@@ -38,9 +38,21 @@ A new generation should be considered only when all three conditions are support
 
 ## Current files
 
-- [Architecture d'un individu artificiel — v2 enrichie](architecture-individu-artificiel-v2.md): complete conceptual and implementation-oriented reference, including 51 building blocks, system diagrams, module catalogue, data structures, limitations, and sources.
+### Long-form reference documents
 
-- [I0 overview](I0_OVERVIEW.md): concise description of what I0 means before detailed implementation exists.
+Conceptual and normative reference documents are organized by language under [`reference/`](reference/README.md).
+
+Current French sources:
+
+- [Conceptual architecture v2](reference/fr/architecture-v2.md)
+- [Normative MVP specification v1.2](reference/fr/mvp-specification-v1.2.md)
+
+English equivalents use the same filenames under `reference/en/`. The language lives in the directory, while the basename and document version remain stable across translations.
+
+### Repository architecture documents
+
+- [I0 overview](I0_OVERVIEW.md): concise description of the current I0 reference boundary.
+- [Bootstrap runtime boundary](BOOTSTRAP_RUNTIME.md): executable bootstrap architecture and its deliberately non-cognitive boundary.
 - [Individual template](INDIVIDUAL_TEMPLATE.md): structure for future generation manifests.
 
 ## Example
