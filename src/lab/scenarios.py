@@ -1,10 +1,20 @@
-"""Small deterministic scenarios used to validate the Lab runtime."""
+"""Scenario contracts and small deterministic technical scenarios."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Protocol
 
 from i0.interfaces import Observation
+
+
+class Scenario(Protocol):
+    """Source of observations for a Lab run."""
+
+    label: str
+
+    def observation(self, cycle: int) -> Observation:
+        """Return the observation presented at a given cycle."""
 
 
 @dataclass(frozen=True, slots=True)
