@@ -1,0 +1,29 @@
+title: "[Research] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for an open scientific question that is not yet a formal experiment.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What are we trying to understand?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What motivates the question?
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Existing work
+      description: Papers, projects, implementations, or prior experiments worth considering.
+  - type: textarea
+    id: testability
+    attributes:
+      label: What could make this testable?
+      description: A possible baseline, observable, metric, or refutation criterion.
