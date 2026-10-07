@@ -13,6 +13,7 @@ Use them to understand how the repository workflow is meant to look before creat
 - [RAI example](rai-example.md): a fictional reuse/adapt/implement decision.
 - [Adapter example](adapter-example.md): how an external component can be connected without hiding cognition in the adapter.
 - [ADR example](adr-example.md): what a shared architectural decision record could look like.
+- [Bootstrap run](bootstrap-run-example.md): what the current executable technical scaffold emits.
 
 ## Rule
 
