@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use Individual Zero in research, please cite the repository and relevant publications or experimental records."
+title: "Individual Zero"
+type: software
+authors:
+  - family-names: "Orta"
+    given-names: "Josselin"
+repository-code: "https://github.com/josselin-orta-lab/individual-zero"
+license: Apache-2.0
+abstract: "Open research project exploring a modular, reproducible architecture for an artificial individual capable of learning, adapting, and mobilizing knowledge in novel situations."
+keywords:
+  - artificial intelligence
+  - cognitive architecture
+  - artificial agents
+  - open science
+  - reproducible research
