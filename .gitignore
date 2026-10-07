@@ -10,3 +10,12 @@ Thumbs.db
 # Logs and local artifacts
 *.log
 .cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Generated run artifacts
+artifacts/
