@@ -12,7 +12,8 @@ If this is your first visit:
 2. take the [repository tour](docs/presentation/02-repository-tour.md);
 3. read [how the research workflow works](docs/presentation/03-research-workflow.md);
 4. if you want to contribute, use the [first-hour contributor guide](docs/presentation/04-contributor-first-hour.md);
-5. browse the [examples](examples/README.md) before creating a new Issue, EXP, benchmark, adapter, or ADR.
+5. browse the [examples](examples/README.md) before creating a new Issue, EXP, benchmark, adapter, or ADR;
+6. when you want to execute the current scaffold, follow [Running the bootstrap](docs/presentation/06-running-the-bootstrap.md).
 
 The project documentation is intentionally layered: you should not need to understand the whole architecture before making a useful contribution.
 
@@ -140,15 +141,28 @@ See [SECURITY.md](SECURITY.md).
 
 The repository is in its initial research bootstrap phase.
 
-Initial goals are:
+The following foundations now exist:
 
-1. establish the repository and contribution workflow;
-2. build a minimal Lab;
-3. define a minimal executable I0 baseline;
-4. register only research questions actually being worked on;
-5. run the first reproducible EXPs;
-6. add shared benchmarks progressively;
-7. iterate from evidence.
+- repository and contribution workflow;
+- neutral Lab execution loop;
+- deterministic technical smoke scenario;
+- structured JSONL run artifacts;
+- minimal I0 execution contracts;
+- executable BootstrapI0 with a deliberate no-op action boundary;
+- automated unit tests and CI.
+
+The current executable scaffold is **not yet a cognitive I0**. It is the research chassis required to test future mechanisms cleanly.
+
+Next goals are:
+
+1. identify the first genuinely measurable cognitive question;
+2. perform RAI for the mechanism involved;
+3. register the first real EXP;
+4. implement the smallest mechanism needed to test it;
+5. add shared benchmarks only when reuse becomes useful;
+6. iterate from evidence.
+
+See [Running the bootstrap](docs/presentation/06-running-the-bootstrap.md) and [Bootstrap runtime boundary](docs/architecture/BOOTSTRAP_RUNTIME.md).
 
 The repository intentionally does **not** pre-create speculative experiments merely to make the project look busy.
 
