@@ -59,3 +59,23 @@ Improving Lab observability does not normally require an EXP when behavior is un
 If instrumentation changes timing, state, available information, or another property that can alter the studied behavior, treat the impact explicitly and create an EXP when necessary.
 
 See [the placement examples](../../examples/repository-placement.md).
+
+## Current bootstrap implementation
+
+The first executable Lab includes:
+
+- `runtime.py`: neutral execution loop and run summary;
+- `events.py`: structured event record;
+- `sinks.py`: in-memory and JSONL event sinks;
+- `scenarios.py`: scenario contract plus a deterministic technical smoke scenario;
+- `cli.py`: command-line bootstrap runner.
+
+The smoke scenario is not a scientific benchmark. It exists only to prove that the execution and observation path works.
+
+Run it with:
+
+```bash
+individual-zero --cycles 3 --seed 0
+```
+
+See [Running the bootstrap](../../docs/presentation/06-running-the-bootstrap.md).
