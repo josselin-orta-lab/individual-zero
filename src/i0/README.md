@@ -72,3 +72,18 @@ A change that can alter reference cognition should be connected to an EXP before
 A shared architectural change may later require an ADR.
 
 See [I0 overview](../../docs/architecture/I0_OVERVIEW.md) and [repository placement examples](../../examples/repository-placement.md).
+
+## Current bootstrap implementation
+
+The first executable I0 code is intentionally non-cognitive.
+
+`architecture/bootstrap.py` currently:
+
+- accepts observations through the shared Individual contract;
+- tracks only technical execution state;
+- returns a deliberate `noop` action;
+- exposes enough state for the Lab to verify and record the execution path.
+
+The no-op policy is not a candidate action-selection theory. It prevents the repository from acquiring accidental cognitive assumptions before the first scientific question is registered.
+
+See [Bootstrap runtime boundary](../../docs/architecture/BOOTSTRAP_RUNTIME.md).
