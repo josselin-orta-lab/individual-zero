@@ -4,9 +4,13 @@
 
 I0 is the first integrated reference architecture planned for Individual Zero.
 
-At the current bootstrap stage, this document defines **the role and boundaries of I0**, not a completed implementation.
+At the current bootstrap stage, the repository contains an **executable technical scaffold** for I0, but not a completed cognitive implementation.
 
-It should not be read as a claim that the final cognitive mechanisms have already been selected.
+The scaffold proves the execution contract, observability path, deterministic run setup, and action boundary. It deliberately returns a no-op action and tracks only technical state.
+
+It should not be read as a claim that memory, motivation, action selection, perception, self-modeling, or any other final cognitive mechanism has already been selected.
+
+See [Bootstrap runtime boundary](BOOTSTRAP_RUNTIME.md).
 
 ## Purpose
 
@@ -86,7 +90,9 @@ The minimum useful I0 is the smallest integrated cycle that allows the project t
 4. compare a controlled variant with a baseline;
 5. preserve enough trace to understand the result.
 
-The exact components of that minimal baseline are a research and implementation decision still to be established.
+The repository now contains the chassis needed for items 1, 2, and 5, but it does not yet satisfy item 3: no meaningful cognitive pathway has been selected.
+
+The exact cognitive components of the first scientific baseline remain a research and implementation decision to be established through the first real EXP.
 
 ## Evolution inside I0
 
