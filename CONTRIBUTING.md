@@ -2,56 +2,126 @@
 
 Thank you for contributing.
 
+The project is designed so that a new contributor can start useful work without first learning the entire cognitive architecture.
+
+## Before you start
+
+For a quick orientation, read:
+
+- [Project overview](docs/presentation/01-project-overview.md)
+- [Repository tour](docs/presentation/02-repository-tour.md)
+- [Research workflow](docs/presentation/03-research-workflow.md)
+- [First-hour contributor guide](docs/presentation/04-contributor-first-hour.md)
+- [Examples](examples/README.md)
+
+Then identify the nature of your proposed change.
+
 ## Contribution paths
 
-### Technical
-For bugs, documentation, tooling, Lab work, tests, behavior-preserving optimizations, and compatible adapter maintenance.
+### Technical contribution
 
-Typical flow: **Issue if useful -> short branch -> change -> tests -> pull request -> merge**.
+Use this path for:
 
-### Scientific
-For a hypothesis, comparison, or behavior change that must be measured.
+- bugs;
+- documentation;
+- tooling and CI;
+- Lab improvements;
+- software tests;
+- performance work with equivalent behavior;
+- compatible adapter maintenance;
+- refactoring without expected scientific behavior change.
 
-Typical flow: **Question -> EXP -> RAI -> minimal prototype -> test -> results -> integration decision**.
+Typical flow:
 
-### Architectural
-For changes to a shared cognitive contract, the global cycle, or several subsystems.
+**Issue if useful -> short branch -> change -> tests -> pull request -> merge**
 
-Typical flow: **Question -> EXP -> results -> ADR -> integrate in I(n) or open candidate I(n+1)**.
+A scientific EXP is not required when no scientific behavior change is expected.
 
-An ADR records a decision. It never replaces an experiment.
+### Scientific contribution
 
-## Placement
+Use this path when a hypothesis, comparison, or behavior change must be measured.
 
-- If code describes how I0 thinks or acts, put it in `src/i0/`.
-- If it only runs or observes, put it in `src/lab/`.
-- If it connects I0 to an external dependency, put it in `src/adapters/`.
-- Put scientific evidence in `experiments/`.
-- Put reusable comparison scenarios in `benchmarks/`.
-- Put software verification in `tests/`.
+Typical flow:
 
-## When an EXP is required
+**Question -> EXP -> RAI -> minimal prototype -> test -> results -> pull request / integration decision**
 
-Create or join an EXP when work tests a scientific hypothesis, compares mechanisms, changes I0 reference cognitive behavior, replaces a reference cognitive component, or alters the global cognitive cycle or structural relationships.
+Experimental code may remain experimental until results justify integration into I0.
 
-An EXP is normally not required for documentation, CI, packaging, logging without behavior change, behavior-preserving refactors, clear bug fixes, equivalent performance work, compatible adapter maintenance, or ordinary software tests.
+### Architectural contribution
 
-If unsure, open an Issue describing expected impact. Create an EXP only after identifying a measurable scientific question.
+Use this path when experimental results support a change to a shared cognitive interface, the global execution cycle, or several subsystems.
 
-## RAI
+Typical flow:
 
-Before significant implementation, perform a time-bounded **Reuse, Adapt, Implement** scan.
+**Question -> EXP -> results -> ADR -> integrate in I(n) or open candidate I(n+1)**
 
-Ask whether a credible solution already exists, whether it matches the hypothesis, whether its license is compatible, whether it is observable and reproducible, and what its integration/maintenance costs are.
+An ADR records a shared decision. It does not replace an experiment.
+
+## Put work in the right place
+
+| Location | Put here | Do not put here |
+| --- | --- | --- |
+| `src/lab/` | runtime, simulation, logging, metrics, seeds, artifact collection, reproduction tools | I0-specific cognitive mechanisms |
+| `src/adapters/` | external API conversion, integration, configuration, compatibility handling | new cognitive logic disguised as integration |
+| `src/i0/` | I0 execution cycle, cognitive interfaces, project-developed modules, reference configuration | generic Lab infrastructure or experiment evidence |
+| `experiments/` | question, RAI, protocol, reproduction commands, results, decision | permanent copies of reference code |
+| `benchmarks/` | reusable scenarios, metrics, reference data, comparison rules | conclusions specific to one EXP |
+| `tests/` | unit, integration, compatibility, regression tests | scientific interpretation |
+
+A practical placement rule:
+
+- if the code describes **how I0 thinks or acts**, use `src/i0/`;
+- if it only **runs or observes**, use `src/lab/`;
+- if it **connects I0 to an external dependency**, use `src/adapters/`.
+
+See [repository placement examples](examples/repository-placement.md).
+
+## Decide whether an EXP is required
+
+Create or join an EXP when the work is intended to:
+
+- test a scientific hypothesis;
+- compare mechanisms or implementations;
+- change I0's reference cognitive behavior;
+- justify replacing a reference cognitive component;
+- alter the global cognitive cycle or structural relationships.
+
+An EXP is normally not required for:
+
+- editorial documentation changes;
+- packaging and development scripts;
+- logging or metrics that do not change behavior;
+- refactoring with equivalent expected behavior;
+- clearly identified bug fixes;
+- equivalent performance optimizations;
+- compatible adapter maintenance;
+- ordinary software tests.
+
+If unsure, open an Issue describing the expected impact. Create an EXP only when a measurable scientific question has been identified.
+
+## Use RAI before significant implementation
+
+Before a meaningful prototype or expensive implementation, perform a time-bounded **Reuse, Adapt, Implement** scan.
+
+Ask:
+
+1. Does a credible implementation or research project already exist?
+2. Does it actually match the hypothesis?
+3. Is its license compatible with intended use and redistribution?
+4. Can its behavior be observed, instrumented, and reproduced?
+5. What are the integration, maintenance, security, and replacement costs?
 
 Choose:
-- **REUSE** when a solution fits;
-- **ADAPT** when a useful mechanism needs a limited interface or modification;
+
+- **REUSE** when a solution already fits the need;
+- **ADAPT** when a useful mechanism needs an interface or limited modification;
 - **IMPLEMENT** when no satisfactory solution exists or the mechanism itself is under study.
+
+See [RAI method](docs/research/rai.md) and the [RAI example](examples/rai-example.md).
 
 ## Branches
 
-Branches are temporary and describe a change, not a long-lived research axis.
+Branches are temporary and describe a change. They do not represent long-lived research axes.
 
 Examples:
 
@@ -63,29 +133,51 @@ docs/contribution-guide
 chore/repository-maintenance
 ```
 
+Research axes live in `RESEARCH_MAP.md`. Experimental evidence lives in `experiments/`.
+
 ## Pull requests
 
-Explain:
+A pull request should explain:
+
 - what changed;
 - why;
 - how it was tested;
 - whether I0 cognitive behavior can change;
-- related EXP, Issue, ADR, or benchmark.
+- the related EXP, if any;
+- the related Issue, ADR, or benchmark, if any.
 
-A PR changing reference cognitive behavior must point to the EXP that justifies it.
+When a pull request changes reference cognitive behavior, it must point to the EXP that justifies the change.
 
-## Tests vs experiments
+Keep pull requests focused enough to review and reproduce.
 
-Software tests verify known expected behavior. Scientific experiments test hypotheses under defined conditions. One does not replace the other.
+## Software tests and scientific experiments are different
+
+A software test verifies a known specification.
+
+A scientific experiment tests a hypothesis or compares variants under defined conditions.
+
+Both matter, but one does not replace the other.
+
+See [Experiments vs tests](docs/research/experiments-vs-tests.md).
 
 ## Negative results
 
-Keep negative and inconclusive results when they provide reproducible information.
+Negative and inconclusive results should be preserved when they contribute reproducible information.
 
-## Licensing
+A failed hypothesis can still prevent the next contributor from repeating the same dead end.
 
-Contributed source code is provided under Apache-2.0. Original documentation, research text, diagrams, and written experimental reports are provided under CC BY 4.0 unless stated otherwise. Preserve third-party licenses and attribution.
+## Licensing and attribution
+
+By contributing, you agree that:
+
+- contributed source code is provided under Apache License 2.0;
+- original documentation, research text, diagrams, and written experimental reports are provided under CC BY 4.0 unless stated otherwise;
+- third-party material must retain its original license and attribution.
+
+Do not commit material that cannot legally be redistributed by the project.
 
 ## Conduct
 
-Critique ideas, mechanisms, methods, and evidence freely. Treat contributors respectfully. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+Critique mechanisms, assumptions, methods, and results freely. Treat contributors respectfully.
+
+See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
