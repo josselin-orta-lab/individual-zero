@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from i0.interfaces import Individual
 
 from .events import LabEvent
-from .scenarios import SmokeScenario
+from .scenarios import Scenario
 from .sinks import EventSink
 
 
@@ -49,11 +49,11 @@ class RunSummary:
 def run_individual(
     *,
     individual: Individual,
-    scenario: SmokeScenario,
+    scenario: Scenario,
     config: RunConfig,
     sink: EventSink,
 ) -> RunSummary:
-    """Run an Individual under a deterministic technical smoke scenario."""
+    """Run an Individual under a Lab-provided scenario."""
 
     config.validate()
     individual.reset(seed=config.seed)
