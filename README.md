@@ -4,11 +4,25 @@
 
 The project does not assume that human-inspired cognitive mechanisms are the answer. They are hypotheses to test. The goal is to build an architecture whose important mechanisms can be understood, observed, measured, challenged, and replaced.
 
+## Start here
+
+If this is your first visit:
+
+1. read the short [project overview](docs/presentation/01-project-overview.md);
+2. take the [repository tour](docs/presentation/02-repository-tour.md);
+3. read [how the research workflow works](docs/presentation/03-research-workflow.md);
+4. if you want to contribute, use the [first-hour contributor guide](docs/presentation/04-contributor-first-hour.md);
+5. browse the [examples](examples/README.md) before creating a new Issue, EXP, benchmark, adapter, or ADR.
+
+The project documentation is intentionally layered: you should not need to understand the whole architecture before making a useful contribution.
+
 ## What is I0?
 
-**I0** is the first integrated reference architecture of Individual Zero. It is not a promise of AGI and it is not meant to be final. It is the smallest integrated baseline from which research questions can be tested reproducibly.
+**I0** is the first integrated reference architecture of Individual Zero.
 
-Future names such as I1 or I2 refer to architectural generations, not ordinary software releases.
+It is not a promise of AGI and it is not meant to be final. It is the smallest integrated baseline from which scientific questions can be tested reproducibly.
+
+Future names such as **I1** or **I2** refer to architectural generations, not ordinary software releases.
 
 ## Guiding rule
 
@@ -24,7 +38,12 @@ Scientific contributions follow:
 
 RAI means **Reuse, Adapt, Implement**.
 
-Possible decisions are **retry**, **reject**, **integrate**, or **candidate I(n+1)**.
+Possible decisions are:
+
+- **retry**: the question remains useful, but the method or prototype needs revision;
+- **reject**: the tested mechanism or hypothesis is not supported under the tested conditions;
+- **integrate**: the result justifies a change to the current reference;
+- **candidate I(n+1)**: the result suggests a broader architectural rupture worth investigating.
 
 Negative and inconclusive results are kept when they provide reproducible information.
 
@@ -33,9 +52,11 @@ Negative and inconclusive results are kept when they provide reproducible inform
 ```text
 individual-zero/
 ├── docs/
+│   ├── presentation/
 │   ├── architecture/
 │   ├── research/
 │   └── decisions/
+├── examples/
 ├── src/
 │   ├── lab/
 │   ├── adapters/
@@ -45,18 +66,36 @@ individual-zero/
 └── tests/
 ```
 
+- `docs/presentation/`: short onboarding documents for humans discovering the project.
+- `docs/architecture/`: architecture descriptions, interfaces, and generation manifests.
+- `docs/research/`: research method, terminology, RAI, and experiment guidance.
+- `docs/decisions/`: shared architectural decisions recorded as ADRs.
+- `examples/`: non-authoritative examples showing how the workflow is used.
 - `src/lab/`: runtime, simulation, logging, metrics, seeds, artifact collection, reproduction tools.
 - `src/adapters/`: integration layers between I0 interfaces and external projects.
 - `src/i0/`: reference cognitive architecture and behavior.
-- `experiments/`: scientific questions, RAI decisions, protocols, results, conclusions.
+- `experiments/`: scientific questions, RAI decisions, protocols, results, and conclusions.
 - `benchmarks/`: reusable scenarios, metrics, and comparison rules.
 - `tests/`: software correctness, integration, compatibility, and regression tests.
 
 ## When is an experiment required?
 
-An EXP is not a development ticket. Create or join one when work is intended to produce measurable knowledge, compare mechanisms, or justify a change in scientific reference behavior.
+An EXP is not a development ticket.
+
+Create or join one when work is intended to produce measurable knowledge about the system, compare mechanisms, or justify a change in scientific reference behavior.
+
+Examples that normally require an EXP:
+
+- a new learning strategy;
+- a new memory or consolidation mechanism;
+- a change in action selection, internal regulation, affect, or motivation;
+- replacing a reference cognitive component with an external dependency;
+- changing reference parameters with an expected behavioral effect;
+- changing the global cycle or structural relationships between subsystems.
 
 Documentation, tooling, CI, compatible adapter updates, behavior-preserving refactoring, clearly identified bug fixes, and equivalent performance optimizations normally require software tests, not a scientific EXP.
+
+See [Experiments vs tests](docs/research/experiments-vs-tests.md) for concrete examples.
 
 ## Research axes
 
@@ -71,9 +110,15 @@ See [RESEARCH_MAP.md](RESEARCH_MAP.md).
 
 ## Contributing
 
-You do not need to understand the entire architecture before contributing. Start by identifying whether the change is technical, scientific, or architectural.
+You do not need to understand the entire architecture before contributing.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+Start by identifying whether the change is:
+
+- **technical**: the software or infrastructure changes, but the scientific behavior is not expected to change;
+- **scientific**: a hypothesis or behavioral change must be measured;
+- **architectural**: experimental evidence supports a shared structural decision.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the [contribution examples](examples/README.md).
 
 ## Licensing
 
@@ -85,13 +130,17 @@ Individual Zero uses a split licensing model:
 
 ## Responsible development
 
-Openness supports independent review, but openness alone does not guarantee safety. The project should progress in stages, evaluate developed capabilities, keep responsibilities identifiable, and document deployment limits when they become relevant.
+Openness supports independent review, but openness alone does not guarantee safety.
+
+The project should progress in stages, evaluate developed capabilities, keep responsibilities identifiable, and document deployment limits when they become relevant.
 
 See [SECURITY.md](SECURITY.md).
 
 ## Current status
 
-The repository is in its initial research bootstrap phase. Initial goals are:
+The repository is in its initial research bootstrap phase.
+
+Initial goals are:
 
 1. establish the repository and contribution workflow;
 2. build a minimal Lab;
@@ -100,6 +149,8 @@ The repository is in its initial research bootstrap phase. Initial goals are:
 5. run the first reproducible EXPs;
 6. add shared benchmarks progressively;
 7. iterate from evidence.
+
+The repository intentionally does **not** pre-create speculative experiments merely to make the project look busy.
 
 ## Citation
 
