@@ -38,6 +38,8 @@ A new generation should be considered only when all three conditions are support
 
 ## Current files
 
+- [Architecture d'un individu artificiel — v2 enrichie](architecture-individu-artificiel-v2.md): complete conceptual and implementation-oriented reference, including 51 building blocks, system diagrams, module catalogue, data structures, limitations, and sources.
+
 - [I0 overview](I0_OVERVIEW.md): concise description of what I0 means before detailed implementation exists.
 - [Individual template](INDIVIDUAL_TEMPLATE.md): structure for future generation manifests.
 
