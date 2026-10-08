@@ -8,7 +8,7 @@ Spec: 4.1, 7.1, 18.3, 19.5, 20.3 Stage 2, P-52, P-53.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Mapping, Sequence
 
 from i0.interfaces import PrimitiveCommand
@@ -317,6 +317,7 @@ class LocalWorldState:
     current_resources: tuple[str, ...]
     adjacent: tuple[LocalCell, ...]
     visible_entities: tuple[VisibleEntity, ...] = ()
+    inventory: Mapping[str, int] = field(default_factory=dict)
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -328,6 +329,7 @@ class LocalWorldState:
             "visible_entities": [
                 entity.as_dict() for entity in self.visible_entities
             ],
+            "inventory": dict(sorted(self.inventory.items())),
         }
 
 
@@ -533,6 +535,7 @@ class WorldBody:
                     ),
                 )
             ),
+            inventory=dict(sorted(self._inventory.items())),
         )
 
     def is_night(self, t_monde: int) -> bool:
