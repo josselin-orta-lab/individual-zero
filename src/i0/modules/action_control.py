@@ -211,7 +211,7 @@ class ActionControl:
             "sent_t_monde": t_monde,
             "deadline_t_monde": t_monde + prepared.observation_window_steps,
             "consequences": tuple(prepared.predicted_consequences),
-            "command": prepared.command,
+            **({"command": prepared.command} if self._agency_comparator is not None else {}),
         }
 
     def compare_capture(
@@ -599,10 +599,10 @@ class ActionControl:
                 "option_ref": self._pending_prediction["option_ref"],
                 "sent_t_monde": self._pending_prediction["sent_t_monde"],
                 "deadline_t_monde": self._pending_prediction["deadline_t_monde"],
-                "command": None if self._pending_prediction.get("command") is None else {
+                **({"command": {
                     "primitive": self._pending_prediction["command"].primitive,
                     "parameters": dict(self._pending_prediction["command"].parameters),
-                },
+                }} if self._agency_comparator is not None and self._pending_prediction.get("command") is not None else {}),
                 "consequences": [
                     {
                         "variable": consequence.variable,
@@ -650,10 +650,10 @@ class ActionControl:
                 "option_ref": raw_pending.get("option_ref"),
                 "sent_t_monde": int(raw_pending["sent_t_monde"]),
                 "deadline_t_monde": int(raw_pending["deadline_t_monde"]),
-                "command": None if raw_pending.get("command") is None else PrimitiveCommand(
+                **({"command": PrimitiveCommand(
                     primitive=str(raw_pending["command"]["primitive"]),
                     parameters=dict(raw_pending["command"]["parameters"]),
-                ),
+                )} if raw_pending.get("command") is not None else {}),
                 "consequences": tuple(
                     PredictedConsequence(
                         variable=str(item["variable"]),
