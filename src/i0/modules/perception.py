@@ -61,10 +61,15 @@ class SymbolicPerception:
 
     def __init__(self) -> None:
         self._known_entities: dict[str, PerceivedEntity] = {}
+        self._observation_ref_by_entity: dict[str, str] = {}
 
     @property
     def known_entities(self) -> Mapping[str, PerceivedEntity]:
         return dict(self._known_entities)
+
+    @property
+    def observation_ref_by_entity(self) -> Mapping[str, str]:
+        return dict(self._observation_ref_by_entity)
 
     def capture(
         self,
@@ -117,6 +122,14 @@ class SymbolicPerception:
             )
             perceived_entities.append(entity)
             self._known_entities[entity.entity_id] = entity
+
+        refs = state.get("observation_ref_by_entity", {})
+        if not isinstance(refs, Mapping):
+            raise ValueError("invalid Perception observation-ref state")
+        self._observation_ref_by_entity = {
+            str(entity_id): str(ref)
+            for entity_id, ref in refs.items()
+        }
 
         body = {
             key: float(telemetry[key])
@@ -183,6 +196,7 @@ class SymbolicPerception:
                 ),
             )
             contribution.validate()
+            self._observation_ref_by_entity[entity.entity_id] = contribution.id
             contributions.append(contribution)
         return tuple(contributions)
 
@@ -200,7 +214,10 @@ class SymbolicPerception:
                     self._known_entities.values(),
                     key=lambda item: item.entity_id,
                 )
-            ]
+            ],
+            "observation_ref_by_entity": dict(
+                sorted(self._observation_ref_by_entity.items())
+            ),
         }
 
     def restore_causal_state(self, state: object) -> None:
