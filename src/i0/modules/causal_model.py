@@ -466,7 +466,7 @@ class CausalModel:
                 continue
             exposed = [x for x in byref[ref] if x.cause_present]
             control = [x for x in byref[ref] if not x.cause_present]
-            if len(exposed) < self.config.n1 or not control:
+            if not control:
                 continue
             # Above-base-rate comparisons require matching observable context
             # and controlled variables. No mismatched context can create a rate.
@@ -474,6 +474,13 @@ class CausalModel:
                        if x.observation_context == y.observation_context
                        and x.controlled_variables == y.controlled_variables]
             if not matched:
+                continue
+            # P-35 n1 counts observed cause+effect co-occurrences,
+            # not merely cause-present episodes without the effect.
+            confirmed = {
+                x.identifier for x, _ in matched if x.effect_present
+            }
+            if len(confirmed) < self.config.n1:
                 continue
             e = {x.identifier: x for x, _ in matched}
             b = {y.identifier: y for _, y in matched}
