@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 import unittest
 
 from lab.bench import EvaluationBench
@@ -73,6 +74,23 @@ class OracleBoundaryTests(unittest.TestCase):
         state = world().export_causal_state()
 
         self.assertNotIn("oracle_canary", state)
+
+    def test_i0_package_has_no_oracle_or_bench_dependency(self) -> None:
+        root = Path(__file__).resolve().parents[1] / "src" / "i0"
+        forbidden = (
+            "lab.oracle",
+            "EvaluationBench",
+            "EvaluationTrace",
+            "oracle_truth",
+        )
+
+        offenders: list[str] = []
+        for path in root.rglob("*.py"):
+            text = path.read_text(encoding="utf-8")
+            if any(token in text for token in forbidden):
+                offenders.append(str(path.relative_to(root)))
+
+        self.assertEqual(offenders, [])
 
     def test_evaluation_metrics_are_external(self) -> None:
         instance = world()
