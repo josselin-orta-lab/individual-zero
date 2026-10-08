@@ -48,6 +48,7 @@ def physics() -> WorldPhysicsConfig:
             "berry_b": BerryEffect(5.0, -100.0),
         },
         creature_damage=10.0,
+        danger_zone_damage=15.0,
         tool_recipe=ToolRecipe(1, 1, 2),
     )
 
