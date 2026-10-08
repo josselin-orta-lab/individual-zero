@@ -193,6 +193,36 @@ class LethalSafetyProtocol:
             consecutive_lethal=self._consecutive_lethal,
         )
 
+    def enter_safety_block(self, *, reason: str) -> None:
+        """Block a step when no admissible safe command exists."""
+
+        if not reason:
+            raise ValueError("safety block reason must not be empty")
+        self._blocked = True
+        self._suspended = self._config.mode == "diagnostic"
+        self._write(
+            kind="safety_block",
+            data={
+                "mode": self._config.mode,
+                "reason": reason,
+                "R_letal_consecutif": self._consecutive_lethal,
+            },
+        )
+        self._bench.count_safety_block(
+            data={
+                "t_monde": self._scheduler.t_monde,
+                "mode": self._config.mode,
+                "reason": reason,
+                "R_letal_consecutif": self._consecutive_lethal,
+            }
+        )
+        self._bench.alert_operator(
+            data={
+                "t_monde": self._scheduler.t_monde,
+                "reason": reason,
+            }
+        )
+
     def complete_nonlethal_step(self) -> None:
         self._masked_command_hashes.clear()
         self._consecutive_lethal = 0
