@@ -177,6 +177,19 @@ class SnapshotManager:
         actual = sha256_hex(canonical_causal_bytes(stored.payload))
         return actual == stored.record.sha256
 
+    def export_payload(self, snapshot_id: str) -> dict[str, object]:
+        """Return a verified deep copy of a stored causal snapshot payload.
+
+        This is used to initialize a new copy instance. It never mutates the
+        source snapshot or any owner.
+        """
+        stored = self._snapshots.get(snapshot_id)
+        if stored is None:
+            raise KeyError(f"unknown snapshot: {snapshot_id}")
+        if not self.verify(snapshot_id):
+            raise ValueError("snapshot hash verification failed")
+        return deepcopy(stored.payload)
+
     def restore(
         self,
         snapshot_id: str,
