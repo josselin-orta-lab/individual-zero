@@ -73,6 +73,7 @@ class Stage5Runtime(Stage4Runtime):
         protected_integrity_threshold: float,
         config: Stage5Config,
         individual_id: str = "i0-stage5",
+        lineage_id: str | None = None,
         lineage_parent_id: str | None = None,
         lineage_copy_point: str | None = None,
         battery_copy: bool = False,
@@ -97,6 +98,11 @@ class Stage5Runtime(Stage4Runtime):
         self.temperament_projection = TemperamentProjection(
             temperament=config.temperament,
             mapping=config.mapping,
+            individual_id=individual_id,
+            lineage_id=lineage_id,
+            parent_id=lineage_parent_id,
+            copy_snapshot_id=lineage_copy_point,
+            battery_copy=battery_copy,
         )
         params = self.temperament_projection.parameters
 
@@ -193,18 +199,18 @@ class Stage5Runtime(Stage4Runtime):
             copy_ref,
         )
         child = Stage5Runtime(
-            world_config=self._source_world_config,
-            layout=self._source_layout,
-            safety_config=self._source_safety_config,
-            safety_facts=self._source_safety_facts,
+            world_config=self._birth_world_config,
+            layout=self._birth_layout,
+            safety_config=self._birth_safety_config,
+            safety_facts=self._birth_safety_facts,
             protected_integrity_threshold=(
-                self._source_protected_integrity_threshold
+                self._birth_protected_integrity_threshold
             ),
             config=self._stage5_config,
             individual_id=child_id,
             lineage_id=self.temperament_projection.lineage_id,
-            parent_id=self.individual_id,
-            copy_snapshot_id=record.id,
+            lineage_parent_id=self.individual_id,
+            lineage_copy_point=record.id,
             battery_copy=battery_copy,
         )
 
