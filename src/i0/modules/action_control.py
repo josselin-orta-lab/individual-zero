@@ -133,6 +133,12 @@ class ActionControl:
         self._current_step_index = 0
         self._pending_prediction: dict[str, object] | None = None
         self._last_comparison: AgencyComparison | None = None
+        self._agency_comparator = None
+
+    def attach_agency_comparator(self, comparator) -> None:
+        if self._agency_comparator is not None:
+            raise ValueError("agency comparator already installed")
+        self._agency_comparator = comparator
 
     @property
     def current_step(self) -> tuple[str | None, str | None, int]:
@@ -191,6 +197,12 @@ class ActionControl:
         prepared: PreparedCommand,
         t_monde: int,
     ) -> None:
+        if self._agency_comparator is not None and (
+            prepared.observation_window_steps < 1
+            or prepared.observation_window_steps
+            > self._agency_comparator.config.max_observation_window_steps
+        ):
+            raise ValueError("P-47 observation window outside declared range")
         if not prepared.predicted_consequences:
             self._pending_prediction = None
             return
@@ -199,6 +211,7 @@ class ActionControl:
             "sent_t_monde": t_monde,
             "deadline_t_monde": t_monde + prepared.observation_window_steps,
             "consequences": tuple(prepared.predicted_consequences),
+            "command": prepared.command,
         }
 
     def compare_capture(
@@ -232,6 +245,20 @@ class ActionControl:
             )
             self._pending_prediction = None
             self._last_comparison = comparison
+            return comparison
+
+        if self._agency_comparator is not None:
+            comparison = self._agency_comparator.compare(
+                option_ref=pending["option_ref"],
+                sent_t_monde=sent_t,
+                deadline_t_monde=deadline,
+                predictions=pending["consequences"],
+                capture=capture,
+                command=pending.get("command"),
+            )
+            if comparison is not None:
+                self._pending_prediction = None
+                self._last_comparison = comparison
             return comparison
 
         effects: list[dict[str, object]] = []
@@ -572,6 +599,10 @@ class ActionControl:
                 "option_ref": self._pending_prediction["option_ref"],
                 "sent_t_monde": self._pending_prediction["sent_t_monde"],
                 "deadline_t_monde": self._pending_prediction["deadline_t_monde"],
+                "command": None if self._pending_prediction.get("command") is None else {
+                    "primitive": self._pending_prediction["command"].primitive,
+                    "parameters": dict(self._pending_prediction["command"].parameters),
+                },
                 "consequences": [
                     {
                         "variable": consequence.variable,
@@ -619,6 +650,10 @@ class ActionControl:
                 "option_ref": raw_pending.get("option_ref"),
                 "sent_t_monde": int(raw_pending["sent_t_monde"]),
                 "deadline_t_monde": int(raw_pending["deadline_t_monde"]),
+                "command": None if raw_pending.get("command") is None else PrimitiveCommand(
+                    primitive=str(raw_pending["command"]["primitive"]),
+                    parameters=dict(raw_pending["command"]["parameters"]),
+                ),
                 "consequences": tuple(
                     PredictedConsequence(
                         variable=str(item["variable"]),
