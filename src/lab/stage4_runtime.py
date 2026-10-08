@@ -228,6 +228,7 @@ class Stage4Runtime:
             "state": goal.state,
             "activation_t": goal.activation_t,
             "activation_cycle": goal.activation_cycle,
+            "justification_ref": goal.justification_ref,
         }
 
     def _goal_satisfied(self) -> bool:
@@ -436,6 +437,13 @@ class Stage4Runtime:
                 st_version=st_before_cycle.version,
                 position=(capture.x, capture.y),
                 known_entities=self.stage3.perception.known_entities,
+                observation_ref_by_entity=(
+                    self.stage3.perception.observation_ref_by_entity
+                ),
+                retained_contribution_refs=frozenset(
+                    element.contribution_ref
+                    for element in st_before_cycle.competitive
+                ),
                 t_monde=capture.t_monde,
                 cycle=cycle,
             )
