@@ -53,6 +53,7 @@ class Goal:
     state: str
     activation_t: int
     activation_cycle: int
+    justification_ref: str | None = None
 
     def validate(self) -> None:
         if self.state not in {
