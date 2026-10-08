@@ -12,6 +12,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping
 
+from .active_kappa import ActiveKappa, KappaConfig, KappaVerification
+
 
 @dataclass(frozen=True, slots=True)
 class MinimalMetacognitionState:
@@ -27,6 +29,16 @@ class MinimalMetacognition:
         self._f_cog_uc_counter = 0
         self._last_cycle_uc = 0
         self._budget_state = "normal"
+        self._active_kappa: ActiveKappa | None = None
+
+    def attach_active_kappa(self, config: KappaConfig) -> None:
+        if self._active_kappa is not None:
+            raise ValueError('active kappa already attached')
+        self._active_kappa = ActiveKappa(config)
+
+    @property
+    def active_kappa(self) -> ActiveKappa | None:
+        return self._active_kappa
 
     @property
     def state(self) -> MinimalMetacognitionState:
@@ -62,11 +74,14 @@ class MinimalMetacognition:
             self._budget_state = "normal"
 
     def export_causal_state(self) -> object:
-        return {
+        state = {
             "f_cog_uc_counter": self._f_cog_uc_counter,
             "last_cycle_uc": self._last_cycle_uc,
             "budget_state": self._budget_state,
         }
+        if self._active_kappa is not None:
+            state["kappa_active"] = self._active_kappa.export_causal_state()
+        return state
 
     def restore_causal_state(self, state: object) -> None:
         if not isinstance(state, Mapping):
@@ -83,3 +98,7 @@ class MinimalMetacognition:
         self._f_cog_uc_counter = total
         self._last_cycle_uc = last
         self._budget_state = str(budget_state)
+        if self._active_kappa is not None:
+            if "kappa_active" not in state:
+                raise ValueError("missing active kappa snapshot")
+            self._active_kappa.restore_causal_state(state["kappa_active"])
