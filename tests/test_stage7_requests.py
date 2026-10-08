@@ -177,6 +177,41 @@ class MemoryRequestIntegrationTests(unittest.TestCase):
             "closed",
         )
 
+    def test_past_dependent_episode_query_improves_after_experience(self) -> None:
+        before = build_stage7_reference_runtime()
+        empty_request = root_request(
+            ident="req:before-history",
+            question="episode:episode:0",
+            deadline=10,
+        )
+        empty_response = before.memory.respond(
+            empty_request,
+            st=before.s_t.current,
+            t_monde=0,
+        )
+        self.assertEqual(empty_response.status, "empty")
+
+        after = build_stage7_reference_runtime()
+        for _ in range(3):
+            after.run_step()
+        self.assertGreater(len(after.memory.episodes), 0)
+
+        learned_request = root_request(
+            ident="req:after-history",
+            question="episode:episode:0",
+            deadline=10,
+        )
+        learned_response = after.memory.respond(
+            learned_request,
+            st=after.s_t.current,
+            t_monde=after.scheduler.t_monde,
+        )
+        self.assertEqual(learned_response.status, "delivered")
+        self.assertEqual(
+            learned_response.content["id"],
+            "episode:0",
+        )
+
     def test_pending_request_status_is_published_in_S_t(self) -> None:
         runtime = build_stage7_reference_runtime()
         request = root_request(
