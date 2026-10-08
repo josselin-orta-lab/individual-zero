@@ -375,3 +375,48 @@ jobs:
           name: stage6-reference-journal
           path: /tmp/stage6-reference.jsonl
           if-no-files-found: error
+
+
+      - name: Generate Stage 7 reference journal
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from lab.stage7_reference_fixture import build_stage7_reference_runtime
+
+          runtime = build_stage7_reference_runtime()
+          for _ in range(300):
+              outcome = runtime.run_step()
+              if outcome.execution_status != "applied":
+                  raise SystemExit(
+                      f"unexpected Stage 7 outcome: {outcome.execution_status}"
+                  )
+
+          if not runtime.memory.episodes:
+              raise SystemExit("Stage 7 reference produced no closed episodes")
+          if runtime.world.body.water != 60.0:
+              raise SystemExit(
+                  f"unexpected Stage 7 final water: {runtime.world.body.water}"
+              )
+
+          payload = runtime.journal.canonical_bytes()
+          path = Path("/tmp/stage7-reference.jsonl")
+          path.write_bytes(payload + (b"\n" if payload else b""))
+          if not runtime.journal.verify():
+              raise SystemExit("stage7 reference journal failed verification")
+          print(f"stage7_reference_bytes={len(payload)}")
+          print(f"stage7_reference_head={runtime.journal.head_hash}")
+          print(f"stage7_episode_count={len(runtime.memory.episodes)}")
+          print(
+              "stage7_f_cog_uc="
+              f"{runtime.metacognition.state.f_cog_uc_counter}"
+          )
+          PY
+
+      - name: Upload Stage 7 reference journal
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage7-reference-journal
+          path: /tmp/stage7-reference.jsonl
+          if-no-files-found: error
