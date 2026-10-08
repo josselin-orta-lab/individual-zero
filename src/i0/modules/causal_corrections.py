@@ -27,6 +27,10 @@ class NumericPredictionCorrection:
     variable: str
     observed_after: float
     application_context: str = "global"
+    # Real-source rules are exact-context observations, not universally valid
+    # absolute body assignments. None retains the older isolated test contract.
+    observed_before_body: tuple[tuple[str, float], ...] | None = None
+    observed_before_position: tuple[int, int] | None = None
 
     def validate(self) -> None:
         if not all((
@@ -49,6 +53,22 @@ class NumericPredictionCorrection:
             or not 0 <= self.observed_after <= 100
         ):
             raise ValueError("correction must contain bounded observed body telemetry")
+        if self.observed_before_body is not None:
+            before = dict(self.observed_before_body)
+            if set(before) != BODY_VARIABLES or len(self.observed_before_body) != 4:
+                raise ValueError("physical correction requires exact body context")
+            if any(
+                isinstance(v, bool) or not isinstance(v, (int, float))
+                or not isfinite(v) or not 0 <= v <= 100
+                for v in before.values()
+            ):
+                raise ValueError("invalid observed pre-action body context")
+            if (self.observed_before_position is None
+                or len(self.observed_before_position) != 2
+                or any(type(v) is not int for v in self.observed_before_position)):
+                raise ValueError("physical correction requires exact observed position")
+        elif self.observed_before_position is not None:
+            raise ValueError("position without physical body context")
 
 
 class EstablishedCorrectionSource(Protocol):
@@ -80,6 +100,14 @@ def correct_equipment_prediction(
             continue
         if c.command_target is not None and (
             command.parameters.get("target") != c.command_target
+        ):
+            continue
+        if c.observed_before_body is not None and (
+            (state.x, state.y) != c.observed_before_position
+            or any(
+                float(state.body[name]) != float(value)
+                for name, value in c.observed_before_body
+            )
         ):
             continue
         active.append(c)
