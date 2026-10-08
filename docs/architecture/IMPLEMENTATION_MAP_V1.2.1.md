@@ -398,6 +398,16 @@ The versioned `src/lab/stage8_learning_benchmark.py` now records two **separate,
 
 **Open normative acceptance:** a preregistered independent physical calibration scenario with sufficiently varied correct/incorrect outcomes is still required for an observed decline in Brier. Do not declare Stage 8 empirically gated merely because its deterministic software and learning-curve tests pass. No oracle labels may enter the individual.
 
+### Stage-8 independent physical calibration stress test (accepted)
+
+A separately versioned, preregistered, *Lab-only* stress scenario now exercises the same DC-06 comparator-verification adapter used by the living Stage-8 runtime (no bench/oracle input to cognition). Each of 80 unique physical world-step observations follows the path: predeclared simulator prediction → ActionControl record → nonlethal WorldBody transition → later Perception capture → ActionControl comparison → Metacognition-owned κ_active update. Preverification reliability is recorded exclusively by the Lab. An independent physical observation reference is credited once; the 80 outcomes are not constructed from κ state or tuned to its feedback.
+
+The fixed controlled predictor produces **64 conforming and 16 nonconforming outcomes**. Prequential Brier decreases from **0.17688754800727752** (first 40) to **0.16273764165848797** (last 40), both below the neutral **0.25** reference. The entire protocol is replayed twice exactly and has explicit invariants in `tests/test_stage8_calibration_stress.py`. All **270 tests** passed on Python **3.11** and **3.12**; GitHub Actions run **37823629279**, with the machine-readable `stage8-physical-kappa-calibration` artifact. The original 300-step scenario's inconclusive Brier 0.25 → 0.25 remains documented above, deliberately unmodified.
+
+The calibration probe only confirms the normatively required **declining-Brier software acceptance in this preregistered stress scenario**. It does not establish general calibration across seeds, families, horizons, or the later Stage-13 scientific campaign. Existing Stage-8 reference golden `0a2dc62d4ba51722a96f307fdf6c7427d1aa3b0a8a3c0e21da81bc490eb23cf8` and historical Stage-7 `c356fe386c2480e78e485f85815ac93fc90f3b679e5806dcb61b374daee9da77` are preserved.
+
+**Stage 8 implementation and its controlled acceptance gate are complete.** PR #17 remains draft for human review; no merge and no Stage-9 implementation have occurred.
+
 ### Deliberate boundaries
 
 The noiseless reference trajectory produces no independent sensor-precision calibration samples; active precision update, provenance rejection and publication are separately exercised by deterministic tests. Stage 8 does not add Stage-9 Causal Model knowledge/contingencies or Stage-10 sleep/consolidation. P-33 and active-precision coefficients are versioned software-reference parameters, not empirical performance calibration. The normative Stage-13 campaign and inter-version equivalence evidence are not implied by a green software gate.
