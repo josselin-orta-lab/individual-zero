@@ -66,6 +66,9 @@ class Stage9Runtime(Stage8Runtime):
             equipment=equipment,
         )
         self.stage3.control.attach_agency_comparator(AgencyComparator(config.agency))
+        # The Simulator only receives a read-only pointer to the canonical
+        # Causal Model; no cached or consolidated correction state exists.
+        self.simulator.attach_established_correction_source(self.causal_model)
 
     @property
     def causal_owners(self):
@@ -202,6 +205,8 @@ class Stage9Runtime(Stage8Runtime):
                     option_ref=proposal.option.id,
                     motive_ref=proposal.option.motive_ref.id,
                     integrity_before=float(captured.body["integrity"]),
+                    body_before=dict(captured.body),
+                    position_before=(captured.x, captured.y),
                 )
         return execution
 
