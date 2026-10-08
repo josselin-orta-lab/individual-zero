@@ -262,7 +262,7 @@ Stage 7 gate status:
 
 ## Current repository gap
 
-The normative implementation now includes the deterministic substrate through Stage 7 Memory. The next normative implementation stage is Stage 8, Online Learning. Stage 8 may consume accessible S_t, experienced transitions and Stage-7 memory interfaces, but must not pull forward Stage-9 causal-model behavior or Stage-10 sleep/consolidation.
+The normative implementation has closed the deterministic substrate through Stage 7 Memory. Stage 8 development is on `i0/stage8-online-learning-v1.2.1` (PR #17, draft). Stage 8 is **not closed** until the complete normative gate and two matching 300-step references pass. Stage 8 may consume accessible S_t, experienced transitions and Stage-7 memory interfaces, but must not pull forward Stage-9 causal-model behavior or Stage-10 sleep/consolidation.
 
 ## Functional groups
 
@@ -357,3 +357,20 @@ Deferred to following Stage 1 groups:
 | Byte-identical normalized journals (Stage 1) | event dictionaries compare equal in memory | canonical journal byte representation | Deterministic foundation | repeated journal bytes identical |
 | Machine time excluded from causality (INV-22) | no machine-time field currently used | explicit separation in new causal journal API | Deterministic foundation | causal bytes contain no implicit wall-clock data |
 
+
+## Stage 8 implementation audit (in progress)
+
+Normative source: section 5.3, 8.5, 11, 20.3 Stage 8, 21, DC-01, DC-06, DC-15.
+Parameter dependencies: P-13, P-30, P-31, P-32, P-33.
+
+- Value and Needs owns Q_active, signature-indexed linear TD weights, update counts, eligibility traces and pending experienced segments. No writes to consolidated Q (Stage 10).
+- Metacognition and Health owns κ_active with P-33 finite beta prior, binned confidence, exact DC-06 module/version/type/family keys, causal provenance admission, deterministic end-of-cycle publication and causal export/restore. No writes to consolidated κ (Stage 10).
+- Closed signal families are reused from the existing structural contract; no new family added.
+- Simulator predictions may be verified only against later physically observed consequences; same-family repetitions, derived confirmation, oracle, cancelled segments and non-verifiable outcomes cannot alter κ.
+- Gatekeeper consumes κ reliability as a multiplicative factor for priority and safety preemption. Legacy Stages 4-7 retain their f=1 compatibility behavior where κ is unattached.
+- Competition receives typed learned and simulated values through Stage8OptionEvaluator, with unlearned distinct from numeric zero.
+- TD unknown-Q reads are pure; no implicit causal map entry is created.
+
+Automated coverage added: tests/test_stage8_kappa.py (INV-01, INV-05, INV-26, INV-27, INV-33, INV-43) and existing tests/test_stage8_td_values.py (INV-07, INV-16, INV-50). Stage 8 300-step journal and evolving active-state assertions are being added to CI.
+
+**Outstanding before closure:** verify the Stage 8 300-step journal twice with identical hashes/bytes, verify κ and Q trajectories and behavioral choice divergence, extend complete rollback/replay/snapshot coverage, confirm P-33 prior-provenance and active precision requirements, validate INV-03/05/07/16/26/43 plus historical Stage 7 golden unchanged. No Stage 8 golden is frozen until that gate is green.
