@@ -523,6 +523,93 @@ class CausalModel:
             raise ValueError("duplicate intervention")
         self._pending_causal_interventions.append(trial)
 
+    def established_prediction_corrections(self) -> tuple[NumericPredictionCorrection, ...]:
+        """INV-25: derived immutable view, not a mutable simulator fact store.
+
+        An established status alone is insufficient. Supporting independent
+        interventions must join already published DC-09 AgencyEvidence with
+        matching time, option and attribution. The numerical after-value is
+        additionally required to match a genuine separately lived,
+        Perception-corroborated Memory transition for the same option.
+        """
+        verified_interventions: dict[str, list[CausalIntervention]] = {}
+        for trial in self._causal_interventions.values():
+            report = self._agency_evidence.get(trial.comparator_ref)
+            if (
+                report is None
+                or not trial.observed_effect
+                or trial.comparator_status != "conforming"
+                or trial.attribution != "self_compatible"
+                or report.status != "conforming"
+                or report.attribution != "self_compatible"
+                or report.episode_ref != trial.episode_ref
+                or report.option_ref != trial.command_ref
+                or report.sent_t_monde != trial.emitted_step
+                or report.observed_t_monde != trial.observed_step
+            ):
+                continue
+            verified_interventions.setdefault(trial.contingency_ref, []).append(trial)
+
+        rules: list[NumericPredictionCorrection] = []
+        for _, witness in sorted(self._numeric_witnesses.items()):
+            contingency = self._published.get(witness.contingency_ref)
+            if (
+                contingency is None
+                or contingency.causal_status != "etablie"
+                or contingency.predicate != "toxic_item"
+                or contingency.subject_ref != witness.command_target
+                or contingency.context_signature != "global"
+            ):
+                continue
+            trials = verified_interventions.get(contingency.ref, ())
+            revision = self._causal_revision_boundaries.get(
+                contingency.ref, (-1, "")
+            )[0]
+            matching_contexts = {
+                trial.context_signature for trial in trials
+                if trial.observed_step > revision
+            }
+            if len(matching_contexts) < self.config.n2:
+                continue
+
+            for report in self.published_agency_evidence():
+                if (
+                    report.option_ref != witness.option_ref
+                    or report.sent_t_monde != witness.sent_t_monde
+                    or report.observed_t_monde != witness.observed_t_monde
+                ):
+                    continue
+                compatible = any(
+                    variable == witness.variable
+                    and status in {"conforming", "nonconforming"}
+                    and observed == witness.observed_after
+                    for variable, status, _predicted, observed, _tolerance, _version
+                    in report.effects
+                )
+                if not compatible:
+                    continue
+                rule = NumericPredictionCorrection(
+                    contingency_ref=contingency.ref,
+                    intervention_ref=min(trial.identifier for trial in trials),
+                    agency_evidence_ref=report.identifier,
+                    command_primitive=witness.command_primitive,
+                    command_target=witness.command_target,
+                    variable=witness.variable,
+                    observed_after=witness.observed_after,
+                    observed_before_body=witness.observed_before_body,
+                    observed_before_position=witness.observed_before_position,
+                )
+                rule.validate()
+                rules.append(rule)
+        return tuple(sorted(
+            rules,
+            key=lambda rule: (
+                rule.contingency_ref, rule.intervention_ref,
+                rule.agency_evidence_ref, rule.command_target or "",
+                rule.observed_after,
+            ),
+        ))
+
     def published_agency_evidence(self) -> tuple[AgencyEvidence, ...]:
         """Only phase-5-published descriptive comparisons, never interventions."""
         return tuple(self._agency_evidence[key] for key in sorted(self._agency_evidence))
