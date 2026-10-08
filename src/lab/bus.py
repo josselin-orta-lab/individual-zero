@@ -126,6 +126,43 @@ class InMemoryBus:
     def available(self) -> tuple[ValidatedMessage, ...]:
         return tuple(self._available)
 
+    @property
+    def owner_id(self) -> str:
+        return "bus.transport"
+
+    def export_causal_state(self) -> object:
+        return {
+            "available": [message.as_dict() for message in self._available],
+        }
+
+    def restore_causal_state(self, state: object) -> None:
+        if not isinstance(state, Mapping):
+            raise ValueError("bus causal state must be a mapping")
+        raw_messages = state.get("available")
+        if not isinstance(raw_messages, list):
+            raise ValueError("bus available state must be a list")
+
+        restored: list[ValidatedMessage] = []
+        for raw in raw_messages:
+            if not isinstance(raw, Mapping):
+                raise ValueError("invalid validated message state")
+            payload = raw.get("payload")
+            terms = raw.get("semantic_terms")
+            if not isinstance(payload, Mapping) or not isinstance(terms, list):
+                raise ValueError("invalid validated message payload state")
+            restored.append(
+                ValidatedMessage(
+                    id=str(raw["id"]),
+                    producer=str(raw["producer"]),
+                    local_sequence=int(raw["local_sequence"]),
+                    schema_name=str(raw["schema_name"]),
+                    schema_version=str(raw["schema_version"]),
+                    payload=dict(payload),
+                    semantic_terms=tuple(str(term) for term in terms),
+                )
+            )
+        self._available = restored
+
     def _journal_event(
         self,
         *,
