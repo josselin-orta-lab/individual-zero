@@ -84,6 +84,39 @@ jobs:
           path: /tmp/stage8-reference.jsonl
           if-no-files-found: error
 
+      - name: Diagnose Stage 7 historical golden divergence
+        if: matrix.python-version == '3.11'
+        run: |
+          mkdir -p /tmp/stage7-pristine
+          git fetch --depth=1 origin i0/stage7-memory-v1.2.1
+          git archive FETCH_HEAD | tar -x -C /tmp/stage7-pristine
+          PYTHONPATH=/tmp/stage7-pristine/src python - <<'PY'
+          from pathlib import Path
+          from lab.stage7_reference_fixture import build_stage7_reference_runtime
+          r = build_stage7_reference_runtime()
+          for _ in range(300):
+              r.run_step()
+          Path("/tmp/stage7-pristine.causal").write_bytes(r.journal.canonical_bytes())
+          print("stage7_pristine_hash=" + r.journal.head_hash)
+          PY
+          python - <<'PY'
+          from pathlib import Path
+          from lab.stage7_reference_fixture import build_stage7_reference_runtime
+          r = build_stage7_reference_runtime()
+          for _ in range(300):
+              r.run_step()
+          original = Path("/tmp/stage7-pristine.causal").read_bytes().splitlines()
+          current = r.journal.canonical_bytes().splitlines()
+          print("stage7_stage8_branch_hash=" + r.journal.head_hash)
+          print("stage7_journal_events_old_new=",len(original),len(current))
+          for i,(a,b) in enumerate(zip(original,current)):
+              if a != b:
+                  print("stage7_first_divergent_event_index=",i)
+                  print("stage7_pristine_event=",a[:1400].decode("utf8"))
+                  print("stage7_stage8_event=",b[:1400].decode("utf8"))
+                  break
+          PY
+
       - name: Generate Stage 1 reference journal
         if: matrix.python-version == '3.11'
         run: |
