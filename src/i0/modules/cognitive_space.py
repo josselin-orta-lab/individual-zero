@@ -94,3 +94,42 @@ class CognitiveSpace:
                 "diff": dict(current.diff),
             },
         }
+
+    def restore_causal_state(self, state: object) -> None:
+        if not isinstance(state, Mapping):
+            raise ValueError("S_t state must be a mapping")
+        if state.get("individual_id") != self._individual_id:
+            raise ValueError("S_t individual mismatch")
+        counter = state.get("version_counter")
+        if not isinstance(counter, int) or counter < 0:
+            raise ValueError("invalid S_t version counter")
+        self._version_counter = counter
+        raw = state.get("current")
+        if raw is None:
+            self._current = None
+            return
+        if not isinstance(raw, Mapping):
+            raise ValueError("invalid S_t current state")
+        elements = tuple(
+            STElement(
+                contribution_ref=str(item["contribution_ref"]),
+                summary=str(item["summary"]),
+                score=float(item["score"]),
+                decomposition=_freeze(dict(item["decomposition"])),
+                reliability=float(item["reliability"]),
+                production_t=int(item["production_t"]),
+                expires_at_step=int(item["expires_at_step"]),
+                preempted=bool(item["preempted"]),
+            )
+            for item in raw.get("competitive", [])
+        )
+        self._current = STVersion(
+            individual_id=str(raw["individual_id"]),
+            version=str(raw["version"]),
+            cycle=int(raw["cycle"]),
+            t_monde=int(raw["t_monde"]),
+            fixed=_freeze(dict(raw.get("fixed", {}))),
+            competitive=elements,
+            requests=_freeze(dict(raw.get("requests", {}))),
+            diff=_freeze(dict(raw.get("diff", {}))),
+        )
