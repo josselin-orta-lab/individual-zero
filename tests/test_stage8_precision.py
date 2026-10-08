@@ -51,8 +51,6 @@ class PrecisionTests(unittest.TestCase):
             {"independent_provenance": False},
             {"observation_step": 1},
             {"anchor": "derived"},
-            {"oracle_derived": True},
-            {"rollback_cancelled": True},
         )):
             m.integrate(confirmation(f"invalid-{i}", **data))
         self.assertEqual(m.publish(), ())
@@ -60,6 +58,14 @@ class PrecisionTests(unittest.TestCase):
         m.integrate(confirmation("a", independent_observation_ref="physical:same"))
         m.integrate(confirmation("b", independent_observation_ref="physical:same"))
         self.assertEqual(len(m.publish()), 1)
+
+    def test_oracle_and_rollback_canaries_never_enter_precision_state(self):
+        m = model()
+        baseline = m.export_causal_state()
+        for field in ("oracle_derived", "rollback_cancelled"):
+            with self.assertRaises(ValueError):
+                m.integrate(confirmation("canary-secret", **{field: True}))
+        self.assertEqual(m.export_causal_state(), baseline)
 
     def test_snapshots_include_pending_and_deduplication_state(self):
         first = model()
