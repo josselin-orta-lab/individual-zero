@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Callable, Protocol
 
+from i0.contracts import OptionProposal
 from i0.interfaces import PrimitiveCommand
 
 from .perception import PerceptualCapture
@@ -112,6 +113,60 @@ class ActionControl:
         self._config = config
         self._facts = safety_facts
         self._protocol_mask = protocol_mask
+        self._current_option_ref: str | None = None
+        self._current_plan_ref: str | None = None
+        self._current_step_index = 0
+
+    @property
+    def current_step(self) -> tuple[str | None, str | None, int]:
+        return (
+            self._current_option_ref,
+            self._current_plan_ref,
+            self._current_step_index,
+        )
+
+    def prepare_option_step(self, proposal: OptionProposal) -> PreparedCommand:
+        proposal.validate()
+        if proposal.plan is None or not proposal.plan.steps:
+            raise ValueError("decided option has no executable plan")
+
+        option_ref = proposal.option.id
+        plan_ref = proposal.plan.id
+        if (
+            self._current_option_ref != option_ref
+            or self._current_plan_ref != plan_ref
+        ):
+            self._current_option_ref = option_ref
+            self._current_plan_ref = plan_ref
+            self._current_step_index = 0
+
+        if self._current_step_index >= len(proposal.plan.steps):
+            self._current_step_index = len(proposal.plan.steps) - 1
+
+        step = proposal.plan.steps[self._current_step_index]
+        return PreparedCommand(
+            command=step.command,
+            source="decision",
+            option_ref=option_ref,
+            st_version_ref=proposal.option.founding_st_version,
+        )
+
+    def mark_cognitive_step_applied(self, proposal: OptionProposal) -> None:
+        if proposal.plan is None:
+            return
+        if (
+            self._current_option_ref != proposal.option.id
+            or self._current_plan_ref != proposal.plan.id
+        ):
+            raise ValueError("applied proposal does not match current control step")
+        self._current_step_index += 1
+
+    def clear_option_step(self, option_ref: str | None = None) -> None:
+        if option_ref is not None and self._current_option_ref != option_ref:
+            return
+        self._current_option_ref = None
+        self._current_plan_ref = None
+        self._current_step_index = 0
 
     @staticmethod
     def _destination(
@@ -288,3 +343,29 @@ class ActionControl:
         if not admission.ok:
             return admission, None
         return admission, sender(admission.command)
+
+    def export_causal_state(self) -> object:
+        return {
+            "safety_policy_version": self._config.safety_policy_version,
+            "current_option_ref": self._current_option_ref,
+            "current_plan_ref": self._current_plan_ref,
+            "current_step_index": self._current_step_index,
+        }
+
+    def restore_causal_state(self, state: object) -> None:
+        if not isinstance(state, dict):
+            raise ValueError("Action Control state must be a mapping")
+        if state.get("safety_policy_version") != self._config.safety_policy_version:
+            raise ValueError("Action Control safety-policy version mismatch")
+        option_ref = state.get("current_option_ref")
+        plan_ref = state.get("current_plan_ref")
+        step_index = state.get("current_step_index")
+        if option_ref is not None and not isinstance(option_ref, str):
+            raise ValueError("invalid current option ref")
+        if plan_ref is not None and not isinstance(plan_ref, str):
+            raise ValueError("invalid current plan ref")
+        if not isinstance(step_index, int) or step_index < 0:
+            raise ValueError("invalid current step index")
+        self._current_option_ref = option_ref
+        self._current_plan_ref = plan_ref
+        self._current_step_index = step_index
