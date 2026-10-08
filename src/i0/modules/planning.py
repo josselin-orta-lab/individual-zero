@@ -112,6 +112,8 @@ class GreedyPlannerE0:
         st_version: str,
         position: tuple[int, int],
         known_entities: Mapping[str, PerceivedEntity],
+        observation_ref_by_entity: Mapping[str, str],
+        retained_contribution_refs: frozenset[str],
         t_monde: int,
         cycle: int,
     ) -> OptionProposal | None:
@@ -128,6 +130,12 @@ class GreedyPlannerE0:
 
         commands: list[PrimitiveCommand] = []
         target_key = goal.target
+        grounding_refs: list[str] = []
+        if (
+            goal.justification_ref is not None
+            and goal.justification_ref in retained_contribution_refs
+        ):
+            grounding_refs.append(goal.justification_ref)
 
         if goal.goal_type == "drink":
             target = self._nearest(
@@ -143,6 +151,10 @@ class GreedyPlannerE0:
                     target=(target.x, target.y),
                 )
             )
+            target_ref = observation_ref_by_entity.get(target.entity_id)
+            if target_ref is None or target_ref not in retained_contribution_refs:
+                return None
+            grounding_refs.append(target_ref)
             commands.append(PrimitiveCommand("boire"))
             target_key = target.entity_id
 
@@ -160,6 +172,10 @@ class GreedyPlannerE0:
                     target=(target.x, target.y),
                 )
             )
+            target_ref = observation_ref_by_entity.get(target.entity_id)
+            if target_ref is None or target_ref not in retained_contribution_refs:
+                return None
+            grounding_refs.append(target_ref)
             commands.append(
                 PrimitiveCommand("collecter", {"target": target.entity_type})
             )
@@ -229,6 +245,7 @@ class GreedyPlannerE0:
             founding_st_version=st_version,
             expires_at_step=t_monde + self._config.option_ttl_steps,
             provenance="planning",
+            grounding_contribution_refs=tuple(sorted(set(grounding_refs))),
             state="proposed",
         )
         proposal = OptionProposal(
