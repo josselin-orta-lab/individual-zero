@@ -28,7 +28,7 @@ def build_stage5_reference_runtime(
         gatekeeper_alpha={
             "b": 0.4,
             "n": 0.5,
-            "urg": 0.0,
+            "urg": 0.3,
             "risk": 0.6,
             "value": 0.7,
         },
