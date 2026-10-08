@@ -18,15 +18,20 @@ Completed in the current branch:
 - explicit construction of a campaign parameter registry only when all 58 values are supplied;
 - validated in-memory bus with local producer buffers, canonical phase-1 pouring, deterministic admission/rejection, ontology/schema checks, and journaled rejection reasons;
 - deterministic simulated-time scheduler with world-step opening, rollback attempts, exact phases 0 through 5, canonical component order, and step-close count guards;
-- generic causal snapshot manager with the four normative life snapshot types, owner-scoped export/restore, hash verification, RNG restoration, and append-only-journal preservation.
+- generic causal snapshot manager with the four normative life snapshot types, owner-scoped export/restore, hash verification, RNG restoration, and append-only-journal preservation;
+- integrated scripted Stage-1 runtime wiring Scheduler, Bus, Journal, RNG streams, scalar technical world, producer buffers and Snapshots;
+- exact causal continuation after snapshot restore, including RNG and producer-local sequence state;
+- independent full re-execution comparison through a reusable replay verifier;
+- autobiographical projection through explicit AutoSegmentCommit references and a versioned allowlist policy;
+- separate evaluation trace storage;
+- explicit machine-delay non-causality test.
 
 Still missing from normative Stage 1:
 
 - full nested payload validation for every schema in 5.2;
-- integration of bus + scheduler + snapshots into one scripted Stage-1 runtime;
-- autobiographical/evaluation journal views;
-- complete replay runner and retained reference journal;
-- periodic snapshot frequency wiring (P-55) once a preregistered value is supplied.
+- retained reference journal artifact committed or persisted by CI;
+- periodic snapshot frequency wiring (P-55) once a preregistered value is supplied;
+- complete production wiring of RunManifest creation from real campaign configuration rather than test fixtures.
 
 ## Current repository gap
 
