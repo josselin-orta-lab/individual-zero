@@ -71,6 +71,74 @@ class NumericPredictionCorrection:
             raise ValueError("position without physical body context")
 
 
+@dataclass(frozen=True, slots=True)
+class LivedNumericOutcome:
+    """DC-09 witnessed physical outcome, not yet an authorized correction.
+
+    Command+transition are from the same closed Memory episode. The pre-action
+    context is captured by Perception at a successfully dispatched command,
+    and the next Perception capture must corroborate the transition's value.
+    Agency and intervention evidence are linked later by immutable references.
+    """
+    identifier: str
+    contingency_ref: str
+    episode_ref: str
+    command_event_ref: str
+    transition_event_ref: str
+    option_ref: str
+    sent_t_monde: int
+    observed_t_monde: int
+    command_primitive: str
+    command_target: str
+    variable: str
+    observed_before_body: tuple[tuple[str, float], ...]
+    observed_before_position: tuple[int, int]
+    observed_after: float
+
+    def validate(self) -> None:
+        if not all(isinstance(v, str) and v for v in (
+            self.identifier, self.contingency_ref, self.episode_ref,
+            self.command_event_ref, self.transition_event_ref, self.option_ref,
+            self.command_primitive, self.command_target,
+        )):
+            raise ValueError("physical outcome lacks closed autobiographical provenance")
+        if (type(self.sent_t_monde) is not int
+            or type(self.observed_t_monde) is not int
+            or self.sent_t_monde < 1
+            or self.observed_t_monde != self.sent_t_monde + 1):
+            raise ValueError("physical outcome is not a next-step lived observation")
+        if self.variable != "integrity" or self.command_primitive != "manger":
+            raise ValueError("Stage-9 lived numeric bridge supports food integrity only")
+        if self.contingency_ref != f"toxic:{self.command_target}":
+            raise ValueError("numeric witness does not match canonical food identity")
+        correction = NumericPredictionCorrection(
+            contingency_ref=self.contingency_ref,
+            intervention_ref=self.command_event_ref,
+            agency_evidence_ref=self.transition_event_ref,
+            command_primitive=self.command_primitive,
+            command_target=self.command_target,
+            variable=self.variable,
+            observed_after=self.observed_after,
+            observed_before_body=self.observed_before_body,
+            observed_before_position=self.observed_before_position,
+        )
+        correction.validate()
+        before = dict(self.observed_before_body)
+        if not self.observed_after < before["integrity"]:
+            raise ValueError("toxicity witness requires an actual integrity loss")
+
+
+def decode_lived_numeric_outcome(data: dict[str, object]) -> LivedNumericOutcome:
+    raw = dict(data)
+    raw["observed_before_body"] = tuple(
+        tuple(v) for v in raw["observed_before_body"]
+    )
+    raw["observed_before_position"] = tuple(raw["observed_before_position"])
+    result = LivedNumericOutcome(**raw)
+    result.validate()
+    return result
+
+
 class EstablishedCorrectionSource(Protocol):
     def established_prediction_corrections(self) -> tuple[NumericPredictionCorrection, ...]:
         ...
