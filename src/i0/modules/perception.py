@@ -123,14 +123,6 @@ class SymbolicPerception:
             perceived_entities.append(entity)
             self._known_entities[entity.entity_id] = entity
 
-        refs = state.get("observation_ref_by_entity", {})
-        if not isinstance(refs, Mapping):
-            raise ValueError("invalid Perception observation-ref state")
-        self._observation_ref_by_entity = {
-            str(entity_id): str(ref)
-            for entity_id, ref in refs.items()
-        }
-
         body = {
             key: float(telemetry[key])
             for key in ("energy", "food", "water", "integrity")
@@ -238,3 +230,11 @@ class SymbolicPerception:
                 properties=dict(row.get("properties", {})),
             )
             self._known_entities[entity.entity_id] = entity
+
+        refs = state.get("observation_ref_by_entity", {})
+        if not isinstance(refs, Mapping):
+            raise ValueError("invalid Perception observation-ref state")
+        self._observation_ref_by_entity = {
+            str(entity_id): str(ref)
+            for entity_id, ref in refs.items()
+        }
