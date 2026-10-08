@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Mapping, Sequence
 
 from i0.contracts import Contribution
+from .active_precision import ActivePerceptualPrecision, PrecisionConfig
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +64,16 @@ class SymbolicPerception:
     def __init__(self) -> None:
         self._known_entities: dict[str, PerceivedEntity] = {}
         self._observation_ref_by_entity: dict[str, str] = {}
+        self._active_precision: ActivePerceptualPrecision | None = None
+
+    def attach_active_precision(self, config: PrecisionConfig) -> None:
+        if self._active_precision is not None:
+            raise ValueError("perceptual precision already attached")
+        self._active_precision = ActivePerceptualPrecision(config)
+
+    @property
+    def active_precision(self) -> ActivePerceptualPrecision | None:
+        return self._active_precision
 
     @property
     def known_entities(self) -> Mapping[str, PerceivedEntity]:
@@ -198,7 +209,7 @@ class SymbolicPerception:
         return tuple(contributions)
 
     def export_causal_state(self) -> object:
-        return {
+        state = {
             "known_entities": [
                 {
                     "entity_id": entity.entity_id,
@@ -216,6 +227,9 @@ class SymbolicPerception:
                 sorted(self._observation_ref_by_entity.items())
             ),
         }
+        if self._active_precision is not None:
+            state["precision_active"] = self._active_precision.export_causal_state()
+        return state
 
     def restore_causal_state(self, state: object) -> None:
         if not isinstance(state, Mapping):
@@ -243,3 +257,7 @@ class SymbolicPerception:
             str(entity_id): str(ref)
             for entity_id, ref in refs.items()
         }
+        if self._active_precision is not None:
+            if "precision_active" not in state:
+                raise ValueError("missing online perceptual precision snapshot")
+            self._active_precision.restore_causal_state(state["precision_active"])
