@@ -199,6 +199,27 @@ def runtime(
     )
 
 
+class Stage4OwnershipTests(unittest.TestCase):
+    def test_causal_state_owners_are_unique_and_include_stage4_owners(self) -> None:
+        instance = runtime()
+        owner_ids = [owner.owner_id for owner in instance.causal_owners]
+
+        self.assertEqual(len(owner_ids), len(set(owner_ids)))
+        for required in {
+            "perception",
+            "action_control",
+            "value_and_needs",
+            "goal_manager",
+            "gatekeeper",
+            "s_t",
+            "planning",
+            "competition",
+            "metacognition_health",
+            "scheduler.compute_budget",
+        }:
+            self.assertIn(required, owner_ids)
+
+
 class Stage4IntegratedLoopTests(unittest.TestCase):
     def test_thirst_goal_appears_before_plan_and_first_move(self) -> None:
         instance = runtime(
