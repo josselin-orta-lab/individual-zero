@@ -121,6 +121,18 @@ class Simulator:
     def equipment_version(self) -> str:
         return self._equipment.version
 
+    def attach_established_correction_source(
+        self, source: EstablishedCorrectionSource,
+    ) -> None:
+        """One-time Stage-9 read-only binding; never duplicates canonical state."""
+        if self._corrections is not None:
+            raise ValueError("Simulator correction reader already attached")
+        if source is None or not callable(
+            getattr(source, "established_prediction_corrections", None)
+        ):
+            raise ValueError("correction source must expose a read-only query")
+        self._corrections = source
+
     def rollout(
         self,
         *,
