@@ -304,7 +304,7 @@ class Gatekeeper:
         ]
         security.sort(
             key=lambda item: (
-                -item.contribution.risk,
+                -self._effective_risk(item.contribution),
                 self._canonical(item.contribution),
             )
         )
