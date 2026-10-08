@@ -426,3 +426,14 @@ Development branch: `i0/stage9-causal-model-agency-v1.2.1`, PR #18 (draft), base
 - **No Stage-9 full integration/golden yet.** Future work remains: true Causal Model observation and intervention lifecycle (§13.2), comparator attribution and P-47 (§9.6), context-aware safety admissibility and DC-05 episode equivalence, conditional learned simulator corrections only for `etablie` (§12.3), controlled test proposals, full runtime phase-5 publication and replay, INV-25 and behavioral gate. None of these are represented as complete by this checkpoint.
 
 Stage 8 golden and all historical goldens remain frozen. Stage 9 is **not closed**. No merge to `main`.
+
+
+### Stage 9 checkpoint 2 — runtime integration (IN PROGRESS)
+
+- `src/lab/stage9_runtime.py`: Stage 8 preserved by inheritance, new `CausalModel` included as an additional unique causal snapshot/checkpoint owner. Its published safety-status view is supplied to the existing Action Control through `CanonicalSafetyFacts`. The fixed veto policy itself remains owned by Action Control and unchanged.
+- DC-05 pending status updates become visible only at phase-5 publication by the normative scheduler. Each status change has a structured journal event containing fact ID, previous/new status, evidence and episode references, and model version.
+- `src/lab/stage9_reference_fixture.py`: versioned Stage-9 reference setup, P-35/P-36 configured explicitly without changing Stage-8 reference configuration.
+- `tests/test_stage9_runtime.py`: verifies a single causal owner, exact model snapshot round-trip, and that pending test evidence cannot affect the veto before phase 5 but published `etabli_pour_securite` changes Action Control refusal while the causal status remains `aucun`.
+- **Important scope boundary:** this integration test injects *synthetic, typed evidence* directly into a controlled instance to verify the temporal contract. Runtime derivation of independently corroborated safety facts from real world captures, autobiographical episodes and comparator evidence is **NOT** yet implemented. Nor are §13.2 hypothesis lifecycle, §9.6 full agency attribution, §12.3 established-only simulator corrections or the Stage-9 golden.
+
+Stage 9 must not be declared closed until those paths and their behavioral, invariant, replay and CI gates pass.
