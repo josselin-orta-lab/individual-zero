@@ -156,3 +156,92 @@ jobs:
           name: stage2-reference-journal
           path: /tmp/stage2-reference.jsonl
           if-no-files-found: error
+
+      - name: Generate Stage 3 reference journal
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from i0.config import MVP_CYCLE_PHASE_COMPONENT_ORDER
+          from i0.modules import StaticSafetyFacts
+          from lab.safety_protocol import SafetyProtocolConfig
+          from lab.stage3_runtime import Stage3Runtime
+          from lab.world import (
+              BerryEffect,
+              BodyState,
+              Position,
+              ToolRecipe,
+              WorldLayout,
+              WorldPhysicsConfig,
+          )
+
+          physics = WorldPhysicsConfig(
+              version="stage3-ci-reference-v1",
+              width=32,
+              height=32,
+              day_steps=300,
+              night_steps=100,
+              night_start_step=200,
+              initial_body=BodyState(50.0, 60.0, 60.0, 100.0),
+              initial_position=Position(2, 2),
+              food_decay_per_step=0.1,
+              water_decay_per_step=0.2,
+              action_energy_costs={
+                  "se_deplacer": 0.5,
+                  "collecter": 0.5,
+                  "manger": 0.2,
+                  "boire": 0.2,
+                  "poser_une_pierre": 0.5,
+                  "fabriquer_outil": 0.5,
+                  "dormir": 0.0,
+                  "attendre": 0.0,
+              },
+              sleep_energy_gain=1.0,
+              rest_integrity_gain=0.0,
+              drink_water_gain=10.0,
+              berry_effects={
+                  "berry_a": BerryEffect(5.0, 0.0),
+                  "berry_b": BerryEffect(5.0, -100.0),
+              },
+              creature_damage=10.0,
+              danger_zone_damage=15.0,
+              tool_recipe=ToolRecipe(1, 1, 2),
+          )
+          runtime = Stage3Runtime(
+              config=physics,
+              layout=WorldLayout(
+                  creatures=frozenset({Position(3, 2)}),
+              ),
+              phase_component_order=MVP_CYCLE_PHASE_COMPONENT_ORDER,
+              safety_config=SafetyProtocolConfig(
+                  version="stage3-ci-safety-v1",
+                  lethal_max=2,
+                  mode="campaign",
+              ),
+              safety_facts=StaticSafetyFacts(),
+              protected_integrity_threshold=20.0,
+          )
+          for _ in range(300):
+              runtime.open_step()
+              outcome = runtime.run_step()
+              if outcome.execution_status != "applied":
+                  raise SystemExit(
+                      f"unexpected Stage 3 outcome: {outcome.execution_status}"
+                  )
+
+          payload = runtime.journal.canonical_bytes()
+          path = Path("/tmp/stage3-reference.jsonl")
+          path.write_bytes(payload + (b"\n" if payload else b""))
+          if not runtime.journal.verify():
+              raise SystemExit("stage3 reference journal failed verification")
+          print(f"stage3_reference_bytes={len(payload)}")
+          print(f"stage3_reference_head={runtime.journal.head_hash}")
+          PY
+
+      - name: Upload Stage 3 reference journal
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage3-reference-journal
+          path: /tmp/stage3-reference.jsonl
+          if-no-files-found: error
