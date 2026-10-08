@@ -2402,3 +2402,305 @@ Each risk in the following list is closed by an explicit rule and checked by at 
 | causal message interpreted differently across binaries | closed schema compatibility for causal fields | INV-51 |
 | direct path bypassing final control | all commands pass through `CONTRÔLE.admettre` | INV-52 |
 | step with zero or multiple unjustified transitions | exactly one command and advancement per completed step; zero when blocked before send | INV-53 |
+
+
+### 21.4 Final consistency check
+
+**Verified chains.** For every piece of data that circulates, from its producer to the instant when its update becomes visible.
+
+| Data | Producer | Transport | Consumer | Effect | Visible |
+| --- | --- | --- | --- | --- | --- |
+| observation | Perception | bus, phase 1 of the first cycle of the step | gatekeeper, Value and Needs, Memory | S_t, x_t | S_t[n+1]: Competition in the same cycle, other modules in the next cycle |
+| need alert, goal proposal | Value and Needs, prospective memory | bus | gatekeeper; Goal Manager | S_t; active goal | next cycle |
+| active goal | Goal Manager | fixed S_t slot | Planning, gatekeeper (term b), Competition (validity of but_ref) | options, scoring | S_t[n+1]; Planning at cycle n+1 |
+| proposed option | Planning, skills, causal test | bus (`action_proposee`) | candidate registry | candidate | phase 3 of the same cycle |
+| EvaluationOption | Value and Needs, Simulator, Exploration, Metacognition and Health | service calls | Competition | evidence, threshold | same cycle |
+| decision | Competition, then Control | command | world | transition | end of step |
+| verification | Metacognition and Health | internal | κ | reliability f | next cycle |
+| TD update | Value and Needs | internal | Q_active | E_a^Q | next step |
+| contingency status | Causal Model | phase-5 publication | simulator, veto, admissibility | predictions, inadmissibility | next cycle |
+| h_new, rebased active forms | Consolidation and owners | coordinated commit | all | history, values, κ, precisions | first waking cycle after commit |
+| death counters | bench | evaluation trace | bench | external metrics | never for the individual |
+
+**Corrections introduced by this check.**
+
+1. The lethal checkpoint is taken before deliberation closes; closure and TD update occur only at the non-lethal end of the step. Resumption after rollback therefore cancels the masked decision without undoing anything (3.4, 18.4, DC-08).
+2. Steps without a cognitive decision, reflex, or sleep extend the learning segment instead of producing an update without an option (DC-15).
+3. The stagnation window is suspended when entering sleep and resumes on waking (15.2, 15.4) [V-10].
+4. The wake deadline of an intention is published by Memory in a read-only index without duplicating the intention (10.5) [V-41].
+5. Every injected scenario has its own random stream, versioned with it (17.2) [V-39].
+6. Option provenance includes the compiled habit (5.2) [V-42].
+7. The MVP's only intentional double effect, predicted harm counted in both E_a^sim and π, is declared (8.5).
+8. The κ prior of equipment, derived from training worlds before birth, is not oracle leakage (11.4).
+9. A cognitive command is prepared only once: `DecisionAdmise` carries the exact already-controlled object all the way to the world (3.4, DC-02).
+10. A veto limited to one step triggers replanning without automatically invalidating the entire option (9.3, DC-02, DC-17).
+11. The option registry now has an explicit capacity `N_options_max` and deterministic eviction policy; an option cannot use its own proposal as evidence (DC-10).
+12. Perception performs one capture per step; reflex and cognition use the same capture (DC-11).
+13. An incomplete simulation no longer enters evidence; candidates actually simulated within a cycle receive the same effective budget (DC-01, DC-07).
+14. κ is no longer strengthened by simple repetition of the same channel: independent evidence is required (DC-06).
+15. The technical journal is never restored backwards; the autobiographical view is a projection through `AutoSegmentCommit`, and `attempt_ref` distinguishes attempts after rollback (DC-08, DC-09).
+16. A suspended consolidation resumes before any new transaction; `L_sommeil_max` bounds the duration of continuous sleep (DC-13).
+17. In campaign mode, a safety block closes the branch without ad hoc human intervention; operator resumption is reserved for diagnostics (DC-14).
+18. Body setpoints remain fixed in the MVP; temperament modulates explicitly listed weights and mechanisms, not the setpoints (7.1, 7.3).
+
+**Points requiring vigilance.** These are not contradictions, but fragilities to monitor.
+
+- Temperament acts through several intended paths: reward sensitivity through w_v, γ_v, and β; threat sensitivity through w_r and w_u, π, the protective threshold, χ, and weight ω_integrity. Body setpoints remain fixed. Ablations B1 and B2 MUST isolate these paths, otherwise the contribution of each remains unknown.
+- A goal proposal is arbitrated only in the next cycle, and Planning sees the new goal only in the cycle after that (DC-11). A goal born in the first cycle of a step therefore cannot ground an option before the third: calibration of C_max (P-01) must account for this.
+- At stage 4, substitution evidence reflects temperament only through the gatekeeper and thresholds: profiles measured at stage 5 do not prejudge those from the campaign.
+- A safety fact is almost never demoted because deliberate re-exposure is absent (DC-05). The bench measures the rate of unjustified vetoes against oracle to quantify this prudence bias.
+- Precision and recall of S_t, and therefore H6, depend on the oracle-relevance materiality thresholds (P-49), fixed at preregistration.
+
+## 22. Parameters to calibrate
+
+This registry is the single list of numerical values not fixed by the document. All are fixed before the first birth, enter preregistration, and remain constant during a campaign. No value is selected here: the "Known value" column contains only values already present in the sources.
+
+**Calibration protocols.**
+
+- **C1 · Operational pilot**: on the reference agent or minimal system, the smallest value satisfying a preregistered operational criterion (fallback rate, saturation, cost).
+- **C2 · Sensitivity sweep**: on calibration worlds and seeds disjoint from those of the campaign; retain a value in the middle of the measured behavior's stability plateau.
+- **C3 · Offline measurement**: derived from a measurement of the instrument, equipment, or corpus.
+- **C4 · Experimental choice**: fixed by the author at preregistration, without optimization on results.
+
+No parameter is tuned on the results of H1 through H6: adjusting thresholds until "personalities" appear would manufacture the result instead of measuring it.
+
+| Id | Parameter | Mechanism | Unit | Bounds | Known value | Stage | Calibration | Expected impact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| P-01 | C_max | maximum deliberation duration (3.4) | cycle | ≥ 1 | — | 4 | C1: rate of deliberations closed by fallback below a threshold | decision delay and cost |
+| P-02 | u_max, c_u | form of u(c) (DC-01) | —; cycle | u(1) = 1 ≤ u(c) ≤ u_max | — | 4 | C1 | closure speed |
+| P-03 | ℓ | accumulator leak (8.6) | — | [0, 1) | — | 4 | C2 | intra-deliberation forgetting |
+| P-04 | σ | accumulation noise (8.6) | — | ≥ 0 | — | 4 | C2 | choice variability |
+| P-05 | g | common accumulation gain (8.6) | — | > 0 | — | 4 | C2 | decision speed |
+| P-06 | s^0 | common base threshold (8.6) | — | > s_min | — | 4 | C2 | general caution |
+| P-07 | s_min | threshold floor (DC-02) | — | > 0 | — | 4 | C4 | defines relative margin |
+| P-08 | k_π, α_π | risk penalty π (DC-01) | — | k_π ≥ 0 | — | 5 | C2 | risk aversion |
+| P-09 | k_χ | uncertainty penalty χ (DC-01) | — | ≥ 0 | — | 5 | C2 | caution toward the unknown |
+| P-10 | δ_prot | threshold reduction for protective options (8.6) | — | 0 ≤ δ_prot ≤ s^0 − s_min | — | 5 | C2 | threat response |
+| P-11 | ι | inertia bound (S-05.4) | — | 0 ≤ ι ≤ s^0 − s_min | — | 4 | C2 | stability against oscillation |
+| P-12 | ρ | accumulator residual (S-05.6) | — | ]0, 1[ | — | 4 | C2 | memory of alternatives |
+| P-13 | n_0 | learned/simulated value mixture (DC-01) | updates | > 0 | — | 8 | C2 | trust in experience |
+| P-14 | E_éch | evidence normalization scale (DC-01) | reward unit | > 0 | — | 6 | C3: dispersion of values on reference agent | evidence sensitivity |
+| P-15 | w_m | weight of m_a in evidence (DC-01) | — | ≥ 0 | — | 10, 11 | C2 | share of intrinsic motivation |
+| P-16 | α_v | temperament effect on extrinsic evidence (DC-01) | — | real | 0: neutral | 5 | C4 | contrast between temperaments |
+| P-17 | R_max, H_max | simulation-budget bounds; each cycle sets the same `(R_eff,H_eff)` for all evaluated candidates (S-05.2, DC-01) | rollouts; transitions | ≥ 1 | — | 6 | C1 | quality, cost, and comparability of simulated evidence |
+| P-18 | K | contested S_t slots | elements | ≥ 1 | 4 (Q10); swept from 2 to unlimited in ablation | 4 | fixed | attentional bottleneck |
+| P-19 | W | S_t recency window | steps | ≥ 1 | — | 4 | C1 | content persistence |
+| P-20 | Δ_hyst | replacement hysteresis (S-07.2) | score | ≥ 0 | — | 4 | C2 | S_t stability |
+| P-21 | s_sec | safety-preemption threshold (S-07.3) | f × rsk | ]0, 1] | — | 4 | C2 | safety responsiveness |
+| P-22 | w_i^0, α_i | gatekeeper base weights, temperament coefficients (6.4) | — | w_i^0 ≥ 0 | hand-set in MVP | 4, 5 | C4 | attention |
+| P-23 | profile multipliers | modulation (6.4) | — | > 0 | threat: w_r, w_u × 1.5 and w_n × 0.5; exploration: w_n × 1.5 | 11 | C2 | profile effect |
+| P-24 | profile thresholds, hysteresis, and confirmation durations | modulation (S-02.6) | steps | — | — | 11 | C2 | profile flapping |
+| P-25 | N_file, Q_ém, q_emp, T_quota | gatekeeper queues, emission quota, and soft diversity quota (DC-04) | elements; steps | ≥ 1 | — | 4 | C1: saturation under distractor flow | saturation, domination, diversity |
+| P-26 | p_min, Δ_but, p_critique, w_ech and form of urg_ech | goal arbitration and intention urgency (DC-03) | pressure | 0 < p_min < 1; Δ_but ≥ 0; p_critique ∈ ]0,1]; w_ech ≥ 0 | — | 4 | C2/C4 | active-goal stability, resumption of critical goal, prospective urgency |
+| P-27 | N_imp, T_refr | goal abandonment and refractory period (DC-03) | steps | ≥ 1 | — | 4 | C1 | abandonment loops |
+| P-28 | stagnation windows and thresholds | per goal type (S-02.7) | steps; goal measure | — | — | 4 | C1 | stagnation detection |
+| P-29 | y_i^*, ω_i, ranges, normalization scales Y_i, deficit functions d_i; table τ → weights ω_i | body and reward (7.1, DC-03) | body units | 0 to 100; Y_i > 0 | fixed MVP setpoints: energy 50, food 60, water 60, integrity 100; Y_i = width of canonical range for the four variables; deficit-type d_i for all four | 2, 5 | C4 | homeostasis and need pressure |
+| P-30 | β_neutre, β_min, β_max, β table | discounting (S-06.4, NQ-05) | — | 0 < β_min ≤ β ≤ β_max < 1 | — | 8 | C4 | temporal preference |
+| P-31 | η, λ_e | TD learning (11.1) | — | η > 0; λ_e ∈ [0, 1] | — | 8 | C2 | learning speed |
+| P-32 | φ(x), version | value features (S-06.2) | — | — | — | 8 | C4 | generalization |
+| P-33 | strength of κ priors, B_κ | calibration (S-08.4, DC-06) | pseudo-observations; confidence classes | > 0; B_κ ≥ 1 | f = 0.5 for a module without evidence; repetition of same channel does not update κ | 8 | C3 for equipment, C4 otherwise | calibration speed |
+| P-34 | k_ép, L_ép, Δ_ép; recall threshold and weights | episodes and recall (10.3, 10.4) | —; steps; steps | — | — | 7 | C2 | segmentation and recall |
+| P-35 | n_1, n_2 | causal status (13.2) | occurrences; contexts | ≥ 1 | — | 9 | C4 | superstitious rules |
+| P-36 | n_sec, m_sec | safety promotion and demotion (DC-05) | distinct evidential episodes | ≥ 1 | example 18.7 assumes n_sec = 2 | 9 | C4 | speed of prohibition |
+| P-37 | protected integrity threshold | veto invariant (9.3) | integrity unit | ]0, 100[ | — | 3 | C4 | safety margin |
+| P-38 | R_letal_max | bound on successive deaths (V-40) | rollbacks | ≥ 1 | — | 2 | C4 | safety-block trigger |
+| P-39 | a_F, b_F, b_F^rec | F_cog dynamics (DC-13) | per step | ≥ 0 | — | 10 | C1 | wake/sleep rhythm |
+| P-40 | w_F, w_C, w_N, E_ref, S_ref | sleep pressure (DC-13) | — | ≥ 0 | — | 10 | C2 | sleep timing |
+| P-41 | p_réveil, s_réveil, L_sommeil_max | wake rule (DC-13) | pressure; f × rsk; steps | p_réveil,s_réveil ∈ ]0,1]; L_sommeil_max ≥ 1 | — | 10 | C2/C1 | fragmented or deep sleep; bound on continuous sleep |
+| P-42 | p_cons_min, capacity per sleep, batch size and priority, slot per step | consolidation (S-10.6) | UC; episodes | — | — | 10 | C1 | depth of history |
+| P-43 | UC costs, B_cycle, envelopes, protected capacity | compute budget (16.3) | UC | ≥ 0 | — | 4, 12 | C1 | frequency of degraded modes |
+| P-44 | N_pré, R_dég, H_dég, reduced depth and width, N_rap^dég | degraded modes (DC-07) | — | ≤ normal values | — | 12 | C1 | quality under load; `(R_dég,H_dég)` common to evaluated candidates |
+| P-45 | Δ_plan | adoption of revised plan (DC-17) | value unit | ≥ 0 | — | 6 | C2 | plan stability |
+| P-46 | corpus composition; equivalence tolerances by criterion | equipment (S-09.4, S-09.6) | — | — | — | 6 | C3, after benchmark definition and before any training; frozen thereafter | H4 |
+| P-47 | per-variable tolerances; observation windows | agency comparator (S-15.3, S-15.4) | variable units; steps | — | standard window: next step, for primitives with immediate effect | 3, 9 | C3 | attribution quality |
+| P-48 | novelty, habituation, learning progress, boredom; effect of τ_exploration on m_a | exploration (14) | — | — | — | 11 | C2 | exploration |
+| P-49 | materiality thresholds | oracle relevance (S-12.1) | — | — | — | 2, 13 | C4 | precision and recall of S_t |
+| P-50 | H1 and H4 refutation thresholds; reliability threshold; multiple-comparison correction | campaign (19.5) | — | — | — | 13 | C4 | conclusions |
+| P-51 | N_τ, N_M, N_R; life duration; battery period | experimental plan (19.5) | lives; days | — | starting point: 9, 5, 3; 60 days; every 5 days | 5, 13 | C4 | power |
+| P-52 | grid, day, resources, creatures, costs and damage | world physics (19.5) | cells; steps | — | 32 × 32 grid; 300-step day including 100 at night | 2 | C4 | world difficulty |
+| P-53 | `fabriquer_outil` recipe and gain | tool (NQ-15) | inventory units; collection gain | — | wood and stone | 2 | C4 | tool use |
+| P-54 | battery scenario parameters | battery (NQ-16) | steps; berries; probabilities | — | patience: one berry immediately or three after 20 steps | 5 | C4 | trait measurement |
+| P-55 | periodic snapshot frequency | interval replay (S-01.5) | steps | ≥ 1 | — | 1 | C1: storage cost | resumption speed |
+| P-56 | default request budgets and deadlines | requests (S-04) | UC; cycles | — | maximum depth 1 (fixed) | 4 | C1 | late responses |
+| P-57 | n_comp | skill or habit compilation (spéc. 7.4, DC-16) | distinct successful episodes | ≥ 1 | — | 10 | C4 | emergence of automatisms |
+| P-58 | N_options_max | capacity of candidate-option registry (DC-10) | options | ≥ 1, excluding `attendre` | — | 4 | C1: saturation under massive option production | bounded competition memory, ability to introduce new alternatives |
+
+All these parameters remain constant during a campaign. K and ablation conditions vary only between preregistered plan conditions, never during a life. Each individual's temperament parameters (τ) are not parameters to calibrate: they are experimental conditions of the plan (P-51).
+
+## 23. Supplementary implementation decisions
+
+A DC-xx fills a genuine gap in the sources that must be resolved to write the software. Each follows the same form: **A** what the sources impose; **B** what is missing; **C** the solution retained for the MVP; **D** why it is compatible with the architecture; **E** rejected alternatives; **F** tests. All are deterministic, inspectable, and compatible with exact replay; their numerical values are in the registry (22). They apply until the author replaces them.
+
+| Covered point | Decision |
+| --- | --- |
+| combination of evidence components e_a | DC-01 |
+| comparison of crossings of different thresholds | DC-02 |
+| arbitration among goal proposals | DC-03 |
+| gatekeeper queue saturation and eviction | DC-04 |
+| promotion and demotion of safety contingencies | DC-05 |
+| provenance of κ verifications, against self-validation | DC-06 |
+| behavior of each module in degraded mode | DC-07 |
+| snapshot and checkpoint types | DC-08 |
+| access rights to journal views | DC-09 |
+| path of a proposed option into competition | DC-10 |
+| component placement in cycle phases | DC-11 |
+| reflex during an engaged option | DC-12 |
+| sleep pressure, fatigue, and waking | DC-13 |
+| effect of a safety block | DC-14 |
+| schedule of temporal-difference updates | DC-15 |
+| rules and skills produced by consolidation | DC-16 |
+| adoption of a revised plan | DC-17 |
+
+### DC-01 · Combining evidence and the forms of u, π, χ, and R_a
+
+**A.** Evidence e_a brings together learned value, simulated value, and intrinsic motivation m_a [S-05.1, NQ-03]; the components are not simply added; a single component may contribute; unavailability remains distinct from zero, as does `non_applicable` [V-19]; no signal is counted twice [V-17]; the exploration dimension acts on m_a, not on g [V-18]; reward sensitivity controls "the gain of high-value actions" [spéc. 10.4] and β [NQ-05]. u(c) is global, deterministic, monotone non-decreasing, bounded, and a gain on incoming evidence [S-05.5]. π is positive, monotone, and zero if R_a is unknown [S-05.3]; χ carries caution toward safety uncertainty according to threat sensitivity [NQ-07]; R_a monotonically aggregates probability, severity, and irreversibility [S-05.3].
+
+**B.** The combination function, currency of simulated value, forms of u, π, χ, and aggregation of R_a.
+
+**C.**
+
+- Simulated value: average, across completed `R_eff` rollouts, of the discounted sum of predicted rewards, without bootstrapping from Q. Predicted rewards are computed by Value and Needs on predicted body variables using the same function as r_t:
+
+```latex
+E_a^{\mathrm{sim}} = \frac{1}{R_{\mathrm{eff}}}\sum_{r=1}^{R_{\mathrm{eff}}}\ \sum_{k=0}^{H_r-1}\beta^{k}\,\hat r^{(r)}_{k},\qquad \hat r_k = \hat D_k - \hat D_{k+1}
+```
+
+- Before evaluating candidates in a cycle, Competition fixes the same budget `(R_eff, H_eff)` for all candidates that will actually be simulated. In degraded mode this budget may be lower than `(R_max, H_max)`, but remains common. If simulation of a candidate does not complete the announced effective budget, `E_a^sim` is `indisponible` for that cycle; partial results are logged without entering evidence.
+- Extrinsic component and total evidence, as in 8.5: convex mixture of E_a^Q and E_a^sim weighted by experience with the option's `signature_apprentissage`, normalization by tanh, then addition of m_a if applicable, all bounded to [−1, 1].
+- Risk: each distinct adverse consequence `j` whose probability is sufficiently known receives `r_j = p_j G_j (1+I_j)/2`. Consequences sharing the same causal identifier are counted only once. Total known risk is `R_a = min(1, Σ_j r_j)`. A materially relevant consequence whose `p_j` is unknown does not erase known risks: it increases `U_a`. `R_a = inconnu` only when no reliable estimate of the option's known risk is available.
+- Functional forms:
+
+```latex
+u(c) = 1 + (u_{\max}-1)\big(1 - e^{-(c-1)/c_u}\big)
+\qquad
+\pi(R_a;\tau) = k_\pi\,e^{\alpha_\pi \tau_{\mathrm{menace}}}\,R_a
+\qquad
+\chi(U_a;\tau) = k_\chi\,\tfrac{1+\tau_{\mathrm{menace}}}{2}\,U_a
+```
+
+- `p_j`, `G_j`, and `I_j` are in [0, 1]. π is 0 when `R_a = inconnu`: the unknown is not artificially turned into known risk; U_a then carries caution toward missing information.
+
+**D.** The convex mixture prevents double counting the same quantity estimated through two paths. Normalization makes accumulators comparable between options. Every temperament effect passes through the table (γ_v, π, χ). π ≥ 0 never lowers a threshold, and every function is monotone in the required direction.
+
+**E.** Sum of components: double counting, rejected by S-05.1. Maximum of components: unstable, ignores reliability of each. Learned combiner: not inspectable, outside MVP. Bootstrapping E_a^sim from Q: mixes the two sources. Option-specific urgency: rejected by S-05.5.
+
+**F.** λ_a increasing with n_a, where n_a counts updates of `signature_apprentissage`, not instance ids; one component only, no component, m_a `non_applicable` or zero; two distinct dangerous consequences aggregated without exceeding 1; same causal consequence deduplicated; `R_a = inconnu` only when no reliable estimate of known risk is available; known risk retained even when uncertainty is present; same `(R_eff,H_eff)` budget among evaluated candidates; interrupted simulation excluded from evidence; monotonicity of R_a, π, and χ; τ = 0 gives γ_v = 1; INV-14 and INV-16.
+
+### DC-02 · Tie-breaking and threshold floor
+
+**A.** The largest overshoot of the effective threshold wins; if thresholds differ, the margin is normalized by each threshold; no draw; canonical order breaks exact ties; u(c) is not a criterion; no protective priority in tie-breaking [S-05.7].
+
+**B.** The normalization formula, guarantee that a threshold remains strictly positive, and treatment of a winner whose command or current step is refused.
+
+**C.** Every effective threshold is bounded by s_min > 0. The selected candidate is the one with the greatest relative margin `(A_a − s_a) / s_a`; on an exact tie in reference arithmetic, stable, versioned canonical order of option identifiers breaks the tie.
+
+After tie-breaking, Control prepares an exact command and then applies admissibility, veto, and mask. A refusal is qualified by its **scope**:
+
+- `portee = option`: the option itself is inadmissible or invalid in the current context; it is invalidated and its accumulator removed;
+- `portee = plan_ou_etape`: only the current plan or step is refused; the plan moves to `a_reviser`, the option remains valid, is suspended for the rest of the cycle, and may return after replanning;
+- `portee = protocole`: the rollback mask forbids only this command in the resumed deliberation; no knowledge or lasting invalidation is created.
+
+In all three cases, the refused candidate is removed from the cycle's winner set and the next candidate is examined. The command eventually admitted is kept in a `DecisionAdmise` object and is never recomputed before being sent to the world.
+
+**D.** With equal thresholds, relative margin orders candidates like raw overshoot: the first rule of S-05.7 is respected. The floor excludes division by zero and negative thresholds. The option/plan distinction preserves S-06.3: replanning does not automatically turn a step problem into invalidation of the pursued behavior.
+
+**E.** Raw difference `A_a − s_a`: favors high thresholds. Draw: breaks replay. Ratio `A_a / s_a`: same ordering as the margin, less readable. Systematic option invalidation after every step veto: rejected because it conflates option and current realization.
+
+**F.** Equal thresholds: same order as raw overshoot; different thresholds; exact tie; active floor; veto applying to option; veto applying only to step with replanning; command in `DecisionAdmise` identical to that sent to world; identical replay.
+
+### DC-03 · Goal proposals and arbitration
+
+**A.** The Goal Manager is the sole owner of the active goal; it receives proposals from Value and Needs and prospective memory; stagnation, recalls, alerts, and plan failures request reevaluation without changing the goal; minimal case: most pressing need, with hysteresis; abandonment of an impossible or invalid goal; everything logged [NQ-01]. An intention never changes the goal by itself [S-02.5]; an intrinsic option does not replace it [V-10].
+
+**B.** Pressure computation, comparison between proposals from different sources, abandonment criterion, treatment of intention deadlines, and timing of arbitration.
+
+**C.**
+
+- Every body variable `i` declares a versioned deficit function `d_i(y_i, y_i*) ∈ [0,1]`. For the four MVP variables, where a low value is unfavorable, `d_i = clip_[0,1]((y_i* − y_i) / Y_i)`. A future asymmetric variable or one where excess is unfavorable must declare its own function instead of using a generic absolute value.
+- Need pressure: `p_i = ω̃_i(τ) · d_i(y_i, y_i*)`, with `ω̃_i = ω_i / max_j ω_j`. Value and Needs emits a proposal when `p_i ≥ p_min`.
+- An intention stores a `pression_base` bounded in [0,1], equal to the pressure of the goal it served when created. Without a deadline, `pression_courante = pression_base`. With a deadline, `pression_courante = clip_[0,1](pression_base + w_ech · urg_ech(temps_restant))`, where `urg_ech` is deterministic, monotone as the deadline approaches, and versioned. The deadline never changes the goal directly: it only changes proposal pressure.
+- Timing: in phase 1 of cycle `n`, the manager arbitrates proposals published through the end of cycle `n − 1` (DC-11).
+- With no active goal: activate the highest-pressure proposal above `p_min`; canonical order breaks ties.
+- With an active goal: satisfaction if its condition is met; invalidation if target disappears or context becomes invalid; replacement if an admissible proposal reaches `p_actif + Δ_but`, where `p_actif` is recomputed every cycle from its source.
+- Planning never declares a goal ontologically "impossible" solely because no plan was found. Under full budget and without truncation, it may produce `non_planifiable_actuellement` with a hash of the relevant material context. At most one failure counts per step. The manager abandons the goal after `N_imp` consecutive failures under unchanged material context.
+- After abandonment, proposals with the same type and target are ignored for `T_refr` steps. The refractory period is lifted immediately if the material-context hash changes or if pressure from the corresponding need reaches `p_critique`.
+- Reevaluation: a stagnation signal, recall, alert, or plan failure triggers next-cycle arbitration under the same rule and may trigger replanning under S-02.4.
+
+**D.** Single writer, deterministic rule, accessible information only. The deficit function prevents a body value above its setpoint from artificially creating the same need as a deficit. Hysteresis prevents oscillation; the refractory period closes the abandon-then-reactivate loop without preventing a real emergency or new context from reopening the goal.
+
+**E.** Goal identified with engaged option: rejected by NQ-01. Multiple-goal scheduler: unnecessary complexity in MVP. Learned selection: outside MVP. Abandonment on stagnation alone or after a single search without a plan: rejected. Intention pressure frozen despite a deadline: rejected because it would prevent a dated intention from becoming more pressing without a new mechanism.
+
+**F.** Activation; zero pressure above setpoint for "deficit" variables; hysteresis; intention without and with deadline; satisfaction; invalidation; `non_planifiable_actuellement`; abandonment after `N_imp` under unchanged context; new context and `p_critique` lifting refractory period; reproducible one-cycle offset; INV-11.
+
+### DC-04 · Gatekeeper queues, quotas, and saturation
+
+**A.** The queue is not FIFO; an evicted item returns without extra lifetime; capacity is to be calibrated [S-07.6]. Emission quotas per module and window, backpressure, aggregation, expiring queue, degraded mode [spéc. 5.6]; sliding slot quota, habituation, decreasing reliability [spéc. 5.8]; active goal occupies a fixed slot outside quota.
+
+**B.** Eviction policy at saturation, exact quota forms, meaning of backpressure, and handling of genuinely new reobservation.
+
+**C.**
+
+- After selection, non-retained items are sorted by decreasing score, then most recent production, then canonical order. The first `N_file` form the queue; the others are permanently evicted and logged.
+- Emission quota: at most `Q_ém` contributions admitted per module over `T_quota` sliding steps. Beyond this, the contribution is rejected at admission with code `quota_emission`: this is backpressure.
+- A module MUST NOT artificially reemit the same content to refresh its age. Two contributions with the same subject and payload remain distinct, however, if provenance shows a **new causal event**, a new measurement, or a new world read. The anti-reemission key therefore includes at minimum subject, payload hash, and source event identifiers.
+- Diversity quota: on the first selection pass, at most `q_emp` contested slots per module, excluding the safety slot. If this quota would leave empty slots while admissible items remain, a second pass fills remaining slots in score order even beyond `q_emp`. The quota prevents domination; it never artificially creates an incomplete S_t.
+- Quotas for a cycle are computed from occupancy in previous cycles (3.7). Habituation goes through `n(m)` (6.4); no separate refractory period is added in the MVP.
+
+**D.** Bounded memory, deterministic eviction, preserved ages (S-07.6). Backpressure requires no new channel. Provenance prevents artificial refresh without suppressing a genuinely new observation. Safety and fixed slots remain outside quota.
+
+**E.** FIFO queue: rejected by S-07.6. Unbounded queue: saturation. Random eviction: breaks replay. Eviction by age alone: removes important items. Absolute slot quota leaving slots empty: rejected. Refractory period in addition to habituation: redundant mechanism.
+
+**F.** Saturation under distractor flow (INV-19); emission quota; artificial reemission rejected; new reobservation accepted; preemption intact under quotas; second pass fills vacant slots; replay.
+
+### DC-05 · Promotion and demotion of safety facts
+
+**A.** Status `etabli_pour_securite` has its own safety-use threshold, reachable without deliberate re-exposure [NQ-11, S-14.2]; it applies to the canonical causal-model object without duplication [V-43]; an isolated observation, suspicion, or exploratory hypothesis is insufficient [S-14.2]; prohibition categories are fixed [S-14.3]; death followed by rollback teaches nothing [S-14.2, V-24].
+
+**B.** Promotion criterion, minimum independence of evidence, and whether demotion exists.
+
+**C.**
+
+- Only facts whose predicate falls under a category of an existing veto rule are eligible: item toxic when consumed, lethal zone, consequence violating a protected invariant.
+- Promotion by the Causal Model in phase 5: `n_sec` **independent evidential episodes** actually experienced, each followed within the relevant observation window by harm observed in a `monde`-anchored observation consistent with the predicate; episodes must be distinct in the journal and not multiple processings of the same source event. Contexts must be comparable in the sense of 13.2; no other cause of harm accessible to the individual may suffice to explain the effect; no admissible contradictory evidence may have been integrated since the first.
+- The system MUST NOT create or favor a dangerous option solely to reach `n_sec`. Counting episodes may come from ordinary, incidental, or otherwise already-motivated exposures; counterfactual, simulated, or rollback-cancelled exposures never count.
+- Initial facts: supplied at birth with this status in the versioned safety policy; never demoted in the MVP.
+- Demotion: return to no safety status after `m_sec` independent evidential episodes actually experienced without harm in a comparable context since the last promotion. Such evidence can only be incidental: no test option is ever proposed to demote a safety fact. If the veto naturally prevents new exposure, the status may remain acquired indefinitely.
+- Every status change is logged with its deduplicated evidence and becomes visible in the next cycle (3.6).
+
+**D.** No deliberate re-exposure is required, the object remains unique, safety status remains independent of causal status, only actually lived experiences count, and cancelled death remains excluded.
+
+**E.** Promotion after first exposure: contrary to S-14.2. Promotion only at `etablie` status: would require the full causal cycle and could encourage dangerous intervention, rejected by NQ-11. Demotion by passage of time alone: no evidence. Operator validation for each fact: operator changes rules, not facts [S-14.3].
+
+**F.** Two processings of the same episode count once; toxic berry observed in `n_sec` distinct episodes then veto; death and rollback: no promotion; counterfactual: no promotion; no dangerous test option created to reach threshold; demotion only on distinct incidental episodes; INV-25.
+
+### DC-06 · κ representation and verification provenance
+
+**A.** Metacognition and Health owns, computes, and publishes κ [NQ-09]; verification by type [S-08.1]; accessible information only, never oracle [S-08.2]; counterfactuals excluded [S-08.3]; finite-strength prior [S-08.4]; f = κ_(version_E,M,type,famille)(conf), historical confirmation rate for alerts and hypotheses [spéc. 4.4]; atomic publication every cycle [S-08.6].
+
+**B.** Map representation, key granularity, and the rule preventing self-validation or artificial confirmation through correlated errors.
+
+**C.**
+
+- A κ map is indexed at minimum by `(version_equipement_ou_module, module, type_de_contribution, famille_de_signal)`. During an H4 substitution, the new version uses its own prior and does not inherit `(a,b)` counters from the replaced version. `famille_de_signal` distinguishes channels or modalities likely to share biases: symbolic vision, body telemetry, agency comparator, equipment predictor, etc. The signal-family table is structural, closed, and versioned with the contract; it is not a parameter adjusted during the campaign.
+- For each key, `B_κ` equal-width classes of declared confidence over [0, 1]. Each class keeps two counters `(a, b)`, initialized by the prior: `force × (f_0, 1 − f_0)`, with `f_0 = 0.5`, or offline-measured calibration for equipment. Then `f = a / (a + b)` for the class containing the declared confidence; alerts and hypotheses use a single class if their contract does not provide graded confidence.
+- A verification is **strong** and admissible for κ only if based on an observation or consequence that: carries anchor `monde`; dates from a step strictly later than emission of the verified contribution; has no data derived from the verified contribution in its provenance chain; does not belong to a segment cancelled by rollback; never comes from oracle; and comes from a causally independent modality or physical consequence whose production does not depend on the channel being evaluated.
+- A later repetition from the **same channel or signal family** may be recorded as `stabilite_meme_canal`, but it does not modify `(a, b)` and therefore cannot, alone, increase κ. It is used to diagnose temporal consistency, not external correctness of the channel.
+- For a strong verification, `confirmee` increments `a`, `contredite` increments `b`; `indeterminee`, `non_verifiable`, `contrefactuelle_non_verifiee`, and `stabilite_meme_canal` do not change κ.
+- Verifications from one cycle are integrated in canonical order `(module, type, famille_de_signal, identifier)`.
+
+**D.** A prediction cannot be confirmed by a computation derived from itself, and a systematically biased sensor cannot become arbitrarily "reliable" by repeating its own bias. A physical consequence or independent modality remains usable without oracle. The representation remains deterministic, inspectable, and compatible with a finite prior.
+
+**E.** Calibration against oracle: forbidden. Verification through derived contributions: circular. κ confirmation through simple repetition of the same sensor: correlated error, rejected. Moving average without prior: loses finite strength from S-08.4. Learned calibrator: outside MVP.
+
+**F.** A module reemitting or remeasuring its own signal does not increase κ; an independent physical consequence can; a distinct modality may confirm or contradict; canaries; INV-05 and INV-26; prior weight decreases as strong verifications accumulate.
+
+### DC-07 · Degraded modes, module by module
+
+**A.** Gatekeeper degraded mode triggers when pass cost exceeds the ordinary budget, for the entire pass [S-11.4]. Precision is reduced before function, without ever inventing a result. Never approximated: determinism, world/body integrity, communications, journal, S_t, immediate safety, reflexes, and veto. Simulator keeps its model; consolidation suspends [S-11.5, S-02.8].
+
+**B.** Exact behavior of each module without turning absence of computation into absence of evidence.
+
+**C.**
+
+| Module | Trigger | Degraded behavior | Never reduced |
+| --- | --- | --- | --- |
