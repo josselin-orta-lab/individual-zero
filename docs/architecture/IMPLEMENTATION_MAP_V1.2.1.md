@@ -6,6 +6,26 @@ Normative authority: `docs/architecture/reference/en/mvp-specification-v1.2.1.md
 
 If this map conflicts with the normative specification, the specification wins.
 
+## Implementation progress on this branch
+
+Completed in the current branch:
+
+- deterministic causal encoding, SHA-256, deterministic identifiers;
+- independent causal RNG streams with complete state snapshot/restore;
+- causal run-manifest primitives;
+- append-only hash-chained causal journal;
+- concrete I0 structural registries for ontology, similarity contract, κ signal families, safety policy, schema compatibility and P-01 to P-58 identifiers;
+- explicit construction of a campaign parameter registry only when all 58 values are supplied;
+- validated in-memory bus with local producer buffers, canonical phase-1 pouring, deterministic admission/rejection, ontology/schema checks, and journaled rejection reasons.
+
+Still missing from normative Stage 1:
+
+- full nested payload validation for every schema in 5.2;
+- six-phase scheduler and world-step clock;
+- complete causal snapshots and global restoration;
+- autobiographical/evaluation journal views;
+- complete replay runner and retained reference journal.
+
 ## Current repository gap
 
 The existing bootstrap provides a neutral Lab loop, structured events, a deterministic smoke scenario, and a deliberately non-cognitive I0 no-op boundary. It does not yet implement the normative Stage 1 execution substrate: canonical causal serialization, normative deterministic identifiers, independent causal RNG streams with restorable state, a causal run manifest, a hash-chained append-only journal, the six-phase scheduler, the normative bus/contract validator, or complete causal snapshots and replay.
