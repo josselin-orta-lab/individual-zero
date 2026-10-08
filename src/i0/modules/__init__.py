@@ -33,6 +33,8 @@ __all__ = [
     "PlanningConfig",
     "ValueAndNeeds",
     "ValueNeedsConfig",
+    "MinimalMetacognition",
+    "MinimalMetacognitionState",
 ]
 
 from .cognitive_space import CognitiveSpace
@@ -41,3 +43,5 @@ from .gatekeeper import Gatekeeper, GatekeeperConfig
 from .goal_manager import GoalManager, GoalManagerConfig
 from .planning import GreedyPlannerE0, PlanningConfig
 from .value_needs import ValueAndNeeds, ValueNeedsConfig
+
+from .metacognition import MinimalMetacognition, MinimalMetacognitionState
