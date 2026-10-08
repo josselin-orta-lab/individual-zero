@@ -118,13 +118,13 @@ class ScriptedStage2Runtime:
                 world=self.world,
             )
 
-    def _write_command_event(self, *, command: Command) -> str:
+    def _write_command_event(self, *, command: Command, emitter: str) -> str:
         attempt = self.scheduler.active_attempt
         if attempt is None:
             raise RuntimeError("command requires active step")
         event_id = deterministic_id(
             "journal-event-v1",
-            "stage2-scripted-agent",
+            emitter,
             attempt.t_monde,
             attempt.attempt_ref,
             command_digest(command),
@@ -133,7 +133,7 @@ class ScriptedStage2Runtime:
         self.journal.append(
             event_id=event_id,
             causal_event={
-                "emitter": "stage2-scripted-agent",
+                "emitter": emitter,
                 "kind": "command_experienced",
                 "t_monde": attempt.t_monde,
                 "attempt_ref": attempt.attempt_ref,
@@ -170,10 +170,21 @@ class ScriptedStage2Runtime:
         )
         return event_id
 
-    def execute(self, command: Command) -> CommandExecution:
+    def send_admitted_command(
+        self,
+        command: Command,
+        *,
+        source: str,
+    ) -> CommandExecution:
+        """Execute a command already admitted by the active control path.
+
+        Stage 2's scripted agent calls this directly as an allowed stage stub.
+        Stage 3+ must invoke it only through Action Control's dispatch callback.
+        """
+
         attempt = self.scheduler.active_attempt
         if attempt is None:
-            raise RuntimeError("open_step must be called before execute")
+            raise RuntimeError("open_step must be called before command send")
         if self.safety.blocked:
             raise RuntimeError("branch is in safety block")
 
@@ -213,14 +224,14 @@ class ScriptedStage2Runtime:
                 "safety_protocol": self.safety.export_causal_state()["config_version"],
             },
             context={
-                "command_source": "scripted_agent",
+                "command_source": source,
                 "command_hash": command_digest(command),
                 "mask": self.safety.export_causal_state()["masked_command_hashes"],
                 "R_letal_consecutif": self.safety.consecutive_lethal,
             },
         )
 
-        command_event = self._write_command_event(command=command)
+        command_event = self._write_command_event(command=command, emitter=source)
         transition = self.world.apply(command, t_monde=attempt.t_monde)
 
         if transition.lethal:
@@ -268,6 +279,14 @@ class ScriptedStage2Runtime:
             status="applied",
             transition=transition,
             lethal_handling=None,
+        )
+
+    def execute(self, command: Command) -> CommandExecution:
+        """Stage-2 scripted-agent compatibility wrapper."""
+
+        return self.send_admitted_command(
+            command,
+            source="stage2-scripted-agent",
         )
 
     def autobiographical_view(self) -> tuple[dict[str, object], ...]:
