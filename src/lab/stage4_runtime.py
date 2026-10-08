@@ -402,6 +402,7 @@ class Stage4Runtime:
                 satisfied=self._goal_satisfied(),
             )
             if before != after:
+                old_proposal = self.planning.current_proposal
                 self._write(
                     kind="active_goal_changed",
                     cycle=cycle,
@@ -413,8 +414,14 @@ class Stage4Runtime:
                 if before is not None and (
                     after is None or after.id != before.id
                 ):
+                    if old_proposal is not None:
+                        self.competition.invalidate_candidate(
+                            old_proposal.option.id
+                        )
+                        self.stage3.control.clear_option_step(
+                            old_proposal.option.id
+                        )
                     self.planning.invalidate_current()
-                    self.stage3.control.clear_option_step(before.id)
 
         def planning_hook(_ctx: PhaseContext) -> None:
             self._proposal_this_cycle = None
@@ -459,6 +466,7 @@ class Stage4Runtime:
                     admitted.append(contribution)
             self._admitted_contributions = tuple(admitted)
             self._pending_contributions.clear()
+            self.bus.drain_available()
 
         def gatekeeper_hook(_ctx: PhaseContext) -> None:
             selection = self.gatekeeper.select(
@@ -510,6 +518,14 @@ class Stage4Runtime:
             )
 
         def competition_registration_hook(_ctx: PhaseContext) -> None:
+            self.competition.prune_invalid(
+                active_goal_id=(
+                    None
+                    if self.goal_manager.active_goal is None
+                    else self.goal_manager.active_goal.id
+                ),
+                t_monde=capture.t_monde,
+            )
             current = self.s_t.current
             if current is None:
                 raise RuntimeError("Competition requires a published S_t")
@@ -709,7 +725,6 @@ class Stage4Runtime:
             and reflex_execution is not None
             and reflex_execution.status in {"applied", "safety_block"}
         ):
-            self.competition.close_deliberation(None)
             self.stage3._capture = None
             return Stage4StepResult(
                 source="reflex",
