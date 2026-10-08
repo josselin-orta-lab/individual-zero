@@ -11,8 +11,9 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Mapping
+from typing import Mapping, Sequence
 
+from .injected_scenario import ScenarioEvent
 from .stage5_runtime import Stage5Runtime
 
 
@@ -40,6 +41,9 @@ class Stage5CopyManager:
         parent: Stage5Runtime,
         child_id: str,
         battery_copy: bool,
+        scenario_id: str | None = None,
+        scenario_version: str | None = None,
+        scenario_events: Sequence[ScenarioEvent] = (),
     ) -> Stage5Copy:
         if not child_id:
             raise ValueError("child_id must not be empty")
@@ -69,14 +73,20 @@ class Stage5CopyManager:
             lineage_parent_id=parent.individual_id,
             lineage_copy_point=parent.journal.head_hash,
             battery_copy=battery_copy,
+            scenario_id=scenario_id,
+            scenario_version=scenario_version,
+            scenario_events=tuple(scenario_events),
         )
 
         child_owners = {owner.owner_id: owner for owner in child.causal_owners}
-        if set(child_owners) != set(owner_states):
-            missing = sorted(set(owner_states) - set(child_owners))
-            extra = sorted(set(child_owners) - set(owner_states))
+        missing = sorted(set(owner_states) - set(child_owners))
+        extra = sorted(set(child_owners) - set(owner_states))
+        allowed_extra = {"scenario"} if scenario_id is not None else set()
+        unexpected_extra = sorted(set(extra) - allowed_extra)
+        if missing or unexpected_extra:
             raise ValueError(
-                f"copy owner mismatch; missing={missing}, extra={extra}"
+                "copy owner mismatch; "
+                f"missing={missing}, unexpected_extra={unexpected_extra}"
             )
 
         for owner_id in sorted(owner_states):
