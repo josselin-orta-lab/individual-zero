@@ -482,3 +482,12 @@ The observation is explicitly `cause_present=True`, never an invented control gr
 Audit revealed that the initial correlation gate counted cause-present exposures as `n1`, including exposures without the effect. The implementation now counts only `cause_present AND effect_present` co-occurrences **in observably matched contexts**, then separately requires a strictly lower matched unexposed base rate. New `tests/test_stage9_cooccurrence_threshold.py` locks down absent effects, unmatched reference contexts and deterministic pending-observation snapshot replay.
 
 This is a normative correction to Stage-9 typed inference; it does not alter Stage-8 code or historic golden references. The autonomous lived observational intake completed in checkpoint 6 supplies only exposure-positive episodes and **cannot invent a negative control group or an intervention**. Stage 9 remains open pending an independent baseline producer, causal test-option lifecycle, and established-only Simulator correction.
+
+
+### Stage 9 checkpoint 7 — preregistered lived controls (IN PROGRESS)
+
+The Causal Model now supports `CausalModelConfig.food_control_pairs`, a **versioned, explicit, default-empty** registry of food treatments and genuinely different control foods. An actually consumed control food in a closed DC-09 episode can create a `cause_present=False` observation for its preregistered treatment, alongside its own positive-exposure record. This projects the **same observed physical transition and same Memory episode** without manufacturing a counterfactual, independent intervention or extra sample.
+
+Source constraints remain: applied goal-motivated consumption, accessible Perception integrity, matched actual `ate` outcome, no accessible sufficient alternative harm, and a closed episode. P-35 correlation still requires observed cause-effect cooccurrences above the matched lived base rate; no status is promoted merely by recording a control. The default Stage-9 reference contains no pairs and retains its prior behavior. `tests/test_stage9_lived_evidence.py` includes source-identity and registry validation.
+
+**Open:** the complete autonomous control/contrast pipeline, contextual equivalence proof across episodes, generated admissible intervention options, causal attribution from AgencyComparator beyond descriptive evidence, established-only simulator correction, and the Stage-9 golden. This is not Stage-9 closure.
