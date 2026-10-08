@@ -219,9 +219,50 @@ Stage 6 gate status:
 - live Competition receives simulator evidence only through the typed evaluator;
 - deterministic replay remains green over the full Stage-6 reference day.
 
+## Stage 7 progress on this branch
+
+Implemented:
+
+- `EpisodicMemory` as sole owner of episodes, intentions, recall state and prospective indexes;
+- Memory reads only the DC-09 autobiographical projection and has no dependency on the technical journal, oracle or evaluation trace;
+- every autobiographical read is logged technically, while access events themselves remain excluded from autobiography;
+- extended Stage-7 autobiographical allowlist for perceptible goal, S_t, comparator, episode and intention events without changing the Stage-1 to Stage-6 default policy;
+- episode segmentation on active-goal change, lived comparator surprise above P-34, observable zone change and `L_episode`;
+- automatic linking of episodes separated by less than `Delta_episode`;
+- exact-search Stage-7 recall using recency, importance and symbolic S_t relevance;
+- spontaneous recall only on threshold crossing, emitted as an ordinary Memory contribution through the bus and Gatekeeper;
+- prospective intentions with time/event/context triggers, one active candidacy per occurrence, immutable base pressure and P-26 deadline-pressure projection owned by Goal Manager;
+- read-only wake-deadline index for wake-authorized dated intentions;
+- triggered intentions create both an ordinary Memory contribution and a next-cycle `GoalProposal`; Memory never writes the active goal;
+- `Request` / `Response` causal contracts and a Bus-owned request registry;
+- request depth <= 1, parent budget/deadline inheritance, two-node cycle rejection and repeated-question refusal inside W;
+- direct Memory responses for exact `recall_recent` and `episode:<id>` requests;
+- pending/closed request statuses published read-only in S_t;
+- past-dependent acceptance task: exact episode query is empty before history and delivered after the episode exists;
+- lethal cancelled branches remain absent from autobiographical memory;
+- non-causal O(1) journal lookup and indexed autobiographical commits remove the quadratic journal scan without changing canonical bytes.
+
+Stage 7 reference fixture:
+
+- duration: 300 world steps;
+- causal journal bytes: 34,636,835;
+- closed episodes: 298 under the software-reference P-34 values;
+- F_cog counter: 9,593 UC;
+- golden journal head: `c356fe386c2480e78e485f85815ac93fc90f3b679e5806dcb61b374daee9da77`;
+- 238 tests green on Python 3.11 and 3.12;
+- Stage 1-6 historical golden behavior remains compatible.
+
+Stage 7 gate status:
+
+- INV-02: extended to Memory, including source-level absence of technical-journal/oracle dependencies;
+- INV-20: request depth, cycles, budgets and deadlines covered;
+- INV-27: lethal transition/detection/rollback/mask remain outside autobiographical Memory;
+- prospective intentions pass through the ordinary attention and Goal Manager paths rather than directly changing goals;
+- deterministic replay remains green over the Stage-7 reference trajectory.
+
 ## Current repository gap
 
-The normative implementation now includes the deterministic substrate, world/body/bench, reflex/control, complete Stage-4 cognition, Stage-5 temperament/copy instrumentation, and Stage-6 equipment/simulator integration. Stage 6 is software-complete. The next implementation dependency is the next stage defined by section 20 of the normative specification; no later cognitive mechanism should be pulled forward merely because the simulator now exists.
+The normative implementation now includes the deterministic substrate through Stage 7 Memory. The next normative implementation stage is Stage 8, Online Learning. Stage 8 may consume accessible S_t, experienced transitions and Stage-7 memory interfaces, but must not pull forward Stage-9 causal-model behavior or Stage-10 sleep/consolidation.
 
 ## Functional groups
 
