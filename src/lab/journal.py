@@ -39,10 +39,16 @@ class HashChainedJournal:
 
     def __init__(self) -> None:
         self._entries: list[JournalEntry] = []
+        # Non-causal lookup index. The append order and canonical bytes remain
+        # exactly those of _entries.
+        self._by_id: dict[str, JournalEntry] = {}
 
     @property
     def entries(self) -> tuple[JournalEntry, ...]:
         return tuple(self._entries)
+
+    def get(self, event_id: str) -> JournalEntry | None:
+        return self._by_id.get(event_id)
 
     @property
     def head_hash(self) -> str:
@@ -80,6 +86,7 @@ class HashChainedJournal:
             causal_event=dict(causal_event),
         )
         self._entries.append(entry)
+        self._by_id[event_id] = entry
         return entry
 
     def canonical_bytes(self) -> bytes:
