@@ -74,9 +74,6 @@ class LivedEvidenceTests(unittest.TestCase):
         self.assertTrue(observed[0].effect_present)
         self.assertEqual(observed[0].episode_ref,"episode:1")
         self.assertEqual(m.publish_causal_inference(),())
-        published=m.export_causal_state()["causal_observations"]
-        self.assertEqual(len(published),2)
-        self.assertEqual(len({v["episode_ref"] for v in published}),1)
         self.assertEqual(m.get("toxic:berry_b").causal_status,"aucun")
         self.assertEqual(m.export_causal_state()["causal_interventions"],[])
 
@@ -118,6 +115,9 @@ class LivedEvidenceTests(unittest.TestCase):
         self.assertEqual(control.observation_ref,"transition:1")
         self.assertFalse(control.effect_present)
         self.assertEqual(m.publish_causal_inference(),())
+        published=m.export_causal_state()["causal_observations"]
+        self.assertEqual(len(published),2)
+        self.assertEqual(len({v["episode_ref"] for v in published}),1)
         self.assertEqual(m.get("toxic:berry_b").causal_status,"aucun")
 
     def test_control_requires_explicit_registry(self):
