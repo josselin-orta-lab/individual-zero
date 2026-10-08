@@ -244,6 +244,59 @@ class Stage4IntegratedLoopTests(unittest.TestCase):
         self.assertEqual(instance.world.position, Position(4, 2))
         self.assertEqual(instance.world.body.water, 60.0)
 
+    def test_position_comparator_confirms_predicted_movements(self) -> None:
+        instance = runtime(
+            layout=WorldLayout(
+                water_sources=frozenset({Position(4, 2)}),
+            )
+        )
+
+        instance.run_step()
+        instance.run_step()
+        instance.run_step()
+
+        comparisons = [
+            entry.causal_event
+            for entry in instance.journal.entries
+            if entry.causal_event.get("kind") == "agency_comparison"
+        ]
+        self.assertGreaterEqual(len(comparisons), 2)
+        self.assertTrue(
+            all(
+                event["data"]["status"] == "conforming"
+                for event in comparisons[:2]
+            )
+        )
+        self.assertTrue(
+            all(
+                event["data"]["attribution"] == "self_compatible"
+                for event in comparisons[:2]
+            )
+        )
+
+    def test_blocked_movement_is_nonconforming_and_invalidates_plan(self) -> None:
+        instance = runtime(
+            layout=WorldLayout(
+                water_sources=frozenset({Position(4, 2)}),
+                obstacles=frozenset({Position(3, 2)}),
+            )
+        )
+
+        first = instance.run_step()
+        self.assertEqual(first.command_primitive, "se_deplacer")
+        self.assertEqual(instance.world.position, Position(2, 2))
+
+        instance.run_step()
+
+        comparisons = [
+            entry.causal_event
+            for entry in instance.journal.entries
+            if entry.causal_event.get("kind") == "agency_comparison"
+        ]
+        self.assertGreaterEqual(len(comparisons), 1)
+        self.assertEqual(comparisons[0]["data"]["status"], "nonconforming")
+        self.assertEqual(comparisons[0]["data"]["attribution"], "uncertain")
+
     def test_no_active_need_reaches_cmax_fallback_wait(self) -> None:
         instance = runtime(water=60.0)
 
