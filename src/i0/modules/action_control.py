@@ -278,10 +278,13 @@ class ActionControl:
         capture: PerceptualCapture,
         prepared: PreparedCommand,
         sender: Callable[[PrimitiveCommand], object],
+        on_admission: Callable[[AdmissionResult], None] | None = None,
     ) -> tuple[AdmissionResult, object | None]:
-        """Admit first, then invoke the world-send callback exactly once if allowed."""
+        """Admit first, record admission, then send exactly once if allowed."""
 
         admission = self.admit(capture=capture, prepared=prepared)
+        if on_admission is not None:
+            on_admission(admission)
         if not admission.ok:
             return admission, None
         return admission, sender(admission.command)
