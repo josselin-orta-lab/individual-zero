@@ -7,6 +7,7 @@ from i0.interfaces import PrimitiveCommand
 from i0.modules import StaticSafetyFacts
 from i0.modules.simulator import SimulatorConfig
 from i0.modules.stage6_evaluator import Stage6EvaluationConfig
+from i0.modules.stage6_planning import Stage6PlanningConfig
 from lab.equipment_corpus import EquipmentCorpusRecorder
 from lab.safety_protocol import SafetyProtocolConfig
 from lab.stage4_reference_fixture import build_stage4_reference_runtime
@@ -76,6 +77,12 @@ def stage6_runtime(*, include_drink: bool) -> Stage6Runtime:
                 beta=0.8,
                 r_eff=3,
                 h_eff=1,
+            ),
+            planning=Stage6PlanningConfig(
+                version="stage6-runtime-planning-v1",
+                option_ttl_steps=20,
+                max_depth=2,
+                setpoints=dict(stage4._config.value_needs.setpoints),
             ),
         ),
         equipment=equipment,
