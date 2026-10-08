@@ -413,3 +413,16 @@ The calibration probe only confirms the normatively required **declining-Brier s
 The noiseless reference trajectory produces no independent sensor-precision calibration samples; active precision update, provenance rejection and publication are separately exercised by deterministic tests. Stage 8 does not add Stage-9 Causal Model knowledge/contingencies or Stage-10 sleep/consolidation. P-33 and active-precision coefficients are versioned software-reference parameters, not empirical performance calibration. The normative Stage-13 campaign and inter-version equivalence evidence are not implied by a green software gate.
 
 **Status:** **Stage 8 closed for the normative MVP implementation gate.** Next normative stage: **Stage 9 — Causal Model and agency**, only after review of the Stage-8 PR; no merge to `main` was performed.
+
+
+## Stage 9 implementation checkpoint — DC-05 safety-state foundation (IN PROGRESS)
+
+Development branch: `i0/stage9-causal-model-agency-v1.2.1`, PR #18 (draft), based on the verified Stage 8 branch. Source of truth: the unchanged English normative v1.2.1 specification.
+
+- The new `CausalModel` is the **sole writer** of canonical contingency/safety-status records; `CanonicalSafetyFacts` is a read-only bridge from published safety status to existing Action Control veto/admissibility. The existing three-category versioned prohibition policy is unchanged.
+- Explicit preregistered configuration `P-35: n1, n2` and `P-36: n_sec, m_sec` is required. Initial DC-05 promotion counts **distinct, independently experienced** harmful episodes, rejects repeated physical-observation references, contradictory intervening evidence, oracle, counterfactual, rollback, alternative causes and deliberately induced harm. Incidental distinct no-harm episodes can demote learned safety status; the adapter never demotes innate safety policy facts.
+- Statuses are kept **separate on one canonical object**: a fact may become `etabli_pour_securite` without becoming causally `etablie`. Thus it cannot silently correct the Simulator (INV-25). A batch publishes at cycle closure; before closure the read-only adapter sees the old version. Causal snapshot/restore includes pending evidence, deduplication and published state.
+- Normative tests in `tests/test_stage9_causal_model.py` cover promotion threshold, no double credit, rejection, contradiction, incidental demotion, veto source and exact snapshot round trip.
+- **No Stage-9 full integration/golden yet.** Future work remains: true Causal Model observation and intervention lifecycle (§13.2), comparator attribution and P-47 (§9.6), context-aware safety admissibility and DC-05 episode equivalence, conditional learned simulator corrections only for `etablie` (§12.3), controlled test proposals, full runtime phase-5 publication and replay, INV-25 and behavioral gate. None of these are represented as complete by this checkpoint.
+
+Stage 8 golden and all historical goldens remain frozen. Stage 9 is **not closed**. No merge to `main`.
