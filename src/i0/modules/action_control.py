@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Callable, Protocol
 
-from i0.contracts import OptionProposal
+from i0.contracts import OptionProposal, PredictedConsequence
 from i0.interfaces import PrimitiveCommand
 
 from .perception import PerceptualCapture
@@ -75,6 +75,8 @@ class PreparedCommand:
     st_version_ref: str | None = None
     established_integrity_after: float | None = None
     grounding_contribution_refs: tuple[str, ...] = ()
+    predicted_consequences: tuple[PredictedConsequence, ...] = ()
+    observation_window_steps: int = 1
 
 
 class Admissibility(str, Enum):
@@ -92,6 +94,16 @@ class AdmissionResult:
     rule_type: str | None
     policy_version: str
     command: PrimitiveCommand
+
+
+@dataclass(frozen=True, slots=True)
+class AgencyComparison:
+    option_ref: str | None
+    sent_t_monde: int
+    observed_t_monde: int
+    status: str
+    attribution: str
+    effects: tuple[dict[str, object], ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,6 +131,8 @@ class ActionControl:
         self._current_option_ref: str | None = None
         self._current_plan_ref: str | None = None
         self._current_step_index = 0
+        self._pending_prediction: dict[str, object] | None = None
+        self._last_comparison: AgencyComparison | None = None
 
     @property
     def current_step(self) -> tuple[str | None, str | None, int]:
@@ -153,6 +167,8 @@ class ActionControl:
             option_ref=option_ref,
             st_version_ref=proposal.option.founding_st_version,
             grounding_contribution_refs=proposal.option.grounding_contribution_refs,
+            predicted_consequences=step.predicted_consequences,
+            observation_window_steps=step.observation_window_steps,
         )
 
     def mark_cognitive_step_applied(self, proposal: OptionProposal) -> None:
@@ -164,6 +180,121 @@ class ActionControl:
         ):
             raise ValueError("applied proposal does not match current control step")
         self._current_step_index += 1
+
+    @property
+    def last_comparison(self) -> AgencyComparison | None:
+        return self._last_comparison
+
+    def record_sent_prediction(
+        self,
+        *,
+        prepared: PreparedCommand,
+        t_monde: int,
+    ) -> None:
+        if not prepared.predicted_consequences:
+            self._pending_prediction = None
+            return
+        self._pending_prediction = {
+            "option_ref": prepared.option_ref,
+            "sent_t_monde": t_monde,
+            "deadline_t_monde": t_monde + prepared.observation_window_steps,
+            "consequences": tuple(prepared.predicted_consequences),
+        }
+
+    def compare_capture(
+        self,
+        capture: PerceptualCapture,
+    ) -> AgencyComparison | None:
+        pending = self._pending_prediction
+        if pending is None:
+            return None
+        sent_t = int(pending["sent_t_monde"])
+        deadline = int(pending["deadline_t_monde"])
+        if capture.t_monde <= sent_t:
+            return None
+        if capture.t_monde > deadline:
+            comparison = AgencyComparison(
+                option_ref=(
+                    None
+                    if pending["option_ref"] is None
+                    else str(pending["option_ref"])
+                ),
+                sent_t_monde=sent_t,
+                observed_t_monde=capture.t_monde,
+                status="indeterminable",
+                attribution="uncertain",
+                effects=(
+                    {
+                        "status": "expected_effect_missing",
+                        "deadline_t_monde": deadline,
+                    },
+                ),
+            )
+            self._pending_prediction = None
+            self._last_comparison = comparison
+            return comparison
+
+        effects: list[dict[str, object]] = []
+        statuses: list[str] = []
+        for consequence in pending["consequences"]:
+            if not isinstance(consequence, PredictedConsequence):
+                raise ValueError("invalid pending predicted consequence")
+            if consequence.variable == "position_x":
+                observed = float(capture.x)
+            elif consequence.variable == "position_y":
+                observed = float(capture.y)
+            else:
+                effects.append(
+                    {
+                        "variable": consequence.variable,
+                        "status": "indeterminable",
+                    }
+                )
+                statuses.append("indeterminable")
+                continue
+
+            difference = abs(observed - consequence.value_or_delta)
+            status = (
+                "conforming"
+                if difference <= consequence.precision
+                else "nonconforming"
+            )
+            statuses.append(status)
+            effects.append(
+                {
+                    "variable": consequence.variable,
+                    "predicted": consequence.value_or_delta,
+                    "observed": observed,
+                    "precision": consequence.precision,
+                    "status": status,
+                }
+            )
+
+        if statuses and all(status == "conforming" for status in statuses):
+            overall = "conforming"
+            attribution = "self_compatible"
+        elif "nonconforming" in statuses:
+            overall = "nonconforming"
+            attribution = "uncertain"
+        else:
+            overall = "indeterminable"
+            attribution = "uncertain"
+
+        comparison = AgencyComparison(
+            option_ref=(
+                None
+                if pending["option_ref"] is None
+                else str(pending["option_ref"])
+            ),
+            sent_t_monde=sent_t,
+            observed_t_monde=capture.t_monde,
+            status=overall,
+            attribution=attribution,
+            effects=tuple(effects),
+        )
+        self._pending_prediction = None
+        self._last_comparison = comparison
+        return comparison
 
     def clear_option_step(self, option_ref: str | None = None) -> None:
         if option_ref is not None and self._current_option_ref != option_ref:
@@ -364,6 +495,31 @@ class ActionControl:
             "current_option_ref": self._current_option_ref,
             "current_plan_ref": self._current_plan_ref,
             "current_step_index": self._current_step_index,
+            "pending_prediction": None
+            if self._pending_prediction is None
+            else {
+                "option_ref": self._pending_prediction["option_ref"],
+                "sent_t_monde": self._pending_prediction["sent_t_monde"],
+                "deadline_t_monde": self._pending_prediction["deadline_t_monde"],
+                "consequences": [
+                    {
+                        "variable": consequence.variable,
+                        "value_or_delta": consequence.value_or_delta,
+                        "precision": consequence.precision,
+                    }
+                    for consequence in self._pending_prediction["consequences"]
+                ],
+            },
+            "last_comparison": None
+            if self._last_comparison is None
+            else {
+                "option_ref": self._last_comparison.option_ref,
+                "sent_t_monde": self._last_comparison.sent_t_monde,
+                "observed_t_monde": self._last_comparison.observed_t_monde,
+                "status": self._last_comparison.status,
+                "attribution": self._last_comparison.attribution,
+                "effects": list(self._last_comparison.effects),
+            },
         }
 
     def restore_causal_state(self, state: object) -> None:
@@ -383,3 +539,44 @@ class ActionControl:
         self._current_option_ref = option_ref
         self._current_plan_ref = plan_ref
         self._current_step_index = step_index
+
+        raw_pending = state.get("pending_prediction")
+        if raw_pending is None:
+            self._pending_prediction = None
+        elif isinstance(raw_pending, dict):
+            self._pending_prediction = {
+                "option_ref": raw_pending.get("option_ref"),
+                "sent_t_monde": int(raw_pending["sent_t_monde"]),
+                "deadline_t_monde": int(raw_pending["deadline_t_monde"]),
+                "consequences": tuple(
+                    PredictedConsequence(
+                        variable=str(item["variable"]),
+                        value_or_delta=float(item["value_or_delta"]),
+                        precision=float(item["precision"]),
+                    )
+                    for item in raw_pending.get("consequences", [])
+                ),
+            }
+        else:
+            raise ValueError("invalid pending prediction state")
+
+        raw_comparison = state.get("last_comparison")
+        if raw_comparison is None:
+            self._last_comparison = None
+        elif isinstance(raw_comparison, dict):
+            self._last_comparison = AgencyComparison(
+                option_ref=(
+                    None
+                    if raw_comparison.get("option_ref") is None
+                    else str(raw_comparison["option_ref"])
+                ),
+                sent_t_monde=int(raw_comparison["sent_t_monde"]),
+                observed_t_monde=int(raw_comparison["observed_t_monde"]),
+                status=str(raw_comparison["status"]),
+                attribution=str(raw_comparison["attribution"]),
+                effects=tuple(
+                    dict(item) for item in raw_comparison.get("effects", [])
+                ),
+            )
+        else:
+            raise ValueError("invalid agency comparison state")
