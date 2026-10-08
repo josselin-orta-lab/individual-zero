@@ -296,6 +296,16 @@ jobs:
               "stage4_f_cog_uc="
               f"{runtime.metacognition.state.f_cog_uc_counter}"
           )
+          expected = "87e2de3c49f07bafa8026ef785e5e50abf38c98314e780b3e2c5107bf26bdac8"
+          if runtime.journal.head_hash != expected:
+              raise SystemExit(
+                  f"Stage 4 reference regression: {runtime.journal.head_hash} != {expected}"
+              )
+          if runtime.metacognition.state.f_cog_uc_counter != 9551:
+              raise SystemExit(
+                  "Stage 4 F_cog UC regression: "
+                  f"{runtime.metacognition.state.f_cog_uc_counter} != 9551"
+              )
           PY
 
       - name: Upload Stage 4 reference journal
