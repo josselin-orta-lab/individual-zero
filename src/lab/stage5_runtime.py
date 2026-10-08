@@ -144,18 +144,6 @@ class Stage5Runtime(Stage4Runtime):
     def stage5_config(self) -> Stage5Config:
         return self._stage5_config
 
-    def copy_constructor_kwargs(self) -> dict[str, object]:
-        return {
-            "world_config": self._birth_world_config,
-            "layout": self._birth_layout,
-            "safety_config": self._birth_safety_config,
-            "safety_facts": self._birth_safety_facts,
-            "protected_integrity_threshold": (
-                self._birth_protected_integrity_threshold
-            ),
-            "config": self._stage5_config,
-        }
-
     @property
     def battery_copy(self) -> bool:
         return self.temperament_projection.battery_copy
