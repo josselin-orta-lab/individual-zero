@@ -42,7 +42,7 @@ Long-form reference documents are organized by language under [`reference/`](ref
 
 For the current French documentation:
 
-1. [Normative MVP specification v1.2](reference/fr/mvp-specification-v1.2.md) is the **implementation authority for the MVP**.
+1. [Normative MVP specification v1.2.1](reference/fr/mvp-specification-v1.2.1.md) is the **implementation authority for the MVP**.
 2. [Conceptual architecture v2](reference/fr/architecture-v2.md) is the broader conceptual and scientific architecture.
 3. Repository-specific notes such as the I0 overview and bootstrap runtime document the current codebase and must remain consistent with the normative MVP specification.
 
