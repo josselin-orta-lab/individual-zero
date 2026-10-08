@@ -16,7 +16,7 @@ from .determinism import deterministic_id
 from .journal import HashChainedJournal
 from .scheduler import Scheduler
 from .snapshots import CausalStateOwner, SnapshotManager
-from .world import Command, TransitionResult
+from .world import Command, TransitionResult, command_digest
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,7 +81,7 @@ class LethalSafetyProtocol:
         return self._suspended
 
     def is_masked(self, command: Command) -> bool:
-        return command.digest() in self._masked_command_hashes
+        return command_digest(command) in self._masked_command_hashes
 
     def _write(self, *, kind: str, data: Mapping[str, object]) -> None:
         attempt = self._scheduler.active_attempt
@@ -117,7 +117,7 @@ class LethalSafetyProtocol:
         if not transition.lethal:
             raise ValueError("handle_lethal requires a lethal transition")
 
-        command_hash = command.digest()
+        command_hash = command_digest(command)
         self._write(
             kind="lethal_transition_detected",
             data={
