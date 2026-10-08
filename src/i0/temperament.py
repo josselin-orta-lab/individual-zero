@@ -180,9 +180,21 @@ class TemperamentProjection:
         *,
         temperament: Temperament,
         mapping: TemperamentMappingConfig,
+        individual_id: str = "i0-stage5",
+        lineage_id: str | None = None,
+        parent_id: str | None = None,
+        copy_snapshot_id: str | None = None,
+        battery_copy: bool = False,
     ) -> None:
         temperament.validate()
         mapping.validate()
+        if not individual_id:
+            raise ValueError("individual_id must not be empty")
+        self._individual_id = individual_id
+        self._lineage_id = lineage_id or individual_id
+        self._parent_id = parent_id
+        self._copy_snapshot_id = copy_snapshot_id
+        self._battery_copy = bool(battery_copy)
         self._tau = temperament
         self._mapping = mapping
         self._derived = self._project_once(temperament, mapping)
@@ -194,6 +206,26 @@ class TemperamentProjection:
     @property
     def mapping_version(self) -> str:
         return self._mapping.version
+
+    @property
+    def individual_id(self) -> str:
+        return self._individual_id
+
+    @property
+    def lineage_id(self) -> str:
+        return self._lineage_id
+
+    @property
+    def parent_id(self) -> str | None:
+        return self._parent_id
+
+    @property
+    def copy_snapshot_id(self) -> str | None:
+        return self._copy_snapshot_id
+
+    @property
+    def battery_copy(self) -> bool:
+        return self._battery_copy
 
     @staticmethod
     def _project_once(
@@ -258,6 +290,11 @@ class TemperamentProjection:
     def export_causal_state(self) -> object:
         return {
             "mapping_version": self._mapping.version,
+            "individual_id": self._individual_id,
+            "lineage_id": self._lineage_id,
+            "parent_id": self._parent_id,
+            "copy_snapshot_id": self._copy_snapshot_id,
+            "battery_copy": self._battery_copy,
             "tau": self._tau.as_dict(),
             "derived": self._derived.as_dict(),
         }
@@ -289,4 +326,39 @@ class TemperamentProjection:
         raw_derived = state.get("derived")
         if raw_derived != recomputed.as_dict():
             raise ValueError("derived temperament parameters do not match table")
+        self._derived = recomputed
+
+        if state.get("individual_id") != self._individual_id:
+            raise ValueError("individual identity mismatch on ordinary restoration")
+        if state.get("lineage_id") != self._lineage_id:
+            raise ValueError("lineage mismatch on ordinary restoration")
+        if state.get("parent_id") != self._parent_id:
+            raise ValueError("parent mismatch on ordinary restoration")
+        if state.get("copy_snapshot_id") != self._copy_snapshot_id:
+            raise ValueError("copy point mismatch on ordinary restoration")
+        if bool(state.get("battery_copy", False)) != self._battery_copy:
+            raise ValueError("battery-copy status mismatch on ordinary restoration")
+
+    def restore_copy_causal_state(self, state: object) -> None:
+        """Restore inherited parameters while preserving the new branch identity."""
+        if not isinstance(state, Mapping):
+            raise ValueError("copy temperament state must be a mapping")
+        if state.get("mapping_version") != self._mapping.version:
+            raise ValueError("temperament mapping version mismatch")
+        raw_tau = state.get("tau")
+        if not isinstance(raw_tau, Mapping):
+            raise ValueError("copy snapshot is missing tau")
+        inherited = Temperament(
+            reward_sensitivity=float(raw_tau["reward_sensitivity"]),
+            threat_sensitivity=float(raw_tau["threat_sensitivity"]),
+            exploration=float(raw_tau["exploration"]),
+            goal_protection=float(raw_tau["goal_protection"]),
+            affiliation=float(raw_tau["affiliation"]),
+        )
+        inherited.validate()
+        if inherited != self._tau:
+            raise ValueError("copy must inherit the exact parent temperament")
+        recomputed = self._project_once(inherited, self._mapping)
+        if state.get("derived") != recomputed.as_dict():
+            raise ValueError("copy derived temperament parameters mismatch")
         self._derived = recomputed
