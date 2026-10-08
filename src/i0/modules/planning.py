@@ -22,6 +22,7 @@ from i0.contracts import (
 )
 from i0.interfaces import PrimitiveCommand
 from i0.modules.perception import PerceivedEntity
+from i0.serde import decode_proposal, encode_proposal
 
 
 @dataclass(frozen=True, slots=True)
@@ -246,25 +247,26 @@ class GreedyPlannerE0:
         return proposal.plan.steps[0].command
 
     def export_causal_state(self) -> object:
-        plan = self._current_plan
         return {
             "config_version": self._config.version,
-            "current_plan": None if plan is None else {
-                "id": plan.id,
-                "option_ref": plan.option_ref,
-                "version": plan.version,
-                "steps": [
-                    {
-                        "index": step.index,
-                        "command": step.command.as_dict(),
-                        "preconditions": list(step.preconditions),
-                        "observation_window_steps": step.observation_window_steps,
-                    }
-                    for step in plan.steps
-                ],
-                "goal_ref": plan.goal_ref,
-                "budget_used_uc": plan.budget_used_uc,
-                "status": plan.status,
-                "st_version": plan.st_version,
-            },
+            "current_proposal": (
+                None
+                if self._current_proposal is None
+                else encode_proposal(self._current_proposal)
+            ),
         }
+
+    def restore_causal_state(self, state: object) -> None:
+        if not isinstance(state, Mapping):
+            raise ValueError("Planning state must be a mapping")
+        if state.get("config_version") != self._config.version:
+            raise ValueError("Planning config version mismatch")
+        raw = state.get("current_proposal")
+        if raw is None:
+            self.invalidate_current()
+            return
+        if not isinstance(raw, Mapping):
+            raise ValueError("invalid Planning proposal state")
+        proposal = decode_proposal(raw)
+        self._current_proposal = proposal
+        self._current_plan = proposal.plan
