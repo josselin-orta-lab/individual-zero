@@ -73,7 +73,7 @@ class GoalManager:
     def defer_proposals(self, proposals: Sequence[GoalProposal]) -> None:
         for proposal in proposals:
             proposal.validate()
-        self._next_proposals = tuple(proposals)
+        self._next_proposals = self._next_proposals + tuple(proposals)
 
     def close_cycle_inputs(self) -> None:
         """Make current-cycle proposals visible to the next cycle."""
