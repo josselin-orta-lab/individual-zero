@@ -198,19 +198,40 @@ class Stage3Runtime:
 
         return self._dispatch(prepared=prepared)
 
-    def run_step(self) -> Stage3StepResult:
+    def attempt_reflex(self):
+        """Attempt only the direct reflex path, with no ordinary fallback.
+
+        Returns (proposal, admission, execution). A refused or rolled-back
+        reflex leaves the current world step open for cognitive deliberation.
+        """
+
         capture = self._capture_required()
         reflex = self.control.reflex(capture)
+        if reflex is None:
+            return None, None, None
 
-        if reflex is not None:
+        self._write(
+            kind="reflex_proposed",
+            data={
+                "stimulus": reflex.stimulus,
+                "command_hash": command_digest(reflex.prepared.command),
+            },
+        )
+        admission, execution = self._dispatch(prepared=reflex.prepared)
+        if not admission.ok:
             self._write(
-                kind="reflex_proposed",
+                kind="reflex_refused",
                 data={
-                    "stimulus": reflex.stimulus,
-                    "command_hash": command_digest(reflex.prepared.command),
+                    "reason": admission.reason,
+                    "rule_id": admission.rule_id,
                 },
             )
-            admission, execution = self._dispatch(prepared=reflex.prepared)
+        return reflex, admission, execution
+
+    def run_step(self) -> Stage3StepResult:
+        reflex, admission, execution = self.attempt_reflex()
+
+        if reflex is not None and admission is not None:
             if admission.ok and execution is not None:
                 if execution.status == "applied":
                     self._capture = None
@@ -231,14 +252,6 @@ class Stage3Runtime:
                         admission=admission,
                     )
                 # Lethal rollback: reflex is not replayed. Continue to wait stub.
-            else:
-                self._write(
-                    kind="reflex_refused",
-                    data={
-                        "reason": admission.reason,
-                        "rule_id": admission.rule_id,
-                    },
-                )
 
         wait = PreparedCommand(
             command=PrimitiveCommand("attendre"),
