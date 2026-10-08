@@ -252,6 +252,16 @@ class CanonicalCorrectionTests(unittest.TestCase):
         self.assertEqual(predicted_integrity(control), 100.0)
         self.assertEqual(predicted_integrity(simulator), 90.0)
         self.assertEqual(predicted_integrity(control), 100.0)
+        annotated = simulator.rollout(
+            initial_state=before, commands=(command,), r_eff=1, h_eff=1,
+        )
+        self.assertEqual(annotated.corrected_contingency_refs, (REF,))
+        self.assertEqual(
+            control.rollout(
+                initial_state=before, commands=(command,), r_eff=1, h_eff=1,
+            ).corrected_contingency_refs,
+            (),
+        )
         changed_context = replace(before, x=5)
         fallback, refs = correct_equipment_prediction(
             source=m, command=command, state=changed_context,
@@ -297,6 +307,12 @@ class CanonicalCorrectionTests(unittest.TestCase):
         self.assertEqual(m.get(REF).causal_status, "hypothese_causale")
         self.assertEqual(m.established_prediction_corrections(), ())
         self.assertEqual(predicted_integrity(simulator), 100.0)
+        self.assertEqual(
+            simulator.rollout(
+                initial_state=before, commands=(command,), r_eff=1, h_eff=1,
+            ).corrected_contingency_refs,
+            (),
+        )
 
     def test_safety_status_alone_never_produces_simulator_rule(self):
         m = model()
