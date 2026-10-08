@@ -34,6 +34,28 @@ Experiments should record the exact reference configuration or commit used.
 
 Avoid hidden defaults that cannot be reconstructed later.
 
-## Future structure
+## Current normative structural contracts
 
-Once implementation begins, prefer explicit versioned configuration files over undocumented runtime defaults.
+The first MVP v1.2.1 implementation layer now defines structural contracts in `contracts.py`.
+
+It currently provides:
+
+- the closed MVP ontology registry;
+- the deterministic similarity-schema contract;
+- the closed κ signal-family registry;
+- the three-category MVP safety policy;
+- the schema compatibility registry for Stage 1 message types;
+- the normative set of parameter identifiers P-01 through P-58;
+- builders that require campaign parameter values to be supplied explicitly.
+
+No P-xx numerical value is invented here. A complete parameter registry can only be built when all 58 values have been explicitly supplied by preregistration/calibration.
+
+These artifacts are versioned and hashable. Their hashes are intended to enter the causal run manifest before execution.
+
+## Placement rule
+
+Generic loading, hashing, compatibility validation, and deterministic rejection belong in `lab`.
+
+The concrete normative I0 vocabulary, schema set, signal families, safety categories, and parameter identifiers belong here because they define the reference I0 contract.
+
+Do not move cognitive state or cognitive policy into this directory merely because it is configurable.
