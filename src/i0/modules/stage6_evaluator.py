@@ -38,6 +38,17 @@ class Stage6EvaluationConfig:
             raise ValueError("effective simulation budgets must be >= 1")
 
 
+@dataclass(frozen=True, slots=True)
+class PlanRevisionComparison:
+    status: str  # improved | not_improved | unavailable
+    old_value: float | None
+    new_value: float | None
+    delta: float | None
+    required_delta: float
+    r_eff: int
+    h_eff: int
+
+
 class Stage6OptionEvaluator:
     def __init__(
         self,
@@ -153,4 +164,57 @@ class Stage6OptionEvaluator:
         return OptionEvidenceInput(
             evaluation=evaluation,
             evidence=evidence,
+        )
+
+    def compare_revised_plans(
+        self,
+        *,
+        old_proposal: OptionProposal,
+        new_proposal: OptionProposal,
+        initial_state: SimulationState,
+        delta_plan: float,
+        cycle: int,
+        t_monde: int,
+    ) -> PlanRevisionComparison:
+        if delta_plan < 0.0:
+            raise ValueError("Delta_plan must be non-negative")
+
+        old = self.evaluate(
+            proposal=old_proposal,
+            initial_state=initial_state,
+            cycle=cycle,
+            t_monde=t_monde,
+        ).evaluation
+        new = self.evaluate(
+            proposal=new_proposal,
+            initial_state=initial_state,
+            cycle=cycle,
+            t_monde=t_monde,
+        ).evaluation
+
+        if (
+            old.simulated_value_status != "computed"
+            or new.simulated_value_status != "computed"
+            or old.simulated_value is None
+            or new.simulated_value is None
+        ):
+            return PlanRevisionComparison(
+                status="unavailable",
+                old_value=old.simulated_value,
+                new_value=new.simulated_value,
+                delta=None,
+                required_delta=delta_plan,
+                r_eff=self._config.r_eff,
+                h_eff=self._config.h_eff,
+            )
+
+        delta = new.simulated_value - old.simulated_value
+        return PlanRevisionComparison(
+            status="improved" if delta >= delta_plan else "not_improved",
+            old_value=old.simulated_value,
+            new_value=new.simulated_value,
+            delta=delta,
+            required_delta=delta_plan,
+            r_eff=self._config.r_eff,
+            h_eff=self._config.h_eff,
         )

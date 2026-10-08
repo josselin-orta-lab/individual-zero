@@ -451,6 +451,22 @@ class Stage4Runtime:
             cycle=cycle,
         )
 
+    def _register_option_proposal(
+        self,
+        *,
+        proposal: OptionProposal,
+        active_goal_id: str | None,
+        t_monde: int,
+        cycle: int,
+    ) -> bool:
+        """Stage-specific registration seam; Stage 4 keeps exact semantics."""
+        del cycle
+        return self.competition.register(
+            proposal,
+            active_goal_id=active_goal_id,
+            t_monde=t_monde,
+        )
+
     def _evaluate_competition_cycle(
         self,
         *,
@@ -686,14 +702,15 @@ class Stage4Runtime:
                 t_monde=capture.t_monde,
             )
             if self._proposal_this_cycle is not None:
-                registered = self.competition.register(
-                    self._proposal_this_cycle,
+                registered = self._register_option_proposal(
+                    proposal=self._proposal_this_cycle,
                     active_goal_id=(
                         None
                         if self.goal_manager.active_goal is None
                         else self.goal_manager.active_goal.id
                     ),
                     t_monde=capture.t_monde,
+                    cycle=cycle,
                 )
                 self._write(
                     kind="option_registration",
