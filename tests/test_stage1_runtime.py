@@ -3,13 +3,25 @@ from __future__ import annotations
 import time
 import unittest
 
+from lab.compute_budget import ComputeBudgetConfig
 from lab.stage1_runtime import ScriptedStage1Runtime
 from lab.snapshots import SnapshotType
 
 
+def fixture_budget_config() -> ComputeBudgetConfig:
+    return ComputeBudgetConfig(
+        version="stage1-test-v1",
+        cycle_ceiling=100,
+        module_envelopes={"stage1_fixture": 100},
+        protected_modules=frozenset({"stage1_fixture"}),
+        protected_capacity=10,
+        operation_costs={"fixture_op": 1},
+    )
+
+
 class ScriptedStage1RuntimeTests(unittest.TestCase):
     def run_reference(self, *, steps: int) -> ScriptedStage1Runtime:
-        runtime = ScriptedStage1Runtime(campaign_seed=17)
+        runtime = ScriptedStage1Runtime(campaign_seed=17, budget_config=fixture_budget_config())
         for _ in range(steps):
             runtime.run_step(cycle=1)
         return runtime
@@ -71,7 +83,7 @@ class ScriptedStage1RuntimeTests(unittest.TestCase):
         self.assertEqual(after, before)
 
     def test_world_advances_once_per_normal_step(self) -> None:
-        runtime = ScriptedStage1Runtime(campaign_seed=17)
+        runtime = ScriptedStage1Runtime(campaign_seed=17, budget_config=fixture_budget_config())
 
         runtime.run_step(cycle=1)
         runtime.run_step(cycle=1)
@@ -81,7 +93,7 @@ class ScriptedStage1RuntimeTests(unittest.TestCase):
         self.assertEqual(runtime.scheduler.t_monde, 3)
 
     def test_bus_is_empty_at_normal_step_boundary(self) -> None:
-        runtime = ScriptedStage1Runtime(campaign_seed=17)
+        runtime = ScriptedStage1Runtime(campaign_seed=17, budget_config=fixture_budget_config())
 
         runtime.run_step(cycle=1)
 
@@ -95,8 +107,8 @@ class ScriptedStage1RuntimeTests(unittest.TestCase):
         self.assertTrue(runtime.snapshots.verify(snapshot.id))
 
     def test_machine_delay_has_no_causal_effect(self) -> None:
-        baseline = ScriptedStage1Runtime(campaign_seed=23)
-        delayed = ScriptedStage1Runtime(campaign_seed=23)
+        baseline = ScriptedStage1Runtime(campaign_seed=23, budget_config=fixture_budget_config())
+        delayed = ScriptedStage1Runtime(campaign_seed=23, budget_config=fixture_budget_config())
 
         for _ in range(3):
             baseline.run_step(cycle=1)
