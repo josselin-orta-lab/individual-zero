@@ -100,7 +100,9 @@ class ReflexProposal:
 
 
 class ActionControl:
-    """Only Stage-3 authority allowed to admit commands toward the world."""
+    """Only authority allowed to admit commands toward the world."""
+
+    owner_id = "action_control"
 
     def __init__(
         self,
