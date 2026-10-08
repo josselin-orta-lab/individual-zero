@@ -2102,3 +2102,303 @@ Each [C] arrow is a direct prerequisite, with its label specifying what the upst
 | Observable behavior | the individual eats, drinks, sleeps, and moves away from danger through the architecture; every command links to its option, motive, and grounding contributions |
 | Acceptance tests | criteria in 20.4; one writer only for active goal; no contribution reinjected into the cycle that created it; option registry never exceeds N_options_max excluding `attendre`; an option cannot use its own proposal as evidence; engaged option restarts from zero at every step; no deliberation beyond C_max; exact replay of one day |
 | Gate | INV-01, INV-04 through INV-12, INV-17 through INV-21 green |
+
+
+**Stage 5 · Temperament and first individuals.**
+
+| Field | Content |
+| --- | --- |
+| Objective | make the postulate measurable as soon as a loop exists, and validate battery reliability early |
+| Build | temperament mapping table (7.3), injected into gatekeeper weights, competition, and need weights; body setpoints remain fixed in the MVP; copies and lineage (17.7); trait battery on copies, injected scenarios (19.5); profile dashboard |
+| Dependencies | stage 4; preregistered temperament parameters |
+| Stubs | equipment E-0; neither memory nor learning |
+| Interfaces | `TABLE_TEMPÉRAMENT(τ) → derived parameters`; `COPIER(individu, t) → individu`; `BATTERIE.passer(copie, situation)` |
+| Observable behavior | A and B produce two distinct profiles; noise control; ablation variants B1 and B2 |
+| Acceptance tests | test-retest reliability measured; gap between temperaments compared with noise control; τ = 0 on all dimensions reproduces the neutral system exactly; a battery copy does not consolidate and never modifies its parent |
+| Gate | INV-30 and INV-34 green; battery judged reliable according to the preregistered threshold |
+
+**Stage 6 · Equipment and simulator.**
+
+| Field | Content |
+| --- | --- |
+| Objective | predict option consequences for multi-step planning and simulated evidence |
+| Build | trajectory corpus, including required families, tool crafting and collection with a tool (12.5); offline training of E-v1 through E-v3, freezing, versioning; simulation service under R_max and H_max; replacement of E-0; multi-step planning; E_a^sim; adoption of revised plans (DC-17) |
+| Dependencies | stages 2 and 4 |
+| Stubs | learned contingencies: none |
+| Interfaces | `SIMULATEUR.dérouler(état, option, R, H) → predictions`; `PLANIFICATION.planifier(but ou cible) → (option, plan)` |
+| Observable behavior | the running-example shelter plan is found; equipment prediction errors are emitted and typed |
+| Acceptance tests | error by horizon and calibration measured; three versions within the conjunctive tolerances (12.5); shelter plan found under fixed budget; every interrupted computation is marked incomplete, logged, and excluded from simulated evidence |
+| Gate | replacement of E-0 by E-v1 without changing the contract or competition |
+
+**Stage 7 · Memory.**
+
+| Field | Content |
+| --- | --- |
+| Objective | open history: without memory, H2 has no object |
+| Build | episode segmentation (10.3); episodic memory and recall (10.4); prospective memory, intentions, and wake-deadline index (10.5); requests and responses (4.5); reading of the autobiographical view (DC-09) |
+| Dependencies | stage 4 |
+| Stubs | vector index replaced by exact search |
+| Interfaces | `MÉMOIRE.rappeler(indices)`, `répondre(Requete)`, `créer_intention(Intention)`; `JOURNAL.vue_autobiographique(filtre)` |
+| Observable behavior | the individual finds a known water source, keeps an intention, responds to the planner |
+| Acceptance tests | exact recall checked against journal; measured gain on past-dependent tasks; no technical-view event readable by Memory; a triggered intention passes through the gatekeeper and never changes the goal by itself |
+| Gate | INV-02 and INV-27 extended to Memory |
+
+**Stage 8 · Online learning and calibration.**
+
+| Field | Content |
+| --- | --- |
+| Objective | make histories diverge through experienced consequences |
+| Build | option values by temporal difference with traces, in two forms (11.1, DC-15); E_a^Q; verification by type (11.3); κ maps computed and published by Metacognition and Health, verification provenance (DC-06); perceptual precisions in two forms |
+| Dependencies | stages 6 and 7 |
+| Stubs | consolidation: none; consolidated forms remain equal to birth values |
+| Interfaces | `VALEUR_BESOINS.mise_à_jour_TD(segment, option)`; `MÉTACOGNITION.intégrer(vérification)`, `publier_κ()` |
+| Observable behavior | the individual avoids the toxic berry after a few trials; module reliabilities adjust |
+| Acceptance tests | learning curves; decreasing Brier score; canary test extended to calibration; an update is never visible in the cycle that produced it; no self-validating verification; repeated same-channel signals without independent consequence: κ unchanged |
+| Gate | INV-03, INV-05, INV-07, INV-16, INV-26, and INV-43 green |
+
+**Stage 9 · Causal model and agency.**
+
+| Field | Content |
+| --- | --- |
+| Objective | distinguish correlation from cause and make safety facts usable by the veto |
+| Build | canonical source of contingencies (13); hypothesis lifecycle (13.2); usage statuses, safety promotion and demotion (13.3, DC-05); test proposals; full agency comparator and attribution (9.6); `verifier_admissibilite` connected to `etabli_pour_securite` |
+| Dependencies | stages 7 and 8 |
+| Stubs | rules produced by consolidation: none |
+| Interfaces | `MODÈLE_CAUSAL.contingences(contexte, statut)`, `proposer_test()`; `CONTRÔLE.attribuer(commande, observations)` |
+| Observable behavior | the running-example nighttime attribution; toxic berry prohibited by veto without another ingestion |
+| Acceptance tests | correct links in worlds with known causes; rate of superstitious rules below the preregistered threshold; simulator applies only `etablie` contingencies; a fact `etabli_pour_securite` makes the option inadmissible without changing R_a or predictions |
+| Gate | INV-25 green |
+
+**Stage 10 · Sleep and consolidation.**
+
+| Field | Content |
+| --- | --- |
+| Objective | build slow history: H3 and ablation A2 depend on it |
+| Build | sleep pressure and m_a(dormir), without double counting (15.1, DC-13); reduced perception and wake rule (15.3); transactional consolidation: cut point, frozen batch, passes, validation, rebase, coordinated commit (15.6); semantic and procedural memories; compiled skills and habits; extracted rules returned to the causal model (DC-16); h versions |
+| Dependencies | stages 7, 8, and 9 |
+| Stubs | none |
+| Interfaces | `CONSOLIDATION.démarrer(t)`, `reprendre()`, `créneau(budget)`, `interrompre()`, `valider()`; `PROPRIÉTAIRE.préparer_rebasage(h_new, journal_post_coupure)`; `ORDONNANCEUR.commit_coordonné(...)` |
+| Observable behavior | "closed shelter before sleep" compiled; lives compared with and without consolidation; waking at dawn from a dated intention |
+| Acceptance tests | extracted rules checked against oracle on the bench side; a consolidation interrupted at a randomly selected point does not corrupt h and loses no update after the cut point; at the next sleep the same consolidation_ref resumes before any new batch; L_sommeil_max bounds every continuous sleep; no variable from D contributes to m_a(dormir) |
+| Gate | INV-14, INV-23, INV-24, and INV-47 green |
+
+**Stage 11 · Exploration and modulation.**
+
+| Field | Content |
+| --- | --- |
+| Objective | assign value to information and complete modulation profiles |
+| Build | novelty, learning progress, boredom (14); exploration targets; m_a for informational options and tests, modulated by the temperament exploration dimension; threat, exploration, and recovery profiles with entry and exit conditions (6.4) |
+| Dependencies | stages 5 and 8 |
+| Stubs | none |
+| Interfaces | `EXPLORATION.cibles()`, `motivation(option) → m_a`; `MODULATION.profil(S_t)` |
+| Observable behavior | B explores north; threat and recovery profiles activate and deactivate |
+| Acceptance tests | noisy-TV trap avoided; coverage measured; no profile oscillation; exploration dimension never modifies g |
+| Gate | INV-06 and INV-14 green for exploration |
+
+**Stage 12 · Metacognition, health, and guardrails.**
+
+| Field | Content |
+| --- | --- |
+| Objective | sustain long lives without continuous supervision |
+| Build | detectors: stagnation, reasoning loops, entropy of S_t occupancy, attribution bias; quotas; complete budgets and degraded modes (16.3, DC-07); console: stop, caps, safety block (DC-14); goal/action alignment metric in three categories |
+| Dependencies | stages 10 and 11 |
+| Stubs | none |
+| Interfaces | `MÉTACOGNITION.détecteurs()`; `CONSOLE.arrêter()`, `plafonner()`; `CONSOLE.résoudre_blocage(décision)` available in diagnostic mode only |
+| Observable behavior | 60-day lives without intervention |
+| Acceptance tests | one simulated failure per detector, detected; stop exercise; stop-avoidance scenarios; every degraded mode conforms to DC-07 under increasing load; `non_evalue` candidate with unchanged accumulator; safety block in campaign mode closes without human intervention, in diagnostic mode suspends and may later resume |
+| Gate | all invariants in 21 green |
+
+**Stage 13 · MVP campaign.**
+
+| Field | Content |
+| --- | --- |
+| Objective | test H1, H2, H4, and H6 |
+| Build | preregistration (19.5); crossed plan; E-v1 to E-v2 substitution; bifurcation copies; ablations; analyses |
+| Dependencies | stages 1 through 12; parameter registry (22) completely filled and frozen |
+| Stubs | none |
+| Interfaces | `CAMPAGNE.lancer(plan, version_registre)` |
+| Observable behavior | all lives in the plan, journals retained |
+| Acceptance tests | exit criteria from 19.5 met; results published whether favorable or not |
+| Gate | end of tier 1 |
+
+### 20.4 Minimal cognitive system
+
+The minimal cognitive system is the software state at the end of stage 4: the smallest subset that perceives, decides, and acts through the architecture rather than alongside it.
+
+| Component | Minimal form |
+| --- | --- |
+| Substrate | complete: it is not simplified |
+| World | grid, water, nutritious berries, stones, one creature to test the reflex |
+| Body | energy, food, water, integrity |
+| Perception | symbolic read without noise; the last known position of each entity serves as the map |
+| Value and Needs | deviations from setpoints, alerts, r_t, goal proposals |
+| Goal Manager | the most pressing need above p_min becomes the active goal, with hysteresis Δ_but (DC-03) |
+| Gatekeeper | function from 6.4 with fixed weights, f = 1, safety preemption, queues, and quotas |
+| S_t | fixed slots and K = 4 |
+| Proposer | greedy planner toward the resource for the active goal, using movement model E-0 |
+| Option Competition | accumulators, common threshold, substitution evidence, inertia, fallback to engaged option or `attendre` |
+| Action Control | veto, avoidance reflex, step execution, position comparator |
+| Temperament | injection point present, neutral values |
+
+Absent are: memory beyond the journal, learning, learned equipment, causal model, exploration, consolidation, and metacognition, reduced to instrumentation and the F_cog counter.
+
+**One loop iteration, running example.**
+
+1. Step t: the world publishes local state; the body publishes telemetry (water 35, setpoint 60).
+2. Perception: observation "water 5 cells north", anchored to the world.
+3. Value and Needs: alert "water below setpoint" and proposal of goal "drink"; in the next cycle, the Goal Manager makes it the active goal.
+4. Gatekeeper: the alert and observation enter S_t, which is published.
+5. Planner: proposed option (but_ref boire, motif_ref but_actif) "go to water then drink", with predicted position after every step.
+6. Competition: this option crosses its threshold; "attendre" remains below its own.
+7. Control: command admitted, veto passed; first command "north", predicted consequence: one cell farther north.
+8. World: movement; body: energy cost.
+9. Step t + 1: perception of the new position; comparator: zero deviation; the engaged option competes again, restarts from a zero accumulator, and wins thanks to its inertia: the next step executes [NQ-02, V-34].
+10. After "drink": r_t positive, need falls, goal is satisfied, another goal takes its place.
+
+**What is observed.** The journal, S_t versions, full trace of every decision (contributions, S_t, EvaluationOption, accumulators, command, result), body variables, and S_t occupancy by module.
+
+**Acceptance criteria.**
+
+- Survival: variables remain within their ranges for the specified duration, without intervention, lethal transition, or rollback, supported by external counters [V-40].
+- Traceability: every command links to at least one contribution, the S_t version that grounded it, and its option; every option to its motif_ref, and to its but_ref when serving the goal [V-10].
+- Priority: a reflex interrupts plan execution when a creature becomes adjacent; the engaged option remains engaged (DC-12).
+- Replay: one day replays identically.
+- Reference: performance of the same order as the scripted agent from stage 2.
+
+**Why this scope.** Any smaller and the architecture disappears: without the gatekeeper and S_t, the loop works but tests nothing from the specification. Without competition, the planner would become the central decision-maker excluded by the architecture. Any larger and verifiability is lost: memory is not required for the loop, and learning would make failures difficult to attribute.
+
+**Extension points.** Every following building block connects in one of three ways without changing the contract, gatekeeper, S_t, or competition:
+
+- as a new contributor on the bus: memory, causal model, exploration;
+- by replacing a stub: E-0 with E-v1, f = 1 with κ, substitution evidence with E_a^sim then E_a^Q, fixed weights with weights derived from τ;
+- as an offline task: consolidation.
+
+### 20.5 Prerequisites by stage
+
+| Stage | Required supplementary decisions | Required parameters (22) |
+| --- | --- | --- |
+| 1 | DC-08, DC-09, DC-11 | P-55 |
+| 2 | DC-08, DC-09, DC-14 | P-29, P-37, P-38, P-49, P-52 to P-54 |
+| 3 | DC-12 | P-37, P-47 |
+| 4 | DC-01, DC-02, DC-03, DC-04, DC-10, DC-11, DC-12, DC-15 | P-01 to P-07, P-11, P-12, P-18 to P-22, P-25 to P-28, P-43, P-56 |
+| 5 | — | P-08 to P-10, P-16, P-22, P-29, P-51, P-54 |
+| 6 | DC-17 | P-14, P-17, P-45, P-46 |
+| 7 | DC-09 | P-34 |
+| 8 | DC-06, DC-15 | P-13, P-30 to P-33 |
+| 9 | DC-05 | P-35, P-36, P-47 |
+| 10 | DC-13, DC-16 | P-15, P-39 to P-42, P-57 |
+| 11 | — | P-15, P-23, P-24, P-48 |
+| 12 | DC-07, DC-14 | P-43, P-44 |
+| 13 | — | complete registry, frozen |
+
+## 21. Tests and invariants
+
+An invariant is a property that MUST remain true at every step of every life. Each has at least one automatable test, run at every integration and on every reference journal (20.1).
+
+### 21.1 Architecture invariants
+
+| Id | Invariant | Automatable test | Origin |
+| --- | --- | --- | --- |
+| INV-01 | Every mutable state has exactly one owner, the only component authorized to write it. | writer registry compared with table 5.3; inject a write by another component: refused and logged | 5.3, NQ-01, NQ-09, NQ-10 |
+| INV-02 | No component of the individual accesses the oracle channel, the technical journal view, or the evaluation trace. | access attempt from every component; code dependency analysis: no link to these interfaces | S-12.4, DC-09 |
+| INV-03 | No oracle-derived information reaches individual state. | canaries known only to oracle, searched in S_t, memories, κ, values, h, causal model; repeated for every new learning mechanism | S-12.4 |
+| INV-04 | A published S_t version is immutable. | hash at publication equals hash reread at end of life; write to a published version: refused | S-02.2 |
+| INV-05 | The κ version used during a cycle remains frozen. | verifications injected during the cycle: cycle scoring identical to scoring without them | S-08.6 |
+| INV-06 | The modulation profile remains fixed during a cycle. | alert change injected between two phases: profile unchanged until the next cycle | S-02.6 |
+| INV-07 | A learned update never influences the cycle that produced it; Q_active becomes visible only at the next step. | compare evidence in a cycle with and without a simultaneous update: identical | S-05.1, DC-15 |
+| INV-08 | A contribution produced in reaction to S_t[n+1] never enters a version published during the same cycle. | cycle timestamp of every contribution compared with that of the version admitting it: always later | S-02.2 |
+| INV-09 | A deliberation has at most C_max cycles; world and body remain frozen during deliberation. | cycle count per step; world-state hash identical at start and end of deliberation | S-02.1, S-05.8 |
+| INV-10 | Every option carries a motif_ref; a but_ref, if present, designates the current active goal. | contract validation: option without motif_ref or with stale but_ref rejected | V-10 |
+| INV-11 | Active goal is written only by the Goal Manager; an autonomous intrinsic option does not change it and receives no b term. | monitor writes to but_actif slot; b score zero for every option without but_ref | NQ-01, V-10 |
+| INV-12 | Every command links either to a decided option and the S_t version that grounded it, or to a direct mechanism and the capture or stimulus that triggered it; current S_t may then be recorded as context but is not a cause of the reflex. | journal query: cognitive command → option → contributions → S_t version; reflex command → reflex → step capture/stimulus | spéc. 6.9, DC-12 |
+| INV-13 | Reflexes and vetoes never enter competition; veto never chooses an action. | candidate registry contains neither reflex nor veto; after a veto, next command always comes from competition or a reflex | S-06.3, S-14.5 |
+| INV-14 | No signal identifier contributes twice to the same decision except under a declared "intentional double effect" rule. | provenance of every decided EvaluationOption: signal set has no duplicate outside allowlist | V-17, V-18 |
+| INV-15 | Protective status of an option is never declared by its producer. | proposed option containing protection field: rejected; field exists only in EvaluationOption written by Value and Needs | V-19 |
+| INV-16 | `non_appris`, `non_applicable`, `inconnu`, `indisponible`, and `non_evalue` remain distinct from zero; an incomplete simulation is never converted to a partial evidence value. | unit tests for every producer and evidence combination (DC-01, DC-07) | S-05.1, S-06.5, V-19 |
+| INV-17 | At deliberation opening, the engaged option restarts from zero, a valid alternative keeps residual ρ·A, a new option starts from zero, an invalid option loses its accumulator. | accumulator trace at every opening | V-34 |
+| INV-18 | W is counted in steps: extra cycles within the same step do not age any contribution. | replay same scenario with different C_max: ages and S_t exits identical at equal step | V-36 |
+| INV-19 | Gatekeeper queues are bounded and eviction is deterministic. | saturation test: queue size never exceeds capacity; eviction reproducible on replay | DC-04 |
+| INV-20 | A request has at most one level of subrequests, no cyclic dependency, and stays within the budget and deadline of its chain. | request provenance graph: depth ≤ 1, acyclic, budgets debited | S-04.5 |
+| INV-21 | No processing blocks a cycle; consumption respects B_cycle and each envelope. | over-consuming stub module: stopped at envelope, cycle closes; sum of UC ≤ B_cycle | S-02.8, S-11.3 |
+| INV-22 | Machine time has no causal effect. | execution with artificial random delays: causal journal identical | S-01.6, S-11.1 |
+| INV-23 | No component of h_new is visible before commit; h_new and rebased active forms become visible at the same synchronization point. | concurrent read during consolidation: old version only; after commit, coherent versions at all owners | S-10.4, V-22 |
+| INV-24 | A consolidation loses no update subsequent to the cut point; continuation of life does not invalidate a batch. | interruption at a random point, life continues, then resume: active forms equal "consolidated + replay of subsequent updates" | V-21 |
+| INV-25 | Only an `etablie` contingency corrects the simulator; `etabli_pour_securite` alone never does. | simulator predictions identical with and without safety facts not established causally | NQ-10, V-43 |
+| INV-26 | No verification uses oracle or data derived from the verified contribution; only a causally independent modality or physical consequence updates κ. | provenance of every κ update: observation anchored `monde`, later step, outside derived chain, independent signal family or physical consequence | S-08.2, DC-06 |
+| INV-27 | A lethal transition, its detection, rollback, and mask never appear in the autobiographical view and produce no learning. | life with induced death compared with restored life: autobiographical view, episodes, values, κ, contingencies contain no event from the sequence | V-24, NQ-14 |
+| INV-28 | Protocol mask applies only to the resumed deliberation and enters no individuality or spontaneous-learning metric. | mask empty after every non-lethal step; metrics recomputed without resumed steps: identical | V-25 |
+| INV-29 | If R_letal_consecutif exceeds R_letal_max, the system declares a safety block, logs it, and alerts the operator. | repeated-death scenario from the same context | V-40 |
+| INV-30 | τ is never modified during a life. E remains constant in every ordinary life; only a preregistered H4 condition may substitute E-v1 with an equivalent version at a defined point, as a logged external input. | τ hash constant; E constant outside H4; in H4, only activation or substitution explicitly defined by protocol at the preregistered point, with before/after versions and external event | spéc. 1.3, S-03.5, 19.5 |
+| INV-31 | x_t uses only information accessible to the individual: neither τ, accumulators, thresholds, oracle, nor unrecalled memory. | inspect x_t schema and construction dependencies | S-06.1 |
+| INV-32 | Campaign parameters are versioned, preregistered, and identical from beginning to end. | registry hash (22) identical across all lives in a campaign | spéc. Appendix E |
+| INV-33 | Replay exactly reproduces causally relevant states, including causal state of injected scenarios, from birth or any complete snapshot. | complete replay and interval replay: normalized causal journals byte-for-byte identical; same scenario states and streams | S-01.2, S-01.5, DC-08 |
+| INV-34 | A copy starts from a complete causal snapshot; its changes are never reinjected into its parent; a battery copy does not consolidate. | compare parent state before and after copy lives; no h version published in a battery copy | S-13 |
+| INV-35 | Vocabulary is closed during execution: every term absent from active version is rejected and logged. | inject message containing an unknown term | S-03.2, S-03.6 |
+| INV-36 | F_cog and compute budget never enter D or r_t. | r_t identical for two lives differing only in compute load | NQ-04, S-11.6 |
+| INV-37 | Replanning changes neither option nor goal. | adoption of revised plan: option identifier, but_ref, and active goal unchanged | S-02.4, S-06.3, DC-17 |
+| INV-38 | A contribution returning to the queue retains its age; only new production creates a fresh contribution. | age of element evicted then readmitted equals t_monde − t_production | S-07.6 |
+| INV-39 | Action Control is the only component that sends commands to the world; no command is sent without a prior lethal checkpoint. | journal: every send preceded by lethal checkpoint, unique emitter | spéc. 8.2, V-25 |
+| INV-40 | A profile, weight, or threshold depends on temperament only through the mapping table; no consuming component reads τ directly. | dependency analysis: only projection 7.3 receives τ; τ = 0 on all dimensions produces neutral parameters and neutral behavior | spéc. 10.4, NQ-05, 7.3 |
+| INV-41 | The command sent to the world is exactly the `Commande` object contained in the already-controlled `DecisionAdmise`; it is never prepared a second time after admission. | command hash at admission equals hash of command sent | DC-02, 3.4 |
+| INV-42 | Candidate registry never exceeds N_options_max excluding `attendre`, engaged option is never evicted, and an `action_proposee(a)` cannot serve as evidence for `a` without independent support. | registry saturation; provenance analysis of every EvaluationOption | DC-10 |
+| INV-43 | Repetition from the same channel or signal family never modifies κ by itself. | artificially biased sensor repeated over several steps: κ unchanged without independent consequence or modality | DC-06 |
+| INV-44 | Technical journal is strictly append-only and never rolled back; only non-lethal attempts receive an `AutoSegmentCommit`. | rollback: journal length and chain grow; no event from cancelled branch in autobiographical projection | DC-08, DC-09 |
+| INV-45 | A waking step performs exactly one capture of local state and telemetry; reflex and cognition use that same capture. | count of world accesses by Perception equals 1 per waking step regardless of cycle count | DC-11 |
+| INV-46 | In degraded mode, a `non_evalue` candidate keeps its accumulator exactly unchanged and cannot win that cycle; all candidates simulated in the same cycle use the same effective budget. | forced overload: compare A before/after for non_evalue, no non_evalue among winners; logged `(R_eff,H_eff)` identical across evaluated candidates | DC-01, DC-07 |
+| INV-47 | A suspended consolidation resumes before a new consolidation is created; at most one consolidation transaction is active or suspended per individual. | wake in the middle of a pass then sleep again: same consolidation_ref resumes, no second batch opened | DC-13, S-10.3 |
+| INV-48 | In campaign mode, a safety block closes the branch without ad hoc human intervention; operator resumption exists only in diagnostic mode and excludes the branch from primary analyses. | test same block in campaign and diagnostic modes | DC-14 |
+| INV-49 | Technical journal occurrences remain unique even after multiple rollbacks of the same step because of `attempt_ref`, which is never visible in the autobiographical projection. | multiple rollbacks at same t/cycle: distinct JournalEvent ids; search attempt_ref in memory and S_t: no occurrence | DC-08, DC-09 |
+| INV-50 | Q_active, n_a, and eligibility traces are indexed by `signature_apprentissage`, never by ephemeral option-instance id; material replanning of the same semantics may share Q without retaining the instance accumulator. | two semantically equivalent instances with different ids and plans read the same Q entry; two different end conditions produce distinct signatures | 8.1, 11.1, DC-17 |
+| INV-51 | An unknown major schema version, unknown term, or unknown causal field is rejected; only an optional field explicitly declared non-causal and ignorable in a compatible version may be ignored. | cross-compatibility tests on messages with unknown major version, added causal field, and declared non-causal optional field | 4.4 |
+| INV-52 | Every command, including reflex and `commande_sommeil`, passes through `CONTRÔLE.admettre` before lethal checkpoint and send; veto never chooses the next command. | instrumentation of all send paths: no `envoi_commande` without earlier admission event for same hash; vetoed reflex triggers deliberation without send | 3.4, 9.1, DC-12 |
+| INV-53 | Every normally completed step contains exactly one applied command and one world advancement; a step closed or suspended by a block before sending contains zero commands and zero advancement. | count by `t_monde` of `envoi_commande` and `transition_monde` events across waking, sleep, reflex, and block cases | 3.2, 15.4, DC-14 |
+
+### 21.2 Test levels
+
+| Level | Object | Method | When |
+| --- | --- | --- | --- |
+| Unit | formulas (DC-01, DC-02, DC-03, DC-13), retention rules, contract validation | edge cases, monotonicities, absence statuses | every modification |
+| Property | invariants INV-01 to INV-53 | generation of random scenarios with fixed seed, checks on journal | every integration |
+| Integration | complete paths: observation → command (diagram C), goal → option → plan → command | running-example scenarios | every stage |
+| Replay | determinism | complete and interval replay of reference journals | every integration |
+| Isolation | epistemic boundary (19) | access attempts, canaries | every new learning or consolidation mechanism |
+| Interruption | consolidation, rollback, block | interruptions at sampled points, induced deaths, repeated deaths | stages 2, 10, 12 |
+| Load | budgets, queues, degraded modes | increasing distractor flow, over-consuming modules | stages 4, 12 |
+| Behavior | stage and campaign criteria | battery, worlds with known causes, noisy-TV trap | stages 5 to 13 |
+
+### 21.3 Review of loops and implementation risks
+
+Each risk in the following list is closed by an explicit rule and checked by at least one invariant.
+
+| Risk | Closing rule | Check |
+| --- | --- | --- |
+| intra-cycle loop | fixed phase order; producers read only frozen inputs (3.3) | INV-08 |
+| recursion through S_t | a reaction to S_t[n+1] is examined only in the next cycle | INV-08 |
+| cyclic requests | depth 1, provenance graph, cyclic dependencies forbidden | INV-20 |
+| learning influencing its own cause | update visible at next step (DC-15) | INV-07 |
+| self-validating calibration | verification provenance (DC-06); oracle excluded | INV-26 |
+| goal modifying itself | only manager writes goal; stagnation only signals; refractory period after abandonment (DC-03) | INV-11 |
+| infinite replanning | processed event does not restart same search; budgeted search; abandonment after N_imp failures (DC-03) | INV-21 |
+| unbounded accumulation | A ≥ 0, leak ℓ, closure at C_max, residual ρ < 1 | INV-09, INV-17 |
+| queue without saturation policy | capacity N_file, eviction by score (DC-04) | INV-19 |
+| consolidation losing updates | cut point, replay of later updates, coordinated commit | INV-23, INV-24 |
+| oracle contamination | bench-only channel, separated views, canaries | INV-02, INV-03 |
+| ownerless data | exhaustive table 5.3; every new state declared there before coding | INV-01 |
+| state with multiple owners | single writer; others read published version | INV-01 |
+| oscillation between options | inertia ι, hysteresis Δ_hyst, residual ρ | INV-17 |
+| profile flapping | exit via hysteresis and confirmation duration in steps | INV-06 |
+| leakage through death | filtered autobiographical view, protocol mask outside cognition | INV-27, INV-28 |
+| double counting | one pathway per signal, mandatory provenance | INV-14 |
+| unbounded option registry | N_options_max, deterministic eviction, engaged option protected (DC-10) | INV-42 |
+| self-justifying option | `action_proposee(a)` excluded from evidence for `a` without independent support | INV-42 |
+| command recomputed after control | DecisionAdmise carries the exact command already prepared and admitted | INV-41 |
+| self-confirmation of biased sensor | same signal family = diagnostic stability only; κ requires independent evidence | INV-26, INV-43 |
+| absence of computation turned into zero evidence | non_evalue candidate frozen; incomplete simulation unavailable | INV-16, INV-46 |
+| double perception within a frozen step | one step capture, then published without rereading world | INV-45 |
+| rollback rewriting journal or duplicating IDs | append-only journal; attempt_ref per technical attempt | INV-44, INV-49 |
+| unbounded sleep or consolidation | L_sommeil_max; suspended transaction resumed before any new one | INV-47 |
+| human intervention biasing campaign | block closes branch in campaign mode; resumption only in diagnostic | INV-48 |
+| learning attached to ephemeral option id | canonical `signature_apprentissage` distinct from instance | INV-50 |
+| causal message interpreted differently across binaries | closed schema compatibility for causal fields | INV-51 |
+| direct path bypassing final control | all commands pass through `CONTRÔLE.admettre` | INV-52 |
+| step with zero or multiple unjustified transitions | exactly one command and advancement per completed step; zero when blocked before send | INV-53 |
