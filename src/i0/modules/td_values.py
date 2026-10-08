@@ -222,7 +222,8 @@ class LinearTDValues:
         return tuple(available[name] for name in self._config.features.feature_names)
 
     def _weights_for(self, signature: str) -> list[float]:
-        return self._weights.setdefault(signature, self._zero_vector())
+        # INV-01/INV-16: an unknown Q read must never create causal state.
+        return self._weights.get(signature, self._zero_vector())
 
     def q(self, state: EvaluationState, signature: str) -> float:
         phi = self.features(state)
