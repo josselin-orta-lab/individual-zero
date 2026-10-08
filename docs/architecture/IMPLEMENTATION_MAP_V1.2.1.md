@@ -466,3 +466,12 @@ Stage 9 must not be declared closed until those paths and their behavioral, inva
 - `tests/test_stage9_causal_lifecycle.py` checks phase staging, mismatched base rates, distinct intervention contexts, revocation/re-establishment, causal snapshots and forbidden-origin canaries.
 - **Still open:** automatic lived observation/intervention producer through authorized Memory and AgencyComparator interfaces; observational confounder review beyond explicit matched checks; eligible causal test options routed through Exploration/Competition; read-only established-only simulator correction; Stage-9 300-step gate and golden. Typed evidence tests do not themselves prove autonomous causal inference.
 
+
+
+### Stage 9 checkpoint 6 — automatic lived observation intake (IN PROGRESS)
+
+Closed, real DC-09 autobiographical food-consumption episodes that have matching applied commands, lived transition effects and next-step Perception telemetry now create both a DC-05 safety evidence record and a **separately typed causal observation** owned by `CausalModel`. Both records share the actual Memory episode and world-transition reference. Preflight validation prevents partial evidence admission when a record is already duplicated or rejected.
+
+The observation is explicitly `cause_present=True`, never an invented control group or an intervention. Without independently lived `cause_present=False` baseline episodes, it **cannot** progress beyond `aucun` under §13.2. An alternative observed creature/zone harm prevents both safety and causal admission. New tests in `tests/test_stage9_lived_evidence.py` enforce these distinctions.
+
+**Still missing:** autonomous independent baseline producer, comparator-to-intervention source with action/episode linkage, explicit alternative-hypothesis review, Exploration/Competition causal test options, established-only simulator corrections and Stage-9 golden. This checkpoint alone is not Stage-9 completion.
