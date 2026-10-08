@@ -11,7 +11,7 @@ Spec: 6.3-6.6, DC-04, 20.3 Stage 4.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping, Sequence
+from typing import Callable, Mapping, Sequence
 
 from i0.contracts import Contribution, Goal, STElement
 from i0.serde import decode_contribution, encode_contribution
@@ -87,6 +87,12 @@ class Gatekeeper:
         self._retained: dict[str, Contribution] = {}
         self._emissions: dict[str, list[int]] = {}
         self._recent_subjects: dict[str, int] = {}
+        self._reliability: Callable[[Contribution], float] | None = None
+
+    def attach_reliability(self, resolver: Callable[[Contribution], float]) -> None:
+        if self._reliability is not None:
+            raise ValueError('reliability resolver already attached')
+        self._reliability = resolver
 
     @property
     def config(self) -> GatekeeperConfig:
@@ -199,6 +205,7 @@ class Gatekeeper:
             self._config.weights[name] * decomposition[name]
             for name in decomposition
         )
+        score *= (1.0 if self._reliability is None else self._reliability(contribution))
         return _Scored(
             contribution=contribution,
             score=score,
@@ -287,7 +294,7 @@ class Gatekeeper:
         security = [
             item
             for item in pool
-            if item.contribution.risk >= self._config.safety_threshold
+            if (item.contribution.risk * (1.0 if self._reliability is None else self._reliability(item.contribution))) >= self._config.safety_threshold
         ]
         security.sort(
             key=lambda item: (
@@ -393,13 +400,13 @@ class Gatekeeper:
                 summary=item.contribution.summary,
                 score=item.score,
                 decomposition=dict(item.decomposition),
-                reliability=1.0,
+                reliability=(1.0 if self._reliability is None else self._reliability(item.contribution)),
                 production_t=item.contribution.production_t,
                 expires_at_step=item.contribution.expires_at_step,
                 preempted=(
                     bool(selected)
                     and item.contribution.id == selected[0].contribution.id
-                    and item.contribution.risk >= self._config.safety_threshold
+                    and (item.contribution.risk * (1.0 if self._reliability is None else self._reliability(item.contribution))) >= self._config.safety_threshold
                 ),
             )
             for item in selected
