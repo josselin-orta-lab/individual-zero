@@ -247,7 +247,11 @@ class Stage4Runtime:
         if isinstance(payload, Mapping):
             entity_type = payload.get("entity_type")
             if isinstance(entity_type, str):
-                terms.append(entity_type)
+                terms.append(
+                    "berry"
+                    if entity_type in {"berry_a", "berry_b"}
+                    else entity_type
+                )
             target = payload.get("target")
             if isinstance(target, str) and target in {
                 "energy",
