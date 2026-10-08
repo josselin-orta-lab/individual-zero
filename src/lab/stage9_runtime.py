@@ -118,6 +118,21 @@ class Stage9Runtime(Stage8Runtime):
         def publish_causal_statuses(_ctx):
             # DC-05, section 5.3: a cycle reads only the previously
             # published facts; the batch commits atomically in phase 5.
+            inference_changes = self.causal_model.publish_causal_inference()
+            for change in inference_changes:
+                self._write(
+                    kind="causal_inference_status_published",
+                    cycle=cycle,
+                    data={
+                        "contingency_ref": change.contingency_ref,
+                        "old_status": change.before,
+                        "new_status": change.after,
+                        "contingency_version": change.version,
+                        "evidence_ref": change.evidence_ref,
+                        "protocol": change.protocol,
+                        "causal_model_version": self.causal_model.version,
+                    },
+                )
             updates = self.causal_model.publish()
             for change in updates:
                 self._write(
