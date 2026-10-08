@@ -43,10 +43,19 @@ class GreedyPlannerE0:
         config.validate()
         self._config = config
         self._current_plan: Plan | None = None
+        self._current_proposal: OptionProposal | None = None
 
     @property
     def current_plan(self) -> Plan | None:
         return self._current_plan
+
+    @property
+    def current_proposal(self) -> OptionProposal | None:
+        return self._current_proposal
+
+    def invalidate_current(self) -> None:
+        self._current_plan = None
+        self._current_proposal = None
 
     @staticmethod
     def _movement_steps(
@@ -106,7 +115,15 @@ class GreedyPlannerE0:
         cycle: int,
     ) -> OptionProposal | None:
         if goal is None:
+            self.invalidate_current()
             return None
+
+        if (
+            self._current_proposal is not None
+            and self._current_proposal.option.goal_ref == goal.id
+            and self._current_proposal.option.expires_at_step > t_monde
+        ):
+            return self._current_proposal
 
         commands: list[PrimitiveCommand] = []
         target_key = goal.target
@@ -172,9 +189,7 @@ class GreedyPlannerE0:
         else:
             return None
 
-        option_id = (
-            f"option:{goal.id}:{target_key}:{st_version}:{t_monde}:{cycle}"
-        )
+        option_id = f"option:{goal.id}:{target_key}"
         plan_id = f"plan:{option_id}:v1"
         steps = tuple(
             PlanStep(
@@ -222,6 +237,7 @@ class GreedyPlannerE0:
         )
         proposal.validate()
         self._current_plan = plan
+        self._current_proposal = proposal
         return proposal
 
     def first_command(self, proposal: OptionProposal) -> PrimitiveCommand:
