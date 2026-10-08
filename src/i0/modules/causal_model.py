@@ -295,6 +295,7 @@ class CausalModel:
                 transitions[t] = event
 
         candidate: list[SafetyEvidence] = []
+        causal_observations: list[CausalObservation] = []
         for t in sorted(commands.keys() & transitions.keys()):
             exposure = self._lived_food_exposures.get(t)
             if exposure is None or exposure.observed_step is None:
@@ -349,15 +350,52 @@ class CausalModel:
                 alternative_cause_sufficient=False,
                 exposure_motivated_independently=True,
             ))
-        # Evidence is admitted only after the entire Memory episode is closed.
+            # Observation of exposure is not causal proof or an intervention.
+            # Absence-of-exposure baselines require other *lived* comparable
+            # episodes and are never generated from this successful meal.
+            causal_observations.append(CausalObservation(
+                identifier=f"causal-observation:{episode_ref}:{event['event_id']}",
+                contingency_ref=f"toxic:{exposure.resource_kind}",
+                predicate="toxic_item",
+                subject_ref=exposure.resource_kind,
+                application_context="global",
+                observation_context="food_consumption",
+                episode_ref=episode_ref,
+                observation_ref=str(event["event_id"]),
+                observed_step=exposure.observed_step,
+                cause_present=True,
+                effect_present=after < exposure.integrity_before,
+                controlled_variables=(("primitive", "manger"),),
+            ))
+        # All validations are preflight: a rejected Memory episode cannot
+        # partially mutate safety state without matching causal observation.
+        for item in candidate:
+            item.validate()
+            if item.identifier in self._seen_ids or any(
+                old.identifier == item.identifier for old in self._pending
+            ):
+                raise ValueError("duplicate closed Memory safety evidence")
+        for item in causal_observations:
+            item.validate()
+            if item.identifier in self._causal_observations or any(
+                old.identifier == item.identifier
+                for old in self._pending_causal_observations
+            ):
+                raise ValueError("duplicate closed Memory causal observation")
         for item in candidate:
             self.integrate(item)
+        for item in causal_observations:
+            self.integrate_causal_observation(item)
         # Exposure refs can be discarded only once their command is represented
         # by a *closed* episode; unobserved attempts cannot be counted later.
         for t, command in commands.items():
             if command.get("primitive") == "manger":
                 self._lived_food_exposures.pop(t, None)
         return tuple(candidate)
+
+    def pending_causal_observations(self) -> tuple[CausalObservation, ...]:
+        """Read-only records for causal provenance logging."""
+        return tuple(self._pending_causal_observations)
 
     def integrate_causal_observation(self, observation: CausalObservation) -> None:
         observation.validate()
