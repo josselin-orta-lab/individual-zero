@@ -191,5 +191,67 @@ class WorldPhysicsTests(unittest.TestCase):
         self.assertEqual(world.export_causal_state(), state)
 
 
+
+
+class ScenarioForcedFailureTests(unittest.TestCase):
+    def test_forced_failure_suppresses_only_primitive_effect_and_advances_schedule(self) -> None:
+        world = make_world()
+        world.apply_scenario_event(
+            "set_action_failure_schedule",
+            {
+                "primitive": "se_deplacer",
+                "schedule": [True, False],
+            },
+        )
+
+        first = world.apply(
+            command("se_deplacer", direction="east"),
+            t_monde=1,
+        )
+        self.assertEqual(first.position_after, first.position_before)
+        self.assertEqual(
+            first.effects["scenario_forced_failure"],
+            "se_deplacer",
+        )
+        self.assertTrue(
+            first.effects["scenario_failure_attempt"]["forced"]
+        )
+
+        second = world.apply(
+            command("se_deplacer", direction="east"),
+            t_monde=2,
+        )
+        self.assertNotEqual(second.position_after, second.position_before)
+        self.assertFalse(
+            second.effects["scenario_failure_attempt"]["forced"]
+        )
+
+    def test_forced_failure_cursor_round_trips_in_causal_state(self) -> None:
+        world = make_world()
+        world.apply_scenario_event(
+            "set_action_failure_schedule",
+            {
+                "primitive": "se_deplacer",
+                "schedule": [True, False, True],
+            },
+        )
+        world.apply(command("se_deplacer", direction="east"), t_monde=1)
+        state = world.export_causal_state()
+
+        restored = make_world()
+        restored.restore_causal_state(state)
+        result = restored.apply(
+            command("se_deplacer", direction="east"),
+            t_monde=2,
+        )
+
+        self.assertFalse(
+            result.effects["scenario_failure_attempt"]["forced"]
+        )
+        self.assertEqual(
+            result.effects["scenario_failure_attempt"]["attempt_index"],
+            1,
+        )
+
 if __name__ == "__main__":
     unittest.main()
