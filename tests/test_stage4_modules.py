@@ -273,6 +273,10 @@ class PlannerTests(unittest.TestCase):
                     properties={},
                 )
             },
+            observation_ref_by_entity={
+                "water_source:0": "obs-water",
+            },
+            retained_contribution_refs=frozenset({"obs-water"}),
             t_monde=1,
             cycle=2,
         )
