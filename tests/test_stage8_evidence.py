@@ -57,7 +57,7 @@ def competition():
         c_max=3, urgency_max=2.0, urgency_scale_cycles=2.0,
         leak=0.0, noise_sigma=0.0, gain=1.0,
         base_threshold=0.2, threshold_floor=0.1,
-        inertia=0.0, residual=0.0, options_max=4,
+        inertia=0.0, residual=0.5, options_max=4,
         substitution_evidence={"boire": 0.7, "attendre": 0.3},
     ))
 
