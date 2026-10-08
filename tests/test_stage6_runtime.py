@@ -20,9 +20,16 @@ def stage6_runtime(
     *,
     include_drink: bool,
     predicted_water_after: float | None = None,
+    actual_drink_gain: float | None = None,
 ) -> Stage6Runtime:
     stage4 = build_stage4_reference_runtime()
     world_config = stage4.world.config
+    if actual_drink_gain is not None:
+        world_config = replace(
+            world_config,
+            version="stage6-runtime-world-drink-override-v1",
+            drink_water_gain=actual_drink_gain,
+        )
     layout = WorldLayout(
         water_sources=frozenset({Position(2, 2)}),
     )
@@ -216,6 +223,33 @@ class Stage6RuntimeTests(unittest.TestCase):
         self.assertEqual(water[0]["observed"], 60.0)
         self.assertEqual(water[0]["value"], 20.0)
         self.assertEqual(water[0]["nature"], "change")
+
+    def test_failed_engaged_plan_preserves_option_for_revision(self) -> None:
+        runtime = stage6_runtime(
+            include_drink=True,
+            predicted_water_after=80.0,
+            actual_drink_gain=20.0,
+        )
+
+        first = runtime.run_step()
+        self.assertEqual(first.command_primitive, "boire")
+        self.assertIsNotNone(first.option_ref)
+        option_ref = first.option_ref
+        self.assertTrue(runtime.competition.is_engaged(option_ref))
+        self.assertEqual(runtime.world.body.water, 40.0)
+
+        second = runtime.run_step()
+
+        requested = [
+            entry.causal_event
+            for entry in runtime.journal.entries
+            if entry.causal_event.get("kind") == "plan_revision_requested"
+        ]
+        self.assertTrue(requested)
+        self.assertEqual(requested[-1]["data"]["option_ref"], option_ref)
+        self.assertEqual(requested[-1]["data"]["reason"], "failed_step")
+        self.assertEqual(second.option_ref, option_ref)
+        self.assertTrue(runtime.competition.is_engaged(option_ref))
 
     def test_equipment_is_not_a_mutable_causal_owner(self) -> None:
         runtime = stage6_runtime(include_drink=True)
