@@ -76,6 +76,17 @@ MVP_PROHIBITION_CATEGORIES = (
 
 SIMILARITY_FAMILIES = ("entity", "situation", "episode")
 
+MVP_PHASE1_PRODUCER_ORDER = (
+    "perception",
+    "value_needs",
+    "memory",
+    "goal_manager",
+    "causal_model",
+    "exploration",
+    "planning",
+    "metacognition_health",
+)
+
 
 def build_ontology_registry() -> OntologyRegistry:
     terms: list[OntologyTerm] = []
