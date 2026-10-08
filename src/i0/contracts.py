@@ -173,6 +173,7 @@ class Contribution:
     production_cycle: int
     expires_at_step: int
     payload: object
+    goal_ref: str | None = None
     provenance_inputs: tuple[str, ...] = ()
     signal_ids: tuple[str, ...] = ()
 
