@@ -193,8 +193,8 @@ class Contribution:
         ):
             if not 0.0 <= value <= 1.0:
                 raise ValueError(f"{name} must be in [0,1]")
-        if not -1.0 <= self.value <= 1.0:
-            raise ValueError("value must be in [-1,1]")
+        if not 0.0 <= self.value <= 1.0:
+            raise ValueError("gatekeeper value must be in [0,1]")
         if self.expires_at_step < self.production_t:
             raise ValueError("contribution cannot expire before production")
 
