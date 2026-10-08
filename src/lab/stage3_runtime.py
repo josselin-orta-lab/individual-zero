@@ -150,24 +150,26 @@ class Stage3Runtime:
         prepared: PreparedCommand,
         admission: AdmissionResult,
     ) -> None:
+        data = {
+            "command_hash": command_digest(admission.command),
+            "primitive": admission.command.primitive,
+            "source": prepared.source,
+            "trigger_ref": prepared.trigger_ref,
+            "option_ref": prepared.option_ref,
+            "st_version_ref": prepared.st_version_ref,
+            "reason": admission.reason,
+            "scope": admission.scope,
+            "rule_id": admission.rule_id,
+            "rule_type": admission.rule_type,
+            "policy_version": admission.policy_version,
+        }
+        if prepared.grounding_contribution_refs:
+            data["grounding_contribution_refs"] = list(
+                prepared.grounding_contribution_refs
+            )
         self._write(
             kind="command_admitted" if admission.ok else "command_vetoed",
-            data={
-                "command_hash": command_digest(admission.command),
-                "primitive": admission.command.primitive,
-                "source": prepared.source,
-                "trigger_ref": prepared.trigger_ref,
-                "option_ref": prepared.option_ref,
-                "st_version_ref": prepared.st_version_ref,
-                "grounding_contribution_refs": list(
-                    prepared.grounding_contribution_refs
-                ),
-                "reason": admission.reason,
-                "scope": admission.scope,
-                "rule_id": admission.rule_id,
-                "rule_type": admission.rule_type,
-                "policy_version": admission.policy_version,
-            },
+            data=data,
         )
 
     def record_admission(
