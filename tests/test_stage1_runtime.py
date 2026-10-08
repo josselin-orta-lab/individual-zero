@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import unittest
 
 from lab.stage1_runtime import ScriptedStage1Runtime
@@ -92,6 +93,26 @@ class ScriptedStage1RuntimeTests(unittest.TestCase):
         snapshot = runtime.take_snapshot()
 
         self.assertTrue(runtime.snapshots.verify(snapshot.id))
+
+    def test_machine_delay_has_no_causal_effect(self) -> None:
+        baseline = ScriptedStage1Runtime(campaign_seed=23)
+        delayed = ScriptedStage1Runtime(campaign_seed=23)
+
+        for _ in range(3):
+            baseline.run_step(cycle=1)
+
+        for _ in range(3):
+            time.sleep(0.002)
+            delayed.run_step(cycle=1)
+
+        self.assertEqual(
+            baseline.journal.canonical_bytes(),
+            delayed.journal.canonical_bytes(),
+        )
+        self.assertEqual(
+            baseline.causal_fingerprint(),
+            delayed.causal_fingerprint(),
+        )
 
 
 if __name__ == "__main__":
