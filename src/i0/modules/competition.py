@@ -368,6 +368,26 @@ class Competition:
             cycle=cycle,
         )
 
+    def prune_invalid(
+        self,
+        *,
+        active_goal_id: str | None,
+        t_monde: int,
+    ) -> None:
+        for option_id in list(self._registry):
+            state = self._registry[option_id]
+            option = state.proposal.option
+            if option_id == "permanent:attendre":
+                continue
+            if (
+                option.expires_at_step <= t_monde
+                or (
+                    option.goal_ref is not None
+                    and option.goal_ref != active_goal_id
+                )
+            ):
+                self.invalidate_candidate(option_id)
+
     def invalidate_candidate(self, option_ref: str) -> None:
         self._registry.pop(option_ref, None)
         if self._engaged_option_id == option_ref:
