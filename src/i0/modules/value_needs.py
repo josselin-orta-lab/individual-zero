@@ -144,7 +144,7 @@ class ValueAndNeeds:
                     confidence=1.0,
                     urgency=pressure,
                     risk=pressure if name == "integrity" else 0.0,
-                    value=-pressure,
+                    value=0.0,
                     production_t=t_monde,
                     production_cycle=cycle,
                     expires_at_step=t_monde + self._config.contribution_ttl_steps,
