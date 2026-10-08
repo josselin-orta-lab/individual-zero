@@ -153,6 +153,9 @@ class Stage5Runtime(Stage4Runtime):
         *,
         copy_ref: str,
         battery_copy: bool = False,
+        scenario_id: str | None = None,
+        scenario_version: str | None = None,
+        scenario_events: tuple[ScenarioEvent, ...] = (),
     ) -> tuple["Stage5Runtime", SnapshotRecord]:
         """Create an isolated individual from a complete coherent copy snapshot."""
         if not copy_ref:
@@ -178,6 +181,8 @@ class Stage5Runtime(Stage4Runtime):
             context={
                 "copy_ref": copy_ref,
                 "battery_copy": battery_copy,
+                "fresh_scenario_id": scenario_id,
+                "fresh_scenario_version": scenario_version,
             },
         )
         child_id = deterministic_id(
@@ -200,6 +205,9 @@ class Stage5Runtime(Stage4Runtime):
             lineage_parent_id=self.individual_id,
             lineage_copy_point=record.id,
             battery_copy=battery_copy,
+            scenario_id=scenario_id,
+            scenario_version=scenario_version,
+            scenario_events=scenario_events,
         )
 
         payload = snapshots.export_payload(record.id)
@@ -210,10 +218,22 @@ class Stage5Runtime(Stage4Runtime):
             owner.owner_id: owner
             for owner in child.causal_owners
         }
-        if set(owner_states) != set(child_owners):
+        inherited_owner_ids = set(owner_states)
+        child_owner_ids = set(child_owners)
+        fresh_external_scenario = scenario_id is not None
+        if fresh_external_scenario:
+            # The new scenario belongs to the external branch environment, not
+            # to copied individual identity. It starts from its own initial state.
+            child_owner_ids_without_scenario = child_owner_ids - {"scenario"}
+            inherited_without_scenario = inherited_owner_ids - {"scenario"}
+            if child_owner_ids_without_scenario != inherited_without_scenario:
+                raise ValueError("copy owner set does not match parent snapshot")
+        elif inherited_owner_ids != child_owner_ids:
             raise ValueError("copy owner set does not match parent snapshot")
 
         for owner_id in sorted(owner_states):
+            if fresh_external_scenario and owner_id == "scenario":
+                continue
             state = owner_states[owner_id]
             if owner_id == "s_t":
                 child.s_t.restore_copy_causal_state(state)
