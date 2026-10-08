@@ -7,6 +7,7 @@ campaign calibration.
 from __future__ import annotations
 
 from i0.modules import TDLearningConfig, ValueFeatureConfig
+from i0.modules.active_kappa import KappaConfig
 from i0.modules.stage8_evaluator import Stage8EvaluationConfig
 
 from .stage7_reference_fixture import build_stage7_reference_runtime
@@ -55,6 +56,12 @@ def build_stage8_reference_runtime() -> Stage8Runtime:
                     position_scale_x=31.0,
                     position_scale_y=31.0,
                 ),
+            ),
+            kappa=KappaConfig(
+                version="p33-stage8-reference-v1",
+                classes=5,
+                prior_strength=2.0,
+                equipment_priors={},
             ),
             evaluation=Stage8EvaluationConfig(
                 version="p13-stage8-reference-v1",
