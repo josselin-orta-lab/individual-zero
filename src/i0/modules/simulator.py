@@ -12,6 +12,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Sequence
 
+from .causal_corrections import (
+    EstablishedCorrectionSource, CausalCorrectionConflict,
+    correct_equipment_prediction,
+)
+
 from i0.equipment import (
     EquipmentModel,
     EquipmentPrediction,
@@ -105,10 +110,12 @@ class Simulator:
         *,
         config: SimulatorConfig,
         equipment: EquipmentModel,
+        corrections: EstablishedCorrectionSource | None = None,
     ) -> None:
         config.validate()
         self._config = config
         self._equipment = equipment
+        self._corrections = corrections
 
     @property
     def equipment_version(self) -> str:
@@ -161,6 +168,31 @@ class Simulator:
                     partial_rollout=partial,
                     reason="equipment_input_unseen",
                 )
+
+            if self._corrections is not None:
+                try:
+                    prediction, _ = correct_equipment_prediction(
+                        source=self._corrections,
+                        command=command,
+                        state=state,
+                        prediction=prediction,
+                    )
+                except CausalCorrectionConflict:
+                    partial = SimulationRollout(
+                        predictions=tuple(predictions),
+                        horizon_reached=len(predictions),
+                        terminal=terminal,
+                    )
+                    return SimulationResult(
+                        status="unavailable",
+                        equipment_version=self._equipment.version,
+                        requested_rollouts=r_eff,
+                        effective_rollouts=1,
+                        requested_horizon=h_eff,
+                        completed_rollouts=(),
+                        partial_rollout=partial,
+                        reason="unresolved_causal_correction_conflict",
+                    )
 
             predictions.append(prediction)
             state = prediction.next_state
