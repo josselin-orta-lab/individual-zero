@@ -136,7 +136,7 @@ class Stage8EvidenceTests(unittest.TestCase):
         model.update_segment(
             previous_state=self.eval_state, previous_signature="sig:wait",
             rewards=(40.0,), next_state=self.eval_state,
-            next_signature="sig:drink",
+            next_signature="sig:neutral",
         )
         self.assertEqual(winner(), "wait")
 
