@@ -649,3 +649,253 @@ Goal { id, type_but, cible, condition_satisfaction, mesure_principale,
 ```text
 OptionProposee {                                   # payload of an action_proposee contribution
   option : Option, plan? : Plan, admissibilite_prealable? : admissible | indetermine }   # V-43
+
+Option {                                           # decision unit [S-06.3], completed spéc. Appendix B
+  id, version, type : primitive | composee
+  signature_apprentissage                            # stable canonical semantic signature, distinct from the instance id
+  preconditions : [condition], condition_fin : { succes, echec, invalidation }
+  but_ref?                                        # active goal served, if any [V-10]
+  motif_ref : { type : but_actif | cible_exploration | test_causal | pression_sommeil | intention | defaut, id }
+  plan_ref?                                       # current realization of a composite option
+  provenance : planification | competence | habitude | exploration | test_causal | defaut   # V-42
+  version_S_t_fondatrice, validite : { expire_a : (valeur, pas), invalide_si? }
+  etat : proposee | candidate | engagee | terminee
+  issue? : succes | echec | invalidee | remplacee | interrompue }
+
+Plan     { id, option_ref, version, etapes : [PlanStep], but_ref?, budget_utilise : UC,
+           statut : valide | a_reviser | abandonne, version_S_t }
+PlanStep { index, commande : primitive + parametres, preconditions,
+           consequences_predites : [ { variable, valeur_ou_variation, precision } ],
+           fenetre_observation : (valeur, pas) }
+ResultatPlanification { but_ref?, motif_ref, statut : plan_trouve | non_planifiable_actuellement | incomplet_budget,
+                        plan_ref?, contexte_materiel_empreinte, budget_complet : boolean, t_monde, cycle }
+
+EvaluationOption {                                 # V-19: attached to the cycle, never to the option
+  option_ref, version_option, cycle, t_monde
+  statut             : evalue | non_evalue
+  valeur_apprise     : { valeur, statut : appris | non_appris }                       # E_a^Q
+  valeur_simulee     : { valeur, statut : calculee | indisponible, deroules, horizon_atteint,
+                         budget_effectif : { R_eff, H_eff } }                          # E_a^sim; an incomplete simulation is not used
+  motivation_intrinseque : { valeur ∈ [0,1] | non_applicable, producteur }              # m_a
+  risque             : valeur ∈ [0,1] | inconnu                                         # R_a
+  incertitude_securite : valeur ∈ [0,1]                                                 # U_a
+  protection         : boolean                                                          # contextual protective status
+  provenance         : { signal_ids : [ids], producteurs : [modules] }
+  version            : { regles, modeles } }
+
+DecisionAdmise {
+  option_ref?, commande : Commande, version_S_t, origine : seuil | repli | attendre,
+  t_monde, cycle, attempt_ref
+}
+```
+
+**Commands and results** [S-15, spéc. 8.3].
+
+```text
+Commande { id, primitive, parametres, origine : option_ref | mecanisme_direct (reflexe),
+           plan_ref?, etape_index?, version_S_t,
+           consequences_predites (frozen on emission), fenetre_observation : (valeur, pas),
+           controle : { admissible, veto?, masque?, portee_refus? : option | plan_ou_etape | protocole | direct }, t_monde_envoi }
+ResultatCommande { commande_ref, t_monde_observation,
+           effets : [ { variable, prevu, observe, tolerance, statut : conforme | non_conforme | indeterminable } ],
+           effets_manquants : [variables], attribution : [ { effet, soi | monde | incertaine, candidates } ] }
+ErreurPrediction { type : sensorielle | causale | action | valeur | interoceptive,
+           source, cible_modele, valeur, precision, nature : bruit_attendu | changement, t_monde, episode_ref }
+```
+
+**Causal and safety knowledge** [NQ-10, NQ-11, V-43].
+
+```text
+Contingence { id, version, contexte_application, cause, effet, correction_prediction?,
+              statut_causal : correlation | hypothese_causale | testee | etablie,
+              statut_securite : aucun | etabli_pour_securite,
+              origine : innee | apprise, preuves : { pour : [refs], contre : [refs] } }
+```
+
+**Memory** [spéc. Appendix B, S-02.5, NQ-17].
+
+```text
+Episode   { id, individu, debut, fin, frontiere : but | ecart | lieu | duree,
+            fragments : refs autobiographical view, contexte : { lieu, but, entites, variables },
+            corps : { debut, fin }, valeur : cumulative r, liens : [episode_ref],
+            statut : non_consolide | consolide }
+Intention { id, but, declencheur : evenement | heure : (valeur, unit) | contexte,
+            echeance?, pression_base ∈ [0,1], surveillance : strategique | spontanee, cout,
+            reveil_autorise : boolean,                                   # NQ-17
+            etat : en_attente | declenchee | faite | abandonnee, candidature_active? }
+```
+
+**Modulation and S_t** [spéc. 5.4, 6.2, S-02.6].
+
+```text
+ProfilModulation { nom : normal | menace | exploration | recuperation,
+                   multiplicateurs : { w_b, w_n, w_u, w_r, w_v }, effets_supplementaires?,
+                   conditions_entree, conditions_sortie : { hysteresis, confirmation : (valeur, pas) },
+                   priorite, version }
+EtatGlobal {                                       # one S_t version, immutable once published
+  individu, version, cycle, t_monde
+  fixes       : { corps, but_actif, etape_plan, profil, budget, derniere_action }
+  competitifs : [ Element ≤ K ]                    # including the safety slot
+  requetes    : { request_ref → statut }
+  diff        : additions, removals and reasons since the previous version }
+Element { contribution_ref, resume, P, decomposition, f, t_monde_production, validite, preempte : boolean }
+```
+
+**Identity, state, and journal** [spéc. Appendix B, S-01, S-13, V-24, V-25].
+
+```text
+Temperament { sensibilite_recompense, sensibilite_menace, exploration, protection_buts, affiliation
+              : reals in [-1, 1], graine, version }
+ParametresTemperament { version_table, poids_portier, gamma_valeur, beta, coeff_risque, coeff_incertitude,
+                        coeff_inertie, poids_besoins, coeff_exploration, empreinte }   # immutable; sole interface for consuming τ
+Theta       { individu, lignee, parent?, temperament, version_h, version, date, valide_par }
+Equipement  { id, version, modules : [ { nom, empreinte_poids, corpus, graine, competence_mesuree } ],
+              plastique : non }
+VersionEtat { objet : h | Q | κ | precisions | ontologie | schema | E | politique_securite,
+              version, version_source?, lot_ref?, coupure_ref?, consolidation_ref?, t_commit }
+Snapshot    { id, type : naissance | periodique | checkpoint_letal | copie, individu,
+              t_monde, cycle, attempt_ref?, etat_causal_complet, etat_scenario_causal?,
+              versions : [VersionEtat], empreinte }                                            # DC-08
+CheckpointConsolidation { id, consolidation_ref, lot_ref, version_source_h, curseur,
+                          dernier_point_valide, etat_prive }                               # private, outside Snapshot
+JournalEvent { n, t_monde?, cycle?, attempt_ref?, individu?, type, charge,
+               provenance : [ids], emp_prec, emp }                                       # every physical occurrence lives in the technical trace
+AutoSegmentCommit { t_monde, attempt_ref, event_refs : [ids], version_filtre }            # autobiographical projection of a validated step
+ProfilTraits { individu, age, version_batterie,
+               scores : { patience, prise_de_risque, exploration, reaction_menace, perseverance },
+               intervalles_confiance }
+```
+
+### 5.3 State ownership
+
+Every mutable state has exactly one owner, the only component authorized to write it. Other components read it through S_t, a service call, or a published version.
+
+| State | Owner | Producers | Readers | Cadence | Unit | Form | Persistence | Snapshot | Journal | Autobiographical view | On replay |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| active goal | Goal Manager | proposals: Value and Needs, prospective memory; signals: stagnation, events | all, through the fixed S_t slot; gatekeeper (b); Planning | every cycle | cycle | active | life | yes | yes | yes | recomputed |
+| S_t versions | S_t | Gatekeeper (candidate content); fixed content supplied by its owners | all | every cycle | cycle | published, immutable | life, in the journal | current version | every version | yes | reconstructed exactly |
+| gatekeeper queues | Gatekeeper | contributions | gatekeeper | every cycle | age in steps | active | life | yes | admissions, evictions | no | recomputed |
+| quotas and habituation | Gatekeeper | gatekeeper | gatekeeper | every cycle | steps | active | life | yes | yes | no | recomputed |
+| modulation profile | Global Modulation | Global Modulation | gatekeeper, S_t | phase 0 | cycle; confirmation in steps | active | life | yes | transitions | yes | recomputed |
+| candidate registry | Competition | option producers | competition, control | every cycle | cycle | active, bounded by N_options_max excluding `attendre` | life | yes | yes | yes | recomputed |
+| accumulators, u(c), counter c | Competition | competition | competition | every cycle | cycle | active | deliberation | yes | yes | no | recomputed |
+| engaged option | Competition | competition | control, Planning, Goal Manager | at every decision | step | active | until closure | yes | yes | yes | recomputed |
+| EvaluationOption | Competition (assembly) | Value and Needs, Exploration, Metacognition and Health | competition | every cycle | cycle | published, immutable | cycle | no | yes | no | recomputed |
+| current plan | Planning | Planning | control, simulator, competition | on trigger [S-02.4] | step | active | until abandonment | yes | yes | yes | recomputed |
+| current step, commands in progress | Action Control | control | S_t (plan step), comparator | every step | step | active | until the end of the step | yes | yes | yes, except cancelled segments | recomputed |
+| attributions | Control (comparator) | comparator | causal model, values, Metacognition | at the close of each window | step | active | life | yes | yes | yes | recomputed |
+| Q_active | Value and Needs | TD learning | competition (through evaluation) | at every decision | step | active | life | yes | yes | yes | recomputed |
+| consolidated Q | Consolidation (in h) | consolidation | Value and Needs (rebase) | at commit | slow time | consolidated | life | yes | version, differences | yes | recomputed |
+| κ_active | Metacognition and Health | verifications | gatekeeper | every cycle | cycle | active | life | yes | every version | yes | recomputed |
+| consolidated κ | Consolidation (in h) | consolidation recalibration | Metacognition (rebase) | at commit | slow time | consolidated | life | yes | version | yes | recomputed |
+| active precisions | Perception | perception | perception, comparator | every step | step | active | life | yes | yes | yes | recomputed |
+| consolidated precisions | Consolidation (in h) | consolidation | Perception (rebase) | at commit | slow time | consolidated | life | yes | version | yes | recomputed |
+| contingencies, causal status | Causal Model | causal model; extracted rules (DC-16) | simulator, memory (references) | end of cycle | cycle | unique, canonical | life | yes | yes | yes | recomputed |
+| contingencies, safety status | Causal Model (same object) | causal model (DC-05) | control: veto, admissibility | end of cycle | cycle | unique, canonical | life | yes | yes | yes | recomputed |
+| hypotheses | Causal Model | causal model | competition (tests), memory | end of episode, night, on event | step | active | life | yes | yes | yes | recomputed |
+| veto rules, protected invariants | Action Control | versioned safety policy | control | never during a life | — | fixed | life | yes | version | no | identical |
+| episodic memory | Memory | segmentation over the autobiographical view | recall, consolidation | end of episode | step | active | life | yes | yes | yes | recomputed |
+| indexes and references of semantic and procedural memories | Memory | consolidation at commit | Planning, competition, recall | at commit | slow time | active index | life | yes | yes | yes | recomputed |
+| semantic and procedural content consolidated in h | Consolidation | consolidation | Memory (through references), Planning, competition | at commit | slow time | consolidated | life | yes | version, differences | yes | recomputed |
+| intentions | Memory (prospective) | Planning | memory, wake rule | every waking cycle | cycle, typed deadline | active | until closure | yes | yes | yes | recomputed |
+| sleep pressure | Metacognition and Health | Metacognition | competition (m_a(dormir)), wake rule | every step | step | active | life | yes | yes | no | recomputed |
+| F_cog | Metacognition and Health | consumed UC | sleep pressure, synthetic budget state | every cycle, recovery by step | UC, step | active | life | yes | yes | no | recomputed |
+| progress and stagnation windows | Metacognition and Health | detector | Goal Manager | every step | step | active | life | yes | yes | yes | recomputed |
+| pending verifications | Metacognition and Health | emitted predictions | Metacognition | at deadline | prediction unit | active | until deadline | yes | yes | no | recomputed |
+| attempt_ref | Scheduler | step opening and rollback | technical journal, checkpoints, protocol control | step opening; after rollback | technical attempt | technical | current step | in lethal checkpoint | yes | no | reproduced identically |
+| pseudorandom streams | Scheduler (registry) | — | each stream is consumed only by its declared source | at every draw | — | — | life | current state | initial seed | no | restored and replayed |
+| cycle UC budgets | Scheduler | configuration | each module | every cycle | UC | — | cycle | yes | consumption | no (only synthetic state is in S_t) | identical |
+| request registry | Bus and Contract | emitters | recipients, S_t (statuses) | at every message | cycle or step | active | until closure | yes | yes | yes | recomputed |
+| τ | Snapshots and Parameters | birth | mapping table only | never modified | — | fixed | life | yes | at birth | no | identical |
+| ParametresTemperament | Snapshots and Parameters | projection of τ by table 7.3 | gatekeeper, Value and Needs, competition, Exploration | birth | — | fixed, immutable | life | yes | version and hash at birth | no | identical |
+| version_E_active | Snapshots and Parameters | birth; preregistered external H4 input | Simulator and Equipment; contribution provenance; Metacognition for κ key; bench read-only | birth; H4 step boundary only | step | active configuration | life | yes | each activation before application | no | identical on replay |
+| versions of θ and h | Snapshots and Parameters (version registry) | coordinated consolidation commit | all, through active forms | at commit | slow time | version registry | life | yes | yes | no | identical |
+| world and body state | World and Body | world | Perception (local), oracle (complete) | every step | step | real | life | yes | yes | no | recomputed |
+| protocol mask, R_letal_consecutif | Scheduler (safety protocol) | lethal rollback | control (filter) | at every rollback | step | technical | until validated step | in checkpoint | yes | no | identical |
+| death counters, metrics, profiles | Evaluation Bench | bench | bench, operator | continuous | step, day | external | campaign | no (evaluation trace) | evaluation trace | no | recomputed from journal |
+
+### 5.4 Diagram K · Owners of the main states
+
+```mermaid
+flowchart LR
+  GB["Goal Manager"] -->|"[D] owns"| S1["active goal"]
+  STC["S_t"] -->|"[D] owns"| S2["published S_t versions"]
+  POR["Gatekeeper"] -->|"[D] owns"| S2B["queues, quotas, habituation"]
+  POR -->|"[D] candidate content"| STC
+  MODG["Global Modulation"] -->|"[D] owns"| S3["modulation profile"]
+  COMP["Competition"] -->|"[D] owns"| S4["candidates, accumulators, engaged option, EvaluationOption"]
+  PLAN["Planning"] -->|"[D] owns"| S5["plans"]
+  CTRL["Action Control"] -->|"[D] owns"| S6["current step, commands, attributions, veto rules"]
+  VB["Value and Needs"] -->|"[D] owns"| S7["Q_active, setpoints, weights"]
+  META["Metacognition and Health"] -->|"[D] owns"| S8["κ_active, F_cog, sleep pressure, stagnation"]
+  PER["Perception"] -->|"[D] owns"| S9["estimates, active precisions"]
+  CAUS["Causal Model"] -->|"[D] owns"| S10["hypotheses, contingencies and statuses"]
+  MEM["Memory"] -->|"[D] owns"| S11["episodes, intentions, indexes"]
+  CONS["Consolidation"] -->|"[D] owns"| S12["h: consolidated forms"]
+  INST["Snapshots and Parameters"] -->|"[D] owns"| S13["τ, ParametresTemperament, version_E_active, versions of θ and h, snapshots"]
+  ORD["Scheduler"] -->|"[D] owns"| S14["clock, random streams, budgets, mask"]
+  JOUR["Journal"] -->|"[D] owns"| S15["chained events"]
+  MON["World and Body"] -->|"[D] owns"| S16["real world and body state"]
+  BANC["Evaluation Bench"] -->|"[D] owns"| S17["metrics, profiles, death counters"]
+  S12 -->|"[P] rebase at commit"| S7
+  S12 -->|"[P] rebase at commit"| S8
+  S12 -->|"[P] rebase at commit"| S9
+```
+
+## 6. Perception, gatekeeper, and cognitive space S_t
+
+### 6.1 Perception
+
+- Perception converts the world's local state and body telemetry into uncertain observations, signals deviations from predictions as typed errors, and emits threat alerts [spéc. 9.2].
+- It reads the local state provided by the world once per step; it never accesses the complete state or the oracle.
+- Its own state consists of the current estimate per entity, active precision per channel, and habituation counters. The last known position of each entity serves as the known map.
+- An observation taken directly from the step's local state carries anchor `monde`; any observation computed from other contributions carries anchor `derive` (DC-06).
+- Perception noise is parameterized and drawn from Perception's own random stream; it is zero in the minimal system at stage 4.
+- During sleep, only reduced perception remains active: stimuli capable of triggering a reflex, relevant threats, and critical body changes [S-10.2].
+
+### 6.2 Contents of S_t
+
+S_t is a bounded, versioned structure broadcast to all; it computes nothing and nobody reads it on behalf of others [spéc. 6].
+
+| Zone | Slot | Content | Supplied by |
+| --- | --- | --- | --- |
+| fixed | body | perceived body variables, deviations from setpoints | Value and Needs |
+| fixed | active goal | identifier, target, progress, optional deadline | Goal Manager |
+| fixed | plan step | current step of the engaged option, expected observations | Action Control |
+| fixed | profile | cycle modulation profile | Global Modulation |
+| fixed | budget | synthetic resource state: normal, constrained, or degraded [S-11.6] | Metacognition and Health |
+| fixed | last action | predicted consequence, observed deviation, attribution | Action Control (comparator) |
+| contested | K elements, including the safety slot | summary, references, score and decomposition, reliability, age, validity | Gatekeeper |
+
+Fixed slots do not compete and do not count toward quotas; the active goal occupies a fixed slot outside the quota [spéc. 5.8]. Every S_t version is a journal event: S_t can be reconstructed exactly at any time. Losing S_t does not lose identity, which is carried by θ.
+
+### 6.3 Gatekeeper pipeline
+
+The gatekeeper is deterministic code. It never chooses an action [spéc. 5].
+
+1. **Admission**: schema validation, presence of validity, module emission quota, marking of content originating from the world. Every rejection is logged.
+2. **Validity and recency**: any occupant, queue item, or new item that has lost semantic validity, or whose age_W reaches W, leaves the pool before any scoring [S-07.4, V-36].
+3. **Grouping**: deduplicate and merge contributions on the same exact subject; two correlated sources, for example backed by the same equipment module, count only once. A reobservation arising from a new causal event or a new world read remains a fresh contribution even if its subject and descriptive payload are identical to an earlier contribution.
+4. **Regime selection**: if the logical cost UC_full of normal scoring for the batch exceeds the ordinary available budget, the entire pass is scored in degraded mode [S-11.4].
+5. **Scoring**: the same function and the same parameter snapshot are used for occupants, the queue, and new items [S-07.1].
+6. **Safety preemption**, then **selection** of the K slots under hysteresis and quotas.
+7. **Queue**: admissible elements not retained enter it, under bounded capacity (DC-04).
+8. **Summary**: a summary beyond its limit is truncated with a reference to the details.
+9. **Publication**: S_t[n+1] is published atomically; each module receives feedback (retained, queued, rejected, evicted) with the score decomposition.
+
+### 6.4 Priority function
+
+```latex
+P(m) = f(m)\,\big[\,w_b\,b(m) + w_n\,n(m) + w_u\,\mathrm{urg}(m) + w_r\,\mathrm{rsk}(m) + w_v\,\mathrm{val}(m)\,\big]
+```
+
+| Term | Measure | Calculation |
+| --- | --- | --- |
+| f(m) | effective reliability | κ_(version_E,M,type,famille)(conf), map for the module, contribution type, and signal family (11.4, DC-06) |
+| b(m) | relevance to the active goal, in the strict sense | explicit links to the active goal, otherwise similarity to its content; an autonomous intrinsic option receives none [V-10] |
+| n(m) | novelty | deviation from S_t content and recent history; decreases when content repeats (habituation) |
+| urg(m) | contribution urgency | decreasing function of time remaining before the declared deadline |
+| rsk(m) | signaled risk | severity × probability × irreversibility of the signaled harm |
+| val(m) | value | expected effect on needs and goals, including outside the active goal |
+
+All terms are normalized to [0, 1]. f multiplies the rest: an unreliable alert cannot dominate through urgency alone. Compute cost never enters the score: estimating it before admission would be circular [S-07.5].
