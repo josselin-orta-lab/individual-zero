@@ -4,7 +4,8 @@ This directory contains the English equivalents of the long-form architecture re
 
 ## Current documents
 
-- [Normative MVP specification v1.2](mvp-specification-v1.2.md)
+- [Normative MVP specification v1.2.1](mvp-specification-v1.2.1.md) — current implementation authority
+- [Normative MVP specification v1.2](mvp-specification-v1.2.md) — superseded, retained for history
 
 ## Pending translations
 
