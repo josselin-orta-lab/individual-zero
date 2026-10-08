@@ -398,13 +398,13 @@ class Stage8Runtime(Stage7Runtime):
             self.journal.append(
                 event_id=deterministic_id(
                     "journal-event-v1", "stage8.precision",
-                    self.world.t_monde, source, observation_ref,
+                    self.scheduler.t_monde, source, observation_ref,
                     self.precision_active.version,
                 ),
                 causal_event={
                     "emitter": "perception",
                     "kind": "perceptual_precision_update_published",
-                    "t_monde": self.world.t_monde,
+                    "t_monde": self.scheduler.t_monde,
                     "source": source,
                     "verification_ref": observation_ref,
                     "before": old, "after": new,
