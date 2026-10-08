@@ -14,6 +14,7 @@ from i0.config import (
     SIMILARITY_FAMILIES,
     build_ontology_registry,
     build_parameter_registry,
+    build_run_manifest,
     build_safety_policy,
     build_schema_registry,
     build_signal_family_registry,
@@ -25,6 +26,7 @@ from lab.contracts import (
     SchemaDefinition,
     SchemaRegistry,
 )
+from lab.determinism import StructuralContractRef
 
 
 class OntologyRegistryTests(unittest.TestCase):
@@ -153,6 +155,60 @@ class ParameterRegistryTests(unittest.TestCase):
             build_parameter_registry(values)
 
         self.assertEqual(caught.exception.code, "unknown_parameter")
+
+
+class RunManifestBuilderTests(unittest.TestCase):
+    def complete_values(self) -> dict[str, object]:
+        return {
+            identifier: index
+            for index, identifier in enumerate(REQUIRED_PARAMETER_IDS)
+        }
+
+    def equipment_ref(self) -> StructuralContractRef:
+        return StructuralContractRef(
+            name="equipment",
+            version="stage1-dummy",
+            sha256="a" * 64,
+        )
+
+    def test_manifest_is_built_from_real_contract_hashes(self) -> None:
+        manifest = build_run_manifest(
+            values=self.complete_values(),
+            equipment=self.equipment_ref(),
+            python_version="3.11.14",
+            code_commit="abc123",
+            campaign_seed=42,
+        )
+
+        names = {contract.name for contract in manifest.contracts}
+
+        self.assertEqual(manifest.specification_version, "1.2.1")
+        self.assertEqual(
+            names,
+            {
+                "ontology_registry",
+                "similarity_schema",
+                "signal_family_registry",
+                "safety_policy",
+                "parameter_registry",
+                "schema_registry",
+                "equipment",
+            },
+        )
+        self.assertEqual(len(manifest.digest()), 64)
+
+    def test_manifest_refuses_incomplete_parameter_values(self) -> None:
+        values = self.complete_values()
+        del values["P-55"]
+
+        with self.assertRaises(ContractViolation):
+            build_run_manifest(
+                values=values,
+                equipment=self.equipment_ref(),
+                python_version="3.11.14",
+                code_commit="abc123",
+                campaign_seed=42,
+            )
 
 
 class SchemaRegistryTests(unittest.TestCase):
