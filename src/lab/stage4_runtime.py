@@ -866,21 +866,33 @@ class Stage4Runtime:
             )
         return execution
 
+    def _handle_agency_comparison(
+        self,
+        *,
+        capture,
+        comparison,
+    ) -> None:
+        """Stage-specific comparison seam; Stage 4 keeps its exact behavior."""
+        self._write(
+            kind="agency_comparison",
+            data=self._comparison_as_dict(comparison),
+        )
+        if (
+            comparison.status == "nonconforming"
+            and comparison.option_ref is not None
+        ):
+            self.competition.invalidate_candidate(comparison.option_ref)
+            self.stage3.control.clear_option_step(comparison.option_ref)
+            self.planning.invalidate_current()
+
     def run_step(self) -> Stage4StepResult:
         capture = self.stage3.open_step()
         comparison = self.stage3.control.compare_capture(capture)
         if comparison is not None:
-            self._write(
-                kind="agency_comparison",
-                data=self._comparison_as_dict(comparison),
+            self._handle_agency_comparison(
+                capture=capture,
+                comparison=comparison,
             )
-            if (
-                comparison.status == "nonconforming"
-                and comparison.option_ref is not None
-            ):
-                self.competition.invalidate_candidate(comparison.option_ref)
-                self.stage3.control.clear_option_step(comparison.option_ref)
-                self.planning.invalidate_current()
 
         self._step_need_state = self.value_needs.assess(capture.body)
         self._step_reward = self.value_needs.reward_for(self._step_need_state)
