@@ -141,6 +141,8 @@ class Stage4Runtime:
         self._proposal_this_cycle: OptionProposal | None = None
         self._cycle_result = None
         self._admitted_decision = None
+        self._fallback_used_this_cycle = False
+        self._safety_block_after_cycle = False
         self._cycle_degraded = False
 
     @property
@@ -615,6 +617,13 @@ class Stage4Runtime:
             )
 
         def competition_registration_hook(_ctx: PhaseContext) -> None:
+            current = self.s_t.current
+            if current is None:
+                raise RuntimeError("Competition requires a published S_t")
+            self.competition.ensure_wait(
+                t_monde=capture.t_monde,
+                st_version=current.version,
+            )
             if not self._charge(
                 module="competition",
                 operation="competition_register",
@@ -627,13 +636,6 @@ class Stage4Runtime:
                     else self.goal_manager.active_goal.id
                 ),
                 t_monde=capture.t_monde,
-            )
-            current = self.s_t.current
-            if current is None:
-                raise RuntimeError("Competition requires a published S_t")
-            self.competition.ensure_wait(
-                t_monde=capture.t_monde,
-                st_version=current.version,
             )
             if self._proposal_this_cycle is not None:
                 registered = self.competition.register(
@@ -686,15 +688,49 @@ class Stage4Runtime:
 
         def control_hook(_ctx: PhaseContext) -> None:
             self._admitted_decision = None
-            if self._cycle_result is None:
+            self._fallback_used_this_cycle = False
+            self._safety_block_after_cycle = False
+
+            if self._cycle_result is not None:
+                for proposal in self._cycle_result.crossed_ranked:
+                    if not self._charge(
+                        module="action_control",
+                        operation="control_admit",
+                        protected=True,
+                    ):
+                        return
+                    prepared = self.stage3.control.prepare_option_step(proposal)
+                    admission = self.stage3.control.admit(
+                        capture=capture,
+                        prepared=prepared,
+                    )
+                    self.stage3.record_admission(
+                        prepared=prepared,
+                        admission=admission,
+                    )
+                    if admission.ok:
+                        self._admitted_decision = (
+                            proposal,
+                            prepared,
+                            admission,
+                        )
+                        return
+                    if admission.scope == "option":
+                        self.competition.invalidate_candidate(proposal.option.id)
+                        self.planning.invalidate_current()
+                        self.stage3.control.clear_option_step(
+                            proposal.option.id
+                        )
+
+            if cycle != self._config.competition.c_max:
                 return
-            for proposal in self._cycle_result.crossed_ranked:
-                if not self._charge(
+
+            for proposal in self.competition.fallback_candidates():
+                self._charge(
                     module="action_control",
                     operation="control_admit",
                     protected=True,
-                ):
-                    return
+                )
                 prepared = self.stage3.control.prepare_option_step(proposal)
                 admission = self.stage3.control.admit(
                     capture=capture,
@@ -710,11 +746,12 @@ class Stage4Runtime:
                         prepared,
                         admission,
                     )
+                    self._fallback_used_this_cycle = True
                     return
                 if admission.scope == "option":
                     self.competition.invalidate_candidate(proposal.option.id)
-                    self.planning.invalidate_current()
-                    self.stage3.control.clear_option_step(proposal.option.id)
+
+            self._safety_block_after_cycle = True
 
         def metacognition_hook(_ctx: PhaseContext) -> None:
             self.metacognition.close_cycle(
@@ -781,57 +818,6 @@ class Stage4Runtime:
             self.stage3.control.mark_cognitive_step_applied(proposal)
         return execution
 
-    def _fallback(
-        self,
-        *,
-        capture,
-        cycle: int,
-    ) -> tuple[OptionProposal | None, CommandExecution | None]:
-        first = self.competition.fallback()
-        candidates = [first]
-        if first.option.id != "permanent:attendre":
-            wait = next(
-                (
-                    state.proposal
-                    for state in self.competition._registry.values()
-                    if state.proposal.option.id == "permanent:attendre"
-                ),
-                None,
-            )
-            if wait is not None:
-                candidates.append(wait)
-
-        for proposal in candidates:
-            prepared = self.stage3.control.prepare_option_step(proposal)
-            admission = self.stage3.control.admit(
-                capture=capture,
-                prepared=prepared,
-            )
-            self.stage3.record_admission(
-                prepared=prepared,
-                admission=admission,
-            )
-            if not admission.ok:
-                if admission.scope == "option":
-                    self.competition.invalidate_candidate(proposal.option.id)
-                continue
-            return proposal, self._dispatch_decision(
-                proposal=proposal,
-                prepared=prepared,
-                admission=admission,
-                cycle=cycle,
-            )
-
-        self.stage3.substrate.safety.enter_safety_block(
-            reason="no_admissible_safe_command",
-        )
-        self.scheduler.close_step(
-            outcome="blocked",
-            applied_command_count=0,
-            world_advance_count=0,
-        )
-        return None, None
-
     def run_step(self) -> Stage4StepResult:
         capture = self.stage3.open_step()
         self._step_need_state = self.value_needs.assess(capture.body)
@@ -875,6 +861,8 @@ class Stage4Runtime:
         start_cycle = 1
         for cycle in range(start_cycle, self._config.competition.c_max + 1):
             self._admitted_decision = None
+            self._fallback_used_this_cycle = False
+            self._safety_block_after_cycle = False
             self._proposal_this_cycle = None
             goal_for_planning = self.goal_manager.active_goal
             st_before_cycle = self.s_t.current
@@ -889,6 +877,31 @@ class Stage4Runtime:
                 ),
             )
             self.goal_manager.close_cycle_inputs()
+
+            if self._safety_block_after_cycle:
+                self.stage3.substrate.safety.enter_safety_block(
+                    reason="no_admissible_safe_command",
+                )
+                self.scheduler.close_step(
+                    outcome="blocked",
+                    applied_command_count=0,
+                    world_advance_count=0,
+                )
+                self.stage3._capture = None
+                return Stage4StepResult(
+                    source="fallback",
+                    execution_status="safety_block",
+                    command_primitive=None,
+                    option_ref=None,
+                    st_version=(
+                        None
+                        if self.s_t.current is None
+                        else self.s_t.current.version
+                    ),
+                    cycles_used=cycle,
+                    reflex_triggered=reflex is not None,
+                    fallback_used=True,
+                )
 
             if self._admitted_decision is None:
                 continue
@@ -910,7 +923,11 @@ class Stage4Runtime:
                 self.competition.close_deliberation(proposal)
             self.stage3._capture = None
             return Stage4StepResult(
-                source="decision",
+                source=(
+                    "fallback"
+                    if self._fallback_used_this_cycle
+                    else "decision"
+                ),
                 execution_status=execution.status,
                 command_primitive=prepared.command.primitive,
                 option_ref=proposal.option.id,
@@ -919,44 +936,7 @@ class Stage4Runtime:
                 ),
                 cycles_used=cycle,
                 reflex_triggered=reflex is not None,
-                fallback_used=False,
+                fallback_used=self._fallback_used_this_cycle,
             )
 
-        proposal, execution = self._fallback(
-            capture=capture,
-            cycle=self._config.competition.c_max,
-        )
-        if execution is None:
-            self.stage3._capture = None
-            return Stage4StepResult(
-                source="fallback",
-                execution_status="safety_block",
-                command_primitive=None,
-                option_ref=None,
-                st_version=(
-                    None if self.s_t.current is None else self.s_t.current.version
-                ),
-                cycles_used=self._config.competition.c_max,
-                reflex_triggered=reflex is not None,
-                fallback_used=True,
-            )
-
-        if execution.status == "applied":
-            self.competition.close_deliberation(proposal)
-        self.stage3._capture = None
-        return Stage4StepResult(
-            source="fallback",
-            execution_status=execution.status,
-            command_primitive=(
-                None
-                if proposal is None or proposal.plan is None
-                else self.stage3.control.prepare_option_step(proposal).command.primitive
-            ),
-            option_ref=None if proposal is None else proposal.option.id,
-            st_version=(
-                None if self.s_t.current is None else self.s_t.current.version
-            ),
-            cycles_used=self._config.competition.c_max,
-            reflex_triggered=reflex is not None,
-            fallback_used=True,
-        )
+        raise RuntimeError("Stage 4 deliberation exited without decision or block")
