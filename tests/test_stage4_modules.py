@@ -352,6 +352,23 @@ class CompetitionTests(unittest.TestCase):
         self.assertIsNotNone(second.winner)
         self.assertEqual(second.winner.option.id, "drink")
 
+    def test_nonwinning_alternative_keeps_residual_across_opening(self) -> None:
+        comp = self.competition()
+        first = proposal("first", "boire")
+        second = proposal("second", "boire")
+        comp.register(first, active_goal_id=None, t_monde=1)
+        comp.register(second, active_goal_id=None, t_monde=1)
+        comp.open_deliberation(active_goal_id=None, t_monde=1)
+        comp.evaluate(cycle=1, t_monde=1)
+        comp.close_deliberation(first)
+
+        comp.open_deliberation(active_goal_id=None, t_monde=2)
+        result = comp.evaluate(cycle=1, t_monde=2)
+        trace = next(t for t in result.traces if t.option_ref == "second")
+
+        self.assertGreater(trace.accumulator_before, 0.0)
+        self.assertAlmostEqual(trace.accumulator_before, 0.3)
+
     def test_engaged_option_restarts_from_zero_on_opening(self) -> None:
         comp = self.competition()
         p = proposal("drink", "boire")
