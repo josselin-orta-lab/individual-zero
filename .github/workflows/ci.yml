@@ -34,6 +34,43 @@ jobs:
       - name: Run bootstrap smoke execution
         run: individual-zero --cycles 3 --seed 0 --run-id ci-smoke --output /tmp/individual-zero-ci.jsonl
 
+      - name: Stage 8 reference and online-state metrics
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from lab.stage8_reference_fixture import build_stage8_reference_runtime
+
+          runtime = build_stage8_reference_runtime()
+          for _ in range(300):
+              outcome = runtime.run_step()
+              if outcome.execution_status != "applied":
+                  raise SystemExit(f"unexpected Stage 8 outcome: {outcome.execution_status}")
+          if not runtime.journal.verify():
+              raise SystemExit("invalid Stage 8 journal")
+          payload = runtime.journal.canonical_bytes()
+          Path("/tmp/stage8-reference.jsonl").write_bytes(payload + b"\n")
+          q = runtime.q_active.export_causal_state()
+          kappa = runtime.kappa_active.export_causal_state()
+          print(f"stage8_bytes={len(payload)}")
+          print(f"stage8_head={runtime.journal.head_hash}")
+          print(f"stage8_q_signatures={len(q['weights'])}")
+          print(f"stage8_q_updates={sum(q['update_counts'].values())}")
+          print(f"stage8_kappa_version={kappa['version']}")
+          print(f"stage8_kappa_keys={len(kappa['counters'])}")
+          print(f"stage8_f_cog={runtime.metacognition.state.f_cog_uc_counter}")
+          if not q['weights'] or not kappa['counters']:
+              raise SystemExit("Stage 8 Q and kappa must both evolve")
+          PY
+
+      - name: Upload Stage 8 reference journal
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8-reference-journal
+          path: /tmp/stage8-reference.jsonl
+          if-no-files-found: error
+
       - name: Generate Stage 1 reference journal
         if: matrix.python-version == '3.11'
         run: |
@@ -437,39 +474,3 @@ jobs:
           path: /tmp/stage7-reference.jsonl
           if-no-files-found: error
 
-      - name: Stage 8 reference and online-state metrics
-        if: matrix.python-version == '3.11'
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          from lab.stage8_reference_fixture import build_stage8_reference_runtime
-
-          runtime = build_stage8_reference_runtime()
-          for _ in range(300):
-              outcome = runtime.run_step()
-              if outcome.execution_status != "applied":
-                  raise SystemExit(f"unexpected Stage 8 outcome: {outcome.execution_status}")
-          if not runtime.journal.verify():
-              raise SystemExit("invalid Stage 8 journal")
-          payload = runtime.journal.canonical_bytes()
-          Path("/tmp/stage8-reference.jsonl").write_bytes(payload + b"\\n")
-          q = runtime.q_active.export_causal_state()
-          kappa = runtime.kappa_active.export_causal_state()
-          print(f"stage8_bytes={len(payload)}")
-          print(f"stage8_head={runtime.journal.head_hash}")
-          print(f"stage8_q_signatures={len(q['weights'])}")
-          print(f"stage8_q_updates={sum(q['update_counts'].values())}")
-          print(f"stage8_kappa_version={kappa['version']}")
-          print(f"stage8_kappa_keys={len(kappa['counters'])}")
-          print(f"stage8_f_cog={runtime.metacognition.state.f_cog_uc_counter}")
-          if not q['weights'] or not kappa['counters']:
-              raise SystemExit("Stage 8 Q and kappa must both evolve")
-          PY
-
-      - name: Upload Stage 8 reference journal
-        if: matrix.python-version == '3.11'
-        uses: actions/upload-artifact@v4
-        with:
-          name: stage8-reference-journal
-          path: /tmp/stage8-reference.jsonl
-          if-no-files-found: error
