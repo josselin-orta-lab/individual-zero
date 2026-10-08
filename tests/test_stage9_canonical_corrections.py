@@ -11,6 +11,10 @@ import unittest
 from dataclasses import replace
 
 from i0.interfaces import PrimitiveCommand
+from i0.equipment import (
+    EquipmentCorpus, EquipmentCorpusExample, train_exact_transition_table,
+)
+from i0.modules.simulator import Simulator, SimulatorConfig
 from i0.equipment import EquipmentPrediction, PredictedEffect
 from i0.modules.causal_model import (
     CausalModel, CausalModelConfig, SafetyEvidence,
@@ -207,6 +211,47 @@ class CanonicalCorrectionTests(unittest.TestCase):
         self.assertEqual(corrected.equipment_version, prediction.equipment_version)
         self.assertEqual(corrected.confidence, 0.8)
         self.assertEqual(prediction.next_state.body["integrity"], 100.0)
+
+        # The same canonical owner is really consumed by Simulator, not only
+        # by the isolated correction function. The frozen equipment remains
+        # identical, and its prediction returns after causal refutation.
+        equipment = train_exact_transition_table(
+            corpus=EquipmentCorpus(
+                version="stage9-canonical-food-corpus-v1",
+                examples=(EquipmentCorpusExample(
+                    family="lived_food_controlled",
+                    state=before,
+                    command=command,
+                    observed_next_state=before,
+                    terminal=False,
+                ),),
+            ),
+            equipment_version="E-stage9-immutable-test",
+        )
+        simulator = Simulator(
+            config=SimulatorConfig(
+                version="stage9-canonical-simulator-v1", r_max=1, h_max=1,
+            ),
+            equipment=equipment,
+            corrections=m,
+        )
+        control = Simulator(
+            config=SimulatorConfig(
+                version="stage9-base-simulator-v1", r_max=1, h_max=1,
+            ),
+            equipment=equipment,
+        )
+
+        def predicted_integrity(sim):
+            result = sim.rollout(
+                initial_state=before, commands=(command,), r_eff=1, h_eff=1,
+            )
+            self.assertTrue(result.complete)
+            return result.completed_rollouts[0].predictions[0].next_state.body["integrity"]
+
+        self.assertEqual(predicted_integrity(control), 100.0)
+        self.assertEqual(predicted_integrity(simulator), 90.0)
+        self.assertEqual(predicted_integrity(control), 100.0)
         changed_context = replace(before, x=5)
         fallback, refs = correct_equipment_prediction(
             source=m, command=command, state=changed_context,
@@ -251,6 +296,7 @@ class CanonicalCorrectionTests(unittest.TestCase):
         m.publish_causal_inference()
         self.assertEqual(m.get(REF).causal_status, "hypothese_causale")
         self.assertEqual(m.established_prediction_corrections(), ())
+        self.assertEqual(predicted_integrity(simulator), 100.0)
 
     def test_safety_status_alone_never_produces_simulator_rule(self):
         m = model()
