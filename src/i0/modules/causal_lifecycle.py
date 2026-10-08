@@ -234,6 +234,13 @@ def agency_evidence_from_autobiography(
     data = event.get("data")
     if not isinstance(data, Mapping) or not isinstance(data.get("option_ref"), str):
         return None
+    if any(
+        event.get(flag) is True or data.get(flag) is True
+        for flag in ("oracle_derived", "rollback_cancelled", "counterfactual")
+    ):
+        raise ValueError("forbidden-source agency evidence is inadmissible")
+    if event.get("t_monde") != data.get("observed_t_monde"):
+        raise ValueError("agency observation time differs from DC-09 source event")
     effects_raw = data.get("effects")
     if not isinstance(effects_raw, (tuple, list)) or not effects_raw:
         return None
