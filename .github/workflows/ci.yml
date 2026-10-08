@@ -35,6 +35,46 @@ jobs:
       - name: Run bootstrap smoke execution
         run: individual-zero --cycles 3 --seed 0 --run-id ci-smoke --output /tmp/individual-zero-ci.jsonl
 
+      - name: Stage 8 preregistered physical κ stress Brier gate
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from lab.stage8_calibration_stress import controlled_physical_calibration
+          report = controlled_physical_calibration()
+          result = {
+              "protocol_version": report.version,
+              "independent_physical_observations": report.credited_observations,
+              "confirmations": report.confirmations,
+              "contradictions": report.contradictions,
+              "brier_early": report.early_brier,
+              "brier_late": report.late_brier,
+              "brier_neutral": report.baseline_brier,
+          }
+          Path("/tmp/stage8-physical-kappa.json").write_text(
+              json.dumps(result, sort_keys=True, indent=2) + "\\n", encoding="utf8"
+          )
+          print("stage8_physical_kappa=" + json.dumps(result, sort_keys=True))
+          if not (report.credited_observations == 80
+                  and report.confirmations > 0 and report.contradictions > 0
+                  and report.late_brier < report.early_brier
+                  and report.late_brier < report.baseline_brier):
+              raise SystemExit("Stage 8 κ independent physical Brier gate failed")
+          second = controlled_physical_calibration()
+          if second != report:
+              raise SystemExit("Stage 8 physical calibration replay differs")
+          print("stage8_physical_kappa_replay_exact=true")
+          PY
+
+      - name: Upload Stage 8 physical κ calibration
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8-physical-kappa-calibration
+          path: /tmp/stage8-physical-kappa.json
+          if-no-files-found: error
+
       - name: Stage 8 physical learning and prequential calibration curves
         if: matrix.python-version == '3.11'
         run: |
