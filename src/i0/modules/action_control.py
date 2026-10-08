@@ -344,6 +344,16 @@ class ActionControl:
             return admission, None
         return admission, sender(admission.command)
 
+    def dispatch_prechecked(
+        self,
+        *,
+        admission: AdmissionResult,
+        sender: Callable[[PrimitiveCommand], object],
+    ) -> object:
+        if not admission.ok:
+            raise ValueError("cannot dispatch a refused admission")
+        return sender(admission.command)
+
     def export_causal_state(self) -> object:
         return {
             "safety_policy_version": self._config.safety_policy_version,
