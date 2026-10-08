@@ -108,7 +108,7 @@ class Stage8Runtime(Stage7Runtime):
         version = (
             self.equipment.version
             if contribution.signal_family == "equipment_predictor"
-            else self._stage8_config.version
+            else self._config.version
         )
         return kappa.reliability(
             version=version,
