@@ -67,7 +67,9 @@ class HashChainedJournal:
             raise ValueError("event_id must not be empty")
 
         previous_hash = self.head_hash
-        event_bytes = canonical_causal_bytes(causal_event)
+        event_bytes = canonical_causal_bytes(
+            {"event_id": event_id, "causal_event": causal_event}
+        )
         event_hash = sha256_hex(bytes.fromhex(previous_hash) + event_bytes)
 
         entry = JournalEntry(
@@ -98,7 +100,12 @@ class HashChainedJournal:
                 return False
             expected_hash = sha256_hex(
                 bytes.fromhex(previous_hash)
-                + canonical_causal_bytes(entry.causal_event)
+                + canonical_causal_bytes(
+                    {
+                        "event_id": entry.event_id,
+                        "causal_event": entry.causal_event,
+                    }
+                )
             )
             if entry.event_hash != expected_hash:
                 return False
