@@ -448,3 +448,204 @@ sequenceDiagram
   participant CTL as Action control
   ORD->>MON: [T] open step t, world and body frozen
   MON->>PER: [D] local state and telemetry for step t
+
+  PER->>CTL: [E] step stimuli, reflex test
+  ORD->>COM: [T] open deliberation
+  loop cycles c = 1 to n, with n at most C_max
+    ORD->>PRO: [T] cycle c, S_t[n], κ and profile frozen
+    PRO->>POR: [D] cycle contributions
+    POR->>COM: [P] S_t[n+1] published
+    COM->>COM: [S] evaluations, accumulation, threshold test
+  end
+  COM->>CTL: [C] decided option, or C_max fallback
+  CTL->>CTL: [S] admissibility, veto, protocol mask
+  Note over CTL,MON: lethal checkpoint taken just before sending, deliberation not closed (18.4)
+  CTL->>MON: [C] command for step t
+  MON->>ORD: [T] world and body advance, non-lethal transition
+  ORD->>COM: [C] close deliberation: ρ, engagement, u(c) reset
+  ORD->>PRO: [C] TD update for the closed segment, visible at step t+1 (DC-15)
+  ORD->>MON: [T] end step t, open step t+1, observe consequences
+```
+
+Running example. The individual is thirsty (water 35, setpoint 60). At step t, deliberation lasts three cycles: in cycle 1, the "water below setpoint" alert enters S_t; in cycle 2, the goal manager has made "drink" the active goal and Planning proposes the option "go to the source and drink"; in cycle 3, that option crosses its threshold. A single command, "north", is sent to the world at the end of the step.
+
+### 3.6 Visibility time of modifications
+
+| Modification | Produced | Visible to | Starting from |
+| --- | --- | --- | --- |
+| New S_t[n+1] version | phase 2 of cycle n | competition | phase 3 of the same cycle |
+| New S_t[n+1] version | phase 2 of cycle n | all other modules | phase 1 of cycle n+1 [S-02.2] |
+| Active-goal change | phase 1 of cycle n (goal manager) | gatekeeper (fixed slot), then all | S_t[n+1]; Planning at cycle n+1 |
+| Modulation profile | phase 0, computed from S_t[n] | gatekeeper | all of cycle n, unchanged [S-02.6] |
+| κ | verifications integrated in phase 5 of cycle n | gatekeeper, competition | cycle n+1 [S-08.6] |
+| Learned value Q_active | TD update at the end of step t, when it ends without a lethal transition | competition | first cycle of step t+1 [S-05.1, DC-15] |
+| Proposed option | phase 1 of cycle n | candidate registry | phase 3 of the same cycle [DC-10] |
+| Command | admitted decision | world | end of the step |
+| Consequence of a command | world transition at the end of step t | perception, comparator | opening of step t+1 |
+| Contingency status | phase 5 (causal model) | simulator, veto, admissibility | next cycle |
+| Closed episode | episode boundary | memory recall | next cycle |
+| h_new and rebased active forms | coordinated commit during sleep | all components | first waking cycle after the commit [V-22] |
+
+### 3.7 Feedback-loop cuts
+
+Every loop passes through an explicit temporal cut; none closes within the same cycle.
+
+| Loop | Cut |
+| --- | --- |
+| profile → gatekeeper weights → S_t → profile | profile computed from S_t[n], frozen during the cycle |
+| S_t → competition → command → last action → S_t | write after execution, read at the next step |
+| prediction → verification → κ → scoring | κ frozen during scoring for a cycle, new version in the next cycle |
+| action → consequence → value → evidence → action | TD update visible at the next step |
+| contribution → S_t[n+1] → new contribution | examined in the next cycle, never in the same cycle |
+| request → subrequest → request | maximum depth 1, cyclic dependencies forbidden [S-04.5] |
+| goal → plan → stagnation → goal | stagnation emits a signal; only the goal manager changes the goal, visible in S_t[n+1] |
+| hypothesis → test → result → hypothesis | tests proposed as options, under budget, through competition |
+| episodes → consolidation → h → behavior | offline, transactional, published at commit |
+| monitoring → quotas → S_t occupancy | quotas applied in the cycle after they are computed |
+| death → rollback → deliberation | the lethal transition never enters learning or the autobiographical view |
+
+### 3.8 End of a deliberation
+
+- A deliberation ends as soon as an option crosses its threshold and its command is admitted, or when C_max is reached.
+- At C_max with no winner, fallback applies: the engaged option is continued if it remains valid, authorized, executable, and unmasked; otherwise `attendre` is executed. Reflexes, vetoes, and priority paths retain priority over this fallback [S-05.8].
+- No threshold is lowered to force a decision; u(c) increases but never creates evidence [S-05.5].
+- Every C_max occurrence is logged with the final competition state and the fallback applied.
+- C_max fallback is distinct from inertia: inertia acts on the threshold during deliberation; fallback acts afterward [V-34].
+
+## 4. Contracts, messages, and ontology
+
+### 4.1 Ontology
+
+- All modules use one shared ontology, closed during an execution and explicitly versioned [S-03.1]. Any vocabulary change creates a new version; the version used is retained with the execution.
+- Concrete MVP categories: individual, water source, berry, stone, wood, creature, shelter, zone, crafted object, or tool. Abstract groupings (resource, structure, external agent) classify these categories without creating a physical entity.
+- Every entity has at least a stable identifier, an ontology type, a location or region when that notion makes sense, a state, and the physical or observable properties defined for its type.
+- The real state of an entity belongs to the world; what the individual knows about it belongs to its observations and estimates. Confidence, relevance, novelty, value, and urgency are never entity attributes [S-03.1].
+- The world instantiates only types from the active version. An entity of unknown type received by the system is a contract violation: it is rejected and logged, never placed in an "unknown" category [S-03.6]. An unknown property of a known entity is uncertainty, not a new type.
+
+**Vocabulary.** Exchanged variables, units, actions, and symbols belong to the same closed, versioned vocabulary [S-03.2]. Each term carries a stable identifier, a category, a type, semantics, an optional unit, and an introduction version. Every measurable quantity has a canonical unit; every conversion is explicit; `pas`, `cycle`, and `jour` are distinct units. A message containing a term absent from the active version is rejected and logged.
+
+**MVP primitive actions** [spéc. 10.1, NQ-15]: `se déplacer` (north, south, east, west), `collecter`, `manger`, `boire`, `poser une pierre`, `fabriquer_outil`, `dormir`, `attendre`. `fabriquer_outil` turns wood and stone from inventory into a tool whose minimum function is to improve collection; its recipe and gain are world parameters (22).
+
+### 4.2 Subjects and similarity
+
+- A **subject** is a canonical, versioned symbolic key built from the ontology: an entity, an entity property, a relation between entities, or a goal [S-03.3]. Each contribution has one main subject; other mentioned objects are secondary references.
+- Two contributions concern the same exact subject if their canonical keys are identical. Subject groupings (a property attached to its entity) are used for subscriptions and triggers without changing subject identity.
+- A subject is descriptive: it contains no urgency, value, or preference.
+- Similarity, used by novelty, relevance, and recall, relies on a deterministic hand-written vector representation defined by family (entities, situations, episodes), with every dimension documented, normalized, and versioned, and absent values represented explicitly [S-03.4]. Symbolic rules determine in advance what may be compared.
+- No learned encoder is used in the MVP. A future extension would have to be trained offline on a descriptive corpus, frozen before birth, validated by a substitution test, and retained with the equipment [S-03.5].
+
+### 4.3 Contributions
+
+Every module communicates through contributions: a common envelope, a typed payload, and a bounded summary, the only part admissible into S_t [spéc. 4].
+
+| Type | Required payload | Running example |
+| --- | --- | --- |
+| observation | entity, attribute, value, uncertainty, channel, anchor | "water source 5 cells north" |
+| hypothesis | statement, alternatives, evidence for and against, causal status, proposed test | "the red berry precedes a loss of integrity" |
+| alert | condition, severity, reflex already taken, acknowledgment required | "water below setpoint" |
+| proposed action | an option proposal (OptionProposee, 5.2) | "go to the source and drink" |
+| prediction | variable, horizon, distribution, condition, deadline and verification method | "position after the step: one cell farther north" |
+| response | request reference, status, content | "2 stones in inventory" |
+
+```text
+Contribution {
+  id                    # deterministic in causal state: (emitter, t_monde, cycle, causal_sequence)
+  version_schema
+  type                  : observation | hypothese | alerte | action_proposee | prediction | reponse
+  resume                : bounded short text, only content admissible in S_t
+  charge                : typed data according to type
+  subject_ref           : main subject; references_secondaires : [subjects]
+  confiance             : { conf ∈ [0,1], methode : declaree | echantillonnage | verificateur }
+  urgence               : { niveau ∈ [0,1], echeance? : (value, unit) }
+  risque                : { niveau ∈ [0,1], irreversible : boolean }
+  valeur                : { estimation, cible : but | besoin, incertitude }
+  cout                  : { engage_UC }                        # measured, never included in the gatekeeper score [S-07.5]
+  provenance            : { individu, module, version_module, equipement?, entrees : [ids], signal_ids : [ids] }
+  horodatage            : { t_monde, cycle, t_systeme }        # attempt_ref belongs to JournalEvent, not the cognitive object; t_systeme is outside causality
+  validite              : { expire_a : (value, pas), invalide_si? }
+  liens                 : { request_ref?, remplace?, fil? }
+  degrade               : boolean                              # produced in degraded mode [S-11.5]
+  empreinte
+}
+```
+
+### 4.4 Contract rules
+
+- The schema is validated on admission; every rejection is logged with its reason [spéc. 4.7].
+- The summary is capped in number of fields and characters; overflow is truncated with a reference to the detail.
+- A contribution without an expiration or invalidation condition is refused.
+- An update is performed through `remplace`, never by duplication.
+- The schema is versioned. An unknown major version, an unknown semantic term, or an unknown field capable of influencing causality causes a logged rejection. Only an optional field explicitly declared non-causal and ignorable by the compatible contract version MAY be ignored. Two conforming executables must never be able to interpret the same causal message differently.
+- A deadline MUST carry its unit (`pas`, `cycle`, or `jour`) [S-02.3].
+- **Declared is not believed.** Declared confidence conf is recalibrated into effective reliability f = κ_(version_E,M,type,famille)(conf) by the emitting module's map [spéc. 4.4, Q11].
+- Machine time (t_systeme, latency, CPU) has no causal effect; it enters the causal perimeter only if it is actually used, in which case it must be logged so it can be restored on replay [S-01.6, S-11.1].
+
+### 4.5 Requests and responses
+
+- Requests have two emitters: Metacognition, when confidence in an element falls, and a module missing a precondition, such as Planning requesting the number of stones in inventory [spéc. 4.6].
+- Each request has a recipient, a budget in UC and cycles, a typed deadline, and a depth. A request without a budget, or invalid under its contract, is **rejected by the validation layer**, which is not a refusal by the module [S-04.4].
+- The response is delivered directly to the requester. A response type declared **shareable** may also enter the ordinary gatekeeper path, with neither a guaranteed slot nor priority from being a response [S-04.1, S-04.2].
+- After the deadline, the requester applies its fallback rule; a late response is delivered with status `tardive` and treated as new information, never as retroactive satisfaction of the request. A response to a cancelled request is logged without being delivered [S-04.3].
+- A module MAY refuse a valid request with a reasoned, coded, versioned refusal; the requester then stops waiting. Refusal, empty response, and absence of a response before the deadline are three distinct statuses [S-04.4].
+- A request may trigger subrequests, only up to **depth 1**, using the remaining budget and without exceeding the parent's deadline; cyclic dependencies are forbidden and logged [S-04.5]. The same question asked of the same module during the recency window is refused [spéc. 5.7].
+
+### 4.6 External inputs
+
+Any information originating outside the simulation that can change its execution, including an operator command, a scenario or event injected by the bench, or actually used data from the technical environment, MUST pass through an identified interface and be logged **before** application, with its content, provenance, reception order, and application point in simulated time [S-01.6]. Reception, application, and rejection are three distinct events. During replay, external inputs are reinjected at the same points; internal pseudorandom draws are not external inputs.
+
+## 5. Data model and state ownership
+
+### 5.1 Common rules
+
+- Every identifier is deterministic and reproducible on replay. A persistent cognitive-object identifier derives from its owner and stable causal context; a technical journal-occurrence identifier derives at minimum from `(emitter, t_monde, cycle, attempt_ref, local_sequence)`. `attempt_ref` distinguishes successive branches of the same step after rollback and is never accessible to the individual. No identifier depends on an unlogged source of randomness.
+- Every persistent object carries its version and provenance; every reference to a versioned object identifies the targeted version.
+- Published objects (versions of S_t, κ, h, and a cycle's EvaluationOption) are immutable.
+- Fields followed by `?` are optional. Names retain those from the sources where they exist.
+
+### 5.2 Schemas
+
+**Observation, alert, prediction, hypothesis, and verification.** The first four are typed payloads of contributions; `Verification` is an internal Metacognition object that links a contribution to later evidence and qualifies its admissibility for κ.
+
+```text
+Observation { entite_ref, attribut, valeur, incertitude, canal,
+              ancrage : monde | derive }            # "monde": taken from the step's local state, without an intermediary (DC-06)
+Alerte      { condition, gravite ∈ [0,1], reflexe_pris?, accuse_requis : boolean }
+Prediction  { variable, horizon : (value, unit), distribution, condition?,
+              echeance_verification : (value, unit), methode_verification,
+              statut : en_attente | confirmee | contredite | indeterminee | non_verifiable
+                     | contrefactuelle_non_verifiee }                       # S-08.1, S-08.3
+Hypothese   { enonce, alternatives : [enonces], pour : [refs], contre : [refs],
+              statut_causal : correlation | hypothese_causale | testee | etablie, test_propose? }
+Verification { cible_ref, statut : confirmee | contredite | indeterminee | non_verifiable | contrefactuelle_non_verifiee,
+               preuve_ref?, famille_signal, qualite_kappa : forte_independante | stabilite_meme_canal | non_recevable,
+               raison, t_monde, cycle }
+```
+
+**Request and response** [spéc. Appendix B, S-04].
+
+```text
+Requete { id, individu, emetteur, destinataire : module | capacite,
+          question, contexte : refs S_t, budget : { UC, cycles }, echeance : (value, unit),
+          format_attendu, profondeur ∈ {0, 1}, parent_ref?, racine_ref }
+Reponse { request_ref, statut : livree | tardive | refus | vide | rejet_validation,
+          contenu?, motif_refus?, partageable : boolean, t_monde_production, validite? }
+```
+
+**Goals.** Only the Goal Manager creates, modifies, and closes a Goal [NQ-01].
+
+```text
+GoalProposal { id, source : valeur_besoins | memoire_prospective, type_but, cible,
+               pression_base ∈ [0,1], pression_courante ∈ [0,1], echeance?,
+               justification_ref, t_monde, cycle, version_regle }                      # DC-03
+Goal { id, type_but, cible, condition_satisfaction, mesure_principale,
+       pression_courante, etat : actif | satisfait | remplace | abandonne | invalide,
+       interrompu_par? : option_ref,                    # intrinsic option in progress [V-10]
+       stagnation : { debut_t, meilleure_mesure, suspendue : boolean },
+       t_activation, t_cloture?, motif_cloture?, refractaire_jusqua?, empreinte_contexte_abandon? }
+```
+
+**Options, plans, evaluations.**
+
+```text
+OptionProposee {                                   # payload of an action_proposee contribution
+  option : Option, plan? : Plan, admissibilite_prealable? : admissible | indetermine }   # V-43
