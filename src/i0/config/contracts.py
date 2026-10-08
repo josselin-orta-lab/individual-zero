@@ -87,6 +87,20 @@ MVP_PHASE1_PRODUCER_ORDER = (
     "metacognition_health",
 )
 
+MVP_CYCLE_PHASE_COMPONENT_ORDER = {
+    0: ("global_modulation",),
+    1: MVP_PHASE1_PRODUCER_ORDER + ("bus",),
+    2: ("gatekeeper",),
+    3: ("competition",),
+    4: ("competition", "action_control"),
+    5: (
+        "metacognition_health",
+        "causal_model",
+        "perception",
+        "journal",
+    ),
+}
+
 
 def build_ontology_registry() -> OntologyRegistry:
     terms: list[OntologyTerm] = []
