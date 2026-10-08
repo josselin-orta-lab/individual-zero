@@ -271,3 +271,17 @@ class ActionControl:
             policy_version=self._config.safety_policy_version,
             command=command,
         )
+
+    def dispatch_if_admitted(
+        self,
+        *,
+        capture: PerceptualCapture,
+        prepared: PreparedCommand,
+        sender: Callable[[PrimitiveCommand], object],
+    ) -> tuple[AdmissionResult, object | None]:
+        """Admit first, then invoke the world-send callback exactly once if allowed."""
+
+        admission = self.admit(capture=capture, prepared=prepared)
+        if not admission.ok:
+            return admission, None
+        return admission, sender(admission.command)
