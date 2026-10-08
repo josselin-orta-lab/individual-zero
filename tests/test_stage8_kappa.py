@@ -56,8 +56,6 @@ class KappaTests(unittest.TestCase):
             dict(observation_anchor="derive"),
             dict(observation_step=1),
             dict(provenance_independent=False),
-            dict(oracle_derived=True),
-            dict(rollback_cancelled=True),
             dict(outcome="stabilite_meme_canal"),
             dict(outcome="indeterminee"),
             dict(outcome="non_verifiable"),
@@ -67,6 +65,14 @@ class KappaTests(unittest.TestCase):
             k.integrate(verification(f"invalid-{n}", **changes))
         self.assertEqual(k.publish(), ())
         self.assertEqual(reliability(k), 0.5)  # INV-26/27/43
+
+    def test_oracle_and_rollback_canaries_never_enter_causal_state(self):
+        k = model()
+        baseline = k.export_causal_state()
+        for field in ("oracle_derived", "rollback_cancelled"):
+            with self.assertRaises(ValueError):
+                k.integrate(verification("canary-secret", **{field: True}))
+        self.assertEqual(k.export_causal_state(), baseline)
 
     def test_independent_contradiction_and_version_segment(self):
         k = model()
