@@ -80,6 +80,41 @@ class Stage9Runtime(Stage8Runtime):
             st_before_cycle=st_before_cycle,
         )
 
+        original_memory = hooks[1]["memory"]
+
+        def observe_then_ingest(_ctx):
+            # Only Perception's accessible body telemetry, never WorldBody.
+            self.causal_model.observe_followup_capture(
+                t_monde=capture.t_monde,
+                integrity=float(capture.body["integrity"]),
+            )
+            before = len(self.memory.episodes)
+            original_memory(_ctx)
+            newly_closed = self.memory.episodes[before:]
+            if not newly_closed:
+                return
+            autobiography = self._autobiographical_events(cycle=cycle)
+            for episode in newly_closed:
+                candidates = self.causal_model.ingest_closed_autobiographical_episode(
+                    episode_ref=episode.id,
+                    event_refs=episode.event_refs,
+                    autobiographical_events=autobiography,
+                )
+                for item in candidates:
+                    self._write(
+                        kind="causal_lived_evidence_admitted",
+                        cycle=cycle,
+                        data={
+                            "contingency_ref": item.contingency_ref,
+                            "episode_ref": item.episode_ref,
+                            "observation_ref": item.observation_ref,
+                            "evidence_ref": item.identifier,
+                            "harm_observed": item.harm_observed,
+                        },
+                    )
+
+        hooks[1]["memory"] = observe_then_ingest
+
         def publish_causal_statuses(_ctx):
             # DC-05, section 5.3: a cycle reads only the previously
             # published facts; the batch commits atomically in phase 5.
@@ -101,3 +136,28 @@ class Stage9Runtime(Stage8Runtime):
 
         hooks[5]["causal_model"] = publish_causal_statuses
         return hooks
+
+    def _dispatch_decision(
+        self, *, proposal, prepared, admission, cycle: int, sent_t_monde: int,
+    ):
+        # Action Control first validates and executes the command. The Causal
+        # Model is never allowed to count a blocked or lethal/rolled-back step.
+        captured = self.stage3._capture
+        execution = super()._dispatch_decision(
+            proposal=proposal, prepared=prepared, admission=admission,
+            cycle=cycle, sent_t_monde=sent_t_monde,
+        )
+        if (execution.status == "applied"
+            and prepared.command.primitive == "manger"
+            and captured is not None
+            and proposal.option.motive_ref.type == "active_goal"):
+            target = prepared.command.parameters.get("target")
+            if target in {"berry_a", "berry_b"}:
+                self.causal_model.record_applied_food_exposure(
+                    t_monde=sent_t_monde, resource_kind=str(target),
+                    option_ref=proposal.option.id,
+                    motive_ref=proposal.option.motive_ref.id,
+                    integrity_before=float(captured.body["integrity"]),
+                )
+        return execution
+
