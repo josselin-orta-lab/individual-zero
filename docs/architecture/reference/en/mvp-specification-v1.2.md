@@ -3005,3 +3005,285 @@ z \leftarrow (\beta\lambda_e)^{L} z + \nabla_\psi Q(x_{t_k}, o^{sig}_k)
 | Degraded mode | reduced-precision operation when budget does not permit normal processing | 16.3, DC-07 |
 | Causal Model | component holding hypotheses, contingencies, and their statuses | 13 |
 | motif_ref | reason an option exists or competes; always present | V-10 |
+
+| Option | candidate behavior evaluated and put into competition; common decision unit | 8.1 |
+| Engaged option | winning option currently being carried out | 8.7 |
+| Autonomous intrinsic option | option motivated for its own sake, without but_ref, that can interrupt the goal without replacing it | 7.4, V-10 |
+| Oracle | bench access to simulated-world truth, never visible to the individual | 19 |
+| World step | elementary advance of simulated time; exactly one command per step | 3 |
+| Plan | current multi-step realization of a composite option | 8.1 |
+| Gatekeeper | deterministic code selecting the K elements of S_t | 6 |
+| Safety preemption | automatic entry into S_t of an element whose f × rsk reaches s_sec | 6.5 |
+| Sleep pressure | quantity produced by Metacognition and Health that grounds m_a(dormir) | 15.1, DC-13 |
+| Modulation profile | set of multipliers on gatekeeper weights, fixed for one cycle | 6.4, 16.4 |
+| Q_active, consolidated form | value learned online; its stabilized version in h | 11.1, 15.6 |
+| R_a | descriptive estimate of known danger of an option | 7.2 |
+| Rebase | replay, on h_new, of online updates subsequent to the cut point | 15.6, V-21 |
+| Reflex | innate priority response on the direct path, outside competition | 9.2 |
+| Candidate registry | set of options registered in competition | 8.3, DC-10 |
+| Exact replay | re-execution that exactly reproduces the reference execution | 17.1 |
+| Rereading | reading the journal without re-execution; not replay | 17.8 |
+| Restoration | resumption of an execution from a snapshot | 17.8 |
+| Lethal rollback | restoration of the checkpoint before a lethal command, followed by resumed deliberation under mask | 18.4 |
+| S_t | shared global state at cycle t: fixed slots and K contested slots | 6.2 |
+| Segment | interval between two cognitive decisions, unit of the TD update | DC-15 |
+| Protective status | contextual quality of an option that reduces a threat, preserves a protected variable, or avoids an invariant violation | 7.2, V-19 |
+| τ | temperament: five bounded dimensions fixed at birth | 7.3 |
+| θ | identity: θ = (τ, h) | 1.1 |
+| U_a | safety uncertainty of an option: lack of reliable information about important consequences | 7.2, NQ-07 |
+| u(c) | deliberation urgency common to all candidates | 8.6 |
+| Semantic validity | applicability of content given its meaning and current information | 6.5 |
+| Veto | blocking of a command by a safety rule; never chooses an action | 9.3 |
+| Autobiographical view | subset of the journal the individual may use as lived history | 17.5, DC-09 |
+| x_t | canonical evaluation state built only from accessible information | 11.1 |
+
+## 25. Technical appendices
+
+### Appendix A · Correspondence of notation and terms
+
+| Earlier formulation | Source | Current form | Decision |
+| --- | --- | --- | --- |
+| x_a, accumulator level | spéc. 6.5, V-34 | A_a | 0.4 |
+| g_a, gain specific to each option | spéc. 6.5 | g, common; novelty no longer controls it | V-18 |
+| ψ(U_a ; τ), uncertainty penalty | consolidation of NQ | χ(U_a ; τ); ψ denotes value parameters | 0.4 |
+| e_a, eligibility trace | spéc. 8.6 | z(t); e_a denotes evidence | I-13 |
+| ρ, episode surprise threshold; L; Δ | spéc. 7.2 | k_ép, L_ép, Δ_ép; ρ denotes accumulator residual | V-37 |
+| K, M, R of experimental plan | spéc. 10.6 | N_τ, N_M, N_R; K denotes S_t slots | 0.4 |
+| h_n, journal hash | spéc. 7.6 | emp_n; h denotes history | 0.4 |
+| u, r, v, gatekeeper terms | spéc. 5.2 | urg, rsk, val | 0.4 |
+| V(x), state value | spéc. 6.5 | Q(x, o_sig), value of an option signature in state x | S-06.3, 8.1 |
+| proposed action, action competition | spéc. 4.1, 6.9 | proposed option, option competition | V-49 |
+| calibration bench | spéc. 4.5 | Metacognition and Health | V-13, NQ-09 |
+| cautious κ prior | spéc. 4.4 | neutral prior f = 0.5, or offline calibration of equipment | V-38, S-08.4 |
+| W-cycle window | spéc. 6.3 | W in world steps | V-36 |
+| deadlines in cycles ("cycle + 6") | spéc. 4.8, Appendix C | world-event deadlines in steps | V-29 |
+| "every step or every k steps" | spéc. 2.1 | several cycles per step during a deliberation | V-02, S-02.1 |
+| priority of current step | spéc. 8.2 | reevaluation at every waking step, with engaged option competing with inertia | V-03, NQ-02 |
+| habits on direct path | spéc. 3.3, Figure 1 | compiled procedural options, in competition | V-05, NQ-12 |
+| horizon dimension | S-06.4 | β derived from reward sensitivity | NQ-05 |
+| realignment of active forms | NQ-13 | rebase | V-21 |
+| restoration to last valid step; temporary exclusion of lethal command | NQ-14 | checkpoint before send; protocol mask | V-25 |
+| reevaluation "at each new world step" | NQ-02 | at every waking step | V-35 |
+| stagnation window in cycles | spéc. 5.7 | window in steps; detector signals, imposes nothing | V-04, S-02.7 |
+
+### Appendix B · Decision history
+
+This appendix creates no rule: it links findings and questions from the sources to the section carrying the current rule.
+
+**B.1 Original findings.**
+
+| Id | Topic | Resolved by | Current rule |
+| --- | --- | --- | --- |
+| I-01 | contradictory temporal model | S-02.1, S-05.8 | 3 |
+| I-02 | active goal without owner | NQ-01, V-10 | 7.4 |
+| I-03 | boundary between fast state and identity | S-06.6, S-10.4, NQ-13, V-21, V-22 | 11, 15.6 |
+| I-04 | owner of κ, risk of oracle leakage | S-08.2, S-08.6, NQ-09 | 11.4 |
+| I-05 | reflexes in competition | S-06.3 | 9.2 |
+| I-06 | habits and R4 arbiter | NQ-12 | 9.1 |
+| I-07 | source of contingencies | S-09.3, NQ-10, NQ-11, V-43 | 13 |
+| I-08 | producer of exploration options | S-06.3, NQ-18 | 14 |
+| I-09 | tool and battery situations | S-03.1, NQ-15, NQ-16 | 4.1, 19.5 |
+| I-10 | temperament pathways | S-05.4, S-06.4, NQ-05 to NQ-07, V-17 to V-19 | 7.3 |
+| I-11 | decision unit | S-06.3 | 8.1 |
+| I-12 | equipment-corpus coverage | S-09.4 | 12.5 |
+| I-13 | ambiguous notation | spéc. 8.6 | 0.4, Appendix A |
+
+**B.2 Inconsistencies introduced by first-round responses.**
+
+| Id | Topic | Resolved by | Current rule |
+| --- | --- | --- | --- |
+| N-01 | urgency and thresholds | S-05.5 | 8.6 |
+| N-02 | thresholds of protective options | S-05.3, NQ-06, V-19 | 8.6 |
+| N-03 | gatekeeper cost term | S-07.5, NQ-08 | 6.4 |
+| N-04 | sources of evidence | NQ-03, V-17 to V-19 | 8.5, DC-01 |
+| N-05 | fatigue and reward | NQ-04 | 16.2 |
+| N-06 | origin of β | NQ-05 | 7.3 |
+| N-07 | sleep as ordinary option | S-10.1 | 15.1 |
+| N-08 | number of sleep factors | S-11.2 | 15.1 |
+| N-09 | κ publication cadence | S-08.6, NQ-09 | 11.4 |
+| N-10 | placement of agency comparator | S-15.1 | 9.6 |
+| N-11 | logical budget versus real budget | S-11, amended Q12 | 16.3 |
+| N-12 | request depth and rejection | S-04.4, S-04.5 | 4.5 |
+| N-13 | options versus actions | S-06.3 | 8.1 |
+| N-14 | reflex candidates | S-06.3 | 9.2 |
+| N-15 | inertia, bonus or threshold reduction | S-05.4 | 8.6 |
+| N-16 | death and end of life | NQ-14, V-24, V-25, V-40 | 18 |
+| N-17 | safety and evidence | NQ-11, V-43 | 13.3 |
+| N-18 | intentions during sleep | NQ-17, V-41 | 10.5, 15.3 |
+| N-19 | triggering a deliberation | NQ-02, V-34 | 8.7 |
+
+**B.3 Second-round questions.**
+
+| Id | Decision | Current rule |
+| --- | --- | --- |
+| NQ-01 | minimal Goal Manager, sole owner of active goal | 7.4 |
+| NQ-02 | reevaluation at every waking step; engaged option competes with inertia | 8.7 |
+| NQ-03 | third evidence component: m_a | 8.5 |
+| NQ-04 | F_cog outside D and r_t | 16.2 |
+| NQ-05 | β derived from reward sensitivity; no sixth dimension | 7.3 |
+| NQ-06 | lower base threshold for protective options | 8.6 |
+| NQ-07 | safety-uncertainty penalty modulated by threat | 8.6 |
+| NQ-08 | recovery profile retained without cost term | 6.4 |
+| NQ-09 | κ owned, computed, and published by Metacognition and Health | 11.4 |
+| NQ-10 | canonical source of contingencies in Causal Model; status `etablie` for simulator | 13 |
+| NQ-11 | status `etabli_pour_securite` for veto | 13.3 |
+| NQ-12 | habits and skills: compiled procedural options; R4 path arbiter | 9.1 |
+| NQ-13 | two forms, active and consolidated; rebase at switch | 15.6 |
+| NQ-14 | detectable, non-persistent death without learning | 18 |
+| NQ-15 | action `fabriquer_outil` | 4.1 |
+| NQ-16 | battery mechanisms specific to injected scenarios | 19.5 |
+| NQ-17 | waking from a dated intention | 15.3 |
+| NQ-18 | Exploration designates target, Planning constructs option | 14 |
+
+**B.4 First-round questions.**
+
+| Group | Topic | Current rule |
+| --- | --- | --- |
+| S-01 | exact replay | 17.1 to 17.3 |
+| S-02 | scheduling and triggers | 3, 8.11 |
+| S-03 | ontology, subjects, similarity | 4.1, 4.2 |
+| S-04 | requests and responses | 4.5 |
+| S-05 | option competition | 8.5 to 8.8 |
+| S-06 | option value | 11.1 |
+| S-07 | retention in S_t | 6.5 |
+| S-08 | verification and calibration | 11.3, 11.4 |
+| S-09 | equipment | 12 |
+| S-10 | sleep and consolidation | 15 |
+| S-11 | compute budget | 16.3 |
+| S-12 | oracle | 19.4 |
+| S-13 | copies | 17.7 |
+| S-14 | veto | 9.3, 18 |
+| S-15 | agency comparator | 9.6 |
+
+**B.5 Findings from the verification report.**
+
+| Id | Topic | Treatment |
+| --- | --- | --- |
+| V-01 | authority of responses over specification | 0.2: this document is the single reference |
+| V-02, V-03 | cycle cadence; priority of current step | 3.4, 8.7, 9.1 |
+| V-04 | stagnation that imposed an action | 7.4 |
+| V-05, V-07, V-42 | habits on direct path, in control, missing provenance | 9.1, 5.2 |
+| V-06 | reflexes among option sources | 8.2 |
+| V-08, V-46 | Goal Manager absent from tables; correspondence with S1 and O1 in v2 | 2.1, 7.4 |
+| V-09 | missing exploration targets | 14 |
+| V-10 | active goal and intrinsic options | 7.4 |
+| V-11, V-12 | contingencies in simulator; rules written by consolidation | 12.3, 13, DC-16 |
+| V-13, V-38 | calibration bench; κ prior | 11.4 |
+| V-14 | recovery profile | 6.4 |
+| V-15, V-16 | competition formula; temperament table | 8.6, 7.3 |
+| V-17, V-18 | double counting | 8.5, 15.1, DC-01, DC-13 |
+| V-19 | producers of m_a, U_a, and protective status | 7.2, 8.5 |
+| V-20 | F_cog and sleep pressure absent from specification | 15.1, 16.2 |
+| V-21, V-22, V-23 | rebase; ownership of realignment; two forms | 15.6 |
+| V-24, V-25, V-40 | death, mask, rollback bound | 17.5, 18 |
+| V-26, V-27 | tool, death, battery mechanisms | 4.1, 18, 19.5 |
+| V-28, V-43 | two knowledge thresholds | 13.3, 9.4 |
+| V-29, V-36 | units: deadlines and W in steps | 0.3, 6.5 |
+| V-30, V-32, V-33 | obsolete or unsupported first-round formulations | removed; rules from 8.6, 10.5 |
+| V-31, V-45 | current statuses and parameters | Appendix B, 22 |
+| V-34, V-35 | accumulators at opening; waking step | 8.7 |
+| V-37, V-49 | symbol and term collisions | 0.4, Appendix A |
+| V-39 | random streams for battery scenarios | 17.2 |
+| V-41 | wake-deadline index | 10.5 |
+| V-44 | attribution producers | 9.6, 13 |
+| V-47 | goal/action alignment metric | 19.5 |
+| V-48 | corpus families | 12.5 |
+| V-50, V-51 | threshold example; empty rows | not applicable in this document |
+
+## 26. Final implementability validation
+
+### A. Architecture fully specified
+
+| Engineer's question | Normative answer |
+| --- | --- |
+| What components exist? | 2.1, diagram A |
+| Which component owns each state? Who reads it, who writes it? | 5.3, diagram K, INV-01 |
+| In what order do components execute? | 3.3, 3.4, DC-11 |
+| When does a modification become visible? | 3.6, 21.4 |
+| How does a perception become an action? | 8.9, diagram C, 20.4 |
+| How do goals, options, plans, and commands interact? | 7.4, 8.1 to 8.3, DC-03, DC-10, DC-17, diagrams D and E |
+| How do fast and consolidated learning interact? | 11, 15.6, DC-15, DC-16, diagram G |
+| How do sleep and consolidation work? | 15, DC-13 |
+| How are accidental compute loops avoided? | 3.7, 21.3 |
+| How is exact replay guaranteed? | 17, DC-08, INV-33 |
+| How do safety, vetoes, reflexes, and lethal rollback work? | 9, 13.3, 18, DC-05, DC-12, DC-14, diagrams F and I |
+| How are experiments run and verified? | 19, diagram H |
+| In what order should the software be built? | 20, diagram J |
+| Which parameters remain to be calibrated? | 22 |
+
+Every system state has one declared owner; every feedback loop has an explicit temporal cut; every arrow in the diagrams carries a type.
+
+### B. Parameters remaining only to be calibrated
+
+Fifty-eight entries, P-01 through P-58, all in the registry in section 22 with their unit, bounds, stage, and calibration protocol. They cover deliberation and competition (P-01 to P-17), gatekeeper and S_t (P-18 to P-25), goals (P-26 to P-28), body and value (P-29 to P-32), calibration, memory, and causal model (P-33 to P-36), safety (P-37, P-38), sleep and consolidation (P-39 to P-42, P-57), budget and degraded modes (P-43, P-44), planning, equipment, agency, and exploration (P-45 to P-48), bench, world, and scenarios (P-49 to P-54), replay and requests (P-55, P-56), procedural compilation (P-57), and option-registry capacity (P-58). No value is selected by this document; only values already fixed by the sources are carried over. All are preregistered and constant during a campaign.
+
+### C. Supplementary decisions added in this document
+
+| Id | Topic |
+| --- | --- |
+| DC-01 | combining evidence; forms of u, π, χ, and R_a |
+| DC-02 | tie-breaking by relative margin; floor s_min |
+| DC-03 | deficit functions, intention pressure, arbitration, non-plannability, and refractory period |
+| DC-04 | gatekeeper capacity, eviction, soft quotas, backpressure, and reobservations |
+| DC-05 | promotion and demotion of safety facts |
+| DC-06 | κ representation by signal family; causally independent verifications |
+| DC-07 | degraded mode of each module; absence of computation distinct from zero evidence |
+| DC-08 | four life Snapshot types plus a private CheckpointConsolidation; lethal checkpoint before closure |
+| DC-09 | autobiographical projection by AutoSegmentCommit; allowlist; access matrix |
+| DC-10 | path, registry capacity, eviction, and prohibition of self-evidence for options |
+| DC-11 | single perceptual capture, component placement in phases, buffered outputs |
+| DC-12 | reflex during an engaged option |
+| DC-13 | fatigue, sleep pressure, consolidation resumption, wake rule and bound |
+| DC-14 | safety block distinguished between campaign and diagnostic |
+| DC-15 | semi-Markov TD update, steps without decisions, and lived termination |
+| DC-16 | rules and skills from consolidation with evidence deduplication |
+| DC-17 | comparable adoption of a revised plan; reset of replanned alternatives |
+
+### D. Governance point outside the software specification
+
+- The general ethical question related to the number of copies, and the possible moral status of the individual, remain explicitly open in the sources [S-13.5, Q18, spéc. 1.6]. They do not block writing the software; authorization to launch the campaign belongs to the author.
+
+This governance point changes no software interface. Human decisions potentially necessary for implementation are listed exclusively in the v1.2 audit appendix below.
+
+## Appendix - Consistency audit of version 1.2
+
+### Certain corrections integrated
+
+- Ownership of published `S_t` versions is now assigned only to the `S_t` component; the Gatekeeper assembles candidate content but no longer owns the same state.
+- The normative hierarchy explicitly places integrated rules of the current version and the DCs ahead of historical sources.
+- H5 now describes copies identical at the bifurcation point and then exposed to distinct worlds or seeds, consistently with the experimental protocol.
+- Equipment freezing has been made compatible with H4: E remains fixed in every ordinary life and may change only through the preregistered, logged, replayable H4 experimental substitution.
+- κ maps are separated by equipment or module version so that an H4 substitution does not artificially transfer calibration learned with the old version.
+- The cadence of `F_cog` is aligned across the state table, prose, and DC-13: increment at the close of every cycle, recovery in steps.
+- Traceability of direct commands correctly distinguishes a cognitive command grounded in `S_t` from a reflex grounded in the step capture or stimulus.
+- The "one command per step" rule explicitly covers the exception of a block before sending, where the world does not advance.
+- `JournalEvent.attempt_ref` is optional for technical events that exist outside a step attempt.
+- Normalization scale `Y_i` used by deficit functions is explicitly attached to P-29.
+
+### Conservative clarifications integrated
+
+- Components no longer receive τ as usable data: table 7.3 produces an immutable `ParametresTemperament` at birth, the sole interface for consuming temperament effects. Mathematical notation containing τ remains shorthand for this projection.
+- Every option has a stable `signature_apprentissage`, distinct from its instance identifier and registry key. `Q_active`, `n_a`, and eligibility traces use this signature, making learning compatible with replanning and successive instances of the same semantics.
+- Sleep pressure is recomputed at step opening and remains frozen during that step's cycles, removing any ambiguity about intra-step visibility.
+- H4 substitution is limited to a coherent step boundary and invalidates caches dependent on the old version without rewriting prior history.
+- Contract compatibility rules are now covered by an explicit invariant.
+
+### Human decisions still required
+
+No remaining blocking human implementation decision. The ethical and governance decision concerning launch and scale of a copy campaign remains outside the software specification and is not an implementation DR.
+
+### Audit result
+
+- Number of top-level components: **21**.
+- Number of registry parameters: **58** (`P-01` through `P-58`).
+- Number of invariants: **53** (`INV-01` through `INV-53`).
+- Number of supplementary decisions: **17** (`DC-01` through `DC-17`).
+- Number of remaining required DR decisions: **0**.
+- Known accidental compute loop: **none**; every identified loop has a temporal cut or explicit bound.
+- Mutable state without a known owner: **none** after correcting ownership of `S_t`.
+- Mutable state with multiple known owners: **none**.
+- Numerical or structural parameter used but undeclared: **none** within the normative scope; closed structural objects are versioned and calibratable quantities are in registry P-01 through P-58.
+- Known broken DC, INV, or P reference: **none** after continuity and numbering checks.
+- Known normative contradiction: **none** after the corrections in this version.
+
+The five final validation paths were checked: birth → first command; command → consequence → learning; wake → sleep → consolidation → resumption → commit → waking; dangerous command → veto or rollback → new deliberation; snapshot → copy → battery → stop → replay. In each, causally relevant data has a producer, an owner, a defined transport or call, a visibility time, a consumer, a persistence rule, and a logging rule.
