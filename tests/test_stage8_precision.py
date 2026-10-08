@@ -71,6 +71,20 @@ class PrecisionTests(unittest.TestCase):
         self.assertEqual(first.publish(), second.publish())
         self.assertEqual(first.export_causal_state(), second.export_causal_state())
 
+    def test_independent_precision_verification_flows_through_stage8_runtime(self):
+        runtime = build_stage8_reference_runtime()
+        self.assertEqual(runtime.run_step().execution_status, "applied")
+        prior = runtime.precision_active.precision("world_symbolic")
+        runtime.integrate_precision_verification(confirmation(
+            "physical-comparator-v1",
+            emission_step=0, observation_step=1,
+            independent_observation_ref="physical:step1:position",
+        ))
+        self.assertEqual(runtime.precision_active.precision("world_symbolic"), prior)
+        self.assertEqual(runtime.run_step().execution_status, "applied")
+        self.assertGreater(runtime.precision_active.precision("world_symbolic"), prior)
+        self.assertIn(b"perceptual_precision_update_published", runtime.journal.canonical_bytes())
+
     def test_perception_only_owner_and_stage8_nonlethal_publication(self):
         legacy = SymbolicPerception()
         self.assertIsNone(legacy.active_precision)
