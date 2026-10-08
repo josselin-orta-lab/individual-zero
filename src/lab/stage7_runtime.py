@@ -18,8 +18,10 @@ from i0.modules import (
     MemoryConfig,
     StaticSafetyFacts,
 )
+from i0.requests import Request, Response
 
 from .journal_views import AutobiographicalPolicy
+from .request_registry import RequestRegistry, RequestRegistryConfig
 from .safety_protocol import SafetyProtocolConfig
 from .stage2_runtime import (
     CommandExecution,
@@ -88,6 +90,14 @@ class Stage7Runtime(Stage6Runtime):
         config.validate()
         self._stage7_config = config
         self.memory = EpisodicMemory(config.memory)
+        self.request_registry = RequestRegistry(
+            RequestRegistryConfig(
+                version="stage7-request-registry-v1",
+                recency_window_steps=(
+                    config.stage6.stage4.gatekeeper.recency_window_steps
+                ),
+            )
+        )
         self._stage7_autobio_refs: list[tuple[str, str]] = []
 
         super().__init__(
@@ -105,6 +115,11 @@ class Stage7Runtime(Stage6Runtime):
         owners = list(super().causal_owners)
         if all(owner.owner_id != self.memory.owner_id for owner in owners):
             owners.append(self.memory)
+        if all(
+            owner.owner_id != self.request_registry.owner_id
+            for owner in owners
+        ):
+            owners.append(self.request_registry)
         return tuple(owners)
 
     def _write(
@@ -121,6 +136,65 @@ class Stage7Runtime(Stage6Runtime):
                 (attempt.attempt_ref, event_id)
             )
         return event_id
+
+    def _request_statuses_for_st(self) -> Mapping[str, str]:
+        return {
+            request_ref: status.state
+            for request_ref, status
+            in sorted(self.request_registry.statuses.items())
+        }
+
+    def request_memory(
+        self,
+        request: Request,
+        *,
+        cycle: int,
+    ) -> Response | None:
+        attempt = self.scheduler.active_attempt
+        if attempt is None:
+            raise RuntimeError("memory request requires an active waking step")
+        self.request_registry.register(
+            request,
+            t_monde=attempt.t_monde,
+        )
+        self._write(
+            kind="request_registered",
+            cycle=cycle,
+            data={
+                "request_ref": request.id,
+                "emitter": request.emitter,
+                "recipient": request.recipient,
+                "question": request.question,
+                "depth": request.depth,
+                "deadline_value": request.deadline_value,
+                "deadline_unit": request.deadline_unit,
+            },
+        )
+        response = self.memory.respond(
+            request,
+            st=self.s_t.current,
+            t_monde=attempt.t_monde,
+        )
+        delivered = self.request_registry.deliver(
+            response,
+            t_monde=attempt.t_monde,
+        )
+        self._write(
+            kind="request_response",
+            cycle=cycle,
+            data={
+                "request_ref": request.id,
+                "status": (
+                    "cancelled_before_delivery"
+                    if delivered is None
+                    else delivered.status
+                ),
+                "shareable": (
+                    False if delivered is None else delivered.shareable
+                ),
+            },
+        )
+        return delivered
 
     def _autobiographical_events(self, *, cycle: int):
         events = self.stage3.substrate.views.autobiographical(
