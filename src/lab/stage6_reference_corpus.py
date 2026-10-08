@@ -49,7 +49,7 @@ def reference_corpus_world_config():
         ),
         action_energy_costs=costs,
         sleep_energy_gain=5.0,
-        rest_integrity_gain=1.0,
+        rest_integrity_gain=0.0,
         drink_water_gain=20.0,
         creature_damage=10.0,
     )
