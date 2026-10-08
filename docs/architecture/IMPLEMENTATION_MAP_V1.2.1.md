@@ -491,3 +491,13 @@ The Causal Model now supports `CausalModelConfig.food_control_pairs`, a **versio
 Source constraints remain: applied goal-motivated consumption, accessible Perception integrity, matched actual `ate` outcome, no accessible sufficient alternative harm, and a closed episode. P-35 correlation still requires observed cause-effect cooccurrences above the matched lived base rate; no status is promoted merely by recording a control. The default Stage-9 reference contains no pairs and retains its prior behavior. `tests/test_stage9_lived_evidence.py` includes source-identity and registry validation.
 
 **Open:** the complete autonomous control/contrast pipeline, contextual equivalence proof across episodes, generated admissible intervention options, causal attribution from AgencyComparator beyond descriptive evidence, established-only simulator correction, and the Stage-9 golden. This is not Stage-9 closure.
+
+
+### Stage 9 checkpoint 7 — independent lived food control and snapshot protocol (IN PROGRESS)
+
+- `CausalModelConfig.food_control_pairs` is an explicit, versioned registry of pairs (hypothesized food, actually consumed different food), initially empty. Only a separately **consumed** food in a closed DC-09 episode can supply a cause-absent observational control; both projections preserve the same episode and physical observation identity and never count as separate independent episodes for a single hypothesis.
+- No observed cause-absent group is fabricated when the registry is empty. Matched-context and P-35 observed co-occurrence checks remain required before any causal correlation is published. These observations are never interventions or proofs of establishment.
+- The exact Causal Model snapshot protocol now includes `n1`, `n2`, `n_sec`, `m_sec`, the causal-predicate registry and the food-control pairs, **in addition to** its version label. Restore refuses a changed protocol even when the human-readable version is reused; the receiving state remains unchanged. Tests: `test_stage9_causal_config_contract.py`.
+- The Stage-9 CI at commit `250a4416457744eafe4a30c79abe78ccc07a44b4` must pass before this checkpoint is considered validated. Existing Stage-8 historical goldens remain immutable.
+
+**Stage 9 remains open:** independent causal intervention generation, alternative-control protocol, established-only correction layer and the Stage-9 golden are not complete.
