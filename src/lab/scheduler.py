@@ -77,6 +77,56 @@ class Scheduler:
     def active_attempt(self) -> StepAttempt | None:
         return self._active_attempt
 
+    @property
+    def owner_id(self) -> str:
+        return "scheduler.clock"
+
+    def export_causal_state(self) -> object:
+        attempt = self._active_attempt
+        return {
+            "t_monde": self._t_monde,
+            "active_attempt": None
+            if attempt is None
+            else {
+                "t_monde": attempt.t_monde,
+                "attempt_index": attempt.attempt_index,
+                "attempt_ref": attempt.attempt_ref,
+            },
+        }
+
+    def restore_causal_state(self, state: object) -> None:
+        if not isinstance(state, Mapping):
+            raise ValueError("scheduler causal state must be a mapping")
+        t_monde = state.get("t_monde")
+        if not isinstance(t_monde, int) or t_monde < 0:
+            raise ValueError("scheduler t_monde must be a non-negative integer")
+        raw_attempt = state.get("active_attempt")
+        if raw_attempt is None:
+            attempt = None
+        elif isinstance(raw_attempt, Mapping):
+            attempt_t = raw_attempt.get("t_monde")
+            attempt_index = raw_attempt.get("attempt_index")
+            attempt_ref = raw_attempt.get("attempt_ref")
+            if (
+                not isinstance(attempt_t, int)
+                or attempt_t != t_monde
+                or not isinstance(attempt_index, int)
+                or attempt_index < 0
+                or not isinstance(attempt_ref, str)
+                or not attempt_ref
+            ):
+                raise ValueError("invalid scheduler active_attempt state")
+            attempt = StepAttempt(
+                t_monde=attempt_t,
+                attempt_index=attempt_index,
+                attempt_ref=attempt_ref,
+            )
+        else:
+            raise ValueError("invalid scheduler active_attempt state")
+
+        self._t_monde = t_monde
+        self._active_attempt = attempt
+
     def _write(
         self,
         *,
