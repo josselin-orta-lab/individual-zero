@@ -23,7 +23,7 @@ class WorldGenerationConfig:
     wood_cells: int
     stone_cells: int
     creature_count: int
-    lethal_zone_count: int
+    danger_zone_count: int
     quantity_per_resource_cell: int
     nutritious_food_gain: float
     toxic_food_gain: float
@@ -39,7 +39,7 @@ class WorldGenerationConfig:
             self.wood_cells,
             self.stone_cells,
             self.creature_count,
-            self.lethal_zone_count,
+            self.danger_zone_count,
         )
         if any(value < 0 for value in counts):
             raise ValueError("world-generation counts must be non-negative")
@@ -81,7 +81,7 @@ def generate_world(
         + generation.wood_cells
         + generation.stone_cells
         + generation.creature_count
-        + generation.lethal_zone_count
+        + generation.danger_zone_count
     )
     if required > len(candidates):
         raise ValueError("world generation requests more unique cells than available")
@@ -104,7 +104,7 @@ def generate_world(
     wood = take(generation.wood_cells)
     stone = take(generation.stone_cells)
     creatures = take(generation.creature_count)
-    lethal = take(generation.lethal_zone_count)
+    danger = take(generation.danger_zone_count)
 
     toxic_berry = "berry_a" if rng.randrange(2) == 0 else "berry_b"
     nutritious_berry = "berry_b" if toxic_berry == "berry_a" else "berry_a"
@@ -124,7 +124,7 @@ def generate_world(
             water_sources=frozenset(water),
             resources=tuple(resources),
             creatures=frozenset(creatures),
-            lethal_zones=frozenset(lethal),
+            danger_zones=frozenset(danger),
             oracle_canary=oracle_canary,
         ),
         toxic_berry=toxic_berry,
