@@ -21,13 +21,14 @@ def battery_config() -> BatteryScenarioConfig:
         threat_creature_position=Position(3, 2),
         exploration_resource_position=Position(5, 2),
         exploration_resource_kind="berry_a",
+        perseverance_primitive="se_deplacer",
         perseverance_failure_schedule=(True, True, False),
         max_steps_by_situation={
             "patience": 3,
             "risk_taking": 3,
             "exploration": 3,
             "threat_response": 3,
-            "perseverance": 3,
+            "perseverance": 6,
         },
     )
 
@@ -104,7 +105,7 @@ class Stage5TraitBatteryTests(unittest.TestCase):
             self.assertEqual(result.score.measure, measure)
             self.assertIn(result.score.value, (0.0, 1.0))
 
-    def test_perseverance_is_not_fabricated_before_world_mechanism_exists(self) -> None:
+    def test_perseverance_uses_explicit_forced_failure_mechanism(self) -> None:
         parent = build_stage5_reference_runtime()
         plan = build_battery_scenario(
             situation=BatterySituation.PERSEVERANCE,
@@ -117,11 +118,24 @@ class Stage5TraitBatteryTests(unittest.TestCase):
             administration_ref="perseverance:0",
         )
 
+        self.assertIn(result.score.status, {"scored", "right_censored"})
         self.assertEqual(
-            result.score.status,
-            "mechanism_not_expressible_stage5",
+            result.score.measure,
+            "attempts_before_abandonment",
         )
-        self.assertIsNone(result.score.value)
+        self.assertEqual(
+            result.score.detail["tested_primitive"],
+            "se_deplacer",
+        )
+        self.assertGreaterEqual(
+            int(result.score.detail["forced_failures_observed"]),
+            1,
+        )
+        if result.score.status == "scored":
+            self.assertIsNotNone(result.score.value)
+            self.assertGreaterEqual(result.score.value, 1.0)
+        else:
+            self.assertIsNone(result.score.value)
 
     def test_same_battery_administration_is_deterministic(self) -> None:
         def execute():
