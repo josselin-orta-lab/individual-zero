@@ -60,6 +60,32 @@ class LivedEvidenceTests(unittest.TestCase):
             self.assertEqual(m.publish().__len__(),int(t==3))
         self.assertEqual(m.get("toxic:berry_b").safety_status,"etabli_pour_securite")
 
+    def test_lived_episode_generates_observation_not_intervention(self):
+        m=model()
+        events=pair(m)
+        admitted=m.ingest_closed_autobiographical_episode(
+            episode_ref="episode:1",event_refs=("c:1","w:1"),
+            autobiographical_events=events,
+        )
+        self.assertEqual(len(admitted),1)
+        observed=m.pending_causal_observations()
+        self.assertEqual(len(observed),1)
+        self.assertTrue(observed[0].cause_present)
+        self.assertTrue(observed[0].effect_present)
+        self.assertEqual(observed[0].episode_ref,"episode:1")
+        self.assertEqual(m.publish_causal_inference(),())
+        self.assertEqual(m.get("toxic:berry_b").causal_status,"aucun")
+        self.assertEqual(m.export_causal_state()["causal_interventions"],[])
+
+    def test_confounder_rejects_safety_and_causal_observation_together(self):
+        m=model()
+        events=pair(m,alternative=True)
+        self.assertEqual(m.ingest_closed_autobiographical_episode(
+            episode_ref="episode:1",event_refs=("c:1","w:1"),
+            autobiographical_events=events,
+        ),())
+        self.assertEqual(m.pending_causal_observations(),())
+
     def test_snapshot_restores_unfinished_exposure(self):
         m=model()
         m.record_applied_food_exposure(t_monde=1,resource_kind="berry_a",
