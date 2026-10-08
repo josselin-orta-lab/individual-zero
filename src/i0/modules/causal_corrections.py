@@ -13,6 +13,7 @@ from typing import Protocol, Sequence
 
 from i0.equipment import EquipmentPrediction, PredictedEffect, SimulationState
 from i0.interfaces import PrimitiveCommand
+from lab.determinism import canonical_causal_bytes, sha256_hex
 
 BODY_VARIABLES = frozenset({"energy", "food", "water", "integrity"})
 
@@ -31,6 +32,7 @@ class NumericPredictionCorrection:
     # absolute body assignments. None retains the older isolated test contract.
     observed_before_body: tuple[tuple[str, float], ...] | None = None
     observed_before_position: tuple[int, int] | None = None
+    observed_before_state_digest: str | None = None
 
     def validate(self) -> None:
         if not all((
@@ -69,6 +71,12 @@ class NumericPredictionCorrection:
                 raise ValueError("physical correction requires exact observed position")
         elif self.observed_before_position is not None:
             raise ValueError("position without physical body context")
+        if self.observed_before_state_digest is not None and (
+            self.observed_before_body is None
+            or len(self.observed_before_state_digest) != 64
+            or any(c not in "0123456789abcdef" for c in self.observed_before_state_digest)
+        ):
+            raise ValueError("invalid full accessible pre-action state digest")
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,6 +101,7 @@ class LivedNumericOutcome:
     variable: str
     observed_before_body: tuple[tuple[str, float], ...]
     observed_before_position: tuple[int, int]
+    observed_before_state_digest: str
     observed_after: float
 
     def validate(self) -> None:
@@ -121,6 +130,7 @@ class LivedNumericOutcome:
             observed_after=self.observed_after,
             observed_before_body=self.observed_before_body,
             observed_before_position=self.observed_before_position,
+            observed_before_state_digest=self.observed_before_state_digest,
         )
         correction.validate()
         before = dict(self.observed_before_body)
@@ -176,6 +186,11 @@ def correct_equipment_prediction(
                 float(state.body[name]) != float(value)
                 for name, value in c.observed_before_body
             )
+        ):
+            continue
+        if c.observed_before_state_digest is not None and (
+            sha256_hex(canonical_causal_bytes(state.as_dict()))
+            != c.observed_before_state_digest
         ):
             continue
         active.append(c)
