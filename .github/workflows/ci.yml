@@ -246,6 +246,11 @@ jobs:
               raise SystemExit("stage3 reference journal failed verification")
           print(f"stage3_reference_bytes={len(payload)}")
           print(f"stage3_reference_head={runtime.journal.head_hash}")
+          expected = "b088023fb83298e2c32b8a66cd4b2dc1fc21a587945a6c103b9a32586f210f09"
+          if runtime.journal.head_hash != expected:
+              raise SystemExit(
+                  f"Stage 3 reference regression: {runtime.journal.head_hash} != {expected}"
+              )
           PY
 
       - name: Upload Stage 3 reference journal
