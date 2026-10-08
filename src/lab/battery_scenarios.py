@@ -119,7 +119,7 @@ def build_battery_scenario(
             ScenarioEvent(
                 t_monde=1,
                 sequence=0,
-                operation="set_lethal_zone",
+                operation="set_danger_zone",
                 payload={
                     "position": config.risk_shortcut_zone.as_dict(),
                     "active": True,
