@@ -402,15 +402,24 @@ class Competition:
         if winner_id is not None:
             self._engaged_option_id = winner_id
 
-    def fallback(self) -> OptionProposal:
+    def fallback_candidates(self) -> tuple[OptionProposal, ...]:
+        candidates: list[OptionProposal] = []
         if self._engaged_option_id is not None:
             engaged = self._registry.get(self._engaged_option_id)
             if engaged is not None:
-                return engaged.proposal
+                candidates.append(engaged.proposal)
         wait = self._registry.get("permanent:attendre")
-        if wait is None:
+        if wait is not None and (
+            not candidates or candidates[0].option.id != wait.proposal.option.id
+        ):
+            candidates.append(wait.proposal)
+        return tuple(candidates)
+
+    def fallback(self) -> OptionProposal:
+        candidates = self.fallback_candidates()
+        if not candidates:
             raise RuntimeError("permanent wait option is missing")
-        return wait.proposal
+        return candidates[0]
 
     def export_causal_state(self) -> object:
         return {
