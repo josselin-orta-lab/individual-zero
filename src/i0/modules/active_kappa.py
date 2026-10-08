@@ -56,6 +56,10 @@ class KappaVerification:
             raise ValueError("declared confidence outside [0,1]")
         if self.outcome not in {"confirmee", "contredite", "indeterminee", "non_verifiable", "contrefactuelle_non_verifiee", "stabilite_meme_canal"}:
             raise ValueError("unknown verification outcome")
+        # INV-03/INV-27: forbidden-origin bytes may not enter pending causal
+        # verifications (or later appear in seen IDs / causal snapshots).
+        if self.oracle_derived or self.rollback_cancelled:
+            raise ValueError("oracle and lethal-rollback verifications are inadmissible")
 
     @property
     def strong(self) -> bool:
