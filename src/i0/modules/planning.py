@@ -19,6 +19,7 @@ from i0.contracts import (
     OptionProposal,
     Plan,
     PlanStep,
+    PredictedConsequence,
 )
 from i0.interfaces import PrimitiveCommand
 from i0.modules.perception import PerceivedEntity
@@ -208,16 +209,42 @@ class GreedyPlannerE0:
 
         option_id = f"option:{goal.id}:{target_key}"
         plan_id = f"plan:{option_id}:v1"
-        steps = tuple(
-            PlanStep(
-                index=index,
-                command=command,
-                preconditions=(),
-                predicted_consequences=(),
-                observation_window_steps=1,
+        predicted_steps: list[PlanStep] = []
+        predicted_x, predicted_y = position
+        for index, command in enumerate(commands):
+            consequences: tuple[PredictedConsequence, ...] = ()
+            if command.primitive == "se_deplacer":
+                direction = str(command.parameters["direction"])
+                if direction == "east":
+                    predicted_x += 1
+                elif direction == "west":
+                    predicted_x -= 1
+                elif direction == "south":
+                    predicted_y += 1
+                elif direction == "north":
+                    predicted_y -= 1
+                consequences = (
+                    PredictedConsequence(
+                        variable="position_x",
+                        value_or_delta=float(predicted_x),
+                        precision=0.0,
+                    ),
+                    PredictedConsequence(
+                        variable="position_y",
+                        value_or_delta=float(predicted_y),
+                        precision=0.0,
+                    ),
+                )
+            predicted_steps.append(
+                PlanStep(
+                    index=index,
+                    command=command,
+                    preconditions=(),
+                    predicted_consequences=consequences,
+                    observation_window_steps=1,
+                )
             )
-            for index, command in enumerate(commands)
-        )
+        steps = tuple(predicted_steps)
         plan = Plan(
             id=plan_id,
             option_ref=option_id,
