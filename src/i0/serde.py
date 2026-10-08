@@ -15,6 +15,24 @@ from i0.contracts import (
 from i0.interfaces import PrimitiveCommand
 
 
+def _encode_payload(payload: object) -> object:
+    if isinstance(payload, OptionProposal):
+        return {
+            "__i0_type__": "OptionProposal",
+            "value": encode_proposal(payload),
+        }
+    return payload
+
+
+def _decode_payload(payload: object) -> object:
+    if isinstance(payload, Mapping) and payload.get("__i0_type__") == "OptionProposal":
+        raw = payload.get("value")
+        if not isinstance(raw, Mapping):
+            raise ValueError("invalid encoded OptionProposal payload")
+        return decode_proposal(raw)
+    return payload
+
+
 def encode_contribution(c: Contribution) -> dict[str, object]:
     return {
         "id": c.id,
@@ -31,7 +49,7 @@ def encode_contribution(c: Contribution) -> dict[str, object]:
         "production_t": c.production_t,
         "production_cycle": c.production_cycle,
         "expires_at_step": c.expires_at_step,
-        "payload": c.payload,
+        "payload": _encode_payload(c.payload),
         "goal_ref": c.goal_ref,
         "provenance_inputs": list(c.provenance_inputs),
         "signal_ids": list(c.signal_ids),
@@ -54,7 +72,7 @@ def decode_contribution(raw: Mapping[str, object]) -> Contribution:
         production_t=int(raw["production_t"]),
         production_cycle=int(raw["production_cycle"]),
         expires_at_step=int(raw["expires_at_step"]),
-        payload=raw.get("payload"),
+        payload=_decode_payload(raw.get("payload")),
         goal_ref=None if raw.get("goal_ref") is None else str(raw["goal_ref"]),
         provenance_inputs=tuple(str(x) for x in raw.get("provenance_inputs", [])),
         signal_ids=tuple(str(x) for x in raw.get("signal_ids", [])),
