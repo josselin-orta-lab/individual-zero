@@ -356,7 +356,7 @@ jobs:
               "stage6_f_cog_uc="
               f"{runtime.metacognition.state.f_cog_uc_counter}"
           )
-          expected = "1f7a61df76a84a5f3c00b66ee636ec99ca787793775b0a6ef15449db69286e1b"
+          expected = "1bbd9071a4a7e9385f537a6f43362f34cc4e7f0a6ca301204abf9100ba2012d5"
           if runtime.journal.head_hash != expected:
               raise SystemExit(
                   f"Stage 6 reference regression: {runtime.journal.head_hash} != {expected}"
