@@ -423,6 +423,10 @@ class WorldBody:
         self._creatures = set(layout.creatures)
         self._danger_zones = set(layout.danger_zones)
         self._lethal_zones = set(layout.lethal_zones)
+        # Empty outside an injected battery scenario, so historical causal
+        # encodings remain unchanged. P-54 supplies primitive + schedule.
+        self._action_failure_schedules: dict[str, tuple[bool, ...]] = {}
+        self._action_failure_indices: dict[str, int] = {}
 
     @property
     def position(self) -> Position:
@@ -573,6 +577,15 @@ class WorldBody:
     def export_causal_state(self) -> object:
         truth = dict(self.ground_truth())
         truth.pop("oracle_canary", None)
+        if self._action_failure_schedules:
+            truth["scenario_action_failures"] = [
+                {
+                    "primitive": primitive,
+                    "schedule": list(self._action_failure_schedules[primitive]),
+                    "next_index": self._action_failure_indices.get(primitive, 0),
+                }
+                for primitive in sorted(self._action_failure_schedules)
+            ]
         return truth
 
     def restore_causal_state(self, state: object) -> None:
@@ -639,6 +652,26 @@ class WorldBody:
             p = Position(int(raw_position["x"]), int(raw_position["y"]))
             self._placed_stones[p] = int(row["count"])
 
+        raw_failures = state.get("scenario_action_failures", [])
+        if not isinstance(raw_failures, list):
+            raise ValueError("malformed scenario action-failure state")
+        self._action_failure_schedules = {}
+        self._action_failure_indices = {}
+        for row in raw_failures:
+            if not isinstance(row, Mapping):
+                raise ValueError("malformed scenario action-failure row")
+            primitive = str(row.get("primitive"))
+            raw_schedule = row.get("schedule")
+            if primitive not in PRIMITIVE_ACTIONS or not isinstance(raw_schedule, list):
+                raise ValueError("invalid scenario action-failure program")
+            if any(type(value) is not bool for value in raw_schedule):
+                raise ValueError("action-failure schedule values must be booleans")
+            next_index = int(row.get("next_index", 0))
+            if not 0 <= next_index <= len(raw_schedule):
+                raise ValueError("action-failure schedule index out of bounds")
+            self._action_failure_schedules[primitive] = tuple(raw_schedule)
+            self._action_failure_indices[primitive] = next_index
+
         if state.get("physics_version") != self._config.version:
             raise ValueError("world physics version mismatch")
 
@@ -675,6 +708,20 @@ class WorldBody:
             integrity=self._clamp(integrity),
         )
 
+    def _consume_action_failure_program(
+        self,
+        primitive: str,
+    ) -> tuple[int, bool] | None:
+        schedule = self._action_failure_schedules.get(primitive)
+        if schedule is None:
+            return None
+        index = self._action_failure_indices.get(primitive, 0)
+        if index >= len(schedule):
+            return None
+        forced = schedule[index]
+        self._action_failure_indices[primitive] = index + 1
+        return index, forced
+
     def apply(self, command: Command, *, t_monde: int) -> TransitionResult:
         """Apply one primitive command and detect lethality before continuation."""
 
@@ -688,7 +735,25 @@ class WorldBody:
         body = self._body_after_continuous_dynamics(command=command, body=before_body)
         effects: dict[str, object] = {}
 
-        if command.primitive == "se_deplacer":
+        programmed_failure = self._consume_action_failure_program(
+            command.primitive
+        )
+        forced_failure = False
+        if programmed_failure is not None:
+            attempt_index, forced_failure = programmed_failure
+            effects["scenario_failure_attempt"] = {
+                "primitive": command.primitive,
+                "attempt_index": attempt_index,
+                "forced": forced_failure,
+            }
+
+        if forced_failure:
+            # The attempt consumes normal continuous body dynamics and world
+            # time, but its primitive-specific intended effect is suppressed.
+            # Hazards below still apply because general physics is unchanged.
+            effects["scenario_forced_failure"] = command.primitive
+
+        elif command.primitive == "se_deplacer":
             target = position.moved(str(command.parameters["direction"]))
             if self._is_interior(target) and target not in self._obstacles:
                 position = target
@@ -863,6 +928,19 @@ class WorldBody:
             body = BodyState(**updates)
             body.validate()
             self._body = body
+            return
+
+        if operation == "set_action_failure_schedule":
+            primitive = str(payload.get("primitive"))
+            raw_schedule = payload.get("schedule")
+            if primitive not in PRIMITIVE_ACTIONS:
+                raise ValueError("action-failure scenario requires known primitive")
+            if not isinstance(raw_schedule, list) or not raw_schedule:
+                raise ValueError("action-failure schedule must be a non-empty list")
+            if any(type(value) is not bool for value in raw_schedule):
+                raise ValueError("action-failure schedule values must be booleans")
+            self._action_failure_schedules[primitive] = tuple(raw_schedule)
+            self._action_failure_indices[primitive] = 0
             return
 
         raise ValueError(f"unsupported scenario operation: {operation}")
