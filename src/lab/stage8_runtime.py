@@ -252,6 +252,10 @@ class Stage8Runtime(Stage7Runtime):
                     else "contredite"
                 ),
                 observation_anchor="monde",
+                observation_ref=(
+                    f"physical-capture:{comparison.observed_t_monde}:"
+                    f"{str(effect.get('variable'))}"
+                ),
                 independent_family="world_symbolic"
                 if str(effect.get("variable")) in {"position_x", "position_y"}
                 else "body_telemetry",
