@@ -159,6 +159,9 @@ class Stage3Runtime:
                 "trigger_ref": prepared.trigger_ref,
                 "option_ref": prepared.option_ref,
                 "st_version_ref": prepared.st_version_ref,
+                "grounding_contribution_refs": list(
+                    prepared.grounding_contribution_refs
+                ),
                 "reason": admission.reason,
                 "scope": admission.scope,
                 "rule_id": admission.rule_id,
