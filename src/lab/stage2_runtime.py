@@ -176,6 +176,8 @@ class ScriptedStage2Runtime:
         *,
         source: str,
         event_emitter: str | None = None,
+        checkpoint_owners=None,
+        individual_id: str = "stage2-scripted",
     ) -> CommandExecution:
         """Execute a command already admitted by the active control path.
 
@@ -215,11 +217,15 @@ class ScriptedStage2Runtime:
 
         checkpoint = self.snapshots.take(
             snapshot_type=SnapshotType.LETHAL_CHECKPOINT,
-            individual_id="stage2-scripted",
+            individual_id=individual_id,
             t_monde=attempt.t_monde,
             cycle=0,
             attempt_ref=attempt.attempt_ref,
-            owners=self.causal_owners,
+            owners=(
+                self.causal_owners
+                if checkpoint_owners is None
+                else tuple(checkpoint_owners)
+            ),
             versions={
                 "world_physics": self.world.config.version,
                 "safety_protocol": self.safety.export_causal_state()["config_version"],
@@ -243,7 +249,11 @@ class ScriptedStage2Runtime:
                 checkpoint_id=checkpoint.id,
                 command=command,
                 transition=transition,
-                restore_owners=self.causal_owners,
+                restore_owners=(
+                    self.causal_owners
+                    if checkpoint_owners is None
+                    else tuple(checkpoint_owners)
+                ),
             )
             if handling.blocked:
                 self.scheduler.close_step(
