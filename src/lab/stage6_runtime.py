@@ -262,39 +262,24 @@ class Stage6Runtime(Stage4Runtime):
         )
         return status is not Admissibility.INADMISSIBLE
 
-    def _revision_improves_value(
+    def _compare_revision_value(
         self,
         *,
         before,
         after,
         cycle: int,
         t_monde: int,
-    ) -> bool:
+    ):
         state = self._revision_initial_state
         if state is None:
-            return False
-        old_value = self.option_evaluator.evaluate(
-            proposal=before,
+            return None
+        return self.option_evaluator.compare_revised_plans(
+            old_proposal=before,
+            new_proposal=after,
             initial_state=state,
+            delta_plan=self._stage6_config.planning.revision_delta,
             cycle=cycle,
             t_monde=t_monde,
-        ).evaluation
-        new_value = self.option_evaluator.evaluate(
-            proposal=after,
-            initial_state=state,
-            cycle=cycle,
-            t_monde=t_monde,
-        ).evaluation
-        if (
-            old_value.simulated_value_status != "computed"
-            or new_value.simulated_value_status != "computed"
-            or old_value.simulated_value is None
-            or new_value.simulated_value is None
-        ):
-            return False
-        return (
-            new_value.simulated_value - old_value.simulated_value
-            >= self._stage6_config.planning.revision_delta
         )
 
     def _register_option_proposal(
@@ -317,15 +302,19 @@ class Stage6Runtime(Stage4Runtime):
                 self.planning.revision_required_option_ref
                 == proposal.option.id
             )
-            value_revision = (
-                False
+            comparison = (
+                None
                 if invalid_revision
-                else self._revision_improves_value(
+                else self._compare_revision_value(
                     before=before,
                     after=proposal,
                     cycle=cycle,
                     t_monde=t_monde,
                 )
+            )
+            value_revision = (
+                comparison is not None
+                and comparison.status == "improved"
             )
             if not invalid_revision and not value_revision:
                 self._write(
@@ -333,9 +322,27 @@ class Stage6Runtime(Stage4Runtime):
                     cycle=cycle,
                     data={
                         "option_ref": proposal.option.id,
-                        "reason": "delta_plan_not_reached_or_unavailable",
-                        "delta_plan": (
-                            self._stage6_config.planning.revision_delta
+                        "reason": (
+                            "comparison_unavailable"
+                            if comparison is None
+                            or comparison.status == "unavailable"
+                            else "delta_plan_not_reached"
+                        ),
+                        "old_value": (
+                            None if comparison is None else comparison.old_value
+                        ),
+                        "new_value": (
+                            None if comparison is None else comparison.new_value
+                        ),
+                        "delta": (
+                            None if comparison is None else comparison.delta
+                        ),
+                        "delta_plan": self._stage6_config.planning.revision_delta,
+                        "r_eff": (
+                            None if comparison is None else comparison.r_eff
+                        ),
+                        "h_eff": (
+                            None if comparison is None else comparison.h_eff
                         ),
                     },
                 )
