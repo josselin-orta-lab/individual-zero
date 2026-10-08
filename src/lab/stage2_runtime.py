@@ -28,7 +28,7 @@ from .safety_protocol import (
 )
 from .scheduler import Scheduler
 from .snapshots import SnapshotManager, SnapshotType
-from .world import Command, TransitionResult, WorldBody, WorldLayout, WorldPhysicsConfig
+from .world import Command, TransitionResult, WorldBody, WorldLayout, WorldPhysicsConfig, command_digest
 
 
 STAGE2_AUTOBIOGRAPHICAL_POLICY = AutobiographicalPolicy(
@@ -127,7 +127,7 @@ class ScriptedStage2Runtime:
             "stage2-scripted-agent",
             attempt.t_monde,
             attempt.attempt_ref,
-            command.digest(),
+            command_digest(command),
             "send",
         )
         self.journal.append(
@@ -139,7 +139,7 @@ class ScriptedStage2Runtime:
                 "attempt_ref": attempt.attempt_ref,
                 "primitive": command.primitive,
                 "parameters": dict(command.parameters),
-                "command_hash": command.digest(),
+                "command_hash": command_digest(command),
             },
         )
         return event_id
@@ -153,7 +153,7 @@ class ScriptedStage2Runtime:
             "world",
             attempt.t_monde,
             attempt.attempt_ref,
-            transition.command.digest(),
+            transition.command_digest(command),
             "transition",
         )
         self.journal.append(
@@ -184,7 +184,7 @@ class ScriptedStage2Runtime:
                     "safety-protocol",
                     attempt.t_monde,
                     attempt.attempt_ref,
-                    command.digest(),
+                    command_digest(command),
                     "masked",
                 ),
                 causal_event={
@@ -192,7 +192,7 @@ class ScriptedStage2Runtime:
                     "kind": "protocol_mask_rejected_command",
                     "t_monde": attempt.t_monde,
                     "attempt_ref": attempt.attempt_ref,
-                    "command_hash": command.digest(),
+                    "command_hash": command_digest(command),
                 },
             )
             return CommandExecution(
@@ -214,7 +214,7 @@ class ScriptedStage2Runtime:
             },
             context={
                 "command_source": "scripted_agent",
-                "command_hash": command.digest(),
+                "command_hash": command_digest(command),
                 "mask": self.safety.export_causal_state()["masked_command_hashes"],
                 "R_letal_consecutif": self.safety.consecutive_lethal,
             },
