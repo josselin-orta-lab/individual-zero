@@ -2704,3 +2704,304 @@ In all three cases, the refused candidate is removed from the cycle's winner set
 
 | Module | Trigger | Degraded behavior | Never reduced |
 | --- | --- | --- | --- |
+
+| Perception | step cost exceeds its envelope | deterministic coarse scan of the entire accessible field; details computed only for subscribed subjects and the most salient items; observations marked `couverture_partielle` | reflex stimuli, threats, critical body variables, coarse existence of an accessible change |
+| Gatekeeper | `UC_full` exceeds ordinary budget | `P_pre` prefilter computed with the **same five dimensions** `b,n,urg,rsk,val` and `f`, using O(1) estimates or explicitly versioned caches; full scoring of the top `N_pré` according to `P_pre`, whole pass marked degraded | safety preemption, fixed slots, atomic publication, no dimension of P removed |
+| Competition | evaluation exceeds envelope | evaluate engaged option, new options from the cycle, and highest accumulators up to the envelope; others are `non_evalue`, cannot win this cycle, and their accumulator, threshold, and state are **frozen**, with neither leak nor noise | thresholds and tie-breaking for actually evaluated candidates, fallback |
+| Simulator | request exceeds envelope | same reduced budget `(R_dég, H_dég)` announced for all candidates actually simulated in the cycle; a simulation that does not complete this budget is `indisponible` and its partial value does not enter evidence | model, version, equal budget among evaluated candidates |
+| Value and Needs | — | `E_a^Q` always computed; `E_a^sim` according to simulator; no invented replacement value | D_t, r_t, alerts, safety evaluations |
+| Planning | search exceeds envelope | reduced depth and width; search continued in the next cycle; partial plan marked | active-plan verification |
+| Memory | recall exceeds envelope | the `N_rap^dég` most recent episodes, then, if budget remains, the most relevant according to the already-available index; responses marked partial | episode writing, intentions |
+| Causal Model | envelope exhausted | revisions and test proposals deferred to next cycle | already-published statuses, admissibility |
+| Exploration | envelope exhausted | designation of new targets deferred; `m_a` for already-candidate options computed if its cost fits the envelope, otherwise option marked unevaluated by Competition | — |
+| Metacognition and Health | envelope exhausted | non-critical detectors executed only on the first cycle of each step | integration and publication of κ, budget counters, block detection |
+| Goal Manager | never | — | full arbitration |
+| Consolidation | ceiling reached | transactional suspension | — |
+| Control, reflexes, veto, journal, bus, S_t | never | protected capacity | everything |
+
+**D.** Function remains available while only precision decreases. Perception preserves minimum coverage of the accessible world; the gatekeeper approximates its own function instead of changing its semantics; an uncomputed option is neither rewarded nor punished; degraded outputs are marked, order remains deterministic, and safety remains out of reach.
+
+**E.** Random sampling: unpredictable coverage and unnecessary fragility. Gatekeeper prefilter ignoring novelty or value: changes cognitive function, rejected. `e = 0` for an unevaluated option: turns lack of computation into zero evidence, rejected. Removing an entire module: loss of function. Borrowing budget between modules: forbidden by S-11.3.
+
+**F.** Increasing load, module by module: outputs marked; coarse perception always present; P_pre and full P use the same dimensions; `non_evalue` candidate with strictly unchanged accumulator; simulator budget identical among evaluated candidates; safety intact; identical replay; INV-21.
+
+### DC-08 · Snapshots and checkpoints
+
+**A.** Exact replay starts from birth or any complete snapshot; snapshot frequency is to be calibrated [S-01.5]. A snapshot is complete causal state taken at a coherent point [S-13.1]. Rollback restores the last checkpoint immediately before sending the lethal command [V-25]. Suspended consolidation retains resumption state [S-10.3].
+
+**B.** Typology, capture timing, retention, relationship among types, and the boundary between restorable state and append-only traces.
+
+**C.**
+
+- There are **four types of life `Snapshot`**: birth, periodic, lethal checkpoint, copy. Only the Scheduler triggers them at coherent points: birth, step boundary, immediately before every command send, copy point.
+- The consolidation transactional point is a fifth resumption mechanism but **not a Snapshot**: `CheckpointConsolidation` is private Consolidation working state, with neither world nor published cognition.
+- The lethal checkpoint is taken after decision admission and before sending, with deliberation still open (3.4). It records `t`, cycle counter, `attempt_ref`, command source, mask, and `R_letal_consecutif`. It is released at the non-lethal end of the step; an in-memory differential copy semantically equivalent to complete state is sufficient.
+- Complete causal state includes every external state that can change deterministic continuation: world state, body, active injected scenario, scenario counters, and states of their pseudorandom streams, in addition to individual states.
+- The technical journal, hash chain, and evaluation trace are NOT part of restored state. A rollback restores world and causal state, then **appends** new events to the existing journal; it never rewinds the technical trace.
+- The hash of every snapshot is logged; restoration verifies the hash before resuming.
+
+**D.** V-25, replay (S-01), and copies (S-13) share one notion of complete causal state, while Consolidation retains a specialized private checkpoint. Separating journal from restorable state makes rollback compatible with append-only logging.
+
+**E.** Checkpoint at the beginning of a step: contrary to V-25. Five variants all called Snapshot: ambiguity between life state and private transaction, rejected. Restoring the journal: contrary to append-only behavior and would erase the lethal branch from audit. Omitting causal scenario state: replay may diverge.
+
+**F.** Restore each of the four Snapshot types, then identical replay; resume a CheckpointConsolidation without modifying the world; death at a randomly chosen step: restored causal state equals checkpoint while journal length strictly increases; injected scenario resumed from snapshot: same future events.
+
+### DC-09 · Journal views and access rights
+
+**A.** Lethal transition, its detection, rollback, and mask remain in the technical journal; the autobiographical view filters them; a single physical journal may expose both views [V-24]. The individual accesses only its own experience and internal functioning [S-08.2]. The evaluation trace is separate and inaccessible to the individual [S-12.4]. Memory reads the journal read-only [Q14].
+
+**B.** Exact content of the autobiographical view, how to construct it without rewriting, and the access matrix.
+
+**C.**
+
+- The physical journal is always the append-only technical trace. No `JournalEvent` is moved, erased, or reclassified after writing.
+- Autobiographical allowlist: observations actually perceived; own contributions and cognitively accessible gatekeeper feedback; S_t versions; decisions and commands actually sent and experienced; observed results; rewards; goal changes; episodes; intentions; falling asleep and waking with only their perceptible cause. Consolidation commits, technical version numbers, hashes, RNG states, score decompositions, and `attempt_ref` identifiers remain technical; their content becomes accessible to the individual only through ordinary memory and skill interfaces after publication.
+- At non-lethal closure of a step, the journal writes an `AutoSegmentCommit` referencing, by identifier, the events from that attempt authorized by the allowlist. The autobiographical view is the projection of these references. An attempt cancelled by rollback receives no commit and therefore never appears in the projection, without rewriting.
+- Everything else is excluded by default, especially: lethal transition, detection, rollback, mask and counters; random states; scheduler and protocol events except their perceptible consequences in the world; oracle annotations and metrics; battery metadata; detailed budget counters.
+- A new event type is technical by default; it enters the projection only after explicit addition to the versioned allowlist.
+
+| View | Readers | Mode |
+| --- | --- | --- |
+| technical | replay and audit tools, operator, bench | read |
+| autobiographical | Memory, Consolidation | read-only projection, every access logged |
+| evaluation trace | bench, operator | read and write by bench only |
+
+**D.** Conforms to V-24: one technical trace, one autobiographical projection, and a separate evaluation trace. The lethal branch remains auditable without becoming a memory.
+
+**E.** Mutable `view` field on events: rejected because it implies reclassification after writing. Two independent causal journals: divergence risk. Denylist: a new event type would leak by default. Retroactive deletion: contrary to append-only behavior.
+
+**F.** INV-02, INV-27; Memory access to technical event: refused; new type absent from projection; rollback without `AutoSegmentCommit`; non-lethal step with commit referencing exactly the authorized events.
+
+### DC-10 · Path of a proposed option
+
+**A.** The option is the common unit; it comes from Planning, compiled skills and habits, Exploration through Planning, and causal tests [S-06.3, NQ-12, NQ-18]; motif_ref mandatory, but_ref when serving the goal [V-10]; Planning may request admissibility [V-43]; an invalid option loses its accumulator [S-05.6]; the gatekeeper never chooses an action [spéc. 3.4].
+
+**B.** Exact path, registration timing, role of S_t, real registry bound, and prevention of an option becoming its own evidence.
+
+**C.** The seven-step path in 8.3, completed as follows:
+
+- An option carries a validity `expire_a` in steps; at expiry it is invalidated.
+- A proposal whose key `(producer, motif_ref, but_ref, end_condition)` already exists replaces the previous version. This registry key is distinct from `signature_apprentissage`: the former manages live instances, the latter indexes shared learning. The accumulator is retained only if the change does not modify the evaluated realization in the sense of DC-17; otherwise it restarts at zero.
+- The registry contains at most `N_options_max` live candidates, **excluding permanent option `attendre`**. The engaged option is protected from eviction.
+- At saturation, after removing invalid or expired candidates, non-engaged candidates are ranked by `(normalized progress A/max(s_min,s_last) descending, t_last_proposal descending, canonical_order)`. The best `N_options_max − 1`, plus the engaged option if present, are retained. A new option can therefore replace an old candidate with no progress but does not arbitrarily displace an option that has accumulated strong evidence. Every eviction is logged.
+- The registry is therefore genuinely bounded, independently of the number of distinct keys a producer may create before expiry.
+- The `action_proposee` contribution carries the option to the registry, but its existence, summary, and assertions produced only by that same proposal MUST NOT increase the evidence for the option it carries. When constructing `x_t`, `E_a^sim`, and EvaluationOption provenance, any chain whose sole support is `action_proposee(a)` is excluded for `a`. The same fact may contribute if it has distinct independent support in provenance.
+
+**D.** Registration does not depend on admission to S_t: the gatekeeper does not choose actions. S_t influences evidence through independent information it contains, not through the mere fact that an option announced itself there. The explicit bound closes registry growth.
+
+**E.** Register only options admitted into S_t: would make the gatekeeper an action selector. Treat options as contributions scored by the gatekeeper: mixes roles. Count only live keys as a "bound": insufficient because their number can grow without limit before expiry. Use an option's proposal to justify the same option: self-reinforcing loop, rejected.
+
+**F.** Option without motif_ref rejected; option registered without entering S_t; saturation at `N_options_max`; engaged option never evicted; recent candidate with no progress may replace older candidate with no progress; invalidation at expiry; duplicate key; `action_proposee(a)` alone does not change evidence for `a`; INV-10.
+
+### DC-11 · Component placement in cycle phases
+
+**A.** Fixed phase order; all contributors in a cycle read the same frozen S_t version; gatekeeper publishes atomically; Competition reads the new version in the same cycle; no recursive loop [S-02.2]; declared activations [S-02.3]; visibility from 3.6.
+
+**B.** Which component acts in which phase, in what order, and how to avoid a second world perception on the first cycle.
+
+**C.**
+
+Before any cognitive phase of a waking step, the Scheduler requests **one perceptual capture for the step**. This capture is immutable for the entire deliberation of the step. The reflex path may immediately read its safety portion. On the first cycle only, Perception transforms this same capture into ordinary contributions; it does not reread the world.
+
+| Phase | Components, in canonical order | Rule |
+| --- | --- | --- |
+| pre-step | Scheduler, Perception (`capturer`), reflex Control | one read of local state and telemetry; world then frozen during deliberation |
+| 0 | Scheduler (freeze), Global Modulation (profile) | inputs frozen for the entire cycle |
+| 1 | Perception (`publier_capture`) on the first cycle only; Value and Needs; Memory; Goal Manager; Causal Model; Exploration; Planning; Metacognition and Health | each reads frozen inputs and own state; outputs stay in local buffer until phase end; manager arbitrates proposals published through previous cycle |
+| end of phase 1 | Bus | pours buffers in canonical order independent of producer call order |
+| 2 | Gatekeeper | publishes S_t[n+1], including fixed slots |
+| 3 | Competition, with service calls to Value and Needs, Simulator, Exploration, Metacognition and Health | assembles EvaluationOption objects |
+| 4 | Competition, Action Control | accumulation, decision, preparation of one command, admissibility, veto, mask |
+| 5 | Metacognition and Health (κ), Causal Model (statuses), Perception (precisions), Journal | publications visible in next cycle |
+
+No component sees, within the same phase, another component's output from that phase except through a declared service call in phases 3 and 4. Permuting internal phase-1 execution order therefore changes neither bus content nor causal result; canonical pouring order also guarantees an identical journal.
+
+**D.** Deterministic and compliant with S-02.2 and 3.6. Separating `capturer` from `publier_capture` avoids a double world read within one step. Buffering then canonical pouring makes result and journal independent of internal producer order.
+
+**E.** Two world perceptions in the same step: would create new information while the world is supposed to be frozen. Parallel execution: excluded from MVP [S-01.4]. Event-driven ordering: non-deterministic. Goal Manager in phase 5: would delay Planning even further, contrary to 3.6.
+
+**F.** World-read counter: exactly one per step outside reduced sleep perception; reflex and cognition see the same capture; permutation of phase-1 calls: same contributions after canonical pouring and same journal; INV-08.
+
+### DC-12 · Reflex during an engaged option
+
+**A.** A reflex is innate, priority, on the direct path, and acts within the step; the path arbiter applies veto, reflexes, then option [spéc. 8.2, NQ-12]; reflexes remain active during sleep [S-10.2].
+
+**B.** What happens to deliberation and the engaged option when a reflex acts.
+
+**C.** Reflexes are tested at step opening on that step's stimuli. When one acts, its command, subject to veto and mask, is the command for the step, and no deliberation opens. The engaged option remains engaged with its inertia; its step is not executed and is revalidated at the next step; the learning segment is extended (DC-15). If veto blocks the reflex command, a deliberation opens normally; if the command is lethal, resumption under 18.4 opens a deliberation within the same step.
+
+**D.** Reflex priority is preserved without corrupting deliberation; a step still carries one command.
+
+**E.** Deliberate additionally within the same step: two commands for one step. Abandon the engaged option: loss of continuity. Make reflex a competition candidate: forbidden by S-06.3.
+
+**F.** Adjacent creature during a plan: reflex acts, engaged option remains engaged and competes on next step; veto on a reflex; INV-13.
+
+### DC-13 · Sleep: pressure, fatigue, and waking
+
+**A.** Four factors; `dormir` is an ordinary option; night is favorable but not mandatory; emergency prevents or interrupts sleep; falling asleep and consolidation are distinct [S-10.1]. Nothing already counted by D enters m_a(dormir); body state may only modulate or condition pressure [V-17]. Metacognition and Health produces pressure and m_a(dormir) [V-19]. F_cog grows with consumed computation and decreases at rest in simulated time without reducing budget [S-11.2]; it enters neither D nor r_t [NQ-04]. Waking follows a dedicated rule [S-10.2], including for a dated intention [NQ-17]. Consolidation pressure aggregates unconsolidated episodes and saturation [spéc. 7.7].
+
+**B.** Functional forms, normalization of memory saturation, waking cases, resumption of suspended consolidation, and maximum bound on continuous sleep.
+
+**C.**
+
+- Fatigue, in [0, 1]: at closure of every waking cycle, `F ← min(1, F + a_F · UC_cycle / (C_max · B_cycle))`. The sum of increments in a step is therefore exactly `a_F · UC_pas / (C_max · B_cycle)` before saturation. During a sleep step, `F ← max(0, F − b_F)`; in recovery profile, at the close of a waking step, `F ← max(0, F − b_F^rec)` after increments from the step's cycles.
+- Memory saturation used here is a normalized fraction `occ_mem = relevant_content / reference_capacity`, bounded to [0,1], not a raw quantity depending on implementation.
+- Consolidation pressure: `P_cons = min(1, N_nc / E_ref + occ_mem / S_ref)`, where `N_nc` counts unconsolidated episodes.
+- Sleep pressure: `p_s = min(1, w_F · F + w_C · P_cons + w_N · 𝟙[night])`. It is recomputed at the opening of each step from the published state of the previous step, then REMAINS FROZEN during the cognitive cycles of that step. No variable in D enters it; the MVP has no other sleep variable.
+- `m_a(dormir) = p_s` while awake, `non_applicable` during sleep.
+- Consolidation starts when the individual is asleep, `P_cons ≥ p_cons_min`, and no threat is perceived by reduced perception. If a consolidation from an earlier sleep is suspended, it resumes before a new consolidation may start.
+- Wake rule, evaluated at every sleep step, in priority order: admitted reflex; reduced-perception signal with `f × rsk ≥ s_réveil`; authorized dated intention at deadline; continuous duration `≥ L_sommeil_max`; natural end when `p_s ≤ p_réveil` and no consolidation is active. `L_sommeil_max` is a hard bound: if reached during consolidation, the current pass is transactionally interrupted and the individual then wakes.
+- Waking during consolidation first interrupts it: current pass cancelled, validated passes retained. Cognition resumes in the same step.
+
+**D.** No double counting, accessible signals only, normalized saturation, determinism, compliance with V-17, V-19, and NQ-17. The hard bound prevents persistent consolidation debt from creating infinite sleep; priority resumption prevents proliferation of suspended transactions.
+
+**E.** Sleep planner: rejected by S-10.1. Energy in pressure: double counting, rejected by V-17. Fixed schedule: contrary to "night is favorable, not mandatory." Learned pressure: outside MVP. New consolidation while a transaction is suspended: rejected.
+
+**F.** Unit forms; life in which only energy varies: m_a(dormir) unchanged; memory occupancy expressed under two different physical capacities but same fraction: same pressure; every waking case; interruption at `L_sommeil_max`; resumption of suspended transaction before creation of a new one; INV-36.
+
+### DC-14 · Safety block
+
+**A.** With no admissible and safe action, the system enters an explicit logged block with operator alert [S-14.5]; likewise above R_letal_max [V-40]; an unresolved block excludes the life [19.5].
+
+**B.** Effect on execution, distinct between interactive diagnostics and experimental campaign.
+
+**C.**
+
+- In all modes, the block immediately stops progress of the step: no command is sent, the world no longer advances, state is logged, and operator is alerted.
+- **Campaign mode**: no case-by-case human decision is allowed. The branch closes immediately with status `blocage_securite`, metrics and journal are finalized, then the preregistered exclusion rule from 19.5 applies. There is no manual resumption of this branch in primary analysis.
+- **Interactive diagnostic mode**: the life may remain suspended at the current step. The operator may `arrêter`, or `reprendre` after an explicit external intervention, for example a scenario modification. Every intervention is logged before application, clears the resumption mask if necessary, marks the branch `intervention_operateur`, and excludes that branch from primary campaign analyses.
+- No resumption is automatic in any mode.
+
+**D.** Safety remains explicit and traceable, while the campaign prevents a non-preregistered human decision from becoming a hidden experimental variable. Replay of a diagnostic remains exact because operator intervention is a logged external input [S-01.6].
+
+**E.** Ad hoc human intervention during campaign: rejected, experimental bias. Force `attendre`: may be precisely the dangerous command. Random action: dangerous and non-deterministic. Automatic return to an earlier snapshot: would rewrite history and hide the event.
+
+**F.** Scenario with no admissible action in campaign mode: branch closes without waiting for operator; same scenario in diagnostic mode: suspension; diagnostic resumption logged and branch marked; exceeding R_letal_max; replay with operator input: identical; INV-29.
+
+### DC-15 · Temporal-difference update schedule
+
+**A.** Temporal-difference learning with traces [spéc. 8.6]; learning affects evidence only from the next cycle [S-05.1]; reflexes and sleep are outside competition; death cancelled by rollback is not learned [NQ-14].
+
+**B.** Computation time, treatment of steps without a cognitive decision, and closure of a final segment when no following decision exists.
+
+**C.** A segment runs from one cognitive decision (step `t_k`, option instance `o_k`, signature `o_k^sig`) to the next (step `t_{k+1}`, option `o_{k+1}`, signature `o_{k+1}^sig`), of length `L = t_{k+1} − t_k`:
+
+```latex
+G = \sum_{j=0}^{L-1}\beta^{j}\,r_{t_k+j}
+\qquad
+\delta = G + \beta^{L}\,Q(x_{t_{k+1}}, o^{sig}_{t_{k+1}}) - Q(x_{t_k}, o^{sig}_k)
+\qquad
+z \leftarrow (\beta\lambda_e)^{L} z + \nabla_\psi Q(x_{t_k}, o^{sig}_k)
+\qquad
+\psi \leftarrow \psi + \eta\,\delta\,z
+```
+
+- The update is computed when step `t_{k+1}` ends without a lethal transition, published immediately, and visible from the first cycle of the next step.
+- Reflex and sleep steps extend the segment; their rewards enter G. If the segment was opened by decision `dormir`, those consequences therefore contribute to credit for that option.
+- A step cancelled by rollback belongs to no segment. The first decision of a life produces no prior update.
+- If a **terminal state actually experienced by the individual** closes a trajectory without a following cognitive decision, the final segment is updated with zero terminal bootstrap: `Q_next = 0`. External protocol termination, stopping a battery copy, or safety block are not presented as world states and therefore do not artificially create a terminal reward or extra update.
+- Only `Q_active` is modified; the consolidated form changes through Consolidation (15.6).
+
+**D.** With `L = 1`, the rule is exactly that of 11.1. It is deterministic, cannot influence its own cause, is compatible with steps without deliberation, and explicitly defines the only situation in which the next bootstrap is zero.
+
+**E.** Update every cycle: no new information within a frozen step. Maximum over all options: requires evaluating entire registry. Learning reflexes: reflex is not learned. Autonomous learning during sleep: cognition is suspended there. Treating external end of a battery as terminal reward: protocol leakage.
+
+**F.** Equivalence for `L = 1`; segment containing a reflex; sleep segment; lived terminal with zero bootstrap; external battery end without update; rollback excluded; INV-07.
+
+### DC-16 · Rules and skills produced by consolidation
+
+**A.** The Causal Model owns the canonical source of contingencies; Memory and Simulator reference it [NQ-10, S-09.3]. A rule is born during consolidation with hypothesis status; a skill is compiled when the same plan succeeds n_comp times in nearby contexts [spéc. 7.4]. Habits and skills are compiled procedural options [NQ-12]. Commit is coordinated [V-22].
+
+**B.** Who writes these results, when they become visible, and how to prevent one episode from being counted multiple times because several mechanisms processed it.
+
+**C.**
+
+- Consolidation produces candidate rules and compiled skills or habits in its private state.
+- Every extracted item of evidence carries identifiers of **source events and episodes**. During integration, a source identifier already attached to the same contingency never increments its counts a second time, even if the episode was processed online and later replayed during consolidation.
+- Before commit, rules are handed to the Causal Model. It privately prepares their integration into the canonical source with status `hypothese_causale`, never `etablie` or `etabli_pour_securite`. A rule identical in predicate and context to an existing contingency merges evidence references **as a set of identifiers**, without duplicating their weight.
+- Skills and habits join Procedural Memory, their owner, as compiled options with preconditions and success rate. `n_comp` counts **distinct successful episodes**, not the number of times the same success was replayed or reindexed.
+- Everything becomes visible at coordinated commit; Semantic Memory keeps only references.
+
+**D.** The single source is preserved, with no direct promotion; nothing is visible before commit and consolidation does not artificially manufacture certainty by counting the same experience several times.
+
+**E.** Consolidation keeps its own store of rules: two competing sources. Direct promotion to `etablie`: bypasses validation in 13.2. Count each replay of an episode as new evidence or success: double counting, rejected.
+
+**F.** Visibility only at commit; same episode learned online then replayed: one canonical item of evidence; same success replayed over several nights: one occurrence for `n_comp`; no duplicate; initial status `hypothese_causale`; INV-23.
+
+### DC-17 · Adoption of a revised plan
+
+**A.** Replanning produces a plan proposal; it does not replace the active plan by itself and never changes the goal [S-02.4]; it does not change option [S-06.3]; an option revalidates at execution [spéc. 6.8].
+
+**B.** Rule for adopting a revised plan, plan comparability, and fate of the accumulator.
+
+**C.**
+
+- A revised plan for the engaged option, with the same identifier, same motif_ref, same but_ref, and same end condition, is adopted at the opening of the next step in either of two cases: the active plan is invalid (failed step, false precondition, lost freshness), or the simulated value of the new plan exceeds that of the active plan by at least `Δ_plan`.
+- When adoption relies on value comparison, old and new plans are evaluated from the **same state**, with the **same simulator version**, same published contingencies, and the **same effective budget**. A plan whose evaluation is unavailable is not declared better.
+- Before adoption, the new plan passes `verifier_admissibilite` on its known steps. `indetermine` remains allowed; `inadmissible` prevents adoption and leaves the option to revise or invalidates it depending on refusal scope.
+- For the engaged option, adoption retains identifier, `engagee` state, and inertia, and resets the current step to the beginning of the new plan; adoption is logged.
+- A plan targeting a different end condition is a new option that enters competition.
+- For a **non-engaged** option, any material plan change creates a new evaluation version and resets `A = 0`. Evidence accumulated for the old means of reaching the end condition does not transfer to the new plan. A purely representational change, with no change to steps, preconditions, or predicted consequences, may retain version and accumulator.
+
+**D.** Stability through `Δ_plan` hysteresis, unchanged goal, symmetric deterministic comparison. The engaged option preserves behavioral continuity; a non-engaged alternative does not artificially carry accumulated evidence into a different realization.
+
+**E.** Always adopt latest plan: oscillation. Adopt only when invalid: loses improvements. Compare two plans under different budgets: evaluation bias. Retain accumulator of an alternative after material plan change: transfers evidence that concerned another realization. Plans as distinct candidates in competition: forbidden by S-06.3.
+
+**F.** INV-37; oscillation between two nearby plans avoided; comparison with same budget and state; inadmissible plan not adopted; invalid engaged plan replaced at next step; replanned non-engaged alternative with `A = 0`.
+
+## 24. Glossary
+
+| Term | Definition | See |
+| --- | --- | --- |
+| Accumulator A_a | quantity that integrates evidence received by an option cycle after cycle; the option launches when it reaches its threshold | 8.6 |
+| Primitive action | command directly executable by actuators; represented as a trivial option | 8.1 |
+| attempt_ref | technical identifier for an attempt at the current step; renewed after rollback, present in journal and checkpoints but never in cognition or autobiographical view | 3.4, 17.4, DC-08 |
+| AutoSegmentCommit | technical event written at non-lethal closure of a step; references authorized events forming the autobiographical projection of that attempt | 17.4, DC-09 |
+| Admissibility | response from safety policy for an option in context: admissible, inadmissible, or indeterminate | 9.4, V-43 |
+| Alert | contribution signaling danger or deviation, with severity; verified only when exposure allows announced harm to be tested | 4.3, 11.3 |
+| Anchor | `monde` for an observation drawn directly from the step's local state; `derive` for an observation computed from other contributions | DC-06 |
+| Evaluation bench | external device that measures without intervening, from technical journal and oracle | 19 |
+| Trait battery | fixed set of test situations run on disposable copies, whose scores form the profile | 19.5 |
+| Bifurcation | complete copy of an individual whose divergence is then followed | 17.7 |
+| Safety block | immediate stop of step progress; closes branch in campaign, or suspends life until operator decision in diagnostics | 18.6, DC-14 |
+| Stub | very simple temporary replacement for a component, allowing the rest to be tested | 20 |
+| Active goal | individual's current goal, written only by Goal Manager | 7.4 |
+| but_ref | reference from an option to the active goal it serves; absent for an autonomous intrinsic option | V-10 |
+| Lethal checkpoint | complete causal state taken immediately before sending a command, with deliberation still open; excludes append-only journal | 17.6, DC-08 |
+| CheckpointConsolidation | private resumption state of suspended consolidation; not a life Snapshot | 15.6, 17.6, DC-08 |
+| Configuration clone | new individual created with only θ parameters from another; not a copy | 17.7 |
+| Command | elementary order sent to world or body by Action Control | 8.1 |
+| DecisionAdmise | immutable object containing optional option, exact already-prepared and admitted command, S_t version, and decision origin; transmitted without recomputation to the world | 5.2, 3.4, DC-02 |
+| Coordinated commit | simultaneous publication of h_new and rebased active forms at the same synchronization point | 15.6, V-22 |
+| Option Competition | accumulation mechanism that chooses the engaged option | 8 |
+| Consolidation | offline, transactional reorganization of episodes into a new h version | 15.6 |
+| Contingency | learned relation between conditions and outcomes, held in the canonical source of the Causal Model | 13 |
+| Contribution | typed message from a module to the bus in the common envelope | 4.3 |
+| Copy | new instance created from a complete causal snapshot, with identifier and lineage | 17.7 |
+| Cut point | causal instant freezing a consolidation batch | 15.6, V-21 |
+| Cognitive cycle | one processing pass of the architecture in six phases; several cycles may occur in one step | 3 |
+| Deliberation | sequence of cycles within one step until a decision or C_max | 3.4, 8.7 |
+| Double counting | contribution of the same signal twice to one decision through two paths; forbidden except declared double effect | 8.5, V-17 |
+| Fixed slot, contested slot | part of S_t supplied by its owner; one of the K places assigned by Gatekeeper | 6.2 |
+| Episode | segment of experience delimited by goal change, surprise, zone change, or maximum duration | 10.3 |
+| Equipment E | models prepared before birth, shared by all and frozen during life | 12 |
+| etabli_pour_securite | usage status authorizing an existing veto rule to apply a fact | 13.3, V-43 |
+| etablie | causal status authorizing a contingency to correct the simulator | 13.2, V-43 |
+| EvaluationOption | evaluation of an option for current cycle: values, m_a, R_a, U_a, protection, provenance, version | 5.2, V-19 |
+| Window W | S_t recency window measured in world steps | 6.5, V-36 |
+| F_cog | accumulated cognitive fatigue fed by consumed computation, outside D and r_t | 16.2, DC-13 |
+| Effective reliability f, κ map | reliability of a contribution, f = κ_(version_E,M,type,famille)(conf), learned only from causally independent verifications; same-channel repetition is insufficient | 11.4, DC-06 |
+| Queue | admissible items not retained by Gatekeeper, under bounded capacity, without age priority | 6.5, DC-04 |
+| Goal Manager | sole component that activates, maintains, replaces, or abandons active goal | 7.4 |
+| h | consolidated, versioned history; with τ, it carries identity | 15.6 |
+| Hysteresis | minimum gap required to replace an item in place: Δ_hyst in S_t, Δ_but for goals, Δ_plan for plans | 6.5, DC-03, DC-17 |
+| Inertia ι_a | bounded reduction of engaged option's threshold, never an evidence bonus | 8.6 |
+| Snapshot | complete causal state recorded at a coherent point | 17.6 |
+| Intention | something to accomplish later with its trigger; held by prospective memory | 10.5 |
+| Journal | append-only trace of all events, chained by hashes | 17.4 |
+| Batch | frozen set of episodes processed by a consolidation | 15.6 |
+| m_a | option-specific intrinsic motivation, third evidence component | 8.5, NQ-03 |
+| Protocol mask | external prohibition of the lethal command for the resumed deliberation only | 18.4, V-25 |
+| Degraded mode | reduced-precision operation when budget does not permit normal processing | 16.3, DC-07 |
+| Causal Model | component holding hypotheses, contingencies, and their statuses | 13 |
+| motif_ref | reason an option exists or competes; always present | V-10 |
