@@ -60,6 +60,21 @@ jobs:
           print(f"stage8_kappa_version={kappa['version']}")
           print(f"stage8_kappa_keys={len(kappa['counters'])}")
           print(f"stage8_f_cog={runtime.metacognition.state.f_cog_uc_counter}")
+          # Fixed only after a verified second identical 300-step execution.
+          expected = "2e6343c1c40f2c61d2c6f5b277af9e12ccda42bc93593b2a13873e184e1d5a5e"
+          if runtime.journal.head_hash != expected:
+              raise SystemExit(
+                  "Stage 8 golden regression: "
+                  f"{runtime.journal.head_hash} != {expected}"
+              )
+          if len(payload) != 35061323:
+              raise SystemExit(f"Stage 8 journal size regression: {len(payload)}")
+          if sum(q["update_counts"].values()) != 597 or len(q["weights"]) != 2:
+              raise SystemExit("Stage 8 Q_active evolution regression")
+          if len(kappa["counters"]) != 1 or kappa["version"] != 1498:
+              raise SystemExit("Stage 8 kappa_active evolution regression")
+          if runtime.metacognition.state.f_cog_uc_counter != 9593:
+              raise SystemExit("Stage 8 F_cog regression")
           if not q['weights'] or not kappa['counters']:
               raise SystemExit("Stage 8 Q and kappa must both evolve")
           repeat = build_stage8_reference_runtime()
@@ -85,36 +100,6 @@ jobs:
           path: /tmp/stage8-reference.jsonl
           if-no-files-found: error
 
-      - name: Fetch retained historical Stage 7 reference journal
-        if: matrix.python-version == '3.11'
-        uses: actions/download-artifact@v4
-        with:
-          name: stage7-reference-journal
-          run-id: 37778385047
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: /tmp/historical-stage7
-
-      - name: Diagnose Stage 7 historical artifact divergence
-        if: matrix.python-version == '3.11'
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          from lab.stage7_reference_fixture import build_stage7_reference_runtime
-          r = build_stage7_reference_runtime()
-          for _ in range(300):
-              r.run_step()
-          historical = Path('/tmp/historical-stage7/stage7-reference.jsonl').read_bytes().splitlines()
-          current = r.journal.canonical_bytes().splitlines()
-          print('stage7_historical_artifact_event_count=',len(historical))
-          print('stage7_current_event_count=',len(current))
-          print('stage7_current_head=',r.journal.head_hash)
-          for i,(a,b) in enumerate(zip(historical,current)):
-              if a != b:
-                  print('stage7_first_historical_divergence_index=',i)
-                  print('stage7_old_event=',a[:1800].decode('utf8'))
-                  print('stage7_current_event=',b[:1800].decode('utf8'))
-                  break
-          PY
       - name: Generate Stage 1 reference journal
         if: matrix.python-version == '3.11'
         run: |
