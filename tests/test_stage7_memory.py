@@ -187,6 +187,29 @@ class EpisodicMemoryTests(unittest.TestCase):
         self.assertEqual(contribution.signal_family, "memory_recall")
         self.assertEqual(contribution.type, "response")
 
+    def test_spontaneous_recall_is_not_reemitted_without_new_threshold_crossing(self) -> None:
+        memory = EpisodicMemory(config(max_episode_steps=1, recall_threshold=0.0))
+        memory.ingest_autobiographical(
+            [transition("e1", 1)],
+            current_t_monde=2,
+            current_goal_ref=None,
+            current_reward=0.0,
+        )
+
+        first = memory.spontaneous_contribution(
+            st=None,
+            t_monde=2,
+            cycle=1,
+        )
+        second = memory.spontaneous_contribution(
+            st=None,
+            t_monde=2,
+            cycle=2,
+        )
+
+        self.assertIsNotNone(first)
+        self.assertIsNone(second)
+
     def test_dated_intention_uses_goal_manager_deadline_pressure(self) -> None:
         memory = EpisodicMemory(config())
         manager = GoalManager(
