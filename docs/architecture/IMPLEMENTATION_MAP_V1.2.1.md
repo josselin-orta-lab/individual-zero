@@ -118,9 +118,68 @@ Deliberately not implemented yet:
 - full cognitive branch of INV-12, which becomes testable at Stage 4;
 - Stage-3 safety facts learned from experience: only the immutable initial source exists here, as required before the Causal Model arrives.
 
+## Stage 4 progress on this branch
+
+Implemented:
+
+- frozen causal contracts for GoalProposal, Goal, Contribution, Option, Plan, EvaluationOption and S_t;
+- Value and Needs with explicit setpoints, weighted homeostatic deviation D_t, reward r_t, need alerts and goal proposals;
+- Goal Manager as sole owner/writer of the active goal, with one-cycle proposal visibility, hysteretic replacement, satisfaction, abandonment counter and refractory state;
+- Gatekeeper with the five normative dimensions, fixed Stage-4 weights, f = 1, exact-subject grouping, exact-symbolic novelty stub, safety preemption, hysteresis, bounded queue, emission quota and soft slot-diversity quota;
+- immutable S_t publication by its sole owner, including body, active goal, current plan step, normal profile, synthetic budget state and last-action comparison;
+- Perception last-known symbolic map and observation contributions, still with zero noise;
+- greedy E-0 planner reading only active goal, founding S_t and Perception's map, never world/oracle;
+- explicit grounding of planned options in contributions actually retained by the founding S_t;
+- bounded live-option registry, permanent `attendre`, accumulators, urgency, leak, thresholds, inertia, residuals, relative-margin tie-break and C_max fallback;
+- substitution evidence by primitive action type only; learned value, simulation and intrinsic motivation remain unavailable/non-applicable exactly as Stage 4 requires;
+- Action Control ownership of the current cognitive plan step, advancing only after a non-lethal applied command;
+- minimal position result comparator using E-0 predicted movement and the next perceptual capture; non-conformance invalidates the current plan and candidate;
+- P-43 logical per-cycle budget using the Stage-1 `CycleComputeBudget`, including envelopes and protected capacity;
+- minimal F_cog representation as cumulative actually-consumed UC plus last-cycle UC and synthetic budget state, with normalized DC-13 dynamics explicitly deferred to Stage 10/P-39;
+- complete cognitive causal state included in lethal checkpoints and restored on rollback while the technical journal remains append-only;
+- C_max fallback performed inside phase 4, therefore inside the same budget/F_cog accounting as ordinary decisions;
+- direct reflex remains prior to cognition and opens no deliberation;
+- deterministic one-day Stage-4 compatibility fixture and retained CI journal.
+
+Stage 4 reference fixture:
+
+- duration: 300 world steps;
+- causal journal bytes: 31,021,402;
+- golden journal head: `87e2de3c49f07bafa8026ef785e5e50abf38c98314e780b3e2c5107bf26bdac8`;
+- minimal F_cog UC counter at day end: 9,551;
+- fixture values are software-compatibility values only and are not campaign calibration or preregistration.
+
+Stage 4 invariant status:
+
+- INV-01: green for implemented Stage-4 causal owners through unique owner identifiers and encapsulated single-writer state;
+- INV-04: green; published S_t structures are recursively immutable and snapshot through a plain causal representation;
+- INV-08: green for implemented producers; goal proposals become visible one cycle later and Planning consumes the active goal/S_t only from the previous cycle;
+- INV-09: green for the minimal runtime; deliberation is bounded by C_max and no world transition occurs before decision/fallback send;
+- INV-10: green for implemented options; motif_ref is mandatory and stale goal_ref proposals are rejected/pruned;
+- INV-11: green for the minimal system; only Goal Manager writes the active goal;
+- INV-12: green for both implemented paths: reflex commands trace to trigger/capture; cognitive commands trace to option, founding S_t and explicit grounding contributions retained by that S_t;
+- INV-13: remains green from Stage 3; reflexes/veto never enter Competition;
+- INV-17: green; engaged option restarts at A = 0 and non-winning alternatives retain rho times their accumulator;
+- INV-18: green for Gatekeeper age/expiry because age changes only with t_monde, not with extra cognitive cycles;
+- INV-19: green; queue capacity and eviction are deterministic;
+- INV-21: green for Stage 4 through per-cycle UC accounting, module envelopes, protected capacity, explicit degradation and a forced planning-overrun test;
+- INV-27/INV-28: extended through cognitive rollback: lethal cognitive branches restore complete causal cognition, remain absent from autobiographical projection and resume under protocol mask;
+- INV-33: extended through deterministic Stage-4 re-execution and the full-day golden journal;
+- INV-41/INV-52: preserved; the exact admitted command object is the one dispatched, after veto/mask and before lethal checkpoint/send.
+
+Minimal stubs that remain intentionally incomplete:
+
+- kappa remains f = 1; verification and reliability learning begin at Stage 8;
+- learned Q is `unlearned`, simulator evidence is `unavailable`, m_a is `not_applicable`; richer EvaluationOption production begins in Stages 6, 8, 10 and 11;
+- risk/protection remain minimal hand-written safety inputs; causal safety facts arrive at Stage 9;
+- Global Modulation remains the fixed `normal` profile until Stage 11;
+- F_cog has no normalized fatigue/sleep-pressure dynamics until Stage 10;
+- E-0 is deliberately not obstacle-aware; a blocked movement is detected by the comparator and triggers replanning, while the richer model arrives later;
+- no memory, learning, simulator, causal model, exploration or consolidation is introduced.
+
 ## Current repository gap
 
-The legacy bootstrap remains as a compatibility smoke path. The normative implementation now has a Stage 1 deterministic substrate, a Stage 2 world/body/bench path, and a Stage 3 reflex/control path. The next architectural gap is Stage 4: the minimal cognitive system through Gatekeeper, S_t, goals, planning and Competition.
+The legacy bootstrap remains as a compatibility smoke path. The normative implementation now has a deterministic substrate, world/body/bench boundary, reflex/control path, and the complete Stage-4 minimal cognitive loop. The next architectural gap is Stage 5: temperament projection, copies/lineage and the first measurable individuals through the trait battery.
 
 ## Functional groups
 
