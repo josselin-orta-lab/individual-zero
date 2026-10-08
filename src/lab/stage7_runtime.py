@@ -44,6 +44,8 @@ STAGE7_AUTOBIOGRAPHICAL_POLICY = AutobiographicalPolicy(
         "agency_comparison": ("t_monde", "data"),
         "episode_closed": ("t_monde", "cycle", "data"),
         "memory_recall_proposed": ("t_monde", "cycle", "data"),
+        "intention_created": ("t_monde", "cycle", "data"),
+        "intention_triggered": ("t_monde", "cycle", "data"),
     },
 )
 
@@ -178,26 +180,75 @@ class Stage7Runtime(Stage6Runtime):
                     data=episode.as_dict(),
                 )
 
+            for trigger in self.memory.check_intentions(
+                st=st_before_cycle,
+                t_monde=capture.t_monde,
+                cycle=cycle,
+                pressure_fn=self.goal_manager.prospective_pressure,
+            ):
+                if not trigger.triggered:
+                    continue
+                if trigger.contribution is None or trigger.goal_proposal is None:
+                    raise RuntimeError("triggered intention missing outputs")
+                self._publish_contribution(trigger.contribution)
+                self.goal_manager.defer_proposals(
+                    (trigger.goal_proposal,)
+                )
+                self._write(
+                    kind="intention_triggered",
+                    cycle=cycle,
+                    data={
+                        "intention_ref": trigger.intention_ref,
+                        "contribution_ref": trigger.contribution.id,
+                        "goal_proposal_ref": trigger.goal_proposal.id,
+                        "current_pressure": (
+                            trigger.goal_proposal.current_pressure
+                        ),
+                    },
+                )
+
             contribution = self.memory.spontaneous_contribution(
                 st=st_before_cycle,
                 t_monde=capture.t_monde,
                 cycle=cycle,
             )
-            if contribution is None:
-                return
-            self._publish_contribution(contribution)
-            self._write(
-                kind="memory_recall_proposed",
-                cycle=cycle,
-                data={
-                    "episode_ref": contribution.payload["episode_ref"],
-                    "subject_ref": contribution.subject_ref,
-                    "contribution_ref": contribution.id,
-                },
-            )
+            if contribution is not None:
+                self._publish_contribution(contribution)
+                self._write(
+                    kind="memory_recall_proposed",
+                    cycle=cycle,
+                    data={
+                        "episode_ref": contribution.payload["episode_ref"],
+                        "subject_ref": contribution.subject_ref,
+                        "contribution_ref": contribution.id,
+                    },
+                )
 
         hooks[1]["memory"] = memory_hook
         return hooks
+
+    def create_intention(self, intention) -> None:
+        self.memory.create_intention(intention)
+        attempt = self.scheduler.active_attempt
+        if attempt is not None:
+            cycle = self.compute_budget.cycle
+            self._write(
+                kind="intention_created",
+                cycle=cycle,
+                data={
+                    "intention_ref": intention.id,
+                    "goal_type": intention.goal_type,
+                    "target": intention.target,
+                    "trigger_type": intention.trigger_type,
+                    "deadline_step": intention.deadline_step,
+                    "base_pressure": intention.base_pressure,
+                    "wake_authorized": intention.wake_authorized,
+                },
+            )
+
+    @property
+    def wake_deadline_index(self) -> Mapping[str, int]:
+        return self.memory.wake_deadline_index
 
     def _current_autobiographical_refs(self) -> tuple[str, ...]:
         attempt = self.scheduler.active_attempt
