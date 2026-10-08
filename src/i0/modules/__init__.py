@@ -37,6 +37,10 @@ __all__ = [
     "ValueNeedsConfig",
     "MinimalMetacognition",
     "MinimalMetacognitionState",
+    "EpisodicMemory",
+    "MemoryConfig",
+    "Episode",
+    "RecallResult",
 ]
 
 from .cognitive_space import CognitiveSpace
@@ -47,3 +51,5 @@ from .planning import GreedyPlannerE0, PlanningConfig
 from .value_needs import ValueAndNeeds, ValueNeedsConfig
 
 from .metacognition import MinimalMetacognition, MinimalMetacognitionState
+
+from .memory import Episode, EpisodicMemory, MemoryConfig, RecallResult
