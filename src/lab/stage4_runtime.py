@@ -30,6 +30,7 @@ from i0.modules import (
     GoalManager,
     GoalManagerConfig,
     GreedyPlannerE0,
+    MinimalMetacognition,
     PlanningConfig,
     PreparedCommand,
     StaticSafetyFacts,
@@ -39,6 +40,7 @@ from i0.modules import (
 from i0.serde import encode_proposal
 
 from .bus import InMemoryBus, ProducerBuffer
+from .compute_budget import ComputeBudgetConfig, CycleComputeBudget
 from .determinism import canonical_causal_bytes, deterministic_id, sha256_hex
 from .safety_protocol import SafetyProtocolConfig
 from .scheduler import CyclePhase, PhaseContext
@@ -56,6 +58,7 @@ class Stage4Config:
     gatekeeper: GatekeeperConfig
     planning: PlanningConfig
     competition: CompetitionConfig
+    compute_budget: ComputeBudgetConfig
 
     def validate(self) -> None:
         if not self.version:
@@ -67,6 +70,7 @@ class Stage4Config:
         self.gatekeeper.validate()
         self.planning.validate()
         self.competition.validate()
+        self.compute_budget.validate()
 
 
 @dataclass(frozen=True, slots=True)
@@ -113,6 +117,8 @@ class Stage4Runtime:
         self.s_t = CognitiveSpace(individual_id=self.individual_id)
         self.planning = GreedyPlannerE0(config.planning)
         self.competition = Competition(config.competition)
+        self.compute_budget = CycleComputeBudget(config=config.compute_budget)
+        self.metacognition = MinimalMetacognition()
 
         self._ontology = build_ontology_registry()
         self._schemas = build_schema_registry()
@@ -135,6 +141,7 @@ class Stage4Runtime:
         self._proposal_this_cycle: OptionProposal | None = None
         self._cycle_result = None
         self._admitted_decision = None
+        self._cycle_degraded = False
 
     @property
     def journal(self):
@@ -165,6 +172,8 @@ class Stage4Runtime:
                 self.s_t,
                 self.planning,
                 self.competition,
+                self.compute_budget,
+                self.metacognition,
                 self.bus,
             ]
         )
@@ -213,6 +222,40 @@ class Stage4Runtime:
             event_id=event_id,
             causal_event=event,
         )
+
+    def _charge(
+        self,
+        *,
+        module: str,
+        operation: str,
+        count: int = 1,
+        protected: bool = False,
+    ) -> bool:
+        charge = self.compute_budget.charge(
+            module=module,
+            operation=operation,
+            count=count,
+        )
+        self._write(
+            kind="compute_charge",
+            cycle=self.compute_budget.cycle,
+            data={
+                "module": module,
+                "operation": operation,
+                "count": count,
+                "requested_uc": charge.requested_uc,
+                "accepted": charge.accepted,
+                "reason": charge.reason,
+            },
+        )
+        if charge.accepted:
+            return True
+        self._cycle_degraded = True
+        if protected:
+            raise RuntimeError(
+                f"protected compute path exceeded P-43 budget: {module}/{operation}"
+            )
+        return False
 
     @staticmethod
     def _goal_as_dict(goal: Goal | None) -> object:
@@ -378,8 +421,18 @@ class Stage4Runtime:
         def no_op(_ctx: PhaseContext) -> None:
             return None
 
+        def modulation_hook(_ctx: PhaseContext) -> None:
+            self.compute_budget.open_cycle(cycle)
+            self._cycle_degraded = False
+
         def perception_hook(_ctx: PhaseContext) -> None:
             if cycle != 1:
+                return
+            if not self._charge(
+                module="perception",
+                operation="perception_publish",
+                count=max(1, len(capture.visible_entities)),
+            ):
                 return
             for contribution in self.stage3.perception.publish_capture(
                 capture=capture,
@@ -389,6 +442,12 @@ class Stage4Runtime:
                 self._publish_contribution(contribution)
 
         def value_needs_hook(_ctx: PhaseContext) -> None:
+            if not self._charge(
+                module="value_needs",
+                operation="value_needs_cycle",
+            ):
+                self.goal_manager.defer_proposals(())
+                return
             alerts, proposals = self.value_needs.produce(
                 state=self._step_need_state,
                 t_monde=capture.t_monde,
@@ -399,6 +458,11 @@ class Stage4Runtime:
             self.goal_manager.defer_proposals(proposals)
 
         def goal_hook(_ctx: PhaseContext) -> None:
+            if not self._charge(
+                module="goal_manager",
+                operation="goal_arbitrate",
+            ):
+                return
             before = self.goal_manager.active_goal
             after = self.goal_manager.arbitrate(
                 self.goal_manager.visible_proposals,
@@ -432,6 +496,11 @@ class Stage4Runtime:
             self._proposal_this_cycle = None
             if goal_for_planning is None or st_before_cycle is None:
                 return
+            if not self._charge(
+                module="planning",
+                operation="planning_build",
+            ):
+                return
             proposal = self.planning.propose(
                 goal=goal_for_planning,
                 st_version=st_before_cycle.version,
@@ -459,6 +528,11 @@ class Stage4Runtime:
             )
 
         def bus_hook(ctx: PhaseContext) -> None:
+            self._charge(
+                module="bus",
+                operation="bus_pour",
+                protected=True,
+            )
             results = self.bus.pour(
                 buffers=[
                     self._buffers[p]
@@ -481,6 +555,11 @@ class Stage4Runtime:
             self.bus.drain_available()
 
         def gatekeeper_hook(_ctx: PhaseContext) -> None:
+            self._charge(
+                module="gatekeeper",
+                operation="gatekeeper_select",
+                protected=True,
+            )
             selection = self.gatekeeper.select(
                 self._admitted_contributions,
                 active_goal=self.goal_manager.active_goal,
@@ -501,7 +580,13 @@ class Stage4Runtime:
                         "step_index": current_step[2],
                     },
                     "profile": {"name": "normal"},
-                    "budget": {"state": "normal"},
+                    "budget": {
+                        "state": (
+                            "degraded"
+                            if self._cycle_degraded
+                            else self.metacognition.state.budget_state
+                        )
+                    },
                     "last_action": None,
                 },
                 competitive=selection.elements,
@@ -530,6 +615,11 @@ class Stage4Runtime:
             )
 
         def competition_registration_hook(_ctx: PhaseContext) -> None:
+            if not self._charge(
+                module="competition",
+                operation="competition_register",
+            ):
+                return
             self.competition.prune_invalid(
                 active_goal_id=(
                     None
@@ -565,6 +655,13 @@ class Stage4Runtime:
                 )
 
         def competition_decision_hook(_ctx: PhaseContext) -> None:
+            if not self._charge(
+                module="competition",
+                operation="competition_evaluate",
+                count=max(1, self.competition.registry_size),
+            ):
+                self._cycle_result = None
+                return
             self._cycle_result = self.competition.evaluate(
                 cycle=cycle,
                 t_monde=capture.t_monde,
@@ -592,6 +689,12 @@ class Stage4Runtime:
             if self._cycle_result is None:
                 return
             for proposal in self._cycle_result.crossed_ranked:
+                if not self._charge(
+                    module="action_control",
+                    operation="control_admit",
+                    protected=True,
+                ):
+                    return
                 prepared = self.stage3.control.prepare_option_step(proposal)
                 admission = self.stage3.control.admit(
                     capture=capture,
@@ -613,9 +716,17 @@ class Stage4Runtime:
                     self.planning.invalidate_current()
                     self.stage3.control.clear_option_step(proposal.option.id)
 
+        def metacognition_hook(_ctx: PhaseContext) -> None:
+            self.metacognition.close_cycle(
+                consumed_uc=self.compute_budget.consumed_cycle_uc,
+                cycle_ceiling=self._config.compute_budget.cycle_ceiling,
+                degraded=self._cycle_degraded,
+                protected_capacity=self._config.compute_budget.protected_capacity,
+            )
+
         return {
             CyclePhase.FREEZE: {
-                "global_modulation": no_op,
+                "global_modulation": modulation_hook,
             },
             CyclePhase.PRODUCTION: {
                 "perception": perception_hook,
@@ -639,7 +750,7 @@ class Stage4Runtime:
                 "action_control": control_hook,
             },
             CyclePhase.CLOSURE: {
-                "metacognition_health": no_op,
+                "metacognition_health": metacognition_hook,
                 "causal_model": no_op,
                 "perception": no_op,
                 "journal": no_op,
