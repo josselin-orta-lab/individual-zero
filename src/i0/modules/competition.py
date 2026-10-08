@@ -147,6 +147,50 @@ class Competition:
             return "attendre"
         return proposal.plan.steps[0].command.primitive
 
+    @staticmethod
+    def _plan_semantics(proposal: OptionProposal) -> object:
+        plan = proposal.plan
+        if plan is None:
+            return None
+        return (
+            tuple(
+                (
+                    step.command.as_dict(),
+                    tuple(step.preconditions),
+                    tuple(
+                        (
+                            consequence.variable,
+                            consequence.value_or_delta,
+                            consequence.precision,
+                        )
+                        for consequence in step.predicted_consequences
+                    ),
+                    step.observation_window_steps,
+                )
+                for step in plan.steps
+            ),
+            plan.goal_ref,
+        )
+
+    @classmethod
+    def material_plan_change(
+        cls,
+        before: OptionProposal,
+        after: OptionProposal,
+    ) -> bool:
+        return cls._plan_semantics(before) != cls._plan_semantics(after)
+
+    def proposal_for(self, option_ref: str) -> OptionProposal | None:
+        state = self._registry.get(option_ref)
+        return None if state is None else state.proposal
+
+    def accumulator_for(self, option_ref: str) -> float | None:
+        state = self._registry.get(option_ref)
+        return None if state is None else state.accumulator
+
+    def is_engaged(self, option_ref: str) -> bool:
+        return self._engaged_option_id == option_ref
+
     def register(
         self,
         proposal: OptionProposal,
@@ -163,6 +207,15 @@ class Competition:
 
         existing = self._registry.get(option.id)
         if existing is not None:
+            material_change = self.material_plan_change(
+                existing.proposal,
+                proposal,
+            )
+            if material_change and option.id != self._engaged_option_id:
+                # DC-17: evidence accumulated for a different realization of
+                # a non-engaged option never transfers to the revised plan.
+                existing.accumulator = 0.0
+                existing.last_threshold = self._config.base_threshold
             existing.proposal = proposal
             existing.last_proposal_t = t_monde
             return True
