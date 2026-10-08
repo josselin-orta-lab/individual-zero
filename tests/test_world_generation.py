@@ -54,7 +54,7 @@ def generation() -> WorldGenerationConfig:
         wood_cells=2,
         stone_cells=2,
         creature_count=2,
-        lethal_zone_count=2,
+        danger_zone_count=2,
         quantity_per_resource_cell=4,
         nutritious_food_gain=12.0,
         toxic_food_gain=4.0,
@@ -104,7 +104,7 @@ class WorldGenerationTests(unittest.TestCase):
         positions = list(generated.layout.water_sources)
         positions += [row[0] for row in generated.layout.resources]
         positions += list(generated.layout.creatures)
-        positions += list(generated.layout.lethal_zones)
+        positions += list(generated.layout.danger_zones)
 
         self.assertEqual(len(positions), len(set(positions)))
         self.assertNotIn(config.initial_position, positions)
@@ -144,7 +144,7 @@ class WorldGenerationTests(unittest.TestCase):
         self.assertEqual(resource_counts["wood"], 2)
         self.assertEqual(resource_counts["stone"], 2)
         self.assertEqual(len(generated.layout.creatures), 2)
-        self.assertEqual(len(generated.layout.lethal_zones), 2)
+        self.assertEqual(len(generated.layout.danger_zones), 2)
 
 
 if __name__ == "__main__":
