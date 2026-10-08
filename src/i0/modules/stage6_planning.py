@@ -46,6 +46,7 @@ class Stage6PlanningConfig:
     version: str
     option_ttl_steps: int
     max_depth: int
+    revision_delta: float
     setpoints: Mapping[str, float]
 
     def validate(self) -> None:
@@ -55,6 +56,8 @@ class Stage6PlanningConfig:
             raise ValueError("option TTL must be >= 1")
         if self.max_depth < 1:
             raise ValueError("planning max depth must be >= 1")
+        if self.revision_delta < 0.0:
+            raise ValueError("Delta_plan must be non-negative")
         if set(self.setpoints) != {"energy", "food", "water", "integrity"}:
             raise ValueError("planning setpoints must cover the four MVP variables")
 
@@ -89,6 +92,7 @@ class SimulatorPlanner:
         self._simulator = simulator
         self._current_plan: Plan | None = None
         self._current_proposal: OptionProposal | None = None
+        self._revision_required_option_ref: str | None = None
 
     @property
     def current_plan(self) -> Plan | None:
@@ -97,6 +101,21 @@ class SimulatorPlanner:
     @property
     def current_proposal(self) -> OptionProposal | None:
         return self._current_proposal
+
+    @property
+    def revision_required_option_ref(self) -> str | None:
+        return self._revision_required_option_ref
+
+    def mark_plan_invalid(self, option_ref: str) -> None:
+        if not option_ref:
+            raise ValueError("option_ref must not be empty")
+        self._revision_required_option_ref = option_ref
+        self._current_plan = None
+        self._current_proposal = None
+
+    def confirm_revision_adopted(self, option_ref: str) -> None:
+        if self._revision_required_option_ref == option_ref:
+            self._revision_required_option_ref = None
 
     def invalidate_current(self) -> None:
         self._current_plan = None
@@ -418,6 +437,7 @@ class SimulatorPlanner:
 
         return {
             "config_version": self._config.version,
+            "revision_required_option_ref": self._revision_required_option_ref,
             "current_proposal": (
                 None
                 if self._current_proposal is None
@@ -432,6 +452,10 @@ class SimulatorPlanner:
             raise ValueError("Stage-6 Planning state must be a mapping")
         if state.get("config_version") != self._config.version:
             raise ValueError("Stage-6 Planning config version mismatch")
+        raw_revision = state.get("revision_required_option_ref")
+        if raw_revision is not None and not isinstance(raw_revision, str):
+            raise ValueError("invalid Stage-6 revision-required option ref")
+        self._revision_required_option_ref = raw_revision
         raw = state.get("current_proposal")
         if raw is None:
             self.invalidate_current()
