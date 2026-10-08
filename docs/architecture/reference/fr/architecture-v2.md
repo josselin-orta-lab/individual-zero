@@ -961,14 +961,14 @@ V1 : S_0 → S_1 → … → S_n ; l'individu n'est aucun état isolé : individ
 
 La formule de la v1 devient :
 
-$$
+```math
 \begin{aligned}
 \text{Individu} &= \operatorname{trajectoire}(\theta_{\text{lents}}(t)) \\
-S_t &= \Phi(S_{t-1},\ \text{entrées}_t,\ \theta_{\text{lents}}(t))
+S_t &= \Phi(S_{t-1},\ \text{entrées}_t,\ \theta_{\text{lents}}(t)) \\
+\theta_{\text{lents}}(0) &= \text{tempérament initial} \\
+\theta_{\text{lents}}(t+1) &= \Psi(\theta_{\text{lents}}(t),\ \text{histoire},\ \text{sommeil})
 \end{aligned}
-$$
-
-où θ_lents(0) est le tempérament initial, puis θ_lents(t+1) = Ψ(θ_lents(t), histoire, sommeil).
+```
 
 **→ Machine :** l'identité est portée par les variables lentes et leur histoire causale, pas par la persistance d'un processus. Une copie des poids serait une bifurcation : deux individus à partir de ce point (voir Limites). Les traits moraux sont la partie la plus identitaire du modèle de soi ; ils méritent la plus forte protection contre la dérive.
 
