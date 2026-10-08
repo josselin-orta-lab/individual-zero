@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping, Sequence
 
-from i0.contracts import Contribution, STVersion
+from i0.contracts import Contribution, GoalProposal, STVersion
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,6 +85,46 @@ class Episode:
 
 
 @dataclass(frozen=True, slots=True)
+class Intention:
+    id: str
+    goal_type: str
+    target: str
+    trigger_type: str
+    trigger_value: object
+    deadline_step: int | None
+    base_pressure: float
+    monitoring: str
+    cost_uc: int
+    wake_authorized: bool
+    state: str = "pending"
+    candidacy_active: bool = False
+
+    def validate(self) -> None:
+        if not self.id or not self.goal_type or not self.target:
+            raise ValueError("intention identity and goal fields are required")
+        if self.trigger_type not in {"event", "time", "context"}:
+            raise ValueError("invalid intention trigger type")
+        if not 0.0 <= self.base_pressure <= 1.0:
+            raise ValueError("intention base pressure must be in [0,1]")
+        if self.monitoring not in {"strategic", "spontaneous"}:
+            raise ValueError("invalid intention monitoring mode")
+        if self.cost_uc < 0:
+            raise ValueError("intention cost must be non-negative")
+        if self.state not in {"pending", "triggered", "done", "abandoned"}:
+            raise ValueError("invalid intention state")
+        if self.deadline_step is not None and self.deadline_step < 0:
+            raise ValueError("intention deadline must be non-negative")
+
+
+@dataclass(frozen=True, slots=True)
+class IntentionTriggerResult:
+    intention_ref: str
+    triggered: bool
+    contribution: Contribution | None
+    goal_proposal: GoalProposal | None
+
+
+@dataclass(frozen=True, slots=True)
 class RecallResult:
     episode_ref: str
     score: float
@@ -110,6 +150,7 @@ class EpisodicMemory:
         self._open_surprise = 0.0
         self._episode_sequence = 0
         self._last_recalled_ref: str | None = None
+        self._intentions: dict[str, Intention] = {}
 
     @property
     def episodes(self) -> tuple[Episode, ...]:
@@ -118,6 +159,169 @@ class EpisodicMemory:
     @property
     def last_recalled_ref(self) -> str | None:
         return self._last_recalled_ref
+
+    @property
+    def intentions(self) -> tuple[Intention, ...]:
+        return tuple(self._intentions[key] for key in sorted(self._intentions))
+
+    @property
+    def wake_deadline_index(self) -> Mapping[str, int]:
+        return {
+            item.id: item.deadline_step
+            for item in self.intentions
+            if (
+                item.wake_authorized
+                and item.deadline_step is not None
+                and item.state == "pending"
+            )
+        }
+
+    def create_intention(self, intention: Intention) -> None:
+        intention.validate()
+        if intention.id in self._intentions:
+            raise ValueError("intention id already exists")
+        self._intentions[intention.id] = intention
+
+    def complete_intention(self, intention_ref: str) -> None:
+        current = self._intentions.get(intention_ref)
+        if current is None:
+            raise KeyError(f"unknown intention: {intention_ref}")
+        self._intentions[intention_ref] = Intention(
+            id=current.id,
+            goal_type=current.goal_type,
+            target=current.target,
+            trigger_type=current.trigger_type,
+            trigger_value=current.trigger_value,
+            deadline_step=current.deadline_step,
+            base_pressure=current.base_pressure,
+            monitoring=current.monitoring,
+            cost_uc=current.cost_uc,
+            wake_authorized=current.wake_authorized,
+            state="done",
+            candidacy_active=False,
+        )
+
+    @staticmethod
+    def _trigger_matches(
+        intention: Intention,
+        *,
+        st: STVersion | None,
+        t_monde: int,
+    ) -> bool:
+        if intention.trigger_type == "time":
+            return t_monde >= int(intention.trigger_value)
+        if intention.trigger_type == "context":
+            if st is None or not isinstance(intention.trigger_value, Mapping):
+                return False
+            key = intention.trigger_value.get("fixed_key")
+            expected = intention.trigger_value.get("equals")
+            return isinstance(key, str) and st.fixed.get(key) == expected
+        if intention.trigger_type == "event":
+            if st is None:
+                return False
+            return any(
+                element.contribution_ref == str(intention.trigger_value)
+                for element in st.competitive
+            )
+        return False
+
+    def check_intentions(
+        self,
+        *,
+        st: STVersion | None,
+        t_monde: int,
+        cycle: int,
+        pressure_fn,
+    ) -> tuple[IntentionTriggerResult, ...]:
+        results: list[IntentionTriggerResult] = []
+        for item in self.intentions:
+            if item.state not in {"pending", "triggered"}:
+                continue
+            matches = self._trigger_matches(item, st=st, t_monde=t_monde)
+            if not matches or item.candidacy_active:
+                results.append(
+                    IntentionTriggerResult(
+                        intention_ref=item.id,
+                        triggered=False,
+                        contribution=None,
+                        goal_proposal=None,
+                    )
+                )
+                continue
+
+            remaining = (
+                None
+                if item.deadline_step is None
+                else item.deadline_step - t_monde
+            )
+            current_pressure = float(
+                pressure_fn(
+                    base_pressure=item.base_pressure,
+                    remaining_steps=remaining,
+                )
+            )
+            contribution_id = f"intention:{item.id}:{t_monde}:{cycle}"
+            contribution = Contribution(
+                id=contribution_id,
+                schema_version="mvp-v1.2.1",
+                type="response",
+                summary=f"intention triggered: {item.goal_type}",
+                subject_ref=f"intention:{item.id}",
+                emitter_module="memory",
+                signal_family="memory_recall",
+                confidence=1.0,
+                urgency=current_pressure,
+                risk=0.0,
+                value=0.0,
+                production_t=t_monde,
+                production_cycle=cycle,
+                expires_at_step=t_monde + self._config.contribution_ttl_steps,
+                payload={
+                    "intention_ref": item.id,
+                    "goal_type": item.goal_type,
+                    "target": item.target,
+                    "trigger_type": item.trigger_type,
+                    "deadline_step": item.deadline_step,
+                },
+                signal_ids=(f"intention:{item.id}",),
+            )
+            contribution.validate()
+            proposal = GoalProposal(
+                id=f"goal-proposal:intention:{item.id}:{t_monde}:{cycle}",
+                source="prospective_memory",
+                goal_type=item.goal_type,
+                target=item.target,
+                base_pressure=item.base_pressure,
+                current_pressure=current_pressure,
+                justification_ref=contribution_id,
+                t_monde=t_monde,
+                cycle=cycle,
+                rule_version=self._config.version,
+            )
+            proposal.validate()
+            self._intentions[item.id] = Intention(
+                id=item.id,
+                goal_type=item.goal_type,
+                target=item.target,
+                trigger_type=item.trigger_type,
+                trigger_value=item.trigger_value,
+                deadline_step=item.deadline_step,
+                base_pressure=item.base_pressure,
+                monitoring=item.monitoring,
+                cost_uc=item.cost_uc,
+                wake_authorized=item.wake_authorized,
+                state="triggered",
+                candidacy_active=True,
+            )
+            results.append(
+                IntentionTriggerResult(
+                    intention_ref=item.id,
+                    triggered=True,
+                    contribution=contribution,
+                    goal_proposal=proposal,
+                )
+            )
+        return tuple(results)
 
     @staticmethod
     def _event_t(event: Mapping[str, object]) -> int | None:
