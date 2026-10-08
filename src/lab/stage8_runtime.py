@@ -14,6 +14,7 @@ from typing import Mapping
 
 from i0.equipment import EquipmentModel
 from i0.modules.active_kappa import KappaConfig, KappaVerification
+from i0.modules.active_precision import PrecisionConfig, PrecisionVerification
 from i0.modules import (
     EvaluationState,
     LinearTDValues,
@@ -40,6 +41,7 @@ class Stage8Config:
     td: TDLearningConfig
     evaluation: Stage8EvaluationConfig
     kappa: KappaConfig
+    precision: PrecisionConfig
 
     def validate(self) -> None:
         if not self.version:
@@ -48,6 +50,7 @@ class Stage8Config:
         self.td.validate()
         self.evaluation.validate()
         self.kappa.validate()
+        self.precision.validate()
         beta_sim = self.stage7.stage6.evaluation.beta
         if self.td.beta != beta_sim:
             raise ValueError("P-30 beta must be common to Q and simulation")
@@ -90,12 +93,21 @@ class Stage8Runtime(Stage7Runtime):
 
         self.value_needs.attach_td_values(self.q_active)
         self.metacognition.attach_active_kappa(config.kappa)
+        self.perception.attach_active_precision(config.precision)
         self.gatekeeper.attach_reliability(self._contribution_reliability)
         self.stage8_option_evaluator = Stage8OptionEvaluator(
             config=config.evaluation,
             stage6=self.option_evaluator,
             q_values=self.q_active,
         )
+
+    @property
+    def precision_active(self):
+        return self.perception.active_precision
+
+    def integrate_precision_verification(self, verification: PrecisionVerification) -> None:
+        """Perception alone learns per-source active precision; no oracle labels."""
+        self.precision_active.integrate(verification)
 
     @property
     def kappa_active(self):
@@ -380,4 +392,23 @@ class Stage8Runtime(Stage7Runtime):
         # segment opened by the current decision. Reflex steps reach this path
         # with no new decision and therefore extend the existing segment.
         self.q_active.append_experienced_reward(reward)
+        # Perception-only active precision; publish after the lived nonlethal
+        # transition, never during the decision's evidence snapshot.
+        for source, old, new, observation_ref in self.precision_active.publish():
+            self.journal.append(
+                event_id=deterministic_id(
+                    "journal-event-v1", "stage8.precision",
+                    self.world.t_monde, source, observation_ref,
+                    self.precision_active.version,
+                ),
+                causal_event={
+                    "emitter": "perception",
+                    "kind": "perceptual_precision_update_published",
+                    "t_monde": self.world.t_monde,
+                    "source": source,
+                    "verification_ref": observation_ref,
+                    "before": old, "after": new,
+                    "precision_version": self.precision_active.version,
+                },
+            )
         return result
