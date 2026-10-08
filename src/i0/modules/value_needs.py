@@ -139,7 +139,7 @@ class ValueAndNeeds:
                     type="alert",
                     summary=f"{name} below setpoint",
                     subject_ref=f"body:{name}",
-                    emitter_module="value_and_needs",
+                    emitter_module="value_needs",
                     signal_family="value_needs",
                     confidence=1.0,
                     urgency=pressure,
