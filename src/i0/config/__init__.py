@@ -18,6 +18,7 @@ from .contracts import (
     build_schema_registry,
     build_signal_family_registry,
     build_similarity_schema,
+    build_structural_contract_bundle,
 )
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     "build_schema_registry",
     "build_signal_family_registry",
     "build_similarity_schema",
+    "build_structural_contract_bundle",
 ]
