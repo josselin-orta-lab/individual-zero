@@ -121,6 +121,7 @@ class Option:
     founding_st_version: str
     expires_at_step: int
     provenance: str
+    grounding_contribution_refs: tuple[str, ...] = ()
     goal_ref: str | None = None
     plan_ref: str | None = None
     state: str = "proposed"
