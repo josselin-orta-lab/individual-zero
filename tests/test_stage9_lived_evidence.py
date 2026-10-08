@@ -86,6 +86,43 @@ class LivedEvidenceTests(unittest.TestCase):
         ),())
         self.assertEqual(m.pending_causal_observations(),())
 
+    def test_preregistered_control_is_other_actually_consumed_food(self):
+        cfg=CausalModelConfig("lived-comparison-v1",2,2,2,2,
+                              food_control_pairs=(("berry_b","berry_a"),))
+        m=CausalModel(cfg)
+        m.record_applied_food_exposure(
+            t_monde=1,resource_kind="berry_a",
+            option_ref="option:1",motive_ref="goal:food",integrity_before=100.0,
+        )
+        m.observe_followup_capture(t_monde=2,integrity=100.0)
+        source=(
+            {"event_id":"command:1","kind":"command_experienced",
+             "t_monde":1,"primitive":"manger","parameters":{"target":"berry_a"}},
+            {"event_id":"transition:1","kind":"world_transition_experienced",
+             "t_monde":1,"body_after":{"integrity":100.0},
+             "effects":{"ate":"berry_a"}},
+        )
+        m.ingest_closed_autobiographical_episode(
+            episode_ref="episode:real-1",
+            event_refs=("command:1","transition:1"),
+            autobiographical_events=source,
+        )
+        observed=m.pending_causal_observations()
+        self.assertEqual(len(observed),2)
+        control=next(o for o in observed if not o.cause_present)
+        self.assertEqual(control.contingency_ref,"toxic:berry_b")
+        self.assertEqual(control.episode_ref,"episode:real-1")
+        self.assertEqual(control.observation_ref,"transition:1")
+        self.assertFalse(control.effect_present)
+        self.assertEqual(m.publish_causal_inference(),())
+        self.assertEqual(m.get("toxic:berry_b").causal_status,"aucun")
+
+    def test_control_requires_explicit_registry(self):
+        with self.assertRaises(ValueError):
+            CausalModelConfig("bad-v1",2,2,2,2,
+                food_control_pairs=(("berry_b","berry_b"),)).validate()
+        self.assertEqual(model().config.food_control_pairs,())
+
     def test_snapshot_restores_unfinished_exposure(self):
         m=model()
         m.record_applied_food_exposure(t_monde=1,resource_kind="berry_a",
