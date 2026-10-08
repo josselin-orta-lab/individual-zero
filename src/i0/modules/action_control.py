@@ -225,6 +225,20 @@ class ActionControl:
         deadline = int(pending["deadline_t_monde"])
         if capture.t_monde <= sent_t:
             return None
+        if capture.t_monde > deadline and self._agency_comparator is not None:
+            # Stage 9 P-47 must version *missing effects* too. Preserve the
+            # legacy Stage-3-8 branch unchanged when no comparator is attached.
+            comparison = self._agency_comparator.compare(
+                option_ref=pending["option_ref"],
+                sent_t_monde=sent_t,
+                deadline_t_monde=deadline,
+                predictions=pending["consequences"],
+                capture=capture,
+                command=pending.get("command"),
+            )
+            self._pending_prediction = None
+            self._last_comparison = comparison
+            return comparison
         if capture.t_monde > deadline:
             comparison = AgencyComparison(
                 option_ref=(
