@@ -252,7 +252,7 @@ def build_stage6_reference_corpus():
     )
     recorder.record_transition(
         world=_world(creature_layout),
-        t_monde=200,
+        t_monde=201,
         family="creature_night",
         command=PrimitiveCommand("attendre"),
     )
