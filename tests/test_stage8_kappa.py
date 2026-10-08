@@ -2,6 +2,9 @@
 import unittest
 
 from i0.modules.active_kappa import ActiveKappa, KappaConfig, KappaVerification
+from i0.modules.gatekeeper import Gatekeeper
+from i0.contracts import Contribution
+from lab.stage8_reference_fixture import build_stage8_reference_runtime
 
 
 def verification(identifier="v1", **changes):
@@ -89,6 +92,39 @@ class KappaTests(unittest.TestCase):
         self.assertEqual(checkpoint, restored.export_causal_state())
         self.assertEqual(first.publish(), restored.publish())
         self.assertEqual(first.export_causal_state(), restored.export_causal_state())
+
+    def test_gatekeeper_consumes_versioned_reliability_without_legacy_regression(self):
+        runtime = build_stage8_reference_runtime()
+        contribution = Contribution(
+            id="stage8-gate-alert", schema_version="mvp-v1.2.1",
+            type="alert", summary="observed local event",
+            subject_ref="local:event", emitter_module="perception",
+            signal_family="world_symbolic", confidence=0.8,
+            urgency=0.4, risk=0.6, value=0.2,
+            production_t=1, production_cycle=1, expires_at_step=5,
+            payload={"anchor": "world"},
+        )
+        contribution.validate()
+        scoring = dict(active_goal=None, occupant=False,
+                       subjects_present_before_new=set())
+        stage8 = runtime.gatekeeper
+        legacy = Gatekeeper(stage8.config)
+        before = stage8._score(contribution, **scoring).score
+        original = legacy._score(contribution, **scoring).score
+        self.assertEqual(before, original * 0.5)
+        verification = verification(
+            "physically-confirmed-alert",
+            equipment_or_module_version=runtime._config.version,
+            module="perception", contribution_type="alert",
+            declared_confidence=0.8,
+            independent_family="body_telemetry",
+        )
+        runtime.integrate_kappa_verification(verification)
+        self.assertEqual(stage8._score(contribution, **scoring).score, before)
+        runtime.kappa_active.publish()
+        after = stage8._score(contribution, **scoring).score
+        self.assertEqual(after, original * (2 / 3))
+        self.assertEqual(legacy._score(contribution, **scoring).score, original)
 
     def test_unknown_family_rejected_and_duplicates_rejected(self):
         k = model()
