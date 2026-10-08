@@ -43,6 +43,7 @@ class KappaVerification:
     provenance_independent: bool
     oracle_derived: bool = False
     rollback_cancelled: bool = False
+    observation_ref: str | None = None
 
     def validate(self) -> None:
         if not self.identifier or not self.module or not self.equipment_or_module_version:
@@ -60,6 +61,7 @@ class KappaVerification:
     def strong(self) -> bool:
         return (
             self.observation_anchor == "monde"
+            and bool(self.observation_ref)
             and self.observation_step > self.emission_step
             and self.provenance_independent
             and not self.oracle_derived
@@ -86,6 +88,7 @@ class ActiveKappa:
         self._pending: list[KappaVerification] = []
         self._version = 0
         self._seen: set[str] = set()
+        self._credited_observations: set[tuple[str, str, str, str, str]] = set()
 
     @property
     def version(self) -> int:
@@ -119,6 +122,10 @@ class ActiveKappa:
             self._seen.add(v.identifier)
             if not v.strong or v.outcome not in {"confirmee", "contredite"}:
                 continue
+            observation_key = (*v.key, str(v.observation_ref))
+            if observation_key in self._credited_observations:
+                continue  # DC-06: one physical consequence cannot train twice
+            self._credited_observations.add(observation_key)
             key = (*v.key, self._bucket(v.declared_confidence))
             a, b = self._counters.get(key, self._prior(v.key))
             old = a / (a + b)
@@ -143,6 +150,7 @@ class ActiveKappa:
                 name: getattr(v, name) for name in v.__dataclass_fields__
             } for v in self._pending],
             "seen": sorted(self._seen),
+            "credited_observations": [list(row) for row in sorted(self._credited_observations)],
         }
 
     def restore_causal_state(self, state: object) -> None:
@@ -162,6 +170,12 @@ class ActiveKappa:
             v.validate()
         self._counters = counters
         self._pending = pending
+        credited = set()
+        for row in state.get("credited_observations", ()):
+            if len(row) != 5 or row[3] not in MVP_SIGNAL_FAMILIES or not row[4]:
+                raise ValueError("invalid physical observation credit")
+            credited.add(tuple(row))
+        self._credited_observations = credited
         self._seen = set(state["seen"])
         self._version = int(state["version"])
 
