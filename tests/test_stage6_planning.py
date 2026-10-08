@@ -105,6 +105,7 @@ class Stage6PlanningTests(unittest.TestCase):
                 version="stage6-incomplete-plan-v1",
                 option_ttl_steps=20,
                 max_depth=4,
+                revision_delta=0.1,
                 setpoints=dict(stage4._config.value_needs.setpoints),
             ),
             simulator=Simulator(
