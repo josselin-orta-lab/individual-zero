@@ -232,12 +232,12 @@ class TemperamentProjection:
         tau: Temperament,
         mapping: TemperamentMappingConfig,
     ) -> ParametresTemperament:
-        # Section 6.4 exact exponential mapping. Urgency has no temperament
-        # dimension in 7.3, therefore its authorized tau coordinate is zero.
+        # Section 7.3 maps threat sensitivity to w_r and w_u.
+        # In Gatekeeper notation, w_u is the weight of urgency.
         coordinates = {
             "b": tau.goal_protection,
             "n": tau.exploration,
-            "urg": 0.0,
+            "urg": tau.threat_sensitivity,
             "risk": tau.threat_sensitivity,
             "value": tau.reward_sensitivity,
         }
