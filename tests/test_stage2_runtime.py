@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from i0.config import MVP_CYCLE_PHASE_COMPONENT_ORDER
+from lab.determinism import canonical_causal_bytes
 from lab.injected_scenario import ScenarioEvent
 from lab.safety_protocol import SafetyProtocolConfig
 from lab.stage2_runtime import ScriptedStage2Runtime
@@ -177,6 +178,27 @@ class Stage2RollbackTests(unittest.TestCase):
 
         self.assertEqual(result.status, "safety_block")
         self.assertTrue(instance.safety.suspended)
+
+
+class Stage2OracleLeakTests(unittest.TestCase):
+    def test_oracle_canary_never_enters_individual_causal_or_autobiographical_state(self) -> None:
+        instance = runtime(
+            layout=WorldLayout(oracle_canary="STAGE2_ORACLE_CANARY")
+        )
+        truth = instance.bench.oracle_truth()
+        self.assertEqual(truth["oracle_canary"], "STAGE2_ORACLE_CANARY")
+
+        instance.open_step()
+        result = instance.execute(Command("attendre"))
+        self.assertEqual(result.status, "applied")
+
+        causal = canonical_causal_bytes(instance.causal_fingerprint())
+        autobiographical = canonical_causal_bytes(
+            list(instance.autobiographical_view())
+        )
+
+        self.assertNotIn(b"STAGE2_ORACLE_CANARY", causal)
+        self.assertNotIn(b"STAGE2_ORACLE_CANARY", autobiographical)
 
 
 class Stage2ReplayTests(unittest.TestCase):
