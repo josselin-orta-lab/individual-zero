@@ -147,6 +147,7 @@ class EpisodicMemory:
         self._open_goal_ref: str | None = None
         self._open_body_start: Mapping[str, float] | None = None
         self._open_body_end: Mapping[str, float] | None = None
+        self._open_zone_ref: str | None = None
         self._open_reward = 0.0
         self._open_surprise = 0.0
         self._episode_sequence = 0
@@ -459,6 +460,7 @@ class EpisodicMemory:
         self._open_goal_ref = None
         self._open_body_start = None
         self._open_body_end = None
+        self._open_zone_ref = None
         self._open_reward = 0.0
         self._open_surprise = 0.0
         return episode
@@ -470,6 +472,7 @@ class EpisodicMemory:
         current_t_monde: int,
         current_goal_ref: str | None,
         current_reward: float,
+        current_zone_ref: str | None = None,
     ) -> tuple[Episode, ...]:
         """Ingest only newly visible autobiographical events."""
 
@@ -497,6 +500,21 @@ class EpisodicMemory:
             if self._open_start_t is None:
                 self._open_start_t = t_monde
                 self._open_goal_ref = current_goal_ref
+                self._open_zone_ref = current_zone_ref
+            elif (
+                current_zone_ref is not None
+                and self._open_zone_ref is not None
+                and current_zone_ref != self._open_zone_ref
+            ):
+                closed_episode = self._close(
+                    end_t_monde=t_monde,
+                    boundary_type="zone_change",
+                )
+                if closed_episode is not None:
+                    closed.append(closed_episode)
+                self._open_start_t = t_monde
+                self._open_goal_ref = current_goal_ref
+                self._open_zone_ref = current_zone_ref
 
             event_id = self._event_id(event)
             if event_id is not None:
@@ -751,6 +769,7 @@ class EpisodicMemory:
                 None if self._open_body_end is None
                 else dict(self._open_body_end)
             ),
+            "open_zone_ref": self._open_zone_ref,
             "open_reward": self._open_reward,
             "open_surprise": self._open_surprise,
             "episode_sequence": self._episode_sequence,
@@ -838,6 +857,8 @@ class EpisodicMemory:
         self._open_body_end = (
             None if raw_body_end is None else dict(raw_body_end)
         )
+        raw_zone = state.get("open_zone_ref")
+        self._open_zone_ref = None if raw_zone is None else str(raw_zone)
         self._open_reward = float(state.get("open_reward", 0.0))
         self._open_surprise = float(state.get("open_surprise", 0.0))
         self._episode_sequence = int(state.get("episode_sequence", 0))
