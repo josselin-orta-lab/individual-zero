@@ -83,9 +83,44 @@ Still requiring preregistration before a scientific campaign:
 - campaign world counts, costs, damages and scenario bounds;
 - materiality thresholds and battery termination values.
 
+## Stage 3 progress on this branch
+
+Implemented:
+
+- `PrimitiveCommand` promoted to a shared I0/world interface so cognitive code does not depend on Lab internals;
+- minimal local symbolic world capture containing only authorized local state, with hidden danger/lethality and oracle canaries excluded;
+- deterministic `SymbolicPerception` without noise or learned state;
+- immutable Stage-3 safety-fact source, designed to be replaced later by the canonical Causal Model source;
+- `ActionControl.verifier_admissibilite` with admissible / inadmissible / indeterminate outcomes;
+- the three exact MVP veto categories with policy-version trace;
+- protected-integrity check driven by explicit P-37 input;
+- protocol-mask check after semantic veto/protected-invariant checks;
+- innate adjacent-creature avoidance reflex using one step capture;
+- deterministic avoidance geometry documented as reversible TD-S3-01;
+- Action Control admission trace emitted before send;
+- Action Control as the only Stage-3 dispatcher into the admitted-command execution port;
+- vetoed reflex falls through to the permanent `attendre` Stage-3 stub; the veto does not select the replacement;
+- lethal reflex rollback resumes in the same world step without replaying the reflex;
+- exactly one local perceptual capture per Stage-3 step;
+- deterministic Stage-3 replay and CI-retained reference journal.
+
+Stage 3 invariant status:
+
+- INV-12: direct/reflex branch green. Every reflex command links to its trigger and capture. The cognitive option → S_t provenance branch is structurally deferred to Stage 4 because S_t does not yet exist at Stage 3;
+- INV-13: green. Reflexes and vetoes never enter competition, and veto never chooses a replacement action;
+- INV-45: green for Stage 3 through exactly one local capture per waking step;
+- INV-52: green for implemented Stage-3 send paths: admission is journaled before checkpoint/send and vetoed commands are never sent;
+- exact replay remains green over the stacked Stage 1/2/3 substrate.
+
+Deliberately not implemented yet:
+
+- S_t, gatekeeper, competition, goals, planner, values, F_cog or learning;
+- full cognitive branch of INV-12, which becomes testable at Stage 4;
+- Stage-3 safety facts learned from experience: only the immutable initial source exists here, as required before the Causal Model arrives.
+
 ## Current repository gap
 
-The legacy bootstrap remains as a compatibility smoke path. The normative implementation now has a Stage 1 deterministic substrate and a Stage 2 scripted world/body/bench path. The next architectural gap is Stage 3: symbolic perception plus Action Control as the sole normative command sender, with veto, reflex and admissibility.
+The legacy bootstrap remains as a compatibility smoke path. The normative implementation now has a Stage 1 deterministic substrate, a Stage 2 world/body/bench path, and a Stage 3 reflex/control path. The next architectural gap is Stage 4: the minimal cognitive system through Gatekeeper, S_t, goals, planning and Competition.
 
 ## Functional groups
 
