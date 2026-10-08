@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from i0.modules.causal_model import CausalModelConfig
+from i0.modules.agency_comparator import AgencyComparatorConfig
 from .stage8_reference_fixture import build_stage8_reference_runtime
 from .stage9_runtime import Stage9Config, Stage9Runtime
 
@@ -19,6 +20,13 @@ def build_stage9_reference_runtime() -> Stage9Runtime:
         config=Stage9Config(
             version="stage9-reference-v1",
             stage8=previous._stage8_config,
+            agency=AgencyComparatorConfig(
+                version="p47-stage9-reference-v1",
+                tolerances={name: 0.0 for name in (
+                    "position_x", "position_y", "energy", "food", "water", "integrity"
+                )},
+                max_observation_window_steps=1,
+            ),
             causal=CausalModelConfig(
                 version="p35-p36-stage9-reference-v1",
                 n1=2, n2=2, n_sec=2, m_sec=2,
