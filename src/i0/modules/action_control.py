@@ -243,6 +243,13 @@ class ActionControl:
                 observed = float(capture.x)
             elif consequence.variable == "position_y":
                 observed = float(capture.y)
+            elif consequence.variable in {
+                "energy",
+                "food",
+                "water",
+                "integrity",
+            }:
+                observed = float(capture.body[consequence.variable])
             else:
                 effects.append(
                     {
