@@ -6,9 +6,13 @@ published version; verification batches are committed at phase 5.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping
+from typing import TYPE_CHECKING, Mapping
 
 from i0.config.contracts import MVP_SIGNAL_FAMILIES
+from lab.determinism import deterministic_id
+
+if TYPE_CHECKING:
+    from i0.modules.action_control import AgencyComparison
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,6 +83,59 @@ class KappaVerification:
     @property
     def key(self) -> tuple[str, str, str, str]:
         return self.equipment_or_module_version, self.module, self.contribution_type, self.signal_family
+
+
+def physical_verifications_from_comparison(
+    *, comparison: "AgencyComparison", equipment_version: str
+) -> tuple[KappaVerification, ...]:
+    """DC-06: typed independent consequences from Action Control's comparison.
+
+    Shared by the living Stage-8 runtime and Lab's external calibration probe.
+    The comparator observes a later Perception capture. This transformer
+    never reads the world, bench labels, oracle, or self-confirming signals.
+    """
+    if not equipment_version:
+        raise ValueError("comparison equipment version is mandatory")
+    results: list[KappaVerification] = []
+    for index, effect in enumerate(comparison.effects):
+        status = effect.get("status")
+        if status not in {"conforming", "nonconforming"}:
+            continue
+        if effect.get("observed") is None or effect.get("predicted") is None:
+            continue
+        variable = str(effect.get("variable"))
+        verification = KappaVerification(
+            identifier=deterministic_id(
+                "kappa-verification-v1",
+                equipment_version,
+                comparison.option_ref,
+                comparison.sent_t_monde,
+                comparison.observed_t_monde,
+                index,
+            ),
+            equipment_or_module_version=equipment_version,
+            module="simulator",
+            contribution_type="prediction",
+            signal_family="equipment_predictor",
+            declared_confidence=1.0,
+            emission_step=comparison.sent_t_monde,
+            observation_step=comparison.observed_t_monde,
+            outcome="confirmee" if status == "conforming" else "contredite",
+            observation_anchor="monde",
+            observation_ref=(
+                f"physical-capture:{comparison.observed_t_monde}:{variable}"
+            ),
+            independent_family=(
+                "world_symbolic"
+                if variable in {"position_x", "position_y"}
+                else "body_telemetry"
+            ),
+            physical_consequence=True,
+            provenance_independent=True,
+        )
+        verification.validate()
+        results.append(verification)
+    return tuple(results)
 
 
 class ActiveKappa:
