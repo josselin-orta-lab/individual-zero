@@ -108,10 +108,12 @@ class GoalManager:
                 proposal.current_pressure
             )
 
-        if self._active is not None and satisfied:
+        if self._active is not None and (satisfied or invalid):
             self._active = None
-        elif self._active is not None and invalid:
-            self._active = None
+            # The visible proposal set belongs to the previous cycle and may
+            # describe the pre-consequence body state. Do not reactivate from
+            # that stale set in the same arbitration.
+            return None
 
         eligible = [
             proposal
