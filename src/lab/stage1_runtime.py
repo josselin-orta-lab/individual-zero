@@ -77,7 +77,13 @@ class ScriptedStage1Runtime:
 
     @property
     def causal_owners(self):
-        return (self.scheduler, self.rng, self.bus, self.world)
+        return (
+            self.scheduler,
+            self.rng,
+            self.bus,
+            self.world,
+            *(self._buffers[name] for name in MVP_PHASE1_PRODUCER_ORDER),
+        )
 
     def _script_payload(
         self,
