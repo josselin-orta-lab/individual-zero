@@ -145,6 +145,7 @@ class GoalManager:
                 state="active",
                 activation_t=t_monde,
                 activation_cycle=cycle,
+                justification_ref=chosen.justification_ref,
             )
             self._active.validate()
             return self._active
@@ -177,6 +178,7 @@ class GoalManager:
                 state="active",
                 activation_t=t_monde,
                 activation_cycle=cycle,
+                justification_ref=replacement.justification_ref,
             )
         else:
             self._active = Goal(
@@ -189,6 +191,7 @@ class GoalManager:
                 state="active",
                 activation_t=self._active.activation_t,
                 activation_cycle=self._active.activation_cycle,
+                justification_ref=self._active.justification_ref,
             )
 
         self._active.validate()
@@ -233,6 +236,7 @@ class GoalManager:
                 "state": self._active.state,
                 "activation_t": self._active.activation_t,
                 "activation_cycle": self._active.activation_cycle,
+                "justification_ref": self._active.justification_ref,
             },
             "latest_pressure": [
                 [goal_type, target, pressure]
@@ -299,6 +303,11 @@ class GoalManager:
                 state=str(raw_active["state"]),
                 activation_t=int(raw_active["activation_t"]),
                 activation_cycle=int(raw_active["activation_cycle"]),
+                justification_ref=(
+                    None
+                    if raw_active.get("justification_ref") is None
+                    else str(raw_active["justification_ref"])
+                ),
             )
         else:
             raise ValueError("invalid active goal state")
