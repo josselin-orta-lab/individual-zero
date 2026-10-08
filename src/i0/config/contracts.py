@@ -193,6 +193,26 @@ def build_safety_policy() -> SafetyPolicy:
     )
 
 
+def build_parameter_registry(values: dict[str, object]):
+    """Build a complete campaign parameter registry without inventing values.
+
+    The caller must supply all P-01 through P-58. Missing or additional ids are
+    rejected by the generic registry validator.
+    """
+
+    from lab.contracts import ParameterRegistry, ParameterValue
+
+    registry = ParameterRegistry(
+        version=STRUCTURAL_CONTRACT_VERSION,
+        values=tuple(
+            ParameterValue(identifier=identifier, value=value)
+            for identifier, value in sorted(values.items())
+        ),
+    )
+    registry.validate(required_ids=REQUIRED_PARAMETER_IDS)
+    return registry
+
+
 def build_schema_registry() -> SchemaRegistry:
     """Return Stage-1 schemas whose field sets are fixed by sections 4 and 5.
 
@@ -226,7 +246,6 @@ def build_schema_registry() -> SchemaRegistry:
                     "degrade",
                     "empreinte",
                 ),
-                ignorable_noncausal_fields=("t_systeme",),
             ),
             SchemaDefinition(
                 name="Requete",
