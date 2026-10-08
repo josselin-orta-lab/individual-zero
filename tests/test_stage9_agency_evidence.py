@@ -160,6 +160,25 @@ class AgencyEvidenceTests(unittest.TestCase):
         self.assertEqual(result.effects[0]["status"], "expected_effect_missing")
         self.assertEqual(result.effects[0]["comparator_version"], "p47-test-v1")
 
+    def test_real_stage9_path_from_action_control_via_memory_to_causal_model(self):
+        # Integrated P-47 + DC-09 + phase-5 acceptance, no injected evidence.
+        runtime = build_stage9_reference_runtime()
+        for _ in range(12):
+            self.assertEqual(runtime.run_step().execution_status, "applied")
+        reports = runtime.causal_model.published_agency_evidence()
+        self.assertGreater(len(reports), 0)
+        self.assertEqual(len({v.event_ref for v in reports}), len(reports))
+        self.assertTrue(all(v.source == "agency_comparator" for v in reports))
+        self.assertTrue(all(v.episode_ref.startswith("episode:") for v in reports))
+        self.assertTrue(all(
+            effect[-1] == "p47-stage9-reference-v1"
+            for report in reports for effect in report.effects
+        ))
+        self.assertEqual(runtime.causal_model.export_causal_state()["causal_interventions"], [])
+        self.assertIn(
+            b"causal_agency_evidence_admitted", runtime.journal.canonical_bytes()
+        )
+
     def test_runtime_owns_only_causal_model_and_old_goldens_remain_separate(self):
         runtime = build_stage9_reference_runtime()
         self.assertEqual(
