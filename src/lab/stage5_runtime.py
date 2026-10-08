@@ -19,6 +19,7 @@ from i0.temperament import (
 )
 
 from .determinism import deterministic_id
+from .injected_scenario import ScenarioEvent
 from .safety_protocol import SafetyProtocolConfig
 from .snapshots import SnapshotRecord, SnapshotType
 from .stage4_runtime import Stage4Config, Stage4Runtime
@@ -75,6 +76,9 @@ class Stage5Runtime(Stage4Runtime):
         lineage_parent_id: str | None = None,
         lineage_copy_point: str | None = None,
         battery_copy: bool = False,
+        scenario_id: str | None = None,
+        scenario_version: str | None = None,
+        scenario_events: tuple[ScenarioEvent, ...] = (),
     ) -> None:
         config.validate()
         if not individual_id:
@@ -121,6 +125,9 @@ class Stage5Runtime(Stage4Runtime):
             safety_facts=safety_facts,
             protected_integrity_threshold=protected_integrity_threshold,
             config=stage4,
+            scenario_id=scenario_id,
+            scenario_version=scenario_version,
+            scenario_events=scenario_events,
         )
 
     @property
