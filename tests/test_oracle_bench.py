@@ -39,6 +39,7 @@ def world() -> WorldBody:
             "berry_b": BerryEffect(1.0, -1.0),
         },
         creature_damage=1.0,
+        danger_zone_damage=15.0,
         tool_recipe=ToolRecipe(1, 1, 2),
     )
     return WorldBody(
