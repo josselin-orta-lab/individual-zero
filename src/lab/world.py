@@ -274,6 +274,44 @@ Command = PrimitiveCommand
 
 
 @dataclass(frozen=True, slots=True)
+class LocalCell:
+    direction: str
+    position: Position
+    passable: bool
+    water_source: bool
+    resources: tuple[str, ...]
+    creature: bool
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "direction": self.direction,
+            "position": self.position.as_dict(),
+            "passable": self.passable,
+            "water_source": self.water_source,
+            "resources": list(self.resources),
+            "creature": self.creature,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class LocalWorldState:
+    t_monde: int
+    position: Position
+    current_water_source: bool
+    current_resources: tuple[str, ...]
+    adjacent: tuple[LocalCell, ...]
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "t_monde": self.t_monde,
+            "position": self.position.as_dict(),
+            "current_water_source": self.current_water_source,
+            "current_resources": list(self.current_resources),
+            "adjacent": [cell.as_dict() for cell in self.adjacent],
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class TransitionResult:
     command: Command
     t_monde: int
@@ -383,6 +421,47 @@ class WorldBody:
 
     def telemetry(self) -> Mapping[str, float]:
         return self._body.as_dict()
+
+    def capture_local(self, *, t_monde: int) -> LocalWorldState:
+        """Return the minimal Stage-3 local symbolic state.
+
+        Hidden danger/lethality classifications are deliberately absent.
+        """
+
+        if t_monde < 1:
+            raise ValueError("t_monde must be >= 1")
+
+        def resource_kinds(position: Position) -> tuple[str, ...]:
+            return tuple(
+                sorted(
+                    kind
+                    for (resource_position, kind), quantity in self._resources.items()
+                    if resource_position == position and quantity > 0
+                )
+            )
+
+        adjacent: list[LocalCell] = []
+        for direction in ("north", "south", "east", "west"):
+            position = self._position.moved(direction)
+            passable = self._is_interior(position) and position not in self._obstacles
+            adjacent.append(
+                LocalCell(
+                    direction=direction,
+                    position=position,
+                    passable=passable,
+                    water_source=position in self._water_sources,
+                    resources=resource_kinds(position),
+                    creature=position in self._creatures,
+                )
+            )
+
+        return LocalWorldState(
+            t_monde=t_monde,
+            position=self._position,
+            current_water_source=self._position in self._water_sources,
+            current_resources=resource_kinds(self._position),
+            adjacent=tuple(adjacent),
+        )
 
     def is_night(self, t_monde: int) -> bool:
         return self._config.is_night(t_monde)
