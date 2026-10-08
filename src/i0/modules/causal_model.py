@@ -18,6 +18,9 @@ from math import isfinite
 from typing import Mapping, Sequence
 
 from .action_control import StaticSafetyFacts
+from .causal_corrections import (
+    LivedNumericOutcome, NumericPredictionCorrection, decode_lived_numeric_outcome,
+)
 from .causal_lifecycle import (CausalObservation, CausalHypothesisReview, CausalIntervention, CausalInferenceChange, AgencyEvidence, agency_evidence_from_autobiography, decode_agency_evidence, decode_observation, decode_review, decode_intervention, serialize_value)
 
 
@@ -133,6 +136,8 @@ class LivedFoodExposure:
     option_ref: str
     motive_ref: str
     integrity_before: float
+    body_before: tuple[tuple[str, float], ...] | None = None
+    position_before: tuple[int, int] | None = None
     observed_step: int | None = None
     integrity_observed: float | None = None
 
@@ -142,6 +147,22 @@ class LivedFoodExposure:
             or not isfinite(self.integrity_before)
             or not 0 <= self.integrity_before <= 100):
             raise ValueError("invalid motivated food exposure")
+        if (self.body_before is None) != (self.position_before is None):
+            raise ValueError("partial pre-action physical context")
+        if self.body_before is not None:
+            from .causal_corrections import BODY_VARIABLES
+            body = dict(self.body_before)
+            if len(self.body_before) != 4 or set(body) != BODY_VARIABLES:
+                raise ValueError("invalid complete observed pre-action body")
+            if (any(
+                isinstance(v, bool) or not isinstance(v, (int, float))
+                or not isfinite(v) or not 0 <= v <= 100
+                for v in body.values()
+            ) or body["integrity"] != self.integrity_before):
+                raise ValueError("inconsistent pre-action physical telemetry")
+            if (len(self.position_before) != 2
+                or any(type(v) is not int for v in self.position_before)):
+                raise ValueError("invalid pre-action observable position")
         if self.observed_step is None:
             if self.integrity_observed is not None:
                 raise ValueError("unpaired observation")
@@ -214,6 +235,7 @@ class CausalModel:
         self._causal_revision_boundaries: dict[str, tuple[int, str]] = {}
         self._agency_evidence: dict[str, AgencyEvidence] = {}
         self._pending_agency_evidence: list[AgencyEvidence] = []
+        self._numeric_witnesses: dict[str, LivedNumericOutcome] = {}
 
     @property
     def version(self) -> int:
@@ -237,6 +259,8 @@ class CausalModel:
     def record_applied_food_exposure(
         self, *, t_monde: int, resource_kind: str,
         option_ref: str, motive_ref: str, integrity_before: float,
+        body_before: Mapping[str, float] | None = None,
+        position_before: tuple[int, int] | None = None,
     ) -> None:
         """Only already-executed, independently goal-motivated actions enter.
 
@@ -247,6 +271,11 @@ class CausalModel:
             t_monde=t_monde, resource_kind=resource_kind,
             option_ref=option_ref, motive_ref=motive_ref,
             integrity_before=integrity_before,
+            body_before=(
+                None if body_before is None else
+                tuple(sorted((name, float(v)) for name, v in body_before.items()))
+            ),
+            position_before=position_before,
         )
         item.validate()
         if t_monde in self._lived_food_exposures:
@@ -313,6 +342,7 @@ class CausalModel:
 
         candidate: list[SafetyEvidence] = []
         causal_observations: list[CausalObservation] = []
+        numeric_witnesses: list[LivedNumericOutcome] = []
         for t in sorted(commands.keys() & transitions.keys()):
             exposure = self._lived_food_exposures.get(t)
             if exposure is None or exposure.observed_step is None:
@@ -367,6 +397,28 @@ class CausalModel:
                 alternative_cause_sufficient=False,
                 exposure_motivated_independently=True,
             ))
+            if (
+                exposure.body_before is not None
+                and exposure.position_before is not None
+                and after < exposure.integrity_before
+            ):
+                witness = LivedNumericOutcome(
+                    identifier=f"numeric-witness:{episode_ref}:{event['event_id']}",
+                    contingency_ref=f"toxic:{exposure.resource_kind}",
+                    episode_ref=episode_ref,
+                    command_event_ref=str(command["event_id"]),
+                    transition_event_ref=str(event["event_id"]),
+                    option_ref=exposure.option_ref,
+                    sent_t_monde=exposure.t_monde,
+                    observed_t_monde=exposure.observed_step,
+                    command_primitive="manger",
+                    command_target=exposure.resource_kind,
+                    variable="integrity",
+                    observed_before_body=exposure.body_before,
+                    observed_before_position=exposure.position_before,
+                    observed_after=float(after),
+                )
+                numeric_witnesses.append(witness)
             # Observation of exposure is not causal proof or an intervention.
             # Absence-of-exposure baselines require other *lived* comparable
             # episodes and are never generated from this successful meal.
@@ -420,10 +472,22 @@ class CausalModel:
                 for old in self._pending_causal_observations
             ):
                 raise ValueError("duplicate closed Memory causal observation")
+        for witness in numeric_witnesses:
+            witness.validate()
+            if (
+                witness.identifier in self._numeric_witnesses
+                or any(
+                    old.transition_event_ref == witness.transition_event_ref
+                    for old in self._numeric_witnesses.values()
+                )
+            ):
+                raise ValueError("duplicated closed physical numeric outcome")
         for item in candidate:
             self.integrate(item)
         for item in causal_observations:
             self.integrate_causal_observation(item)
+        for witness in numeric_witnesses:
+            self._numeric_witnesses[witness.identifier] = witness
         # Exposure refs can be discarded only once their command is represented
         # by a *closed* episode; unobserved attempts cannot be counted later.
         for t, command in commands.items():
@@ -775,6 +839,10 @@ class CausalModel:
             "pending_causal_observations": [serialize_value(x) for x in self._pending_causal_observations],
             "pending_causal_reviews": [serialize_value(x) for x in self._pending_causal_reviews],
             "pending_causal_interventions": [serialize_value(x) for x in self._pending_causal_interventions],
+            "numeric_witnesses": [
+                {name: getattr(w, name) for name in w.__dataclass_fields__}
+                for _, w in sorted(self._numeric_witnesses.items())
+            ],
             "lived_food_exposures": [
                 {name: getattr(v, name) for name in v.__dataclass_fields__}
                 for _, v in sorted(self._lived_food_exposures.items())
@@ -849,6 +917,15 @@ class CausalModel:
             raise ValueError("duplicate agency comparison in causal snapshot")
         self._agency_evidence = {v.identifier: v for v in agency_rows}
         self._pending_agency_evidence = pending_agency
+        witnesses = [
+            decode_lived_numeric_outcome(raw)
+            for raw in state.get("numeric_witnesses", ())
+        ]
+        if len({v.identifier for v in witnesses}) != len(witnesses):
+            raise ValueError("duplicate lived numeric witnesses in causal snapshot")
+        if len({v.transition_event_ref for v in witnesses}) != len(witnesses):
+            raise ValueError("same lived physical transition credited twice")
+        self._numeric_witnesses = {v.identifier: v for v in witnesses}
         self._version = version
 
 
