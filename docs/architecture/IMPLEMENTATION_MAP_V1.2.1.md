@@ -196,7 +196,18 @@ Implemented:
 - bench-side disposable trait-battery administration with deterministic stop bounds and retained child journal;
 - observable scoring paths for patience, risk-taking, exploration and threat response;
 - battery scoring remains outside cognition and cannot alter the parent or child decision process;
-- exact replay/non-regression tests remain green on Python 3.11 and 3.12 with Stage 1-4 golden fixtures unchanged.
+- explicit trait-profile construction that refuses to call an incomplete five-dimensional battery complete;
+- versioned test-retest reliability configuration with explicit ICC(3,1) selection and preregistered threshold; undefined zero-between-subject variance is never mislabeled as perfect reliability;
+- a retained 300-step neutral Stage-5 compatibility journal in CI, while all Stage 1-4 golden fixtures remain unchanged;
+- exact replay/non-regression tests remain green on Python 3.11 and 3.12.
+
+Stage 5 reference fixture:
+
+- duration: 300 world steps;
+- causal journal bytes: 31,036,802;
+- golden journal head: `3b0319a318039a0a759ded929835215a94113922ede43e9a5e4553ba56b643e9`;
+- minimal F_cog UC counter at day end: 9,551;
+- neutral tau reproduces the Stage-4 behavioral path while the Stage-5 journal additionally retains the temperament/individual layer.
 
 Stage 5 invariant status:
 
@@ -208,7 +219,8 @@ Remaining Stage-5 measurement gap:
 
 - the perseverance battery row specifies only “an action that fails randomly” and a failure schedule, but the current normative contract does not identify the tested action or define a world/scenario operation that applies those failures;
 - the reference implementation therefore returns `mechanism_not_expressible_stage5` with no numerical score instead of manufacturing a perseverance value;
-- battery test-retest reliability and the profile confidence intervals cannot be declared validated until all five battery dimensions are observable and the preregistered reliability threshold/statistical protocol are supplied;
+- test-retest reliability instrumentation is implemented, but reliability cannot be declared scientifically validated until all five battery dimensions are observable and a campaign threshold is preregistered;
+- profile confidence intervals remain a campaign-analysis concern after the five-dimensional instrument is complete;
 - this is an experimental-instrument closure issue, not a failure of the temperament or copy architecture.
 
 ## Current repository gap
