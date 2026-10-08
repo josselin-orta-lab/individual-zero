@@ -93,6 +93,27 @@ class EpisodicMemoryTests(unittest.TestCase):
         self.assertEqual(closed[0].boundary_type, "prediction_error")
         self.assertEqual(closed[0].surprise, 3.0)
 
+    def test_observable_zone_change_closes_episode(self) -> None:
+        memory = EpisodicMemory(config(max_episode_steps=20))
+        memory.ingest_autobiographical(
+            [transition("z1", 1)],
+            current_t_monde=2,
+            current_goal_ref=None,
+            current_reward=0.0,
+            current_zone_ref="zone:A",
+        )
+
+        closed = memory.ingest_autobiographical(
+            [transition("z1", 1), transition("z2", 2)],
+            current_t_monde=3,
+            current_goal_ref=None,
+            current_reward=0.0,
+            current_zone_ref="zone:B",
+        )
+
+        self.assertEqual(len(closed), 1)
+        self.assertEqual(closed[0].boundary_type, "zone_change")
+
     def test_seen_autobiographical_events_are_not_ingested_twice(self) -> None:
         memory = EpisodicMemory(config(max_episode_steps=2))
         events = [transition("e1", 1)]
