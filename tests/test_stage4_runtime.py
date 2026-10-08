@@ -258,7 +258,54 @@ class Stage4IntegratedLoopTests(unittest.TestCase):
         ]
         self.assertEqual(len(admitted), 1)
         self.assertIsNotNone(admitted[0]["data"]["option_ref"])
-        self.assertIsNotNone(admitted[0]["data"]["st_version_ref"])
+        founding_version = admitted[0]["data"]["st_version_ref"]
+        self.assertIsNotNone(founding_version)
+        grounding = admitted[0]["data"]["grounding_contribution_refs"]
+        self.assertGreaterEqual(len(grounding), 1)
+
+        founding_events = [
+            event
+            for event in (entry.causal_event for entry in instance.journal.entries)
+            if event.get("kind") == "s_t_published"
+            and event["data"]["version"] == founding_version
+        ]
+        self.assertEqual(len(founding_events), 1)
+        retained = set(founding_events[0]["data"]["competitive_refs"])
+        self.assertTrue(set(grounding).issubset(retained))
+
+    def test_lethal_cognitive_decision_rolls_back_full_cognition_then_masks_it(self) -> None:
+        instance = runtime(
+            layout=WorldLayout(
+                water_sources=frozenset({Position(4, 2)}),
+                lethal_zones=frozenset({Position(3, 2)}),
+            )
+        )
+
+        before_world = instance.world.export_causal_state()
+        result = instance.run_step()
+
+        self.assertEqual(instance.bench.metrics.lethal_transitions, 1)
+        self.assertEqual(instance.bench.metrics.lethal_rollbacks, 1)
+        self.assertEqual(instance.world.position, Position(2, 2))
+        self.assertEqual(
+            instance.world.export_causal_state()["position"],
+            before_world["position"],
+        )
+        self.assertEqual(result.execution_status, "applied")
+        self.assertTrue(result.fallback_used)
+        self.assertEqual(result.command_primitive, "attendre")
+
+        autobiography = instance.stage3.substrate.autobiographical_view()
+        self.assertEqual(len(autobiography), 2)
+        self.assertEqual(autobiography[0]["primitive"], "attendre")
+
+        technical_kinds = [
+            entry.causal_event.get("kind")
+            for entry in instance.journal.entries
+        ]
+        self.assertIn("lethal_transition_detected", technical_kinds)
+        self.assertIn("lethal_rollback_completed", technical_kinds)
+        self.assertIn("command_vetoed", technical_kinds)
 
     def test_same_minimal_cognitive_run_replays_identically(self) -> None:
         def execute():
