@@ -177,9 +177,35 @@ Minimal stubs that remain intentionally incomplete:
 - E-0 is deliberately not obstacle-aware; a blocked movement is detected by the comparator and triggers replanning, while the richer model arrives later;
 - no memory, learning, simulator, causal model, exploration or consolidation is introduced.
 
+## Stage 6 progress on this branch
+
+Implemented independently from Stage 5, as allowed by Diagram J:
+
+- explicit accessible `SimulationState` containing only perceived/local state, authorized body variables, inventory and observable context;
+- inventory propagated through the Perception boundary rather than read directly from `WorldBody` by equipment;
+- typed one-step equipment predictions with horizon, confidence and equipment version;
+- versioned/hashable offline `EquipmentCorpus` and immutable `EquipmentArtifact`;
+- deterministic exact-transition-table baseline trainer with no fallback extrapolation;
+- conflicting outcomes for an identical accessible input are rejected explicitly;
+- budgeted `Simulator` with R_max/H_max bounds and deterministic-rollout de-duplication;
+- incomplete/unseen rollouts are marked unavailable and partial results are excluded from completed simulated evidence;
+- closed required-family corpus coverage gate for movement, resource interaction, tool use, shelter, creatures by day/night, sleep and wait;
+- P-46-style conjunctive equipment benchmark: overall error, unavailable rate, per-family error, per-horizon error, calibration and systematic bias must all pass;
+- explicit requirement that E-v1, E-v2 and E-v3 each pass the equivalence gate;
+- Stage-6 simulated option evaluator computing predicted homeostatic rewards, discounted E_a^sim and bounded tanh evidence;
+- Competition accepts typed external evidence while preserving the Stage-4 substitution path as its exact default;
+- a `not_evaluated` option carries no evidence and freezes accumulator/threshold state instead of receiving an artificial zero.
+
+Current Stage-6 checkpoint:
+
+- unit tests and all Stage 1-4 golden fixtures are green on Python 3.11 and 3.12;
+- no equipment code imports temperament, oracle, learned values or accumulator internals;
+- E-0 Planning is still active in the integrated runtime;
+- the next sub-block is the Stage6Runtime hook that supplies common-budget E_a^sim to Competition, followed by simulator-based multi-step Planning and the retained Stage-6 reference journal.
+
 ## Current repository gap
 
-The legacy bootstrap remains as a compatibility smoke path. The normative implementation now has a deterministic substrate, world/body/bench boundary, reflex/control path, and the complete Stage-4 minimal cognitive loop. The next architectural gap is Stage 5: temperament projection, copies/lineage and the first measurable individuals through the trait battery.
+The legacy bootstrap remains as a compatibility smoke path. Stage 6 now has an independently testable equipment/corpus/simulator/evaluation core. The next code gap on this branch is integration of E_a^sim into the live six-phase loop and replacement of greedy E-0 planning by simulator-based multi-step planning.
 
 ## Functional groups
 
