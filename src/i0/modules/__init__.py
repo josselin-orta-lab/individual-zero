@@ -47,10 +47,3 @@ from .planning import GreedyPlannerE0, PlanningConfig
 from .value_needs import ValueAndNeeds, ValueNeedsConfig
 
 from .metacognition import MinimalMetacognition, MinimalMetacognitionState
-
-from .temperament import (
-    Temperament,
-    TemperamentMappingConfig,
-    TemperamentParameters,
-    TemperamentProjector,
-)
