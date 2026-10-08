@@ -125,6 +125,23 @@ class WorldPhysicsTests(unittest.TestCase):
             placed = world.apply(Command("poser_une_pierre"), t_monde=step)
         self.assertTrue(placed.effects["shelter_formed"])
 
+    def test_danger_zone_applies_damage_without_forcing_lethality(self) -> None:
+        world = WorldBody(
+            config=physics(),
+            layout=WorldLayout(
+                danger_zones=frozenset({Position(3, 2)}),
+            ),
+        )
+
+        result = world.apply(
+            Command("se_deplacer", {"direction": "east"}),
+            t_monde=1,
+        )
+
+        self.assertFalse(result.lethal)
+        self.assertEqual(result.effects["danger_zone_damage"], 15.0)
+        self.assertEqual(result.body_after.integrity, 85.0)
+
     def test_lethal_zone_is_detected(self) -> None:
         world = WorldBody(
             config=physics(),
