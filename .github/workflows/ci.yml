@@ -315,3 +315,53 @@ jobs:
           name: stage4-reference-journal
           path: /tmp/stage4-reference.jsonl
           if-no-files-found: error
+
+
+      - name: Generate Stage 6 reference journal
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from lab.stage6_reference_fixture import build_stage6_reference_runtime
+
+          runtime = build_stage6_reference_runtime()
+          for _ in range(300):
+              outcome = runtime.run_step()
+              if outcome.execution_status != "applied":
+                  raise SystemExit(
+                      f"unexpected Stage 6 outcome: {outcome.execution_status}"
+                  )
+
+          if runtime.world.position.x != 2 or runtime.world.position.y != 2:
+              raise SystemExit(
+                  f"unexpected Stage 6 final position: {runtime.world.position}"
+              )
+          if runtime.world.body.water != 60.0:
+              raise SystemExit(
+                  f"unexpected Stage 6 final water: {runtime.world.body.water}"
+              )
+          if runtime.equipment_version != "E-v1-stage6-reference":
+              raise SystemExit(
+                  f"unexpected Stage 6 equipment: {runtime.equipment_version}"
+              )
+
+          payload = runtime.journal.canonical_bytes()
+          path = Path("/tmp/stage6-reference.jsonl")
+          path.write_bytes(payload + (b"\n" if payload else b""))
+          if not runtime.journal.verify():
+              raise SystemExit("stage6 reference journal failed verification")
+          print(f"stage6_reference_bytes={len(payload)}")
+          print(f"stage6_reference_head={runtime.journal.head_hash}")
+          print(
+              "stage6_f_cog_uc="
+              f"{runtime.metacognition.state.f_cog_uc_counter}"
+          )
+          PY
+
+      - name: Upload Stage 6 reference journal
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage6-reference-journal
+          path: /tmp/stage6-reference.jsonl
+          if-no-files-found: error
