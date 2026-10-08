@@ -37,6 +37,23 @@ class Stage5Config:
         self.mapping.validate()
         self.stage4.validate()
 
+        if dict(self.mapping.gatekeeper_base_weights) != dict(
+            self.stage4.gatekeeper.weights
+        ):
+            raise ValueError(
+                "temperament gatekeeper neutral weights must equal Stage-4 weights"
+            )
+        if dict(self.mapping.base_body_weights) != dict(
+            self.stage4.value_needs.weights
+        ):
+            raise ValueError(
+                "temperament neutral body weights must equal Stage-4 need weights"
+            )
+        if self.mapping.base_inertia != self.stage4.competition.inertia:
+            raise ValueError(
+                "temperament neutral inertia must equal Stage-4 inertia"
+            )
+
 
 class Stage5Runtime(Stage4Runtime):
     """Stage 4 loop plus birth-time temperament projection."""
