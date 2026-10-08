@@ -41,6 +41,8 @@ __all__ = [
     "MemoryConfig",
     "Episode",
     "RecallResult",
+    "Intention",
+    "IntentionTriggerResult",
 ]
 
 from .cognitive_space import CognitiveSpace
@@ -52,4 +54,11 @@ from .value_needs import ValueAndNeeds, ValueNeedsConfig
 
 from .metacognition import MinimalMetacognition, MinimalMetacognitionState
 
-from .memory import Episode, EpisodicMemory, MemoryConfig, RecallResult
+from .memory import (
+    Episode,
+    EpisodicMemory,
+    Intention,
+    IntentionTriggerResult,
+    MemoryConfig,
+    RecallResult,
+)
