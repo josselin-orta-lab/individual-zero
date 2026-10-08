@@ -314,6 +314,26 @@ class CanonicalCorrectionTests(unittest.TestCase):
             (),
         )
 
+    def test_numeric_witness_needs_exact_published_comparator_value_and_identity(self):
+        for option, step, observed in (
+            ("option:meal", 1, 89.0),  # different bodily observation
+            ("option:unrelated", 1, 90.0),  # different executed option
+            ("option:meal", 2, 90.0),  # different world-step lineage
+        ):
+            with self.subTest(option=option, step=step, observed=observed):
+                m = model()
+                physical_meal(m)
+                m.publish_causal_inference()
+                hypothesis(m)
+                agency_report(
+                    m, "meal", step=step, option=option, observed=observed,
+                    predicted=100.0, conforms=False,
+                )
+                intervention(m, "first", step=5, context="zone1")
+                intervention(m, "second", step=7, context="zone2")
+                self.assertEqual(m.get(REF).causal_status, "etablie")
+                self.assertEqual(m.established_prediction_corrections(), ())
+
     def test_safety_status_alone_never_produces_simulator_rule(self):
         m = model()
         physical_meal(m)
