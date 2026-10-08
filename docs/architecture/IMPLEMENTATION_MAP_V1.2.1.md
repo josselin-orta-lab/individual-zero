@@ -501,3 +501,13 @@ Source constraints remain: applied goal-motivated consumption, accessible Percep
 - The Stage-9 CI at commit `250a4416457744eafe4a30c79abe78ccc07a44b4` must pass before this checkpoint is considered validated. Existing Stage-8 historical goldens remain immutable.
 
 **Stage 9 remains open:** independent causal intervention generation, alternative-control protocol, established-only correction layer and the Stage-9 golden are not complete.
+
+
+### Stage 9 checkpoint 8 — numeric simulator correction boundary (IN PROGRESS)
+
+- `src/i0/modules/causal_corrections.py` provides a narrowly typed, immutable numerical correction contract for **global-context body variables only**. Non-finite/out-of-range values and unknown variables or contexts are rejected, not estimated. Corrections never mutate frozen Equipment.
+- `Simulator` now supports an **optional read-only correction source**, absent by default; the legacy Stage-6/7/8 path is unchanged. The correction layer modifies only explicitly covered next-state components, preserves the frozen Equipment identifier and declared confidence, and reports unresolved conflicts between equally specific rules as explicit `unavailable`, not an arbitrary prediction.
+- `tests/test_stage9_causal_corrections.py` tests legacy equivalence, component isolation, conflict handling and unsupported-case refusal using a controlled synthetic established-rule source.
+- **Essential unfinished boundary:** the production `CausalModel` does not yet export an established-only numerically grounded correction source. A tested mock view is not evidence that interventions have taught a numeric correction. The Stage-9 runtime therefore does not attach a correction source to its Simulator. Before activation, an established contingency must be linked to a verified applied intervention and independently observed, variable-specific consequence; context matching and alternative/conflict resolution must be auditable. Categorical and probabilistic corrections are also not implemented.
+
+Stage 9 remains **OPEN**; no new Stage-9 reference golden has been frozen and no previous stage was modified for the new optional path.
