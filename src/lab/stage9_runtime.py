@@ -10,6 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from i0.equipment import EquipmentModel
+from i0.modules.simulator import state_from_capture
+from .determinism import canonical_causal_bytes, sha256_hex
 from i0.modules.agency_comparator import AgencyComparator, AgencyComparatorConfig
 from i0.modules.action_control import StaticSafetyFacts
 from i0.modules.causal_model import (
@@ -207,6 +209,12 @@ class Stage9Runtime(Stage8Runtime):
                     integrity_before=float(captured.body["integrity"]),
                     body_before=dict(captured.body),
                     position_before=(captured.x, captured.y),
+                    state_before_digest=sha256_hex(canonical_causal_bytes(
+                        state_from_capture(
+                            capture=captured,
+                            is_night=self.world.is_night(captured.t_monde),
+                        ).as_dict()
+                    )),
                 )
         return execution
 
