@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import Mapping, Sequence
 
 from i0.contracts import Contribution, Goal, STElement
+from i0.serde import decode_contribution, encode_contribution
 
 
 @dataclass(frozen=True, slots=True)
@@ -409,35 +410,53 @@ class Gatekeeper:
         )
 
     def export_causal_state(self) -> object:
-        def encode(contribution: Contribution) -> dict[str, object]:
-            return {
-                "id": contribution.id,
-                "schema_version": contribution.schema_version,
-                "type": contribution.type,
-                "summary": contribution.summary,
-                "subject_ref": contribution.subject_ref,
-                "emitter_module": contribution.emitter_module,
-                "signal_family": contribution.signal_family,
-                "confidence": contribution.confidence,
-                "urgency": contribution.urgency,
-                "risk": contribution.risk,
-                "value": contribution.value,
-                "production_t": contribution.production_t,
-                "production_cycle": contribution.production_cycle,
-                "expires_at_step": contribution.expires_at_step,
-                "payload": contribution.payload,
-                "goal_ref": contribution.goal_ref,
-                "provenance_inputs": list(contribution.provenance_inputs),
-                "signal_ids": list(contribution.signal_ids),
-            }
-
         return {
             "config_version": self._config.version,
-            "retained": [encode(self._retained[key]) for key in sorted(self._retained)],
-            "queue": [encode(self._queue[key]) for key in sorted(self._queue)],
+            "retained": [
+                encode_contribution(self._retained[key])
+                for key in sorted(self._retained)
+            ],
+            "queue": [
+                encode_contribution(self._queue[key])
+                for key in sorted(self._queue)
+            ],
             "emissions": {
                 key: list(value)
                 for key, value in sorted(self._emissions.items())
             },
             "recent_subjects": dict(sorted(self._recent_subjects.items())),
+        }
+
+    def restore_causal_state(self, state: object) -> None:
+        if not isinstance(state, Mapping):
+            raise ValueError("Gatekeeper state must be a mapping")
+        if state.get("config_version") != self._config.version:
+            raise ValueError("Gatekeeper config version mismatch")
+        retained = state.get("retained")
+        queue = state.get("queue")
+        emissions = state.get("emissions")
+        recent = state.get("recent_subjects")
+        if not isinstance(retained, list) or not isinstance(queue, list):
+            raise ValueError("invalid Gatekeeper retained/queue state")
+        if not isinstance(emissions, Mapping) or not isinstance(recent, Mapping):
+            raise ValueError("invalid Gatekeeper history state")
+        self._retained = {}
+        for raw in retained:
+            if not isinstance(raw, Mapping):
+                raise ValueError("invalid retained contribution")
+            c = decode_contribution(raw)
+            self._retained[c.id] = c
+        self._queue = {}
+        for raw in queue:
+            if not isinstance(raw, Mapping):
+                raise ValueError("invalid queued contribution")
+            c = decode_contribution(raw)
+            self._queue[c.id] = c
+        self._emissions = {
+            str(module): [int(step) for step in steps]
+            for module, steps in emissions.items()
+        }
+        self._recent_subjects = {
+            str(subject): int(step)
+            for subject, step in recent.items()
         }
