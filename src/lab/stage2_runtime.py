@@ -175,6 +175,7 @@ class ScriptedStage2Runtime:
         command: Command,
         *,
         source: str,
+        event_emitter: str | None = None,
     ) -> CommandExecution:
         """Execute a command already admitted by the active control path.
 
@@ -231,7 +232,10 @@ class ScriptedStage2Runtime:
             },
         )
 
-        command_event = self._write_command_event(command=command, emitter=source)
+        command_event = self._write_command_event(
+            command=command,
+            emitter=event_emitter or source,
+        )
         transition = self.world.apply(command, t_monde=attempt.t_monde)
 
         if transition.lethal:
@@ -286,7 +290,8 @@ class ScriptedStage2Runtime:
 
         return self.send_admitted_command(
             command,
-            source="stage2-scripted-agent",
+            source="scripted_agent",
+            event_emitter="stage2-scripted-agent",
         )
 
     def autobiographical_view(self) -> tuple[dict[str, object], ...]:
