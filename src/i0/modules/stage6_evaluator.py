@@ -159,6 +159,10 @@ class Stage6OptionEvaluator:
                 f"equipment:{result.equipment_version}",
                 "stage6_simulator",
                 "value_needs",
+                *(
+                    f"causal_model:etablie:{ref}"
+                    for ref in result.corrected_contingency_refs
+                ),
             ),
         )
         return OptionEvidenceInput(
