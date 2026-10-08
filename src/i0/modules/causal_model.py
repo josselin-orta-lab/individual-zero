@@ -745,6 +745,12 @@ class CausalModel:
     def export_causal_state(self) -> object:
         return {
             "config_version": self.config.version,
+            "config_contract": {
+                "n1": self.config.n1, "n2": self.config.n2,
+                "n_sec": self.config.n_sec, "m_sec": self.config.m_sec,
+                "causal_predicates": list(self.config.causal_predicates),
+                "food_control_pairs": [list(pair) for pair in self.config.food_control_pairs],
+            },
             "version": self._version,
             "published": [
                 {name: getattr(c, name) for name in c.__dataclass_fields__}
@@ -778,6 +784,14 @@ class CausalModel:
     def restore_causal_state(self, state: object) -> None:
         if not isinstance(state, Mapping) or state.get("config_version") != self.config.version:
             raise ValueError("causal model snapshot config mismatch")
+        expected_contract = {
+            "n1": self.config.n1, "n2": self.config.n2,
+            "n_sec": self.config.n_sec, "m_sec": self.config.m_sec,
+            "causal_predicates": list(self.config.causal_predicates),
+            "food_control_pairs": [list(pair) for pair in self.config.food_control_pairs],
+        }
+        if state.get("config_contract") != expected_contract:
+            raise ValueError("causal model snapshot protocol mismatch")
         records = {}
         for raw in state["published"]:
             c = CanonicalContingency(
