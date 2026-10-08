@@ -17,6 +17,7 @@ from lab.contracts import (
     SchemaRegistry,
     SignalFamilyRegistry,
     SimilaritySchema,
+    StructuralContractBundle,
 )
 
 
@@ -211,6 +212,23 @@ def build_parameter_registry(values: dict[str, object]):
     )
     registry.validate(required_ids=REQUIRED_PARAMETER_IDS)
     return registry
+
+
+def build_structural_contract_bundle(values: dict[str, object]) -> StructuralContractBundle:
+    """Build and validate the frozen I0 structural-contract bundle."""
+
+    ontology = build_ontology_registry()
+    bundle = StructuralContractBundle(
+        ontology=ontology,
+        similarity=build_similarity_schema(ontology),
+        signal_families=build_signal_family_registry(),
+        safety_policy=build_safety_policy(),
+        parameters=build_parameter_registry(values),
+        schemas=build_schema_registry(),
+        required_parameter_ids=REQUIRED_PARAMETER_IDS,
+    )
+    bundle.validate()
+    return bundle
 
 
 def build_schema_registry() -> SchemaRegistry:
