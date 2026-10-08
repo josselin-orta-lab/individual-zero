@@ -294,12 +294,29 @@ class LocalCell:
 
 
 @dataclass(frozen=True, slots=True)
+class VisibleEntity:
+    entity_id: str
+    entity_type: str
+    position: Position
+    properties: Mapping[str, object]
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "entity_id": self.entity_id,
+            "entity_type": self.entity_type,
+            "position": self.position.as_dict(),
+            "properties": dict(self.properties),
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class LocalWorldState:
     t_monde: int
     position: Position
     current_water_source: bool
     current_resources: tuple[str, ...]
     adjacent: tuple[LocalCell, ...]
+    visible_entities: tuple[VisibleEntity, ...] = ()
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -308,6 +325,9 @@ class LocalWorldState:
             "current_water_source": self.current_water_source,
             "current_resources": list(self.current_resources),
             "adjacent": [cell.as_dict() for cell in self.adjacent],
+            "visible_entities": [
+                entity.as_dict() for entity in self.visible_entities
+            ],
         }
 
 
@@ -455,12 +475,64 @@ class WorldBody:
                 )
             )
 
+        visible_entities: list[VisibleEntity] = []
+        for index, position in enumerate(sorted(self._water_sources)):
+            visible_entities.append(
+                VisibleEntity(
+                    entity_id=f"water_source:{index}",
+                    entity_type="water_source",
+                    position=position,
+                    properties={},
+                )
+            )
+        for (position, kind), quantity in sorted(
+            self._resources.items(),
+            key=lambda row: (row[0][0].x, row[0][0].y, row[0][1]),
+        ):
+            if quantity <= 0:
+                continue
+            visible_entities.append(
+                VisibleEntity(
+                    entity_id=f"{kind}:{position.x}:{position.y}",
+                    entity_type=kind,
+                    position=position,
+                    properties={"quantity": quantity},
+                )
+            )
+        for index, position in enumerate(sorted(self._creatures)):
+            visible_entities.append(
+                VisibleEntity(
+                    entity_id=f"creature:{index}",
+                    entity_type="creature",
+                    position=position,
+                    properties={},
+                )
+            )
+        for index, position in enumerate(sorted(self._shelters)):
+            visible_entities.append(
+                VisibleEntity(
+                    entity_id=f"shelter:{index}",
+                    entity_type="shelter",
+                    position=position,
+                    properties={},
+                )
+            )
+
         return LocalWorldState(
             t_monde=t_monde,
             position=self._position,
             current_water_source=self._position in self._water_sources,
             current_resources=resource_kinds(self._position),
             adjacent=tuple(adjacent),
+            visible_entities=tuple(
+                sorted(
+                    visible_entities,
+                    key=lambda entity: (
+                        entity.entity_type,
+                        entity.entity_id,
+                    ),
+                )
+            ),
         )
 
     def is_night(self, t_monde: int) -> bool:
