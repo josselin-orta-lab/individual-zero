@@ -167,6 +167,17 @@ class Stage3Runtime:
             },
         )
 
+    def record_admission(
+        self,
+        *,
+        prepared: PreparedCommand,
+        admission: AdmissionResult,
+    ) -> None:
+        self._trace_admission(
+            prepared=prepared,
+            admission=admission,
+        )
+
     def _dispatch(
         self,
         *,
