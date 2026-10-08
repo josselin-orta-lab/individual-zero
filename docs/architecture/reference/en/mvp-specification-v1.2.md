@@ -899,3 +899,303 @@ P(m) = f(m)\,\big[\,w_b\,b(m) + w_n\,n(m) + w_u\,\mathrm{urg}(m) + w_r\,\mathrm{
 | val(m) | value | expected effect on needs and goals, including outside the active goal |
 
 All terms are normalized to [0, 1]. f multiplies the rest: an unreliable alert cannot dominate through urgency alone. Compute cost never enters the score: estimating it before admission would be circular [S-07.5].
+
+
+**Weights.** Base weights come from `ParametresTemperament`, obtained through table 7.3, then the cycle profile multiplies them [spéc. 5.4, Q6]:
+
+```latex
+w_i = w_i^{0}\, e^{\alpha_i\, \tau_{j(i)}} \times \mathrm{mult}_i(\text{profil}), \qquad \tau_j \in [-1, 1]
+```
+
+| Temperament dimension | Weight increased when it is high |
+| --- | --- |
+| threat sensitivity | w_r and w_u |
+| exploration | w_n |
+| reward sensitivity | w_v |
+| goal protection | w_b |
+| affiliation | social signal, tier 3 only |
+
+| Profile | Entry condition | Effect on weights (starting multipliers, to calibrate) |
+| --- | --- | --- |
+| normal | default | none |
+| threat | risk alert retained in S_t | w_r and w_u × 1.5; w_n × 0.5 |
+| exploration | needs satisfied, boredom detected | w_n × 1.5 |
+| recovery | low energy or integrity for several steps | favors recovery-related contributions; reduces the depth of optional processing without affecting essential functions or safety [NQ-08] |
+
+The profile is determined from S_t[n] and remains fixed throughout the cycle. Its exit conditions are explicit: hysteresis on indicators and a confirmation duration in steps; the mere disappearance of an alert or passage of time is insufficient; insufficient information suspends confirmation. Confirmation blocks neither a declared priority transition nor reflexes and veto [S-02.6].
+
+### 6.5 Retention rules
+
+- **Rescoring.** At every cycle, every still-admissible occupant of a contested slot is rescored and competes again with new items, with no score bonus [S-07.1].
+- **Hysteresis.** A new item replaces a still-admissible occupant only if P(new) ≥ P(occupant) + Δ_hyst. No minimum residence time is imposed. Δ_hyst is common to all individuals [S-07.2].
+- **Safety preemption.** If f(m) × rsk(m) ≥ s_sec, the item gets the safety slot, which counts among the K slots, without passing through hysteresis; if several items cross s_sec, the highest one wins, then canonical order breaks ties. Without preemption, this slot is used for ordinary selection [S-07.3]. An alert below s_sec remains an ordinary contribution. Preemption is distinct from the reflex path.
+- **Exit.** An item ceases to be admissible at the first of two deadlines: loss of semantic validity, or age_W ≥ W. Rescoring or retaining an item never resets its age; only a new production based on a new event creates a fresh contribution [S-07.4].
+- **Queue.** An evicted item that remains admissible returns to the queue without additional lifetime; the queue is not FIFO; at every cycle, its items compete with new items and occupants [S-07.6]. Capacity, eviction, quotas, and anti-domination: DC-04.
+- **Reliability.** Alerts from a module that fail to be confirmed lower that module's reliability, and therefore its scores, through κ.
+
+### 6.6 Normative gatekeeper pseudocode
+
+```text
+procédure PORTIER.sélectionner(nouvelles, S, K_κ, prof)
+  admises ← { m ∈ nouvelles : schéma_valide(m) ∧ validité_présente(m) ∧ quota_émission_ok(m) }   # logged rejections
+  pool ← { e ∈ S.competitifs ∪ FILE : valide(e) ∧ age_W(e) < W } ∪ admises                      # S-07.4, V-36
+  journaliser_sorties((S.competitifs ∪ FILE) \ pool)
+  pool ← regrouper_par_sujet_exact(pool)
+  mode ← dégradé si UC_full(pool) > budget_ordinaire(PORTIER) sinon normal                    # whole pass
+  w ← PARAMETRES_TEMPERAMENT.poids_portier × multiplicateurs(prof)
+  si mode = normal :
+    notes ← pool
+  sinon :
+    pour m ∈ pool :
+      P_pre[m] ← f(m) · (w_b·b_pre(m) + w_n·n_pre(m) + w_u·urg_pre(m) + w_r·rsk_pre(m) + w_v·val_pre(m))
+    notes ← N_pré premiers de trier(pool, clé = (P_pre décroissant, ordre_canonique))
+  pour m ∈ notes : P[m] ← f(m) · (w_b·b(m) + w_n·n(m) + w_u·urg(m) + w_r·rsk(m) + w_v·val(m))
+  pour m ∈ pool \ notes : P[m] ← P_pre[m]                                                     # approximate score, all dimensions retained
+  sec ← premier_par( {m ∈ pool : f(m)·rsk_securite(m) ≥ s_sec}, clé = (f·rsk_securite décroissant, ordre_canonique) )
+  retenus ← [sec] si sec ≠ ∅ sinon []
+  clé_sélection(m) ← P[m] + Δ_hyst si m ∈ S.competitifs sinon P[m]       # hysteresis is used only for comparison
+  ordonnes ← trier(pool \ {sec}, clé = (clé_sélection décroissante, nouveau avant occupant à égalité, ordre_canonique))
+  # first pass: diversity, q_emp quota per module
+  pour m dans ordonnes :
+    si |retenus| = K : arrêter
+    si quota_emplacements_ok(m.module, retenus) : ajouter m à retenus
+  # second pass: never leave a slot empty solely because of the quota
+  pour m dans ordonnes :
+    si |retenus| = K : arrêter
+    si m ∉ retenus : ajouter m à retenus
+  FILE ← mettre_en_file(pool \ retenus)                                                     # capacity and eviction: DC-04
+  S_nouveau ← EtatGlobal(fixes = emplacements_fixes(propriétaires), competitifs = résumés(retenus), diff)
+  retourner S_nouveau                                                                       # atomic publication by S_T
+```
+
+### 6.7 Example: A and B in the same cycle
+
+Two individuals with the same equipment, same contributions, and same reliabilities; only their weights differ. Illustrative values, not tuning values [spéc. 5.5].
+
+| Weights | w_b | w_n | w_u | w_r | w_v |
+| --- | --- | --- | --- | --- | --- |
+| A, threat-sensitive | 1 | 0.5 | 1.5 | 2 | 1 |
+| B, explorer | 1 | 2 | 1 | 0.8 | 1 |
+
+| Contribution | f | b | n | urg | rsk | val | P for A | P for B |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| m1 threat | 0.80 | 0.3 | 0.7 | 0.8 | 0.6 | 0.5 | 2.84 | 2.78 |
+| m2 energy deficit | 0.95 | 0.2 | 0.3 | 0.5 | 0.4 | 0.6 | 2.38 | 2.11 |
+| m3 shelter prediction | 0.60 | 0.4 | 0.5 | 0.6 | 0.6 | 0.7 | 2.07 | 1.91 |
+| m4 shelter plan | 0.70 | 0.5 | 0.4 | 0.6 | 0.3 | 0.7 | 2.03 | 1.99 |
+| m5 unknown zone | 0.90 | 0.1 | 0.9 | 0.1 | 0.1 | 0.4 | 1.17 | 2.23 |
+
+With s_sec = 0.45, m1 takes the safety slot for both individuals (f × rsk = 0.48). With K = 4, A then retains m2, m3, and m4 while m5 waits in the queue; B retains m5, m2, and m4, while shelter prediction m3 waits.
+
+## 7. Value, needs, and goal management
+
+### 7.1 Body, setpoints, and reward
+
+| Variable | Dynamics | Viable range | Starting setpoint |
+| --- | --- | --- | --- |
+| Energy | decreases with every action, rises during sleep | 0 to 100 | 50, fixed in the MVP |
+| Food | decreases slowly and continuously | 0 to 100 | 60 |
+| Water | decreases faster than food | 0 to 100 | 60 |
+| Integrity | decreases with damage, rises slowly at rest | 0 to 100 | 100, fixed in the MVP |
+
+These are starting values, frozen at preregistration [spéc. 10.3]. Homeostatic reward is the reduction in weighted deviation from setpoints:
+
+```latex
+D_t = \sum_i \omega_i(\tau)\,\big|y_i(t) - y_i^{*}(\tau)\big| \qquad r_t = D_t - D_{t+1}
+```
+
+- Weights ω_i(τ) depend on the temperament mapping table (7.3). Setpoints y_i^* remain fixed in the MVP; any future modulation of a setpoint by τ would require an explicit extension of that table and of the experimental protocol.
+- A protected constraint, such as never dropping below an integrity threshold, remains outside this currency: it is a veto invariant, not a cost [spéc. 9.5, S-14.4].
+- F_cog enters neither D nor r_t: thinking is neither rewarded nor punished [NQ-04].
+- Compute budget never enters r_t or the value of an option [S-11.6, Q12].
+
+### 7.2 Evaluations produced by Value and Needs
+
+Through a deterministic, versioned consequence-evaluation subservice, Value and Needs produces the following fields of EvaluationOption [V-19]:
+
+| Field | Definition | Rules |
+| --- | --- | --- |
+| E_a^Q (learned value) | Q_active(x_t, a) | status `non_appris` until the option has received any update; until then it is not available evidence [S-06.5] |
+| E_a^sim (simulated value) | value of consequences predicted by the simulator, evaluated in the same currency as Q (DC-01) | computation bounded by a common effective budget `(R_eff, H_eff)` for all candidates evaluated in the cycle; a simulation that does not complete this budget is `indisponible` for that cycle and does not enter evidence; absence of a consequence within the horizon does not prove impossibility [S-05.2, DC-01] |
+| R_a (risk) | descriptive estimate of known danger: each distinct adverse consequence receives an elementary risk based on probability, severity, and irreversibility, then these risks are aggregated by a monotone bounded function (DC-01) | independent of temperament; `inconnu` remains distinct from zero [S-05.3] |
+| U_a (safety uncertainty) | lack of reliable information about consequences potentially important for safety | an unknown is not a high risk; separate from R_a [NQ-07] |
+| protection | contextual status: the option reduces an active threat, preserves a protected variable, or avoids an invariant violation | computed by a shared deterministic, versioned rule; never declared by the option producer [V-19] |
+
+Value and Needs also produces need alerts, reward r_t, and goal proposals derived from needs (7.4).
+
+### 7.3 Temperament mapping table
+
+All innate individuality passes through this table; no temperament effect is coded elsewhere, which makes ablations B1 and B2 clean [spéc. 10.4]. The five dimensions from Q5 are the only ones: there is no "horizon" dimension [NQ-05].
+
+**Normative interface.** At birth, `Instantanés et paramètres d'individu` applies the versioned table to τ once and publishes an immutable `ParametresTemperament` object containing only the authorized derived coefficients: gatekeeper weights, value and discount coefficients, risk and uncertainty coefficients, inertia coefficient, body weights, and exploration coefficient. Consuming components MUST NOT read τ directly. In equations, notation such as `π(R_a ; τ)` is a mathematical shorthand for "π with the coefficient derived from the threat dimension by table 7.3"; it does not authorize direct access to τ in code. Any new temperament dependency requires a new explicit row in this table, a table version, and an ablation test.
+
+| Dimension | Gatekeeper | Competition | Needs, value, exploration |
+| --- | --- | --- | --- |
+| Reward sensitivity | w_v | weight of the extrinsic evidence component (DC-01) | β_individu, discounting [NQ-05] |
+| Threat sensitivity | w_r, w_u | risk penalty π(R_a ; τ); uncertainty penalty χ(U_a ; τ); lower base threshold for protective options [NQ-06, NQ-07] | higher ω_integrity weight; body setpoints remain fixed in the MVP |
+| Exploration | w_n | no effect on g [V-18] | m_a module for exploratory options [V-18] |
+| Goal protection | w_b | inertia ι_a | none |
+| Affiliation | social signal, tier 3 | none | social need, tier 3 |
+
+Curiosity and caution remain separate: the same option may receive both a high m_a and a high uncertainty penalty χ [V-18]. β_individu is stable throughout the life, bounded by 0 < β_min ≤ β_individu ≤ β_max < 1; the minimal system uses β_neutre [S-06.4, NQ-05].
+
+### 7.4 Goal manager
+
+The Goal Manager is the sole owner of the active goal. No other component creates, changes, or abandons a goal [NQ-01].
+
+```text
+needs / prospective memory / events → proposals → goal manager → active goal → planning → options → competition
+```
+
+**Proposals.** Value and Needs proposes a goal for each need whose pressure reaches p_min; a need's pressure is based on a declared deficit function for that variable, which may be asymmetric. Prospective Memory proposes the goal of a triggered intention; a deadline may deterministically increase its current pressure without changing its base priority. Stagnation, recalls, alerts, and plan failures do not propose a goal: they request reevaluation [NQ-01]. Pressure computation and arbitration are fixed by DC-03.
+
+**Rules.**
+
+- With no active goal, the manager activates the highest-pressure proposal above p_min; canonical order breaks ties.
+- An active goal is retained as long as its satisfaction condition has not been reached, it remains valid, and no proposal exceeds it by at least Δ_but (hysteresis).
+- It is **satisfied** when its satisfaction condition is reached; **replaced** when an admissible proposal exceeds it by Δ_but; **abandoned** after N_imp findings of `non_planifiable_actuellement` under full budget with no material context change between them; **invalidated** when its target disappears or its context becomes invalid. A refractory period after abandonment is lifted immediately if the context changes materially or if pressure from the corresponding need reaches p_critique.
+- Every activation, replacement, and abandonment is deterministic, versioned, and logged.
+
+**Progress and stagnation** [S-02.7, V-10].
+
+- Each goal type defines a satisfaction condition and a principal measure of approach; an active plan may supply intermediate indicators, which count only if they are verified and the plan remains applicable.
+- Cognitive activity (cycles, computation, new proposals) is never progress.
+- Stagnation is detected when no improvement beyond a declared threshold is observed over a sliding window in steps, defined per goal type. The detector, owned by Metacognition and Health, emits a signal; it changes neither the goal nor the plan.
+- An autonomous intrinsic option does not count as progress and does not reset the window. During sleep, the window is suspended, then resumes on waking; during exploration or a causal test while awake, world time continues to count.
+- Successive cycles without progress are monitored separately to detect reasoning loops.
+
+**Intrinsic options and references** [V-10].
+
+- An option need not serve the active goal in order to compete, but it MUST carry a `motif_ref`, and a `but_ref` when it serves the active goal.
+- An autonomous intrinsic option (`dormir`, explore, test a hypothesis) may win without changing the active goal; when it ends, the active goal again becomes the reference for goal-directed options unless the manager independently changes it.
+- Exploration is instrumental (`but_ref` present) or autonomous (`motif_ref = cible_exploration` only).
+
+| Option | but_ref | motif_ref |
+| --- | --- | --- |
+| collecter_eau | boire | but_actif |
+| explorer_zone_nord | absent | cible_exploration_17 |
+| dormir | absent | pression_sommeil |
+
+**Intentions.** A triggered intention becomes a candidate for attention through the gatekeeper circuit; it never changes the goal by itself. The manager receives its goal proposal and arbitrates it like the others [S-02.5].
+
+### 7.5 Diagram E · Goal state machine
+
+```mermaid
+stateDiagram-v2
+  [*] --> Actif : activation by the manager
+  Actif --> Actif : intrinsic option in progress, goal retained
+  Actif --> Actif : reevaluation after stagnation, goal retained
+  Actif --> Satisfait : satisfaction condition reached
+  Actif --> Remplace : proposal more pressing by at least Δ_but
+  Actif --> Abandonne : N_imp non_planifiable_actuellement findings, context unchanged
+  Actif --> Invalide : target disappeared or context invalid
+  Satisfait --> [*]
+  Remplace --> [*]
+  Abandonne --> [*]
+  Invalide --> [*]
+```
+
+Running example. "Drink" is the active goal when night falls. Sleep pressure makes option `dormir` win (`motif_ref = pression_sommeil`, without `but_ref`): the "drink" goal remains active, its stagnation window is suspended during sleep, and upon waking Planning again proposes options directed toward water.
+
+## 8. Options, planning, and competition
+
+### 8.1 Option, plan, command
+
+| Object | Definition | Rule |
+| --- | --- | --- |
+| Option | candidate behavior, evaluated and put into competition; common decision unit [S-06.3] | carries preconditions, an end condition, a motif_ref, optionally a but_ref and a plan |
+| Plan | current multi-step realization of a composite option | never a separate candidate; its quality enters the option's simulated evidence |
+| Command | primitive action sent to the world or body | carries its predicted consequences, frozen on emission, and its observation window |
+
+Each option carries a canonical, versioned `signature_apprentissage` independent of its instance identifier. It encodes only the stable semantics used by Q: primitive and normalized semantic parameters for a primitive option; behavior type, target class, and end condition for a composite or procedural option. It excludes `id`, `plan_ref`, `version_S_t_fondatrice`, timestamps, and ephemeral identifiers. Two instances differing only in their current plan MAY share the same signature; two options whose end condition or action semantics differ MUST NOT share it.
+
+- A primitive action is a trivial option whose plan contains only one command.
+- Replanning does not change the option: the option may remain the same while its plan evolves [S-06.3]. Adoption of a revised plan follows DC-17.
+- Reflexes, veto, and other direct paths are not options and do not participate in ordinary competition.
+- Stabilized habits and compiled skills are **compiled procedural options**: they enter ordinary competition; only innate reflexes keep a direct path [NQ-12].
+- Every engaged option retains a trace of its current plan, its steps, and the commands actually executed.
+
+### 8.2 Sources of options
+
+| Source | Options produced | Motive |
+| --- | --- | --- |
+| Planning | options directed toward the active goal; options built on an exploration target [NQ-18] | but_actif, or cible_exploration |
+| Procedural memory | compiled skills and habits | but_actif, or original motive |
+| Causal Model | options for testing a hypothesis; Exploration evaluates their intrinsic interest [V-19] | test_causal |
+| Prospective memory, through Planning | options that realize a triggered intention | intention |
+| Permanent options | `attendre` (fallback and ordinary option); `dormir` | defaut; pression_sommeil |
+
+### 8.3 Path of an option into competition
+
+The sources did not fix the exact path of a proposed option; DC-10 fixes it.
+
+1. The producer constructs the option and, for a composite option, its plan; Planning MAY consult `verifier_admissibilite(option, contexte)` before finalizing it, without copying veto facts [V-43]. An option already known to be inadmissible is not proposed.
+2. It emits it in phase 1, in an `action_proposee` contribution.
+3. The validation layer rejects any option without `motif_ref`, or whose `but_ref` does not designate the current active goal.
+4. In phase 3 of the same cycle, Competition attempts to register it in the candidate registry with A = 0. Registration does not depend on admission of the contribution into S_t; S_t instead influences evidence through evaluation state x_t and simulator inputs. The registry is bounded by N_options_max; at saturation, the engaged option is protected and eviction of other candidates follows DC-10.
+5. At every cycle, Competition assembles its EvaluationOption, updates its accumulator, and tests its threshold.
+6. A decision is retained only if the command for the current step is admitted: admissibility, veto, protocol mask.
+7. An option becomes invalid as soon as its preconditions are false, its but_ref is no longer the active goal, its validity expires, or it itself becomes inadmissible; its accumulator is then removed [S-05.6]. A refusal that applies only to the current step or plan marks that plan `a_reviser` without automatically invalidating the option.
+
+### 8.4 Diagram D · Option state machine
+
+```mermaid
+stateDiagram-v2
+  [*] --> Proposee : action_proposee contribution
+  Proposee --> Rejetee : invalid schema or missing motif_ref
+  Proposee --> Candidate : registration in phase 3
+  Candidate --> Candidate : accumulation every cycle
+  Candidate --> Invalidee : false preconditions, stale but_ref, expiration, inadmissible
+  Candidate --> Engagee : threshold crossed, tie-break won, command admitted
+  Engagee --> Engagee : step executed then verified, continue
+  Engagee --> Engagee : new deliberation won with inertia
+  Engagee --> Engagee : revised plan adopted
+  Engagee --> Engagee : veto/refusal limited to step, plan marked a_reviser then replanning
+  Engagee --> Engagee : reflex, step suspended for this world step
+  Engagee --> Succes : success condition reached
+  Engagee --> Echec : failure condition reached
+  Engagee --> Invalidee : option itself invalid or inadmissible
+  Engagee --> Remplacee : another option wins a deliberation
+  Engagee --> Interrompue : safety block or operator stop
+  Succes --> [*]
+  Echec --> [*]
+  Invalidee --> [*]
+  Remplacee --> [*]
+  Interrompue --> [*]
+  Rejetee --> [*]
+```
+
+Complete lifecycle: creation → preliminary admissibility → registration → competition → engagement → planning or plan revision → execution of one step → comparator verification → continuation, revision, or interruption → success, failure, invalidation, or replacement.
+
+### 8.5 Evidence and evaluation
+
+For each candidate and at every cycle, Competition assembles an EvaluationOption from specialized producers; it does not itself compute its reasons for choosing [V-19].
+
+| Component | Producer | Absence |
+| --- | --- | --- |
+| E_a^Q, learned value | Value and Needs | `non_appris`: component unavailable, distinct from zero [S-06.5] |
+| E_a^sim, simulated value | Value and Needs, through a simulator call | `indisponible` if the cycle's common effective budget is not completed; incompleteness is logged and the partial value is not used |
+| m_a, intrinsic motivation | Exploration for informational options and tests; Metacognition and Health for `dormir` | `non_applicable`, distinct from a zero value [V-19] |
+| R_a, U_a, protection | Value and Needs | R_a `inconnu`: no risk penalty; U_a carries uncertainty |
+
+Total evidence combines these components without double counting (DC-01):
+
+```latex
+E_a^{\mathrm{ext}} = \lambda_a\,E_a^{Q} + (1-\lambda_a)\,E_a^{\mathrm{sim}},\quad \lambda_a = \frac{n_a}{n_a + n_0}
+\qquad
+e_a = \mathrm{clip}_{[-1,1]}\Big(\gamma_v(\tau)\,\tanh\!\big(E_a^{\mathrm{ext}}/E_{\mathrm{éch}}\big) + w_m\, m_a\Big)
+```
+
+- n_a is the number of learned updates for the option's `signature_apprentissage`; if only one extrinsic component is available, it is used alone; if neither is available, E_a^ext = 0 and the unavailability is logged [S-05.1]. A partial or interrupted simulated value is never treated as an available component.
+- m_a counts only when applicable. γ_v(τ) = e^{α_v τ_reward} carries the effect of reward sensitivity; temperament exploration acts inside m_a, not here [V-18].
+- **No double counting**: variables already included in D pass through value and never a second time through m_a(dormir) [V-17]. Each component preserves the provenance of the signals that produced it; the same signal identifier does not contribute twice to the same decision through two paths, except under a rule declared as an "intentional double effect" [V-17].
+- **Declared intentional double effect.** Predicted harm weighs both in E_a^sim, through the reduction in predicted rewards, and in π(R_a ; τ): this is intentional risk aversion [S-05.3]. This is the only entry on the INV-14 allowlist in the MVP; no engineer removes either path on the grounds of double counting.
+- All components in a cycle refer to the same starting state and the same option. All candidates actually simulated within a cycle receive the same `(R_eff, H_eff)` budget. Learning derived from the consequences of a command influences evidence only from the next cycle onward [S-05.1]. An `action_proposee` contribution can never serve as evidence for the option it carries unless independent support, distinct in provenance, establishes the same fact.
+
+### 8.6 Accumulation and thresholds
+
+```latex
+A_a(c+1) = \max\big(0,\ (1-\ell)\,A_a(c) + u(c)\,g\,e_a(c) + \sigma\,\varepsilon_{a,c}\big)
+\qquad
+a \text{ crosses if } A_a(c) \ge s_a(c)
+```
