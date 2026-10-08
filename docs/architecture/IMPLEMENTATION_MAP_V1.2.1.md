@@ -508,6 +508,24 @@ Source constraints remain: applied goal-motivated consumption, accessible Percep
 - `src/i0/modules/causal_corrections.py` provides a narrowly typed, immutable numerical correction contract for **global-context body variables only**. Non-finite/out-of-range values and unknown variables or contexts are rejected, not estimated. Corrections never mutate frozen Equipment.
 - `Simulator` now supports an **optional read-only correction source**, absent by default; the legacy Stage-6/7/8 path is unchanged. The correction layer modifies only explicitly covered next-state components, preserves the frozen Equipment identifier and declared confidence, and reports unresolved conflicts between equally specific rules as explicit `unavailable`, not an arbitrary prediction.
 - `tests/test_stage9_causal_corrections.py` tests legacy equivalence, component isolation, conflict handling and unsupported-case refusal using a controlled synthetic established-rule source.
-- **Essential unfinished boundary:** the production `CausalModel` does not yet export an established-only numerically grounded correction source. A tested mock view is not evidence that interventions have taught a numeric correction. The Stage-9 runtime therefore does not attach a correction source to its Simulator. Before activation, an established contingency must be linked to a verified applied intervention and independently observed, variable-specific consequence; context matching and alternative/conflict resolution must be auditable. Categorical and probabilistic corrections are also not implemented.
+- **Boundary at checkpoint 8:** this initial layer was tested with a synthetic established-rule source only. Its missing connection to the canonical Causal Model is addressed narrowly in checkpoint 9 below. The autonomous intervention-test-option lifecycle and categorical/probabilistic corrections remain unimplemented.
 
 Stage 9 remains **OPEN**; no new Stage-9 reference golden has been frozen and no previous stage was modified for the new optional path.
+
+
+### Stage 9 checkpoint 9 — canonical correction provenance and read-only integration (IN PROGRESS)
+
+The Stage-9 runtime now attaches **the one existing Causal Model** to Simulator as a read-only `EstablishedCorrectionSource`, with no duplicate mutable state. Earlier Stage-6/7/8 runtimes keep the correction reader unattached and their Equipment/golden baselines unchanged.
+
+The Causal Model owns and snapshots pending and published `LivedNumericOutcome` records. These are created **only** from an applied goal-motivated food command, next-step Perception telemetry, and the matching command/transition references of a *closed* DC-09 Memory episode. Missing ingestion, alternative creature/zone damage, lethal rollback, absent pre-action context or failed corroboration produce no numeric witness. New witnesses publish **only at phase 5** with the rest of causal inference, not during their phase-1 admission.
+
+A correction is exposed only when all of the following hold together:
+
+- The **same canonical contingency** has causal status `etablie`, not merely `etabli_pour_securite`. A causal refutation immediately removes the correction from the read-only view.
+- At least P-35 `n2` **distinct intervention contexts** after any revision have published, physically linked AgencyComparator evidence with consistent episode, option, emission/observation times and attribution. An unlinked synthetic intervention or raw comparator success is insufficient.
+- A separate, actually lived numeric witness is corroborated by a published comparator's observed physical value and its original option and time identity.
+- The complete accessible pre-action `SimulationState` is matched by its **canonical SHA-256 digest** in addition to the before-body/position and command target. No interpolation, broad cross-context generalization, oracle input or extra certainty is introduced. Equally specific contradictory values remain `unavailable`.
+
+Structured `causal_prediction_corrections_published` events record only meaningful changes to the published correction set, after the phase-5 transaction. The frozen Equipment artifact remains unchanged. The new controlled `tests/test_stage9_canonical_corrections.py` exercises the three-source provenance gate, no premature publication, safety/causal-status separation, different inventory context refusal, exact snapshot/replay and revocation after refutation.
+
+**Still open:** automatic, safely motivated causal test-option generation via Exploration/Competition; full observational alternatives and intervening-cause attribution; robust generalization beyond exact physical state; categorical/probabilistic learned transitions; final Stage-9 300-step/golden CI gate. Typed controlled intervention fixtures do not prove autonomous intervention generation. Stage 9 remains **OPEN** and PR #18 is intentionally draft.
