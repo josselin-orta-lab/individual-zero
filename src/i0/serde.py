@@ -103,6 +103,7 @@ def encode_proposal(p: OptionProposal) -> dict[str, object]:
             "founding_st_version": option.founding_st_version,
             "expires_at_step": option.expires_at_step,
             "provenance": option.provenance,
+            "grounding_contribution_refs": list(option.grounding_contribution_refs),
             "state": option.state,
         },
         "plan": None if plan is None else {
@@ -163,6 +164,9 @@ def decode_proposal(raw: Mapping[str, object]) -> OptionProposal:
         founding_st_version=str(option_raw["founding_st_version"]),
         expires_at_step=int(option_raw["expires_at_step"]),
         provenance=str(option_raw["provenance"]),
+        grounding_contribution_refs=tuple(
+            str(x) for x in option_raw.get("grounding_contribution_refs", [])
+        ),
         state=str(option_raw["state"]),
     )
 
