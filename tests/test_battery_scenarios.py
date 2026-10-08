@@ -19,6 +19,7 @@ def config() -> BatteryScenarioConfig:
         threat_creature_position=Position(8, 5),
         exploration_resource_position=Position(10, 10),
         exploration_resource_kind="wood",
+        perseverance_primitive="se_deplacer",
         perseverance_failure_schedule=(True, True, False, True, False),
         max_steps_by_situation={
             "patience": 30,
@@ -63,9 +64,16 @@ class BatteryScenarioTests(unittest.TestCase):
             config=config(),
         )
 
+        self.assertEqual(plan.mechanism["tested_primitive"], "se_deplacer")
         self.assertEqual(
             plan.mechanism["action_failure_schedule"],
             [True, True, False, True, False],
+        )
+        self.assertEqual(len(plan.events), 1)
+        self.assertEqual(plan.events[0].operation, "set_action_failure_schedule")
+        self.assertEqual(
+            plan.events[0].payload["primitive"],
+            "se_deplacer",
         )
 
     def test_same_config_builds_identical_plan(self) -> None:
