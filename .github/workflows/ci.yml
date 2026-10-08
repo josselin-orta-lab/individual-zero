@@ -411,6 +411,22 @@ jobs:
               "stage7_f_cog_uc="
               f"{runtime.metacognition.state.f_cog_uc_counter}"
           )
+          expected_head = "c356fe386c2480e78e485f85815ac93fc90f3b679e5806dcb61b374daee9da77"
+          if runtime.journal.head_hash != expected_head:
+              raise SystemExit(
+                  "Stage 7 reference regression: "
+                  f"{runtime.journal.head_hash} != {expected_head}"
+              )
+          if len(runtime.memory.episodes) != 298:
+              raise SystemExit(
+                  "Stage 7 episode-count regression: "
+                  f"{len(runtime.memory.episodes)} != 298"
+              )
+          if runtime.metacognition.state.f_cog_uc_counter != 9593:
+              raise SystemExit(
+                  "Stage 7 F_cog UC regression: "
+                  f"{runtime.metacognition.state.f_cog_uc_counter} != 9593"
+              )
           PY
 
       - name: Upload Stage 7 reference journal
