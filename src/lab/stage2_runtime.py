@@ -153,7 +153,7 @@ class ScriptedStage2Runtime:
             "world",
             attempt.t_monde,
             attempt.attempt_ref,
-            transition.command_digest(command),
+            command_digest(transition.command),
             "transition",
         )
         self.journal.append(
