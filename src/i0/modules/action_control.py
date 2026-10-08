@@ -135,16 +135,16 @@ class ActionControl:
         if not passable:
             return None
 
-        def nearest_creature_distance(cell) -> int:
+        def nearest_creature_distance_squared(cell) -> int:
             return min(
-                abs(cell.x - creature.x) + abs(cell.y - creature.y)
+                (cell.x - creature.x) ** 2 + (cell.y - creature.y) ** 2
                 for creature in creatures
             )
 
         ranked = sorted(
             passable,
             key=lambda cell: (
-                -nearest_creature_distance(cell),
+                -nearest_creature_distance_squared(cell),
                 CANONICAL_DIRECTION_ORDER.index(cell.direction),
             ),
         )
