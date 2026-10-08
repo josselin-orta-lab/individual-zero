@@ -16,15 +16,17 @@ Completed in the current branch:
 - append-only hash-chained causal journal;
 - concrete I0 structural registries for ontology, similarity contract, κ signal families, safety policy, schema compatibility and P-01 to P-58 identifiers;
 - explicit construction of a campaign parameter registry only when all 58 values are supplied;
-- validated in-memory bus with local producer buffers, canonical phase-1 pouring, deterministic admission/rejection, ontology/schema checks, and journaled rejection reasons.
+- validated in-memory bus with local producer buffers, canonical phase-1 pouring, deterministic admission/rejection, ontology/schema checks, and journaled rejection reasons;
+- deterministic simulated-time scheduler with world-step opening, rollback attempts, exact phases 0 through 5, canonical component order, and step-close count guards;
+- generic causal snapshot manager with the four normative life snapshot types, owner-scoped export/restore, hash verification, RNG restoration, and append-only-journal preservation.
 
 Still missing from normative Stage 1:
 
 - full nested payload validation for every schema in 5.2;
-- six-phase scheduler and world-step clock;
-- complete causal snapshots and global restoration;
+- integration of bus + scheduler + snapshots into one scripted Stage-1 runtime;
 - autobiographical/evaluation journal views;
-- complete replay runner and retained reference journal.
+- complete replay runner and retained reference journal;
+- periodic snapshot frequency wiring (P-55) once a preregistered value is supplied.
 
 ## Current repository gap
 
