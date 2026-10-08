@@ -21,6 +21,10 @@ from i0.modules.stage6_evaluator import (
     Stage6EvaluationConfig,
     Stage6OptionEvaluator,
 )
+from i0.modules.stage6_planning import (
+    SimulatorPlanner,
+    Stage6PlanningConfig,
+)
 
 from .safety_protocol import SafetyProtocolConfig
 from .stage4_runtime import Stage4Config, Stage4Runtime
@@ -33,6 +37,7 @@ class Stage6Config:
     stage4: Stage4Config
     simulator: SimulatorConfig
     evaluation: Stage6EvaluationConfig
+    planning: Stage6PlanningConfig
 
     def validate(self) -> None:
         if not self.version:
@@ -40,10 +45,13 @@ class Stage6Config:
         self.stage4.validate()
         self.simulator.validate()
         self.evaluation.validate()
+        self.planning.validate()
         if self.evaluation.r_eff > self.simulator.r_max:
             raise ValueError("R_eff must not exceed R_max")
         if self.evaluation.h_eff > self.simulator.h_max:
             raise ValueError("H_eff must not exceed H_max")
+        if self.planning.max_depth > self.simulator.h_max:
+            raise ValueError("planning max_depth must not exceed H_max")
 
 
 class Stage6Runtime(Stage4Runtime):
@@ -83,6 +91,10 @@ class Stage6Runtime(Stage4Runtime):
             protected_integrity_threshold=protected_integrity_threshold,
             config=config.stage4,
         )
+        self.planning = SimulatorPlanner(
+            config=config.planning,
+            simulator=self.simulator,
+        )
 
     @property
     def stage6_config(self) -> Stage6Config:
@@ -91,6 +103,46 @@ class Stage6Runtime(Stage4Runtime):
     @property
     def equipment_version(self) -> str:
         return self.equipment.version
+
+    def _propose_for_cycle(
+        self,
+        *,
+        capture,
+        goal_for_planning,
+        st_before_cycle,
+        cycle: int,
+    ):
+        initial_state = state_from_capture(
+            capture=capture,
+            is_night=self.world.is_night(capture.t_monde),
+        )
+        proposal = self.planning.propose(
+            goal=goal_for_planning,
+            initial_state=initial_state,
+            st_version=st_before_cycle.version,
+            retained_contribution_refs=frozenset(
+                element.contribution_ref
+                for element in st_before_cycle.competitive
+            ),
+            observation_ref_by_entity=(
+                self.stage3.perception.observation_ref_by_entity
+            ),
+            t_monde=capture.t_monde,
+            cycle=cycle,
+        )
+        self._write(
+            kind="stage6_planning_result",
+            cycle=cycle,
+            data={
+                "goal_ref": goal_for_planning.id,
+                "proposal_ref": (
+                    None if proposal is None else proposal.option.id
+                ),
+                "equipment_version": self.equipment.version,
+                "planning_version": self._stage6_config.planning.version,
+            },
+        )
+        return proposal
 
     def _evaluate_competition_cycle(
         self,
