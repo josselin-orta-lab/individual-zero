@@ -93,7 +93,7 @@ class Stage8Runtime(Stage7Runtime):
 
         self.value_needs.attach_td_values(self.q_active)
         self.metacognition.attach_active_kappa(config.kappa)
-        self.perception.attach_active_precision(config.precision)
+        self.stage3.perception.attach_active_precision(config.precision)
         self.gatekeeper.attach_reliability(self._contribution_reliability)
         self.stage8_option_evaluator = Stage8OptionEvaluator(
             config=config.evaluation,
@@ -103,7 +103,7 @@ class Stage8Runtime(Stage7Runtime):
 
     @property
     def precision_active(self):
-        return self.perception.active_precision
+        return self.stage3.perception.active_precision
 
     def integrate_precision_verification(self, verification: PrecisionVerification) -> None:
         """Perception alone learns per-source active precision; no oracle labels."""
