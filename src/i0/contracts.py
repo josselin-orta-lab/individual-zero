@@ -76,6 +76,57 @@ class PredictedConsequence:
 
 
 @dataclass(frozen=True, slots=True)
+class PredictionError:
+    error_type: str
+    source: str
+    model_target: str
+    variable: str
+    predicted: float | None
+    observed: float | None
+    value: float | None
+    precision: float | None
+    nature: str
+    t_monde: int
+    episode_ref: str | None = None
+
+    def validate(self) -> None:
+        if self.error_type not in {
+            "sensory",
+            "causal",
+            "action",
+            "value",
+            "interoceptive",
+        }:
+            raise ValueError("invalid prediction-error type")
+        if not self.source or not self.model_target or not self.variable:
+            raise ValueError("prediction-error provenance is required")
+        if self.nature not in {"expected_noise", "change"}:
+            raise ValueError("invalid prediction-error nature")
+        if self.t_monde < 0:
+            raise ValueError("prediction-error world time must be non-negative")
+        if self.precision is not None and self.precision < 0.0:
+            raise ValueError("prediction-error precision must be non-negative")
+        if self.value is not None and self.value < 0.0:
+            raise ValueError("prediction-error magnitude must be non-negative")
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {
+            "error_type": self.error_type,
+            "source": self.source,
+            "model_target": self.model_target,
+            "variable": self.variable,
+            "predicted": self.predicted,
+            "observed": self.observed,
+            "value": self.value,
+            "precision": self.precision,
+            "nature": self.nature,
+            "t_monde": self.t_monde,
+            "episode_ref": self.episode_ref,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class PlanStep:
     index: int
     command: PrimitiveCommand
