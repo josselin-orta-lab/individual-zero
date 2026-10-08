@@ -33,3 +33,17 @@ No semantic embedding, learned novelty or exploration bonus is introduced.
 The minimal E-0 planner uses deterministic Manhattan routing with horizontal moves before vertical moves. It reads only Perception's last-known symbolic map and the active goal. It never reads the world or oracle.
 
 Obstacle-aware search is not introduced at Stage 4. A blocked predicted step causes replanning from the next perceptual state, as required by the later comparator/replanning path.
+
+## TD-S4-04 · Minimal F_cog representation
+
+Stage 4 requires a minimal F_cog counter and a per-cycle logical compute budget, but the normalized fatigue dynamics are fixed by DC-13 and P-39, whose implementation stage is Stage 10.
+
+Stage 4 therefore stores:
+
+- the cumulative count of UC actually consumed by cognition;
+- the UC consumed in the latest cycle;
+- the synthetic budget state `normal | constrained | degraded`.
+
+It does **not** manufacture an interim [0,1] fatigue value and does not feed this counter into reward, value, thresholds, or behavior.
+
+At Stage 10, DC-13 will derive the normative fatigue state from consumed UC and the preregistered P-39 parameters. The raw UC counter remains useful for replay and audit.
