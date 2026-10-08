@@ -49,6 +49,7 @@ def physics() -> WorldPhysicsConfig:
             "berry_b": BerryEffect(food_gain=10.0, integrity_delta=-100.0),
         },
         creature_damage=25.0,
+        danger_zone_damage=15.0,
         tool_recipe=ToolRecipe(
             wood_required=1,
             stone_required=1,
