@@ -8,10 +8,12 @@ Spec: 4.1, 7.1, 18.3, 19.5, 20.3 Stage 2, P-52, P-53.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Mapping, Sequence
 
-from .determinism import canonical_causal_bytes, deterministic_id, sha256_hex
+from i0.interfaces import PrimitiveCommand
+
+from .determinism import canonical_causal_bytes, sha256_hex
 
 
 PRIMITIVE_ACTIONS = frozenset(
@@ -268,43 +270,7 @@ class WorldLayout:
         }
 
 
-@dataclass(frozen=True, slots=True)
-class Command:
-    primitive: str
-    parameters: Mapping[str, object] = field(default_factory=dict)
-
-    def validate(self) -> None:
-        if self.primitive not in PRIMITIVE_ACTIONS:
-            raise ValueError(f"unknown primitive action: {self.primitive}")
-        if self.primitive == "se_deplacer":
-            direction = self.parameters.get("direction")
-            if direction not in DIRECTIONS:
-                raise ValueError("movement command requires a canonical direction")
-        if self.primitive in {"collecter", "manger"}:
-            target = self.parameters.get("target")
-            if target not in RESOURCE_KINDS:
-                raise ValueError(f"{self.primitive} requires a resource target")
-        unknown = set(self.parameters)
-        allowed = {
-            "se_deplacer": {"direction"},
-            "collecter": {"target"},
-            "manger": {"target"},
-        }.get(self.primitive, set())
-        if unknown - allowed:
-            raise ValueError(
-                f"unsupported parameters for {self.primitive}: "
-                + ", ".join(sorted(unknown - allowed))
-            )
-
-    def as_dict(self) -> dict[str, object]:
-        self.validate()
-        return {
-            "primitive": self.primitive,
-            "parameters": dict(self.parameters),
-        }
-
-    def digest(self) -> str:
-        return sha256_hex(canonical_causal_bytes(self.as_dict()))
+Command = PrimitiveCommand
 
 
 @dataclass(frozen=True, slots=True)
@@ -331,6 +297,35 @@ class TransitionResult:
             "lethal_reasons": list(self.lethal_reasons),
             "effects": dict(self.effects),
         }
+
+
+def validate_command(command: PrimitiveCommand) -> None:
+    if command.primitive not in PRIMITIVE_ACTIONS:
+        raise ValueError(f"unknown primitive action: {command.primitive}")
+    if command.primitive == "se_deplacer":
+        direction = command.parameters.get("direction")
+        if direction not in DIRECTIONS:
+            raise ValueError("movement command requires a canonical direction")
+    if command.primitive in {"collecter", "manger"}:
+        target = command.parameters.get("target")
+        if target not in RESOURCE_KINDS:
+            raise ValueError(f"{command.primitive} requires a resource target")
+    unknown = set(command.parameters)
+    allowed = {
+        "se_deplacer": {"direction"},
+        "collecter": {"target"},
+        "manger": {"target"},
+    }.get(command.primitive, set())
+    if unknown - allowed:
+        raise ValueError(
+            f"unsupported parameters for {command.primitive}: "
+            + ", ".join(sorted(unknown - allowed))
+        )
+
+
+def command_digest(command: PrimitiveCommand) -> str:
+    validate_command(command)
+    return sha256_hex(canonical_causal_bytes(command.as_dict()))
 
 
 class WorldBody:
@@ -532,7 +527,7 @@ class WorldBody:
     def apply(self, command: Command, *, t_monde: int) -> TransitionResult:
         """Apply one primitive command and detect lethality before continuation."""
 
-        command.validate()
+        validate_command(command)
         if t_monde < 1:
             raise ValueError("t_monde must be >= 1")
 
