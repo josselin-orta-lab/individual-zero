@@ -82,6 +82,7 @@ class CompetitionTrace:
 @dataclass(frozen=True, slots=True)
 class CompetitionCycleResult:
     winner: OptionProposal | None
+    crossed_ranked: tuple[OptionProposal, ...]
     evaluations: tuple[EvaluationOption, ...]
     traces: tuple[CompetitionTrace, ...]
     cycle: int
@@ -343,9 +344,9 @@ class Competition:
             if did_cross:
                 crossed.append(state)
 
-        winner_state: CandidateState | None = None
-        if crossed:
-            winner_state = sorted(
+        crossed_ranked = tuple(
+            state.proposal
+            for state in sorted(
                 crossed,
                 key=lambda state: (
                     -(
@@ -356,14 +357,21 @@ class Competition:
                     ),
                     canonical_option_order(state.proposal.option),
                 ),
-            )[0]
+            )
+        )
 
         return CompetitionCycleResult(
-            winner=None if winner_state is None else winner_state.proposal,
+            winner=None if not crossed_ranked else crossed_ranked[0],
+            crossed_ranked=crossed_ranked,
             evaluations=tuple(evaluations),
             traces=tuple(traces),
             cycle=cycle,
         )
+
+    def invalidate_candidate(self, option_ref: str) -> None:
+        self._registry.pop(option_ref, None)
+        if self._engaged_option_id == option_ref:
+            self._engaged_option_id = None
 
     def close_deliberation(self, winner: OptionProposal | None) -> None:
         winner_id = None if winner is None else winner.option.id
