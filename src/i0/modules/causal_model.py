@@ -18,7 +18,7 @@ from math import isfinite
 from typing import Mapping, Sequence
 
 from .action_control import StaticSafetyFacts
-from .causal_lifecycle import (CausalObservation, CausalHypothesisReview, CausalIntervention, CausalInferenceChange, decode_observation, decode_review, decode_intervention, serialize_value)
+from .causal_lifecycle import (CausalObservation, CausalHypothesisReview, CausalIntervention, CausalInferenceChange, AgencyEvidence, agency_evidence_from_autobiography, decode_agency_evidence, decode_observation, decode_review, decode_intervention, serialize_value)
 
 
 # The existing, versioned MVP veto policy permits exactly these categories.
@@ -197,6 +197,8 @@ class CausalModel:
         # Failure boundaries are causal state: stale successful trials must
         # not re-establish a refuted contingency without fresh contexts.
         self._causal_revision_boundaries: dict[str, tuple[int, str]] = {}
+        self._agency_evidence: dict[str, AgencyEvidence] = {}
+        self._pending_agency_evidence: list[AgencyEvidence] = []
 
     @property
     def version(self) -> int:
@@ -421,6 +423,47 @@ class CausalModel:
             raise ValueError("duplicate intervention")
         self._pending_causal_interventions.append(trial)
 
+    def published_agency_evidence(self) -> tuple[AgencyEvidence, ...]:
+        """Only phase-5-published descriptive comparisons, never interventions."""
+        return tuple(self._agency_evidence[key] for key in sorted(self._agency_evidence))
+
+    def ingest_closed_agency_comparisons(
+        self, *, episode_ref: str, event_refs: Sequence[str],
+        autobiographical_events: Sequence[Mapping[str, object]],
+    ) -> tuple[AgencyEvidence, ...]:
+        """DC-09 Memory handoff; no technical-journal read or oracle labels.
+
+        The comparison is an observed item of evidence; it never directly
+        increments P-35 intervention/context counts or changes a status.
+        """
+        if not episode_ref:
+            raise ValueError("closed Memory episode reference is mandatory")
+        refs = set(event_refs)
+        if len(refs) != len(event_refs):
+            raise ValueError("repeated event reference within Memory episode")
+        admitted: list[AgencyEvidence] = []
+        for event in autobiographical_events:
+            if event.get("event_id") not in refs:
+                continue
+            report = agency_evidence_from_autobiography(
+                episode_ref=episode_ref, event=event,
+            )
+            if report is not None:
+                admitted.append(report)
+        # Preflight the whole episode; no partial causal buffering if one
+        # observation is duplicate or has inconsistent physical provenance.
+        historical_refs = {v.event_ref for v in self._agency_evidence.values()}
+        pending_refs = {v.event_ref for v in self._pending_agency_evidence}
+        seen_in_batch: set[str] = set()
+        for report in admitted:
+            if (report.event_ref in historical_refs
+                or report.event_ref in pending_refs
+                or report.event_ref in seen_in_batch):
+                raise ValueError("DC-09 comparator observation credited more than once")
+            seen_in_batch.add(report.event_ref)
+        self._pending_agency_evidence.extend(admitted)
+        return tuple(admitted)
+
     def publish_causal_inference(self) -> tuple[CausalInferenceChange, ...]:
         """Publish independent §13.2 evidence atomically, with frozen input stages."""
         from collections import defaultdict
@@ -543,7 +586,18 @@ class CausalModel:
                 published[old.ref] = new
                 changes.append(CausalInferenceChange(old.ref, current.causal_status, next_status, new.version, trial.identifier, "independent_intervention"))
 
+        # Comparator descriptions do not influence causal or safety statuses.
+        # Publish them only after all staged inference validations succeed.
+        agency = dict(self._agency_evidence)
+        for report in sorted(
+            self._pending_agency_evidence,
+            key=lambda value: (value.observed_t_monde, value.event_ref),
+        ):
+            if report.event_ref in {v.event_ref for v in agency.values()}:
+                raise ValueError("duplicate published physical agency observation")
+            agency[report.identifier] = report
         self._published = published
+        self._agency_evidence = agency
         self._causal_observations = observations
         self._causal_interventions = interventions
         self._causal_reviews = reviews
@@ -552,6 +606,7 @@ class CausalModel:
         self._pending_causal_observations.clear()
         self._pending_causal_reviews.clear()
         self._pending_causal_interventions.clear()
+        self._pending_agency_evidence.clear()
         self._version += 1
         return tuple(changes)
 
@@ -666,6 +721,8 @@ class CausalModel:
             "causal_interventions": [serialize_value(x) for _,x in sorted(self._causal_interventions.items())],
             "causal_reviews": sorted(self._causal_reviews),
             "causal_credits": [list(x) for x in sorted(self._causal_credits)],
+            "agency_evidence": [serialize_value(v) for _, v in sorted(self._agency_evidence.items())],
+            "pending_agency_evidence": [serialize_value(v) for v in self._pending_agency_evidence],
             "causal_revision_boundaries": [
                 [key, step, ref] for key, (step, ref) in sorted(self._causal_revision_boundaries.items())
             ],
@@ -731,6 +788,13 @@ class CausalModel:
         self._pending_causal_observations=pending_obs
         self._pending_causal_reviews=pending_review
         self._pending_causal_interventions=pending_trial
+        agency_rows = [decode_agency_evidence(v) for v in state.get("agency_evidence", [])]
+        pending_agency = [decode_agency_evidence(v) for v in state.get("pending_agency_evidence", [])]
+        refs = [v.event_ref for v in (*agency_rows, *pending_agency)]
+        if len(refs) != len(set(refs)):
+            raise ValueError("duplicate agency comparison in causal snapshot")
+        self._agency_evidence = {v.identifier: v for v in agency_rows}
+        self._pending_agency_evidence = pending_agency
         self._version = version
 
 
