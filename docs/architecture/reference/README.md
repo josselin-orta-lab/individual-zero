@@ -50,7 +50,7 @@ en/mvp-specification-v1.2.md
 | Reference document | French | English | Source language | Role |
 | --- | --- | --- | --- | --- |
 | Conceptual architecture v2 | current | pending | French | conceptual reference |
-| Normative MVP specification v1.2 | current | pending | French | normative implementation reference |
+| Normative MVP specification v1.2 | current | current | French | normative implementation reference |
 
 When an English equivalent is added, it should use the exact matching path under `en/`.
 

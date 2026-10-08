@@ -1,10 +1,13 @@
 # Architecture references in English
 
-English equivalents of the long-form architecture references will be stored here.
+This directory contains the English equivalents of the long-form architecture references.
 
-Expected translation pairs:
+## Current documents
+
+- [Normative MVP specification v1.2](mvp-specification-v1.2.md)
+
+## Pending translations
 
 - `architecture-v2.md`
-- `mvp-specification-v1.2.md`
 
-The filename and document version must match the corresponding file under `../fr/`. Translation status is tracked in [the reference index](../README.md).
+Equivalent translations keep the same basename and document version as the corresponding file under `../fr/`. Translation status is tracked in [the reference index](../README.md).
