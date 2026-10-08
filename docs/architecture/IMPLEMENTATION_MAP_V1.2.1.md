@@ -177,9 +177,43 @@ Minimal stubs that remain intentionally incomplete:
 - E-0 is deliberately not obstacle-aware; a blocked movement is detected by the comparator and triggers replanning, while the richer model arrives later;
 - no memory, learning, simulator, causal model, exploration or consolidation is introduced.
 
+## Stage 5 progress on this branch
+
+Implemented:
+
+- raw temperament `tau` as immutable birth configuration with exactly the five normative dimensions;
+- a single `TemperamentProjection` boundary, owned by `snapshots_and_individual_parameters`, as the only code path authorized to read raw `tau`;
+- immutable `ParametresTemperament` with exact normative exponential mappings where the specification fixes a form and explicit versioned table curves where it does not;
+- Stage-5 runtime injection of derived gatekeeper weights, need weights and inertia only; Stage-4 consumers never read raw `tau`;
+- neutral `tau = 0` behavior checked against the Stage-4 reference loop;
+- restoration guard rejecting any in-life mutation of `tau` (INV-30);
+- complete `SnapshotType.COPY` creation at coherent step boundaries;
+- deterministic child identity, lineage, parent and copy-point metadata;
+- identity-safe S_t rebinding in copied branches;
+- exact inherited temperament and causal state at the copy point, followed by isolated child continuation with no reinjection into the parent;
+- explicit `battery_copy` causal status retained for the future Stage-10 consolidation guard;
+- fresh external scenario attachment to disposable copies without treating the external scenario as inherited individual identity;
+- bench-side disposable trait-battery administration with deterministic stop bounds and retained child journal;
+- observable scoring paths for patience, risk-taking, exploration and threat response;
+- battery scoring remains outside cognition and cannot alter the parent or child decision process;
+- exact replay/non-regression tests remain green on Python 3.11 and 3.12 with Stage 1-4 golden fixtures unchanged.
+
+Stage 5 invariant status:
+
+- INV-30: green for raw temperament immutability across life execution and restoration;
+- INV-34: green for complete-state copy creation, isolated continuation and parent non-reinjection;
+- INV-40: green for implemented consumers; raw `tau` is absent from Gatekeeper, Competition and Value/Needs dependencies, and neutral mapping reproduces the neutral Stage-4 behavior.
+
+Remaining Stage-5 measurement gap:
+
+- the perseverance battery row specifies only “an action that fails randomly” and a failure schedule, but the current normative contract does not identify the tested action or define a world/scenario operation that applies those failures;
+- the reference implementation therefore returns `mechanism_not_expressible_stage5` with no numerical score instead of manufacturing a perseverance value;
+- battery test-retest reliability and the profile confidence intervals cannot be declared validated until all five battery dimensions are observable and the preregistered reliability threshold/statistical protocol are supplied;
+- this is an experimental-instrument closure issue, not a failure of the temperament or copy architecture.
+
 ## Current repository gap
 
-The legacy bootstrap remains as a compatibility smoke path. The normative implementation now has a deterministic substrate, world/body/bench boundary, reflex/control path, and the complete Stage-4 minimal cognitive loop. The next architectural gap is Stage 5: temperament projection, copies/lineage and the first measurable individuals through the trait battery.
+The legacy bootstrap remains as a compatibility smoke path. The normative implementation now includes the deterministic substrate through the complete Stage-4 cognitive loop plus the Stage-5 temperament and copy/lineage machinery. The next code gap inside Stage 5 is closure of the perseverance battery mechanism and the preregistered reliability/profile analysis protocol; Stage 6 equipment/simulator work must not be treated as a replacement for that missing measurement contract.
 
 ## Functional groups
 
