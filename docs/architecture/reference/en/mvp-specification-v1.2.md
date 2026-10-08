@@ -1801,3 +1801,304 @@ A complete causal state contains at minimum: parameters and versions including `
 | Reflex | innate response, direct path | Action Control | at step opening, awake and asleep | immediate command for the step | an option or a veto |
 | Veto | prohibition of a command | Action Control | before any send | command blocked, option inadmissible | a replacement choice |
 | Cognitive preemption | guaranteed place in S_t | Gatekeeper | phase 2 | safety item enters S_t | an action on the world |
+
+| R_a | descriptive estimate of known danger | Value and Needs | phase 3 | threshold penalty π | a prohibition |
+| U_a | lack of reliable safety information | Value and Needs | phase 3 | threshold penalty χ | evidence of danger |
+| etabli_pour_securite | usage status of a fact | Causal Model | end of cycle | veto may apply an existing rule to that fact | a simulator correction |
+| etablie | causal status of a contingency | Causal Model | end of cycle | correction of simulator predictions | a new veto rule |
+
+They are not equivalent because they do not answer the same question: the reflex protects before cognition; the veto says whether a command is authorized; preemption says what must be known; R_a and U_a say how dangerous or poorly known an option is; the two statuses say for which use a piece of knowledge is authorized.
+
+### 18.2 From command to new deliberation
+
+command → admissibility check, veto and mask → send → world transition → detection of lethal transition → rollback to checkpoint → protocol mask → external counting → resume deliberation.
+
+### 18.3 Death
+
+Death is a detectable terminal outcome of the world; it never becomes a lasting state of the individual [NQ-14]. A transition reaching a terminal condition (zero integrity, or any condition explicitly defined as lethal) is detected by the world **before** becoming the new continuation state. Death exists for the world, replay, and evaluation; it is not a learnable experience: it produces no value, contingency, confidence update, or memory [V-24]. The journal distinguishes an action that led to a lethal outcome from a self-destructive intention; an error, exploration, or bad prediction is never labeled a suicide attempt; that classification requires the intention itself to be established [S-14.1].
+
+### 18.4 Rollback
+
+```text
+procédure ROLLBACK_LÉTAL(ckpt, cmd)
+  JOURNAL.écrire(transition_létale(cmd), détection, attempt_ref)        # append-only technical trace; no AutoSegmentCommit
+  BANC.compter(nombre_transitions_letales)
+  INSTANTANÉS.restaurer_etat_causal(ckpt)                              # world, body, cognition, S_t, accumulators, scenario, streams;
+                                                                        # technical journal and evaluation trace are never restored
+  BANC.compter(nombre_rollbacks_letaux)
+  R_letal_consecutif ← ckpt.R_letal_consecutif + 1                     # external protocol state, attached to the resumption sequence
+  si R_letal_consecutif > R_letal_max :
+    BLOCAGE_DE_SÉCURITÉ(ckpt.t) ; BANC.compter(nombre_blocages_securite) ; retour
+  MASQUE.ajouter(cmd)      # protocol intervention, for the resumed deliberation only
+  attempt_ref ← ORDONNANCEUR.nouvel_essai_apres_rollback(ckpt.t)       # unique technical namespace; invisible to the individual
+  REPRENDRE_DÉLIBÉRATION(ckpt)   # masked decision cancelled; cycles continue to C_max;
+                                 # fallback and "attendre" subject to mask; otherwise safety block
+```
+
+- The restoration point is the last complete causal checkpoint immediately before the lethal command was sent [V-25]. Restoration never rewinds the technical journal or evaluation trace; it restores only replayable causal state.
+- The mask applies only to the deliberation resumed from that checkpoint. It is neither knowledge, nor a learned veto, nor a modification of the causal model; it is cleared as soon as a step ends without a lethal transition. Each new attempt at the same step receives a distinct technical `attempt_ref`, absent from the autobiographical view.
+- Each new lethal command from the same context joins the sequence mask and increments R_letal_consecutif [V-40].
+- If the masked command is the sleep command, the protocol wakes the individual and opens a deliberation within the same step; the reason for this waking appears only in the technical view.
+- If the masked command came from a reflex, the reflex is not replayed: a deliberation opens within the same step (procedure REPRENDRE_DÉLIBÉRATION, 3.4).
+- The lethal checkpoint is taken before deliberation closes: resumption cancels the masked decision without needing to undo engagement, the ρ reduction, or the TD update, none of which has yet occurred (DC-08).
+- Mask and rollback events are excluded from individuality and spontaneous-learning metrics [V-25].
+
+### 18.5 Diagram I · Lethal rollback
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant COM as Competition
+  participant CTL as Action Control
+  participant INS as Snapshots
+  participant MON as World and body
+  participant ORD as Scheduler
+  participant JOU as Journal
+  participant BAN as Bench
+  COM->>CTL: [C] decided option
+  CTL->>CTL: [S] admissibility, veto, mask
+  CTL->>INS: [P] complete causal checkpoint before send
+  Note over COM,INS: deliberation not closed at checkpoint: resumption undoes neither engagement, ρ, nor TD update (DC-08)
+  CTL->>MON: [C] command
+  MON->>ORD: [E] lethal transition detected before continuation
+  ORD->>JOU: [E] transition, detection, rollback, technical view only
+  ORD->>BAN: [E] lethal transition and rollback counted
+  ORD->>INS: [C] restore checkpoint
+  INS-->>ORD: [D] world, body, cognitive state, S_t, accumulators, scenario, randomness; journal unchanged
+  ORD->>CTL: [C] protocol mask for the command, counter + 1
+  alt counter above R_letal_max
+    ORD->>BAN: [E] safety block, operator alert
+  else otherwise
+    ORD->>COM: [T] deliberation resumed without masked command
+  end
+```
+
+### 18.6 Safety block
+
+The individual enters safety block when no admissible and safe action exists, including `attendre`, or when R_letal_consecutif exceeds R_letal_max [S-14.5, V-40]. The block is logged and an alert is sent to the operator. In **interactive diagnostic mode**, the life is suspended at the current step until an operator decision. In **campaign mode**, no ad hoc human intervention is allowed: the branch stops immediately with status `blocage_securite` and is handled according to preregistered exclusion rules (DC-14).
+
+### 18.7 Running example: the toxic berry and the lethal zone
+
+The individual is hungry and has never tasted the red berry; R_a is unknown, U_a high. In a threat-sensitive temperament, χ(U_a ; τ) raises the threshold for "eat the red berry" sharply without forbidding it. It eats the berry: integrity loss is observed and the contingency recorded. On the second occurrence, the contingency reaches `etabli_pour_securite` (DC-05): the existing rule "do not consume an item known to be toxic" now applies, the veto blocks the command, and Planning no longer proposes the option. Later, the individual enters a zone whose lethality it does not know: the lethal transition is detected, the world is restored to the checkpoint before movement, the movement is masked for the resumed deliberation, and the individual chooses differently. It retains no trace of the episode: it may approach the zone again, while the bench counts one lethal transition and one rollback.
+
+## 19. Epistemic boundary, oracle, and experimental bench
+
+### 19.1 Six domains
+
+| Domain | Content | Accessible to | Never accessible to |
+| --- | --- | --- | --- |
+| Simulated real world | complete ground truth of world and body | World and Body; oracle | the individual, except through local state and authorized telemetry |
+| Oracle | true rules, true causes, reference causal structure, relevance | evaluation bench | every component of the individual |
+| Individual | perceptions, authorized telemetry, memory, acquired knowledge | its components | — |
+| Technical journal | complete trace for audit and replay | operator, bench, replay tools | the individual |
+| Autobiographical view | part of the journal usable as lived history | Memory and Consolidation, read-only | — |
+| Evaluation bench | external measurement, scenarios, control | operator | the individual, except through logged external inputs into the world |
+
+### 19.2 Rules
+
+- The oracle channel is accessible only to the bench; no component of the individual, including perception, memory, metacognition, calibration, causal model, simulator, or consolidation, depends on it or has access rights to it [S-12.4].
+- The prohibition covers all information derived from the oracle: relevance, errors measured against ground truth, causes, reference values or actions, metrics. None of it ever becomes a causal input to the individual or its learning.
+- Oracle annotations and metrics live in a separate evaluation trace; if it shares journal infrastructure, views and rights remain strictly separated.
+- Isolation is verified automatically through access attempts from every component and by canary information known only to the oracle, searched for in S_t, memories, κ, values, h, and the causal model; these tests are repeated whenever a learning or consolidation mechanism is added.
+- Bench control functions use an interface separate from the oracle channel; injected scenarios enter through the world as logged external inputs (4.6), never directly into the individual.
+
+### 19.3 Diagram H · Oracle, individual, journal, and bench boundary
+
+```mermaid
+flowchart LR
+  subgraph EXTERNE["External to the individual"]
+    VRAI["Simulated real world: complete ground truth"]
+    ORA["Oracle"]
+    BANC["Evaluation bench"]
+    TRACE["Evaluation trace"]
+  end
+  subgraph JOURNAL["Single causal journal"]
+    TECH["Technical view"]
+    AUTO["Filtered autobiographical view"]
+  end
+  subgraph INDIV["Individual"]
+    PER["Perception"]
+    COG["Cognition: gatekeeper, S_t, competition, learning"]
+    MEM["Memory and consolidation"]
+  end
+  VRAI -->|"[D] local state and telemetry only"| PER
+  PER -->|"[D] observations"| COG
+  COG -->|"[C] validated commands"| VRAI
+  VRAI -->|"[D] ground truth"| ORA
+  ORA -->|"[D] ground truth, relevance"| BANC
+  BANC -->|"[D] metrics, death counters"| TRACE
+  INDIV -->|"[E] all events"| TECH
+  TECH -->|"[D] projection by AutoSegmentCommit + allowlist"| AUTO
+  AUTO -->|"[D] read-only, accesses logged"| MEM
+  TECH -->|"[D] audit and replay"| BANC
+  BANC -->|"[E] scenarios logged as external inputs"| VRAI
+```
+
+No arrow goes from the oracle, bench, or evaluation trace toward the individual.
+
+### 19.4 Oracle relevance
+
+- An item is relevant in a context if it satisfies at least one criterion: **decision relevance** (knowing it can change which option is judged preferable), **safety relevance** (it describes a real danger within the considered horizon), **informational relevance** (it significantly reduces uncertainty about a variable that can change a decision, risk, or option evaluation). Relevance is contextual; preregistered materiality thresholds prevent negligible variation from creating relevance [S-12.1].
+- It is defined for every cycle; the bench MAY compute it in parallel or after the fact without ever delaying or influencing the individual. S_t recall counts only elements accessible or legitimately inferable by the individual. Ordinary life and test situations are measured separately [S-12.2].
+- The oracle supplies primitive truths (real state, transition rules, consequences, reference causal structure when it exists, otherwise it says so). Best action and true option value are derived by the bench from these truths and an explicit protocol (admissible options, reward, horizon, individual parameters) [S-12.3].
+
+### 19.5 Experimental bench
+
+**World** (starting values, spéc. 10.1): 32 × 32 grid with impassable borders; day of 300 steps including 100 at night; water, two berry species, wood, stone; hostile creatures active at night; fixed physics (movement, obstacles, collection, damage, shelter formed from 4 stones, tool crafting); contingencies drawn by seed (nutritious or toxic berry, water location, danger zones).
+
+**Experimental plan** [spéc. 10.6, Q8]: N_τ temperaments × N_M worlds × N_R seeds; proposed starting point N_τ = 9 (the eight vertices and the center of the cube threat, exploration, goal protection, with the other two dimensions at 0), N_M = 5, N_R = 3; lives of 60 simulated days.
+
+| Condition | Setup | Tests |
+| --- | --- | --- |
+| Noise control | same temperament, same world, N_R seeds | divergence floor |
+| Temperaments | N_τ temperaments, same world, same equipment | H1 |
+| Twins | same temperament, N_M worlds | H2 |
+| Age | profiles measured every 5 days | H3 |
+| Substitution | E-v1 replaced by E-v2 at birth or midlife, only in condition H4; event preregistered, logged before application, and replayable; a temperament permutation serves as identity-change control | H4 |
+| Bifurcation | copy at day 30, then distinct worlds | H5 |
+| Ablations | S_t unlimited, no consolidation, temperament limited to a single pathway | H6 |
+
+The midlife H4 substitution is the only exception to freezing E during a life. The bench emits the external input; `Instantanés et paramètres d'individu`, sole owner of `version_E_active`, applies it at a coherent step boundary, never in the middle of a cycle, deliberation, publication, or consolidation. The version change invalidates caches and outputs dependent on the old version; κ maps are separated by equipment or module version and restart from the prior corresponding to E-v2, without transferring confirmations specific to E-v1. Prior autobiographical history remains unchanged.
+
+**Trait battery** [spéc. 10.7, Q7, NQ-16]: five fixed situations, replayed every 5 days, each on a disposable copy (17.7); their mechanisms belong to the scenarios, injected into the copy's environment, while general physics remains unchanged.
+
+| Situation | Setup | Score |
+| --- | --- | --- |
+| Patience | one berry now, or three berries after 20 steps if scenario conditions are respected | share of delayed choices |
+| Risk-taking | shortcut through a danger zone or safe detour | share of shortcuts |
+| Exploration | known resource or unknown zone | share of explorations |
+| Threat response | creature approaching at varying distance | flight distance |
+| Perseverance | action that fails randomly | attempts before abandonment |
+
+The profile is the vector of five scores with their confidence intervals; an individual is recognized if its profile remains closer to its previous profiles than to those of others. The reference volume, at least 8,100 copy creations and stops per campaign (135 lives × 12 administrations × 5 situations), is retained; independent, bounded copies execute sequentially or in deterministic batches; a reduction is allowed only after empirical, preregistered demonstration [S-13.5].
+
+**References and ablations** [spéc. 10.8]: B0 identical temperaments; B1 temperament applied only to the gatekeeper; B2 temperament applied only to decision thresholds; A1 unlimited S_t; A2 no consolidation; A3 random gatekeeper; A4 K from 2 to unlimited.
+
+**Metrics** [spéc. 11.1, V-10, V-40]:
+
+| Criterion | Metric |
+| --- | --- |
+| Individuality | distance between profiles relative to noise control; profile-recognition rate |
+| Temporal coherence | goal resumption after interruption; contradictions between successive beliefs; rank stability of traits |
+| Arbitration quality | precision and recall of S_t against oracle; entry delay for a critical item |
+| Memory | difference with and without memory on tasks dependent on the past; false-memory rate against journal |
+| Overload | performance and cost as distractor flow increases; graceful degradation or collapse |
+| Causal attribution | accuracy in worlds with known causes; superstitious rules under random reward |
+| Learning | day-by-day curves; transfer; forgetting; Brier score |
+| Goal/action alignment | three categories: goal-directed behavior; legitimate autonomous intrinsic behavior; behavior without traceable justification |
+| Death | nombre_transitions_letales, nombre_rollbacks_letaux, nombre_blocages_securite, external and invisible to the individual; a life with many rollbacks is never evaluated as perfect survival |
+| Cost | UC and duration per simulated day |
+
+**Analyses** [spéc. 11.2]: variance decomposition by mixed model (temperament, world, seed); battery reliability by intraclass correlation; stability (H3) by rank correlation of profiles with age; recognition (H4) by nearest neighbor against chance, before and after substitution; bifurcation (H5) by distance between copy profiles as a function of elapsed time.
+
+**MVP exit** [spéc. 10.9]: validated battery, test-retest reliability above the preregistered threshold; stable loop for the full planned duration; complete traceability; results published whether favorable or not.
+
+**Preregistration** [spéc. Appendix E]: hypotheses and expected direction of effects; H1 and H4 refutation thresholds; world, body, and equipment values, equivalence tolerances; temperaments; all registry parameters (22); plan; battery version and rules; analyses and multiple-comparison correction; rules for excluding a life (failure, guardrail violation, corrupted journal, safety block in campaign mode, or unresolved diagnostic block); early-stop conditions; commitment to publish. Golden rule: parameters are fixed before results are known; tuning thresholds until "personalities" appear would manufacture the result instead of measuring it.
+
+## 20. Implementation order
+
+The software is built in thirteen stages, each closed by observable behavior, acceptance tests, and exact replay. The order follows one rule: first what makes everything else verifiable, then the shortest loop, then each capability, which replaces a declared stub without changing the contract.
+
+### 20.1 Construction principles
+
+- Substrate and measurement precede cognition: without replay, isolated oracle, and rereading, no stage can be verified.
+- Loop first, capabilities second: each capability replaces a declared stub; the contract (4), gatekeeper (6), S_t, and competition (8) do not change shape.
+- The postulate is measured from stage 5 onward, with temperament alone, before any history.
+- A stage is complete only if it replays identically and its invariants (21) are green.
+- Each stage produces a retained reference journal that serves as a non-regression test for all later stages.
+
+### 20.2 Diagram J · Roadmap
+
+```mermaid
+flowchart TB
+  subgraph P0["Tier 0 · gate: exact replay of a scripted life"]
+    E1["1 · Execution substrate"]
+    E2["2 · World, body, bench"]
+  end
+  subgraph P1["Tier 1 · MVP"]
+    E3["3 · Reflex loop"]
+    E4["4 · Minimal cognitive system"]
+    E5["5 · Temperament, first individuals"]
+    E6["6 · Equipment and simulator"]
+    E7["7 · Memory"]
+    E8["8 · Learning and calibration"]
+    E9["9 · Causal model and agency"]
+    E10["10 · Sleep and consolidation"]
+    E11["11 · Exploration and modulation"]
+    E12["12 · Metacognition and guardrails"]
+    E13["13 · MVP campaign"]
+  end
+  E1 -->|"[C]"| E2
+  E2 -->|"[C]"| E3
+  E3 -->|"[C]"| E4
+  E4 -->|"[C]"| E5
+  E2 -->|"[C] corpus"| E6
+  E4 -->|"[C]"| E6
+  E4 -->|"[C]"| E7
+  E6 -->|"[C]"| E8
+  E7 -->|"[C]"| E8
+  E7 -->|"[C] episodes"| E9
+  E8 -->|"[C] values"| E9
+  E9 -->|"[C]"| E10
+  E5 -->|"[C] temperament"| E11
+  E8 -->|"[C] reliable alerts"| E11
+  E10 -->|"[C]"| E12
+  E11 -->|"[C]"| E12
+  E12 -->|"[C]"| E13
+```
+
+Each [C] arrow is a direct prerequisite, with its label specifying what the upstream stage supplies when not all its deliverables are required; indirect prerequisites follow from these. Stages 1 and 2 form tier 0; stages 3 through 13 form tier 1, closed by the campaign.
+
+### 20.3 The thirteen stages
+
+**Stage 1 · Execution substrate.**
+
+| Field | Content |
+| --- | --- |
+| Objective | make every execution deterministic, traceable, restorable, and replayable before any cognition |
+| Build | simulated-time scheduler: steps, cycles, six phases, canonical order (DC-11); in-memory bus, schema registry, contract validation (4.4); chained append-only journal and its three views (17.4, 17.5); pseudorandom-stream registry by causal source (17.2); parameter and version registry; birth and periodic snapshots, restoration (17.6, DC-08) |
+| Dependencies | none |
+| Stubs | dummy modules emitting scripted contributions; dummy world with scalar state |
+| Interfaces | `ORDONNANCEUR.ouvrir_pas`, `ouvrir_cycle`, phases; `BUS.publier(Contribution)`; `JOURNAL.écrire(événement)`; `JOURNAL.commit_autobiographique(t, attempt_ref)`; `INSTANTANÉS.prendre(type)`, `restaurer(id)`; `FLUX(source).tirer()` |
+| Observable behavior | dummy modules exchange validated contributions; an execution is restored then replayed |
+| Acceptance tests | two executions with the same seed produce byte-for-byte identical normalized journals; journal alteration is detected by hash recomputation; restoration from a periodic snapshot reproduces the reference continuation; an invalid message is rejected and logged; adding a draw in one stream shifts no other stream; artificial machine delays do not change the journal |
+| Gate | INV-21, INV-22, INV-33, and INV-35 green |
+
+**Stage 2 · World, body, and evaluation bench.**
+
+| Field | Content |
+| --- | --- |
+| Objective | provide the environment and measurement before cognition |
+| Build | grid world and body (19.5, 7.1); primitive actions including `fabriquer_outil` (4.1); terminal condition, lethal-transition detection, lethal checkpoint, rollback, protocol mask and external counters (18); isolated oracle channel; evaluation trace; scenario engine including injected battery mechanisms (NQ-16); rereading tool; scripted reference agent |
+| Dependencies | stage 1; closed ontology (4.1) |
+| Stubs | scripted agent in place of the individual |
+| Interfaces | `MONDE.appliquer(cmd) → transition`; `CORPS.télémétrie()`; `ORACLE.*`, accessible only to bench; `SCÉNARIO.injecter(scénario, version)`; `BANC.compter(métrique)` |
+| Observable behavior | scripted agent lives replayable days; bench computes first metrics; induced death is restored |
+| Acceptance tests | physics and body-dynamics tests; attempted oracle access from every individual component, including stubs: refused; an injected scenario replays identically; an induced death is restored to the checkpoint before sending, absent from the autobiographical view, and counted by the bench; beyond R_letal_max, safety block and alert |
+| Gate | tier-0 gate: exact replay of a scripted-agent life; INV-02, INV-27 through INV-29 green |
+
+**Stage 3 · Reflex loop.**
+
+| Field | Content |
+| --- | --- |
+| Objective | close the shortest loop and validate world interfaces before global workspace |
+| Build | symbolic perception without noise; Action Control: path arbitration (9.1), closed-list veto and protected invariants (9.3), avoidance reflex (9.2), `verifier_admissibilite` over initial rules (9.4); command journal |
+| Dependencies | stage 2; versioned safety policy (DA-07) |
+| Stubs | no cognition: `attendre` is the only option, always decided |
+| Interfaces | `PERCEPTION.percevoir(état_local, télémétrie)`; `CONTRÔLE.réflexe(obs)`, `préparer(option)`, `admissible(cmd)`, `verifier_admissibilite(option, contexte)` |
+| Observable behavior | the individual moves away from an adjacent creature; a forbidden command is blocked |
+| Acceptance tests | reflex acts within the step without deliberation; every command in a sequence of dangerous commands is blocked; every veto is logged with rule, type, and policy version; no command without a trace |
+| Gate | INV-12 and INV-13 green |
+
+**Stage 4 · Minimal cognitive system.**
+
+| Field | Content |
+| --- | --- |
+| Objective | close the loop world → perception → gatekeeper → S_t → competition → control → world while traversing the architecture (20.4) |
+| Build | Value and Needs: D_t, r_t, alerts, goal proposals; minimal Goal Manager (7.4, DC-03); gatekeeper with fixed weights, queues and quotas (6, DC-04); S_t: fixed slots and K = 4; greedy planner on E-0; candidate registry and option path (DC-10); option competition and minimal EvaluationOption (8); step execution; result comparator; `normal` modulation profile; minimal F_cog counter; per-cycle budget (16.3) |
+| Dependencies | stage 3; DC-01, DC-02, DC-03, DC-04, DC-10, DC-11, DC-12, DC-15 |
+| Stubs | κ: f = 1; val: 0; constant substitution evidence by option type, with simulated component arriving at stage 6 and learned component at stage 8 [S-05.1]; m_a: `non_applicable`; R_a and protection from hand-written rules; neutral temperament |
+| Interfaces | `BUS.publier(GoalProposal)`; `GESTIONNAIRE_BUTS.but_actif()`; `COMPÉTITION.inscrire(OptionProposee)`, `assembler_évaluation(option)`; `PORTIER.sélectionner(...)`; `S_T.publier(EtatGlobal)` |
+| Observable behavior | the individual eats, drinks, sleeps, and moves away from danger through the architecture; every command links to its option, motive, and grounding contributions |
+| Acceptance tests | criteria in 20.4; one writer only for active goal; no contribution reinjected into the cycle that created it; option registry never exceeds N_options_max excluding `attendre`; an option cannot use its own proposal as evidence; engaged option restarts from zero at every step; no deliberation beyond C_max; exact replay of one day |
+| Gate | INV-01, INV-04 through INV-12, INV-17 through INV-21 green |
