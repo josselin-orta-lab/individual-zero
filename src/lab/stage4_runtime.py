@@ -197,7 +197,7 @@ class Stage4Runtime:
         kind: str,
         data: Mapping[str, object],
         cycle: int | None = None,
-    ) -> None:
+    ) -> str:
         attempt = self.scheduler.active_attempt
         if attempt is None:
             raise RuntimeError("Stage 4 journal event requires active step")
@@ -224,6 +224,7 @@ class Stage4Runtime:
             event_id=event_id,
             causal_event=event,
         )
+        return event_id
 
     def _charge(
         self,
