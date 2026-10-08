@@ -42,8 +42,8 @@ class KappaTests(unittest.TestCase):
         self.assertEqual(reliability(k), 0.5)
         k.integrate(verification())
         self.assertEqual(reliability(k), 0.5)  # INV-05
-        self.assertEqual(k.publish()[0][2], 0.75)
-        self.assertEqual(reliability(k), 0.75)
+        self.assertEqual(k.publish()[0][2], 2 / 3)
+        self.assertEqual(reliability(k), 2 / 3)
 
     def test_same_family_repetition_and_provenance_do_not_train(self):
         k = model()
@@ -68,7 +68,7 @@ class KappaTests(unittest.TestCase):
         k = model()
         k.integrate(verification("contradiction", outcome="contredite"))
         k.publish()
-        self.assertEqual(reliability(k), 0.25)
+        self.assertEqual(reliability(k), 1 / 3)
         self.assertEqual(reliability(k, version="E-v2"), 0.5)
         self.assertEqual(reliability(k, family="body_telemetry"), 0.5)
         self.assertEqual(reliability(k, module="memory"), 0.5)
