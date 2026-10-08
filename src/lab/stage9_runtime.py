@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from i0.equipment import EquipmentModel
+from i0.modules.agency_comparator import AgencyComparator, AgencyComparatorConfig
 from i0.modules.action_control import StaticSafetyFacts
 from i0.modules.causal_model import (
     CanonicalSafetyFacts, CausalModel, CausalModelConfig,
@@ -25,12 +26,14 @@ class Stage9Config:
     version: str
     stage8: Stage8Config
     causal: CausalModelConfig
+    agency: AgencyComparatorConfig
 
     def validate(self) -> None:
         if not self.version:
             raise ValueError("Stage 9 configuration requires a version")
         self.stage8.validate()
         self.causal.validate()
+        self.agency.validate()
 
 
 class Stage9Runtime(Stage8Runtime):
@@ -62,6 +65,7 @@ class Stage9Runtime(Stage8Runtime):
             config=config.stage8,
             equipment=equipment,
         )
+        self.stage3.control.attach_agency_comparator(AgencyComparator(config.agency))
 
     @property
     def causal_owners(self):
