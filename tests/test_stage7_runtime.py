@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from i0.modules import StaticSafetyFacts
-from i0.modules.memory import MemoryConfig
+from i0.modules.memory import Intention, MemoryConfig
 from lab.stage6_reference_fixture import build_stage6_reference_runtime
 from lab.stage7_reference_fixture import build_stage7_reference_runtime
 from lab.stage7_runtime import (
@@ -155,6 +155,75 @@ class Stage7RuntimeTests(unittest.TestCase):
                 for episode in runtime.memory.episodes
             )
         )
+
+    def test_triggered_intention_enters_bus_and_only_goal_manager_changes_goal(self) -> None:
+        runtime = build_stage7_reference_runtime()
+        runtime.create_intention(
+            Intention(
+                id="intent:drink-later",
+                goal_type="drink",
+                target="water",
+                trigger_type="time",
+                trigger_value=1,
+                deadline_step=3,
+                base_pressure=0.8,
+                monitoring="strategic",
+                cost_uc=1,
+                wake_authorized=True,
+            )
+        )
+        before = runtime.goal_manager.active_goal
+
+        runtime.run_step()
+
+        trigger_events = [
+            entry.causal_event
+            for entry in runtime.journal.entries
+            if entry.causal_event.get("kind") == "intention_triggered"
+        ]
+        memory_bus = [
+            entry.causal_event
+            for entry in runtime.journal.entries
+            if entry.causal_event.get("kind") == "bus_message_admitted"
+            and entry.causal_event.get("data", {})
+            .get("message", {})
+            .get("producer") == "memory"
+        ]
+
+        self.assertGreater(len(trigger_events), 0)
+        self.assertGreater(len(memory_bus), 0)
+        # Triggering itself does not synchronously write the active goal.
+        # Any eventual change is produced by GoalManager arbitration.
+        changes = [
+            entry.causal_event
+            for entry in runtime.journal.entries
+            if entry.causal_event.get("kind") == "active_goal_changed"
+        ]
+        self.assertTrue(all(event.get("emitter") == "stage4-runtime" for event in changes))
+        self.assertNotEqual(runtime.goal_manager.active_goal, before)
+
+    def test_wake_deadline_index_is_exposed_without_intention_duplication(self) -> None:
+        runtime = build_stage7_reference_runtime()
+        runtime.create_intention(
+            Intention(
+                id="intent:wake-runtime",
+                goal_type="drink",
+                target="water",
+                trigger_type="time",
+                trigger_value=50,
+                deadline_step=50,
+                base_pressure=0.2,
+                monitoring="strategic",
+                cost_uc=1,
+                wake_authorized=True,
+            )
+        )
+
+        self.assertEqual(
+            runtime.wake_deadline_index,
+            {"intent:wake-runtime": 50},
+        )
+        self.assertEqual(len(runtime.memory.intentions), 1)
 
     def test_stage7_reference_execution_is_deterministic(self) -> None:
         def execute():
