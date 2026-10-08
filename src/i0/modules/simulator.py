@@ -58,6 +58,9 @@ class SimulationResult:
     completed_rollouts: tuple[SimulationRollout, ...]
     partial_rollout: SimulationRollout | None
     reason: str | None
+    # Only refs whose corrections actually changed a simulated transition.
+    # Empty for the frozen Stage-6–8 Equipment-only path.
+    corrected_contingency_refs: tuple[str, ...] = ()
 
     @property
     def complete(self) -> bool:
@@ -153,6 +156,7 @@ class Simulator:
         # repeating an identical rollout; R_eff is therefore announced and
         # logged while only one unique trajectory is computed.
         predictions: list[EquipmentPrediction] = []
+        applied_corrections: set[str] = set()
         state = initial_state
         terminal = False
 
@@ -179,16 +183,18 @@ class Simulator:
                     completed_rollouts=(),
                     partial_rollout=partial,
                     reason="equipment_input_unseen",
+                    corrected_contingency_refs=tuple(sorted(applied_corrections)),
                 )
 
             if self._corrections is not None:
                 try:
-                    prediction, _ = correct_equipment_prediction(
+                    prediction, correction_refs = correct_equipment_prediction(
                         source=self._corrections,
                         command=command,
                         state=state,
                         prediction=prediction,
                     )
+                    applied_corrections.update(correction_refs)
                 except CausalCorrectionConflict:
                     partial = SimulationRollout(
                         predictions=tuple(predictions),
@@ -204,6 +210,7 @@ class Simulator:
                         completed_rollouts=(),
                         partial_rollout=partial,
                         reason="unresolved_causal_correction_conflict",
+                        corrected_contingency_refs=tuple(sorted(applied_corrections)),
                     )
 
             predictions.append(prediction)
@@ -232,6 +239,7 @@ class Simulator:
                 completed_rollouts=(),
                 partial_rollout=rollout,
                 reason="announced_horizon_incomplete",
+                corrected_contingency_refs=tuple(sorted(applied_corrections)),
             )
 
         return SimulationResult(
@@ -243,4 +251,5 @@ class Simulator:
             completed_rollouts=(rollout,),
             partial_rollout=None,
             reason=None,
+            corrected_contingency_refs=tuple(sorted(applied_corrections)),
         )
