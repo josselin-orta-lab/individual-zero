@@ -425,6 +425,43 @@ class Stage4Runtime:
         contribution.validate()
         return contribution
 
+    def _propose_for_cycle(
+        self,
+        *,
+        capture,
+        goal_for_planning: Goal,
+        st_before_cycle,
+        cycle: int,
+    ) -> OptionProposal | None:
+        """Stage-specific planning seam. Stage 4 keeps greedy E-0 exactly."""
+        return self.planning.propose(
+            goal=goal_for_planning,
+            st_version=st_before_cycle.version,
+            position=(capture.x, capture.y),
+            known_entities=self.stage3.perception.known_entities,
+            observation_ref_by_entity=(
+                self.stage3.perception.observation_ref_by_entity
+            ),
+            retained_contribution_refs=frozenset(
+                element.contribution_ref
+                for element in st_before_cycle.competitive
+            ),
+            t_monde=capture.t_monde,
+            cycle=cycle,
+        )
+
+    def _evaluate_competition_cycle(
+        self,
+        *,
+        capture,
+        cycle: int,
+    ):
+        """Stage-specific evidence seam. Stage 4 keeps substitution evidence."""
+        return self.competition.evaluate(
+            cycle=cycle,
+            t_monde=capture.t_monde,
+        )
+
     def _phase_hooks(
         self,
         *,
@@ -516,19 +553,10 @@ class Stage4Runtime:
                 operation="planning_build",
             ):
                 return
-            proposal = self.planning.propose(
-                goal=goal_for_planning,
-                st_version=st_before_cycle.version,
-                position=(capture.x, capture.y),
-                known_entities=self.stage3.perception.known_entities,
-                observation_ref_by_entity=(
-                    self.stage3.perception.observation_ref_by_entity
-                ),
-                retained_contribution_refs=frozenset(
-                    element.contribution_ref
-                    for element in st_before_cycle.competitive
-                ),
-                t_monde=capture.t_monde,
+            proposal = self._propose_for_cycle(
+                capture=capture,
+                goal_for_planning=goal_for_planning,
+                st_before_cycle=st_before_cycle,
                 cycle=cycle,
             )
             if proposal is None:
@@ -679,9 +707,9 @@ class Stage4Runtime:
             ):
                 self._cycle_result = None
                 return
-            self._cycle_result = self.competition.evaluate(
+            self._cycle_result = self._evaluate_competition_cycle(
+                capture=capture,
                 cycle=cycle,
-                t_monde=capture.t_monde,
             )
             self._write(
                 kind="competition_cycle",
