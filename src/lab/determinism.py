@@ -140,6 +140,26 @@ class RandomStreamRegistry:
             restored[stream_id] = generator
         self._streams = restored
 
+    @property
+    def owner_id(self) -> str:
+        return "scheduler.random_streams"
+
+    def export_causal_state(self) -> object:
+        return {
+            "campaign_seed": self._campaign_seed,
+            "streams": self.snapshot(),
+        }
+
+    def restore_causal_state(self, state: object) -> None:
+        if not isinstance(state, Mapping):
+            raise ValueError("random stream state must be a mapping")
+        if state.get("campaign_seed") != self._campaign_seed:
+            raise ValueError("snapshot campaign seed does not match registry")
+        streams = state.get("streams")
+        if not isinstance(streams, Mapping):
+            raise ValueError("snapshot random stream states are missing")
+        self.restore(streams)
+
 
 @dataclass(frozen=True, slots=True)
 class StructuralContractRef:
