@@ -112,14 +112,14 @@ class KappaTests(unittest.TestCase):
         before = stage8._score(contribution, **scoring).score
         original = legacy._score(contribution, **scoring).score
         self.assertEqual(before, original * 0.5)
-        verification = verification(
+        verified = verification(
             "physically-confirmed-alert",
             equipment_or_module_version=runtime._config.version,
             module="perception", contribution_type="alert",
             declared_confidence=0.8,
             independent_family="body_telemetry",
         )
-        runtime.integrate_kappa_verification(verification)
+        runtime.integrate_kappa_verification(verified)
         self.assertEqual(stage8._score(contribution, **scoring).score, before)
         runtime.kappa_active.publish()
         after = stage8._score(contribution, **scoring).score
