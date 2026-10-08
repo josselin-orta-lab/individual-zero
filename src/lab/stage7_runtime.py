@@ -49,7 +49,7 @@ STAGE7_AUTOBIOGRAPHICAL_POLICY = AutobiographicalPolicy(
 
 
 _STAGE7_AUTOBIO_KINDS = frozenset(
-    STAGE7_AUTOBIOGRAPHICAL_POLICY.allowed_fields_by_kind
+    set(STAGE7_AUTOBIOGRAPHICAL_POLICY.allowed_fields_by_kind)
     - {"command_experienced", "world_transition_experienced"}
 )
 
