@@ -437,3 +437,12 @@ Stage 8 golden and all historical goldens remain frozen. Stage 9 is **not closed
 - **Important scope boundary:** this integration test injects *synthetic, typed evidence* directly into a controlled instance to verify the temporal contract. Runtime derivation of independently corroborated safety facts from real world captures, autobiographical episodes and comparator evidence is **NOT** yet implemented. Nor are §13.2 hypothesis lifecycle, §9.6 full agency attribution, §12.3 established-only simulator corrections or the Stage-9 golden.
 
 Stage 9 must not be declared closed until those paths and their behavioral, invariant, replay and CI gates pass.
+
+
+### Stage 9 checkpoint 3 — P-47 agency comparator (IN PROGRESS)
+
+- New independently testable `AgencyComparator` under Action Control, enabled by `Stage9Runtime` only. `AgencyComparatorConfig` declares a version, per-variable tolerances for all six observable coordinates/body variables, and a bounded observation window (P-47).
+- Action Control retains the sole pending command prediction owner, the frozen predicted consequences and the causal snapshot. The Stage-9 comparator consumes only accessible Perception captures, never `WorldBody`, oracle or a simulator ground truth.
+- Compatibility with a predicted consequence is `self_compatible`, **not** causal proof. On nonconformity, attribution to an outside factor is allowed only for an independently accessible movement obstacle; all ambiguous mismatches remain `uncertain`. A missing effect after its declared window cannot be attributed retroactively.
+- `tests/test_stage9_agency_comparator.py` covers window freshness/closure, conservative attribution, P-47 configuration and compatible candidate retention. Action Control's legacy snapshot serialization remains identical when the Stage-9 comparator is unattached, preserving the golden references for Stages 3–8.
+- Remaining: full multi-command attribution and external-cause alternative accounting; lived episode and comparator-to-Causal-Model evidence adapter; complete §13.2 hypothesis/intervention lifecycle and conditional simulator correction. This checkpoint is **not** Stage-9 closure.
