@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from typing import Mapping, Sequence
 
 from i0.contracts import Contribution, GoalProposal, STVersion
+from i0.requests import Request, Response
 
 
 @dataclass(frozen=True, slots=True)
@@ -615,6 +616,78 @@ class EpisodicMemory:
                 raise ValueError("recall limit must be >= 1")
             scored = scored[:limit]
         return tuple(scored)
+
+    def respond(
+        self,
+        request: Request,
+        *,
+        st: STVersion | None,
+        t_monde: int,
+    ) -> Response:
+        request.validate()
+        if request.recipient != "memory":
+            return Response(
+                request_ref=request.id,
+                status="refused",
+                shareable=False,
+                produced_t_monde=t_monde,
+                refusal_reason="memory.wrong_recipient",
+            )
+
+        if request.question == "recall_recent":
+            recalled = self.recall(st=st, t_monde=t_monde)
+            if not recalled:
+                return Response(
+                    request_ref=request.id,
+                    status="empty",
+                    shareable=True,
+                    produced_t_monde=t_monde,
+                    content=[],
+                )
+            return Response(
+                request_ref=request.id,
+                status="delivered",
+                shareable=True,
+                produced_t_monde=t_monde,
+                content=[
+                    {
+                        "episode_ref": item.episode_ref,
+                        "score": item.score,
+                    }
+                    for item in recalled
+                ],
+            )
+
+        if request.question.startswith("episode:"):
+            episode_ref = request.question.split(":", 1)[1]
+            episode = next(
+                (item for item in self._episodes if item.id == episode_ref),
+                None,
+            )
+            if episode is None:
+                return Response(
+                    request_ref=request.id,
+                    status="empty",
+                    shareable=True,
+                    produced_t_monde=t_monde,
+                    content=None,
+                )
+            self._last_recalled_ref = episode.id
+            return Response(
+                request_ref=request.id,
+                status="delivered",
+                shareable=True,
+                produced_t_monde=t_monde,
+                content=episode.as_dict(),
+            )
+
+        return Response(
+            request_ref=request.id,
+            status="refused",
+            shareable=False,
+            produced_t_monde=t_monde,
+            refusal_reason="memory.unsupported_question",
+        )
 
     def spontaneous_contribution(
         self,
