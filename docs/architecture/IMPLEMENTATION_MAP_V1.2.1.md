@@ -262,7 +262,7 @@ Stage 7 gate status:
 
 ## Current repository gap
 
-The normative implementation has closed the deterministic substrate through Stage 7 Memory. Stage 8 development is on `i0/stage8-online-learning-v1.2.1` (PR #17, draft). Stage 8 is **not closed** until the complete normative gate and two matching 300-step references pass. Stage 8 may consume accessible S_t, experienced transitions and Stage-7 memory interfaces, but must not pull forward Stage-9 causal-model behavior or Stage-10 sleep/consolidation.
+The normative implementation is closed through **Stage 8 Online Learning**, as verified on `i0/stage8-online-learning-v1.2.1` (PR #17, draft, deliberately not merged). Stage 9 Causal Model remains the next normative development stage; Stage 10 consolidated forms remain outside Stage 8. Stage 8 may consume accessible S_t, experienced transitions and Stage-7 memory interfaces, but must not pull forward Stage-9 causal-model behavior or Stage-10 sleep/consolidation.
 
 ## Functional groups
 
@@ -358,19 +358,38 @@ Deferred to following Stage 1 groups:
 | Machine time excluded from causality (INV-22) | no machine-time field currently used | explicit separation in new causal journal API | Deterministic foundation | causal bytes contain no implicit wall-clock data |
 
 
-## Stage 8 implementation audit (in progress)
+## Stage 8: Online Learning and active calibration — software-complete
 
-Normative source: section 5.3, 8.5, 11, 20.3 Stage 8, 21, DC-01, DC-06, DC-15.
-Parameter dependencies: P-13, P-30, P-31, P-32, P-33.
+**Normative authority:** `docs/architecture/reference/en/mvp-specification-v1.2.1.md`, especially §§5.3, 8.1, 8.5, 11.1–11.4, 20.3 Stage 8, 21, DC-01, DC-06, DC-15. The EN specification is unchanged.
 
-- Value and Needs owns Q_active, signature-indexed linear TD weights, update counts, eligibility traces and pending experienced segments. No writes to consolidated Q (Stage 10).
-- Metacognition and Health owns κ_active with P-33 finite beta prior, binned confidence, exact DC-06 module/version/type/family keys, causal provenance admission, deterministic end-of-cycle publication and causal export/restore. No writes to consolidated κ (Stage 10).
-- Closed signal families are reused from the existing structural contract; no new family added.
-- Simulator predictions may be verified only against later physically observed consequences; same-family repetitions, derived confirmation, oracle, cancelled segments and non-verifiable outcomes cannot alter κ.
-- Gatekeeper consumes κ reliability as a multiplicative factor for priority and safety preemption. Legacy Stages 4-7 retain their f=1 compatibility behavior where κ is unattached.
-- Competition receives typed learned and simulated values through Stage8OptionEvaluator, with unlearned distinct from numeric zero.
-- TD unknown-Q reads are pure; no implicit causal map entry is created.
+**Parameters:** P-13 (learned/simulated mixture), P-30 (individual discount), P-31 (TD learning rate and eligibility decay), P-32 (versioned feature projection), P-33 (reliability map confidence classes and finite priors). Perceptual-source precision estimation uses a separately versioned, explicit configuration under §11.2 rather than an undeclared constant.
 
-Automated coverage added: tests/test_stage8_kappa.py (INV-01, INV-05, INV-26, INV-27, INV-33, INV-43) and existing tests/test_stage8_td_values.py (INV-07, INV-16, INV-50). Stage 8 300-step journal and evolving active-state assertions are being added to CI.
+### Causal state owners and update frontiers
 
-**Outstanding before closure:** verify the Stage 8 300-step journal twice with identical hashes/bytes, verify κ and Q trajectories and behavioral choice divergence, extend complete rollback/replay/snapshot coverage, confirm P-33 prior-provenance and active precision requirements, validate INV-03/05/07/16/26/43 plus historical Stage 7 golden unchanged. No Stage 8 golden is frozen until that gate is green.
+| Owner | Active states exclusively owned | Temporal and snapshot behavior |
+| --- | --- | --- |
+| Value and Needs | `Q_active`: per-learning-signature linear parameters, update counts, eligibility traces, pending experienced-decision segments | Experience-driven TD is published only after an applied nonlethal transition; no oracle, lethal rollback or premature same-step evaluation. Unknown Q reads do not create state; unlearned is not zero evidence. Complete snapshot/restore. |
+| Metacognition and Health | `κ_active`: DC-06 map, confidence buckets, finite prior, counted confirmations/contradictions, pending verification batch, verification IDs and credited independent physical observations | Each deliberation uses the previously frozen published version; canonical integration and atomic phase-5 publication; causal snapshot/restore, no self-verification or oracle. |
+| Perception | Active precision per registered source, pending independent verification batch, finite prior-weighted error statistics and credited physical observations | Only Perception mutates its active precision; publish after a nonlethal world-step; causal snapshot/restore and versioned initial assumptions. |
+
+No Stage 8 module mutates consolidated `Q`, consolidated `κ`, consolidated perceptual precision or the future Stage-10 Consolidation transaction.
+
+The **closed, structural DC-06 family registry** is used unchanged. Calibration keys include the equipment/module version, emitting module, contribution type and signal family; confidence is bucketed into the P-33 classes. A strong verification must refer to a later, independent, `monde`-anchored physical consequence/modality; same-channel repetitions, repeated identifiers, duplicate physical observation credits, derived/self-confirmation, oracle, counterfactuals, and rolled-back experiences cannot inflate counters. Each physically independent credit is used at most once per key.
+
+**Decision path:** experienced nonlethal reward → TD update to signature-indexed `Q_active` → typed learned option evaluation combined with available simulator evidence using `n/(n+n0)` → Competition accumulator and normal option selection. Metacognition's `κ_active` is separately consumed read-only through the Gatekeeper reliability factor, including `f × risk` security ordering. Learned, simulated, substitution, unavailable and unlearned evidence remain distinguishable. Legacy Stages 4–7 use their original Gatekeeper behavior when the Stage-8 reliability resolver is not attached. Learned experience is shown in `tests/test_stage8_evidence.py` to change a subsequent Competition winner.
+
+### Verification and gate
+
+- **263 unit tests green on Python 3.11 and 3.12**. Stage-8 tests: `tests/test_stage8_td_values.py`, `tests/test_stage8_kappa.py`, `tests/test_stage8_evidence.py` and `tests/test_stage8_precision.py`, plus all inherited Stage 1–7 suites. Behavioral, provenance, physical-observation deduplication, frozen-cycle, deterministic segment, source-owner and exact snapshot round-trip tests are included.
+- Normative invariants tested and/or integrated: **INV-01, INV-03, INV-05, INV-07, INV-16, INV-26, INV-27, INV-33, INV-43 and INV-50**; DC-01, DC-06, DC-15.
+- **Reference duration: 300 world steps**. Canonical journal size **35,061,323 bytes**; final SHA-256 chain head **`0a2dc62d4ba51722a96f307fdf6c7427d1aa3b0a8a3c0e21da81bc490eb23cf8`**.
+- `Q_active`: **2 populated signatures, 597 updates**. `κ_active`: **1 updated calibration key, final publication version 1498**. `F_cog`: **9,593 UC**.
+- **Two complete 300-step runs agree byte-for-byte** in journal bytes and hash, and exactly in `Q_active` and `κ_active` causal state. These checks and a frozen hash/size/state gate are part of CI.
+- **Stage 7 historical hash unchanged:** `c356fe386c2480e78e485f85815ac93fc90f3b679e5806dcb61b374daee9da77`.
+- Stage 6 reference is the corrected, already Stage-7-validated Stage-6 baseline `1bbd9071a4a7e9385f537a6f43362f34cc4e7f0a6ca301204abf9100ba2012d5`, incorporated through an explicit non-destructive merge of Stage-6 fixes. The older Stage-6 head `1f7a61df76a84a5f3c00b66ee636ec99ca787793775b0a6ef15449db69286e1b` predates those validated Stage-6 fixes; it was not silently substituted by Stage-8 changes.
+
+### Deliberate boundaries
+
+The noiseless reference trajectory produces no independent sensor-precision calibration samples; active precision update, provenance rejection and publication are separately exercised by deterministic tests. Stage 8 does not add Stage-9 Causal Model knowledge/contingencies or Stage-10 sleep/consolidation. P-33 and active-precision coefficients are versioned software-reference parameters, not empirical performance calibration. The normative Stage-13 campaign and inter-version equivalence evidence are not implied by a green software gate.
+
+**Status:** **Stage 8 closed for the normative MVP implementation gate.** Next normative stage: **Stage 9 — Causal Model and agency**, only after review of the Stage-8 PR; no merge to `main` was performed.
