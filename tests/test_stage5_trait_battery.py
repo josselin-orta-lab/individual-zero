@@ -66,7 +66,13 @@ class Stage5TraitBatteryTests(unittest.TestCase):
             set(BatterySituation),
         )
         self.assertTrue(all(result.copy_id != parent.individual_id for result in results))
-        self.assertTrue(all(result.steps_run <= 3 for result in results))
+        bounds = battery_config().max_steps_by_situation
+        self.assertTrue(
+            all(
+                result.steps_run <= bounds[result.situation.value]
+                for result in results
+            )
+        )
 
     def test_threat_response_produces_observable_flight_score(self) -> None:
         parent = build_stage5_reference_runtime()
