@@ -19,6 +19,7 @@ def verification(identifier="v1", **changes):
         observation_step=2,
         outcome="confirmee",
         observation_anchor="monde",
+        observation_ref=f"physical-observation:{identifier}",
         independent_family="body_telemetry",
         physical_consequence=False,
         provenance_independent=True,
@@ -81,6 +82,25 @@ class KappaTests(unittest.TestCase):
         k = model()
         k.integrate(verification(independent_family=None, physical_consequence=True))
         self.assertEqual(len(k.publish()), 1)
+
+    def test_two_identifiers_cannot_credit_the_same_physical_consequence_twice(self):
+        k = model()
+        k.integrate(verification("signal-a", observation_ref="physical:x:step2"))
+        k.integrate(verification("signal-b", observation_ref="physical:x:step2"))
+        self.assertEqual(len(k.publish()), 1)
+        self.assertEqual(reliability(k), 2 / 3)
+        k.integrate(verification("signal-c", observation_ref="physical:x:step2"))
+        self.assertEqual(len(k.publish()), 0)
+        self.assertEqual(reliability(k), 2 / 3)
+        k.integrate(verification("signal-d", observation_ref="physical:x:step3"))
+        self.assertEqual(len(k.publish()), 1)
+        self.assertEqual(reliability(k), 3 / 4)
+
+    def test_no_credited_kappa_without_observation_reference(self):
+        k = model()
+        k.integrate(verification(observation_ref=None))
+        self.assertEqual(k.publish(), ())
+        self.assertEqual(reliability(k), 0.5)
 
     def test_snapshot_restore_pending_and_determinism(self):
         first = model()
