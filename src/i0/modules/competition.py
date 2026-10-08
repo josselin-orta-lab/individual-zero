@@ -75,8 +75,24 @@ class CompetitionTrace:
     accumulator_before: float
     accumulator_after: float
     threshold: float
-    evidence: float
+    evidence: float | None
     crossed: bool
+
+
+@dataclass(frozen=True, slots=True)
+class OptionEvidenceInput:
+    evaluation: EvaluationOption
+    evidence: float | None
+
+    def validate(self) -> None:
+        self.evaluation.validate()
+        if self.evaluation.status == "evaluated":
+            if self.evidence is None:
+                raise ValueError("evaluated option requires evidence")
+            if not -1.0 <= self.evidence <= 1.0:
+                raise ValueError("option evidence must lie in [-1,1]")
+        elif self.evidence is not None:
+            raise ValueError("not_evaluated option cannot carry evidence")
 
 
 @dataclass(frozen=True, slots=True)
@@ -113,6 +129,18 @@ class Competition:
     @property
     def registry_size(self) -> int:
         return len(self._registry)
+
+    @property
+    def candidate_proposals(self) -> tuple[OptionProposal, ...]:
+        return tuple(
+            self._registry[option_id].proposal
+            for option_id in sorted(
+                self._registry,
+                key=lambda oid: canonical_option_order(
+                    self._registry[oid].proposal.option
+                ),
+            )
+        )
 
     def _primitive_for(self, proposal: OptionProposal) -> str:
         if proposal.plan is None or not proposal.plan.steps:
@@ -266,6 +294,7 @@ class Competition:
         *,
         cycle: int,
         t_monde: int,
+        evidence_inputs: Mapping[str, OptionEvidenceInput] | None = None,
     ) -> CompetitionCycleResult:
         if cycle < 1:
             raise ValueError("competition cycle must be >= 1")
@@ -282,30 +311,57 @@ class Competition:
             ),
         ):
             state = self._registry[option_id]
-            primitive = self._primitive_for(state.proposal)
-            evidence = self._config.substitution_evidence.get(primitive, 0.0)
+            if evidence_inputs is None:
+                primitive = self._primitive_for(state.proposal)
+                evidence = self._config.substitution_evidence.get(primitive, 0.0)
+                evaluation = EvaluationOption(
+                    option_ref=option_id,
+                    option_version=state.proposal.option.version,
+                    cycle=cycle,
+                    t_monde=t_monde,
+                    status="evaluated",
+                    learned_value_status="unlearned",
+                    learned_value=None,
+                    simulated_value_status="unavailable",
+                    simulated_value=None,
+                    intrinsic_status="not_applicable",
+                    intrinsic_value=None,
+                    risk_status="unknown",
+                    risk=None,
+                    safety_uncertainty=0.0,
+                    protection=False,
+                    signal_ids=(),
+                    producers=("stage4_substitution",),
+                )
+            else:
+                supplied = evidence_inputs.get(option_id)
+                if supplied is None:
+                    raise ValueError(
+                        f"missing Stage-6 evidence input for option {option_id}"
+                    )
+                supplied.validate()
+                evaluation = supplied.evaluation
+                evidence = supplied.evidence
 
-            evaluation = EvaluationOption(
-                option_ref=option_id,
-                option_version=state.proposal.option.version,
-                cycle=cycle,
-                t_monde=t_monde,
-                status="evaluated",
-                learned_value_status="unlearned",
-                learned_value=None,
-                simulated_value_status="unavailable",
-                simulated_value=None,
-                intrinsic_status="not_applicable",
-                intrinsic_value=None,
-                risk_status="unknown",
-                risk=None,
-                safety_uncertainty=0.0,
-                protection=False,
-                signal_ids=(),
-                producers=("stage4_substitution",),
-            )
             evaluation.validate()
             evaluations.append(evaluation)
+
+            if evaluation.status == "not_evaluated":
+                before = state.accumulator
+                traces.append(
+                    CompetitionTrace(
+                        option_ref=option_id,
+                        accumulator_before=before,
+                        accumulator_after=before,
+                        threshold=state.last_threshold,
+                        evidence=None,
+                        crossed=False,
+                    )
+                )
+                continue
+
+            if evidence is None:
+                raise ValueError("evaluated option unexpectedly lacks evidence")
 
             threshold = max(
                 self._config.threshold_floor,
