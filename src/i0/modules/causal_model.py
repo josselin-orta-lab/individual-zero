@@ -43,6 +43,9 @@ class CausalModelConfig:
     # Non-safety causal predicates must be explicitly registered and versioned.
     # Existing veto categories remain closed and unchanged (DC-05).
     causal_predicates: tuple[str, ...] = ()
+    # Explicit, versioned physical comparison pairs (treatment, observed
+    # different food). Empty by default: no automatic baseline is inferred.
+    food_control_pairs: tuple[tuple[str, str], ...] = ()
 
     def validate(self) -> None:
         if not self.version or any(
@@ -53,6 +56,18 @@ class CausalModelConfig:
         if (any(not isinstance(p, str) or not p.strip() for p in self.causal_predicates)
             or len(set(self.causal_predicates)) != len(self.causal_predicates)):
             raise ValueError("invalid versioned causal predicate registry")
+        if (
+            any(
+                not isinstance(pair, (tuple, list)) or len(pair) != 2
+                or pair[0] not in {"berry_a", "berry_b"}
+                or pair[1] not in {"berry_a", "berry_b"}
+                or pair[0] == pair[1]
+                for pair in self.food_control_pairs
+            )
+            or len({pair[0] for pair in self.food_control_pairs})
+                != len(self.food_control_pairs)
+        ):
+            raise ValueError("invalid preregistered physically observed food controls")
 
 
 @dataclass(frozen=True, slots=True)
