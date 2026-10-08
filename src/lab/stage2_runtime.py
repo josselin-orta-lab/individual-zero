@@ -178,6 +178,7 @@ class ScriptedStage2Runtime:
         event_emitter: str | None = None,
         checkpoint_owners=None,
         individual_id: str = "stage2-scripted",
+        checkpoint_cycle: int = 0,
     ) -> CommandExecution:
         """Execute a command already admitted by the active control path.
 
@@ -219,7 +220,7 @@ class ScriptedStage2Runtime:
             snapshot_type=SnapshotType.LETHAL_CHECKPOINT,
             individual_id=individual_id,
             t_monde=attempt.t_monde,
-            cycle=0,
+            cycle=checkpoint_cycle,
             attempt_ref=attempt.attempt_ref,
             owners=(
                 self.causal_owners
