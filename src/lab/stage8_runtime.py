@@ -220,6 +220,45 @@ class Stage8Runtime(Stage7Runtime):
             evidence_inputs=evidence_inputs,
         )
 
+    def _handle_agency_comparison(self, *, capture, comparison) -> None:
+        super()._handle_agency_comparison(capture=capture, comparison=comparison)
+        # DC-06: the simulator's declared outcome is compared with a fresh
+        # physical capture. Predictions do not verify themselves. Unknown
+        # comparisons and unobserved consequences never enter the posterior.
+        for index, effect in enumerate(comparison.effects):
+            status = effect.get("status")
+            if status not in {"conforming", "nonconforming"}:
+                continue
+            if effect.get("observed") is None or effect.get("predicted") is None:
+                continue
+            self.kappa_active.integrate(KappaVerification(
+                identifier=deterministic_id(
+                    "kappa-verification-v1",
+                    self.equipment.version,
+                    comparison.option_ref,
+                    comparison.sent_t_monde,
+                    comparison.observed_t_monde,
+                    index,
+                ),
+                equipment_or_module_version=self.equipment.version,
+                module="simulator",
+                contribution_type="prediction",
+                signal_family="equipment_predictor",
+                declared_confidence=1.0,
+                emission_step=comparison.sent_t_monde,
+                observation_step=comparison.observed_t_monde,
+                outcome=(
+                    "confirmee" if status == "conforming"
+                    else "contredite"
+                ),
+                observation_anchor="monde",
+                independent_family="world_symbolic"
+                if str(effect.get("variable")) in {"position_x", "position_y"}
+                else "body_telemetry",
+                physical_consequence=True,
+                provenance_independent=True,
+            ))
+
     def _dispatch_decision(
         self,
         *,
