@@ -42,6 +42,7 @@ from i0.serde import encode_proposal
 from .bus import InMemoryBus, ProducerBuffer
 from .compute_budget import ComputeBudgetConfig, CycleComputeBudget
 from .determinism import canonical_causal_bytes, deterministic_id, sha256_hex
+from .injected_scenario import ScenarioEvent
 from .safety_protocol import SafetyProtocolConfig
 from .scheduler import CyclePhase, PhaseContext
 from .stage2_runtime import CommandExecution
@@ -99,6 +100,9 @@ class Stage4Runtime:
         safety_facts: StaticSafetyFacts,
         protected_integrity_threshold: float,
         config: Stage4Config,
+        scenario_id: str | None = None,
+        scenario_version: str | None = None,
+        scenario_events: tuple[ScenarioEvent, ...] = (),
     ) -> None:
         config.validate()
         self._config = config
@@ -110,6 +114,9 @@ class Stage4Runtime:
             safety_config=safety_config,
             safety_facts=safety_facts,
             protected_integrity_threshold=protected_integrity_threshold,
+            scenario_id=scenario_id,
+            scenario_version=scenario_version,
+            scenario_events=scenario_events,
         )
         self.value_needs = ValueAndNeeds(config.value_needs)
         self.goal_manager = GoalManager(config.goals)
