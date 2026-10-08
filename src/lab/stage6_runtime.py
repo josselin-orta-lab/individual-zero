@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from i0.contracts import PredictionError
 from i0.equipment import EquipmentModel
 from i0.modules import StaticSafetyFacts
 from i0.modules.simulator import Simulator, SimulatorConfig, state_from_capture
@@ -103,6 +104,69 @@ class Stage6Runtime(Stage4Runtime):
     @property
     def equipment_version(self) -> str:
         return self.equipment.version
+
+    def _handle_agency_comparison(
+        self,
+        *,
+        capture,
+        comparison,
+    ) -> None:
+        super()._handle_agency_comparison(
+            capture=capture,
+            comparison=comparison,
+        )
+
+        for index, effect in enumerate(comparison.effects):
+            status = effect.get("status")
+            if status not in {"nonconforming", "expected_effect_missing"}:
+                continue
+
+            variable = str(effect.get("variable", "unspecified"))
+            predicted_raw = effect.get("predicted")
+            observed_raw = effect.get("observed")
+            precision_raw = effect.get("precision")
+            predicted = (
+                None if predicted_raw is None else float(predicted_raw)
+            )
+            observed = (
+                None if observed_raw is None else float(observed_raw)
+            )
+            precision = (
+                None if precision_raw is None else float(precision_raw)
+            )
+            magnitude = (
+                None
+                if predicted is None or observed is None
+                else abs(observed - predicted)
+            )
+            error_type = (
+                "interoceptive"
+                if variable in {"energy", "food", "water", "integrity"}
+                else "action"
+            )
+            error = PredictionError(
+                error_type=error_type,
+                source="agency_comparator",
+                model_target=f"equipment:{self.equipment.version}",
+                variable=variable,
+                predicted=predicted,
+                observed=observed,
+                value=magnitude,
+                precision=precision,
+                nature="change",
+                t_monde=capture.t_monde,
+                episode_ref=None,
+            )
+            error.validate()
+            self._write(
+                kind="prediction_error",
+                data={
+                    "index": index,
+                    "option_ref": comparison.option_ref,
+                    "sent_t_monde": comparison.sent_t_monde,
+                    "error": error.as_dict(),
+                },
+            )
 
     def _propose_for_cycle(
         self,
