@@ -375,8 +375,7 @@ class Stage6Runtime(Stage4Runtime):
                     },
                     "reason": (
                         "invalid_active_plan"
-                        if self.planning.revision_required_option_ref
-                        == proposal.option.id
+                        if invalid_revision
                         else "value_improvement"
                     ),
                     "delta_plan": self._stage6_config.planning.revision_delta,
