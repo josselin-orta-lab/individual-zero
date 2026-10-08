@@ -138,6 +138,7 @@ class LivedFoodExposure:
     integrity_before: float
     body_before: tuple[tuple[str, float], ...] | None = None
     position_before: tuple[int, int] | None = None
+    state_before_digest: str | None = None
     observed_step: int | None = None
     integrity_observed: float | None = None
 
@@ -163,6 +164,12 @@ class LivedFoodExposure:
             if (len(self.position_before) != 2
                 or any(type(v) is not int for v in self.position_before)):
                 raise ValueError("invalid pre-action observable position")
+        if self.state_before_digest is not None and (
+            self.body_before is None or self.position_before is None
+            or len(self.state_before_digest) != 64
+            or any(c not in "0123456789abcdef" for c in self.state_before_digest)
+        ):
+            raise ValueError("invalid accessible pre-action state digest")
         if self.observed_step is None:
             if self.integrity_observed is not None:
                 raise ValueError("unpaired observation")
@@ -262,6 +269,7 @@ class CausalModel:
         option_ref: str, motive_ref: str, integrity_before: float,
         body_before: Mapping[str, float] | None = None,
         position_before: tuple[int, int] | None = None,
+        state_before_digest: str | None = None,
     ) -> None:
         """Only already-executed, independently goal-motivated actions enter.
 
@@ -277,6 +285,7 @@ class CausalModel:
                 tuple(sorted((name, float(v)) for name, v in body_before.items()))
             ),
             position_before=position_before,
+            state_before_digest=state_before_digest,
         )
         item.validate()
         if t_monde in self._lived_food_exposures:
@@ -401,6 +410,7 @@ class CausalModel:
             if (
                 exposure.body_before is not None
                 and exposure.position_before is not None
+                and exposure.state_before_digest is not None
                 and after < exposure.integrity_before
             ):
                 witness = LivedNumericOutcome(
@@ -417,6 +427,7 @@ class CausalModel:
                     variable="integrity",
                     observed_before_body=exposure.body_before,
                     observed_before_position=exposure.position_before,
+                    observed_before_state_digest=exposure.state_before_digest,
                     observed_after=float(after),
                 )
                 numeric_witnesses.append(witness)
@@ -602,6 +613,7 @@ class CausalModel:
                     observed_after=witness.observed_after,
                     observed_before_body=witness.observed_before_body,
                     observed_before_position=witness.observed_before_position,
+                    observed_before_state_digest=witness.observed_before_state_digest,
                 )
                 rule.validate()
                 rules.append(rule)
