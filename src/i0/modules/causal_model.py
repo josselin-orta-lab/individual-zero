@@ -236,6 +236,7 @@ class CausalModel:
         self._agency_evidence: dict[str, AgencyEvidence] = {}
         self._pending_agency_evidence: list[AgencyEvidence] = []
         self._numeric_witnesses: dict[str, LivedNumericOutcome] = {}
+        self._pending_numeric_witnesses: list[LivedNumericOutcome] = []
 
     @property
     def version(self) -> int:
@@ -478,7 +479,10 @@ class CausalModel:
                 witness.identifier in self._numeric_witnesses
                 or any(
                     old.transition_event_ref == witness.transition_event_ref
-                    for old in self._numeric_witnesses.values()
+                    for old in (
+                        *self._numeric_witnesses.values(),
+                        *self._pending_numeric_witnesses,
+                    )
                 )
             ):
                 raise ValueError("duplicated closed physical numeric outcome")
@@ -487,7 +491,7 @@ class CausalModel:
         for item in causal_observations:
             self.integrate_causal_observation(item)
         for witness in numeric_witnesses:
-            self._numeric_witnesses[witness.identifier] = witness
+            self._pending_numeric_witnesses.append(witness)
         # Exposure refs can be discarded only once their command is represented
         # by a *closed* episode; unobserved attempts cannot be counted later.
         for t, command in commands.items():
@@ -787,7 +791,23 @@ class CausalModel:
             if report.event_ref in {v.event_ref for v in agency.values()}:
                 raise ValueError("duplicate published physical agency observation")
             agency[report.identifier] = report
+        numeric = dict(self._numeric_witnesses)
+        for witness in sorted(
+            self._pending_numeric_witnesses, key=lambda row: row.identifier,
+        ):
+            witness.validate()
+            if (
+                witness.identifier in numeric
+                or any(
+                    prior.transition_event_ref == witness.transition_event_ref
+                    for prior in numeric.values()
+                )
+            ):
+                raise ValueError("duplicate published physical numeric witness")
+            numeric[witness.identifier] = witness
         self._published = published
+        self._numeric_witnesses = numeric
+        self._pending_numeric_witnesses.clear()
         self._agency_evidence = agency
         self._causal_observations = observations
         self._causal_interventions = interventions
@@ -930,6 +950,10 @@ class CausalModel:
                 {name: getattr(w, name) for name in w.__dataclass_fields__}
                 for _, w in sorted(self._numeric_witnesses.items())
             ],
+            "pending_numeric_witnesses": [
+                {name: getattr(w, name) for name in w.__dataclass_fields__}
+                for w in self._pending_numeric_witnesses
+            ],
             "lived_food_exposures": [
                 {name: getattr(v, name) for name in v.__dataclass_fields__}
                 for _, v in sorted(self._lived_food_exposures.items())
@@ -1010,9 +1034,16 @@ class CausalModel:
         ]
         if len({v.identifier for v in witnesses}) != len(witnesses):
             raise ValueError("duplicate lived numeric witnesses in causal snapshot")
-        if len({v.transition_event_ref for v in witnesses}) != len(witnesses):
-            raise ValueError("same lived physical transition credited twice")
+        pending_witnesses = [
+            decode_lived_numeric_outcome(raw)
+            for raw in state.get("pending_numeric_witnesses", ())
+        ]
+        if len({
+            w.transition_event_ref for w in (*witnesses, *pending_witnesses)
+        }) != len(witnesses) + len(pending_witnesses):
+            raise ValueError("same physical transition across published/pending witnesses")
         self._numeric_witnesses = {v.identifier: v for v in witnesses}
+        self._pending_numeric_witnesses = pending_witnesses
         self._version = version
 
 
