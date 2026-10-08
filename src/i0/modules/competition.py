@@ -14,6 +14,7 @@ from math import exp
 from typing import Callable, Mapping, Sequence
 
 from i0.contracts import EvaluationOption, Option, OptionProposal, canonical_option_order
+from i0.serde import decode_proposal, encode_proposal
 
 
 @dataclass(frozen=True, slots=True)
@@ -390,11 +391,43 @@ class Competition:
             "engaged_option_id": self._engaged_option_id,
             "registry": [
                 {
-                    "option_id": option_id,
+                    "proposal": encode_proposal(state.proposal),
                     "accumulator": state.accumulator,
                     "last_threshold": state.last_threshold,
                     "last_proposal_t": state.last_proposal_t,
                 }
-                for option_id, state in sorted(self._registry.items())
+                for _, state in sorted(self._registry.items())
             ],
         }
+
+    def restore_causal_state(self, state: object) -> None:
+        if not isinstance(state, Mapping):
+            raise ValueError("Competition state must be a mapping")
+        if state.get("config_version") != self._config.version:
+            raise ValueError("Competition config version mismatch")
+        cycle = state.get("cycle")
+        if not isinstance(cycle, int) or cycle < 0:
+            raise ValueError("invalid Competition cycle")
+        engaged = state.get("engaged_option_id")
+        if engaged is not None and not isinstance(engaged, str):
+            raise ValueError("invalid engaged option id")
+        raw_registry = state.get("registry")
+        if not isinstance(raw_registry, list):
+            raise ValueError("invalid Competition registry")
+        registry: dict[str, CandidateState] = {}
+        for row in raw_registry:
+            if not isinstance(row, Mapping):
+                raise ValueError("invalid Competition candidate")
+            proposal_raw = row.get("proposal")
+            if not isinstance(proposal_raw, Mapping):
+                raise ValueError("invalid Competition proposal")
+            proposal = decode_proposal(proposal_raw)
+            registry[proposal.option.id] = CandidateState(
+                proposal=proposal,
+                accumulator=float(row["accumulator"]),
+                last_threshold=float(row["last_threshold"]),
+                last_proposal_t=int(row["last_proposal_t"]),
+            )
+        self._cycle = cycle
+        self._engaged_option_id = engaged
+        self._registry = registry
