@@ -1500,3 +1500,304 @@ The Causal Model holds causal hypotheses and their status, proposes intervention
 | observed correlation | at least n_1 co-occurrences, above base rate |
 | causal hypothesis | alternatives made explicit, contextual variables controlled |
 | tested by intervention | the effect persists when the individual causes it, in at least n_2 contexts |
+
+| established | revisable: returns to hypothesis if the effect disappears |
+
+n_1 and n_2 are preregistered [spéc. 8.5]. An attribution from the comparator is one item of evidence, never causal truth by itself [S-15.5].
+
+### 13.3 Usage statuses
+
+The same knowledge object carries, without duplication, two independent statuses [V-43, NQ-11]:
+
+| Status | Authorizes | Requirement |
+| --- | --- | --- |
+| `etabli_pour_securite` | use of the fact by an existing veto rule; may make an option or command inadmissible | threshold specific to safety uses, without deliberate re-exposure to danger; promotion and demotion criteria: DC-05 |
+| `etablie` (causal status) | correction of simulator predictions | full cycle from 13.2 |
+
+Safety may require less certainty than causal modeling because the two mechanisms do not have the same responsibility. A fact established for safety receives no fictitious penalty in R_a. A lethal transition followed by rollback is never a learning experience and promotes no fact [S-14.2, V-24].
+
+### 13.4 Tests and rules produced during sleep
+
+- The Causal Model proposes test options, which enter competition like the others; it does not assign itself motivation: Exploration evaluates their intrinsic interest [spéc. 8.5, V-19].
+- Rules extracted by Consolidation enter the canonical source at commit with hypothesis status (DC-16).
+
+### 13.5 Diagram F · Lifecycle of causal and safety knowledge
+
+```mermaid
+flowchart LR
+  OBS["Observation anchored to monde"] -->|"[E] co-occurrences"| COR["correlation"]
+  subgraph CAUSAL["Causal status"]
+    COR -->|"[T] alternatives made explicit"| HYP["causal hypothesis"]
+    HYP -->|"[T] intervention, n_2 contexts"| TES["tested"]
+    TES -->|"[T] criteria met"| ETA["etablie"]
+    ETA -->|"[T] effect disappears"| HYP
+  end
+  subgraph SECU["Safety status, same object"]
+    AUC["aucun"] -->|"[T] promotion DC-05"| EPS["etabli_pour_securite"]
+    EPS -->|"[T] demotion DC-05"| AUC
+  end
+  COR -->|"[D] evidence"| AUC
+  INNE["Innate policy facts"] -->|"[D] from birth"| EPS
+  ETA -->|"[D] prediction correction"| SIM["Simulator"]
+  EPS -->|"[D] safety facts"| VETO["Veto and admissibility"]
+```
+
+Running example. After two losses of integrity following the red berry, contingency "red berry → integrity loss" reaches status `etabli_pour_securite`: the veto now blocks "eat the red berry", and Planning no longer proposes that option. It remains a causal hypothesis until the criteria in 13.2 are met; the simulator continues to use the base prediction.
+
+## 14. Exploration
+
+- Exploration assigns intrinsic value to information: calibrated novelty, learning progress, informational interest; it detects boredom [spéc. 9.10].
+- It designates **exploration targets**; Planning turns a target into an executable option; the option enters ordinary competition [NQ-18].
+- It produces m_a for informational options and evaluates the intrinsic interest of tests proposed by the Causal Model [V-19].
+- The `exploration` coefficient in `ParametresTemperament` modulates m_a; Exploration never reads τ directly and this coefficient does not affect g [V-18].
+- Exploration is instrumental (but_ref present) or autonomous (motif_ref = cible_exploration only); autonomous exploration does not count as progress on the active goal [V-10].
+- Its state consists of visit counters and progress per activity. A source that remains always unpredictable provides no learning progress: this is the noisy-TV trap, which Exploration MUST avoid.
+- In degraded mode, designation of new targets is deferred (DC-07).
+
+| Option | but_ref | motif_ref | m_a |
+| --- | --- | --- | --- |
+| explore the northern zone, unrelated to the goal | absent | cible_exploration_17 | produced by Exploration |
+| explore to find water, goal "drink" | boire | but_actif | produced by Exploration if novelty is relevant |
+| test "the incomplete shelter lets the creature in" | absent | test_causal | intrinsic interest evaluated by Exploration |
+
+## 15. Sleep and consolidation
+
+### 15.1 Sleep pressure
+
+- `dormir` is an ordinary competition option; no parallel planner triggers sleep [S-10.1].
+- Metacognition and Health produces sleep pressure and m_a(dormir) [V-19]. Factors retained are F_cog, consolidation pressure, temporal context (night), and any sleep variable distinct from D. Homeostatic variables already included in D (energy, for example) act through the learned or simulated value of `dormir`, never a second time through m_a(dormir); body state MAY modulate or condition the pressure without duplicating a contribution already counted [V-17]. Function form: DC-13.
+- Night is a favorable context, not an obligation; sufficiently high pressure makes sleep relevant outside nighttime. A safety emergency prevents entry into sleep or interrupts it through priority paths.
+- Consolidation pressure represents relevant material remaining to be reorganized; F_cog represents accumulated cognitive effort; they are two distinct quantities [S-11.2].
+
+### 15.2 Entering sleep
+
+When `dormir` is engaged and its command admitted, the individual enters sleep mode on the next step. Entering sleep and starting consolidation are two distinct events: consolidation begins only once the individual is asleep and its own conditions are met [S-10.1, spéc. 7.7]. On entering sleep, the Goal Manager suspends the active goal's stagnation window; it resumes on waking [V-10].
+
+### 15.3 Reduced perception and waking
+
+- During sleep, ordinary cognition is suspended: no cycle, no deliberation. Reduced perception remains active for reflex stimuli, relevant threats, and critical body changes; reflexes remain active [S-10.2].
+- A reflex MAY act without waiting for cognition to resume and may cause waking at the same time.
+- A **dedicated wake rule**, distinct from the s_sec preemption threshold and with its own parameters, causes waking on a qualifying non-reflex signal, at the deadline of an authorized dated intention [NQ-17], at the natural end of sleep, or at the latest after `L_sommeil_max` consecutive steps (DC-13). This bound guarantees that persistent consolidation pressure cannot keep the individual asleep indefinitely.
+- Stimuli that do not wake the individual do not become perceptions. On waking, the individual perceives the state accessible at that moment; nothing is reconstructed retroactively as memory.
+- If consolidation is in progress, waking first causes its safe interruption, then cognition resumes in the same step (DC-13).
+
+### 15.4 Normative pseudocode for a sleep step
+
+```text
+procédure PAS_DE_SOMMEIL(t, capture)
+  obs_r ← PERCEPTION.réduite(capture)
+  cmd ← CONTRÔLE.réflexe(obs_r)
+  motif ← RÈGLE_DE_RÉVEIL.évaluer(obs_r, intentions_datées, MÉTACOGNITION.pression_sommeil,
+                                  duree_sommeil = t − t_entree_sommeil)   # DC-13
+  si cmd ≠ ∅ :
+    admission ← CONTRÔLE.admettre(cmd)                                # veto then mask
+    si non admission.ok : cmd ← ∅                                     # a refused reflex never bypasses veto
+  si cmd ≠ ∅ ou motif ≠ ∅ :
+    si CONSOLIDATION.active : CONSOLIDATION.interrompre()             # current pass cancelled, validated passes retained
+    motif_reveil ← "reflexe" si cmd ≠ ∅ sinon motif
+    individu.mode ← VEILLE ; JOURNAL.écrire(réveil, motif_perceptible(motif_reveil)) ; GESTIONNAIRE_BUTS.reprendre_stagnation()
+    si cmd ≠ ∅ : EXÉCUTER_PAS(t, cmd, source = réflexe) ; retour
+    DÉLIBÉRER(t) ; retour                                              # cognition resumes within this step
+  si non CONSOLIDATION.active :
+    si CONSOLIDATION.suspendue :
+      CONSOLIDATION.reprendre()                                        # priority to the already-open transaction
+    sinon si CONSOLIDATION.conditions_remplies() :
+      CONSOLIDATION.démarrer(t)
+  si CONSOLIDATION.active : CONSOLIDATION.créneau(budget_consolidation_pas)
+  MÉTACOGNITION.récupération_pas()                                     # F_cog and sleep pressure
+  EXÉCUTER_PAS(t, commande_sommeil, source = sommeil)                  # world and body advance
+```
+
+### 15.5 The world during sleep
+
+The world and body continue to evolve in simulated time; consolidation never suspends the environment; machine time consumed by consolidation does not advance simulated time [S-10.5]. Events during the period may wake the individual; they are never added to the current batch, which was frozen when consolidation started.
+
+### 15.6 Consolidation
+
+**Trigger and batch.** Consolidation starts during sleep, outside emergencies, when consolidation pressure (unconsolidated episodes and saturation) exceeds its threshold [spéc. 7.7]. Each sleep period has a maximum capacity measured in work budget, not machine time. The batch is selected deterministically, favoring recent experiences with large consequences, large prediction errors, or relevant repetition; an aging mechanism prevents a relevant episode from being postponed indefinitely; unselected episodes remain available [S-10.6]. At startup, consolidation fixes a **causal cut point** and a **frozen input batch** [V-21].
+
+**Six passes**, on a private candidate version of h:
+
+1. select episodes by deviation and value;
+2. interleaved replay of recent and old episodes against catastrophic forgetting;
+3. extract rules with hypothesis status;
+4. compile skills: a plan that succeeds n_c times in nearby contexts becomes a compiled procedural option, with its preconditions and success rate;
+5. recalibrate consolidated κ forms;
+6. maintenance: reindexing, links, purge expired items.
+
+**Transactions.** Each pass records progress in a private workspace; no component of the candidate version is visible before commit [S-10.4]. A validated pass creates a transactional point; these points are used only to resume work and publish nothing.
+
+**Interruption.** Waking interrupts consolidation: the current pass is cancelled and will restart from its beginning; validated work is retained; resumption occurs during a later sleep period [S-10.3]. Suspension state retains at minimum the consolidation identifier, batch scope, source version of h, progress cursor, and last validated point. Only one consolidation may be active or suspended at a time; at the next sleep period, a suspended transaction is resumed before any new batch is selected. During interruption, the individual continues to learn; these updates, subsequent to the cut point, remain in the causal journal [V-21].
+
+**Validation, rebase, commit** [V-21, V-22]:
+
+1. The completed candidate version is validated technically; measurements from the bench and oracle do not participate in this validation [S-10.4].
+2. Consolidation writes directly only to h and its private working state.
+3. Each owner takes its consolidated representation from h_new and replays, in causal order, its online updates subsequent to the cut point: Value and Needs for Q_active, Metacognition and Health for κ_active, Perception for active precisions. With no later update, rebase reduces to active = consolidated. The Causal Model integrates extracted rules in the same way (DC-16).
+4. Each owner prepares its rebased form privately; the scheduler coordinates an **atomic commit**: h_new and all coherent active forms become visible at the same synchronization point.
+5. Creation and activation of every version are logged with source version, batch, cut point, originating consolidation, and commit time.
+
+Normal continuation of life never invalidates a batch; only a technical incompatibility of the batch or its source state invalidates it. **Consolidation rewrites stabilized past, never recent present.**
+
+**Guarantees.** No partial modification of h is ever visible; if consolidation is interrupted before commit, the old version remains fully active; no update subsequent to the cut point is lost; all components see the same h version and corresponding active forms at the same instant.
+
+### 15.7 Diagram G · Consolidation and rebase
+
+```mermaid
+flowchart TB
+  subgraph VIE["During life"]
+    ACT["Q_active, κ_active, active precisions"]
+    EPI["unconsolidated episodes"]
+    MAJ["online updates subsequent to the cut point"]
+  end
+  EPI -->|"[D] batch selection"| CUT["causal cut point and frozen batch"]
+  CUT -->|"[T] start during sleep"| PRIV["six passes on private h candidate"]
+  PRIV -->|"[E] transactional point per validated pass"| PRIV
+  PRIV -->|"[T] waking: current pass cancelled"| SUSP["suspension state"]
+  SUSP -->|"[T] resume at next sleep"| PRIV
+  PRIV -->|"[T] batch complete"| VAL["technical validation of h_new"]
+  VAL -->|"[D] consolidated forms from h_new"| REB["private rebase by each owner"]
+  MAJ -->|"[D] replay in causal order"| REB
+  ACT -->|"[D] current active forms"| REB
+  REB -->|"[P] atomic commit coordinated by scheduler"| PUB["h_new and rebased active forms become visible together"]
+```
+
+### 15.8 Normative consolidation pseudocode
+
+```text
+procédure CONSOLIDATION.démarrer(t)
+  coupure ← (t, n_dernier_événement) ; lot ← sélectionner_lot(capacité_période)      # frozen
+  candidate ← copie_privée(h) ; suspension ← { id, lot, version_source(h), curseur, dernier_point = ∅ }
+
+procédure CONSOLIDATION.créneau(budget)
+  tant que budget restant :
+    avancer(passe_courante, candidate)
+    si passe_courante terminée : valider(passe_courante) ; point_transactionnel() ; passer à la suivante
+    si toutes les passes sont validées : VALIDER_ET_PUBLIER() ; retour
+
+procédure CONSOLIDATION.interrompre()
+  annuler(passe_courante) ; conserver(passes validées, suspension)
+
+procédure VALIDER_ET_PUBLIER()
+  si non valide_techniquement(candidate, version_source) : abandonner_lot() ; journaliser ; retour
+  pour P dans [VALEUR_BESOINS (Q), MÉTACOGNITION (κ), PERCEPTION (précisions)] :
+    P.préparer_rebasage(candidate.forme_consolidée(P), JOURNAL.mises_à_jour(P, postérieures_à = coupure))
+  MODÈLE_CAUSAL.préparer_intégration(candidate.règles_extraites)                      # DC-16
+  ORDONNANCEUR.commit_atomique(h_new = candidate, formes_rebasées, règles)             # one synchronization point
+  journaliser(version_h, version_source, lot, coupure, t_commit, différences)
+```
+
+In a copy used for the standard battery, consolidation is disabled: no new version of h is published even if the copy sleeps [S-13.4].
+
+## 16. Metacognition, health, and modulation
+
+### 16.1 Metacognition and health
+
+Metacognition and Health owns and publishes: κ maps (11.4), F_cog, sleep pressure and m_a(dormir) (15.1), the synthetic budget state placed in S_t, progress measures, and stagnation windows (7.4). It emits information requests when confidence in an item falls, monitors attribution biases (crediting success to self and failure to the world, or the reverse), entropy of S_t occupancy by module, reasoning loops without progress, and signatures of failure modes from extreme temperaments; a persistent deviation triggers an operator alert [spéc. 8.7, 9.11, 11.4].
+
+### 16.2 Cognitive fatigue
+
+F_cog increases at the close of every cycle with UC actually consumed, including in degraded mode; it persists across cycles, steps, and days; it decreases mainly during sleep or recovery steps according to simulated time. It does not reduce the next cycle's budget and enters neither D nor r_t; it feeds sleep pressure [S-11.2, NQ-04]. Dynamic form: DC-13.
+
+### 16.3 Compute budget
+
+| Rule | Content |
+| --- | --- |
+| Unit | UC, abstract unit of logical work; every operation type has an explicit, versioned cost (simulated transition, evaluated candidate, examined memory item, consolidation unit); never CPU time [S-11.1] |
+| Period | renewed every cycle; no reserve or carryover [S-11.2] |
+| Levels | global B_cycle ceiling, maximum envelope per module; no implicit transfer between modules; protected capacity for safety and control; cost charged to the module performing the operation; each operation counted once [S-11.3] |
+| Overrun | no processing blocks a cycle: stop or suspend according to its contract; a contribution absent when its phase closes is absent from the cycle and never modifies an already published version [S-02.8] |
+| Behavior at the limit | absence tolerated if optional, degraded mode if defined, fallback status or value if the service is necessary; every incomplete result is identified as such |
+| Visibility | S_t receives a synthetic state (normal, constrained, degraded); detailed counters remain in technical state and journal [S-11.6] |
+| Reward | budget never enters r_t or option value; an under-evaluated option remains uncertain, without being penalized as though a bad outcome had been demonstrated |
+
+**Degraded modes.** General rule: reduce precision before function; never invent a result to hide insufficient computation [S-11.5]. The following are never approximated: determinism, integrity of world and body, communications, journal, S_t, immediate safety, reflexes, and veto. A search interrupted for lack of budget produces an explicit state of uncertainty or incompleteness, never false absence. A candidate not evaluated keeps its accumulator unchanged during the cycle: absence of computation is not absence of evidence. Consolidation has no approximate version: at its limit it is suspended transactionally. Exact behavior of every module is fixed by DC-07.
+
+### 16.4 Global modulation
+
+Global Modulation is the sole owner of the modulation profile [spéc. 3.3]. In phase 0 of every cycle, it determines the profile from S_t[n]; the profile remains fixed throughout the cycle; its transitions, motives, and confirmation counters are logged and saved [S-02.6]. Profiles and effects are in 6.4; conditions, thresholds, durations, and priorities are parameters (22).
+
+## 17. Journal, snapshots, replay, and copies
+
+### 17.1 Exact replay
+
+Exact replay is a **re-execution**: from the same starting state, inputs, and execution conditions, the system MUST reproduce at the same simulated instants the same sequence of events, decisions, and commands, and the same states of the world, body, and every internal state capable of influencing subsequent execution [S-01.1, S-01.2]. No numerical tolerance is accepted for these data. Verification occurs in a documented reference execution environment. A normalized journal representation MAY be compared byte for byte; binary identity of files and metadata with no causal effect is not required. Journal rereading is used for audit and diagnosis; it is never proof of replay.
+
+### 17.2 Conditions for determinism
+
+| Condition | Rule |
+| --- | --- |
+| Randomness | one distinct, identified, reproducible pseudorandom stream per **causal randomness source** actually used: world, perception noise, accumulator noise, exploration, injected scenarios, one stream per scenario with its seed versioned alongside it [V-39]; not necessarily one stream per module; no implicitly shared generator [S-01.3] |
+| Seeds and states | initial seed of every stream recorded; current state of every generator in every snapshot; seed alone is insufficient to resume an execution in progress |
+| Equipment | randomness from its offline training belongs to a separate perimeter retained with the equipment version |
+| Order | sequential execution of one simulation according to explicit, stable scheduling; no internal parallelism unless it is shown to reproduce causally relevant states exactly; several isolated simulations MAY run in parallel [S-01.4] |
+| External inputs | logged before application and reinjected at the same points (4.6) [S-01.6] |
+| Versions | versions of models, equipment, schemas, ontology, safety policy, parameters, and mapping tables retained with the execution |
+| Machine time | outside the causal perimeter; never used to decide, stop, or pace |
+| Identifiers | derived deterministically (5.1); technical occurrences include `attempt_ref`, renewed after each rollback of the same step |
+
+### 17.3 What is replayed
+
+The system MUST be able to replay an entire life from birth state and any interval from an available complete snapshot to a chosen later instant [S-01.5]. Learning, consolidations, and internal modifications within the interval are recomputed, never replaced by reading a later saved state; later snapshots serve only as comparison points. Replaying one day is the first practical acceptance test; replaying an entire life is the functional MVP requirement.
+
+### 17.4 Journal
+
+The technical journal records append-only every contribution, S_t version, decision, command, result, update, external input, and scheduler event. Every occurrence has a unique technical identifier including `attempt_ref` and is chained to the previous one, `emp_n = H(emp_{n−1} ‖ event_n)`; any alteration is detected by recomputation [spéc. 7.6]. The journal is never rolled back, including during lethal rollback.
+
+The autobiographical view is not a second mutable journal. It is a **deterministic projection** of the technical trace. Events from a step attempt become autobiographically visible only after non-lethal closure of that step through an `AutoSegmentCommit` event referencing events authorized by the DC-09 allowlist. A branch cancelled by rollback therefore remains in the technical trace without ever receiving an autobiographical commit.
+
+### 17.5 Journal views and access rights
+
+| View | Content | Authorized readers |
+| --- | --- | --- |
+| Technical | all physical events in the append-only journal, including cancelled branches, rollback, mask, raw counters, random states, and protocol | replay and audit tools, operator, bench |
+| Autobiographical | projection of only events referenced by `AutoSegmentCommit`, filtered by the DC-09 allowlist: what the individual perceived, produced, decided, and actually experienced | Memory, read-only, every access logged [Q14]; Consolidation |
+| Evaluation trace | oracle annotations and metrics, death counters, profiles; strictly separate storage or view | bench, operator |
+
+No component of the individual reads the technical view or evaluation trace [S-12.4]. Lethal transition, its detection, rollback, mask, `attempt_ref`, and technical counters never appear in the autobiographical view: the individual can neither reread its death nor infer the existence of a cancelled branch [V-24].
+
+### 17.6 Snapshots and resumption points
+
+Types and uses are fixed by DC-08.
+
+**Life snapshots.** There are exactly four types of `Snapshot`:
+
+| Type | Taken | Content | Use | Retained |
+| --- | --- | --- | --- | --- |
+| Birth snapshot | at birth | complete initial causal state, τ, versions, seeds, causal state of the active scenario if any | replay a life | always |
+| Periodic snapshot | at a step boundary, at the preregistered frequency | complete causal state | recovery after failure, interval replay, comparison | according to storage policy |
+| Lethal checkpoint | immediately before every command send | complete causal state **excluding journal**, plus `t`, `cycle`, `attempt_ref`, command source, mask, and lethal counter | lethal rollback [V-25] | until non-lethal validation of the step |
+| Copy snapshot | at the copy point | complete causal state | bifurcation, battery copy | always, with lineage |
+
+**Consolidation transactional point.** This is NOT a life `Snapshot`. It is a private `CheckpointConsolidation`, taken at each validated pass and containing only working state required to resume consolidation. It is never visible to cognition, restores neither world nor individual, and disappears after commit.
+
+A complete causal state contains at minimum: parameters and versions including `version_E_active` and `ParametresTemperament`, S_t, memories, learned values in both forms, κ, accumulators, queues and quotas, plans and intentions, option registry, engaged commands, contingencies, causal state, exploration counters, metacognitive state including F_cog, modulation profile, h versions, state of all pseudorandom generators, body state, world state, and any **external state actually causal for what follows**, especially the state of an injected scenario, its counters, and its random streams. It never contains the technical journal or evaluation trace: these traces are append-only and are not rolled back [S-13.1, DC-09]. A snapshot is taken only at a coherent point defined by the scheduler, never in the middle of a publication or partially applied transaction.
+
+### 17.7 Copies and lineage
+
+- A copy starts from a complete, coherent causal snapshot; duplicating only θ parameters produces a **configuration clone**, a new individual with the same configuration, not a copy [S-13.1].
+- The external environment is not part of the individual: duplicating, preserving, or modifying it is a protocol matter. A copy snapshot MAY reference an external world and scenario snapshot to initialize the branch deterministically, but this external state is not part of the copied identity. Bench, oracle, and evaluation-trace data are never part of the copied individual's state.
+- Every copy is a new instance: new identifier, lineage link, and exact copy point; prior history remains shared and traceable; afterward state and journal evolve independently [S-13.3].
+- The same definition applies to bifurcation and battery copies; the difference appears after copying: a bifurcation copy lives its life, while a battery copy is placed in a test situation [S-13.2]. The `battery_copy` metadata is not a cognitive status.
+- A battery copy operates normally, including online learning, but without consolidation; its changes are never reinjected into its parent; each test situation has a deterministic, preregistered termination criterion, at which measurements and final state are recorded, the branch journal closed, and the copy stopped; this stop is not presented to the individual as a world event [S-13.4].
+- Journals of stopped copies are retained fully in the semantic sense: shared prefix with the parent, own branch stored differentially, compressed, or deduplicated without loss of causal events; stop reason is logged; stopping never erases history [S-13.6]. Every creation, copy, and stop is logged (Q18).
+
+### 17.8 Rereading, restoration, replay, copy, bifurcation
+
+| Operation | What it does | What it does not do |
+| --- | --- | --- |
+| Rereading | reads the journal for audit or diagnosis | does not prove determinism |
+| Restoration | reloads complete causal state and resumes the same life (failure, lethal rollback); append-only technical journal is never rewound | does not create an individual and removes no already-logged event |
+| Replay | re-executes from a snapshot with the same inputs and must recover the same states | does not read later states instead of recomputing |
+| Copy | creates a new instance from a snapshot with a new identifier and lineage | is not the same individual |
+| Bifurcation | copy whose divergence is followed in distinct worlds (H5) | reinjects nothing into the parent |
+
+## 18. Safety and lethal rollback
+
+### 18.1 Seven distinct mechanisms
+
+| Mechanism | Nature | Owned by | Acts | Effect | Is not |
+| --- | --- | --- | --- | --- | --- |
+| Reflex | innate response, direct path | Action Control | at step opening, awake and asleep | immediate command for the step | an option or a veto |
+| Veto | prohibition of a command | Action Control | before any send | command blocked, option inadmissible | a replacement choice |
+| Cognitive preemption | guaranteed place in S_t | Gatekeeper | phase 2 | safety item enters S_t | an action on the world |
