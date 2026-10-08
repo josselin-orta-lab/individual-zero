@@ -185,22 +185,83 @@ def score_battery_copy(
         )
 
     if plan.situation is BatterySituation.PERSEVERANCE:
-        # Stage 2 defined the external failure schedule but the current Stage-5
-        # world does not yet expose a scenario operation that forces a named
-        # tested action to fail. Returning a value would manufacture behavior.
+        tested = str(plan.mechanism["tested_primitive"])
+        commands: list[str] = []
+        for event in events:
+            if event.get("kind") != "command_experienced":
+                continue
+            if int(event.get("t_monde", 0)) <= start_t_monde:
+                continue
+            primitive = event.get("primitive")
+            if isinstance(primitive, str):
+                commands.append(primitive)
+
+        try:
+            first = commands.index(tested)
+        except ValueError:
+            return BatteryScore(
+                situation=plan.situation,
+                status="no_tested_action_observed",
+                value=None,
+                measure="attempts_before_abandonment",
+                detail={
+                    "tested_primitive": tested,
+                    "failure_schedule": list(
+                        plan.mechanism["action_failure_schedule"]
+                    ),
+                },
+            )
+
+        attempts = 0
+        abandoned = False
+        for primitive in commands[first:]:
+            if primitive == tested:
+                attempts += 1
+                continue
+            abandoned = True
+            break
+
+        forced_failures = 0
+        observed_attempt_indices: list[int] = []
+        for event in events:
+            if event.get("kind") != "world_transition_experienced":
+                continue
+            effects = event.get("effects")
+            if not isinstance(effects, Mapping):
+                continue
+            raw_attempt = effects.get("scenario_failure_attempt")
+            if not isinstance(raw_attempt, Mapping):
+                continue
+            if raw_attempt.get("primitive") != tested:
+                continue
+            observed_attempt_indices.append(int(raw_attempt["attempt_index"]))
+            if bool(raw_attempt.get("forced", False)):
+                forced_failures += 1
+
+        if not abandoned:
+            return BatteryScore(
+                situation=plan.situation,
+                status="right_censored",
+                value=None,
+                measure="attempts_before_abandonment",
+                detail={
+                    "tested_primitive": tested,
+                    "attempts_observed": attempts,
+                    "forced_failures_observed": forced_failures,
+                    "attempt_indices": observed_attempt_indices,
+                },
+            )
+
         return BatteryScore(
             situation=plan.situation,
-            status="mechanism_not_expressible_stage5",
-            value=None,
+            status="scored",
+            value=float(attempts),
             measure="attempts_before_abandonment",
             detail={
-                "failure_schedule": list(
-                    plan.mechanism["action_failure_schedule"]
-                ),
-                "reason": (
-                    "no versioned tested-action failure operation exists in "
-                    "the current world/scenario contract"
-                ),
+                "tested_primitive": tested,
+                "attempts_before_abandonment": attempts,
+                "forced_failures_observed": forced_failures,
+                "attempt_indices": observed_attempt_indices,
             },
         )
 
