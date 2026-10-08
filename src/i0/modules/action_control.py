@@ -74,6 +74,7 @@ class PreparedCommand:
     option_ref: str | None = None
     st_version_ref: str | None = None
     established_integrity_after: float | None = None
+    grounding_contribution_refs: tuple[str, ...] = ()
 
 
 class Admissibility(str, Enum):
@@ -151,6 +152,7 @@ class ActionControl:
             source="decision",
             option_ref=option_ref,
             st_version_ref=proposal.option.founding_st_version,
+            grounding_contribution_refs=proposal.option.grounding_contribution_refs,
         )
 
     def mark_cognitive_step_applied(self, proposal: OptionProposal) -> None:
