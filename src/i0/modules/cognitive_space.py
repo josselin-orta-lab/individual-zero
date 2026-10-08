@@ -108,6 +108,19 @@ class CognitiveSpace:
             },
         }
 
+    def restore_copy_causal_state(self, state: object) -> None:
+        """Restore copied cognition while rebinding only the instance identity."""
+        if not isinstance(state, Mapping):
+            raise ValueError("S_t copy state must be a mapping")
+        rebound = dict(state)
+        rebound["individual_id"] = self._individual_id
+        raw = rebound.get("current")
+        if isinstance(raw, Mapping):
+            current = dict(raw)
+            current["individual_id"] = self._individual_id
+            rebound["current"] = current
+        self.restore_causal_state(rebound)
+
     def restore_causal_state(self, state: object) -> None:
         if not isinstance(state, Mapping):
             raise ValueError("S_t state must be a mapping")
