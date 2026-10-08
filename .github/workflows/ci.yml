@@ -39,9 +39,21 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          from lab.compute_budget import ComputeBudgetConfig
           from lab.stage1_runtime import ScriptedStage1Runtime
 
-          runtime = ScriptedStage1Runtime(campaign_seed=17)
+          budget = ComputeBudgetConfig(
+              version="stage1-ci-v1",
+              cycle_ceiling=100,
+              module_envelopes={"stage1_fixture": 100},
+              protected_modules=frozenset({"stage1_fixture"}),
+              protected_capacity=10,
+              operation_costs={"fixture_op": 1},
+          )
+          runtime = ScriptedStage1Runtime(
+              campaign_seed=17,
+              budget_config=budget,
+          )
           for _ in range(3):
               runtime.run_step(cycle=1)
 
