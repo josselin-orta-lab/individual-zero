@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Mapping
 
 from i0.equipment import EquipmentModel
+from i0.modules.active_kappa import KappaConfig, KappaVerification
 from i0.modules import (
     EvaluationState,
     LinearTDValues,
@@ -38,6 +39,7 @@ class Stage8Config:
     stage7: Stage7Config
     td: TDLearningConfig
     evaluation: Stage8EvaluationConfig
+    kappa: KappaConfig
 
     def validate(self) -> None:
         if not self.version:
@@ -45,6 +47,7 @@ class Stage8Config:
         self.stage7.validate()
         self.td.validate()
         self.evaluation.validate()
+        self.kappa.validate()
         beta_sim = self.stage7.stage6.evaluation.beta
         if self.td.beta != beta_sim:
             raise ValueError("P-30 beta must be common to Q and simulation")
@@ -86,11 +89,70 @@ class Stage8Runtime(Stage7Runtime):
         )
 
         self.value_needs.attach_td_values(self.q_active)
+        self.metacognition.attach_active_kappa(config.kappa)
+        self.gatekeeper.attach_reliability(self._contribution_reliability)
         self.stage8_option_evaluator = Stage8OptionEvaluator(
             config=config.evaluation,
             stage6=self.option_evaluator,
             q_values=self.q_active,
         )
+
+    @property
+    def kappa_active(self):
+        return self.metacognition.active_kappa
+
+    def _contribution_reliability(self, contribution) -> float:
+        kappa = self.kappa_active
+        if kappa is None:
+            raise RuntimeError("Stage 8 active kappa is missing")
+        version = (
+            self.equipment.version
+            if contribution.signal_family == "equipment_predictor"
+            else self._stage8_config.version
+        )
+        return kappa.reliability(
+            version=version,
+            module=contribution.emitter_module,
+            contribution_type=contribution.type,
+            family=contribution.signal_family,
+            confidence=contribution.confidence,
+        )
+
+    def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
+        hooks = super()._phase_hooks(
+            cycle=cycle, capture=capture,
+            goal_for_planning=goal_for_planning,
+            st_before_cycle=st_before_cycle,
+        )
+        original_closure = hooks[5]["metacognition_health"]
+
+        def close_kappa(ctx):
+            original_closure(ctx)
+            kappa = self.kappa_active
+            updates = kappa.publish()
+            for verification, before, after in updates:
+                self._write(
+                    kind="kappa_update_published", cycle=cycle,
+                    data={
+                        "verification_ref": verification.identifier,
+                        "calibration_key": list(verification.key),
+                        "confidence": verification.declared_confidence,
+                        "outcome": verification.outcome,
+                        "reliability_before": before,
+                        "reliability_after": after,
+                        "kappa_version": kappa.version,
+                    },
+                )
+        hooks[5]["metacognition_health"] = close_kappa
+        return hooks
+
+    def integrate_kappa_verification(self, verification: KappaVerification) -> None:
+        """Accept an externally produced causal verification, not an oracle verdict.
+
+        Evidence provenance must be supplied by the owning verifier.
+        Only Metacognition can mutate counters, and only at phase 5.
+        """
+        self.kappa_active.integrate(verification)
 
     def _evaluation_state(self, capture) -> EvaluationState:
         goal = self.goal_manager.active_goal
