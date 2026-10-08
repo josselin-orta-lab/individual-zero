@@ -4,7 +4,8 @@ import inspect
 import unittest
 
 from i0.contracts import STVersion
-from i0.modules.memory import EpisodicMemory, MemoryConfig
+from i0.modules.goal_manager import GoalManager, GoalManagerConfig
+from i0.modules.memory import EpisodicMemory, Intention, MemoryConfig
 
 
 def config(**overrides) -> MemoryConfig:
@@ -164,6 +165,120 @@ class EpisodicMemoryTests(unittest.TestCase):
         self.assertEqual(contribution.emitter_module, "memory")
         self.assertEqual(contribution.signal_family, "memory_recall")
         self.assertEqual(contribution.type, "response")
+
+    def test_dated_intention_uses_goal_manager_deadline_pressure(self) -> None:
+        memory = EpisodicMemory(config())
+        manager = GoalManager(
+            GoalManagerConfig(
+                version="goal-intention-test-v1",
+                p_min=0.1,
+                replacement_hysteresis=0.1,
+                critical_pressure=0.9,
+                impossible_failures_required=2,
+                refractory_steps=3,
+                deadline_weight=0.5,
+                deadline_urgency_horizon_steps=10,
+                deadline_urgency_form="linear",
+            )
+        )
+        memory.create_intention(
+            Intention(
+                id="intent:drink",
+                goal_type="drink",
+                target="water",
+                trigger_type="time",
+                trigger_value=5,
+                deadline_step=10,
+                base_pressure=0.2,
+                monitoring="strategic",
+                cost_uc=1,
+                wake_authorized=True,
+            )
+        )
+
+        before = manager.prospective_pressure(
+            base_pressure=0.2,
+            remaining_steps=10,
+        )
+        near = manager.prospective_pressure(
+            base_pressure=0.2,
+            remaining_steps=1,
+        )
+        self.assertEqual(before, 0.2)
+        self.assertGreater(near, before)
+
+        results = memory.check_intentions(
+            st=None,
+            t_monde=5,
+            cycle=1,
+            pressure_fn=manager.prospective_pressure,
+        )
+        triggered = [result for result in results if result.triggered]
+        self.assertEqual(len(triggered), 1)
+        self.assertEqual(
+            triggered[0].goal_proposal.source,
+            "prospective_memory",
+        )
+        self.assertEqual(
+            triggered[0].goal_proposal.current_pressure,
+            manager.prospective_pressure(
+                base_pressure=0.2,
+                remaining_steps=5,
+            ),
+        )
+
+    def test_intention_has_only_one_active_candidacy(self) -> None:
+        memory = EpisodicMemory(config())
+        memory.create_intention(
+            Intention(
+                id="intent:once",
+                goal_type="drink",
+                target="water",
+                trigger_type="time",
+                trigger_value=1,
+                deadline_step=None,
+                base_pressure=0.5,
+                monitoring="spontaneous",
+                cost_uc=0,
+                wake_authorized=False,
+            )
+        )
+        pressure = lambda **kwargs: kwargs["base_pressure"]
+
+        first = memory.check_intentions(
+            st=None,
+            t_monde=1,
+            cycle=1,
+            pressure_fn=pressure,
+        )
+        second = memory.check_intentions(
+            st=None,
+            t_monde=1,
+            cycle=2,
+            pressure_fn=pressure,
+        )
+
+        self.assertTrue(first[0].triggered)
+        self.assertFalse(second[0].triggered)
+
+    def test_wake_index_is_derived_from_pending_dated_intentions(self) -> None:
+        memory = EpisodicMemory(config())
+        intention = Intention(
+            id="intent:wake",
+            goal_type="drink",
+            target="water",
+            trigger_type="time",
+            trigger_value=8,
+            deadline_step=8,
+            base_pressure=0.3,
+            monitoring="strategic",
+            cost_uc=1,
+            wake_authorized=True,
+        )
+        memory.create_intention(intention)
+
+        self.assertEqual(memory.wake_deadline_index, {"intent:wake": 8})
+        self.assertEqual(len(memory.intentions), 1)
 
     def test_memory_module_has_no_technical_journal_or_oracle_dependency(self) -> None:
         import i0.modules.memory as module
