@@ -35,6 +35,30 @@ class Stage9IntegrationTests(unittest.TestCase):
         runtime.causal_model.restore_causal_state(state)
         self.assertEqual(runtime.causal_model.export_causal_state(), state)
 
+    def test_phase_five_joint_publication_rejects_partial_causal_commit(self):
+        # INV-01/25/33: if the safety half fails, inference cannot publish.
+        from unittest.mock import patch
+        from i0.modules.causal_lifecycle import CausalObservation
+
+        runtime = build_stage9_reference_runtime()
+        event = CausalObservation(
+            identifier="observation:atomic", contingency_ref="causal:atomic",
+            predicate="toxic_item", subject_ref="berry_b",
+            application_context="global", observation_context="nearby",
+            episode_ref="episode:atomic", observation_ref="world:atomic",
+            observed_step=1, cause_present=True, effect_present=True,
+            controlled_variables=(("time", "day"),),
+        )
+        runtime.causal_model.integrate_causal_observation(event)
+        original = runtime.causal_model.export_causal_state()
+        with patch.object(runtime.causal_model, "publish", side_effect=ValueError("batch rejected")):
+            with self.assertRaisesRegex(ValueError, "batch rejected"):
+                runtime.run_step()
+        self.assertEqual(runtime.causal_model.export_causal_state(), original)
+        self.assertNotIn(
+            b"causal_inference_status_published", runtime.journal.canonical_bytes()
+        )
+
     def test_phase_five_status_changes_veto_only_on_published_status(self):
         runtime = build_stage9_reference_runtime()
         action = PreparedCommand(
