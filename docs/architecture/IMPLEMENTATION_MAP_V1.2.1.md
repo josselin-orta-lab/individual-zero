@@ -40,9 +40,52 @@ Deferred without blocking the Stage 1 gate:
 - periodic snapshot scheduling from P-55 until a preregistered campaign value is supplied;
 - production campaign RunManifest instantiation, which now has a validated builder but requires real campaign values and equipment reference.
 
+## Stage 2 progress on this branch
+
+Implemented:
+
+- deterministic 32 x 32 grid world with impassable borders and a 300-step day including 100 night steps;
+- body state with energy, food, water and integrity, all bounded to [0,100];
+- primitive commands for movement, collection, eating, drinking, stone placement, tool crafting, sleep and wait;
+- P-52/P-53-driven action costs, body decay/gains, damage, resource quantities and tool recipe;
+- water, two berry species, wood, stone, hostile-creature positions, damaging danger zones and explicitly lethal zones;
+- shelter formation from exactly four stones;
+- deterministic seeded world generation with explicit counts and seeded toxic/nutritious berry identity;
+- isolated oracle capability accessible only through the evaluation bench;
+- oracle canary isolation checks and a source-level dependency check forbidding oracle/bench dependencies under `src/i0`;
+- separate evaluation trace and external death/rollback/block/alert counters;
+- deterministic external scenario injection logged before application;
+- typed protocols for all five MVP battery situations, with trait scoring deferred to Stage 5;
+- lethal checkpoint immediately before every scripted command send;
+- lethal-transition detection, rollback, protocol mask and renewed `attempt_ref`;
+- campaign/diagnostic safety-block distinction and operator alert after `R_letal_max`;
+- autobiographical projection only for non-lethal attempts;
+- exact replay of injected scenarios and a full 300-step scripted-agent day;
+- Stage 2 reference journal generated and retained by CI on Python 3.11.
+
+Stage 2 gate status:
+
+- INV-02: green for current code boundary through capability denial, `src/i0` dependency scan, and oracle-canary non-leak checks;
+- INV-27: green for the current no-learning Stage-2 system; lethal transition, detection, rollback and mask are absent from the autobiographical projection;
+- INV-28: green for protocol-mask scope in Stage 2; the mask is cleared after a non-lethal step and exists only in technical Scheduler state;
+- INV-29: green through repeated distinct lethal commands, safety block, bench counter and operator alert;
+- INV-33: extended through deterministic scenario state and full scripted-day replay;
+- INV-39/INV-44/INV-49: exercised by the Stage-2 scripted send/rollback path.
+
+Prepared but not activated as cognition:
+
+- the five battery scenario mechanisms are typed and versioned, but profile scoring and disposable-copy administration remain Stage 5;
+- the scripted agent is intentionally not Action Control; Stage 3 will become the sole normative command sender for the individual.
+
+Still requiring preregistration before a scientific campaign:
+
+- concrete P-29, P-37, P-38, P-49 and P-52 to P-54 values;
+- campaign world counts, costs, damages and scenario bounds;
+- materiality thresholds and battery termination values.
+
 ## Current repository gap
 
-The existing bootstrap provides a neutral Lab loop, structured events, a deterministic smoke scenario, and a deliberately non-cognitive I0 no-op boundary. It does not yet implement the normative Stage 1 execution substrate: canonical causal serialization, normative deterministic identifiers, independent causal RNG streams with restorable state, a causal run manifest, a hash-chained append-only journal, the six-phase scheduler, the normative bus/contract validator, or complete causal snapshots and replay.
+The legacy bootstrap remains as a compatibility smoke path. The normative implementation now has a Stage 1 deterministic substrate and a Stage 2 scripted world/body/bench path. The next architectural gap is Stage 3: symbolic perception plus Action Control as the sole normative command sender, with veto, reflex and admissibility.
 
 ## Functional groups
 
