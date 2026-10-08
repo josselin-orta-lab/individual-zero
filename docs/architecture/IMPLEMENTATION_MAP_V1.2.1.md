@@ -187,25 +187,41 @@ Implemented independently from Stage 5, as allowed by Diagram J:
 - versioned/hashable offline `EquipmentCorpus` and immutable `EquipmentArtifact`;
 - deterministic exact-transition-table baseline trainer with no fallback extrapolation;
 - conflicting outcomes for an identical accessible input are rejected explicitly;
-- budgeted `Simulator` with R_max/H_max bounds and deterministic-rollout de-duplication;
-- incomplete/unseen rollouts are marked unavailable and partial results are excluded from completed simulated evidence;
-- closed required-family corpus coverage gate for movement, resource interaction, tool use, shelter, creatures by day/night, sleep and wait;
-- P-46-style conjunctive equipment benchmark: overall error, unavailable rate, per-family error, per-horizon error, calibration and systematic bias must all pass;
-- explicit requirement that E-v1, E-v2 and E-v3 each pass the equivalence gate;
-- Stage-6 simulated option evaluator computing predicted homeostatic rewards, discounted E_a^sim and bounded tanh evidence;
-- Competition accepts typed external evidence while preserving the Stage-4 substitution path as its exact default;
-- a `not_evaluated` option carries no evidence and freezes accumulator/threshold state instead of receiving an artificial zero.
+- real controlled reference corpus covering movement, blocked movement, resources, tools, shelter, creatures by day/night, sleep and wait;
+- budgeted `Simulator` with R_max/H_max bounds, deterministic rollout de-duplication and explicit unavailable/partial outcomes;
+- P-46 conjunctive benchmark over overall error, unavailable rate, per-family error, per-horizon error, calibration and systematic bias;
+- E-v1, E-v2 and E-v3 are distinct immutable artifacts and each passes the equivalence gate;
+- Stage-6 simulated option evaluator computes predicted homeostatic rewards, discounted E_a^sim and bounded tanh evidence;
+- Competition consumes typed simulation evidence while preserving the exact Stage-4 substitution path when simulation is unavailable;
+- `not_evaluated` freezes accumulator and threshold state and contributes no artificial zero evidence;
+- integrated `Stage6Runtime` supplies common-budget E_a^sim inside the six-phase live loop;
+- simulator-based multi-step planning replaces greedy E-0 on the Stage-6 path;
+- lived prediction errors are emitted as typed causal contributions;
+- shelter planning is covered by an acceptance test;
+- full 300-step deterministic Stage-6 reference trajectory is retained by CI.
 
-Current Stage-6 checkpoint:
+Stage 6 reference fixture:
 
-- unit tests and all Stage 1-4 golden fixtures are green on Python 3.11 and 3.12;
-- no equipment code imports temperament, oracle, learned values or accumulator internals;
-- E-0 Planning is still active in the integrated runtime;
-- the next sub-block is the Stage6Runtime hook that supplies common-budget E_a^sim to Competition, followed by simulator-based multi-step Planning and the retained Stage-6 reference journal.
+- duration: 300 world steps;
+- causal journal bytes: 32,171,169;
+- golden journal head: `1f7a61df76a84a5f3c00b66ee636ec99ca787793775b0a6ef15449db69286e1b`;
+- CI green on Python 3.11 and 3.12;
+- 203 tests green;
+- Stage 1-4 golden references remain byte-identical.
+
+Stage 6 gate status:
+
+- equipment does not import temperament, memory, learned Q, causal model or oracle internals;
+- only accessible symbolic state and authorized inventory/body variables enter equipment;
+- unseen inputs remain unavailable rather than extrapolated;
+- incomplete rollouts never become completed simulated evidence;
+- E-v1 -> E-v3 equivalence is explicitly benchmarked;
+- live Competition receives simulator evidence only through the typed evaluator;
+- deterministic replay remains green over the full Stage-6 reference day.
 
 ## Current repository gap
 
-The legacy bootstrap remains as a compatibility smoke path. Stage 6 now has an independently testable equipment/corpus/simulator/evaluation core. The next code gap on this branch is integration of E_a^sim into the live six-phase loop and replacement of greedy E-0 planning by simulator-based multi-step planning.
+The normative implementation now includes the deterministic substrate, world/body/bench, reflex/control, complete Stage-4 cognition, Stage-5 temperament/copy instrumentation, and Stage-6 equipment/simulator integration. Stage 6 is software-complete. The next implementation dependency is the next stage defined by section 20 of the normative specification; no later cognitive mechanism should be pulled forward merely because the simulator now exists.
 
 ## Functional groups
 
