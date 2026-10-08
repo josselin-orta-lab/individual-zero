@@ -11,6 +11,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping
 
+from .td_values import LinearTDValues
+
 from i0.contracts import Contribution, GoalProposal
 
 
@@ -62,10 +64,21 @@ class ValueAndNeeds:
         self._config = config
         self._previous_deviation: float | None = None
         self._last_state: NeedState | None = None
+        self._td_values: LinearTDValues | None = None
 
     @property
     def config(self) -> ValueNeedsConfig:
         return self._config
+
+
+    @property
+    def td_values(self) -> LinearTDValues | None:
+        return self._td_values
+
+    def attach_td_values(self, model: LinearTDValues) -> None:
+        if self._td_values is not None:
+            raise ValueError("TD values already attached")
+        self._td_values = model
 
     @staticmethod
     def _clip01(value: float) -> float:
@@ -107,6 +120,23 @@ class ValueAndNeeds:
         )
         self._last_state = state
         return state
+
+    def reward_between(
+        self,
+        before: Mapping[str, float],
+        after: Mapping[str, float],
+    ) -> float:
+        before_deviation = sum(
+            self._config.weights[name]
+            * abs(float(before[name]) - self._config.setpoints[name])
+            for name in BODY_VARIABLES
+        )
+        after_deviation = sum(
+            self._config.weights[name]
+            * abs(float(after[name]) - self._config.setpoints[name])
+            for name in BODY_VARIABLES
+        )
+        return before_deviation - after_deviation
 
     def reward_for(self, state: NeedState) -> float:
         if self._previous_deviation is None:
@@ -184,7 +214,7 @@ class ValueAndNeeds:
         return tuple(alerts), tuple(proposals)
 
     def export_causal_state(self) -> object:
-        return {
+        state = {
             "config_version": self._config.version,
             "previous_deviation": self._previous_deviation,
             "last_state": None
@@ -196,6 +226,9 @@ class ValueAndNeeds:
                 "deviation": self._last_state.deviation,
             },
         }
+        if self._td_values is not None:
+            state["td_values"] = self._td_values.export_causal_state()
+        return state
 
     def restore_causal_state(self, state: object) -> None:
         if not isinstance(state, Mapping):
@@ -216,3 +249,9 @@ class ValueAndNeeds:
             )
         else:
             raise ValueError("invalid Value/Needs last_state")
+
+        raw_td = state.get("td_values")
+        if raw_td is not None:
+            if self._td_values is None:
+                raise ValueError("snapshot contains TD state but no model is attached")
+            self._td_values.restore_causal_state(raw_td)
