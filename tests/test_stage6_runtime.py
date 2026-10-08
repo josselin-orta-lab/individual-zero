@@ -125,19 +125,34 @@ class Stage6RuntimeTests(unittest.TestCase):
 
         self.assertEqual(result.execution_status, "applied")
         self.assertEqual(result.command_primitive, "attendre")
-        evaluations = [
+        planning = [
             entry.causal_event
             for entry in runtime.journal.entries
-            if entry.causal_event.get("kind") == "stage6_option_evaluation"
+            if entry.causal_event.get("kind") == "stage6_planning_result"
         ]
-        unavailable = [
-            event
-            for event in evaluations
-            if event.get("data", {}).get("simulated_value_status") == "unavailable"
-        ]
-        self.assertTrue(unavailable)
+        self.assertTrue(planning)
         self.assertTrue(
-            all(event["data"]["evidence"] is None for event in unavailable)
+            all(event["data"]["proposal_ref"] is None for event in planning)
+        )
+        self.assertFalse(
+            any(
+                entry.causal_event.get("kind") == "stage6_option_evaluation"
+                and str(entry.causal_event.get("data", {}).get("option_ref", "")).startswith(
+                    "option:"
+                )
+                for entry in runtime.journal.entries
+            )
+        )
+        self.assertFalse(
+            any(
+                entry.causal_event.get("kind") == "competition_cycle"
+                and any(
+                    trace.get("evidence") not in (None, 0.0)
+                    for trace in entry.causal_event.get("data", {}).get("traces", [])
+                    if trace.get("option_ref") != "permanent:attendre"
+                )
+                for entry in runtime.journal.entries
+            )
         )
 
     def test_equipment_is_not_a_mutable_causal_owner(self) -> None:
