@@ -98,7 +98,7 @@ class TemperamentProjectionTests(unittest.TestCase):
             high.gatekeeper_weights["risk"],
             low.gatekeeper_weights["risk"],
         )
-        self.assertEqual(
+        self.assertGreater(
             high.gatekeeper_weights["urg"],
             low.gatekeeper_weights["urg"],
         )
