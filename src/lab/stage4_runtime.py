@@ -463,6 +463,9 @@ class Stage4Runtime:
             t_monde=capture.t_monde,
         )
 
+    def _request_statuses_for_st(self) -> Mapping[str, str]:
+        return {}
+
     def _phase_hooks(
         self,
         *,
@@ -636,6 +639,7 @@ class Stage4Runtime:
                     ),
                 },
                 competitive=selection.elements,
+                requests=self._request_statuses_for_st(),
                 diff={
                     "feedback": [
                         {
