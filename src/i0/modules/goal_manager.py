@@ -24,6 +24,9 @@ class GoalManagerConfig:
     critical_pressure: float
     impossible_failures_required: int
     refractory_steps: int
+    deadline_weight: float = 0.0
+    deadline_urgency_horizon_steps: int = 1
+    deadline_urgency_form: str = "linear"
 
     def validate(self) -> None:
         if not self.version:
@@ -38,6 +41,12 @@ class GoalManagerConfig:
             raise ValueError("N_imp must be >= 1")
         if self.refractory_steps < 1:
             raise ValueError("T_refr must be >= 1")
+        if self.deadline_weight < 0.0:
+            raise ValueError("w_ech must be non-negative")
+        if self.deadline_urgency_horizon_steps < 1:
+            raise ValueError("deadline urgency horizon must be >= 1")
+        if self.deadline_urgency_form != "linear":
+            raise ValueError("unsupported versioned deadline urgency form")
 
 
 class GoalManager:
@@ -70,6 +79,28 @@ class GoalManager:
         """Make current-cycle proposals visible to the next cycle."""
         self._visible_proposals = self._next_proposals
         self._next_proposals = ()
+
+    def prospective_pressure(
+        self,
+        *,
+        base_pressure: float,
+        remaining_steps: int | None,
+    ) -> float:
+        """DC-03 P-26 deadline-pressure projection for prospective memory."""
+
+        if not 0.0 <= base_pressure <= 1.0:
+            raise ValueError("base prospective pressure must be in [0,1]")
+        if remaining_steps is None:
+            return base_pressure
+        horizon = self._config.deadline_urgency_horizon_steps
+        urgency = max(
+            0.0,
+            min(1.0, 1.0 - max(0, remaining_steps) / horizon),
+        )
+        return max(
+            0.0,
+            min(1.0, base_pressure + self._config.deadline_weight * urgency),
+        )
 
     @staticmethod
     def _condition_for(goal_type: str) -> tuple[str, str]:
