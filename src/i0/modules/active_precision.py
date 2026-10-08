@@ -86,6 +86,8 @@ class ActivePerceptualPrecision:
             raise ValueError("invalid precision verification source")
         if verification.squared_error < 0 or verification.squared_error == float("inf"):
             raise ValueError("invalid squared-error sample")
+        if verification.oracle_derived or verification.rollback_cancelled:
+            raise ValueError("oracle and lethal-rollback precision verifications are inadmissible")
         if verification.identifier in self._seen or any(
             event.identifier == verification.identifier for event in self._pending
         ):
