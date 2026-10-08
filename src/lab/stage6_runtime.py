@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 from i0.contracts import PredictionError
 from i0.equipment import EquipmentModel
-from i0.modules import StaticSafetyFacts
+from i0.modules import Admissibility, PreparedCommand, StaticSafetyFacts
 from i0.modules.simulator import Simulator, SimulatorConfig, state_from_capture
 from i0.modules.stage6_evaluator import (
     Stage6EvaluationConfig,
@@ -78,6 +78,8 @@ class Stage6Runtime(Stage4Runtime):
             config=config.simulator,
             equipment=equipment,
         )
+        self._revision_initial_state = None
+        self._revision_capture = None
         self.option_evaluator = Stage6OptionEvaluator(
             config=config.evaluation,
             simulator=self.simulator,
@@ -111,10 +113,37 @@ class Stage6Runtime(Stage4Runtime):
         capture,
         comparison,
     ) -> None:
-        super()._handle_agency_comparison(
-            capture=capture,
-            comparison=comparison,
+        engaged_plan_failed = (
+            comparison.status == "nonconforming"
+            and comparison.option_ref is not None
+            and self.competition.is_engaged(comparison.option_ref)
         )
+        if engaged_plan_failed:
+            # DC-17: the realization failed, not the pursued option or goal.
+            self._write(
+                kind="agency_comparison",
+                data=self._comparison_as_dict(comparison),
+            )
+            option_ref = str(comparison.option_ref)
+            self.planning.mark_plan_invalid(option_ref)
+            self.stage3.control.clear_option_step(option_ref)
+            self._write(
+                kind="plan_revision_requested",
+                data={
+                    "option_ref": option_ref,
+                    "reason": "failed_step",
+                    "active_goal_ref": (
+                        None
+                        if self.goal_manager.active_goal is None
+                        else self.goal_manager.active_goal.id
+                    ),
+                },
+            )
+        else:
+            super()._handle_agency_comparison(
+                capture=capture,
+                comparison=comparison,
+            )
 
         for index, effect in enumerate(comparison.effects):
             status = effect.get("status")
@@ -180,6 +209,8 @@ class Stage6Runtime(Stage4Runtime):
             capture=capture,
             is_night=self.world.is_night(capture.t_monde),
         )
+        self._revision_initial_state = initial_state
+        self._revision_capture = capture
         proposal = self.planning.propose(
             goal=goal_for_planning,
             initial_state=initial_state,
@@ -207,6 +238,162 @@ class Stage6Runtime(Stage4Runtime):
             },
         )
         return proposal
+
+    def _first_step_admissible(self, proposal) -> bool:
+        if proposal.plan is None or not proposal.plan.steps:
+            return False
+        if self._revision_capture is None:
+            return False
+        step = proposal.plan.steps[0]
+        prepared = PreparedCommand(
+            command=step.command,
+            source="decision",
+            option_ref=proposal.option.id,
+            st_version_ref=proposal.option.founding_st_version,
+            grounding_contribution_refs=(
+                proposal.option.grounding_contribution_refs
+            ),
+            predicted_consequences=step.predicted_consequences,
+            observation_window_steps=step.observation_window_steps,
+        )
+        status = self.stage3.control.verifier_admissibilite(
+            capture=self._revision_capture,
+            prepared=prepared,
+        )
+        return status is not Admissibility.INADMISSIBLE
+
+    def _revision_improves_value(
+        self,
+        *,
+        before,
+        after,
+        cycle: int,
+        t_monde: int,
+    ) -> bool:
+        state = self._revision_initial_state
+        if state is None:
+            return False
+        old_value = self.option_evaluator.evaluate(
+            proposal=before,
+            initial_state=state,
+            cycle=cycle,
+            t_monde=t_monde,
+        ).evaluation
+        new_value = self.option_evaluator.evaluate(
+            proposal=after,
+            initial_state=state,
+            cycle=cycle,
+            t_monde=t_monde,
+        ).evaluation
+        if (
+            old_value.simulated_value_status != "computed"
+            or new_value.simulated_value_status != "computed"
+            or old_value.simulated_value is None
+            or new_value.simulated_value is None
+        ):
+            return False
+        return (
+            new_value.simulated_value - old_value.simulated_value
+            >= self._stage6_config.planning.revision_delta
+        )
+
+    def _register_option_proposal(
+        self,
+        *,
+        proposal,
+        active_goal_id: str | None,
+        t_monde: int,
+        cycle: int,
+    ) -> bool:
+        before = self.competition.proposal_for(proposal.option.id)
+        material = (
+            before is not None
+            and self.competition.material_plan_change(before, proposal)
+        )
+        engaged = self.competition.is_engaged(proposal.option.id)
+
+        if material and engaged:
+            invalid_revision = (
+                self.planning.revision_required_option_ref
+                == proposal.option.id
+            )
+            value_revision = (
+                False
+                if invalid_revision
+                else self._revision_improves_value(
+                    before=before,
+                    after=proposal,
+                    cycle=cycle,
+                    t_monde=t_monde,
+                )
+            )
+            if not invalid_revision and not value_revision:
+                self._write(
+                    kind="revised_plan_rejected",
+                    cycle=cycle,
+                    data={
+                        "option_ref": proposal.option.id,
+                        "reason": "delta_plan_not_reached_or_unavailable",
+                        "delta_plan": (
+                            self._stage6_config.planning.revision_delta
+                        ),
+                    },
+                )
+                return False
+            if not self._first_step_admissible(proposal):
+                self._write(
+                    kind="revised_plan_rejected",
+                    cycle=cycle,
+                    data={
+                        "option_ref": proposal.option.id,
+                        "reason": "first_step_inadmissible",
+                    },
+                )
+                return False
+
+        registered = super()._register_option_proposal(
+            proposal=proposal,
+            active_goal_id=active_goal_id,
+            t_monde=t_monde,
+            cycle=cycle,
+        )
+        if not registered or before is None or not material:
+            return registered
+
+        if engaged:
+            self.stage3.control.clear_option_step(proposal.option.id)
+            self.planning.confirm_revision_adopted(proposal.option.id)
+            self._write(
+                kind="revised_plan_adopted",
+                cycle=cycle,
+                data={
+                    "option_ref": proposal.option.id,
+                    "goal_ref": proposal.option.goal_ref,
+                    "motive_ref": {
+                        "type": proposal.option.motive_ref.type,
+                        "id": proposal.option.motive_ref.id,
+                    },
+                    "reason": (
+                        "invalid_active_plan"
+                        if self.planning.revision_required_option_ref
+                        == proposal.option.id
+                        else "value_improvement"
+                    ),
+                    "delta_plan": self._stage6_config.planning.revision_delta,
+                },
+            )
+        else:
+            self._write(
+                kind="nonengaged_plan_replaced",
+                cycle=cycle,
+                data={
+                    "option_ref": proposal.option.id,
+                    "accumulator_after": self.competition.accumulator_for(
+                        proposal.option.id
+                    ),
+                },
+            )
+        return registered
 
     def _evaluate_competition_cycle(
         self,
