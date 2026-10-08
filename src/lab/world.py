@@ -136,6 +136,7 @@ class WorldPhysicsConfig:
     drink_water_gain: float
     berry_effects: Mapping[str, BerryEffect]
     creature_damage: float
+    danger_zone_damage: float
     tool_recipe: ToolRecipe
     shelter_stones_required: int = 4
 
@@ -156,7 +157,11 @@ class WorldPhysicsConfig:
             raise ValueError("continuous body decay must be non-negative")
         if self.sleep_energy_gain < 0 or self.rest_integrity_gain < 0:
             raise ValueError("rest gains must be non-negative")
-        if self.drink_water_gain < 0 or self.creature_damage < 0:
+        if (
+            self.drink_water_gain < 0
+            or self.creature_damage < 0
+            or self.danger_zone_damage < 0
+        ):
             raise ValueError("world gains and damages must be non-negative")
         if set(self.action_energy_costs) != PRIMITIVE_ACTIONS:
             raise ValueError("energy cost must be declared for every primitive action")
@@ -201,6 +206,7 @@ class WorldPhysicsConfig:
                 for name, effect in sorted(self.berry_effects.items())
             },
             "creature_damage": self.creature_damage,
+            "danger_zone_damage": self.danger_zone_damage,
             "tool_recipe": self.tool_recipe.as_dict(),
             "shelter_stones_required": self.shelter_stones_required,
         }
@@ -218,6 +224,7 @@ class WorldLayout:
     water_sources: frozenset[Position] = frozenset()
     resources: tuple[tuple[Position, str, int], ...] = ()
     creatures: frozenset[Position] = frozenset()
+    danger_zones: frozenset[Position] = frozenset()
     lethal_zones: frozenset[Position] = frozenset()
     oracle_canary: str = ""
 
@@ -227,6 +234,7 @@ class WorldLayout:
             set(self.obstacles)
             | set(self.water_sources)
             | set(self.creatures)
+            | set(self.danger_zones)
             | set(self.lethal_zones)
         ):
             config._validate_interior(position)
@@ -254,6 +262,7 @@ class WorldLayout:
                 )
             ],
             "creatures": [p.as_dict() for p in sorted(self.creatures)],
+            "danger_zones": [p.as_dict() for p in sorted(self.danger_zones)],
             "lethal_zones": [p.as_dict() for p in sorted(self.lethal_zones)],
             "oracle_canary": self.oracle_canary,
         }
@@ -359,6 +368,7 @@ class WorldBody:
         self._obstacles = set(layout.obstacles)
         self._water_sources = set(layout.water_sources)
         self._creatures = set(layout.creatures)
+        self._danger_zones = set(layout.danger_zones)
         self._lethal_zones = set(layout.lethal_zones)
 
     @property
@@ -403,6 +413,7 @@ class WorldBody:
             "obstacles": [p.as_dict() for p in sorted(self._obstacles)],
             "water_sources": [p.as_dict() for p in sorted(self._water_sources)],
             "creatures": [p.as_dict() for p in sorted(self._creatures)],
+            "danger_zones": [p.as_dict() for p in sorted(self._danger_zones)],
             "lethal_zones": [p.as_dict() for p in sorted(self._lethal_zones)],
             "placed_stones": [
                 {"position": p.as_dict(), "count": count}
@@ -465,6 +476,7 @@ class WorldBody:
         self._obstacles = positions("obstacles")
         self._water_sources = positions("water_sources")
         self._creatures = positions("creatures")
+        self._danger_zones = positions("danger_zones")
         self._lethal_zones = positions("lethal_zones")
         self._shelters = positions("shelters")
 
@@ -623,6 +635,17 @@ class WorldBody:
                 )
                 effects["creature_damage"] = self._config.creature_damage
 
+        if position in self._danger_zones:
+            body = BodyState(
+                energy=body.energy,
+                food=body.food,
+                water=body.water,
+                integrity=self._clamp(
+                    body.integrity - self._config.danger_zone_damage
+                ),
+            )
+            effects["danger_zone_damage"] = self._config.danger_zone_damage
+
         lethal_reasons: list[str] = []
         if position in self._lethal_zones:
             lethal_reasons.append("lethal_zone")
@@ -655,13 +678,18 @@ class WorldBody:
             self._config._validate_interior(position)
             return position
 
-        if operation == "set_lethal_zone":
+        if operation in {"set_danger_zone", "set_lethal_zone"}:
             position = position_from_payload()
             active = bool(payload.get("active", True))
+            target = (
+                self._danger_zones
+                if operation == "set_danger_zone"
+                else self._lethal_zones
+            )
             if active:
-                self._lethal_zones.add(position)
+                target.add(position)
             else:
-                self._lethal_zones.discard(position)
+                target.discard(position)
             return
 
         if operation == "place_creature":
