@@ -52,8 +52,25 @@ class Stage5Runtime(Stage4Runtime):
         safety_facts: StaticSafetyFacts,
         protected_integrity_threshold: float,
         config: Stage5Config,
+        individual_id: str = "i0-stage5",
+        lineage_parent_id: str | None = None,
+        lineage_copy_point: str | None = None,
+        battery_copy: bool = False,
     ) -> None:
         config.validate()
+        if not individual_id:
+            raise ValueError("Stage-5 individual_id must not be empty")
+        self.individual_id = individual_id
+        self.lineage_parent_id = lineage_parent_id
+        self.lineage_copy_point = lineage_copy_point
+        self.battery_copy = battery_copy
+
+        self._birth_world_config = world_config
+        self._birth_layout = layout
+        self._birth_safety_config = safety_config
+        self._birth_safety_facts = safety_facts
+        self._birth_protected_integrity_threshold = protected_integrity_threshold
+
         self.temperament_projection = TemperamentProjection(
             temperament=config.temperament,
             mapping=config.mapping,
@@ -90,6 +107,22 @@ class Stage5Runtime(Stage4Runtime):
     @property
     def temperament_parameters(self) -> ParametresTemperament:
         return self.temperament_projection.parameters
+
+    @property
+    def stage5_config(self) -> Stage5Config:
+        return self._stage5_config
+
+    def copy_constructor_kwargs(self) -> dict[str, object]:
+        return {
+            "world_config": self._birth_world_config,
+            "layout": self._birth_layout,
+            "safety_config": self._birth_safety_config,
+            "safety_facts": self._birth_safety_facts,
+            "protected_integrity_threshold": (
+                self._birth_protected_integrity_threshold
+            ),
+            "config": self._stage5_config,
+        }
 
     @property
     def causal_owners(self):
