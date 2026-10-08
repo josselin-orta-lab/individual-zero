@@ -116,9 +116,16 @@ class Stage9Runtime(Stage8Runtime):
         hooks[1]["memory"] = observe_then_ingest
 
         def publish_causal_statuses(_ctx):
-            # DC-05, section 5.3: a cycle reads only the previously
-            # published facts; the batch commits atomically in phase 5.
-            inference_changes = self.causal_model.publish_causal_inference()
+            # INV-01/25/33: causal and safety statuses inhabit ONE canonical
+            # owner. Prepare both publications before any journal write;
+            # rollback its entire causal state if either rejects a batch.
+            old = self.causal_model.export_causal_state()
+            try:
+                inference_changes = self.causal_model.publish_causal_inference()
+                safety_changes = self.causal_model.publish()
+            except Exception:
+                self.causal_model.restore_causal_state(old)
+                raise
             for change in inference_changes:
                 self._write(
                     kind="causal_inference_status_published",
@@ -133,8 +140,7 @@ class Stage9Runtime(Stage8Runtime):
                         "causal_model_version": self.causal_model.version,
                     },
                 )
-            updates = self.causal_model.publish()
-            for change in updates:
+            for change in safety_changes:
                 self._write(
                     kind="causal_safety_status_published",
                     cycle=cycle,
