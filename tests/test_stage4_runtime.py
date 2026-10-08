@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import unittest
 
 from i0.modules import (
@@ -10,6 +11,7 @@ from i0.modules import (
     StaticSafetyFacts,
     ValueNeedsConfig,
 )
+from lab.compute_budget import ComputeBudgetConfig
 from lab.safety_protocol import SafetyProtocolConfig
 from lab.stage4_runtime import Stage4Config, Stage4Runtime
 from lab.world import (
@@ -143,6 +145,37 @@ def stage4_config() -> Stage4Config:
                 "fabriquer_outil": 0.5,
             },
         ),
+        compute_budget=ComputeBudgetConfig(
+            version="stage4-budget-v1",
+            cycle_ceiling=100,
+            module_envelopes={
+                "perception": 20,
+                "value_needs": 10,
+                "goal_manager": 10,
+                "planning": 20,
+                "bus": 10,
+                "gatekeeper": 10,
+                "competition": 30,
+                "action_control": 10,
+            },
+            protected_modules=frozenset({
+                "bus",
+                "gatekeeper",
+                "action_control",
+            }),
+            protected_capacity=20,
+            operation_costs={
+                "perception_publish": 1,
+                "value_needs_cycle": 1,
+                "goal_arbitrate": 1,
+                "planning_build": 2,
+                "bus_pour": 1,
+                "gatekeeper_select": 1,
+                "competition_register": 1,
+                "competition_evaluate": 1,
+                "control_admit": 1,
+            },
+        ),
     )
 
 
@@ -150,6 +183,7 @@ def runtime(
     *,
     water: float = 20.0,
     layout: WorldLayout | None = None,
+    config: Stage4Config | None = None,
 ) -> Stage4Runtime:
     return Stage4Runtime(
         world_config=world_config(water=water),
@@ -161,7 +195,7 @@ def runtime(
         ),
         safety_facts=StaticSafetyFacts(),
         protected_integrity_threshold=20.0,
-        config=stage4_config(),
+        config=config or stage4_config(),
     )
 
 
@@ -220,6 +254,49 @@ class Stage4IntegratedLoopTests(unittest.TestCase):
         self.assertTrue(result.fallback_used)
         self.assertEqual(result.command_primitive, "attendre")
         self.assertEqual(result.cycles_used, 5)
+
+    def test_planning_budget_exhaustion_degrades_but_cycle_closes(self) -> None:
+        config = stage4_config()
+        constrained_budget = replace(
+            config.compute_budget,
+            module_envelopes={
+                **dict(config.compute_budget.module_envelopes),
+                "planning": 0,
+            },
+        )
+        constrained = replace(
+            config,
+            compute_budget=constrained_budget,
+        )
+        instance = runtime(
+            layout=WorldLayout(
+                water_sources=frozenset({Position(4, 2)}),
+            ),
+            config=constrained,
+        )
+
+        result = instance.run_step()
+
+        self.assertEqual(result.execution_status, "applied")
+        self.assertEqual(result.source, "fallback")
+        self.assertEqual(result.command_primitive, "attendre")
+        self.assertEqual(
+            instance.metacognition.state.budget_state,
+            "degraded",
+        )
+
+        accepted_uc = sum(
+            event["data"]["requested_uc"]
+            for event in (
+                entry.causal_event for entry in instance.journal.entries
+            )
+            if event.get("kind") == "compute_charge"
+            and event["data"]["accepted"]
+        )
+        self.assertEqual(
+            instance.metacognition.state.f_cog_uc_counter,
+            accepted_uc,
+        )
 
     def test_reflex_preempts_cognition_and_uses_zero_cycles(self) -> None:
         instance = runtime(
