@@ -14,7 +14,8 @@ attribution are separate Stage-9 work items.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Mapping
+from math import isfinite
+from typing import Mapping, Sequence
 
 from .action_control import StaticSafetyFacts
 
@@ -98,6 +99,38 @@ class SafetyEvidence:
 
 
 @dataclass(frozen=True, slots=True)
+class LivedFoodExposure:
+    """Causal Model's independent-motivation reference to an applied action.
+
+    The source is a successful, goal-motivated Action Control dispatch. It is
+    NOT evidence by itself: it must be paired with a later Perception capture
+    and matching events in a Memory-closed DC-09 autobiographical episode.
+    """
+    t_monde: int
+    resource_kind: str
+    option_ref: str
+    motive_ref: str
+    integrity_before: float
+    observed_step: int | None = None
+    integrity_observed: float | None = None
+
+    def validate(self) -> None:
+        if (self.t_monde < 1 or self.resource_kind not in ("berry_a", "berry_b")
+            or not self.option_ref or not self.motive_ref
+            or not isfinite(self.integrity_before)
+            or not 0 <= self.integrity_before <= 100):
+            raise ValueError("invalid motivated food exposure")
+        if self.observed_step is None:
+            if self.integrity_observed is not None:
+                raise ValueError("unpaired observation")
+        elif (self.observed_step != self.t_monde + 1
+              or self.integrity_observed is None
+              or not isfinite(self.integrity_observed)
+              or not 0 <= self.integrity_observed <= 100):
+            raise ValueError("a lived exposure needs next-step physical telemetry")
+
+
+@dataclass(frozen=True, slots=True)
 class CanonicalContingency:
     ref: str
     version: int
@@ -145,6 +178,7 @@ class CausalModel:
         self._credited_episodes: set[tuple[str, str]] = set()
         self._credited_observations: set[tuple[str, str]] = set()
         self._version = 0
+        self._lived_food_exposures: dict[int, LivedFoodExposure] = {}
 
     @property
     def version(self) -> int:
@@ -164,6 +198,148 @@ class CausalModel:
 
     def get(self, contingency_ref: str) -> CanonicalContingency | None:
         return self._published.get(contingency_ref)
+
+    def record_applied_food_exposure(
+        self, *, t_monde: int, resource_kind: str,
+        option_ref: str, motive_ref: str, integrity_before: float,
+    ) -> None:
+        """Only already-executed, independently goal-motivated actions enter.
+
+        No generated dangerous test option and no reward/bench/oracle inputs.
+        These are pending action references, not promoted evidence.
+        """
+        item = LivedFoodExposure(
+            t_monde=t_monde, resource_kind=resource_kind,
+            option_ref=option_ref, motive_ref=motive_ref,
+            integrity_before=integrity_before,
+        )
+        item.validate()
+        if t_monde in self._lived_food_exposures:
+            raise ValueError("more than one food exposure in a world step")
+        self._lived_food_exposures[t_monde] = item
+
+    def observe_followup_capture(
+        self, *, t_monde: int, integrity: float,
+    ) -> None:
+        """Only the next *accessible Perception capture* can corroborate harm."""
+        if t_monde < 1 or not isfinite(integrity) or not 0 <= integrity <= 100:
+            raise ValueError("invalid physical capture")
+        item = self._lived_food_exposures.get(t_monde - 1)
+        if item is None or item.observed_step is not None:
+            return
+        updated = replace(
+            item, observed_step=t_monde, integrity_observed=float(integrity),
+        )
+        updated.validate()
+        self._lived_food_exposures[item.t_monde] = updated
+
+    def ingest_closed_autobiographical_episode(
+        self, *, episode_ref: str, event_refs: Sequence[str],
+        autobiographical_events: Sequence[Mapping[str, object]],
+    ) -> tuple[SafetyEvidence, ...]:
+        """DC-05: consume only lived, closed Memory episodes from DC-09.
+
+        Never read technical journal or current world. We require a matching
+        authorized command+transition, actual ingestion, next-step physical
+        telemetry, and no observable sufficient alternative injury cause.
+        A candidate receives the *real* Memory episode ID, not a manufactured
+        new episode for each command. No shortcut to causal `etablie`.
+        """
+        if not episode_ref:
+            raise ValueError("missing Memory episode reference")
+        events = {
+            e["event_id"]: e for e in autobiographical_events
+            if isinstance(e.get("event_id"), str)
+            and e.get("kind") in {
+                "command_experienced", "world_transition_experienced",
+            }
+        }
+        commands: dict[int, Mapping[str, object]] = {}
+        transitions: dict[int, Mapping[str, object]] = {}
+        for event_ref in event_refs:
+            event = events.get(event_ref)
+            if event is None:
+                continue
+            t = event.get("t_monde")
+            if not isinstance(t, int) or t < 1:
+                continue
+            if event["kind"] == "command_experienced":
+                if t in commands:
+                    # Conflicting exposures must never be manufactured as
+                    # independent by duplicate projections.
+                    commands.pop(t, None)
+                    continue
+                commands[t] = event
+            elif event["kind"] == "world_transition_experienced":
+                if t in transitions:
+                    transitions.pop(t, None)
+                    continue
+                transitions[t] = event
+
+        candidate: list[SafetyEvidence] = []
+        for t in sorted(commands.keys() & transitions.keys()):
+            exposure = self._lived_food_exposures.get(t)
+            if exposure is None or exposure.observed_step is None:
+                continue
+            command = commands[t]
+            transition = transitions[t]
+            parameters = command.get("parameters")
+            effects = transition.get("effects")
+            body_after = transition.get("body_after")
+            if (
+                command.get("primitive") != "manger"
+                or not isinstance(parameters, Mapping)
+                or parameters.get("target") != exposure.resource_kind
+                or not isinstance(effects, Mapping)
+                or effects.get("ate") != exposure.resource_kind
+                or not isinstance(body_after, Mapping)
+            ):
+                continue
+            after = body_after.get("integrity")
+            if (
+                not isinstance(after, (int, float))
+                or not isfinite(after)
+                or after != exposure.integrity_observed
+            ):
+                # Scenario changed telemetry, or the following capture is
+                # missing; neither should masquerade as an observed consequence.
+                continue
+            # The allowed autobiographical effects may reveal other physical
+            # harm (creature/danger zone). When present, independent attribution
+            # to food is impossible and the candidate is withheld.
+            if any(
+                isinstance(effects.get(key), (int, float))
+                and effects[key] > 0
+                for key in ("creature_damage", "danger_zone_damage")
+            ):
+                continue
+            event = transition
+            candidate.append(SafetyEvidence(
+                identifier=f"dc05:{episode_ref}:{event['event_id']}",
+                contingency_ref=f"toxic:{exposure.resource_kind}",
+                predicate="toxic_item",
+                subject_ref=exposure.resource_kind,
+                context_signature="global",
+                episode_ref=episode_ref,
+                observation_ref=str(event["event_id"]),
+                emission_step=exposure.t_monde,
+                observation_step=exposure.observed_step,
+                harm_observed=after < exposure.integrity_before,
+                source="monde",
+                independent_episode=True,
+                comparable_context=True,
+                alternative_cause_sufficient=False,
+                exposure_motivated_independently=True,
+            ))
+        # Evidence is admitted only after the entire Memory episode is closed.
+        for item in candidate:
+            self.integrate(item)
+        # Exposure refs can be discarded only once their command is represented
+        # by a *closed* episode; unobserved attempts cannot be counted later.
+        for t, command in commands.items():
+            if command.get("primitive") == "manger":
+                self._lived_food_exposures.pop(t, None)
+        return tuple(candidate)
 
     def integrate(self, evidence: SafetyEvidence) -> None:
         evidence.validate()  # INV-03/27: reject before any causal write.
@@ -272,6 +448,10 @@ class CausalModel:
             "seen": sorted(self._seen_ids),
             "episodes": [list(x) for x in sorted(self._credited_episodes)],
             "observations": [list(x) for x in sorted(self._credited_observations)],
+            "lived_food_exposures": [
+                {name: getattr(v, name) for name in v.__dataclass_fields__}
+                for _, v in sorted(self._lived_food_exposures.items())
+            ],
         }
 
     def restore_causal_state(self, state: object) -> None:
@@ -303,6 +483,15 @@ class CausalModel:
         self._credited_episodes = episodes
         self._credited_observations = observations
         self._seen_ids = set(state["seen"])
+        exposure_rows = state.get("lived_food_exposures", [])
+        exposures = {}
+        for raw in exposure_rows:
+            exposure = LivedFoodExposure(**raw)
+            exposure.validate()
+            if exposure.t_monde in exposures:
+                raise ValueError("duplicate pending lived exposure")
+            exposures[exposure.t_monde] = exposure
+        self._lived_food_exposures = exposures
         self._version = version
 
 
