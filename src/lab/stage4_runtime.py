@@ -260,6 +260,19 @@ class Stage4Runtime:
         return False
 
     @staticmethod
+    def _comparison_as_dict(comparison) -> object:
+        if comparison is None:
+            return None
+        return {
+            "option_ref": comparison.option_ref,
+            "sent_t_monde": comparison.sent_t_monde,
+            "observed_t_monde": comparison.observed_t_monde,
+            "status": comparison.status,
+            "attribution": comparison.attribution,
+            "effects": list(comparison.effects),
+        }
+
+    @staticmethod
     def _goal_as_dict(goal: Goal | None) -> object:
         if goal is None:
             return None
@@ -454,6 +467,7 @@ class Stage4Runtime:
                 state=self._step_need_state,
                 t_monde=capture.t_monde,
                 cycle=cycle,
+                sent_t_monde=capture.t_monde,
             )
             for alert in alerts:
                 self._publish_contribution(alert)
@@ -589,7 +603,9 @@ class Stage4Runtime:
                             else self.metacognition.state.budget_state
                         )
                     },
-                    "last_action": None,
+                    "last_action": self._comparison_as_dict(
+                        self.stage3.control.last_comparison
+                    ),
                 },
                 competitive=selection.elements,
                 diff={
@@ -801,6 +817,7 @@ class Stage4Runtime:
         prepared: PreparedCommand,
         admission,
         cycle: int,
+        sent_t_monde: int,
     ) -> CommandExecution:
         execution = self.stage3.control.dispatch_prechecked(
             admission=admission,
@@ -816,10 +833,28 @@ class Stage4Runtime:
             raise TypeError("unexpected Stage 4 execution result")
         if execution.status == "applied":
             self.stage3.control.mark_cognitive_step_applied(proposal)
+            self.stage3.control.record_sent_prediction(
+                prepared=prepared,
+                t_monde=sent_t_monde,
+            )
         return execution
 
     def run_step(self) -> Stage4StepResult:
         capture = self.stage3.open_step()
+        comparison = self.stage3.control.compare_capture(capture)
+        if comparison is not None:
+            self._write(
+                kind="agency_comparison",
+                data=self._comparison_as_dict(comparison),
+            )
+            if (
+                comparison.status == "nonconforming"
+                and comparison.option_ref is not None
+            ):
+                self.competition.invalidate_candidate(comparison.option_ref)
+                self.stage3.control.clear_option_step(comparison.option_ref)
+                self.planning.invalidate_current()
+
         self._step_need_state = self.value_needs.assess(capture.body)
         self._step_reward = self.value_needs.reward_for(self._step_need_state)
 
