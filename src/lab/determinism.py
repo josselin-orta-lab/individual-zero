@@ -46,7 +46,10 @@ def _normalize(value: object) -> object:
         for key, item in value.items():
             if not isinstance(key, str):
                 raise TypeError("causal mapping keys must be strings")
-            normalized[unicodedata.normalize("NFC", key)] = _normalize(item)
+            normalized_key = unicodedata.normalize("NFC", key)
+            if normalized_key in normalized:
+                raise ValueError("causal mapping keys collide after NFC normalization")
+            normalized[normalized_key] = _normalize(item)
         return normalized
 
     if isinstance(value, (list, tuple)):
