@@ -475,3 +475,10 @@ Closed, real DC-09 autobiographical food-consumption episodes that have matching
 The observation is explicitly `cause_present=True`, never an invented control group or an intervention. Without independently lived `cause_present=False` baseline episodes, it **cannot** progress beyond `aucun` under §13.2. An alternative observed creature/zone harm prevents both safety and causal admission. New tests in `tests/test_stage9_lived_evidence.py` enforce these distinctions.
 
 **Still missing:** autonomous independent baseline producer, comparator-to-intervention source with action/episode linkage, explicit alternative-hypothesis review, Exploration/Competition causal test options, established-only simulator corrections and Stage-9 golden. This checkpoint alone is not Stage-9 completion.
+
+
+### Stage 9 checkpoint 6b — P-35 co-occurrence correctness
+
+Audit revealed that the initial correlation gate counted cause-present exposures as `n1`, including exposures without the effect. The implementation now counts only `cause_present AND effect_present` co-occurrences **in observably matched contexts**, then separately requires a strictly lower matched unexposed base rate. New `tests/test_stage9_cooccurrence_threshold.py` locks down absent effects, unmatched reference contexts and deterministic pending-observation snapshot replay.
+
+This is a normative correction to Stage-9 typed inference; it does not alter Stage-8 code or historic golden references. The autonomous lived observational intake completed in checkpoint 6 supplies only exposure-positive episodes and **cannot invent a negative control group or an intervention**. Stage 9 remains open pending an independent baseline producer, causal test-option lifecycle, and established-only Simulator correction.
