@@ -12,6 +12,7 @@ from lab.stage7_runtime import (
     Stage7Runtime,
 )
 from lab.stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY
+from i0.interfaces import PrimitiveCommand
 from lab.world import Position, WorldLayout
 
 
@@ -123,17 +124,30 @@ class Stage7RuntimeTests(unittest.TestCase):
             equipment=stage6.equipment,
         )
 
-        result = runtime.run_step()
+        runtime.stage3.open_step()
+        execution = runtime.stage3.substrate.send_admitted_command(
+            PrimitiveCommand("attendre"),
+            source="stage7-inv27-test",
+            checkpoint_owners=runtime.causal_owners,
+            individual_id=runtime.individual_id,
+        )
+        self.assertEqual(execution.status, "rolled_back")
 
         technical_kinds = [
             entry.causal_event.get("kind")
             for entry in runtime.journal.entries
         ]
         self.assertIn("lethal_transition_detected", technical_kinds)
-        self.assertIn(result.execution_status, {"applied", "safety_block"})
+
         visible = autobiography(runtime)
         self.assertFalse(
             any("lethal" in str(event.get("kind", "")) for event in visible)
+        )
+        runtime.memory.ingest_autobiographical(
+            visible,
+            current_t_monde=runtime.scheduler.t_monde,
+            current_goal_ref=None,
+            current_reward=0.0,
         )
         self.assertFalse(
             any(
