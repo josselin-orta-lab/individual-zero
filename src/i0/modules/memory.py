@@ -152,6 +152,7 @@ class EpisodicMemory:
         self._open_surprise = 0.0
         self._episode_sequence = 0
         self._last_recalled_ref: str | None = None
+        self._recall_above_threshold: set[str] = set()
         self._intentions: dict[str, Intention] = {}
 
     @property
@@ -714,10 +715,17 @@ class EpisodicMemory:
         t_monde: int,
         cycle: int,
     ) -> Contribution | None:
-        recalled = self.recall(st=st, t_monde=t_monde, limit=1)
-        if not recalled:
+        recalled = self.recall(st=st, t_monde=t_monde)
+        current_refs = {item.episode_ref for item in recalled}
+        newly_crossed = [
+            item
+            for item in recalled
+            if item.episode_ref not in self._recall_above_threshold
+        ]
+        self._recall_above_threshold = current_refs
+        if not newly_crossed:
             return None
-        top = recalled[0]
+        top = newly_crossed[0]
         episode = next(
             episode for episode in self._episodes
             if episode.id == top.episode_ref
@@ -774,6 +782,7 @@ class EpisodicMemory:
             "open_surprise": self._open_surprise,
             "episode_sequence": self._episode_sequence,
             "last_recalled_ref": self._last_recalled_ref,
+            "recall_above_threshold": sorted(self._recall_above_threshold),
             "intentions": [
                 {
                     "id": item.id,
