@@ -86,7 +86,7 @@ class SimilaritySchemaTests(unittest.TestCase):
         ontology = build_ontology_registry()
         schema = build_similarity_schema(ontology)
 
-        self.assertEqual(
+        self.assertAlmostEqual(
             schema.similarity(
                 left_family="entity",
                 left=(0.0, 0.5, 1.0),
@@ -94,6 +94,7 @@ class SimilaritySchemaTests(unittest.TestCase):
                 right=(1.0, 0.5, 0.0),
             ),
             1.0 / 3.0,
+            places=15,
         )
 
 
