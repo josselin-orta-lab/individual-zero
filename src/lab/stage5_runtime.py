@@ -18,7 +18,9 @@ from i0.temperament import (
     TemperamentProjection,
 )
 
+from .determinism import deterministic_id
 from .safety_protocol import SafetyProtocolConfig
+from .snapshots import SnapshotRecord, SnapshotType
 from .stage4_runtime import Stage4Config, Stage4Runtime
 from .world import WorldLayout, WorldPhysicsConfig
 
@@ -140,6 +142,129 @@ class Stage5Runtime(Stage4Runtime):
             ),
             "config": self._stage5_config,
         }
+
+    @property
+    def battery_copy(self) -> bool:
+        return self.temperament_projection.battery_copy
+
+    def create_copy(
+        self,
+        *,
+        copy_ref: str,
+        battery_copy: bool = False,
+    ) -> tuple["Stage5Runtime", SnapshotRecord]:
+        """Create an isolated individual from a complete coherent copy snapshot."""
+        if not copy_ref:
+            raise ValueError("copy_ref must not be empty")
+        if self.scheduler.active_attempt is not None:
+            raise RuntimeError("copies may be created only at a coherent step boundary")
+
+        snapshots = self.stage3.substrate.snapshots
+        record = snapshots.take(
+            snapshot_type=SnapshotType.COPY,
+            individual_id=self.individual_id,
+            t_monde=self.scheduler.t_monde,
+            cycle=0,
+            attempt_ref=None,
+            owners=self.causal_owners,
+            versions={
+                "stage5": self._stage5_config.version,
+                "temperament_mapping": (
+                    self.temperament_projection.mapping_version
+                ),
+                "world_physics": self.world.config.version,
+            },
+            context={
+                "copy_ref": copy_ref,
+                "battery_copy": battery_copy,
+            },
+        )
+        child_id = deterministic_id(
+            "individual-copy-v1",
+            self.individual_id,
+            record.id,
+            copy_ref,
+        )
+        child = Stage5Runtime(
+            world_config=self._source_world_config,
+            layout=self._source_layout,
+            safety_config=self._source_safety_config,
+            safety_facts=self._source_safety_facts,
+            protected_integrity_threshold=(
+                self._source_protected_integrity_threshold
+            ),
+            config=self._stage5_config,
+            individual_id=child_id,
+            lineage_id=self.temperament_projection.lineage_id,
+            parent_id=self.individual_id,
+            copy_snapshot_id=record.id,
+            battery_copy=battery_copy,
+        )
+
+        payload = snapshots.export_payload(record.id)
+        owner_states = payload.get("owner_states")
+        if not isinstance(owner_states, dict):
+            raise ValueError("copy snapshot owner state is malformed")
+        child_owners = {
+            owner.owner_id: owner
+            for owner in child.causal_owners
+        }
+        if set(owner_states) != set(child_owners):
+            raise ValueError("copy owner set does not match parent snapshot")
+
+        for owner_id in sorted(owner_states):
+            state = owner_states[owner_id]
+            if owner_id == "s_t":
+                child.s_t.restore_copy_causal_state(state)
+            elif owner_id == "snapshots_and_individual_parameters":
+                child.temperament_projection.restore_copy_causal_state(state)
+            else:
+                child_owners[owner_id].restore_causal_state(state)
+
+        parent_event = {
+            "emitter": "stage5.copy",
+            "kind": "copy_created",
+            "t_monde": self.scheduler.t_monde,
+            "parent_individual": self.individual_id,
+            "child_individual": child_id,
+            "copy_ref": copy_ref,
+            "copy_snapshot_id": record.id,
+            "battery_copy": battery_copy,
+        }
+        self.journal.append(
+            event_id=deterministic_id(
+                "journal-event-v1",
+                "stage5.copy",
+                "parent",
+                self.individual_id,
+                child_id,
+                record.id,
+                copy_ref,
+            ),
+            causal_event=parent_event,
+        )
+        child.journal.append(
+            event_id=deterministic_id(
+                "journal-event-v1",
+                "stage5.copy",
+                "child",
+                self.individual_id,
+                child_id,
+                record.id,
+                copy_ref,
+            ),
+            causal_event={
+                "emitter": "stage5.copy",
+                "kind": "copy_branch_started",
+                "t_monde": child.scheduler.t_monde,
+                "individual": child_id,
+                "parent_individual": self.individual_id,
+                "copy_ref": copy_ref,
+                "shared_prefix_snapshot_id": record.id,
+                "battery_copy": battery_copy,
+            },
+        )
+        return child, record
 
     @property
     def causal_owners(self):
