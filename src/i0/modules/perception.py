@@ -8,7 +8,7 @@ Spec: 6.1, 9.2, 20.3 Stage 3, DC-11, INV-02, INV-45.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Mapping, Sequence
 
 from i0.contracts import Contribution
@@ -44,6 +44,7 @@ class PerceptualCapture:
     current_resources: tuple[str, ...]
     adjacent: tuple[PerceivedCell, ...]
     visible_entities: tuple[PerceivedEntity, ...] = ()
+    inventory: Mapping[str, int] = field(default_factory=dict)
 
     @property
     def adjacent_creatures(self) -> tuple[PerceivedCell, ...]:
@@ -139,6 +140,10 @@ class SymbolicPerception:
             ),
             adjacent=tuple(perceived_cells),
             visible_entities=tuple(perceived_entities),
+            inventory={
+                str(key): int(value)
+                for key, value in dict(local_state.get("inventory", {})).items()
+            },
         )
 
     def publish_capture(
