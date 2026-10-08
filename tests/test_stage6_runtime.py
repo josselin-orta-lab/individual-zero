@@ -110,6 +110,7 @@ def stage6_runtime(
                 version="stage6-runtime-planning-v1",
                 option_ttl_steps=20,
                 max_depth=2,
+                revision_delta=0.1,
                 setpoints=dict(stage4._config.value_needs.setpoints),
             ),
         ),
