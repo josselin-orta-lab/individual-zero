@@ -164,20 +164,56 @@ class EpisodicMemory:
         self,
         event: Mapping[str, object],
     ) -> tuple[bool, float]:
-        if event.get("kind") != "experienced_prediction_error":
+        if event.get("kind") == "experienced_prediction_error":
+            value_raw = event.get("value")
+            precision_raw = event.get("precision")
+            if not isinstance(value_raw, (int, float)):
+                return False, 0.0
+            value = abs(float(value_raw))
+            precision = (
+                0.0
+                if not isinstance(precision_raw, (int, float))
+                else abs(float(precision_raw))
+            )
+            threshold = self._config.prediction_error_multiplier * precision
+            return value > threshold, value
+
+        if event.get("kind") != "agency_comparison":
             return False, 0.0
-        value_raw = event.get("value")
-        precision_raw = event.get("precision")
-        if not isinstance(value_raw, (int, float)):
+        data = event.get("data")
+        if not isinstance(data, Mapping):
             return False, 0.0
-        value = abs(float(value_raw))
-        precision = (
-            0.0
-            if not isinstance(precision_raw, (int, float))
-            else abs(float(precision_raw))
-        )
-        threshold = self._config.prediction_error_multiplier * precision
-        return value > threshold, value
+        effects = data.get("effects")
+        if not isinstance(effects, list):
+            return False, 0.0
+
+        largest = 0.0
+        crosses = False
+        for effect in effects:
+            if not isinstance(effect, Mapping):
+                continue
+            if effect.get("status") not in {
+                "nonconforming",
+                "expected_effect_missing",
+            }:
+                continue
+            predicted = effect.get("predicted")
+            observed = effect.get("observed")
+            precision_raw = effect.get("precision")
+            if not isinstance(predicted, (int, float)) or not isinstance(
+                observed, (int, float)
+            ):
+                continue
+            magnitude = abs(float(observed) - float(predicted))
+            precision = (
+                0.0
+                if not isinstance(precision_raw, (int, float))
+                else abs(float(precision_raw))
+            )
+            largest = max(largest, magnitude)
+            if magnitude > self._config.prediction_error_multiplier * precision:
+                crosses = True
+        return crosses, largest
 
     def _close(
         self,
