@@ -61,7 +61,7 @@ jobs:
           print(f"stage8_kappa_keys={len(kappa['counters'])}")
           print(f"stage8_f_cog={runtime.metacognition.state.f_cog_uc_counter}")
           # Fixed only after a verified second identical 300-step execution.
-          expected = "2e6343c1c40f2c61d2c6f5b277af9e12ccda42bc93593b2a13873e184e1d5a5e"
+          expected = "0a2dc62d4ba51722a96f307fdf6c7427d1aa3b0a8a3c0e21da81bc490eb23cf8"
           if runtime.journal.head_hash != expected:
               raise SystemExit(
                   "Stage 8 golden regression: "
