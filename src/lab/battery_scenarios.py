@@ -52,6 +52,7 @@ class BatteryScenarioConfig:
     threat_creature_position: Position
     exploration_resource_position: Position
     exploration_resource_kind: str
+    perseverance_primitive: str
     perseverance_failure_schedule: tuple[bool, ...]
     max_steps_by_situation: Mapping[str, int]
 
@@ -72,6 +73,17 @@ class BatteryScenarioConfig:
             raise ValueError("termination step bound required for every battery situation")
         if any(value < 1 for value in self.max_steps_by_situation.values()):
             raise ValueError("battery termination bounds must be >= 1")
+        if self.perseverance_primitive not in {
+            "se_deplacer",
+            "collecter",
+            "manger",
+            "boire",
+            "poser_une_pierre",
+            "fabriquer_outil",
+            "dormir",
+            "attendre",
+        }:
+            raise ValueError("perseverance primitive must be a known primitive action")
         if not self.perseverance_failure_schedule:
             raise ValueError("perseverance failure schedule must be explicit")
 
@@ -165,8 +177,19 @@ def build_battery_scenario(
         }
 
     elif situation is BatterySituation.PERSEVERANCE:
-        events = ()
+        events = (
+            ScenarioEvent(
+                t_monde=1,
+                sequence=0,
+                operation="set_action_failure_schedule",
+                payload={
+                    "primitive": config.perseverance_primitive,
+                    "schedule": list(config.perseverance_failure_schedule),
+                },
+            ),
+        )
         mechanism = {
+            "tested_primitive": config.perseverance_primitive,
             "action_failure_schedule": list(config.perseverance_failure_schedule),
             "schedule_semantics": (
                 "true means the scenario forces the tested action to fail; "
