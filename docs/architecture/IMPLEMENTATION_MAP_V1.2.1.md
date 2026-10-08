@@ -26,12 +26,19 @@ Completed in the current branch:
 - separate evaluation trace storage;
 - explicit machine-delay non-causality test.
 
-Still missing from normative Stage 1:
+Stage 1 gate status:
 
-- full nested payload validation for every schema in 5.2;
-- retained reference journal artifact committed or persisted by CI;
-- periodic snapshot frequency wiring (P-55) once a preregistered value is supplied;
-- complete production wiring of RunManifest creation from real campaign configuration rather than test fixtures.
+- INV-21: green through explicit per-cycle UC accounting, module envelopes, protected capacity, non-carryover, deterministic refusal before overrun, and over-consuming-stub tests;
+- INV-22: green through explicit exclusion of machine time from causal state and a delayed-vs-undelayed byte-identical journal test;
+- INV-33: green for the Stage-1 scripted substrate through independent re-execution plus snapshot restoration and exact causal continuation;
+- INV-35: green through closed ontology admission and deterministic logged rejection of unknown semantic terms;
+- reference journal: generated and retained by CI on Python 3.11.
+
+Deferred without blocking the Stage 1 gate:
+
+- full nested payload validation for schemas whose owning cognitive/world components are not implemented yet;
+- periodic snapshot scheduling from P-55 until a preregistered campaign value is supplied;
+- production campaign RunManifest instantiation, which now has a validated builder but requires real campaign values and equipment reference.
 
 ## Current repository gap
 
