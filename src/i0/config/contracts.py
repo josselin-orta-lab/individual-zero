@@ -19,6 +19,11 @@ from lab.contracts import (
     SimilaritySchema,
     StructuralContractBundle,
 )
+from lab.determinism import (
+    DETERMINISTIC_RUNTIME_CONTRACT,
+    RunManifest,
+    StructuralContractRef,
+)
 
 
 SPECIFICATION_VERSION = "1.2.1"
@@ -254,6 +259,30 @@ def build_structural_contract_bundle(values: dict[str, object]) -> StructuralCon
     )
     bundle.validate()
     return bundle
+
+
+
+def build_run_manifest(
+    *,
+    values: dict[str, object],
+    equipment: StructuralContractRef,
+    python_version: str,
+    code_commit: str,
+    campaign_seed: object,
+) -> RunManifest:
+    """Build and validate the causal run manifest from frozen contracts."""
+
+    bundle = build_structural_contract_bundle(values)
+    manifest = RunManifest(
+        specification_version=SPECIFICATION_VERSION,
+        deterministic_runtime_contract=DETERMINISTIC_RUNTIME_CONTRACT,
+        python_version=python_version,
+        code_commit=code_commit,
+        campaign_seed=campaign_seed,
+        contracts=bundle.contract_refs(equipment=equipment),
+    )
+    manifest.validate()
+    return manifest
 
 
 def build_schema_registry() -> SchemaRegistry:
