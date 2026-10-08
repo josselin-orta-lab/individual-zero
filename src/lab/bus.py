@@ -40,6 +40,61 @@ class ProducerBuffer:
     def producer(self) -> str:
         return self._producer
 
+    @property
+    def owner_id(self) -> str:
+        return f"bus.producer_buffer.{self._producer}"
+
+    def export_causal_state(self) -> object:
+        return {
+            "next_sequence": self._next_sequence,
+            "messages": [
+                {
+                    "producer": message.producer,
+                    "local_sequence": message.local_sequence,
+                    "schema_name": message.schema_name,
+                    "schema_version": message.schema_version,
+                    "payload": dict(message.payload),
+                    "semantic_terms": list(message.semantic_terms),
+                }
+                for message in self._messages
+            ],
+        }
+
+    def restore_causal_state(self, state: object) -> None:
+        if not isinstance(state, Mapping):
+            raise ValueError("producer buffer state must be a mapping")
+        next_sequence = state.get("next_sequence")
+        raw_messages = state.get("messages")
+        if not isinstance(next_sequence, int) or next_sequence < 0:
+            raise ValueError("producer buffer next_sequence must be non-negative")
+        if not isinstance(raw_messages, list):
+            raise ValueError("producer buffer messages must be a list")
+
+        restored: list[BufferedMessage] = []
+        for raw in raw_messages:
+            if not isinstance(raw, Mapping):
+                raise ValueError("invalid buffered message state")
+            payload = raw.get("payload")
+            terms = raw.get("semantic_terms")
+            if not isinstance(payload, Mapping) or not isinstance(terms, list):
+                raise ValueError("invalid buffered message payload state")
+            producer = str(raw["producer"])
+            if producer != self._producer:
+                raise ValueError("buffered message producer does not match owner")
+            restored.append(
+                BufferedMessage(
+                    producer=producer,
+                    local_sequence=int(raw["local_sequence"]),
+                    schema_name=str(raw["schema_name"]),
+                    schema_version=str(raw["schema_version"]),
+                    payload=dict(payload),
+                    semantic_terms=tuple(str(term) for term in terms),
+                )
+            )
+
+        self._next_sequence = next_sequence
+        self._messages = restored
+
     def publish(
         self,
         *,
