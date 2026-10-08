@@ -36,20 +36,21 @@ A new generation should be considered only when all three conditions are support
 2. the change affects global behavior or several functions;
 3. enough experimental evidence exists to establish a new baseline.
 
-## Current files
+## Reference hierarchy
 
-### Long-form reference documents
+Long-form reference documents are organized by language under [`reference/`](reference/README.md).
 
-Conceptual and normative reference documents are organized by language under [`reference/`](reference/README.md).
+For the current French documentation:
 
-Current French sources:
+1. [Normative MVP specification v1.2](reference/fr/mvp-specification-v1.2.md) is the **implementation authority for the MVP**.
+2. [Conceptual architecture v2](reference/fr/architecture-v2.md) is the broader conceptual and scientific architecture.
+3. Repository-specific notes such as the I0 overview and bootstrap runtime document the current codebase and must remain consistent with the normative MVP specification.
 
-- [Conceptual architecture v2](reference/fr/architecture-v2.md)
-- [Normative MVP specification v1.2](reference/fr/mvp-specification-v1.2.md)
+When a conceptual statement and an implementation rule differ, implementation work follows the normative MVP specification for the scope of the MVP.
 
 English equivalents use the same filenames under `reference/en/`. The language lives in the directory, while the basename and document version remain stable across translations.
 
-### Repository architecture documents
+## Repository architecture documents
 
 - [I0 overview](I0_OVERVIEW.md): concise description of the current I0 reference boundary.
 - [Bootstrap runtime boundary](BOOTSTRAP_RUNTIME.md): executable bootstrap architecture and its deliberately non-cognitive boundary.
