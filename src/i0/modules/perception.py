@@ -11,6 +11,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping, Sequence
 
+from i0.contracts import Contribution
+
 
 @dataclass(frozen=True, slots=True)
 class PerceivedCell:
@@ -24,6 +26,15 @@ class PerceivedCell:
 
 
 @dataclass(frozen=True, slots=True)
+class PerceivedEntity:
+    entity_id: str
+    entity_type: str
+    x: int
+    y: int
+    properties: Mapping[str, object]
+
+
+@dataclass(frozen=True, slots=True)
 class PerceptualCapture:
     t_monde: int
     x: int
@@ -32,6 +43,7 @@ class PerceptualCapture:
     current_water_source: bool
     current_resources: tuple[str, ...]
     adjacent: tuple[PerceivedCell, ...]
+    visible_entities: tuple[PerceivedEntity, ...] = ()
 
     @property
     def adjacent_creatures(self) -> tuple[PerceivedCell, ...]:
@@ -43,7 +55,16 @@ class PerceptualCapture:
 
 
 class SymbolicPerception:
-    """Deterministic Stage-3 perception stub with no learned state or noise."""
+    """Deterministic symbolic perception with Stage-4 exact known-map state."""
+
+    owner_id = "perception"
+
+    def __init__(self) -> None:
+        self._known_entities: dict[str, PerceivedEntity] = {}
+
+    @property
+    def known_entities(self) -> Mapping[str, PerceivedEntity]:
+        return dict(self._known_entities)
 
     def capture(
         self,
@@ -76,6 +97,27 @@ class SymbolicPerception:
                 )
             )
 
+        raw_entities = local_state.get("visible_entities", ())
+        if not isinstance(raw_entities, Sequence):
+            raise ValueError("invalid visible-entity payload")
+        perceived_entities: list[PerceivedEntity] = []
+        for raw in raw_entities:
+            if not isinstance(raw, Mapping):
+                raise ValueError("invalid visible entity")
+            raw_position = raw.get("position")
+            properties = raw.get("properties", {})
+            if not isinstance(raw_position, Mapping) or not isinstance(properties, Mapping):
+                raise ValueError("invalid visible entity payload")
+            entity = PerceivedEntity(
+                entity_id=str(raw["entity_id"]),
+                entity_type=str(raw["entity_type"]),
+                x=int(raw_position["x"]),
+                y=int(raw_position["y"]),
+                properties=dict(properties),
+            )
+            perceived_entities.append(entity)
+            self._known_entities[entity.entity_id] = entity
+
         body = {
             key: float(telemetry[key])
             for key in ("energy", "food", "water", "integrity")
@@ -91,4 +133,91 @@ class SymbolicPerception:
                 for item in local_state["current_resources"]  # type: ignore[index]
             ),
             adjacent=tuple(perceived_cells),
+            visible_entities=tuple(perceived_entities),
         )
+
+    def publish_capture(
+        self,
+        *,
+        capture: PerceptualCapture,
+        cycle: int,
+        ttl_steps: int,
+    ) -> tuple[Contribution, ...]:
+        if ttl_steps < 1:
+            raise ValueError("perception contribution TTL must be >= 1")
+
+        contributions: list[Contribution] = []
+        for entity in sorted(
+            capture.visible_entities,
+            key=lambda item: (item.entity_type, item.entity_id),
+        ):
+            contribution = Contribution(
+                id=f"observation:{entity.entity_id}:{capture.t_monde}:{cycle}",
+                schema_version="mvp-v1.2.1",
+                type="observation",
+                summary=(
+                    f"{entity.entity_type} at ({entity.x},{entity.y})"
+                ),
+                subject_ref=f"entity:{entity.entity_id}",
+                emitter_module="perception",
+                signal_family="world_symbolic",
+                confidence=1.0,
+                urgency=0.0,
+                risk=0.0,
+                value=0.0,
+                production_t=capture.t_monde,
+                production_cycle=cycle,
+                expires_at_step=capture.t_monde + ttl_steps,
+                payload={
+                    "entity_ref": entity.entity_id,
+                    "entity_type": entity.entity_type,
+                    "attribute": "position",
+                    "value": {"x": entity.x, "y": entity.y},
+                    "uncertainty": 0.0,
+                    "channel": "symbolic_world",
+                    "anchor": "world",
+                    "properties": dict(entity.properties),
+                },
+                signal_ids=(
+                    f"world-capture:{capture.t_monde}:{entity.entity_id}",
+                ),
+            )
+            contribution.validate()
+            contributions.append(contribution)
+        return tuple(contributions)
+
+    def export_causal_state(self) -> object:
+        return {
+            "known_entities": [
+                {
+                    "entity_id": entity.entity_id,
+                    "entity_type": entity.entity_type,
+                    "x": entity.x,
+                    "y": entity.y,
+                    "properties": dict(entity.properties),
+                }
+                for entity in sorted(
+                    self._known_entities.values(),
+                    key=lambda item: item.entity_id,
+                )
+            ]
+        }
+
+    def restore_causal_state(self, state: object) -> None:
+        if not isinstance(state, Mapping):
+            raise ValueError("Perception state must be a mapping")
+        raw = state.get("known_entities")
+        if not isinstance(raw, list):
+            raise ValueError("Perception known_entities must be a list")
+        self._known_entities = {}
+        for row in raw:
+            if not isinstance(row, Mapping):
+                raise ValueError("invalid known entity state")
+            entity = PerceivedEntity(
+                entity_id=str(row["entity_id"]),
+                entity_type=str(row["entity_type"]),
+                x=int(row["x"]),
+                y=int(row["y"]),
+                properties=dict(row.get("properties", {})),
+            )
+            self._known_entities[entity.entity_id] = entity
