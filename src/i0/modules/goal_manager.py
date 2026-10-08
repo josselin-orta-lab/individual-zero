@@ -50,10 +50,26 @@ class GoalManager:
         self._latest_pressure: dict[tuple[str, str], float] = {}
         self._refractory_until: dict[tuple[str, str], int] = {}
         self._impossible_failures: dict[tuple[str, str], tuple[str, int]] = {}
+        self._visible_proposals: tuple[GoalProposal, ...] = ()
+        self._next_proposals: tuple[GoalProposal, ...] = ()
 
     @property
     def active_goal(self) -> Goal | None:
         return self._active
+
+    @property
+    def visible_proposals(self) -> tuple[GoalProposal, ...]:
+        return self._visible_proposals
+
+    def defer_proposals(self, proposals: Sequence[GoalProposal]) -> None:
+        for proposal in proposals:
+            proposal.validate()
+        self._next_proposals = tuple(proposals)
+
+    def close_cycle_inputs(self) -> None:
+        """Make current-cycle proposals visible to the next cycle."""
+        self._visible_proposals = self._next_proposals
+        self._next_proposals = ()
 
     @staticmethod
     def _condition_for(goal_type: str) -> tuple[str, str]:
@@ -229,6 +245,36 @@ class GoalManager:
                 for (goal_type, target), (context_hash, count)
                 in sorted(self._impossible_failures.items())
             ],
+            "visible_proposals": [
+                {
+                    "id": p.id,
+                    "source": p.source,
+                    "goal_type": p.goal_type,
+                    "target": p.target,
+                    "base_pressure": p.base_pressure,
+                    "current_pressure": p.current_pressure,
+                    "justification_ref": p.justification_ref,
+                    "t_monde": p.t_monde,
+                    "cycle": p.cycle,
+                    "rule_version": p.rule_version,
+                }
+                for p in self._visible_proposals
+            ],
+            "next_proposals": [
+                {
+                    "id": p.id,
+                    "source": p.source,
+                    "goal_type": p.goal_type,
+                    "target": p.target,
+                    "base_pressure": p.base_pressure,
+                    "current_pressure": p.current_pressure,
+                    "justification_ref": p.justification_ref,
+                    "t_monde": p.t_monde,
+                    "cycle": p.cycle,
+                    "rule_version": p.rule_version,
+                }
+                for p in self._next_proposals
+            ],
         }
 
     def restore_causal_state(self, state: object) -> None:
@@ -267,3 +313,30 @@ class GoalManager:
             (str(row[0]), str(row[1])): (str(row[2]), int(row[3]))
             for row in state.get("impossible_failures", [])
         }
+
+        def decode_proposals(name: str) -> tuple[GoalProposal, ...]:
+            raw_list = state.get(name, [])
+            if not isinstance(raw_list, list):
+                raise ValueError(f"invalid {name}")
+            result: list[GoalProposal] = []
+            for raw in raw_list:
+                if not isinstance(raw, Mapping):
+                    raise ValueError(f"invalid proposal in {name}")
+                proposal = GoalProposal(
+                    id=str(raw["id"]),
+                    source=str(raw["source"]),
+                    goal_type=str(raw["goal_type"]),
+                    target=str(raw["target"]),
+                    base_pressure=float(raw["base_pressure"]),
+                    current_pressure=float(raw["current_pressure"]),
+                    justification_ref=str(raw["justification_ref"]),
+                    t_monde=int(raw["t_monde"]),
+                    cycle=int(raw["cycle"]),
+                    rule_version=str(raw["rule_version"]),
+                )
+                proposal.validate()
+                result.append(proposal)
+            return tuple(result)
+
+        self._visible_proposals = decode_proposals("visible_proposals")
+        self._next_proposals = decode_proposals("next_proposals")
