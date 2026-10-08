@@ -59,6 +59,30 @@ class ComputeBudgetTests(unittest.TestCase):
         self.assertTrue(accepted_control.accepted)
         self.assertEqual(budget.consumed_cycle_uc, 7)
 
+    def test_ordinary_work_cannot_consume_protected_capacity(self) -> None:
+        config = ComputeBudgetConfig(
+            version="fixture-protected-v1",
+            cycle_ceiling=10,
+            module_envelopes={"worker": 10, "control": 4},
+            protected_modules=frozenset({"control"}),
+            protected_capacity=3,
+            operation_costs={"large": 5, "small": 2},
+        )
+        budget = CycleComputeBudget(config=config)
+        budget.open_cycle(1)
+
+        self.assertTrue(budget.charge(module="worker", operation="large").accepted)
+        self.assertTrue(budget.charge(module="worker", operation="small").accepted)
+        rejected = budget.charge(module="worker", operation="small")
+
+        self.assertFalse(rejected.accepted)
+        self.assertEqual(rejected.reason, "protected_capacity")
+        self.assertEqual(budget.consumed_cycle_uc, 7)
+
+        control = budget.charge(module="control", operation="small")
+        self.assertTrue(control.accepted)
+        self.assertEqual(budget.consumed_cycle_uc, 9)
+
     def test_global_ceiling_is_never_exceeded(self) -> None:
         config = ComputeBudgetConfig(
             version="fixture-v2",
