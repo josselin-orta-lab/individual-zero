@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 from i0.contracts import PredictionError
 from i0.equipment import EquipmentModel
-from i0.modules import Admissibility, PreparedCommand, StaticSafetyFacts
+from i0.modules import Admissibility, StaticSafetyFacts
 from i0.modules.simulator import Simulator, SimulatorConfig, state_from_capture
 from i0.modules.stage6_evaluator import (
     Stage6EvaluationConfig,
@@ -79,7 +79,6 @@ class Stage6Runtime(Stage4Runtime):
             equipment=equipment,
         )
         self._revision_initial_state = None
-        self._revision_capture = None
         self.option_evaluator = Stage6OptionEvaluator(
             config=config.evaluation,
             simulator=self.simulator,
@@ -210,7 +209,6 @@ class Stage6Runtime(Stage4Runtime):
             is_night=self.world.is_night(capture.t_monde),
         )
         self._revision_initial_state = initial_state
-        self._revision_capture = capture
         proposal = self.planning.propose(
             goal=goal_for_planning,
             initial_state=initial_state,
@@ -239,27 +237,8 @@ class Stage6Runtime(Stage4Runtime):
         )
         return proposal
 
-    def _first_step_admissible(self, proposal) -> bool:
-        if proposal.plan is None or not proposal.plan.steps:
-            return False
-        if self._revision_capture is None:
-            return False
-        step = proposal.plan.steps[0]
-        prepared = PreparedCommand(
-            command=step.command,
-            source="decision",
-            option_ref=proposal.option.id,
-            st_version_ref=proposal.option.founding_st_version,
-            grounding_contribution_refs=(
-                proposal.option.grounding_contribution_refs
-            ),
-            predicted_consequences=step.predicted_consequences,
-            observation_window_steps=step.observation_window_steps,
-        )
-        status = self.stage3.control.verifier_admissibilite(
-            capture=self._revision_capture,
-            prepared=prepared,
-        )
+    def _revised_plan_admissible(self, proposal) -> bool:
+        status = self.stage3.control.verifier_plan_connu(proposal)
         return status is not Admissibility.INADMISSIBLE
 
     def _compare_revision_value(
@@ -347,7 +326,7 @@ class Stage6Runtime(Stage4Runtime):
                     },
                 )
                 return False
-            if not self._first_step_admissible(proposal):
+            if not self._revised_plan_admissible(proposal):
                 self._write(
                     kind="revised_plan_rejected",
                     cycle=cycle,
