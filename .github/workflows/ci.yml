@@ -356,6 +356,16 @@ jobs:
               "stage6_f_cog_uc="
               f"{runtime.metacognition.state.f_cog_uc_counter}"
           )
+          expected = "1f7a61df76a84a5f3c00b66ee636ec99ca787793775b0a6ef15449db69286e1b"
+          if runtime.journal.head_hash != expected:
+              raise SystemExit(
+                  f"Stage 6 reference regression: {runtime.journal.head_hash} != {expected}"
+              )
+          if runtime.metacognition.state.f_cog_uc_counter != 9593:
+              raise SystemExit(
+                  "Stage 6 F_cog UC regression: "
+                  f"{runtime.metacognition.state.f_cog_uc_counter} != 9593"
+              )
           PY
 
       - name: Upload Stage 6 reference journal
