@@ -8,7 +8,7 @@ from i0.interfaces import PrimitiveCommand
 from i0.modules.causal_model import (
     CausalModel, CausalModelConfig, SafetyEvidence, CanonicalSafetyFacts
 )
-from test_action_control import capture
+from test_action_control import capture_with_creature
 
 
 def model():
@@ -108,13 +108,13 @@ class CanonicalCausalSafetyTests(unittest.TestCase):
             command=PrimitiveCommand("manger", {"target": "berry_b"}),
             source="decision",
         )
-        prior = control.admit(capture=capture(), prepared=prepared)
+        prior = control.admit(capture=capture_with_creature(creature_direction=None), prepared=prepared)
         self.assertTrue(prior.ok)
         for name in ("harm1", "harm2"):
             m.integrate(evidence(name))
             m.publish()
         self.assertEqual(adapter.item_status(resource_kind="berry_b"), "known_toxic")
-        veto = control.admit(capture=capture(), prepared=prepared)
+        veto = control.admit(capture=capture_with_creature(creature_direction=None), prepared=prepared)
         self.assertFalse(veto.ok)
         self.assertEqual(veto.rule_id, "toxic_item_consumption")
         self.assertEqual(m.get("toxic:berry_b").causal_status, "aucun")
