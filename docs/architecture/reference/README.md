@@ -2,6 +2,15 @@
 
 This directory contains the long-form conceptual and normative reference documents used by Individual Zero.
 
+## Reference roles
+
+Two document families currently coexist:
+
+- **Conceptual architecture**: explains the broader model, scientific hypotheses, building blocks, implementation diagrams, limitations, and research framing.
+- **Normative MVP specification**: defines the software contract for the MVP and is the implementation authority for that version.
+
+The conceptual architecture informs the project. The normative MVP specification tells an implementation team what must actually be built, tested, replayed, owned, and versioned for the MVP.
+
 ## Language layout
 
 Reference documents are organized by ISO 639-1 language code:
@@ -38,13 +47,15 @@ en/mvp-specification-v1.2.md
 
 ## Translation status
 
-| Reference document | French | English | Source language |
-| --- | --- | --- | --- |
-| Conceptual architecture v2 | current | pending | French |
-| Normative MVP specification v1.2 | current | pending | French |
+| Reference document | French | English | Source language | Role |
+| --- | --- | --- | --- | --- |
+| Conceptual architecture v2 | current | pending | French | conceptual reference |
+| Normative MVP specification v1.2 | current | pending | French | normative implementation reference |
 
 When an English equivalent is added, it should use the exact matching path under `en/`.
 
 ## Scope
 
 These files are reference material. Repository-specific architecture notes such as the executable bootstrap boundary, I0 overview, and generation templates remain one level above in `docs/architecture/`.
+
+Repository-specific notes may summarize or operationalize the references, but they must not silently override a normative MVP rule.
