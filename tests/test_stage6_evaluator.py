@@ -50,7 +50,10 @@ def needs_config() -> ValueNeedsConfig:
     )
 
 
-def evaluator_with_drink_transition() -> Stage6OptionEvaluator:
+def evaluator_with_drink_transition(
+    *,
+    include_wait: bool = False,
+) -> Stage6OptionEvaluator:
     before = replace(
         state(),
         body={
@@ -70,17 +73,28 @@ def evaluator_with_drink_transition() -> Stage6OptionEvaluator:
             "integrity": 100.0,
         },
     )
+    examples = [
+        EquipmentCorpusExample(
+            family="drinking",
+            state=before,
+            command=PrimitiveCommand("boire"),
+            observed_next_state=after,
+            terminal=False,
+        ),
+    ]
+    if include_wait:
+        examples.append(
+            EquipmentCorpusExample(
+                family="wait",
+                state=before,
+                command=PrimitiveCommand("attendre"),
+                observed_next_state=before,
+                terminal=False,
+            )
+        )
     corpus = EquipmentCorpus(
         version="stage6-eval-corpus-v1",
-        examples=(
-            EquipmentCorpusExample(
-                family="drinking",
-                state=before,
-                command=PrimitiveCommand("boire"),
-                observed_next_state=after,
-                terminal=False,
-            ),
-        ),
+        examples=tuple(examples),
     )
     equipment = train_exact_transition_table(
         corpus=corpus,
@@ -146,6 +160,85 @@ class Stage6OptionEvaluatorTests(unittest.TestCase):
         self.assertEqual(result.evaluation.status, "not_evaluated")
         self.assertEqual(result.evaluation.simulated_value_status, "unavailable")
         self.assertIsNone(result.evidence)
+
+    def test_revised_plan_above_delta_is_improved_under_same_budget(self) -> None:
+        evaluator = evaluator_with_drink_transition(include_wait=True)
+        initial = replace(
+            state(),
+            body={
+                "energy": 50.0,
+                "food": 60.0,
+                "water": 20.0,
+                "integrity": 100.0,
+            },
+            current_water_source=True,
+        )
+
+        comparison = evaluator.compare_revised_plans(
+            old_proposal=proposal("same", "attendre"),
+            new_proposal=proposal("same", "boire"),
+            initial_state=initial,
+            delta_plan=5.0,
+            cycle=1,
+            t_monde=1,
+        )
+
+        self.assertEqual(comparison.status, "improved")
+        self.assertEqual(comparison.old_value, 0.0)
+        self.assertEqual(comparison.new_value, 40.0)
+        self.assertEqual(comparison.delta, 40.0)
+        self.assertEqual(comparison.r_eff, 3)
+        self.assertEqual(comparison.h_eff, 1)
+
+    def test_revised_plan_below_delta_is_not_improved(self) -> None:
+        evaluator = evaluator_with_drink_transition(include_wait=True)
+        initial = replace(
+            state(),
+            body={
+                "energy": 50.0,
+                "food": 60.0,
+                "water": 20.0,
+                "integrity": 100.0,
+            },
+            current_water_source=True,
+        )
+
+        comparison = evaluator.compare_revised_plans(
+            old_proposal=proposal("same", "attendre"),
+            new_proposal=proposal("same", "boire"),
+            initial_state=initial,
+            delta_plan=50.0,
+            cycle=1,
+            t_monde=1,
+        )
+
+        self.assertEqual(comparison.status, "not_improved")
+        self.assertEqual(comparison.delta, 40.0)
+
+    def test_unavailable_revised_plan_is_never_declared_better(self) -> None:
+        evaluator = evaluator_with_drink_transition(include_wait=True)
+        initial = replace(
+            state(),
+            body={
+                "energy": 50.0,
+                "food": 60.0,
+                "water": 20.0,
+                "integrity": 100.0,
+            },
+            current_water_source=True,
+        )
+
+        comparison = evaluator.compare_revised_plans(
+            old_proposal=proposal("same", "attendre"),
+            new_proposal=proposal("same", "se_deplacer"),
+            initial_state=initial,
+            delta_plan=0.0,
+            cycle=1,
+            t_monde=1,
+        )
+
+        self.assertEqual(comparison.status, "unavailable")
+        self.assertIsNone(comparison.delta)
 
     def test_not_evaluated_candidate_freezes_accumulator(self) -> None:
         comp = Competition(
