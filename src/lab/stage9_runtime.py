@@ -112,6 +112,29 @@ class Stage9Runtime(Stage8Runtime):
                             "harm_observed": item.harm_observed,
                         },
                     )
+                # Stage 9 §9.6: only Memory-closed DC-09 comparator reports
+                # reach Causal Model; no comparator output becomes an
+                # intervention or independent confirmation by itself.
+                agency_reports = self.causal_model.ingest_closed_agency_comparisons(
+                    episode_ref=episode.id,
+                    event_refs=episode.event_refs,
+                    autobiographical_events=autobiography,
+                )
+                for report in agency_reports:
+                    self._write(
+                        kind="causal_agency_evidence_admitted",
+                        cycle=cycle,
+                        data={
+                            "evidence_ref": report.identifier,
+                            "episode_ref": report.episode_ref,
+                            "source_event_ref": report.event_ref,
+                            "option_ref": report.option_ref,
+                            "status": report.status,
+                            "attribution": report.attribution,
+                            "observed_t_monde": report.observed_t_monde,
+                            "causal_status_changed": False,
+                        },
+                    )
 
         hooks[1]["memory"] = observe_then_ingest
 
