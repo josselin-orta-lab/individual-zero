@@ -139,7 +139,12 @@ class Stage7Runtime(Stage6Runtime):
 
     def _request_statuses_for_st(self) -> Mapping[str, str]:
         return {
-            request_ref: status.state
+            request_ref: (
+                status.response_status
+                if status.state == "closed"
+                and status.response_status is not None
+                else status.state
+            )
             for request_ref, status
             in sorted(self.request_registry.statuses.items())
         }
