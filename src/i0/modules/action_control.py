@@ -398,6 +398,70 @@ class ActionControl:
 
         return Admissibility.ADMISSIBLE
 
+    def verifier_plan_connu(
+        self,
+        proposal: OptionProposal,
+    ) -> Admissibility:
+        """Prevalidate every plan step whose safety facts are already knowable.
+
+        Future geometry comes only from the plan's predicted consequences. A
+        missing destination or an unknown safety fact remains indeterminate;
+        it is never upgraded to safe.
+        """
+        proposal.validate()
+        if proposal.plan is None or not proposal.plan.steps:
+            return Admissibility.INDETERMINATE
+
+        saw_indeterminate = False
+        for step in proposal.plan.steps:
+            command = step.command
+
+            if command.primitive == "se_deplacer":
+                predicted = {
+                    consequence.variable: consequence.value_or_delta
+                    for consequence in step.predicted_consequences
+                }
+                if "position_x" not in predicted or "position_y" not in predicted:
+                    saw_indeterminate = True
+                else:
+                    status = self._facts.zone_status(
+                        x=int(predicted["position_x"]),
+                        y=int(predicted["position_y"]),
+                    )
+                    if status == "known_lethal":
+                        return Admissibility.INADMISSIBLE
+                    if status == "unknown":
+                        saw_indeterminate = True
+
+            if command.primitive == "manger":
+                resource = str(command.parameters.get("target"))
+                status = self._facts.item_status(resource_kind=resource)
+                if status == "known_toxic":
+                    return Admissibility.INADMISSIBLE
+                if status == "unknown":
+                    saw_indeterminate = True
+
+            integrity = next(
+                (
+                    consequence.value_or_delta
+                    for consequence in step.predicted_consequences
+                    if consequence.variable == "integrity"
+                ),
+                None,
+            )
+            if (
+                integrity is not None
+                and float(integrity)
+                < self._config.protected_integrity_threshold
+            ):
+                return Admissibility.INADMISSIBLE
+
+        return (
+            Admissibility.INDETERMINATE
+            if saw_indeterminate
+            else Admissibility.ADMISSIBLE
+        )
+
     def admit(
         self,
         *,
