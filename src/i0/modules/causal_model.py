@@ -384,101 +384,130 @@ class CausalModel:
         self._pending_causal_interventions.append(trial)
 
     def publish_causal_inference(self) -> tuple[CausalInferenceChange, ...]:
-        """Atomic staged inference; never counts a source twice or skips states.
-
-        P-35 thresholds are preregistered. Observations establish correlation
-        only when matched baseline frequency is lower; review verifies actual
-        observable matched controls. Interventions must reproduce effects in
-        n2 distinct contexts. An observed failure revises established status.
-        """
+        """Publish independent §13.2 evidence atomically, with frozen input stages."""
         from collections import defaultdict
+        original = dict(self._published)
+        published = dict(original)
         observations = dict(self._causal_observations)
-        trials = dict(self._causal_interventions)
+        interventions = dict(self._causal_interventions)
         reviews = set(self._causal_reviews)
         credits = set(self._causal_credits)
-        published = dict(self._published)
-        changes = []
-        for x in sorted(self._pending_causal_observations,key=lambda v:v.identifier):
-            if (x.contingency_ref,x.episode_ref,"observation") in credits or any(
-                v.observation_ref == x.observation_ref for v in observations.values()
+        revisions = dict(self._causal_revision_boundaries)
+        changes: list[CausalInferenceChange] = []
+
+        # Batch arrival never bypasses the prior published lifecycle level.
+        for o in sorted(self._pending_causal_observations, key=lambda x: x.identifier):
+            if o.predicate not in SAFETY_PREDICATES and o.predicate not in self.config.causal_predicates:
+                raise ValueError("unregistered causal predicate")
+            key = (o.contingency_ref, o.episode_ref, "observation")
+            if key in credits or any(v.observation_ref == o.observation_ref for v in observations.values()):
+                continue
+            old = published.get(o.contingency_ref)
+            if old is None:
+                old = CanonicalContingency(
+                    ref=o.contingency_ref, version=1, predicate=o.predicate,
+                    subject_ref=o.subject_ref, context_signature=o.application_context,
+                    causal_status="aucun", safety_status="aucun",
+                    evidence_refs=(), harmful_episodes=(), harmless_episodes=(),
+                )
+            elif (old.predicate, old.subject_ref, old.context_signature) != (
+                o.predicate, o.subject_ref, o.application_context
+            ):
+                raise ValueError("observation mismatches canonical contingency")
+            credits.add(key)
+            observations[o.identifier] = o
+            published[o.contingency_ref] = old
+
+        byref = defaultdict(list)
+        for o in observations.values():
+            byref[o.contingency_ref].append(o)
+        for ref in sorted(byref):
+            old = original.get(ref)
+            current = published[ref]
+            if old is not None and old.causal_status != "aucun":
+                continue
+            exposed = [x for x in byref[ref] if x.cause_present]
+            control = [x for x in byref[ref] if not x.cause_present]
+            if len(exposed) < self.config.n1 or not control:
+                continue
+            # Above-base-rate comparisons require matching observable context
+            # and controlled variables. No mismatched context can create a rate.
+            matched = [(x, y) for x in exposed for y in control
+                       if x.observation_context == y.observation_context
+                       and x.controlled_variables == y.controlled_variables]
+            if not matched:
+                continue
+            e = {x.identifier: x for x, _ in matched}
+            b = {y.identifier: y for _, y in matched}
+            if sum(x.effect_present for x in e.values()) * len(b) <= (
+                sum(y.effect_present for y in b.values()) * len(e)
             ):
                 continue
-            credits.add((x.contingency_ref,x.episode_ref,"observation"))
-            observations[x.identifier]=x
-            current=published.get(x.contingency_ref)
-            if current is None:
-                current=CanonicalContingency(
-                    ref=x.contingency_ref,version=1,predicate=x.predicate,
-                    subject_ref=x.subject_ref,context_signature=x.application_context,
-                    causal_status="aucun",safety_status="aucun",
-                    evidence_refs=(),harmful_episodes=(),harmless_episodes=(),
-                )
-            elif (current.predicate,current.subject_ref,current.context_signature)!=(
-                x.predicate,x.subject_ref,x.application_context
-            ):
-                raise ValueError("observation does not match canonical context")
-            published[x.contingency_ref]=current
-        byref=defaultdict(list)
-        for x in observations.values(): byref[x.contingency_ref].append(x)
-        for ref in sorted(byref):
-            current=published[ref]
-            if current.causal_status!="aucun": continue
-            rows=byref[ref]
-            exposed=[x for x in rows if x.cause_present]
-            baseline=[x for x in rows if not x.cause_present]
-            if (len(exposed)<self.config.n1 or not baseline
-                or not any(x.effect_present for x in exposed)):continue
-            # Compare observed effect rates; no fixed pseudo-baseline.
-            if (sum(x.effect_present for x in exposed)*len(baseline)
-                <=sum(x.effect_present for x in baseline)*len(exposed)):continue
-            changed=replace(current,causal_status="correlation_observee",version=current.version+1)
-            published[ref]=changed
-            changes.append(CausalInferenceChange(ref,current.causal_status,changed.causal_status,changed.version,exposed[-1].identifier,"observed_rate"))
-        for review in sorted(self._pending_causal_reviews,key=lambda v:v.identifier):
-            current=published.get(review.contingency_ref)
-            if current is None or current.causal_status!="correlation_observee":
-                raise ValueError("hypothesis review requires published correlation")
-            for positive,negative in review.contrasting_pairs:
-                a,b=observations.get(positive),observations.get(negative)
-                if (a is None or b is None or a.contingency_ref!=current.ref
-                    or b.contingency_ref!=current.ref or not a.cause_present
-                    or b.cause_present or a.controlled_variables!=b.controlled_variables
-                    or a.observation_context!=b.observation_context):
-                    raise ValueError("hypothesis review lacks real matched controls")
+            new = replace(current, causal_status="correlation_observee", version=current.version + 1)
+            published[ref] = new
+            changes.append(CausalInferenceChange(ref, current.causal_status, new.causal_status, new.version, sorted(e)[-1], "controlled_base_rate"))
+
+        for review in sorted(self._pending_causal_reviews, key=lambda x: x.identifier):
+            old = original.get(review.contingency_ref)
+            if old is None or old.causal_status != "correlation_observee":
+                raise ValueError("review requires previously published correlation")
+            for a_ref, b_ref in review.contrasting_pairs:
+                a, b = observations.get(a_ref), observations.get(b_ref)
+                if (a is None or b is None or a.contingency_ref != old.ref
+                    or b.contingency_ref != old.ref or not a.cause_present
+                    or b.cause_present or a.controlled_variables != b.controlled_variables
+                    or a.observation_context != b.observation_context
+                    or a.episode_ref == b.episode_ref):
+                    raise ValueError("review lacks independent matched controls")
             reviews.add(review.identifier)
-            changed=replace(current,causal_status="hypothese_causale",version=current.version+1)
-            published[current.ref]=changed
-            changes.append(CausalInferenceChange(current.ref,current.causal_status,changed.causal_status,changed.version,review.identifier,"matched_controls"))
-        for trial in sorted(self._pending_causal_interventions,key=lambda v:(v.observed_step,v.identifier)):
-            current=published.get(trial.contingency_ref)
-            if current is None or current.causal_status not in {"hypothese_causale","testee_par_intervention","etablie"}:
-                raise ValueError("interventions require previously published hypothesis")
-            key=(trial.contingency_ref,trial.episode_ref,"intervention")
-            if key in credits or any(v.observation_ref==trial.observation_ref for v in trials.values()):
+            current = published[old.ref]
+            new = replace(current, causal_status="hypothese_causale", version=current.version + 1)
+            published[old.ref] = new
+            changes.append(CausalInferenceChange(old.ref, current.causal_status, new.causal_status, new.version, review.identifier, "matched_alternatives"))
+
+        for trial in sorted(self._pending_causal_interventions, key=lambda x: (x.observed_step, x.identifier)):
+            old = original.get(trial.contingency_ref)
+            if old is None or old.causal_status not in {
+                "hypothese_causale", "testee_par_intervention", "etablie"
+            }:
+                raise ValueError("intervention needs previously published hypothesis")
+            key = (trial.contingency_ref, trial.episode_ref, "intervention")
+            if key in credits or any(v.observation_ref == trial.observation_ref for v in interventions.values()):
                 continue
             credits.add(key)
-            trials[trial.identifier]=trial
-            successes={v.context_signature for v in trials.values() if v.contingency_ref==current.ref and v.observed_effect and v.attribution=="self_compatible"}
-            if not trial.observed_effect and current.causal_status=="etablie":
-                new_status="hypothese_causale"
-            elif trial.observed_effect and current.causal_status=="hypothese_causale":
-                new_status="testee_par_intervention"
-            elif trial.observed_effect and current.causal_status=="testee_par_intervention" and len(successes)>=self.config.n2:
-                new_status="etablie"
-            else:new_status=current.causal_status
-            if new_status!=current.causal_status:
-                changed=replace(current,causal_status=new_status,version=current.version+1)
-                published[current.ref]=changed
-                changes.append(CausalInferenceChange(current.ref,current.causal_status,new_status,changed.version,trial.identifier,"independent_intervention"))
-        self._published=published
-        self._causal_observations=observations
-        self._causal_interventions=trials
-        self._causal_reviews=reviews
-        self._causal_credits=credits
+            interventions[trial.identifier] = trial
+            current = published[old.ref]
+            if not trial.observed_effect and old.causal_status == "etablie":
+                revisions[old.ref] = (trial.observed_step, trial.identifier)
+                next_status = "hypothese_causale"
+            else:
+                boundary = revisions.get(old.ref, (-1, ""))[0]
+                contexts = {
+                    x.context_signature for x in interventions.values()
+                    if x.contingency_ref == old.ref and x.observed_effect
+                    and x.attribution == "self_compatible" and x.observed_step > boundary
+                }
+                if trial.observed_effect and old.causal_status == "hypothese_causale":
+                    next_status = "testee_par_intervention"
+                elif trial.observed_effect and old.causal_status == "testee_par_intervention" and len(contexts) >= self.config.n2:
+                    next_status = "etablie"
+                else:
+                    next_status = current.causal_status
+            if next_status != current.causal_status:
+                new = replace(current, causal_status=next_status, version=current.version + 1)
+                published[old.ref] = new
+                changes.append(CausalInferenceChange(old.ref, current.causal_status, next_status, new.version, trial.identifier, "independent_intervention"))
+
+        self._published = published
+        self._causal_observations = observations
+        self._causal_interventions = interventions
+        self._causal_reviews = reviews
+        self._causal_credits = credits
+        self._causal_revision_boundaries = revisions
         self._pending_causal_observations.clear()
         self._pending_causal_reviews.clear()
         self._pending_causal_interventions.clear()
-        self._version+=1
+        self._version += 1
         return tuple(changes)
 
     def integrate(self, evidence: SafetyEvidence) -> None:
@@ -592,6 +621,9 @@ class CausalModel:
             "causal_interventions": [serialize_value(x) for _,x in sorted(self._causal_interventions.items())],
             "causal_reviews": sorted(self._causal_reviews),
             "causal_credits": [list(x) for x in sorted(self._causal_credits)],
+            "causal_revision_boundaries": [
+                [key, step, ref] for key, (step, ref) in sorted(self._causal_revision_boundaries.items())
+            ],
             "pending_causal_observations": [serialize_value(x) for x in self._pending_causal_observations],
             "pending_causal_reviews": [serialize_value(x) for x in self._pending_causal_reviews],
             "pending_causal_interventions": [serialize_value(x) for x in self._pending_causal_interventions],
@@ -648,6 +680,9 @@ class CausalModel:
         self._causal_interventions=trials
         self._causal_reviews=set(state.get("causal_reviews",[]))
         self._causal_credits={tuple(v) for v in state.get("causal_credits",[])}
+        self._causal_revision_boundaries={
+            key:(step,ref) for key,step,ref in state.get("causal_revision_boundaries",[])
+        }
         self._pending_causal_observations=pending_obs
         self._pending_causal_reviews=pending_review
         self._pending_causal_interventions=pending_trial
