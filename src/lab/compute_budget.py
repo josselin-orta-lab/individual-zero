@@ -153,18 +153,6 @@ class CycleComputeBudget:
             reason=None,
         )
 
-    def synthetic_state(self) -> str:
-        """Return only the coarse state permitted for later S_t publication."""
-
-        if self._cycle is None or self._consumed_cycle == 0:
-            return "normal"
-        fraction = self._consumed_cycle / self._config.cycle_ceiling if self._config.cycle_ceiling else 1.0
-        if fraction >= 1.0:
-            return "degraded"
-        if fraction >= 0.75:
-            return "constrained"
-        return "normal"
-
     def export_causal_state(self) -> object:
         return {
             "config_version": self._config.version,
