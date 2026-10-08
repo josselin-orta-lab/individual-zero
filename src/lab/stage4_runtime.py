@@ -467,7 +467,6 @@ class Stage4Runtime:
                 state=self._step_need_state,
                 t_monde=capture.t_monde,
                 cycle=cycle,
-                sent_t_monde=capture.t_monde,
             )
             for alert in alerts:
                 self._publish_contribution(alert)
@@ -947,6 +946,7 @@ class Stage4Runtime:
                 prepared=prepared,
                 admission=admission,
                 cycle=cycle,
+                sent_t_monde=capture.t_monde,
             )
             if execution.status == "rolled_back":
                 # The cognitive checkpoint restored all causal owners, while
