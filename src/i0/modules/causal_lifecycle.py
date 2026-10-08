@@ -149,6 +149,137 @@ class CausalIntervention:
 
 
 @dataclass(frozen=True, slots=True)
+class AgencyEvidence:
+    """DC-09-backed Action Control comparator observation, not causal proof.
+
+    This record is descriptive only. It does not count as an intervention,
+    create a hypothesis, establish a contingency, or authorize a veto.
+    Effects retain the P-47 comparator version and observed numerical values.
+    """
+    identifier: str
+    episode_ref: str
+    event_ref: str
+    option_ref: str
+    sent_t_monde: int
+    observed_t_monde: int
+    status: str
+    attribution: str
+    # (variable, status, predicted, observed, tolerance, p47_version)
+    effects: tuple[tuple[str | None, str, float | None, float | None, float | None, str], ...]
+    source: str = "agency_comparator"
+
+    def validate(self) -> None:
+        from math import isfinite
+
+        if not all(_nonblank(v) for v in (
+            self.identifier, self.episode_ref, self.event_ref, self.option_ref,
+        )):
+            raise ValueError("agency comparison requires an autobiographical source")
+        if (
+            self.source != "agency_comparator"
+            or type(self.sent_t_monde) is not int or self.sent_t_monde < 0
+            or type(self.observed_t_monde) is not int
+            or self.observed_t_monde <= self.sent_t_monde
+            or self.status not in {"conforming", "nonconforming", "indeterminable"}
+            or self.attribution not in {"self_compatible", "world_justified", "uncertain"}
+            or not self.effects
+        ):
+            raise ValueError("invalid lived agency comparison")
+        statuses = []
+        for effect in self.effects:
+            if not isinstance(effect, (tuple, list)) or len(effect) != 6:
+                raise ValueError("invalid P-47 observed effect")
+            variable, status, predicted, observed, tolerance, version = effect
+            if status not in {
+                "conforming", "nonconforming", "indeterminable", "expected_effect_missing",
+            } or not _nonblank(version):
+                raise ValueError("unknown comparator outcome or P-47 version")
+            if variable is not None and not _nonblank(variable):
+                raise ValueError("invalid observed effect variable")
+            if status in {"conforming", "nonconforming"} and variable is None:
+                raise ValueError("comparison result must identify its variable")
+            for value in (predicted, observed, tolerance):
+                if value is not None and (
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not isfinite(value)
+                ):
+                    raise ValueError("nonfinite comparator measurement")
+            if tolerance is not None and tolerance < 0:
+                raise ValueError("negative P-47 tolerance")
+            if status in {"conforming", "nonconforming"} and (
+                predicted is None or observed is None or tolerance is None
+            ):
+                raise ValueError("comparator evidence requires observed physical value")
+            statuses.append(status)
+        if self.status == "conforming" and any(v != "conforming" for v in statuses):
+            raise ValueError("conforming comparison has nonconforming effects")
+        if self.status == "nonconforming" and "nonconforming" not in statuses:
+            raise ValueError("nonconforming comparison lacks a mismatched effect")
+        if self.status == "indeterminable" and all(v == "conforming" for v in statuses):
+            raise ValueError("indeterminate comparison cannot have all effects confirmed")
+
+
+def agency_evidence_from_autobiography(
+    *, episode_ref: str, event: Mapping[str, object],
+) -> AgencyEvidence | None:
+    """Only a DC-09 projected, versioned P-47 comparison is admissible.
+
+    The caller supplies one event from an actually closed Memory episode. A
+    missing option (e.g., a reflex) has no plan intervention attribution.
+    Old Stage-3-8 comparator projections are not silently reinterpreted.
+    """
+    if event.get("kind") != "agency_comparison":
+        return None
+    data = event.get("data")
+    if not isinstance(data, Mapping) or not isinstance(data.get("option_ref"), str):
+        return None
+    effects_raw = data.get("effects")
+    if not isinstance(effects_raw, (tuple, list)) or not effects_raw:
+        return None
+    effects = []
+    for item in effects_raw:
+        if not isinstance(item, Mapping):
+            raise ValueError("invalid autobiographical comparator effect")
+        version = item.get("comparator_version")
+        if not _nonblank(version):
+            # Never forge P-47 provenance for an unversioned older comparator.
+            return None
+        effects.append((
+            item.get("variable"),
+            item.get("status"),
+            item.get("predicted"),
+            item.get("observed"),
+            item.get("precision"),
+            version,
+        ))
+    event_ref = event.get("event_id")
+    if not isinstance(event_ref, str):
+        raise ValueError("missing DC-09 event identity")
+    report = AgencyEvidence(
+        identifier=f"agency-evidence:{episode_ref}:{event_ref}",
+        episode_ref=episode_ref,
+        event_ref=event_ref,
+        option_ref=data["option_ref"],
+        sent_t_monde=data.get("sent_t_monde"),
+        observed_t_monde=data.get("observed_t_monde"),
+        status=data.get("status"),
+        attribution=data.get("attribution"),
+        effects=tuple(effects),
+    )
+    report.validate()
+    return report
+
+
+def decode_agency_evidence(raw: Mapping[str, object]) -> AgencyEvidence:
+    data = dict(raw)
+    data["effects"] = tuple(tuple(effect) for effect in data["effects"])
+    report = AgencyEvidence(**data)
+    report.validate()
+    return report
+
+
+@dataclass(frozen=True, slots=True)
 class CausalInferenceChange:
     contingency_ref: str
     before: str
