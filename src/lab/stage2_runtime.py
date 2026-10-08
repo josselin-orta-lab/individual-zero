@@ -179,6 +179,8 @@ class ScriptedStage2Runtime:
         checkpoint_owners=None,
         individual_id: str = "stage2-scripted",
         checkpoint_cycle: int = 0,
+        autobiographical_policy: AutobiographicalPolicy | None = None,
+        extra_autobiographical_event_refs: tuple[str, ...] = (),
     ) -> CommandExecution:
         """Execute a command already admitted by the active control path.
 
@@ -281,8 +283,15 @@ class ScriptedStage2Runtime:
         self.views.commit_autobiographical(
             t_monde=active.t_monde,
             attempt_ref=active.attempt_ref,
-            event_refs=(command_event, transition_event),
-            policy=STAGE2_AUTOBIOGRAPHICAL_POLICY,
+            event_refs=(
+                tuple(extra_autobiographical_event_refs)
+                + (command_event, transition_event)
+            ),
+            policy=(
+                STAGE2_AUTOBIOGRAPHICAL_POLICY
+                if autobiographical_policy is None
+                else autobiographical_policy
+            ),
         )
         self.safety.complete_nonlethal_step()
         self.scheduler.close_step(
