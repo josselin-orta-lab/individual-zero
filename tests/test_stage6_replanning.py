@@ -2,9 +2,23 @@ from __future__ import annotations
 
 import unittest
 
-from i0.contracts import MotiveRef, Option, OptionProposal, Plan, PlanStep
+from i0.contracts import (
+    MotiveRef,
+    Option,
+    OptionProposal,
+    Plan,
+    PlanStep,
+    PredictedConsequence,
+)
 from i0.interfaces import PrimitiveCommand
-from i0.modules import Competition, CompetitionConfig
+from i0.modules import (
+    ActionControl,
+    ActionControlConfig,
+    Admissibility,
+    Competition,
+    CompetitionConfig,
+    StaticSafetyFacts,
+)
 
 
 def proposal(option_id: str, primitive: str) -> OptionProposal:
@@ -64,6 +78,107 @@ def competition() -> Competition:
             },
         )
     )
+
+
+def movement_plan_to(
+    *,
+    option_id: str,
+    x: int,
+    y: int,
+) -> OptionProposal:
+    base = proposal(option_id, "se_deplacer")
+    step = PlanStep(
+        index=0,
+        command=PrimitiveCommand(
+            "se_deplacer",
+            {"direction": "east"},
+        ),
+        predicted_consequences=(
+            PredictedConsequence(
+                variable="position_x",
+                value_or_delta=float(x),
+                precision=0.0,
+            ),
+            PredictedConsequence(
+                variable="position_y",
+                value_or_delta=float(y),
+                precision=0.0,
+            ),
+        ),
+    )
+    plan = Plan(
+        id=f"plan:{option_id}:move:{x}:{y}",
+        option_ref=option_id,
+        version="move",
+        steps=(step,),
+        goal_ref=base.option.goal_ref,
+        budget_used_uc=1,
+        status="valid",
+        st_version="S_t:1",
+    )
+    return OptionProposal(
+        option=Option(
+            id=base.option.id,
+            version=base.option.version,
+            type=base.option.type,
+            learning_signature=base.option.learning_signature,
+            preconditions=base.option.preconditions,
+            success_condition=base.option.success_condition,
+            failure_condition=base.option.failure_condition,
+            invalidation_condition=base.option.invalidation_condition,
+            motive_ref=base.option.motive_ref,
+            founding_st_version=base.option.founding_st_version,
+            expires_at_step=base.option.expires_at_step,
+            provenance=base.option.provenance,
+            grounding_contribution_refs=base.option.grounding_contribution_refs,
+            goal_ref=base.option.goal_ref,
+            plan_ref=plan.id,
+            state=base.option.state,
+        ),
+        plan=plan,
+    )
+
+
+class Stage6PlanSafetyTests(unittest.TestCase):
+    def control(self, facts: StaticSafetyFacts) -> ActionControl:
+        return ActionControl(
+            config=ActionControlConfig(
+                safety_policy_version="stage6-replan-safety-v1",
+                protected_integrity_threshold=20.0,
+            ),
+            safety_facts=facts,
+            protocol_mask=lambda command: False,
+        )
+
+    def test_known_lethal_predicted_future_step_blocks_plan_adoption(self) -> None:
+        control = self.control(
+            StaticSafetyFacts(
+                known_lethal_positions=frozenset({(5, 5)}),
+            )
+        )
+        plan = movement_plan_to(
+            option_id="option:lethal",
+            x=5,
+            y=5,
+        )
+
+        self.assertIs(
+            control.verifier_plan_connu(plan),
+            Admissibility.INADMISSIBLE,
+        )
+
+    def test_unknown_predicted_future_step_remains_indeterminate(self) -> None:
+        control = self.control(StaticSafetyFacts())
+        plan = movement_plan_to(
+            option_id="option:unknown",
+            x=5,
+            y=5,
+        )
+
+        self.assertIs(
+            control.verifier_plan_connu(plan),
+            Admissibility.INDETERMINATE,
+        )
 
 
 class Stage6ReplanningCompetitionTests(unittest.TestCase):
