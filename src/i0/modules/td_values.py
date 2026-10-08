@@ -71,6 +71,14 @@ class EvaluationState:
 
 
 @dataclass(frozen=True, slots=True)
+class PendingTDSegment:
+    decision_t_monde: int
+    state: EvaluationState
+    signature: str
+    rewards: tuple[float, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class LearnedValue:
     signature: str
     status: str
@@ -100,10 +108,79 @@ class LinearTDValues:
         self._weights: dict[str, list[float]] = {}
         self._traces: dict[str, list[float]] = {}
         self._update_counts: dict[str, int] = {}
+        self._pending: PendingTDSegment | None = None
 
     @property
     def config(self) -> TDLearningConfig:
         return self._config
+
+
+    @property
+    def pending_segment(self) -> PendingTDSegment | None:
+        return self._pending
+
+    def arrive_decision(
+        self,
+        *,
+        state: EvaluationState,
+        signature: str,
+        t_monde: int,
+    ) -> TDUpdate | None:
+        state.validate()
+        if t_monde < 0:
+            raise ValueError("decision world step must be non-negative")
+
+        update = None
+        if self._pending is not None:
+            expected_length = t_monde - self._pending.decision_t_monde
+            if expected_length < 1:
+                raise ValueError("successive cognitive decisions must advance world time")
+            if len(self._pending.rewards) != expected_length:
+                raise ValueError(
+                    "TD segment reward count does not match decision spacing"
+                )
+            update = self.update_segment(
+                previous_state=self._pending.state,
+                previous_signature=self._pending.signature,
+                rewards=self._pending.rewards,
+                next_state=state,
+                next_signature=signature,
+            )
+
+        self._pending = PendingTDSegment(
+            decision_t_monde=t_monde,
+            state=state,
+            signature=signature,
+            rewards=(),
+        )
+        return update
+
+    def append_experienced_reward(self, reward: float) -> None:
+        if self._pending is None:
+            return
+        self._pending = PendingTDSegment(
+            decision_t_monde=self._pending.decision_t_monde,
+            state=self._pending.state,
+            signature=self._pending.signature,
+            rewards=self._pending.rewards + (float(reward),),
+        )
+
+    def close_experienced_terminal(self) -> TDUpdate | None:
+        if self._pending is None:
+            return None
+        if not self._pending.rewards:
+            raise ValueError("terminal segment has no experienced reward")
+        update = self.update_terminal(
+            previous_state=self._pending.state,
+            previous_signature=self._pending.signature,
+            rewards=self._pending.rewards,
+        )
+        self._pending = None
+        return update
+
+    def external_stop(self) -> None:
+        """Protocol stop: no synthetic terminal update (DC-15)."""
+        self._pending = None
 
     @property
     def consolidated_birth_form(self) -> Mapping[str, tuple[float, ...]]:
@@ -312,6 +389,18 @@ class LinearTDValues:
                 for signature, values in sorted(self._traces.items())
             },
             "update_counts": dict(sorted(self._update_counts.items())),
+            "pending": None if self._pending is None else {
+                "decision_t_monde": self._pending.decision_t_monde,
+                "state": {
+                    "body": dict(self._pending.state.body),
+                    "x": self._pending.state.x,
+                    "y": self._pending.state.y,
+                    "active_goal_type": self._pending.state.active_goal_type,
+                    "temporal_context": self._pending.state.temporal_context,
+                },
+                "signature": self._pending.signature,
+                "rewards": list(self._pending.rewards),
+            },
         }
 
     def restore_causal_state(self, state: object) -> None:
@@ -344,3 +433,31 @@ class LinearTDValues:
             str(signature): int(count)
             for signature, count in raw_counts.items()
         }
+
+        raw_pending = state.get("pending")
+        if raw_pending is None:
+            self._pending = None
+        elif isinstance(raw_pending, Mapping):
+            raw_state = raw_pending.get("state")
+            if not isinstance(raw_state, Mapping):
+                raise ValueError("TD pending state is malformed")
+            pending_state = EvaluationState(
+                body=dict(raw_state["body"]),
+                x=int(raw_state["x"]),
+                y=int(raw_state["y"]),
+                active_goal_type=(
+                    None
+                    if raw_state.get("active_goal_type") is None
+                    else str(raw_state["active_goal_type"])
+                ),
+                temporal_context=str(raw_state["temporal_context"]),
+            )
+            pending_state.validate()
+            self._pending = PendingTDSegment(
+                decision_t_monde=int(raw_pending["decision_t_monde"]),
+                state=pending_state,
+                signature=str(raw_pending["signature"]),
+                rewards=tuple(float(x) for x in raw_pending["rewards"]),
+            )
+        else:
+            raise ValueError("TD pending state must be a mapping or null")
