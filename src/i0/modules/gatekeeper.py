@@ -173,6 +173,11 @@ class Gatekeeper:
 
         return admitted, feedback
 
+    def _effective_risk(self, contribution: Contribution) -> float:
+        if self._reliability is None:
+            return contribution.risk
+        return contribution.risk * self._reliability(contribution)
+
     def _score(
         self,
         contribution: Contribution,
@@ -205,7 +210,8 @@ class Gatekeeper:
             self._config.weights[name] * decomposition[name]
             for name in decomposition
         )
-        score *= (1.0 if self._reliability is None else self._reliability(contribution))
+        if self._reliability is not None:
+            score *= self._reliability(contribution)
         return _Scored(
             contribution=contribution,
             score=score,
@@ -294,7 +300,7 @@ class Gatekeeper:
         security = [
             item
             for item in pool
-            if (item.contribution.risk * (1.0 if self._reliability is None else self._reliability(item.contribution))) >= self._config.safety_threshold
+            if self._effective_risk(item.contribution) >= self._config.safety_threshold
         ]
         security.sort(
             key=lambda item: (
@@ -406,7 +412,7 @@ class Gatekeeper:
                 preempted=(
                     bool(selected)
                     and item.contribution.id == selected[0].contribution.id
-                    and (item.contribution.risk * (1.0 if self._reliability is None else self._reliability(item.contribution))) >= self._config.safety_threshold
+                    and self._effective_risk(item.contribution) >= self._config.safety_threshold
                 ),
             )
             for item in selected
