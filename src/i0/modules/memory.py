@@ -682,6 +682,23 @@ class EpisodicMemory:
             "open_surprise": self._open_surprise,
             "episode_sequence": self._episode_sequence,
             "last_recalled_ref": self._last_recalled_ref,
+            "intentions": [
+                {
+                    "id": item.id,
+                    "goal_type": item.goal_type,
+                    "target": item.target,
+                    "trigger_type": item.trigger_type,
+                    "trigger_value": item.trigger_value,
+                    "deadline_step": item.deadline_step,
+                    "base_pressure": item.base_pressure,
+                    "monitoring": item.monitoring,
+                    "cost_uc": item.cost_uc,
+                    "wake_authorized": item.wake_authorized,
+                    "state": item.state,
+                    "candidacy_active": item.candidacy_active,
+                }
+                for item in self.intentions
+            ],
         }
 
     def restore_causal_state(self, state: object) -> None:
@@ -755,3 +772,31 @@ class EpisodicMemory:
         self._last_recalled_ref = (
             None if raw_recalled is None else str(raw_recalled)
         )
+
+        raw_intentions = state.get("intentions", [])
+        if not isinstance(raw_intentions, list):
+            raise ValueError("Memory intentions must be a list")
+        self._intentions = {}
+        for raw in raw_intentions:
+            if not isinstance(raw, Mapping):
+                raise ValueError("invalid intention state")
+            item = Intention(
+                id=str(raw["id"]),
+                goal_type=str(raw["goal_type"]),
+                target=str(raw["target"]),
+                trigger_type=str(raw["trigger_type"]),
+                trigger_value=raw.get("trigger_value"),
+                deadline_step=(
+                    None
+                    if raw.get("deadline_step") is None
+                    else int(raw["deadline_step"])
+                ),
+                base_pressure=float(raw["base_pressure"]),
+                monitoring=str(raw["monitoring"]),
+                cost_uc=int(raw["cost_uc"]),
+                wake_authorized=bool(raw["wake_authorized"]),
+                state=str(raw["state"]),
+                candidacy_active=bool(raw["candidacy_active"]),
+            )
+            item.validate()
+            self._intentions[item.id] = item
