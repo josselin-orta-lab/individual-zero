@@ -86,7 +86,7 @@ class Stage5Runtime(Stage4Runtime):
         self.individual_id = individual_id
         self.lineage_parent_id = lineage_parent_id
         self.lineage_copy_point = lineage_copy_point
-        self.battery_copy = battery_copy
+        self._battery_copy_requested = bool(battery_copy)
 
         self._birth_world_config = world_config
         self._birth_layout = layout
