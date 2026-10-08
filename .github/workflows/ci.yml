@@ -61,6 +61,19 @@ jobs:
           print(f"stage8_f_cog={runtime.metacognition.state.f_cog_uc_counter}")
           if not q['weights'] or not kappa['counters']:
               raise SystemExit("Stage 8 Q and kappa must both evolve")
+          repeat = build_stage8_reference_runtime()
+          for _ in range(300):
+              if repeat.run_step().execution_status != "applied":
+                  raise SystemExit("Stage 8 replay execution diverged")
+          if repeat.journal.canonical_bytes() != payload:
+              raise SystemExit("Stage 8 300-step journal replay diverged")
+          if repeat.journal.head_hash != runtime.journal.head_hash:
+              raise SystemExit("Stage 8 300-step golden heads differ")
+          if repeat.q_active.export_causal_state() != q:
+              raise SystemExit("Stage 8 Q_active replay diverged")
+          if repeat.kappa_active.export_causal_state() != kappa:
+              raise SystemExit("Stage 8 kappa_active replay diverged")
+          print("stage8_reference_second_run_exact=true")
           PY
 
       - name: Upload Stage 8 reference journal
