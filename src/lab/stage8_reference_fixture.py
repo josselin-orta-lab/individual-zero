@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from i0.modules import TDLearningConfig, ValueFeatureConfig
 from i0.modules.active_kappa import KappaConfig
+from i0.modules.active_precision import PrecisionConfig
 from i0.modules.stage8_evaluator import Stage8EvaluationConfig
 
 from .stage7_reference_fixture import build_stage7_reference_runtime
@@ -56,6 +57,16 @@ def build_stage8_reference_runtime() -> Stage8Runtime:
                     position_scale_x=31.0,
                     position_scale_y=31.0,
                 ),
+            ),
+            precision=PrecisionConfig(
+                version="stage8-precision-source-v1",
+                prior_weight=2.0,
+                initial_rmse_by_source={
+                    "world_symbolic": 1.0,
+                    "body_telemetry": 1.0,
+                },
+                variance_floor=0.0001,
+                maximum_precision=100.0,
             ),
             kappa=KappaConfig(
                 version="p33-stage8-reference-v1",
