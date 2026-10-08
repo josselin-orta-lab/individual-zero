@@ -35,6 +35,67 @@ jobs:
       - name: Run bootstrap smoke execution
         run: individual-zero --cycles 3 --seed 0 --run-id ci-smoke --output /tmp/individual-zero-ci.jsonl
 
+      - name: Stage 8 physical learning and prequential calibration curves
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from lab.stage8_learning_benchmark import (
+              world_learning_curve, Stage8PhysicalCalibrationRecorder,
+          )
+          from lab.stage8_reference_fixture import build_stage8_reference_runtime
+          td = world_learning_curve(pairs=80, interval=20)
+          if not td.points[-1].rmse_against_observed_return < td.points[0].rmse_against_observed_return:
+              raise SystemExit("Stage 8 physical-world TD learning did not improve")
+          recorder = Stage8PhysicalCalibrationRecorder()
+          runtime = build_stage8_reference_runtime()
+          for _ in range(300):
+              confidence = recorder.before_step(runtime)
+              result = runtime.run_step()
+              if result.execution_status != "applied":
+                  raise SystemExit("Stage 8 calibration-world execution not applied")
+              recorder.after_step(runtime, confidence)
+          curve = recorder.curve()
+          report = {
+              "protocol_version": td.protocol_version,
+              "td_world_version": td.world_version,
+              "td_sample_count": td.sample_count,
+              "td_measured_rewards": [td.measured_reward_drink, td.measured_reward_wait],
+              "td_points": [
+                  {"step": p.observed_steps, "q_drink": p.q_drink,
+                   "q_wait": p.q_wait, "rmse": p.rmse_against_observed_return}
+                  for p in td.points
+              ],
+              "calibration_count": len(curve.samples),
+              "brier_first_half": curve.initial_brier,
+              "brier_second_half": curve.late_brier,
+              "brier_neutral_baseline": curve.baseline_brier,
+              "brier_decreased": (
+                  None if curve.initial_brier is None or curve.late_brier is None
+                  else curve.late_brier < curve.initial_brier
+              ),
+          }
+          Path("/tmp/stage8-learning-benchmark.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\\n", encoding="utf-8"
+          )
+          print("stage8_learning_benchmark=" + json.dumps(report, sort_keys=True))
+          if not curve.samples:
+              print("stage8_brier_gate=inconclusive_no_credited_physical_comparisons")
+          elif report["brier_decreased"] is not True:
+              print("stage8_brier_gate=not_yet_demonstrated")
+          else:
+              print("stage8_brier_gate=observed_decrease")
+          PY
+
+      - name: Upload Stage 8 learning and calibration curves
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8-learning-benchmark
+          path: /tmp/stage8-learning-benchmark.json
+          if-no-files-found: error
+
       - name: Stage 8 reference and online-state metrics
         if: matrix.python-version == '3.11'
         run: |
