@@ -517,7 +517,11 @@ class CausalModel:
             if o.predicate not in SAFETY_PREDICATES and o.predicate not in self.config.causal_predicates:
                 raise ValueError("unregistered causal predicate")
             key = (o.contingency_ref, o.episode_ref, "observation")
-            if key in credits or any(v.observation_ref == o.observation_ref for v in observations.values()):
+            if key in credits or any(
+                v.contingency_ref == o.contingency_ref
+                and v.observation_ref == o.observation_ref
+                for v in observations.values()
+            ):
                 continue
             old = published.get(o.contingency_ref)
             if old is None:
