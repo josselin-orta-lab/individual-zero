@@ -40,6 +40,9 @@ class CausalModelConfig:
     n2: int
     n_sec: int
     m_sec: int
+    # Non-safety causal predicates must be explicitly registered and versioned.
+    # Existing veto categories remain closed and unchanged (DC-05).
+    causal_predicates: tuple[str, ...] = ()
 
     def validate(self) -> None:
         if not self.version or any(
@@ -47,6 +50,9 @@ class CausalModelConfig:
             for n in (self.n1, self.n2, self.n_sec, self.m_sec)
         ):
             raise ValueError("invalid versioned P-35/P-36 thresholds")
+        if (any(not isinstance(p, str) or not p.strip() for p in self.causal_predicates)
+            or len(set(self.causal_predicates)) != len(self.causal_predicates)):
+            raise ValueError("invalid versioned causal predicate registry")
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,7 +154,8 @@ class CanonicalContingency:
     def validate(self) -> None:
         if (
             not self.ref or self.version < 1
-            or self.predicate not in SAFETY_PREDICATES
+            or not isinstance(self.predicate, str) or not self.predicate.strip()
+            or (self.predicate not in SAFETY_PREDICATES and self.safety_status != "aucun")
             or self.causal_status not in CAUSAL_STATUSES
             or self.safety_status not in SAFETY_STATUSES
         ):
@@ -187,6 +194,9 @@ class CausalModel:
         self._causal_interventions: dict[str, CausalIntervention] = {}
         self._causal_reviews: set[str] = set()
         self._causal_credits: set[tuple[str, str, str]] = set()
+        # Failure boundaries are causal state: stale successful trials must
+        # not re-establish a refuted contingency without fresh contexts.
+        self._causal_revision_boundaries: dict[str, tuple[int, str]] = {}
 
     @property
     def version(self) -> int:
