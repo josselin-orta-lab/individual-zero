@@ -21,6 +21,7 @@ from i0.modules.causal_lifecycle import (
 from i0.modules.causal_corrections import correct_equipment_prediction
 from lab.stage9_reference_fixture import build_stage9_reference_runtime
 from test_stage6_equipment import state
+from lab.determinism import canonical_causal_bytes, sha256_hex
 
 REF = "toxic:berry_b"
 
@@ -38,6 +39,7 @@ def physical_meal(m):
         t_monde=1, resource_kind="berry_b", option_ref="option:meal",
         motive_ref="goal:food", integrity_before=100.0,
         body_before=dict(before.body), position_before=(2, 2),
+        state_before_digest=sha256_hex(canonical_causal_bytes(before.as_dict())),
     )
     m.observe_followup_capture(t_monde=2, integrity=90.0)
     events = (
@@ -208,6 +210,17 @@ class CanonicalCorrectionTests(unittest.TestCase):
         changed_context = replace(before, x=5)
         fallback, refs = correct_equipment_prediction(
             source=m, command=command, state=changed_context,
+            prediction=prediction,
+        )
+        self.assertIs(fallback, prediction)
+        self.assertEqual(refs, ())
+        # Matching position/body alone cannot authorize a correction when
+        # inventory or other accessible environmental state differs.
+        changed_inventory = replace(
+            before, inventory={**before.inventory, "berry_b": 1},
+        )
+        fallback, refs = correct_equipment_prediction(
+            source=m, command=command, state=changed_inventory,
             prediction=prediction,
         )
         self.assertIs(fallback, prediction)
