@@ -19,6 +19,7 @@ from i0.config import (
     build_schema_registry,
 )
 from .bus import InMemoryBus, ProducerBuffer
+from .compute_budget import ComputeBudgetConfig, CycleComputeBudget
 from .determinism import RandomStreamRegistry, deterministic_id
 from .journal import HashChainedJournal
 from .scheduler import CyclePhase, PhaseContext, Scheduler
@@ -55,13 +56,19 @@ class ScalarWorld:
 class ScriptedStage1Runtime:
     """Minimal integrated substrate proving deterministic restore and replay."""
 
-    def __init__(self, *, campaign_seed: int) -> None:
+    def __init__(
+        self,
+        *,
+        campaign_seed: int,
+        budget_config: ComputeBudgetConfig,
+    ) -> None:
         self.journal = HashChainedJournal()
         self.rng = RandomStreamRegistry(campaign_seed=campaign_seed)
         self.scheduler = Scheduler(
             journal=self.journal,
             phase_component_order=MVP_CYCLE_PHASE_COMPONENT_ORDER,
         )
+        self.compute_budget = CycleComputeBudget(config=budget_config)
         self.bus = InMemoryBus(
             schemas=build_schema_registry(),
             ontology=build_ontology_registry(),
@@ -79,6 +86,7 @@ class ScriptedStage1Runtime:
     def causal_owners(self):
         return (
             self.scheduler,
+            self.compute_budget,
             self.rng,
             self.bus,
             self.world,
@@ -151,6 +159,7 @@ class ScriptedStage1Runtime:
         """Execute one normal scripted world step."""
 
         self.scheduler.open_step()
+        self.compute_budget.open_cycle(cycle)
         self.scheduler.run_cycle(cycle=cycle, hooks=self._hooks())
 
         attempt = self.scheduler.active_attempt
@@ -230,6 +239,7 @@ class ScriptedStage1Runtime:
     def causal_fingerprint(self) -> dict[str, object]:
         return {
             "scheduler": self.scheduler.export_causal_state(),
+            "compute_budget": self.compute_budget.export_causal_state(),
             "rng": self.rng.export_causal_state(),
             "bus": self.bus.export_causal_state(),
             "world": self.world.export_causal_state(),
