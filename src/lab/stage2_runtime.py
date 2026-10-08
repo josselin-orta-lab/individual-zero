@@ -13,7 +13,7 @@ from typing import Mapping
 
 from .bench import EvaluationBench
 from .determinism import deterministic_id
-from .injected_scenario import InjectedScenario
+from .injected_scenario import InjectedScenario, ScenarioEvent
 from .journal import HashChainedJournal
 from .journal_views import (
     AutobiographicalPolicy,
@@ -62,7 +62,9 @@ class ScriptedStage2Runtime:
         layout: WorldLayout,
         phase_component_order: Mapping[int, tuple[str, ...]],
         safety_config: SafetyProtocolConfig,
-        scenario: InjectedScenario | None = None,
+        scenario_id: str | None = None,
+        scenario_version: str | None = None,
+        scenario_events: tuple[ScenarioEvent, ...] = (),
     ) -> None:
         self.journal = HashChainedJournal()
         self.views = JournalViews(journal=self.journal)
@@ -86,8 +88,20 @@ class ScriptedStage2Runtime:
             journal=self.journal,
             bench=self.bench,
         )
-        self.scenario = scenario
-        self._scenario_attached = scenario is not None
+        if scenario_id is None and (scenario_version is not None or scenario_events):
+            raise ValueError("scenario_id is required when scenario data is supplied")
+        if scenario_id is not None and scenario_version is None:
+            raise ValueError("scenario_version is required with scenario_id")
+        self.scenario = (
+            None
+            if scenario_id is None
+            else InjectedScenario(
+                scenario_id=scenario_id,
+                version=str(scenario_version),
+                events=scenario_events,
+                journal=self.journal,
+            )
+        )
 
     @property
     def causal_owners(self):
