@@ -384,6 +384,27 @@ class CausalModel:
                 effect_present=after < exposure.integrity_before,
                 controlled_variables=(("primitive", "manger"),),
             ))
+        # A *different actually eaten food* may be an independently lived
+        # no-exposure comparison for a preregistered treatment. Same episode
+        # and physical reference are preserved: this is NOT a new experience.
+        for observed in tuple(causal_observations):
+            for treatment, control in self.config.food_control_pairs:
+                if observed.subject_ref != control:
+                    continue
+                causal_observations.append(CausalObservation(
+                    identifier=f"causal-control:{treatment}:{observed.identifier}",
+                    contingency_ref=f"toxic:{treatment}",
+                    predicate="toxic_item",
+                    subject_ref=treatment,
+                    application_context=observed.application_context,
+                    observation_context=observed.observation_context,
+                    episode_ref=observed.episode_ref,
+                    observation_ref=observed.observation_ref,
+                    observed_step=observed.observed_step,
+                    cause_present=False,
+                    effect_present=observed.effect_present,
+                    controlled_variables=observed.controlled_variables,
+                ))
         # All validations are preflight: a rejected Memory episode cannot
         # partially mutate safety state without matching causal observation.
         for item in candidate:
