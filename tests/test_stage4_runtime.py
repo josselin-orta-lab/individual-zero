@@ -1,0 +1,288 @@
+from __future__ import annotations
+
+import unittest
+
+from i0.modules import (
+    CompetitionConfig,
+    GatekeeperConfig,
+    GoalManagerConfig,
+    PlanningConfig,
+    StaticSafetyFacts,
+    ValueNeedsConfig,
+)
+from lab.safety_protocol import SafetyProtocolConfig
+from lab.stage4_runtime import Stage4Config, Stage4Runtime
+from lab.world import (
+    BerryEffect,
+    BodyState,
+    Position,
+    ToolRecipe,
+    WorldLayout,
+    WorldPhysicsConfig,
+)
+
+
+def world_config(*, water: float = 20.0) -> WorldPhysicsConfig:
+    return WorldPhysicsConfig(
+        version="stage4-runtime-test-world-v1",
+        width=32,
+        height=32,
+        day_steps=300,
+        night_steps=100,
+        night_start_step=200,
+        initial_body=BodyState(
+            energy=50.0,
+            food=60.0,
+            water=water,
+            integrity=100.0,
+        ),
+        initial_position=Position(2, 2),
+        food_decay_per_step=0.0,
+        water_decay_per_step=0.0,
+        action_energy_costs={
+            "se_deplacer": 0.0,
+            "collecter": 0.0,
+            "manger": 0.0,
+            "boire": 0.0,
+            "poser_une_pierre": 0.0,
+            "fabriquer_outil": 0.0,
+            "dormir": 0.0,
+            "attendre": 0.0,
+        },
+        sleep_energy_gain=0.0,
+        rest_integrity_gain=0.0,
+        drink_water_gain=40.0,
+        berry_effects={
+            "berry_a": BerryEffect(10.0, 0.0),
+            "berry_b": BerryEffect(5.0, -100.0),
+        },
+        creature_damage=0.0,
+        danger_zone_damage=10.0,
+        tool_recipe=ToolRecipe(1, 1, 2),
+    )
+
+
+def stage4_config() -> Stage4Config:
+    return Stage4Config(
+        version="stage4-runtime-test-v1",
+        perception_ttl_steps=5,
+        value_needs=ValueNeedsConfig(
+            version="stage4-needs-v1",
+            setpoints={
+                "energy": 50.0,
+                "food": 60.0,
+                "water": 60.0,
+                "integrity": 100.0,
+            },
+            weights={
+                "energy": 1.0,
+                "food": 1.0,
+                "water": 1.0,
+                "integrity": 1.0,
+            },
+            normalization_scales={
+                "energy": 100.0,
+                "food": 100.0,
+                "water": 100.0,
+                "integrity": 100.0,
+            },
+            p_min=0.1,
+            contribution_ttl_steps=5,
+        ),
+        goals=GoalManagerConfig(
+            version="stage4-goals-v1",
+            p_min=0.1,
+            replacement_hysteresis=0.1,
+            critical_pressure=0.9,
+            impossible_failures_required=2,
+            refractory_steps=3,
+        ),
+        gatekeeper=GatekeeperConfig(
+            version="stage4-gate-v1",
+            k_slots=4,
+            recency_window_steps=5,
+            replacement_hysteresis=0.1,
+            safety_threshold=0.8,
+            queue_capacity=10,
+            emission_quota=20,
+            slot_quota=2,
+            quota_window_steps=3,
+            weights={
+                "b": 1.0,
+                "n": 1.0,
+                "urg": 1.0,
+                "risk": 1.0,
+                "value": 1.0,
+            },
+        ),
+        planning=PlanningConfig(
+            version="stage4-plan-v1",
+            option_ttl_steps=20,
+        ),
+        competition=CompetitionConfig(
+            version="stage4-comp-v1",
+            c_max=5,
+            urgency_max=2.0,
+            urgency_scale_cycles=2.0,
+            leak=0.0,
+            noise_sigma=0.0,
+            gain=1.0,
+            base_threshold=0.5,
+            threshold_floor=0.1,
+            inertia=0.1,
+            residual=0.5,
+            options_max=8,
+            substitution_evidence={
+                "se_deplacer": 1.0,
+                "collecter": 1.0,
+                "manger": 1.0,
+                "boire": 1.0,
+                "dormir": 1.0,
+                "attendre": 0.0,
+                "poser_une_pierre": 0.5,
+                "fabriquer_outil": 0.5,
+            },
+        ),
+    )
+
+
+def runtime(
+    *,
+    water: float = 20.0,
+    layout: WorldLayout | None = None,
+) -> Stage4Runtime:
+    return Stage4Runtime(
+        world_config=world_config(water=water),
+        layout=layout or WorldLayout(),
+        safety_config=SafetyProtocolConfig(
+            version="stage4-safety-v1",
+            lethal_max=2,
+            mode="campaign",
+        ),
+        safety_facts=StaticSafetyFacts(),
+        protected_integrity_threshold=20.0,
+        config=stage4_config(),
+    )
+
+
+class Stage4IntegratedLoopTests(unittest.TestCase):
+    def test_thirst_goal_appears_before_plan_and_first_move(self) -> None:
+        instance = runtime(
+            layout=WorldLayout(
+                water_sources=frozenset({Position(4, 2)}),
+            )
+        )
+
+        result = instance.run_step()
+
+        self.assertEqual(result.execution_status, "applied")
+        self.assertEqual(result.source, "decision")
+        self.assertEqual(result.command_primitive, "se_deplacer")
+        self.assertEqual(instance.world.position, Position(3, 2))
+        self.assertEqual(result.cycles_used, 3)
+
+        events = [entry.causal_event for entry in instance.journal.entries]
+        goal_changes = [
+            event for event in events
+            if event.get("kind") == "active_goal_changed"
+        ]
+        registrations = [
+            event for event in events
+            if event.get("kind") == "option_registration"
+        ]
+        self.assertEqual(goal_changes[0]["cycle"], 2)
+        self.assertEqual(registrations[0]["cycle"], 3)
+
+    def test_multi_step_drink_plan_advances_across_world_steps(self) -> None:
+        instance = runtime(
+            layout=WorldLayout(
+                water_sources=frozenset({Position(4, 2)}),
+            )
+        )
+
+        first = instance.run_step()
+        second = instance.run_step()
+        third = instance.run_step()
+
+        self.assertEqual(first.command_primitive, "se_deplacer")
+        self.assertEqual(second.command_primitive, "se_deplacer")
+        self.assertEqual(third.command_primitive, "boire")
+        self.assertEqual(instance.world.position, Position(4, 2))
+        self.assertEqual(instance.world.body.water, 60.0)
+
+    def test_no_active_need_reaches_cmax_fallback_wait(self) -> None:
+        instance = runtime(water=60.0)
+
+        result = instance.run_step()
+
+        self.assertEqual(result.execution_status, "applied")
+        self.assertEqual(result.source, "fallback")
+        self.assertTrue(result.fallback_used)
+        self.assertEqual(result.command_primitive, "attendre")
+        self.assertEqual(result.cycles_used, 5)
+
+    def test_reflex_preempts_cognition_and_uses_zero_cycles(self) -> None:
+        instance = runtime(
+            layout=WorldLayout(
+                creatures=frozenset({Position(3, 2)}),
+            )
+        )
+
+        result = instance.run_step()
+
+        self.assertEqual(result.source, "reflex")
+        self.assertEqual(result.execution_status, "applied")
+        self.assertEqual(result.cycles_used, 0)
+        self.assertEqual(instance.world.position, Position(1, 2))
+
+        cognitive_cycles = [
+            entry for entry in instance.journal.entries
+            if entry.causal_event.get("kind") == "cycle_opened"
+        ]
+        self.assertEqual(cognitive_cycles, [])
+
+    def test_every_cognitive_command_traces_to_option_and_st_version(self) -> None:
+        instance = runtime(
+            layout=WorldLayout(
+                water_sources=frozenset({Position(4, 2)}),
+            )
+        )
+        result = instance.run_step()
+        self.assertEqual(result.source, "decision")
+
+        admitted = [
+            entry.causal_event
+            for entry in instance.journal.entries
+            if entry.causal_event.get("kind") == "command_admitted"
+            and entry.causal_event["data"].get("source") == "decision"
+        ]
+        self.assertEqual(len(admitted), 1)
+        self.assertIsNotNone(admitted[0]["data"]["option_ref"])
+        self.assertIsNotNone(admitted[0]["data"]["st_version_ref"])
+
+    def test_same_minimal_cognitive_run_replays_identically(self) -> None:
+        def execute():
+            instance = runtime(
+                layout=WorldLayout(
+                    water_sources=frozenset({Position(4, 2)}),
+                )
+            )
+            for _ in range(4):
+                instance.run_step()
+            return (
+                instance.journal.canonical_bytes(),
+                {
+                    owner.owner_id: owner.export_causal_state()
+                    for owner in instance.causal_owners
+                },
+            )
+
+        journal_a, state_a = execute()
+        journal_b, state_b = execute()
+
+        self.assertEqual(journal_a, journal_b)
+        self.assertEqual(state_a, state_b)
+
+
+if __name__ == "__main__":
+    unittest.main()
