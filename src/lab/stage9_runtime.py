@@ -148,12 +148,33 @@ class Stage9Runtime(Stage8Runtime):
             # owner. Prepare both publications before any journal write;
             # rollback its entire causal state if either rejects a batch.
             old = self.causal_model.export_causal_state()
+            corrections_before = self.causal_model.established_prediction_corrections()
             try:
                 inference_changes = self.causal_model.publish_causal_inference()
                 safety_changes = self.causal_model.publish()
             except Exception:
                 self.causal_model.restore_causal_state(old)
                 raise
+            corrections_after = self.causal_model.established_prediction_corrections()
+            if corrections_after != corrections_before:
+                self._write(
+                    kind="causal_prediction_corrections_published",
+                    cycle=cycle,
+                    data={
+                        "causal_model_version": self.causal_model.version,
+                        "before": [
+                            [rule.contingency_ref, rule.intervention_ref,
+                             rule.agency_evidence_ref]
+                            for rule in corrections_before
+                        ],
+                        "after": [
+                            [rule.contingency_ref, rule.intervention_ref,
+                             rule.agency_evidence_ref]
+                            for rule in corrections_after
+                        ],
+                        "versioned_source": "causal_model",
+                    },
+                )
             for change in inference_changes:
                 self._write(
                     kind="causal_inference_status_published",
