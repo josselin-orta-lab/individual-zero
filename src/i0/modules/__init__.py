@@ -43,6 +43,12 @@ __all__ = [
     "RecallResult",
     "Intention",
     "IntentionTriggerResult",
+    "EvaluationState",
+    "LearnedValue",
+    "LinearTDValues",
+    "TDLearningConfig",
+    "TDUpdate",
+    "ValueFeatureConfig",
 ]
 
 from .cognitive_space import CognitiveSpace
@@ -61,4 +67,13 @@ from .memory import (
     IntentionTriggerResult,
     MemoryConfig,
     RecallResult,
+)
+
+from .td_values import (
+    EvaluationState,
+    LearnedValue,
+    LinearTDValues,
+    TDLearningConfig,
+    TDUpdate,
+    ValueFeatureConfig,
 )
