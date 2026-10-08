@@ -1199,3 +1199,304 @@ A_a(c+1) = \max\big(0,\ (1-\ell)\,A_a(c) + u(c)\,g\,e_a(c) + \sigma\,\varepsilon
 \qquad
 a \text{ crosses if } A_a(c) \ge s_a(c)
 ```
+
+```latex
+s_a(c) = \max\big(s_{\min},\ s_a^{0} + \pi(R_a;\tau) + \chi(U_a;\tau) - \iota_a\big),\qquad
+s_a^{0} = s^{0} - \delta_{\mathrm{prot}}\,\tfrac{1+\tau_{\mathrm{menace}}}{2}\,\mathbb{1}[\text{protectrice}]
+```
+
+| Term | Rule | Origin |
+| --- | --- | --- |
+| u(c) | global deliberation urgency: deterministic, monotone non-decreasing, bounded, common to all; gain on incoming evidence, never evidence itself nor a threshold reduction; reset at each closure | S-05.5, DC-01 |
+| g | accumulation gain, common in the MVP; novelty no longer modifies it | V-18 |
+| ε_{a,c} | draw from the accumulator random stream, in canonical candidate order | S-01.3 |
+| π(R_a ; τ) | positive, increasing in R_a, heavier when threat sensitivity is high; zero if R_a is unknown; can never lower the threshold | S-05.3, DC-01 |
+| χ(U_a ; τ) | safety-uncertainty penalty, low or zero for a temperament with low threat sensitivity, high for a temperament with high threat sensitivity | NQ-07, DC-01 |
+| s_a^0 | base threshold; lower for an option with contextual protective status in a threat-sensitive individual | NQ-06 |
+| ι_a | inertia: bounded reduction of the threshold for the engaged option only, modulated by goal protection; never an evidence bonus; never bypasses veto or reflex | S-05.4 |
+| s_min | strictly positive floor guaranteeing a defined relative margin | DC-02 |
+
+Inertia lasts as long as the option remains engaged; it disappears as soon as the option succeeds, fails, becomes invalid, is interrupted, or is replaced. No fixed duration in cycles is used [S-05.4].
+
+### 8.7 Opening, tie-breaking, and closure
+
+**Opening a deliberation** (every waking step) [V-34, NQ-02]:
+
+| Candidate | Accumulator at opening |
+| --- | --- |
+| engaged option | A = 0, with its inertia on the threshold |
+| previous non-winning alternative that remains valid | retains the residual ρ·A applied at the previous closure |
+| new option | A = 0 |
+| invalid option | accumulator removed |
+
+If no new information justifies a change, inertia normally favors continuing the engaged option; another option replaces it if it crosses its threshold despite that advantage. End, failure, or invalidation of the engaged option, veto of its step, active-goal change, or admission of relevant information into S_t impose especially strong reevaluation, without themselves choosing the new action.
+
+**Tie-breaking**: when several candidates cross their threshold in the same cycle, the largest relative overshoot (A_a − s_a) / s_a wins; on an exact tie, stable, versioned canonical order breaks the tie. u(c) is not a criterion; no priority is given to a protective option at this stage; no random draw is used [S-05.7, DC-02].
+
+**Closure**, when the step ends without a lethal transition (3.4): accumulators of other valid candidates are multiplied by ρ, those of invalid candidates are removed; the winning option leaves the accumulation regime; u(c) is reset. The same reduction applies after a C_max fallback with no winner [S-05.6, S-05.8].
+
+### 8.8 Normative competition pseudocode
+
+```text
+procédure COMPÉTITION.ouvrir_délibération(t)
+  c ← 0
+  pour a ∈ registre (ordre canonique) :
+    si invalide(a, but_actif, t) : supprimer(a)                  # preconditions, but_ref, validity, admissibility
+    sinon si a = option_engagée : A[a] ← 0                         # V-34
+  # the others keep their residual ρ·A; an option registered later starts at 0
+
+procédure COMPÉTITION.accumuler(EV, c)
+  pour a ∈ candidats (ordre canonique) :
+    si EV[a].statut = non_evalue :
+      journaliser(non_evalue(a))                                   # DC-07: A and s remain unchanged for this cycle
+      continuer
+    e ← preuve(EV[a])                                              # DC-01
+    A[a] ← max(0, (1 − ℓ)·A[a] + u(c)·g·e + σ·tirage(flux_accumulateurs))
+    s[a] ← max(s_min, s0(a) + π(R_a, PARAMETRES_TEMPERAMENT.menace) + χ(U_a, PARAMETRES_TEMPERAMENT.menace) − ι(a))         # ι(a) = 0 if a is not engaged
+
+fonction départager(G)
+  retourner premier_par(G, clé = ((A[a] − s[a]) / s[a] décroissante, ordre_canonique(a)))   # DC-02
+
+procédure COMPÉTITION.clore_délibération(d)
+  pour a ∈ registre, a ≠ d, a valide : A[a] ← ρ·A[a]
+  si d est une option cognitive : option_engagée ← d ; d.etat ← engagee
+  u ← état initial
+```
+
+### 8.9 Diagram C · From observation to learning
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant MON as World
+  participant PER as Perception
+  participant POR as Gatekeeper
+  participant PLA as Planning
+  participant COM as Competition
+  participant VB as Value and Needs
+  participant CTL as Action Control
+  MON->>PER: [D] local state for step t
+  PER->>POR: [D] observation "source to the north", alert "water below setpoint"
+  POR->>POR: [P] S_t[n+1] published
+  POR->>PLA: [D] read S_t at cycle n+1
+  PLA->>COM: [D] proposed option, but_ref boire, motif_ref but_actif
+  COM->>VB: [S] option evaluation
+  VB-->>COM: [D] EvaluationOption: values, R_a, U_a, protection
+  COM->>COM: [S] accumulation, threshold crossed, tie-break
+  COM->>CTL: [C] decided option
+  CTL->>CTL: [S] admissibility, veto, mask
+  CTL->>MON: [C] command "north", predicted consequences frozen
+  MON->>PER: [D] consequence observed at step t+1
+  PER->>CTL: [D] compare predicted and observed
+  CTL->>VB: [D] attribution, auxiliary credit information
+  PER->>VB: [D] body telemetry, from which reward r_t is computed
+  VB->>VB: [P] TD update at the end of the step of the next decision, visible on the following step (DC-15)
+```
+
+### 8.10 Example: A and B
+
+Leak, noise, and urgency omitted; illustrative values. Base threshold 1.0; the risk penalty for nighttime exploration is 0.4 for A, which is threat-sensitive, and 0.1 for B. For B, the shelter prediction did not enter S_t (6.7), yielding weaker evidence for shelter [spéc. 6.6].
+
+| Cycle | A · shelter, threshold 1.0 | A · explore, threshold 1.4 | B · shelter, threshold 1.0 | B · explore, threshold 1.1 |
+| --- | --- | --- | --- | --- |
+| c + 1 | 0.35 | 0.30 | 0.30 | 0.40 |
+| c + 2 | 0.70 | 0.60 | 0.60 | 0.80 |
+| c + 3 | 1.05 | 0.90 | 0.90 | 1.20 |
+
+At cycle c + 3, shelter crosses its threshold for A, while "explore" crosses for B; three S_t publications were sufficient, all within the same world step.
+
+### 8.11 Planning
+
+- Planning builds budgeted plans, with expected observations for each step, toward the active goal or an exploration target [spéc. 9.8, NQ-18].
+- It is triggered when a goal requiring a plan is activated or modified, a step fails, new information challenges feasibility conditions, an expected observation is missing at its deadline, a relevant alert appears, or an explicit request arrives [S-02.4]. A stagnation signal counts as new information under this rule.
+- At each step, the active plan is checked in the authorized phase; verification restarts a search only if a relevant reason is detected. A missing observation is uncertainty to examine, not an automatic failure.
+- An already processed event does not restart the same search; an active search may continue over several cycles within its budget.
+- Replanning produces a `ResultatPlanification`: `plan_trouve`, `non_planifiable_actuellement` only after a search under full budget, or `incomplet_budget` if the search could not be completed. It does not replace the active plan by itself and never changes the goal (DC-03, DC-17).
+- Planning requests missing preconditions through requests (stone inventory) and creates intentions in prospective memory.
+- Minimal system (stage 4): greedy planner toward the resource for the active goal, using the hand-written E-0 movement model; replaced by simulator-based planning at stage 6.
+
+## 9. Action control, reflexes, and vetoes
+
+### 9.1 Arbitration of execution paths
+
+Action Control is the only component that sends commands to the world. The path arbiter (R4 in v2) applies a fixed order [spéc. 8.2, NQ-12]:
+
+1. **Veto** on any command, regardless of source, plus protocol mask during resumption after rollback (18.4).
+2. Innate **reflexes** for avoidance or approach.
+3. **Option decided by competition**, including compiled skills and habits.
+
+A double command within the same step is resolved by this order and logged. The subservice `CONTRÔLE.admettre(cmd)` applies, in order, veto prohibitions and then the protocol mask, returning `{ok, raison, portee : option | plan_ou_etape | protocole | direct}`; it is used for reflex and cognitive commands alike. The current step of the engaged option no longer has its own priority: it executes only if the engaged option wins the step's deliberation, with its inertia [NQ-02].
+
+### 9.2 Reflexes
+
+- A reflex is an innate, priority response on the direct path: it acts within the step without passing through S_t or competition. MVP reflex: move away from an adjacent creature.
+- Reflexes are tested at the opening of every step on that step's stimuli; they remain active during sleep and may cause waking [S-10.2].
+- When a reflex proposes a command, that command first passes through the same veto and mask as every other command. If admitted, it becomes the command for the step and no deliberation is opened; the engaged option remains engaged, its step is suspended for that world step, and is revalidated on the next step. If refused, no reflex command is sent and an ordinary deliberation opens within the same step (DC-12).
+- Every reflex is logged with the stimulus that triggered it.
+
+### 9.3 Veto and protected invariants
+
+The veto has a closed, explicit, versioned list of prohibitions; it creates no new category during a life [S-14.1, S-14.3]. At minimum, it blocks:
+
+1. movement into a zone known to be lethal;
+2. consumption of an item known to be toxic;
+3. any command whose sufficiently established consequence would violate a protected invariant, for example lowering integrity below the minimum threshold in the safety policy.
+
+| Rule | Content |
+| --- | --- |
+| Engine | semantic prohibitions and protected invariants pass through the same single control point [S-14.4] |
+| Knowledge | innate core of rules and facts, plus learned facts with status etabli_pour_securite, read from the canonical source in the causal model; no private copy, no oracle access [S-14.2] |
+| Threshold | a hypothesis, suspicion, or uncertain possibility does not trigger the veto; a merely uncertain violation remains a risk handled by R_a and U_a [S-14.4] |
+| Learning | the individual learns facts to which the rules apply (this berry, this zone), never new rules; a candidate constraint remains inactive until the policy is modified externally, explicitly and in a versioned manner [S-14.3] |
+| Policy | frozen during the life; any exceptional intervention is a logged external input analyzed separately |
+| Journal | command, rule, rule type, elements establishing the violation, policy version |
+
+**After a veto** [S-14.5]: the command is never sent. Control qualifies the scope of the refusal. If the rule forbids the option itself in the current context, the option becomes inadmissible and its accumulator is removed. If it forbids only the current step or plan, the plan moves to `a_reviser`, the option remains valid, is suspended for the rest of the cycle, and may return after replanning. Competition resumes among remaining admissible candidates. The veto never chooses a replacement. If no admissible option is retained, `attendre` is executed, provided it itself respects protected constraints; otherwise the individual enters safety block (18.6). An ordinary veto does not alert the operator.
+
+### 9.4 Admissibility
+
+The safety system exposes a service [V-43]:
+
+```text
+verifier_admissibilite(option, contexte) → admissible | inadmissible | indetermine
+```
+
+- Planning MAY consult it before finalizing an option, without copying the veto's internal facts; this filtering avoids planning and competing an option already known to be forbidden.
+- `indetermine` does not prevent proposing the option; the final veto remains the last barrier: invalidation, replanning, and resumption of competition if the option becomes forbidden after planning.
+- Admissibility is neither R_a nor U_a: it states whether the safety policy authorizes the option, not how dangerous or poorly known it is.
+
+### 9.5 Step execution and freshness
+
+- A decided option carries the S_t version on which it was based and is revalidated when executing its step, like optimistic concurrency control: if a critical element has changed (preconditions, safety), it returns to competition or the direct path takes over [spéc. 6.8].
+- Every command is sent with its predicted consequences frozen on emission and an observation window declared before execution, in steps; for a primitive command with immediate effect, the standard window covers the next step [S-15.2, S-15.3].
+- Every command is traceable to the option and plan that produced it, or to the direct mechanism (reflex), as well as to the contributions and S_t version that grounded it.
+
+### 9.6 Agency comparator
+
+The agency comparator is an internal Action Control subservice, independently testable (`AgencyComparator`), not a top-level component [S-15.1].
+
+- **Data**: the executed command, its predicted consequences frozen on emission, and later observations accessible to the individual; never the real world state or the oracle [S-15.2].
+- **Window**: a change can be attributed only if it appears within the declared window for the expected effect; an absent effect at window closure is recorded as `effet attendu manquant`; a change occurring after the window is not attributed retroactively [S-15.3].
+- **Tolerance**: per variable, deterministic and versioned, according to channel and prediction precision; status `conforme`, `non_conforme`, or `indeterminable`, effect by effect [S-15.4].
+- **Attribution**: a conforming effect within the window is compatible with attribution to self; a non-conforming effect is attributed to the world only if an accessible external element justifies it; otherwise, or if several causes remain plausible, attribution is `incertaine`; several compatible commands are retained as candidates.
+- **Consumers** [S-15.5]: the Causal Model is the main consumer, as an item of evidence; value learning MAY use it for credit assignment without depending on it; Metacognition monitors attribution biases; the bench compares attributions against ground truth externally; the simulator never uses them directly.
+
+## 10. Memory
+
+### 10.1 Five memories
+
+| Memory | Content | Write | Recall |
+| --- | --- | --- | --- |
+| Working | S_t and its silent reactivatable buffer | every cycle | direct |
+| Episodic | dated episodes with context, body, and value | end of episode | by cue (10.4) |
+| Semantic | facts and maps with provenance, confidence, and status; references to contingencies whose canonical source is the Causal Model [NQ-10] | consolidation | request |
+| Procedural | compiled skills and habits, preconditions, success rate | consolidation | triggered by preconditions, as options |
+| Prospective | intentions and triggers | Planning | monitoring at every waking cycle |
+
+### 10.2 Memory source
+
+- Memory writes only from what the individual experienced: contributions, S_t versions, commands, and results in the journal's autobiographical view (17.5). Segments cancelled by lethal rollback, oracle and bench data, and protocol events never enter it [V-24].
+- It accesses the journal read-only, through this view only; every access is logged and its effect measured [Q14].
+
+### 10.3 Episodes
+
+A new episode begins when the active goal changes, when a prediction error exceeds k_ép times its usual precision, when the individual changes zone, or after L_ép steps. Two episodes separated by fewer than Δ_ép steps are linked automatically [spéc. 7.2].
+
+### 10.4 Recall
+
+Recall score combines recency, importance, and relevance to S_t; importance is the absolute value of the episode plus its surprise. Memory spontaneously proposes a memory when its score crosses a threshold and responds to requests [spéc. 7.3]. A memory enters x_t only if it has been recalled by these mechanisms [S-06.1]. In degraded mode, recall examines a smaller set (DC-07).
+
+### 10.5 Intentions
+
+- While awake, Memory checks triggers every cycle against frozen S_t and its authorized interfaces. A temporal trigger carries an explicit deadline and unit [S-02.5].
+- A trigger that becomes applicable makes the intention a **candidate for attention** through the ordinary gatekeeper circuit: this is neither a goal change, nor a command, nor a guarantee of immediate processing. The Goal Manager receives the associated goal proposal. Memory retains the `pression_base` set at creation; if the intention has a deadline, its proposal's `pression_courante` is recomputed deterministically as the deadline approaches according to DC-03.
+- Tracking state prevents multiple simultaneous candidacies for the same occurrence. Trigger satisfaction, candidacy, possible admission into S_t, and consequences are distinct, logged steps.
+- A dated intention marked `reveil_autorise` has its deadline published by Memory before sleep in a read-only index read by the wake rule, without duplicating the intention [V-41]; at the deadline, it may cause waking; ordinary cognition is not maintained during sleep; on waking, Memory checks the intention, then recall passes through the gatekeeper [NQ-17].
+
+### 10.6 Forgetting and rewriting
+
+Reduce accessibility rather than delete; archive; delete only for safety or data-protection reasons; never from the journal except through cryptographic erasure. No memory is rewritten in the MVP [spéc. 7.8, 7.9].
+
+## 11. Online learning and calibration
+
+### 11.1 Learned values
+
+- Evaluation state x_t is canonical, versioned, and built only from information accessible to the individual in the considered cycle: relevant body state, position, active goal, temporal context, and the explicit projection of descriptive S_t information defined by the schema [S-06.1].
+- x_t excludes accumulators, thresholds, u(c), current evidence, budgets, logging metadata, random states, all oracle information, unrecalled memory, and temperament τ. For evaluation of an option `a`, it also excludes any information whose sole causal support is the `action_proposee(a)` contribution itself; independent support may contribute (DC-10).
+- Value is an inspectable linear function of a versioned vector of deterministic descriptive features φ(x): Q(x, o_sig) = ψ_o_sig · φ(x), where `o_sig = option.signature_apprentissage` (8.1). `ψ`, `n_a`, and eligibility traces are indexed by this signature, never by the ephemeral identifier of the option instance. An exact table may serve as a reference in small tests; no learned network is used in the MVP [S-06.2].
+- Temporal-difference learning with eligibility traces [spéc. 8.6]:
+
+```latex
+\delta_t = r_t + \beta\,Q(x_{t+1}, o^{sig}_{t+1}) - Q(x_t, o^{sig}_t) \qquad z(t) = \beta\,\lambda_e\,z(t-1) + \nabla_{\psi} Q(x_t, o^{sig}_t) \qquad \Delta\psi = \eta\,\delta_t\,z(t)
+```
+
+- At birth, parameters are zero and each value has status `non_appris`; an unlearned value is not available evidence. No optimistic or pessimistic initialization [S-06.5].
+- β = β_individu, derived from reward sensitivity by the mapping table and stable during the life; η is fixed in the MVP [S-06.4, NQ-05].
+- The update of a segment between two cognitive decisions is computed and published when the step of the second decision ends without a lethal transition; it is visible from the first cycle of the next step. A reflex or sleep step extends the segment without an update. If a terminal state actually experienced closes the trajectory without a following decision, the last segment uses zero bootstrap; an external protocol termination produces no terminal update (DC-15).
+
+### 11.2 Perceptual precisions
+
+Perception learns one precision per source online; it owns the active form, while the consolidated form lives in h (15.6).
+
+### 11.3 Verification
+
+Verification is defined by contribution type and produces one of four outcomes: `confirmee`, `contredite`, `indeterminee`, `non_verifiable`. Absence of verification evidence is never a contradiction [S-08.1].
+
+| Type | Rule |
+| --- | --- |
+| prediction | at its deadline, against a later comparable observation of the announced quantity |
+| observation | against a later comparable observation, according to its subject, context, and time |
+| alert | only when exposure allows the announced harm to be tested: observed harm, confirmation; exposure without harm, contradiction or weakening; no exposure, indeterminate |
+| hypothesis | progressively, through its lifecycle in the causal model (13.2) |
+| proposed option | neither true nor false; its claims (feasibility, preconditions, consequences) become testable when appropriate; an unchosen option is not an error |
+| response | according to the nature of its content |
+
+- Verification status and admissibility for κ are distinct: a later observation from the same channel may confirm signal stability in the sense of this section, but DC-06 determines whether the confirmation is sufficiently independent to modify κ.
+- A counterfactual prediction on an unexperienced branch carries status `contrefactuelle_non_verifiee` and never counts in κ. A comparable situation experienced later MAY verify the model or rule that produced it, never the unexperienced episode [S-08.3].
+- The oracle channel is never used to verify, calibrate, or correct anything in the individual [S-08.2].
+
+### 11.4 Reliability maps κ
+
+- Metacognition and Health owns, computes, and publishes κ maps; the gatekeeper only reads them; the bench computes its own calibration metrics externally [NQ-09].
+- Initial confidence is a finite-strength prior: neutral (f = 0.5) for a module with no prior evidence, derived from calibration measured offline for pretrained equipment, identical for all individuals using the same equipment version. Experience counts from the first verification and eventually dominates [S-08.4].
+- Verifications obtained during a cycle are integrated deterministically, then published atomically in phase 5; the version used during a cycle remains frozen; the new version is usable only in the next cycle [S-08.6].
+- Map representation and verification-provenance rule: the calibration key includes module, contribution type, and signal channel or family. Only verifications grounded in a physical consequence or causally independent modality update κ; repetition from the same channel may feed a separate stability indicator but cannot by itself increase effective reliability. Details: DC-06.
+- The prior of pretrained equipment is based on ground truth from training worlds, shared by all individuals and predating birth: this is not oracle leakage, because the oracle is never used during a life.
+
+## 12. Simulator and equipment
+
+### 12.1 Role
+
+The equipment predicts observable world and body transitions relevant to candidate options; it produces no preference, value, or decision [S-09.1]. Minimum scope: local consequences of the individual's actions (movement, obstacles, physical changes), evolution of external mobile entities (creatures), outcomes of interactions with resources, objects, and structures (collection, tool crafting, shelter), and consequences of world configurations (shelter protection). Its outputs are typed predictions with a horizon, declared confidence, and equipment version. E-v1 through E-v3 are comparable versions of the same equipment, potentially composed of submodels behind a common interface.
+
+### 12.2 Inputs
+
+Each call receives an explicit, versioned simulation state built by the requester solely from information accessible to the individual: perceived local view, option or action to simulate, required body variables, known map, and observable contextual variables that actually affect dynamics (day or night). Never hidden ground truth or the oracle; never temperament, learned values, or accumulators; never the internal state of another module [S-09.2].
+
+### 12.3 Learned contingencies
+
+Frozen equipment is the base model; learned contingencies form a personal correction layer applied to its predictions without ever modifying its parameters [S-09.3]. A contingency replaces only the transition components it concerns; the correction may be numerical, categorical, or probabilistic. Only contingencies with causal status `etablie` correct a prediction [NQ-10]; when no applicable contingency exists, the base prediction is used unchanged. If several contingencies target the same variable, the most specific one wins; an unresolved conflict is represented as explicit uncertainty.
+
+### 12.4 Budget
+
+For each cycle, before evaluation Competition sets a common effective budget `(R_eff, H_eff)` for all candidates that will actually be simulated; in normal mode `R_eff ≤ R_max` and `H_eff ≤ H_max`, and in degraded mode the same reduced values apply to every evaluated candidate. A rollout stops early on a terminal condition; in a deterministic context an identical rollout is not repeated; unused budget is not redistributed. If a candidate cannot complete the announced effective budget, its `E_a^sim` component is `indisponible` for that cycle: partial results are logged for diagnosis but do not enter evidence. Absence of a consequence within the horizon never proves impossibility; the rollouts used and horizon reached are logged; exhaustion stops only that candidate's simulation [S-05.2, DC-01]. β, which discounts distant consequences, remains distinct from H_max, which limits how far computation runs [S-06.4].
+
+### 12.5 Corpus and equivalence
+
+- The corpus combines broad exploration with targeted scenarios guaranteeing indispensable rare transitions; at minimum it covers free and blocked movements, resource interactions and collection, tool crafting and collection with a tool [NQ-15], shelter construction and states including a closed shelter, creature dynamics by day and night, and every transition in 12.1; each phenomenon is represented with contrast situations; coverage is verified family by family [S-09.4]. Corpus seeds are distinct from experiment seeds [spéc. 10.2].
+- Two versions are equivalent only if they simultaneously satisfy overall performance, per-family performance, performance by horizon, calibration, and absence of systematic bias, each within its own tolerance. Tolerances are fixed after benchmark definition and before any training, then frozen; if no version meets all tolerances, none is equivalent. Decision comparison on test situations is only an additional integration test [S-09.5, S-09.6].
+- Minimal system: the hand-written E-0 movement model serves as equipment through stage 6.
+
+## 13. Causal model
+
+### 13.1 Role
+
+The Causal Model holds causal hypotheses and their status, proposes interventions, answers "why" questions, and owns the **single canonical source** of learned contingencies; Memory keeps references to them, the simulator consults them, and neither keeps a mutable copy [spéc. 9.6, NQ-10]. Each contingency has a stable identifier, a version, an application context, its statuses, and the evidence supporting them.
+
+### 13.2 Causal status
+
+| Status | Condition for moving to the next |
+| --- | --- |
+| observed correlation | at least n_1 co-occurrences, above base rate |
+| causal hypothesis | alternatives made explicit, contextual variables controlled |
+| tested by intervention | the effect persists when the individual causes it, in at least n_2 contexts |
