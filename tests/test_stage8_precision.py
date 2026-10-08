@@ -75,14 +75,14 @@ class PrecisionTests(unittest.TestCase):
         legacy = SymbolicPerception()
         self.assertIsNone(legacy.active_precision)
         runtime = build_stage8_reference_runtime()
-        self.assertIsNotNone(runtime.perception.active_precision)
-        self.assertIs(runtime.perception.active_precision, runtime.precision_active)
+        self.assertIsNotNone(runtime.stage3.perception.active_precision)
+        self.assertIs(runtime.stage3.perception.active_precision, runtime.precision_active)
         self.assertEqual(runtime.precision_active.version, 0)
         result = runtime.run_step()
         self.assertEqual(result.execution_status, "applied")
         self.assertGreater(runtime.precision_active.version, 0)
         self.assertEqual(runtime.precision_active.export_causal_state()["source_sums"], [])
-        self.assertIn("precision_active", runtime.perception.export_causal_state())
+        self.assertIn("precision_active", runtime.stage3.perception.export_causal_state())
 
 
 if __name__ == "__main__":
