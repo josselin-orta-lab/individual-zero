@@ -215,17 +215,24 @@ Stage 5 invariant status:
 - INV-34: green for complete-state copy creation, isolated continuation and parent non-reinjection;
 - INV-40: green for implemented consumers; raw `tau` is absent from Gatekeeper, Competition and Value/Needs dependencies, and neutral mapping reproduces the neutral Stage-4 behavior.
 
-Remaining Stage-5 measurement gap:
+Stage 5 software status:
 
-- the perseverance battery row specifies only “an action that fails randomly” and a failure schedule, but the current normative contract does not identify the tested action or define a world/scenario operation that applies those failures;
-- the reference implementation therefore returns `mechanism_not_expressible_stage5` with no numerical score instead of manufacturing a perseverance value;
-- test-retest reliability instrumentation is implemented, but reliability cannot be declared scientifically validated until all five battery dimensions are observable and a campaign threshold is preregistered;
-- profile confidence intervals remain a campaign-analysis concern after the five-dimensional instrument is complete;
-- this is an experimental-instrument closure issue, not a failure of the temperament or copy architecture.
+- the perseverance mechanism is now closed through P-54: the tested primitive and deterministic failure schedule are explicit preregistered scenario parameters;
+- the scenario engine suppresses only the primitive-specific effect on forced failures while preserving ordinary world time, body dynamics, hazards, journaling, replay and snapshot/restore;
+- perseverance is scored from observed attempts before behavioral abandonment; if abandonment is not observed before the bounded scenario ends, the observation is explicitly right-censored rather than fabricated;
+- all five battery situations therefore have executable, versioned, replayable mechanisms;
+- test-retest reliability instrumentation is implemented with explicit ICC(3,1) selection and a preregistered threshold input;
+- Stage-5 unit tests are green on Python 3.11 and 3.12 and the retained Stage-5 reference journal regenerates successfully without changing Stage 1-4 golden references.
+
+Stage 5 experimental gate still pending:
+
+- the normative gate additionally requires the battery to be judged reliable against the preregistered P-50 threshold, plus temperament-vs-noise comparison;
+- no scientific pass/fail is claimed until P-50/P-51 campaign choices are frozen and the required repeated administrations are actually run;
+- this remaining item is an experimental acceptance gate, not missing implementation behavior.
 
 ## Current repository gap
 
-The legacy bootstrap remains as a compatibility smoke path. The normative implementation now includes the deterministic substrate through the complete Stage-4 cognitive loop plus the Stage-5 temperament and copy/lineage machinery. The next code gap inside Stage 5 is closure of the perseverance battery mechanism and the preregistered reliability/profile analysis protocol; Stage 6 equipment/simulator work must not be treated as a replacement for that missing measurement contract.
+The legacy bootstrap remains as a compatibility smoke path. The normative implementation now includes the deterministic substrate, world/body/bench, reflex/control, the complete Stage-4 cognitive loop, and the Stage-5 temperament/copy/battery instrumentation. Stage 5 is software-complete but awaits its preregistered experimental reliability gate. The next independent implementation dependency is Stage 6 equipment and simulator, which normatively depends on Stages 2 and 4 and can therefore proceed without inventing or bypassing the pending Stage-5 experiment.
 
 ## Functional groups
 
