@@ -15,6 +15,19 @@ from typing import Mapping
 from i0.contracts import STElement, STVersion
 
 
+def _plain(value):
+    if isinstance(value, Mapping):
+        return {
+            str(key): _plain(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, tuple):
+        return [_plain(item) for item in value]
+    if isinstance(value, list):
+        return [_plain(item) for item in value]
+    return value
+
+
 def _freeze(value):
     if isinstance(value, Mapping):
         return MappingProxyType({
@@ -76,13 +89,13 @@ class CognitiveSpace:
                 "version": current.version,
                 "cycle": current.cycle,
                 "t_monde": current.t_monde,
-                "fixed": dict(current.fixed),
+                "fixed": _plain(current.fixed),
                 "competitive": [
                     {
                         "contribution_ref": element.contribution_ref,
                         "summary": element.summary,
                         "score": element.score,
-                        "decomposition": dict(element.decomposition),
+                        "decomposition": _plain(element.decomposition),
                         "reliability": element.reliability,
                         "production_t": element.production_t,
                         "expires_at_step": element.expires_at_step,
@@ -90,8 +103,8 @@ class CognitiveSpace:
                     }
                     for element in current.competitive
                 ],
-                "requests": dict(current.requests),
-                "diff": dict(current.diff),
+                "requests": _plain(current.requests),
+                "diff": _plain(current.diff),
             },
         }
 
