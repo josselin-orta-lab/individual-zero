@@ -27,12 +27,18 @@ def _git(repo: Path, *command: str) -> str:
 def _create_fixture(
     repo: Path, *, source_tree: bool = True,
     modify_before_registration: bool = False,
+    project_installer: bool = True,
 ) -> tuple[str, str, str]:
     _git(repo, "init", "-q")
     _git(repo, "config", "user.name", "Stage 9 Test")
     _git(repo, "config", "user.email", "stage9@example.invalid")
     (repo / "frozen-implementation.txt").write_text("frozen software\n", encoding="utf-8")
     _git(repo, "add", "frozen-implementation.txt")
+    if project_installer:
+        (repo / "pyproject.toml").write_text(
+            "[project]\nname = 'individual-zero'\n", encoding="utf-8",
+        )
+        _git(repo, "add", "pyproject.toml")
     if source_tree:
         (repo / "src").mkdir()
         (repo / "src" / "engine.py").write_text(
@@ -89,6 +95,10 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
             self.assertEqual(
                 result["frozen_source_tree_sha"],
                 _git(repo, "rev-parse", f"{freeze}:src"),
+            )
+            self.assertEqual(
+                result["frozen_pyproject_blob_sha"],
+                _git(repo, "rev-parse", f"{freeze}:pyproject.toml"),
             )
             self.assertEqual(
                 result["source_tree_unchanged_descendant_commits_checked"], 2,
@@ -248,6 +258,53 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
                         ValueError, "frozen source tree changed|frozen source tree absent",
                     ):
                         _audit(repo, registered, evidence)
+
+    def test_frozen_commit_without_installer_manifest_fails_closed(self):
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            _, registered, evidence = _create_fixture(
+                repo, project_installer=False,
+            )
+            with self.assertRaisesRegex(
+                ValueError, "project installation manifest absent",
+            ):
+                _audit(repo, registered, evidence)
+
+    def test_committed_installer_manifest_edit_is_detected(self):
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            _, registered, _ = _create_fixture(repo)
+            config = repo / "pyproject.toml"
+            config.write_bytes(config.read_bytes() + b"\n# changed install metadata\n")
+            _git(repo, "add", "pyproject.toml")
+            _git(repo, "commit", "-qm", "change package metadata")
+            with self.assertRaisesRegex(
+                ValueError, "project installation manifest changed",
+            ):
+                _audit(repo, registered, _git(repo, "rev-parse", "HEAD"))
+
+    def test_temporary_installer_edit_or_deletion_cannot_be_reverted(self):
+        for modification in ("edit", "delete"):
+            with self.subTest(modification=modification):
+                with TemporaryDirectory() as folder:
+                    repo = Path(folder)
+                    _, registered, _ = _create_fixture(repo)
+                    path = repo / "pyproject.toml"
+                    original = path.read_bytes()
+                    if modification == "edit":
+                        path.write_bytes(original + b"\n# transient package change\n")
+                        _git(repo, "add", "pyproject.toml")
+                    else:
+                        _git(repo, "rm", "pyproject.toml")
+                    _git(repo, "commit", "-qm", "transient packaging edit")
+                    path.write_bytes(original)
+                    _git(repo, "add", "pyproject.toml")
+                    _git(repo, "commit", "-qm", "restore package manifest")
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "project installation manifest changed|project installation manifest absent",
+                    ):
+                        _audit(repo, registered, _git(repo, "rev-parse", "HEAD"))
 
     def test_paths_outside_worktree_are_rejected(self):
         with TemporaryDirectory() as folder:

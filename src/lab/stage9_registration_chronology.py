@@ -110,17 +110,20 @@ def _verify_registration_unchanged_through_history(
 
 
 SOURCE_TREE_PATH = "src"
+PROJECT_INSTALL_PATH = "pyproject.toml"
 
 
 def _verify_frozen_source_tree(
     repository: Path, frozen_commit: str, evidence_commit: str,
-) -> tuple[str, int]:
-    """Pin the complete committed source subtree throughout Git ancestry.
+) -> tuple[str, str, int]:
+    """Pin source code AND project installer across the experiment lineage.
 
     Git object IDs identify content (including file modes and paths). Checking
     each descendant, rather than the final endpoint alone, also detects an
     intermediate source edit subsequently reverted before evidence archival.
-    The Git tree cannot prove which checkout or binary actually ran.
+    Project metadata matters too: it selects the Python package entry points,
+    build backend, Python compatibility and dependency requirements. Neither
+    object ID proves which checkout, environment or binary actually ran.
     """
     def tree_at(commit: str) -> bytes:
         try:
@@ -131,7 +134,19 @@ def _verify_frozen_source_tree(
             raise ValueError("frozen source path is not a Git tree")
         return oid
 
+    def installer_blob_at(commit: str) -> bytes:
+        try:
+            oid = _git(
+                repository, "rev-parse", f"{commit}:{PROJECT_INSTALL_PATH}",
+            ).strip()
+        except ValueError as exc:
+            raise ValueError("frozen project installation manifest absent") from exc
+        if _git(repository, "cat-file", "-t", oid.decode("ascii")).strip() != b"blob":
+            raise ValueError("frozen project installation manifest is not a file")
+        return oid
+
     frozen_tree = tree_at(frozen_commit)
+    frozen_installer = installer_blob_at(frozen_commit)
     descendants = _git(
         repository, "rev-list", "--ancestry-path", "--topo-order",
         f"{frozen_commit}..{evidence_commit}",
@@ -142,7 +157,12 @@ def _verify_frozen_source_tree(
         current = tree_at(commit.decode("ascii"))
         if current != frozen_tree:
             raise ValueError("frozen source tree changed within Git ancestry")
-    return frozen_tree.decode("ascii"), len(descendants)
+        if installer_blob_at(commit.decode("ascii")) != frozen_installer:
+            raise ValueError("frozen project installation manifest changed within Git ancestry")
+    return (
+        frozen_tree.decode("ascii"), frozen_installer.decode("ascii"),
+        len(descendants),
+    )
 
 
 def audit_registration_chronology(
@@ -170,7 +190,7 @@ def audit_registration_chronology(
         _check_commit(root, commit)
     _require_ancestor(root, frozen, registration_commit)
     _require_ancestor(root, registration_commit, evidence_commit)
-    source_tree_sha, source_commits_checked = _verify_frozen_source_tree(
+    source_tree_sha, installer_blob_sha, source_commits_checked = _verify_frozen_source_tree(
         root, frozen, evidence_commit,
     )
 
@@ -207,6 +227,7 @@ def audit_registration_chronology(
         "registration_commit": registration_commit,
         "frozen_implementation_commit": frozen,
         "frozen_source_tree_sha": source_tree_sha,
+        "frozen_pyproject_blob_sha": installer_blob_sha,
         "source_tree_unchanged_descendant_commits_checked": source_commits_checked,
         "evidence_commit": evidence_commit,
         "registration_digest": provisional["registration_digest"],
