@@ -197,6 +197,50 @@ class LivedFoodExposure:
 
 
 @dataclass(frozen=True, slots=True)
+class LivedHydrationExposure:
+    """Passive, independently selected water action; no hypothesis needed.
+
+    The two labels 'boire' and 'attendre' are OBSERVED controls only, never
+    commands generated to satisfy n1. DC-09 closure and next Perception are
+    independently required before this becomes a CausalObservation.
+    """
+    t_monde: int
+    primitive: str
+    option_ref: str
+    position: tuple[int, int]
+    water_before: float
+    observed_step: int | None = None
+    water_observed: float | None = None
+
+    def validate(self) -> None:
+        if (
+            type(self.t_monde) is not int or self.t_monde < 1
+            or self.primitive not in {"boire", "attendre"}
+            or not isinstance(self.option_ref, str) or not self.option_ref
+            or not isinstance(self.position, (tuple, list))
+            or len(self.position) != 2
+            or any(type(v) is not int for v in self.position)
+            or isinstance(self.water_before, bool)
+            or not isinstance(self.water_before, (float, int))
+            or not isfinite(self.water_before)
+            or not 0 <= self.water_before < 100.0
+        ):
+            raise ValueError("invalid lived hydration observation source")
+        if self.observed_step is None:
+            if self.water_observed is not None:
+                raise ValueError("unpaired water observation")
+        elif (
+            self.observed_step != self.t_monde + 1
+            or self.water_observed is None
+            or isinstance(self.water_observed, bool)
+            or not isinstance(self.water_observed, (float, int))
+            or not isfinite(self.water_observed)
+            or not 0 <= self.water_observed <= 100
+        ):
+            raise ValueError("invalid next-step water Perception")
+
+
+@dataclass(frozen=True, slots=True)
 class LivedCausalAction:
     """Applied benign test or independently motivated action awaiting evidence.
 
@@ -308,6 +352,9 @@ class CausalModel:
         self._credited_observations: set[tuple[str, str]] = set()
         self._version = 0
         self._lived_food_exposures: dict[int, LivedFoodExposure] = {}
+        self._lived_hydration_exposures: dict[int, LivedHydrationExposure] = {}
+        # Exact DC-09 physical command/transition references, not oracle facts.
+        self._hydration_observation_witnesses: dict[str, tuple[str, str]] = {}
         self._lived_causal_actions: dict[str, LivedCausalAction] = {}
         # Immutable closed-episode witnesses retained when a lived action is
         # converted into a pending intervention. Canonical phase-5 admission
@@ -386,6 +433,178 @@ class CausalModel:
             target.validate()
             targets.append(target)
         return tuple(targets)
+
+    def record_applied_hydration_observation(
+        self, *, t_monde: int, primitive: str, option_ref: str,
+        current_water_source: bool, position: tuple[int, int],
+        water_before: float,
+    ) -> bool:
+        """Register only an independently applied drink or ordinary wait.
+
+        This is passive observation, *not* a causal test, and neither option
+        proposals nor intended but blocked actions may call this adapter.
+        """
+        if (
+            "hydration_effect" not in self.config.causal_predicates
+            or primitive not in {"boire", "attendre"}
+            or not current_water_source
+            or isinstance(water_before, bool)
+            or not isinstance(water_before, (int, float))
+            or not isfinite(water_before)
+            or water_before >= 100
+        ):
+            return False
+        sample = LivedHydrationExposure(
+            t_monde=t_monde, primitive=primitive, option_ref=option_ref,
+            position=position, water_before=float(water_before),
+        )
+        sample.validate()
+        if t_monde in self._lived_hydration_exposures:
+            raise ValueError("multiple hydration commands in one world step")
+        self._lived_hydration_exposures[t_monde] = sample
+        return True
+
+    def observe_hydration_followup(
+        self, *, t_monde: int, water: float,
+    ) -> None:
+        """Only accessible next-step body telemetry, never a world/oracle read."""
+        if (
+            type(t_monde) is not int or t_monde < 1
+            or isinstance(water, bool) or not isinstance(water, (int, float))
+            or not isfinite(water) or not 0 <= water <= 100
+        ):
+            raise ValueError("invalid hydration Perception capture")
+        row = self._lived_hydration_exposures.get(t_monde - 1)
+        if row is None or row.observed_step is not None:
+            return
+        update = replace(
+            row, observed_step=t_monde, water_observed=float(water),
+        )
+        update.validate()
+        self._lived_hydration_exposures[row.t_monde] = update
+
+    def ingest_closed_hydration_episode(
+        self, *, episode_ref: str, event_refs: Sequence[str],
+        autobiographical_events: Sequence[Mapping[str, object]],
+    ) -> tuple[CausalObservation, ...]:
+        """Admit only matching DC-09 command/physical consequence pairs.
+
+        An externally altered next-step water reading does not corroborate
+        the step's physical transition, so it cannot become an observation.
+        Actual non-drinking WAITs provide controls only at the same accessible
+        water-source site and do not create new experiments or motivations.
+        """
+        if (
+            not isinstance(episode_ref, str) or not episode_ref
+            or len(event_refs) != len(set(event_refs))
+        ):
+            raise ValueError("invalid closed hydration episode")
+        allowed = set(event_refs)
+        events = tuple(
+            event for event in autobiographical_events
+            if event.get("event_id") in allowed
+        )
+        rows = []
+        retire = []
+        for sample in sorted(
+            self._lived_hydration_exposures.values(),
+            key=lambda v: v.t_monde,
+        ):
+            if sample.observed_step is None:
+                continue
+            commands = [
+                event for event in events
+                if event.get("kind") == "command_experienced"
+                and event.get("t_monde") == sample.t_monde
+            ]
+            transitions = [
+                event for event in events
+                if event.get("kind") == "world_transition_experienced"
+                and event.get("t_monde") == sample.t_monde
+            ]
+            if not commands and not transitions:
+                continue
+            # This command belongs to a closed episode; mismatches can never
+            # be resurrected by reopening the same world step later.
+            retire.append(sample.t_monde)
+            if len(commands) != 1 or len(transitions) != 1:
+                continue
+            command, physical = commands[0], transitions[0]
+            effects = physical.get("effects")
+            body = physical.get("body_after")
+            pos = physical.get("position_after")
+            if (
+                command.get("primitive") != sample.primitive
+                or command.get("parameters") != {}
+                or not isinstance(effects, Mapping)
+                or not isinstance(body, Mapping)
+                or not isinstance(pos, Mapping)
+                or (
+                    pos.get("x"), pos.get("y")
+                ) != sample.position
+                or body.get("water") != sample.water_observed
+                or (
+                    effects.get("drank") is not True
+                    if sample.primitive == "boire"
+                    else effects.get("rest") != "attendre"
+                )
+            ):
+                continue
+            command_id = command.get("event_id")
+            transition_id = physical.get("event_id")
+            if (
+                not isinstance(command_id, str) or not command_id
+                or not isinstance(transition_id, str) or not transition_id
+                or command_id == transition_id
+            ):
+                continue
+            site = f"{sample.position[0]},{sample.position[1]}"
+            observation = CausalObservation(
+                identifier=f"lived-hydration:{episode_ref}:{transition_id}",
+                contingency_ref="causal:hydration",
+                predicate="hydration_effect",
+                subject_ref="water",
+                application_context="water_source",
+                observation_context="water_source",
+                episode_ref=episode_ref,
+                observation_ref=transition_id,
+                observed_step=sample.observed_step,
+                cause_present=sample.primitive == "boire",
+                effect_present=sample.water_observed > sample.water_before,
+                controlled_variables=(
+                    ("water_source", "present"), ("site", site),
+                ),
+            )
+            observation.validate()
+            if (
+                observation.identifier in self._hydration_observation_witnesses
+                or observation.identifier in self._causal_observations
+                or any(
+                    old.identifier == observation.identifier
+                    for old in (*self._pending_causal_observations, *rows)
+                )
+                or any(
+                    transition_id == pair[1]
+                    for pair in self._hydration_observation_witnesses.values()
+                )
+            ):
+                raise ValueError("duplicate lived hydration physical transition")
+            rows.append(observation)
+        for obs in rows:
+            self.integrate_causal_observation(obs)
+            # Source references are retained after publication so a typed
+            # or replayed observation cannot fabricate an autonomous review.
+            command = next(
+                event for event in events
+                if event.get("kind") == "command_experienced"
+                and event.get("t_monde") == obs.observed_step - 1
+            )
+            self._hydration_observation_witnesses[obs.identifier] = (
+                str(command["event_id"]), obs.observation_ref,
+            )
+        for step in retire:
+            del self._lived_hydration_exposures[step]
+        return tuple(rows)
 
     def record_applied_causal_action(
         self, *, t_monde: int, option_ref: str,
@@ -1247,6 +1466,65 @@ class CausalModel:
                 return review
         return None
 
+    def _lived_hydration_hypothesis_review(
+        self, contingency: CanonicalContingency,
+        observations: Mapping[str, CausalObservation],
+    ) -> CausalHypothesisReview | None:
+        """Explicit observed 'attendre' alternative, never a typed placebo.
+
+        Both arms must have separately closed physical witnesses and a
+        matching water-source site, with distinct autobiographical episodes.
+        """
+        if (
+            contingency.causal_status != "correlation_observee"
+            or contingency.ref != "causal:hydration"
+            or contingency.predicate != "hydration_effect"
+            or contingency.subject_ref != "water"
+            or contingency.context_signature != "water_source"
+        ):
+            return None
+        observed = [
+            value for value in observations.values()
+            if value.identifier in self._hydration_observation_witnesses
+            and value.contingency_ref == contingency.ref
+            and value.predicate == contingency.predicate
+            and value.application_context == contingency.context_signature
+            and value.observation_context == "water_source"
+            and value.controlled_variables
+        ]
+        treated = sorted(
+            (value for value in observed if value.cause_present
+             and value.effect_present),
+            key=lambda value: value.identifier,
+        )
+        controls = sorted(
+            (value for value in observed if not value.cause_present
+             and not value.effect_present),
+            key=lambda value: value.identifier,
+        )
+        for effect in treated:
+            for baseline in controls:
+                if (
+                    effect.episode_ref == baseline.episode_ref
+                    or effect.controlled_variables != baseline.controlled_variables
+                    or effect.observation_context != baseline.observation_context
+                ):
+                    continue
+                review = CausalHypothesisReview(
+                    identifier=(
+                        f"lived-hydration-review:{contingency.ref}:"
+                        f"{effect.identifier}:{baseline.identifier}"
+                    ),
+                    contingency_ref=contingency.ref,
+                    alternatives=("observed_primitive:attendre",),
+                    contrasting_pairs=((
+                        effect.identifier, baseline.identifier,
+                    ),),
+                )
+                review.validate()
+                return review
+        return None
+
     def publish_causal_inference(self) -> tuple[CausalInferenceChange, ...]:
         """Publish independent §13.2 evidence atomically, with frozen input stages."""
         from collections import defaultdict
@@ -1335,6 +1613,7 @@ class CausalModel:
             if ref not in pending_review_refs
             for review in (
                 self._lived_food_hypothesis_review(record, observations),
+                self._lived_hydration_hypothesis_review(record, observations),
             )
             if review is not None
         )
@@ -1654,6 +1933,18 @@ class CausalModel:
                 {name: getattr(v, name) for name in v.__dataclass_fields__}
                 for _, v in sorted(self._lived_food_exposures.items())
             ],
+            "lived_hydration_exposures": [
+                {
+                    **{name: getattr(v, name) for name in v.__dataclass_fields__},
+                    "position": list(v.position),
+                }
+                for _, v in sorted(self._lived_hydration_exposures.items())
+            ],
+            "hydration_observation_witnesses": [
+                [ref, command_ref, transition_ref]
+                for ref, (command_ref, transition_ref)
+                in sorted(self._hydration_observation_witnesses.items())
+            ],
             "lived_causal_actions": [
                 {
                     **{name: getattr(v, name) for name in v.__dataclass_fields__},
@@ -1734,6 +2025,36 @@ class CausalModel:
                 raise ValueError("duplicate pending lived exposure")
             exposures[exposure.t_monde] = exposure
         self._lived_food_exposures = exposures
+        hydration = {}
+        for raw in state.get("lived_hydration_exposures", []):
+            if not isinstance(raw, Mapping):
+                raise ValueError("invalid pending hydration exposure")
+            row = LivedHydrationExposure(**{
+                **raw, "position": tuple(raw["position"]),
+            })
+            row.validate()
+            if row.t_monde in hydration:
+                raise ValueError("duplicate pending hydration exposure")
+            hydration[row.t_monde] = row
+        self._lived_hydration_exposures = hydration
+        water_witnesses = {}
+        used_transitions = set()
+        for row in state.get("hydration_observation_witnesses", []):
+            if (
+                not isinstance(row, (list, tuple))
+                or len(row) != 3
+                or any(not isinstance(value, str) or not value for value in row)
+            ):
+                raise ValueError("invalid hydration observation witness")
+            ref, command_ref, transition_ref = row
+            if (
+                ref in water_witnesses or command_ref == transition_ref
+                or transition_ref in used_transitions
+            ):
+                raise ValueError("duplicate hydration physical evidence")
+            water_witnesses[ref] = (command_ref, transition_ref)
+            used_transitions.add(transition_ref)
+        self._hydration_observation_witnesses = water_witnesses
         actions = {}
         for raw in state.get("lived_causal_actions", []):
             if not isinstance(raw, Mapping):

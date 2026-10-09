@@ -110,6 +110,10 @@ class Stage9Runtime(Stage8Runtime):
                 t_monde=capture.t_monde,
                 water=float(capture.body["water"]),
             )
+            self.causal_model.observe_hydration_followup(
+                t_monde=capture.t_monde,
+                water=float(capture.body["water"]),
+            )
             before = len(self.memory.episodes)
             original_memory(_ctx)
             newly_closed = self.memory.episodes[before:]
@@ -154,6 +158,23 @@ class Stage9Runtime(Stage8Runtime):
                             "attribution": report.attribution,
                             "observed_t_monde": report.observed_t_monde,
                             "causal_status_changed": False,
+                        },
+                    )
+                for observation in self.causal_model.ingest_closed_hydration_episode(
+                    episode_ref=episode.id,
+                    event_refs=episode.event_refs,
+                    autobiographical_events=autobiography,
+                ):
+                    self._write(
+                        kind="causal_lived_hydration_observation",
+                        cycle=cycle,
+                        data={
+                            "contingency_ref": observation.contingency_ref,
+                            "episode_ref": observation.episode_ref,
+                            "observation_ref": observation.observation_ref,
+                            "evidence_ref": observation.identifier,
+                            "cause_present": observation.cause_present,
+                            "effect_present": observation.effect_present,
                         },
                     )
                 for action in self.causal_model.ingest_closed_causal_action_episode(
@@ -416,6 +437,19 @@ class Stage9Runtime(Stage8Runtime):
                         ).as_dict()
                     )),
                 )
+        if execution.status == "applied" and captured is not None:
+            # Observational learning follows *applied* ordinary choices,
+            # independently of whether a hypothesis already exists.
+            # The Causal Model admits the observation only after the next
+            # accessible capture and a closed DC-09 physical episode.
+            self.causal_model.record_applied_hydration_observation(
+                t_monde=sent_t_monde,
+                primitive=prepared.command.primitive,
+                option_ref=proposal.option.id,
+                current_water_source=captured.current_water_source,
+                position=(captured.x, captured.y),
+                water_before=float(captured.body["water"]),
+            )
         if (
             execution.status == "applied"
             and captured is not None
