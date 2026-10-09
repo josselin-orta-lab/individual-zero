@@ -187,6 +187,47 @@ class Stage9ScientificAssessmentTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     assess_heldout_campaign(draft, sealed(damaged))
 
+    def test_two_causal_cases_cannot_share_one_lived_episode(self):
+        draft = example_draft()
+        draft["confidence_method"] = "wilson_95"
+        report = make_report(draft, candidates=5)
+        first = deepcopy(report["runs"][0]["known_cause_cases"][0])
+        second = deepcopy(first)
+        second["id"] = "case:2"
+        second["observation_ref"] = "distinct-world-transition"
+        report["runs"][0]["known_cause_cases"].append(second)
+        with self.assertRaisesRegex(ValueError, "reused physical episode"):
+            assess_heldout_campaign(draft, sealed(report))
+
+    def test_false_candidates_require_independent_closed_episodes(self):
+        draft = example_draft()
+        draft["confidence_method"] = "wilson_95"
+        report = make_report(draft, candidates=5)
+        null_run = report["runs"][2]
+        candidates = null_run["naturally_acquired_false_candidates"]
+        candidates[1]["episode_ref"] = candidates[0]["episode_ref"]
+        with self.assertRaisesRegex(ValueError, "reused physical episode"):
+            assess_heldout_campaign(draft, sealed(report))
+        report = make_report(draft, candidates=5)
+        null_run = report["runs"][2]
+        null_run["naturally_acquired_false_candidates"][0]["episode_ref"] = (
+            null_run["known_cause_cases"][0]["episode_ref"]
+        )
+        with self.assertRaisesRegex(ValueError, "reused physical episode"):
+            assess_heldout_campaign(draft, sealed(report))
+
+    def test_distinct_episodes_remain_evaluable_without_golden_approval(self):
+        draft = example_draft()
+        draft["confidence_method"] = "wilson_95"
+        draft["minimum_known_cause_accuracy"] = 0.20
+        draft["maximum_superstitious_rule_rate"] = 0.80
+        draft["minimum_naturally_acquired_candidates"] = 2
+        scored = assess_heldout_campaign(draft, make_report(draft, candidates=20))
+        self.assertEqual(scored["natural_false_candidate_count"], 40)
+        self.assertEqual(scored["assessment"], "metrics_eligible_for_independent_review")
+        self.assertIsNone(scored["scientific_verdict"])
+        self.assertFalse(scored["golden_stage9_frozen"])
+
     def test_unsupported_confidence_method_cannot_implicitly_pass(self):
         draft = example_draft()
         report = make_report(draft)
