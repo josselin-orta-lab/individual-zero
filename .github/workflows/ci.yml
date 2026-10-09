@@ -68,6 +68,15 @@ jobs:
           )
           PY
           python - <<'PY'
+          from pathlib import Path
+          from lab.stage9_known_cause_world_matrix import run_known_cause_world_matrix
+          # Match the acceptance-report fixed diagnostic seed set exactly.
+          result = run_known_cause_world_matrix(seeds=(42, 43, 44))
+          Path("/tmp/stage9-known-cause-world-matrix.json").write_text(
+              result.to_json(), encoding="utf-8",
+          )
+          PY
+          python - <<'PY'
           import json
           from pathlib import Path
           from lab.determinism import canonical_causal_bytes, sha256_hex
@@ -101,6 +110,31 @@ jobs:
               )
           ):
               raise SystemExit("Stage 9 multiworld numerator/denominator inconsistent")
+          known = json.loads(Path(
+              "/tmp/stage9-known-cause-world-matrix.json"
+          ).read_text(encoding="utf-8"))
+          known_digest = known.pop("digest")
+          if sha256_hex(canonical_causal_bytes(known)) != known_digest:
+              raise SystemExit("Stage 9 known-cause matrix artifact digest differs")
+          known_rows = known["runs"]
+          expected_known = checks["known_cause_attribution"]["evidence"]
+          if (
+              len(known_rows) != expected_known["geometric_world_count"]
+              or known_digest != expected_known["geometric_matrix_sha256"]
+              or known["seeds"] != expected_known["geometric_matrix_seeds"]
+              or len({row["world_digest"] for row in known_rows}) != len(known_rows)
+              or sum(row["results"]["ground_truthed_cases"] for row in known_rows) != known["physically_ground_truthed_cases"]
+              or sum(row["results"]["correct_links"] for row in known_rows) != known["correct_links"]
+              or sum(row["results"]["uncertain_cases"] for row in known_rows) != known["uncertain_cases"]
+              or sum(row["results"]["false_self_links"] for row in known_rows) != known["false_self_links"]
+              or known["physically_ground_truthed_cases"] != expected_known["geometric_ground_truthed_cases"]
+              or known["correct_links"] != expected_known["geometric_correct_links"]
+              or known["uncertain_cases"] != expected_known["geometric_uncertain_cases"]
+              or known["false_self_links"] != expected_known["geometric_false_self_links"]
+              or known["observed_accuracy"] != expected_known["geometric_observed_accuracy"]
+              or known["classification"] != "diagnostic_only"
+          ):
+              raise SystemExit("Stage 9 known-cause world matrix mismatches acceptance report")
           superstition = checks["superstitious_rules_under_random_reward"]["evidence"]
           if (
               matrix_digest != superstition["spontaneous_matrix_sha256"]
@@ -114,6 +148,10 @@ jobs:
               "golden_frozen": acceptance["golden_stage9_frozen"],
               "acceptance_digest": expected_digest,
               "multiworld_digest": matrix_digest,
+              "known_cause_world_digest": known_digest,
+              "known_cause_worlds": len(known_rows),
+              "known_cause_correct_links": known["correct_links"],
+              "known_cause_total_links": known["physically_ground_truthed_cases"],
               "natural_candidates": matrix["spontaneously_observed_candidates"],
               "false_rule_rate": matrix["natural_false_rule_rate"],
               "scientific_status": matrix["evaluation_status"],
@@ -128,6 +166,7 @@ jobs:
           path: |
             /tmp/stage9-acceptance-diagnostic.json
             /tmp/stage9-spontaneous-matrix-diagnostic.json
+            /tmp/stage9-known-cause-world-matrix.json
           if-no-files-found: error
 
       - name: Stage 8 preregistered physical κ stress Brier gate
