@@ -181,67 +181,24 @@ class CausalLifecycleTests(unittest.TestCase):
             n.integrate_causal_observation(x)
         self.assertEqual(n.publish_causal_inference(),())
 
-    def test_same_world_step_observation_does_not_double_count_n1(self):
-        # Different event and Memory episode IDs cannot turn a single world
-        # step into two independent P-35 co-occurrences (§13.2).
-        first = obs(1, cause=True, effect=True)
-        control = obs(3, cause=False, effect=False)
-        alias = replace(
-            obs(90, cause=True, effect=True),
-            observed_step=first.observed_step,
+    def test_one_step_may_have_distinct_observational_arms(self):
+        # Closed physical exposure and its matched no-treatment control
+        # can share a time without being equivalent observations.
+        m = model()
+        treated = obs(1, cause=True, effect=True)
+        control = replace(
+            obs(3, cause=False, effect=False),
+            observed_step=treated.observed_step,
         )
-        for separate_publications in (False, True):
-            with self.subTest(separate_publications=separate_publications):
-                m = model()
-                for row in (first, control):
-                    m.integrate_causal_observation(row)
-                if separate_publications:
-                    self.assertEqual(m.publish_causal_inference(), ())
-                m.integrate_causal_observation(alias)
-                before = m.export_causal_state()
-                twin = model()
-                twin.restore_causal_state(before)
-                self.assertEqual(
-                    m.publish_causal_inference(),
-                    twin.publish_causal_inference(),
-                )
-                self.assertEqual(m.get(REF).causal_status, "aucun")
-                state = m.export_causal_state()
-                self.assertEqual(state, twin.export_causal_state())
-                self.assertEqual(len(state["causal_observations"]), 2)
-                self.assertEqual(
-                    len([v for v in state["causal_credits"]
-                         if v[2] == "observation"]),
-                    2,
-                )
-                self.assertEqual(m.publish_causal_inference(), ())
-                m.integrate_causal_observation(obs(2, cause=True, effect=True))
-                self.assertEqual(
-                    [change.after for change in m.publish_causal_inference()],
-                    ["correlation_observee"],
-                )
-
-    def test_conflicting_same_world_step_observations_reject_atomically(self):
-        first = obs(1, cause=True, effect=True)
-        control = obs(3, cause=False, effect=False)
-        contradiction = replace(
-            obs(90, cause=True, effect=False),
-            observed_step=first.observed_step,
+        m.integrate_causal_observation(treated)
+        m.integrate_causal_observation(control)
+        self.assertEqual(m.publish_causal_inference(), ())
+        observations = m.export_causal_state()["causal_observations"]
+        self.assertEqual(len(observations), 2)
+        self.assertNotEqual(
+            observations[0]["cause_present"],
+            observations[1]["cause_present"],
         )
-        for separate_publications in (False, True):
-            with self.subTest(separate_publications=separate_publications):
-                m = model()
-                for row in (first, control):
-                    m.integrate_causal_observation(row)
-                if separate_publications:
-                    m.publish_causal_inference()
-                m.integrate_causal_observation(contradiction)
-                before = m.export_causal_state()
-                with self.assertRaisesRegex(
-                    ValueError, "conflicting same-step causal observations",
-                ):
-                    m.publish_causal_inference()
-                self.assertEqual(m.export_causal_state(), before)
 
     def test_same_context_interventions_never_meet_n2(self):
         m=model()

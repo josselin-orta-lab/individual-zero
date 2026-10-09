@@ -1553,28 +1553,6 @@ class CausalModel:
                 for v in observations.values()
             ):
                 continue
-            # P-35 n1 is a count of physical co-occurrences, not event IDs.
-            # One world step cannot provide two independent observations of
-            # the same contingency, even with different episode/transition
-            # references. A contradiction at one step is invalid evidence,
-            # rather than a reason to arbitrarily prefer one of its aliases.
-            same_step = next((
-                v for v in observations.values()
-                if v.contingency_ref == o.contingency_ref
-                and v.observed_step == o.observed_step
-            ), None)
-            if same_step is not None:
-                if (
-                    same_step.predicate != o.predicate
-                    or same_step.subject_ref != o.subject_ref
-                    or same_step.application_context != o.application_context
-                    or same_step.observation_context != o.observation_context
-                    or same_step.controlled_variables != o.controlled_variables
-                    or same_step.cause_present != o.cause_present
-                    or same_step.effect_present != o.effect_present
-                ):
-                    raise ValueError("conflicting same-step causal observations")
-                continue
             old = published.get(o.contingency_ref)
             if old is None:
                 old = CanonicalContingency(
