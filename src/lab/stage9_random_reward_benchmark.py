@@ -86,7 +86,9 @@ def _audit_lived_hydration_provenance(
     Every credited observation requires a unique applied command AND world
     transition; one command cannot be credited twice under new event IDs.
     The raw journal must also confirm the command, transition and declared
-    next-step observation belong to the same actual physical world step.
+    next-step observation belong to the same actual physical world step and
+    the same committed execution attempt. Matched times alone cannot prove
+    two source events belong to one applied action after a retry/rollback.
     """
     episodes: set[str] = set()
     physical_commands: set[str] = set()
@@ -101,6 +103,14 @@ def _audit_lived_hydration_provenance(
         transition_event = technical_events.get(transition_ref)
         step = row.get("observed_step")
         cause = row.get("cause_present")
+        command_attempt = (
+            command_event.get("attempt_ref")
+            if isinstance(command_event, Mapping) else None
+        )
+        effects = (
+            transition_event.get("effects")
+            if isinstance(transition_event, Mapping) else None
+        )
         if (
             episode_refs is None
             or row["observation_ref"] != transition_ref
@@ -116,8 +126,17 @@ def _audit_lived_hydration_provenance(
             or transition_event.get("kind") != "world_transition_experienced"
             or command_event.get("t_monde") != step - 1
             or transition_event.get("t_monde") != step - 1
+            or not isinstance(command_attempt, str)
+            or not command_attempt
+            or transition_event.get("attempt_ref") != command_attempt
+            or command_event.get("parameters") != {}
             or command_event.get("primitive") != (
                 "boire" if cause else "attendre"
+            )
+            or not isinstance(effects, Mapping)
+            or (
+                effects.get("drank") is not True
+                if cause else effects.get("rest") != "attendre"
             )
         ):
             raise AssertionError(

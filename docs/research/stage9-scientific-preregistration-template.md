@@ -160,8 +160,10 @@ command and transition against the **same named closed Memory episode**,
 not merely a union of event references across all closed episodes.
 The technical journal must further confirm the experienced command and
 world transition are from the same source step immediately preceding the
-causal observation; event aliases with mismatched time or action kind are
-rejected before diagnostic sample counting. The report fields `lived_hydration_observations`
+causal observation. Both events must belong to the same execution attempt
+and confirm the physically executed primitive and its observed effect;
+matching timestamps or episode membership alone are insufficient.
+Disagreements are rejected before diagnostic sample counting. The report fields `lived_hydration_observations`
 and `independent_lived_hydration_episodes` therefore measure different
 units. An episode count alone is not proof of statistically independent
 experimental sampling.

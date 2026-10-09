@@ -8,18 +8,20 @@ from lab.stage9_random_reward_benchmark import (
 def _technical_hydration_events() -> dict[str, dict[str, object]]:
     return {
         "command:1": {
-            "kind": "command_experienced",
-            "t_monde": 1, "primitive": "boire",
+            "kind": "command_experienced", "attempt_ref": "attempt:1",
+            "t_monde": 1, "primitive": "boire", "parameters": {},
         },
         "world-transition:1": {
-            "kind": "world_transition_experienced", "t_monde": 1,
+            "kind": "world_transition_experienced", "attempt_ref": "attempt:1",
+            "t_monde": 1, "effects": {"drank": True},
         },
         "command:2": {
-            "kind": "command_experienced",
-            "t_monde": 2, "primitive": "boire",
+            "kind": "command_experienced", "attempt_ref": "attempt:2",
+            "t_monde": 2, "primitive": "boire", "parameters": {},
         },
         "world-transition:2": {
-            "kind": "world_transition_experienced", "t_monde": 2,
+            "kind": "world_transition_experienced", "attempt_ref": "attempt:2",
+            "t_monde": 2, "effects": {"drank": True},
         },
     }
 
@@ -177,6 +179,10 @@ class RandomRewardNegativeControlTests(unittest.TestCase):
             ("world-transition:1", "t_monde", 2),
             ("command:1", "primitive", "attendre"),
             ("command:1", "kind", "world_transition_experienced"),
+            ("world-transition:1", "attempt_ref", "attempt:other"),
+            ("command:1", "attempt_ref", "attempt:other"),
+            ("command:1", "parameters", {"target": "water"}),
+            ("world-transition:1", "effects", {"drank": False}),
         ):
             with self.subTest(change=change):
                 event_ref, field, value = change
@@ -192,6 +198,39 @@ class RandomRewardNegativeControlTests(unittest.TestCase):
             _audit_lived_hydration_provenance(
                 [{**rows[0], "observed_step": 3}],
                 refs, closed, source,
+            )
+
+    def test_physically_executed_wait_is_an_independent_control_arm(self):
+        row = {
+            "identifier": "hydration:wait",
+            "episode_ref": "memory:one",
+            "observation_ref": "world-transition:2",
+            "observed_step": 3,
+            "cause_present": False,
+        }
+        witness = {"hydration:wait": ("command:2", "world-transition:2")}
+        closed = {
+            "memory:one": frozenset({
+                "command:2", "world-transition:2",
+            }),
+        }
+        source = _technical_hydration_events()
+        source["command:2"]["primitive"] = "attendre"
+        source["world-transition:2"]["effects"] = {"rest": "attendre"}
+        self.assertEqual(
+            _audit_lived_hydration_provenance([row], witness, closed, source),
+            1,
+        )
+        # Labelling a drink as a passive wait, or a wait as an active
+        # exposure, must not manufacture a controlled baseline.
+        with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
+            _audit_lived_hydration_provenance(
+                [{**row, "cause_present": True}], witness, closed, source,
+            )
+        source["world-transition:2"]["effects"] = {"rest": "dormir"}
+        with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
+            _audit_lived_hydration_provenance(
+                [row], witness, closed, source,
             )
 
     def test_real_world_negative_control_is_replayed(self):
