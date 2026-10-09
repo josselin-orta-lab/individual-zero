@@ -197,6 +197,68 @@ class LivedFoodExposure:
 
 
 @dataclass(frozen=True, slots=True)
+class LivedCausalAction:
+    """Applied benign test or independently motivated action awaiting evidence.
+
+    Sending a command is not an intervention credit. A later accessible
+    Perception capture, a closed DC-09 physical action and a separately
+    published P-47 comparison must all agree before CausalIntervention exists.
+    """
+    identifier: str
+    contingency_ref: str
+    contingency_version: int
+    option_ref: str
+    motive_type: str
+    sent_t_monde: int
+    position: tuple[int, int]
+    water_before: float
+    observed_t_monde: int | None = None
+    water_observed: float | None = None
+    command_event_ref: str | None = None
+    transition_event_ref: str | None = None
+    physical_episode_ref: str | None = None
+
+    def validate(self) -> None:
+        if (
+            not self.identifier or not self.contingency_ref
+            or not self.option_ref
+            or self.motive_type not in {"active_goal", "test_causal"}
+            or type(self.contingency_version) is not int
+            or self.contingency_version < 1
+            or type(self.sent_t_monde) is not int or self.sent_t_monde < 1
+            or not isinstance(self.position, (tuple, list))
+            or len(self.position) != 2
+            or any(type(x) is not int for x in self.position)
+            or isinstance(self.water_before, bool)
+            or not isinstance(self.water_before, (int, float))
+            or not isfinite(self.water_before)
+            or not 0 <= self.water_before < 100
+        ):
+            raise ValueError("invalid pre-action causal test provenance")
+        if self.observed_t_monde is None:
+            if self.water_observed is not None:
+                raise ValueError("unpaired causal test capture")
+        elif (
+            self.observed_t_monde != self.sent_t_monde + 1
+            or self.water_observed is None
+            or isinstance(self.water_observed, bool)
+            or not isinstance(self.water_observed, (int, float))
+            or not isfinite(self.water_observed)
+            or not 0 <= self.water_observed <= 100
+        ):
+            raise ValueError("invalid causal test follow-up capture")
+        refs = (
+            self.command_event_ref, self.transition_event_ref,
+            self.physical_episode_ref,
+        )
+        if any(v is not None for v in refs) and (
+            self.observed_t_monde is None
+            or any(not isinstance(v, str) or not v for v in refs)
+        ):
+            raise ValueError("partial closed Memory action provenance")
+
+
+@dataclass(frozen=True, slots=True)
 class CanonicalContingency:
     ref: str
     version: int
@@ -246,6 +308,7 @@ class CausalModel:
         self._credited_observations: set[tuple[str, str]] = set()
         self._version = 0
         self._lived_food_exposures: dict[int, LivedFoodExposure] = {}
+        self._lived_causal_actions: dict[str, LivedCausalAction] = {}
         self._causal_observations: dict[str, CausalObservation] = {}
         self._pending_causal_observations: list[CausalObservation] = []
         self._pending_causal_reviews: list[CausalHypothesisReview] = []
@@ -319,6 +382,263 @@ class CausalModel:
             target.validate()
             targets.append(target)
         return tuple(targets)
+
+    def record_applied_causal_action(
+        self, *, t_monde: int, option_ref: str,
+        motive_type: str, motive_ref: str, primitive: str,
+        current_water_source: bool, position: tuple[int, int],
+        water_before: float,
+    ) -> tuple[LivedCausalAction, ...]:
+        """Receive only an actually applied Action Control decision (Stage 9).
+
+        The caller is the dispatch adapter, after nonlethal application.
+        This is a *pending* causal action, not published intervention evidence.
+        Pre-existing hypotheses and explicit P-35 safe actions are required.
+        Goal-motivated actions may be incidental interventions: they never
+        create a new exploratory motivation or demand dangerous re-exposure.
+        """
+        if (
+            primitive != "boire" or not current_water_source
+            or motive_type not in {"active_goal", "test_causal"}
+            or not option_ref or not motive_ref
+            or isinstance(water_before, bool)
+            or not isinstance(water_before, (float, int))
+            or not isfinite(water_before) or water_before >= 100
+        ):
+            return ()
+        rows = []
+        for target in self.proposer_test():
+            if (
+                target.primitive != primitive
+                or target.application_context != "water_source"
+            ):
+                continue
+            if motive_type == "test_causal" and (
+                motive_ref != target.motive_ref
+                or option_ref != (
+                    f"option:causal-test:{target.contingency_ref}:"
+                    f"v{target.contingency_version}"
+                )
+            ):
+                continue
+            row = LivedCausalAction(
+                identifier=(
+                    f"lived-causal:{target.contingency_ref}:"
+                    f"{option_ref}:{t_monde}"
+                ),
+                contingency_ref=target.contingency_ref,
+                contingency_version=target.contingency_version,
+                option_ref=option_ref,
+                motive_type=motive_type,
+                sent_t_monde=t_monde,
+                position=position,
+                water_before=float(water_before),
+            )
+            row.validate()
+            if row.identifier in self._lived_causal_actions:
+                raise ValueError("duplicate applied causal action")
+            rows.append(row)
+        for row in rows:
+            self._lived_causal_actions[row.identifier] = row
+        return tuple(rows)
+
+    def observe_causal_action_followup(
+        self, *, t_monde: int, water: float,
+    ) -> None:
+        """Only the next individual-accessible Perception body capture."""
+        if (
+            type(t_monde) is not int or t_monde < 1
+            or isinstance(water, bool) or not isinstance(water, (float, int))
+            or not isfinite(water) or not 0 <= water <= 100
+        ):
+            raise ValueError("invalid causal test Perception capture")
+        for ref, row in tuple(self._lived_causal_actions.items()):
+            if row.sent_t_monde != t_monde - 1 or row.observed_t_monde is not None:
+                continue
+            updated = replace(
+                row, observed_t_monde=t_monde, water_observed=float(water),
+            )
+            updated.validate()
+            self._lived_causal_actions[ref] = updated
+
+    def ingest_closed_causal_action_episode(
+        self, *, episode_ref: str, event_refs: Sequence[str],
+        autobiographical_events: Sequence[Mapping[str, object]],
+    ) -> tuple[LivedCausalAction, ...]:
+        """Bind an applied drinking action to exact closed DC-09 event IDs.
+
+        The comparator may close in a different episode. Its evidence is
+        joined *later*, only after publication by the canonical owner.
+        This method cannot credit a typed intervention.
+        """
+        if not episode_ref or len(set(event_refs)) != len(event_refs):
+            raise ValueError("invalid closed Memory causal action references")
+        allowed = set(event_refs)
+        events = [
+            item for item in autobiographical_events
+            if item.get("event_id") in allowed
+        ]
+        changes = []
+        for row in sorted(self._lived_causal_actions.values(),
+                          key=lambda value: value.identifier):
+            if (
+                row.observed_t_monde is None
+                or row.command_event_ref is not None
+            ):
+                continue
+            commands = [
+                event for event in events
+                if (
+                    event.get("kind") == "command_experienced"
+                    and event.get("t_monde") == row.sent_t_monde
+                    and event.get("primitive") == "boire"
+                    and event.get("parameters") == {}
+                )
+            ]
+            transitions = [
+                event for event in events
+                if (
+                    event.get("kind") == "world_transition_experienced"
+                    and event.get("t_monde") == row.sent_t_monde
+                    and isinstance(event.get("effects"), Mapping)
+                    and event["effects"].get("drank") is True
+                    and isinstance(event.get("body_after"), Mapping)
+                    and event["body_after"].get("water") == row.water_observed
+                    and isinstance(event.get("position_after"), Mapping)
+                    and (
+                        event["position_after"].get("x"),
+                        event["position_after"].get("y"),
+                    ) == row.position
+                )
+            ]
+            if len(commands) != 1 or len(transitions) != 1:
+                continue
+            command_ref = commands[0].get("event_id")
+            transition_ref = transitions[0].get("event_id")
+            if (
+                not isinstance(command_ref, str)
+                or not isinstance(transition_ref, str)
+                or command_ref == transition_ref
+            ):
+                continue
+            updated = replace(
+                row,
+                command_event_ref=command_ref,
+                transition_event_ref=transition_ref,
+                physical_episode_ref=episode_ref,
+            )
+            updated.validate()
+            changes.append(updated)
+        for row in changes:
+            self._lived_causal_actions[row.identifier] = row
+        return tuple(changes)
+
+    def promote_lived_causal_interventions(self) -> tuple[CausalIntervention, ...]:
+        """Publish no facts: stage only fully joined, *published* P-47 evidence.
+
+        The caller invokes this after Memory ingestion, in phase 1. Comparator
+        results from the same cycle cannot authorize the test until a future
+        cycle; the ordinary phase-5 causal publication remains the sole writer.
+        """
+        trials = []
+        retire = []
+        for row in sorted(self._lived_causal_actions.values(),
+                          key=lambda value: value.identifier):
+            if (
+                row.physical_episode_ref is None
+                or row.transition_event_ref is None
+                or row.observed_t_monde is None
+                or row.water_observed is None
+            ):
+                continue
+            contingency = self._published.get(row.contingency_ref)
+            if (
+                contingency is None
+                or contingency.version < row.contingency_version
+                or contingency.causal_status not in {
+                    "hypothese_causale", "testee_par_intervention", "etablie"
+                }
+            ):
+                retire.append(row.identifier)
+                continue
+            matching = [
+                report for report in self._agency_evidence.values()
+                if (
+                    report.option_ref == row.option_ref
+                    and report.sent_t_monde == row.sent_t_monde
+                    and report.observed_t_monde == row.observed_t_monde
+                )
+            ]
+            if not matching:
+                continue
+            if len(matching) != 1:
+                # Ambiguous provenance can never be upgraded to causality.
+                retire.append(row.identifier)
+                continue
+            report = matching[0]
+            water_effects = [
+                effect for effect in report.effects
+                if effect[0] == "water"
+            ]
+            if (
+                len(water_effects) != 1
+                or water_effects[0][3] != row.water_observed
+            ):
+                retire.append(row.identifier)
+                continue
+            effect_status = water_effects[0][1]
+            observed = row.water_observed > row.water_before
+            if observed:
+                admitted = (
+                    report.status == "conforming"
+                    and report.attribution == "self_compatible"
+                    and effect_status == "conforming"
+                )
+            else:
+                admitted = (
+                    report.status == "nonconforming"
+                    and report.attribution == "uncertain"
+                    and effect_status == "nonconforming"
+                )
+            if not admitted:
+                retire.append(row.identifier)
+                continue
+            context = f"water_source:{row.position[0]},{row.position[1]}"
+            trial = CausalIntervention(
+                identifier=f"intervention:{row.identifier}",
+                contingency_ref=row.contingency_ref,
+                episode_ref=report.episode_ref,
+                observation_ref=row.transition_event_ref,
+                command_ref=row.option_ref,
+                comparator_ref=report.identifier,
+                context_signature=context,
+                emitted_step=row.sent_t_monde,
+                observed_step=row.observed_t_monde,
+                observed_effect=observed,
+                comparator_status=report.status,
+                attribution=report.attribution,
+                controlled_variables=(
+                    ("primitive", "boire"),
+                    ("water_source", "present"),
+                    ("site", f"{row.position[0]},{row.position[1]}"),
+                ),
+                action_applied=True,
+            )
+            trial.validate()
+            if (
+                trial.identifier not in self._causal_interventions
+                and all(
+                    pending.identifier != trial.identifier
+                    for pending in self._pending_causal_interventions
+                )
+            ):
+                trials.append(trial)
+            retire.append(row.identifier)
+        for trial in trials:
+            self.integrate_causal_intervention(trial)
+        for identifier in retire:
+            del self._lived_causal_actions[identifier]
+        return tuple(trials)
 
     def record_applied_food_exposure(
         self, *, t_monde: int, resource_kind: str,
@@ -1162,6 +1482,13 @@ class CausalModel:
                 {name: getattr(v, name) for name in v.__dataclass_fields__}
                 for _, v in sorted(self._lived_food_exposures.items())
             ],
+            "lived_causal_actions": [
+                {
+                    **{name: getattr(v, name) for name in v.__dataclass_fields__},
+                    "position": list(v.position),
+                }
+                for _, v in sorted(self._lived_causal_actions.items())
+            ],
         }
 
     def restore_causal_state(self, state: object) -> None:
@@ -1211,6 +1538,18 @@ class CausalModel:
                 raise ValueError("duplicate pending lived exposure")
             exposures[exposure.t_monde] = exposure
         self._lived_food_exposures = exposures
+        actions = {}
+        for raw in state.get("lived_causal_actions", []):
+            if not isinstance(raw, Mapping):
+                raise ValueError("invalid pending lived causal action")
+            row = LivedCausalAction(**{
+                **raw, "position": tuple(raw["position"]),
+            })
+            row.validate()
+            if row.identifier in actions:
+                raise ValueError("duplicated pending lived causal action")
+            actions[row.identifier] = row
+        self._lived_causal_actions = actions
         obs={x.identifier:x for x in (decode_observation(v) for v in state.get("causal_observations",[]))}
         trials={x.identifier:x for x in (decode_intervention(v) for v in state.get("causal_interventions",[]))}
         pending_obs=[decode_observation(v) for v in state.get("pending_causal_observations",[])]

@@ -106,12 +106,15 @@ class Stage9Runtime(Stage8Runtime):
                 t_monde=capture.t_monde,
                 integrity=float(capture.body["integrity"]),
             )
+            self.causal_model.observe_causal_action_followup(
+                t_monde=capture.t_monde,
+                water=float(capture.body["water"]),
+            )
             before = len(self.memory.episodes)
             original_memory(_ctx)
             newly_closed = self.memory.episodes[before:]
-            if not newly_closed:
-                return
-            autobiography = self._autobiographical_events(cycle=cycle)
+            if newly_closed:
+                autobiography = self._autobiographical_events(cycle=cycle)
             for episode in newly_closed:
                 candidates = self.causal_model.ingest_closed_autobiographical_episode(
                     episode_ref=episode.id,
@@ -153,6 +156,39 @@ class Stage9Runtime(Stage8Runtime):
                             "causal_status_changed": False,
                         },
                     )
+                for action in self.causal_model.ingest_closed_causal_action_episode(
+                    episode_ref=episode.id,
+                    event_refs=episode.event_refs,
+                    autobiographical_events=autobiography,
+                ):
+                    self._write(
+                        kind="causal_applied_action_memory_verified",
+                        cycle=cycle,
+                        data={
+                            "contingency_ref": action.contingency_ref,
+                            "option_ref": action.option_ref,
+                            "episode_ref": action.physical_episode_ref,
+                            "transition_ref": action.transition_event_ref,
+                            "sent_t_monde": action.sent_t_monde,
+                        },
+                    )
+            # A comparator newly closed above is only *pending*. An
+            # intervention can be constructed after its independent phase-5
+            # publication, in a later waking cycle.
+            for trial in self.causal_model.promote_lived_causal_interventions():
+                self._write(
+                    kind="causal_lived_intervention_staged",
+                    cycle=cycle,
+                    data={
+                        "intervention_ref": trial.identifier,
+                        "contingency_ref": trial.contingency_ref,
+                        "observation_ref": trial.observation_ref,
+                        "comparator_ref": trial.comparator_ref,
+                        "episode_ref": trial.episode_ref,
+                        "context_signature": trial.context_signature,
+                        "observed_effect": trial.observed_effect,
+                    },
+                )
 
         hooks[1]["memory"] = observe_then_ingest
 
@@ -379,6 +415,32 @@ class Stage9Runtime(Stage8Runtime):
                             is_night=self.world.is_night(captured.t_monde),
                         ).as_dict()
                     )),
+                )
+        if (
+            execution.status == "applied"
+            and captured is not None
+            and prepared.command.primitive == "boire"
+        ):
+            for action in self.causal_model.record_applied_causal_action(
+                t_monde=sent_t_monde,
+                option_ref=proposal.option.id,
+                motive_type=proposal.option.motive_ref.type,
+                motive_ref=proposal.option.motive_ref.id,
+                primitive=prepared.command.primitive,
+                current_water_source=captured.current_water_source,
+                position=(captured.x, captured.y),
+                water_before=float(captured.body["water"]),
+            ):
+                self._write(
+                    kind="causal_applied_action_recorded",
+                    cycle=cycle,
+                    data={
+                        "contingency_ref": action.contingency_ref,
+                        "option_ref": action.option_ref,
+                        "sent_t_monde": action.sent_t_monde,
+                        "source": "action_control_applied",
+                        "intervention_published": False,
+                    },
                 )
         return execution
 
