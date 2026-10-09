@@ -142,6 +142,34 @@ class FrozenWorktreePreflightTests(unittest.TestCase):
                     repository=repo, frozen_implementation_commit=frozen,
                 )
 
+    def test_unrelated_git_history_with_identical_source_cannot_claim_freeze(self):
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            frozen, _, _ = _create_fixture(repo)
+            # Equal sources on an orphan branch do not prove Git ancestry.
+            _git(repo, "checkout", "-q", "--orphan", "unrelated-root")
+            _git(repo, "add", "-A")
+            _git(repo, "commit", "-qm", "unrelated root with same source")
+            self.assertEqual(
+                _git(repo, "rev-parse", "HEAD:src"),
+                _git(repo, "rev-parse", f"{frozen}:src"),
+            )
+            with self.assertRaisesRegex(ValueError, "does not descend"):
+                verify_frozen_worktree(
+                    repository=repo, frozen_implementation_commit=frozen,
+                )
+
+    def test_exact_frozen_commit_checkout_is_permitted(self):
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            frozen, _, _ = _create_fixture(repo)
+            _git(repo, "checkout", "-q", "--detach", frozen)
+            result = verify_frozen_worktree(
+                repository=repo, frozen_implementation_commit=frozen,
+            )
+            self.assertEqual(result["git_head"], frozen)
+            self.assertIsNone(result["scientific_verdict"])
+
     def test_invalid_sha_and_nested_directory_are_not_accepted(self):
         with TemporaryDirectory() as folder:
             repo = Path(folder)

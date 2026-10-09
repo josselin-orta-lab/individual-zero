@@ -77,7 +77,9 @@ def generate_stage9_reference_diagnostic(
     ):
         raise AssertionError("Stage-9 independent reference execution diverged")
     if journal_path is not None:
-        journal_path.write_bytes(first_journal + b"\n")
+        # Archive the *exact* bytes named by journal_sha256, without an
+        # extra line terminator that would break independent raw-file audit.
+        journal_path.write_bytes(first_journal)
     return Stage9ReferenceDiagnostic(
         protocol_version=PROTOCOL_VERSION,
         steps=steps,

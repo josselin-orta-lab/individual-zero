@@ -100,8 +100,8 @@ jobs:
               or report["scientific_verdict"] is not None
               or report["steps"] != 300
               or not report["identical_independent_reexecution"]
-              or report["journal_bytes"] != len(journal) - 1
-              or report["journal_sha256"] != sha256_hex(journal[:-1])
+              or report["journal_bytes"] != len(journal)
+              or report["journal_sha256"] != sha256_hex(journal)
           ):
               raise SystemExit("Stage 9 300-step replay diagnostic failed")
           print("stage9_300_step_replay_exact=true")

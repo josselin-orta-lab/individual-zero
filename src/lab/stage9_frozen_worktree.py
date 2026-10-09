@@ -47,6 +47,14 @@ def verify_frozen_worktree(
         raise ValueError("frozen package manifest is not a Git blob")
 
     current_head = _git(root, "rev-parse", "HEAD").decode().strip()
+    if current_head != frozen_implementation_commit:
+        try:
+            _git(
+                root, "merge-base", "--is-ancestor",
+                frozen_implementation_commit, current_head,
+            )
+        except ValueError as exc:
+            raise ValueError("current checkout does not descend from frozen commit") from exc
     for path, expected, description in (
         (SOURCE_TREE_PATH, expected_tree, "source tree"),
         (PROJECT_INSTALL_PATH, expected_package, "package manifest"),
