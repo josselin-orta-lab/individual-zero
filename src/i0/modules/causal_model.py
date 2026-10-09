@@ -799,9 +799,12 @@ class CausalModel:
                 and event.get("t_monde") == row.sent_t_monde
             ]
             if len(commands) != 1 or len(transitions) != 1:
-                if len(commands) > 1 or len(transitions) > 1:
-                    # A closed ambiguous physical step must not later be
-                    # reopened under a different Memory episode identity.
+                if commands or transitions:
+                    # A closed Memory projection of this physical step that
+                    # lacks its matching partner cannot be reopened later
+                    # under another episode identity. This mirrors the
+                    # observational hydration admission path (P-35/DC-09).
+                    # An entirely unrelated episode must leave it pending.
                     invalidated.append(row.identifier)
                 continue
             command, transition = commands[0], transitions[0]

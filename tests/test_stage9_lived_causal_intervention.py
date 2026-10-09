@@ -156,6 +156,64 @@ class LivedCausalInterventionProducerTests(unittest.TestCase):
         m.observe_causal_action_followup(t_monde=11, water=60.0)
         self.assertEqual(m.promote_lived_causal_interventions(), ())
 
+    def test_one_sided_closed_physical_episode_retires_pending_intervention(self):
+        for visible in ("command", "transition"):
+            with self.subTest(visible=visible):
+                m = model()
+                hypothesis(m)
+                evidence_path(m, step=10, close=False, comparator=False)
+                command, transition = physical_episode(
+                    step=10, after=60.0, position=(2, 2),
+                )
+                only = (command,) if visible == "command" else (transition,)
+                self.assertEqual(m.ingest_closed_causal_action_episode(
+                    episode_ref="episode:incomplete",
+                    event_refs=tuple(e["event_id"] for e in only),
+                    autobiographical_events=only,
+                ), ())
+                self.assertEqual(
+                    m.export_causal_state()["lived_causal_actions"], [],
+                )
+                # Re-labelling the original world step as a later closed
+                # episode cannot turn an incomplete first witness into a
+                # validated intervention.
+                self.assertEqual(m.ingest_closed_causal_action_episode(
+                    episode_ref="episode:attempt-relabelled",
+                    event_refs=("command:10", "transition:10"),
+                    autobiographical_events=(command, transition),
+                ), ())
+                self.assertEqual(m.promote_lived_causal_interventions(), ())
+                self.assertEqual(
+                    m.get("causal:hydration").causal_status,
+                    "hypothese_causale",
+                )
+
+    def test_unrelated_closed_episode_keeps_physical_action_pending(self):
+        m = model()
+        hypothesis(m)
+        evidence_path(m, step=10, close=False, comparator=False)
+        command, transition = physical_episode(
+            step=10, after=60.0, position=(2, 2),
+        )
+        unrelated = {
+            **command, "event_id": "command:other",
+            "t_monde": 9,
+        }
+        self.assertEqual(m.ingest_closed_causal_action_episode(
+            episode_ref="episode:other",
+            event_refs=("command:other",),
+            autobiographical_events=(unrelated,),
+        ), ())
+        self.assertEqual(len(
+            m.export_causal_state()["lived_causal_actions"],
+        ), 1)
+        (admitted,) = m.ingest_closed_causal_action_episode(
+            episode_ref="episode:physical:10",
+            event_refs=("command:10", "transition:10"),
+            autobiographical_events=(command, transition),
+        )
+        self.assertEqual(admitted.transition_event_ref, "transition:10")
+
     def test_inconsistent_physical_telemetry_prevents_intervention(self):
         m = model()
         hypothesis(m)
