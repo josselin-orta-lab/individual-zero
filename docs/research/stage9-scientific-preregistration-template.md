@@ -64,6 +64,38 @@ from a draft. The CI stores a fail-closed readiness artifact, not a certificate
 of scientific validity. Test fixture values in unit tests are **not** thresholds
 selected for the research campaign.
 
+## Held-out metric assessment (provisional, not certification)
+
+The lab-only tool can score a prospective held-out evidence manifest, but cannot
+declare Golden or a scientific verdict without independently audited physical
+witnesses and Git chronology. Usage:
+
+~~~bash
+python -m lab.stage9_scientific_assessment
+python -m lab.stage9_scientific_assessment --registration registration.json --evidence heldout.json
+~~~
+
+The evidence envelope must identify the frozen registration digest and
+implementation commit and include every registered world × seed pair. Each run
+contains its registered physical world SHA-256, original and replay journal
+hashes, original and replay causal-state hashes, independently sourced
+known-cause case rows with ground truth and agency attribution, and the
+naturally acquired false-rule candidates in negative-control worlds. The
+whole envelope has its own canonical SHA-256. Physical source event references
+and episodes must not be counted twice inside a run.
+
+The scorer recomputes attribution accuracy, abstentions, false self links,
+false-rule rates and two-sided 95% Wilson confidence intervals. It returns
+"not_evaluable" if any required denominator is zero, and keeps Golden false
+even when metrics meet prospectively frozen limits: raw journal/oracle
+authenticity, independent world generation, prospective registration ancestry,
+INV-25 and exact reproduction still need external examination.
+
+No demonstration JSON fixture or prior exploratory matrix is valid held-out
+evidence; changing the registered confidence rule after seeing outcomes is
+prohibited. Only "wilson_95" is implemented. Other prospective confidence
+rules require code and tests *before* a hold-out campaign begins.
+
 ## Experimental separation
 
 1. **Calibration:** choose necessary parameters using disjoint worlds and seeds, following the normative parameter registry and its calibration protocols. Record their immutable hashes.

@@ -194,6 +194,29 @@ jobs:
           path: /tmp/stage9-scientific-preflight.json
           if-no-files-found: error
 
+      - name: Stage 9 prospective holdout assessment readiness (never Golden)
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m lab.stage9_scientific_assessment > /tmp/stage9-scientific-assessment.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path("/tmp/stage9-scientific-assessment.json").read_text())
+          if (result["assessment"] != "unregistered"
+              or result["scientific_verdict"] is not None
+              or result["golden_stage9_frozen"]):
+              raise SystemExit("unregistered Stage-9 scientific assessment must fail closed")
+          print("stage9_scientific_assessment=" + result["assessment"])
+          PY
+
+      - name: Upload Stage 9 prospective holdout assessment readiness
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage9-scientific-assessment-readiness
+          path: /tmp/stage9-scientific-assessment.json
+          if-no-files-found: error
+
       - name: Stage 8 preregistered physical κ stress Brier gate
         if: matrix.python-version == '3.11'
         run: |
