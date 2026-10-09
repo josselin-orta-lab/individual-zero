@@ -290,6 +290,98 @@ class LivedCausalInterventionProducerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             model().restore_causal_state(corrupt)
 
+
+    def test_failed_snapshot_restore_is_atomic_even_at_late_validation(self):
+        m = model()
+        hypothesis(m)
+        evidence_path(m, step=10)
+        m.publish_causal_inference()
+        m.promote_lived_causal_interventions()
+        m.publish_causal_inference()
+        baseline = m.export_causal_state()
+        self.assertEqual(len(baseline["causal_action_witnesses"]), 1)
+        self.assertEqual(len(baseline["agency_evidence"]), 1)
+        original_owner = m
+
+        corrupt_witness = deepcopy(baseline)
+        # This early, well-typed change would be applied before the late
+        # invalid physical witness if restore mutated the live owner.
+        corrupt_witness["published"][0]["causal_status"] = "correlation_observee"
+        corrupt_witness["causal_action_witnesses"][0][
+            "transition_event_ref"
+        ] = None
+
+        duplicate_comparison = deepcopy(baseline)
+        duplicate_comparison["published"][0][
+            "causal_status"
+        ] = "correlation_observee"
+        duplicate_comparison["pending_agency_evidence"] = deepcopy(
+            duplicate_comparison["agency_evidence"]
+        )
+
+        config_mismatch = deepcopy(baseline)
+        config_mismatch["config_contract"]["n2"] = 99
+        for invalid in (
+            corrupt_witness, duplicate_comparison, config_mismatch,
+        ):
+            with self.subTest(fault=list(invalid.keys())):
+                with self.assertRaises(ValueError):
+                    m.restore_causal_state(invalid)
+                self.assertIs(m, original_owner)
+                self.assertEqual(m.export_causal_state(), baseline)
+                self.assertEqual(
+                    m.get("causal:hydration").causal_status,
+                    "testee_par_intervention",
+                )
+
+        # The original owner is still usable after rejected restore calls.
+        m.restore_causal_state(baseline)
+        self.assertIs(m, original_owner)
+        self.assertEqual(m.export_causal_state(), baseline)
+
+    def test_promoted_applied_action_cannot_be_recorded_a_second_time(self):
+        m = model()
+        hypothesis(m)
+        evidence_path(m, step=10)
+        m.publish_causal_inference()
+        m.promote_lived_causal_interventions()
+        m.publish_causal_inference()
+        baseline = m.export_causal_state()
+        self.assertEqual(len(baseline["causal_action_witnesses"]), 1)
+        with self.assertRaisesRegex(
+            ValueError, "duplicate applied causal action",
+        ):
+            m.record_applied_causal_action(
+                t_monde=10, option_ref="option:drink:10",
+                motive_type="active_goal", motive_ref="goal:drink",
+                primitive="boire", current_water_source=True,
+                position=(2, 2), water_before=20.0,
+            )
+        self.assertEqual(m.export_causal_state(), baseline)
+        self.assertEqual(m.promote_lived_causal_interventions(), ())
+
+    def test_valid_and_reused_interventions_fail_as_one_atomic_batch(self):
+        m = model()
+        hypothesis(m)
+        evidence_path(m, step=10)
+        m.publish_causal_inference()
+        (genuine,) = m.promote_lived_causal_interventions()
+        m.integrate_causal_intervention(replace(
+            genuine,
+            identifier="intervention:zz-reused-physical-transition",
+            context_signature="water_source:4,4",
+        ))
+        before = m.export_causal_state()
+        with self.assertRaisesRegex(
+            ValueError, "closed physical action evidence",
+        ):
+            m.publish_causal_inference()
+        self.assertEqual(m.export_causal_state(), before)
+        self.assertEqual(
+            m.get("causal:hydration").causal_status, "hypothese_causale",
+        )
+        self.assertEqual(m.export_causal_state()["causal_interventions"], [])
+
     def test_unconfigured_model_does_not_record_normal_drinking(self):
         from i0.modules.causal_model import CausalModel, CausalModelConfig
         m = CausalModel(CausalModelConfig("no-preregistered-test-v1", 2, 2, 2, 2))

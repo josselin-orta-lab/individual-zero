@@ -461,7 +461,14 @@ class CausalModel:
                 water_before=float(water_before),
             )
             row.validate()
-            if row.identifier in self._lived_causal_actions:
+            if (
+                row.identifier in self._lived_causal_actions
+                or f"intervention:{row.identifier}"
+                   in self._causal_action_witnesses
+            ):
+                # A closed action remains used even after promotion has
+                # retired its pending entry. Repeating its dispatch identity
+                # must not reopen physical evidence or double-count it.
                 raise ValueError("duplicate applied causal action")
             rows.append(row)
         for row in rows:
@@ -1605,6 +1612,19 @@ class CausalModel:
         }
 
     def restore_causal_state(self, state: object) -> None:
+        """Validate a whole snapshot before changing this canonical owner.
+
+        The decoder has late-stage provenance checks (physical outcomes,
+        P-47 reports, and witnessed actions). It must never leave the live
+        owner half-restored when a later row is invalid. Construct a fresh
+        private candidate, validate it completely, then atomically replace
+        the state of this *same* externally referenced owner.
+        """
+        replacement = type(self)(self.config)
+        replacement._restore_causal_state_unchecked(state)
+        self.__dict__ = replacement.__dict__
+
+    def _restore_causal_state_unchecked(self, state: object) -> None:
         if not isinstance(state, Mapping) or state.get("config_version") != self.config.version:
             raise ValueError("causal model snapshot config mismatch")
         expected_contract = {
