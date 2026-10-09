@@ -42,14 +42,17 @@ def rig(*, drink_gain: float = 20.0):
 
 def physical_sample(world, model, *, step: int, primitive: str):
     """Actually change world state, then provide only Perception to model."""
-    before = world.capture_local(t_monde=step).as_dict()
+    before = SymbolicPerception().capture(
+        local_state=world.capture_local(t_monde=step).as_dict(),
+        telemetry=world.telemetry(),
+    )
     self_position = world.config.initial_position
     admitted = model.record_applied_hydration_observation(
         t_monde=step, primitive=primitive,
         option_ref=f"option:real:{step}:{primitive}",
         current_water_source=True,
         position=(self_position.x, self_position.y),
-        water_before=float(before["body"]["water"]),
+        water_before=float(before.body["water"]),
     )
     assert admitted
     result = world.apply(PrimitiveCommand(primitive), t_monde=step)
