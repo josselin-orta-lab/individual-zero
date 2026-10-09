@@ -286,16 +286,20 @@ class CausalLifecycleTests(unittest.TestCase):
     def test_failed_intervention_blocks_stale_n2_establishment(self):
         m = model()
         hypothesized(m)
-        for i, context in ((10, "zone1"), (11, "zone2")):
-            row = trial(i, context=context)
+        rows = (
+            trial(10, context="zone1"), trial(11, context="zone2"),
+        )
+        failed = trial(12, context="zone3", effect=False)
+        # Publish all comparator reports BEFORE the staged interventions:
+        # preparation cannot accidentally finalize n2 at the next phase 5.
+        for row in (*rows, failed):
             publish_matching_agency(m, row)
+        for row in rows:
             m.integrate_causal_intervention(row)
         self.assertEqual(
             [v.after for v in m.publish_causal_inference()],
             ["testee_par_intervention"],
         )
-        failed = trial(12, context="zone3", effect=False)
-        publish_matching_agency(m, failed)
         m.integrate_causal_intervention(failed)
         self.assertEqual(m.publish_causal_inference(), ())
         self.assertEqual(m.publish_causal_inference(), ())
