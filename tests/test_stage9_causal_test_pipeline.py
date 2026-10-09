@@ -44,8 +44,8 @@ class CausalTestPipelineTests(unittest.TestCase):
         hypothesis(runtime.causal_model)
         (target,) = runtime.causal_model.proposer_test()
         capture = runtime.stage3.perception.capture(
-            local_state=runtime.world.local_state(t_monde=1),
-            telemetry=runtime.world.body.as_dict(),
+            local_state=runtime.world.capture_local(t_monde=1).as_dict(),
+            telemetry=runtime.world.telemetry(),
         )
         initial = state_from_capture(capture=capture, is_night=False)
         proposal = propose_executable_causal_test(
