@@ -35,6 +35,19 @@ jobs:
       - name: Run bootstrap smoke execution
         run: individual-zero --cycles 3 --seed 0 --run-id ci-smoke --output /tmp/individual-zero-ci.jsonl
 
+      - name: Stage 9 matched hydration contrast (diagnostic, not acceptance)
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m lab.stage9_hydration_contrast_report | tee /tmp/stage9-hydration-contrast.jsonl
+
+      - name: Upload Stage 9 hydration contrast evidence
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage9-hydration-contrast-diagnostic
+          path: /tmp/stage9-hydration-contrast.jsonl
+          if-no-files-found: error
+
       - name: Stage 8 preregistered physical κ stress Brier gate
         if: matrix.python-version == '3.11'
         run: |
