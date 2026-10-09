@@ -154,7 +154,9 @@ The CI archives `stage9-hydration-contrast-diagnostic` and `stage9-acceptance-di
 Random-reward diagnostics count accepted *physical hydration observations*
 separately from distinct closed Memory episode identifiers. Multiple actual
 world transitions may occur within one episode; duplicating the same physical
-transition is forbidden. The report fields `lived_hydration_observations`
+transition is forbidden. The bench cross-checks both the experienced command
+and transition against the **same named closed Memory episode**, not merely
+a union of event references across all closed episodes. The report fields `lived_hydration_observations`
 and `independent_lived_hydration_episodes` therefore measure different
 units. An episode count alone is not proof of statistically independent
 experimental sampling.

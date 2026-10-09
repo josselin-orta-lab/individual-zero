@@ -74,13 +74,13 @@ class RandomRewardControl:
 def _audit_lived_hydration_provenance(
     observations: list[dict[str, object]],
     witnesses: dict[str, tuple[str, str]],
-    committed_refs: set[str],
+    committed_episode_refs: dict[str, frozenset[str]],
 ) -> int:
-    """Count distinct Memory episodes; credit each physical transition once.
+    """Verify each physical witness in its stated closed Memory episode.
 
-    An episode can contain several genuine commands and world transitions.
-    Neither multiple IDs for one physical transition nor an uncommitted
-    command/transition can create another causal observation.
+    An episode can contain multiple real transitions. A global union of
+    committed event IDs is insufficient: it would accept a command from one
+    episode and its claimed consequence from an unrelated closed episode.
     """
     episodes: set[str] = set()
     physical_transitions: set[str] = set()
@@ -89,10 +89,12 @@ def _audit_lived_hydration_provenance(
         if witness is None:
             raise AssertionError("lived hydration observation lacks witness")
         command_ref, transition_ref = witness
+        episode_refs = committed_episode_refs.get(row["episode_ref"])
         if (
-            row["observation_ref"] != transition_ref
-            or command_ref not in committed_refs
-            or transition_ref not in committed_refs
+            episode_refs is None
+            or row["observation_ref"] != transition_ref
+            or command_ref not in episode_refs
+            or transition_ref not in episode_refs
             or transition_ref in physical_transitions
         ):
             raise AssertionError(
@@ -290,11 +292,14 @@ def run_random_reward_negative_control(
     ]
     if len(observation_rows) != len(witnessed):
         raise AssertionError("physical hydration witness lacks admitted observation")
-    committed_refs = {
-        ref for episode in runtime.memory.episodes for ref in episode.event_refs
+    closed_episodes = runtime.memory.episodes
+    committed_episode_refs = {
+        episode.id: frozenset(episode.event_refs) for episode in closed_episodes
     }
+    if len(committed_episode_refs) != len(closed_episodes):
+        raise AssertionError("duplicate closed Memory episode identity")
     distinct_episode_count = _audit_lived_hydration_provenance(
-        observation_rows, witnessed, committed_refs,
+        observation_rows, witnessed, committed_episode_refs,
     )
     drinks = [row for row in observation_rows if row["cause_present"]]
     positive_drinks = [row for row in drinks if row["effect_present"]]

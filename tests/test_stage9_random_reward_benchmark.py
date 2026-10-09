@@ -38,8 +38,10 @@ class RandomRewardNegativeControlTests(unittest.TestCase):
             "hydration:2": ("command:2", "world-transition:2"),
         }
         committed = {
-            "command:1", "command:2",
-            "world-transition:1", "world-transition:2",
+            "memory:one": frozenset({
+                "command:1", "command:2",
+                "world-transition:1", "world-transition:2",
+            }),
         }
         self.assertEqual(
             _audit_lived_hydration_provenance(rows, witnesses, committed), 1,
@@ -61,8 +63,50 @@ class RandomRewardNegativeControlTests(unittest.TestCase):
             )
         with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
             _audit_lived_hydration_provenance(
-                rows, witnesses, committed - {"command:2"},
+                rows, witnesses, {
+                    "memory:one": committed["memory:one"] - {"command:2"},
+                },
             )
+
+    def test_rejects_witnesses_from_other_closed_memory_episodes(self):
+        rows = [{
+            "identifier": "hydration:1",
+            "episode_ref": "memory:one",
+            "observation_ref": "world-transition:1",
+        }]
+        witnesses = {
+            "hydration:1": ("command:1", "world-transition:1"),
+        }
+        # Both source IDs are in committed Memory, but not together in the
+        # episode claimed by this causal row. A global ref union falsely
+        # accepts these mismatched physical witnesses.
+        split = {
+            "memory:one": frozenset({"command:1"}),
+            "memory:two": frozenset({"world-transition:1"}),
+        }
+        with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
+            _audit_lived_hydration_provenance(rows, witnesses, split)
+
+        # Re-labelling the row to the other episode also cannot launder it.
+        with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
+            _audit_lived_hydration_provenance(
+                [{**rows[0], "episode_ref": "memory:two"}],
+                witnesses, split,
+            )
+
+        valid = {
+            "memory:one": frozenset({"command:1", "world-transition:1"}),
+            "memory:two": frozenset({"command:2", "world-transition:2"}),
+        }
+        extra = {
+            "identifier": "hydration:2",
+            "episode_ref": "memory:two",
+            "observation_ref": "world-transition:2",
+        }
+        both = {**witnesses, "hydration:2": ("command:2", "world-transition:2")}
+        self.assertEqual(
+            _audit_lived_hydration_provenance([*rows, extra], both, valid), 2,
+        )
 
     def test_real_world_negative_control_is_replayed(self):
         first = run_random_reward_negative_control(
