@@ -39,6 +39,7 @@ def make_report(registration: dict[str, object], *, candidates: int = 1):
                 run["naturally_acquired_false_candidates"] = [
                     {
                         "id": f"natural:{i}",
+                        "contingency_ref": f"causal:natural:{i}",
                         "episode_ref": f"natural-episode:{world}:{seed}:{i}",
                         "observation_ref": f"natural-transition:{world}:{seed}:{i}",
                         "causal_status": "hypothese_causale",
@@ -213,6 +214,39 @@ class Stage9ScientificAssessmentTests(unittest.TestCase):
         scored = assess_heldout_campaign(draft, sealed(report))
         self.assertEqual(scored["natural_false_candidate_count"], 10)
         self.assertIsNone(scored["scientific_verdict"])
+
+    def test_repeated_canonical_rule_cannot_inflate_false_rule_denominator(self):
+        draft = example_draft()
+        draft["confidence_method"] = "wilson_95"
+        report = make_report(draft, candidates=5)
+        natural = report["runs"][2]["naturally_acquired_false_candidates"]
+        # Independent event, independent episode and candidate alias still
+        # refer to the same canonical hypothesis and must count once.
+        natural[1]["contingency_ref"] = natural[0]["contingency_ref"]
+        with self.assertRaisesRegex(ValueError, "reused canonical false-rule"):
+            assess_heldout_campaign(draft, sealed(report))
+
+    def test_canonical_rules_are_run_scoped_for_independent_world_seeds(self):
+        draft = example_draft()
+        draft["confidence_method"] = "wilson_95"
+        report = make_report(draft, candidates=5)
+        # The same ontology-level contingency can be learned independently
+        # by two different individuals in distinct world/seed runs.
+        rows = [row for row in report["runs"] if row["naturally_acquired_false_candidates"]]
+        self.assertEqual(
+            rows[0]["naturally_acquired_false_candidates"][0]["contingency_ref"],
+            rows[1]["naturally_acquired_false_candidates"][0]["contingency_ref"],
+        )
+        scored = assess_heldout_campaign(draft, sealed(report))
+        self.assertEqual(scored["natural_false_candidate_count"], 10)
+        self.assertFalse(scored["golden_stage9_frozen"])
+
+    def test_obsolete_evidence_schema_cannot_be_treated_as_current(self):
+        draft = example_draft()
+        report = make_report(draft, candidates=5)
+        report["protocol_version"] = "stage9-heldout-evidence-v1"
+        with self.assertRaisesRegex(ValueError, "heldout evidence version mismatch"):
+            assess_heldout_campaign(draft, sealed(report))
 
     def test_one_physical_transition_never_counts_twice_with_episode_alias(self):
         draft = example_draft()

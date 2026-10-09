@@ -81,7 +81,14 @@ contains its registered physical world SHA-256, original and replay journal
 hashes, original and replay causal-state hashes, independently sourced
 known-cause case rows with ground truth and agency attribution, and the
 naturally acquired false-rule candidates in negative-control worlds. The
-whole envelope has its own canonical SHA-256. A physical observation source
+whole envelope has its own canonical SHA-256. The held-out evidence
+protocol is `stage9-heldout-evidence-v2`: each naturally acquired
+false-rule candidate must identify both its individual sample ID and its
+canonical `contingency_ref`. A canonical causal rule may be counted only
+once within a world/seed run, regardless of how many physical observations,
+Memory episodes or candidate ID aliases mention it. The same canonical
+predicate/reference may legitimately be learned in different independent
+world/seed runs. A physical observation source
 reference may be counted **only once within a world/seed run**, across both
 known-cause cases and naturally acquired false-rule candidates. A closed
 Memory episode may legitimately contain multiple distinct world transitions:

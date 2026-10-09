@@ -20,7 +20,7 @@ from .determinism import canonical_causal_bytes, sha256_hex
 from .stage9_scientific_preregistration import validate_registration
 
 
-EVIDENCE_VERSION = "stage9-heldout-evidence-v1"
+EVIDENCE_VERSION = "stage9-heldout-evidence-v2"
 SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 TRUTHS = frozenset({"self", "world", "none"})
 ATTRIBUTIONS = frozenset({"self_compatible", "world_justified", "uncertain"})
@@ -32,7 +32,8 @@ CASE_FIELDS = frozenset({
     "id", "episode_ref", "observation_ref", "ground_truth", "attribution",
 })
 CANDIDATE_FIELDS = frozenset({
-    "id", "episode_ref", "observation_ref", "causal_status",
+    "id", "contingency_ref", "episode_ref", "observation_ref",
+    "causal_status",
 })
 RUN_FIELDS = frozenset({
     "world_id", "world_sha256", "seed",
@@ -152,6 +153,7 @@ def assess_heldout_campaign(
             raise ValueError("heldout cases and candidates must be lists")
         seen_cases = set()
         seen_candidates = set()
+        seen_candidate_contingencies = set()
         # Evidence identity is a physical observation source, not an
         # autobiographical episode. One closed episode may contain distinct
         # transitions (and distinct §13.2 intervention contexts). Independence
@@ -208,7 +210,14 @@ def assess_heldout_campaign(
                 or item["id"] in seen_candidates
             ):
                 raise ValueError("invalid or repeated natural candidate")
+            # The superstition denominator counts canonical causal rules,
+            # never one row for each observation of a single learned rule.
+            # Repetition under fresh candidate IDs would otherwise dilute
+            # an established false-rule rate with duplicate hypotheses.
+            if item["contingency_ref"] in seen_candidate_contingencies:
+                raise ValueError("reused canonical false-rule contingency")
             seen_candidates.add(item["id"])
+            seen_candidate_contingencies.add(item["contingency_ref"])
             physical = item["observation_ref"]
             if physical in used_physical_refs:
                 raise ValueError("reused physical natural candidate evidence")
