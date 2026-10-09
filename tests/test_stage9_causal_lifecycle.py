@@ -330,6 +330,53 @@ class CausalLifecycleTests(unittest.TestCase):
                     m.get(REF).causal_status, "testee_par_intervention",
                 )
 
+    def test_same_observation_step_cannot_supply_two_independent_contexts(self):
+        # Two different sent commands and comparator IDs using one accessible
+        # Perception capture are NOT two independently observed experiments.
+        # P-35 n2 must count distinct physical follow-ups, not aliases.
+        first = trial(10, context="zone1")
+        alias = replace(
+            trial(11, context="zone2"),
+            emitted_step=first.emitted_step - 1,
+            observed_step=first.observed_step,
+        )
+        self.assertNotEqual(first.emitted_step, alias.emitted_step)
+        self.assertNotEqual(first.observation_ref, alias.observation_ref)
+        self.assertNotEqual(first.comparator_ref, alias.comparator_ref)
+
+        for separate_publications in (False, True):
+            with self.subTest(separate_publications=separate_publications):
+                m = model()
+                hypothesized(m)
+                publish_matching_agency(m, first)
+                publish_matching_agency(m, alias)
+                m.integrate_causal_intervention(first)
+                if separate_publications:
+                    self.assertEqual(
+                        [v.after for v in m.publish_causal_inference()],
+                        ["testee_par_intervention"],
+                    )
+                m.integrate_causal_intervention(alias)
+                before = m.export_causal_state()
+                replay = model()
+                replay.restore_causal_state(before)
+                changes = m.publish_causal_inference()
+                self.assertEqual(changes, replay.publish_causal_inference())
+                self.assertEqual(
+                    [v.after for v in changes],
+                    [] if separate_publications else ["testee_par_intervention"],
+                )
+                self.assertEqual(m.export_causal_state(), replay.export_causal_state())
+                state = m.export_causal_state()
+                self.assertEqual(len(state["causal_interventions"]), 1)
+                self.assertEqual(
+                    len([item for item in state["causal_credits"]
+                         if item[2] == "intervention"]),
+                    1,
+                )
+                self.assertEqual(m.get(REF).causal_status, "testee_par_intervention")
+                self.assertEqual(m.publish_causal_inference(), ())
+
     def test_failed_intervention_blocks_stale_n2_establishment(self):
         m = model()
         hypothesized(m)

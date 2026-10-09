@@ -1682,7 +1682,9 @@ class CausalModel:
             # A Memory episode may contain several physically distinct
             # interventions. Its identifier does not prove uniqueness: count
             # each observed transition once, and reject reused P-47 outcomes
-            # or repeated world-step claims for the same contingency.
+            # or repeated emission/observation world-step claims for the same
+            # contingency. Different event IDs pointing to the same observed
+            # step cannot manufacture an additional independent context.
             key = (trial.contingency_ref, trial.observation_ref, "intervention")
             if key in credits or any(
                 other.observation_ref == trial.observation_ref
@@ -1691,6 +1693,7 @@ class CausalModel:
                     and (
                         other.comparator_ref == trial.comparator_ref
                         or other.emitted_step == trial.emitted_step
+                        or other.observed_step == trial.observed_step
                     )
                 )
                 for other in interventions.values()
