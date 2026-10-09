@@ -48,6 +48,45 @@ jobs:
           path: /tmp/stage9-hydration-contrast.jsonl
           if-no-files-found: error
 
+      # A 300-step full-journal and all-owner comparison is a software
+      # reference diagnostic only. No Stage-9 scientific Golden is frozen.
+      - name: Stage 9 extended exact reference replay (diagnostic, not Golden)
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m lab.stage9_reference_replay --steps 300 \
+            --journal /tmp/stage9-reference-diagnostic.jsonl \
+            > /tmp/stage9-reference-diagnostic.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from lab.determinism import sha256_hex
+          report = json.loads(Path(
+              "/tmp/stage9-reference-diagnostic.json"
+          ).read_text(encoding="utf-8"))
+          journal = Path("/tmp/stage9-reference-diagnostic.jsonl").read_bytes()
+          if (
+              report["classification"] != "diagnostic_only"
+              or report["golden_stage9_frozen"]
+              or report["scientific_verdict"] is not None
+              or report["steps"] != 300
+              or not report["identical_independent_reexecution"]
+              or report["journal_bytes"] != len(journal) - 1
+              or report["journal_sha256"] != sha256_hex(journal[:-1])
+          ):
+              raise SystemExit("Stage 9 300-step replay diagnostic failed")
+          print("stage9_300_step_replay_exact=true")
+          PY
+
+      - name: Upload Stage 9 extended software reference diagnostic
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage9-extended-reference-diagnostic
+          path: |
+            /tmp/stage9-reference-diagnostic.json
+            /tmp/stage9-reference-diagnostic.jsonl
+          if-no-files-found: error
+
       # Evidence publishing is not Stage-9 scientific acceptance. The
       # laboratory must still preregister the threshold and obtain real
       # independent naturally acquired causal candidates before the Golden.

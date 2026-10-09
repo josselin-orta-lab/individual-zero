@@ -206,9 +206,10 @@ python -m unittest discover -s tests -v
 python -m lab.stage9_hydration_contrast_report
 python -m lab.stage9_spontaneous_superstition_matrix
 python -m lab.stage9_acceptance_report
+python -m lab.stage9_reference_replay --steps 300 --journal stage9-reference-diagnostic.jsonl
 ```
 
-The CI archives `stage9-hydration-contrast-diagnostic` and `stage9-acceptance-diagnostics`. Their hashes identify **diagnostic artefacts**, not a scientific preregistration or Golden.
+The CI archives `stage9-hydration-contrast-diagnostic`, `stage9-acceptance-diagnostics`, and `stage9-extended-reference-diagnostic`. The extended reference independently executes 300 complete world steps twice, compares the entire canonical journal and every causal owner state, and retains the first journal. All these hashes identify **diagnostic artefacts**, not a scientific preregistration or Golden.
 
 Random-reward diagnostics count accepted *physical hydration observations*
 separately from distinct closed Memory episode identifiers. Multiple actual
