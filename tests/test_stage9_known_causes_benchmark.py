@@ -121,6 +121,7 @@ class KnownCausesBenchmarkTests(unittest.TestCase):
             event_id="send:1",
             causal_event={
                 "kind": "command_experienced", "primitive": "boire",
+                "parameters": {},
                 "attempt_ref": "attempt:1", "t_monde": 1,
             },
         )
