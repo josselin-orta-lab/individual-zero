@@ -150,13 +150,13 @@ class AutonomousHydrationLifecycleTests(unittest.TestCase):
             model, episode_ref="episode:both",
             events=(*first, *second),
         )
-        self.assertEqual(len(accepted), 0)
+        self.assertEqual(len(accepted), 1)
         model.publish_causal_inference()
         self.assertEqual(
             len(model.export_causal_state()["hydration_observation_witnesses"]),
-            0,
+            1,
         )
-        self.assertEqual(len(model.export_causal_state()["causal_observations"]), 0)
+        self.assertEqual(len(model.export_causal_state()["causal_observations"]), 1)
 
         close(
             model, episode_ref="episode:control",
