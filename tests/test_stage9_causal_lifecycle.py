@@ -118,6 +118,53 @@ class CausalLifecycleTests(unittest.TestCase):
         )
         self.assertEqual(m.get(REF).safety_status,"aucun")
 
+    def test_multiple_valid_reviews_in_one_publication_promote_only_once(self):
+        m = model()
+        correlated(m)
+        before = m.get(REF)
+        self.assertEqual(before.causal_status, "correlation_observee")
+        second = CausalHypothesisReview(
+            identifier="review:2",
+            contingency_ref=REF,
+            alternatives=("observed_hunger_control",),
+            contrasting_pairs=(("observation:2", "observation:4"),),
+        )
+        m.integrate_hypothesis_review(review())
+        m.integrate_hypothesis_review(second)
+        frozen = m.export_causal_state()
+
+        twin = model()
+        twin.restore_causal_state(frozen)
+        change = m.publish_causal_inference()
+        self.assertEqual(change, twin.publish_causal_inference())
+        self.assertEqual(len(change), 1)
+        self.assertEqual(change[0].before, "correlation_observee")
+        self.assertEqual(change[0].after, "hypothese_causale")
+        self.assertEqual(change[0].version, before.version + 1)
+        self.assertEqual(m.get(REF).version, before.version + 1)
+        self.assertEqual(
+            m.export_causal_state()["causal_reviews"],
+            ["review:1", "review:2"],
+        )
+        self.assertEqual(m.export_causal_state(), twin.export_causal_state())
+        self.assertEqual(m.publish_causal_inference(), ())
+        self.assertEqual(m.get(REF).version, before.version + 1)
+
+    def test_invalid_second_review_rolls_back_entire_publication(self):
+        m = model()
+        correlated(m)
+        m.integrate_hypothesis_review(review())
+        m.integrate_hypothesis_review(CausalHypothesisReview(
+            identifier="review:2",
+            contingency_ref=REF,
+            alternatives=("unobserved_control",),
+            contrasting_pairs=(("observation:2", "observation:missing"),),
+        ))
+        before = m.export_causal_state()
+        with self.assertRaisesRegex(ValueError, "matched controls"):
+            m.publish_causal_inference()
+        self.assertEqual(m.export_causal_state(), before)
+
     def test_equal_base_rate_or_unmatched_context_never_correlates(self):
         m=model()
         for x in (obs(1,cause=True,effect=True),

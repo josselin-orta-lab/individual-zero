@@ -1639,6 +1639,12 @@ class CausalModel:
                     raise ValueError("review lacks independent matched controls")
             reviews.add(review.identifier)
             current = published[old.ref]
+            # Multiple independently supported reviews may share a phase-5
+            # batch. Keep their provenance, but promote the canonical
+            # contingency only once: a hypothesis cannot transition to
+            # the same status again or gain a fictitious new version.
+            if current.causal_status != "correlation_observee":
+                continue
             new = replace(current, causal_status="hypothese_causale", version=current.version + 1)
             published[old.ref] = new
             changes.append(CausalInferenceChange(old.ref, current.causal_status, new.causal_status, new.version, review.identifier, "matched_alternatives"))
