@@ -175,7 +175,16 @@ class CausalLifecycleTests(unittest.TestCase):
         restored = model()
         restored.restore_causal_state(state)
         self.assertEqual(restored.export_causal_state(), state)
+        # An empty phase-5 publication advances the owner's version even
+        # when it creates no causal status change. Advance both owners and
+        # compare like-for-like checkpoints before testing atomic rejection.
         self.assertEqual(restored.publish_causal_inference(), ())
+        self.assertEqual(m.publish_causal_inference(), ())
+        after_empty_publication = m.export_causal_state()
+        self.assertEqual(restored.export_causal_state(), after_empty_publication)
+        self.assertEqual(
+            after_empty_publication["version"], state["version"] + 1,
+        )
 
         # A replayed contrast cannot alias the same physical world step
         # under another source-event ID, even if the episode matches.
@@ -187,7 +196,9 @@ class CausalLifecycleTests(unittest.TestCase):
             ValueError, "review proof lacks independent matched controls",
         ):
             restored.restore_causal_state(damaged)
-        self.assertEqual(restored.export_causal_state(), state)
+        self.assertEqual(
+            restored.export_causal_state(), after_empty_publication,
+        )
 
     def test_review_rejects_two_arms_of_same_world_step(self):
         m = model()
