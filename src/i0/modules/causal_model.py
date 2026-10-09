@@ -2030,10 +2030,71 @@ class CausalModel:
         pending = [SafetyEvidence(**row) for row in state["pending"]]
         for e in pending:
             e.validate()
-        episodes = {tuple(x) for x in state["episodes"]}
-        observations = {tuple(x) for x in state["observations"]}
-        if any(len(key) != 2 for key in episodes | observations):
-            raise ValueError("invalid causal evidence credit key")
+        # DC-05 / INV-33: safety evidence also has a publication ledger.
+        # A snapshot must not silently collapse duplicate identities, erase
+        # credited episodes, or restore an unearned safety veto.
+        episode_rows = state["episodes"]
+        observation_rows = state["observations"]
+        for rows in (episode_rows, observation_rows):
+            if any(
+                not isinstance(row, (tuple, list))
+                or len(row) != 2
+                or any(not isinstance(value, str) or not value for value in row)
+                for row in rows
+            ):
+                raise ValueError("invalid safety physical credit key")
+        episodes = {tuple(row) for row in episode_rows}
+        observations = {tuple(row) for row in observation_rows}
+        if (
+            len(episodes) != len(episode_rows)
+            or len(observations) != len(observation_rows)
+        ):
+            raise ValueError("duplicate safety physical credit in snapshot")
+        seen_rows = list(state["seen"])
+        if (
+            any(not isinstance(ref, str) or not ref for ref in seen_rows)
+            or len(seen_rows) != len(set(seen_rows))
+        ):
+            raise ValueError("invalid or duplicate seen safety evidence identity")
+        pending_refs = [e.identifier for e in pending]
+        if (
+            len(pending_refs) != len(set(pending_refs))
+            or not set(pending_refs).isdisjoint(seen_rows)
+        ):
+            raise ValueError("pending safety evidence collides with seen identity")
+        accepted_refs = [
+            ref for record in records.values() for ref in record.evidence_refs
+        ]
+        if (
+            len(accepted_refs) != len(set(accepted_refs))
+            or not set(accepted_refs).issubset(seen_rows)
+        ):
+            raise ValueError("unwitnessed published safety evidence reference")
+        # Every admitted safety episode adds one episode credit, one physical
+        # observation credit and one reference. The seen ledger may be longer:
+        # duplicate or nonindependent evidence is recorded as already seen.
+        if not (
+            len(accepted_refs) == len(episodes) == len(observations)
+        ):
+            raise ValueError("safety snapshot credits mismatch published evidence")
+        for record in records.values():
+            earned = {
+                episode for contingency, episode in episodes
+                if contingency == record.ref
+            }
+            if (
+                not set(record.harmful_episodes).issubset(earned)
+                or not set(record.harmless_episodes).issubset(earned)
+                or len(record.harmful_episodes) != len(set(record.harmful_episodes))
+                or len(record.harmless_episodes) != len(set(record.harmless_episodes))
+            ):
+                raise ValueError("safety snapshot episode provenance mismatch")
+            if (
+                record.safety_status == "etabli_pour_securite"
+                and not record.innate
+                and len(record.harmful_episodes) < self.config.n_sec
+            ):
+                raise ValueError("safety snapshot status lacks independent harm evidence")
         version = state["version"]
         if not isinstance(version, int) or version < 0:
             raise ValueError("invalid causal model version")
@@ -2041,7 +2102,7 @@ class CausalModel:
         self._pending = pending
         self._credited_episodes = episodes
         self._credited_observations = observations
-        self._seen_ids = set(state["seen"])
+        self._seen_ids = set(seen_rows)
         exposure_rows = state.get("lived_food_exposures", [])
         exposures = {}
         for raw in exposure_rows:

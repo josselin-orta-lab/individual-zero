@@ -1,5 +1,6 @@
 """Stage-9 DC-05 canonical safety: episode deduplication and sole read source."""
 import unittest
+from copy import deepcopy
 
 from i0.modules.action_control import (
     ActionControl, ActionControlConfig, PreparedCommand, StaticSafetyFacts, Admissibility
@@ -118,6 +119,75 @@ class CanonicalCausalSafetyTests(unittest.TestCase):
         self.assertFalse(veto.ok)
         self.assertEqual(veto.rule_id, "toxic_item_consumption")
         self.assertEqual(m.get("toxic:berry_b").causal_status, "aucun")
+
+
+    def test_restore_preserves_legitimate_safety_veto_and_pending_evidence(self):
+        m = model()
+        for identifier in ("harm1", "harm2"):
+            m.integrate(evidence(identifier))
+            m.publish()
+        self.assertEqual(
+            m.get("toxic:berry_b").safety_status, "etabli_pour_securite",
+        )
+        m.integrate(evidence("safe1", harm_observed=False))
+        m.publish()
+        m.integrate(evidence("pending1", harm_observed=False))
+        snapshot = m.export_causal_state()
+        self.assertEqual(len(snapshot["pending"]), 1)
+        self.assertEqual(len(snapshot["episodes"]), 3)
+        clone = model()
+        clone.restore_causal_state(snapshot)
+        self.assertEqual(clone.export_causal_state(), snapshot)
+        self.assertEqual(m.publish(), clone.publish())
+        self.assertEqual(m.export_causal_state(), clone.export_causal_state())
+
+    def test_safety_snapshot_cannot_forge_veto_or_erase_physical_credits(self):
+        m = model()
+        for identifier in ("harm1", "harm2"):
+            m.integrate(evidence(identifier))
+            m.publish()
+        baseline = m.export_causal_state()
+        bad = {}
+        bad["duplicate_episode"] = deepcopy(baseline)
+        bad["duplicate_episode"]["episodes"].append(
+            deepcopy(baseline["episodes"][0])
+        )
+        bad["duplicate_observation"] = deepcopy(baseline)
+        bad["duplicate_observation"]["observations"].append(
+            deepcopy(baseline["observations"][0])
+        )
+        bad["duplicate_seen"] = deepcopy(baseline)
+        bad["duplicate_seen"]["seen"].append(baseline["seen"][0])
+        bad["missing_seen"] = deepcopy(baseline)
+        bad["missing_seen"]["seen"].remove("harm1")
+        bad["missing_credit"] = deepcopy(baseline)
+        bad["missing_credit"]["episodes"].pop()
+        bad["fictional_harm"] = deepcopy(baseline)
+        bad["fictional_harm"]["published"][0]["harmful_episodes"] = (
+            "episode:fictional", "episode:harm2",
+        )
+        bad["replayed_pending"] = deepcopy(baseline)
+        row = evidence("harm1")
+        bad["replayed_pending"]["pending"].append({
+            name: getattr(row, name) for name in row.__dataclass_fields__
+        })
+        for label, damaged in bad.items():
+            with self.subTest(label=label):
+                with self.assertRaises(ValueError):
+                    m.restore_causal_state(damaged)
+                self.assertEqual(m.export_causal_state(), baseline)
+
+        one = model()
+        one.integrate(evidence("harm1"))
+        one.publish()
+        before = one.export_causal_state()
+        claimed = deepcopy(before)
+        claimed["published"][0]["safety_status"] = "etabli_pour_securite"
+        with self.assertRaisesRegex(
+            ValueError, "safety snapshot status lacks independent harm evidence",
+        ):
+            one.restore_causal_state(claimed)
+        self.assertEqual(one.export_causal_state(), before)
 
     def test_snapshot_pending_and_replay_are_identical(self):
         m = model()
