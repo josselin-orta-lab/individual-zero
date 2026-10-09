@@ -145,6 +145,9 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
                         path.write_bytes(original + b" ")
                         _git(repo, "add", "research/registration.json")
                     _git(repo, "commit", "-qm", "tamper with registered protocol")
+                    # git rm removes the now-empty research directory. Restore
+                    # the parent directory before recreating its frozen file.
+                    path.parent.mkdir(parents=True, exist_ok=True)
                     path.write_bytes(original)
                     _git(repo, "add", "research/registration.json")
                     _git(repo, "commit", "-qm", "restore original registered bytes")
