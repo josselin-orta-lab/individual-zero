@@ -22,6 +22,9 @@ from .replay import verify_reexecution
 from .stage9_known_causes_benchmark import run_known_cause_probes
 from .stage9_random_reward_benchmark import run_random_reward_negative_control
 from .stage9_reference_fixture import build_stage9_reference_runtime
+from .stage9_spontaneous_superstition_matrix import (
+    run_spontaneous_superstition_matrix,
+)
 
 
 NORMATIVE_SPECIFICATION = (
@@ -166,6 +169,22 @@ def generate_stage9_acceptance_report(
     ):
         raise AssertionError("diagnostic must not invent scientific success")
 
+    # The existing fixed multi-world negative-control diagnostic measures
+    # whether this runtime *ever* produces naturally acquired candidates.
+    # A zero denominator is "not_evaluable", never a passing superstition rate.
+    spontaneous = run_spontaneous_superstition_matrix(
+        seeds=(
+            random_reward_seed,
+            random_reward_seed + 1,
+            random_reward_seed + 2,
+        ),
+        steps=random_reward_steps,
+    )
+    if spontaneous.natural_false_rule_rate is None:
+        if spontaneous.spontaneously_observed_candidates != 0:
+            raise AssertionError("spontaneous false-rule denominator inconsistency")
+    elif spontaneous.spontaneously_observed_candidates <= 0:
+        raise AssertionError("spontaneous false-rule rate without candidate exposure")
     replay = _reference_reexecution()
     night = tuple({
         "scenario": identifier,
@@ -220,11 +239,56 @@ def generate_stage9_acceptance_report(
                 ),
                 "naturally_learned_false_rule_rate": None,
                 "preregistered_maximum_false_rule_rate": None,
+                "spontaneous_matrix_protocol": spontaneous.protocol_version,
+                "spontaneous_matrix_sha256": spontaneous.digest,
+                "spontaneous_matrix_seeds": spontaneous.seeds,
+                "spontaneous_matrix_worlds": spontaneous.world_variants,
+                "spontaneous_matrix_runs": len(spontaneous.runs),
+                "spontaneous_candidate_count": (
+                    spontaneous.spontaneously_observed_candidates
+                ),
+                "spontaneously_established_false_rules": (
+                    spontaneous.established_false_rules
+                ),
+                "spontaneous_diagnostic_rate": (
+                    spontaneous.natural_false_rule_rate
+                ),
+                "independent_lived_hydration_episodes": (
+                    spontaneous.total_lived_hydration_observations
+                ),
+                "observed_drinking_episodes": (
+                    spontaneous.lived_drink_observations
+                ),
+                "observed_wait_control_episodes": (
+                    spontaneous.lived_wait_control_observations
+                ),
+                "runs_with_both_drink_and_wait": (
+                    spontaneous.runs_with_observed_drink_and_wait
+                ),
+                "runs_with_n1_positive_drinks": (
+                    spontaneous.runs_with_independent_positive_drinks
+                ),
+                "runs_with_matched_controls": (
+                    spontaneous.runs_with_matched_controls
+                ),
+                "spontaneous_evaluation_status": (
+                    spontaneous.evaluation_status
+                ),
+                "spontaneous_correlation_readiness": (
+                    spontaneous.correlation_readiness
+                ),
             },
             outstanding=(
-                "A frozen scientific protocol, naturally acquired causal "
-                "candidates, multiple independent trials, and a preregistered "
-                "maximum superstition rate are required."
+                "The multi-seed diagnostic measures physical opportunities "
+                "but no naturally acquired false-rule candidates; its "
+                "denominator is zero and no scientific rate can be inferred. "
+                "An independent frozen protocol, sufficient naturally formed "
+                "candidates, and an author-preregistered superstition "
+                "threshold remain required."
+                if spontaneous.spontaneously_observed_candidates == 0 else
+                "The matrix has natural candidates but is still only a "
+                "diagnostic: independent preregistration, a fixed maximum "
+                "false-rule rate, and held-out trials remain required."
             ),
         ),
         Stage9AcceptanceCheck(

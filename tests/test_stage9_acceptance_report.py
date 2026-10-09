@@ -29,6 +29,21 @@ class Stage9AcceptanceReportTests(unittest.TestCase):
         self.assertEqual(superstition["classification"], "not_evaluable")
         self.assertIsNone(superstition["evidence"]["naturally_learned_false_rule_rate"])
         self.assertIsNone(superstition["evidence"]["preregistered_maximum_false_rule_rate"])
+        self.assertEqual(superstition["evidence"]["spontaneous_matrix_seeds"], [42, 43, 44])
+        self.assertEqual(superstition["evidence"]["spontaneous_matrix_runs"], 6)
+        self.assertEqual(len(superstition["evidence"]["spontaneous_matrix_sha256"]), 64)
+        self.assertGreaterEqual(
+            superstition["evidence"]["independent_lived_hydration_episodes"], 1,
+        )
+        self.assertEqual(superstition["evidence"]["spontaneous_candidate_count"], 0)
+        self.assertEqual(
+            superstition["evidence"]["spontaneous_evaluation_status"], "not_evaluable",
+        )
+        self.assertIsNone(superstition["evidence"]["spontaneous_diagnostic_rate"])
+        self.assertEqual(
+            superstition["evidence"]["spontaneous_correlation_readiness"],
+            "no_matched_positive_exposures",
+        )
         self.assertEqual(
             superstition["evidence"]["external_inputs_verified_seeded"], 13,
         )
@@ -39,6 +54,25 @@ class Stage9AcceptanceReportTests(unittest.TestCase):
         )
         self.assertTrue(all(check["outstanding"] for check in data["checks"]))
         self.assertEqual(len(data["evidence_sha256"]), 64)
+
+    def test_spontaneous_multiworld_diagnostic_is_seeded_without_false_acceptance(self):
+        one = generate_stage9_acceptance_report(
+            random_reward_seed=71, random_reward_steps=10,
+        ).as_dict()
+        two = generate_stage9_acceptance_report(
+            random_reward_seed=71, random_reward_steps=10,
+        ).as_dict()
+        self.assertEqual(one, two)
+        evidence = next(
+            check["evidence"] for check in one["checks"]
+            if check["criterion"] == "superstitious_rules_under_random_reward"
+        )
+        self.assertEqual(evidence["spontaneous_matrix_seeds"], (71, 72, 73))
+        self.assertEqual(evidence["spontaneous_matrix_runs"], 6)
+        self.assertIsNone(evidence["naturally_learned_false_rule_rate"])
+        self.assertIsNone(evidence["spontaneous_diagnostic_rate"])
+        self.assertEqual(one["acceptance_status"], "open")
+        self.assertFalse(one["golden_stage9_frozen"])
 
     def test_invalid_seed_and_length_cannot_be_scored(self):
         for seed, steps in ((True, 14), (-1, 14), (1, True), (1, 5)):
