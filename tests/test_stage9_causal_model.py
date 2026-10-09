@@ -199,8 +199,10 @@ class CanonicalCausalSafetyTests(unittest.TestCase):
             with self.subTest(kind=kind):
                 broken = deepcopy(baseline)
                 broken[kind][0][0] = "toxic:another-berry"
+                # The ledger itself has not changed; its cross-reference
+                # with the physical credits is what must reject this snapshot.
                 with self.assertRaisesRegex(
-                    ValueError, "safety snapshot ledger digest mismatch",
+                    ValueError, "safety snapshot admitted evidence ledger mismatch",
                 ):
                     m.restore_causal_state(broken)
                 self.assertEqual(m.export_causal_state(), baseline)
