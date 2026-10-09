@@ -364,6 +364,55 @@ class CausalLifecycleTests(unittest.TestCase):
             ["etablie"],
         )
 
+    def test_late_negative_in_same_batch_revokes_newly_established_claim(self):
+        # Phase 5 receives observations in world-time order, while holding
+        # its publication atomic. An already tested hypothesis must not
+        # remain established after a later contradictory lived intervention.
+        m = model()
+        hypothesized(m)
+        publish_trial(m, trial(10, context="zone1"))
+        self.assertEqual(m.get(REF).causal_status, "testee_par_intervention")
+
+        positive = trial(11, context="zone2")
+        negative = trial(12, context="zone3", effect=False)
+        for row in (positive, negative):
+            publish_matching_agency(m, row)
+            m.integrate_causal_intervention(row)
+
+        frozen = m.export_causal_state()
+        replay = model()
+        replay.restore_causal_state(frozen)
+        changes = m.publish_causal_inference()
+        self.assertEqual(changes, replay.publish_causal_inference())
+        self.assertEqual(changes[-1].after, "hypothese_causale")
+        self.assertEqual(m.get(REF).causal_status, "hypothese_causale")
+        self.assertEqual(m.export_causal_state(), replay.export_causal_state())
+        self.assertEqual(len(m.export_causal_state()["causal_interventions"]), 3)
+        self.assertEqual(m.publish_causal_inference(), ())
+        # The last negative invalidates pre-refutation positive contexts.
+        publish_trial(m, trial(13, context="zone1"))
+        self.assertEqual(m.get(REF).causal_status, "testee_par_intervention")
+        publish_trial(m, trial(14, context="zone2"))
+        self.assertEqual(m.get(REF).causal_status, "etablie")
+
+    def test_negative_before_positive_in_batch_does_not_reuse_stale_contexts(self):
+        m = model()
+        hypothesized(m)
+        publish_trial(m, trial(10, context="zone1"))
+        self.assertEqual(m.get(REF).causal_status, "testee_par_intervention")
+        earlier_negative = trial(11, context="zone2", effect=False)
+        later_positive = trial(12, context="zone3")
+        for row in (earlier_negative, later_positive):
+            publish_matching_agency(m, row)
+            m.integrate_causal_intervention(row)
+        self.assertEqual(m.publish_causal_inference(), ())
+        self.assertEqual(m.get(REF).causal_status, "testee_par_intervention")
+        self.assertEqual(m.publish_causal_inference(), ())
+        # The old zone1 positive is stale; the later zone3 observation alone
+        # cannot satisfy n2, despite being processed in the same batch.
+        publish_trial(m, trial(13, context="zone4"))
+        self.assertEqual(m.get(REF).causal_status, "etablie")
+
     def test_snapshot_replay_pending_and_no_oracle(self):
         m=model()
         correlated(m)

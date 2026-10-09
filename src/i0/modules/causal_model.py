@@ -1708,9 +1708,14 @@ class CausalModel:
                 previous_boundary = revisions.get(old.ref, (-1, ""))[0]
                 if trial.observed_step > previous_boundary:
                     revisions[old.ref] = (trial.observed_step, trial.identifier)
+                # An earlier successful trial in this *same* phase-5 batch
+                # can have established the claim. A later real counterexample
+                # must revoke that status, even if the batch's frozen input
+                # was only "testee_par_intervention". Do not treat the stale
+                # input status as the current epistemic state.
                 next_status = (
                     "hypothese_causale"
-                    if old.causal_status == "etablie"
+                    if current.causal_status == "etablie"
                     else current.causal_status
                 )
             else:
