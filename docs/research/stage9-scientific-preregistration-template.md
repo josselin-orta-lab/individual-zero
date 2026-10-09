@@ -101,7 +101,13 @@ witness audit remains mandatory before treating provisional Wilson intervals
 as scientific evidence or freezing a Golden.
 
 The scorer recomputes attribution accuracy, abstentions, false self links,
-false-rule rates and two-sided 95% Wilson confidence intervals.
+false-rule rates and two-sided 95% Wilson confidence intervals. It also
+reports deterministic `per_run_metrics` for each registered world and seed,
+with separate known-cause, no-effect and natural-candidate counts, plus
+`negative_runs_with_candidates` and `registered_negative_runs`. Individual
+run counts sum to pooled counts. These figures expose concentration for
+independent review, but do not prove trial independence, change frozen
+thresholds or authorize a Golden.
 Each registered positive world × seed run must contain at least one
 independently observed known-positive-cause case. If a positive run contains
 only no-effect controls or no causal cases, the assessor reports

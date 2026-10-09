@@ -128,6 +128,14 @@ def assess_heldout_campaign(
     known_cases = correct = uncertain = false_self = 0
     no_effect_controls = no_effect_abstentions = no_effect_false_attributions = 0
     natural_candidates = false_established = 0
+    # Pooled metrics are provisional: disclose sample concentration per run.
+    count_labels = (
+        "known_cause_cases", "correct_links", "uncertain_links",
+        "false_self_links", "no_effect_control_cases",
+        "no_effect_control_abstentions", "no_effect_control_false_attributions",
+        "natural_false_candidate_count", "false_established_count",
+    )
+    run_metrics = []
     for row in rows:
         if not isinstance(row, dict) or set(row) != RUN_FIELDS:
             raise ValueError("invalid heldout run schema")
@@ -139,6 +147,11 @@ def assess_heldout_campaign(
         ):
             raise ValueError("unexpected or duplicate heldout world/seed run")
         encountered.add((world, seed))
+        counts_before = (
+            known_cases, correct, uncertain, false_self, no_effect_controls,
+            no_effect_abstentions, no_effect_false_attributions,
+            natural_candidates, false_established,
+        )
         if row["world_sha256"] != registration["holdout_world_sha256"][world]:
             raise ValueError("heldout physical world digest does not match registration")
         for label in (
@@ -238,6 +251,28 @@ def assess_heldout_campaign(
             used_physical_refs.add(physical)
             natural_candidates += 1
             false_established += int(item["causal_status"] == "etablie")
+        counts_after = (
+            known_cases, correct, uncertain, false_self, no_effect_controls,
+            no_effect_abstentions, no_effect_false_attributions,
+            natural_candidates, false_established,
+        )
+        run_metrics.append({
+            "world_id": world, "seed": seed,
+            **{
+                label: after - before
+                for label, before, after in zip(
+                    count_labels, counts_before, counts_after,
+                )
+            },
+        })
+    # Sorting prevents the report from concealing concentration via run order.
+    # Run breakdown remains diagnostic, not a proof of sample independence.
+    run_metrics.sort(key=lambda item: (item["world_id"], item["seed"]))
+    negative_runs_with_candidates = sum(
+        item["natural_false_candidate_count"] > 0
+        for item in run_metrics
+        if item["world_id"] in registration["negative_world_ids"]
+    )
     if encountered != expected:
         raise ValueError("heldout world/seed coverage does not match registration")
     missing_positive_runs = sorted(expected_positive_runs - witnessed_positive_runs)
@@ -269,6 +304,11 @@ def assess_heldout_campaign(
         "registration_digest": registration_digest,
         "evidence_sha256": supplied_digest,
         "runs": len(rows),
+        "per_run_metrics": run_metrics,
+        "negative_runs_with_candidates": negative_runs_with_candidates,
+        "registered_negative_runs": (
+            len(registration["negative_world_ids"]) * len(seeds)
+        ),
         "known_cause_cases": known_cases,
         "positive_known_cause_runs": len(witnessed_positive_runs),
         "registered_positive_runs": len(expected_positive_runs),

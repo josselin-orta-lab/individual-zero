@@ -123,6 +123,64 @@ class Stage9ScientificAssessmentTests(unittest.TestCase):
         self.assertEqual(scored["false_established_count"], 1)
         self.assertEqual(scored["assessment"], "below_preregistered_confidence_threshold")
 
+    def test_run_level_metrics_disclose_candidate_sampling_concentration(self):
+        draft = example_draft()
+        draft["confidence_method"] = "wilson_95"
+        draft["minimum_known_cause_accuracy"] = 0.20
+        draft["maximum_superstitious_rule_rate"] = 1.0
+        draft["minimum_naturally_acquired_candidates"] = 2
+        report = make_report(draft, candidates=12)
+        negative = [
+            row for row in report["runs"]
+            if row["world_id"] in draft["negative_world_ids"]
+        ]
+        self.assertEqual(len(negative), 2)
+        negative[0]["naturally_acquired_false_candidates"] = []
+        negative[1]["naturally_acquired_false_candidates"][0][
+            "causal_status"
+        ] = "etablie"
+        positive = next(
+            row for row in report["runs"]
+            if row["world_id"] in draft["positive_world_ids"]
+        )
+        no_effect = deepcopy(positive["known_cause_cases"][0])
+        no_effect.update({
+            "id": "control:no-effect",
+            "observation_ref": "physical:no-effect",
+            "ground_truth": "none",
+            "attribution": "uncertain",
+        })
+        positive["known_cause_cases"].append(no_effect)
+        result = assess_heldout_campaign(draft, sealed(report))
+        self.assertEqual(
+            result["assessment"], "metrics_eligible_for_independent_review",
+        )
+        self.assertEqual(result["registered_negative_runs"], 2)
+        self.assertEqual(result["negative_runs_with_candidates"], 1)
+        self.assertEqual(result["natural_false_candidate_count"], 12)
+        self.assertEqual(result["false_established_count"], 1)
+        self.assertEqual(result["no_effect_control_cases"], 1)
+        self.assertIsNone(result["scientific_verdict"])
+        self.assertFalse(result["golden_stage9_frozen"])
+        breakdown = result["per_run_metrics"]
+        self.assertEqual(len(breakdown), len(report["runs"]))
+        self.assertEqual(
+            [(row["world_id"], row["seed"]) for row in breakdown],
+            sorted((row["world_id"], row["seed"]) for row in breakdown),
+        )
+        for key in (
+            "known_cause_cases", "correct_links", "uncertain_links",
+            "false_self_links", "no_effect_control_cases",
+            "no_effect_control_abstentions",
+            "no_effect_control_false_attributions",
+            "natural_false_candidate_count", "false_established_count",
+        ):
+            self.assertEqual(sum(row[key] for row in breakdown), result[key])
+        report["runs"].reverse()
+        replay = assess_heldout_campaign(draft, sealed(report))
+        self.assertEqual(replay["per_run_metrics"], breakdown)
+        self.assertEqual(replay["negative_runs_with_candidates"], 1)
+
     def test_missing_known_cause_witness_in_positive_run_prevents_eligibility(self):
         draft = example_draft()
         draft["confidence_method"] = "wilson_95"
