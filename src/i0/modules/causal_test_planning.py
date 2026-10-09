@@ -28,6 +28,10 @@ class CausalTestPlanningAttempt:
 
     proposal: OptionProposal | None
     reason: str | None
+    # None means the plan contains a real Equipment prediction. A nonempty
+    # reason means the plan has no invented numeric consequences, and must
+    # remain unscored until ordinary evidence sources are available.
+    prediction_unavailability: str | None = None
 
 
 def assess_executable_causal_test(
@@ -69,18 +73,29 @@ def assess_executable_causal_test(
         r_eff=1,
         h_eff=1,
     )
+    prediction_unavailability = None
     if not result.complete:
-        return CausalTestPlanningAttempt(
-            None, "simulation_unavailable:" + (result.reason or "unspecified"),
-        )
-    if len(result.completed_rollouts) != 1:
-        return CausalTestPlanningAttempt(None, "invalid_rollout_count")
-    predictions = result.completed_rollouts[0].predictions
-    if len(predictions) != 1:
-        return CausalTestPlanningAttempt(None, "invalid_prediction_count")
-    consequences = SimulatorPlanner._predicted_consequences(predictions[0])
-    if not any(item.variable == "water" for item in consequences):
-        return CausalTestPlanningAttempt(None, "water_consequence_not_predicted")
+        if result.reason != "equipment_input_unseen":
+            # An unresolved causal correction conflict is not a mere corpus
+            # coverage gap: retain an explicit refusal rather than silently
+            # ignoring a potentially important competing causal prediction.
+            return CausalTestPlanningAttempt(
+                None, "simulation_unavailable:" + (result.reason or "unspecified"),
+            )
+        # §12.4: unseen Equipment input gives E_a^sim=unavailable; it does
+        # not prove the physically accessible one-step test unplanifiable.
+        # Never manufacture a numerical prediction or treat this as evidence.
+        consequences = ()
+        prediction_unavailability = result.reason
+    else:
+        if len(result.completed_rollouts) != 1:
+            return CausalTestPlanningAttempt(None, "invalid_rollout_count")
+        predictions = result.completed_rollouts[0].predictions
+        if len(predictions) != 1:
+            return CausalTestPlanningAttempt(None, "invalid_prediction_count")
+        consequences = SimulatorPlanner._predicted_consequences(predictions[0])
+        if not any(item.variable == "water" for item in consequences):
+            return CausalTestPlanningAttempt(None, "water_consequence_not_predicted")
 
     option_id = (
         f"option:causal-test:{target.contingency_ref}:"
@@ -120,9 +135,17 @@ def assess_executable_causal_test(
         plan_ref=plan.id,
         state="proposed",
     )
-    proposal = OptionProposal(option=option, plan=plan)
+    proposal = OptionProposal(
+        option=option,
+        plan=plan,
+        preliminary_admissibility=(
+            "indeterminate" if prediction_unavailability else None
+        ),
+    )
     proposal.validate()
-    return CausalTestPlanningAttempt(proposal, None)
+    return CausalTestPlanningAttempt(
+        proposal, None, prediction_unavailability,
+    )
 
 
 def propose_executable_causal_test(
@@ -134,7 +157,7 @@ def propose_executable_causal_test(
     t_monde: int,
     ttl_steps: int,
 ) -> OptionProposal | None:
-    """Preserve the established proposal API without losing diagnostics."""
+    """Preserve the proposal API; an unknown prediction is not a veto."""
     return assess_executable_causal_test(
         target=target, initial_state=initial_state, simulator=simulator,
         st_version=st_version, t_monde=t_monde, ttl_steps=ttl_steps,

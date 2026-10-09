@@ -77,7 +77,7 @@ class CausalTestPipelineTests(unittest.TestCase):
             ), None,
         )
 
-    def test_prediction_gap_is_diagnostic_not_a_fabricated_test(self):
+    def test_unseen_equipment_allows_a_test_without_fabricated_prediction(self):
         runtime = configured_runtime()
         hypothesis(runtime.causal_model)
         (target,) = runtime.causal_model.proposer_test()
@@ -108,14 +108,39 @@ class CausalTestPipelineTests(unittest.TestCase):
             initial_state=replace(initial, body={**initial.body, "water": 37.25}),
             **common,
         )
-        self.assertIsNone(unseen.proposal)
+        self.assertIsNotNone(unseen.proposal)
+        self.assertIsNone(unseen.reason)
+        self.assertEqual(unseen.prediction_unavailability, "equipment_input_unseen")
+        self.assertEqual(unseen.proposal.preliminary_admissibility, "indeterminate")
+        self.assertEqual(unseen.proposal.plan.steps[0].predicted_consequences, ())
+        self.assertEqual(unseen.proposal.plan.steps[0].observation_window_steps, 1)
+        self.assertEqual(unseen.proposal.option.motive_ref.type, "test_causal")
+        self.assertIsNone(unseen.proposal.option.goal_ref)
         self.assertEqual(
-            unseen.reason, "simulation_unavailable:equipment_input_unseen",
+            propose_executable_causal_test(
+                initial_state=replace(initial, body={**initial.body, "water": 37.25}),
+                **common,
+            ), unseen.proposal,
         )
-        self.assertIsNone(propose_executable_causal_test(
-            initial_state=replace(initial, body={**initial.body, "water": 37.25}),
-            **common,
-        ))
+
+        class ConflictingCorrection:
+            def rollout(self, **_kwargs):
+                from types import SimpleNamespace
+                return SimpleNamespace(
+                    complete=False,
+                    reason="unresolved_causal_correction_conflict",
+                )
+
+        conflict = assess_executable_causal_test(
+            initial_state=initial, target=target,
+            simulator=ConflictingCorrection(),
+            st_version="st:test", t_monde=1, ttl_steps=5,
+        )
+        self.assertIsNone(conflict.proposal)
+        self.assertEqual(
+            conflict.reason,
+            "simulation_unavailable:unresolved_causal_correction_conflict",
+        )
 
     def test_causal_option_is_registered_but_intrinsically_unevaluated(self):
         runtime = configured_runtime()

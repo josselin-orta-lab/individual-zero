@@ -41,6 +41,15 @@ class Stage9HydrationContrastTests(unittest.TestCase):
         for case in (positive, exploratory, aligned):
             self.assertIsNotNone(case.causal_test_planning_outcomes)
             self.assertIsNotNone(case.causal_test_planning_reasons)
+            self.assertIsNotNone(case.causal_test_unpredicted_proposal_reasons)
+            self.assertLessEqual(
+                sum(count for _, count in case.causal_test_unpredicted_proposal_reasons),
+                case.causal_test_proposals,
+            )
+            self.assertTrue(all(
+                reason == "equipment_input_unseen" and count > 0
+                for reason, count in case.causal_test_unpredicted_proposal_reasons
+            ))
             self.assertEqual(
                 sum(count for _, count in case.causal_test_planning_reasons),
                 dict(case.causal_test_planning_outcomes).get(
@@ -60,6 +69,17 @@ class Stage9HydrationContrastTests(unittest.TestCase):
                 for outcome, count in case.causal_test_planning_outcomes
             ))
 
+        # Unknown exact-table input does not suppress grounded, unscored
+        # hypothesis tests. This is a software diagnostic, not causal success.
+        for case in (positive, exploratory):
+            self.assertGreater(case.designated_test_target_steps, 0)
+            self.assertGreater(case.causal_test_proposals, 0)
+            self.assertGreater(
+                sum(count for _, count in case.causal_test_unpredicted_proposal_reasons),
+                0,
+            )
+            self.assertEqual(case.published_interventions, 0)
+            self.assertEqual(case.drinks_after_hypothesis, 0)
         self.assertGreaterEqual(aligned.post_hypothesis_decision_steps, 0)
         self.assertGreaterEqual(aligned.designated_test_target_steps, 0)
         self.assertLessEqual(

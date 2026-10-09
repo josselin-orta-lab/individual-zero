@@ -87,6 +87,7 @@ class PositiveHydrationDiagnostic:
     causal_test_evaluation_events: int = 0
     causal_test_planning_outcomes: tuple[tuple[str, int], ...] = ()
     causal_test_planning_reasons: tuple[tuple[str, int], ...] = ()
+    causal_test_unpredicted_proposal_reasons: tuple[tuple[str, int], ...] = ()
 
 
 def run_positive_hydration_diagnostic(
@@ -200,7 +201,20 @@ def run_positive_hydration_diagnostic(
     )
     planning_outcomes = {}
     planning_reasons = {}
+    unpredicted_proposal_reasons = {}
     for event in events:
+        if (
+            event.get("kind") == "causal_test_option_proposed"
+            and isinstance(event.get("data"), dict)
+            and event["data"].get("contingency_ref") == "causal:hydration"
+            and event["data"].get("simulation_status") == "unavailable"
+        ):
+            reason = event["data"].get("simulation_reason")
+            if not isinstance(reason, str) or not reason:
+                raise AssertionError("missing unavailable-proposal prediction reason")
+            unpredicted_proposal_reasons[reason] = (
+                unpredicted_proposal_reasons.get(reason, 0) + 1
+            )
         if (
             event.get("kind") == "causal_test_planning_diagnostic"
             and isinstance(event.get("data"), dict)
@@ -375,4 +389,7 @@ def run_positive_hydration_diagnostic(
         causal_test_evaluation_events=len(test_evaluations),
         causal_test_planning_outcomes=tuple(sorted(planning_outcomes.items())),
         causal_test_planning_reasons=tuple(sorted(planning_reasons.items())),
+        causal_test_unpredicted_proposal_reasons=tuple(
+            sorted(unpredicted_proposal_reasons.items())
+        ),
     )

@@ -84,6 +84,14 @@ class PositiveHydrationBenchmarkTests(unittest.TestCase):
                         first.independent_closed_episodes,
                         first.closed_drink_observations,
                     )
+                    self.assertLessEqual(
+                        sum(n for _, n in first.causal_test_unpredicted_proposal_reasons),
+                        first.causal_test_proposal_events,
+                    )
+                    self.assertEqual(
+                        first.applied_causal_test_drinks, 0,
+                        "without intrinsic evidence, test proposals cannot execute",
+                    )
 
     def test_invalid_protocol_parameters_are_not_accepted(self):
         for seed, steps, variant in (

@@ -280,7 +280,9 @@ class Stage9Runtime(Stage8Runtime):
         # but Planning alone turns a target into a locally feasible option.
         # The Exploration P-48 evaluation is NOT implemented at Stage 9:
         # Stage9OptionEvaluator leaves these candidates unscored and unable
-        # to cross a competition threshold.
+        # to cross a competition threshold. An unseen Equipment input
+        # means prediction unavailable, not a prohibition on proposing a
+        # locally grounded single-command test.
         previous_causal_producer = hooks[1]["causal_model"]
         previous_planning_producer = hooks[1]["planning"]
         previous_registration = hooks[3]["competition"]
@@ -378,14 +380,20 @@ class Stage9Runtime(Stage8Runtime):
                         "primitive": target.primitive,
                         "motif_ref": target.motive_ref,
                         "intrinsic_evidence": "unavailable",
+                        "simulation_status": (
+                            "unavailable" if attempt.prediction_unavailability
+                            else "complete"
+                        ),
+                        "simulation_reason": attempt.prediction_unavailability,
                     },
                 )
             self._causal_test_proposals_this_cycle = tuple(proposals)
 
         def register_causal_tests(ctx):
             previous_registration(ctx)
-            # Stale hypotheses, unsuitable current context, missing equipment
-            # or degraded processing must never leave old tests executable.
+            # Stale hypotheses, unsuitable current context, or degraded
+            # processing must never leave old tests executable. Missing
+            # Equipment coverage alone is uncertainty, not invalidation.
             current_ids = {
                 proposal.option.id
                 for proposal in self._causal_test_proposals_this_cycle
