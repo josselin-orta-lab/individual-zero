@@ -348,6 +348,7 @@ class CausalModel:
         self._published: dict[str, CanonicalContingency] = {}
         self._pending: list[SafetyEvidence] = []
         self._seen_ids: set[str] = set()
+        self._admitted_safety_evidence: list[SafetyEvidence] = []
         self._credited_episodes: set[tuple[str, str]] = set()
         self._credited_observations: set[tuple[str, str]] = set()
         self._version = 0
@@ -1836,6 +1837,7 @@ class CausalModel:
         episodes = set(self._credited_episodes)
         observations = set(self._credited_observations)
         seen = set(self._seen_ids)
+        admitted = list(self._admitted_safety_evidence)
         changes: list[CausalStatusChange] = []
         for e in sorted(
             self._pending,
@@ -1848,6 +1850,7 @@ class CausalModel:
                 continue
             episodes.add(episode_key)
             observations.add(observation_key)
+            admitted.append(e)
             current = published.get(e.contingency_ref)
             if current is None:
                 current = CanonicalContingency(
@@ -1909,6 +1912,7 @@ class CausalModel:
         self._credited_episodes = episodes
         self._credited_observations = observations
         self._seen_ids = seen
+        self._admitted_safety_evidence = admitted
         self._pending.clear()
         self._version += 1
         return tuple(changes)
@@ -1933,6 +1937,10 @@ class CausalModel:
                 for e in self._pending
             ],
             "seen": sorted(self._seen_ids),
+            "admitted_safety_evidence": [
+                {name: getattr(e, name) for name in e.__dataclass_fields__}
+                for e in self._admitted_safety_evidence
+            ],
             "episodes": [list(x) for x in sorted(self._credited_episodes)],
             "observations": [list(x) for x in sorted(self._credited_observations)],
             "causal_observations": [serialize_value(x) for _,x in sorted(self._causal_observations.items())],
@@ -2070,6 +2078,16 @@ class CausalModel:
             or not set(accepted_refs).issubset(seen_rows)
         ):
             raise ValueError("unwitnessed published safety evidence reference")
+        ledger = [SafetyEvidence(**row) for row in state.get("admitted_safety_evidence", [])]
+        for row in ledger:
+            row.validate()
+        if (
+            len({row.identifier for row in ledger}) != len(ledger)
+            or {row.identifier for row in ledger} != set(accepted_refs)
+            or {(row.contingency_ref, row.episode_ref) for row in ledger} != episodes
+            or {(row.contingency_ref, row.observation_ref) for row in ledger} != observations
+        ):
+            raise ValueError("safety snapshot admitted evidence ledger mismatch")
         # Every admitted safety episode adds one episode credit, one physical
         # observation credit and one reference. The seen ledger may be longer:
         # duplicate or nonindependent evidence is recorded as already seen.
@@ -2109,6 +2127,53 @@ class CausalModel:
                 and len(record.harmful_episodes) < self.config.n_sec
             ):
                 raise ValueError("safety snapshot status lacks independent harm evidence")
+        # Replay actual admissible physical harm/no-harm history. Unlike
+        # counters alone, this checks promotion AND demotion chronology.
+        derived = {}
+        for e in ledger:
+            prev = derived.get(e.contingency_ref)
+            if prev is None:
+                prev = CanonicalContingency(
+                    ref=e.contingency_ref, version=1, predicate=e.predicate,
+                    subject_ref=e.subject_ref, context_signature=e.context_signature,
+                    causal_status="aucun", safety_status="aucun",
+                    evidence_refs=(), harmful_episodes=(), harmless_episodes=(),
+                )
+            if (prev.predicate, prev.subject_ref, prev.context_signature) != (
+                e.predicate, e.subject_ref, e.context_signature
+            ):
+                raise ValueError("safety snapshot evidence ledger context mismatch")
+            harm, safe, status = prev.harmful_episodes, prev.harmless_episodes, prev.safety_status
+            if e.harm_observed:
+                harm, safe = harm + (e.episode_ref,), ()
+                if status != "etabli_pour_securite" and len(harm) >= self.config.n_sec:
+                    status = "etabli_pour_securite"
+            else:
+                safe = safe + (e.episode_ref,)
+                if status == "aucun":
+                    harm = ()
+                elif len(safe) >= self.config.m_sec:
+                    status, harm = "aucun", ()
+            derived[e.contingency_ref] = replace(
+                prev, safety_status=status,
+                evidence_refs=prev.evidence_refs + (e.identifier,),
+                harmful_episodes=harm, harmless_episodes=safe,
+            )
+        for ref, actual in records.items():
+            if actual.innate:
+                continue
+            expected = derived.get(ref)
+            if expected is None:
+                if actual.evidence_refs:
+                    raise ValueError("safety snapshot ledger missing evidence")
+                continue
+            if any((
+                expected.safety_status != actual.safety_status,
+                expected.evidence_refs != actual.evidence_refs,
+                expected.harmful_episodes != actual.harmful_episodes,
+                expected.harmless_episodes != actual.harmless_episodes,
+            )):
+                raise ValueError("safety snapshot ledger status history mismatch")
         version = state["version"]
         if not isinstance(version, int) or version < 0:
             raise ValueError("invalid causal model version")
@@ -2117,6 +2182,7 @@ class CausalModel:
         self._credited_episodes = episodes
         self._credited_observations = observations
         self._seen_ids = set(seen_rows)
+        self._admitted_safety_evidence = ledger
         exposure_rows = state.get("lived_food_exposures", [])
         exposures = {}
         for raw in exposure_rows:

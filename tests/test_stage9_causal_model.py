@@ -205,6 +205,31 @@ class CanonicalCausalSafetyTests(unittest.TestCase):
                     m.restore_causal_state(broken)
                 self.assertEqual(m.export_causal_state(), baseline)
 
+    def test_safety_snapshot_replays_actual_harm_and_nonharm_order(self):
+        m = model()
+        for identifier in ("harm1", "harm2", "safe1", "safe2"):
+            m.integrate(evidence(
+                identifier, harm_observed=identifier.startswith("harm"),
+            ))
+            m.publish()
+        baseline = m.export_causal_state()
+        twin = model()
+        twin.restore_causal_state(baseline)
+        self.assertEqual(twin.export_causal_state(), baseline)
+        for mutation in ("false_outcome", "missing_history", "reordered"):
+            with self.subTest(mutation=mutation):
+                damaged = deepcopy(baseline)
+                rows = damaged["admitted_safety_evidence"]
+                if mutation == "false_outcome":
+                    rows[0]["harm_observed"] = False
+                elif mutation == "missing_history":
+                    rows.pop()
+                else:
+                    rows[1], rows[2] = rows[2], rows[1]
+                with self.assertRaisesRegex(ValueError, "ledger"):
+                    m.restore_causal_state(damaged)
+                self.assertEqual(m.export_causal_state(), baseline)
+
     def test_snapshot_pending_and_replay_are_identical(self):
         m = model()
         m.integrate(evidence("first"))
