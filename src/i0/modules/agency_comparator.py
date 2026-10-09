@@ -103,8 +103,15 @@ class AgencyComparator:
             type(predicted) not in (int, float)
             or type(observed) not in (int, float)
             or not isfinite(predicted) or not isfinite(observed)
-            or sign * (predicted - observed) <= 0
         ):
+            return False
+        # One se_deplacer command advances by at most one grid cell.
+        # An obstacle at the attempted destination cannot independently
+        # explain a larger discrepancy or movement opposite to the command.
+        # With no pre-command position in P-47 evidence, larger mismatches
+        # remain uncertain instead of being mislabelled as world causation.
+        discrepancy = sign * (predicted - observed)
+        if not 0 < discrepancy <= 1.0:
             return False
         return any(
             cell.direction == direction and not cell.passable

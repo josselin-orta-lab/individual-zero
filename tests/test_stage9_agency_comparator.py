@@ -119,10 +119,12 @@ class AgencyComparatorStage9Tests(unittest.TestCase):
         self.assertEqual(blocked_forward.attribution, "world_justified")
 
         # That same obstacle cannot explain a sideways displacement,
-        # movement in the opposite direction, or multiple deviations.
+        # an opposite predicted direction, an excessive missed distance,
+        # or multiple deviations.
         for predictions in (
             (PredictedConsequence("position_y", 3.0, 0.0),),
             (PredictedConsequence("position_x", 1.0, 0.0),),
+            (PredictedConsequence("position_x", 4.0, 0.0),),
             (
                 PredictedConsequence("position_x", 3.0, 0.0),
                 PredictedConsequence("position_y", 3.0, 0.0),
@@ -132,6 +134,20 @@ class AgencyComparatorStage9Tests(unittest.TestCase):
                 result = compare(*predictions)
                 self.assertEqual(result.status, "nonconforming")
                 self.assertEqual(result.attribution, "uncertain")
+
+        # Moving a cell in the opposite direction cannot be explained by
+        # the eastward obstacle, even if the *predicted* east destination is
+        # still farther east than the observed west-shifted coordinate.
+        opposite_capture = replace(blocked, x=blocked.x - 1)
+        opposite = comparator().compare(
+            option_ref="move:east:opposite",
+            sent_t_monde=1, deadline_t_monde=2,
+            predictions=(PredictedConsequence("position_x", 3.0, 0.0),),
+            capture=opposite_capture,
+            command=PrimitiveCommand("se_deplacer", {"direction": "east"}),
+        )
+        self.assertEqual(opposite.status, "nonconforming")
+        self.assertEqual(opposite.attribution, "uncertain")
 
         accessible = replace(
             blocked,
