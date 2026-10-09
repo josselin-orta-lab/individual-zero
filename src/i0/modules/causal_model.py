@@ -2120,9 +2120,35 @@ class CausalModel:
         ):
             raise ValueError("closed causal action may not remain pending")
         self._causal_action_witnesses = witnesses
-        obs={x.identifier:x for x in (decode_observation(v) for v in state.get("causal_observations",[]))}
-        trials={x.identifier:x for x in (decode_intervention(v) for v in state.get("causal_interventions",[]))}
-        pending_obs=[decode_observation(v) for v in state.get("pending_causal_observations",[])]
+        # INV-33 / DC-08: a snapshot must round-trip exactly. A dictionary
+        # comprehension would silently discard repeated causal rows, while a
+        # set would erase duplicated credits. Reject identity collisions
+        # before constructing the restored canonical collections.
+        observation_rows = [
+            decode_observation(v) for v in state.get("causal_observations", [])
+        ]
+        pending_obs = [
+            decode_observation(v) for v in state.get("pending_causal_observations", [])
+        ]
+        all_observation_refs = [
+            row.identifier for row in (*observation_rows, *pending_obs)
+        ]
+        if len(all_observation_refs) != len(set(all_observation_refs)):
+            raise ValueError("duplicate causal observation identity in snapshot")
+        obs = {row.identifier: row for row in observation_rows}
+
+        intervention_rows = [
+            decode_intervention(v) for v in state.get("causal_interventions", [])
+        ]
+        pending_trial = [
+            decode_intervention(v) for v in state.get("pending_causal_interventions", [])
+        ]
+        all_intervention_refs = [
+            row.identifier for row in (*intervention_rows, *pending_trial)
+        ]
+        if len(all_intervention_refs) != len(set(all_intervention_refs)):
+            raise ValueError("duplicate causal intervention identity in snapshot")
+        trials = {row.identifier: row for row in intervention_rows}
         # Snapshot provenance must be internally consistent: the immutable
         # witness of an actual closed water-source command may not be an
         # orphan or point to another observation's physical transition.
@@ -2151,14 +2177,29 @@ class CausalModel:
                 or command_ref == transition_ref
             ):
                 raise ValueError("hydration snapshot witness mismatches physical observation")
-        pending_review=[decode_review(v) for v in state.get("pending_causal_reviews",[])]
-        pending_trial=[decode_intervention(v) for v in state.get("pending_causal_interventions",[])]
-        self._causal_observations=obs
-        self._causal_interventions=trials
-        self._causal_reviews=set(state.get("causal_reviews",[]))
-        self._causal_credits={tuple(v) for v in state.get("causal_credits",[])}
-        self._causal_revision_boundaries={
-            key:(step,ref) for key,step,ref in state.get("causal_revision_boundaries",[])
+        pending_review = [
+            decode_review(v) for v in state.get("pending_causal_reviews", [])
+        ]
+        published_review_refs = list(state.get("causal_reviews", []))
+        all_review_refs = [
+            *published_review_refs, *(row.identifier for row in pending_review)
+        ]
+        if len(all_review_refs) != len(set(all_review_refs)):
+            raise ValueError("duplicate causal review identity in snapshot")
+        credit_rows = [tuple(row) for row in state.get("causal_credits", [])]
+        if len(credit_rows) != len(set(credit_rows)):
+            raise ValueError("duplicate causal evidence credit in snapshot")
+        boundary_rows = list(state.get("causal_revision_boundaries", []))
+        boundary_refs = [key for key, _step, _ref in boundary_rows]
+        if len(boundary_refs) != len(set(boundary_refs)):
+            raise ValueError("duplicate causal revision boundary in snapshot")
+
+        self._causal_observations = obs
+        self._causal_interventions = trials
+        self._causal_reviews = set(published_review_refs)
+        self._causal_credits = set(credit_rows)
+        self._causal_revision_boundaries = {
+            key: (step, ref) for key, step, ref in boundary_rows
         }
         self._pending_causal_observations=pending_obs
         self._pending_causal_reviews=pending_review
@@ -2168,6 +2209,9 @@ class CausalModel:
         refs = [v.event_ref for v in (*agency_rows, *pending_agency)]
         if len(refs) != len(set(refs)):
             raise ValueError("duplicate agency comparison in causal snapshot")
+        agency_ids = [v.identifier for v in (*agency_rows, *pending_agency)]
+        if len(agency_ids) != len(set(agency_ids)):
+            raise ValueError("duplicate agency evidence identity in snapshot")
         self._agency_evidence = {v.identifier: v for v in agency_rows}
         self._pending_agency_evidence = pending_agency
         witnesses = [
@@ -2180,6 +2224,10 @@ class CausalModel:
             decode_lived_numeric_outcome(raw)
             for raw in state.get("pending_numeric_witnesses", ())
         ]
+        if len({
+            w.identifier for w in (*witnesses, *pending_witnesses)
+        }) != len(witnesses) + len(pending_witnesses):
+            raise ValueError("duplicate numeric witness identity in snapshot")
         if len({
             w.transition_event_ref for w in (*witnesses, *pending_witnesses)
         }) != len(witnesses) + len(pending_witnesses):

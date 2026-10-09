@@ -2,6 +2,7 @@
 from __future__ import annotations
 import unittest
 from dataclasses import replace
+from copy import deepcopy
 from i0.modules.causal_model import CausalModel, CausalModelConfig
 from i0.modules.causal_lifecycle import (
     CausalObservation, CausalHypothesisReview, CausalIntervention,
@@ -489,6 +490,52 @@ class CausalLifecycleTests(unittest.TestCase):
         # cannot satisfy n2, despite being processed in the same batch.
         publish_trial(m, trial(13, context="zone4"))
         self.assertEqual(m.get(REF).causal_status, "etablie")
+
+    def test_snapshot_duplicate_causal_rows_are_rejected_atomically(self):
+        # DC-08 / INV-33: restore may not quietly discard two rows carrying
+        # one identity, in either a published or pending evidence collection.
+        m = model()
+        hypothesized(m)
+        publish_trial(m, trial(10, context="zone1"))
+        m.integrate_causal_observation(obs(6, cause=True, effect=True))
+        baseline = m.export_causal_state()
+        self.assertTrue(baseline["causal_observations"])
+        self.assertTrue(baseline["causal_interventions"])
+        self.assertTrue(baseline["causal_reviews"])
+        self.assertTrue(baseline["causal_credits"])
+
+        corruptions = (
+            ("causal_observations", "causal_observations",
+             "duplicate causal observation identity"),
+            ("causal_interventions", "causal_interventions",
+             "duplicate causal intervention identity"),
+            ("causal_reviews", "causal_reviews",
+             "duplicate causal review identity"),
+            ("causal_credits", "causal_credits",
+             "duplicate causal evidence credit"),
+            ("pending_causal_observations", "causal_observations",
+             "duplicate causal observation identity"),
+            ("pending_causal_interventions", "causal_interventions",
+             "duplicate causal intervention identity"),
+        )
+        for destination, source, message in corruptions:
+            with self.subTest(destination=destination, source=source):
+                modified = deepcopy(baseline)
+                modified[destination].append(deepcopy(modified[source][0]))
+                with self.assertRaisesRegex(ValueError, message):
+                    m.restore_causal_state(modified)
+                self.assertEqual(m.export_causal_state(), baseline)
+
+    def test_valid_snapshot_with_pending_and_published_evidence_roundtrips(self):
+        m = model()
+        hypothesized(m)
+        publish_trial(m, trial(10, context="zone1"))
+        m.integrate_causal_observation(obs(6, cause=True, effect=True))
+        m.integrate_causal_intervention(trial(11, context="zone2"))
+        checkpoint = m.export_causal_state()
+        twin = model()
+        twin.restore_causal_state(checkpoint)
+        self.assertEqual(twin.export_causal_state(), checkpoint)
 
     def test_snapshot_replay_pending_and_no_oracle(self):
         m=model()
