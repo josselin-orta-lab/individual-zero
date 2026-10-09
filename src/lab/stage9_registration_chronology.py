@@ -109,6 +109,42 @@ def _verify_registration_unchanged_through_history(
     return len(descendants)
 
 
+SOURCE_TREE_PATH = "src"
+
+
+def _verify_frozen_source_tree(
+    repository: Path, frozen_commit: str, evidence_commit: str,
+) -> tuple[str, int]:
+    """Pin the complete committed source subtree throughout Git ancestry.
+
+    Git object IDs identify content (including file modes and paths). Checking
+    each descendant, rather than the final endpoint alone, also detects an
+    intermediate source edit subsequently reverted before evidence archival.
+    The Git tree cannot prove which checkout or binary actually ran.
+    """
+    def tree_at(commit: str) -> bytes:
+        try:
+            oid = _git(repository, "rev-parse", f"{commit}:{SOURCE_TREE_PATH}").strip()
+        except ValueError as exc:
+            raise ValueError("frozen source tree absent in Git ancestry") from exc
+        if _git(repository, "cat-file", "-t", oid.decode("ascii")).strip() != b"tree":
+            raise ValueError("frozen source path is not a Git tree")
+        return oid
+
+    frozen_tree = tree_at(frozen_commit)
+    descendants = _git(
+        repository, "rev-list", "--ancestry-path", "--topo-order",
+        f"{frozen_commit}..{evidence_commit}",
+    ).splitlines()
+    if not descendants:
+        raise ValueError("missing source-tree descendants before evidence")
+    for commit in descendants:
+        current = tree_at(commit.decode("ascii"))
+        if current != frozen_tree:
+            raise ValueError("frozen source tree changed within Git ancestry")
+    return frozen_tree.decode("ascii"), len(descendants)
+
+
 def audit_registration_chronology(
     *, repository: Path, registration_path: Path, registration_commit: str,
     evidence_path: Path, evidence_commit: str,
@@ -134,6 +170,9 @@ def audit_registration_chronology(
         _check_commit(root, commit)
     _require_ancestor(root, frozen, registration_commit)
     _require_ancestor(root, registration_commit, evidence_commit)
+    source_tree_sha, source_commits_checked = _verify_frozen_source_tree(
+        root, frozen, evidence_commit,
+    )
 
     frozen_registration = _git(root, "show", f"{registration_commit}:{registration_name}")
     if frozen_registration != registered_file.read_bytes():
@@ -167,6 +206,8 @@ def audit_registration_chronology(
         ),
         "registration_commit": registration_commit,
         "frozen_implementation_commit": frozen,
+        "frozen_source_tree_sha": source_tree_sha,
+        "source_tree_unchanged_descendant_commits_checked": source_commits_checked,
         "evidence_commit": evidence_commit,
         "registration_digest": provisional["registration_digest"],
         "evidence_sha256": provisional["evidence_sha256"],
@@ -181,6 +222,7 @@ def audit_registration_chronology(
             "independently confirm the protocol was frozen before results were inspected",
             "verify physical world manifests, seeds and external oracle custody",
             "audit raw closed-Memory witnesses and reproduce frozen-code runs",
+            "verify the actual executed checkout and binary match the frozen Git source",
             "independent Stage-9 acceptance and INV-25 scientific review",
         ],
     }

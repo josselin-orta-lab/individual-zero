@@ -24,14 +24,29 @@ def _git(repo: Path, *command: str) -> str:
     return result.stdout.strip()
 
 
-def _create_fixture(repo: Path) -> tuple[str, str, str]:
+def _create_fixture(
+    repo: Path, *, source_tree: bool = True,
+    modify_before_registration: bool = False,
+) -> tuple[str, str, str]:
     _git(repo, "init", "-q")
     _git(repo, "config", "user.name", "Stage 9 Test")
     _git(repo, "config", "user.email", "stage9@example.invalid")
     (repo / "frozen-implementation.txt").write_text("frozen software\n", encoding="utf-8")
     _git(repo, "add", "frozen-implementation.txt")
+    if source_tree:
+        (repo / "src").mkdir()
+        (repo / "src" / "engine.py").write_text(
+            "print('frozen source')\n", encoding="utf-8",
+        )
+        _git(repo, "add", "src/engine.py")
     _git(repo, "commit", "-qm", "freeze implementation")
     implementation = _git(repo, "rev-parse", "HEAD")
+    if modify_before_registration:
+        (repo / "src" / "engine.py").write_text(
+            "print('changed before registration')\n", encoding="utf-8",
+        )
+        _git(repo, "add", "src/engine.py")
+        _git(repo, "commit", "-qm", "unsealed source change")
 
     draft = example_draft()
     draft["frozen_implementation_commit"] = implementation
@@ -71,6 +86,13 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
             freeze, registered, evidence = _create_fixture(repo)
             result = _audit(repo, registered, evidence)
             self.assertEqual(result["frozen_implementation_commit"], freeze)
+            self.assertEqual(
+                result["frozen_source_tree_sha"],
+                _git(repo, "rev-parse", f"{freeze}:src"),
+            )
+            self.assertEqual(
+                result["source_tree_unchanged_descendant_commits_checked"], 2,
+            )
             self.assertEqual(result["registration_commit"], registered)
             self.assertEqual(result["evidence_commit"], evidence)
             self.assertEqual(
@@ -178,6 +200,54 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
             )
             self.assertIsNone(result["scientific_verdict"])
             self.assertFalse(result["golden_stage9_frozen"])
+
+    def test_changes_to_source_before_registration_are_rejected(self):
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            _, registered, evidence = _create_fixture(
+                repo, modify_before_registration=True,
+            )
+            with self.assertRaisesRegex(ValueError, "frozen source tree changed"):
+                _audit(repo, registered, evidence)
+
+    def test_frozen_commit_without_source_tree_fails_closed(self):
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            _, registered, evidence = _create_fixture(repo, source_tree=False)
+            with self.assertRaisesRegex(ValueError, "frozen source tree absent"):
+                _audit(repo, registered, evidence)
+
+    def test_temporary_source_edit_cannot_be_reverted_away(self):
+        for mode in ("rewrite", "delete", "add"):
+            with self.subTest(mode=mode):
+                with TemporaryDirectory() as folder:
+                    repo = Path(folder)
+                    _, registered, _ = _create_fixture(repo)
+                    source = repo / "src" / "engine.py"
+                    original = source.read_bytes()
+                    if mode == "delete":
+                        _git(repo, "rm", "src/engine.py")
+                    elif mode == "add":
+                        (repo / "src" / "extra.py").write_text(
+                            "print('extra')\n", encoding="utf-8",
+                        )
+                        _git(repo, "add", "src/extra.py")
+                    else:
+                        source.write_bytes(original + b"\n")
+                        _git(repo, "add", "src/engine.py")
+                    _git(repo, "commit", "-qm", "temporarily alter frozen source")
+                    if mode == "add":
+                        _git(repo, "rm", "src/extra.py")
+                    else:
+                        source.parent.mkdir(parents=True, exist_ok=True)
+                        source.write_bytes(original)
+                        _git(repo, "add", "src/engine.py")
+                    _git(repo, "commit", "-qm", "restore frozen source")
+                    evidence = _git(repo, "rev-parse", "HEAD")
+                    with self.assertRaisesRegex(
+                        ValueError, "frozen source tree changed|frozen source tree absent",
+                    ):
+                        _audit(repo, registered, evidence)
 
     def test_paths_outside_worktree_are_rejected(self):
         with TemporaryDirectory() as folder:

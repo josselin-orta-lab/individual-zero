@@ -83,7 +83,12 @@ python -m lab.stage9_registration_chronology \
 
 The tool checks that the implementation freeze precedes the registration
 commit and the registration commit strictly precedes the evidence commit in
-Git ancestry; that the exact registration bytes were committed at the
+Git ancestry; that the complete committed `src/` Git tree (file names,
+contents, and modes) has the identical object ID at the implementation freeze
+and **every descendant commit** through evidence archival. This rejects
+intermediate source edits even when subsequently reverted. The report gives
+the frozen source-tree object ID and the number of commits examined.
+It also checks that the exact registration bytes were committed at the
 registration point and remain unchanged through **every intervening
 descendant commit on Git ancestry paths** (including merges), not just in
 the final evidence commit; and that the evidence file exactly matches its
@@ -95,8 +100,9 @@ the **provisional** metrics using the existing held-out scorer.
 A previous file at the evidence path is surfaced for independent scrutiny.
 An already identical evidence payload at registration is rejected. Git
 ancestry alone cannot prove the investigator did not inspect results earlier,
-that execution used the frozen binary, that world configurations were
-physically independent, or that the bench-only oracle was kept inaccessible
+that execution used the frozen checkout or binary (including untracked
+code, generated files and runtime dependencies outside `src/`), that world
+configurations were physically independent, or that the bench-only oracle was kept inaccessible
 to the individual. Those steps need an external audit. Even a fully
 consistent Git history always returns scientific_verdict=null and
 golden_stage9_frozen=false. Unit tests of the checker use deliberately
