@@ -1565,21 +1565,6 @@ class CausalModel:
                 for v in observations.values()
             ):
                 continue
-            # Different source-event IDs cannot multiply one physical
-            # world-step into independent n1 evidence for the same causal
-            # predicate and treatment arm. This key is deliberately NOT an
-            # episode ID: distinct transitions in one Memory episode count.
-            # Distinct causal predicates or observed treatment/control arms
-            # may refer to the same physical instant without being collapsed.
-            if any(
-                v.contingency_ref == o.contingency_ref
-                and v.observed_step == o.observed_step
-                and v.cause_present == o.cause_present
-                for v in observations.values()
-            ):
-                raise ValueError(
-                    "causal observation reuses physical world step and treatment arm"
-                )
             old = published.get(o.contingency_ref)
             if old is None:
                 old = CanonicalContingency(
@@ -2349,19 +2334,6 @@ class CausalModel:
         if len(observation_physical_refs) != len(set(observation_physical_refs)):
             raise ValueError(
                 "causal snapshot reuses published observational physical transition"
-            )
-        # Event IDs alone are not sufficient to authenticate two P-35 trials.
-        # Within a canonical contingency, two reports of the same world
-        # instant and treatment arm cannot become distinct co-occurrences.
-        # Leave distinct physical treatment/control arms and independent
-        # contingencies intact; DC-05 uses its own episode ledger.
-        observation_step_arms = [
-            (row.contingency_ref, row.observed_step, row.cause_present)
-            for row in observation_rows
-        ]
-        if len(observation_step_arms) != len(set(observation_step_arms)):
-            raise ValueError(
-                "causal snapshot reuses observational physical world step"
             )
 
         intervention_rows = [

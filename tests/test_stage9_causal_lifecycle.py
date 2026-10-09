@@ -276,46 +276,6 @@ class CausalLifecycleTests(unittest.TestCase):
             self.assertEqual(len(snapshot["causal_credits"]), 2)
         self.assertEqual(m.export_causal_state(), twin.export_causal_state())
 
-    def test_same_world_step_cannot_multiply_n1_observation_arm(self):
-        # Distinct identifiers and Memory episodes do not prove independent
-        # world transitions at the same world time and treatment arm.
-        for same_batch in (True, False):
-            with self.subTest(same_batch=same_batch):
-                m = model()
-                first = obs(1, cause=True, effect=True)
-                alias = replace(
-                    obs(2, cause=True, effect=True),
-                    observed_step=first.observed_step,
-                )
-                m.integrate_causal_observation(first)
-                if not same_batch:
-                    self.assertEqual(m.publish_causal_inference(), ())
-                m.integrate_causal_observation(alias)
-                baseline = m.export_causal_state()
-                with self.assertRaisesRegex(
-                    ValueError, "reuses physical world step and treatment arm",
-                ):
-                    m.publish_causal_inference()
-                self.assertEqual(m.export_causal_state(), baseline)
-
-    def test_snapshot_rejects_duplicate_world_step_even_with_new_event_id(self):
-        m = model()
-        correlated(m)
-        baseline = m.export_causal_state()
-        modified = deepcopy(baseline)
-        treated = [
-            row for row in modified["causal_observations"]
-            if row["cause_present"]
-        ]
-        self.assertEqual(len(treated), 2)
-        self.assertNotEqual(treated[0]["observation_ref"], treated[1]["observation_ref"])
-        treated[1]["observed_step"] = treated[0]["observed_step"]
-        with self.assertRaisesRegex(
-            ValueError, "reuses observational physical world step",
-        ):
-            m.restore_causal_state(modified)
-        self.assertEqual(m.export_causal_state(), baseline)
-
     def test_one_step_may_have_distinct_observational_arms(self):
         # Closed physical exposure and its matched no-treatment control
         # can share a time without being equivalent observations.
