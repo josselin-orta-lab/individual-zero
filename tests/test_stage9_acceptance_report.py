@@ -19,6 +19,12 @@ class Stage9AcceptanceReportTests(unittest.TestCase):
         checks = {row["criterion"]: row for row in data["checks"]}
         self.assertEqual(checks["known_cause_attribution"]["evidence"]["positive_ground_truth_cases"], 6)
         self.assertEqual(checks["known_cause_attribution"]["evidence"]["correct_links"], 4)
+        geometric = checks["known_cause_attribution"]["evidence"]
+        self.assertEqual(geometric["geometric_world_count"], 3)
+        self.assertEqual(geometric["geometric_ground_truthed_cases"], 18)
+        self.assertEqual(geometric["geometric_false_self_links"], 0)
+        self.assertEqual(geometric["geometric_matrix_seeds"], [42, 43, 44])
+        self.assertEqual(len(geometric["geometric_matrix_sha256"]), 64)
         night = checks["nighttime_attribution"]["evidence"]["scenarios"]
         self.assertEqual([v["scenario"] for v in night], [
             "creature-night-harm", "two-visible-creatures-night", "hidden-danger-harm",

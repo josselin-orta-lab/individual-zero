@@ -74,10 +74,28 @@ class KnownCauseMetrics:
     accuracy: float | None
 
 
-def _protocol() -> tuple[KnownCauseProbe, ...]:
+def _protocol(*, world_seed: int | None = None) -> tuple[KnownCauseProbe, ...]:
+    if world_seed is not None and (
+        type(world_seed) is not int or world_seed < 0
+    ):
+        raise ValueError("known-cause world seed must be a nonnegative integer")
+    # Four actual geometric variants with distinct physical layouts. The
+    # original fixed suite remains unchanged for reference regressions.
     home = Position(2, 2)
-    east = Position(3, 2)
-    creature = Position(2, 3)
+    compass = ("east", "south", "west", "north")
+    if world_seed is None:
+        direction, creature_direction, second_direction = (
+            "east", "south", "east",
+        )
+    else:
+        direction = compass[world_seed % 4]
+        creature_direction = compass[(world_seed + 1) % 4]
+        second_direction = compass[(world_seed + 2) % 4]
+    east = home.moved(direction)
+    creature = home.moved(creature_direction)
+    second_creature = home.moved(second_direction)
+    coordinate = "position_x" if direction in {"east", "west"} else "position_y"
+    expected = float(east.x if coordinate == "position_x" else east.y)
     return (
         KnownCauseProbe(
             "drink-at-water", 1, PrimitiveCommand("boire"),
@@ -86,16 +104,16 @@ def _protocol() -> tuple[KnownCauseProbe, ...]:
             "self", "drank",
         ),
         KnownCauseProbe(
-            "open-east-move", 1,
-            PrimitiveCommand("se_deplacer", {"direction": "east"}),
-            WorldLayout(), PredictedConsequence("position_x", 3.0, 0.0),
+            ("open-east-move" if world_seed is None else "open-direction-move"), 1,
+            PrimitiveCommand("se_deplacer", {"direction": direction}),
+            WorldLayout(), PredictedConsequence(coordinate, expected, 0.0),
             "self", "movement:moved",
         ),
         KnownCauseProbe(
             "visible-obstacle", 1,
-            PrimitiveCommand("se_deplacer", {"direction": "east"}),
+            PrimitiveCommand("se_deplacer", {"direction": direction}),
             WorldLayout(obstacles=frozenset({east})),
-            PredictedConsequence("position_x", 3.0, 0.0),
+            PredictedConsequence(coordinate, expected, 0.0),
             "world", "movement:blocked",
         ),
         KnownCauseProbe(
@@ -112,7 +130,7 @@ def _protocol() -> tuple[KnownCauseProbe, ...]:
         ),
         KnownCauseProbe(
             "two-visible-creatures-night", 201, PrimitiveCommand("attendre"),
-            WorldLayout(creatures=frozenset({creature, Position(3, 2)})),
+            WorldLayout(creatures=frozenset({creature, second_creature})),
             PredictedConsequence("integrity", 100.0, 0.0),
             "world", "creature_damage",
         ),
@@ -140,8 +158,10 @@ def _validate_physical_effect(*, effect: str, actual: dict[str, object]) -> None
         raise AssertionError(f"benchmark truth does not match physical effect: {effect}")
 
 
-def run_known_cause_probes() -> KnownCauseMetrics:
-    """Fixed contrastive physical worlds; reference parameters, not calibration."""
+def run_known_cause_probes(
+    *, world_seed: int | None = None,
+) -> KnownCauseMetrics:
+    """Run fixed or geometrically varied physical probes, never scientific gate."""
     source = build_stage4_reference_runtime().world.config
     world_config = replace(
         source, version="stage9-lab-known-causes-physical-v1",
@@ -158,7 +178,7 @@ def run_known_cause_probes() -> KnownCauseMetrics:
         max_observation_window_steps=1,
     )
     output = []
-    for probe in _protocol():
+    for probe in _protocol(world_seed=world_seed):
         probe.validate()
         world = WorldBody(config=world_config, layout=probe.layout)
         perception = SymbolicPerception()

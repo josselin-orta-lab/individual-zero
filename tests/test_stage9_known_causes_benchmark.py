@@ -8,6 +8,7 @@ from i0.modules.causal_lifecycle import CausalIntervention
 from lab.stage9_known_causes_benchmark import (
     run_known_cause_probes, audit_superstitious_rules,
 )
+from lab.stage9_known_cause_world_matrix import run_known_cause_world_matrix
 from test_stage9_causal_lifecycle import model, hypothesized, trial, publish_trial
 
 
@@ -42,6 +43,28 @@ class KnownCausesBenchmarkTests(unittest.TestCase):
         self.assertEqual(metrics.false_self_links, 0)
         self.assertEqual(metrics.accuracy, 4 / 6)
         self.assertEqual(metrics, run_known_cause_probes())
+
+    def test_seeded_physical_worlds_have_distinct_layouts_and_replay(self):
+        matrix = run_known_cause_world_matrix()
+        self.assertEqual(matrix, run_known_cause_world_matrix())
+        self.assertEqual(matrix.seeds, (41, 42, 43))
+        self.assertEqual(len(matrix.runs), 3)
+        self.assertEqual(len({run.world_digest for run in matrix.runs}), 3)
+        self.assertEqual(matrix.physically_ground_truthed_cases, 18)
+        self.assertEqual(matrix.correct_links, 12)
+        self.assertEqual(matrix.uncertain_cases, 6)
+        self.assertEqual(matrix.false_self_links, 0)
+        self.assertTrue(matrix.verify_digest())
+        self.assertFalse(replace(matrix, correct_links=13).verify_digest())
+        self.assertEqual(matrix.classification, "diagnostic_only")
+
+    def test_repeat_seed_or_geometric_layout_does_not_count_as_new_world(self):
+        for seeds in ((41, 41), (41, 45), (True,), (), (-1,)):
+            with self.subTest(seeds=seeds):
+                with self.assertRaises(ValueError):
+                    run_known_cause_world_matrix(seeds=seeds)
+        with self.assertRaises(ValueError):
+            run_known_cause_probes(world_seed=True)
 
     def test_attribution_truth_is_not_given_to_comparator(self):
         metrics = run_known_cause_probes()

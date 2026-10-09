@@ -20,6 +20,7 @@ import json
 from .determinism import canonical_causal_bytes, sha256_hex
 from .replay import verify_reexecution
 from .stage9_known_causes_benchmark import run_known_cause_probes
+from .stage9_known_cause_world_matrix import run_known_cause_world_matrix
 from .stage9_random_reward_benchmark import run_random_reward_negative_control
 from .stage9_reference_fixture import build_stage9_reference_runtime
 from .stage9_spontaneous_superstition_matrix import (
@@ -133,6 +134,11 @@ def generate_stage9_acceptance_report(
         raise ValueError("random reward steps must be an integer >= 6")
 
     known = run_known_cause_probes()
+    known_matrix = run_known_cause_world_matrix(
+        seeds=(random_reward_seed, random_reward_seed + 1, random_reward_seed + 2),
+    )
+    if not known_matrix.verify_digest():
+        raise AssertionError("seeded known-cause matrix digest invalid")
     by_id = {case.identifier: case for case in known.cases}
     required_night = (
         "creature-night-harm",
@@ -205,10 +211,21 @@ def generate_stage9_acceptance_report(
                 "uncertain_cases": known.uncertain_cases,
                 "false_self_links": known.false_self_links,
                 "accuracy": known.accuracy,
+                "geometric_matrix_protocol": known_matrix.protocol_version,
+                "geometric_matrix_sha256": known_matrix.digest,
+                "geometric_matrix_seeds": known_matrix.seeds,
+                "geometric_world_count": len(known_matrix.runs),
+                "geometric_ground_truthed_cases": (
+                    known_matrix.physically_ground_truthed_cases
+                ),
+                "geometric_correct_links": known_matrix.correct_links,
+                "geometric_uncertain_cases": known_matrix.uncertain_cases,
+                "geometric_false_self_links": known_matrix.false_self_links,
+                "geometric_observed_accuracy": known_matrix.observed_accuracy,
             },
             outstanding=(
-                "Diagnostic probes do not replace a preregistered "
-                "evaluation across multiple independent worlds."
+                "Geometrically varied P-47 probes remain diagnostic, not "
+                "an autonomous held-out scientific campaign across worlds."
             ),
         ),
         Stage9AcceptanceCheck(
