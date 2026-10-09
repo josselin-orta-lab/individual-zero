@@ -151,6 +151,64 @@ class CausalLifecycleTests(unittest.TestCase):
         self.assertEqual(m.publish_causal_inference(), ())
         self.assertEqual(m.get(REF).version, before.version + 1)
 
+    def test_matched_physical_arms_in_one_memory_episode_produce_hypothesis(self):
+        m = model()
+        for row in (
+            obs(1, cause=True, effect=True),
+            obs(2, cause=True, effect=True),
+            replace(obs(3, cause=False, effect=False), episode_ref="episode:1"),
+            obs(4, cause=False, effect=False),
+        ):
+            m.integrate_causal_observation(row)
+        self.assertEqual(
+            [change.after for change in m.publish_causal_inference()],
+            ["correlation_observee"],
+        )
+        m.integrate_hypothesis_review(review())
+        self.assertEqual(
+            [change.after for change in m.publish_causal_inference()],
+            ["hypothese_causale"],
+        )
+        state = m.export_causal_state()
+        self.assertEqual(len(state["causal_review_proofs"]), 1)
+        self.assertEqual(len(state["causal_correlation_witnesses"]), 1)
+        restored = model()
+        restored.restore_causal_state(state)
+        self.assertEqual(restored.export_causal_state(), state)
+        self.assertEqual(restored.publish_causal_inference(), ())
+
+        # A replayed contrast cannot alias the same physical world step
+        # under another source-event ID, even if the episode matches.
+        damaged = deepcopy(state)
+        control = next(row for row in damaged["causal_observations"]
+                       if row["identifier"] == "observation:3")
+        control["observed_step"] = 1
+        with self.assertRaisesRegex(
+            ValueError, "review proof lacks independent matched controls",
+        ):
+            restored.restore_causal_state(damaged)
+        self.assertEqual(restored.export_causal_state(), state)
+
+    def test_review_rejects_two_arms_of_same_world_step(self):
+        m = model()
+        for row in (
+            obs(1, cause=True, effect=True),
+            obs(2, cause=True, effect=True),
+            replace(obs(3, cause=False, effect=False),
+                    episode_ref="episode:1", observed_step=1),
+            obs(4, cause=False, effect=False),
+        ):
+            m.integrate_causal_observation(row)
+        self.assertEqual(
+            [change.after for change in m.publish_causal_inference()],
+            ["correlation_observee"],
+        )
+        m.integrate_hypothesis_review(review())
+        snapshot = m.export_causal_state()
+        with self.assertRaisesRegex(ValueError, "review lacks independent matched controls"):
+            m.publish_causal_inference()
+        self.assertEqual(m.export_causal_state(), snapshot)
+
     def test_invalid_second_review_rolls_back_entire_publication(self):
         m = model()
         correlated(m)

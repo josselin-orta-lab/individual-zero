@@ -169,6 +169,32 @@ class AutonomousHydrationLifecycleTests(unittest.TestCase):
             ["hypothese_causale"],
         )
 
+    def test_independent_drink_and_wait_same_episode_can_support_review(self):
+        world, model = rig()
+        events = []
+        for step, primitive in ((1, "boire"), (2, "boire"), (3, "attendre")):
+            events.extend(physical_sample(world, model, step=step, primitive=primitive))
+        accepted = close(
+            model, episode_ref="episode:one-lived-segment",
+            events=tuple(events),
+        )
+        self.assertEqual(len(accepted), 3)
+        self.assertEqual(len({v.observation_ref for v in accepted}), 3)
+        self.assertEqual(
+            [change.after for change in model.publish_causal_inference()],
+            ["correlation_observee"],
+        )
+        self.assertEqual(
+            [change.after for change in model.publish_causal_inference()],
+            ["hypothese_causale"],
+        )
+        self.assertEqual(model.get("causal:hydration").causal_status,
+                         "hypothese_causale")
+        checkpoint = model.export_causal_state()
+        twin = rig()[1]
+        twin.restore_causal_state(checkpoint)
+        self.assertEqual(twin.export_causal_state(), checkpoint)
+
     def test_null_gain_never_creates_spurious_positive_correlations(self):
         world, model = rig(drink_gain=0.0)
         for step, primitive in ((1, "boire"), (2, "boire"), (3, "attendre")):

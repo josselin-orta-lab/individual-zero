@@ -2,7 +2,7 @@
 
 Spec v1.2.1 EN §§13.2, 13.4, DC-05, P-35, INV-03/25/27/33.
 An observed correlation can acquire explicit alternatives only from genuine,
-independent DC-09 episodes and a preregistered physical comparison pair.
+independent physical DC-09 transitions and a preregistered comparison pair.
 No intervention, exploratory motive or unsafe test is manufactured here.
 """
 from __future__ import annotations

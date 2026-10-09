@@ -1460,7 +1460,8 @@ class CausalModel:
         for present in sorted(exposed, key=lambda row: row.identifier):
             for absent in sorted(controls, key=lambda row: row.identifier):
                 if (
-                    present.episode_ref == absent.episode_ref
+                    present.observation_ref == absent.observation_ref
+                    or present.observed_step == absent.observed_step
                     or present.observation_context != absent.observation_context
                     or present.controlled_variables != absent.controlled_variables
                 ):
@@ -1484,8 +1485,9 @@ class CausalModel:
     ) -> CausalHypothesisReview | None:
         """Explicit observed 'attendre' alternative, never a typed placebo.
 
-        Both arms must have separately closed physical witnesses and a
-        matching water-source site, with distinct autobiographical episodes.
+        Both arms must have separately closed physical witnesses, distinct
+        world transitions and steps, and the same water-source site.
+        Autobiographical episode IDs are provenance, not causal sample IDs.
         """
         if (
             contingency.causal_status != "correlation_observee"
@@ -1517,7 +1519,8 @@ class CausalModel:
         for effect in treated:
             for baseline in controls:
                 if (
-                    effect.episode_ref == baseline.episode_ref
+                    effect.observation_ref == baseline.observation_ref
+                    or effect.observed_step == baseline.observed_step
                     or effect.controlled_variables != baseline.controlled_variables
                     or effect.observation_context != baseline.observation_context
                 ):
@@ -1617,7 +1620,8 @@ class CausalModel:
 
         # An already published correlation may autonomously become a
         # hypothesis when the preregistered alternative was *physically*
-        # observed in independent closed episodes. Newly correlated facts
+        # observed in distinct world transitions, even in the same closed
+        # episode. Newly correlated facts
         # cannot skip a publication stage in this batch.
         pending_review_refs = {
             review.contingency_ref for review in self._pending_causal_reviews
@@ -1645,7 +1649,8 @@ class CausalModel:
                     or b.contingency_ref != old.ref or not a.cause_present
                     or b.cause_present or a.controlled_variables != b.controlled_variables
                     or a.observation_context != b.observation_context
-                    or a.episode_ref == b.episode_ref):
+                    or a.observation_ref == b.observation_ref
+                    or a.observed_step == b.observed_step):
                     raise ValueError("review lacks independent matched controls")
             reviews.add(review.identifier)
             review_proofs[review.identifier] = review
@@ -2516,7 +2521,8 @@ class CausalModel:
                     or not a.cause_present or b.cause_present
                     or a.controlled_variables != b.controlled_variables
                     or a.observation_context != b.observation_context
-                    or a.episode_ref == b.episode_ref
+                    or a.observation_ref == b.observation_ref
+                    or a.observed_step == b.observed_step
                 ):
                     raise ValueError(
                         "causal snapshot review proof lacks independent matched controls"
