@@ -7,7 +7,8 @@ than reporting a falsely reassuring superstition rate.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+import json
 
 from .determinism import canonical_causal_bytes, sha256_hex
 from .stage9_random_reward_benchmark import (
@@ -37,6 +38,14 @@ class SpontaneousSuperstitionMatrix:
     correlation_readiness: str
     evaluation_status: str
     digest: str
+
+    def as_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+    def to_json(self) -> str:
+        return json.dumps(
+            self.as_dict(), ensure_ascii=False, sort_keys=True, indent=2,
+        ) + "\n"
 
 
 def run_spontaneous_superstition_matrix(
@@ -148,3 +157,11 @@ def run_spontaneous_superstition_matrix(
         evaluation_status="not_evaluable" if opportunities == 0 else "diagnostic_only",
         digest=sha256_hex(canonical_causal_bytes(payload)),
     )
+
+
+def main() -> None:
+    print(run_spontaneous_superstition_matrix().to_json(), end="")
+
+
+if __name__ == "__main__":
+    main()

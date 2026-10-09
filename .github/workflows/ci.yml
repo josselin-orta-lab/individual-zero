@@ -48,6 +48,60 @@ jobs:
           path: /tmp/stage9-hydration-contrast.jsonl
           if-no-files-found: error
 
+      # Evidence publishing is not Stage-9 scientific acceptance. The
+      # laboratory must still preregister the threshold and obtain real
+      # independent naturally acquired causal candidates before the Golden.
+      - name: Stage 9 evidence bundle (diagnostic, not acceptance)
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m lab.stage9_acceptance_report > /tmp/stage9-acceptance-diagnostic.json
+          python -m lab.stage9_spontaneous_superstition_matrix > /tmp/stage9-spontaneous-matrix-diagnostic.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from lab.determinism import canonical_causal_bytes, sha256_hex
+
+          acceptance = json.loads(Path(
+              "/tmp/stage9-acceptance-diagnostic.json"
+          ).read_text(encoding="utf-8"))
+          expected_digest = acceptance.pop("evidence_sha256")
+          if sha256_hex(canonical_causal_bytes(acceptance)) != expected_digest:
+              raise SystemExit("Stage 9 acceptance artifact digest differs")
+          if acceptance["acceptance_status"] != "open" or acceptance["golden_stage9_frozen"]:
+              raise SystemExit("Stage 9 diagnostic was incorrectly promoted to Golden")
+          checks = {row["criterion"]: row for row in acceptance["checks"]}
+          matrix = json.loads(Path(
+              "/tmp/stage9-spontaneous-matrix-diagnostic.json"
+          ).read_text(encoding="utf-8"))
+          superstition = checks["superstitious_rules_under_random_reward"]["evidence"]
+          if (
+              matrix["digest"] != superstition["spontaneous_matrix_sha256"]
+              or matrix["evaluation_status"] != superstition["spontaneous_evaluation_status"]
+              or matrix["spontaneously_observed_candidates"] != superstition["spontaneous_candidate_count"]
+              or matrix["natural_false_rule_rate"] != superstition["spontaneous_diagnostic_rate"]
+          ):
+              raise SystemExit("Stage 9 multiworld evidence and acceptance report differ")
+          print("stage9_diagnostic_bundle=" + json.dumps({
+              "acceptance": acceptance["acceptance_status"],
+              "golden_frozen": acceptance["golden_stage9_frozen"],
+              "acceptance_digest": expected_digest,
+              "multiworld_digest": matrix["digest"],
+              "natural_candidates": matrix["spontaneously_observed_candidates"],
+              "false_rule_rate": matrix["natural_false_rule_rate"],
+              "scientific_status": matrix["evaluation_status"],
+          }, sort_keys=True))
+          PY
+
+      - name: Upload Stage 9 diagnostic evidence bundle
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage9-acceptance-diagnostics
+          path: |
+            /tmp/stage9-acceptance-diagnostic.json
+            /tmp/stage9-spontaneous-matrix-diagnostic.json
+          if-no-files-found: error
+
       - name: Stage 8 preregistered physical κ stress Brier gate
         if: matrix.python-version == '3.11'
         run: |

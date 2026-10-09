@@ -3,6 +3,7 @@ import json
 import unittest
 
 from lab.stage9_acceptance_report import generate_stage9_acceptance_report
+from lab.determinism import canonical_causal_bytes, sha256_hex
 
 
 class Stage9AcceptanceReportTests(unittest.TestCase):
@@ -53,7 +54,11 @@ class Stage9AcceptanceReportTests(unittest.TestCase):
             checks["causal_replay"]["evidence"]["replayed_sha256"],
         )
         self.assertTrue(all(check["outstanding"] for check in data["checks"]))
-        self.assertEqual(len(data["evidence_sha256"]), 64)
+        digest = data.pop("evidence_sha256")
+        self.assertEqual(len(digest), 64)
+        self.assertEqual(
+            digest, sha256_hex(canonical_causal_bytes(data)),
+        )
 
     def test_spontaneous_multiworld_diagnostic_is_seeded_without_false_acceptance(self):
         one = generate_stage9_acceptance_report(

@@ -1,4 +1,5 @@
 """Stage-9 spontaneous causal-claim diagnostics, not scientific acceptance."""
+import json
 import unittest
 
 from lab.stage9_spontaneous_superstition_matrix import (
@@ -36,6 +37,19 @@ class SpontaneousMatrixTests(unittest.TestCase):
         self.assertIsNone(a.natural_false_rule_rate)
         self.assertEqual(a.evaluation_status, "not_evaluable")
         self.assertEqual(len(a.digest), 64)
+
+    def test_serialized_matrix_preserves_exact_provenance(self):
+        row = run_spontaneous_superstition_matrix(seeds=(41,), steps=10)
+        serialized = json.loads(row.to_json())
+        self.assertEqual(serialized["digest"], row.digest)
+        self.assertEqual(len(serialized["runs"]), 2)
+        self.assertEqual(serialized["spontaneously_observed_candidates"], 0)
+        self.assertIsNone(serialized["natural_false_rule_rate"])
+        self.assertEqual(serialized["evaluation_status"], "not_evaluable")
+        self.assertFalse(any(
+            entry["bench_seeded_false_hypothesis"]
+            for entry in serialized["runs"]
+        ))
 
     def test_invalid_design_rejected(self):
         for seeds, worlds in (
