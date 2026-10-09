@@ -38,7 +38,13 @@ The author or designated experiment owner must fill each item and commit the reg
 ## Machine-readable preregistration preflight
 
 The laboratory supplies a prospective JSON manifest containing the exact
-fields checked by `lab.stage9_scientific_preregistration`. Validate it using:
+fields checked by `lab.stage9_scientific_preregistration`, including
+SHA-256 digests of the physical world+layout+scenario manifests for **every**
+calibration and hold-out world. The preflight checks that two different IDs
+cannot reuse the same physical world. The frozen world generator, equipment,
+parameter registry, and ontology also require version-identifying SHA-256
+digests. These declarations do not prove actual physical independence:
+the bench must compare the manifests to each digest. Validate the draft using:
 
 ```bash
 python -m lab.stage9_scientific_preregistration

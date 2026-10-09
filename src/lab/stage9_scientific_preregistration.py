@@ -19,13 +19,16 @@ from .determinism import canonical_causal_bytes, sha256_hex
 
 
 SPEC_PATH = "docs/architecture/reference/en/mvp-specification-v1.2.1.md"
-REGISTRATION_VERSION = "stage9-preregistration-schema-v1"
+REGISTRATION_VERSION = "stage9-preregistration-schema-v2"
 SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
 COMMIT_RE = re.compile(r"[0-9a-f]{40}\Z")
 REQUIRED_FIELDS = frozenset({
     "protocol_version", "registration_id", "author",
     "normative_specification", "normative_specification_sha256",
     "frozen_implementation_commit", "world_generator_version",
+    "world_generator_sha256", "equipment_sha256",
+    "parameter_registry_sha256", "ontology_sha256",
+    "calibration_world_sha256", "holdout_world_sha256",
     "calibration_world_ids", "holdout_world_ids", "positive_world_ids",
     "negative_world_ids", "calibration_seeds", "holdout_seeds",
     "steps_per_run", "minimum_naturally_acquired_candidates",
@@ -49,6 +52,25 @@ def _ids(rows: object, minimum: int = 1) -> set[str]:
     ):
         raise ValueError("world IDs must be unique nonempty strings")
     return set(rows)
+
+
+def _world_hashes(value: object, names: set[str]) -> set[str]:
+    """Require explicit immutable world physics+layout+scenario digests.
+
+    This catches simple world relabelling; the independent bench must still
+    inspect the underlying physical manifests and their real provenance.
+    """
+    if not isinstance(value, dict) or set(value) != names:
+        raise ValueError("physical world digests must cover exactly the world IDs")
+    if any(
+        not isinstance(digest, str) or not SHA256_RE.fullmatch(digest)
+        for digest in value.values()
+    ):
+        raise ValueError("invalid physical world SHA-256 digest")
+    values = set(value.values())
+    if len(values) != len(value):
+        raise ValueError("duplicate physical world under different identifiers")
+    return values
 
 
 def _seeds(rows: object, minimum: int = 1) -> set[int]:
@@ -107,6 +129,19 @@ def validate_registration(data: Mapping[str, object]) -> str:
         or positive | negative != worlds
     ):
         raise ValueError("holdout world/control groups must be disjoint")
+    for name in (
+        "world_generator_sha256", "equipment_sha256",
+        "parameter_registry_sha256", "ontology_sha256",
+    ):
+        digest = data[name]
+        if not isinstance(digest, str) or not SHA256_RE.fullmatch(digest):
+            raise ValueError(f"invalid frozen manifest digest: {name}")
+    physical_calibration = _world_hashes(
+        data["calibration_world_sha256"], calibration_worlds,
+    )
+    physical_holdout = _world_hashes(data["holdout_world_sha256"], worlds)
+    if physical_calibration & physical_holdout:
+        raise ValueError("holdout duplicates calibration physical world")
     if _seeds(data["holdout_seeds"], 2) & _seeds(data["calibration_seeds"]):
         raise ValueError("holdout and calibration seeds must be disjoint")
     for key in ("steps_per_run", "minimum_naturally_acquired_candidates"):

@@ -24,6 +24,15 @@ def example_draft() -> dict[str, object]:
         "normative_specification_sha256": normative_specification_digest(),
         "frozen_implementation_commit": "a" * 40,
         "world_generator_version": "future-holdout-v1",
+        "world_generator_sha256": "d" * 64,
+        "equipment_sha256": "e" * 64,
+        "parameter_registry_sha256": "f" * 64,
+        "ontology_sha256": "0" * 64,
+        "calibration_world_sha256": {"calibration:1": "a" * 64},
+        "holdout_world_sha256": {
+            "holdout:positive": "b" * 64,
+            "holdout:null": "c" * 64,
+        },
         "calibration_world_ids": ["calibration:1"],
         "holdout_world_ids": ["holdout:positive", "holdout:null"],
         "positive_world_ids": ["holdout:positive"],
@@ -81,6 +90,32 @@ class Stage9PreregistrationTests(unittest.TestCase):
                 draft[key] = bad
                 with self.assertRaises(ValueError):
                     validate_registration(draft)
+
+    def test_world_hashes_reject_relabeling_and_calibration_reuse(self):
+        for label, edit in (
+            ("same_holdout_physics", ("holdout:null", "b" * 64)),
+            ("calibration_reused", ("holdout:positive", "a" * 64)),
+            ("invalid_world_digest", ("holdout:null", "not-a-digest")),
+            ("missing_world_digest", ("holdout:null", None)),
+        ):
+            with self.subTest(label=label):
+                draft = example_draft()
+                key, digest = edit
+                if digest is None:
+                    draft["holdout_world_sha256"].pop(key)
+                else:
+                    draft["holdout_world_sha256"][key] = digest
+                with self.assertRaises(ValueError):
+                    validate_registration(draft)
+
+        draft = example_draft()
+        draft["calibration_world_sha256"]["alias:extra"] = "1" * 64
+        with self.assertRaises(ValueError):
+            validate_registration(draft)
+        draft = example_draft()
+        draft["parameter_registry_sha256"] = "0" * 63
+        with self.assertRaises(ValueError):
+            validate_registration(draft)
 
     def test_invalid_thresholds_and_counts_cannot_pass(self):
         for key, bad in (
