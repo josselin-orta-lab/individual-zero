@@ -123,6 +123,66 @@ class AgencyEvidenceTests(unittest.TestCase):
                 )
             self.assertEqual(m.export_causal_state(), baseline)
 
+    def test_agency_source_id_collision_cannot_launder_p47_evidence(self):
+        original = event()
+        for duplicate_kind in ("unrelated_telemetry", "agency_comparison"):
+            for reversed_order in (False, True):
+                with self.subTest(
+                    kind=duplicate_kind, reversed=reversed_order,
+                ):
+                    m = model()
+                    duplicate = {
+                        **original,
+                        "kind": duplicate_kind,
+                    }
+                    if duplicate_kind == "agency_comparison":
+                        duplicate["data"] = {
+                            **original["data"],
+                            "option_ref": "option:contradictory",
+                        }
+                    variants = (
+                        (duplicate, original)
+                        if reversed_order else (original, duplicate)
+                    )
+                    baseline = m.export_causal_state()
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "duplicate closed Memory agency event projection",
+                    ):
+                        m.ingest_closed_agency_comparisons(
+                            episode_ref="episode:collision",
+                            event_refs=(original["event_id"],),
+                            autobiographical_events=variants,
+                        )
+                    self.assertEqual(m.export_causal_state(), baseline)
+                    self.assertEqual(m.published_agency_evidence(), ())
+                    # Invalid input must not consume the legitimate source.
+                    (admitted,) = m.ingest_closed_agency_comparisons(
+                        episode_ref="episode:valid",
+                        event_refs=(original["event_id"],),
+                        autobiographical_events=(original,),
+                    )
+                    self.assertEqual(admitted.event_ref, original["event_id"])
+
+        # An event from another episode cannot invalidate a valid P-47
+        # source and unrelated closed events do not make it ambiguous.
+        m = model()
+        outside = {
+            **original,
+            "event_id": "dc09:outside-closed-memory",
+            "kind": "unrelated_telemetry",
+        }
+        other_closed_event = {
+            "event_id": "dc09:unrelated",
+            "kind": "unrelated_telemetry", "t_monde": 2,
+        }
+        (admitted,) = m.ingest_closed_agency_comparisons(
+            episode_ref="episode:valid",
+            event_refs=(original["event_id"], other_closed_event["event_id"]),
+            autobiographical_events=(original, outside, other_closed_event),
+        )
+        self.assertEqual(admitted.event_ref, original["event_id"])
+
     def test_unversioned_legacy_projection_is_never_relabelled_p47(self):
         m = model()
         e = event()

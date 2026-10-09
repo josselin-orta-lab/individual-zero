@@ -1454,10 +1454,27 @@ class CausalModel:
         refs = set(event_refs)
         if len(refs) != len(event_refs):
             raise ValueError("repeated event reference within Memory episode")
+        # Fail closed on source-ID collisions *before* decoding P-47.
+        # Otherwise a repeated event ID with a different kind (or a
+        # malformed comparison) can be silently ignored while its other
+        # projection is accepted as independent evidence. Unrelated event
+        # kinds from the same Memory episode do not enter this gate.
+        closed_events = [
+            event for event in autobiographical_events
+            if event.get("event_id") in refs
+        ]
+        agency_source_refs = {
+            event["event_id"] for event in closed_events
+            if event.get("kind") == "agency_comparison"
+        }
+        agency_projection_refs = [
+            event["event_id"] for event in closed_events
+            if event["event_id"] in agency_source_refs
+        ]
+        if len(agency_projection_refs) != len(set(agency_projection_refs)):
+            raise ValueError("duplicate closed Memory agency event projection")
         admitted: list[AgencyEvidence] = []
-        for event in autobiographical_events:
-            if event.get("event_id") not in refs:
-                continue
+        for event in closed_events:
             report = agency_evidence_from_autobiography(
                 episode_ref=episode_ref, event=event,
             )
