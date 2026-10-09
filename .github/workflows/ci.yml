@@ -32,6 +32,36 @@ jobs:
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
 
+      - name: Stage 9 frozen checkout preflight (local software diagnostic)
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m lab.stage9_frozen_worktree --repo . \
+            --frozen-commit "$(git rev-parse HEAD)" \
+            > /tmp/stage9-checkout-integrity.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path(
+              "/tmp/stage9-checkout-integrity.json"
+          ).read_text(encoding="utf-8"))
+          if (
+              report["worktree_status"] != "frozen_tracked_code_matches_local_checkout"
+              or report["scientific_verdict"] is not None
+              or report["golden_stage9_frozen"]
+              or report["verified_tracked_files"] < 1
+          ):
+              raise SystemExit("Stage 9 local checkout integrity preflight failed")
+          print("stage9_checkout_preflight=local_software_only")
+          PY
+
+      - name: Upload Stage 9 local checkout integrity diagnostic
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage9-checkout-integrity-diagnostic
+          path: /tmp/stage9-checkout-integrity.json
+          if-no-files-found: error
+
       - name: Run bootstrap smoke execution
         run: individual-zero --cycles 3 --seed 0 --run-id ci-smoke --output /tmp/individual-zero-ci.jsonl
 

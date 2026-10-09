@@ -126,7 +126,7 @@ python -m lab.stage9_frozen_worktree \
   --repo . --frozen-commit FULL_40_CHARACTER_IMPLEMENTATION_COMMIT
 ```
 
-The checker ensures current HEAD retains the exact frozen `src/` tree and `pyproject.toml` blob, rejects staged and unstaged changes, and compares every tracked file's **actual disk bytes and executable mode** against the frozen Git blob. Added executable-source files are refused even when ignored by Git. The source must be checked on a compatible filesystem with meaningful executable permission bits. No source, index, registration or output file is changed.
+The checker ensures current HEAD retains the exact frozen `src/` tree and `pyproject.toml` blob, rejects staged and unstaged changes, and compares every tracked file's **actual disk bytes and executable mode** against the frozen Git blob. Unexpected additional source files and directory symlinks are refused even when ignored by Git (except generated Python caches and editable-install metadata, which are explicitly **not attested**). The source must be checked on a compatible filesystem with meaningful executable permission bits. No source, index, registration or output file is changed.
 
 This is **only a local software preflight**, not scientific certification. Ignored compiled Python caches, installed dependencies, interpreter/runtime configuration, the true executed binary and the physical experimental environment still require separate custody. Running the checker after a run cannot retrospectively prove which code was executed. Archive its output together with the run's claimed checkout identity and obtain an independent witness; the tool always returns `scientific_verdict=null` and `golden_stage9_frozen=false`.
 
@@ -222,7 +222,7 @@ python -m lab.stage9_acceptance_report
 python -m lab.stage9_reference_replay --steps 300 --journal stage9-reference-diagnostic.jsonl
 ```
 
-The CI archives `stage9-hydration-contrast-diagnostic`, `stage9-acceptance-diagnostics`, and `stage9-extended-reference-diagnostic`. The extended reference independently executes 300 complete world steps twice, compares the entire canonical journal and every causal owner state, and retains the first journal. All these hashes identify **diagnostic artefacts**, not a scientific preregistration or Golden.
+The CI archives `stage9-hydration-contrast-diagnostic`, `stage9-acceptance-diagnostics`, `stage9-checkout-integrity-diagnostic`, and `stage9-extended-reference-diagnostic`. The checkout-integrity artifact checks the CI working tree against its own checked-out HEAD only; it does not establish a prospective research freeze or identify the binary later used in scientific trials. The extended reference independently executes 300 complete world steps twice, compares the entire canonical journal and every causal owner state, and retains the first journal. All these hashes identify **diagnostic artefacts**, not a scientific preregistration or Golden.
 
 Random-reward diagnostics count accepted *physical hydration observations*
 separately from distinct closed Memory episode identifiers. Multiple actual

@@ -78,11 +78,46 @@ class FrozenWorktreePreflightTests(unittest.TestCase):
                         "print('not frozen')\n", encoding="utf-8",
                     )
                     with self.assertRaisesRegex(
-                        ValueError, "untracked executable source|local Git changes",
+                        ValueError, "untracked source path|local Git changes",
                     ):
                         verify_frozen_worktree(
                             repository=repo, frozen_implementation_commit=frozen,
                         )
+
+    def test_ignored_source_directory_symlink_is_not_trusted(self):
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            frozen, _, _ = _create_fixture(repo)
+            external = repo / "outside"
+            external.mkdir()
+            (external / "__init__.py").write_text(
+                "value = 'not frozen'\n", encoding="utf-8",
+            )
+            (repo / ".gitignore").write_text(
+                "src/injected_package\n", encoding="utf-8",
+            )
+            (repo / "src" / "injected_package").symlink_to(
+                external, target_is_directory=True,
+            )
+            with self.assertRaisesRegex(ValueError, "untracked source symlink"):
+                verify_frozen_worktree(
+                    repository=repo, frozen_implementation_commit=frozen,
+                )
+
+    def test_non_python_extra_source_file_cannot_be_hidden_by_ignore(self):
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            frozen, _, _ = _create_fixture(repo)
+            (repo / ".gitignore").write_text(
+                "src/launcher\n", encoding="utf-8",
+            )
+            (repo / "src" / "launcher").write_text(
+                "#!/bin/sh\nexit 0\n", encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "untracked source path"):
+                verify_frozen_worktree(
+                    repository=repo, frozen_implementation_commit=frozen,
+                )
 
     def test_untracked_non_source_document_does_not_invalidate_worktree(self):
         with TemporaryDirectory() as folder:
