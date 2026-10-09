@@ -61,6 +61,20 @@ class ScriptedStage1RuntimeTests(unittest.TestCase):
         self.assertEqual(actual, expected)
         self.assertGreater(len(runtime.journal.entries), journal_length_before_restore)
         self.assertTrue(runtime.journal.verify())
+        event_ids = tuple(entry.event_id for entry in runtime.journal.entries)
+        self.assertEqual(len(event_ids), len(set(event_ids)))
+        # Restoring causal state does not erase the technical journal.
+        # The same logical step can reexecute with identical causal state,
+        # but its technical occurrence must retain a distinct event ID.
+        repeated = [
+            entry for entry in runtime.journal.entries
+            if entry.causal_event.get("kind") == "command_applied"
+            and entry.causal_event.get("t_monde") == 2
+        ]
+        self.assertEqual(len(repeated), 2)
+        self.assertNotEqual(repeated[0].event_id, repeated[1].event_id)
+        self.assertIs(runtime.journal.get(repeated[0].event_id), repeated[0])
+        self.assertIs(runtime.journal.get(repeated[1].event_id), repeated[1])
 
     def test_snapshot_restores_producer_local_sequences(self) -> None:
         runtime = self.run_reference(steps=1)
