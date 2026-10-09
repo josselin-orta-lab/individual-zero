@@ -682,6 +682,98 @@ class CausalModel:
         self._pending_agency_evidence.extend(admitted)
         return tuple(admitted)
 
+    def _lived_food_hypothesis_review(
+        self,
+        contingency: CanonicalContingency,
+        observations: Mapping[str, CausalObservation],
+    ) -> CausalHypothesisReview | None:
+        """Make explicit only a preregistered alternative actually experienced.
+
+        A different consumed food is a control only when the closed DC-09
+        episode produced both its own positive exposure and the corresponding
+        negative treatment observation. Typed control claims alone are not
+        proof of a lived comparison. This produces NO test action or
+        intervention, and never overrides the separate safety veto.
+        """
+        if (
+            contingency.causal_status != "correlation_observee"
+            or contingency.predicate != "toxic_item"
+            or contingency.context_signature != "global"
+        ):
+            return None
+        control_food = next((
+            control for treatment, control in self.config.food_control_pairs
+            if treatment == contingency.subject_ref
+        ), None)
+        if control_food is None:
+            return None
+
+        exposed: list[CausalObservation] = []
+        controls: list[CausalObservation] = []
+        for observation in observations.values():
+            if (
+                observation.contingency_ref != contingency.ref
+                or observation.predicate != contingency.predicate
+                or observation.subject_ref != contingency.subject_ref
+                or observation.application_context != contingency.context_signature
+                or observation.observation_context != "food_consumption"
+                or observation.controlled_variables != (("primitive", "manger"),)
+                or f"dc05:{observation.episode_ref}:{observation.observation_ref}"
+                   not in self._seen_ids
+            ):
+                continue
+            physical_id = (
+                f"causal-observation:{observation.episode_ref}:"
+                f"{observation.observation_ref}"
+            )
+            if observation.cause_present:
+                if observation.identifier == physical_id and observation.effect_present:
+                    exposed.append(observation)
+                continue
+            if observation.identifier != (
+                f"causal-control:{contingency.subject_ref}:{physical_id}"
+            ) or observation.effect_present:
+                continue
+            # The no-treatment record must have been generated from the
+            # same real transition as eating the declared control food.
+            actual_control = observations.get(physical_id)
+            if (
+                actual_control is None
+                or actual_control.contingency_ref != f"toxic:{control_food}"
+                or actual_control.predicate != "toxic_item"
+                or actual_control.subject_ref != control_food
+                or not actual_control.cause_present
+                or actual_control.effect_present != observation.effect_present
+                or actual_control.episode_ref != observation.episode_ref
+                or actual_control.observation_ref != observation.observation_ref
+                or actual_control.observed_step != observation.observed_step
+                or actual_control.observation_context != observation.observation_context
+                or actual_control.controlled_variables != observation.controlled_variables
+            ):
+                continue
+            controls.append(observation)
+
+        for present in sorted(exposed, key=lambda row: row.identifier):
+            for absent in sorted(controls, key=lambda row: row.identifier):
+                if (
+                    present.episode_ref == absent.episode_ref
+                    or present.observation_context != absent.observation_context
+                    or present.controlled_variables != absent.controlled_variables
+                ):
+                    continue
+                review = CausalHypothesisReview(
+                    identifier=(
+                        f"lived-food-review:{contingency.ref}:"
+                        f"{present.identifier}:{absent.identifier}"
+                    ),
+                    contingency_ref=contingency.ref,
+                    alternatives=(f"observed_control_food:{control_food}",),
+                    contrasting_pairs=((present.identifier, absent.identifier),),
+                )
+                review.validate()
+                return review
+        return None
+
     def publish_causal_inference(self) -> tuple[CausalInferenceChange, ...]:
         """Publish independent §13.2 evidence atomically, with frozen input stages."""
         from collections import defaultdict
@@ -757,7 +849,26 @@ class CausalModel:
             published[ref] = new
             changes.append(CausalInferenceChange(ref, current.causal_status, new.causal_status, new.version, sorted(e)[-1], "controlled_base_rate"))
 
-        for review in sorted(self._pending_causal_reviews, key=lambda x: x.identifier):
+        # An already published correlation may autonomously become a
+        # hypothesis when the preregistered alternative was *physically*
+        # observed in independent closed episodes. Newly correlated facts
+        # cannot skip a publication stage in this batch.
+        pending_review_refs = {
+            review.contingency_ref for review in self._pending_causal_reviews
+        }
+        lived_reviews = tuple(
+            review
+            for ref, record in sorted(original.items())
+            if ref not in pending_review_refs
+            for review in (
+                self._lived_food_hypothesis_review(record, observations),
+            )
+            if review is not None
+        )
+        for review in sorted(
+            (*self._pending_causal_reviews, *lived_reviews),
+            key=lambda x: x.identifier,
+        ):
             old = original.get(review.contingency_ref)
             if old is None or old.causal_status != "correlation_observee":
                 raise ValueError("review requires previously published correlation")
