@@ -5,6 +5,25 @@ from lab.stage9_random_reward_benchmark import (
     preregistered_food_rewards, run_random_reward_negative_control,
 )
 
+def _technical_hydration_events() -> dict[str, dict[str, object]]:
+    return {
+        "command:1": {
+            "kind": "command_experienced",
+            "t_monde": 1, "primitive": "boire",
+        },
+        "world-transition:1": {
+            "kind": "world_transition_experienced", "t_monde": 1,
+        },
+        "command:2": {
+            "kind": "command_experienced",
+            "t_monde": 2, "primitive": "boire",
+        },
+        "world-transition:2": {
+            "kind": "world_transition_experienced", "t_monde": 2,
+        },
+    }
+
+
 class RandomRewardNegativeControlTests(unittest.TestCase):
     def test_schedule_seeded_before_actions_and_counterbalanced(self):
         a = preregistered_food_rewards(campaign_seed=42, steps=14)
@@ -26,11 +45,15 @@ class RandomRewardNegativeControlTests(unittest.TestCase):
                 "identifier": "hydration:1",
                 "episode_ref": "memory:one",
                 "observation_ref": "world-transition:1",
+                "observed_step": 2,
+                "cause_present": True,
             },
             {
                 "identifier": "hydration:2",
                 "episode_ref": "memory:one",
                 "observation_ref": "world-transition:2",
+                "observed_step": 3,
+                "cause_present": True,
             },
         ]
         witnesses = {
@@ -44,7 +67,9 @@ class RandomRewardNegativeControlTests(unittest.TestCase):
             }),
         }
         self.assertEqual(
-            _audit_lived_hydration_provenance(rows, witnesses, committed), 1,
+            _audit_lived_hydration_provenance(
+                rows, witnesses, committed, _technical_hydration_events(),
+            ), 1,
         )
         # Reusing a physical transition with another observation ID or
         # episode alias is not an additional source of causal evidence.
@@ -60,12 +85,14 @@ class RandomRewardNegativeControlTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
             _audit_lived_hydration_provenance(
                 duplicated, alias_witnesses, committed,
+                _technical_hydration_events(),
             )
         with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
             _audit_lived_hydration_provenance(
                 rows, witnesses, {
                     "memory:one": committed["memory:one"] - {"command:2"},
                 },
+                _technical_hydration_events(),
             )
         # Different world transitions cannot both claim one applied
         # command as an independent physical trial.
@@ -74,13 +101,17 @@ class RandomRewardNegativeControlTests(unittest.TestCase):
             "hydration:2": ("command:1", "world-transition:2"),
         }
         with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
-            _audit_lived_hydration_provenance(rows, reused_command, committed)
+            _audit_lived_hydration_provenance(
+                rows, reused_command, committed, _technical_hydration_events(),
+            )
 
     def test_rejects_witnesses_from_other_closed_memory_episodes(self):
         rows = [{
             "identifier": "hydration:1",
             "episode_ref": "memory:one",
             "observation_ref": "world-transition:1",
+            "observed_step": 2,
+            "cause_present": True,
         }]
         witnesses = {
             "hydration:1": ("command:1", "world-transition:1"),
@@ -93,13 +124,15 @@ class RandomRewardNegativeControlTests(unittest.TestCase):
             "memory:two": frozenset({"world-transition:1"}),
         }
         with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
-            _audit_lived_hydration_provenance(rows, witnesses, split)
+            _audit_lived_hydration_provenance(
+                rows, witnesses, split, _technical_hydration_events(),
+            )
 
         # Re-labelling the row to the other episode also cannot launder it.
         with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
             _audit_lived_hydration_provenance(
                 [{**rows[0], "episode_ref": "memory:two"}],
-                witnesses, split,
+                witnesses, split, _technical_hydration_events(),
             )
 
         valid = {
@@ -110,11 +143,56 @@ class RandomRewardNegativeControlTests(unittest.TestCase):
             "identifier": "hydration:2",
             "episode_ref": "memory:two",
             "observation_ref": "world-transition:2",
+            "observed_step": 3,
+            "cause_present": True,
         }
         both = {**witnesses, "hydration:2": ("command:2", "world-transition:2")}
         self.assertEqual(
-            _audit_lived_hydration_provenance([*rows, extra], both, valid), 2,
+            _audit_lived_hydration_provenance(
+                [*rows, extra], both, valid, _technical_hydration_events(),
+            ), 2,
         )
+
+    def test_rejects_mismatched_physical_timing_and_action_types(self):
+        rows = [{
+            "identifier": "hydration:1",
+            "episode_ref": "memory:one",
+            "observation_ref": "world-transition:1",
+            "observed_step": 2,
+            "cause_present": True,
+        }]
+        refs = {"hydration:1": ("command:1", "world-transition:1")}
+        closed = {
+            "memory:one": frozenset({
+                "command:1", "world-transition:1",
+                "command:2", "world-transition:2",
+            }),
+        }
+        source = _technical_hydration_events()
+        self.assertEqual(
+            _audit_lived_hydration_provenance(rows, refs, closed, source), 1,
+        )
+        for change in (
+            ("command:1", "t_monde", 2),
+            ("world-transition:1", "t_monde", 2),
+            ("command:1", "primitive", "attendre"),
+            ("command:1", "kind", "world_transition_experienced"),
+        ):
+            with self.subTest(change=change):
+                event_ref, field, value = change
+                damaged = {
+                    key: dict(event) for key, event in source.items()
+                }
+                damaged[event_ref][field] = value
+                with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
+                    _audit_lived_hydration_provenance(
+                        rows, refs, closed, damaged,
+                    )
+        with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
+            _audit_lived_hydration_provenance(
+                [{**rows[0], "observed_step": 3}],
+                refs, closed, source,
+            )
 
     def test_real_world_negative_control_is_replayed(self):
         first = run_random_reward_negative_control(

@@ -157,7 +157,11 @@ world transitions may occur within one episode; duplicating the same physical
 transition is forbidden, as is claiming two independent transitions
 from the same applied command. The bench cross-checks both the experienced
 command and transition against the **same named closed Memory episode**,
-not merely a union of event references across all closed episodes. The report fields `lived_hydration_observations`
+not merely a union of event references across all closed episodes.
+The technical journal must further confirm the experienced command and
+world transition are from the same source step immediately preceding the
+causal observation; event aliases with mismatched time or action kind are
+rejected before diagnostic sample counting. The report fields `lived_hydration_observations`
 and `independent_lived_hydration_episodes` therefore measure different
 units. An episode count alone is not proof of statistically independent
 experimental sampling.

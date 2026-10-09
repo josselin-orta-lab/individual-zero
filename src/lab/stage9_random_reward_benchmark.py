@@ -14,6 +14,7 @@ a frozen superstition acceptance threshold remain to be registered.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from typing import Mapping
 
 from i0.modules.causal_lifecycle import CausalObservation, CausalHypothesisReview
 from i0.modules.causal_model import CausalModelConfig
@@ -75,6 +76,7 @@ def _audit_lived_hydration_provenance(
     observations: list[dict[str, object]],
     witnesses: dict[str, tuple[str, str]],
     committed_episode_refs: dict[str, frozenset[str]],
+    technical_events: Mapping[str, Mapping[str, object]],
 ) -> int:
     """Verify each physical witness in its stated closed Memory episode.
 
@@ -83,6 +85,8 @@ def _audit_lived_hydration_provenance(
     episode and its claimed consequence from an unrelated closed episode.
     Every credited observation requires a unique applied command AND world
     transition; one command cannot be credited twice under new event IDs.
+    The raw journal must also confirm the command, transition and declared
+    next-step observation belong to the same actual physical world step.
     """
     episodes: set[str] = set()
     physical_commands: set[str] = set()
@@ -93,6 +97,10 @@ def _audit_lived_hydration_provenance(
             raise AssertionError("lived hydration observation lacks witness")
         command_ref, transition_ref = witness
         episode_refs = committed_episode_refs.get(row["episode_ref"])
+        command_event = technical_events.get(command_ref)
+        transition_event = technical_events.get(transition_ref)
+        step = row.get("observed_step")
+        cause = row.get("cause_present")
         if (
             episode_refs is None
             or row["observation_ref"] != transition_ref
@@ -100,6 +108,17 @@ def _audit_lived_hydration_provenance(
             or transition_ref not in episode_refs
             or command_ref in physical_commands
             or transition_ref in physical_transitions
+            or type(step) is not int or step < 2
+            or type(cause) is not bool
+            or not isinstance(command_event, Mapping)
+            or not isinstance(transition_event, Mapping)
+            or command_event.get("kind") != "command_experienced"
+            or transition_event.get("kind") != "world_transition_experienced"
+            or command_event.get("t_monde") != step - 1
+            or transition_event.get("t_monde") != step - 1
+            or command_event.get("primitive") != (
+                "boire" if cause else "attendre"
+            )
         ):
             raise AssertionError(
                 "lived hydration observation lacks unique closed Memory physical evidence"
@@ -303,8 +322,15 @@ def run_random_reward_negative_control(
     }
     if len(committed_episode_refs) != len(closed_episodes):
         raise AssertionError("duplicate closed Memory episode identity")
+    technical_events = {
+        entry.event_id: entry.causal_event
+        for entry in runtime.journal.entries
+        if entry.causal_event.get("kind") in {
+            "command_experienced", "world_transition_experienced",
+        }
+    }
     distinct_episode_count = _audit_lived_hydration_provenance(
-        observation_rows, witnessed, committed_episode_refs,
+        observation_rows, witnessed, committed_episode_refs, technical_events,
     )
     drinks = [row for row in observation_rows if row["cause_present"]]
     positive_drinks = [row for row in drinks if row["effect_present"]]
