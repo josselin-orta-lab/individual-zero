@@ -189,6 +189,22 @@ class CanonicalCausalSafetyTests(unittest.TestCase):
             one.restore_causal_state(claimed)
         self.assertEqual(one.export_causal_state(), before)
 
+    def test_safety_snapshot_cannot_reassign_credit_between_contingencies(self):
+        m = model()
+        for identifier in ("harm1", "harm2"):
+            m.integrate(evidence(identifier))
+            m.publish()
+        baseline = m.export_causal_state()
+        for kind in ("episodes", "observations"):
+            with self.subTest(kind=kind):
+                broken = deepcopy(baseline)
+                broken[kind][0][0] = "toxic:another-berry"
+                with self.assertRaisesRegex(
+                    ValueError, "unknown contingency",
+                ):
+                    m.restore_causal_state(broken)
+                self.assertEqual(m.export_causal_state(), baseline)
+
     def test_snapshot_pending_and_replay_are_identical(self):
         m = model()
         m.integrate(evidence("first"))

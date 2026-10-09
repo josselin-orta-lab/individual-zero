@@ -2077,11 +2077,25 @@ class CausalModel:
             len(accepted_refs) == len(episodes) == len(observations)
         ):
             raise ValueError("safety snapshot credits mismatch published evidence")
+        # Global totals alone are not sufficient: a corrupted snapshot could
+        # reassign one physical credit to another contingency while keeping
+        # both global counts unchanged.
+        if any(ref not in records for ref, _ in episodes | observations):
+            raise ValueError("safety snapshot credit refers to unknown contingency")
         for record in records.values():
             earned = {
                 episode for contingency, episode in episodes
                 if contingency == record.ref
             }
+            observed_for_ref = {
+                observation for contingency, observation in observations
+                if contingency == record.ref
+            }
+            if (
+                len(earned) != len(record.evidence_refs)
+                or len(observed_for_ref) != len(record.evidence_refs)
+            ):
+                raise ValueError("safety snapshot credits mismatch contingency")
             if (
                 not set(record.harmful_episodes).issubset(earned)
                 or not set(record.harmless_episodes).issubset(earned)
