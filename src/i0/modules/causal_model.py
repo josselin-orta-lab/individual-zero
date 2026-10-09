@@ -1299,6 +1299,12 @@ class CausalModel:
             revision = self._causal_revision_boundaries.get(
                 contingency.ref, (-1, "")
             )[0]
+            # A recovered causal status cannot revive a numerical value
+            # measured before a contradictory lived intervention. The
+            # simulator needs a new, Memory-closed Perception measurement
+            # and its own already-published P-47 comparison after revision.
+            if witness.observed_t_monde <= revision:
+                continue
             # Only interventions after the latest published refutation
             # establish the current rule. Export provenance from that same
             # revision window, never from a stale pre-refutation success.

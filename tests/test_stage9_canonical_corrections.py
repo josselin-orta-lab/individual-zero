@@ -37,26 +37,29 @@ def model():
     ))
 
 
-def physical_meal(m):
+def physical_meal(m, *, step=1, option="option:meal"):
     before = state(x=2)
+    suffix = "" if step == 1 else f":{step}"
+    command_ref = "cmd:meal" + suffix
+    transition_ref = "world:meal" + suffix
     m.record_applied_food_exposure(
-        t_monde=1, resource_kind="berry_b", option_ref="option:meal",
+        t_monde=step, resource_kind="berry_b", option_ref=option,
         motive_ref="goal:food", integrity_before=100.0,
         body_before=dict(before.body), position_before=(2, 2),
         state_before_digest=sha256_hex(canonical_causal_bytes(before.as_dict())),
     )
-    m.observe_followup_capture(t_monde=2, integrity=90.0)
+    m.observe_followup_capture(t_monde=step + 1, integrity=90.0)
     events = (
-        {"event_id": "cmd:meal", "kind": "command_experienced",
-         "t_monde": 1, "primitive": "manger",
+        {"event_id": command_ref, "kind": "command_experienced",
+         "t_monde": step, "primitive": "manger",
          "parameters": {"target": "berry_b"}},
-        {"event_id": "world:meal", "kind": "world_transition_experienced",
-         "t_monde": 1, "effects": {"ate": "berry_b"},
+        {"event_id": transition_ref, "kind": "world_transition_experienced",
+         "t_monde": step, "effects": {"ate": "berry_b"},
          "body_after": {"integrity": 90.0}},
     )
     admitted = m.ingest_closed_autobiographical_episode(
-        episode_ref="episode:meal",
-        event_refs=("cmd:meal", "world:meal"),
+        episode_ref="episode:meal" + suffix,
+        event_refs=(command_ref, transition_ref),
         autobiographical_events=events,
     )
     assert len(admitted) == 1
@@ -370,19 +373,36 @@ class CanonicalCorrectionTests(unittest.TestCase):
                 m, "recovery2", step=13, context="zone2",
             )], ["etablie"],
         )
+        # Fresh P-35 interventions restore the *causal* fact, but cannot
+        # reuse the pre-refutation body measurement as a current numerical
+        # Simulator correction. Only a newly lived outcome can enable it.
+        self.assertEqual(m.established_prediction_corrections(), ())
+        no_numeric = m.export_causal_state()
+        without_new_value = model()
+        without_new_value.restore_causal_state(no_numeric)
+        self.assertEqual(without_new_value.export_causal_state(), no_numeric)
+        self.assertEqual(without_new_value.established_prediction_corrections(), ())
+
+        physical_meal(m, step=15, option="option:meal:recovery")
+        self.assertEqual(m.established_prediction_corrections(), ())
+        m.publish_causal_inference()
+        self.assertEqual(m.established_prediction_corrections(), ())
+        agency_report(
+            m, "meal-recovery", step=15, option="option:meal:recovery",
+            observed=90.0, predicted=100.0, conforms=False,
+        )
         (reestablished,) = m.established_prediction_corrections()
         self.assertEqual(reestablished.contingency_ref, REF)
+        self.assertEqual(reestablished.observed_after, 90.0)
         self.assertEqual(reestablished.intervention_ref, "intervention:recovery1")
         self.assertNotEqual(reestablished.intervention_ref, original.intervention_ref)
+        self.assertNotEqual(reestablished.agency_evidence_ref, original.agency_evidence_ref)
 
         snapshot = m.export_causal_state()
         replay = model()
         replay.restore_causal_state(snapshot)
         self.assertEqual(replay.export_causal_state(), snapshot)
-        self.assertEqual(
-            replay.established_prediction_corrections(),
-            (reestablished,),
-        )
+        self.assertEqual(replay.established_prediction_corrections(), (reestablished,))
 
     def test_numeric_witness_needs_exact_published_comparator_value_and_identity(self):
         for option, step, observed in (
