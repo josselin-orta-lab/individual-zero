@@ -331,6 +331,9 @@ class Stage9ScientificAssessmentTests(unittest.TestCase):
     def test_unsupported_confidence_method_cannot_implicitly_pass(self):
         draft = example_draft()
         report = make_report(draft)
+        # A post-hoc method change invalidates a valid frozen registration;
+        # the assessor refuses it before looking at passing-looking rows.
+        draft["confidence_method"] = "test-only-confidence-rule"
         with self.assertRaisesRegex(ValueError, "confidence rule"):
             assess_heldout_campaign(draft, report)
 

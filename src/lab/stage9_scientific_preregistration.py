@@ -119,6 +119,12 @@ def validate_registration(data: Mapping[str, object]) -> str:
         v = data[name]
         if not isinstance(v, str) or not v.strip():
             raise ValueError(f"registration field {name} must be nonempty")
+    # A registration is frozen *before* a held-out campaign. Its selected
+    # uncertainty method must already have an implemented, tested scorer;
+    # accepting an unsupported method as a valid draft would produce an
+    # unusable prospective registration after the experiment is run.
+    if data["confidence_method"] != "wilson_95":
+        raise ValueError("unsupported preregistered confidence rule")
     worlds = _ids(data["holdout_world_ids"], 2)
     calibration_worlds = _ids(data["calibration_world_ids"])
     positive = _ids(data["positive_world_ids"])
@@ -162,9 +168,15 @@ def _unique_pairs(items: list[tuple[str, object]]) -> dict[str, object]:
     return result
 
 
+def _reject_nonfinite_registration_constant(value: str) -> None:
+    raise ValueError(f"invalid non-finite registration JSON constant: {value}")
+
+
 def load_registration(path: Path) -> dict[str, object]:
     data = json.loads(
-        path.read_text(encoding="utf-8"), object_pairs_hook=_unique_pairs,
+        path.read_text(encoding="utf-8"),
+        object_pairs_hook=_unique_pairs,
+        parse_constant=_reject_nonfinite_registration_constant,
     )
     validate_registration(data)
     return data

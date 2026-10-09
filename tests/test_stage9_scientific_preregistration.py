@@ -43,7 +43,7 @@ def example_draft() -> dict[str, object]:
         "minimum_naturally_acquired_candidates": 10,
         "maximum_superstitious_rule_rate": 0.05,
         "minimum_known_cause_accuracy": 0.9,
-        "confidence_method": "test-only-confidence-rule",
+        "confidence_method": "wilson_95",
         "candidate_definition": "independent naturally acquired hypotheses",
         "ground_truth_definition": "bench-only physical effect",
         "independent_episode_definition": "distinct closed Memory episodes",
@@ -144,6 +144,7 @@ class Stage9PreregistrationTests(unittest.TestCase):
             ("protocol_version", "old-v1"),
             ("author", ""),
             ("replay_rule", ""),
+            ("confidence_method", "unsupported-test-method"),
             ("extra", "unlisted"),
         ):
             with self.subTest(field=key):
@@ -163,6 +164,16 @@ class Stage9PreregistrationTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "duplicate"):
                 load_registration(path)
+            for malformed in ("NaN", "Infinity", "-Infinity"):
+                with self.subTest(value=malformed):
+                    raw = json.dumps(draft).replace(
+                        '"maximum_superstitious_rule_rate": 0.05',
+                        '"maximum_superstitious_rule_rate": ' + malformed,
+                        1,
+                    )
+                    path.write_text(raw, encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, "non-finite registration"):
+                        load_registration(path)
             path.write_text(json.dumps(draft), encoding="utf-8")
             self.assertEqual(load_registration(path), draft)
 

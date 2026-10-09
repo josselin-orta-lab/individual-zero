@@ -118,8 +118,11 @@ readers from interpreting the same evidence bytes differently.
 
 No demonstration JSON fixture or prior exploratory matrix is valid held-out
 evidence; changing the registered confidence rule after seeing outcomes is
-prohibited. Only "wilson_95" is implemented. Other prospective confidence
-rules require code and tests *before* a hold-out campaign begins.
+prohibited. Only "wilson_95" is implemented. The registration preflight now rejects
+unsupported confidence methods before a draft can be sealed. Other
+prospective confidence rules require code and tests *before* a hold-out
+campaign begins. Both preregistration and evidence JSON loaders reject
+duplicate object keys and NaN/Infinity constants at any nesting level.
 
 ## Experimental separation
 
