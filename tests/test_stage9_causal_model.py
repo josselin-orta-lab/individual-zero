@@ -200,7 +200,7 @@ class CanonicalCausalSafetyTests(unittest.TestCase):
                 broken = deepcopy(baseline)
                 broken[kind][0][0] = "toxic:another-berry"
                 with self.assertRaisesRegex(
-                    ValueError, "unknown contingency",
+                    ValueError, "safety snapshot ledger digest mismatch",
                 ):
                     m.restore_causal_state(broken)
                 self.assertEqual(m.export_causal_state(), baseline)
@@ -216,7 +216,7 @@ class CanonicalCausalSafetyTests(unittest.TestCase):
         twin = model()
         twin.restore_causal_state(baseline)
         self.assertEqual(twin.export_causal_state(), baseline)
-        for mutation in ("false_outcome", "missing_history", "reordered"):
+        for mutation in ("false_outcome", "missing_history", "reordered", "missing_digest"):
             with self.subTest(mutation=mutation):
                 damaged = deepcopy(baseline)
                 rows = damaged["admitted_safety_evidence"]
@@ -224,8 +224,10 @@ class CanonicalCausalSafetyTests(unittest.TestCase):
                     rows[0]["harm_observed"] = False
                 elif mutation == "missing_history":
                     rows.pop()
-                else:
+                elif mutation == "reordered":
                     rows[1], rows[2] = rows[2], rows[1]
+                else:
+                    damaged.pop("admitted_safety_evidence_sha256")
                 with self.assertRaisesRegex(ValueError, "ledger"):
                     m.restore_causal_state(damaged)
                 self.assertEqual(m.export_causal_state(), baseline)

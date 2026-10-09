@@ -14,6 +14,8 @@ attribution are separate Stage-9 work items.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from hashlib import sha256
+from json import dumps
 from math import isfinite
 from typing import Mapping, Sequence
 
@@ -1941,6 +1943,12 @@ class CausalModel:
                 {name: getattr(e, name) for name in e.__dataclass_fields__}
                 for e in self._admitted_safety_evidence
             ],
+            # Detect accidental or partial damage even where a changed lived
+            # event happens to yield identical *final* status counters.
+            # The external hash-chained journal remains authoritative.
+            "admitted_safety_evidence_sha256": self._safety_ledger_sha256(
+                self._admitted_safety_evidence
+            ),
             "episodes": [list(x) for x in sorted(self._credited_episodes)],
             "observations": [list(x) for x in sorted(self._credited_observations)],
             "causal_observations": [serialize_value(x) for _,x in sorted(self._causal_observations.items())],
@@ -1995,6 +2003,17 @@ class CausalModel:
                 for trial_ref, v in sorted(self._causal_action_witnesses.items())
             ],
         }
+
+    @staticmethod
+    def _safety_ledger_sha256(rows: Sequence[SafetyEvidence]) -> str:
+        payload = [
+            {name: getattr(row, name) for name in row.__dataclass_fields__}
+            for row in rows
+        ]
+        return sha256(dumps(
+            payload, sort_keys=True, ensure_ascii=False,
+            allow_nan=False, separators=(",", ":"),
+        ).encode("utf-8")).hexdigest()
 
     def restore_causal_state(self, state: object) -> None:
         """Validate a whole snapshot before changing this canonical owner.
@@ -2081,6 +2100,11 @@ class CausalModel:
         ledger = [SafetyEvidence(**row) for row in state.get("admitted_safety_evidence", [])]
         for row in ledger:
             row.validate()
+        if (
+            state.get("admitted_safety_evidence_sha256")
+            != self._safety_ledger_sha256(ledger)
+        ):
+            raise ValueError("safety snapshot ledger digest mismatch")
         if (
             len({row.identifier for row in ledger}) != len(ledger)
             or {row.identifier for row in ledger} != set(accepted_refs)
