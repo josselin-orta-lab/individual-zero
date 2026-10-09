@@ -163,6 +163,8 @@ world transition are from the same source step immediately preceding the
 causal observation. Both events must belong to the same execution attempt
 and confirm the physically executed primitive and its observed effect;
 matching timestamps or episode membership alone are insufficient.
+Each scheduler attempt can contribute at most one credited physical hydration
+trial, even if duplicated events have distinct source IDs.
 Disagreements are rejected before diagnostic sample counting. The report fields `lived_hydration_observations`
 and `independent_lived_hydration_episodes` therefore measure different
 units. An episode count alone is not proof of statistically independent

@@ -87,12 +87,15 @@ def _audit_lived_hydration_provenance(
     transition; one command cannot be credited twice under new event IDs.
     The raw journal must also confirm the command, transition and declared
     next-step observation belong to the same actual physical world step and
-    the same committed execution attempt. Matched times alone cannot prove
+    the same committed execution attempt. Each applied attempt can supply
+    only one independent hydration trial, even if its command or transition
+    is re-labelled under new event IDs. Matched times alone cannot prove
     two source events belong to one applied action after a retry/rollback.
     """
     episodes: set[str] = set()
     physical_commands: set[str] = set()
     physical_transitions: set[str] = set()
+    physical_attempts: set[str] = set()
     for row in observations:
         witness = witnesses.get(row["identifier"])
         if witness is None:
@@ -129,6 +132,7 @@ def _audit_lived_hydration_provenance(
             or not isinstance(command_attempt, str)
             or not command_attempt
             or transition_event.get("attempt_ref") != command_attempt
+            or command_attempt in physical_attempts
             or command_event.get("parameters") != {}
             or command_event.get("primitive") != (
                 "boire" if cause else "attendre"
@@ -144,6 +148,7 @@ def _audit_lived_hydration_provenance(
             )
         physical_commands.add(command_ref)
         physical_transitions.add(transition_ref)
+        physical_attempts.add(command_attempt)
         episodes.add(row["episode_ref"])
     return len(episodes)
 

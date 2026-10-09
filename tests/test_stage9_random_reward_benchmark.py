@@ -233,6 +233,45 @@ class RandomRewardNegativeControlTests(unittest.TestCase):
                 [row], witness, closed, source,
             )
 
+    def test_one_execution_attempt_cannot_supply_two_independent_trials(self):
+        observations = [
+            {
+                "identifier": "hydration:1", "episode_ref": "memory:one",
+                "observation_ref": "world-transition:1",
+                "observed_step": 2, "cause_present": True,
+            },
+            {
+                "identifier": "hydration:2", "episode_ref": "memory:one",
+                "observation_ref": "world-transition:2",
+                "observed_step": 3, "cause_present": True,
+            },
+        ]
+        witnesses = {
+            "hydration:1": ("command:1", "world-transition:1"),
+            "hydration:2": ("command:2", "world-transition:2"),
+        }
+        committed = {
+            "memory:one": frozenset({
+                "command:1", "world-transition:1",
+                "command:2", "world-transition:2",
+            }),
+        }
+        events = _technical_hydration_events()
+        self.assertEqual(
+            _audit_lived_hydration_provenance(
+                observations, witnesses, committed, events,
+            ), 1,
+        )
+        # Re-labelled events from the same scheduler attempt cannot
+        # provide two independent physical trials, even with distinct
+        # source-event IDs and distinct apparent world steps.
+        events["command:2"]["attempt_ref"] = "attempt:1"
+        events["world-transition:2"]["attempt_ref"] = "attempt:1"
+        with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
+            _audit_lived_hydration_provenance(
+                observations, witnesses, committed, events,
+            )
+
     def test_real_world_negative_control_is_replayed(self):
         first = run_random_reward_negative_control(
             campaign_seed=42, steps=14,
