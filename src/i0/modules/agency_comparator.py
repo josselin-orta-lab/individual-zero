@@ -122,6 +122,7 @@ class AgencyComparator:
     def _visible_creature_can_explain_integrity_loss(
         *, effects: Sequence[Mapping[str, object]],
         capture: PerceptualCapture,
+        command: PrimitiveCommand | None,
     ) -> bool:
         """Use accessible external evidence, never the world's true cause.
 
@@ -129,7 +130,15 @@ class AgencyComparator:
         integrity inside the declared P-47 window. It is not a causal proof,
         and neither a mere nearby creature nor a predicted integrity gain
         suffices. Multiple visible creatures leave the attribution uncertain.
+        In particular, an executed food ingestion may itself change integrity,
+        so its concurrence with a creature is not a uniquely justified world
+        attribution without a separate witnessed cause.
         """
+        # The agent may not inspect the hidden berry effect or world physics:
+        # eating is a *plausible* alternative self-linked cause of integrity
+        # loss, therefore the creature alone cannot justify world_justified.
+        if command is not None and command.primitive == "manger":
+            return False
         visible_creatures = capture.adjacent_creatures
         deviations = tuple(
             effect for effect in effects
@@ -234,7 +243,7 @@ class AgencyComparator:
                     )
                 )
                 or self._visible_creature_can_explain_integrity_loss(
-                    effects=effects, capture=capture,
+                    effects=effects, capture=capture, command=command,
                 )
             )
             attribution = (

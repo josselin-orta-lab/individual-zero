@@ -67,6 +67,18 @@ class AgencyComparatorStage9Tests(unittest.TestCase):
         )
         self.assertEqual(comparison.status, "nonconforming")
         self.assertEqual(comparison.attribution, "world_justified")
+        # A coincident berry ingestion is another plausible explanation:
+        # without hidden berry chemistry or independently witnessed impact,
+        # a visible creature does not make agency attribution unambiguous.
+        ambiguous_meal = comparator().compare(
+            option_ref="night:eat", sent_t_monde=1,
+            deadline_t_monde=2,
+            predictions=(PredictedConsequence("integrity", 100.0, 0.0),),
+            capture=capture,
+            command=PrimitiveCommand("manger", {"target": "berry_a"}),
+        )
+        self.assertEqual(ambiguous_meal.status, "nonconforming")
+        self.assertEqual(ambiguous_meal.attribution, "uncertain")
         gain = comparator().compare(
             option_ref="gain", sent_t_monde=1,
             deadline_t_monde=2,
