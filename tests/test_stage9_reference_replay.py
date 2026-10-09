@@ -21,6 +21,10 @@ class Stage9ReferenceReplayTests(unittest.TestCase):
             )
             self.assertTrue(result.identical_independent_reexecution)
             self.assertEqual(result.protocol_version, PROTOCOL_VERSION)
+            self.assertEqual(
+                result.protocol_version,
+                "stage9-extended-reference-diagnostic-v2",
+            )
             self.assertEqual(result.steps, 4)
             self.assertEqual(result.classification, "diagnostic_only")
             self.assertIsNone(result.scientific_verdict)

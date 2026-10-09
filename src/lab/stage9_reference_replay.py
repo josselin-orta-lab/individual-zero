@@ -16,7 +16,7 @@ from .determinism import canonical_causal_bytes, sha256_hex
 from .stage9_reference_fixture import build_stage9_reference_runtime
 
 
-PROTOCOL_VERSION = "stage9-extended-reference-diagnostic-v1"
+PROTOCOL_VERSION = "stage9-extended-reference-diagnostic-v2"
 
 
 @dataclass(frozen=True, slots=True)

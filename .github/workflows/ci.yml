@@ -95,7 +95,8 @@ jobs:
           ).read_text(encoding="utf-8"))
           journal = Path("/tmp/stage9-reference-diagnostic.jsonl").read_bytes()
           if (
-              report["classification"] != "diagnostic_only"
+              report["protocol_version"] != "stage9-extended-reference-diagnostic-v2"
+              or report["classification"] != "diagnostic_only"
               or report["golden_stage9_frozen"]
               or report["scientific_verdict"] is not None
               or report["steps"] != 300
