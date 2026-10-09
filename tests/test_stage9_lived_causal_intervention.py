@@ -561,6 +561,54 @@ class LivedCausalInterventionProducerTests(unittest.TestCase):
         self.assertIs(m, original_owner)
         self.assertEqual(m.export_causal_state(), baseline)
 
+    def test_different_option_alias_cannot_repeat_one_physical_action_step(self):
+        m = model()
+        hypothesis(m)
+        (first,) = m.record_applied_causal_action(
+            t_monde=10, option_ref="option:first",
+            motive_type="active_goal", motive_ref="goal:drink",
+            primitive="boire", current_water_source=True,
+            position=(2, 2), water_before=20.0,
+        )
+        before = m.export_causal_state()
+        # Two option IDs do not imply two applied world actions at t=10.
+        with self.assertRaisesRegex(ValueError, "duplicate applied causal action"):
+            m.record_applied_causal_action(
+                t_monde=10, option_ref="option:renamed",
+                motive_type="active_goal", motive_ref="goal:drink",
+                primitive="boire", current_water_source=True,
+                position=(2, 2), water_before=20.0,
+            )
+        self.assertEqual(m.export_causal_state(), before)
+        (later,) = m.record_applied_causal_action(
+            t_monde=20, option_ref="option:distinct-step",
+            motive_type="active_goal", motive_ref="goal:drink",
+            primitive="boire", current_water_source=True,
+            position=(2, 2), water_before=20.0,
+        )
+        self.assertNotEqual(first.sent_t_monde, later.sent_t_monde)
+
+    def test_promoted_action_rejects_new_option_id_for_same_source_step(self):
+        m = model()
+        hypothesis(m)
+        evidence_path(m, step=10)
+        m.publish_causal_inference()
+        m.promote_lived_causal_interventions()
+        m.publish_causal_inference()
+        checkpoint = m.export_causal_state()
+        self.assertEqual(len(checkpoint["causal_action_witnesses"]), 1)
+        for target in (m, model()):
+            if target is not m:
+                target.restore_causal_state(checkpoint)
+            with self.assertRaisesRegex(ValueError, "duplicate applied causal action"):
+                target.record_applied_causal_action(
+                    t_monde=10, option_ref="option:after-promotion-alias",
+                    motive_type="active_goal", motive_ref="goal:drink",
+                    primitive="boire", current_water_source=True,
+                    position=(2, 2), water_before=20.0,
+                )
+            self.assertEqual(target.export_causal_state(), checkpoint)
+
     def test_promoted_applied_action_cannot_be_recorded_a_second_time(self):
         m = model()
         hypothesis(m)

@@ -725,10 +725,20 @@ class CausalModel:
                 row.identifier in self._lived_causal_actions
                 or f"intervention:{row.identifier}"
                    in self._causal_action_witnesses
+                or any(
+                    v.contingency_ref == row.contingency_ref
+                    and v.sent_t_monde == row.sent_t_monde
+                    for v in (
+                        *self._lived_causal_actions.values(),
+                        *self._causal_action_witnesses.values(),
+                        *rows,
+                    )
+                )
             ):
-                # A closed action remains used even after promotion has
-                # retired its pending entry. Repeating its dispatch identity
-                # must not reopen physical evidence or double-count it.
+                # A differently named option cannot turn a second claim
+                # about one physical world step into an independent P-35
+                # intervention for the same canonical contingency. Keep
+                # separate real steps, and separate predicates, untouched.
                 raise ValueError("duplicate applied causal action")
             rows.append(row)
         for row in rows:
