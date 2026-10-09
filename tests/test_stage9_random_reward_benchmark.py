@@ -1,6 +1,7 @@
 """Stage-9 externally randomized food rewards, with recorded physical inputs."""
 import unittest
 from lab.stage9_random_reward_benchmark import (
+    _audit_lived_hydration_provenance,
     preregistered_food_rewards, run_random_reward_negative_control,
 )
 
@@ -18,6 +19,50 @@ class RandomRewardNegativeControlTests(unittest.TestCase):
             with self.subTest(seed=seed, steps=steps):
                 with self.assertRaises(ValueError):
                     preregistered_food_rewards(campaign_seed=seed, steps=steps)
+
+    def test_physical_hydration_witnesses_may_share_one_memory_episode(self):
+        rows = [
+            {
+                "identifier": "hydration:1",
+                "episode_ref": "memory:one",
+                "observation_ref": "world-transition:1",
+            },
+            {
+                "identifier": "hydration:2",
+                "episode_ref": "memory:one",
+                "observation_ref": "world-transition:2",
+            },
+        ]
+        witnesses = {
+            "hydration:1": ("command:1", "world-transition:1"),
+            "hydration:2": ("command:2", "world-transition:2"),
+        }
+        committed = {
+            "command:1", "command:2",
+            "world-transition:1", "world-transition:2",
+        }
+        self.assertEqual(
+            _audit_lived_hydration_provenance(rows, witnesses, committed), 1,
+        )
+        # Reusing a physical transition with another observation ID or
+        # episode alias is not an additional source of causal evidence.
+        duplicated = [
+            rows[0],
+            {**rows[1], "episode_ref": "memory:alias",
+             "observation_ref": "world-transition:1"},
+        ]
+        alias_witnesses = {
+            **witnesses,
+            "hydration:2": ("command:2", "world-transition:1"),
+        }
+        with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
+            _audit_lived_hydration_provenance(
+                duplicated, alias_witnesses, committed,
+            )
+        with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
+            _audit_lived_hydration_provenance(
+                rows, witnesses, committed - {"command:2"},
+            )
 
     def test_real_world_negative_control_is_replayed(self):
         first = run_random_reward_negative_control(

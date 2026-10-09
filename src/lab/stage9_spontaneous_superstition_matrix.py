@@ -27,6 +27,7 @@ class SpontaneousSuperstitionMatrix:
     physically_verified_exposures: int
     established_false_rules: int
     total_lived_hydration_observations: int
+    distinct_lived_hydration_episodes: int
     lived_drink_observations: int
     lived_wait_control_observations: int
     runs_with_observed_drink_and_wait: int
@@ -105,6 +106,9 @@ def run_spontaneous_superstition_matrix(
         ),
         established_false_rules=false_rules,
         total_lived_hydration_observations=sum(
+            len(row.lived_hydration_observation_refs) for row in runs
+        ),
+        distinct_lived_hydration_episodes=sum(
             row.independent_lived_hydration_episodes for row in runs
         ),
         lived_drink_observations=sum(

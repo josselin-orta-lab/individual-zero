@@ -270,8 +270,11 @@ def generate_stage9_acceptance_report(
                 "spontaneous_diagnostic_rate": (
                     spontaneous.natural_false_rule_rate
                 ),
-                "independent_lived_hydration_episodes": (
+                "lived_hydration_observations": (
                     spontaneous.total_lived_hydration_observations
+                ),
+                "independent_lived_hydration_episodes": (
+                    spontaneous.distinct_lived_hydration_episodes
                 ),
                 "observed_drinking_episodes": (
                     spontaneous.lived_drink_observations

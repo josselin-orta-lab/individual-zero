@@ -71,6 +71,38 @@ class RandomRewardControl:
     natural_hydration_status: str = "aucun"
 
 
+def _audit_lived_hydration_provenance(
+    observations: list[dict[str, object]],
+    witnesses: dict[str, tuple[str, str]],
+    committed_refs: set[str],
+) -> int:
+    """Count distinct Memory episodes; credit each physical transition once.
+
+    An episode can contain several genuine commands and world transitions.
+    Neither multiple IDs for one physical transition nor an uncommitted
+    command/transition can create another causal observation.
+    """
+    episodes: set[str] = set()
+    physical_transitions: set[str] = set()
+    for row in observations:
+        witness = witnesses.get(row["identifier"])
+        if witness is None:
+            raise AssertionError("lived hydration observation lacks witness")
+        command_ref, transition_ref = witness
+        if (
+            row["observation_ref"] != transition_ref
+            or command_ref not in committed_refs
+            or transition_ref not in committed_refs
+            or transition_ref in physical_transitions
+        ):
+            raise AssertionError(
+                "lived hydration observation lacks unique closed Memory physical evidence"
+            )
+        physical_transitions.add(transition_ref)
+        episodes.add(row["episode_ref"])
+    return len(episodes)
+
+
 def preregistered_food_rewards(
     *, campaign_seed: int, steps: int,
 ) -> tuple[ScenarioEvent, ...]:
@@ -261,17 +293,9 @@ def run_random_reward_negative_control(
     committed_refs = {
         ref for episode in runtime.memory.episodes for ref in episode.event_refs
     }
-    for row in observation_rows:
-        command_ref, transition_ref = witnessed[row["identifier"]]
-        if (
-            row["observation_ref"] != transition_ref
-            or command_ref not in committed_refs
-            or transition_ref not in committed_refs
-        ):
-            raise AssertionError("lived hydration observation lacks closed Memory evidence")
-    episode_ids = {row["episode_ref"] for row in observation_rows}
-    if len(episode_ids) != len(observation_rows):
-        raise AssertionError("lived hydration observations reuse an episode")
+    distinct_episode_count = _audit_lived_hydration_provenance(
+        observation_rows, witnessed, committed_refs,
+    )
     drinks = [row for row in observation_rows if row["cause_present"]]
     positive_drinks = [row for row in drinks if row["effect_present"]]
     wait_controls = [row for row in observation_rows if not row["cause_present"]]
@@ -335,7 +359,7 @@ def run_random_reward_negative_control(
         lived_drink_observations=len(drinks),
         lived_positive_drink_observations=len(positive_drinks),
         lived_wait_control_observations=len(wait_controls),
-        independent_lived_hydration_episodes=len(episode_ids),
+        independent_lived_hydration_episodes=distinct_episode_count,
         natural_hydration_status=(
             "bench_seeded_hypothesis" if bench_seed_false_hypothesis
             else statuses.get(_FALSE_HYPOTHESIS_REF, "aucun")

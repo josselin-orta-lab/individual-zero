@@ -24,6 +24,18 @@ class SpontaneousMatrixTests(unittest.TestCase):
             a.total_lived_hydration_observations,
             a.lived_drink_observations + a.lived_wait_control_observations,
         )
+        self.assertEqual(
+            a.total_lived_hydration_observations,
+            sum(len(run.lived_hydration_observation_refs) for run in a.runs),
+        )
+        self.assertEqual(
+            a.distinct_lived_hydration_episodes,
+            sum(run.independent_lived_hydration_episodes for run in a.runs),
+        )
+        self.assertLessEqual(
+            a.distinct_lived_hydration_episodes,
+            a.total_lived_hydration_observations,
+        )
         self.assertGreaterEqual(a.lived_drink_observations, 1)
         self.assertTrue(all(
             run.lived_positive_drink_observations == 0 for run in a.runs

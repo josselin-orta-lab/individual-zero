@@ -42,6 +42,10 @@ class Stage9AcceptanceReportTests(unittest.TestCase):
         self.assertGreaterEqual(
             superstition["evidence"]["independent_lived_hydration_episodes"], 1,
         )
+        self.assertGreaterEqual(
+            superstition["evidence"]["lived_hydration_observations"],
+            superstition["evidence"]["independent_lived_hydration_episodes"],
+        )
         self.assertEqual(superstition["evidence"]["spontaneous_candidate_count"], 0)
         self.assertEqual(
             superstition["evidence"]["spontaneous_evaluation_status"], "not_evaluable",

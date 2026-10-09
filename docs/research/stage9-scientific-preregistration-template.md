@@ -151,6 +151,14 @@ python -m lab.stage9_acceptance_report
 
 The CI archives `stage9-hydration-contrast-diagnostic` and `stage9-acceptance-diagnostics`. Their hashes identify **diagnostic artefacts**, not a scientific preregistration or Golden.
 
+Random-reward diagnostics count accepted *physical hydration observations*
+separately from distinct closed Memory episode identifiers. Multiple actual
+world transitions may occur within one episode; duplicating the same physical
+transition is forbidden. The report fields `lived_hydration_observations`
+and `independent_lived_hydration_episodes` therefore measure different
+units. An episode count alone is not proof of statistically independent
+experimental sampling.
+
 The current Stage-9 reference runs may legitimately produce causal-test proposals that are not scored until normative Exploration motivation is available (Stage 11); do not fake intrinsic motivation or weaken safety/competition to manufacture interventions.
 
 ## Acceptance hand-off
