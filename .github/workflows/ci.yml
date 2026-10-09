@@ -84,9 +84,26 @@ jobs:
           matrix = json.loads(Path(
               "/tmp/stage9-spontaneous-matrix-diagnostic.json"
           ).read_text(encoding="utf-8"))
+          matrix_digest = matrix.pop("digest")
+          if sha256_hex(canonical_causal_bytes(matrix)) != matrix_digest:
+              raise SystemExit("Stage 9 full multiworld artifact digest differs")
+          runs = matrix["runs"]
+          opportunities = sum(len(row["spontaneous_candidate_refs"]) for row in runs)
+          established = sum(len(row["spontaneous_established_false_refs"]) for row in runs)
+          if (
+              opportunities != matrix["spontaneously_observed_candidates"]
+              or established != matrix["established_false_rules"]
+              or any(not set(row["spontaneous_established_false_refs"]).issubset(
+                  row["spontaneous_candidate_refs"]
+              ) for row in runs)
+              or matrix["natural_false_rule_rate"] != (
+                  None if opportunities == 0 else established / opportunities
+              )
+          ):
+              raise SystemExit("Stage 9 multiworld numerator/denominator inconsistent")
           superstition = checks["superstitious_rules_under_random_reward"]["evidence"]
           if (
-              matrix["digest"] != superstition["spontaneous_matrix_sha256"]
+              matrix_digest != superstition["spontaneous_matrix_sha256"]
               or matrix["evaluation_status"] != superstition["spontaneous_evaluation_status"]
               or matrix["spontaneously_observed_candidates"] != superstition["spontaneous_candidate_count"]
               or matrix["natural_false_rule_rate"] != superstition["spontaneous_diagnostic_rate"]
@@ -96,7 +113,7 @@ jobs:
               "acceptance": acceptance["acceptance_status"],
               "golden_frozen": acceptance["golden_stage9_frozen"],
               "acceptance_digest": expected_digest,
-              "multiworld_digest": matrix["digest"],
+              "multiworld_digest": matrix_digest,
               "natural_candidates": matrix["spontaneously_observed_candidates"],
               "false_rule_rate": matrix["natural_false_rule_rate"],
               "scientific_status": matrix["evaluation_status"],

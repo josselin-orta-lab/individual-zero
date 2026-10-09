@@ -1,4 +1,5 @@
 """Stage-9 spontaneous causal-claim diagnostics, not scientific acceptance."""
+from dataclasses import replace
 import json
 import unittest
 
@@ -37,11 +38,36 @@ class SpontaneousMatrixTests(unittest.TestCase):
         self.assertIsNone(a.natural_false_rule_rate)
         self.assertEqual(a.evaluation_status, "not_evaluable")
         self.assertEqual(len(a.digest), 64)
+        self.assertTrue(a.verify_digest())
+
+    def test_matrix_digest_commits_to_results_and_physical_provenance(self):
+        original = run_spontaneous_superstition_matrix(
+            seeds=(41,), steps=10,
+        )
+        self.assertTrue(original.verify_digest())
+        json_document = json.loads(original.to_json())
+        digest = json_document.pop("digest")
+        from lab.determinism import canonical_causal_bytes, sha256_hex
+        self.assertEqual(
+            sha256_hex(canonical_causal_bytes(json_document)), digest,
+        )
+        variants = (
+            replace(original, established_false_rules=1),
+            replace(original, evaluation_status="diagnostic_only"),
+            replace(original, physically_verified_exposures=99),
+            replace(original, runs=(
+                replace(original.runs[0], drinking_commands=99),
+                *original.runs[1:],
+            )),
+            replace(original, digest="0" * 64),
+        )
+        self.assertTrue(all(not item.verify_digest() for item in variants))
 
     def test_serialized_matrix_preserves_exact_provenance(self):
         row = run_spontaneous_superstition_matrix(seeds=(41,), steps=10)
         serialized = json.loads(row.to_json())
         self.assertEqual(serialized["digest"], row.digest)
+        self.assertTrue(row.verify_digest())
         self.assertEqual(len(serialized["runs"]), 2)
         self.assertEqual(serialized["spontaneously_observed_candidates"], 0)
         self.assertIsNone(serialized["natural_false_rule_rate"])

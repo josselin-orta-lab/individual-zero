@@ -7,7 +7,7 @@ than reporting a falsely reassuring superstition rate.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 import json
 
 from .determinism import canonical_causal_bytes, sha256_hex
@@ -41,6 +41,11 @@ class SpontaneousSuperstitionMatrix:
 
     def as_dict(self) -> dict[str, object]:
         return asdict(self)
+
+    def verify_digest(self) -> bool:
+        document = self.as_dict()
+        digest = document.pop("digest")
+        return digest == sha256_hex(canonical_causal_bytes(document))
 
     def to_json(self) -> str:
         return json.dumps(
@@ -89,30 +94,8 @@ def run_spontaneous_superstition_matrix(
     # This is a per-run fraction of actually occurring candidates, not a
     # population-level scientific rate or an ex-post threshold comparison.
     diagnostic_rate = None if opportunities == 0 else false_rules / opportunities
-    payload = {
-        "protocol": "stage9-spontaneous-superstition-matrix-v1",
-        "seeds": seeds,
-        "variants": world_variants,
-        "steps": steps,
-        "runs": [
-            {
-                "seed": row.seed,
-                "world": row.world_variant,
-                "journal": row.journal_sha256,
-                "schedule": row.schedule_sha256,
-                "witnesses": row.verified_null_drink_transitions,
-                "spontaneous": row.spontaneous_candidate_refs,
-                "lived_observations": row.lived_hydration_observation_refs,
-                "lived_drinks": row.lived_drink_observations,
-                "lived_waits": row.lived_wait_control_observations,
-                "positive_drinks": row.lived_positive_drink_observations,
-                "independent_episodes": row.independent_lived_hydration_episodes,
-            }
-            for row in runs
-        ],
-    }
-    return SpontaneousSuperstitionMatrix(
-        protocol_version=payload["protocol"],
+    report = SpontaneousSuperstitionMatrix(
+        protocol_version="stage9-spontaneous-superstition-matrix-v2",
         seeds=seeds,
         world_variants=world_variants,
         runs=runs,
@@ -155,8 +138,14 @@ def run_spontaneous_superstition_matrix(
             ) else "requires_per_run_context_and_base_rate_validation"
         ),
         evaluation_status="not_evaluable" if opportunities == 0 else "diagnostic_only",
-        digest=sha256_hex(canonical_causal_bytes(payload)),
+        digest="",
     )
+    # Commit to ALL visible metrics and per-run provenance, not only a
+    # selected diagnostic subset. A changed numerator, output status or
+    # physical run must invalidate the artifact before scientific review.
+    document = report.as_dict()
+    document.pop("digest")
+    return replace(report, digest=sha256_hex(canonical_causal_bytes(document)))
 
 
 def main() -> None:
