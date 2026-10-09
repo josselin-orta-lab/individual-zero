@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
 
 from lab.determinism import canonical_causal_bytes, sha256_hex
 from lab.stage9_scientific_assessment import (
-    EVIDENCE_VERSION, assess_heldout_campaign,
+    EVIDENCE_VERSION, assess_heldout_campaign, load_heldout_evidence,
 )
 from lab.stage9_scientific_preregistration import validate_registration
 from tests.test_stage9_scientific_preregistration import example_draft
@@ -294,6 +297,36 @@ class Stage9ScientificAssessmentTests(unittest.TestCase):
         self.assertEqual(scored["assessment"], "metrics_eligible_for_independent_review")
         self.assertIsNone(scored["scientific_verdict"])
         self.assertFalse(scored["golden_stage9_frozen"])
+
+    def test_holdout_json_loader_rejects_ambiguous_or_nonfinite_reports(self):
+        draft = example_draft()
+        draft["confidence_method"] = "wilson_95"
+        report = make_report(draft, candidates=5)
+        encoded = json.dumps(report)
+        self.assertIn('"ground_truth": "self"', encoded)
+        duplicated = encoded.replace(
+            '"ground_truth": "self"',
+            '"ground_truth": "world", "ground_truth": "self"',
+            1,
+        )
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / "heldout.json"
+            for label, raw in (
+                ("duplicate_nested_key", duplicated),
+                ("nonfinite_literal", encoded.replace('"seed": 1001', '"seed": NaN', 1)),
+                ("root_not_object", '[]'),
+            ):
+                with self.subTest(label=label):
+                    path.write_text(raw, encoding="utf-8")
+                    with self.assertRaises(ValueError):
+                        load_heldout_evidence(path)
+            path.write_text(encoded, encoding="utf-8")
+            self.assertEqual(load_heldout_evidence(path), report)
+            self.assertFalse(
+                assess_heldout_campaign(draft, load_heldout_evidence(path))[
+                    "golden_stage9_frozen"
+                ]
+            )
 
     def test_unsupported_confidence_method_cannot_implicitly_pass(self):
         draft = example_draft()

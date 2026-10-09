@@ -111,6 +111,11 @@ even when metrics meet prospectively frozen limits: raw journal/oracle
 authenticity, independent world generation, prospective registration ancestry,
 INV-25 and exact reproduction still need external examination.
 
+The command-line assessor parses untrusted JSON strictly: duplicate keys
+at any nesting level and non-finite literals such as NaN or Infinity are
+rejected before any provisional score is calculated. This prevents two
+readers from interpreting the same evidence bytes differently.
+
 No demonstration JSON fixture or prior exploratory matrix is valid held-out
 evidence; changing the registered confidence rule after seeing outcomes is
 prohibited. Only "wilson_95" is implemented. Other prospective confidence

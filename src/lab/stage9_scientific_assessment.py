@@ -277,6 +277,32 @@ def assess_heldout_campaign(
     }
 
 
+def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Never permit an ambiguous heldout record at any JSON nesting level."""
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate heldout evidence JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _reject_nonfinite_constant(value: str) -> None:
+    raise ValueError(f"invalid non-finite heldout JSON constant: {value}")
+
+
+def load_heldout_evidence(path: Path) -> dict[str, object]:
+    """Parse an untrusted scientific report without lossy JSON key merging."""
+    payload = json.loads(
+        path.read_text(encoding="utf-8"),
+        object_pairs_hook=_reject_duplicate_keys,
+        parse_constant=_reject_nonfinite_constant,
+    )
+    if not isinstance(payload, dict):
+        raise ValueError("heldout evidence root must be a JSON object")
+    return payload
+
+
 def main() -> None:
     import argparse
     from .stage9_scientific_preregistration import load_registration
@@ -291,10 +317,7 @@ def main() -> None:
     registration = (
         load_registration(args.registration) if args.registration else None
     )
-    evidence = (
-        json.loads(args.evidence.read_text(encoding="utf-8"))
-        if args.evidence else None
-    )
+    evidence = load_heldout_evidence(args.evidence) if args.evidence else None
     print(json.dumps(
         assess_heldout_campaign(registration, evidence),
         sort_keys=True, indent=2,
