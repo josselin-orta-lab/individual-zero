@@ -64,6 +64,40 @@ from a draft. The CI stores a fail-closed readiness artifact, not a certificate
 of scientific validity. Test fixture values in unit tests are **not** thresholds
 selected for the research campaign.
 
+## Git chronology audit (read-only, not scientific certification)
+
+For an actual author-approved protocol committed before the held-out campaign,
+archive the unmodified registration JSON and later the claimed held-out JSON
+in the **same Git ancestry** as the frozen implementation. With a complete,
+unshallowed checkout (for example, GitHub Actions checkout with fetch-depth 0),
+run:
+
+```bash
+python -m lab.stage9_registration_chronology \
+  --repo . \
+  --registration research/stage9/registration.json \
+  --registration-commit FULL_40_CHARACTER_PREREGISTRATION_COMMIT \
+  --evidence results/stage9/heldout.json \
+  --evidence-commit FULL_40_CHARACTER_EVIDENCE_COMMIT
+```
+
+The tool checks that the implementation freeze precedes the registration
+commit and the registration commit strictly precedes the evidence commit in
+Git ancestry; that the exact registration bytes were committed at the
+registration point and remain unchanged in the evidence commit; and that
+the evidence file exactly matches its committed bytes. It also calculates
+the **provisional** metrics using the existing held-out scorer.
+
+A previous file at the evidence path is surfaced for independent scrutiny.
+An already identical evidence payload at registration is rejected. Git
+ancestry alone cannot prove the investigator did not inspect results earlier,
+that execution used the frozen binary, that world configurations were
+physically independent, or that the bench-only oracle was kept inaccessible
+to the individual. Those steps need an external audit. Even a fully
+consistent Git history always returns scientific_verdict=null and
+golden_stage9_frozen=false. Unit tests of the checker use deliberately
+synthetic Git commits and are **not** an experiment.
+
 ## Held-out metric assessment (provisional, not certification)
 
 The lab-only tool can score a prospective held-out evidence manifest, but cannot
