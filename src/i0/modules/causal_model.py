@@ -539,11 +539,8 @@ class CausalModel:
             retire.append(sample.t_monde)
             if len(commands) != 1 or len(transitions) != 1:
                 continue
-            # P-35 counts independent *episodes*, not successive commands
-            # within one Memory episode. Keep the first eligible physical
-            # sample and retire the rest without recording extra witnesses.
-            if rows:
-                continue
+            # P-35 credits physical co-occurrences, not Memory episode IDs.
+            # DC-05 retains its separate distinct-episode safety threshold.
             command, physical = commands[0], transitions[0]
             effects = physical.get("effects")
             body = physical.get("body_after")
@@ -1558,7 +1555,7 @@ class CausalModel:
         for o in sorted(self._pending_causal_observations, key=lambda x: x.identifier):
             if o.predicate not in SAFETY_PREDICATES and o.predicate not in self.config.causal_predicates:
                 raise ValueError("unregistered causal predicate")
-            key = (o.contingency_ref, o.episode_ref, "observation")
+            key = (o.contingency_ref, o.observation_ref, "observation")
             if key in credits or any(
                 v.contingency_ref == o.contingency_ref
                 and v.observation_ref == o.observation_ref
@@ -1817,9 +1814,8 @@ class CausalModel:
         self._pending_numeric_witnesses.clear()
         self._agency_evidence = agency
         self._causal_observations = observations
-        # Some pending observations can be suppressed at phase-5 by the
-        # independently-credited episode constraint. Their physical witness
-        # cannot remain available to support a later, uncredited review.
+        # Suppressed duplicates of a physical transition cannot retain
+        # their witness and support a future uncredited causal review.
         self._hydration_observation_witnesses = {
             ref: pair for ref, pair in self._hydration_observation_witnesses.items()
             if ref in observations
@@ -2419,7 +2415,7 @@ class CausalModel:
         # episode or suppress later independent evidence after resumption.
         # Pending evidence is intentionally excluded until its publication.
         observation_credits = {
-            (row.contingency_ref, row.episode_ref, "observation")
+            (row.contingency_ref, row.observation_ref, "observation")
             for row in obs.values()
         }
         intervention_credits = {

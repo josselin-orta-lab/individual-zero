@@ -142,29 +142,32 @@ class AutonomousHydrationLifecycleTests(unittest.TestCase):
         self.assertEqual(restored.export_causal_state(), state)
         self.assertEqual(restored.proposer_test(), model.proposer_test())
 
-    def test_same_episode_cannot_fake_two_independent_positive_occurrences(self):
+    def test_distinct_physical_drinks_in_one_episode_count_separately(self):
         world, model = rig()
         first = physical_sample(world, model, step=1, primitive="boire")
         second = physical_sample(world, model, step=2, primitive="boire")
-        accepted = close(
-            model, episode_ref="episode:both",
-            events=(*first, *second),
-        )
-        self.assertEqual(len(accepted), 1)
+        accepted = close(model, episode_ref="episode:both", events=(*first, *second))
+        self.assertEqual(len(accepted), 2)
+        self.assertEqual(len({row.observation_ref for row in accepted}), 2)
         model.publish_causal_inference()
-        self.assertEqual(
-            len(model.export_causal_state()["hydration_observation_witnesses"]),
-            1,
-        )
-        self.assertEqual(len(model.export_causal_state()["causal_observations"]), 1)
-
+        baseline = model.export_causal_state()
+        self.assertEqual(len(baseline["hydration_observation_witnesses"]), 2)
+        self.assertEqual(len(baseline["causal_observations"]), 2)
+        clone = rig()[1]
+        clone.restore_causal_state(baseline)
+        self.assertEqual(clone.export_causal_state(), baseline)
         close(
             model, episode_ref="episode:control",
             events=physical_sample(world, model, step=3, primitive="attendre"),
         )
-        self.assertEqual(model.publish_causal_inference(), ())
-        self.assertEqual(model.get("causal:hydration").causal_status, "aucun")
-        self.assertEqual(model.proposer_test(), ())
+        self.assertEqual(
+            [c.after for c in model.publish_causal_inference()],
+            ["correlation_observee"],
+        )
+        self.assertEqual(
+            [c.after for c in model.publish_causal_inference()],
+            ["hypothese_causale"],
+        )
 
     def test_null_gain_never_creates_spurious_positive_correlations(self):
         world, model = rig(drink_gain=0.0)

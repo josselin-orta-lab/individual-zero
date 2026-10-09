@@ -182,6 +182,31 @@ class CausalLifecycleTests(unittest.TestCase):
             n.integrate_causal_observation(x)
         self.assertEqual(n.publish_causal_inference(),())
 
+    def test_physical_observation_credits_allow_distinct_transitions_in_one_episode(self):
+        m = model()
+        first = obs(1, cause=True, effect=True)
+        second = replace(obs(2, cause=True, effect=True), episode_ref=first.episode_ref)
+        for row in (first, second):
+            m.integrate_causal_observation(row)
+        self.assertEqual(m.publish_causal_inference(), ())
+        state = m.export_causal_state()
+        self.assertEqual(len(state["causal_observations"]), 2)
+        self.assertEqual(
+            {tuple(row) for row in state["causal_credits"]},
+            {(REF, "world:1", "observation"), (REF, "world:2", "observation")},
+        )
+        twin = model()
+        twin.restore_causal_state(state)
+        self.assertEqual(twin.export_causal_state(), state)
+        alias = replace(obs(5, cause=True, effect=True), observation_ref=first.observation_ref)
+        for owner in (m, twin):
+            owner.integrate_causal_observation(alias)
+            self.assertEqual(owner.publish_causal_inference(), ())
+            snapshot = owner.export_causal_state()
+            self.assertEqual(len(snapshot["causal_observations"]), 2)
+            self.assertEqual(len(snapshot["causal_credits"]), 2)
+        self.assertEqual(m.export_causal_state(), twin.export_causal_state())
+
     def test_one_step_may_have_distinct_observational_arms(self):
         # Closed physical exposure and its matched no-treatment control
         # can share a time without being equivalent observations.
@@ -541,7 +566,7 @@ class CausalLifecycleTests(unittest.TestCase):
 
         # Pending evidence does not appear in published credits until phase 5.
         credits = {tuple(row) for row in baseline["causal_credits"]}
-        self.assertNotIn((REF, "episode:6", "observation"), credits)
+        self.assertNotIn((REF, "world:6", "observation"), credits)
         self.assertNotIn(
             (REF, "world:intervention:11", "intervention"), credits,
         )
@@ -569,7 +594,7 @@ class CausalLifecycleTests(unittest.TestCase):
                     self.assertEqual(m.export_causal_state(), baseline)
 
         for source, key in (
-            ("causal_observations", "episode_ref"),
+            ("causal_observations", "observation_ref"),
             ("causal_interventions", "observation_ref"),
         ):
             with self.subTest(source=source):
