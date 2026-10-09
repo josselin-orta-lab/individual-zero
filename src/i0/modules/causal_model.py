@@ -529,6 +529,11 @@ class CausalModel:
             retire.append(sample.t_monde)
             if len(commands) != 1 or len(transitions) != 1:
                 continue
+            # P-35 counts independent *episodes*, not successive commands
+            # within one Memory episode. Keep the first eligible physical
+            # sample and retire the rest without recording extra witnesses.
+            if rows:
+                continue
             command, physical = commands[0], transitions[0]
             effects = physical.get("effects")
             body = physical.get("body_after")
@@ -1784,6 +1789,13 @@ class CausalModel:
         self._pending_numeric_witnesses.clear()
         self._agency_evidence = agency
         self._causal_observations = observations
+        # Some pending observations can be suppressed at phase-5 by the
+        # independently-credited episode constraint. Their physical witness
+        # cannot remain available to support a later, uncredited review.
+        self._hydration_observation_witnesses = {
+            ref: pair for ref, pair in self._hydration_observation_witnesses.items()
+            if ref in observations
+        }
         self._causal_interventions = interventions
         self._causal_reviews = reviews
         self._causal_credits = credits
@@ -2097,6 +2109,34 @@ class CausalModel:
         obs={x.identifier:x for x in (decode_observation(v) for v in state.get("causal_observations",[]))}
         trials={x.identifier:x for x in (decode_intervention(v) for v in state.get("causal_interventions",[]))}
         pending_obs=[decode_observation(v) for v in state.get("pending_causal_observations",[])]
+        # Snapshot provenance must be internally consistent: the immutable
+        # witness of an actual closed water-source command may not be an
+        # orphan or point to another observation's physical transition.
+        hydration_rows = {
+            row.identifier: row for row in (*obs.values(), *pending_obs)
+        }
+        for ref, (command_ref, transition_ref) in water_witnesses.items():
+            observation = hydration_rows.get(ref)
+            if (
+                observation is None
+                or observation.identifier != (
+                    f"lived-hydration:{observation.episode_ref}:"
+                    f"{transition_ref}"
+                )
+                or observation.observation_ref != transition_ref
+                or observation.contingency_ref != "causal:hydration"
+                or observation.predicate != "hydration_effect"
+                or observation.subject_ref != "water"
+                or observation.application_context != "water_source"
+                or observation.observation_context != "water_source"
+                or len(observation.controlled_variables) != 2
+                or observation.controlled_variables[0] != (
+                    "water_source", "present"
+                )
+                or observation.controlled_variables[1][0] != "site"
+                or command_ref == transition_ref
+            ):
+                raise ValueError("hydration snapshot witness mismatches physical observation")
         pending_review=[decode_review(v) for v in state.get("pending_causal_reviews",[])]
         pending_trial=[decode_intervention(v) for v in state.get("pending_causal_interventions",[])]
         self._causal_observations=obs
