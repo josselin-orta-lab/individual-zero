@@ -1,0 +1,62 @@
+# Stage 9: scientific preregistration template
+
+**Status: UNREGISTERED. This file is a blank protocol template, not an approved preregistration, a scientific result, or a Golden.**
+
+Normative reference: `docs/architecture/reference/en/mvp-specification-v1.2.1.md`, sections 9.6, 13.2-13.4, 19.5, 20.3 (Stage 9), and INV-25. The English v1.2.1 specification always prevails.
+
+## Purpose and boundary
+
+Evaluate whether the Stage-9 Causal Model and Action Control correctly associate actions and observable consequences in independent worlds with known causes; reject inappropriate self-attribution; avoid `etablie` for noncausal or random associations; preserve the distinction between `etablie` (simulator corrections) and `etabli_pour_securite` (existing veto rules). All causal input to the individual must come from actual accessible Perception and independently closed autobiographical episodes. World truth, random schedules and the oracle remain exclusively on the bench side.
+
+Do not use the fixed software tests, hand-typed observations, bench-seeded false hypotheses or previous exploratory seeds to claim independent scientific success.
+
+## Required frozen registration, **before** hold-out runs
+
+The author or designated experiment owner must fill each item and commit the registration with its digest **before** revealing hold-out outcomes. Unfilled values mean `NOT REGISTERED` and cannot authorize Stage 9 acceptance.
+
+| Field | Must be specified in advance |
+| --- | --- |
+| Registration ID, author, timestamp, immutable commit/hash | **UNSET** |
+| Exact individual code commit and equipment/parameter/ontology manifests | **UNSET** |
+| Objective and ground-truth classification for each causal family | **UNSET** |
+| Independent hold-out world generators, physical variants, and world IDs | **UNSET** |
+| Independent held-out seeds and random assignment scheme | **UNSET** |
+| Calibration-world and development-seed exclusions | **UNSET** |
+| Steps per run, number of independent runs and run termination rules | **UNSET** |
+| Comparable exposure, controlled context, and independent episode definitions | **UNSET** |
+| Expected minimum number of naturally generated candidate hypotheses (rate denominator) | **UNSET** |
+| Exact superstition-rate numerator, denominator, confidence method and aggregation | **UNSET** |
+| Maximum acceptable spontaneous superstitious-rule rate and uncertainty rule | **UNSET** |
+| Minimum known-cause attribution performance and uncertainty/abstention rules | **UNSET** |
+| Treatment of multiple causes, ambiguous comparator outcomes and interventions | **UNSET** |
+| Safety-veto checks including unchanged R_a and unaffected simulator predictions | **UNSET** |
+| Replay equality checks, expected artefacts, missing-run policy and analysis scripts | **UNSET** |
+| Inclusion/exclusion rules, failure handling and stopping rule | **UNSET** |
+
+**Critical:** if naturally acquired causal candidates are absent, the superstition rate has a zero denominator and is `NOT EVALUABLE`, never `0%` or `PASS`. An observation of reward alone is not an independent causal test. Do not inject a hypothesis to create a denominator. Do not select or revise thresholds after looking at hold-out results.
+
+## Experimental separation
+
+1. **Calibration:** choose necessary parameters using disjoint worlds and seeds, following the normative parameter registry and its calibration protocols. Record their immutable hashes.
+2. **Registration:** fix thresholds, run count, families, seeds/world selection, analysis and exclusion rules. Record the registration commit and SHA-256 digest before any hold-out result is inspected.
+3. **Hold-out campaign:** execute independently constructed positive and negative worlds. Log full real command-to-transition provenance and the separate bench-only ground truth. Do not expose oracle, world internals or synthetic candidate labels to any individual component.
+4. **Analysis:** for known causes, report correct/incorrect/uncertain outcomes without counting abstentions as correct links. For random reward, count only independently observed, naturally acquired candidates and the subset falsely established. Report the numerator, denominator, uncertainty and preregistered threshold exactly.
+5. **Replay:** re-execute every accepted run under the frozen manifests; compare normalized journals, causal owner state and reported metrics. Reject silent repairs or cherry-picked seeds.
+6. **Decision:** accept only if **every** Stage-9 normative criterion passes the preregistered rule, invariants and CI pass, and independent reproducibility is documented. Otherwise report `NOT EVALUABLE`, `INCONCLUSIVE` or `FAIL` with evidence. The Golden remains unfrozen.
+
+## Existing diagnostic commands (exploratory only)
+
+```bash
+python -m unittest discover -s tests -v
+python -m lab.stage9_hydration_contrast_report
+python -m lab.stage9_spontaneous_superstition_matrix
+python -m lab.stage9_acceptance_report
+```
+
+The CI archives `stage9-hydration-contrast-diagnostic` and `stage9-acceptance-diagnostics`. Their hashes identify **diagnostic artefacts**, not a scientific preregistration or Golden.
+
+The current Stage-9 reference runs may legitimately produce causal-test proposals that are not scored until normative Exploration motivation is available (Stage 11); do not fake intrinsic motivation or weaken safety/competition to manufacture interventions.
+
+## Acceptance hand-off
+
+A completed registration identifies a freeze commit and hash, an isolated held-out evaluation set, the exact runner and output location, the bench's ground-truth custody, a reviewer who has not selected thresholds from observed outcomes, and an explicit pass/fail/inconclusive report. The Stage-9 Golden reference is frozen **only after** these conditions and the Stage-9 acceptance checks are satisfied.
