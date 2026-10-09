@@ -5,7 +5,8 @@ from dataclasses import replace
 import unittest
 
 from i0.modules.causal_test_planning import (
-    Stage9OptionEvaluator, propose_executable_causal_test,
+    Stage9OptionEvaluator, assess_executable_causal_test,
+    propose_executable_causal_test,
 )
 from i0.modules.causal_model import CausalModelConfig
 from i0.modules.simulator import state_from_capture
@@ -75,6 +76,46 @@ class CausalTestPipelineTests(unittest.TestCase):
                 t_monde=1, ttl_steps=5,
             ), None,
         )
+
+    def test_prediction_gap_is_diagnostic_not_a_fabricated_test(self):
+        runtime = configured_runtime()
+        hypothesis(runtime.causal_model)
+        (target,) = runtime.causal_model.proposer_test()
+        capture = runtime.stage3.perception.capture(
+            local_state=runtime.world.capture_local(t_monde=1).as_dict(),
+            telemetry=runtime.world.telemetry(),
+        )
+        initial = state_from_capture(capture=capture, is_night=False)
+        common = dict(
+            target=target, simulator=runtime.simulator,
+            st_version="st:test", t_monde=1, ttl_steps=5,
+        )
+        known = assess_executable_causal_test(initial_state=initial, **common)
+        self.assertIsNotNone(known.proposal)
+        self.assertIsNone(known.reason)
+        no_source = assess_executable_causal_test(
+            initial_state=replace(initial, current_water_source=False),
+            **common,
+        )
+        self.assertIsNone(no_source.proposal)
+        self.assertEqual(no_source.reason, "water_source_not_accessible")
+        saturated = assess_executable_causal_test(
+            initial_state=replace(initial, body={**initial.body, "water": 100.0}),
+            **common,
+        )
+        self.assertEqual(saturated.reason, "water_saturated")
+        unseen = assess_executable_causal_test(
+            initial_state=replace(initial, body={**initial.body, "water": 37.25}),
+            **common,
+        )
+        self.assertIsNone(unseen.proposal)
+        self.assertEqual(
+            unseen.reason, "simulation_unavailable:equipment_input_unseen",
+        )
+        self.assertIsNone(propose_executable_causal_test(
+            initial_state=replace(initial, body={**initial.body, "water": 37.25}),
+            **common,
+        ))
 
     def test_causal_option_is_registered_but_intrinsically_unevaluated(self):
         runtime = configured_runtime()

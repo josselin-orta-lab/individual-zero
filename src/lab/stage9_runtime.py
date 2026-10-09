@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from i0.contracts import Contribution
 from i0.modules.action_control import Admissibility
 from i0.modules.causal_test_planning import (
-    Stage9OptionEvaluator, propose_executable_causal_test,
+    Stage9OptionEvaluator, assess_executable_causal_test,
 )
 from i0.equipment import EquipmentModel
 from i0.modules.simulator import state_from_capture
@@ -316,7 +316,7 @@ class Stage9Runtime(Stage8Runtime):
                               "outcome": "planning_budget_exhausted"},
                     )
                     break
-                proposal = propose_executable_causal_test(
+                attempt = assess_executable_causal_test(
                     target=target,
                     initial_state=initial_state,
                     simulator=self.simulator,
@@ -324,12 +324,14 @@ class Stage9Runtime(Stage8Runtime):
                     t_monde=capture.t_monde,
                     ttl_steps=self._stage6_config.planning.option_ttl_steps,
                 )
+                proposal = attempt.proposal
                 if proposal is None:
                     self._write(
                         kind="causal_test_planning_diagnostic",
                         cycle=cycle,
                         data={"contingency_ref": target.contingency_ref,
-                              "outcome": "planning_no_executable_option"},
+                              "outcome": "planning_no_executable_option",
+                              "reason": attempt.reason},
                     )
                     continue
                 if (

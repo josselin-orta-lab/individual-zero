@@ -40,6 +40,17 @@ class Stage9HydrationContrastTests(unittest.TestCase):
         self.assertTrue(aligned.missing_evidence)
         for case in (positive, exploratory, aligned):
             self.assertIsNotNone(case.causal_test_planning_outcomes)
+            self.assertIsNotNone(case.causal_test_planning_reasons)
+            self.assertEqual(
+                sum(count for _, count in case.causal_test_planning_reasons),
+                dict(case.causal_test_planning_outcomes).get(
+                    "planning_no_executable_option", 0,
+                ),
+            )
+            self.assertTrue(all(
+                isinstance(reason, str) and reason and count > 0
+                for reason, count in case.causal_test_planning_reasons
+            ))
             self.assertTrue(all(
                 outcome in {
                     "planning_budget_exhausted",

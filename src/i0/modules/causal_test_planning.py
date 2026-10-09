@@ -7,7 +7,7 @@ until Exploration supplies a real intrinsic evaluation in a later stage.
 """
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 
 from i0.contracts import (
     EvaluationOption, MotiveRef, Option, OptionProposal, Plan, PlanStep,
@@ -22,7 +22,15 @@ from .stage6_planning import SimulatorPlanner
 from .stage8_evaluator import Stage8OptionEvaluator
 
 
-def propose_executable_causal_test(
+@dataclass(frozen=True, slots=True)
+class CausalTestPlanningAttempt:
+    """Read-only reason for a proposal refusal; not a learning signal."""
+
+    proposal: OptionProposal | None
+    reason: str | None
+
+
+def assess_executable_causal_test(
     *,
     target: CausalTestTarget,
     initial_state: SimulationState,
@@ -30,12 +38,11 @@ def propose_executable_causal_test(
     st_version: str,
     t_monde: int,
     ttl_steps: int,
-) -> OptionProposal | None:
-    """Convert a predeclared benign target into a grounded, simulated plan.
+) -> CausalTestPlanningAttempt:
+    """Try the existing safe test without inventing an Equipment prediction.
 
-    There is no default risky action. Missing water, a saturated water level,
-    missing S_t provenance, or an unavailable equipment prediction results
-    in no proposal. This is a pure Planning transformation, not attribution.
+    Reasons are diagnostic only. An unavailable simulation is uncertainty,
+    not evidence that an intervention is impossible or causally refuted.
     """
     target.validate()
     initial_state.validate()
@@ -43,13 +50,18 @@ def propose_executable_causal_test(
         target.primitive != "boire"
         or target.subject_ref != "water"
         or target.application_context != "water_source"
-        or not initial_state.current_water_source
-        or float(initial_state.body["water"]) >= 100.0
-        or not st_version
+    ):
+        return CausalTestPlanningAttempt(None, "unsupported_test_target")
+    if not initial_state.current_water_source:
+        return CausalTestPlanningAttempt(None, "water_source_not_accessible")
+    if float(initial_state.body["water"]) >= 100.0:
+        return CausalTestPlanningAttempt(None, "water_saturated")
+    if (
+        not st_version
         or type(t_monde) is not int or t_monde < 1
         or type(ttl_steps) is not int or ttl_steps < 1
     ):
-        return None
+        return CausalTestPlanningAttempt(None, "invalid_planning_context")
     command = PrimitiveCommand("boire")
     result = simulator.rollout(
         initial_state=initial_state,
@@ -57,14 +69,18 @@ def propose_executable_causal_test(
         r_eff=1,
         h_eff=1,
     )
-    if not result.complete or len(result.completed_rollouts) != 1:
-        return None
+    if not result.complete:
+        return CausalTestPlanningAttempt(
+            None, "simulation_unavailable:" + (result.reason or "unspecified"),
+        )
+    if len(result.completed_rollouts) != 1:
+        return CausalTestPlanningAttempt(None, "invalid_rollout_count")
     predictions = result.completed_rollouts[0].predictions
     if len(predictions) != 1:
-        return None
+        return CausalTestPlanningAttempt(None, "invalid_prediction_count")
     consequences = SimulatorPlanner._predicted_consequences(predictions[0])
     if not any(item.variable == "water" for item in consequences):
-        return None
+        return CausalTestPlanningAttempt(None, "water_consequence_not_predicted")
 
     option_id = (
         f"option:causal-test:{target.contingency_ref}:"
@@ -106,7 +122,23 @@ def propose_executable_causal_test(
     )
     proposal = OptionProposal(option=option, plan=plan)
     proposal.validate()
-    return proposal
+    return CausalTestPlanningAttempt(proposal, None)
+
+
+def propose_executable_causal_test(
+    *,
+    target: CausalTestTarget,
+    initial_state: SimulationState,
+    simulator: Simulator,
+    st_version: str,
+    t_monde: int,
+    ttl_steps: int,
+) -> OptionProposal | None:
+    """Preserve the established proposal API without losing diagnostics."""
+    return assess_executable_causal_test(
+        target=target, initial_state=initial_state, simulator=simulator,
+        st_version=st_version, t_monde=t_monde, ttl_steps=ttl_steps,
+    ).proposal
 
 
 class Stage9OptionEvaluator(Stage8OptionEvaluator):
