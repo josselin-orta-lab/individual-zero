@@ -250,36 +250,67 @@ def _verified_null_drink_witnesses(
     ):
         return ()
 
-    sent = {
-        (event.causal_event.get("attempt_ref"), event.causal_event.get("t_monde")):
-            event
-        for event in journal.entries
-        if event.causal_event.get("kind") == "command_experienced"
-        and event.causal_event.get("primitive") == "boire"
-    }
-    results = []
-    for transition in journal.entries:
-        data = transition.causal_event
+    # A command+transition pair is not a lived experiment until DC-09
+    # commits that exact pair as an autobiographical, nonlethal segment.
+    # In particular, discarded death/rollback attempts never get a commit.
+    witnesses: set[str] = set()
+    for commit in journal.entries:
+        record = commit.causal_event
+        if record.get("kind") != "auto_segment_commit":
+            continue
+        refs = record.get("event_refs")
+        attempt = record.get("attempt_ref")
+        step = record.get("t_monde")
         if (
-            data.get("kind") != "world_transition_experienced"
-            or not isinstance(data.get("effects"), dict)
-            or data["effects"].get("drank") is not True
-            or not isinstance(data.get("body_after"), dict)
-            or not isinstance(data["body_after"].get("water"), (int, float))
+            not isinstance(refs, list)
+            or not refs
+            or len(refs) != len(set(refs))
+            or not isinstance(attempt, str)
+            or not attempt
+            or type(step) is not int
         ):
             continue
-        pair = (data.get("attempt_ref"), data.get("t_monde"))
-        command = sent.get(pair)
-        if (
-            command is None
-            or command.causal_event.get("attempt_ref") is None
+        entries = tuple(journal.get(ref) for ref in refs)
+        if any(
+            entry is None or entry.index >= commit.index
+            for entry in entries
         ):
             continue
-        # WorldPhysicsConfig is external truth, not an observation available
-        # to CausalModel. The journal only verifies exposure and a transition.
-        results.append(transition.event_id)
-    return tuple(sorted(set(results)))
-
+        commands = tuple(
+            entry for entry in entries
+            if entry.causal_event.get("kind") == "command_experienced"
+        )
+        transitions = tuple(
+            entry for entry in entries
+            if entry.causal_event.get("kind") == "world_transition_experienced"
+        )
+        if len(commands) != 1 or len(transitions) != 1:
+            continue
+        command = commands[0].causal_event
+        physical = transitions[0].causal_event
+        if any(
+            row.get("attempt_ref") != attempt
+            or row.get("t_monde") != step
+            for row in (command, physical)
+        ):
+            continue
+        effects = physical.get("effects")
+        body = physical.get("body_after")
+        if (
+            command.get("primitive") != "boire"
+            or command.get("parameters") != {}
+            or not isinstance(effects, dict)
+            or effects.get("drank") is not True
+            or not isinstance(body, dict)
+            or isinstance(body.get("water"), bool)
+            or not isinstance(body.get("water"), (int, float))
+            or not isfinite(body["water"])
+        ):
+            continue
+        # The truth of the missing gain is externally known from frozen
+        # physics. The segment witnesses that the individual really drank.
+        witnesses.add(transitions[0].event_id)
+    return tuple(sorted(witnesses))
 
 def audit_superstitious_rules(
     *,

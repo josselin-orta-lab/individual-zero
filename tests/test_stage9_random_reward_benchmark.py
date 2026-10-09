@@ -31,6 +31,8 @@ class RandomRewardNegativeControlTests(unittest.TestCase):
         self.assertGreaterEqual(first.drinking_commands, 1)
         self.assertTrue(first.bench_seeded_false_hypothesis)
         self.assertFalse(first.established_false_rule)
+        self.assertGreaterEqual(len(first.verified_null_drink_transitions), 1)
+        self.assertEqual(first.observed_false_rule_rate, 0.0)
         self.assertIsNone(first.scientific_superstition_rate)
         self.assertIsNone(first.scientific_gate)
 

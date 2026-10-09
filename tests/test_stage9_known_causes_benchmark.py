@@ -135,6 +135,17 @@ class KnownCausesBenchmarkTests(unittest.TestCase):
                 "body_after": transition.body_after.as_dict(),
             },
         )
+        # A raw technical transition alone is not an experienced episode.
+        self.assertIsNone(audit().observed_rate)
+        journal.append(
+            event_id="commit:1",
+            causal_event={
+                "kind": "auto_segment_commit",
+                "attempt_ref": "attempt:1", "t_monde": 1,
+                "event_refs": ["send:1", "transition:1"],
+                "filter_version": "stage9-test-autobio",
+            },
+        )
         result = audit()
         self.assertEqual(result.audited_false_refs, ("causal:hydration",))
         self.assertEqual(result.physical_witness_refs, ("transition:1",))
@@ -149,6 +160,38 @@ class KnownCausesBenchmarkTests(unittest.TestCase):
                 preregistered_max_rate=0.0,
                 physical_journal=journal,
             )
+
+    def test_rejected_or_cross_attempt_commit_cannot_create_false_canary(self):
+        from dataclasses import replace
+        from lab.journal import HashChainedJournal
+        from lab.stage4_reference_fixture import build_stage4_reference_runtime
+        config = replace(
+            build_stage4_reference_runtime().world.config,
+            drink_water_gain=0.0,
+        )
+        journal = HashChainedJournal()
+        journal.append(event_id="c", causal_event={
+            "kind": "command_experienced", "primitive": "boire",
+            "parameters": {}, "attempt_ref": "failed:1", "t_monde": 1,
+        })
+        journal.append(event_id="w", causal_event={
+            "kind": "world_transition_experienced",
+            "attempt_ref": "failed:1", "t_monde": 1,
+            "effects": {"drank": True}, "body_after": {"water": 20.0},
+        })
+        journal.append(event_id="commit", causal_event={
+            "kind": "auto_segment_commit",
+            "attempt_ref": "other:1", "t_monde": 1,
+            "event_refs": ["c", "w"],
+        })
+        outcome = audit_superstitious_rules(
+            causal_model=model(),
+            eligible_known_false_refs=("causal:hydration",),
+            preregistered_max_rate=None,
+            physical_journal=journal, known_false_world=config,
+        )
+        self.assertIsNone(outcome.observed_rate)
+        self.assertEqual(outcome.physical_witness_refs, ())
 
     def test_known_true_established_contingency_is_not_a_false_canary(self):
         m = model()

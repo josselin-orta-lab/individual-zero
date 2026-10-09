@@ -21,6 +21,7 @@ from lab.determinism import RandomStreamRegistry, sha256_hex, canonical_causal_b
 from lab.injected_scenario import InjectedScenario, ScenarioEvent
 from lab.stage9_reference_fixture import build_stage9_reference_runtime
 from lab.stage9_runtime import Stage9Runtime
+from lab.stage9_known_causes_benchmark import audit_superstitious_rules
 
 _PROTOCOL_VERSION = "stage9-random-food-negative-control-v1"
 _SCENARIO_ID = "stage9-exogenous-food-reward"
@@ -46,6 +47,8 @@ class RandomRewardControl:
     # estimate of superstition under genuinely learned random associations.
     scientific_superstition_rate: float | None
     scientific_gate: bool | None
+    verified_null_drink_transitions: tuple[str, ...] = ()
+    observed_false_rule_rate: float | None = None
 
 
 def preregistered_food_rewards(
@@ -218,6 +221,17 @@ def run_random_reward_negative_control(
     statuses = {row.ref: row.causal_status
                 for row in runtime.causal_model.contingencies()}
     false_established = statuses.get(_FALSE_HYPOTHESIS_REF) == "etablie"
+    diagnostic = audit_superstitious_rules(
+        causal_model=runtime.causal_model,
+        eligible_known_false_refs=(_FALSE_HYPOTHESIS_REF,),
+        preregistered_max_rate=None,
+        physical_journal=runtime.journal,
+        known_false_world=physical,
+    )
+    if not diagnostic.physical_witness_refs or diagnostic.observed_rate is None:
+        raise AssertionError("null-effect control lacks a committed physical exposure")
+    if bool(diagnostic.established_false_refs) != false_established:
+        raise AssertionError("audit and canonical statuses disagree")
     return RandomRewardControl(
         protocol_version=_PROTOCOL_VERSION,
         seed=campaign_seed, steps=steps,
@@ -238,4 +252,6 @@ def run_random_reward_negative_control(
         journal_sha256=runtime.journal.head_hash,
         scientific_superstition_rate=None,
         scientific_gate=None,
+        verified_null_drink_transitions=diagnostic.physical_witness_refs,
+        observed_false_rule_rate=diagnostic.observed_rate,
     )
