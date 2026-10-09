@@ -78,6 +78,37 @@ class AgencyComparator:
             for cell in capture.adjacent
         )
 
+    @staticmethod
+    def _visible_creature_can_explain_integrity_loss(
+        *, effects: Sequence[Mapping[str, object]],
+        capture: PerceptualCapture,
+    ) -> bool:
+        """Use accessible external evidence, never the world's true cause.
+
+        One adjacent perceived creature can justify a nonconforming loss of
+        integrity inside the declared P-47 window. It is not a causal proof,
+        and neither a mere nearby creature nor a predicted integrity gain
+        suffices. Multiple visible creatures leave the attribution uncertain.
+        """
+        visible_creatures = capture.adjacent_creatures
+        deviations = tuple(
+            effect for effect in effects
+            if effect.get("status") == "nonconforming"
+        )
+        return (
+            len(visible_creatures) == 1
+            and bool(deviations)
+            and all(
+                effect.get("variable") == "integrity"
+                and isinstance(effect.get("predicted"), (int, float))
+                and not isinstance(effect.get("predicted"), bool)
+                and isinstance(effect.get("observed"), (int, float))
+                and not isinstance(effect.get("observed"), bool)
+                and float(effect["observed"]) < float(effect["predicted"])
+                for effect in deviations
+            )
+        )
+
     def compare(
         self,
         *,
@@ -155,11 +186,20 @@ class AgencyComparator:
                 e.get("variable") in {"position_x", "position_y"}
                 for e in effects if e.get("status") == "nonconforming"
             )
+            visible_external_explanation = (
+                (
+                    only_motion
+                    and self._physical_obstacle_is_accessible(
+                        command=command, capture=capture,
+                    )
+                )
+                or self._visible_creature_can_explain_integrity_loss(
+                    effects=effects, capture=capture,
+                )
+            )
             attribution = (
                 "world_justified"
-                if only_motion and self._physical_obstacle_is_accessible(
-                    command=command, capture=capture
-                )
+                if visible_external_explanation
                 else "uncertain"
             )
         else:

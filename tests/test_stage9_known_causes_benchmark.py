@@ -15,7 +15,7 @@ class KnownCausesBenchmarkTests(unittest.TestCase):
     def test_physical_world_controls_have_traceable_expected_attributions(self):
         metrics = run_known_cause_probes()
         rows = {row.identifier: row for row in metrics.cases}
-        self.assertEqual(len(rows), 6)
+        self.assertEqual(len(rows), 7)
         self.assertEqual(
             (rows["drink-at-water"].comparator_status,
              rows["drink-at-water"].attribution),
@@ -31,14 +31,16 @@ class KnownCausesBenchmarkTests(unittest.TestCase):
         self.assertEqual(
             (rows["creature-night-harm"].comparator_status,
              rows["creature-night-harm"].attribution),
-            ("nonconforming", "uncertain"),
+            ("nonconforming", "world_justified"),
         )
         self.assertEqual(rows["hidden-danger-harm"].attribution, "uncertain")
-        self.assertEqual(metrics.ground_truthed_cases, 5)
-        self.assertEqual(metrics.correct_links, 3)
+        self.assertEqual(rows["creature-night-harm"].attribution, "world_justified")
+        self.assertEqual(rows["two-visible-creatures-night"].attribution, "uncertain")
+        self.assertEqual(metrics.ground_truthed_cases, 6)
+        self.assertEqual(metrics.correct_links, 4)
         self.assertEqual(metrics.uncertain_cases, 2)
         self.assertEqual(metrics.false_self_links, 0)
-        self.assertEqual(metrics.accuracy, 3 / 5)
+        self.assertEqual(metrics.accuracy, 4 / 6)
         self.assertEqual(metrics, run_known_cause_probes())
 
     def test_attribution_truth_is_not_given_to_comparator(self):
@@ -48,8 +50,8 @@ class KnownCausesBenchmarkTests(unittest.TestCase):
             if row.identifier == "creature-night-harm"
         )
         self.assertEqual(night.known_cause, "world")
-        self.assertFalse(night.correct_link)
-        self.assertTrue(night.uncertain)
+        self.assertTrue(night.correct_link)
+        self.assertFalse(night.uncertain)
         self.assertFalse(night.false_self_link)
 
     def test_no_preregistered_superstition_threshold_means_no_verdict(self):

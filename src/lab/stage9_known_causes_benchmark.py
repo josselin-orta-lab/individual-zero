@@ -110,6 +110,12 @@ def _protocol() -> tuple[KnownCauseProbe, ...]:
             "world", "creature_damage",
         ),
         KnownCauseProbe(
+            "two-visible-creatures-night", 201, PrimitiveCommand("attendre"),
+            WorldLayout(creatures=frozenset({creature, Position(3, 2)})),
+            PredictedConsequence("integrity", 100.0, 0.0),
+            "world", "creature_damage",
+        ),
+        KnownCauseProbe(
             "hidden-danger-harm", 201, PrimitiveCommand("attendre"),
             WorldLayout(danger_zones=frozenset({home})),
             PredictedConsequence("integrity", 100.0, 0.0),
