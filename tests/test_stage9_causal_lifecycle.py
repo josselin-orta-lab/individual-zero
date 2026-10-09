@@ -662,6 +662,52 @@ class CausalLifecycleTests(unittest.TestCase):
             m.restore_causal_state(damaged)
         self.assertEqual(m.export_causal_state(), checkpoint)
 
+    def test_snapshot_published_interventions_keep_agency_lineage(self):
+        m = model()
+        hypothesized(m)
+        publish_trial(m, trial(10, context="zone1"))
+        m.integrate_causal_intervention(trial(11, context="zone2"))
+        checkpoint = m.export_causal_state()
+        self.assertEqual(len(checkpoint["causal_interventions"]), 1)
+        self.assertGreaterEqual(len(checkpoint["agency_evidence"]), 1)
+        self.assertEqual(len(checkpoint["pending_causal_interventions"]), 1)
+        replay = model()
+        replay.restore_causal_state(checkpoint)
+        self.assertEqual(replay.export_causal_state(), checkpoint)
+
+        for kind in (
+            "missing_agency", "missing_comparator", "wrong_option",
+            "wrong_step", "wrong_episode", "unknown_contingency",
+        ):
+            with self.subTest(kind=kind):
+                damaged = deepcopy(checkpoint)
+                published = damaged["causal_interventions"][0]
+                if kind == "missing_agency":
+                    damaged["agency_evidence"] = []
+                elif kind == "missing_comparator":
+                    published["comparator_ref"] = "agency-evidence:missing"
+                elif kind == "wrong_option":
+                    damaged["agency_evidence"][0]["option_ref"] = "command:unrelated"
+                elif kind == "wrong_step":
+                    damaged["agency_evidence"][0]["observed_t_monde"] += 1
+                elif kind == "wrong_episode":
+                    published["episode_ref"] = "episode:unrelated"
+                elif kind == "unknown_contingency":
+                    published["contingency_ref"] = "causal:unknown"
+                    damaged["causal_credits"] = [
+                        ["causal:unknown", row[1], row[2]]
+                        if row[2] == "intervention" else row
+                        for row in damaged["causal_credits"]
+                    ]
+                expected = (
+                    "lacks canonical contingency"
+                    if kind == "unknown_contingency"
+                    else "lacks matching published agency comparison"
+                )
+                with self.assertRaisesRegex(ValueError, expected):
+                    m.restore_causal_state(damaged)
+                self.assertEqual(m.export_causal_state(), checkpoint)
+
     def test_snapshot_replay_pending_and_no_oracle(self):
         m=model()
         correlated(m)

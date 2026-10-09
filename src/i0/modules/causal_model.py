@@ -2256,6 +2256,33 @@ class CausalModel:
             raise ValueError("duplicate agency evidence identity in snapshot")
         self._agency_evidence = {v.identifier: v for v in agency_rows}
         self._pending_agency_evidence = pending_agency
+        # Every *published* causal intervention was admitted only after its
+        # comparator was independently published. Restore must preserve that
+        # join: losing or relabeling a comparison would otherwise let a
+        # snapshot retain an unwitnessed n2 credit (DC-09, INV-33).
+        # Pending interventions are intentionally not checked here: their
+        # comparator may still be pending publication.
+        for trial in trials.values():
+            canonical = records.get(trial.contingency_ref)
+            if canonical is None:
+                raise ValueError(
+                    "causal snapshot intervention lacks canonical contingency"
+                )
+            report = self._agency_evidence.get(trial.comparator_ref)
+            if not self._published_comparison_supports(trial, report):
+                raise ValueError(
+                    "causal snapshot intervention lacks matching published agency comparison"
+                )
+            if (
+                (canonical.predicate, canonical.subject_ref, "boire")
+                in self.config.safe_test_actions
+                and not self._verified_lived_drink_intervention(
+                    trial, witnesses.get(trial.identifier), report,
+                )
+            ):
+                raise ValueError(
+                    "causal snapshot intervention lacks matching closed physical action"
+                )
         witnesses = [
             decode_lived_numeric_outcome(raw)
             for raw in state.get("numeric_witnesses", ())

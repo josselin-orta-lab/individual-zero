@@ -291,6 +291,39 @@ class LivedCausalInterventionProducerTests(unittest.TestCase):
             model().restore_causal_state(corrupt)
 
 
+    def test_restored_published_hydration_intervention_needs_physical_witness(self):
+        m = model()
+        hypothesis(m)
+        evidence_path(m, step=10)
+        m.publish_causal_inference()
+        m.promote_lived_causal_interventions()
+        m.publish_causal_inference()
+        checkpoint = m.export_causal_state()
+        self.assertEqual(len(checkpoint["causal_interventions"]), 1)
+        self.assertEqual(len(checkpoint["causal_action_witnesses"]), 1)
+        replay = model()
+        replay.restore_causal_state(checkpoint)
+        self.assertEqual(replay.export_causal_state(), checkpoint)
+
+        for kind in ("missing_witness", "wrong_transition", "wrong_water"):
+            with self.subTest(kind=kind):
+                damaged = deepcopy(checkpoint)
+                if kind == "missing_witness":
+                    damaged["causal_action_witnesses"] = []
+                elif kind == "wrong_transition":
+                    damaged["causal_action_witnesses"][0][
+                        "transition_event_ref"
+                    ] = "transition:other"
+                else:
+                    damaged["causal_action_witnesses"][0][
+                        "water_observed"
+                    ] = 75.0
+                with self.assertRaisesRegex(
+                    ValueError, "lacks matching closed physical action",
+                ):
+                    m.restore_causal_state(damaged)
+                self.assertEqual(m.export_causal_state(), checkpoint)
+
     def test_failed_snapshot_restore_is_atomic_even_at_late_validation(self):
         m = model()
         hypothesis(m)
