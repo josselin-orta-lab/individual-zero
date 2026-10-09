@@ -21,10 +21,23 @@ class Stage9HydrationContrastTests(unittest.TestCase):
         self.assertEqual(exploratory.comparison_role,"exploratory_changed_water_decay")
         self.assertEqual(aligned.comparison_role,"exploratory_model_aligned_prediction")
         self.assertEqual(aligned.schedule_sha256,null.schedule_sha256)
-        self.assertIsNotNone(aligned.first_hypothesis_step)
-        self.assertGreaterEqual(aligned.drinks_after_hypothesis,0)
-        self.assertGreaterEqual(aligned.unscored_test_evaluations,0)
-        self.assertGreaterEqual(aligned.published_interventions,0)
+        # The aligned physics is a controlled *opportunity*, not a forced
+        # learning result. It may saturate water before n1 and independent
+        # controls exist; report missing evidence rather than assuming success.
+        if aligned.first_hypothesis_step is None:
+            self.assertNotIn(aligned.causal_status, (
+                "hypothese_causale", "testee_par_intervention", "etablie",
+            ))
+            self.assertEqual(aligned.drinks_after_hypothesis, 0)
+        else:
+            self.assertGreaterEqual(aligned.first_hypothesis_step, 1)
+            self.assertIn(aligned.causal_status, (
+                "hypothese_causale", "testee_par_intervention", "etablie",
+            ))
+        self.assertGreaterEqual(aligned.drinks_after_hypothesis, 0)
+        self.assertGreaterEqual(aligned.unscored_test_evaluations, 0)
+        self.assertGreaterEqual(aligned.published_interventions, 0)
+        self.assertTrue(aligned.missing_evidence)
         self.assertTrue(all(row.scientific_gate is None for row in first.cases))
         self.assertEqual(len(first.as_dict()["evidence_sha256"]),64)
 
