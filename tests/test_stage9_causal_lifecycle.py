@@ -763,6 +763,78 @@ class CausalLifecycleTests(unittest.TestCase):
         replay.restore_causal_state(checkpoint)
         self.assertEqual(replay.export_causal_state(), checkpoint)
 
+
+    def test_snapshot_tested_or_established_status_requires_earned_interventions(self):
+        m = model()
+        hypothesized(m)
+        untouched = m.export_causal_state()
+        for unearned in ("testee_par_intervention", "etablie"):
+            with self.subTest(unearned=unearned):
+                forged = deepcopy(untouched)
+                forged["published"][0]["causal_status"] = unearned
+                with self.assertRaisesRegex(
+                    ValueError, "tested status lacks lived intervention",
+                ):
+                    m.restore_causal_state(forged)
+                self.assertEqual(m.export_causal_state(), untouched)
+
+        publish_trial(m, trial(10, context="zone1"))
+        tested = m.export_causal_state()
+        self.assertEqual(m.get(REF).causal_status, "testee_par_intervention")
+        restored = model()
+        restored.restore_causal_state(tested)
+        self.assertEqual(restored.export_causal_state(), tested)
+
+        forged = deepcopy(tested)
+        forged["published"][0]["causal_status"] = "etablie"
+        with self.assertRaisesRegex(
+            ValueError, "established status lacks independent post-revision contexts",
+        ):
+            m.restore_causal_state(forged)
+        self.assertEqual(m.export_causal_state(), tested)
+
+        publish_trial(m, trial(11, context="zone2"))
+        established = m.export_causal_state()
+        self.assertEqual(m.get(REF).causal_status, "etablie")
+        restored.restore_causal_state(established)
+        self.assertEqual(restored.export_causal_state(), established)
+
+        collision = deepcopy(established)
+        collision["causal_interventions"][1]["context_signature"] = "zone1"
+        with self.assertRaisesRegex(
+            ValueError, "established status lacks independent post-revision contexts",
+        ):
+            m.restore_causal_state(collision)
+        self.assertEqual(m.export_causal_state(), established)
+
+    def test_snapshot_established_status_never_reuses_pre_refutation_successes(self):
+        m = model()
+        hypothesized(m)
+        publish_trial(m, trial(10, context="zone1"))
+        publish_trial(m, trial(11, context="zone2"))
+        publish_trial(m, trial(12, context="zone3", effect=False))
+        self.assertEqual(m.get(REF).causal_status, "hypothese_causale")
+        publish_trial(m, trial(13, context="zone4"))
+        tested = m.export_causal_state()
+        self.assertEqual(m.get(REF).causal_status, "testee_par_intervention")
+        replay = model()
+        replay.restore_causal_state(tested)
+        self.assertEqual(replay.export_causal_state(), tested)
+
+        forged = deepcopy(tested)
+        forged["published"][0]["causal_status"] = "etablie"
+        with self.assertRaisesRegex(
+            ValueError, "established status lacks independent post-revision contexts",
+        ):
+            m.restore_causal_state(forged)
+        self.assertEqual(m.export_causal_state(), tested)
+
+        publish_trial(m, trial(14, context="zone5"))
+        established = m.export_causal_state()
+        self.assertEqual(m.get(REF).causal_status, "etablie")
+        replay.restore_causal_state(established)
+        self.assertEqual(replay.export_causal_state(), established)
+
     def test_snapshot_replay_pending_and_no_oracle(self):
         m=model()
         correlated(m)

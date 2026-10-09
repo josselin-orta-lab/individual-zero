@@ -2381,6 +2381,38 @@ class CausalModel:
                 raise ValueError(
                     "causal snapshot intervention lacks matching closed physical action"
                 )
+        # §13.2 / INV-25: a persisted status has epistemic consequences.
+        # Restoring "tested" without any observed successful intervention,
+        # or "established" without n2 independent post-refutation contexts,
+        # would skip the real phase-5 progression and could suppress tests
+        # or authorize established-only uses without earned causal evidence.
+        for contingency in records.values():
+            if contingency.causal_status not in {
+                "testee_par_intervention", "etablie",
+            }:
+                continue
+            positive = [
+                row for row in trials.values()
+                if row.contingency_ref == contingency.ref
+                and row.observed_effect
+                and row.attribution == "self_compatible"
+            ]
+            if not positive:
+                raise ValueError(
+                    "causal snapshot tested status lacks lived intervention"
+                )
+            if contingency.causal_status == "etablie":
+                last_failure_step = boundary_index.get(
+                    contingency.ref, (-1, "")
+                )[0]
+                independent_contexts = {
+                    row.context_signature for row in positive
+                    if row.observed_step > last_failure_step
+                }
+                if len(independent_contexts) < self.config.n2:
+                    raise ValueError(
+                        "causal snapshot established status lacks independent post-revision contexts"
+                    )
         witnesses = [
             decode_lived_numeric_outcome(raw)
             for raw in state.get("numeric_witnesses", ())
