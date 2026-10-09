@@ -623,7 +623,7 @@ class CausalLifecycleTests(unittest.TestCase):
                     damaged["causal_correlation_witnesses"][0][1][0] = (
                         "observation:missing"
                     )
-                    expected = "invalid controlled correlation witness"
+                    expected = "invalid causal snapshot correlation witness samples"
                 else:
                     damaged["causal_observations"][0]["effect_present"] = False
                     expected = "invalid controlled correlation witness"
