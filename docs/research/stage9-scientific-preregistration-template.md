@@ -81,6 +81,11 @@ python -m lab.stage9_registration_chronology \
   --evidence-commit FULL_40_CHARACTER_EVIDENCE_COMMIT
 ```
 
+The chronology checker requires an unshallowed Git checkout and ignores
+local Git replace-object views when resolving commits, paths and ancestry.
+These guards prevent a partial or locally substituted commit graph from
+silently masquerading as a verified immutable history.
+
 The tool checks that the implementation freeze precedes the registration
 commit and the registration commit strictly precedes the evidence commit in
 Git ancestry; that the complete committed `src/` Git tree (file names,

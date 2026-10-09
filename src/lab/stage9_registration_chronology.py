@@ -25,7 +25,7 @@ COMMIT_ID = re.compile(r"[0-9a-f]{40}\Z")
 def _git(repository: Path, *arguments: str) -> bytes:
     try:
         result = subprocess.run(
-            ("git", "-C", str(repository), *arguments),
+            ("git", "-C", str(repository), "--no-replace-objects", *arguments),
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             check=False,
         )
@@ -61,7 +61,8 @@ def _require_ancestor(repository: Path, earlier: str, later: str) -> None:
         raise ValueError("registration and evidence require distinct Git commits")
     try:
         result = subprocess.run(
-            ("git", "-C", str(repository), "merge-base", "--is-ancestor",
+            ("git", "-C", str(repository), "--no-replace-objects",
+             "merge-base", "--is-ancestor",
              earlier, later),
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
         )
@@ -176,6 +177,8 @@ def audit_registration_chronology(
     world generation, raw evidence provenance or independent review.
     """
     root = repository.resolve()
+    if _git(root, "rev-parse", "--is-shallow-repository").strip() != b"false":
+        raise ValueError("chronology requires complete unshallowed Git history")
     if Path(_git(root, "rev-parse", "--show-toplevel").decode().strip()).resolve() != root:
         raise ValueError("chronology repository must be its Git worktree root")
     registered_file, registration_name = _file_in_repo(root, registration_path)
@@ -208,7 +211,7 @@ def audit_registration_chronology(
         raise ValueError("heldout evidence bytes differ from committed Git artifact")
 
     prior_evidence = subprocess.run(
-        ("git", "-C", str(root), "cat-file", "-e",
+        ("git", "-C", str(root), "--no-replace-objects", "cat-file", "-e",
          f"{registration_commit}:{evidence_name}"),
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
     ).returncode == 0

@@ -306,6 +306,52 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
                     ):
                         _audit(repo, registered, _git(repo, "rev-parse", "HEAD"))
 
+    def test_local_git_replace_cannot_hide_a_committed_source_change(self):
+        # A replacement object may make an altered commit *appear* to have
+        # the original tree. The chronology audit must see the real objects.
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            freeze, registered, _ = _create_fixture(repo)
+            source = repo / "src" / "engine.py"
+            original = source.read_bytes()
+            source.write_bytes(original + b"\n# altered")
+            _git(repo, "add", "src/engine.py")
+            _git(repo, "commit", "-qm", "temporarily change frozen source")
+            altered = _git(repo, "rev-parse", "HEAD")
+            source.write_bytes(original)
+            _git(repo, "add", "src/engine.py")
+            _git(repo, "commit", "-qm", "restore frozen source")
+            evidence = _git(repo, "rev-parse", "HEAD")
+            prior = _git(repo, "rev-parse", f"{altered}^")
+            original_tree = _git(repo, "rev-parse", f"{prior}^{{tree}}")
+            replacement = _git(
+                repo, "commit-tree", original_tree, "-p", prior,
+                "-m", "local replacement claims unmodified code",
+            )
+            _git(repo, "replace", altered, replacement)
+            # Standard Git readers are susceptible to the local replacement.
+            self.assertEqual(
+                _git(repo, "rev-parse", f"{altered}:src"),
+                _git(repo, "rev-parse", f"{freeze}:src"),
+            )
+            with self.assertRaisesRegex(ValueError, "frozen source tree changed"):
+                _audit(repo, registered, evidence)
+
+    def test_shallow_checkout_cannot_certify_git_chronology(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            source = root / "full"
+            source.mkdir()
+            _, registered, evidence = _create_fixture(source)
+            shallow = root / "shallow"
+            subprocess.run(
+                ("git", "clone", "-q", "--depth", "1",
+                 source.as_uri(), str(shallow)),
+                check=True, capture_output=True,
+            )
+            with self.assertRaisesRegex(ValueError, "unshallowed Git history"):
+                _audit(shallow, registered, evidence)
+
     def test_paths_outside_worktree_are_rejected(self):
         with TemporaryDirectory() as folder:
             repo = Path(folder) / "repo"
