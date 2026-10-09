@@ -406,8 +406,30 @@ class CausalModel:
             or not isfinite(water_before) or water_before >= 100
         ):
             return ()
+        # Once established, the contingency remains revisable by further
+        # independently goal-motivated lived actions (§13.2). Do not propose
+        # another experimental action merely to reconfirm it.
+        candidates = list(self.proposer_test())
+        if motive_type == "active_goal":
+            for contingency in self.contingencies(status="etablie"):
+                if (
+                    contingency.predicate not in SAFETY_PREDICATES
+                    and (
+                        contingency.predicate, contingency.subject_ref, "boire"
+                    ) in self.config.safe_test_actions
+                    and contingency.context_signature == "water_source"
+                ):
+                    candidates.append(CausalTestTarget(
+                        contingency_ref=contingency.ref,
+                        contingency_version=contingency.version,
+                        predicate=contingency.predicate,
+                        subject_ref=contingency.subject_ref,
+                        application_context=contingency.context_signature,
+                        primitive="boire",
+                        motive_ref=f"test_causal:{contingency.ref}",
+                    ))
         rows = []
-        for target in self.proposer_test():
+        for target in candidates:
             if (
                 target.primitive != primitive
                 or target.application_context != "water_source"

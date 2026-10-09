@@ -431,16 +431,11 @@ class Stage9Runtime(Stage8Runtime):
                 position=(captured.x, captured.y),
                 water_before=float(captured.body["water"]),
             ):
-                self._write(
-                    kind="causal_applied_action_recorded",
-                    cycle=cycle,
-                    data={
-                        "contingency_ref": action.contingency_ref,
-                        "option_ref": action.option_ref,
-                        "sent_t_monde": action.sent_t_monde,
-                        "source": "action_control_applied",
-                        "intervention_published": False,
-                    },
-                )
+                # The world step has already closed inside dispatch. Its
+                # journal append-only boundary cannot be extended through
+                # Stage4Runtime._write, which requires an active attempt.
+                # The pending action is snapshot-owned by CausalModel and
+                # becomes observable when closed Memory evidence is logged.
+                del action
         return execution
 
