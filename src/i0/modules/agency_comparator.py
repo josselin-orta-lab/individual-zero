@@ -68,11 +68,44 @@ class AgencyComparator:
 
     @staticmethod
     def _physical_obstacle_is_accessible(
-        *, command: PrimitiveCommand | None, capture: PerceptualCapture
+        *,
+        command: PrimitiveCommand | None,
+        capture: PerceptualCapture,
+        effects: Sequence[Mapping[str, object]],
     ) -> bool:
+        """A visible obstacle explains only the attempted forward displacement.
+
+        Mere adjacency to an impassable cell cannot explain an orthogonal
+        shift or motion opposite to the command. This is a conservative
+        agency attribution, never proof of the world's hidden causal rule.
+        """
         if command is None or command.primitive != "se_deplacer":
             return False
         direction = command.parameters.get("direction")
+        axis_and_sign = {
+            "east": ("position_x", 1),
+            "west": ("position_x", -1),
+            "south": ("position_y", 1),
+            "north": ("position_y", -1),
+        }.get(direction)
+        if axis_and_sign is None:
+            return False
+        variable, sign = axis_and_sign
+        deviations = [
+            effect for effect in effects
+            if effect.get("status") == "nonconforming"
+        ]
+        if len(deviations) != 1 or deviations[0].get("variable") != variable:
+            return False
+        predicted = deviations[0].get("predicted")
+        observed = deviations[0].get("observed")
+        if (
+            type(predicted) not in (int, float)
+            or type(observed) not in (int, float)
+            or not isfinite(predicted) or not isfinite(observed)
+            or sign * (predicted - observed) <= 0
+        ):
+            return False
         return any(
             cell.direction == direction and not cell.passable
             for cell in capture.adjacent
@@ -190,7 +223,7 @@ class AgencyComparator:
                 (
                     only_motion
                     and self._physical_obstacle_is_accessible(
-                        command=command, capture=capture,
+                        command=command, capture=capture, effects=effects,
                     )
                 )
                 or self._visible_creature_can_explain_integrity_loss(

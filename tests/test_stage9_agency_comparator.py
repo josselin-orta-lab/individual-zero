@@ -87,6 +87,88 @@ class AgencyComparatorStage9Tests(unittest.TestCase):
         )
         self.assertEqual(hidden.attribution, "uncertain")
 
+    def test_world_obstacle_attribution_requires_matching_displacement(self):
+        from dataclasses import replace
+
+        base = capture_with_creature(creature_direction=None)
+        blocked = replace(
+            base,
+            t_monde=2,
+            adjacent=tuple(
+                replace(cell, passable=False) if cell.direction == "east" else cell
+                for cell in base.adjacent
+            ),
+        )
+
+        def compare(*predictions):
+            return comparator().compare(
+                option_ref="move:east",
+                sent_t_monde=1,
+                deadline_t_monde=2,
+                predictions=predictions,
+                capture=blocked,
+                command=PrimitiveCommand(
+                    "se_deplacer", {"direction": "east"},
+                ),
+            )
+
+        # The expected eastward displacement was blocked by an accessible
+        # impassable eastern cell, so a world contribution is defensible.
+        blocked_forward = compare(PredictedConsequence("position_x", 3.0, 0.0))
+        self.assertEqual(blocked_forward.status, "nonconforming")
+        self.assertEqual(blocked_forward.attribution, "world_justified")
+
+        # That same obstacle cannot explain a sideways displacement,
+        # movement in the opposite direction, or multiple deviations.
+        for predictions in (
+            (PredictedConsequence("position_y", 3.0, 0.0),),
+            (PredictedConsequence("position_x", 1.0, 0.0),),
+            (
+                PredictedConsequence("position_x", 3.0, 0.0),
+                PredictedConsequence("position_y", 3.0, 0.0),
+            ),
+        ):
+            with self.subTest(predictions=predictions):
+                result = compare(*predictions)
+                self.assertEqual(result.status, "nonconforming")
+                self.assertEqual(result.attribution, "uncertain")
+
+        accessible = replace(
+            blocked,
+            adjacent=tuple(
+                replace(cell, passable=True) for cell in blocked.adjacent
+            ),
+        )
+        unblocked = comparator().compare(
+            option_ref="move:east",
+            sent_t_monde=1,
+            deadline_t_monde=2,
+            predictions=(PredictedConsequence("position_x", 3.0, 0.0),),
+            capture=accessible,
+            command=PrimitiveCommand("se_deplacer", {"direction": "east"}),
+        )
+        self.assertEqual(unblocked.attribution, "uncertain")
+
+    def test_northward_blockage_explains_only_northward_difference(self):
+        from dataclasses import replace
+
+        base = capture_with_creature(creature_direction=None)
+        blocked = replace(
+            base,
+            t_monde=2,
+            adjacent=tuple(
+                replace(cell, passable=False) if cell.direction == "north" else cell
+                for cell in base.adjacent
+            ),
+        )
+        result = comparator().compare(
+            option_ref="move:north", sent_t_monde=1, deadline_t_monde=2,
+            predictions=(PredictedConsequence("position_y", 1.0, 0.0),),
+            capture=blocked,
+            command=PrimitiveCommand("se_deplacer", {"direction": "north"}),
+        )
+        self.assertEqual(result.attribution, "world_justified")
+
     def test_window_closure_is_not_retroactive(self):
         from dataclasses import replace
         c = comparator()
