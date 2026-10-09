@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Mapping
+from unicodedata import normalize
 
 from .determinism import canonical_causal_bytes, sha256_hex
 
@@ -69,8 +70,15 @@ class HashChainedJournal:
 
         del noncausal_metadata
 
-        if not event_id:
-            raise ValueError("event_id must not be empty")
+        if not isinstance(event_id, str) or not event_id:
+            raise ValueError("event_id must be a nonempty string")
+        # INV-49: an occurrence has one immutable identity, including after
+        # repeated attempts/rollbacks. Otherwise _by_id silently loses the
+        # first occurrence while the hash-chained journal still contains it.
+        if normalize("NFC", event_id) != event_id:
+            raise ValueError("journal event_id must be NFC-normalized")
+        if event_id in self._by_id:
+            raise ValueError("duplicate technical journal event_id")
 
         previous_hash = self.head_hash
         event_bytes = canonical_causal_bytes(
@@ -100,9 +108,20 @@ class HashChainedJournal:
         """Recompute the complete chain and reject any broken link or mutation."""
 
         previous_hash = GENESIS_HASH
+        seen_ids: set[str] = set()
+        if len(self._by_id) != len(self._entries):
+            return False
         for expected_index, entry in enumerate(self._entries):
-            if entry.index != expected_index:
+            if (
+                entry.index != expected_index
+                or not isinstance(entry.event_id, str)
+                or not entry.event_id
+                or normalize("NFC", entry.event_id) != entry.event_id
+                or entry.event_id in seen_ids
+                or self._by_id.get(entry.event_id) is not entry
+            ):
                 return False
+            seen_ids.add(entry.event_id)
             if entry.previous_hash != previous_hash:
                 return False
             expected_hash = sha256_hex(

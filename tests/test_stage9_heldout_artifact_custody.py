@@ -265,23 +265,29 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             root = Path(folder)
             reg, report, index = _prepared(root)
             original = (root / index["runs"][0]["journal_path"]).read_bytes()
-            fresh = HashChainedJournal()
-            first_event = None
-            for line in original.split(b"\n"):
-                entry = json.loads(line)
-                event = entry["causal_event"]
-                if first_event is None:
-                    first_event = entry
-                fresh.append(event_id=entry["event_id"], causal_event=event)
-            # The generic journal writer permits repeated event IDs: the
-            # independent scientific custody audit must still fail closed.
-            fresh.append(
-                event_id=first_event["event_id"],
-                causal_event={"kind": "synthetic_duplicate_id"},
-            )
-            self.assertTrue(fresh.verify())
+            records = [
+                json.loads(line) for line in original.split(b"\n")
+            ]
+            duplicate_id = records[0]["event_id"]
+            event = {"kind": "synthetic_duplicate_id"}
+            previous_hash = records[-1]["event_hash"]
+            # Forge a cryptographically linked record without going through
+            # HashChainedJournal.append, which rejects duplicate IDs.
+            records.append({
+                "index": len(records),
+                "event_id": duplicate_id,
+                "previous_hash": previous_hash,
+                "causal_event": event,
+                "event_hash": sha256(
+                    bytes.fromhex(previous_hash)
+                    + canonical_causal_bytes({
+                        "event_id": duplicate_id, "causal_event": event,
+                    })
+                ).hexdigest(),
+            })
             forged = _replace_journal_bytes(
-                root, report, index, fresh.canonical_bytes(),
+                root, report, index,
+                b"\n".join(canonical_causal_bytes(row) for row in records),
             )
             with self.assertRaisesRegex(ValueError, "repeated canonical journal"):
                 audit_heldout_raw_artifacts(
