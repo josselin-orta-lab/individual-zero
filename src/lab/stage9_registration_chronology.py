@@ -72,6 +72,43 @@ def _require_ancestor(repository: Path, earlier: str, later: str) -> None:
                          "are not in the required Git ancestor order")
 
 
+def _verify_registration_unchanged_through_history(
+    repository: Path, registration_commit: str, evidence_commit: str,
+    registration_name: str,
+) -> int:
+    """Reject changes at *any* descendant commit between seal and evidence.
+
+    Comparing only the two endpoint blobs misses a committed protocol change
+    subsequently reverted just before evidence deposition. Walk all commits
+    on DAG ancestry paths (including merged descendants), not just first
+    parent, and require the same Git blob at each step.
+    """
+    sealed_blob = _git(
+        repository, "rev-parse", f"{registration_commit}:{registration_name}",
+    ).strip()
+    descendants = _git(
+        repository, "rev-list", "--ancestry-path", "--topo-order",
+        f"{registration_commit}..{evidence_commit}",
+    ).splitlines()
+    if not descendants:
+        raise ValueError("missing Git commits between registration and evidence")
+    for commit in descendants:
+        try:
+            blob = _git(
+                repository, "rev-parse",
+                f"{commit.decode('ascii')}:{registration_name}",
+            ).strip()
+        except ValueError as exc:
+            raise ValueError(
+                "registration removed or renamed after prospective Git seal"
+            ) from exc
+        if blob != sealed_blob:
+            raise ValueError(
+                "registration changed within Git ancestry after prospective seal"
+            )
+    return len(descendants)
+
+
 def audit_registration_chronology(
     *, repository: Path, registration_path: Path, registration_commit: str,
     evidence_path: Path, evidence_commit: str,
@@ -104,6 +141,9 @@ def audit_registration_chronology(
     carried_registration = _git(root, "show", f"{evidence_commit}:{registration_name}")
     if carried_registration != frozen_registration:
         raise ValueError("registration changed after prospective Git seal")
+    audited_descendant_commits = _verify_registration_unchanged_through_history(
+        root, registration_commit, evidence_commit, registration_name,
+    )
     committed_evidence = _git(root, "show", f"{evidence_commit}:{evidence_name}")
     if committed_evidence != evidence_file.read_bytes():
         raise ValueError("heldout evidence bytes differ from committed Git artifact")
@@ -132,6 +172,9 @@ def audit_registration_chronology(
         "evidence_sha256": provisional["evidence_sha256"],
         "provisional_metric_assessment": provisional["assessment"],
         "evidence_path_present_at_registration": prior_evidence,
+        "registration_unchanged_descendant_commits_checked": (
+            audited_descendant_commits
+        ),
         "scientific_verdict": None,
         "golden_stage9_frozen": False,
         "outstanding": [

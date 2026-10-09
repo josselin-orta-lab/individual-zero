@@ -128,6 +128,54 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "registration bytes"):
                 _audit(repo, registered, altered)
 
+    def test_transient_committed_registration_edit_cannot_be_reverted_away(self):
+        # Endpoints have identical protocol bytes. Inspecting only the
+        # registration and evidence commits would silently accept this
+        # retrospective modification of supposedly frozen rules.
+        for modification in ("rewrite", "delete"):
+            with self.subTest(modification=modification):
+                with TemporaryDirectory() as folder:
+                    repo = Path(folder)
+                    _, sealed, _ = _create_fixture(repo)
+                    path = repo / "research" / "registration.json"
+                    original = path.read_bytes()
+                    if modification == "delete":
+                        _git(repo, "rm", "research/registration.json")
+                    else:
+                        path.write_bytes(original + b" ")
+                        _git(repo, "add", "research/registration.json")
+                    _git(repo, "commit", "-qm", "tamper with registered protocol")
+                    path.write_bytes(original)
+                    _git(repo, "add", "research/registration.json")
+                    _git(repo, "commit", "-qm", "restore original registered bytes")
+                    evidence = _git(repo, "rev-parse", "HEAD")
+                    self.assertEqual(path.read_bytes(), original)
+                    with self.assertRaisesRegex(
+                        ValueError, "registration changed|registration removed",
+                    ):
+                        _audit(repo, sealed, evidence)
+
+    def test_unrelated_intermediate_commit_preserves_valid_lineage(self):
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            _, sealed, _ = _create_fixture(repo)
+            (repo / "unrelated.txt").write_text(
+                "An unrelated documentation change.\n", encoding="utf-8",
+            )
+            _git(repo, "add", "unrelated.txt")
+            _git(repo, "commit", "-qm", "unrelated intervening work")
+            evidence = _git(repo, "rev-parse", "HEAD")
+            result = _audit(repo, sealed, evidence)
+            self.assertEqual(
+                result["chronology_status"],
+                "git_lineage_consistent_requires_independent_review",
+            )
+            self.assertEqual(
+                result["registration_unchanged_descendant_commits_checked"], 2,
+            )
+            self.assertIsNone(result["scientific_verdict"])
+            self.assertFalse(result["golden_stage9_frozen"])
+
     def test_paths_outside_worktree_are_rejected(self):
         with TemporaryDirectory() as folder:
             repo = Path(folder) / "repo"

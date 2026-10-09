@@ -84,8 +84,12 @@ python -m lab.stage9_registration_chronology \
 The tool checks that the implementation freeze precedes the registration
 commit and the registration commit strictly precedes the evidence commit in
 Git ancestry; that the exact registration bytes were committed at the
-registration point and remain unchanged in the evidence commit; and that
-the evidence file exactly matches its committed bytes. It also calculates
+registration point and remain unchanged through **every intervening
+descendant commit on Git ancestry paths** (including merges), not just in
+the final evidence commit; and that the evidence file exactly matches its
+committed bytes. Changing and later reverting a frozen registration is
+rejected. The output includes the number of descendant commits checked.
+It also calculates
 the **provisional** metrics using the existing held-out scorer.
 
 A previous file at the evidence path is surfaced for independent scrutiny.
