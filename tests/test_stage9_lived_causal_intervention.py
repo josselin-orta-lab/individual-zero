@@ -170,6 +170,89 @@ class LivedCausalInterventionProducerTests(unittest.TestCase):
         m.publish_causal_inference()
         self.assertEqual(m.promote_lived_causal_interventions(), ())
 
+    def test_ambiguous_closed_world_step_cannot_launder_a_drink_action(self):
+        for fault in ("other_command", "other_transition", "same_event_id",
+                      "mismatched_effect"):
+            with self.subTest(fault=fault):
+                m = model()
+                hypothesis(m)
+                evidence_path(m, step=10, close=False, comparator=False)
+                command, transition = physical_episode(
+                    step=10, after=60.0, position=(2, 2),
+                )
+                if fault == "other_command":
+                    extra = {
+                        **command, "event_id": "command:other",
+                        "primitive": "attendre",
+                    }
+                    events = (command, transition, extra)
+                elif fault == "other_transition":
+                    extra = {
+                        **transition, "event_id": "transition:other",
+                        "effects": {"rest": "attendre"},
+                    }
+                    events = (command, transition, extra)
+                elif fault == "same_event_id":
+                    extra = {
+                        **transition, "effects": {"rest": "attendre"},
+                    }
+                    events = (command, transition, extra)
+                else:
+                    events = (
+                        command, {
+                            **transition, "effects": {"rest": "attendre"},
+                        },
+                    )
+                admitted = m.ingest_closed_causal_action_episode(
+                    episode_ref="episode:physical:ambiguous",
+                    event_refs=tuple(dict.fromkeys(e["event_id"] for e in events)),
+                    autobiographical_events=events,
+                )
+                self.assertEqual(admitted, ())
+                self.assertEqual(
+                    m.export_causal_state()["lived_causal_actions"], [],
+                )
+                # Re-presenting only the matching subset under another
+                # episode ID cannot recover the discredited physical action.
+                self.assertEqual(m.ingest_closed_causal_action_episode(
+                    episode_ref="episode:physical:alias",
+                    event_refs=("command:10", "transition:10"),
+                    autobiographical_events=(command, transition),
+                ), ())
+                self.assertEqual(m.promote_lived_causal_interventions(), ())
+                self.assertEqual(m.get("causal:hydration").causal_status,
+                                 "hypothese_causale")
+
+    def test_distinct_physical_drinks_within_one_closed_episode_remain_valid(self):
+        m = model()
+        hypothesis(m)
+        physical = []
+        for step in (10, 20):
+            (action,) = m.record_applied_causal_action(
+                t_monde=step, option_ref=f"option:drink:{step}",
+                motive_type="active_goal", motive_ref="goal:drink",
+                primitive="boire", current_water_source=True,
+                position=(2, 2), water_before=20.0,
+            )
+            m.observe_causal_action_followup(t_monde=step + 1, water=60.0)
+            physical.extend(
+                physical_episode(step=step, after=60.0, position=(2, 2))
+            )
+        admitted = m.ingest_closed_causal_action_episode(
+            episode_ref="episode:shared",
+            event_refs=tuple(item["event_id"] for item in physical),
+            autobiographical_events=tuple(physical),
+        )
+        self.assertEqual(len(admitted), 2)
+        self.assertEqual(
+            {row.transition_event_ref for row in admitted},
+            {"transition:10", "transition:20"},
+        )
+        self.assertEqual(
+            {row.physical_episode_ref for row in admitted},
+            {"episode:shared"},
+        )
+
     def test_snapshot_preserves_pending_physical_and_comparator_provenance(self):
         left = model()
         hypothesis(left)

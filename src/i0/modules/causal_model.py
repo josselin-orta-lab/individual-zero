@@ -743,6 +743,7 @@ class CausalModel:
             if item.get("event_id") in allowed
         ]
         changes = []
+        invalidated = []
         for row in sorted(self._lived_causal_actions.values(),
                           key=lambda value: value.identifier):
             if (
@@ -750,35 +751,44 @@ class CausalModel:
                 or row.command_event_ref is not None
             ):
                 continue
+            # Select all physical projections at the source step before
+            # inspecting the expected outcome. Filtering by successful
+            # drink fields first would hide an additional, incompatible
+            # command or transition and manufacture unique P-35 evidence.
             commands = [
                 event for event in events
-                if (
-                    event.get("kind") == "command_experienced"
-                    and event.get("t_monde") == row.sent_t_monde
-                    and event.get("primitive") == "boire"
-                    and event.get("parameters") == {}
-                )
+                if event.get("kind") == "command_experienced"
+                and event.get("t_monde") == row.sent_t_monde
             ]
             transitions = [
                 event for event in events
-                if (
-                    event.get("kind") == "world_transition_experienced"
-                    and event.get("t_monde") == row.sent_t_monde
-                    and isinstance(event.get("effects"), Mapping)
-                    and event["effects"].get("drank") is True
-                    and isinstance(event.get("body_after"), Mapping)
-                    and event["body_after"].get("water") == row.water_observed
-                    and isinstance(event.get("position_after"), Mapping)
-                    and (
-                        event["position_after"].get("x"),
-                        event["position_after"].get("y"),
-                    ) == row.position
-                )
+                if event.get("kind") == "world_transition_experienced"
+                and event.get("t_monde") == row.sent_t_monde
             ]
             if len(commands) != 1 or len(transitions) != 1:
+                if len(commands) > 1 or len(transitions) > 1:
+                    # A closed ambiguous physical step must not later be
+                    # reopened under a different Memory episode identity.
+                    invalidated.append(row.identifier)
                 continue
-            command_ref = commands[0].get("event_id")
-            transition_ref = transitions[0].get("event_id")
+            command, transition = commands[0], transitions[0]
+            if (
+                command.get("primitive") != "boire"
+                or command.get("parameters") != {}
+                or not isinstance(transition.get("effects"), Mapping)
+                or transition["effects"].get("drank") is not True
+                or not isinstance(transition.get("body_after"), Mapping)
+                or transition["body_after"].get("water") != row.water_observed
+                or not isinstance(transition.get("position_after"), Mapping)
+                or (
+                    transition["position_after"].get("x"),
+                    transition["position_after"].get("y"),
+                ) != row.position
+            ):
+                invalidated.append(row.identifier)
+                continue
+            command_ref = command.get("event_id")
+            transition_ref = transition.get("event_id")
             if (
                 not isinstance(command_ref, str)
                 or not isinstance(transition_ref, str)
@@ -795,6 +805,8 @@ class CausalModel:
             changes.append(updated)
         for row in changes:
             self._lived_causal_actions[row.identifier] = row
+        for identifier in invalidated:
+            del self._lived_causal_actions[identifier]
         return tuple(changes)
 
     @staticmethod
