@@ -55,7 +55,18 @@ jobs:
         if: matrix.python-version == '3.12'
         run: |
           python -m lab.stage9_acceptance_report > /tmp/stage9-acceptance-diagnostic.json
-          python -m lab.stage9_spontaneous_superstition_matrix > /tmp/stage9-spontaneous-matrix-diagnostic.json
+          python - <<'PY'
+          from pathlib import Path
+          from lab.stage9_spontaneous_superstition_matrix import run_spontaneous_superstition_matrix
+          # Must match acceptance-report default (seed 42, then 43 and 44),
+          # rather than the standalone matrix's exploratory defaults.
+          result = run_spontaneous_superstition_matrix(
+              seeds=(42, 43, 44), steps=14,
+          )
+          Path("/tmp/stage9-spontaneous-matrix-diagnostic.json").write_text(
+              result.to_json(), encoding="utf-8",
+          )
+          PY
           python - <<'PY'
           import json
           from pathlib import Path
