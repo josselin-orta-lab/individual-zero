@@ -2189,6 +2189,25 @@ class CausalModel:
         credit_rows = [tuple(row) for row in state.get("causal_credits", [])]
         if len(credit_rows) != len(set(credit_rows)):
             raise ValueError("duplicate causal evidence credit in snapshot")
+        # Phase-5 credits have no autonomous causal authority: they are an
+        # index of already-published lived observations and interventions.
+        # A snapshot with an omitted or invented credit could re-count an
+        # episode or suppress later independent evidence after resumption.
+        # Pending evidence is intentionally excluded until its publication.
+        observation_credits = {
+            (row.contingency_ref, row.episode_ref, "observation")
+            for row in obs.values()
+        }
+        intervention_credits = {
+            (row.contingency_ref, row.observation_ref, "intervention")
+            for row in trials.values()
+        }
+        if (
+            len(observation_credits) != len(obs)
+            or len(intervention_credits) != len(trials)
+            or set(credit_rows) != observation_credits | intervention_credits
+        ):
+            raise ValueError("causal snapshot credits mismatch published evidence")
         boundary_rows = list(state.get("causal_revision_boundaries", []))
         boundary_refs = [key for key, _step, _ref in boundary_rows]
         if len(boundary_refs) != len(set(boundary_refs)):

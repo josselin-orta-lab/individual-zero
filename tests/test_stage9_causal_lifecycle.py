@@ -526,6 +526,61 @@ class CausalLifecycleTests(unittest.TestCase):
                     m.restore_causal_state(modified)
                 self.assertEqual(m.export_causal_state(), baseline)
 
+
+    def test_snapshot_credits_match_published_evidence_not_pending_rows(self):
+        # §13.2 / DC-08 / INV-33: an independent episode is not a
+        # free-standing credit that can be forged or erased by replay.
+        m = model()
+        hypothesized(m)
+        publish_trial(m, trial(10, context="zone1"))
+        m.integrate_causal_observation(obs(6, cause=True, effect=True))
+        m.integrate_causal_intervention(trial(11, context="zone2"))
+        baseline = m.export_causal_state()
+        self.assertTrue(baseline["pending_causal_observations"])
+        self.assertTrue(baseline["pending_causal_interventions"])
+
+        # Pending evidence does not appear in published credits until phase 5.
+        credits = {tuple(row) for row in baseline["causal_credits"]}
+        self.assertNotIn((REF, "episode:6", "observation"), credits)
+        self.assertNotIn(
+            (REF, "world:intervention:11", "intervention"), credits,
+        )
+        twin = model()
+        twin.restore_causal_state(baseline)
+        self.assertEqual(twin.export_causal_state(), baseline)
+
+        for kind in ("observation", "intervention"):
+            for mutation in ("missing", "invented"):
+                with self.subTest(kind=kind, mutation=mutation):
+                    damaged = deepcopy(baseline)
+                    if mutation == "missing":
+                        damaged["causal_credits"] = [
+                            row for row in damaged["causal_credits"]
+                            if row[2] != kind
+                        ]
+                    else:
+                        damaged["causal_credits"].append(
+                            [REF, "unwitnessed:synthetic", kind]
+                        )
+                    with self.assertRaisesRegex(
+                        ValueError, "credits mismatch published evidence",
+                    ):
+                        m.restore_causal_state(damaged)
+                    self.assertEqual(m.export_causal_state(), baseline)
+
+        for source, key in (
+            ("causal_observations", "episode_ref"),
+            ("causal_interventions", "observation_ref"),
+        ):
+            with self.subTest(source=source):
+                damaged = deepcopy(baseline)
+                damaged[source][0][key] = "unwitnessed:synthetic"
+                with self.assertRaisesRegex(
+                    ValueError, "credits mismatch published evidence",
+                ):
+                    m.restore_causal_state(damaged)
+                self.assertEqual(m.export_causal_state(), baseline)
+
     def test_valid_snapshot_with_pending_and_published_evidence_roundtrips(self):
         m = model()
         hypothesized(m)
