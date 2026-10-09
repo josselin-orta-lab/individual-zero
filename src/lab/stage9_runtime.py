@@ -9,6 +9,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from i0.contracts import Contribution
+from i0.modules.action_control import Admissibility
+from i0.modules.causal_test_planning import (
+    Stage9OptionEvaluator, propose_executable_causal_test,
+)
 from i0.equipment import EquipmentModel
 from i0.modules.simulator import state_from_capture
 from .determinism import canonical_causal_bytes, sha256_hex
@@ -71,6 +76,14 @@ class Stage9Runtime(Stage8Runtime):
         # The Simulator only receives a read-only pointer to the canonical
         # Causal Model; no cached or consolidated correction state exists.
         self.simulator.attach_established_correction_source(self.causal_model)
+        # Only the Stage-9 instance receives this test-specific guard. Goal
+        # options and every Stage-7/8 reference evaluator remain unchanged.
+        self.stage8_option_evaluator = Stage9OptionEvaluator(
+            config=config.stage8.evaluation,
+            stage6=self.option_evaluator,
+            q_values=self.q_active,
+        )
+        self._causal_test_proposals_this_cycle = ()
 
     @property
     def causal_owners(self):
@@ -205,6 +218,136 @@ class Stage9Runtime(Stage8Runtime):
                 )
 
         hooks[5]["causal_model"] = publish_causal_statuses
+
+        # §8.3 / §13.4: the Causal Model designates tests during production,
+        # but Planning alone turns a target into a locally feasible option.
+        # The Exploration P-48 evaluation is NOT implemented at Stage 9:
+        # Stage9OptionEvaluator leaves these candidates unscored and unable
+        # to cross a competition threshold.
+        previous_causal_producer = hooks[1]["causal_model"]
+        previous_planning_producer = hooks[1]["planning"]
+        previous_registration = hooks[3]["competition"]
+
+        def designate_causal_tests(ctx):
+            self._causal_test_proposals_this_cycle = ()
+            previous_causal_producer(ctx)
+            self._causal_test_targets_this_cycle = (
+                self.causal_model.proposer_test()
+                if not self._cycle_degraded else ()
+            )
+
+        def plan_causal_tests(ctx):
+            previous_planning_producer(ctx)
+            if (
+                st_before_cycle is None or self._cycle_degraded
+                or not self._causal_test_targets_this_cycle
+            ):
+                return
+            initial_state = state_from_capture(
+                capture=capture,
+                is_night=self.world.is_night(capture.t_monde),
+            )
+            proposals = []
+            for target in self._causal_test_targets_this_cycle:
+                if not self._charge(
+                    module="planning", operation="planning_build",
+                ):
+                    break
+                proposal = propose_executable_causal_test(
+                    target=target,
+                    initial_state=initial_state,
+                    simulator=self.simulator,
+                    st_version=st_before_cycle.version,
+                    t_monde=capture.t_monde,
+                    ttl_steps=self._stage6_config.planning.option_ttl_steps,
+                )
+                if proposal is None:
+                    continue
+                if (
+                    self.stage3.control.verifier_plan_connu(proposal)
+                    is Admissibility.INADMISSIBLE
+                ):
+                    continue
+                self._publish_contribution(Contribution(
+                    id=(
+                        f"action-proposal:{proposal.option.id}:"
+                        f"{capture.t_monde}:{cycle}"
+                    ),
+                    schema_version="mvp-v1.2.1",
+                    type="proposed_action",
+                    summary=(
+                        f"causal test proposal for {target.contingency_ref}"
+                    ),
+                    subject_ref=f"option:{proposal.option.id}",
+                    emitter_module="causal_model",
+                    signal_family="causal_model",
+                    confidence=1.0,
+                    urgency=0.0,
+                    risk=0.0,
+                    value=0.0,
+                    production_t=capture.t_monde,
+                    production_cycle=cycle,
+                    expires_at_step=proposal.option.expires_at_step,
+                    payload=proposal,
+                    provenance_inputs=(target.contingency_ref,),
+                ))
+                proposals.append(proposal)
+                self._write(
+                    kind="causal_test_option_proposed", cycle=cycle,
+                    data={
+                        "contingency_ref": target.contingency_ref,
+                        "contingency_version": target.contingency_version,
+                        "option_ref": proposal.option.id,
+                        "primitive": target.primitive,
+                        "motif_ref": target.motive_ref,
+                        "intrinsic_evidence": "unavailable",
+                    },
+                )
+            self._causal_test_proposals_this_cycle = tuple(proposals)
+
+        def register_causal_tests(ctx):
+            previous_registration(ctx)
+            # Stale hypotheses, unsuitable current context, missing equipment
+            # or degraded processing must never leave old tests executable.
+            current_ids = {
+                proposal.option.id
+                for proposal in self._causal_test_proposals_this_cycle
+            }
+            for old in self.competition.candidate_proposals:
+                if (
+                    old.option.motive_ref.type == "test_causal"
+                    and old.option.id not in current_ids
+                ):
+                    self.competition.invalidate_candidate(old.option.id)
+            if self._cycle_degraded:
+                return
+            for proposal in self._causal_test_proposals_this_cycle:
+                if not self._charge(
+                    module="competition",
+                    operation="competition_register",
+                ):
+                    break
+                accepted = self._register_option_proposal(
+                    proposal=proposal,
+                    active_goal_id=(
+                        None if self.goal_manager.active_goal is None
+                        else self.goal_manager.active_goal.id
+                    ),
+                    t_monde=capture.t_monde,
+                    cycle=cycle,
+                )
+                self._write(
+                    kind="causal_test_option_registration", cycle=cycle,
+                    data={
+                        "option_ref": proposal.option.id,
+                        "registered": accepted,
+                        "intrinsic_evidence": "unavailable",
+                    },
+                )
+
+        hooks[1]["causal_model"] = designate_causal_tests
+        hooks[1]["planning"] = plan_causal_tests
+        hooks[3]["competition"] = register_causal_tests
         return hooks
 
     def _dispatch_decision(

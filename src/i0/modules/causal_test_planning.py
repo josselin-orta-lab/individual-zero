@@ -1,0 +1,144 @@
+"""Stage-9 safe causal-test Planning and evidence barrier.
+
+Normative EN v1.2.1 §§8.2-8.3, 13.2-13.4, 14, INV-16/25/33.
+No new P-48 novelty, information-gain or learning-progress policy is
+invented. Test candidates enter ordinary Competition but stay unscored
+until Exploration supplies a real intrinsic evaluation in a later stage.
+"""
+from __future__ import annotations
+
+from dataclasses import replace
+
+from i0.contracts import (
+    EvaluationOption, MotiveRef, Option, OptionProposal, Plan, PlanStep,
+)
+from i0.equipment import SimulationState
+from i0.interfaces import PrimitiveCommand
+
+from .causal_lifecycle import CausalTestTarget
+from .competition import OptionEvidenceInput
+from .simulator import Simulator
+from .stage6_planning import SimulatorPlanner
+from .stage8_evaluator import Stage8OptionEvaluator
+
+
+def propose_executable_causal_test(
+    *,
+    target: CausalTestTarget,
+    initial_state: SimulationState,
+    simulator: Simulator,
+    st_version: str,
+    t_monde: int,
+    ttl_steps: int,
+) -> OptionProposal | None:
+    """Convert a predeclared benign target into a grounded, simulated plan.
+
+    There is no default risky action. Missing water, a saturated water level,
+    missing S_t provenance, or an unavailable equipment prediction results
+    in no proposal. This is a pure Planning transformation, not attribution.
+    """
+    target.validate()
+    initial_state.validate()
+    if (
+        target.primitive != "boire"
+        or target.subject_ref != "water"
+        or target.application_context != "water_source"
+        or not initial_state.current_water_source
+        or float(initial_state.body["water"]) >= 100.0
+        or not st_version
+        or type(t_monde) is not int or t_monde < 1
+        or type(ttl_steps) is not int or ttl_steps < 1
+    ):
+        return None
+    command = PrimitiveCommand("boire")
+    result = simulator.rollout(
+        initial_state=initial_state,
+        commands=(command,),
+        r_eff=1,
+        h_eff=1,
+    )
+    if not result.complete or len(result.completed_rollouts) != 1:
+        return None
+    predictions = result.completed_rollouts[0].predictions
+    if len(predictions) != 1:
+        return None
+    consequences = SimulatorPlanner._predicted_consequences(predictions[0])
+    if not any(item.variable == "water" for item in consequences):
+        return None
+
+    option_id = (
+        f"option:causal-test:{target.contingency_ref}:"
+        f"v{target.contingency_version}"
+    )
+    plan = Plan(
+        id=f"plan:{option_id}:v1",
+        option_ref=option_id,
+        version="1",
+        steps=(PlanStep(
+            index=0,
+            command=command,
+            preconditions=("water_source_present",),
+            predicted_consequences=consequences,
+            observation_window_steps=1,
+        ),),
+        goal_ref=None,
+        budget_used_uc=1,
+        status="valid",
+        st_version=st_version,
+    )
+    option = Option(
+        id=option_id,
+        version="1",
+        type="primitive",
+        learning_signature=(
+            "causal_test:boire:water:water_source:observation"
+        ),
+        preconditions=("water_source_present",),
+        success_condition="agency_observation_received",
+        failure_condition="observation_missing_or_nonconforming",
+        invalidation_condition="causal_hypothesis_or_context_changed",
+        motive_ref=MotiveRef(type="test_causal", id=target.motive_ref),
+        founding_st_version=st_version,
+        expires_at_step=t_monde + ttl_steps,
+        provenance="causal_model",
+        plan_ref=plan.id,
+        state="proposed",
+    )
+    proposal = OptionProposal(option=option, plan=plan)
+    proposal.validate()
+    return proposal
+
+
+class Stage9OptionEvaluator(Stage8OptionEvaluator):
+    """Stage-8 evaluation for goals, but no fabricated P-48 test interest."""
+
+    def evaluate(
+        self, *, proposal, evaluation_state, initial_state, cycle, t_monde,
+    ) -> OptionEvidenceInput:
+        original = super().evaluate(
+            proposal=proposal,
+            evaluation_state=evaluation_state,
+            initial_state=initial_state,
+            cycle=cycle,
+            t_monde=t_monde,
+        )
+        if proposal.option.motive_ref.type != "test_causal":
+            return original
+        # Simulated and learned information may be known, but the required
+        # informational interest is not. In particular it is NOT zero.
+        # Competition may retain this candidate but cannot accumulate
+        # evidence or select it until Exploration P-48 is implemented.
+        assessment = replace(
+            original.evaluation,
+            status="not_evaluated",
+            intrinsic_status="applicable",
+            intrinsic_value=None,
+            producers=tuple(dict.fromkeys(
+                original.evaluation.producers
+                + ("exploration:p48_not_available",)
+            )),
+        )
+        assessment.validate()
+        result = OptionEvidenceInput(evaluation=assessment, evidence=None)
+        result.validate()
+        return result
