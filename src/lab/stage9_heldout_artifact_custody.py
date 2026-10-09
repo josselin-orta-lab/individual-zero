@@ -85,6 +85,8 @@ def _file_hash_and_size(path: Path) -> tuple[str, int]:
                 break
             total += len(chunk)
             digest.update(chunk)
+    if total == 0:
+        raise ValueError("empty raw artifact cannot witness an executed run")
     return digest.hexdigest(), total
 
 

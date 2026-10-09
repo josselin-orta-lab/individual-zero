@@ -89,6 +89,24 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                             index=index, artifact_root=root,
                         )
 
+    def test_empty_reported_journal_is_not_accepted_as_execution(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, evidence, index = _prepared(root)
+            reported = deepcopy(evidence)
+            empty_sha = sha256(b"").hexdigest()
+            reported["runs"][0]["journal_sha256"] = empty_sha
+            reported["runs"][0]["replay_journal_sha256"] = empty_sha
+            reported = sealed(reported)
+            index["evidence_sha256"] = reported["evidence_sha256"]
+            for key in ("journal_path", "replay_journal_path"):
+                (root / index["runs"][0][key]).write_bytes(b"")
+            with self.assertRaisesRegex(ValueError, "empty raw artifact"):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=reported,
+                    index=index, artifact_root=root,
+                )
+
     def test_digest_can_not_be_forged_in_report_or_index(self):
         with TemporaryDirectory() as folder:
             root = Path(folder)
