@@ -593,6 +593,82 @@ class CausalLifecycleTests(unittest.TestCase):
         self.assertEqual(twin.export_causal_state(), checkpoint)
 
 
+    def test_snapshot_requires_original_physical_correlation_witness(self):
+        m = model()
+        m.integrate_causal_observation(obs(1, cause=True, effect=True))
+        m.publish_causal_inference()
+        uncorrelated = m.export_causal_state()
+        forged = deepcopy(uncorrelated)
+        forged["published"][0]["causal_status"] = "correlation_observee"
+        with self.assertRaisesRegex(
+            ValueError, "promoted status lacks historical correlation witness",
+        ):
+            m.restore_causal_state(forged)
+        self.assertEqual(m.export_causal_state(), uncorrelated)
+
+        m = model()
+        correlated(m)
+        checkpoint = m.export_causal_state()
+        self.assertEqual(len(checkpoint["causal_correlation_witnesses"]), 1)
+        restored = model()
+        restored.restore_causal_state(checkpoint)
+        self.assertEqual(restored.export_causal_state(), checkpoint)
+        for mutation in ("missing", "fake_sample", "lost_effect"):
+            with self.subTest(mutation=mutation):
+                damaged = deepcopy(checkpoint)
+                if mutation == "missing":
+                    damaged["causal_correlation_witnesses"] = []
+                    expected = "promoted status lacks historical correlation witness"
+                elif mutation == "fake_sample":
+                    damaged["causal_correlation_witnesses"][0][1][0] = (
+                        "observation:missing"
+                    )
+                    expected = "invalid controlled correlation witness"
+                else:
+                    damaged["causal_observations"][0]["effect_present"] = False
+                    expected = "invalid controlled correlation witness"
+                with self.assertRaisesRegex(ValueError, expected):
+                    m.restore_causal_state(damaged)
+                self.assertEqual(m.export_causal_state(), checkpoint)
+
+    def test_snapshot_hypothesis_requires_physical_review_proof(self):
+        m = model()
+        correlated(m)
+        correlation = m.export_causal_state()
+        promoted = deepcopy(correlation)
+        promoted["published"][0]["causal_status"] = "hypothese_causale"
+        with self.assertRaisesRegex(ValueError, "hypothesis lacks published matched review"):
+            m.restore_causal_state(promoted)
+        self.assertEqual(m.export_causal_state(), correlation)
+
+        m.integrate_hypothesis_review(review())
+        pending = m.export_causal_state()
+        waiting = model()
+        waiting.restore_causal_state(pending)
+        self.assertEqual(waiting.export_causal_state(), pending)
+        self.assertEqual(m.publish_causal_inference(), waiting.publish_causal_inference())
+        checkpoint = m.export_causal_state()
+        self.assertEqual(len(checkpoint["causal_review_proofs"]), 1)
+        self.assertEqual(checkpoint, waiting.export_causal_state())
+
+        for mutation in ("missing", "wrong_controls", "wrong_contingency"):
+            with self.subTest(mutation=mutation):
+                damaged = deepcopy(checkpoint)
+                if mutation == "missing":
+                    damaged["causal_review_proofs"] = []
+                    expected = "review proof ledger mismatch"
+                elif mutation == "wrong_controls":
+                    damaged["causal_review_proofs"][0]["contrasting_pairs"] = [
+                        ["observation:1", "observation:2"],
+                    ]
+                    expected = "review proof lacks independent matched controls"
+                else:
+                    damaged["causal_review_proofs"][0]["contingency_ref"] = "unknown"
+                    expected = "review lacks published hypothesis"
+                with self.assertRaisesRegex(ValueError, expected):
+                    m.restore_causal_state(damaged)
+                self.assertEqual(m.export_causal_state(), checkpoint)
+
     def test_snapshot_revision_boundary_requires_latest_published_failure(self):
         # An erased, stale or fabricated revision would allow pre-failure
         # positives to be counted again after snapshot restoration.

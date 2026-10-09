@@ -369,6 +369,13 @@ class CausalModel:
         self._pending_causal_interventions: list[CausalIntervention] = []
         self._causal_interventions: dict[str, CausalIntervention] = {}
         self._causal_reviews: set[str] = set()
+        # Retain the precise physical samples supporting the first P-35
+        # promotion; subsequent contradictory observations cannot erase the
+        # original above-base-rate witness from the causal audit trail.
+        self._causal_correlation_witnesses: dict[
+            str, tuple[tuple[str, ...], tuple[str, ...]]
+        ] = {}
+        self._causal_review_proofs: dict[str, CausalHypothesisReview] = {}
         self._causal_credits: set[tuple[str, str, str]] = set()
         # Failure boundaries are causal state: stale successful trials must
         # not re-establish a refuted contingency without fresh contexts.
@@ -1541,6 +1548,8 @@ class CausalModel:
         observations = dict(self._causal_observations)
         interventions = dict(self._causal_interventions)
         reviews = set(self._causal_reviews)
+        correlation_witnesses = dict(self._causal_correlation_witnesses)
+        review_proofs = dict(self._causal_review_proofs)
         credits = set(self._causal_credits)
         revisions = dict(self._causal_revision_boundaries)
         changes: list[CausalInferenceChange] = []
@@ -1606,6 +1615,7 @@ class CausalModel:
                 continue
             new = replace(current, causal_status="correlation_observee", version=current.version + 1)
             published[ref] = new
+            correlation_witnesses[ref] = (tuple(sorted(e)), tuple(sorted(b)))
             changes.append(CausalInferenceChange(ref, current.causal_status, new.causal_status, new.version, sorted(e)[-1], "controlled_base_rate"))
 
         # An already published correlation may autonomously become a
@@ -1641,6 +1651,7 @@ class CausalModel:
                     or a.episode_ref == b.episode_ref):
                     raise ValueError("review lacks independent matched controls")
             reviews.add(review.identifier)
+            review_proofs[review.identifier] = review
             current = published[old.ref]
             # Multiple independently supported reviews may share a phase-5
             # batch. Keep their provenance, but promote the canonical
@@ -1815,6 +1826,8 @@ class CausalModel:
         }
         self._causal_interventions = interventions
         self._causal_reviews = reviews
+        self._causal_correlation_witnesses = correlation_witnesses
+        self._causal_review_proofs = review_proofs
         self._causal_credits = credits
         self._causal_revision_boundaries = revisions
         self._pending_causal_observations.clear()
@@ -1954,6 +1967,15 @@ class CausalModel:
             "causal_observations": [serialize_value(x) for _,x in sorted(self._causal_observations.items())],
             "causal_interventions": [serialize_value(x) for _,x in sorted(self._causal_interventions.items())],
             "causal_reviews": sorted(self._causal_reviews),
+            "causal_correlation_witnesses": [
+                [ref, list(treated), list(controls)]
+                for ref, (treated, controls)
+                in sorted(self._causal_correlation_witnesses.items())
+            ],
+            "causal_review_proofs": [
+                serialize_value(review)
+                for _, review in sorted(self._causal_review_proofs.items())
+            ],
             "causal_credits": [list(x) for x in sorted(self._causal_credits)],
             "agency_evidence": [serialize_value(v) for _, v in sorted(self._agency_evidence.items())],
             "pending_agency_evidence": [serialize_value(v) for v in self._pending_agency_evidence],
@@ -2410,6 +2432,110 @@ class CausalModel:
             or set(credit_rows) != observation_credits | intervention_credits
         ):
             raise ValueError("causal snapshot credits mismatch published evidence")
+        # Stage-9 snapshot provenance is a claim, never new evidence. Store
+        # the *original* matched base-rate subset so subsequent physical
+        # observations cannot retroactively invalidate a true earlier
+        # correlation, and an edited status cannot promote itself on restore.
+        correlation_witnesses = {}
+        for raw in state.get("causal_correlation_witnesses", []):
+            if (
+                not isinstance(raw, (list, tuple)) or len(raw) != 3
+                or not isinstance(raw[0], str) or not raw[0]
+                or raw[0] in correlation_witnesses
+            ):
+                raise ValueError("invalid causal snapshot correlation witness identity")
+            ref, treated_ids, control_ids = raw
+            if (
+                not isinstance(treated_ids, (list, tuple))
+                or not isinstance(control_ids, (list, tuple))
+                or not treated_ids or not control_ids
+                or any(not isinstance(k, str) or not k for k in (*treated_ids, *control_ids))
+                or list(treated_ids) != sorted(set(treated_ids))
+                or list(control_ids) != sorted(set(control_ids))
+            ):
+                raise ValueError("invalid causal snapshot correlation witness samples")
+            treated = [obs.get(k) for k in treated_ids]
+            controls = [obs.get(k) for k in control_ids]
+            if (
+                any(x is None or x.contingency_ref != ref or not x.cause_present
+                    for x in treated)
+                or any(x is None or x.contingency_ref != ref or x.cause_present
+                    for x in controls)
+                or not all(any(
+                    x.observation_context == y.observation_context
+                    and x.controlled_variables == y.controlled_variables
+                    for y in controls
+                ) for x in treated)
+                or not all(any(
+                    x.observation_context == y.observation_context
+                    and x.controlled_variables == y.controlled_variables
+                    for x in treated
+                ) for y in controls)
+                or sum(x.effect_present for x in treated) < self.config.n1
+                or (
+                    sum(x.effect_present for x in treated) * len(controls)
+                    <= sum(y.effect_present for y in controls) * len(treated)
+                )
+            ):
+                raise ValueError("causal snapshot invalid controlled correlation witness")
+            correlation_witnesses[ref] = (
+                tuple(treated_ids), tuple(control_ids)
+            )
+        promoted_refs = {
+            ref for ref, record in records.items()
+            if record.causal_status != "aucun"
+        }
+        if set(correlation_witnesses) != promoted_refs:
+            raise ValueError(
+                "causal snapshot promoted status lacks historical correlation witness"
+            )
+
+        # A review ID alone is not an audited hypothesis. Persist its
+        # alternatives and matched independent physical controls, and check
+        # them against *published* observations, never a pending claim.
+        review_proofs = [
+            decode_review(row) for row in state.get("causal_review_proofs", [])
+        ]
+        if (
+            len({p.identifier for p in review_proofs}) != len(review_proofs)
+            or {p.identifier for p in review_proofs} != set(published_review_refs)
+        ):
+            raise ValueError("causal snapshot review proof ledger mismatch")
+        reviewed_refs = set()
+        for proof in review_proofs:
+            record = records.get(proof.contingency_ref)
+            if (
+                record is None
+                or record.causal_status not in {
+                    "hypothese_causale", "testee_par_intervention", "etablie"
+                }
+            ):
+                raise ValueError("causal snapshot review lacks published hypothesis")
+            for a_ref, b_ref in proof.contrasting_pairs:
+                a, b = obs.get(a_ref), obs.get(b_ref)
+                if (
+                    a is None or b is None
+                    or a.contingency_ref != record.ref
+                    or b.contingency_ref != record.ref
+                    or not a.cause_present or b.cause_present
+                    or a.controlled_variables != b.controlled_variables
+                    or a.observation_context != b.observation_context
+                    or a.episode_ref == b.episode_ref
+                ):
+                    raise ValueError(
+                        "causal snapshot review proof lacks independent matched controls"
+                    )
+            reviewed_refs.add(record.ref)
+        hypothesis_refs = {
+            ref for ref, record in records.items()
+            if record.causal_status in {
+                "hypothese_causale", "testee_par_intervention", "etablie"
+            }
+        }
+        if reviewed_refs != hypothesis_refs:
+            raise ValueError(
+                "causal snapshot hypothesis lacks published matched review"
+            )
         boundary_rows = list(state.get("causal_revision_boundaries", []))
         boundary_refs = [key for key, _step, _ref in boundary_rows]
         if len(boundary_refs) != len(set(boundary_refs)):
@@ -2443,6 +2569,8 @@ class CausalModel:
         self._causal_observations = obs
         self._causal_interventions = trials
         self._causal_reviews = set(published_review_refs)
+        self._causal_correlation_witnesses = correlation_witnesses
+        self._causal_review_proofs = {p.identifier: p for p in review_proofs}
         self._causal_credits = set(credit_rows)
         self._causal_revision_boundaries = boundary_index
         self._pending_causal_observations=pending_obs
