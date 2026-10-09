@@ -61,6 +61,14 @@ class RandomRewardControl:
     # Natural means NO typed hypothesis or contrast was injected by the bench.
     spontaneous_candidate_refs: tuple[str, ...] = ()
     spontaneous_established_false_refs: tuple[str, ...] = ()
+    # Canonically admitted closed-Memory observations only; synthetic
+    # bench-seeded observations are deliberately excluded.
+    lived_hydration_observation_refs: tuple[str, ...] = ()
+    lived_drink_observations: int = 0
+    lived_positive_drink_observations: int = 0
+    lived_wait_control_observations: int = 0
+    independent_lived_hydration_episodes: int = 0
+    natural_hydration_status: str = "aucun"
 
 
 def preregistered_food_rewards(
@@ -234,6 +242,39 @@ def run_random_reward_negative_control(
     # Ground truth is evaluated externally, NEVER delivered to the individual.
     if physical.drink_water_gain != 0.0:
         raise AssertionError("the negative control has no verified false cause")
+    state = runtime.causal_model.export_causal_state()
+    witness_rows = state["hydration_observation_witnesses"]
+    witnessed = {
+        row[0]: (row[1], row[2])
+        for row in witness_rows
+    }
+    if len(witnessed) != len(witness_rows):
+        raise AssertionError("duplicate lived hydration witnesses in canonical state")
+    observation_rows = [
+        row for row in state["causal_observations"]
+        if row["identifier"] in witnessed
+        and row["contingency_ref"] == _FALSE_HYPOTHESIS_REF
+        and row["predicate"] == "hydration_effect"
+    ]
+    if len(observation_rows) != len(witnessed):
+        raise AssertionError("physical hydration witness lacks admitted observation")
+    committed_refs = {
+        ref for episode in runtime.memory.episodes for ref in episode.event_refs
+    }
+    for row in observation_rows:
+        command_ref, transition_ref = witnessed[row["identifier"]]
+        if (
+            row["observation_ref"] != transition_ref
+            or command_ref not in committed_refs
+            or transition_ref not in committed_refs
+        ):
+            raise AssertionError("lived hydration observation lacks closed Memory evidence")
+    episode_ids = {row["episode_ref"] for row in observation_rows}
+    if len(episode_ids) != len(observation_rows):
+        raise AssertionError("lived hydration observations reuse an episode")
+    drinks = [row for row in observation_rows if row["cause_present"]]
+    positive_drinks = [row for row in drinks if row["effect_present"]]
+    wait_controls = [row for row in observation_rows if not row["cause_present"]]
     statuses = {row.ref: row.causal_status
                 for row in runtime.causal_model.contingencies()}
     false_established = statuses.get(_FALSE_HYPOTHESIS_REF) == "etablie"
@@ -290,4 +331,13 @@ def run_random_reward_negative_control(
         world_variant=world_variant,
         spontaneous_candidate_refs=spontaneous_candidates,
         spontaneous_established_false_refs=spontaneous_false_established,
+        lived_hydration_observation_refs=tuple(sorted(witnessed)),
+        lived_drink_observations=len(drinks),
+        lived_positive_drink_observations=len(positive_drinks),
+        lived_wait_control_observations=len(wait_controls),
+        independent_lived_hydration_episodes=len(episode_ids),
+        natural_hydration_status=(
+            "bench_seeded_hypothesis" if bench_seed_false_hypothesis
+            else statuses.get(_FALSE_HYPOTHESIS_REF, "aucun")
+        ),
     )

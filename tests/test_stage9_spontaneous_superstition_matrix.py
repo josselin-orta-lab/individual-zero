@@ -18,6 +18,14 @@ class SpontaneousMatrixTests(unittest.TestCase):
         self.assertGreaterEqual(a.physically_verified_exposures, 6)
         self.assertTrue(all(not row.bench_seeded_false_hypothesis for row in a.runs))
         self.assertTrue(all(row.scientific_gate is None for row in a.runs))
+        self.assertEqual(
+            a.total_lived_hydration_observations,
+            a.lived_drink_observations + a.lived_wait_control_observations,
+        )
+        self.assertGreaterEqual(a.lived_drink_observations, 1)
+        self.assertTrue(all(
+            run.lived_positive_drink_observations == 0 for run in a.runs
+        ))
         self.assertEqual(a.spontaneously_observed_candidates, 0)
         self.assertIsNone(a.natural_false_rule_rate)
         self.assertEqual(a.evaluation_status, "not_evaluable")

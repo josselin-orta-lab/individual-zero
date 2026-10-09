@@ -25,6 +25,10 @@ class SpontaneousSuperstitionMatrix:
     spontaneously_observed_candidates: int
     physically_verified_exposures: int
     established_false_rules: int
+    total_lived_hydration_observations: int
+    lived_drink_observations: int
+    lived_wait_control_observations: int
+    runs_with_observed_drink_and_wait: int
     natural_false_rule_rate: float | None
     evaluation_status: str
     digest: str
@@ -84,6 +88,9 @@ def run_spontaneous_superstition_matrix(
                 "schedule": row.schedule_sha256,
                 "witnesses": row.verified_null_drink_transitions,
                 "spontaneous": row.spontaneous_candidate_refs,
+                "lived_observations": row.lived_hydration_observation_refs,
+                "lived_drinks": row.lived_drink_observations,
+                "lived_waits": row.lived_wait_control_observations,
             }
             for row in runs
         ],
@@ -98,6 +105,19 @@ def run_spontaneous_superstition_matrix(
             len(run.verified_null_drink_transitions) for run in runs
         ),
         established_false_rules=false_rules,
+        total_lived_hydration_observations=sum(
+            row.independent_lived_hydration_episodes for row in runs
+        ),
+        lived_drink_observations=sum(
+            row.lived_drink_observations for row in runs
+        ),
+        lived_wait_control_observations=sum(
+            row.lived_wait_control_observations for row in runs
+        ),
+        runs_with_observed_drink_and_wait=sum(
+            bool(row.lived_drink_observations and row.lived_wait_control_observations)
+            for row in runs
+        ),
         natural_false_rule_rate=diagnostic_rate,
         evaluation_status="not_evaluable" if opportunities == 0 else "diagnostic_only",
         digest=sha256_hex(canonical_causal_bytes(payload)),
