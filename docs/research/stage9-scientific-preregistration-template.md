@@ -117,6 +117,19 @@ consistent Git history always returns scientific_verdict=null and
 golden_stage9_frozen=false. Unit tests of the checker use deliberately
 synthetic Git commits and are **not** an experiment.
 
+## Pre-execution frozen checkout preflight (read-only)
+
+Git ancestry verifies commits but does **not** verify physical files in the checkout selected for execution. Before a held-out run, execute this standalone preflight in the checkout to be used (not in a different clone):
+
+```bash
+python -m lab.stage9_frozen_worktree \
+  --repo . --frozen-commit FULL_40_CHARACTER_IMPLEMENTATION_COMMIT
+```
+
+The checker ensures current HEAD retains the exact frozen `src/` tree and `pyproject.toml` blob, rejects staged and unstaged changes, and compares every tracked file's **actual disk bytes and executable mode** against the frozen Git blob. Added executable-source files are refused even when ignored by Git. The source must be checked on a compatible filesystem with meaningful executable permission bits. No source, index, registration or output file is changed.
+
+This is **only a local software preflight**, not scientific certification. Ignored compiled Python caches, installed dependencies, interpreter/runtime configuration, the true executed binary and the physical experimental environment still require separate custody. Running the checker after a run cannot retrospectively prove which code was executed. Archive its output together with the run's claimed checkout identity and obtain an independent witness; the tool always returns `scientific_verdict=null` and `golden_stage9_frozen=false`.
+
 ## Held-out metric assessment (provisional, not certification)
 
 The lab-only tool can score a prospective held-out evidence manifest, but cannot
