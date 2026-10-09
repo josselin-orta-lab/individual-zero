@@ -27,6 +27,12 @@ class SpontaneousMatrixTests(unittest.TestCase):
             run.lived_positive_drink_observations == 0 for run in a.runs
         ))
         self.assertEqual(a.spontaneously_observed_candidates, 0)
+        self.assertEqual(a.lived_positive_drink_observations, 0)
+        self.assertEqual(a.runs_with_independent_positive_drinks, 0)
+        self.assertEqual(a.runs_with_matched_controls, 0)
+        self.assertEqual(
+            a.correlation_readiness, "no_matched_positive_exposures",
+        )
         self.assertIsNone(a.natural_false_rule_rate)
         self.assertEqual(a.evaluation_status, "not_evaluable")
         self.assertEqual(len(a.digest), 64)

@@ -30,6 +30,11 @@ class SpontaneousSuperstitionMatrix:
     lived_wait_control_observations: int
     runs_with_observed_drink_and_wait: int
     natural_false_rule_rate: float | None
+    # Opportunity accounting is empirical, not a claim of causation.
+    lived_positive_drink_observations: int
+    runs_with_independent_positive_drinks: int
+    runs_with_matched_controls: int
+    correlation_readiness: str
     evaluation_status: str
     digest: str
 
@@ -91,6 +96,8 @@ def run_spontaneous_superstition_matrix(
                 "lived_observations": row.lived_hydration_observation_refs,
                 "lived_drinks": row.lived_drink_observations,
                 "lived_waits": row.lived_wait_control_observations,
+                "positive_drinks": row.lived_positive_drink_observations,
+                "independent_episodes": row.independent_lived_hydration_episodes,
             }
             for row in runs
         ],
@@ -119,6 +126,25 @@ def run_spontaneous_superstition_matrix(
             for row in runs
         ),
         natural_false_rule_rate=diagnostic_rate,
+        lived_positive_drink_observations=sum(
+            row.lived_positive_drink_observations for row in runs
+        ),
+        runs_with_independent_positive_drinks=sum(
+            row.lived_positive_drink_observations >= 2 for row in runs
+        ),
+        runs_with_matched_controls=sum(
+            row.lived_positive_drink_observations >= 2
+            and row.lived_wait_control_observations >= 1
+            for row in runs
+        ),
+        correlation_readiness=(
+            "no_matched_positive_exposures"
+            if not any(
+                row.lived_positive_drink_observations >= 2
+                and row.lived_wait_control_observations >= 1
+                for row in runs
+            ) else "requires_per_run_context_and_base_rate_validation"
+        ),
         evaluation_status="not_evaluable" if opportunities == 0 else "diagnostic_only",
         digest=sha256_hex(canonical_causal_bytes(payload)),
     )
