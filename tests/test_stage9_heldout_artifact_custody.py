@@ -13,6 +13,8 @@ from lab.stage9_heldout_artifact_custody import (
     INDEX_VERSION, audit_heldout_raw_artifacts, load_raw_artifact_index,
 )
 from lab.stage9_scientific_preregistration import validate_registration
+from lab.journal import HashChainedJournal
+from lab.determinism import canonical_causal_bytes
 from tests.test_stage9_scientific_assessment import make_report, sealed
 from tests.test_stage9_scientific_preregistration import example_draft
 
@@ -21,12 +23,51 @@ def _prepared(root: Path):
     registration = example_draft()
     report = make_report(registration, candidates=20)
     index_runs = []
-    first_paths = None
     for i, run in enumerate(report["runs"]):
         name = f"run{i}"
         folder = root / name
         folder.mkdir()
-        journal = f"synthetic journal bytes {i}\n".encode()
+        # These journal entries are deliberately synthetic parser fixtures.
+        # They exercise source-link integrity but DO NOT represent real
+        # WorldBody transitions or closed Memory episodes.
+        journal_builder = HashChainedJournal()
+        observations = (
+            run["known_cause_cases"]
+            + run["naturally_acquired_false_candidates"]
+        )
+        for step, observation in enumerate(observations, start=1):
+            attempt = f"synthetic-attempt:{i}:{step}"
+            command_id = f"command:{i}:{step}"
+            transition_id = observation["observation_ref"]
+            journal_builder.append(
+                event_id=command_id,
+                causal_event={
+                    "kind": "command_experienced",
+                    "attempt_ref": attempt, "t_monde": step,
+                    "primitive": "attendre", "parameters": {},
+                },
+            )
+            journal_builder.append(
+                event_id=transition_id,
+                causal_event={
+                    "kind": "world_transition_experienced",
+                    "attempt_ref": attempt, "t_monde": step,
+                    "effects": {"rest": "attendre"},
+                },
+            )
+            journal_builder.append(
+                event_id=f"commit:{i}:{step}",
+                causal_event={
+                    "kind": "auto_segment_commit",
+                    "attempt_ref": attempt, "t_monde": step,
+                    "event_refs": [command_id, transition_id],
+                    "filter_version": "stage9-synthetic-parser-fixture",
+                },
+            )
+        self_audit = journal_builder.verify()
+        if not self_audit:
+            raise AssertionError("synthetic fixture's journal must be consistent")
+        journal = journal_builder.canonical_bytes()
         state = f"synthetic causal state bytes {i}\n".encode()
         files = {
             "journal_path": (f"{name}/original.jsonl", journal),
@@ -43,8 +84,6 @@ def _prepared(root: Path):
         run["causal_state_sha256"] = sha256(state).hexdigest()
         run["replay_causal_state_sha256"] = sha256(state).hexdigest()
         index_runs.append(row)
-        if first_paths is None:
-            first_paths = dict(row)
     report = sealed(report)
     index = {
         "protocol_version": INDEX_VERSION,
@@ -53,6 +92,47 @@ def _prepared(root: Path):
         "runs": index_runs,
     }
     return registration, report, index
+
+
+def _replace_journal_bytes(
+    root: Path, evidence: dict[str, object], index: dict[str, object],
+    payload: bytes,
+):
+    """Re-seal forged *metadata*, proving SHA agreement is not authenticity."""
+    revised = deepcopy(evidence)
+    for key, sha_key in (
+        ("journal_path", "journal_sha256"),
+        ("replay_journal_path", "replay_journal_sha256"),
+    ):
+        (root / index["runs"][0][key]).write_bytes(payload)
+        revised["runs"][0][sha_key] = sha256(payload).hexdigest()
+    revised = sealed(revised)
+    index["evidence_sha256"] = revised["evidence_sha256"]
+    return revised
+
+
+def _rewrite_chain(
+    payload: bytes, *,
+    rename_observation: str,
+) -> bytes:
+    fresh = HashChainedJournal()
+    for line in payload.split(b"\n"):
+        record = json.loads(line)
+        identifier = record["event_id"]
+        event = record["causal_event"]
+        if rename_observation == identifier:
+            identifier = "synthetic-renamed-physical-transition"
+        if event.get("kind") == "auto_segment_commit":
+            refs = event["event_refs"]
+            if rename_observation in refs:
+                event["event_refs"] = [
+                    "synthetic-renamed-physical-transition"
+                    if r == rename_observation else r for r in refs
+                ]
+        fresh.append(event_id=identifier, causal_event=event)
+    if not fresh.verify():
+        raise AssertionError("forged synthetic chain must be internally valid")
+    return fresh.canonical_bytes()
 
 
 class Stage9RawArtifactCustodyTests(unittest.TestCase):
@@ -67,6 +147,11 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             self.assertEqual(result["runs_checked"], 4)
             self.assertEqual(result["raw_files_checked"], 16)
             self.assertTrue(result["original_replay_bytes_identical"])
+            self.assertTrue(result["journal_chain_integrity_verified"])
+            self.assertEqual(result["journal_events_checked"], 132)
+            self.assertEqual(result["committed_physical_sources_checked"], 44)
+            self.assertFalse(result["physical_truth_attested"])
+            self.assertFalse(result["memory_episode_closure_attested"])
             self.assertGreater(result["total_bytes_checked"], 0)
             self.assertEqual(len(result["index_sha256"]), 64)
             self.assertIsNone(result["scientific_verdict"])
@@ -104,6 +189,103 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "empty raw artifact"):
                 audit_heldout_raw_artifacts(
                     registration=reg, evidence=reported,
+                    index=index, artifact_root=root,
+                )
+
+    def test_metadata_rehashed_but_broken_raw_hash_chain_is_detected(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            original = root / index["runs"][0]["journal_path"]
+            records = original.read_bytes().split(b"\n")
+            first = json.loads(records[0])
+            first["event_hash"] = "0" * 64
+            records[0] = canonical_causal_bytes(first)
+            forged = _replace_journal_bytes(root, report, index, b"\n".join(records))
+            with self.assertRaisesRegex(ValueError, "broken causal journal event hash"):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=forged,
+                    index=index, artifact_root=root,
+                )
+
+    def test_valid_rehashed_chain_cannot_hide_missing_physical_observation(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            physical = report["runs"][0]["known_cause_cases"][0]["observation_ref"]
+            original = (root / index["runs"][0]["journal_path"]).read_bytes()
+            payload = _rewrite_chain(
+                original, rename_observation=physical,
+            )
+            forged = _replace_journal_bytes(root, report, index, payload)
+            with self.assertRaisesRegex(ValueError, "physical transition absent"):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=forged,
+                    index=index, artifact_root=root,
+                )
+
+    def test_rehashed_journal_without_applied_command_commit_is_rejected(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            physical = report["runs"][0]["known_cause_cases"][0]["observation_ref"]
+            original = (root / index["runs"][0]["journal_path"]).read_bytes()
+            # Preserve the physical source ID while removing the matching
+            # command from its otherwise correctly re-hashed closure.
+            source = HashChainedJournal()
+            for line in original.split(b"\n"):
+                entry = json.loads(line)
+                event = entry["causal_event"]
+                if event.get("kind") == "auto_segment_commit" and physical in event["event_refs"]:
+                    event["event_refs"] = [physical]
+                source.append(event_id=entry["event_id"], causal_event=event)
+            forged = _replace_journal_bytes(
+                root, report, index, source.canonical_bytes(),
+            )
+            with self.assertRaisesRegex(ValueError, "unique committed same-attempt"):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=forged,
+                    index=index, artifact_root=root,
+                )
+
+    def test_rehashed_noncanonical_journal_bytes_are_rejected(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            original = (root / index["runs"][0]["journal_path"]).read_bytes()
+            forged = _replace_journal_bytes(root, report, index, b" " + original)
+            with self.assertRaisesRegex(ValueError, "not byte-canonical"):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=forged,
+                    index=index, artifact_root=root,
+                )
+
+    def test_rehashed_duplicate_journal_event_id_is_rejected(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            original = (root / index["runs"][0]["journal_path"]).read_bytes()
+            fresh = HashChainedJournal()
+            first_event = None
+            for line in original.split(b"\n"):
+                entry = json.loads(line)
+                event = entry["causal_event"]
+                if first_event is None:
+                    first_event = entry
+                fresh.append(event_id=entry["event_id"], causal_event=event)
+            # The generic journal writer permits repeated event IDs: the
+            # independent scientific custody audit must still fail closed.
+            fresh.append(
+                event_id=first_event["event_id"],
+                causal_event={"kind": "synthetic_duplicate_id"},
+            )
+            self.assertTrue(fresh.verify())
+            forged = _replace_journal_bytes(
+                root, report, index, fresh.canonical_bytes(),
+            )
+            with self.assertRaisesRegex(ValueError, "repeated canonical journal"):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=forged,
                     index=index, artifact_root=root,
                 )
 

@@ -207,10 +207,10 @@ duplicate object keys and NaN/Infinity constants at any nesting level.
 
 After a real hold-out run, the metric scorer reads claimed journal and causal-state SHA-256 strings from the evidence JSON. String equality alone cannot verify that any such raw file exists. For independent inspection, create a separate **retrospective path index** with the following exact fields:
 
-- Root: `protocol_version` = `stage9-heldout-raw-artifact-index-v1`, `registration_digest`, `evidence_sha256`, `runs`.
+- Root: `protocol_version` = `stage9-heldout-raw-artifact-index-v2`, `registration_digest`, `evidence_sha256`, `runs`.
 - Each run: `world_id`, `seed`, `journal_path`, `replay_journal_path`, `causal_state_path`, `replay_causal_state_path`.
 
-The four paths must be separate files beneath the operator-selected artifact root; they must not be aliases, hardlinks or symlink targets. Each file's **actual raw bytes** must hash to the corresponding declared digest for its world/seed run. Original and replay journals and causal-state files must also be byte-identical. The index must cover every registered world × seed run exactly once. Run:
+The four paths must be separate files beneath the operator-selected artifact root; they must not be aliases, hardlinks or symlink targets. Each file's **actual raw bytes** must hash to the corresponding declared digest for its world/seed run. Original and replay journals and causal-state files must also be byte-identical. In index protocol v2, the original journal must additionally be an exact canonical JSON-lines `HashChainedJournal` with contiguous indices, unique event IDs, intact genesis-to-head hashes and no extra final line terminator. Every physical `observation_ref` in a known-cause case or natural candidate must identify a recorded `world_transition_experienced` accompanied by an earlier `command_experienced` from the same attempt and world step, both present in exactly one later `auto_segment_commit`. The index must cover every registered world × seed run exactly once. Run:
 
 ```bash
 python -m lab.stage9_heldout_artifact_custody \
@@ -220,7 +220,7 @@ python -m lab.stage9_heldout_artifact_custody \
   --artifact-root results/stage9/raw
 ```
 
-The checker parses the index strictly (duplicate JSON keys and non-finite values are rejected), refuses path traversal and symlinks, and streams hashes to avoid loading entire journals into memory. It never writes to the evidence or index and never turns matching hashes into an independent witness. Its output remains `scientific_verdict=null` and `golden_stage9_frozen=false`. Physical world provenance, actual execution of the declared frozen code, inaccessible oracle data, independent observations and prospective preregistration must still be demonstrated separately. The test fixtures are synthetic and must not be used as held-out evidence.
+The checker parses the index strictly (duplicate JSON keys and non-finite values are rejected), refuses path traversal and symlinks, and streams file hashes before a separate canonical-journal chain audit. Index schema v1 recorded only SHA matches; **v2 is not backward-equivalent**, so historical v1 audit results are not silently promoted. It never writes to the evidence or index and never turns matching hashes into an independent witness. Its output remains `scientific_verdict=null` and `golden_stage9_frozen=false`. Recorded commit links cannot prove that physical events truly happened or that a claimed `episode_ref` was closed by real Memory. Physical world provenance, actual execution of the declared frozen code, inaccessible oracle data, independent observations and prospective preregistration must still be demonstrated separately. The test fixtures are synthetic and must not be used as held-out evidence.
 
 ## Experimental separation
 

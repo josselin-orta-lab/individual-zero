@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Mapping
 
 from .determinism import canonical_causal_bytes, sha256_hex
+from .stage9_canonical_journal_audit import audit_raw_causal_journal
 from .stage9_scientific_assessment import (
     _reject_duplicate_keys, _reject_nonfinite_constant,
     assess_heldout_campaign, load_heldout_evidence,
@@ -23,7 +24,7 @@ from .stage9_scientific_assessment import (
 from .stage9_scientific_preregistration import load_registration
 
 
-INDEX_VERSION = "stage9-heldout-raw-artifact-index-v1"
+INDEX_VERSION = "stage9-heldout-raw-artifact-index-v2"
 INDEX_FIELDS = frozenset({
     "protocol_version", "registration_digest", "evidence_sha256", "runs",
 })
@@ -110,6 +111,8 @@ def audit_heldout_raw_artifacts(
     """Compare physically present files to already-validated evidence claims.
 
     Two differently named paths (or hardlinks) to the same file are rejected.
+    In v2, canonical journal structure, its hash chain, and reported physical
+    source/command/commit references are also independently checked.
     The index is retrospective file custody metadata, NOT a preregistration or
     a proof that independent world steps really occurred.
     """
@@ -141,6 +144,8 @@ def audit_heldout_raw_artifacts(
     seen_inodes: set[tuple[int, int]] = set()
     total_size = 0
     verified_files = 0
+    journal_events_checked = 0
+    physical_sources_checked = 0
     for item in rows:
         if not isinstance(item, dict) or set(item) != RUN_INDEX_FIELDS:
             raise ValueError("invalid raw artifact run index")
@@ -178,6 +183,19 @@ def audit_heldout_raw_artifacts(
             )
         ):
             raise ValueError("original and replay raw artifact bytes differ")
+        # Digests alone do not prove that the named file is an append-only
+        # journal, or that a physical observation ever appeared in it.
+        # This structural check is independent of the report's own hashes.
+        references = {
+            entry["observation_ref"]
+            for name in ("known_cause_cases", "naturally_acquired_false_candidates")
+            for entry in reported[name]
+        }
+        journal_audit = audit_raw_causal_journal(
+            paths["journal_path"], physical_observation_refs=references,
+        )
+        journal_events_checked += journal_audit["journal_events_checked"]
+        physical_sources_checked += journal_audit["claimed_physical_transitions_checked"]
     if seen_runs != set(original_runs):
         raise ValueError("raw artifact index did not cover every heldout run")
 
@@ -193,11 +211,17 @@ def audit_heldout_raw_artifacts(
         "raw_files_checked": verified_files,
         "total_bytes_checked": total_size,
         "original_replay_bytes_identical": True,
+        "journal_chain_integrity_verified": True,
+        "journal_events_checked": journal_events_checked,
+        "committed_physical_sources_checked": physical_sources_checked,
+        "physical_truth_attested": False,
+        "memory_episode_closure_attested": False,
         "scientific_verdict": None,
         "golden_stage9_frozen": False,
         "outstanding": [
             "attest that archived files were produced by the declared frozen code",
             "independently witness physical world provenance and oracle custody",
+            "audit real Memory episode closure for each source reference",
             "verify prospective registration, sampling independence and INV-25",
         ],
     }
