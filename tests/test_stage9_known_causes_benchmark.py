@@ -82,7 +82,7 @@ class KnownCausesBenchmarkTests(unittest.TestCase):
             eligible_known_false_refs=("false:canary", "false:canary"),
             preregistered_max_rate=0.0,
         )
-        self.assertEqual(result.audited_false_refs, ("false:canary",))
+        self.assertEqual(result.audited_false_refs, ())
         self.assertIsNone(result.observed_rate)
         self.assertIsNone(result.passes)
         self.assertEqual(result.unverified_false_refs, ("false:canary",))
