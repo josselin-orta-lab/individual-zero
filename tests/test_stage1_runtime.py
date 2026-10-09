@@ -69,7 +69,7 @@ class ScriptedStage1RuntimeTests(unittest.TestCase):
         repeated = [
             entry for entry in runtime.journal.entries
             if entry.causal_event.get("kind") == "command_applied"
-            and entry.causal_event.get("t_monde") == 2
+            and entry.causal_event.get("t_monde") == snapshot.t_monde + 1
         ]
         self.assertEqual(len(repeated), 2)
         self.assertNotEqual(repeated[0].event_id, repeated[1].event_id)
