@@ -309,6 +309,12 @@ class Stage9Runtime(Stage8Runtime):
                 if not self._charge(
                     module="planning", operation="planning_build",
                 ):
+                    self._write(
+                        kind="causal_test_planning_diagnostic",
+                        cycle=cycle,
+                        data={"contingency_ref": target.contingency_ref,
+                              "outcome": "planning_budget_exhausted"},
+                    )
                     break
                 proposal = propose_executable_causal_test(
                     target=target,
@@ -319,11 +325,23 @@ class Stage9Runtime(Stage8Runtime):
                     ttl_steps=self._stage6_config.planning.option_ttl_steps,
                 )
                 if proposal is None:
+                    self._write(
+                        kind="causal_test_planning_diagnostic",
+                        cycle=cycle,
+                        data={"contingency_ref": target.contingency_ref,
+                              "outcome": "planning_no_executable_option"},
+                    )
                     continue
                 if (
                     self.stage3.control.verifier_plan_connu(proposal)
                     is Admissibility.INADMISSIBLE
                 ):
+                    self._write(
+                        kind="causal_test_planning_diagnostic",
+                        cycle=cycle,
+                        data={"contingency_ref": target.contingency_ref,
+                              "outcome": "plan_vetoed"},
+                    )
                     continue
                 self._publish_contribution(Contribution(
                     id=(

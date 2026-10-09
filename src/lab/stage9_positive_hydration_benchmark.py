@@ -85,6 +85,7 @@ class PositiveHydrationDiagnostic:
     causal_test_registration_events: int = 0
     accepted_causal_test_registrations: int = 0
     causal_test_evaluation_events: int = 0
+    causal_test_planning_outcomes: tuple[tuple[str, int], ...] = ()
 
 
 def run_positive_hydration_diagnostic(
@@ -196,6 +197,21 @@ def run_positive_hydration_diagnostic(
         if event.get("kind") == "causal_test_option_proposed"
         and isinstance(event.get("data"), dict)
     )
+    planning_outcomes = {}
+    for event in events:
+        if (
+            event.get("kind") == "causal_test_planning_diagnostic"
+            and isinstance(event.get("data"), dict)
+            and event["data"].get("contingency_ref") == "causal:hydration"
+        ):
+            outcome = event["data"].get("outcome")
+            if outcome not in {
+                "planning_budget_exhausted",
+                "planning_no_executable_option",
+                "plan_vetoed",
+            }:
+                raise AssertionError("unexpected causal-test Planning outcome")
+            planning_outcomes[outcome] = planning_outcomes.get(outcome, 0) + 1
     test_options = set(test_proposals)
     test_registrations = tuple(
         event["data"]
@@ -350,4 +366,5 @@ def run_positive_hydration_diagnostic(
             event.get("registered") is True for event in test_registrations
         ),
         causal_test_evaluation_events=len(test_evaluations),
+        causal_test_planning_outcomes=tuple(sorted(planning_outcomes.items())),
     )

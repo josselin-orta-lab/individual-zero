@@ -38,6 +38,17 @@ class Stage9HydrationContrastTests(unittest.TestCase):
         self.assertGreaterEqual(aligned.unscored_test_evaluations, 0)
         self.assertGreaterEqual(aligned.published_interventions, 0)
         self.assertTrue(aligned.missing_evidence)
+        for case in (positive, exploratory, aligned):
+            self.assertIsNotNone(case.causal_test_planning_outcomes)
+            self.assertTrue(all(
+                outcome in {
+                    "planning_budget_exhausted",
+                    "planning_no_executable_option",
+                    "plan_vetoed",
+                } and count > 0
+                for outcome, count in case.causal_test_planning_outcomes
+            ))
+
         self.assertGreaterEqual(aligned.post_hypothesis_decision_steps, 0)
         self.assertGreaterEqual(aligned.designated_test_target_steps, 0)
         self.assertLessEqual(

@@ -59,6 +59,7 @@ class HydrationContrastCase:
     causal_test_registration_events: int | None = None
     accepted_causal_test_registrations: int | None = None
     causal_test_evaluation_events: int | None = None
+    causal_test_planning_outcomes: tuple[tuple[str, int], ...] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -241,6 +242,7 @@ def run_hydration_contrast_report(
                 causal_test_evaluation_events=(
                     item.causal_test_evaluation_events
                 ),
+                causal_test_planning_outcomes=item.causal_test_planning_outcomes,
                 published_interventions=item.published_physical_interventions,
                 published_self_compatible_water_reports=(
                     item.published_self_compatible_water_reports
