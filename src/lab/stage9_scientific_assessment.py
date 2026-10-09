@@ -152,12 +152,12 @@ def assess_heldout_campaign(
             raise ValueError("heldout cases and candidates must be lists")
         seen_cases = set()
         seen_candidates = set()
+        # Evidence identity is a physical observation source, not an
+        # autobiographical episode. One closed episode may contain distinct
+        # transitions (and distinct §13.2 intervention contexts). Independence
+        # of heldout sampling still requires external provenance/context audit;
+        # this scorer must not claim that a digest proves it.
         used_physical_refs = set()
-        # Wilson bounds assume independently witnessed trials. Multiple
-        # transitions from the same closed autobiographical episode are not
-        # independent causal evidence; reject instead of silently counting
-        # them twice (13.2, 19.5, DC-09, INV-33).
-        used_episodes = set()
         for case in cases:
             if not isinstance(case, dict) or set(case) != CASE_FIELDS:
                 raise ValueError("invalid known-cause observation schema")
@@ -169,13 +169,10 @@ def assess_heldout_campaign(
             ):
                 raise ValueError("invalid or duplicate known-cause observation")
             seen_cases.add(case["id"])
-            physical = (case["episode_ref"], case["observation_ref"])
+            physical = case["observation_ref"]
             if physical in used_physical_refs:
                 raise ValueError("reused physical known-cause evidence")
             used_physical_refs.add(physical)
-            if case["episode_ref"] in used_episodes:
-                raise ValueError("reused physical episode in heldout run")
-            used_episodes.add(case["episode_ref"])
             # §9.6: "none" is a real negative control, not a known
             # positive cause. Counting it in the accuracy denominator
             # would dilute the benchmark and could hide false attributions.
@@ -212,13 +209,10 @@ def assess_heldout_campaign(
             ):
                 raise ValueError("invalid or repeated natural candidate")
             seen_candidates.add(item["id"])
-            physical = (item["episode_ref"], item["observation_ref"])
+            physical = item["observation_ref"]
             if physical in used_physical_refs:
                 raise ValueError("reused physical natural candidate evidence")
             used_physical_refs.add(physical)
-            if item["episode_ref"] in used_episodes:
-                raise ValueError("reused physical episode in heldout run")
-            used_episodes.add(item["episode_ref"])
             natural_candidates += 1
             false_established += int(item["causal_status"] == "etablie")
     if encountered != expected:

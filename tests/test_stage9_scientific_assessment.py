@@ -187,7 +187,7 @@ class Stage9ScientificAssessmentTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     assess_heldout_campaign(draft, sealed(damaged))
 
-    def test_two_causal_cases_cannot_share_one_lived_episode(self):
+    def test_distinct_physical_cases_can_share_one_closed_memory_episode(self):
         draft = example_draft()
         draft["confidence_method"] = "wilson_95"
         report = make_report(draft, candidates=5)
@@ -196,25 +196,58 @@ class Stage9ScientificAssessmentTests(unittest.TestCase):
         second["id"] = "case:2"
         second["observation_ref"] = "distinct-world-transition"
         report["runs"][0]["known_cause_cases"].append(second)
-        with self.assertRaisesRegex(ValueError, "reused physical episode"):
-            assess_heldout_campaign(draft, sealed(report))
+        scored = assess_heldout_campaign(draft, sealed(report))
+        self.assertEqual(scored["known_cause_cases"], 5)
+        self.assertEqual(scored["correct_links"], 5)
+        self.assertIsNone(scored["scientific_verdict"])
+        self.assertFalse(scored["golden_stage9_frozen"])
 
-    def test_false_candidates_require_independent_closed_episodes(self):
+    def test_distinct_physical_candidates_can_share_an_episode(self):
         draft = example_draft()
         draft["confidence_method"] = "wilson_95"
         report = make_report(draft, candidates=5)
         null_run = report["runs"][2]
         candidates = null_run["naturally_acquired_false_candidates"]
         candidates[1]["episode_ref"] = candidates[0]["episode_ref"]
-        with self.assertRaisesRegex(ValueError, "reused physical episode"):
-            assess_heldout_campaign(draft, sealed(report))
+        candidates[2]["episode_ref"] = null_run["known_cause_cases"][0]["episode_ref"]
+        scored = assess_heldout_campaign(draft, sealed(report))
+        self.assertEqual(scored["natural_false_candidate_count"], 10)
+        self.assertIsNone(scored["scientific_verdict"])
+
+    def test_one_physical_transition_never_counts_twice_with_episode_alias(self):
+        draft = example_draft()
+        draft["confidence_method"] = "wilson_95"
+        for kind in ("known_cause", "natural_candidate", "cross_category"):
+            with self.subTest(kind=kind):
+                report = make_report(draft, candidates=5)
+                run = report["runs"][2]
+                cases = run["known_cause_cases"]
+                candidates = run["naturally_acquired_false_candidates"]
+                if kind == "known_cause":
+                    alias = deepcopy(cases[0])
+                    alias["id"] = "case:physical-alias"
+                    alias["episode_ref"] = "different-memory-episode"
+                    cases.append(alias)
+                elif kind == "natural_candidate":
+                    candidates[1]["observation_ref"] = candidates[0]["observation_ref"]
+                    candidates[1]["episode_ref"] = "different-memory-episode"
+                else:
+                    candidates[0]["observation_ref"] = cases[0]["observation_ref"]
+                    candidates[0]["episode_ref"] = "different-memory-episode"
+                with self.assertRaisesRegex(ValueError, "reused physical"):
+                    assess_heldout_campaign(draft, sealed(report))
+
+    def test_physical_refs_are_scoped_to_world_seed_run(self):
+        draft = example_draft()
+        draft["confidence_method"] = "wilson_95"
         report = make_report(draft, candidates=5)
-        null_run = report["runs"][2]
-        null_run["naturally_acquired_false_candidates"][0]["episode_ref"] = (
-            null_run["known_cause_cases"][0]["episode_ref"]
+        # Each world/seed run has an independent physical event namespace.
+        report["runs"][1]["known_cause_cases"][0]["observation_ref"] = (
+            report["runs"][0]["known_cause_cases"][0]["observation_ref"]
         )
-        with self.assertRaisesRegex(ValueError, "reused physical episode"):
-            assess_heldout_campaign(draft, sealed(report))
+        scored = assess_heldout_campaign(draft, sealed(report))
+        self.assertEqual(scored["known_cause_cases"], 4)
+        self.assertFalse(scored["golden_stage9_frozen"])
 
     def test_distinct_episodes_remain_evaluable_without_golden_approval(self):
         draft = example_draft()

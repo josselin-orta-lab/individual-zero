@@ -81,11 +81,17 @@ contains its registered physical world SHA-256, original and replay journal
 hashes, original and replay causal-state hashes, independently sourced
 known-cause case rows with ground truth and agency attribution, and the
 naturally acquired false-rule candidates in negative-control worlds. The
-whole envelope has its own canonical SHA-256. Physical source event references
-and episodes must not be counted twice inside a run, even if multiple
-distinct physical observation references happen to share one closed Memory
-episode. The scorer refuses such reuse across both known-cause cases and
-false-rule candidates rather than inflating an independent sample count.
+whole envelope has its own canonical SHA-256. A physical observation source
+reference may be counted **only once within a world/seed run**, across both
+known-cause cases and naturally acquired false-rule candidates. A closed
+Memory episode may legitimately contain multiple distinct world transitions:
+the episode identifier is provenance, **not** the physical deduplication key.
+Causal establishment still requires independently controlled intervention
+contexts under §13.2; safety promotion/demotion separately requires distinct
+evidential episodes under DC-05. This report format does not by itself verify
+those contexts or establish independent statistical sampling: an external
+witness audit remains mandatory before treating provisional Wilson intervals
+as scientific evidence or freezing a Golden.
 
 The scorer recomputes attribution accuracy, abstentions, false self links,
 false-rule rates and two-sided 95% Wilson confidence intervals.
