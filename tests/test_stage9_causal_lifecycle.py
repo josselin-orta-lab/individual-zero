@@ -375,9 +375,16 @@ class CausalLifecycleTests(unittest.TestCase):
 
         positive = trial(11, context="zone2")
         negative = trial(12, context="zone3", effect=False)
+        # P-47 comparisons must be independently published before the
+        # interventions arrive. The interventions themselves stay pending
+        # together until the single phase-5 publication being tested.
         for row in (positive, negative):
             publish_matching_agency(m, row)
+        for row in (positive, negative):
             m.integrate_causal_intervention(row)
+        self.assertEqual(
+            len(m.export_causal_state()["pending_causal_interventions"]), 2,
+        )
 
         frozen = m.export_causal_state()
         replay = model()
@@ -404,7 +411,11 @@ class CausalLifecycleTests(unittest.TestCase):
         later_positive = trial(12, context="zone3")
         for row in (earlier_negative, later_positive):
             publish_matching_agency(m, row)
+        for row in (earlier_negative, later_positive):
             m.integrate_causal_intervention(row)
+        self.assertEqual(
+            len(m.export_causal_state()["pending_causal_interventions"]), 2,
+        )
         self.assertEqual(m.publish_causal_inference(), ())
         self.assertEqual(m.get(REF).causal_status, "testee_par_intervention")
         self.assertEqual(m.publish_causal_inference(), ())
