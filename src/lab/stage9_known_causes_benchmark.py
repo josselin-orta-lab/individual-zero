@@ -22,8 +22,9 @@ from i0.modules.agency_comparator import AgencyComparator, AgencyComparatorConfi
 from i0.modules.causal_model import CausalModel
 from i0.modules.perception import SymbolicPerception
 
+from .journal import HashChainedJournal
 from .stage4_reference_fixture import build_stage4_reference_runtime
-from .world import Position, WorldBody, WorldLayout
+from .world import Position, WorldBody, WorldLayout, WorldPhysicsConfig
 
 
 @dataclass(frozen=True, slots=True)
@@ -216,23 +217,89 @@ def run_known_cause_probes() -> KnownCauseMetrics:
 
 @dataclass(frozen=True, slots=True)
 class SuperstitiousRuleAudit:
-    """External known-false canaries only; not an individual-owned fact."""
+    """Lab-only diagnostic, not the Stage-9 scientific acceptance gate."""
     audited_false_refs: tuple[str, ...]
     established_false_refs: tuple[str, ...]
     observed_rate: float | None
     preregistered_max_rate: float | None
     passes: bool | None
+    # Do not count unexposed, unverified or invented false canaries as zeroes.
+    unverified_false_refs: tuple[str, ...] = ()
+    physical_witness_refs: tuple[str, ...] = ()
+
+
+def _verified_null_drink_witnesses(
+    *,
+    journal: HashChainedJournal | None,
+    world_config: WorldPhysicsConfig | None,
+) -> tuple[str, ...]:
+    """Ground the one supported null-cause canary in a closed world step.
+
+    The laboratory alone knows that this world's 'boire' action produces
+    no water. Verify a paired command + physical world transition in the
+    *same nonlethal attempt*, rather than a bare comparator declaration.
+    This is a specific diagnostic, not a generic proof of every causal rule.
+    """
+    if journal is None or world_config is None:
+        return ()
+    if not journal.verify():
+        raise ValueError("false-rule audit requires an intact causal journal")
+    if (
+        world_config.drink_water_gain != 0.0
+        or world_config.water_decay_per_step != 0.0
+    ):
+        return ()
+
+    sent = {
+        (event.causal_event.get("attempt_ref"), event.causal_event.get("t_monde")):
+            event
+        for event in journal.entries
+        if event.causal_event.get("kind") == "command_experienced"
+        and event.causal_event.get("primitive") == "boire"
+    }
+    results = []
+    for transition in journal.entries:
+        data = transition.causal_event
+        if (
+            data.get("kind") != "world_transition_experienced"
+            or not isinstance(data.get("effects"), dict)
+            or data["effects"].get("drank") is not True
+            or not isinstance(data.get("body_after"), dict)
+            or not isinstance(data["body_after"].get("water"), (int, float))
+        ):
+            continue
+        pair = (data.get("attempt_ref"), data.get("t_monde"))
+        command = sent.get(pair)
+        if (
+            command is None
+            or command.causal_event.get("attempt_ref") is None
+        ):
+            continue
+        # WorldPhysicsConfig is external truth, not an observation available
+        # to CausalModel. The journal only verifies exposure and a transition.
+        results.append(transition.event_id)
+    return tuple(sorted(set(results)))
 
 
 def audit_superstitious_rules(
     *,
     causal_model: CausalModel,
-    # Only cases actually exposed and verified by an external preregistered
-    # known-cause benchmark are eligible; missing exposure is not evidence.
     eligible_known_false_refs: Iterable[str],
     preregistered_max_rate: float | None,
+    physical_journal: HashChainedJournal | None = None,
+    known_false_world: WorldPhysicsConfig | None = None,
 ) -> SuperstitiousRuleAudit:
-    """Measure false established rules, never choose a success cutoff post hoc."""
+    """Rate established known-false rules only with lived physical exposure.
+
+    A caller-supplied label is *not* verification. For Stage 9 the only
+    supported physically checked canary is a null-water-effect world with
+    a completed 'boire' transition. Unknown canaries and unobserved runs
+    remain unevaluable, never successful by default.
+
+    'passes' is an arithmetic check against a separately frozen threshold.
+    Neither a diagnostic pass nor a threshold provided post hoc completes
+    the scientific campaign acceptance gate (19.5 / 20.3).
+    """
     if preregistered_max_rate is not None and (
         isinstance(preregistered_max_rate, bool)
         or not isinstance(preregistered_max_rate, (int, float))
@@ -240,23 +307,37 @@ def audit_superstitious_rules(
         or not 0 <= preregistered_max_rate <= 1
     ):
         raise ValueError("scientific threshold must be a finite preregistered rate")
-    eligible = tuple(sorted(set(eligible_known_false_refs)))
-    if any(not isinstance(ref, str) or not ref for ref in eligible):
+    requested = tuple(sorted(set(eligible_known_false_refs)))
+    if any(not isinstance(ref, str) or not ref for ref in requested):
         raise ValueError("known-false reference must be a nonempty string")
+    if (physical_journal is None) != (known_false_world is None):
+        raise ValueError("physical journal and external world must be paired")
+
+    witnessed = _verified_null_drink_witnesses(
+        journal=physical_journal, world_config=known_false_world,
+    )
+    observed = tuple(
+        ref for ref in requested
+        if ref == "causal:hydration" and witnessed
+    )
+    unverified = tuple(ref for ref in requested if ref not in observed)
     established = {
         row.ref for row in causal_model.contingencies(status="etablie")
     }
-    false_rules = tuple(ref for ref in eligible if ref in established)
-    rate = None if not eligible else len(false_rules) / len(eligible)
+    false_rules = tuple(ref for ref in observed if ref in established)
+    rate = None if not observed else len(false_rules) / len(observed)
     passed = (
-        None
-        if rate is None or preregistered_max_rate is None
+        None if rate is None or preregistered_max_rate is None
         else rate <= preregistered_max_rate
     )
     return SuperstitiousRuleAudit(
-        audited_false_refs=eligible,
+        audited_false_refs=observed,
         established_false_refs=false_rules,
         observed_rate=rate,
         preregistered_max_rate=preregistered_max_rate,
         passes=passed,
+        unverified_false_refs=unverified,
+        physical_witness_refs=(
+            witnessed if observed else ()
+        ),
     )

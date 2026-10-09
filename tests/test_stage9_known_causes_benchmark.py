@@ -83,9 +83,72 @@ class KnownCausesBenchmarkTests(unittest.TestCase):
             preregistered_max_rate=0.0,
         )
         self.assertEqual(result.audited_false_refs, ("false:canary",))
-        self.assertEqual(result.observed_rate, 0.0)
-        self.assertTrue(result.passes)
+        self.assertIsNone(result.observed_rate)
+        self.assertIsNone(result.passes)
+        self.assertEqual(result.unverified_false_refs, ("false:canary",))
         self.assertEqual(m.export_causal_state(), original)
+
+    def test_null_world_requires_real_applied_drink_and_world_transition(self):
+        from dataclasses import replace
+        from i0.interfaces import PrimitiveCommand
+        from lab.journal import HashChainedJournal
+        from lab.stage4_reference_fixture import build_stage4_reference_runtime
+        from lab.world import Position, WorldBody, WorldLayout
+
+        config = replace(
+            build_stage4_reference_runtime().world.config,
+            version="stage9-null-water-audit-v1", drink_water_gain=0.0,
+        )
+        world = WorldBody(
+            config=config,
+            layout=WorldLayout(water_sources=frozenset({Position(2, 2)})),
+        )
+        journal = HashChainedJournal()
+        model_under_audit = model()
+        hypothesized(model_under_audit)
+
+        def audit():
+            return audit_superstitious_rules(
+                causal_model=model_under_audit,
+                eligible_known_false_refs=("causal:hydration", "unsupported"),
+                preregistered_max_rate=None,
+                physical_journal=journal,
+                known_false_world=config,
+            )
+
+        self.assertIsNone(audit().observed_rate)
+        journal.append(
+            event_id="send:1",
+            causal_event={
+                "kind": "command_experienced", "primitive": "boire",
+                "attempt_ref": "attempt:1", "t_monde": 1,
+            },
+        )
+        self.assertIsNone(audit().observed_rate)
+        transition = world.apply(PrimitiveCommand("boire"), t_monde=1)
+        journal.append(
+            event_id="transition:1",
+            causal_event={
+                "kind": "world_transition_experienced",
+                "attempt_ref": "attempt:1", "t_monde": 1,
+                "effects": dict(transition.effects),
+                "body_after": transition.body_after.as_dict(),
+            },
+        )
+        result = audit()
+        self.assertEqual(result.audited_false_refs, ("causal:hydration",))
+        self.assertEqual(result.physical_witness_refs, ("transition:1",))
+        self.assertEqual(result.unverified_false_refs, ("unsupported",))
+        self.assertEqual(result.observed_rate, 0.0)
+        self.assertIsNone(result.passes)
+        self.assertEqual(result, audit())
+        with self.assertRaises(ValueError):
+            audit_superstitious_rules(
+                causal_model=model_under_audit,
+                eligible_known_false_refs=("causal:hydration",),
+                preregistered_max_rate=0.0,
+                physical_journal=journal,
+            )
 
     def test_known_true_established_contingency_is_not_a_false_canary(self):
         m = model()
@@ -100,8 +163,9 @@ class KnownCausesBenchmarkTests(unittest.TestCase):
         )
         # In this controlled calculation, the caller explicitly supplies the
         # false-canary set; this is NOT a claim that the tested rule is false.
-        self.assertEqual(result.observed_rate, 1.0)
+        self.assertIsNone(result.observed_rate)
         self.assertIsNone(result.passes)
+        self.assertEqual(result.unverified_false_refs, ("causal:food-energy",))
 
 
 if __name__ == "__main__":
