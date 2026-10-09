@@ -48,6 +48,63 @@ class LivedEvidenceTests(unittest.TestCase):
             self.assertEqual(m.publish(),())
             self.assertIsNone(m.get("toxic:berry_b"))
 
+    def test_duplicate_closed_event_reference_is_rejected_atomically(self):
+        m = model()
+        events = pair(m)
+        before = m.export_causal_state()
+        with self.assertRaisesRegex(
+            ValueError, "closed Memory episode reference ledger",
+        ):
+            m.ingest_closed_autobiographical_episode(
+                episode_ref="episode:dup",
+                event_refs=("c:1", "c:1", "w:1"),
+                autobiographical_events=events,
+            )
+        self.assertEqual(m.export_causal_state(), before)
+        # A valid later projection of the same genuinely closed attempt
+        # remains creditable after the invalid input was rejected.
+        self.assertEqual(len(m.ingest_closed_autobiographical_episode(
+            episode_ref="episode:valid",
+            event_refs=("c:1", "w:1"),
+            autobiographical_events=events,
+        )), 1)
+
+    def test_three_conflicting_events_cannot_resurrect_one_physical_step(self):
+        for kind in ("command_experienced", "world_transition_experienced"):
+            with self.subTest(kind=kind):
+                m = model()
+                command, transition = pair(m)
+                primary = command if kind == "command_experienced" else transition
+                alternatives = tuple(
+                    {**primary, "event_id": f"duplicate:{kind}:{index}"}
+                    for index in (1, 2)
+                )
+                events = (command, transition, *alternatives)
+                refs = tuple(event["event_id"] for event in events)
+                self.assertEqual(
+                    m.ingest_closed_autobiographical_episode(
+                        episode_ref="episode:ambiguous",
+                        event_refs=refs,
+                        autobiographical_events=events,
+                    ), (),
+                )
+                snapshot = m.export_causal_state()
+                self.assertEqual(snapshot["pending"], [])
+                self.assertEqual(snapshot["pending_causal_observations"], [])
+                self.assertEqual(snapshot["pending_numeric_witnesses"], [])
+                self.assertEqual(snapshot["lived_food_exposures"], [])
+                self.assertEqual(m.publish(), ())
+                self.assertEqual(m.publish_causal_inference(), ())
+                self.assertIsNone(m.get("toxic:berry_b"))
+                # The rejected closed attempt cannot be reopened with a
+                # different autobiographical label and then promoted.
+                self.assertEqual(m.ingest_closed_autobiographical_episode(
+                    episode_ref="episode:alias",
+                    event_refs=("c:1", "w:1"),
+                    autobiographical_events=(command, transition),
+                ), ())
+                self.assertEqual(m.pending_causal_observations(), ())
+
     def test_distinct_closed_episodes_required(self):
         m=model()
         for t in (1,3):

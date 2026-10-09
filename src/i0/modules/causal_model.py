@@ -1023,8 +1023,11 @@ class CausalModel:
         A candidate receives the *real* Memory episode ID, not a manufactured
         new episode for each command. No shortcut to causal `etablie`.
         """
-        if not episode_ref:
-            raise ValueError("missing Memory episode reference")
+        if (
+            not isinstance(episode_ref, str) or not episode_ref
+            or len(event_refs) != len(set(event_refs))
+        ):
+            raise ValueError("invalid closed Memory episode reference ledger")
         events = {
             e["event_id"]: e for e in autobiographical_events
             if isinstance(e.get("event_id"), str)
@@ -1034,23 +1037,29 @@ class CausalModel:
         }
         commands: dict[int, Mapping[str, object]] = {}
         transitions: dict[int, Mapping[str, object]] = {}
+        ambiguous_steps: set[int] = set()
         for event_ref in event_refs:
             event = events.get(event_ref)
             if event is None:
                 continue
             t = event.get("t_monde")
-            if not isinstance(t, int) or t < 1:
+            if type(t) is not int or t < 1 or t in ambiguous_steps:
                 continue
             if event["kind"] == "command_experienced":
                 if t in commands:
-                    # Conflicting exposures must never be manufactured as
-                    # independent by duplicate projections.
+                    # Once a closed world step has conflicting projections,
+                    # a third differently named event must not resurrect
+                    # the same physical exposure. Retire both arms.
                     commands.pop(t, None)
+                    transitions.pop(t, None)
+                    ambiguous_steps.add(t)
                     continue
                 commands[t] = event
             elif event["kind"] == "world_transition_experienced":
                 if t in transitions:
                     transitions.pop(t, None)
+                    commands.pop(t, None)
+                    ambiguous_steps.add(t)
                     continue
                 transitions[t] = event
 
@@ -1207,6 +1216,11 @@ class CausalModel:
             self.integrate_causal_observation(item)
         for witness in numeric_witnesses:
             self._pending_numeric_witnesses.append(witness)
+        # A physically ambiguous closed attempt is retired, not left
+        # available to support another forged episode later. Ordinary
+        # observed but unpaired commands retain the previous lifecycle.
+        for t in ambiguous_steps:
+            self._lived_food_exposures.pop(t, None)
         # Exposure refs can be discarded only once their command is represented
         # by a *closed* episode; unobserved attempts cannot be counted later.
         for t, command in commands.items():
