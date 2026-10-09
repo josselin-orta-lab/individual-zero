@@ -56,6 +56,8 @@ class CausalTestPipelineTests(unittest.TestCase):
         )
         self.assertIsNotNone(proposal)
         self.assertEqual(proposal.option.motive_ref.type, "test_causal")
+        # §4 contract: option origin differs from the emitter module name.
+        self.assertEqual(proposal.option.provenance, "test_causal")
         self.assertIsNone(proposal.option.goal_ref)
         self.assertEqual(proposal.plan.steps[0].command.primitive, "boire")
         self.assertEqual(proposal.option.learning_signature,
@@ -115,6 +117,7 @@ class CausalTestPipelineTests(unittest.TestCase):
         self.assertEqual(unseen.proposal.plan.steps[0].predicted_consequences, ())
         self.assertEqual(unseen.proposal.plan.steps[0].observation_window_steps, 1)
         self.assertEqual(unseen.proposal.option.motive_ref.type, "test_causal")
+        self.assertEqual(unseen.proposal.option.provenance, "test_causal")
         self.assertIsNone(unseen.proposal.option.goal_ref)
         self.assertEqual(
             propose_executable_causal_test(

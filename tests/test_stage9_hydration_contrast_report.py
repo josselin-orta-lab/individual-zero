@@ -40,6 +40,11 @@ class Stage9HydrationContrastTests(unittest.TestCase):
         self.assertTrue(aligned.missing_evidence)
         for case in (positive, exploratory, aligned):
             self.assertIsNotNone(case.causal_test_planning_outcomes)
+            self.assertIsNotNone(case.distinct_causal_test_options)
+            self.assertLessEqual(
+                case.distinct_causal_test_options, case.causal_test_proposals,
+            )
+            self.assertIsNotNone(case.applied_causal_test_drinks)
             self.assertIsNotNone(case.causal_test_planning_reasons)
             self.assertIsNotNone(case.causal_test_unpredicted_proposal_reasons)
             self.assertLessEqual(
@@ -102,6 +107,47 @@ class Stage9HydrationContrastTests(unittest.TestCase):
         )
         self.assertTrue(all(row.scientific_gate is None for row in first.cases))
         self.assertEqual(len(first.as_dict()["evidence_sha256"]),64)
+
+
+    def test_causal_test_proposals_are_not_independent_interventions(self):
+        # Same reproducible 18-step contrast as CI, but all counters are
+        # observational. An event per cycle is not a new option, a command,
+        # or an independent n2 intervention context (§13.2).
+        report = run_hydration_contrast_report(seeds=(41, 42), steps=18)
+        self.assertEqual(report.acceptance_status, "open")
+        self.assertFalse(report.golden_stage9_frozen)
+        positive = tuple(
+            case for case in report.cases
+            if case.world in {"small_water_gain", "recurrent_water_need"}
+        )
+        self.assertEqual(len(positive), 4)
+        for case in positive:
+            with self.subTest(seed=case.seed, world=case.world):
+                self.assertGreater(case.causal_test_proposals, 1)
+                self.assertGreater(case.distinct_causal_test_options, 0)
+                self.assertLess(
+                    case.distinct_causal_test_options,
+                    case.causal_test_proposals,
+                )
+                self.assertEqual(
+                    case.causal_test_evaluation_events,
+                    case.unscored_test_evaluations,
+                )
+                self.assertEqual(
+                    case.causal_test_registration_events,
+                    case.accepted_causal_test_registrations,
+                )
+                self.assertEqual(case.applied_causal_test_drinks, 0)
+                self.assertEqual(case.published_interventions, 0)
+                self.assertEqual(case.causal_status, "hypothese_causale")
+                self.assertEqual(
+                    sum(n for _, n in case.causal_test_unpredicted_proposal_reasons),
+                    case.causal_test_proposals,
+                )
+                self.assertEqual(
+                    case.causal_test_unpredicted_proposal_reasons,
+                    (("equipment_input_unseen", case.causal_test_proposals),),
+                )
 
     def test_first_observed_blocker_is_explained(self):
         common=dict(

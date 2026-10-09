@@ -56,6 +56,8 @@ class HydrationContrastCase:
     designated_test_target_steps: int | None = None
     accessible_test_context_steps: int | None = None
     causal_test_proposals: int | None = None
+    distinct_causal_test_options: int | None = None
+    applied_causal_test_drinks: int | None = None
     causal_test_registration_events: int | None = None
     accepted_causal_test_registrations: int | None = None
     causal_test_evaluation_events: int | None = None
@@ -235,6 +237,10 @@ def run_hydration_contrast_report(
                     item.accessible_water_test_context_steps
                 ),
                 causal_test_proposals=item.causal_test_proposal_events,
+                distinct_causal_test_options=(
+                    item.distinct_causal_test_options
+                ),
+                applied_causal_test_drinks=item.applied_causal_test_drinks,
                 causal_test_registration_events=(
                     item.causal_test_registration_events
                 ),

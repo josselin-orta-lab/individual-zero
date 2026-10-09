@@ -72,6 +72,8 @@ class PositiveHydrationDiagnostic:
     applied_drinks_after_hypothesis: int = 0
     applied_causal_test_drinks: int = 0
     causal_test_proposal_events: int = 0
+    # Repeated phase-1 emissions of one option are not independent tests.
+    distinct_causal_test_options: int = 0
     unscored_causal_test_evaluations: int = 0
     published_physical_interventions: int = 0
     pending_lived_causal_actions: int = 0
@@ -375,6 +377,7 @@ def run_positive_hydration_diagnostic(
             for result in outcomes
         ),
         causal_test_proposal_events=len(test_proposals),
+        distinct_causal_test_options=len(test_options),
         unscored_causal_test_evaluations=unscored_tests,
         published_physical_interventions=len(state["causal_interventions"]),
         pending_lived_causal_actions=len(state["lived_causal_actions"]),

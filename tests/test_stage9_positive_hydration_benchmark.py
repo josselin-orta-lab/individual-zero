@@ -88,6 +88,10 @@ class PositiveHydrationBenchmarkTests(unittest.TestCase):
                         sum(n for _, n in first.causal_test_unpredicted_proposal_reasons),
                         first.causal_test_proposal_events,
                     )
+                    self.assertLessEqual(
+                        first.distinct_causal_test_options,
+                        first.causal_test_proposal_events,
+                    )
                     self.assertEqual(
                         first.applied_causal_test_drinks, 0,
                         "without intrinsic evidence, test proposals cannot execute",

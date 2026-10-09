@@ -131,7 +131,7 @@ def assess_executable_causal_test(
         motive_ref=MotiveRef(type="test_causal", id=target.motive_ref),
         founding_st_version=st_version,
         expires_at_step=t_monde + ttl_steps,
-        provenance="causal_model",
+        provenance="test_causal",
         plan_ref=plan.id,
         state="proposed",
     )
