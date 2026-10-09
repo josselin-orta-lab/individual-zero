@@ -21,7 +21,7 @@ from .action_control import StaticSafetyFacts
 from .causal_corrections import (
     LivedNumericOutcome, NumericPredictionCorrection, decode_lived_numeric_outcome,
 )
-from .causal_lifecycle import (CausalObservation, CausalHypothesisReview, CausalIntervention, CausalInferenceChange, AgencyEvidence, agency_evidence_from_autobiography, decode_agency_evidence, decode_observation, decode_review, decode_intervention, serialize_value)
+from .causal_lifecycle import (CausalObservation, CausalHypothesisReview, CausalIntervention, CausalInferenceChange, AgencyEvidence, agency_evidence_from_autobiography, decode_agency_evidence, decode_observation, decode_review, decode_intervention, serialize_value, CausalTestTarget)
 
 
 # The existing, versioned MVP veto policy permits exactly these categories.
@@ -49,6 +49,10 @@ class CausalModelConfig:
     # Explicit, versioned physical comparison pairs (treatment, observed
     # different food). Empty by default: no automatic baseline is inferred.
     food_control_pairs: tuple[tuple[str, str], ...] = ()
+    # Stage-9 preregistered, currently supported non-harmful test primitives.
+    # No automatic action derivation from an arbitrary predicate or belief.
+    # (predicate, subject_ref, primitive); P-48 motivation is not fabricated.
+    safe_test_actions: tuple[tuple[str, str, str], ...] = ()
 
     def validate(self) -> None:
         if not self.version or any(
@@ -71,6 +75,18 @@ class CausalModelConfig:
                 != len(self.food_control_pairs)
         ):
             raise ValueError("invalid preregistered physically observed food controls")
+        if (
+            any(
+                not isinstance(row, (tuple, list)) or len(row) != 3
+                or row[0] not in self.causal_predicates
+                or row[1] != "water"
+                or row[2] != "boire"
+                for row in self.safe_test_actions
+            )
+            or len({(row[0], row[1]) for row in self.safe_test_actions})
+               != len(self.safe_test_actions)
+        ):
+            raise ValueError("unsupported or duplicate preregistered causal test action")
 
 
 @dataclass(frozen=True, slots=True)
@@ -263,6 +279,46 @@ class CausalModel:
 
     def get(self, contingency_ref: str) -> CanonicalContingency | None:
         return self._published.get(contingency_ref)
+
+    def proposer_test(self) -> tuple[CausalTestTarget, ...]:
+        """Read-only §13.4 proposals from published, revisable hypotheses.
+
+        This Stage-9 subset designates only explicitly registered drinking
+        tests for a non-safety predicate. It neither creates motivation nor
+        bypasses Planning/Action Control. Unsafe ingestion tests and invented
+        commands are never inferred from causal correlation.
+        """
+        actions = {
+            (predicate, subject): primitive
+            for predicate, subject, primitive in self.config.safe_test_actions
+        }
+        targets: list[CausalTestTarget] = []
+        for contingency in self.contingencies():
+            if (
+                contingency.causal_status not in {
+                    "hypothese_causale", "testee_par_intervention"
+                }
+                or contingency.safety_status != "aucun"
+                or contingency.predicate in SAFETY_PREDICATES
+            ):
+                continue
+            primitive = actions.get(
+                (contingency.predicate, contingency.subject_ref)
+            )
+            if primitive is None:
+                continue
+            target = CausalTestTarget(
+                contingency_ref=contingency.ref,
+                contingency_version=contingency.version,
+                predicate=contingency.predicate,
+                subject_ref=contingency.subject_ref,
+                application_context=contingency.context_signature,
+                primitive=primitive,
+                motive_ref=f"test_causal:{contingency.ref}",
+            )
+            target.validate()
+            targets.append(target)
+        return tuple(targets)
 
     def record_applied_food_exposure(
         self, *, t_monde: int, resource_kind: str,
@@ -1068,6 +1124,7 @@ class CausalModel:
                 "n_sec": self.config.n_sec, "m_sec": self.config.m_sec,
                 "causal_predicates": list(self.config.causal_predicates),
                 "food_control_pairs": [list(pair) for pair in self.config.food_control_pairs],
+                "safe_test_actions": [list(row) for row in self.config.safe_test_actions],
             },
             "version": self._version,
             "published": [
@@ -1115,6 +1172,7 @@ class CausalModel:
             "n_sec": self.config.n_sec, "m_sec": self.config.m_sec,
             "causal_predicates": list(self.config.causal_predicates),
             "food_control_pairs": [list(pair) for pair in self.config.food_control_pairs],
+            "safe_test_actions": [list(row) for row in self.config.safe_test_actions],
         }
         if state.get("config_contract") != expected_contract:
             raise ValueError("causal model snapshot protocol mismatch")

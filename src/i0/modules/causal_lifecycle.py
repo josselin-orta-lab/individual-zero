@@ -287,6 +287,35 @@ def decode_agency_evidence(raw: Mapping[str, object]) -> AgencyEvidence:
 
 
 @dataclass(frozen=True, slots=True)
+class CausalTestTarget:
+    """Read-only test designation, not a command or an intervention.
+
+    Exploration must evaluate informational motivation; Planning must check
+    local feasibility; Action Control retains final admissibility authority.
+    """
+    contingency_ref: str
+    contingency_version: int
+    predicate: str
+    subject_ref: str
+    application_context: str
+    primitive: str
+    motive_ref: str
+
+    def validate(self) -> None:
+        if not all(_nonblank(v) for v in (
+            self.contingency_ref, self.predicate, self.subject_ref,
+            self.application_context, self.motive_ref,
+        )) or self.contingency_version < 1:
+            raise ValueError("causal test target needs a published hypothesis")
+        if (
+            self.primitive != "boire"
+            or self.subject_ref != "water"
+            or self.motive_ref != f"test_causal:{self.contingency_ref}"
+        ):
+            raise ValueError("unsupported Stage-9 safe causal test action")
+
+
+@dataclass(frozen=True, slots=True)
 class CausalInferenceChange:
     contingency_ref: str
     before: str
