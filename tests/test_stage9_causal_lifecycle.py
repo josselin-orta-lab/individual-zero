@@ -592,6 +592,76 @@ class CausalLifecycleTests(unittest.TestCase):
         twin.restore_causal_state(checkpoint)
         self.assertEqual(twin.export_causal_state(), checkpoint)
 
+
+    def test_snapshot_revision_boundary_requires_latest_published_failure(self):
+        # An erased, stale or fabricated revision would allow pre-failure
+        # positives to be counted again after snapshot restoration.
+        m = model()
+        hypothesized(m)
+        publish_trial(m, trial(10, context="zone1"))
+        publish_trial(m, trial(11, context="zone2"))
+        self.assertEqual(m.get(REF).causal_status, "etablie")
+        publish_trial(m, trial(12, context="zone3", effect=False))
+        publish_trial(m, trial(13, context="zone4", effect=False))
+        self.assertEqual(m.get(REF).causal_status, "hypothese_causale")
+
+        pending = trial(14, context="zone5", effect=False)
+        publish_matching_agency(m, pending)
+        m.integrate_causal_intervention(pending)
+        checkpoint = m.export_causal_state()
+        self.assertEqual(
+            checkpoint["causal_revision_boundaries"],
+            [[REF, trial(13, context="zone4").observed_step, "intervention:13"]],
+        )
+        twin = model()
+        twin.restore_causal_state(checkpoint)
+        self.assertEqual(twin.export_causal_state(), checkpoint)
+
+        forged = (
+            ("missing", []),
+            ("stale_valid_failure", [[REF, 25, "intervention:12"]]),
+            ("same_failure_wrong_step", [[REF, 99, "intervention:13"]]),
+            ("nonexistent_failure", [[REF, 27, "intervention:forged"]]),
+            ("positive_as_failure", [[REF, 21, "intervention:10"]]),
+            ("wrong_contingency", [["causal:unknown", 27, "intervention:13"]]),
+        )
+        for label, replacement in forged:
+            with self.subTest(label=label):
+                damaged = deepcopy(checkpoint)
+                damaged["causal_revision_boundaries"] = replacement
+                with self.assertRaisesRegex(
+                    ValueError, "revision boundary mismatches published counterexample",
+                ):
+                    m.restore_causal_state(damaged)
+                self.assertEqual(m.export_causal_state(), checkpoint)
+
+        # The next pending counterexample can move the boundary only after
+        # its own phase-5 publication, and replay must agree exactly.
+        self.assertEqual(
+            m.publish_causal_inference(), twin.publish_causal_inference(),
+        )
+        self.assertEqual(
+            m.export_causal_state()["causal_revision_boundaries"],
+            [[REF, pending.observed_step, pending.identifier]],
+        )
+        self.assertEqual(m.export_causal_state(), twin.export_causal_state())
+
+    def test_snapshot_cannot_invent_revision_without_negative_intervention(self):
+        m = model()
+        hypothesized(m)
+        publish_trial(m, trial(10, context="zone1"))
+        checkpoint = m.export_causal_state()
+        self.assertEqual(checkpoint["causal_revision_boundaries"], [])
+        damaged = deepcopy(checkpoint)
+        damaged["causal_revision_boundaries"] = [
+            [REF, 21, "intervention:10"],
+        ]
+        with self.assertRaisesRegex(
+            ValueError, "revision boundary mismatches published counterexample",
+        ):
+            m.restore_causal_state(damaged)
+        self.assertEqual(m.export_causal_state(), checkpoint)
+
     def test_snapshot_replay_pending_and_no_oracle(self):
         m=model()
         correlated(m)

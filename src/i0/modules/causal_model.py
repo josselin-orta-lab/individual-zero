@@ -2212,14 +2212,37 @@ class CausalModel:
         boundary_refs = [key for key, _step, _ref in boundary_rows]
         if len(boundary_refs) != len(set(boundary_refs)):
             raise ValueError("duplicate causal revision boundary in snapshot")
+        boundary_index = {
+            key: (step, ref) for key, step, ref in boundary_rows
+        }
+        # §13.2 / INV-33: an intervention with a physically observed missing
+        # effect is the only source of a revision boundary. Check the most
+        # recent *published* negative result for every contingency, using
+        # the same stable ordering and tie rule as phase-5 publication.
+        # Pending interventions have not yet established new boundaries.
+        witnessed_boundaries = {}
+        for trial in sorted(
+            trials.values(), key=lambda value: (value.observed_step, value.identifier)
+        ):
+            if trial.observed_effect:
+                continue
+            latest_step = witnessed_boundaries.get(
+                trial.contingency_ref, (-1, "")
+            )[0]
+            if trial.observed_step > latest_step:
+                witnessed_boundaries[trial.contingency_ref] = (
+                    trial.observed_step, trial.identifier,
+                )
+        if boundary_index != witnessed_boundaries:
+            raise ValueError(
+                "causal snapshot revision boundary mismatches published counterexample"
+            )
 
         self._causal_observations = obs
         self._causal_interventions = trials
         self._causal_reviews = set(published_review_refs)
         self._causal_credits = set(credit_rows)
-        self._causal_revision_boundaries = {
-            key: (step, ref) for key, step, ref in boundary_rows
-        }
+        self._causal_revision_boundaries = boundary_index
         self._pending_causal_observations=pending_obs
         self._pending_causal_reviews=pending_review
         self._pending_causal_interventions=pending_trial
