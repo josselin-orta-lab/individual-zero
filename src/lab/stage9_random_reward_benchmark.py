@@ -81,8 +81,11 @@ def _audit_lived_hydration_provenance(
     An episode can contain multiple real transitions. A global union of
     committed event IDs is insufficient: it would accept a command from one
     episode and its claimed consequence from an unrelated closed episode.
+    Every credited observation requires a unique applied command AND world
+    transition; one command cannot be credited twice under new event IDs.
     """
     episodes: set[str] = set()
+    physical_commands: set[str] = set()
     physical_transitions: set[str] = set()
     for row in observations:
         witness = witnesses.get(row["identifier"])
@@ -95,11 +98,13 @@ def _audit_lived_hydration_provenance(
             or row["observation_ref"] != transition_ref
             or command_ref not in episode_refs
             or transition_ref not in episode_refs
+            or command_ref in physical_commands
             or transition_ref in physical_transitions
         ):
             raise AssertionError(
                 "lived hydration observation lacks unique closed Memory physical evidence"
             )
+        physical_commands.add(command_ref)
         physical_transitions.add(transition_ref)
         episodes.add(row["episode_ref"])
     return len(episodes)

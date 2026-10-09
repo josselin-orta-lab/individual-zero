@@ -67,6 +67,14 @@ class RandomRewardNegativeControlTests(unittest.TestCase):
                     "memory:one": committed["memory:one"] - {"command:2"},
                 },
             )
+        # Different world transitions cannot both claim one applied
+        # command as an independent physical trial.
+        reused_command = {
+            **witnesses,
+            "hydration:2": ("command:1", "world-transition:2"),
+        }
+        with self.assertRaisesRegex(AssertionError, "unique closed Memory"):
+            _audit_lived_hydration_provenance(rows, reused_command, committed)
 
     def test_rejects_witnesses_from_other_closed_memory_episodes(self):
         rows = [{
