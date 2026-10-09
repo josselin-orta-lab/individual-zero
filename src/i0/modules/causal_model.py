@@ -1389,15 +1389,40 @@ class CausalModel:
                 raise ValueError(
                     "intervention requires matching closed physical action evidence"
                 )
-            key = (trial.contingency_ref, trial.episode_ref, "intervention")
-            if key in credits or any(v.observation_ref == trial.observation_ref for v in interventions.values()):
+            # A Memory episode may contain several physically distinct
+            # interventions. Its identifier does not prove uniqueness: count
+            # each observed transition once, and reject reused P-47 outcomes
+            # or repeated world-step claims for the same contingency.
+            key = (trial.contingency_ref, trial.observation_ref, "intervention")
+            if key in credits or any(
+                other.observation_ref == trial.observation_ref
+                or (
+                    other.contingency_ref == trial.contingency_ref
+                    and (
+                        other.comparator_ref == trial.comparator_ref
+                        or other.emitted_step == trial.emitted_step
+                    )
+                )
+                for other in interventions.values()
+            ):
                 continue
             credits.add(key)
             interventions[trial.identifier] = trial
             current = published[old.ref]
-            if not trial.observed_effect and old.causal_status == "etablie":
-                revisions[old.ref] = (trial.observed_step, trial.identifier)
-                next_status = "hypothese_causale"
+            if not trial.observed_effect:
+                # A failed lived intervention invalidates the assumption
+                # that earlier positive contexts still demonstrate a
+                # persistent effect. Only an established claim is demoted;
+                # tested hypotheses retain their status but must accumulate
+                # fresh, subsequent contexts before establishment.
+                previous_boundary = revisions.get(old.ref, (-1, ""))[0]
+                if trial.observed_step > previous_boundary:
+                    revisions[old.ref] = (trial.observed_step, trial.identifier)
+                next_status = (
+                    "hypothese_causale"
+                    if old.causal_status == "etablie"
+                    else current.causal_status
+                )
             else:
                 boundary = revisions.get(old.ref, (-1, ""))[0]
                 contexts = {
@@ -1415,6 +1440,41 @@ class CausalModel:
                 new = replace(current, causal_status=next_status, version=current.version + 1)
                 published[old.ref] = new
                 changes.append(CausalInferenceChange(old.ref, current.causal_status, next_status, new.version, trial.identifier, "independent_intervention"))
+
+        # When independent physical interventions were admitted together,
+        # the frozen input level prevents skipping hypothesis -> tested ->
+        # established in one batch. On a later publication, already credited
+        # distinct contexts can complete n2 even with no new intervention.
+        # A failed observation since the last valid context prevents this.
+        for ref, previous in sorted(original.items()):
+            if (
+                previous.causal_status != "testee_par_intervention"
+                or published[ref].causal_status != "testee_par_intervention"
+            ):
+                continue
+            boundary = revisions.get(ref, (-1, ""))[0]
+            successful = sorted(
+                (
+                    item for item in interventions.values()
+                    if item.contingency_ref == ref
+                    and item.observed_effect
+                    and item.attribution == "self_compatible"
+                    and item.observed_step > boundary
+                ),
+                key=lambda item: (item.observed_step, item.identifier),
+            )
+            if len({item.context_signature for item in successful}) < self.config.n2:
+                continue
+            current = published[ref]
+            witness = successful[-1]
+            new = replace(
+                current, causal_status="etablie", version=current.version + 1,
+            )
+            published[ref] = new
+            changes.append(CausalInferenceChange(
+                ref, current.causal_status, new.causal_status, new.version,
+                witness.identifier, "independent_intervention",
+            ))
 
         # Comparator descriptions do not influence causal or safety statuses.
         # Publish them only after all staged inference validations succeed.

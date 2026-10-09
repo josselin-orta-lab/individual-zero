@@ -209,6 +209,110 @@ class CausalLifecycleTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "published DC-09 agency comparison"):
             m.publish_causal_inference()
 
+    def test_distinct_physical_interventions_in_one_memory_episode_meet_n2_later(self):
+        m = model()
+        hypothesized(m)
+        first = trial(10, context="zone1")
+        # Several DC-09 comparisons may be placed in one closed Memory
+        # episode, without the same physical transition being reused.
+        second = replace(
+            trial(11, context="zone2"),
+            episode_ref=first.episode_ref,
+            comparator_ref=f"agency-evidence:{first.episode_ref}:comparison:11",
+        )
+        publish_matching_agency(m, first)
+        publish_matching_agency(m, second)
+        m.integrate_causal_intervention(first)
+        m.integrate_causal_intervention(second)
+        self.assertEqual(
+            [v.after for v in m.publish_causal_inference()],
+            ["testee_par_intervention"],
+        )
+        snapshot = m.export_causal_state()
+        self.assertEqual(len(snapshot["causal_interventions"]), 2)
+        self.assertEqual(
+            len([v for v in snapshot["causal_credits"] if v[2] == "intervention"]),
+            2,
+        )
+        twin = model()
+        twin.restore_causal_state(snapshot)
+        self.assertEqual(snapshot, twin.export_causal_state())
+        self.assertEqual(
+            [v.after for v in m.publish_causal_inference()],
+            ["etablie"],
+        )
+        self.assertEqual(
+            [v.after for v in twin.publish_causal_inference()],
+            ["etablie"],
+        )
+        self.assertEqual(m.export_causal_state(), twin.export_causal_state())
+        self.assertEqual(m.publish_causal_inference(), ())
+
+    def test_reused_comparison_or_world_step_is_not_a_second_context(self):
+        for mode in ("same_comparator", "same_step"):
+            with self.subTest(mode=mode):
+                m = model()
+                hypothesized(m)
+                first = trial(10, context="zone1")
+                publish_matching_agency(m, first)
+                if mode == "same_comparator":
+                    # Different alias and invented transition/context cannot
+                    # turn one agency comparison into two experiments.
+                    second = replace(
+                        first, identifier="intervention:reused",
+                        observation_ref="world:invented",
+                        context_signature="zone2",
+                    )
+                else:
+                    second = replace(
+                        trial(11, context="zone2"),
+                        emitted_step=first.emitted_step,
+                        observed_step=first.observed_step,
+                    )
+                    publish_matching_agency(m, second)
+                m.integrate_causal_intervention(first)
+                m.integrate_causal_intervention(second)
+                self.assertEqual(
+                    [v.after for v in m.publish_causal_inference()],
+                    ["testee_par_intervention"],
+                )
+                state = m.export_causal_state()
+                self.assertEqual(len(state["causal_interventions"]), 1)
+                self.assertEqual(m.publish_causal_inference(), ())
+                self.assertEqual(
+                    m.get(REF).causal_status, "testee_par_intervention",
+                )
+
+    def test_failed_intervention_blocks_stale_n2_establishment(self):
+        m = model()
+        hypothesized(m)
+        for i, context in ((10, "zone1"), (11, "zone2")):
+            row = trial(i, context=context)
+            publish_matching_agency(m, row)
+            m.integrate_causal_intervention(row)
+        self.assertEqual(
+            [v.after for v in m.publish_causal_inference()],
+            ["testee_par_intervention"],
+        )
+        failed = trial(12, context="zone3", effect=False)
+        publish_matching_agency(m, failed)
+        m.integrate_causal_intervention(failed)
+        self.assertEqual(m.publish_causal_inference(), ())
+        self.assertEqual(m.publish_causal_inference(), ())
+        self.assertEqual(
+            m.get(REF).causal_status, "testee_par_intervention",
+        )
+        # Fresh independent contexts after the negative observation may
+        # establish the claim; pre-refutation positives cannot do so.
+        publish_trial(m, trial(13, context="zone1"))
+        self.assertEqual(
+            m.get(REF).causal_status, "testee_par_intervention",
+        )
+        self.assertEqual(
+            [v.after for v in publish_trial(m, trial(14, context="zone2"))],
+            ["etablie"],
+        )
+
     def test_snapshot_replay_pending_and_no_oracle(self):
         m=model()
         correlated(m)
