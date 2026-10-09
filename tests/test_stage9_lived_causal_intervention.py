@@ -217,5 +217,72 @@ class LivedCausalInterventionProducerTests(unittest.TestCase):
         )
 
 
+
+class RuntimeLivedInterventionTests(unittest.TestCase):
+    def test_real_applied_action_memory_p47_and_causal_publication(self):
+        from test_stage9_causal_test_pipeline import configured_runtime
+
+        runtime = configured_runtime()
+        hypothesis(runtime.causal_model)
+        initial_state = runtime.causal_model.export_causal_state()
+        self.assertEqual(
+            runtime.causal_model.get("causal:hydration").causal_status,
+            "hypothese_causale",
+        )
+        self.assertEqual(initial_state["lived_causal_actions"], [])
+
+        first = runtime.run_step()
+        self.assertEqual(first.execution_status, "applied")
+        self.assertEqual(first.command_primitive, "boire")
+        # A selected goal action is not yet an intervention. Its evidence is
+        # physical and autobiographical, never the predicted effect alone.
+        self.assertEqual(
+            runtime.causal_model.get("causal:hydration").causal_status,
+            "hypothese_causale",
+        )
+        self.assertEqual(
+            runtime.causal_model.export_causal_state()["causal_interventions"],
+            [],
+        )
+        self.assertEqual(
+            len(runtime.causal_model.export_causal_state()["lived_causal_actions"]),
+            1,
+        )
+
+        for _ in range(10):
+            runtime.run_step()
+
+        reports = runtime.causal_model.published_agency_evidence()
+        interventions = runtime.causal_model.export_causal_state()[
+            "causal_interventions"
+        ]
+        self.assertGreater(len(reports), 0)
+        self.assertEqual(len(interventions), 1)
+        (trial,) = interventions
+        self.assertEqual(trial["contingency_ref"], "causal:hydration")
+        self.assertEqual(trial["observed_step"], trial["emitted_step"] + 1)
+        self.assertTrue(trial["observed_effect"])
+        self.assertIn(trial["comparator_ref"], {
+            record.identifier for record in reports
+        })
+        self.assertIn(trial["observation_ref"], {
+            ref for episode in runtime.memory.episodes
+            for ref in episode.event_refs
+        })
+        self.assertEqual(
+            runtime.causal_model.get("causal:hydration").causal_status,
+            "testee_par_intervention",
+        )
+        events = [entry.causal_event for entry in runtime.journal.entries]
+        self.assertTrue(any(
+            event.get("kind") == "causal_applied_action_memory_verified"
+            for event in events
+        ))
+        self.assertTrue(any(
+            event.get("kind") == "causal_lived_intervention_staged"
+            for event in events
+        ))
+        self.assertTrue(runtime.journal.verify())
+
 if __name__ == "__main__":
     unittest.main()
