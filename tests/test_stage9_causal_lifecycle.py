@@ -708,6 +708,61 @@ class CausalLifecycleTests(unittest.TestCase):
                     m.restore_causal_state(damaged)
                 self.assertEqual(m.export_causal_state(), checkpoint)
 
+
+    def test_snapshot_rejects_reused_observational_physical_reference(self):
+        m = model()
+        hypothesized(m)
+        checkpoint = m.export_causal_state()
+        self.assertGreaterEqual(len(checkpoint["causal_observations"]), 2)
+        damaged = deepcopy(checkpoint)
+        damaged["causal_observations"][1]["observation_ref"] = (
+            damaged["causal_observations"][0]["observation_ref"]
+        )
+        # Two episode credits are still present, but one physical event
+        # cannot be counted as two P-35 co-occurrences after replay.
+        with self.assertRaisesRegex(
+            ValueError, "reuses published observational physical transition",
+        ):
+            m.restore_causal_state(damaged)
+        self.assertEqual(m.export_causal_state(), checkpoint)
+
+    def test_snapshot_rejects_reused_intervention_world_steps(self):
+        m = model()
+        hypothesized(m)
+        publish_trial(m, trial(10, context="zone1"))
+        publish_trial(m, trial(11, context="zone2"))
+        checkpoint = m.export_causal_state()
+        self.assertEqual(len(checkpoint["causal_interventions"]), 2)
+        self.assertEqual(m.get(REF).causal_status, "etablie")
+
+        for fault in ("emitted_step", "observed_step"):
+            with self.subTest(fault=fault):
+                damaged = deepcopy(checkpoint)
+                first, second = damaged["causal_interventions"]
+                agency = next(
+                    report for report in damaged["agency_evidence"]
+                    if report["identifier"] == second["comparator_ref"]
+                )
+                if fault == "emitted_step":
+                    second["emitted_step"] = first["emitted_step"]
+                    agency["sent_t_monde"] = first["emitted_step"]
+                else:
+                    # Keep time ordering and the comparator join valid;
+                    # only the physical follow-up's world step is reused.
+                    second["emitted_step"] = first["emitted_step"] - 1
+                    second["observed_step"] = first["observed_step"]
+                    agency["sent_t_monde"] = second["emitted_step"]
+                    agency["observed_t_monde"] = second["observed_step"]
+                with self.assertRaisesRegex(
+                    ValueError, "reuses published intervention physical provenance",
+                ):
+                    m.restore_causal_state(damaged)
+                self.assertEqual(m.export_causal_state(), checkpoint)
+
+        replay = model()
+        replay.restore_causal_state(checkpoint)
+        self.assertEqual(replay.export_causal_state(), checkpoint)
+
     def test_snapshot_replay_pending_and_no_oracle(self):
         m=model()
         correlated(m)

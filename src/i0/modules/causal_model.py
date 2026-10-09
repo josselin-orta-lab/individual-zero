@@ -2136,6 +2136,17 @@ class CausalModel:
         if len(all_observation_refs) != len(set(all_observation_refs)):
             raise ValueError("duplicate causal observation identity in snapshot")
         obs = {row.identifier: row for row in observation_rows}
+        # Phase-5 admits at most one physical transition per contingency.
+        # Different episode/record IDs cannot convert the same experienced
+        # transition into two independent n1 observations after replay.
+        observation_physical_refs = [
+            (row.contingency_ref, row.observation_ref)
+            for row in observation_rows
+        ]
+        if len(observation_physical_refs) != len(set(observation_physical_refs)):
+            raise ValueError(
+                "causal snapshot reuses published observational physical transition"
+            )
 
         intervention_rows = [
             decode_intervention(v) for v in state.get("causal_interventions", [])
@@ -2149,6 +2160,32 @@ class CausalModel:
         if len(all_intervention_refs) != len(set(all_intervention_refs)):
             raise ValueError("duplicate causal intervention identity in snapshot")
         trials = {row.identifier: row for row in intervention_rows}
+        # Preserve the same physical-independence gates as phase-5 admission:
+        # an actual world transition may back at most one intervention and
+        # one contingency may not count the same comparator or world step
+        # twice. None of these rules compare passive control observations
+        # with treated observations, which can share an experienced instant.
+        physical_refs = set()
+        comparator_refs = set()
+        emitted_steps = set()
+        observed_steps = set()
+        for trial in intervention_rows:
+            comparator_key = (trial.contingency_ref, trial.comparator_ref)
+            emitted_key = (trial.contingency_ref, trial.emitted_step)
+            observed_key = (trial.contingency_ref, trial.observed_step)
+            if (
+                trial.observation_ref in physical_refs
+                or comparator_key in comparator_refs
+                or emitted_key in emitted_steps
+                or observed_key in observed_steps
+            ):
+                raise ValueError(
+                    "causal snapshot reuses published intervention physical provenance"
+                )
+            physical_refs.add(trial.observation_ref)
+            comparator_refs.add(comparator_key)
+            emitted_steps.add(emitted_key)
+            observed_steps.add(observed_key)
         # Snapshot provenance must be internally consistent: the immutable
         # witness of an actual closed water-source command may not be an
         # orphan or point to another observation's physical transition.
