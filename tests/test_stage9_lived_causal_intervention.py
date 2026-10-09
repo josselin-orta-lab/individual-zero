@@ -7,7 +7,10 @@ published AgencyComparator report. A typed claim alone is never evidence.
 from __future__ import annotations
 
 import unittest
+from copy import deepcopy
+from dataclasses import replace
 
+from i0.modules.causal_lifecycle import CausalIntervention
 from i0.modules.causal_model import CausalModel
 from test_stage9_causal_test_targets import hypothesis, model
 
@@ -183,6 +186,109 @@ class LivedCausalInterventionProducerTests(unittest.TestCase):
         self.assertEqual(left.export_causal_state(), twin.export_causal_state())
         self.assertEqual(left.publish_causal_inference(), twin.publish_causal_inference())
         self.assertEqual(left.export_causal_state(), twin.export_causal_state())
+
+
+    def test_typed_intervention_cannot_borrow_comparator_without_lived_action(self):
+        m = model()
+        hypothesis(m)
+        comparison = agency_episode(
+            step=10, option_ref="option:drink:10", after=60.0,
+        )
+        (report,) = m.ingest_closed_agency_comparisons(
+            episode_ref="episode:comparison:10",
+            event_refs=(comparison["event_id"],),
+            autobiographical_events=(comparison,),
+        )
+        m.publish_causal_inference()
+        m.integrate_causal_intervention(CausalIntervention(
+            identifier="intervention:unverified",
+            contingency_ref="causal:hydration",
+            episode_ref=report.episode_ref,
+            observation_ref="transition:unverified",
+            command_ref=report.option_ref,
+            comparator_ref=report.identifier,
+            context_signature="water_source:2,2",
+            emitted_step=10, observed_step=11,
+            observed_effect=True,
+            comparator_status="conforming",
+            attribution="self_compatible",
+            controlled_variables=(
+                ("primitive", "boire"),
+                ("water_source", "present"),
+                ("site", "2,2"),
+            ),
+            action_applied=True,
+        ))
+        snapshot = m.export_causal_state()
+        with self.assertRaisesRegex(ValueError, "closed physical action evidence"):
+            m.publish_causal_inference()
+        self.assertEqual(m.export_causal_state(), snapshot)
+        self.assertEqual(
+            m.get("causal:hydration").causal_status,
+            "hypothese_causale",
+        )
+
+    def test_canonical_admission_rejects_tampered_physical_lineage(self):
+        mismatches = (
+            {"identifier": "intervention:forged"},
+            {"observation_ref": "transition:unrelated"},
+            {"context_signature": "water_source:99,99"},
+            {"controlled_variables": (
+                ("primitive", "boire"),
+                ("water_source", "present"),
+                ("site", "99,99"),
+            )},
+        )
+        for fields in mismatches:
+            with self.subTest(fields=fields):
+                m = model()
+                hypothesis(m)
+                evidence_path(m, step=10)
+                m.publish_causal_inference()
+                (trial,) = m.promote_lived_causal_interventions()
+                snapshot = m.export_causal_state()
+                self.assertEqual(len(snapshot["causal_action_witnesses"]), 1)
+                altered = deepcopy(snapshot)
+                altered["pending_causal_interventions"][0].update(fields)
+                twin = model()
+                twin.restore_causal_state(altered)
+                before = twin.export_causal_state()
+                with self.assertRaisesRegex(
+                    ValueError, "closed physical action evidence",
+                ):
+                    twin.publish_causal_inference()
+                self.assertEqual(twin.export_causal_state(), before)
+                self.assertEqual(
+                    twin.get("causal:hydration").causal_status,
+                    "hypothese_causale",
+                )
+
+    def test_closed_physical_witness_replay_and_duplicate_prevention(self):
+        m = model()
+        hypothesis(m)
+        evidence_path(m, step=10)
+        m.publish_causal_inference()
+        m.promote_lived_causal_interventions()
+        snapshot = m.export_causal_state()
+        self.assertEqual(len(snapshot["causal_action_witnesses"]), 1)
+        self.assertEqual(snapshot["lived_causal_actions"], [])
+        twin = model()
+        twin.restore_causal_state(snapshot)
+        self.assertEqual(twin.export_causal_state(), snapshot)
+        self.assertEqual(m.publish_causal_inference(),
+                         twin.publish_causal_inference())
+        self.assertEqual(m.export_causal_state(),
+                         twin.export_causal_state())
+        self.assertEqual(m.promote_lived_causal_interventions(), ())
+        self.assertEqual(twin.promote_lived_causal_interventions(), ())
+        self.assertEqual(m.publish_causal_inference(), ())
+        self.assertEqual(twin.publish_causal_inference(), ())
+        self.assertEqual(len(m.export_causal_state()["causal_interventions"]), 1)
+
+        corrupt = deepcopy(snapshot)
+        corrupt["causal_action_witnesses"][0]["transition_event_ref"] = None
+        with self.assertRaises(ValueError):
+            model().restore_causal_state(corrupt)
 
     def test_unconfigured_model_does_not_record_normal_drinking(self):
         from i0.modules.causal_model import CausalModel, CausalModelConfig

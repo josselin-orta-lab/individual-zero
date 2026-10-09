@@ -309,6 +309,10 @@ class CausalModel:
         self._version = 0
         self._lived_food_exposures: dict[int, LivedFoodExposure] = {}
         self._lived_causal_actions: dict[str, LivedCausalAction] = {}
+        # Immutable closed-episode witnesses retained when a lived action is
+        # converted into a pending intervention. Canonical phase-5 admission
+        # checks these instead of trusting a CausalIntervention declaration.
+        self._causal_action_witnesses: dict[str, LivedCausalAction] = {}
         self._causal_observations: dict[str, CausalObservation] = {}
         self._pending_causal_observations: list[CausalObservation] = []
         self._pending_causal_reviews: list[CausalHypothesisReview] = []
@@ -555,6 +559,57 @@ class CausalModel:
             self._lived_causal_actions[row.identifier] = row
         return tuple(changes)
 
+    @staticmethod
+    def _verified_lived_drink_intervention(
+        trial: CausalIntervention,
+        witness: LivedCausalAction | None,
+        report: AgencyEvidence | None,
+    ) -> bool:
+        """Canonical physical join for the supported Stage-9 water test.
+
+        A published comparator is descriptive evidence; the separately
+        Memory-closed physical command and transition must additionally agree.
+        A typed trial is not permitted to invent or redirect its provenance.
+        """
+        if witness is None or report is None:
+            return False
+        witness.validate()
+        site = (
+            f"water_source:{witness.position[0]},{witness.position[1]}"
+        )
+        expected_controls = (
+            ("primitive", "boire"),
+            ("water_source", "present"),
+            ("site", f"{witness.position[0]},{witness.position[1]}"),
+        )
+        water_effects = [
+            effect for effect in report.effects if effect[0] == "water"
+        ]
+        return (
+            trial.identifier == f"intervention:{witness.identifier}"
+            and witness.contingency_ref == trial.contingency_ref
+            and witness.physical_episode_ref is not None
+            and witness.command_event_ref is not None
+            and witness.command_event_ref != witness.transition_event_ref
+            and witness.transition_event_ref == trial.observation_ref
+            and witness.option_ref == trial.command_ref
+            and witness.sent_t_monde == trial.emitted_step
+            and witness.observed_t_monde == trial.observed_step
+            and trial.context_signature == site
+            and trial.controlled_variables == expected_controls
+            and witness.water_observed is not None
+            and trial.observed_effect
+                == (witness.water_observed > witness.water_before)
+            and report.option_ref == witness.option_ref
+            and report.sent_t_monde == witness.sent_t_monde
+            and report.observed_t_monde == witness.observed_t_monde
+            and len(water_effects) == 1
+            and water_effects[0][3] == witness.water_observed
+            and water_effects[0][1] == (
+                "conforming" if trial.observed_effect else "nonconforming"
+            )
+        )
+
     def promote_lived_causal_interventions(self) -> tuple[CausalIntervention, ...]:
         """Publish no facts: stage only fully joined, *published* P-47 evidence.
 
@@ -657,7 +712,20 @@ class CausalModel:
                 trials.append(trial)
             retire.append(row.identifier)
         for trial in trials:
+            witness_ref = trial.identifier.removeprefix("intervention:")
+            witness = self._lived_causal_actions[witness_ref]
+            if trial.identifier in self._causal_action_witnesses:
+                raise ValueError("duplicate physical causal intervention witness")
+            if not self._verified_lived_drink_intervention(
+                trial, witness, self._agency_evidence.get(trial.comparator_ref),
+            ):
+                raise ValueError("lived intervention physical lineage mismatch")
+        for trial in trials:
+            witness_ref = trial.identifier.removeprefix("intervention:")
             self.integrate_causal_intervention(trial)
+            self._causal_action_witnesses[trial.identifier] = (
+                self._lived_causal_actions[witness_ref]
+            )
         for identifier in retire:
             del self._lived_causal_actions[identifier]
         return tuple(trials)
@@ -1293,11 +1361,26 @@ class CausalModel:
             # A typed declaration cannot establish causal status by itself.
             # Only already published, Memory-closed AgencyComparator evidence
             # can support the phase-5 admission of a lived intervention.
-            if not self._published_comparison_supports(
-                trial, self._agency_evidence.get(trial.comparator_ref)
-            ):
+            report = self._agency_evidence.get(trial.comparator_ref)
+            if not self._published_comparison_supports(trial, report):
                 raise ValueError(
                     "intervention requires matching previously published DC-09 agency comparison"
+                )
+            # For the supported live Stage-9 drinking-test protocol, a
+            # comparison alone cannot certify an action: the canonical owner
+            # also requires its already closed and Perception-corroborated
+            # physical witness. This check applies to manually integrated
+            # typed trials as well as to the autonomous producer.
+            if (
+                (old.predicate, old.subject_ref, "boire")
+                in self.config.safe_test_actions
+                and not self._verified_lived_drink_intervention(
+                    trial, self._causal_action_witnesses.get(trial.identifier),
+                    report,
+                )
+            ):
+                raise ValueError(
+                    "intervention requires matching closed physical action evidence"
                 )
             key = (trial.contingency_ref, trial.episode_ref, "intervention")
             if key in credits or any(v.observation_ref == trial.observation_ref for v in interventions.values()):
@@ -1511,6 +1594,14 @@ class CausalModel:
                 }
                 for _, v in sorted(self._lived_causal_actions.items())
             ],
+            "causal_action_witnesses": [
+                {
+                    "intervention_ref": trial_ref,
+                    **{name: getattr(v, name) for name in v.__dataclass_fields__},
+                    "position": list(v.position),
+                }
+                for trial_ref, v in sorted(self._causal_action_witnesses.items())
+            ],
         }
 
     def restore_causal_state(self, state: object) -> None:
@@ -1572,6 +1663,33 @@ class CausalModel:
                 raise ValueError("duplicated pending lived causal action")
             actions[row.identifier] = row
         self._lived_causal_actions = actions
+        witnesses = {}
+        for raw in state.get("causal_action_witnesses", []):
+            if not isinstance(raw, Mapping):
+                raise ValueError("invalid closed causal action witness")
+            trial_ref = raw.get("intervention_ref")
+            if not isinstance(trial_ref, str):
+                raise ValueError("missing causal action witness intervention reference")
+            witness = LivedCausalAction(**{
+                **{k: v for k, v in raw.items() if k != "intervention_ref"},
+                "position": tuple(raw["position"]),
+            })
+            witness.validate()
+            if (
+                witness.physical_episode_ref is None
+                or witness.command_event_ref is None
+                or witness.transition_event_ref is None
+                or trial_ref != f"intervention:{witness.identifier}"
+                or trial_ref in witnesses
+            ):
+                raise ValueError("invalid or duplicate closed causal action witness")
+            witnesses[trial_ref] = witness
+        if any(
+            witness.identifier in actions
+            for witness in witnesses.values()
+        ):
+            raise ValueError("closed causal action may not remain pending")
+        self._causal_action_witnesses = witnesses
         obs={x.identifier:x for x in (decode_observation(v) for v in state.get("causal_observations",[]))}
         trials={x.identifier:x for x in (decode_intervention(v) for v in state.get("causal_interventions",[]))}
         pending_obs=[decode_observation(v) for v in state.get("pending_causal_observations",[])]
