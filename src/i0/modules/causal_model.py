@@ -1028,13 +1028,28 @@ class CausalModel:
             or len(event_refs) != len(set(event_refs))
         ):
             raise ValueError("invalid closed Memory episode reference ledger")
-        events = {
-            e["event_id"]: e for e in autobiographical_events
-            if isinstance(e.get("event_id"), str)
-            and e.get("kind") in {
-                "command_experienced", "world_transition_experienced",
-            }
-        }
+        # DC-09 projections are immutable journal facts. Do not let a
+        # repeated event ID silently overwrite a different source payload,
+        # even if the final payload appears to match the pending exposure.
+        # Only identifiers credited by this closed episode may be considered.
+        closed_refs = set(event_refs)
+        events: dict[str, Mapping[str, object]] = {}
+        for projection in autobiographical_events:
+            if not isinstance(projection, Mapping):
+                continue
+            ref = projection.get("event_id")
+            if (
+                not isinstance(ref, str) or ref not in closed_refs
+                or projection.get("kind") not in {
+                    "command_experienced", "world_transition_experienced",
+                }
+            ):
+                continue
+            if ref in events:
+                raise ValueError(
+                    "duplicate closed Memory autobiographical event projection"
+                )
+            events[ref] = projection
         commands: dict[int, Mapping[str, object]] = {}
         transitions: dict[int, Mapping[str, object]] = {}
         ambiguous_steps: set[int] = set()

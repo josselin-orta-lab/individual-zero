@@ -48,6 +48,53 @@ class LivedEvidenceTests(unittest.TestCase):
             self.assertEqual(m.publish(),())
             self.assertIsNone(m.get("toxic:berry_b"))
 
+    def test_duplicate_autobiographical_projection_id_is_not_last_write_wins(self):
+        # A closed episode's event_refs are unique, but a corrupted source
+        # view can still supply two payloads under the same referenced ID.
+        # Neither arrival order may rescue an otherwise ambiguous attempt.
+        for repeated_kind in ("command", "transition"):
+            for reverse in (False, True):
+                with self.subTest(kind=repeated_kind, reverse=reverse):
+                    m = model()
+                    command, transition = pair(m)
+                    original = command if repeated_kind == "command" else transition
+                    altered = dict(original)
+                    if repeated_kind == "command":
+                        altered["parameters"] = {"target": "berry_a"}
+                    else:
+                        altered["body_after"] = {"integrity": 75.0}
+                    extra = (altered, original) if reverse else (original, altered)
+                    source = (
+                        (transition, *extra) if repeated_kind == "command"
+                        else (command, *extra)
+                    )
+                    before = m.export_causal_state()
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "duplicate closed Memory autobiographical event projection",
+                    ):
+                        m.ingest_closed_autobiographical_episode(
+                            episode_ref="episode:ambiguous-projection",
+                            event_refs=("c:1", "w:1"),
+                            autobiographical_events=source,
+                        )
+                    self.assertEqual(m.export_causal_state(), before)
+                    self.assertEqual(m.pending_causal_observations(), ())
+                    self.assertIsNone(m.get("toxic:berry_b"))
+
+        # A different event not named by this episode is not an alternate
+        # physical witness and must not poison an otherwise valid ingestion.
+        m = model()
+        events = pair(m)
+        unrelated = {
+            **events[0], "event_id": "command:outside-closed-episode",
+        }
+        self.assertEqual(len(m.ingest_closed_autobiographical_episode(
+            episode_ref="episode:valid",
+            event_refs=("c:1", "w:1"),
+            autobiographical_events=(*events, unrelated),
+        )), 1)
+
     def test_duplicate_closed_event_reference_is_rejected_atomically(self):
         m = model()
         events = pair(m)
