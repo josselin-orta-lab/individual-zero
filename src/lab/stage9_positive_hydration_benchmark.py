@@ -29,6 +29,10 @@ PROTOCOL_VERSION = "stage9-positive-hydration-diagnostic-v1"
 # Fixed, explicitly test-only physical configurations. Food rewards depend
 # on the campaign seed; the variant controls only the water physics.
 POSITIVE_HYDRATION_VARIANTS = {
+    # The E-v1 reference predicts +40.0 water for 'boire'. This controls
+    # whether correct physical agency attribution is achievable without
+    # changing motivation, policy, command sequence, or benchmark seeds.
+    "model_aligned_water_gain": (40.0, 0.0),
     "small_water_gain": (12.0, 0.0),
     "recurrent_water_need": (35.0, 1.5),
 }
@@ -64,6 +68,14 @@ class PositiveHydrationDiagnostic:
     pending_hydration_exposures: int = 0
     pending_causal_observations: int = 0
     published_hydration_reviews: int = 0
+    first_published_hypothesis_step: int | None = None
+    applied_drinks_after_hypothesis: int = 0
+    applied_causal_test_drinks: int = 0
+    causal_test_proposal_events: int = 0
+    unscored_causal_test_evaluations: int = 0
+    published_physical_interventions: int = 0
+    pending_lived_causal_actions: int = 0
+    published_self_compatible_water_reports: int = 0
 
 
 def run_positive_hydration_diagnostic(
@@ -119,10 +131,63 @@ def run_positive_hydration_diagnostic(
         journal=runtime.journal,
     )
 
-    outcomes = tuple(runtime.run_step() for _ in range(steps))
+    # Record status *before* every real decision: the hypothesis published
+    # during a step cannot retroactively motivate that same step's action.
+    outcomes = []
+    first_hypothesis_step = None
+    drinks_after_hypothesis = 0
+    for step_number in range(1, steps + 1):
+        prior = runtime.causal_model.get("causal:hydration")
+        prior_hypothesis = (
+            prior is not None
+            and prior.causal_status in {
+                "hypothese_causale", "testee_par_intervention", "etablie",
+            }
+        )
+        result = runtime.run_step()
+        outcomes.append(result)
+        if (
+            prior_hypothesis
+            and result.execution_status == "applied"
+            and result.command_primitive == "boire"
+        ):
+            drinks_after_hypothesis += 1
+        current = runtime.causal_model.get("causal:hydration")
+        if (
+            first_hypothesis_step is None
+            and current is not None
+            and current.causal_status in {
+                "hypothese_causale", "testee_par_intervention", "etablie",
+            }
+        ):
+            first_hypothesis_step = step_number
     if not runtime.journal.verify():
         raise AssertionError("positive hydration journal is not intact")
     state = runtime.causal_model.export_causal_state()
+    events = tuple(entry.causal_event for entry in runtime.journal.entries)
+    test_proposals = tuple(
+        event["data"]["option_ref"]
+        for event in events
+        if event.get("kind") == "causal_test_option_proposed"
+        and isinstance(event.get("data"), dict)
+    )
+    test_options = set(test_proposals)
+    unscored_tests = sum(
+        event["data"].get("option_ref") in test_options
+        and event["data"].get("status") == "not_evaluated"
+        for event in events
+        if event.get("kind") == "stage8_option_evaluation"
+        and isinstance(event.get("data"), dict)
+    )
+    self_compatible_water = sum(
+        report.status == "conforming"
+        and report.attribution == "self_compatible"
+        and any(
+            effect[0] == "water" and effect[1] == "conforming"
+            for effect in report.effects
+        )
+        for report in runtime.causal_model.published_agency_evidence()
+    )
     witnesses = {
         ref: (command_ref, transition_ref)
         for ref, command_ref, transition_ref
@@ -225,4 +290,17 @@ def run_positive_hydration_diagnostic(
         pending_hydration_exposures=len(state["lived_hydration_exposures"]),
         pending_causal_observations=len(state["pending_causal_observations"]),
         published_hydration_reviews=len(state["causal_reviews"]),
+        first_published_hypothesis_step=first_hypothesis_step,
+        applied_drinks_after_hypothesis=drinks_after_hypothesis,
+        applied_causal_test_drinks=sum(
+            result.execution_status == "applied"
+            and result.command_primitive == "boire"
+            and result.option_ref in test_options
+            for result in outcomes
+        ),
+        causal_test_proposal_events=len(test_proposals),
+        unscored_causal_test_evaluations=unscored_tests,
+        published_physical_interventions=len(state["causal_interventions"]),
+        pending_lived_causal_actions=len(state["lived_causal_actions"]),
+        published_self_compatible_water_reports=self_compatible_water,
     )

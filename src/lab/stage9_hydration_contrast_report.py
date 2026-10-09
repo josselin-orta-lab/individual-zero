@@ -47,6 +47,11 @@ class HydrationContrastCase:
     causal_status: str
     missing_evidence: str
     scientific_gate: None = None
+    first_hypothesis_step: int | None = None
+    drinks_after_hypothesis: int | None = None
+    unscored_test_evaluations: int | None = None
+    published_interventions: int | None = None
+    published_self_compatible_water_reports: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -145,11 +150,17 @@ def run_hydration_contrast_report(
             campaign_seed=seed, steps=steps,
             world_variant="recurrent_water_need",
         )
+        aligned = run_positive_hydration_diagnostic(
+            campaign_seed=seed, steps=steps,
+            world_variant="model_aligned_water_gain",
+        )
         if (
             negative.schedule_sha256 != positive.schedule_sha256
             or negative.schedule_sha256 != exploratory.schedule_sha256
             or negative.seed != positive.seed
+            or positive.schedule_sha256 != aligned.schedule_sha256
             or positive.seed != exploratory.seed
+            or positive.seed != aligned.seed
         ):
             raise AssertionError("physical contrast did not preserve reward schedule")
         if (
@@ -157,6 +168,7 @@ def run_hydration_contrast_report(
             or negative.scientific_gate is not None
             or positive.scientific_gate is not None
             or exploratory.scientific_gate is not None
+            or aligned.scientific_gate is not None
         ):
             raise AssertionError("contrast leaked false causal or acceptance evidence")
         rows.append(HydrationContrastCase(
@@ -183,6 +195,7 @@ def run_hydration_contrast_report(
         for item, role in (
             (positive, "matched_positive_water_gain"),
             (exploratory, "exploratory_changed_water_decay"),
+            (aligned, "exploratory_model_aligned_prediction"),
         ):
             rows.append(HydrationContrastCase(
                 seed=seed,
@@ -201,6 +214,13 @@ def run_hydration_contrast_report(
                 pending_hydration_exposures=item.pending_hydration_exposures,
                 pending_causal_observations=item.pending_causal_observations,
                 causal_status=item.published_hydration_status,
+                first_hypothesis_step=item.first_published_hypothesis_step,
+                drinks_after_hypothesis=item.applied_drinks_after_hypothesis,
+                unscored_test_evaluations=item.unscored_causal_test_evaluations,
+                published_interventions=item.published_physical_interventions,
+                published_self_compatible_water_reports=(
+                    item.published_self_compatible_water_reports
+                ),
                 missing_evidence=_positive_gap(
                     closed_drinks=item.closed_drink_observations,
                     applied_drinks=item.applied_drink_commands,
