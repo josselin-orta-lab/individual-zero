@@ -276,6 +276,46 @@ class CausalLifecycleTests(unittest.TestCase):
             self.assertEqual(len(snapshot["causal_credits"]), 2)
         self.assertEqual(m.export_causal_state(), twin.export_causal_state())
 
+    def test_conflicting_labels_for_one_physical_observation_fail_atomically(self):
+        original = obs(1, cause=True, effect=True)
+        variations = (
+            ("treatment", {"cause_present": False}),
+            ("outcome", {"effect_present": False}),
+            ("context", {"observation_context": "zone2"}),
+            ("controlled_variable", {
+                "controlled_variables": (("time", "night"),),
+            }),
+            ("subject", {"subject_ref": "different_food"}),
+        )
+        for already_published in (False, True):
+            for case, mutation in variations:
+                with self.subTest(published=already_published, case=case):
+                    m = model()
+                    m.integrate_causal_observation(original)
+                    if already_published:
+                        self.assertEqual(m.publish_causal_inference(), ())
+                    alias = replace(
+                        obs(5, cause=True, effect=True),
+                        observation_ref=original.observation_ref,
+                        **mutation,
+                    )
+                    m.integrate_causal_observation(alias)
+                    baseline = m.export_causal_state()
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "conflicting causal labels for one physical observation",
+                    ):
+                        m.publish_causal_inference()
+                    self.assertEqual(m.export_causal_state(), baseline)
+                    restored = model()
+                    restored.restore_causal_state(baseline)
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "conflicting causal labels for one physical observation",
+                    ):
+                        restored.publish_causal_inference()
+                    self.assertEqual(restored.export_causal_state(), baseline)
+
     def test_one_step_may_have_distinct_observational_arms(self):
         # Closed physical exposure and its matched no-treatment control
         # can share a time without being equivalent observations.

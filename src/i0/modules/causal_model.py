@@ -1602,27 +1602,55 @@ class CausalModel:
             if o.predicate not in SAFETY_PREDICATES and o.predicate not in self.config.causal_predicates:
                 raise ValueError("unregistered causal predicate")
             key = (o.contingency_ref, o.observation_ref, "observation")
-            if key in credits or any(
-                v.contingency_ref == o.contingency_ref
+            same_physical = (
+                v for v in observations.values()
+                if v.contingency_ref == o.contingency_ref
                 and v.observation_ref == o.observation_ref
-                for v in observations.values()
-            ):
+            )
+            for existing in same_physical:
+                # It is safe to ignore an alias of an already credited
+                # physical transition, never to silently prefer one of two
+                # contradictory cause/effect labels for that same witness.
+                # Memory episode IDs and world-step values are not used to
+                # deduplicate independent source events.
+                if (
+                    existing.predicate, existing.subject_ref,
+                    existing.application_context, existing.observation_context,
+                    existing.cause_present, existing.effect_present,
+                    existing.controlled_variables,
+                ) != (
+                    o.predicate, o.subject_ref,
+                    o.application_context, o.observation_context,
+                    o.cause_present, o.effect_present,
+                    o.controlled_variables,
+                ):
+                    raise ValueError(
+                        "conflicting causal labels for one physical observation"
+                    )
+                break
+            else:
+                if key in credits:
+                    # Credits are always paired to accepted observations.
+                    # A lone credit cannot justify silently losing a row.
+                    raise ValueError("causal observation credit lacks its source")
+                old = published.get(o.contingency_ref)
+                if old is None:
+                    old = CanonicalContingency(
+                        ref=o.contingency_ref, version=1, predicate=o.predicate,
+                        subject_ref=o.subject_ref, context_signature=o.application_context,
+                        causal_status="aucun", safety_status="aucun",
+                        evidence_refs=(), harmful_episodes=(), harmless_episodes=(),
+                    )
+                elif (old.predicate, old.subject_ref, old.context_signature) != (
+                    o.predicate, o.subject_ref, o.application_context
+                ):
+                    raise ValueError("observation mismatches canonical contingency")
+                credits.add(key)
+                observations[o.identifier] = o
+                published[o.contingency_ref] = old
                 continue
-            old = published.get(o.contingency_ref)
-            if old is None:
-                old = CanonicalContingency(
-                    ref=o.contingency_ref, version=1, predicate=o.predicate,
-                    subject_ref=o.subject_ref, context_signature=o.application_context,
-                    causal_status="aucun", safety_status="aucun",
-                    evidence_refs=(), harmful_episodes=(), harmless_episodes=(),
-                )
-            elif (old.predicate, old.subject_ref, old.context_signature) != (
-                o.predicate, o.subject_ref, o.application_context
-            ):
-                raise ValueError("observation mismatches canonical contingency")
-            credits.add(key)
-            observations[o.identifier] = o
-            published[o.contingency_ref] = old
+            # An identical physical alias has no second P-35 credit.
+            continue
 
         byref = defaultdict(list)
         for o in observations.values():
