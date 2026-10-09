@@ -27,6 +27,14 @@ _PROTOCOL_VERSION = "stage9-random-food-negative-control-v1"
 _SCENARIO_ID = "stage9-exogenous-food-reward"
 _FALSE_HYPOTHESIS_REF = "causal:hydration"
 
+# Fixed diagnostic physical perturbations of the reference world. Both have
+# zero drinking gain, while food decay differs. Shared geometry is deliberate:
+# this is NOT the diverse N_M-world scientific campaign from §19.5.
+NULL_WATER_WORLD_VARIANTS = {
+    "null_water_reference": 0.0,
+    "null_water_food_decay": 0.25,
+}
+
 
 @dataclass(frozen=True, slots=True)
 class RandomRewardControl:
@@ -49,6 +57,10 @@ class RandomRewardControl:
     scientific_gate: bool | None
     verified_null_drink_transitions: tuple[str, ...] = ()
     observed_false_rule_rate: float | None = None
+    world_variant: str = "null_water_reference"
+    # Natural means NO typed hypothesis or contrast was injected by the bench.
+    spontaneous_candidate_refs: tuple[str, ...] = ()
+    spontaneous_established_false_refs: tuple[str, ...] = ()
 
 
 def preregistered_food_rewards(
@@ -126,6 +138,7 @@ def _seed_false_hypothesis_for_control(runtime: Stage9Runtime) -> None:
 def run_random_reward_negative_control(
     *, campaign_seed: int, steps: int = 14,
     bench_seed_false_hypothesis: bool = True,
+    world_variant: str = "null_water_reference",
 ) -> RandomRewardControl:
     """Exercise the *real* Stage-9 runtime with an exogenous reward schedule.
 
@@ -136,6 +149,8 @@ def run_random_reward_negative_control(
     """
     if type(bench_seed_false_hypothesis) is not bool:
         raise ValueError("bench seed flag must be Boolean")
+    if not isinstance(world_variant, str) or world_variant not in NULL_WATER_WORLD_VARIANTS:
+        raise ValueError("unknown Stage-9 diagnostic world variant")
     events = preregistered_food_rewards(
         campaign_seed=campaign_seed, steps=steps,
     )
@@ -154,8 +169,9 @@ def run_random_reward_negative_control(
     # equipment still expects the original, positive drinking consequence.
     physical = replace(
         source.world.config,
-        version=_PROTOCOL_VERSION + ":physics",
+        version=_PROTOCOL_VERSION + ":physics:" + world_variant,
         drink_water_gain=0.0,
+        food_decay_per_step=NULL_WATER_WORLD_VARIANTS[world_variant],
     )
     runtime = Stage9Runtime(
         world_config=physical,
@@ -221,6 +237,23 @@ def run_random_reward_negative_control(
     statuses = {row.ref: row.causal_status
                 for row in runtime.causal_model.contingencies()}
     false_established = statuses.get(_FALSE_HYPOTHESIS_REF) == "etablie"
+    spontaneous_candidates = (
+        ()
+        if bench_seed_false_hypothesis
+        else tuple(sorted(
+            row.ref
+            for row in runtime.causal_model.contingencies()
+            if row.ref == _FALSE_HYPOTHESIS_REF
+            and row.causal_status in {
+                "correlation_observee", "hypothese_causale",
+                "testee_par_intervention", "etablie",
+            }
+        ))
+    )
+    spontaneous_false_established = tuple(
+        ref for ref in spontaneous_candidates
+        if statuses.get(ref) == "etablie"
+    )
     diagnostic = audit_superstitious_rules(
         causal_model=runtime.causal_model,
         eligible_known_false_refs=(_FALSE_HYPOTHESIS_REF,),
@@ -254,4 +287,7 @@ def run_random_reward_negative_control(
         scientific_gate=None,
         verified_null_drink_transitions=diagnostic.physical_witness_refs,
         observed_false_rule_rate=diagnostic.observed_rate,
+        world_variant=world_variant,
+        spontaneous_candidate_refs=spontaneous_candidates,
+        spontaneous_established_false_refs=spontaneous_false_established,
     )
