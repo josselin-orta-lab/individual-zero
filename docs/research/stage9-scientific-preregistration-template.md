@@ -102,6 +102,13 @@ as scientific evidence or freezing a Golden.
 
 The scorer recomputes attribution accuracy, abstentions, false self links,
 false-rule rates and two-sided 95% Wilson confidence intervals.
+Each registered positive world × seed run must contain at least one
+independently observed known-positive-cause case. If a positive run contains
+only no-effect controls or no causal cases, the assessor reports
+`incomplete_known_cause_world_coverage` even if the pooled accuracy from
+other runs looks strong; it lists the missing world/seed pairs for external
+review. No missing observation is invented or silently excluded.
+
 No-effect physical controls (`ground_truth=none`) are excluded from the
 known-positive-cause accuracy denominator. Their abstentions are reported
 separately; any self/world causal attribution without an observed physical

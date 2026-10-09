@@ -120,6 +120,11 @@ def assess_heldout_campaign(
     if not isinstance(rows, list) or len(rows) != len(expected):
         raise ValueError("heldout campaign is incomplete or has extra runs")
     encountered = set()
+    witnessed_positive_runs = set()
+    expected_positive_runs = {
+        (world, seed) for world in registration["positive_world_ids"]
+        for seed in seeds
+    }
     known_cases = correct = uncertain = false_self = 0
     no_effect_controls = no_effect_abstentions = no_effect_false_attributions = 0
     natural_candidates = false_established = 0
@@ -160,6 +165,7 @@ def assess_heldout_campaign(
         # of heldout sampling still requires external provenance/context audit;
         # this scorer must not claim that a digest proves it.
         used_physical_refs = set()
+        positive_known_case_count = 0
         for case in cases:
             if not isinstance(case, dict) or set(case) != CASE_FIELDS:
                 raise ValueError("invalid known-cause observation schema")
@@ -188,6 +194,7 @@ def assess_heldout_campaign(
                         false_self += 1
                 continue
             known_cases += 1
+            positive_known_case_count += 1
             if case["attribution"] == "uncertain":
                 uncertain += 1
             if case["attribution"] == "self_compatible" and case["ground_truth"] != "self":
@@ -199,6 +206,13 @@ def assess_heldout_campaign(
                     and case["attribution"] == "world_justified")
             ):
                 correct += 1
+        # A positive-control world with no observed positive-cause case
+        # cannot be treated as an independently evaluated world merely
+        # because other worlds contribute enough rows to pass a pooled
+        # Wilson bound. Record missing coverage instead of synthesizing
+        # a case or excluding the run after seeing outcomes.
+        if positive_known_case_count and (world, seed) in expected_positive_runs:
+            witnessed_positive_runs.add((world, seed))
         if candidates and world not in registration["negative_world_ids"]:
             raise ValueError("known-false candidates must come from null-control worlds")
         for item in candidates:
@@ -226,6 +240,7 @@ def assess_heldout_campaign(
             false_established += int(item["causal_status"] == "etablie")
     if encountered != expected:
         raise ValueError("heldout world/seed coverage does not match registration")
+    missing_positive_runs = sorted(expected_positive_runs - witnessed_positive_runs)
     if registration["confidence_method"] != "wilson_95":
         raise ValueError("unsupported preregistered confidence rule")
     accuracy = correct / known_cases if known_cases else None
@@ -238,6 +253,8 @@ def assess_heldout_campaign(
         status = "invalid_no_effect_attribution"
     elif known_cases == 0 or natural_candidates == 0:
         status = "not_evaluable"
+    elif missing_positive_runs:
+        status = "incomplete_known_cause_world_coverage"
     elif natural_candidates < registration["minimum_naturally_acquired_candidates"]:
         status = "insufficient_natural_candidates"
     elif (
@@ -253,6 +270,12 @@ def assess_heldout_campaign(
         "evidence_sha256": supplied_digest,
         "runs": len(rows),
         "known_cause_cases": known_cases,
+        "positive_known_cause_runs": len(witnessed_positive_runs),
+        "registered_positive_runs": len(expected_positive_runs),
+        "missing_positive_known_cause_runs": [
+            {"world_id": world, "seed": seed} for world, seed
+            in missing_positive_runs
+        ],
         "correct_links": correct,
         "uncertain_links": uncertain,
         "false_self_links": false_self,

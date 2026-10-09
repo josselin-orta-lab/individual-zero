@@ -97,6 +97,9 @@ class Stage9ScientificAssessmentTests(unittest.TestCase):
         result = assess_heldout_campaign(draft, make_report(draft, candidates=20))
         self.assertEqual(result["assessment"], "metrics_eligible_for_independent_review")
         self.assertEqual(result["known_cause_cases"], 4)
+        self.assertEqual(result["registered_positive_runs"], 2)
+        self.assertEqual(result["positive_known_cause_runs"], 2)
+        self.assertEqual(result["missing_positive_known_cause_runs"], [])
         self.assertEqual(result["correct_links"], 4)
         self.assertEqual(result["natural_false_candidate_count"], 40)
         self.assertEqual(result["false_established_count"], 0)
@@ -119,6 +122,40 @@ class Stage9ScientificAssessmentTests(unittest.TestCase):
         self.assertEqual(scored["correct_links"], 2)
         self.assertEqual(scored["false_established_count"], 1)
         self.assertEqual(scored["assessment"], "below_preregistered_confidence_threshold")
+
+    def test_missing_known_cause_witness_in_positive_run_prevents_eligibility(self):
+        draft = example_draft()
+        draft["confidence_method"] = "wilson_95"
+        draft["minimum_known_cause_accuracy"] = 0.1
+        draft["maximum_superstitious_rule_rate"] = 1.0
+        draft["minimum_naturally_acquired_candidates"] = 2
+        for missing_as in ("empty", "no_effect_only"):
+            with self.subTest(missing_as=missing_as):
+                report = make_report(draft, candidates=20)
+                target = next(
+                    run for run in report["runs"]
+                    if run["world_id"] == "holdout:positive"
+                    and run["seed"] == 1001
+                )
+                if missing_as == "empty":
+                    target["known_cause_cases"] = []
+                else:
+                    target["known_cause_cases"][0]["ground_truth"] = "none"
+                    target["known_cause_cases"][0]["attribution"] = "uncertain"
+                result = assess_heldout_campaign(draft, sealed(report))
+                self.assertEqual(
+                    result["assessment"], "incomplete_known_cause_world_coverage",
+                )
+                self.assertEqual(result["known_cause_cases"], 3)
+                self.assertEqual(result["correct_links"], 3)
+                self.assertEqual(result["registered_positive_runs"], 2)
+                self.assertEqual(result["positive_known_cause_runs"], 1)
+                self.assertEqual(
+                    result["missing_positive_known_cause_runs"],
+                    [{"world_id": "holdout:positive", "seed": 1001}],
+                )
+                self.assertIsNone(result["scientific_verdict"])
+                self.assertFalse(result["golden_stage9_frozen"])
 
     def test_no_effect_controls_do_not_inflate_known_cause_denominator(self):
         draft = example_draft()
