@@ -169,6 +169,31 @@ jobs:
             /tmp/stage9-known-cause-world-matrix.json
           if-no-files-found: error
 
+      - name: Stage 9 prospective scientific preflight (never Golden)
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m lab.stage9_scientific_preregistration > /tmp/stage9-scientific-preflight.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          status = json.loads(Path("/tmp/stage9-scientific-preflight.json").read_text(encoding="utf-8"))
+          if (
+              status["registration_status"] != "unregistered"
+              or status["scientific_verdict"] is not None
+              or status["golden_stage9_frozen"]
+          ):
+              raise SystemExit("Stage 9 prospective scientific preflight falsely passes")
+          print("stage9_preregistration=" + status["registration_status"])
+          PY
+
+      - name: Upload Stage 9 prospective scientific preflight
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage9-scientific-preregistration-preflight
+          path: /tmp/stage9-scientific-preflight.json
+          if-no-files-found: error
+
       - name: Stage 8 preregistered physical κ stress Brier gate
         if: matrix.python-version == '3.11'
         run: |

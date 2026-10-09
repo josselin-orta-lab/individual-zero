@@ -35,6 +35,29 @@ The author or designated experiment owner must fill each item and commit the reg
 
 **Critical:** if naturally acquired causal candidates are absent, the superstition rate has a zero denominator and is `NOT EVALUABLE`, never `0%` or `PASS`. An observation of reward alone is not an independent causal test. Do not inject a hypothesis to create a denominator. Do not select or revise thresholds after looking at hold-out results.
 
+## Machine-readable preregistration preflight
+
+The laboratory supplies a prospective JSON manifest containing the exact
+fields checked by `lab.stage9_scientific_preregistration`. Validate it using:
+
+```bash
+python -m lab.stage9_scientific_preregistration
+python -m lab.stage9_scientific_preregistration --manifest path/to/registration.json
+```
+
+Without a manifest, the result is `unregistered`. A complete manifest is
+**only a draft**, identified by its canonical digest. It remains
+`draft_requires_independent_git_seal`: the evaluator must separately check
+that the registration was committed before any hold-out outcome was observed,
+that its world IDs correspond to physically distinct configurations, and that
+none of the held-out seeds were used for calibration. JSON field validation
+does **not** certify genuine world independence or Git chronology.
+
+The utility never produces `scientific_verdict=PASS` or freezes Stage 9
+from a draft. The CI stores a fail-closed readiness artifact, not a certificate
+of scientific validity. Test fixture values in unit tests are **not** thresholds
+selected for the research campaign.
+
 ## Experimental separation
 
 1. **Calibration:** choose necessary parameters using disjoint worlds and seeds, following the normative parameter registry and its calibration protocols. Record their immutable hashes.
