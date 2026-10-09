@@ -1622,7 +1622,10 @@ class CausalModel:
         """
         replacement = type(self)(self.config)
         replacement._restore_causal_state_unchecked(state)
-        self.__dict__ = replacement.__dict__
+        # Commit only canonical-owned fields. Preserve non-state instance
+        # instrumentation (e.g. a phase-5 failure hook) and references to
+        # this owner, rather than replacing its whole attribute namespace.
+        self.__dict__.update(replacement.__dict__)
 
     def _restore_causal_state_unchecked(self, state: object) -> None:
         if not isinstance(state, Mapping) or state.get("config_version") != self.config.version:
