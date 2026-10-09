@@ -120,6 +120,7 @@ def assess_heldout_campaign(
         raise ValueError("heldout campaign is incomplete or has extra runs")
     encountered = set()
     known_cases = correct = uncertain = false_self = 0
+    no_effect_controls = no_effect_abstentions = no_effect_false_attributions = 0
     natural_candidates = false_established = 0
     for row in rows:
         if not isinstance(row, dict) or set(row) != RUN_FIELDS:
@@ -167,6 +168,18 @@ def assess_heldout_campaign(
             if physical in used_physical_refs:
                 raise ValueError("reused physical known-cause evidence")
             used_physical_refs.add(physical)
+            # §9.6: "none" is a real negative control, not a known
+            # positive cause. Counting it in the accuracy denominator
+            # would dilute the benchmark and could hide false attributions.
+            if case["ground_truth"] == "none":
+                no_effect_controls += 1
+                if case["attribution"] == "uncertain":
+                    no_effect_abstentions += 1
+                else:
+                    no_effect_false_attributions += 1
+                    if case["attribution"] == "self_compatible":
+                        false_self += 1
+                continue
             known_cases += 1
             if case["attribution"] == "uncertain":
                 uncertain += 1
@@ -205,7 +218,11 @@ def assess_heldout_campaign(
     rate = false_established / natural_candidates if natural_candidates else None
     correct_interval = _wilson(correct, known_cases)
     false_interval = _wilson(false_established, natural_candidates)
-    if known_cases == 0 or natural_candidates == 0:
+    if no_effect_false_attributions:
+        # A reported causal link without a physical effect violates the
+        # basic attribution boundary; do not label metrics review-eligible.
+        status = "invalid_no_effect_attribution"
+    elif known_cases == 0 or natural_candidates == 0:
         status = "not_evaluable"
     elif natural_candidates < registration["minimum_naturally_acquired_candidates"]:
         status = "insufficient_natural_candidates"
@@ -225,6 +242,9 @@ def assess_heldout_campaign(
         "correct_links": correct,
         "uncertain_links": uncertain,
         "false_self_links": false_self,
+        "no_effect_control_cases": no_effect_controls,
+        "no_effect_control_abstentions": no_effect_abstentions,
+        "no_effect_control_false_attributions": no_effect_false_attributions,
         "known_cause_accuracy": accuracy,
         "known_cause_wilson_95": correct_interval,
         "natural_false_candidate_count": natural_candidates,

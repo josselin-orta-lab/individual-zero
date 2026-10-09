@@ -116,6 +116,47 @@ class Stage9ScientificAssessmentTests(unittest.TestCase):
         self.assertEqual(scored["false_established_count"], 1)
         self.assertEqual(scored["assessment"], "below_preregistered_confidence_threshold")
 
+    def test_no_effect_controls_do_not_inflate_known_cause_denominator(self):
+        draft = example_draft()
+        draft["confidence_method"] = "wilson_95"
+        draft["minimum_known_cause_accuracy"] = 0.1
+        draft["maximum_superstitious_rule_rate"] = 1.0
+        draft["minimum_naturally_acquired_candidates"] = 2
+        report = make_report(draft, candidates=10)
+        report["runs"][0]["known_cause_cases"][0].update(
+            ground_truth="none", attribution="uncertain",
+        )
+        result = assess_heldout_campaign(draft, sealed(report))
+        self.assertEqual(result["known_cause_cases"], 3)
+        self.assertEqual(result["correct_links"], 3)
+        self.assertEqual(result["known_cause_accuracy"], 1.0)
+        self.assertEqual(result["uncertain_links"], 0)
+        self.assertEqual(result["no_effect_control_cases"], 1)
+        self.assertEqual(result["no_effect_control_abstentions"], 1)
+        self.assertEqual(result["no_effect_control_false_attributions"], 0)
+
+    def test_false_causation_in_no_effect_control_blocks_metric_eligibility(self):
+        draft = example_draft()
+        draft["confidence_method"] = "wilson_95"
+        draft["minimum_known_cause_accuracy"] = 0.1
+        draft["maximum_superstitious_rule_rate"] = 1.0
+        draft["minimum_naturally_acquired_candidates"] = 2
+        for incorrect in ("self_compatible", "world_justified"):
+            with self.subTest(incorrect=incorrect):
+                report = make_report(draft, candidates=10)
+                report["runs"][0]["known_cause_cases"][0].update(
+                    ground_truth="none", attribution=incorrect,
+                )
+                result = assess_heldout_campaign(draft, sealed(report))
+                self.assertEqual(result["assessment"], "invalid_no_effect_attribution")
+                self.assertEqual(result["no_effect_control_cases"], 1)
+                self.assertEqual(result["no_effect_control_false_attributions"], 1)
+                self.assertEqual(
+                    result["false_self_links"], int(incorrect == "self_compatible"),
+                )
+                self.assertIsNone(result["scientific_verdict"])
+                self.assertFalse(result["golden_stage9_frozen"])
+
     def test_rejects_forged_evidence_and_repeated_world_runs(self):
         draft = example_draft()
         draft["confidence_method"] = "wilson_95"

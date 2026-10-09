@@ -85,7 +85,11 @@ whole envelope has its own canonical SHA-256. Physical source event references
 and episodes must not be counted twice inside a run.
 
 The scorer recomputes attribution accuracy, abstentions, false self links,
-false-rule rates and two-sided 95% Wilson confidence intervals. It returns
+false-rule rates and two-sided 95% Wilson confidence intervals.
+No-effect physical controls (`ground_truth=none`) are excluded from the
+known-positive-cause accuracy denominator. Their abstentions are reported
+separately; any self/world causal attribution without an observed physical
+effect is marked `invalid_no_effect_attribution`, not review-eligible. It returns
 "not_evaluable" if any required denominator is zero, and keeps Golden false
 even when metrics meet prospectively frozen limits: raw journal/oracle
 authenticity, independent world generation, prospective registration ancestry,
