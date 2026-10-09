@@ -38,6 +38,12 @@ class PositiveHydrationBenchmarkTests(unittest.TestCase):
             positive.independent_closed_episodes,
             positive.closed_hydration_observations,
         )
+        self.assertGreaterEqual(
+            positive.closed_memory_episodes,
+            positive.independent_closed_episodes,
+        )
+        self.assertGreaterEqual(positive.pending_hydration_exposures, 0)
+        self.assertGreaterEqual(positive.pending_causal_observations, 0)
         self.assertEqual(
             positive.observed_hydration_refs,
             tuple(sorted(set(positive.observed_hydration_refs))),

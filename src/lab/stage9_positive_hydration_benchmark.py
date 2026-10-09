@@ -57,6 +57,13 @@ class PositiveHydrationDiagnostic:
     qualifying_n1: bool
     missing_evidence: str
     scientific_gate: None = None
+    # End-of-run state disambiguates missing physical exposure from Memory
+    # closure or an unfinished phase-5 publication. These are measurements,
+    # not signals exposed to the individual.
+    closed_memory_episodes: int = 0
+    pending_hydration_exposures: int = 0
+    pending_causal_observations: int = 0
+    published_hydration_reviews: int = 0
 
 
 def run_positive_hydration_diagnostic(
@@ -69,7 +76,7 @@ def run_positive_hydration_diagnostic(
         raise ValueError("a nonnegative integer campaign seed is required")
     if type(steps) is not int or steps < 6:
         raise ValueError("at least six world steps are required")
-    if world_variant not in POSITIVE_HYDRATION_VARIANTS:
+    if not isinstance(world_variant, str) or world_variant not in POSITIVE_HYDRATION_VARIANTS:
         raise ValueError("unsupported positive hydration world variant")
 
     drink_gain, water_decay = POSITIVE_HYDRATION_VARIANTS[world_variant]
@@ -214,4 +221,8 @@ def run_positive_hydration_diagnostic(
         ),
         missing_evidence=missing,
         scientific_gate=None,
+        closed_memory_episodes=len(runtime.memory.episodes),
+        pending_hydration_exposures=len(state["lived_hydration_exposures"]),
+        pending_causal_observations=len(state["pending_causal_observations"]),
+        published_hydration_reviews=len(state["causal_reviews"]),
     )
