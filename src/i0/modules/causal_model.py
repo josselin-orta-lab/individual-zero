@@ -38,6 +38,31 @@ CAUSAL_STATUSES = frozenset({
 SAFETY_STATUSES = frozenset({"aucun", "etabli_pour_securite"})
 
 
+def _ambiguous_closed_projection_steps(
+    events: Sequence[Mapping[str, object]],
+) -> set[int]:
+    """Find physical steps with duplicate referenced autobiographical IDs.
+
+    A repeated source ID cannot masquerade as an unrelated event kind and
+    escape the physical command/transition cardinality checks. Do not
+    poison independent steps or projections outside the closed episode.
+    """
+    seen: dict[str, object] = {}
+    ambiguous: set[int] = set()
+    for event in events:
+        ref = event.get("event_id")
+        if not isinstance(ref, str):
+            continue
+        step = event.get("t_monde")
+        if ref in seen:
+            for candidate in (seen[ref], step):
+                if type(candidate) is int and candidate >= 1:
+                    ambiguous.add(candidate)
+        else:
+            seen[ref] = step
+    return ambiguous
+
+
 @dataclass(frozen=True, slots=True)
 class CausalModelConfig:
     version: str
@@ -514,6 +539,7 @@ class CausalModel:
             event for event in autobiographical_events
             if event.get("event_id") in allowed
         )
+        ambiguous_steps = _ambiguous_closed_projection_steps(events)
         rows = []
         retire = []
         for sample in sorted(
@@ -521,6 +547,9 @@ class CausalModel:
             key=lambda v: v.t_monde,
         ):
             if sample.observed_step is None:
+                continue
+            if sample.t_monde in ambiguous_steps:
+                retire.append(sample.t_monde)
                 continue
             commands = [
                 event for event in events
@@ -742,6 +771,7 @@ class CausalModel:
             item for item in autobiographical_events
             if item.get("event_id") in allowed
         ]
+        ambiguous_steps = _ambiguous_closed_projection_steps(events)
         changes = []
         invalidated = []
         for row in sorted(self._lived_causal_actions.values(),
@@ -750,6 +780,9 @@ class CausalModel:
                 row.observed_t_monde is None
                 or row.command_event_ref is not None
             ):
+                continue
+            if row.sent_t_monde in ambiguous_steps:
+                invalidated.append(row.identifier)
                 continue
             # Select all physical projections at the source step before
             # inspecting the expected outcome. Filtering by successful

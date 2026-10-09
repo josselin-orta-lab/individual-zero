@@ -223,6 +223,54 @@ class LivedCausalInterventionProducerTests(unittest.TestCase):
                 self.assertEqual(m.get("causal:hydration").causal_status,
                                  "hypothese_causale")
 
+    def test_same_source_id_with_different_kind_invalidates_physical_action(self):
+        for extra_step in (10, 99):
+            with self.subTest(extra_step=extra_step):
+                m = model()
+                hypothesis(m)
+                evidence_path(m, step=10, close=False, comparator=False)
+                command, transition = physical_episode(
+                    step=10, after=60.0, position=(2, 2),
+                )
+                # A duplicate source ID labelled as an unrelated event kind
+                # previously bypassed the physical cardinality check.
+                wrong_kind = {
+                    "event_id": command["event_id"],
+                    "kind": "unrelated_telemetry",
+                    "t_monde": extra_step,
+                }
+                self.assertEqual(m.ingest_closed_causal_action_episode(
+                    episode_ref="episode:ambiguous-kind",
+                    event_refs=("command:10", "transition:10"),
+                    autobiographical_events=(command, transition, wrong_kind),
+                ), ())
+                self.assertEqual(
+                    m.export_causal_state()["lived_causal_actions"], [],
+                )
+                self.assertEqual(m.ingest_closed_causal_action_episode(
+                    episode_ref="episode:alias",
+                    event_refs=("command:10", "transition:10"),
+                    autobiographical_events=(command, transition),
+                ), ())
+                self.assertEqual(m.promote_lived_causal_interventions(), ())
+
+    def test_projection_outside_closed_episode_does_not_invalidate_drink(self):
+        m = model()
+        hypothesis(m)
+        evidence_path(m, step=10, close=False, comparator=False)
+        command, transition = physical_episode(
+            step=10, after=60.0, position=(2, 2),
+        )
+        unrelated = {
+            **command, "event_id": "not-in-closed-memory",
+        }
+        (verified,) = m.ingest_closed_causal_action_episode(
+            episode_ref="episode:physical:10",
+            event_refs=("command:10", "transition:10"),
+            autobiographical_events=(command, transition, unrelated),
+        )
+        self.assertEqual(verified.transition_event_ref, "transition:10")
+
     def test_distinct_physical_drinks_within_one_closed_episode_remain_valid(self):
         m = model()
         hypothesis(m)

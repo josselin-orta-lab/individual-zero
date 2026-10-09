@@ -195,6 +195,35 @@ class AutonomousHydrationLifecycleTests(unittest.TestCase):
         twin.restore_causal_state(checkpoint)
         self.assertEqual(twin.export_causal_state(), checkpoint)
 
+    def test_duplicate_source_id_under_other_kind_cannot_credit_hydration(self):
+        for primitive in ("boire", "attendre"):
+            with self.subTest(primitive=primitive):
+                world, model = rig()
+                command, transition = physical_sample(
+                    world, model, step=1, primitive=primitive,
+                )
+                disguised = {
+                    "event_id": command["event_id"],
+                    "kind": "unrelated_telemetry",
+                    "t_monde": 1,
+                }
+                self.assertEqual(model.ingest_closed_hydration_episode(
+                    episode_ref="episode:ambiguous",
+                    event_refs=(command["event_id"], transition["event_id"]),
+                    autobiographical_events=(command, transition, disguised),
+                ), ())
+                self.assertEqual(
+                    model.export_causal_state()["pending_causal_observations"],
+                    [],
+                )
+                self.assertEqual(model.ingest_closed_hydration_episode(
+                    episode_ref="episode:alias",
+                    event_refs=(command["event_id"], transition["event_id"]),
+                    autobiographical_events=(command, transition),
+                ), ())
+                self.assertEqual(model.publish_causal_inference(), ())
+                self.assertIsNone(model.get("causal:hydration"))
+
     def test_null_gain_never_creates_spurious_positive_correlations(self):
         world, model = rig(drink_gain=0.0)
         for step, primitive in ((1, "boire"), (2, "boire"), (3, "attendre")):
