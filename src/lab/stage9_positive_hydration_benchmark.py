@@ -76,6 +76,15 @@ class PositiveHydrationDiagnostic:
     published_physical_interventions: int = 0
     pending_lived_causal_actions: int = 0
     published_self_compatible_water_reports: int = 0
+    # Lab-observed funnel of the ordinary Stage-9 causal-test option path.
+    # The context counter uses a read-only WorldBody probe and is never
+    # transferred to the individual's Perception, Planning or Causal Model.
+    post_hypothesis_decision_steps: int = 0
+    designated_causal_test_target_steps: int = 0
+    accessible_water_test_context_steps: int = 0
+    causal_test_registration_events: int = 0
+    accepted_causal_test_registrations: int = 0
+    causal_test_evaluation_events: int = 0
 
 
 def run_positive_hydration_diagnostic(
@@ -136,6 +145,9 @@ def run_positive_hydration_diagnostic(
     outcomes = []
     first_hypothesis_step = None
     drinks_after_hypothesis = 0
+    post_hypothesis_steps = 0
+    designated_target_steps = 0
+    accessible_test_context_steps = 0
     for step_number in range(1, steps + 1):
         prior = runtime.causal_model.get("causal:hydration")
         prior_hypothesis = (
@@ -144,6 +156,19 @@ def run_positive_hydration_diagnostic(
                 "hypothese_causale", "testee_par_intervention", "etablie",
             }
         )
+        if prior_hypothesis:
+            post_hypothesis_steps += 1
+            targets = runtime.causal_model.proposer_test()
+            if any(target.contingency_ref == "causal:hydration" for target in targets):
+                designated_target_steps += 1
+                accessible = runtime.world.capture_local(
+                    t_monde=step_number,
+                )
+                if (
+                    accessible.current_water_source
+                    and runtime.world.telemetry()["water"] < 100.0
+                ):
+                    accessible_test_context_steps += 1
         result = runtime.run_step()
         outcomes.append(result)
         if (
@@ -172,6 +197,20 @@ def run_positive_hydration_diagnostic(
         and isinstance(event.get("data"), dict)
     )
     test_options = set(test_proposals)
+    test_registrations = tuple(
+        event["data"]
+        for event in events
+        if event.get("kind") == "causal_test_option_registration"
+        and isinstance(event.get("data"), dict)
+        and event["data"].get("option_ref") in test_options
+    )
+    test_evaluations = tuple(
+        event["data"]
+        for event in events
+        if event.get("kind") == "stage8_option_evaluation"
+        and isinstance(event.get("data"), dict)
+        and event["data"].get("option_ref") in test_options
+    )
     unscored_tests = sum(
         event["data"].get("option_ref") in test_options
         and event["data"].get("status") == "not_evaluated"
@@ -303,4 +342,12 @@ def run_positive_hydration_diagnostic(
         published_physical_interventions=len(state["causal_interventions"]),
         pending_lived_causal_actions=len(state["lived_causal_actions"]),
         published_self_compatible_water_reports=self_compatible_water,
+        post_hypothesis_decision_steps=post_hypothesis_steps,
+        designated_causal_test_target_steps=designated_target_steps,
+        accessible_water_test_context_steps=accessible_test_context_steps,
+        causal_test_registration_events=len(test_registrations),
+        accepted_causal_test_registrations=sum(
+            event.get("registered") is True for event in test_registrations
+        ),
+        causal_test_evaluation_events=len(test_evaluations),
     )

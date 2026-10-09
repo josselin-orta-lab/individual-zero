@@ -52,6 +52,13 @@ class HydrationContrastCase:
     unscored_test_evaluations: int | None = None
     published_interventions: int | None = None
     published_self_compatible_water_reports: int | None = None
+    post_hypothesis_decision_steps: int | None = None
+    designated_test_target_steps: int | None = None
+    accessible_test_context_steps: int | None = None
+    causal_test_proposals: int | None = None
+    causal_test_registration_events: int | None = None
+    accepted_causal_test_registrations: int | None = None
+    causal_test_evaluation_events: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -217,6 +224,23 @@ def run_hydration_contrast_report(
                 first_hypothesis_step=item.first_published_hypothesis_step,
                 drinks_after_hypothesis=item.applied_drinks_after_hypothesis,
                 unscored_test_evaluations=item.unscored_causal_test_evaluations,
+                post_hypothesis_decision_steps=item.post_hypothesis_decision_steps,
+                designated_test_target_steps=(
+                    item.designated_causal_test_target_steps
+                ),
+                accessible_test_context_steps=(
+                    item.accessible_water_test_context_steps
+                ),
+                causal_test_proposals=item.causal_test_proposal_events,
+                causal_test_registration_events=(
+                    item.causal_test_registration_events
+                ),
+                accepted_causal_test_registrations=(
+                    item.accepted_causal_test_registrations
+                ),
+                causal_test_evaluation_events=(
+                    item.causal_test_evaluation_events
+                ),
                 published_interventions=item.published_physical_interventions,
                 published_self_compatible_water_reports=(
                     item.published_self_compatible_water_reports

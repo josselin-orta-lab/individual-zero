@@ -38,6 +38,26 @@ class Stage9HydrationContrastTests(unittest.TestCase):
         self.assertGreaterEqual(aligned.unscored_test_evaluations, 0)
         self.assertGreaterEqual(aligned.published_interventions, 0)
         self.assertTrue(aligned.missing_evidence)
+        self.assertGreaterEqual(aligned.post_hypothesis_decision_steps, 0)
+        self.assertGreaterEqual(aligned.designated_test_target_steps, 0)
+        self.assertLessEqual(
+            aligned.designated_test_target_steps,
+            aligned.post_hypothesis_decision_steps,
+        )
+        self.assertLessEqual(
+            aligned.accessible_test_context_steps,
+            aligned.designated_test_target_steps,
+        )
+        self.assertGreaterEqual(aligned.causal_test_proposals, 0)
+        self.assertGreaterEqual(aligned.causal_test_registration_events, 0)
+        self.assertLessEqual(
+            aligned.accepted_causal_test_registrations,
+            aligned.causal_test_registration_events,
+        )
+        self.assertLessEqual(
+            aligned.unscored_test_evaluations,
+            aligned.causal_test_evaluation_events,
+        )
         self.assertTrue(all(row.scientific_gate is None for row in first.cases))
         self.assertEqual(len(first.as_dict()["evidence_sha256"]),64)
 
