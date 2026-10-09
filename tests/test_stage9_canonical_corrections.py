@@ -164,11 +164,12 @@ class CanonicalCorrectionTests(unittest.TestCase):
         self.assertEqual(len(m.export_causal_state()["numeric_witnesses"]), 1)
         hypothesis(m)
         self.assertEqual(m.established_prediction_corrections(), ())
-        intervention(m, "first", step=5, context="zone1", linked=False)
-        intervention(m, "second", step=7, context="zone2", linked=False)
-        self.assertEqual(m.get(REF).causal_status, "etablie")
-        # Even established typed intervention records are insufficient without
-        # their physical DC-09 AgencyComparator provenance.
+        with self.assertRaisesRegex(ValueError, "published DC-09 agency comparison"):
+            intervention(m, "first", step=5, context="zone1", linked=False)
+        # An unlinked declaration cannot even change the canonical status;
+        # the simulator's existing correction gate is no substitute.
+        self.assertEqual(m.get(REF).causal_status, "hypothese_causale")
+        self.assertEqual(m.export_causal_state()["causal_interventions"], [])
         self.assertEqual(m.established_prediction_corrections(), ())
 
     def test_published_physical_witness_corrects_only_its_exact_context(self):
@@ -292,10 +293,15 @@ class CanonicalCorrectionTests(unittest.TestCase):
 
         # A later conflicting lived intervention can revoke establishment;
         # the Simulator's read-only correction disappears immediately.
+        failed_report = agency_report(
+            m, "failed", step=9, option="option:failed",
+            observed=85.0, predicted=95.0, conforms=False,
+        )
         m.integrate_causal_intervention(CausalIntervention(
             identifier="intervention:failed", contingency_ref=REF,
-            episode_ref="episode:failed", observation_ref="world:failed",
-            command_ref="option:failed", comparator_ref="agency:failed",
+            episode_ref=failed_report.episode_ref,
+            observation_ref="world:failed", command_ref="option:failed",
+            comparator_ref=failed_report.identifier,
             context_signature="zone3",
             emitted_step=9, observed_step=10, observed_effect=False,
             comparator_status="nonconforming", attribution="uncertain",

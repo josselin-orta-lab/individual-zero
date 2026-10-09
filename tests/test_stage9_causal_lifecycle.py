@@ -36,13 +36,51 @@ def trial(i, *, context, effect=True):
         identifier=f"intervention:{i}", contingency_ref=REF,
         episode_ref=f"episode:intervention:{i}",
         observation_ref=f"world:intervention:{i}",
-        command_ref=f"command:{i}", comparator_ref=f"comparison:{i}",
+        command_ref=f"command:{i}",
+        comparator_ref=f"agency-evidence:episode:intervention:{i}:comparison:{i}",
         context_signature=context, emitted_step=i*2,
         observed_step=i*2+1, observed_effect=effect,
         comparator_status="conforming" if effect else "nonconforming",
         attribution="self_compatible" if effect else "uncertain",
         controlled_variables=(("time","day"),), action_applied=True,
     )
+
+def publish_matching_agency(m, row, *, publish=True):
+    """Closed DC-09 comparison, with independently versioned P-47 outcomes."""
+    status = "conforming" if row.observed_effect else "nonconforming"
+    event_ref = "comparison:" + row.identifier.rsplit(":", 1)[-1]
+    event = {
+        "event_id": event_ref, "kind": "agency_comparison",
+        "t_monde": row.observed_step,
+        "data": {
+            "option_ref": row.command_ref,
+            "sent_t_monde": row.emitted_step,
+            "observed_t_monde": row.observed_step,
+            "status": status,
+            "attribution": "self_compatible" if row.observed_effect else "uncertain",
+            "effects": [{
+                "variable": "integrity", "status": status,
+                "predicted": 90.0,
+                "observed": 90.0 if row.observed_effect else 80.0,
+                "precision": 0.0, "comparator_version": "p47-causal-test-v1",
+            }],
+        },
+    }
+    (report,) = m.ingest_closed_agency_comparisons(
+        episode_ref=row.episode_ref, event_refs=(event_ref,),
+        autobiographical_events=(event,),
+    )
+    assert report.identifier == row.comparator_ref
+    if publish:
+        assert m.publish_causal_inference() == ()
+    return report
+
+
+def publish_trial(m, row):
+    publish_matching_agency(m, row)
+    m.integrate_causal_intervention(row)
+    return m.publish_causal_inference()
+
 
 def correlated(m):
     for event in (obs(1,cause=True,effect=True),obs(2,cause=True,effect=True),
@@ -70,10 +108,14 @@ class CausalLifecycleTests(unittest.TestCase):
         # No partial batch mutation on invalid next-level evidence.
         m= model()
         hypothesized(m)
-        m.integrate_causal_intervention(trial(10,context="zone1"))
-        self.assertEqual([v.after for v in m.publish_causal_inference()],["testee_par_intervention"])
-        m.integrate_causal_intervention(trial(11,context="zone2"))
-        self.assertEqual([v.after for v in m.publish_causal_inference()],["etablie"])
+        self.assertEqual(
+            [v.after for v in publish_trial(m, trial(10,context="zone1"))],
+            ["testee_par_intervention"],
+        )
+        self.assertEqual(
+            [v.after for v in publish_trial(m, trial(11,context="zone2"))],
+            ["etablie"],
+        )
         self.assertEqual(m.get(REF).safety_status,"aucun")
 
     def test_equal_base_rate_or_unmatched_context_never_correlates(self):
@@ -96,25 +138,76 @@ class CausalLifecycleTests(unittest.TestCase):
         m=model()
         hypothesized(m)
         for i in (10,11,12):
-            m.integrate_causal_intervention(trial(i,context="zone1"))
-            m.publish_causal_inference()
+            publish_trial(m, trial(i,context="zone1"))
         self.assertEqual(m.get(REF).causal_status,"testee_par_intervention")
 
     def test_revision_does_not_keep_stale_successes(self):
         m=model()
         hypothesized(m)
         for i,c in ((10,"zone1"),(11,"zone2")):
-            m.integrate_causal_intervention(trial(i,context=c))
-            m.publish_causal_inference()
+            publish_trial(m, trial(i,context=c))
         self.assertEqual(m.get(REF).causal_status,"etablie")
-        m.integrate_causal_intervention(trial(12,context="zone3",effect=False))
-        self.assertEqual([x.after for x in m.publish_causal_inference()],["hypothese_causale"])
-        m.integrate_causal_intervention(trial(13,context="zone1"))
-        m.publish_causal_inference()
+        self.assertEqual(
+            [x.after for x in publish_trial(m, trial(12,context="zone3",effect=False))],
+            ["hypothese_causale"],
+        )
+        publish_trial(m, trial(13,context="zone1"))
         self.assertEqual(m.get(REF).causal_status,"testee_par_intervention")
-        m.integrate_causal_intervention(trial(14,context="zone2"))
-        m.publish_causal_inference()
+        publish_trial(m, trial(14,context="zone2"))
         self.assertEqual(m.get(REF).causal_status,"etablie")
+
+    def test_unlinked_typed_intervention_cannot_advance_canonical_status(self):
+        m = model()
+        hypothesized(m)
+        m.integrate_causal_intervention(trial(10, context="zone1"))
+        before = m.export_causal_state()
+        with self.assertRaisesRegex(ValueError, "published DC-09 agency comparison"):
+            m.publish_causal_inference()
+        self.assertEqual(m.export_causal_state(), before)
+        self.assertEqual(m.get(REF).causal_status, "hypothese_causale")
+        self.assertEqual(m.export_causal_state()["causal_interventions"], [])
+
+    def test_same_batch_pending_comparison_is_not_yet_published(self):
+        m = model()
+        hypothesized(m)
+        row = trial(10, context="zone1")
+        publish_matching_agency(m, row, publish=False)
+        m.integrate_causal_intervention(row)
+        before = m.export_causal_state()
+        with self.assertRaisesRegex(ValueError, "published DC-09 agency comparison"):
+            m.publish_causal_inference()
+        self.assertEqual(m.export_causal_state(), before)
+
+    def test_published_comparison_must_match_all_trial_lineage(self):
+        mismatches = (
+            {"comparator_ref": "agency-evidence:missing"},
+            {"episode_ref": "episode:unrelated"},
+            {"command_ref": "command:unrelated"},
+            {"emitted_step": 19},
+            {"observed_step": 22},
+            {"observed_effect": False, "comparator_status": "nonconforming",
+             "attribution": "uncertain"},
+        )
+        for fields in mismatches:
+            with self.subTest(fields=fields):
+                m = model()
+                hypothesized(m)
+                row = trial(10, context="zone1")
+                publish_matching_agency(m, row)
+                m.integrate_causal_intervention(replace(row, **fields))
+                before = m.export_causal_state()
+                with self.assertRaisesRegex(ValueError, "published DC-09 agency comparison"):
+                    m.publish_causal_inference()
+                self.assertEqual(m.export_causal_state(), before)
+                self.assertEqual(m.get(REF).causal_status, "hypothese_causale")
+        # A negative observation cannot claim another comparator attribution.
+        m = model()
+        hypothesized(m)
+        negative = trial(10, context="zone1", effect=False)
+        publish_matching_agency(m, negative)
+        m.integrate_causal_intervention(replace(negative, attribution="self_compatible"))
+        with self.assertRaisesRegex(ValueError, "published DC-09 agency comparison"):
+            m.publish_causal_inference()
 
     def test_snapshot_replay_pending_and_no_oracle(self):
         m=model()

@@ -538,6 +538,27 @@ class CausalModel:
             raise ValueError("duplicate intervention")
         self._pending_causal_interventions.append(trial)
 
+    @staticmethod
+    def _published_comparison_supports(
+        trial: CausalIntervention, report: AgencyEvidence | None,
+    ) -> bool:
+        """Bind a typed intervention to previously published DC-09/P-47 evidence.
+
+        This checks provenance, not causal truth. Pending comparisons cannot
+        authorize an intervention in the same phase-5 publication batch.
+        """
+        return (
+            report is not None
+            and report.source == "agency_comparator"
+            and report.identifier == trial.comparator_ref
+            and report.episode_ref == trial.episode_ref
+            and report.option_ref == trial.command_ref
+            and report.sent_t_monde == trial.emitted_step
+            and report.observed_t_monde == trial.observed_step
+            and report.status == trial.comparator_status
+            and report.attribution == trial.attribution
+        )
+
     def established_prediction_corrections(self) -> tuple[NumericPredictionCorrection, ...]:
         """INV-25: derived immutable view, not a mutable simulator fact store.
 
@@ -551,16 +572,10 @@ class CausalModel:
         for trial in self._causal_interventions.values():
             report = self._agency_evidence.get(trial.comparator_ref)
             if (
-                report is None
-                or not trial.observed_effect
+                not trial.observed_effect
+                or not self._published_comparison_supports(trial, report)
                 or trial.comparator_status != "conforming"
                 or trial.attribution != "self_compatible"
-                or report.status != "conforming"
-                or report.attribution != "self_compatible"
-                or report.episode_ref != trial.episode_ref
-                or report.option_ref != trial.command_ref
-                or report.sent_t_monde != trial.emitted_step
-                or report.observed_t_monde != trial.observed_step
             ):
                 continue
             verified_interventions.setdefault(trial.contingency_ref, []).append(trial)
@@ -766,6 +781,15 @@ class CausalModel:
                 "hypothese_causale", "testee_par_intervention", "etablie"
             }:
                 raise ValueError("intervention needs previously published hypothesis")
+            # A typed declaration cannot establish causal status by itself.
+            # Only already published, Memory-closed AgencyComparator evidence
+            # can support the phase-5 admission of a lived intervention.
+            if not self._published_comparison_supports(
+                trial, self._agency_evidence.get(trial.comparator_ref)
+            ):
+                raise ValueError(
+                    "intervention requires matching previously published DC-09 agency comparison"
+                )
             key = (trial.contingency_ref, trial.episode_ref, "intervention")
             if key in credits or any(v.observation_ref == trial.observation_ref for v in interventions.values()):
                 continue
