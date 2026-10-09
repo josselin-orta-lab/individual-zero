@@ -1299,9 +1299,15 @@ class CausalModel:
             revision = self._causal_revision_boundaries.get(
                 contingency.ref, (-1, "")
             )[0]
-            matching_contexts = {
-                trial.context_signature for trial in trials
+            # Only interventions after the latest published refutation
+            # establish the current rule. Export provenance from that same
+            # revision window, never from a stale pre-refutation success.
+            active_trials = tuple(
+                trial for trial in trials
                 if trial.observed_step > revision
+            )
+            matching_contexts = {
+                trial.context_signature for trial in active_trials
             }
             if len(matching_contexts) < self.config.n2:
                 continue
@@ -1324,7 +1330,9 @@ class CausalModel:
                     continue
                 rule = NumericPredictionCorrection(
                     contingency_ref=contingency.ref,
-                    intervention_ref=min(trial.identifier for trial in trials),
+                    intervention_ref=min(
+                        trial.identifier for trial in active_trials
+                    ),
                     agency_evidence_ref=report.identifier,
                     command_primitive=witness.command_primitive,
                     command_target=witness.command_target,

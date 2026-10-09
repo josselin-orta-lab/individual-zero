@@ -320,6 +320,70 @@ class CanonicalCorrectionTests(unittest.TestCase):
             (),
         )
 
+    def test_reestablished_correction_cannot_cite_stale_intervention(self):
+        m = model()
+        physical_meal(m)
+        m.publish_causal_inference()
+        hypothesis(m)
+        agency_report(
+            m, "meal", step=1, option="option:meal",
+            observed=90.0, predicted=100.0, conforms=False,
+        )
+        intervention(m, "first", step=5, context="zone1")
+        intervention(m, "second", step=7, context="zone2")
+        self.assertEqual(m.get(REF).causal_status, "etablie")
+        (original,) = m.established_prediction_corrections()
+        self.assertEqual(original.intervention_ref, "intervention:first")
+
+        # A later physically supported counterexample revokes the rule.
+        # Its earlier positive interventions are no longer valid witnesses
+        # to the new revision's causal establishment.
+        negative = agency_report(
+            m, "failed", step=9, option="option:failed",
+            observed=85.0, predicted=95.0, conforms=False,
+        )
+        m.integrate_causal_intervention(CausalIntervention(
+            identifier="intervention:failed", contingency_ref=REF,
+            episode_ref=negative.episode_ref,
+            observation_ref="world:failed", command_ref="option:failed",
+            comparator_ref=negative.identifier,
+            context_signature="zone3",
+            emitted_step=9, observed_step=10,
+            observed_effect=False, comparator_status="nonconforming",
+            attribution="uncertain",
+            controlled_variables=(("primitive", "manger"),),
+            action_applied=True,
+        ))
+        self.assertEqual(
+            [x.after for x in m.publish_causal_inference()],
+            ["hypothese_causale"],
+        )
+        self.assertEqual(m.established_prediction_corrections(), ())
+        self.assertEqual(
+            [x.after for x in intervention(
+                m, "recovery1", step=11, context="zone1",
+            )], ["testee_par_intervention"],
+        )
+        self.assertEqual(m.established_prediction_corrections(), ())
+        self.assertEqual(
+            [x.after for x in intervention(
+                m, "recovery2", step=13, context="zone2",
+            )], ["etablie"],
+        )
+        (reestablished,) = m.established_prediction_corrections()
+        self.assertEqual(reestablished.contingency_ref, REF)
+        self.assertEqual(reestablished.intervention_ref, "intervention:recovery1")
+        self.assertNotEqual(reestablished.intervention_ref, original.intervention_ref)
+
+        snapshot = m.export_causal_state()
+        replay = model()
+        replay.restore_causal_state(snapshot)
+        self.assertEqual(replay.export_causal_state(), snapshot)
+        self.assertEqual(
+            replay.established_prediction_corrections(),
+            (reestablished,),
+        )
+
     def test_numeric_witness_needs_exact_published_comparator_value_and_identity(self):
         for option, step, observed in (
             ("option:meal", 1, 89.0),  # different bodily observation
