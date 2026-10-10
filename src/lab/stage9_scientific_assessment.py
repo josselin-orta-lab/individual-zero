@@ -141,6 +141,7 @@ def assess_heldout_campaign(
     # neither a larger row count nor a distinct episode identifier alone
     # establishes sampling independence across physical contexts.
     repeated_candidate_episode_clusters = []
+    repeated_known_case_episode_clusters = []
     for row in rows:
         if not isinstance(row, dict) or set(row) != RUN_FIELDS:
             raise ValueError("invalid heldout run schema")
@@ -277,9 +278,20 @@ def assess_heldout_campaign(
             for episode_ref, n in sorted(candidate_episode_counts.items())
             if n > 1
         )
+        repeated_known_case_episode_clusters.extend(
+            {
+                "world_id": world, "seed": seed, "episode_ref": episode_ref,
+                "known_case_count": n,
+            }
+            for episode_ref, n in sorted(known_episode_counts.items())
+            if n > 1
+        )
         run_metrics.append({
             "world_id": world, "seed": seed,
             "distinct_known_case_episode_refs": len(known_episode_counts),
+            "max_known_cases_per_episode": max(
+                known_episode_counts.values(), default=0,
+            ),
             "distinct_natural_candidate_episode_refs": len(candidate_episode_counts),
             "max_natural_candidates_per_episode": max(
                 candidate_episode_counts.values(), default=0,
@@ -292,6 +304,11 @@ def assess_heldout_campaign(
             },
         })
     repeated_candidate_episode_clusters.sort(
+        key=lambda group: (
+            group["world_id"], group["seed"], group["episode_ref"],
+        )
+    )
+    repeated_known_case_episode_clusters.sort(
         key=lambda group: (
             group["world_id"], group["seed"], group["episode_ref"],
         )
@@ -357,6 +374,10 @@ def assess_heldout_campaign(
         "runs": len(rows),
         "per_run_metrics": run_metrics,
         "reused_closed_memory_candidate_episodes": repeated_candidate_episode_clusters,
+        "reused_closed_memory_known_case_episodes": repeated_known_case_episode_clusters,
+        "total_distinct_known_case_episode_refs_by_run": sum(
+            run["distinct_known_case_episode_refs"] for run in run_metrics
+        ),
         "total_distinct_natural_candidate_episode_refs_by_run": sum(
             run["distinct_natural_candidate_episode_refs"]
             for run in run_metrics
