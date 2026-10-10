@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 import unittest
 
 from lab.stage9_frozen_worktree import verify_frozen_worktree
@@ -88,6 +89,43 @@ class FrozenWorktreePreflightTests(unittest.TestCase):
                         verify_frozen_worktree(
                             repository=repo, frozen_implementation_commit=frozen,
                         )
+
+
+    def test_package_and_normative_symlink_swap_after_preflight_is_rejected(self):
+        # Git status and the initial is_symlink() check see ordinary files.
+        # An attacker replaces a file with a link to byte-identical contents
+        # during the later is_file() precheck. A subsequent Path.read_bytes()
+        # would follow it and the final src/ scan would never see it.
+        for relative in ("pyproject.toml", SPEC_PATH):
+            with self.subTest(path=relative):
+                with TemporaryDirectory() as folder:
+                    repo = Path(folder)
+                    frozen, _, _ = _create_fixture(repo)
+                    target = repo / relative
+                    relocated = repo / ("relocated-" + target.name)
+                    original_is_file = Path.is_file
+                    replaced = False
+
+                    def replace_after_alias_precheck(candidate):
+                        nonlocal replaced
+                        if candidate == target and not replaced:
+                            replaced = True
+                            target.rename(relocated)
+                            target.symlink_to(relocated)
+                        return original_is_file(candidate)
+
+                    with patch.object(
+                        Path, "is_file", autospec=True,
+                        side_effect=replace_after_alias_precheck,
+                    ):
+                        with self.assertRaisesRegex(
+                            ValueError, "frozen tracked file failed guarded physical read",
+                        ):
+                            verify_frozen_worktree(
+                                repository=repo, frozen_implementation_commit=frozen,
+                            )
+                    self.assertTrue(replaced)
+                    self.assertTrue(target.is_symlink())
 
     def test_ignored_source_directory_symlink_is_not_trusted(self):
         with TemporaryDirectory() as folder:

@@ -69,6 +69,11 @@ the research plan is frozen, never to the simulated individual.
      --frozen-commit FULL_40_CHARACTER_IMPLEMENTATION_COMMIT
    ~~~
 
+   This preflight reads tracked source, package and normative specification
+   bytes with guarded no-follow descriptors, rejecting detectable path
+   substitutions during reading. It still cannot attest that the same
+   checkout actually executed or exclude transient changes between checks.
+
 A failed control at this point is an execution blocker, not grounds to silently
 change a sealed manifest. Either correct the plan **prospectively** through a
 new documented freeze and registration, or declare the attempted campaign

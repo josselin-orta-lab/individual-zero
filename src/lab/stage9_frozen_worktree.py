@@ -15,6 +15,7 @@ from .stage9_registration_chronology import (
     PROJECT_INSTALL_PATH, SOURCE_TREE_PATH, _check_commit, _git,
 )
 from .stage9_scientific_preregistration import SPEC_PATH
+from .stage9_secure_file_read import open_regular_no_follow
 
 # Cache and packaging metadata are explicitly excluded from this preflight.
 # They need separate runtime custody; all other unexpected source paths fail.
@@ -109,7 +110,15 @@ def verify_frozen_worktree(
         ))
         if executable != (mode == b"100755"):
             raise ValueError("source executable mode differs from frozen Git")
-        if file.read_bytes() != _git(root, "cat-file", "blob", oid.decode()):
+        # A prior is_symlink()/is_file() check cannot make Path.read_bytes()
+        # safe against a leaf or parent substitution immediately before open.
+        # The shared no-follow reader verifies the opened inode and final path.
+        try:
+            with open_regular_no_follow(file) as stream:
+                actual = stream.read()
+        except ValueError as exc:
+            raise ValueError("frozen tracked file failed guarded physical read") from exc
+        if actual != _git(root, "cat-file", "blob", oid.decode()):
             raise ValueError("physical source bytes differ from frozen Git blob")
 
     if not any(p.startswith(SOURCE_TREE_PATH + "/") for p in tracked):
