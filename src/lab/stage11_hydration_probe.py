@@ -232,7 +232,7 @@ def run_public_hydration_funnel(
         and row["option_ref"].startswith(TEST_PREFIX)
         for row in state["agency_evidence"]
     )
-    pending_actions = sum(
+    pending_test_action_count = sum(
         isinstance(row.get("option_ref"), str)
         and row["option_ref"].startswith(TEST_PREFIX)
         for row in state["lived_causal_actions"]
@@ -301,7 +301,7 @@ def run_public_hydration_funnel(
         stage11_test_comparison_classes=comparison_classes,
         stage11_causal_action_memory_closed=memory_closed,
         stage11_published_test_agency_reports=published_agency,
-        stage11_pending_test_actions=pending_actions,
+        stage11_pending_test_actions=pending_test_action_count,
         stage11_causal_intervention_stagings=staged_interventions,
         stage11_exploration_visits=exploration_visits,
         stage11_exploration_stagnant_visits=exploration_stagnant,
