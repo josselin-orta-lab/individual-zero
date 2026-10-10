@@ -112,6 +112,10 @@ class Stage9IndependentHandoffTests(unittest.TestCase):
             result = audit_independent_heldout_handoff(**options)
             self.assertEqual(result["protocol_version"], HANDOFF_VERSION)
             self.assertEqual(
+                result["current_checkout_preflight"]["normative_specification_blob_sha"],
+                result["git_chronology"]["frozen_normative_specification_blob_sha"],
+            )
+            self.assertEqual(
                 result["physical_manifest_custody"]["total_manifest_files_checked"],
                 7,
             )
@@ -156,7 +160,7 @@ class Stage9IndependentHandoffTests(unittest.TestCase):
             ("forged_manifest_index", "physical manifest index differs"),
             ("forged_raw_index", "raw artifact index is not bound"),
             ("changed_evidence", "committed|Git|evidence"),
-            ("changed_normative", "normative specification|Git"),
+            ("changed_normative", "local Git changes"),
         ):
             with self.subTest(scenario=scenario):
                 with TemporaryDirectory() as folder:
