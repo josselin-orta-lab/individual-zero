@@ -136,6 +136,11 @@ def assess_heldout_campaign(
         "natural_false_candidate_count", "false_established_count",
     )
     run_metrics = []
+    # A memory episode may contain multiple genuine physical transitions.
+    # Count observation rows and distinct closed-episode references separately:
+    # neither a larger row count nor a distinct episode identifier alone
+    # establishes sampling independence across physical contexts.
+    repeated_candidate_episode_clusters = []
     for row in rows:
         if not isinstance(row, dict) or set(row) != RUN_FIELDS:
             raise ValueError("invalid heldout run schema")
@@ -172,6 +177,8 @@ def assess_heldout_campaign(
         seen_cases = set()
         seen_candidates = set()
         seen_candidate_contingencies = set()
+        known_episode_counts: dict[str, int] = {}
+        candidate_episode_counts: dict[str, int] = {}
         # Evidence identity is a physical observation source, not an
         # autobiographical episode. One closed episode may contain distinct
         # transitions (and distinct §13.2 intervention contexts). Independence
@@ -190,6 +197,9 @@ def assess_heldout_campaign(
             ):
                 raise ValueError("invalid or duplicate known-cause observation")
             seen_cases.add(case["id"])
+            known_episode_counts[case["episode_ref"]] = (
+                known_episode_counts.get(case["episode_ref"], 0) + 1
+            )
             physical = case["observation_ref"]
             if physical in used_physical_refs:
                 raise ValueError("reused physical known-cause evidence")
@@ -245,6 +255,9 @@ def assess_heldout_campaign(
                 raise ValueError("reused canonical false-rule contingency")
             seen_candidates.add(item["id"])
             seen_candidate_contingencies.add(item["contingency_ref"])
+            candidate_episode_counts[item["episode_ref"]] = (
+                candidate_episode_counts.get(item["episode_ref"], 0) + 1
+            )
             physical = item["observation_ref"]
             if physical in used_physical_refs:
                 raise ValueError("reused physical natural candidate evidence")
@@ -256,8 +269,21 @@ def assess_heldout_campaign(
             no_effect_abstentions, no_effect_false_attributions,
             natural_candidates, false_established,
         )
+        repeated_candidate_episode_clusters.extend(
+            {
+                "world_id": world, "seed": seed, "episode_ref": episode_ref,
+                "candidate_count": n,
+            }
+            for episode_ref, n in sorted(candidate_episode_counts.items())
+            if n > 1
+        )
         run_metrics.append({
             "world_id": world, "seed": seed,
+            "distinct_known_case_episode_refs": len(known_episode_counts),
+            "distinct_natural_candidate_episode_refs": len(candidate_episode_counts),
+            "max_natural_candidates_per_episode": max(
+                candidate_episode_counts.values(), default=0,
+            ),
             **{
                 label: after - before
                 for label, before, after in zip(
@@ -265,6 +291,11 @@ def assess_heldout_campaign(
                 )
             },
         })
+    repeated_candidate_episode_clusters.sort(
+        key=lambda group: (
+            group["world_id"], group["seed"], group["episode_ref"],
+        )
+    )
     # Byte-identical archives reused between distinct registered world/seed
     # cells are a concrete provenance warning, even when filenames and inodes
     # differ. This is NOT, by itself, proof of fraud or lack of independence:
@@ -325,11 +356,22 @@ def assess_heldout_campaign(
         "evidence_sha256": supplied_digest,
         "runs": len(rows),
         "per_run_metrics": run_metrics,
+        "reused_closed_memory_candidate_episodes": repeated_candidate_episode_clusters,
+        "total_distinct_natural_candidate_episode_refs_by_run": sum(
+            run["distinct_natural_candidate_episode_refs"]
+            for run in run_metrics
+        ),
         "cross_run_identical_archives": archive_digest_collisions,
         "negative_runs_with_candidates": negative_runs_with_candidates,
         "registered_negative_runs": (
             len(registration["negative_world_ids"]) * len(seeds)
         ),
+        "negative_runs_without_natural_candidates": [
+            {"world_id": run["world_id"], "seed": run["seed"]}
+            for run in run_metrics
+            if run["world_id"] in registration["negative_world_ids"]
+            and run["natural_false_candidate_count"] == 0
+        ],
         "known_cause_cases": known_cases,
         "positive_known_cause_runs": len(witnessed_positive_runs),
         "registered_positive_runs": len(expected_positive_runs),
