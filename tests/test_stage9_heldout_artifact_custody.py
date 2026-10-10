@@ -446,7 +446,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             for candidate in candidates[:2]:
                 state["causal_model"]["causal_observations"].append({
                     "contingency_ref": candidate["contingency_ref"],
-                    "observation_ref": observation_ref,
+                    "observation_ref": observation_ref,\n                    "episode_ref": candidates[0]["episode_ref"],
                 })
                 state["causal_model"]["causal_credits"].append([
                     candidate["contingency_ref"], observation_ref, "observation",
@@ -470,12 +470,12 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             state = json.loads(
                 (root / index["runs"][0]["causal_state_path"]).read_bytes()
             )
-            state["causal_model"]["causal_observations"].append({
+            physical = report["runs"][0]["known_cause_cases"][0]\n            state["causal_model"]["causal_observations"].append({
                 "contingency_ref": "invented:unpublished",
-                "observation_ref": "invented:observation",
+                "observation_ref": physical["observation_ref"],\n                "episode_ref": physical["episode_ref"],
             })
             state["causal_model"]["causal_credits"].append([
-                "invented:unpublished", "invented:observation", "observation",
+                "invented:unpublished", physical["observation_ref"], "observation",
             ])
             altered = _replace_causal_state_bytes(
                 root, report, index, canonical_causal_bytes(state),
