@@ -4,6 +4,9 @@
 
 [English version](stage9-development-behavior-2026-10-10.en.md).
 
+**Pour reproduire ce test :** [procédure minimale pas à pas pour les observateurs](stage9-behavioral-test-quickstart.fr.md).
+
+
 ## Objet et provenance
 
 **Question :** I0 parvient-il, dans les mondes de développement du Stage 9, à observer l'effet de boire, publier une hypothèse causale, proposer une expérience et réellement exécuter une intervention vérifiée ?
