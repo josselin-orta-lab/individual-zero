@@ -240,10 +240,12 @@ swaps even when the opened file itself was never modified. This local
 filesystem safeguard requires no-follow descriptor support; it cannot
 establish independent custody, prevent transient changes reverted before the
 checks, or witness the actual execution. During one custody audit,
-the archived causal-owner file is parsed from one guarded byte image whose
-SHA-256 is checked against the registered report. The same frozen in-memory
-image must serve causal evidence, P-47 and closed-Memory checks; standalone
-Memory file reads also reject symlink paths. This prevents mixing snapshots
+the canonical journal and archived causal-owner file are each parsed from
+their own single guarded byte image, with each image's SHA-256 checked against
+the registered report. Journal event, P-47 and physical-transition evidence
+cannot be read from a different journal image after digest verification.
+The same frozen owner-state image serves causal evidence, P-47 and
+closed-Memory checks; standalone file readers still reject symlink paths. This prevents mixing snapshots
 read at different moments, but does not prevent transient tampering outside
 the guarded reads or establish an independent physical witness. The raw-artifact
 checker validates physical event identities, same-attempt commands/transitions,

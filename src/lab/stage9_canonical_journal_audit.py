@@ -13,6 +13,7 @@ remain necessary. EN MVP v1.2.1 §§17.4-17.5, 19.5, 20.3; INV-33/44/49.
 from __future__ import annotations
 
 from hashlib import sha256
+from io import BytesIO
 import json
 from pathlib import Path
 from typing import Mapping
@@ -32,12 +33,17 @@ ENTRY_FIELDS = frozenset({
 def audit_raw_causal_journal(
     path: Path, *, physical_observation_refs: set[str],
     published_agency_event_refs: set[str] | None = None,
+    verified_journal_bytes: bytes | None = None,
 ) -> dict[str, object]:
-    """Read a canonical journal without modifying it or trusting its claims.
+    """Audit exact canonical records without trusting journal claims.
 
-    Only a *separate* committed command and world transition from a matching
-    attempt can ground a physically identified observational row. This check
-    does not infer whether the claimed episode ID was really closed by Memory.
+    The optional byte image is supplied by the custody audit *after* that
+    caller verifies its SHA-256 against the registered held-out report.
+    Standalone use still opens the path through a guarded no-follow descriptor.
+    Supplying bytes alone does not independently attest their physical origin.
+
+    Only a separate committed command and transition from the same attempt
+    can ground an observational row; this is not a Memory closure witness.
     """
     if not isinstance(physical_observation_refs, set) or any(
         not isinstance(value, str) or not value.strip()
@@ -134,10 +140,18 @@ def audit_raw_causal_journal(
                 ).append((index, event_id))
         index += 1
 
-    # Hashing is handled by the artifact-custody caller. This second pass
-    # examines exact canonical records, never a transformed JSON rendering.
-    # The canonical journal format has LF *between* records but no terminal LF.
-    with open_regular_no_follow(path) as stream:
+    # Use the *same* registered-digest-bound bytes from the custody caller.
+    # Direct use still reads a guarded descriptor. BytesIO reproduces the
+    # identical line iteration, including exact final-LF validation.
+    if verified_journal_bytes is not None and not isinstance(
+        verified_journal_bytes, bytes
+    ):
+        raise ValueError("verified canonical journal image must be bytes")
+    source = (
+        open_regular_no_follow(path) if verified_journal_bytes is None
+        else BytesIO(verified_journal_bytes)
+    )
+    with source as stream:
         buffered: bytes | None = None
         for line in stream:
             if buffered is not None:

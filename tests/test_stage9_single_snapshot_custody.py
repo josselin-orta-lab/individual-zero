@@ -81,6 +81,71 @@ class Stage9SingleSnapshotCustodyTests(unittest.TestCase):
             self.assertTrue(injected)
             self.assertEqual(target.read_bytes(), original_bytes)
 
+
+    def test_journal_custody_passes_verified_image_without_reopening_parser(self):
+        # A fresh path open inside the journal parser used to observe bytes
+        # different from the digest-checked image. Retain the standalone
+        # guarded entrypoint, but never use it for a parent custody audit.
+        from lab import stage9_canonical_journal_audit as journal
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            registration, report, index = _prepared(root)
+            originals = {root / row["journal_path"] for row in index["runs"]}
+            journal_reads: dict[Path, int] = {}
+            original_reader = custody._read_raw_bytes
+
+            def count_journal_reads(path: Path) -> bytes:
+                if path in originals:
+                    journal_reads[path] = journal_reads.get(path, 0) + 1
+                return original_reader(path)
+
+            with patch.object(custody, "_read_raw_bytes", side_effect=count_journal_reads):
+                with patch.object(
+                    journal, "open_regular_no_follow",
+                    side_effect=AssertionError(
+                        "custody may not reopen journal inside source parser"
+                    ),
+                ):
+                    result = custody.audit_heldout_raw_artifacts(
+                        registration=registration, evidence=report,
+                        index=index, artifact_root=root,
+                    )
+            self.assertEqual(result["runs_checked"], len(index["runs"]))
+            self.assertEqual(journal_reads, {path: 1 for path in originals})
+            self.assertFalse(result["physical_truth_attested"])
+
+    def test_swapped_journal_image_cannot_pass_initial_and_final_file_hashes(self):
+        # Model a transient equal-size image substitution after the initial
+        # disk SHA check. The last disk read would still see original bytes.
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            registration, report, index = _prepared(root)
+            target = root / index["runs"][0]["journal_path"]
+            original = target.read_bytes()
+            substituted = b"X" + original[1:]
+            self.assertEqual(len(substituted), len(original))
+            real_reader = custody._read_raw_bytes
+            applied = False
+
+            def inject_once(path: Path) -> bytes:
+                nonlocal applied
+                if path == target and not applied:
+                    applied = True
+                    return substituted
+                return real_reader(path)
+
+            with patch.object(custody, "_read_raw_bytes", side_effect=inject_once):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "journal bytes changed between custody hash and parsing",
+                ):
+                    custody.audit_heldout_raw_artifacts(
+                        registration=registration, evidence=report,
+                        index=index, artifact_root=root,
+                    )
+            self.assertTrue(applied)
+            self.assertEqual(target.read_bytes(), original)
+
     def test_standalone_memory_file_reader_refuses_symlink(self):
         # The standalone path reader must not bypass the no-follow guard.
         with TemporaryDirectory() as folder:

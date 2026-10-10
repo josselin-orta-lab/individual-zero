@@ -345,9 +345,18 @@ def audit_heldout_raw_artifacts(
                     and isinstance(entry.get("event_ref"), str)
                 ):
                     published_agency_refs.add(entry["event_ref"])
+        # Bind physical transition and P-47 provenance to the exact journal
+        # image whose SHA-256 matches the previously registered report. A
+        # second file open with independent bytes would leave a TOCTOU gap.
+        journal_bytes = _read_raw_bytes(paths["journal_path"])
+        if sha256(journal_bytes).hexdigest() != reported["journal_sha256"]:
+            raise ValueError(
+                "raw causal journal bytes changed between custody hash and parsing"
+            )
         journal_audit = audit_raw_causal_journal(
             paths["journal_path"], physical_observation_refs=references,
             published_agency_event_refs=published_agency_refs,
+            verified_journal_bytes=journal_bytes,
         )
         journal_events_checked += journal_audit["journal_events_checked"]
         physical_sources_checked += journal_audit["claimed_physical_transitions_checked"]
