@@ -8,6 +8,18 @@ For the **operator-facing step sequence and custody responsibilities**, see
 [Stage 9 independent held-out operator runbook](stage9-independent-heldout-operator-runbook.md).
 The runbook is guidance, never an experimental result or scientific approval.
 
+The [pre-launch decision record](stage9-heldout-prelaunch-decision-record.md)
+tracks independent custodianship, identified operator/evaluator, protocol
+sign-off and the manual release-to-run decision. **This v2 JSON manifest
+includes the numeric `holdout_seeds` in plaintext.** Do not commit or
+publish it to a repository, branch, PR, log or Action visible to developers
+before the independent evaluation. Seal it in independently controlled
+Git history descended from the frozen code, preserve externally witnessed
+timing and access records, and let the independent reviewer later audit the
+complete chronology. The machine preflight does not attest this confidentiality
+or approve a campaign.
+
+
 ## Purpose and boundary
 
 Evaluate whether the Stage-9 Causal Model and Action Control correctly associate actions and observable consequences in independent worlds with known causes; reject inappropriate self-attribution; avoid `etablie` for noncausal or random associations; preserve the distinction between `etablie` (simulator corrections) and `etabli_pour_securite` (existing veto rules). All causal input to the individual must come from actual accessible Perception and independently closed autobiographical episodes. World truth, random schedules and the oracle remain exclusively on the bench side.

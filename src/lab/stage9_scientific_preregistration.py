@@ -197,11 +197,19 @@ def preflight(data: Mapping[str, object] | None = None) -> dict[str, object]:
             else "draft_requires_independent_git_seal"
         ),
         "registration_digest": digest,
+        # A JSON draft does not carry a witnessed human authorization,
+        # prove independent held-out custody, or authorize execution.
+        "launch_authorized_by_preflight": False,
+        "independent_heldout_custody_attested_by_preflight": False,
+        "independent_evaluator_approved_by_preflight": False,
         "scientific_verdict": None,
         "golden_stage9_frozen": False,
         "outstanding": [
             "author-approved thresholds and heldout design" if data is None
             else "independent prospective Git ancestry verification",
+            "sealed custody of plaintext held-out seeds and world manifests",
+            "named operator and independent evaluator with conflict review",
+            "prospective human approval and explicit release-to-run decision",
             "physically distinct holdout worlds and independent lived candidates",
             "external truth isolation, complete raw journals and exact replay",
             "preregistered rate/accuracy assessment and INV-25 review",

@@ -11,6 +11,21 @@ For the full exact schemas and scientific criteria, see
 [the preregistration template](stage9-scientific-preregistration-template.md).
 Do not run the deliberately synthetic test fixtures as if they were real data.
 
+Before a held-out campaign, complete the separate
+[pre-launch approval record](stage9-heldout-prelaunch-decision-record.md).
+It begins at **NO-GO** and records who accepted each responsibility,
+conflicts of interest, controlled custody, protocol approval, and an explicit
+human release-to-run decision. A named role or a filled template is not proof
+of independence. In particular, preregistration schema v2 contains the actual
+held-out seeds **in plaintext**: the registration commit must initially be
+made only in an independently controlled Git checkout/history that is not
+accessible to developers, not on this development PR or in CI logs.
+Preserve a separate independently witnessed time-stamped registration
+receipt; Git ancestry alone does not establish calendar-time antedating.
+The full isolated history can be examined by the authorized evaluator later
+without prematurely distributing hidden worlds, seeds or bench-only oracle.
+
+
 ## Accountability and isolation
 
 | Role | Holds and decides | Must not do |

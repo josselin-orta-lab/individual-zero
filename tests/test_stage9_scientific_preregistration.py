@@ -139,6 +139,36 @@ class Stage9PreregistrationTests(unittest.TestCase):
         self.assertIsNone(result["scientific_verdict"])
         self.assertFalse(result["golden_stage9_frozen"])
 
+    def test_registration_preflight_never_authorizes_heldout_exposure(self):
+        # Even a complete, syntactically valid prospective draft does not
+        # witness custody or independent roles, and cannot be a campaign GO.
+        for draft in (None, example_draft()):
+            with self.subTest(manifest_supplied=draft is not None):
+                result = preflight(draft)
+                self.assertIs(result["launch_authorized_by_preflight"], False)
+                self.assertIs(
+                    result["independent_heldout_custody_attested_by_preflight"],
+                    False,
+                )
+                self.assertIs(
+                    result["independent_evaluator_approved_by_preflight"],
+                    False,
+                )
+                self.assertIn(
+                    "sealed custody of plaintext held-out seeds and world manifests",
+                    result["outstanding"],
+                )
+                self.assertIn(
+                    "named operator and independent evaluator with conflict review",
+                    result["outstanding"],
+                )
+                self.assertIn(
+                    "prospective human approval and explicit release-to-run decision",
+                    result["outstanding"],
+                )
+                self.assertIsNone(result["scientific_verdict"])
+                self.assertFalse(result["golden_stage9_frozen"])
+
     def test_heldout_seed_or_world_overlap_is_rejected(self):
         for key, bad in (
             ("holdout_seeds", [41, 1002]),
