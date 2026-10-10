@@ -224,6 +224,7 @@ def audit_raw_causal_journal(
     # appended to a resealed Memory snapshot. An independent physical source
     # still requires external witness; this is a structural byte-level join.
     agency_source_events: dict[str, Mapping[str, object]] = {}
+    agency_physical_sources: dict[str, dict[str, object]] = {}
     for ref in sorted(agency_refs):
         source = events.get(ref)
         if source is None or source[1].get("kind") != "agency_comparison":
@@ -278,6 +279,12 @@ def audit_raw_causal_journal(
                 "published agency comparison absent from its autobiographical commit"
             )
         agency_source_events[ref] = event
+        agency_physical_sources[ref] = {
+            "command_ref": command_ref,
+            "transition_ref": transition_ref,
+            "attempt_ref": attempt,
+            "t_monde": step,
+        }
 
     return {
         "journal_events_checked": index,
@@ -285,6 +292,7 @@ def audit_raw_causal_journal(
         "claimed_physical_transitions_checked": matched,
         "physical_source_provenance": physical_source_provenance,
         "published_agency_source_events": agency_source_events,
+        "published_agency_physical_sources": agency_physical_sources,
         "published_agency_sources_checked": len(agency_source_events),
         "structural_status": "canonical_chain_and_committed_sources_verified",
         "physical_truth_attested": False,
