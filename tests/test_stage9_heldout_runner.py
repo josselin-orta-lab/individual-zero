@@ -230,6 +230,21 @@ class Stage9HeldoutRunnerTests(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         _json_file(path)
 
+    def test_operator_rejects_shallow_history_before_loading_worlds(self):
+        from lab.stage9_heldout_runner import _check_preregistration
+
+        with TemporaryDirectory() as folder:
+            with patch(
+                "lab.stage9_heldout_runner._git", return_value=b"true",
+            ), patch("lab.stage9_heldout_runner.reject_git_repository_overrides"):
+                with self.assertRaisesRegex(ValueError, "unshallowed"):
+                    _check_preregistration(
+                        repository=Path(folder),
+                        registration_path=Path("research/stage9/registration.json"),
+                        registration_commit="b" * 40,
+                        registration=example_draft(),
+                    )
+
     def test_synthetic_archive_packages_only_independently_supplied_labels(self):
         registration = example_draft()
         # Synthetic world labels and 4 cells only, no hidden data or oracle.
