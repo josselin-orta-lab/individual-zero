@@ -27,7 +27,7 @@ from .stage9_positive_hydration_benchmark import (
 from .stage9_random_reward_benchmark import preregistered_food_rewards
 
 
-PROTOCOL_VERSION = "stage11-public-hydration-funnel-dev-v5"
+PROTOCOL_VERSION = "stage11-public-hydration-funnel-dev-v6"
 TEST_PREFIX = "option:causal-test:"
 
 
@@ -66,6 +66,10 @@ class PublicHydrationFunnel:
     stage11_test_comparison_classes: tuple[tuple[str, str, str, int], ...]
     stage11_comparison_water_values: tuple[tuple[int, int, float, float, float, str], ...]
     stage11_physical_comparator_join_candidates: int
+    stage11_applied_test_steps: tuple[int, ...]
+    stage11_physical_action_custody: tuple[tuple[int, float, float | None, bool, bool], ...]
+    stage11_test_comparator_sent_steps: tuple[int, ...]
+    stage11_prospective_lineage: tuple[tuple[int, tuple[int, ...]], ...]
     stage11_causal_action_memory_closed: int
     stage11_published_test_agency_reports: int
     stage11_pending_test_actions: int
@@ -163,6 +167,7 @@ def run_public_hydration_funnel(
 
     first_hypothesis = None
     applied_tests = 0
+    applied_test_steps: list[int] = []
     for t in range(1, steps + 1):
         outcome = vnext.run_step()
         if (outcome.execution_status == "applied"
@@ -170,6 +175,7 @@ def run_public_hydration_funnel(
             and outcome.option_ref.startswith(TEST_PREFIX)
             and outcome.command_primitive == "boire"):
             applied_tests += 1
+            applied_test_steps.append(t)
         record = vnext.causal_model.get("causal:hydration")
         if (first_hypothesis is None and record is not None
             and record.causal_status in {
@@ -292,13 +298,24 @@ def run_public_hydration_funnel(
          report["observed_t_monde"])
         for report in published_comparisons
     }
-    joined_candidates = sum(
-        row.get("physical_episode_ref") is not None
-        and (row["option_ref"], row["sent_t_monde"],
-             row["observed_t_monde"]) in comparator_keys
+    physical_action_custody = tuple(sorted(
+        (
+            row["sent_t_monde"],
+            float(row["water_before"]),
+            None if row["water_observed"] is None
+            else float(row["water_observed"]),
+            row.get("physical_episode_ref") is not None,
+            (row["option_ref"], row["sent_t_monde"],
+             row["observed_t_monde"]) in comparator_keys,
+        )
         for row in state["lived_causal_actions"]
         if isinstance(row.get("option_ref"), str)
         and row["option_ref"].startswith(TEST_PREFIX)
+    ))
+    joined_candidates = sum(
+        physical_closed and comparator_matched
+        for _, _, _, physical_closed, comparator_matched
+        in physical_action_custody
     )
     comparison_classes = tuple(
         (status, attribution, water_effect, count)
@@ -386,6 +403,15 @@ def run_public_hydration_funnel(
         stage11_test_comparison_classes=comparison_classes,
         stage11_comparison_water_values=tuple(sorted(comparison_water_values)),
         stage11_physical_comparator_join_candidates=joined_candidates,
+        stage11_applied_test_steps=tuple(applied_test_steps),
+        stage11_physical_action_custody=physical_action_custody,
+        stage11_test_comparator_sent_steps=tuple(sorted(
+            report["sent_t_monde"] for report in comparisons
+        )),
+        stage11_prospective_lineage=tuple(sorted(
+            (row["sent_t_monde"], tuple(row["source_steps"]))
+            for row in prospective
+        )),
         stage11_causal_action_memory_closed=memory_closed,
         stage11_published_test_agency_reports=published_agency,
         stage11_pending_test_actions=pending_test_action_count,
