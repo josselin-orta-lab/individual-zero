@@ -286,7 +286,7 @@ def _reject_nonfinite_candidate_constant(value: str) -> None:
 def _reject_semantic_pre_registration_evidence(
     repository: Path, registration_commit: str, evidence: dict[str, object],
     archived_size: int,
-) -> tuple[int, int]:
+) -> tuple[int, int, int]:
     """Detect earlier JSON reports with identical content but different bytes.
 
     Exact Git-blob equality is checked separately, without a size limit.
@@ -318,7 +318,7 @@ def _reject_semantic_pre_registration_evidence(
     # exhaust the audit. The soft cap allows substantial JSON reformatting
     # while disclosing the unexamined object count.
     size_limit = min(max(archived_size * 8 + 4096, 1024 * 1024), 64 * 1024 * 1024)
-    compared = skipped = 0
+    compared = skipped = ambiguous_stage9 = 0
     for oid, row in zip(ids, rows):
         fields = row.split()
         if (
@@ -347,13 +347,39 @@ def _reject_semantic_pre_registration_evidence(
                 object_pairs_hook=_reject_duplicate_candidate_keys,
                 parse_constant=_reject_nonfinite_candidate_constant,
             )
-        except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError):
+            # A malformed prior Stage-9 envelope is not proof of an
+            # independent prospectively acquired report. In particular,
+            # silently skipping duplicate-key or NaN-bearing variants would
+            # turn a known provenance ambiguity into a clean receipt.
+            # Read it a *second time* permissively only to identify an
+            # obvious prior Stage-9 envelope. Never use this parse for
+            # accepted evidence or metric computation.
+            try:
+                loose = json.loads(raw)
+            except (UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError):
+                loose = None
+            is_stage9 = (
+                isinstance(loose, dict)
+                and loose.get("protocol_version") == "stage9-heldout-evidence-v2"
+                and "registration_digest" in loose and "runs" in loose
+            ) or (
+                b"stage9-heldout-evidence-v2" in raw
+                and b"registration_digest" in raw and b"runs" in raw
+            )
+            if is_stage9:
+                if loose == evidence:
+                    raise ValueError(
+                        "ambiguous pre-registration heldout JSON can decode "
+                        "to archived scientific evidence"
+                    )
+                ambiguous_stage9 += 1
             continue
         if candidate == evidence:
             raise ValueError(
                 "semantically identical heldout evidence existed in Git before preregistration"
             )
-    return compared, skipped
+    return compared, skipped, ambiguous_stage9
 
 
 def audit_registration_chronology(
@@ -420,7 +446,7 @@ def audit_registration_chronology(
     prior_objects_checked = _reject_pre_registration_evidence_blob(
         root, registration_commit, evidence_commit, evidence_name,
     )
-    semantic_blobs_checked, oversized_blobs_not_checked = (
+    semantic_blobs_checked, oversized_blobs_not_checked, ambiguous_stage9_blobs = (
         _reject_semantic_pre_registration_evidence(
             root, registration_commit, evidence, len(committed_evidence),
         )
@@ -453,7 +479,10 @@ def audit_registration_chronology(
         "pre_registration_git_objects_checked": prior_objects_checked,
         "pre_registration_json_blobs_checked": semantic_blobs_checked,
         "pre_registration_oversized_blobs_not_checked": oversized_blobs_not_checked,
-        "pre_registration_semantic_scan_complete": oversized_blobs_not_checked == 0,
+        "pre_registration_ambiguous_stage9_json_blobs": ambiguous_stage9_blobs,
+        "pre_registration_semantic_scan_complete": (
+            oversized_blobs_not_checked == 0 and ambiguous_stage9_blobs == 0
+        ),
         "registration_unchanged_descendant_commits_checked": (
             audited_descendant_commits
         ),
