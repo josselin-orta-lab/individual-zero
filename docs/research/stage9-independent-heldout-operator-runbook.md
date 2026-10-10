@@ -118,6 +118,31 @@ python -m lab.stage9_heldout_artifact_custody \
   --artifact-root results/stage9/raw
 ~~~
 
+For an **additional single, fail-closed machine receipt**, invoke the
+combined reader. It runs the Git-chronology audit, the present-checkout
+preflight, the registered physical manifest audit, the raw journal/Memory
+custody audit and the provisional scorer using one coherent registration:
+
+~~~bash
+python -m lab.stage9_independent_handoff \
+  --repo . \
+  --registration research/stage9/registration.json \
+  --registration-commit FULL_40_CHARACTER_PREREGISTRATION_COMMIT \
+  --evidence results/stage9/heldout.json \
+  --evidence-commit FULL_40_CHARACTER_EVIDENCE_COMMIT \
+  --manifest-index results/stage9/physical-manifest-index.json \
+  --manifest-root results/stage9/raw-manifests \
+  --raw-index results/stage9/raw-artifact-index.json \
+  --raw-artifact-root results/stage9/raw
+~~~
+
+The combined output includes a deterministic machine-receipt SHA-256, all
+underlying machine reports, the recorded metric status and explicit
+unattested claims. It writes no source or scientific result, cannot return a
+Golden and cannot replace an independent reviewer. Checking the **current**
+checkout does not retrospectively prove that it was the binary actually
+executed; preserve the separate pre-run receipt from step 1.
+
 Retain the manifest-file audit from step 1 and compare the physical manifests
 again if custody changed hands. If any tool reports a mismatch, block
 acceptance and retain the failure. The raw-artifact checker validates physical
