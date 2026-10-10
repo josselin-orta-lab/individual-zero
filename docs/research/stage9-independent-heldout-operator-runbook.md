@@ -206,8 +206,10 @@ the **current** checkout does not retrospectively prove that it was the binary
 actually executed; preserve the separate pre-run receipt from step 1.
 
 Retain the manifest-file audit from step 1 and compare the physical manifests
-again if custody changed hands. If any tool reports a mismatch, block
-acceptance and retain the failure. The raw-artifact reader also opens each
+again if custody changed hands. Physical-manifest hashing uses the same guarded
+descriptor reader as raw evidence, rejecting detectable same-size in-place
+changes and persistent parent-directory substitutions during reading. If any
+tool reports a mismatch, block acceptance and retain the failure. The raw-artifact reader also opens each
 journal, replay and archived causal-owner file through guarded regular-file
 descriptors, rejecting symlink replacements of file or parent directories and
 detectable in-read mutations. After each read it also checks that the named

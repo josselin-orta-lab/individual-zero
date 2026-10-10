@@ -192,6 +192,7 @@ class Stage9RegisteredManifestCustodyTests(unittest.TestCase):
         # a symlink immediately before open(). A preflight is_symlink()
         # followed by Path.open() would follow it without noticing.
         from lab import stage9_registered_manifest_custody as custody
+        from lab import stage9_secure_file_read as guarded
         for scenario in ("leaf", "parent"):
             with self.subTest(scenario=scenario):
                 with TemporaryDirectory() as folder:
@@ -206,7 +207,7 @@ class Stage9RegisteredManifestCustodyTests(unittest.TestCase):
                     target_component = (
                         filename.name if scenario == "leaf" else filename.parent.name
                     )
-                    real_open = custody.os.open
+                    real_open = guarded.os.open
                     switched = False
 
                     def swap_at_open(path, flags, *, dir_fd=None):
@@ -226,7 +227,7 @@ class Stage9RegisteredManifestCustodyTests(unittest.TestCase):
                             )
                         return real_open(path, flags, dir_fd=dir_fd)
 
-                    with patch.object(custody.os, "open", side_effect=swap_at_open):
+                    with patch.object(guarded.os, "open", side_effect=swap_at_open):
                         with self.assertRaisesRegex(ValueError, "symlink"):
                             custody._hash_bytes(filename)
                     self.assertTrue(switched)
@@ -282,6 +283,70 @@ class Stage9RegisteredManifestCustodyTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "changed during custody audit"):
                     _audit(root, draft, index)
             self.assertTrue(modified)
+
+
+    def test_same_size_manifest_mutation_during_read_is_rejected(self):
+        # A size-only fstat() check cannot detect a same-length rewrite.
+        from lab import stage9_registered_manifest_custody as custody
+        from lab import stage9_secure_file_read as guarded
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            _draft, index = _fixture(root)
+            target = root / index["frozen_manifests"]["equipment"]
+            original = target.read_bytes()
+            before = target.stat()
+            changed = b"X" + original[1:]
+            self.assertEqual(len(original), len(changed))
+            real_fdopen = guarded.os.fdopen
+            mutated = False
+
+            def rewrite_after_open(fd, mode):
+                nonlocal mutated
+                stream = real_fdopen(fd, mode)
+                if not mutated:
+                    mutated = True
+                    target.write_bytes(changed)
+                    # Force a reproducible timestamp difference even on
+                    # lower-resolution filesystems.
+                    os.utime(target, ns=(
+                        before.st_atime_ns, before.st_mtime_ns + 2_000_000_000,
+                    ))
+                return stream
+
+            with patch.object(guarded.os, "fdopen", side_effect=rewrite_after_open):
+                with self.assertRaisesRegex(ValueError, "changed during descriptor read"):
+                    custody._hash_bytes(target)
+            self.assertTrue(mutated)
+
+    def test_manifest_parent_swap_while_reading_rejects_identical_bytes(self):
+        # The old opened inode remains intact but the path now resolves to
+        # an unrelated inode whose contents have the same expected digest.
+        from lab import stage9_registered_manifest_custody as custody
+        from lab import stage9_secure_file_read as guarded
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            _draft, index = _fixture(root)
+            target = root / index["frozen_manifests"]["equipment"]
+            parent = target.parent
+            incoming = root / "incoming"
+            incoming.mkdir()
+            (incoming / target.name).write_bytes(target.read_bytes())
+            real_fdopen = guarded.os.fdopen
+            swapped = False
+
+            def swap_parent_after_open(fd, mode):
+                nonlocal swapped
+                stream = real_fdopen(fd, mode)
+                if not swapped:
+                    swapped = True
+                    parent.rename(root / "relocated-manifests")
+                    incoming.rename(parent)
+                return stream
+
+            with patch.object(guarded.os, "fdopen", side_effect=swap_parent_after_open):
+                with self.assertRaisesRegex(ValueError, "changed during descriptor read"):
+                    custody._hash_bytes(target)
+            self.assertTrue(swapped)
 
     def test_index_requires_exact_worlds_roles_and_digest(self):
         edits = (
