@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Mapping
 
 from .determinism import canonical_causal_bytes, sha256_hex
+from i0.modules.causal_lifecycle import decode_intervention, decode_observation
 from .stage9_canonical_journal_audit import audit_raw_causal_journal
 from .stage9_memory_custody import audit_archived_closed_memory_sources
 from .stage9_scientific_assessment import (
@@ -330,6 +331,21 @@ def audit_heldout_raw_artifacts(
             or set(actual_credits) != expected_credits
         ):
             raise ValueError("archived causal credits disagree with admitted evidence")
+        # Cross-check syntactic and normative admissibility after independent
+        # physical/journal/credit checks. A rehashed owner snapshot must not
+        # launder oracle-derived, rolled-back, counterfactual, or unapplied
+        # evidence into the causal history.
+        for records, decoder in (
+            (observations, decode_observation),
+            (interventions, decode_intervention),
+        ):
+            for entry in records:
+                try:
+                    decoder(entry)
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise ValueError(
+                        "archived causal evidence is not admissible"
+                    ) from exc
         for candidate in reported["naturally_acquired_false_candidates"]:
             actual = by_ref.get(candidate["contingency_ref"])
             if (
