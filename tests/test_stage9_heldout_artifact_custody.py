@@ -95,7 +95,8 @@ def _prepared(root: Path):
                     "causal_status": entry["causal_status"],
                 }
                 for entry in run["naturally_acquired_false_candidates"]
-            ]},
+            ], "causal_observations": [],
+                "causal_interventions": [], "causal_credits": []},
         })
         files = {
             "journal_path": (f"{name}/original.jsonl", journal),
@@ -420,6 +421,27 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                 run_index=index["runs"].index(item),
             )
             with self.assertRaisesRegex(ValueError, "disagrees with archived causal status"):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=altered,
+                    index=index, artifact_root=root,
+                )
+
+    def test_rehashed_forged_causal_credit_is_rejected(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            state = json.loads(
+                (root / index["runs"][0]["causal_state_path"]).read_bytes()
+            )
+            state["causal_model"]["causal_credits"].append([
+                "forged:contingency", "forged:observation", "intervention",
+            ])
+            altered = _replace_causal_state_bytes(
+                root, report, index, canonical_causal_bytes(state),
+            )
+            with self.assertRaisesRegex(
+                ValueError, "causal credits disagree with admitted evidence",
+            ):
                 audit_heldout_raw_artifacts(
                     registration=reg, evidence=altered,
                     index=index, artifact_root=root,
