@@ -7,6 +7,7 @@ from dataclasses import dataclass, replace
 from math import isfinite
 
 from i0.modules.exploration import Exploration, ExplorationConfig
+from i0.modules.global_modulation import GlobalModulation, ModulationConfig
 from i0.modules.stage11_evaluator import Stage11OptionEvaluator
 from i0.temperament import ParametresTemperament
 
@@ -18,6 +19,7 @@ class Stage11Config:
     version: str
     stage9: Stage9Config
     exploration: ExplorationConfig
+    modulation: ModulationConfig
     temperament_parameters: ParametresTemperament
     intrinsic_weight: float
     exploration_envelope_uc: int
@@ -28,6 +30,7 @@ class Stage11Config:
             raise ValueError("Stage-11 runtime version required")
         self.stage9.validate()
         self.exploration.validate()
+        self.modulation.validate()
         self.temperament_parameters.validate()
         if not isfinite(self.intrinsic_weight) or self.intrinsic_weight < 0:
             raise ValueError("invalid P-15")
@@ -83,6 +86,10 @@ class Stage11Runtime(Stage9Runtime):
             config.exploration,
             coefficient=config.temperament_parameters.exploration_coefficient,
         )
+        self.modulation = GlobalModulation(config.modulation)
+        self._stage11_modulation_signals = {
+            "boredom": False, "needs_satisfied": False,
+        }
         self.stage8_option_evaluator = Stage11OptionEvaluator(
             config=config.stage9.stage8.evaluation,
             stage6=self.option_evaluator, q_values=self.q_active,
@@ -91,15 +98,63 @@ class Stage11Runtime(Stage9Runtime):
 
     @property
     def causal_owners(self):
-        return (*super().causal_owners, self.exploration)
+        return (*super().causal_owners, self.exploration, self.modulation)
+
+    def _gatekeeper_profile_multipliers(self):
+        # P-23: per-cycle coefficients; Gatekeeper retains sole scoring state.
+        return self.modulation.multipliers()
+
+    def _profile_state(self):
+        return {
+            "name": self.modulation.profile,
+            "version": self._stage11_config.modulation.version,
+        }
+
+    def _st_additional_fixed(self):
+        # Captured before phase 1. The next cycle reads it via frozen S_t.
+        return {"modulation_signals": dict(self._stage11_modulation_signals)}
 
     def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
         # Frozen input precedes all producers of phase 1 (INV-08).
         frozen = self.causal_model.export_causal_state()
+        # These phase-2 S_t fields are captured BEFORE phase-1 producers run.
+        # The current step's physical needs and previous Exploration state
+        # cannot influence the profile until S_t publishes for a NEXT cycle.
+        need_state = self._step_need_state
+        self._stage11_modulation_signals = {
+            "boredom": self.exploration.boredom_detected(),
+            "needs_satisfied": (
+                False if need_state is None
+                else all(float(v) == 0.0 for v in need_state.deficits.values())
+            ),
+        }
         hooks = super()._phase_hooks(
             cycle=cycle, capture=capture, goal_for_planning=goal_for_planning,
             st_before_cycle=st_before_cycle,
         )
+
+        previous_modulation_hook = hooks[0]["global_modulation"]
+
+        def modulation_hook(ctx):
+            previous_modulation_hook(ctx)
+            old = self.modulation.profile
+            indicators = self.modulation.indicators_from_st(st_before_cycle)
+            new = self.modulation.freeze(
+                signals=indicators, world_step=capture.t_monde, cycle=cycle,
+            )
+            if old != new:
+                self._write(
+                    kind="stage11_modulation_transition", cycle=cycle,
+                    data={
+                        "before": old, "after": new,
+                        "profile_version": self._stage11_config.modulation.version,
+                        "source_st_version": (
+                            None if st_before_cycle is None
+                            else st_before_cycle.version
+                        ),
+                    },
+                )
+        hooks[0]["global_modulation"] = modulation_hook
 
         def exploration_hook(_context):
             if not self._charge(module="exploration", operation="exploration_observe"):
