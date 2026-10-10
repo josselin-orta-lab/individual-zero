@@ -228,6 +228,27 @@ def _synthetic_causal_trial(
     }
 
 
+def _synthetic_agency_comparison(trial: dict[str, object]) -> dict[str, object]:
+    """P-47-shaped *synthetic parser fixture*, never actual agency evidence."""
+    status = trial["comparator_status"]
+    return {
+        "identifier": trial["comparator_ref"],
+        "episode_ref": trial["episode_ref"],
+        "event_ref": f"synthetic:p47-event:{trial['identifier']}",
+        "option_ref": trial["command_ref"],
+        "sent_t_monde": trial["emitted_step"],
+        "observed_t_monde": trial["observed_step"],
+        "status": status,
+        "attribution": trial["attribution"],
+        "effects": [[
+            "water", status, 1.0,
+            1.0 if status == "conforming" else 0.0,
+            0.1, "synthetic:p47-v1",
+        ]],
+        "source": "agency_comparator",
+    }
+
+
 def _attach_synthetic_historical_proof(
     root: Path, evidence: dict[str, object], index: dict[str, object],
     state: dict[str, object], *, run_index: int, rule_ref: str,
@@ -309,6 +330,13 @@ def _attach_synthetic_historical_proof(
         "alternatives": ["synthetic:alternative"],
         "contrasting_pairs": [[source_ids[0], source_ids[1]]],
     }]
+    # Admitted interventions need already-published comparator reports.
+    # These fabricated reports exercise only the archived structural join.
+    owner = state["causal_model"]
+    owner.setdefault("agency_evidence", []).extend(
+        _synthetic_agency_comparison(trial)
+        for trial in owner.get("causal_interventions", [])
+    )
     revised = _replace_journal_bytes(
         root, evidence, index, journal.canonical_bytes(), run_index=run_index,
     )
@@ -1093,6 +1121,11 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                 [first["contingency_ref"], first["observation_ref"], "observation"],
                 [second["contingency_ref"], second["observation_ref"], "intervention"],
             ])
+            state["causal_model"]["agency_evidence"] = [
+                _synthetic_agency_comparison(
+                    state["causal_model"]["causal_interventions"][0]
+                )
+            ]
             altered = _replace_causal_state_bytes(
                 root, report, index, canonical_causal_bytes(state),
                 run_index=run_index,
