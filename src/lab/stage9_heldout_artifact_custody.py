@@ -152,6 +152,7 @@ def audit_heldout_raw_artifacts(
     seen_runs: set[tuple[str, int]] = set()
     seen_paths: set[Path] = set()
     seen_inodes: set[tuple[int, int]] = set()
+    pinned_inodes: dict[Path, tuple[int, int]] = {}
     total_size = 0
     verified_files = 0
     journal_events_checked = 0
@@ -179,6 +180,7 @@ def audit_heldout_raw_artifacts(
                 raise ValueError("raw artifact reused across runs or replay roles")
             seen_paths.add(physical)
             seen_inodes.add(inode)
+            pinned_inodes[physical] = inode
             actual_sha, size = _file_hash_and_size(physical)
             if actual_sha != reported[expected_sha_key]:
                 raise ValueError(
@@ -231,7 +233,7 @@ def audit_heldout_raw_artifacts(
             if (
                 _physical_file(root, item[index_key]) != physical
                 or (physical.stat().st_dev, physical.stat().st_ino)
-                not in seen_inodes
+                != pinned_inodes[physical]
                 or _file_hash_and_size(physical)[0] != reported[expected_sha_key]
             ):
                 raise ValueError("raw artifact changed during custody audit")
