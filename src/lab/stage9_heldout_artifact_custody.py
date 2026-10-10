@@ -221,7 +221,16 @@ def audit_heldout_raw_artifacts(
         # canonical contingency and its archived causal status. Matching only
         # physical episodes would let a forged report invent an established
         # rule without any such rule in the frozen causal owner.
-        state = json.loads(paths["causal_state_path"].read_bytes())
+        try:
+            state = json.loads(
+                paths["causal_state_path"].read_bytes().decode("utf-8"),
+                object_pairs_hook=_reject_duplicate_keys,
+                parse_constant=_reject_nonfinite_constant,
+            )
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError("invalid archived causal owner-state JSON") from exc
+        if not isinstance(state, dict):
+            raise ValueError("archived causal owners must be an object")
         owner = state.get("causal_model")
         published = owner.get("published") if isinstance(owner, dict) else None
         if not isinstance(published, list):
