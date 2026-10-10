@@ -117,6 +117,18 @@ def _published_p47_from_journal(
         raise ValueError("invalid raw P-47 comparator data") from exc
     if result is None:
         raise ValueError("raw P-47 comparator has no admissible evidence")
+    # AgencyComparator's frozen P-47 rule is a per-variable absolute
+    # difference against the effective tolerance recorded with the
+    # comparison. A rehashed journal and owner snapshot must not agree on
+    # an impossible "conforming" classification.
+    for _variable, status, predicted, observed, tolerance, _version in result.effects:
+        if status not in {"conforming", "nonconforming"}:
+            continue
+        numerical_match = abs(observed - predicted) <= tolerance
+        if numerical_match != (status == "conforming"):
+            raise ValueError(
+                "raw P-47 comparator status contradicts numerical tolerance"
+            )
     return result
 
 
