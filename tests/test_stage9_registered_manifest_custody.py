@@ -135,6 +135,12 @@ class Stage9RegisteredManifestCustodyTests(unittest.TestCase):
                         original.unlink()
                         os.link(replacement, original)
                         expected = "physical manifest reused"
+                    if kind in {"duplicate_path", "hardlink"}:
+                        # Freeze two roles to the *same* digest, so each
+                        # byte-level comparison succeeds and the anti-alias
+                        # inode/path check is exercised independently.
+                        draft["equipment_sha256"] = draft["ontology_sha256"]
+                        index["registration_digest"] = validate_registration(draft)
                     with self.assertRaisesRegex(ValueError, expected):
                         _audit(root, draft, index)
 
