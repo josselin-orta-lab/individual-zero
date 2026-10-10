@@ -231,12 +231,23 @@ def audit_independent_heldout_handoff(
     episode_clusters = provisional.get(
         "reused_closed_memory_candidate_episodes"
     )
+    known_case_episode_clusters = provisional.get(
+        "reused_closed_memory_known_case_episodes"
+    )
     empty_negative_runs = provisional.get(
         "negative_runs_without_natural_candidates"
     )
     if (
         not isinstance(episode_clusters, list)
+        or not isinstance(known_case_episode_clusters, list)
         or not isinstance(empty_negative_runs, list)
+        or any(
+            not isinstance(item, dict)
+            or set(item) != {"world_id", "seed", "episode_ref", "known_case_count"}
+            or type(item["known_case_count"]) is not int
+            or item["known_case_count"] < 2
+            for item in known_case_episode_clusters
+        )
         or any(
             not isinstance(item, dict)
             or set(item) != {"world_id", "seed", "episode_ref", "candidate_count"}
@@ -255,6 +266,8 @@ def audit_independent_heldout_handoff(
         )
     if (
         raw.get("reused_closed_memory_candidate_episodes") != episode_clusters
+        or raw.get("reused_closed_memory_known_case_episodes")
+        != known_case_episode_clusters
         or raw.get("negative_runs_without_natural_candidates")
         != empty_negative_runs
     ):
@@ -264,6 +277,10 @@ def audit_independent_heldout_handoff(
     if episode_clusters:
         review_blockers.append(
             "multiple_false_rules_from_one_closed_memory_episode_require_independence_review"
+        )
+    if known_case_episode_clusters:
+        review_blockers.append(
+            "multiple_known_cause_cases_from_one_closed_memory_episode_require_independence_review"
         )
     if empty_negative_runs and provisional["natural_false_candidate_count"] > 0:
         review_blockers.append(
@@ -306,6 +323,7 @@ def audit_independent_heldout_handoff(
         "provisional_metric_assessment": provisional["assessment"],
         "cross_run_identical_archives": collisions,
         "reused_closed_memory_candidate_episodes": episode_clusters,
+        "reused_closed_memory_known_case_episodes": known_case_episode_clusters,
         "negative_runs_without_natural_candidates": empty_negative_runs,
         "git_chronology": chronology,
         "current_checkout_preflight": checkout,
