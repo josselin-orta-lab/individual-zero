@@ -95,6 +95,7 @@ def run_public_hydration_funnel(
     if (type(seed) is not int or seed < 0 or type(steps) is not int
         or steps < 6 or world not in POSITIVE_HYDRATION_VARIANTS
         or type(enable_lived_prediction) is not bool
+        or type(exploration_policy) is not str
         or exploration_policy not in {"reference", "three_visit_window"}):
         raise ValueError("only explicitly public Stage-9 development settings are allowed")
     gain, decay = POSITIVE_HYDRATION_VARIANTS[world]
