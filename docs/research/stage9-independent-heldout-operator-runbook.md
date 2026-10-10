@@ -264,8 +264,11 @@ does not appear in held-out scoring rows**. Attempts with zero applied commands
 and zero advancement are not misclassified as successful physical steps.
 Uncommitted rollback attempts may remain in the technical journal (INV-49)
 without becoming accepted physical samples. Every committed `event_refs` entry must also belong to the same
-`attempt_ref` and `t_monde` and be a perceptible event kind authorized by the
-versioned Stage-7/DC-09 autobiographical allowlist. This prevents even
+`attempt_ref` and `t_monde`. Each commit must declare a recognized
+`filter_version` belonging to the versioned Stage-2 or Stage-7/DC-09
+runtime policy. Referenced events must be permitted by **that exact version**:
+an unknown version or a Stage-2 commit referencing Stage-7-only cognitive
+content fails closed. This prevents even
 unreported commits from laundering oracle, technical or foreign-attempt
 events into Memory. The checker also validates canonical P-47 source
 measurements, causal evidence, reviews, intervention contexts and closed

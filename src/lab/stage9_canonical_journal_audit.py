@@ -20,6 +20,7 @@ from typing import Mapping
 
 from .determinism import canonical_causal_bytes, sha256_hex
 from .journal import GENESIS_HASH
+from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY
 from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY
 from .stage9_secure_file_read import open_regular_no_follow
 from .stage9_scientific_assessment import (
@@ -29,11 +30,16 @@ from .stage9_scientific_assessment import (
 ENTRY_FIELDS = frozenset({
     "index", "event_id", "previous_hash", "event_hash", "causal_event",
 })
-# Stage 8/9 inherit this exact Stage-7 autobiographical projection policy.
-# Refer to its owned allowlist, never an independently maintained audit copy.
-_DC09_ALLOWED_KINDS = frozenset(
-    STAGE7_AUTOBIOGRAPHICAL_POLICY.allowed_fields_by_kind
-)
+# Stage 9 inherits the Stage-2 physical projection and Stage-7 cognitive
+# projection. A commit may only claim the event kinds permitted by *its own*
+# declared filter_version, not by their union. Reuse runtime-owned policies.
+_DC09_ALLOWED_BY_VERSION = {
+    policy.version: frozenset(policy.allowed_fields_by_kind)
+    for policy in (
+        STAGE2_AUTOBIOGRAPHICAL_POLICY,
+        STAGE7_AUTOBIOGRAPHICAL_POLICY,
+    )
+}
 
 
 def audit_raw_causal_journal(
@@ -187,6 +193,15 @@ def audit_raw_causal_journal(
         if len(commits) != 1:
             raise ValueError("physical attempt has multiple Memory commits")
         commit_index, commit = commits[0]
+        filter_version = commit.get("filter_version")
+        if (
+            not isinstance(filter_version, str)
+            or filter_version not in _DC09_ALLOWED_BY_VERSION
+        ):
+            raise ValueError(
+                "committed Memory record uses an unknown autobiographical policy version"
+            )
+        allowed_kinds = _DC09_ALLOWED_BY_VERSION[filter_version]
         refs = commit.get("event_refs")
         if (
             not isinstance(refs, list)
@@ -201,7 +216,7 @@ def audit_raw_causal_journal(
         if any(
             events[value][1].get("attempt_ref") != attempt
             or events[value][1].get("t_monde") != step
-            or events[value][1].get("kind") not in _DC09_ALLOWED_KINDS
+            or events[value][1].get("kind") not in allowed_kinds
             for value in refs
         ):
             raise ValueError(

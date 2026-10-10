@@ -6,6 +6,8 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from lab.journal import HashChainedJournal
+from lab.stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY
+from lab.stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY
 from lab.stage9_canonical_journal_audit import audit_raw_causal_journal
 
 
@@ -62,6 +64,7 @@ def synthetic_journal(
             )
         if label == "second" and second_fault in (
             "technical_leak", "wrong_step_cognitive", "valid_cognitive",
+            "stage2_cognitive",
         ):
             event_kind = (
                 "oracle_annotation" if second_fault == "technical_leak"
@@ -88,6 +91,7 @@ def synthetic_journal(
             )
             if label == "second" and second_fault in (
                 "technical_leak", "wrong_step_cognitive", "valid_cognitive",
+                "stage2_cognitive",
             ):
                 refs.append("synthetic-secondary-event")
             if label == "second" and second_fault == "foreign_cognitive_ref":
@@ -98,6 +102,16 @@ def synthetic_journal(
                 "t_monde": step,
                 "event_refs": refs,
             }
+            if not (label == "second" and second_fault == "missing_policy"):
+                event["filter_version"] = (
+                    "synthetic-unregistered-policy"
+                    if label == "second" and second_fault == "unknown_policy"
+                    else STAGE2_AUTOBIOGRAPHICAL_POLICY.version
+                    if label == "second" and second_fault in (
+                        "stage2_cognitive", "valid_stage2",
+                    )
+                    else STAGE7_AUTOBIOGRAPHICAL_POLICY.version
+                )
             journal.append(
                 event_id=f"synthetic-commit:{label}", causal_event=event,
             )
@@ -222,6 +236,37 @@ class Stage9CommittedWorldStepTests(unittest.TestCase):
         )
         self.assertEqual(result["claimed_physical_transitions_checked"], 1)
         self.assertFalse(result["physical_truth_attested"])
+
+
+    def test_unreported_commit_rejects_missing_or_unknown_policy_version(self):
+        for fault in ("missing_policy", "unknown_policy"):
+            with self.subTest(fault=fault):
+                with self.assertRaisesRegex(
+                    ValueError, "unknown autobiographical policy version",
+                ):
+                    self.inspect(
+                        second_step=2, second_committed=True, second_fault=fault,
+                    )
+
+    def test_stage2_filter_cannot_launder_stage7_cognitive_event(self):
+        # A cognitive kind allowed under Stage 7 does not enter a
+        # Stage-2-only projection merely by claiming its event ID.
+        with self.assertRaisesRegex(
+            ValueError, "committed Memory reference crosses attempts or exposes technical event",
+        ):
+            self.inspect(
+                second_step=2, second_committed=True,
+                second_fault="stage2_cognitive",
+            )
+
+    def test_genuine_stage2_and_stage7_policy_scopes_remain_compatible(self):
+        for fault in ("valid_stage2", "valid_cognitive"):
+            with self.subTest(fault=fault):
+                result = self.inspect(
+                    second_step=2, second_committed=True, second_fault=fault,
+                )
+                self.assertEqual(result["claimed_physical_transitions_checked"], 1)
+                self.assertFalse(result["physical_truth_attested"])
 
     def test_distinct_completed_world_steps_are_still_accepted(self):
         result = self.inspect(second_step=2, second_committed=True)

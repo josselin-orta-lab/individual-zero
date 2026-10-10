@@ -16,6 +16,7 @@ from lab.stage9_heldout_artifact_custody import (
 from lab.stage9_memory_custody import audit_archived_closed_memory_sources
 from lab.stage9_scientific_preregistration import validate_registration
 from lab.journal import HashChainedJournal
+from lab.stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY
 from lab.determinism import canonical_causal_bytes
 from tests.test_stage9_scientific_assessment import make_report, sealed
 from tests.test_stage9_scientific_preregistration import example_draft
@@ -111,7 +112,7 @@ def _prepared(
                     "kind": "auto_segment_commit",
                     "attempt_ref": attempt, "t_monde": step,
                     "event_refs": [command_id, transition_id],
-                    "filter_version": "stage9-synthetic-parser-fixture",
+                    "filter_version": STAGE7_AUTOBIOGRAPHICAL_POLICY.version,
                 },
             )
         self_audit = journal_builder.verify()
@@ -472,7 +473,7 @@ def _attach_synthetic_historical_proof(
                 "kind": "auto_segment_commit",
                 "attempt_ref": attempt, "t_monde": step,
                 "event_refs": [command, transition],
-                "filter_version": "stage9-synthetic-parser-fixture",
+                "filter_version": STAGE7_AUTOBIOGRAPHICAL_POLICY.version,
             },
         )
         state["memory"]["episodes"].append({
@@ -1527,7 +1528,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                                 "attempt_ref": "synthetic:orphan-p47-attempt",
                                 "t_monde": original_p47["t_monde"],
                                 "event_refs": [source_ref],
-                                "filter_version": "stage9-synthetic-parser-fixture",
+                                "filter_version": STAGE7_AUTOBIOGRAPHICAL_POLICY.version,
                             },
                         )
                     self.assertTrue(builder.verify())
@@ -2133,7 +2134,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                         "attempt_ref": "synthetic-attempt:0:1",
                         "t_monde": 1,
                         "event_refs": ["command:0:1", physical],
-                        "filter_version": "stage9-synthetic-parser-fixture",
+                        "filter_version": STAGE7_AUTOBIOGRAPHICAL_POLICY.version,
                     },
                 ),
             )
