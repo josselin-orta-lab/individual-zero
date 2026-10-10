@@ -167,9 +167,11 @@ def correct_equipment_prediction(
 ) -> tuple[EquipmentPrediction, tuple[str, ...]]:
     """Apply at most one established correction to each concerned component.
 
-    The only supported context is explicitly `global`. Exact command-target
-    matches outrank primitive-wide rules. At equal specificity, inconsistent
-    observed values yield explicit uncertainty, never an arbitrary winner.
+    The only supported application context is explicitly `global`.
+    Constraints on command target, observed body/position and full accessible
+    state determine specificity. A rule can override another only when it is
+    at least as constrained on every dimension and stricter on one. Conflicting
+    applicable rules with incomparable constraints remain unavailable.
     """
     active = []
     for c in source.established_prediction_corrections():
@@ -195,20 +197,43 @@ def correct_equipment_prediction(
             continue
         active.append(c)
 
+    def constraints(correction: NumericPredictionCorrection) -> tuple[int, int, int]:
+        # A full-state digest is stricter than body/position matching, which
+        # in turn is stricter than having no measured pre-action context.
+        # A command target is an independent constraint, not a substitute
+        # for a physical state condition.
+        return (
+            int(correction.command_target is not None),
+            int(correction.observed_before_body is not None),
+            int(correction.observed_before_state_digest is not None),
+        )
+
+    def dominates(left: NumericPredictionCorrection,
+                  right: NumericPredictionCorrection) -> bool:
+        a, b = constraints(left), constraints(right)
+        return all(x >= y for x, y in zip(a, b)) and a != b
+
     replacements: dict[str, NumericPredictionCorrection] = {}
     for variable in sorted({c.variable for c in active}):
         options = [c for c in active if c.variable == variable]
-        specificity = max(int(c.command_target is not None) for c in options)
-        best = sorted(
-            (c for c in options if int(c.command_target is not None) == specificity),
-            key=lambda c: (c.contingency_ref, c.intervention_ref),
-        )
-        values = {float(c.observed_after) for c in best}
+        # Reject incomparable *conflicting* rules. Selecting a targeted rule
+        # over an exact-context untargeted rule by arbitrary priority would
+        # invent evidence that neither is universally more specific.
+        maximal = [
+            c for c in options
+            if not any(dominates(other, c) for other in options)
+        ]
+        values = {float(c.observed_after) for c in maximal}
         if len(values) != 1:
             raise CausalCorrectionConflict(
                 f"unresolved established correction conflict for {variable}"
             )
-        replacements[variable] = best[0]
+        replacements[variable] = min(
+            maximal,
+            key=lambda c: (
+                c.contingency_ref, c.intervention_ref, c.agency_evidence_ref,
+            ),
+        )
     if not replacements:
         return prediction, ()
 

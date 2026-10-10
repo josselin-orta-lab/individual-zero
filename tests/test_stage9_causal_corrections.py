@@ -4,9 +4,11 @@ A fake *read-only* canonical view supplies pre-established rules. These tests
 do not pretend the unfinished intervention producer can establish new rules.
 """
 import unittest
+from dataclasses import replace
 
+from lab.determinism import canonical_causal_bytes, sha256_hex
 from i0.interfaces import PrimitiveCommand
-from i0.equipment import train_exact_transition_table
+from i0.equipment import EquipmentPrediction, train_exact_transition_table
 from i0.modules.simulator import Simulator, SimulatorConfig
 from i0.modules.causal_corrections import (
     NumericPredictionCorrection, CausalCorrectionConflict,
@@ -78,6 +80,88 @@ class EstablishedCorrectionTests(unittest.TestCase):
         self.assertFalse(result.complete)
         self.assertEqual(result.reason, "unresolved_causal_correction_conflict")
         self.assertEqual(result.completed_rollouts, ())
+
+
+    def test_exact_physical_context_outweighs_primitive_wide_rule(self):
+        # Full accessible-state matching is narrower than matching only
+        # body/position, which is narrower than no physical context.
+        before = state(x=2)
+        body_context = dict(
+            observed_before_body=tuple(sorted(before.body.items())),
+            observed_before_position=(before.x, before.y),
+        )
+        generic = correction("generic", observed=45.0)
+        measured = replace(
+            correction("measured", observed=35.0), **body_context,
+        )
+        exact = replace(
+            correction("full-state", observed=25.0),
+            **body_context,
+            observed_before_state_digest=sha256_hex(
+                canonical_causal_bytes(before.as_dict())
+            ),
+        )
+        for rules, winner, value in (
+            ((generic, measured), "measured", 35.0),
+            ((generic, measured, exact), "full-state", 25.0),
+            ((exact, measured, generic), "full-state", 25.0),
+        ):
+            with self.subTest(winner=winner, rules=tuple(r.contingency_ref for r in rules)):
+                outcome = run(PublishedEstablishedRules(rules))
+                self.assertTrue(outcome.complete)
+                self.assertEqual(
+                    outcome.completed_rollouts[0].predictions[0].next_state.body["energy"],
+                    value,
+                )
+                self.assertEqual(outcome.corrected_contingency_refs, (winner,))
+
+        # Exact-context observations never propagate into unobserved states.
+        changed = state(x=3)
+        self.assertNotEqual((changed.x, changed.y), measured.observed_before_position)
+
+    def test_incomparable_target_and_state_evidence_does_not_choose_arbitrarily(self):
+        before = state(x=2)
+        command = PrimitiveCommand("manger", {"target": "berry_b"})
+        base_prediction = EquipmentPrediction(
+            equipment_version="E-frozen-test",
+            state_schema_version=before.schema_version,
+            horizon=1,
+            command=command,
+            next_state=before,
+            effects=(),
+            confidence=0.8,
+        )
+        context = dict(
+            observed_before_body=tuple(sorted(before.body.items())),
+            observed_before_position=(before.x, before.y),
+        )
+        target_only = replace(
+            correction("target-only", observed=40.0, target="berry_b"),
+            command_primitive="manger",
+        )
+        body_only = replace(
+            correction("body-only", observed=35.0),
+            command_primitive="manger",
+            **context,
+        )
+        with self.assertRaises(CausalCorrectionConflict):
+            correct_equipment_prediction(
+                source=PublishedEstablishedRules((target_only, body_only)),
+                command=command, state=before, prediction=base_prediction,
+            )
+        # A rule constrained by *both* dimensions really is more specific.
+        both = replace(
+            correction("target-and-body", observed=25.0, target="berry_b"),
+            command_primitive="manger",
+            **context,
+        )
+        corrected, refs = correct_equipment_prediction(
+            source=PublishedEstablishedRules((body_only, target_only, both)),
+            command=command, state=before, prediction=base_prediction,
+        )
+        self.assertEqual(refs, ("target-and-body",))
+        self.assertEqual(corrected.next_state.body["energy"], 25.0)
+        self.assertEqual(base_prediction.next_state.body["energy"], 50.0)
 
     def test_unregistered_context_and_variable_are_not_silently_supported(self):
         with self.assertRaises(ValueError):

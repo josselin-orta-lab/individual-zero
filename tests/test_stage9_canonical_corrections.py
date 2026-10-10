@@ -444,6 +444,35 @@ class CanonicalCorrectionTests(unittest.TestCase):
         self.assertEqual(m.get(REF).safety_status, "etabli_pour_securite")
         self.assertEqual(m.get(REF).causal_status, "aucun")
         self.assertEqual(m.established_prediction_corrections(), ())
+        # INV-25's observable test is a differential simulator prediction,
+        # not merely the absence of a correction descriptor. A real safety
+        # status must not silently alter any frozen-Equipment prediction.
+        before = state(x=2)
+        command = PrimitiveCommand("manger", {"target": "berry_b"})
+        equipment = train_exact_transition_table(
+            corpus=EquipmentCorpus(
+                version="stage9-safety-inv25-control-v1",
+                examples=(EquipmentCorpusExample(
+                    family="physical_safety_control",
+                    state=before, command=command,
+                    observed_next_state=before, terminal=False,
+                ),),
+            ),
+            equipment_version="E-stage9-safety-control",
+        )
+        config = SimulatorConfig(
+            version="stage9-safety-inv25-v1", r_max=1, h_max=1,
+        )
+        frozen = Simulator(config=config, equipment=equipment)
+        with_safety = Simulator(config=config, equipment=equipment, corrections=m)
+        params = dict(
+            initial_state=before, commands=(command,), r_eff=1, h_eff=1,
+        )
+        control_result = frozen.rollout(**params)
+        safety_result = with_safety.rollout(**params)
+        self.assertTrue(control_result.complete)
+        self.assertEqual(safety_result, control_result)
+        self.assertEqual(safety_result.corrected_contingency_refs, ())
 
     def test_stage9_runtime_attaches_only_one_canonical_reader(self):
         r = build_stage9_reference_runtime()
