@@ -111,6 +111,23 @@ class Exploration:
                             if q["proof"] and q["status"] in ("hypothese_causale", "testee_par_intervention")
                             and q["stagnant"] < self.config.stagnant_visit_limit))
 
+    def boredom_detected(self) -> bool:
+        """Development-only evidence of stagnation, not a synthetic reward.
+
+        A genuinely unanswered but *unexplored* question is not boredom.
+        Repeated proposals do not increment visits and cannot create it.
+        """
+        unresolved = [
+            q for q in self._questions.values()
+            if q["proof"] and q["status"] in (
+                "hypothese_causale", "testee_par_intervention"
+            )
+        ]
+        return bool(unresolved) and all(
+            q["stagnant"] >= self.config.stagnant_visit_limit
+            for q in unresolved
+        )
+
     def export_causal_state(self):
         return {"config_version": self.config.version, "coefficient": self.coefficient,
                 "questions": [[key, dict(value)] for key,value in sorted(self._questions.items())]}
