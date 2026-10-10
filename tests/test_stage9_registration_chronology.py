@@ -32,6 +32,7 @@ def _create_fixture(
     normative_specification: bool = True,
     alter_frozen_normative: bool = False,
     modify_normative_before_registration: bool = False,
+    earlier_evidence: str | None = None,
 ) -> tuple[str, str, str]:
     _git(repo, "init", "-q")
     _git(repo, "config", "user.name", "Stage 9 Test")
@@ -76,6 +77,29 @@ def _create_fixture(
 
     draft = example_draft()
     draft["frozen_implementation_commit"] = implementation
+    if earlier_evidence is not None:
+        if earlier_evidence not in {
+            "identical", "placeholder", "transient_identical",
+            "transient_placeholder",
+        }:
+            raise ValueError("unrecognized synthetic prior evidence scenario")
+        (repo / "results").mkdir()
+        early_file = repo / "results" / "heldout.json"
+        if earlier_evidence.endswith("identical"):
+            early_file.write_text(
+                json.dumps(make_report(draft, candidates=20), sort_keys=True, indent=2)
+                + "\n", encoding="utf-8",
+            )
+        else:
+            early_file.write_text(
+                "SYNTHETIC PREEXISTING PLACEHOLDER, NOT RESULTS\n",
+                encoding="utf-8",
+            )
+        _git(repo, "add", "results/heldout.json")
+        _git(repo, "commit", "-qm", "synthetic outcome-path before registration")
+        if earlier_evidence.startswith("transient_"):
+            _git(repo, "rm", "results/heldout.json")
+            _git(repo, "commit", "-qm", "remove synthetic earlier outcome path")
     (repo / "research").mkdir()
     (repo / "research" / "registration.json").write_text(
         json.dumps(draft, sort_keys=True, indent=2) + "\n", encoding="utf-8",
@@ -84,7 +108,7 @@ def _create_fixture(
     _git(repo, "commit", "-qm", "preregister protocol")
     registration_commit = _git(repo, "rev-parse", "HEAD")
 
-    (repo / "results").mkdir()
+    (repo / "results").mkdir(exist_ok=True)
     (repo / "results" / "heldout.json").write_text(
         json.dumps(make_report(draft, candidates=20), sort_keys=True, indent=2)
         + "\n", encoding="utf-8",
@@ -138,10 +162,59 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
                 "git_lineage_consistent_requires_independent_review",
             )
             self.assertFalse(result["evidence_path_present_at_registration"])
+            self.assertFalse(
+                result["evidence_path_seen_in_pre_registration_git_history"]
+            )
+            self.assertEqual(
+                result["pre_registration_evidence_path_commits_checked"], 0,
+            )
             self.assertIsNone(result["scientific_verdict"])
             self.assertFalse(result["golden_stage9_frozen"])
             self.assertTrue(result["outstanding"])
             self.assertNotEqual(result["provisional_metric_assessment"], "accepted")
+
+    def test_pre_registration_identical_report_rejected_even_after_git_deletion(self):
+        for scenario in ("identical", "transient_identical"):
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    repo = Path(folder)
+                    _, registered, evidence = _create_fixture(
+                        repo, earlier_evidence=scenario,
+                    )
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "already committed before prospective registration",
+                    ):
+                        _audit(repo, registered, evidence)
+
+    def test_prior_placeholder_never_appears_as_clean_git_chronology(self):
+        for scenario, at_registration in (
+            ("placeholder", True),
+            ("transient_placeholder", False),
+        ):
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    repo = Path(folder)
+                    _, registered, evidence = _create_fixture(
+                        repo, earlier_evidence=scenario,
+                    )
+                    result = _audit(repo, registered, evidence)
+                    self.assertEqual(
+                        result["chronology_status"],
+                        "prior_evidence_path_requires_independent_review",
+                    )
+                    self.assertEqual(
+                        result["evidence_path_present_at_registration"],
+                        at_registration,
+                    )
+                    self.assertTrue(
+                        result["evidence_path_seen_in_pre_registration_git_history"]
+                    )
+                    self.assertGreater(
+                        result["pre_registration_evidence_path_commits_checked"], 0,
+                    )
+                    self.assertIsNone(result["scientific_verdict"])
+                    self.assertFalse(result["golden_stage9_frozen"])
 
     def test_uncommitted_changes_cannot_change_sealed_protocol_or_evidence(self):
         with TemporaryDirectory() as folder:
