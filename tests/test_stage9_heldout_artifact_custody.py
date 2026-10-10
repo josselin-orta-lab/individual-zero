@@ -1300,6 +1300,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             ("orphan_attempt", "lacks same-attempt physical execution"),
             ("forged_option", "disagrees with raw P-47 source"),
             ("forged_measurement", "disagrees with raw P-47 source"),
+            ("integer_alias", "P-47 numerical encoding disagrees with raw journal"),
             ("forged_version", "disagrees with raw P-47 source"),
             ("malformed_measurement", "invalid raw P-47 comparator data"),
         )
@@ -1373,6 +1374,10 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                                 event["data"]["effects"][0]["observed"] = {
                                     "$f64": "0x1.0000000000000p+1"
                                 }
+                            elif scenario == "integer_alias":
+                                # 1 == 1.0 in Python, but canonical $f64 is
+                                # not a JSON integer on the wire.
+                                event["data"]["effects"][0]["predicted"] = 1
                             elif scenario == "forged_version":
                                 event["data"]["effects"][0]["comparator_version"] = (
                                     "synthetic:forged-p47-version"
