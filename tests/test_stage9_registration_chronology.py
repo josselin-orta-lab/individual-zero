@@ -85,11 +85,15 @@ def _create_fixture(
             "transient_alternate_path_identical",
             "alternate_path_equivalent",
             "transient_alternate_path_equivalent",
+            "alternate_path_ambiguous_duplicate",
+            "alternate_path_ambiguous_nonfinite",
         }:
             raise ValueError("unrecognized synthetic prior evidence scenario")
         alternate_name = earlier_evidence in {
             "alternate_path_identical", "transient_alternate_path_identical",
             "alternate_path_equivalent", "transient_alternate_path_equivalent",
+            "alternate_path_ambiguous_duplicate",
+            "alternate_path_ambiguous_nonfinite",
         }
         early_relative = (
             "preseal/private-outcomes.json"
@@ -97,7 +101,27 @@ def _create_fixture(
         )
         (repo / Path(early_relative).parent).mkdir(exist_ok=True)
         early_file = repo / early_relative
-        if earlier_evidence.endswith(("identical", "equivalent")):
+        if earlier_evidence.startswith("alternate_path_ambiguous_"):
+            # Non-standard JSON from a preseal Git blob must never be
+            # silently treated as fully scanned prospective evidence.
+            encoded = json.dumps(
+                make_report(draft, candidates=20),
+                sort_keys=True, indent=2,
+            )
+            marker = '"protocol_version": "stage9-heldout-evidence-v2",'
+            if marker not in encoded:
+                raise AssertionError("synthetic protocol marker absent")
+            if earlier_evidence.endswith("duplicate"):
+                # Lenient JSON parsing yields the exact archived report, but
+                # duplicate keys are forbidden by the scientific reader.
+                insertion = marker + '\n  ' + marker
+            else:
+                insertion = marker + '\n  "synthetic_malformed": NaN,'
+            early_file.write_text(
+                encoded.replace(marker, insertion, 1) + "\n",
+                encoding="utf-8",
+            )
+        elif earlier_evidence.endswith(("identical", "equivalent")):
             # The equivalent variant has the *same JSON meaning* as the
             # final report, but different Git blob bytes, field order and
             # whitespace. This must not bypass prospective custody.
@@ -202,6 +226,9 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
             )
             self.assertGreater(result["pre_registration_git_objects_checked"], 0)
             self.assertGreater(result["pre_registration_json_blobs_checked"], 0)
+            self.assertEqual(
+                result["pre_registration_ambiguous_stage9_json_blobs"], 0,
+            )
             self.assertGreaterEqual(
                 result["pre_registration_oversized_blobs_not_checked"], 0,
             )
@@ -270,6 +297,33 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
                         "semantically identical heldout evidence existed in Git",
                     ):
                         _audit(repo, registered, evidence)
+
+    def test_earlier_duplicate_key_stage9_report_cannot_hide_exact_outcomes(self):
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            _, registered, evidence = _create_fixture(
+                repo, earlier_evidence="alternate_path_ambiguous_duplicate",
+            )
+            with self.assertRaisesRegex(
+                ValueError,
+                "ambiguous pre-registration heldout JSON can decode",
+            ):
+                _audit(repo, registered, evidence)
+
+    def test_earlier_nonfinite_stage9_report_makes_scan_incomplete(self):
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            _, registered, evidence = _create_fixture(
+                repo, earlier_evidence="alternate_path_ambiguous_nonfinite",
+            )
+            result = _audit(repo, registered, evidence)
+            self.assertFalse(result["pre_registration_semantic_scan_complete"])
+            self.assertEqual(
+                result["pre_registration_ambiguous_stage9_json_blobs"], 1,
+            )
+            self.assertFalse(result["evidence_path_seen_in_pre_registration_git_history"])
+            self.assertIsNone(result["scientific_verdict"])
+            self.assertFalse(result["golden_stage9_frozen"])
 
     def test_prior_placeholder_never_appears_as_clean_git_chronology(self):
         for scenario, at_registration in (
