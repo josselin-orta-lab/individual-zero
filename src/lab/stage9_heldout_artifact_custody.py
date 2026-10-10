@@ -153,6 +153,7 @@ def audit_heldout_raw_artifacts(
     seen_paths: set[Path] = set()
     seen_inodes: set[tuple[int, int]] = set()
     pinned_inodes: dict[Path, tuple[int, int]] = {}
+    pinned_artifacts: list[tuple[object, str, Path, tuple[int, int]]] = []
     total_size = 0
     verified_files = 0
     journal_events_checked = 0
@@ -181,6 +182,7 @@ def audit_heldout_raw_artifacts(
             seen_paths.add(physical)
             seen_inodes.add(inode)
             pinned_inodes[physical] = inode
+            pinned_artifacts.append((item[index_key], reported[expected_sha_key], physical, inode))
             actual_sha, size = _file_hash_and_size(physical)
             if actual_sha != reported[expected_sha_key]:
                 raise ValueError(
@@ -237,6 +239,17 @@ def audit_heldout_raw_artifacts(
                 or _file_hash_and_size(physical)[0] != reported[expected_sha_key]
             ):
                 raise ValueError("raw artifact changed during custody audit")
+    # Each run is checked again before returning, not just immediately after
+    # its own parsing. A later run must not mask changes to earlier artifacts.
+    for relative, expected_digest, original_path, original_inode in pinned_artifacts:
+        current_path = _physical_file(root, relative)
+        if (
+            current_path != original_path
+            or (current_path.stat().st_dev, current_path.stat().st_ino)
+            != original_inode
+            or _file_hash_and_size(current_path)[0] != expected_digest
+        ):
+            raise ValueError("raw artifact changed before custody audit completion")
     if seen_runs != set(original_runs):
         raise ValueError("raw artifact index did not cover every heldout run")
 
