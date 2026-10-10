@@ -207,6 +207,17 @@ def audit_heldout_raw_artifacts(
             for name in ("known_cause_cases", "naturally_acquired_false_candidates")
             for entry in reported[name]
         }
+        # Audit every admitted causal physical source, including interventions
+        # omitted from the held-out report's selected scoring rows.
+        archived = json.loads(paths["causal_state_path"].read_bytes())
+        causal_owner = archived.get("causal_model") if isinstance(archived, dict) else None
+        if isinstance(causal_owner, dict):
+            for ledger in ("causal_observations", "causal_interventions"):
+                entries = causal_owner.get(ledger)
+                if isinstance(entries, list):
+                    for entry in entries:
+                        if isinstance(entry, dict) and isinstance(entry.get("observation_ref"), str):
+                            references.add(entry["observation_ref"])
         journal_audit = audit_raw_causal_journal(
             paths["journal_path"], physical_observation_refs=references,
         )
@@ -217,6 +228,16 @@ def audit_heldout_raw_artifacts(
             for name in ("known_cause_cases", "naturally_acquired_false_candidates")
             for entry in reported[name]
         }
+        for ledger in ("causal_observations", "causal_interventions"):
+            for entry in causal_owner.get(ledger, []):
+                observation = entry["observation_ref"]
+                episode = entry.get("episode_ref")
+                if (
+                    not isinstance(episode, str) or not episode
+                    or (observation in claimed_episodes and claimed_episodes[observation] != episode)
+                ):
+                    raise ValueError("archived causal evidence episode disagrees with heldout source")
+                claimed_episodes[observation] = episode
         # A reported natural candidate must correspond to the actual
         # canonical contingency and its archived causal status. Matching only
         # physical episodes would let a forged report invent an established
