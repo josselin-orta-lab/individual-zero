@@ -242,10 +242,29 @@ def audit_raw_causal_journal(
             raise ValueError("published agency source lacks same-attempt commit")
         commit_index, commit = commits[0]
         refs = commit.get("event_refs")
+        # A P-47 source must come from an accepted physically executed step:
+        # it is compared to the new capture before that step's next command,
+        # never invented after the outcome or in an orphan attempt.
+        paired = physical_by_attempt.get((attempt, step), {})
+        commands = paired.get("command_experienced", ())
+        transitions = paired.get("world_transition_experienced", ())
+        if len(commands) != 1 or len(transitions) != 1:
+            raise ValueError(
+                "published agency source lacks same-attempt physical execution"
+            )
+        command_index, command_ref = commands[0]
+        transition_index, transition_ref = transitions[0]
+        if not (
+            source_index < command_index < transition_index < commit_index
+        ):
+            raise ValueError(
+                "published agency source violates physical comparator event order"
+            )
         if (
-            source_index >= commit_index
-            or not isinstance(refs, list)
+            not isinstance(refs, list)
             or ref not in refs
+            or command_ref not in refs
+            or transition_ref not in refs
             or len(refs) != len(set(refs))
             or any(
                 v not in events
