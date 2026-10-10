@@ -9,6 +9,7 @@ from math import isfinite
 from i0.modules.exploration import Exploration, ExplorationConfig
 from i0.modules.global_modulation import GlobalModulation, ModulationConfig
 from i0.modules.lived_prediction import LivedPredictionConfig, LivedWaterPredictor
+from i0.modules.memory import EpisodicMemory
 from i0.modules.stage11_evaluator import Stage11OptionEvaluator
 from i0.temperament import ParametresTemperament
 
@@ -47,7 +48,16 @@ class Stage11Config:
 
     def with_budget(self):
         stage8 = self.stage9.stage8
-        stage7 = stage8.stage7
+        stage7 = replace(
+            stage8.stage7,
+            memory=replace(
+                stage8.stage7.memory,
+                version=(
+                    stage8.stage7.memory.version
+                    + "+atomic-world-step-length-v1"
+                ),
+            ),
+        )
         stage6 = stage7.stage6
         stage4 = stage6.stage4
         budget = stage4.compute_budget
@@ -94,6 +104,15 @@ class Stage11Runtime(Stage9Runtime):
             config=config.with_budget(), equipment=equipment,
             scenario_id=scenario_id, scenario_version=scenario_version,
             scenario_events=scenario_events,
+        )
+        # Construct the vNext-only Memory variant before the first world
+        # step. Stage 7--9 historical Memory objects remain in their
+        # original event-level length-boundary mode (and config version).
+        if self.memory.episodes or self.memory.intentions:
+            raise ValueError("cannot switch Memory boundary contract mid-life")
+        self.memory = EpisodicMemory(
+            self._stage7_config.memory,
+            atomic_world_step_length_boundary=True,
         )
         self.exploration = Exploration(
             config.exploration,
