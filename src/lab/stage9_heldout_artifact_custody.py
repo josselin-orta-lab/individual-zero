@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 from hashlib import sha256
+from math import isfinite
 import json
 from itertools import zip_longest
 from pathlib import Path
@@ -42,6 +43,45 @@ RAW_HASH_FIELDS = {
     "causal_state_path": "causal_state_sha256",
     "replay_causal_state_path": "replay_causal_state_sha256",
 }
+
+
+def _decode_archived_p47_float(value: object) -> object:
+    """Decode exactly the normative canonical $f64 measurement envelope.
+
+    Canonical JSON stores finite floats as hexadecimal strings, whereas the
+    AgencyEvidence validator expects numerical P-47 measurements. Reject
+    noncanonical, nonfinite and negative-zero encodings rather than trusting
+    a forged tagged object just because the JSON SHA-256 matches.
+    """
+    if not isinstance(value, dict) or set(value) != {"$f64"}:
+        return value
+    encoded = value["$f64"]
+    if not isinstance(encoded, str):
+        raise ValueError("invalid archived P-47 floating measurement")
+    try:
+        decoded = float.fromhex(encoded)
+    except (ValueError, OverflowError) as exc:
+        raise ValueError("invalid archived P-47 floating measurement") from exc
+    normalized = 0.0 if decoded == 0.0 else decoded
+    if not isfinite(decoded) or normalized.hex().lower() != encoded:
+        raise ValueError("noncanonical archived P-47 floating measurement")
+    return decoded
+
+
+def _decode_archived_agency_evidence(entry: dict[str, object]):
+    # Decode only P-47 numerical slots, never arbitrary owner-state objects.
+    fields = dict(entry)
+    effects = fields.get("effects")
+    if isinstance(effects, list):
+        fields["effects"] = [
+            [
+                _decode_archived_p47_float(value) if index in (2, 3, 4)
+                else value
+                for index, value in enumerate(effect)
+            ] if isinstance(effect, list) else effect
+            for effect in effects
+        ]
+    return decode_agency_evidence(fields)
 
 
 def load_raw_artifact_index(path: Path) -> dict[str, object]:
@@ -588,7 +628,7 @@ def audit_heldout_raw_artifacts(
                 if not isinstance(entry, dict):
                     raise ValueError("invalid archived agency comparison")
                 try:
-                    comparison = decode_agency_evidence(entry)
+                    comparison = _decode_archived_agency_evidence(entry)
                 except (KeyError, TypeError, ValueError) as exc:
                     raise ValueError(
                         "invalid archived agency comparison"
