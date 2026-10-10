@@ -291,10 +291,15 @@ def _synthetic_causal_trial(
 def _synthetic_agency_comparison(trial: dict[str, object]) -> dict[str, object]:
     """P-47-shaped *synthetic parser fixture*, never actual agency evidence."""
     status = trial["comparator_status"]
+    event_ref = f"synthetic:p47-event:{trial['identifier']}"
+    # Match the DC-09 projection's deterministic identity, not an invented
+    # comparator alias. Update this synthetic trial to reference that ID.
+    comparator_ref = f"agency-evidence:{trial['episode_ref']}:{event_ref}"
+    trial["comparator_ref"] = comparator_ref
     return {
-        "identifier": trial["comparator_ref"],
+        "identifier": comparator_ref,
         "episode_ref": trial["episode_ref"],
-        "event_ref": f"synthetic:p47-event:{trial['identifier']}",
+        "event_ref": event_ref,
         "option_ref": trial["command_ref"],
         "sent_t_monde": trial["emitted_step"],
         "observed_t_monde": trial["observed_step"],
