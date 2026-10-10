@@ -2335,14 +2335,28 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                 )
 
     def test_path_escape_and_symlink_do_not_access_outside_file(self):
-        for scenario in ("traversal", "symlink"):
+        for scenario in (
+            "traversal", "dot_segment", "repeated_separator",
+            "trailing_separator", "symlink",
+        ):
             with self.subTest(scenario=scenario):
                 with TemporaryDirectory() as folder:
                     root = Path(folder)
                     reg, evidence, index = _prepared(root)
-                    original = root / index["runs"][0]["journal_path"]
+                    original_name = index["runs"][0]["journal_path"]
+                    original = root / original_name
                     if scenario == "traversal":
                         index["runs"][0]["journal_path"] = "../../outside"
+                    elif scenario == "dot_segment":
+                        index["runs"][0]["journal_path"] = (
+                            original_name.replace("/", "/./", 1)
+                        )
+                    elif scenario == "repeated_separator":
+                        index["runs"][0]["journal_path"] = (
+                            original_name.replace("/", "//", 1)
+                        )
+                    elif scenario == "trailing_separator":
+                        index["runs"][0]["journal_path"] = original_name + "/"
                     else:
                         link = root / "shortcut.jsonl"
                         link.symlink_to(original)
