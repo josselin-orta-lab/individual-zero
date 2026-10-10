@@ -295,7 +295,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                         failure = "reused or unseen event"
                     forged = _replace_causal_state_bytes(
                         root, report, index, canonical_causal_bytes(state),
-                        run_index=index["runs"].index(item),
+                        run_index=0,
                     )
                     with self.assertRaisesRegex(ValueError, failure):
                         audit_heldout_raw_artifacts(
