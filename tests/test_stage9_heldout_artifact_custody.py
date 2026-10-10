@@ -1286,6 +1286,115 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                             index=index, artifact_root=root,
                         )
 
+    def test_rehashed_raw_p47_event_cannot_forge_published_comparison(self):
+        scenarios = (
+            ("missing_event", "published agency comparison absent from raw journal"),
+            ("wrong_kind", "published agency comparison absent from raw journal"),
+            ("uncommitted_event", "absent from its autobiographical commit"),
+            ("forged_option", "disagrees with raw P-47 source"),
+            ("forged_measurement", "disagrees with raw P-47 source"),
+            ("forged_version", "disagrees with raw P-47 source"),
+            ("malformed_measurement", "invalid raw P-47 comparator data"),
+        )
+        for scenario, error in scenarios:
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    reg, report, index = _prepared(root)
+                    run = next(
+                        row for row in report["runs"]
+                        if len(row["naturally_acquired_false_candidates"]) >= 2
+                    )
+                    item = next(
+                        row for row in index["runs"]
+                        if (row["world_id"], row["seed"])
+                        == (run["world_id"], run["seed"])
+                    )
+                    run_index = index["runs"].index(item)
+                    first, second = run["naturally_acquired_false_candidates"][:2]
+                    rule_ref = first["contingency_ref"]
+                    state = json.loads(
+                        (root / item["causal_state_path"]).read_bytes()
+                    )
+                    row = next(
+                        row for row in state["causal_model"]["published"]
+                        if row["ref"] == rule_ref
+                    )
+                    row["causal_status"] = "etablie"
+                    first["causal_status"] = "etablie"
+                    start = len(run["known_cause_cases"]) + 1
+                    trials = [
+                        _synthetic_causal_trial(
+                            rule_ref=rule_ref, candidate=candidate,
+                            run_index=run_index, observed_step=start + offset,
+                            identifier=f"synthetic:raw-p47-trial:{offset}",
+                            context=f"synthetic:independent-p47:{offset}",
+                        )
+                        for offset, candidate in enumerate((first, second))
+                    ]
+                    owner = state["causal_model"]
+                    owner["causal_interventions"].extend(trials)
+                    owner["causal_credits"].extend([
+                        [rule_ref, trial["observation_ref"], "intervention"]
+                        for trial in trials
+                    ])
+                    baseline = _attach_synthetic_historical_proof(
+                        root, report, index, state, run_index=run_index,
+                        rule_ref=rule_ref,
+                    )
+                    source_ref = owner["agency_evidence"][0]["event_ref"]
+                    raw = (root / item["journal_path"]).read_bytes()
+                    builder = HashChainedJournal()
+                    for line in raw.split(b"\n"):
+                        event_row = json.loads(line)
+                        event = event_row["causal_event"]
+                        if event_row["event_id"] == source_ref:
+                            if scenario == "missing_event":
+                                continue
+                            event = deepcopy(event)
+                            if scenario == "wrong_kind":
+                                event["kind"] = "synthetic_non_comparator"
+                            elif scenario == "forged_option":
+                                event["data"]["option_ref"] = "synthetic:forged-option"
+                            elif scenario == "forged_measurement":
+                                event["data"]["effects"][0]["observed"] = {
+                                    "$f64": "0x1.0000000000000p+1"
+                                }
+                            elif scenario == "forged_version":
+                                event["data"]["effects"][0]["comparator_version"] = (
+                                    "synthetic:forged-p47-version"
+                                )
+                            elif scenario == "malformed_measurement":
+                                event["data"]["effects"][0]["observed"] = {
+                                    "$f64": "not-a-measurement"
+                                }
+                        if (
+                            scenario in {"missing_event", "uncommitted_event"}
+                            and event.get("kind") == "auto_segment_commit"
+                            and source_ref in event.get("event_refs", [])
+                        ):
+                            event = {
+                                **event,
+                                "event_refs": [
+                                    ref for ref in event["event_refs"]
+                                    if ref != source_ref
+                                ],
+                            }
+                        builder.append(
+                            event_id=event_row["event_id"],
+                            causal_event=event,
+                        )
+                    self.assertTrue(builder.verify())
+                    altered = _replace_journal_bytes(
+                        root, baseline, index, builder.canonical_bytes(),
+                        run_index=run_index,
+                    )
+                    with self.assertRaisesRegex(ValueError, error):
+                        audit_heldout_raw_artifacts(
+                            registration=reg, evidence=altered,
+                            index=index, artifact_root=root,
+                        )
+
     def test_resealed_intervention_requires_published_matching_p47_report(self):
         scenarios = (
             ("missing", "lacks matching published agency comparison"),
