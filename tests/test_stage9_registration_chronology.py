@@ -81,10 +81,19 @@ def _create_fixture(
         if earlier_evidence not in {
             "identical", "placeholder", "transient_identical",
             "transient_placeholder",
+            "alternate_path_identical",
+            "transient_alternate_path_identical",
         }:
             raise ValueError("unrecognized synthetic prior evidence scenario")
-        (repo / "results").mkdir()
-        early_file = repo / "results" / "heldout.json"
+        alternate_name = earlier_evidence in {
+            "alternate_path_identical", "transient_alternate_path_identical",
+        }
+        early_relative = (
+            "preseal/private-outcomes.json"
+            if alternate_name else "results/heldout.json"
+        )
+        (repo / Path(early_relative).parent).mkdir(exist_ok=True)
+        early_file = repo / early_relative
         if earlier_evidence.endswith("identical"):
             early_file.write_text(
                 json.dumps(make_report(draft, candidates=20), sort_keys=True, indent=2)
@@ -95,10 +104,10 @@ def _create_fixture(
                 "SYNTHETIC PREEXISTING PLACEHOLDER, NOT RESULTS\n",
                 encoding="utf-8",
             )
-        _git(repo, "add", "results/heldout.json")
+        _git(repo, "add", early_relative)
         _git(repo, "commit", "-qm", "synthetic outcome-path before registration")
         if earlier_evidence.startswith("transient_"):
-            _git(repo, "rm", "results/heldout.json")
+            _git(repo, "rm", early_relative)
             _git(repo, "commit", "-qm", "remove synthetic earlier outcome path")
     (repo / "research").mkdir()
     (repo / "research" / "registration.json").write_text(
@@ -177,6 +186,7 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
             self.assertEqual(
                 result["pre_registration_evidence_path_commits_checked"], 0,
             )
+            self.assertGreater(result["pre_registration_git_objects_checked"], 0)
             self.assertIsNone(result["scientific_verdict"])
             self.assertFalse(result["golden_stage9_frozen"])
             self.assertTrue(result["outstanding"])
@@ -193,6 +203,26 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
                     with self.assertRaisesRegex(
                         ValueError,
                         "already committed before prospective registration",
+                    ):
+                        _audit(repo, registered, evidence)
+
+    def test_early_evidence_under_a_different_git_path_is_not_prospective(self):
+        for scenario in (
+            "alternate_path_identical", "transient_alternate_path_identical",
+        ):
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    repo = Path(folder)
+                    _, registered, evidence = _create_fixture(
+                        repo, earlier_evidence=scenario,
+                    )
+                    self.assertNotEqual(
+                        _git(repo, "rev-parse", f"{evidence}:results/heldout.json"),
+                        _git(repo, "rev-parse", f"{evidence}:research/registration.json"),
+                    )
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "heldout evidence bytes existed in Git before prospective registration",
                     ):
                         _audit(repo, registered, evidence)
 
