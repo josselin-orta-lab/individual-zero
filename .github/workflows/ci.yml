@@ -85,6 +85,7 @@ jobs:
         run: |
           python -m lab.stage9_reference_replay --steps 300 \
             --journal /tmp/stage9-reference-diagnostic.jsonl \
+            --causal-state /tmp/stage9-reference-causal-state.json \
             > /tmp/stage9-reference-diagnostic.json
           python - <<'PY'
           import json
@@ -94,8 +95,9 @@ jobs:
               "/tmp/stage9-reference-diagnostic.json"
           ).read_text(encoding="utf-8"))
           journal = Path("/tmp/stage9-reference-diagnostic.jsonl").read_bytes()
+          state_bytes = Path("/tmp/stage9-reference-causal-state.json").read_bytes()
           if (
-              report["protocol_version"] != "stage9-extended-reference-diagnostic-v2"
+              report["protocol_version"] != "stage9-extended-reference-diagnostic-v3"
               or report["classification"] != "diagnostic_only"
               or report["golden_stage9_frozen"]
               or report["scientific_verdict"] is not None
@@ -103,6 +105,8 @@ jobs:
               or not report["identical_independent_reexecution"]
               or report["journal_bytes"] != len(journal)
               or report["journal_sha256"] != sha256_hex(journal)
+              or report["causal_state_sha256"] != sha256_hex(state_bytes)
+              or not state_bytes
           ):
               raise SystemExit("Stage 9 300-step replay diagnostic failed")
           print("stage9_300_step_replay_exact=true")
@@ -116,6 +120,7 @@ jobs:
           path: |
             /tmp/stage9-reference-diagnostic.json
             /tmp/stage9-reference-diagnostic.jsonl
+            /tmp/stage9-reference-causal-state.json
           if-no-files-found: error
 
       # Evidence publishing is not Stage-9 scientific acceptance. The

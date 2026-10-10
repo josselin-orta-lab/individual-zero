@@ -16,7 +16,7 @@ from .determinism import canonical_causal_bytes, sha256_hex
 from .stage9_reference_fixture import build_stage9_reference_runtime
 
 
-PROTOCOL_VERSION = "stage9-extended-reference-diagnostic-v2"
+PROTOCOL_VERSION = "stage9-extended-reference-diagnostic-v3"
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,6 +39,7 @@ class Stage9ReferenceDiagnostic:
 
 def generate_stage9_reference_diagnostic(
     *, steps: int = 300, journal_path: Path | None = None,
+    causal_state_path: Path | None = None,
 ) -> Stage9ReferenceDiagnostic:
     """Independently rerun the unchanged Stage-9 fixture for a fixed duration.
 
@@ -76,10 +77,15 @@ def generate_stage9_reference_diagnostic(
         or first_head != second_head
     ):
         raise AssertionError("Stage-9 independent reference execution diverged")
+    # Export *exactly* the normalized bytes used for the diagnostic digest.
+    # The owner map is a software reference, never a held-out causal witness.
+    first_state_bytes = canonical_causal_bytes(first_owners)
     if journal_path is not None:
         # Archive the *exact* bytes named by journal_sha256, without an
         # extra line terminator that would break independent raw-file audit.
         journal_path.write_bytes(first_journal)
+    if causal_state_path is not None:
+        causal_state_path.write_bytes(first_state_bytes)
     return Stage9ReferenceDiagnostic(
         protocol_version=PROTOCOL_VERSION,
         steps=steps,
@@ -87,7 +93,7 @@ def generate_stage9_reference_diagnostic(
         journal_sha256=sha256_hex(first_journal),
         journal_head=first_head,
         causal_owners=len(first_owners),
-        causal_state_sha256=sha256_hex(canonical_causal_bytes(first_owners)),
+        causal_state_sha256=sha256_hex(first_state_bytes),
         identical_independent_reexecution=True,
     )
 
@@ -98,9 +104,11 @@ def main() -> None:
     )
     parser.add_argument("--steps", type=int, default=300)
     parser.add_argument("--journal", type=Path)
+    parser.add_argument("--causal-state", type=Path)
     args = parser.parse_args()
     print(generate_stage9_reference_diagnostic(
         steps=args.steps, journal_path=args.journal,
+        causal_state_path=args.causal_state,
     ).to_json(), end="")
 
 
