@@ -85,11 +85,17 @@ def audit_independent_heldout_handoff(
     unchecked_blobs = chronology.get(
         "pre_registration_oversized_blobs_not_checked"
     )
+    ambiguous_blobs = chronology.get(
+        "pre_registration_ambiguous_stage9_json_blobs"
+    )
     if (
         type(scanned_completely) is not bool
         or type(unchecked_blobs) is not int
-        or unchecked_blobs < 0
-        or scanned_completely != (unchecked_blobs == 0)
+        or type(ambiguous_blobs) is not int
+        or unchecked_blobs < 0 or ambiguous_blobs < 0
+        or scanned_completely != (
+            unchecked_blobs == 0 and ambiguous_blobs == 0
+        )
     ):
         raise ValueError("Git semantic ancestry coverage is inconsistent")
     if (
@@ -218,6 +224,10 @@ def audit_independent_heldout_handoff(
         review_blockers.append(
             "pre_registration_large_git_blobs_not_semantically_inspected"
         )
+    if ambiguous_blobs:
+        review_blockers.append(
+            "pre_registration_ambiguous_stage9_json_requires_prospectivity_review"
+        )
     handoff = {
         "protocol_version": HANDOFF_VERSION,
         "handoff_status": (
@@ -230,6 +240,7 @@ def audit_independent_heldout_handoff(
         "evidence_path_seen_in_pre_registration_git_history": prior_history,
         "pre_registration_semantic_scan_complete": scanned_completely,
         "pre_registration_oversized_blobs_not_checked": unchecked_blobs,
+        "pre_registration_ambiguous_stage9_json_blobs": ambiguous_blobs,
         "registration_digest": digest,
         "evidence_sha256": provisional["evidence_sha256"],
         "frozen_implementation_commit":
