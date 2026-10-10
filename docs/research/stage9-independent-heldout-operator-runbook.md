@@ -147,7 +147,12 @@ criteria. A byte-identical outcome already committed **anywhere in the
 Git history reachable from registration**, even under a different path or
 after deletion, is rejected rather than receiving a machine receipt.
 The audit also detects JSON reports with the **same parsed content** but
-different whitespace, field order or file name. This supplementary scan is
+different whitespace, field order or file name. For Stage-9 evidence, it
+additionally treats different presentation order of registered world/seed
+runs, known-cause cases and naturally acquired false-rule rows as the **same
+claimed observations**, even when the report SHA-256 was recomputed after
+reordering. Reordered archives predating registration are rejected rather
+than counted as new independent trials. This supplementary scan is
 bounded (currently at least 1 MiB per candidate blob and at most 64 MiB).
 Unexamined larger Git objects are counted and become an explicit
 `pre_registration_large_git_blobs_not_semantically_inspected`
