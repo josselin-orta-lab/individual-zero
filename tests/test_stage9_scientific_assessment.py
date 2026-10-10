@@ -226,6 +226,104 @@ class Stage9ScientificAssessmentTests(unittest.TestCase):
         self.assertEqual(replay["per_run_metrics"], breakdown)
         self.assertEqual(replay["negative_runs_with_candidates"], 1)
 
+    def test_multiple_physical_trials_in_one_closed_episode_are_disclosed(self):
+        draft = example_draft()
+        draft["minimum_known_cause_accuracy"] = 0.20
+        draft["maximum_superstitious_rule_rate"] = 0.80
+        draft["minimum_naturally_acquired_candidates"] = 2
+        report = make_report(draft, candidates=15)
+        target = next(
+            row for row in report["runs"]
+            if row["world_id"] in draft["negative_world_ids"]
+            and row["seed"] == draft["holdout_seeds"][0]
+        )
+        candidates = target["naturally_acquired_false_candidates"]
+        # Each underlying physical transition remains distinct; only the
+        # closed Memory episode containing two transitions is shared.
+        candidates[1]["episode_ref"] = candidates[0]["episode_ref"]
+        scored = assess_heldout_campaign(draft, sealed(report))
+        self.assertEqual(
+            scored["assessment"], "metrics_eligible_for_independent_review",
+        )
+        self.assertEqual(scored["natural_false_candidate_count"], 30)
+        self.assertEqual(
+            scored["total_distinct_natural_candidate_episode_refs_by_run"], 29,
+        )
+        self.assertEqual(
+            scored["reused_closed_memory_candidate_episodes"],
+            [{
+                "world_id": target["world_id"], "seed": target["seed"],
+                "episode_ref": candidates[0]["episode_ref"], "candidate_count": 2,
+            }],
+        )
+        row = next(
+            r for r in scored["per_run_metrics"]
+            if r["world_id"] == target["world_id"] and r["seed"] == target["seed"]
+        )
+        self.assertEqual(row["natural_false_candidate_count"], 15)
+        self.assertEqual(row["distinct_natural_candidate_episode_refs"], 14)
+        self.assertEqual(row["max_natural_candidates_per_episode"], 2)
+        self.assertIsNone(scored["scientific_verdict"])
+        self.assertFalse(scored["golden_stage9_frozen"])
+        # Presentation order must not change a diagnostic cluster identity.
+        report["runs"].reverse()
+        target["naturally_acquired_false_candidates"].reverse()
+        reordered = assess_heldout_campaign(draft, sealed(report))
+        self.assertEqual(
+            reordered["reused_closed_memory_candidate_episodes"],
+            scored["reused_closed_memory_candidate_episodes"],
+        )
+
+    def test_missing_natural_hypotheses_in_one_null_run_are_not_hidden(self):
+        draft = example_draft()
+        draft["minimum_known_cause_accuracy"] = 0.20
+        draft["maximum_superstitious_rule_rate"] = 0.80
+        draft["minimum_naturally_acquired_candidates"] = 2
+        report = make_report(draft, candidates=20)
+        target = next(
+            row for row in report["runs"]
+            if row["world_id"] in draft["negative_world_ids"]
+            and row["seed"] == draft["holdout_seeds"][0]
+        )
+        target["naturally_acquired_false_candidates"] = []
+        scored = assess_heldout_campaign(draft, sealed(report))
+        self.assertEqual(
+            scored["assessment"], "metrics_eligible_for_independent_review",
+        )
+        self.assertEqual(scored["natural_false_candidate_count"], 20)
+        self.assertEqual(scored["negative_runs_with_candidates"], 1)
+        self.assertEqual(
+            scored["negative_runs_without_natural_candidates"],
+            [{"world_id": target["world_id"], "seed": target["seed"]}],
+        )
+        self.assertEqual(
+            scored["reused_closed_memory_candidate_episodes"], [],
+        )
+        self.assertIsNone(scored["scientific_verdict"])
+        self.assertFalse(scored["golden_stage9_frozen"])
+
+    def test_no_candidates_disclosed_without_fabricated_episode_credit(self):
+        draft = example_draft()
+        scored = assess_heldout_campaign(
+            draft, make_report(draft, candidates=0),
+        )
+        self.assertEqual(scored["assessment"], "not_evaluable")
+        self.assertEqual(
+            scored["total_distinct_natural_candidate_episode_refs_by_run"], 0,
+        )
+        self.assertEqual(scored["reused_closed_memory_candidate_episodes"], [])
+        self.assertEqual(
+            scored["negative_runs_without_natural_candidates"],
+            [
+                {"world_id": "holdout:null", "seed": 1001},
+                {"world_id": "holdout:null", "seed": 1002},
+            ],
+        )
+        self.assertTrue(all(
+            item["max_natural_candidates_per_episode"] == 0
+            for item in scored["per_run_metrics"]
+        ))
+
     def test_missing_known_cause_witness_in_positive_run_prevents_eligibility(self):
         draft = example_draft()
         draft["confidence_method"] = "wilson_95"
