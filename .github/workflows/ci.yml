@@ -22,14 +22,14 @@ on:
       - 'tox.ini'
       - 'scripts/**'
       - 'docs/architecture/reference/en/mvp-specification-v1.2.1.md'
-  # Available from the Actions UI after this workflow reaches default branch.
-  # Until then, manually apply the ci-full label to the Stage-9 PR.
+  # Full replay stays available on the default branch via manual dispatch.
+  # Draft PRs may request unit-only verification with the ci-unit label.
   workflow_dispatch:
 
 concurrency:
-  # Cancel stale PR updates, but never cancel a requested full run on the
-  # same PR merely because another commit or ready-for-review event arrived.
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.action == 'labeled' && 'manual-full' || github.event_name }}
+  # Distinct label groups prevent a short unit check from canceling an
+  # operator-requested full run, and avoid canceling either on PR updates.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.action == 'labeled' && github.event.label.name || github.event_name }}
   cancel-in-progress: true
 
 permissions:
@@ -39,12 +39,12 @@ permissions:
 jobs:
   quick-checks:
     name: quick-unit-tests (Python 3.12)
-    # Draft PRs are development checkpoints, not release validation events.
-    # A labeled PR only requests a full run when explicitly labeled ci-full.
+    # PRs ready for review get this lightweight check automatically. Draft
+    # PRs get it ONLY upon explicit application of the ci-unit label.
     if: >-
       github.event_name == 'pull_request' &&
-      github.event.action != 'labeled' &&
-      !github.event.pull_request.draft
+      ((github.event.action == 'labeled' && github.event.label.name == 'ci-unit') ||
+       (github.event.action != 'labeled' && !github.event.pull_request.draft))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
