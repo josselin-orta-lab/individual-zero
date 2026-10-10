@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from math import isfinite
 from hashlib import sha256
 from pathlib import Path
 import re
@@ -283,6 +284,19 @@ def _reject_nonfinite_candidate_constant(value: str) -> None:
     raise ValueError("nonfinite earlier candidate JSON constant")
 
 
+def _reject_overflow_candidate_float(token: str) -> float:
+    """A JSON exponent such as 1e999 must not become silent Infinity.
+
+    parse_constant rejects literal NaN/Infinity, but Python's default
+    parse_float may overflow a syntactically valid exponent to infinity.
+    Mark such prior Stage-9-looking reports as ambiguous for external review.
+    """
+    number = float(token)
+    if not isfinite(number):
+        raise ValueError("nonfinite earlier candidate JSON numeric overflow")
+    return number
+
+
 def _unordered_stage9_report_payload(value: object) -> dict[str, object] | None:
     """Canonicalize only *presentation* order for Stage-9 prior-result checks.
 
@@ -392,6 +406,7 @@ def _reject_semantic_pre_registration_evidence(
                 raw,
                 object_pairs_hook=_reject_duplicate_candidate_keys,
                 parse_constant=_reject_nonfinite_candidate_constant,
+                parse_float=_reject_overflow_candidate_float,
             )
         except (UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError):
             # A malformed prior Stage-9 envelope is not proof of an
