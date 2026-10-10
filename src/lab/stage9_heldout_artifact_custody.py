@@ -768,6 +768,9 @@ def audit_heldout_raw_artifacts(
                 report.event_ref: (report.episode_ref, report.observed_t_monde)
                 for report in agency_by_id.values()
             },
+            claimed_agency_physical_sources=journal_audit[
+                "published_agency_physical_sources"
+            ],
         )
         published_agency_comparisons_checked += memory_audit[
             "published_agency_comparisons_checked"
