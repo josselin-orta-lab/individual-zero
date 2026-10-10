@@ -337,6 +337,14 @@ def _attach_synthetic_historical_proof(
         _synthetic_agency_comparison(trial)
         for trial in owner.get("causal_interventions", [])
     )
+    for comparison in owner["agency_evidence"]:
+        episode = next(
+            row for row in state["memory"]["episodes"]
+            if row["id"] == comparison["episode_ref"]
+        )
+        episode["event_refs"].append(comparison["event_ref"])
+        state["memory"]["seen_event_refs"].append(comparison["event_ref"])
+    state["memory"]["seen_event_refs"].sort()
     revised = _replace_journal_bytes(
         root, evidence, index, journal.canonical_bytes(), run_index=run_index,
     )
@@ -1230,6 +1238,14 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     state["causal_model"]["causal_interventions"][0]
                 )
             ]
+            agency_event = state["causal_model"]["agency_evidence"][0]["event_ref"]
+            episode = next(
+                row for row in state["memory"]["episodes"]
+                if row["id"] == second["episode_ref"]
+            )
+            episode["event_refs"].append(agency_event)
+            state["memory"]["seen_event_refs"].append(agency_event)
+            state["memory"]["seen_event_refs"].sort()
             altered = _replace_causal_state_bytes(
                 root, report, index, canonical_causal_bytes(state),
                 run_index=run_index,
