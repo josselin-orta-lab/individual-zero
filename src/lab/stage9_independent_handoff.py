@@ -76,12 +76,17 @@ def audit_independent_heldout_handoff(
     if chronology.get("chronology_status") not in CHRONOLOGY_STATUSES:
         raise ValueError("unrecognized or incomplete Stage-9 chronology result")
     prior_evidence = chronology.get("evidence_path_present_at_registration")
+    prior_history = chronology.get(
+        "evidence_path_seen_in_pre_registration_git_history"
+    )
     if (
         type(prior_evidence) is not bool
+        or type(prior_history) is not bool
+        or (prior_evidence and not prior_history)
         or (
             chronology["chronology_status"]
             == "prior_evidence_path_requires_independent_review"
-        ) != prior_evidence
+        ) != prior_history
     ):
         raise ValueError("Git chronology evidence-path status is inconsistent")
     # The present checkout must also match the frozen bytes. This is a
@@ -188,6 +193,10 @@ def audit_independent_heldout_handoff(
         review_blockers.append(
             "evidence_path_preexisted_registration_requires_prospectivity_review"
         )
+    elif prior_history:
+        review_blockers.append(
+            "evidence_path_existed_earlier_in_git_history_requires_prospectivity_review"
+        )
     if provisional["assessment"] != "metrics_eligible_for_independent_review":
         review_blockers.append(
             "preregistered_metrics_not_eligible_for_independent_acceptance"
@@ -201,6 +210,7 @@ def audit_independent_heldout_handoff(
         ),
         "review_blockers": review_blockers,
         "evidence_path_present_at_registration": prior_evidence,
+        "evidence_path_seen_in_pre_registration_git_history": prior_history,
         "registration_digest": digest,
         "evidence_sha256": provisional["evidence_sha256"],
         "frozen_implementation_commit":
