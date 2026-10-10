@@ -89,6 +89,12 @@ def _create_fixture(
             "alternate_path_ambiguous_nonfinite",
             "alternate_path_reordered",
             "transient_alternate_path_reordered",
+            "alternate_path_utf8_bom",
+            "alternate_path_utf16_le",
+            "alternate_path_utf16_be",
+            "alternate_path_utf16_no_bom",
+            "alternate_path_utf32_le",
+            "transient_alternate_path_utf16_le",
         }:
             raise ValueError("unrecognized synthetic prior evidence scenario")
         alternate_name = earlier_evidence in {
@@ -98,6 +104,12 @@ def _create_fixture(
             "alternate_path_ambiguous_nonfinite",
             "alternate_path_reordered",
             "transient_alternate_path_reordered",
+            "alternate_path_utf8_bom",
+            "alternate_path_utf16_le",
+            "alternate_path_utf16_be",
+            "alternate_path_utf16_no_bom",
+            "alternate_path_utf32_le",
+            "transient_alternate_path_utf16_le",
         }
         early_relative = (
             "preseal/private-outcomes.json"
@@ -125,6 +137,27 @@ def _create_fixture(
                 encoded.replace(marker, insertion, 1) + "\n",
                 encoding="utf-8",
             )
+        elif earlier_evidence.endswith((
+            "utf8_bom", "utf16_le", "utf16_be", "utf16_no_bom", "utf32_le",
+        )):
+            # Python's JSON parser accepts multiple real Unicode encodings.
+            # A previous bytewise ASCII-brace shortcut mistakenly skipped
+            # these semantically identical earlier heldout reports.
+            text = json.dumps(
+                make_report(draft, candidates=20),
+                sort_keys=True, indent=2,
+            )
+            codec = {
+                "utf8_bom": "utf-8-sig",
+                "utf16_le": "utf-16",
+                "utf16_be": "utf-16-be",
+                "utf16_no_bom": "utf-16-le",
+                "utf32_le": "utf-32",
+            }
+            variant = next(
+                name for name in codec if earlier_evidence.endswith(name)
+            )
+            early_file.write_bytes(text.encode(codec[variant]))
         elif earlier_evidence.endswith("reordered"):
             # Same physical rows and same source hashes, but different
             # presentation ordering and a correctly recomputed full digest.
@@ -312,6 +345,37 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
                         self.assertEqual(
                             json.loads(early_path.read_text()),
                             json.loads(archived.read_text()),
+                        )
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "semantically identical heldout evidence existed in Git",
+                    ):
+                        _audit(repo, registered, evidence)
+
+    def test_unicode_encoded_prior_reports_cannot_disguise_same_results(self):
+        for scenario in (
+            "alternate_path_utf8_bom",
+            "alternate_path_utf16_le",
+            "alternate_path_utf16_be",
+            "alternate_path_utf16_no_bom",
+            "alternate_path_utf32_le",
+            "transient_alternate_path_utf16_le",
+        ):
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    repo = Path(folder)
+                    _, registered, evidence = _create_fixture(
+                        repo, earlier_evidence=scenario,
+                    )
+                    old_path = repo / "preseal/private-outcomes.json"
+                    archived = repo / "results/heldout.json"
+                    if old_path.exists():
+                        self.assertNotEqual(
+                            old_path.read_bytes(), archived.read_bytes(),
+                        )
+                        self.assertEqual(
+                            json.loads(old_path.read_bytes()),
+                            json.loads(archived.read_bytes()),
                         )
                     with self.assertRaisesRegex(
                         ValueError,
