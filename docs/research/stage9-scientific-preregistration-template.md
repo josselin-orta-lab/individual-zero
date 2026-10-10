@@ -64,6 +64,56 @@ from a draft. The CI stores a fail-closed readiness artifact, not a certificate
 of scientific validity. Test fixture values in unit tests are **not** thresholds
 selected for the research campaign.
 
+## Registered physical manifest file custody (read-only)
+
+An independent bench operator must preserve the **original file bytes** of
+every preregistered world+layout+scenario manifest and each frozen generator,
+equipment, parameter-registry and ontology manifest. Supply their paths in a
+separate, retrospective *custody index* (not in the registered protocol).
+The index is JSON using this shape, with illustrative file names only:
+
+```json
+{
+  "protocol_version": "stage9-registered-physical-manifest-index-v1",
+  "registration_digest": "FULL_64_HEX_CANONICAL_REGISTRATION_DIGEST",
+  "frozen_manifests": {
+    "world_generator": "frozen/world-generator.json",
+    "equipment": "frozen/equipment.json",
+    "parameter_registry": "frozen/parameters.json",
+    "ontology": "frozen/ontology.json"
+  },
+  "calibration_worlds": {
+    "calibration:1": "worlds/calibration-1.json"
+  },
+  "holdout_worlds": {
+    "holdout:positive": "worlds/holdout-positive.json",
+    "holdout:null": "worlds/holdout-null.json"
+  }
+}
+```
+
+All listed world IDs must match the author-approved registration exactly.
+Do not substitute these illustrative IDs for a real prospective design.
+Run after the actual files have been deposited, from the frozen software
+environment selected for the evaluation:
+
+```bash
+python -m lab.stage9_registered_manifest_custody \
+  --registration research/stage9/registration.json \
+  --index results/stage9/physical-manifest-index.json \
+  --artifact-root results/stage9/raw-manifests
+```
+
+The checker rejects missing, empty, aliased or duplicated file paths
+(including symlinks and hardlinks), incorrect digests, extra world IDs,
+incorrect manifest roles and mismatch with the registered protocol digest.
+It hashes the original bytes and performs a second stability sweep. It does
+not invent or normalize a world manifest format; the preregistered SHA-256
+is over its original **file bytes**. The operator must separately inspect
+the manifest's physical, layout and scenario semantics and independently
+custody held-out seed selection. The machine result remains
+`scientific_verdict=null` and `golden_stage9_frozen=false`.
+
 ## Git chronology audit (read-only, not scientific certification)
 
 For an actual author-approved protocol committed before the held-out campaign,
@@ -93,9 +143,14 @@ contents, and modes) has the identical object ID at the implementation freeze
 and **every descendant commit** through evidence archival. The same
 ancestry audit freezes the root `pyproject.toml` Git blob, because changing
 Python compatibility, package discovery, dependencies or entry points can
-change execution even if `src/` itself is unchanged. Both checks reject
-intermediate changes subsequently reverted. The report gives the frozen
-source-tree and packaging blob object IDs plus the number of commits examined.
+change execution even if `src/` itself is unchanged. It also checks that the
+English normative specification blob in
+`docs/architecture/reference/en/mvp-specification-v1.2.1.md` has exactly
+the preregistered SHA-256 at the implementation freeze and stays byte-identical
+at **every descendant Git commit** through evidence archival. All three
+checks reject intermediate changes subsequently reverted. The report gives
+the frozen source-tree, packaging and normative-specification Git object IDs
+plus the number of commits examined.
 It also checks that the exact registration bytes were committed at the
 registration point and remain unchanged through **every intervening
 descendant commit on Git ancestry paths** (including merges), not just in
