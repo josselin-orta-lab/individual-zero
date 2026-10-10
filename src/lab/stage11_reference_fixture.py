@@ -1,12 +1,16 @@
 """Public I0-vNext P-48 software fixture, not scientific calibration."""
 from i0.modules.exploration import ExplorationConfig
 from i0.modules.global_modulation import ModulationConfig
+from i0.modules.lived_prediction import LivedPredictionConfig
 from .stage5_reference_fixture import build_stage5_reference_runtime
 from .stage9_reference_fixture import build_stage9_reference_runtime
 from .stage11_runtime import Stage11Config, Stage11Runtime
 
 
-def build_stage11_reference_runtime():
+def build_stage11_reference_runtime(*, enable_lived_prediction: bool = False):
+    # An opt-in public diagnostic, never a trained Equipment replacement.
+    if type(enable_lived_prediction) is not bool:
+        raise ValueError("development predictor flag must be boolean")
     baseline = build_stage9_reference_runtime()
     temperament = build_stage5_reference_runtime().temperament_parameters
     return Stage11Runtime(
@@ -45,6 +49,15 @@ def build_stage11_reference_runtime():
             intrinsic_weight=0.75,
             exploration_envelope_uc=4,
             exploration_observe_cost_uc=1,
+            prospective_water=(
+                LivedPredictionConfig(
+                    version="p47-prior-lived-observation-dev-v1",
+                    min_distinct_episodes=1,
+                    maximum_spread=0.5,
+                    precision_floor=0.0,
+                    max_precision=1.0,
+                ) if enable_lived_prediction else None
+            ),
         ),
         equipment=baseline.equipment,
     )
