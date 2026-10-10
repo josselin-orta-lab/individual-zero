@@ -27,6 +27,7 @@ def _synthetic_bundle(
     transient_prior_evidence: bool = False,
     large_unexamined_prior_blob: bool = False,
     ambiguous_prior_stage9_json: bool = False,
+    reused_archives: bool = False,
 ) -> dict:
     """Disposable Git+world+raw bundle, NO real causal experiment."""
     repo, manifest_root, raw_root = (
@@ -129,6 +130,36 @@ def _synthetic_bundle(
         row["world_sha256"] = registration["holdout_world_sha256"][
             row["world_id"]
         ]
+    if reused_archives:
+        # Keep physically distinct PATHS and inodes while copying the actual
+        # first positive cell's journal and causal snapshot into another
+        # seed's cell. The per-run hash, replay, journal, Memory and published
+        # causal checks can all pass for this intentionally forged provenance.
+        # Only the cross-run byte-identity disclosure makes it conspicuous.
+        positive_rows = [
+            (i, row)
+            for i, row in enumerate(evidence["runs"])
+            if row["world_id"] in registration["positive_world_ids"]
+        ]
+        if len(positive_rows) < 2:
+            raise ValueError("synthetic collision needs two positive cells")
+        (source_idx, source_row), (dest_idx, dest_row) = positive_rows[:2]
+        src_index = raw_index["runs"][source_idx]
+        dst_index = raw_index["runs"][dest_idx]
+        for path_field, digest_field in (
+            ("journal_path", "journal_sha256"),
+            ("replay_journal_path", "replay_journal_sha256"),
+            ("causal_state_path", "causal_state_sha256"),
+            ("replay_causal_state_path", "replay_causal_state_sha256"),
+        ):
+            (raw_root / dst_index[path_field]).write_bytes(
+                (raw_root / src_index[path_field]).read_bytes()
+            )
+            dest_row[digest_field] = source_row[digest_field]
+        dest_row["known_cause_cases"] = deepcopy(source_row["known_cause_cases"])
+        dest_row["naturally_acquired_false_candidates"] = deepcopy(
+            source_row["naturally_acquired_false_candidates"]
+        )
     evidence = sealed(evidence)
     raw_index["registration_digest"] = digest
     raw_index["evidence_sha256"] = evidence["evidence_sha256"]
@@ -242,6 +273,44 @@ class Stage9IndependentHandoffTests(unittest.TestCase):
             self.assertEqual(
                 result["handoff_status"],
                 "machine_checks_consistent_requires_independent_scientific_review",
+            )
+            self.assertIsNone(result["scientific_verdict"])
+            self.assertFalse(result["golden_stage9_frozen"])
+
+    def test_copied_original_and_replay_archives_across_seeds_block_clean_handoff(self):
+        with TemporaryDirectory() as folder:
+            options = _synthetic_bundle(
+                Path(folder), review_eligible=True, reused_archives=True,
+            )
+            # Every file remains a different physical path/inode. The
+            # independent index, hash chain and Memory checks should pass.
+            result = audit_independent_heldout_handoff(**options)
+            self.assertTrue(
+                result["raw_artifact_custody"]["journal_chain_integrity_verified"]
+            )
+            self.assertTrue(
+                result["raw_artifact_custody"]["closed_episode_membership_structurally_verified"]
+            )
+            self.assertEqual(
+                result["provisional_metric_assessment"],
+                "metrics_eligible_for_independent_review",
+            )
+            self.assertEqual(
+                result["review_blockers"],
+                [
+                    "identical_journal_bytes_across_distinct_heldout_runs_requires_review",
+                    "identical_causal_owner_bytes_across_distinct_heldout_runs_requires_review",
+                ],
+            )
+            self.assertEqual(
+                result["handoff_status"],
+                "machine_checks_complete_with_explicit_review_blockers",
+            )
+            self.assertEqual(
+                len(result["cross_run_identical_archives"]["journal_sha256"]), 1,
+            )
+            self.assertEqual(
+                len(result["cross_run_identical_archives"]["causal_state_sha256"]), 1,
             )
             self.assertIsNone(result["scientific_verdict"])
             self.assertFalse(result["golden_stage9_frozen"])
