@@ -21,7 +21,10 @@ from tests.test_stage9_registration_chronology import _git
 from tests.test_stage9_scientific_assessment import sealed
 
 
-def _synthetic_bundle(root: Path, *, insufficient: bool = False) -> dict:
+def _synthetic_bundle(
+    root: Path, *, insufficient: bool = False,
+    review_eligible: bool = False, prior_evidence_path: bool = False,
+) -> dict:
     """Disposable Git+world+raw bundle, NO real causal experiment."""
     repo, manifest_root, raw_root = (
         root / "repo", root / "manifests", root / "raw",
@@ -50,8 +53,16 @@ def _synthetic_bundle(root: Path, *, insufficient: bool = False) -> dict:
 
     registration, manifest_index = _fixture(manifest_root)
     registration["frozen_implementation_commit"] = frozen
+    if insufficient and review_eligible:
+        raise ValueError("synthetic bundle cannot be both eligible and insufficient")
     if insufficient:
         registration["minimum_naturally_acquired_candidates"] = 1000
+    if review_eligible:
+        # Numeric eligibility in a disposable fixture is still NOT
+        # independently witnessed world truth, prospectivity or INV-25.
+        registration["minimum_known_cause_accuracy"] = 0.20
+        registration["maximum_superstitious_rule_rate"] = 0.80
+        registration["minimum_naturally_acquired_candidates"] = 2
     digest = validate_registration(registration)
     manifest_index["registration_digest"] = digest
     (repo / "research").mkdir()
@@ -61,6 +72,16 @@ def _synthetic_bundle(root: Path, *, insufficient: bool = False) -> dict:
         encoding="utf-8",
     )
     _git(repo, "add", registration_path.as_posix())
+    if prior_evidence_path:
+        # This is an *existing placeholder*, not identical heldout evidence.
+        # The chronology reader reports ambiguity without treating it as
+        # equivalent to an immutable prospective outcome witness.
+        (repo / "results").mkdir()
+        (repo / "results" / "heldout.json").write_text(
+            "SYNTHETIC PREEXISTING PLACEHOLDER, NOT SCIENTIFIC DATA\n",
+            encoding="utf-8",
+        )
+        _git(repo, "add", "results/heldout.json")
     _git(repo, "commit", "-qm", "synthetic prospective registration")
     registration_commit = _git(repo, "rev-parse", "HEAD")
 
@@ -74,7 +95,7 @@ def _synthetic_bundle(root: Path, *, insufficient: bool = False) -> dict:
     evidence = sealed(evidence)
     raw_index["registration_digest"] = digest
     raw_index["evidence_sha256"] = evidence["evidence_sha256"]
-    (repo / "results").mkdir()
+    (repo / "results").mkdir(exist_ok=True)
     evidence_path = Path("results/heldout.json")
     (repo / evidence_path).write_text(
         json.dumps(evidence, sort_keys=True, indent=2) + "\n",
@@ -136,6 +157,15 @@ class Stage9IndependentHandoffTests(unittest.TestCase):
                 })),
             )
             self.assertTrue(result["outstanding"])
+            self.assertIn(
+                "preregistered_metrics_not_eligible_for_independent_acceptance",
+                result["review_blockers"],
+            )
+            self.assertEqual(
+                result["handoff_status"],
+                "machine_checks_complete_with_explicit_review_blockers",
+            )
+            self.assertFalse(result["evidence_path_present_at_registration"])
             self.assertFalse(result["independent_world_custody_attested"])
             self.assertFalse(result["prospective_approval_attested"])
             self.assertFalse(result["frozen_runtime_execution_attested"])
@@ -152,6 +182,64 @@ class Stage9IndependentHandoffTests(unittest.TestCase):
             )
             self.assertFalse(result["golden_stage9_frozen"])
             self.assertIsNone(result["scientific_verdict"])
+
+    def test_review_eligible_machine_metrics_are_still_not_scientific_pass(self):
+        with TemporaryDirectory() as folder:
+            options = _synthetic_bundle(Path(folder), review_eligible=True)
+            result = audit_independent_heldout_handoff(**options)
+            self.assertEqual(
+                result["provisional_metric_assessment"],
+                "metrics_eligible_for_independent_review",
+            )
+            self.assertEqual(result["review_blockers"], [])
+            self.assertEqual(
+                result["handoff_status"],
+                "machine_checks_consistent_requires_independent_scientific_review",
+            )
+            self.assertIsNone(result["scientific_verdict"])
+            self.assertFalse(result["golden_stage9_frozen"])
+
+    def test_existing_placeholder_evidence_path_is_explicit_review_blocker(self):
+        with TemporaryDirectory() as folder:
+            options = _synthetic_bundle(
+                Path(folder), review_eligible=True, prior_evidence_path=True,
+            )
+            result = audit_independent_heldout_handoff(**options)
+            self.assertTrue(result["evidence_path_present_at_registration"])
+            self.assertEqual(
+                result["git_chronology"]["chronology_status"],
+                "prior_evidence_path_requires_independent_review",
+            )
+            self.assertEqual(
+                result["review_blockers"],
+                ["evidence_path_preexisted_registration_requires_prospectivity_review"],
+            )
+            self.assertEqual(
+                result["handoff_status"],
+                "machine_checks_complete_with_explicit_review_blockers",
+            )
+            self.assertFalse(result["golden_stage9_frozen"])
+
+    def test_inconsistent_prospectivity_claim_from_component_fails_closed(self):
+        with TemporaryDirectory() as folder:
+            options = _synthetic_bundle(Path(folder), review_eligible=True)
+            from lab.stage9_independent_handoff import audit_registration_chronology
+            actual = audit_registration_chronology(
+                repository=options["repository"],
+                registration_path=options["registration_path"],
+                registration_commit=options["registration_commit"],
+                evidence_path=options["evidence_path"],
+                evidence_commit=options["evidence_commit"],
+            )
+            altered = {**actual, "evidence_path_present_at_registration": True}
+            with patch(
+                "lab.stage9_independent_handoff.audit_registration_chronology",
+                return_value=altered,
+            ):
+                with self.assertRaisesRegex(
+                    ValueError, "evidence-path status is inconsistent",
+                ):
+                    audit_independent_heldout_handoff(**options)
 
     def test_missing_or_changed_inputs_fail_before_any_handoff_receipt(self):
         for scenario, expectation in (
