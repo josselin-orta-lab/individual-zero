@@ -11,6 +11,11 @@ For the full exact schemas and scientific criteria, see
 [the preregistration template](stage9-scientific-preregistration-template.md).
 For the actual sealed-world runner and its manifest/annotation formats, see
 [the held-out executor instructions](stage9-heldout-executor.md).
+For an evaluator with no prior knowledge of this project, follow the complete
+[independent evaluation manual (English)](stage9-independent-heldout-evaluation-manual.en.md)
+or [manual (français)](stage9-independent-heldout-evaluation-manual.fr.md).
+These manuals describe the same scientific procedure. All prior approval and
+custody restrictions remain in force.
 Do not run the deliberately synthetic test fixtures as if they were real data.
 
 Before a held-out campaign, complete the separate
