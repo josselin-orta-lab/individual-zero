@@ -41,6 +41,16 @@ class Stage11HydrationProbeTests(unittest.TestCase):
                              first.stage11_executed_test_commands)
         self.assertEqual(len(first.stage11_applied_test_steps),
                          first.stage11_executed_test_commands)
+        self.assertEqual(len(first.stage11_action_custody_at_send),
+                         first.stage11_executed_test_commands)
+        for t, option, water_before, version, registered in (
+            first.stage11_action_custody_at_send
+        ):
+            self.assertIn(t, first.stage11_applied_test_steps)
+            self.assertTrue(option.startswith("option:causal-test:"))
+            self.assertTrue(0 <= water_before <= 100)
+            self.assertTrue(version is None or version >= 1)
+            self.assertIs(type(registered), bool)
         self.assertEqual(len(first.stage11_physical_action_custody),
                          first.stage11_pending_test_actions)
         self.assertEqual(len(first.stage11_test_comparator_sent_steps),
@@ -135,7 +145,7 @@ class Stage11HydrationProbeTests(unittest.TestCase):
             exploration_policy="three_visit_window",
         )
         self.assertEqual(row.classification, "development_only_not_heldout")
-        self.assertEqual(row.protocol_version, "stage11-public-hydration-funnel-dev-v6")
+        self.assertEqual(row.protocol_version, "stage11-public-hydration-funnel-dev-v7")
         self.assertEqual(row.exploration_policy_version, "p48-three-visit-window-dev-v1")
         self.assertEqual(row.exploration_visit_ceiling, 3)
         self.assertLessEqual(row.stage11_exploration_visits, 3)
@@ -197,6 +207,14 @@ class Stage11HydrationProbeTests(unittest.TestCase):
         self.assertEqual(
             len(result.stage11_applied_test_steps),
             result.stage11_executed_test_commands,
+        )
+        self.assertEqual(
+            len(result.stage11_action_custody_at_send),
+            result.stage11_executed_test_commands,
+        )
+        self.assertEqual(
+            tuple(row[0] for row in result.stage11_action_custody_at_send),
+            result.stage11_applied_test_steps,
         )
         self.assertEqual(
             result.stage11_physical_comparator_join_candidates,
