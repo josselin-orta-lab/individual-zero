@@ -14,7 +14,8 @@ from unittest.mock import patch
 import unittest
 
 from lab.stage9_registration_chronology import audit_registration_chronology
-from lab.stage9_scientific_preregistration import SPEC_PATH
+from lab.stage9_scientific_preregistration import SPEC_PATH, load_registration
+from lab.stage9_scientific_assessment import load_heldout_evidence
 from tests.test_stage9_scientific_preregistration import example_draft
 from tests.test_stage9_scientific_assessment import make_report, sealed
 
@@ -303,6 +304,79 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
             self.assertFalse(result["golden_stage9_frozen"])
             self.assertTrue(result["outstanding"])
             self.assertNotEqual(result["provisional_metric_assessment"], "accepted")
+
+
+    def test_transient_evidence_parse_cannot_override_sealed_git_artifact(self):
+        # Swap only the first guarded JSON parse, then restore the original
+        # file before Git byte identity is checked. The old chronology audit
+        # could score this internally valid fake rather than the Git blob.
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            _freeze, registered, evidence = _create_fixture(repo)
+            path = repo / "results/heldout.json"
+            saved = path.read_bytes()
+            forged = deepcopy(json.loads(saved))
+            forged["runs"][0]["known_cause_cases"][0]["attribution"] = "uncertain"
+            forged = sealed(forged)
+            self.assertNotEqual(forged["evidence_sha256"], json.loads(saved)["evidence_sha256"])
+
+            def transient_read(supplied):
+                original = supplied.read_bytes()
+                supplied.write_text(json.dumps(forged), encoding="utf-8")
+                try:
+                    return load_heldout_evidence(supplied)
+                finally:
+                    supplied.write_bytes(original)
+
+            with patch(
+                "lab.stage9_registration_chronology.load_heldout_evidence",
+                side_effect=transient_read,
+            ):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "parsed heldout evidence differs from committed Git artifact",
+                ):
+                    _audit(repo, registered, evidence)
+            self.assertEqual(path.read_bytes(), saved)
+
+    def test_transient_registration_and_report_parse_cannot_forge_prospective_seal(self):
+        # A colluding same-moment replacement can keep a forged registration
+        # and forged report mutually consistent while restoring both real Git
+        # files before the later physical-vs-Git byte comparisons.
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            _freeze, registered, evidence = _create_fixture(repo)
+            manifest_path = repo / "research/registration.json"
+            report_path = repo / "results/heldout.json"
+            registered_bytes = manifest_path.read_bytes()
+            report_bytes = report_path.read_bytes()
+            forged_manifest = deepcopy(json.loads(registered_bytes))
+            forged_manifest["author"] = "synthetic-transient-author"
+            forged_report = make_report(forged_manifest, candidates=20)
+
+            def temporary_loader(loader, altered):
+                def read(supplied):
+                    saved = supplied.read_bytes()
+                    supplied.write_text(json.dumps(altered), encoding="utf-8")
+                    try:
+                        return loader(supplied)
+                    finally:
+                        supplied.write_bytes(saved)
+                return read
+
+            with patch(
+                "lab.stage9_registration_chronology.load_registration",
+                side_effect=temporary_loader(load_registration, forged_manifest),
+            ), patch(
+                "lab.stage9_registration_chronology.load_heldout_evidence",
+                side_effect=temporary_loader(load_heldout_evidence, forged_report),
+            ):
+                with self.assertRaisesRegex(
+                    ValueError, "parsed registration differs from prospective Git seal",
+                ):
+                    _audit(repo, registered, evidence)
+            self.assertEqual(manifest_path.read_bytes(), registered_bytes)
+            self.assertEqual(report_path.read_bytes(), report_bytes)
 
     def test_pre_registration_identical_report_rejected_even_after_git_deletion(self):
         for scenario in ("identical", "transient_identical"):

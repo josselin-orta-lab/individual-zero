@@ -16,10 +16,15 @@ from pathlib import Path
 import re
 import subprocess
 
+from .determinism import canonical_causal_bytes
 from .stage9_scientific_assessment import (
+    _reject_duplicate_keys, _reject_nonfinite_constant,
     assess_heldout_campaign, load_heldout_evidence,
 )
-from .stage9_scientific_preregistration import SPEC_PATH, load_registration
+from .stage9_scientific_preregistration import (
+    SPEC_PATH, _unique_pairs, _reject_nonfinite_registration_constant,
+    load_registration,
+)
 from .stage9_secure_file_read import open_regular_no_follow
 
 
@@ -531,6 +536,23 @@ def audit_registration_chronology(
         physical_registration = stream.read()
     if frozen_registration != physical_registration:
         raise ValueError("registration bytes differ from prospective Git seal")
+    # The loader ran *before* the Git blob and physical file were compared.
+    # A transient substitution confined to that parse could otherwise make
+    # the scorer use a different protocol while the later file check passed.
+    try_marker = frozen_registration
+    try:
+        committed_registration = json.loads(
+            try_marker.decode("utf-8"),
+            object_pairs_hook=_unique_pairs,
+            parse_constant=_reject_nonfinite_registration_constant,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("invalid prospective Git registration JSON") from exc
+    if canonical_causal_bytes(registration) != canonical_causal_bytes(
+        committed_registration
+    ):
+        raise ValueError("parsed registration differs from prospective Git seal")
+    registration = committed_registration
     carried_registration = _git(root, "show", f"{evidence_commit}:{registration_name}")
     if carried_registration != frozen_registration:
         raise ValueError("registration changed after prospective Git seal")
@@ -542,6 +564,21 @@ def audit_registration_chronology(
         physical_evidence = stream.read()
     if committed_evidence != physical_evidence:
         raise ValueError("heldout evidence bytes differ from committed Git artifact")
+    # Bind the scored JSON object to the exact Git-committed bytes, not only
+    # to another guarded read of the file after the original loader returned.
+    try:
+        committed_report = json.loads(
+            committed_evidence.decode("utf-8"),
+            object_pairs_hook=_reject_duplicate_keys,
+            parse_constant=_reject_nonfinite_constant,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("invalid committed Git heldout evidence JSON") from exc
+    if canonical_causal_bytes(evidence) != canonical_causal_bytes(
+        committed_report
+    ):
+        raise ValueError("parsed heldout evidence differs from committed Git artifact")
+    evidence = committed_report
 
     prior_evidence = subprocess.run(
         ("git", "-C", str(root), "--no-replace-objects", "cat-file", "-e",
