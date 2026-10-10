@@ -43,7 +43,7 @@ from .stage9_registration_chronology import (
 from .stage9_runtime import Stage9Config, Stage9Runtime
 from .stage9_scientific_assessment import assess_heldout_campaign
 from .stage9_scientific_preregistration import load_registration, validate_registration
-from .stage9_secure_file_read import read_text_no_follow
+from .stage9_secure_file_read import read_text_no_follow, open_regular_no_follow
 from .world import (
     WorldPhysicsConfig, WorldLayout, Position,
 )
@@ -284,15 +284,16 @@ def _world(document: dict, *, world_id: str, steps: int):
 
 def _write_new(path: Path, content: bytes) -> None:
     """Never overwrite or reassign an experimental path, even after failure."""
-    path.parent.mkdir(parents=True, exist_ok=True)
     if any(part.is_symlink() for part in (path, *path.parents)):
         raise ValueError("output path contains a symlink")
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("xb") as stream:
         stream.write(content)
 
 
 def _file_sha(path: Path) -> str:
-    return sha256_hex(path.read_bytes())
+    with open_regular_no_follow(path) as stream:
+        return sha256_hex(stream.read())
 
 
 def _external_release(release: dict, registration: dict, registration_commit: str) -> None:
@@ -354,7 +355,7 @@ def _cell_run(
     scenario: tuple[str, str, tuple[ScenarioEvent, ...]],
     config: Stage9Config, safety: SafetyProtocolConfig, threshold: float,
     innate: StaticSafetyFacts, equipment: FrozenTableEquipment,
-) -> tuple[bytes, bytes, dict]:
+) -> tuple[bytes, bytes, bytes, bytes, dict]:
     # Each seed procedurally changes *real* world layout and berry identity.
     # All oracle-relevant choices remain on the bench side.
     generated = generate_world(physics=physics, generation=generator, seed=seed)
@@ -408,7 +409,7 @@ def _cell_run(
     truth["scenario_version"] = scenario[1]
     truth["generated_toxic_berry_bench_only"] = generated.toxic_berry
     truth["generated_nutritious_berry_bench_only"] = generated.nutritious_berry
-    return original_journal, original_state, truth
+    return original_journal, original_state, replay_journal, replay_state, truth
 
 
 def execute_campaign(
@@ -473,7 +474,7 @@ def execute_campaign(
         physics, scenario = worlds[world_id]
         for seed_number, seed in enumerate(registration["holdout_seeds"]):
             cell = f"cell-{world_number:03d}-{seed_number:03d}"
-            journal, state, bench_truth = _cell_run(
+            journal, state, replay_journal, replay_state, bench_truth = _cell_run(
                 world_id=world_id, seed=seed,
                 steps=registration["steps_per_run"], physics=physics,
                 generator=generator, scenario=scenario,
@@ -489,9 +490,9 @@ def execute_campaign(
             }
             for field, content in (
                 ("journal_path", journal),
-                ("replay_journal_path", journal),
+                ("replay_journal_path", replay_journal),
                 ("causal_state_path", state),
-                ("replay_causal_state_path", state),
+                ("replay_causal_state_path", replay_state),
             ):
                 _write_new(output_root / files[field], content)
             _write_new(
