@@ -29,6 +29,20 @@ class Action:
 
 
 @dataclass(frozen=True, slots=True)
+class PrimitiveCommand:
+    """Primitive command contract shared by I0 and the world boundary."""
+
+    primitive: str
+    parameters: Mapping[str, object] = field(default_factory=dict)
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "primitive": self.primitive,
+            "parameters": dict(self.parameters),
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class StepResult:
     """Observable result of one Individual step."""
 

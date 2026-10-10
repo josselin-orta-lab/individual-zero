@@ -1,0 +1,405 @@
+"""Synthetic-only file custody tests; no heldout science or Golden evidence."""
+from __future__ import annotations
+
+from copy import deepcopy
+from hashlib import sha256
+import json
+import os
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
+import unittest
+
+from lab.stage9_registered_manifest_custody import (
+    INDEX_VERSION, audit_registered_manifest_files, load_manifest_index,
+)
+from lab.stage9_scientific_preregistration import validate_registration
+from tests.test_stage9_scientific_preregistration import example_draft
+
+
+def _fixture(root: Path) -> tuple[dict[str, object], dict[str, object]]:
+    draft = example_draft()
+    files: dict[str, dict[str, str]] = {
+        "frozen_manifests": {},
+        "calibration_worlds": {},
+        "holdout_worlds": {},
+    }
+    groups = (
+        ("frozen_manifests", (
+            ("world_generator", "world_generator_sha256"),
+            ("equipment", "equipment_sha256"),
+            ("parameter_registry", "parameter_registry_sha256"),
+            ("ontology", "ontology_sha256"),
+        )),
+        ("calibration_worlds", tuple(
+            (world, world) for world in draft["calibration_world_ids"]
+        )),
+        ("holdout_worlds", tuple(
+            (world, world) for world in draft["holdout_world_ids"]
+        )),
+    )
+    for group, labels in groups:
+        (root / group).mkdir()
+        for label, _ in labels:
+            name = label.replace(":", "_") + ".manifest"
+            relative = f"{group}/{name}"
+            payload = (
+                f"SYNTHETIC MANIFEST, NOT A REAL EXPERIMENT\n"
+                f"group={group}\nlabel={label}\n"
+            ).encode("utf-8")
+            (root / relative).write_bytes(payload)
+            digest = sha256(payload).hexdigest()
+            files[group][label] = relative
+            if group == "frozen_manifests":
+                fields = {
+                    "world_generator": "world_generator_sha256",
+                    "equipment": "equipment_sha256",
+                    "parameter_registry": "parameter_registry_sha256",
+                    "ontology": "ontology_sha256",
+                }
+                draft[fields[label]] = digest
+            elif group == "calibration_worlds":
+                draft["calibration_world_sha256"][label] = digest
+            else:
+                draft["holdout_world_sha256"][label] = digest
+    index = {
+        "protocol_version": INDEX_VERSION,
+        "registration_digest": validate_registration(draft),
+        **files,
+    }
+    return draft, index
+
+
+def _audit(
+    root: Path, draft: dict[str, object], index: dict[str, object],
+) -> dict[str, object]:
+    return audit_registered_manifest_files(
+        registration=draft, index=index, artifact_root=root,
+    )
+
+
+class Stage9RegisteredManifestCustodyTests(unittest.TestCase):
+    def test_all_registered_manifest_bytes_verified_without_scientific_verdict(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            draft, index = _fixture(root)
+            result = _audit(root, draft, index)
+            self.assertEqual(result["frozen_manifests_checked"], 4)
+            self.assertEqual(result["calibration_worlds_checked"], 1)
+            self.assertEqual(result["holdout_worlds_checked"], 2)
+            self.assertEqual(result["total_manifest_files_checked"], 7)
+            self.assertGreater(result["total_manifest_bytes_checked"], 0)
+            self.assertEqual(result["registration_digest"], validate_registration(draft))
+            self.assertFalse(result["physical_world_semantics_attested"])
+            self.assertFalse(result["world_generation_independence_attested"])
+            self.assertFalse(result["heldout_seed_custody_attested"])
+            self.assertFalse(result["golden_stage9_frozen"])
+            self.assertIsNone(result["scientific_verdict"])
+            self.assertTrue(result["outstanding"])
+
+    def test_manifest_bytes_cannot_be_forged_or_substituted(self):
+        for role, name in (
+            ("frozen_manifests", "ontology"),
+            ("frozen_manifests", "equipment"),
+            ("calibration_worlds", "calibration:1"),
+            ("holdout_worlds", "holdout:null"),
+        ):
+            with self.subTest(group=role, manifest=name):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    draft, index = _fixture(root)
+                    path = root / index[role][name]
+                    path.write_bytes(path.read_bytes() + b"late forensic alteration")
+                    with self.assertRaisesRegex(ValueError, "manifest digest mismatch"):
+                        _audit(root, draft, index)
+
+    def test_missing_empty_and_reused_manifest_files_fail_closed(self):
+        for kind in ("missing", "empty", "duplicate_path", "hardlink"):
+            with self.subTest(kind=kind):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    draft, index = _fixture(root)
+                    original = root / index["frozen_manifests"]["equipment"]
+                    replacement = root / index["frozen_manifests"]["ontology"]
+                    if kind == "missing":
+                        original.unlink()
+                        expected = "missing physical manifest file"
+                    elif kind == "empty":
+                        original.write_bytes(b"")
+                        expected = "empty physical manifest"
+                    elif kind == "duplicate_path":
+                        index["frozen_manifests"]["equipment"] = index[
+                            "frozen_manifests"
+                        ]["ontology"]
+                        expected = "physical manifest reused"
+                    else:
+                        original.unlink()
+                        os.link(replacement, original)
+                        expected = "physical manifest reused"
+                    if kind in {"duplicate_path", "hardlink"}:
+                        # Freeze two roles to the *same* digest, so each
+                        # byte-level comparison succeeds and the anti-alias
+                        # inode/path check is exercised independently.
+                        draft["equipment_sha256"] = draft["ontology_sha256"]
+                        index["registration_digest"] = validate_registration(draft)
+                    with self.assertRaisesRegex(ValueError, expected):
+                        _audit(root, draft, index)
+
+    def test_path_escape_and_symlink_aliases_fail(self):
+        for kind in ("parent", "absolute", "dot", "symlink_file", "symlink_dir"):
+            with self.subTest(kind=kind):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    draft, index = _fixture(root)
+                    source = index["frozen_manifests"]["equipment"]
+                    original = root / source
+                    if kind == "parent":
+                        index["frozen_manifests"]["equipment"] = "../elsewhere"
+                    elif kind == "absolute":
+                        index["frozen_manifests"]["equipment"] = str(original)
+                    elif kind == "dot":
+                        index["frozen_manifests"]["equipment"] = (
+                            "frozen_manifests/./equipment.manifest"
+                        )
+                    elif kind == "symlink_file":
+                        other = root / "equipment.link"
+                        other.symlink_to(original)
+                        index["frozen_manifests"]["equipment"] = other.name
+                    else:
+                        (root / "linked").symlink_to(
+                            root / "frozen_manifests", target_is_directory=True,
+                        )
+                        index["frozen_manifests"]["equipment"] = (
+                            "linked/equipment.manifest"
+                        )
+                    with self.assertRaisesRegex(
+                        ValueError, "traversal-free|relative|symlinks",
+                    ):
+                        _audit(root, draft, index)
+
+    def test_symlinked_custody_root_is_rejected(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder) / "real"
+            root.mkdir()
+            draft, index = _fixture(root)
+            alias = root.parent / "alias"
+            alias.symlink_to(root, target_is_directory=True)
+            with self.assertRaisesRegex(ValueError, "root may not be a symlink"):
+                _audit(alias, draft, index)
+
+    def test_symlink_swap_at_descriptor_open_is_rejected(self):
+        # The file is ordinary when the index path is checked, but becomes
+        # a symlink immediately before open(). A preflight is_symlink()
+        # followed by Path.open() would follow it without noticing.
+        from lab import stage9_registered_manifest_custody as custody
+        from lab import stage9_secure_file_read as guarded
+        for scenario in ("leaf", "parent"):
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    _draft, index = _fixture(root)
+                    filename = root / index["frozen_manifests"]["equipment"]
+                    relocated = (
+                        root / "moved-equipment.manifest"
+                        if scenario == "leaf"
+                        else root / "relocated-manifests"
+                    )
+                    target_component = (
+                        filename.name if scenario == "leaf" else filename.parent.name
+                    )
+                    real_open = guarded.os.open
+                    switched = False
+
+                    def swap_at_open(path, flags, *, dir_fd=None):
+                        nonlocal switched
+                        if (
+                            not switched and path == target_component
+                            and dir_fd is not None
+                        ):
+                            switched = True
+                            original = (
+                                filename if scenario == "leaf"
+                                else filename.parent
+                            )
+                            original.rename(relocated)
+                            original.symlink_to(
+                                relocated, target_is_directory=scenario == "parent",
+                            )
+                        return real_open(path, flags, dir_fd=dir_fd)
+
+                    with patch.object(guarded.os, "open", side_effect=swap_at_open):
+                        with self.assertRaisesRegex(ValueError, "symlink"):
+                            custody._hash_bytes(filename)
+                    self.assertTrue(switched)
+
+    def test_mid_audit_symlink_to_same_inode_is_rejected(self):
+        # Synthetic TOCTOU: the first SHA read is valid. Afterwards an
+        # operator relocates the very same inode and leaves a symlink at
+        # the registered path. A second stat+hash alone would pass.
+        from lab import stage9_registered_manifest_custody as custody
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            draft, index = _fixture(root)
+            original = root / index["frozen_manifests"]["equipment"]
+            relocated = root / "relocated-equipment.manifest"
+            real_hash = custody._hash_bytes
+            modified = False
+
+            def replace_after_first_hash(path: Path) -> tuple[str, int]:
+                nonlocal modified
+                result = real_hash(path)
+                if path == original and not modified:
+                    modified = True
+                    original.rename(relocated)
+                    original.symlink_to(relocated)
+                    self.assertEqual(original.stat().st_ino, relocated.stat().st_ino)
+                return result
+
+            with patch.object(custody, "_hash_bytes", side_effect=replace_after_first_hash):
+                with self.assertRaisesRegex(ValueError, "symlink"):
+                    _audit(root, draft, index)
+            self.assertTrue(modified)
+
+    def test_mid_audit_replacement_with_same_bytes_is_rejected(self):
+        from lab import stage9_registered_manifest_custody as custody
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            draft, index = _fixture(root)
+            original = root / index["frozen_manifests"]["equipment"]
+            payload = original.read_bytes()
+            real_hash = custody._hash_bytes
+            modified = False
+
+            def replace_after_first_hash(path: Path) -> tuple[str, int]:
+                nonlocal modified
+                result = real_hash(path)
+                if path == original and not modified:
+                    modified = True
+                    original.rename(root / "old-equipment.manifest")
+                    original.write_bytes(payload)
+                return result
+
+            with patch.object(custody, "_hash_bytes", side_effect=replace_after_first_hash):
+                with self.assertRaisesRegex(ValueError, "changed during custody audit"):
+                    _audit(root, draft, index)
+            self.assertTrue(modified)
+
+
+    def test_same_size_manifest_mutation_during_read_is_rejected(self):
+        # A size-only fstat() check cannot detect a same-length rewrite.
+        from lab import stage9_registered_manifest_custody as custody
+        from lab import stage9_secure_file_read as guarded
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            _draft, index = _fixture(root)
+            target = root / index["frozen_manifests"]["equipment"]
+            original = target.read_bytes()
+            before = target.stat()
+            changed = b"X" + original[1:]
+            self.assertEqual(len(original), len(changed))
+            real_fdopen = guarded.os.fdopen
+            mutated = False
+
+            def rewrite_after_open(fd, mode):
+                nonlocal mutated
+                stream = real_fdopen(fd, mode)
+                if not mutated:
+                    mutated = True
+                    target.write_bytes(changed)
+                    # Force a reproducible timestamp difference even on
+                    # lower-resolution filesystems.
+                    os.utime(target, ns=(
+                        before.st_atime_ns, before.st_mtime_ns + 2_000_000_000,
+                    ))
+                return stream
+
+            with patch.object(guarded.os, "fdopen", side_effect=rewrite_after_open):
+                with self.assertRaisesRegex(ValueError, "changed during descriptor read"):
+                    custody._hash_bytes(target)
+            self.assertTrue(mutated)
+
+    def test_manifest_parent_swap_while_reading_rejects_identical_bytes(self):
+        # The old opened inode remains intact but the path now resolves to
+        # an unrelated inode whose contents have the same expected digest.
+        from lab import stage9_registered_manifest_custody as custody
+        from lab import stage9_secure_file_read as guarded
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            _draft, index = _fixture(root)
+            target = root / index["frozen_manifests"]["equipment"]
+            parent = target.parent
+            incoming = root / "incoming"
+            incoming.mkdir()
+            (incoming / target.name).write_bytes(target.read_bytes())
+            real_fdopen = guarded.os.fdopen
+            swapped = False
+
+            def swap_parent_after_open(fd, mode):
+                nonlocal swapped
+                stream = real_fdopen(fd, mode)
+                if not swapped:
+                    swapped = True
+                    parent.rename(root / "relocated-manifests")
+                    incoming.rename(parent)
+                return stream
+
+            with patch.object(guarded.os, "fdopen", side_effect=swap_parent_after_open):
+                with self.assertRaisesRegex(ValueError, "changed during descriptor read"):
+                    custody._hash_bytes(target)
+            self.assertTrue(swapped)
+
+    def test_index_requires_exact_worlds_roles_and_digest(self):
+        edits = (
+            ("missing_holdout", lambda i: i["holdout_worlds"].pop("holdout:null")),
+            ("extra_calibration", lambda i: i["calibration_worlds"].update({
+                "synthetic:foreign": i["calibration_worlds"]["calibration:1"],
+            })),
+            ("missing_equipment", lambda i: i["frozen_manifests"].pop("equipment")),
+            ("unexpected_index_key", lambda i: i.update({"approved": True})),
+            ("wrong_version", lambda i: i.update({"protocol_version": "future"})),
+            ("wrong_binding", lambda i: i.update({"registration_digest": "0" * 64})),
+        )
+        for scenario, edit in edits:
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    draft, baseline = _fixture(root)
+                    index = deepcopy(baseline)
+                    edit(index)
+                    with self.assertRaises(ValueError):
+                        _audit(root, draft, index)
+
+    def test_index_json_rejects_ambiguity_and_nonfinite_constants(self):
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / "index.json"
+            for contents, error in (
+                ('{"protocol_version":"a","protocol_version":"b"}',
+                 "duplicate physical manifest index JSON key"),
+                ('{"protocol_version":NaN}', "non-finite physical manifest index JSON constant"),
+                ('[]', "physical manifest index must be a JSON object"),
+            ):
+                with self.subTest(contents=contents):
+                    path.write_text(contents, encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, error):
+                        load_manifest_index(path)
+
+    def test_registration_digest_changes_cannot_launder_old_manifest_index(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            draft, index = _fixture(root)
+            draft["steps_per_run"] += 1
+            with self.assertRaisesRegex(ValueError, "differs from registration"):
+                _audit(root, draft, index)
+
+    def test_synthetic_example_remains_unregistered(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            draft, index = _fixture(root)
+            path = root / "index.json"
+            path.write_text(json.dumps(index), encoding="utf-8")
+            loaded = load_manifest_index(path)
+            self.assertEqual(_audit(root, draft, loaded)["scientific_verdict"], None)
+
+
+if __name__ == "__main__":
+    unittest.main()

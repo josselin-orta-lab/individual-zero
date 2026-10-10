@@ -40,9 +40,283 @@ Deferred without blocking the Stage 1 gate:
 - periodic snapshot scheduling from P-55 until a preregistered campaign value is supplied;
 - production campaign RunManifest instantiation, which now has a validated builder but requires real campaign values and equipment reference.
 
+## Stage 2 progress on this branch
+
+Implemented:
+
+- deterministic 32 x 32 grid world with impassable borders and a 300-step day including 100 night steps;
+- body state with energy, food, water and integrity, all bounded to [0,100];
+- primitive commands for movement, collection, eating, drinking, stone placement, tool crafting, sleep and wait;
+- P-52/P-53-driven action costs, body decay/gains, damage, resource quantities and tool recipe;
+- water, two berry species, wood, stone, hostile-creature positions, damaging danger zones and explicitly lethal zones;
+- shelter formation from exactly four stones;
+- deterministic seeded world generation with explicit counts and seeded toxic/nutritious berry identity;
+- isolated oracle capability accessible only through the evaluation bench;
+- oracle canary isolation checks and a source-level dependency check forbidding oracle/bench dependencies under `src/i0`;
+- separate evaluation trace and external death/rollback/block/alert counters;
+- deterministic external scenario injection logged before application;
+- typed protocols for all five MVP battery situations, with trait scoring deferred to Stage 5;
+- lethal checkpoint immediately before every scripted command send;
+- lethal-transition detection, rollback, protocol mask and renewed `attempt_ref`;
+- campaign/diagnostic safety-block distinction and operator alert after `R_letal_max`;
+- autobiographical projection only for non-lethal attempts;
+- exact replay of injected scenarios and a full 300-step scripted-agent day;
+- Stage 2 reference journal generated and retained by CI on Python 3.11.
+
+Stage 2 gate status:
+
+- INV-02: green for current code boundary through capability denial, `src/i0` dependency scan, and oracle-canary non-leak checks;
+- INV-27: green for the current no-learning Stage-2 system; lethal transition, detection, rollback and mask are absent from the autobiographical projection;
+- INV-28: green for protocol-mask scope in Stage 2; the mask is cleared after a non-lethal step and exists only in technical Scheduler state;
+- INV-29: green through repeated distinct lethal commands, safety block, bench counter and operator alert;
+- INV-33: extended through deterministic scenario state and full scripted-day replay;
+- INV-39/INV-44/INV-49: exercised by the Stage-2 scripted send/rollback path.
+
+Prepared but not activated as cognition:
+
+- the five battery scenario mechanisms are typed and versioned, but profile scoring and disposable-copy administration remain Stage 5;
+- the scripted agent is intentionally not Action Control; Stage 3 will become the sole normative command sender for the individual.
+
+Still requiring preregistration before a scientific campaign:
+
+- concrete P-29, P-37, P-38, P-49 and P-52 to P-54 values;
+- campaign world counts, costs, damages and scenario bounds;
+- materiality thresholds and battery termination values.
+
+## Stage 3 progress on this branch
+
+Implemented:
+
+- `PrimitiveCommand` promoted to a shared I0/world interface so cognitive code does not depend on Lab internals;
+- minimal local symbolic world capture containing only authorized local state, with hidden danger/lethality and oracle canaries excluded;
+- deterministic `SymbolicPerception` without noise or learned state;
+- immutable Stage-3 safety-fact source, designed to be replaced later by the canonical Causal Model source;
+- `ActionControl.verifier_admissibilite` with admissible / inadmissible / indeterminate outcomes;
+- the three exact MVP veto categories with policy-version trace;
+- protected-integrity check driven by explicit P-37 input;
+- protocol-mask check after semantic veto/protected-invariant checks;
+- innate adjacent-creature avoidance reflex using one step capture;
+- deterministic avoidance geometry documented as reversible TD-S3-01;
+- Action Control admission trace emitted before send;
+- Action Control as the only Stage-3 dispatcher into the admitted-command execution port;
+- vetoed reflex falls through to the permanent `attendre` Stage-3 stub; the veto does not select the replacement;
+- lethal reflex rollback resumes in the same world step without replaying the reflex;
+- exactly one local perceptual capture per Stage-3 step;
+- deterministic Stage-3 replay and CI-retained reference journal.
+
+Stage 3 invariant status:
+
+- INV-12: direct/reflex branch green. Every reflex command links to its trigger and capture. The cognitive option → S_t provenance branch is structurally deferred to Stage 4 because S_t does not yet exist at Stage 3;
+- INV-13: green. Reflexes and vetoes never enter competition, and veto never chooses a replacement action;
+- INV-45: green for Stage 3 through exactly one local capture per waking step;
+- INV-52: green for implemented Stage-3 send paths: admission is journaled before checkpoint/send and vetoed commands are never sent;
+- exact replay remains green over the stacked Stage 1/2/3 substrate.
+
+Deliberately not implemented yet:
+
+- S_t, gatekeeper, competition, goals, planner, values, F_cog or learning;
+- full cognitive branch of INV-12, which becomes testable at Stage 4;
+- Stage-3 safety facts learned from experience: only the immutable initial source exists here, as required before the Causal Model arrives.
+
+## Stage 4 progress on this branch
+
+Implemented:
+
+- frozen causal contracts for GoalProposal, Goal, Contribution, Option, Plan, EvaluationOption and S_t;
+- Value and Needs with explicit setpoints, weighted homeostatic deviation D_t, reward r_t, need alerts and goal proposals;
+- Goal Manager as sole owner/writer of the active goal, with one-cycle proposal visibility, hysteretic replacement, satisfaction, abandonment counter and refractory state;
+- Gatekeeper with the five normative dimensions, fixed Stage-4 weights, f = 1, exact-subject grouping, exact-symbolic novelty stub, safety preemption, hysteresis, bounded queue, emission quota and soft slot-diversity quota;
+- immutable S_t publication by its sole owner, including body, active goal, current plan step, normal profile, synthetic budget state and last-action comparison;
+- Perception last-known symbolic map and observation contributions, still with zero noise;
+- greedy E-0 planner reading only active goal, founding S_t and Perception's map, never world/oracle;
+- explicit grounding of planned options in contributions actually retained by the founding S_t;
+- bounded live-option registry, permanent `attendre`, accumulators, urgency, leak, thresholds, inertia, residuals, relative-margin tie-break and C_max fallback;
+- substitution evidence by primitive action type only; learned value, simulation and intrinsic motivation remain unavailable/non-applicable exactly as Stage 4 requires;
+- Action Control ownership of the current cognitive plan step, advancing only after a non-lethal applied command;
+- minimal position result comparator using E-0 predicted movement and the next perceptual capture; non-conformance invalidates the current plan and candidate;
+- P-43 logical per-cycle budget using the Stage-1 `CycleComputeBudget`, including envelopes and protected capacity;
+- minimal F_cog representation as cumulative actually-consumed UC plus last-cycle UC and synthetic budget state, with normalized DC-13 dynamics explicitly deferred to Stage 10/P-39;
+- complete cognitive causal state included in lethal checkpoints and restored on rollback while the technical journal remains append-only;
+- C_max fallback performed inside phase 4, therefore inside the same budget/F_cog accounting as ordinary decisions;
+- direct reflex remains prior to cognition and opens no deliberation;
+- deterministic one-day Stage-4 compatibility fixture and retained CI journal.
+
+Stage 4 reference fixture:
+
+- duration: 300 world steps;
+- causal journal bytes: 31,021,402;
+- golden journal head: `87e2de3c49f07bafa8026ef785e5e50abf38c98314e780b3e2c5107bf26bdac8`;
+- minimal F_cog UC counter at day end: 9,551;
+- fixture values are software-compatibility values only and are not campaign calibration or preregistration.
+
+Stage 4 invariant status:
+
+- INV-01: green for implemented Stage-4 causal owners through unique owner identifiers and encapsulated single-writer state;
+- INV-04: green; published S_t structures are recursively immutable and snapshot through a plain causal representation;
+- INV-08: green for implemented producers; goal proposals become visible one cycle later and Planning consumes the active goal/S_t only from the previous cycle;
+- INV-09: green for the minimal runtime; deliberation is bounded by C_max and no world transition occurs before decision/fallback send;
+- INV-10: green for implemented options; motif_ref is mandatory and stale goal_ref proposals are rejected/pruned;
+- INV-11: green for the minimal system; only Goal Manager writes the active goal;
+- INV-12: green for both implemented paths: reflex commands trace to trigger/capture; cognitive commands trace to option, founding S_t and explicit grounding contributions retained by that S_t;
+- INV-13: remains green from Stage 3; reflexes/veto never enter Competition;
+- INV-17: green; engaged option restarts at A = 0 and non-winning alternatives retain rho times their accumulator;
+- INV-18: green for Gatekeeper age/expiry because age changes only with t_monde, not with extra cognitive cycles;
+- INV-19: green; queue capacity and eviction are deterministic;
+- INV-21: green for Stage 4 through per-cycle UC accounting, module envelopes, protected capacity, explicit degradation and a forced planning-overrun test;
+- INV-27/INV-28: extended through cognitive rollback: lethal cognitive branches restore complete causal cognition, remain absent from autobiographical projection and resume under protocol mask;
+- INV-33: extended through deterministic Stage-4 re-execution and the full-day golden journal;
+- INV-41/INV-52: preserved; the exact admitted command object is the one dispatched, after veto/mask and before lethal checkpoint/send.
+
+Minimal stubs that remain intentionally incomplete:
+
+- kappa remains f = 1; verification and reliability learning begin at Stage 8;
+- learned Q is `unlearned`, simulator evidence is `unavailable`, m_a is `not_applicable`; richer EvaluationOption production begins in Stages 6, 8, 10 and 11;
+- risk/protection remain minimal hand-written safety inputs; causal safety facts arrive at Stage 9;
+- Global Modulation remains the fixed `normal` profile until Stage 11;
+- F_cog has no normalized fatigue/sleep-pressure dynamics until Stage 10;
+- E-0 is deliberately not obstacle-aware; a blocked movement is detected by the comparator and triggers replanning, while the richer model arrives later;
+- no memory, learning, simulator, causal model, exploration or consolidation is introduced.
+
+## Stage 5 integrated software module (parallel branch)
+
+Implemented:
+
+- raw temperament `tau` as immutable birth configuration with exactly the five normative dimensions;
+- a single `TemperamentProjection` boundary, owned by `snapshots_and_individual_parameters`, as the only code path authorized to read raw `tau`;
+- immutable `ParametresTemperament` with exact normative exponential mappings where the specification fixes a form and explicit versioned table curves where it does not;
+- Stage-5 runtime injection of derived gatekeeper weights, need weights and inertia only; Stage-4 consumers never read raw `tau`;
+- neutral `tau = 0` behavior checked against the Stage-4 reference loop;
+- restoration guard rejecting any in-life mutation of `tau` (INV-30);
+- complete `SnapshotType.COPY` creation at coherent step boundaries;
+- deterministic child identity, lineage, parent and copy-point metadata;
+- identity-safe S_t rebinding in copied branches;
+- exact inherited temperament and causal state at the copy point, followed by isolated child continuation with no reinjection into the parent;
+- explicit `battery_copy` causal status retained for the future Stage-10 consolidation guard;
+- fresh external scenario attachment to disposable copies without treating the external scenario as inherited individual identity;
+- bench-side disposable trait-battery administration with deterministic stop bounds and retained child journal;
+- observable scoring paths for patience, risk-taking, exploration and threat response;
+- battery scoring remains outside cognition and cannot alter the parent or child decision process;
+- explicit trait-profile construction that refuses to call an incomplete five-dimensional battery complete;
+- versioned test-retest reliability configuration with explicit ICC(3,1) selection and preregistered threshold; undefined zero-between-subject variance is never mislabeled as perfect reliability;
+- a retained 300-step neutral Stage-5 compatibility journal in CI, while all Stage 1-4 golden fixtures remain unchanged;
+- exact replay/non-regression tests remain green on Python 3.11 and 3.12.
+
+Stage 5 reference fixture:
+
+- duration: 300 world steps;
+- causal journal bytes: 31,036,802;
+- golden journal head: `3b0319a318039a0a759ded929835215a94113922ede43e9a5e4553ba56b643e9`;
+- minimal F_cog UC counter at day end: 9,551;
+- neutral tau reproduces the Stage-4 behavioral path while the Stage-5 journal additionally retains the temperament/individual layer.
+
+Stage 5 invariant status:
+
+- INV-30: green for raw temperament immutability across life execution and restoration;
+- INV-34: green for complete-state copy creation, isolated continuation and parent non-reinjection;
+- INV-40: green for implemented consumers; raw `tau` is absent from Gatekeeper, Competition and Value/Needs dependencies, and neutral mapping reproduces the neutral Stage-4 behavior.
+
+Stage 5 software status:
+
+- the perseverance mechanism is now closed through P-54: the tested primitive and deterministic failure schedule are explicit preregistered scenario parameters;
+- the scenario engine suppresses only the primitive-specific effect on forced failures while preserving ordinary world time, body dynamics, hazards, journaling, replay and snapshot/restore;
+- perseverance is scored from observed attempts before behavioral abandonment; if abandonment is not observed before the bounded scenario ends, the observation is explicitly right-censored rather than fabricated;
+- all five battery situations therefore have executable, versioned, replayable mechanisms;
+- test-retest reliability instrumentation is implemented with explicit ICC(3,1) selection and a preregistered threshold input;
+- Stage-5 unit tests are green on Python 3.11 and 3.12 and the retained Stage-5 reference journal regenerates successfully without changing Stage 1-4 golden references.
+
+Stage 5 experimental gate still pending:
+
+- the normative gate additionally requires the battery to be judged reliable against the preregistered P-50 threshold, plus temperament-vs-noise comparison;
+- no scientific pass/fail is claimed until P-50/P-51 campaign choices are frozen and the required repeated administrations are actually run;
+- this remaining item is an experimental acceptance gate, not missing implementation behavior.
+
+
+## Stage 6 progress on this branch
+
+Implemented independently from Stage 5, as allowed by Diagram J:
+
+- explicit accessible `SimulationState` containing only perceived/local state, authorized body variables, inventory and observable context;
+- inventory propagated through the Perception boundary rather than read directly from `WorldBody` by equipment;
+- typed one-step equipment predictions with horizon, confidence and equipment version;
+- versioned/hashable offline `EquipmentCorpus` and immutable `EquipmentArtifact`;
+- deterministic exact-transition-table baseline trainer with no fallback extrapolation;
+- conflicting outcomes for an identical accessible input are rejected explicitly;
+- real controlled reference corpus covering movement, blocked movement, resources, tools, shelter, creatures by day/night, sleep and wait;
+- budgeted `Simulator` with R_max/H_max bounds, deterministic rollout de-duplication and explicit unavailable/partial outcomes;
+- P-46 conjunctive benchmark over overall error, unavailable rate, per-family error, per-horizon error, calibration and systematic bias;
+- E-v1, E-v2 and E-v3 are distinct immutable artifacts and each passes the equivalence gate;
+- Stage-6 simulated option evaluator computes predicted homeostatic rewards, discounted E_a^sim and bounded tanh evidence;
+- Competition consumes typed simulation evidence while preserving the exact Stage-4 substitution path when simulation is unavailable;
+- `not_evaluated` freezes accumulator and threshold state and contributes no artificial zero evidence;
+- integrated `Stage6Runtime` supplies common-budget E_a^sim inside the six-phase live loop;
+- simulator-based multi-step planning replaces greedy E-0 on the Stage-6 path;
+- lived prediction errors are emitted as typed causal contributions;
+- shelter planning is covered by an acceptance test;
+- full 300-step deterministic Stage-6 reference trajectory is retained by CI.
+
+Stage 6 reference fixture:
+
+- duration: 300 world steps;
+- causal journal bytes: 32,171,169;
+- golden journal head: `1f7a61df76a84a5f3c00b66ee636ec99ca787793775b0a6ef15449db69286e1b`;
+- CI green on Python 3.11 and 3.12;
+- 203 tests green;
+- Stage 1-4 golden references remain byte-identical.
+
+Stage 6 gate status:
+
+- equipment does not import temperament, memory, learned Q, causal model or oracle internals;
+- only accessible symbolic state and authorized inventory/body variables enter equipment;
+- unseen inputs remain unavailable rather than extrapolated;
+- incomplete rollouts never become completed simulated evidence;
+- E-v1 -> E-v3 equivalence is explicitly benchmarked;
+- live Competition receives simulator evidence only through the typed evaluator;
+- deterministic replay remains green over the full Stage-6 reference day.
+
+## Stage 7 progress on this branch
+
+Implemented:
+
+- `EpisodicMemory` as sole owner of episodes, intentions, recall state and prospective indexes;
+- Memory reads only the DC-09 autobiographical projection and has no dependency on the technical journal, oracle or evaluation trace;
+- every autobiographical read is logged technically, while access events themselves remain excluded from autobiography;
+- extended Stage-7 autobiographical allowlist for perceptible goal, S_t, comparator, episode and intention events without changing the Stage-1 to Stage-6 default policy;
+- episode segmentation on active-goal change, lived comparator surprise above P-34, observable zone change and `L_episode`;
+- automatic linking of episodes separated by less than `Delta_episode`;
+- exact-search Stage-7 recall using recency, importance and symbolic S_t relevance;
+- spontaneous recall only on threshold crossing, emitted as an ordinary Memory contribution through the bus and Gatekeeper;
+- prospective intentions with time/event/context triggers, one active candidacy per occurrence, immutable base pressure and P-26 deadline-pressure projection owned by Goal Manager;
+- read-only wake-deadline index for wake-authorized dated intentions;
+- triggered intentions create both an ordinary Memory contribution and a next-cycle `GoalProposal`; Memory never writes the active goal;
+- `Request` / `Response` causal contracts and a Bus-owned request registry;
+- request depth <= 1, parent budget/deadline inheritance, two-node cycle rejection and repeated-question refusal inside W;
+- direct Memory responses for exact `recall_recent` and `episode:<id>` requests;
+- pending/closed request statuses published read-only in S_t;
+- past-dependent acceptance task: exact episode query is empty before history and delivered after the episode exists;
+- lethal cancelled branches remain absent from autobiographical memory;
+- non-causal O(1) journal lookup and indexed autobiographical commits remove the quadratic journal scan without changing canonical bytes.
+
+Stage 7 reference fixture:
+
+- duration: 300 world steps;
+- causal journal bytes: 34,636,835;
+- closed episodes: 298 under the software-reference P-34 values;
+- F_cog counter: 9,593 UC;
+- golden journal head: `c356fe386c2480e78e485f85815ac93fc90f3b679e5806dcb61b374daee9da77`;
+- 238 tests green on Python 3.11 and 3.12;
+- Stage 1-6 historical golden behavior remains compatible.
+
+Stage 7 gate status:
+
+- INV-02: extended to Memory, including source-level absence of technical-journal/oracle dependencies;
+- INV-20: request depth, cycles, budgets and deadlines covered;
+- INV-27: lethal transition/detection/rollback/mask remain outside autobiographical Memory;
+- prospective intentions pass through the ordinary attention and Goal Manager paths rather than directly changing goals;
+- deterministic replay remains green over the Stage-7 reference trajectory.
+
 ## Current repository gap
 
-The existing bootstrap provides a neutral Lab loop, structured events, a deterministic smoke scenario, and a deliberately non-cognitive I0 no-op boundary. It does not yet implement the normative Stage 1 execution substrate: canonical causal serialization, normative deterministic identifiers, independent causal RNG streams with restorable state, a causal run manifest, a hash-chained append-only journal, the six-phase scheduler, the normative bus/contract validator, or complete causal snapshots and replay.
+The normative implementation is closed through **Stage 8 Online Learning**, as verified on `i0/stage8-online-learning-v1.2.1` (PR #17, draft, deliberately not merged). Stage 9 Causal Model remains the next normative development stage; Stage 10 consolidated forms remain outside Stage 8. Stage 8 may consume accessible S_t, experienced transitions and Stage-7 memory interfaces, but must not pull forward Stage-9 causal-model behavior or Stage-10 sleep/consolidation.
 
 ## Functional groups
 
@@ -137,3 +411,231 @@ Deferred to following Stage 1 groups:
 | Byte-identical normalized journals (Stage 1) | event dictionaries compare equal in memory | canonical journal byte representation | Deterministic foundation | repeated journal bytes identical |
 | Machine time excluded from causality (INV-22) | no machine-time field currently used | explicit separation in new causal journal API | Deterministic foundation | causal bytes contain no implicit wall-clock data |
 
+
+## Stage 8: Online Learning and active calibration — software-complete
+
+**Normative authority:** `docs/architecture/reference/en/mvp-specification-v1.2.1.md`, especially §§5.3, 8.1, 8.5, 11.1–11.4, 20.3 Stage 8, 21, DC-01, DC-06, DC-15. The EN specification is unchanged.
+
+**Parameters:** P-13 (learned/simulated mixture), P-30 (individual discount), P-31 (TD learning rate and eligibility decay), P-32 (versioned feature projection), P-33 (reliability map confidence classes and finite priors). Perceptual-source precision estimation uses a separately versioned, explicit configuration under §11.2 rather than an undeclared constant.
+
+### Causal state owners and update frontiers
+
+| Owner | Active states exclusively owned | Temporal and snapshot behavior |
+| --- | --- | --- |
+| Value and Needs | `Q_active`: per-learning-signature linear parameters, update counts, eligibility traces, pending experienced-decision segments | Experience-driven TD is published only after an applied nonlethal transition; no oracle, lethal rollback or premature same-step evaluation. Unknown Q reads do not create state; unlearned is not zero evidence. Complete snapshot/restore. |
+| Metacognition and Health | `κ_active`: DC-06 map, confidence buckets, finite prior, counted confirmations/contradictions, pending verification batch, verification IDs and credited independent physical observations | Each deliberation uses the previously frozen published version; canonical integration and atomic phase-5 publication; causal snapshot/restore, no self-verification or oracle. |
+| Perception | Active precision per registered source, pending independent verification batch, finite prior-weighted error statistics and credited physical observations | Only Perception mutates its active precision; publish after a nonlethal world-step; causal snapshot/restore and versioned initial assumptions. |
+
+No Stage 8 module mutates consolidated `Q`, consolidated `κ`, consolidated perceptual precision or the future Stage-10 Consolidation transaction.
+
+The **closed, structural DC-06 family registry** is used unchanged. Calibration keys include the equipment/module version, emitting module, contribution type and signal family; confidence is bucketed into the P-33 classes. A strong verification must refer to a later, independent, `monde`-anchored physical consequence/modality; same-channel repetitions, repeated identifiers, duplicate physical observation credits, derived/self-confirmation, oracle, counterfactuals, and rolled-back experiences cannot inflate counters. Each physically independent credit is used at most once per key.
+
+**Decision path:** experienced nonlethal reward → TD update to signature-indexed `Q_active` → typed learned option evaluation combined with available simulator evidence using `n/(n+n0)` → Competition accumulator and normal option selection. Metacognition's `κ_active` is separately consumed read-only through the Gatekeeper reliability factor, including `f × risk` security ordering. Learned, simulated, substitution, unavailable and unlearned evidence remain distinguishable. Legacy Stages 4–7 use their original Gatekeeper behavior when the Stage-8 reliability resolver is not attached. Learned experience is shown in `tests/test_stage8_evidence.py` to change a subsequent Competition winner.
+
+### Verification and gate
+
+- **263 unit tests green on Python 3.11 and 3.12**. Stage-8 tests: `tests/test_stage8_td_values.py`, `tests/test_stage8_kappa.py`, `tests/test_stage8_evidence.py` and `tests/test_stage8_precision.py`, plus all inherited Stage 1–7 suites. Behavioral, provenance, physical-observation deduplication, frozen-cycle, deterministic segment, source-owner and exact snapshot round-trip tests are included.
+- Normative invariants tested and/or integrated: **INV-01, INV-03, INV-05, INV-07, INV-16, INV-26, INV-27, INV-33, INV-43 and INV-50**; DC-01, DC-06, DC-15.
+- **Reference duration: 300 world steps**. Canonical journal size **35,061,323 bytes**; final SHA-256 chain head **`0a2dc62d4ba51722a96f307fdf6c7427d1aa3b0a8a3c0e21da81bc490eb23cf8`**.
+- `Q_active`: **2 populated signatures, 597 updates**. `κ_active`: **1 updated calibration key, final publication version 1498**. `F_cog`: **9,593 UC**.
+- **Two complete 300-step runs agree byte-for-byte** in journal bytes and hash, and exactly in `Q_active` and `κ_active` causal state. These checks and a frozen hash/size/state gate are part of CI.
+- **Stage 7 historical hash unchanged:** `c356fe386c2480e78e485f85815ac93fc90f3b679e5806dcb61b374daee9da77`.
+- Stage 6 reference is the corrected, already Stage-7-validated Stage-6 baseline `1bbd9071a4a7e9385f537a6f43362f34cc4e7f0a6ca301204abf9100ba2012d5`, incorporated through an explicit non-destructive merge of Stage-6 fixes. The older Stage-6 head `1f7a61df76a84a5f3c00b66ee636ec99ca787793775b0a6ef15449db69286e1b` predates those validated Stage-6 fixes; it was not silently substituted by Stage-8 changes.
+
+### Stage-8 measured learning acceptance (post-golden, Lab-only)
+
+The versioned `src/lab/stage8_learning_benchmark.py` now records two **separate, non-cognitive evaluation traces**; `tests/test_stage8_learning_benchmark.py` checks reproducibility and noninterference. This does not alter the individual or historical journals.
+
+- **TD physical learning curve:** 160 nonlethal, observed water-cycle transitions with actual `WorldBody.apply()`, reward computed through Value and Needs, and DC-15 two-decision TD segments. Fixed benchmark configuration `stage8-online-learning-benchmark-v1` uses an inspectable bias-only feature to isolate the TD mechanism. Bench-only RMSE against the return inferred from observed rewards declines from **5.5555555556** at the birth checkpoint to **0.0493605471** at 160 transitions; intermediate measurements at steps 20, 40, 60, 80, 100, 120 and 140 appear in the CI artifact. This demonstrates controlled TD convergence, not a general learning claim.
+- **Prequential κ Brier audit:** `Stage8PhysicalCalibrationRecorder` reads reliability *before* each physical verification, uses only observations actually credited in κ, and writes metrics to the separate Lab artifact. In the existing 300-world-step reference there are only **4 credited calibration samples**; first-half Brier **0.25**, second-half Brier **0.25**, neutral-baseline Brier **0.25**. **No decrease is demonstrated.** Four sparse observations with unchanged calibration are insufficient to validate the Stage-8 declining-Brier acceptance criterion.
+- **CI:** new `stage8-learning-benchmark` JSON artifact and visibly reported `stage8_brier_gate=not_yet_demonstrated`; 268 tests passed on both Python versions in run 37822162804. Prior Stage 8 golden `0a2dc62d4ba51722a96f307fdf6c7427d1aa3b0a8a3c0e21da81bc490eb23cf8` remains frozen; historical Stage 7 golden remains unchanged.
+
+**Open normative acceptance:** a preregistered independent physical calibration scenario with sufficiently varied correct/incorrect outcomes is still required for an observed decline in Brier. Do not declare Stage 8 empirically gated merely because its deterministic software and learning-curve tests pass. No oracle labels may enter the individual.
+
+### Stage-8 independent physical calibration stress test (accepted)
+
+A separately versioned, preregistered, *Lab-only* stress scenario now exercises the same DC-06 comparator-verification adapter used by the living Stage-8 runtime (no bench/oracle input to cognition). Each of 80 unique physical world-step observations follows the path: predeclared simulator prediction → ActionControl record → nonlethal WorldBody transition → later Perception capture → ActionControl comparison → Metacognition-owned κ_active update. Preverification reliability is recorded exclusively by the Lab. An independent physical observation reference is credited once; the 80 outcomes are not constructed from κ state or tuned to its feedback.
+
+The fixed controlled predictor produces **64 conforming and 16 nonconforming outcomes**. Prequential Brier decreases from **0.17688754800727752** (first 40) to **0.16273764165848797** (last 40), both below the neutral **0.25** reference. The entire protocol is replayed twice exactly and has explicit invariants in `tests/test_stage8_calibration_stress.py`. All **270 tests** passed on Python **3.11** and **3.12**; GitHub Actions run **37823629279**, with the machine-readable `stage8-physical-kappa-calibration` artifact. The original 300-step scenario's inconclusive Brier 0.25 → 0.25 remains documented above, deliberately unmodified.
+
+The calibration probe only confirms the normatively required **declining-Brier software acceptance in this preregistered stress scenario**. It does not establish general calibration across seeds, families, horizons, or the later Stage-13 scientific campaign. Existing Stage-8 reference golden `0a2dc62d4ba51722a96f307fdf6c7427d1aa3b0a8a3c0e21da81bc490eb23cf8` and historical Stage-7 `c356fe386c2480e78e485f85815ac93fc90f3b679e5806dcb61b374daee9da77` are preserved.
+
+**Stage 8 implementation and its controlled acceptance gate are complete.** PR #17 remains draft for human review; no merge and no Stage-9 implementation have occurred.
+
+### Deliberate boundaries
+
+The noiseless reference trajectory produces no independent sensor-precision calibration samples; active precision update, provenance rejection and publication are separately exercised by deterministic tests. Stage 8 does not add Stage-9 Causal Model knowledge/contingencies or Stage-10 sleep/consolidation. P-33 and active-precision coefficients are versioned software-reference parameters, not empirical performance calibration. The normative Stage-13 campaign and inter-version equivalence evidence are not implied by a green software gate.
+
+**Status:** **Stage 8 closed for the normative MVP implementation gate.** Next normative stage: **Stage 9 — Causal Model and agency**, only after review of the Stage-8 PR; no merge to `main` was performed.
+
+
+## Stage 9 implementation checkpoint — DC-05 safety-state foundation (IN PROGRESS)
+
+Development branch: `i0/stage9-causal-model-agency-v1.2.1`, PR #18 (draft), based on the verified Stage 8 branch. Source of truth: the unchanged English normative v1.2.1 specification.
+
+- The new `CausalModel` is the **sole writer** of canonical contingency/safety-status records; `CanonicalSafetyFacts` is a read-only bridge from published safety status to existing Action Control veto/admissibility. The existing three-category versioned prohibition policy is unchanged.
+- Explicit preregistered configuration `P-35: n1, n2` and `P-36: n_sec, m_sec` is required. Initial DC-05 promotion counts **distinct, independently experienced** harmful episodes, rejects repeated physical-observation references, contradictory intervening evidence, oracle, counterfactual, rollback, alternative causes and deliberately induced harm. Incidental distinct no-harm episodes can demote learned safety status; the adapter never demotes innate safety policy facts.
+- Statuses are kept **separate on one canonical object**: a fact may become `etabli_pour_securite` without becoming causally `etablie`. Thus it cannot silently correct the Simulator (INV-25). A batch publishes at cycle closure; before closure the read-only adapter sees the old version. Causal snapshot/restore includes pending evidence, deduplication and published state.
+- Normative tests in `tests/test_stage9_causal_model.py` cover promotion threshold, no double credit, rejection, contradiction, incidental demotion, veto source and exact snapshot round trip.
+- **No Stage-9 full integration/golden yet.** Future work remains: true Causal Model observation and intervention lifecycle (§13.2), comparator attribution and P-47 (§9.6), context-aware safety admissibility and DC-05 episode equivalence, conditional learned simulator corrections only for `etablie` (§12.3), controlled test proposals, full runtime phase-5 publication and replay, INV-25 and behavioral gate. None of these are represented as complete by this checkpoint.
+
+Stage 8 golden and all historical goldens remain frozen. Stage 9 is **not closed**. No merge to `main`.
+
+
+### Stage 9 checkpoint 2 — runtime integration (IN PROGRESS)
+
+- `src/lab/stage9_runtime.py`: Stage 8 preserved by inheritance, new `CausalModel` included as an additional unique causal snapshot/checkpoint owner. Its published safety-status view is supplied to the existing Action Control through `CanonicalSafetyFacts`. The fixed veto policy itself remains owned by Action Control and unchanged.
+- DC-05 pending status updates become visible only at phase-5 publication by the normative scheduler. Each status change has a structured journal event containing fact ID, previous/new status, evidence and episode references, and model version.
+- `src/lab/stage9_reference_fixture.py`: versioned Stage-9 reference setup, P-35/P-36 configured explicitly without changing Stage-8 reference configuration.
+- `tests/test_stage9_runtime.py`: verifies a single causal owner, exact model snapshot round-trip, and that pending test evidence cannot affect the veto before phase 5 but published `etabli_pour_securite` changes Action Control refusal while the causal status remains `aucun`.
+- **Important scope boundary:** this integration test injects *synthetic, typed evidence* directly into a controlled instance to verify the temporal contract. Runtime derivation of independently corroborated safety facts from real world captures, autobiographical episodes and comparator evidence is **NOT** yet implemented. Nor are §13.2 hypothesis lifecycle, §9.6 full agency attribution, §12.3 established-only simulator corrections or the Stage-9 golden.
+
+Stage 9 must not be declared closed until those paths and their behavioral, invariant, replay and CI gates pass.
+
+
+### Stage 9 checkpoint 3 — P-47 agency comparator (IN PROGRESS)
+
+- New independently testable `AgencyComparator` under Action Control, enabled by `Stage9Runtime` only. `AgencyComparatorConfig` declares a version, per-variable tolerances for all six observable coordinates/body variables, and a bounded observation window (P-47).
+- Action Control retains the sole pending command prediction owner, the frozen predicted consequences and the causal snapshot. The Stage-9 comparator consumes only accessible Perception captures, never `WorldBody`, oracle or a simulator ground truth.
+- Compatibility with a predicted consequence is `self_compatible`, **not** causal proof. On nonconformity, attribution to an outside factor is allowed only for an independently accessible movement obstacle; all ambiguous mismatches remain `uncertain`. A missing effect after its declared window cannot be attributed retroactively.
+- `tests/test_stage9_agency_comparator.py` covers window freshness/closure, conservative attribution, P-47 configuration and compatible candidate retention. Action Control's legacy snapshot serialization remains identical when the Stage-9 comparator is unattached, preserving the golden references for Stages 3–8.
+- Remaining: full multi-command attribution and external-cause alternative accounting; lived episode and comparator-to-Causal-Model evidence adapter; complete §13.2 hypothesis/intervention lifecycle and conditional simulator correction. This checkpoint is **not** Stage-9 closure.
+
+
+### Stage 9 checkpoint 4 — lived autobiographical evidence admission (IN PROGRESS)
+
+- `CausalModel` now retains a causal snapshot of **actually applied, independently goal-motivated food exposure references**. Only an `applied` Action Control execution may create an exposure; a vetoed, rolled-back, lethal or otherwise unexecuted command cannot enter the candidate path.
+- At the next world-step boundary, accessible **Perception telemetry** corroborates the integrity observation. At a subsequent **Memory episode closure**, the Causal Model consumes only matching command and successful world-transition event references from the DC-09 autobiographical projection. It has no direct raw-technical-journal or oracle access.
+- Candidates for the existing DC-05 `SafetyEvidence` type require an actual `ate` outcome, matching action and effect, the same observed physical integrity, no separately visible creature/zone harm, and distinct closed episode references. The normal phase-5 Causal Model owner publishes any promotion to Action Control after the normative threshold, without changing causal `etablie` status or simulator predictions.
+- `tests/test_stage9_lived_evidence.py` tests real-source matching, unavailable ingestion, independently observable alternative harm rejection, distinct closed episodes, and exact unfinished-exposure snapshot/restore.
+- **Limited scope:** this is the food/toxicity DC-05 path; zone, nonfood invariant violation, contextual causal alternatives, hypothesis lifecycle, actively generated intervention proposals, and simulator corrections remain unimplemented. The controlled test exposes source-contract correctness, not a full autonomous two-ingestion behavior demonstration. Stage 9 remains OPEN.
+
+
+### Stage 9 checkpoint 5 — explicit causal inference lifecycle (§13.2, IN PROGRESS)
+
+- `src/i0/modules/causal_lifecycle.py`: typed, provenance-checked observational association, matched hypothesis alternatives, and experienced intervention records. Oracle, rollback and counterfactual inputs are rejected *before* causal admission.
+- `CausalModel` remains the single canonical owner of causal and safety statuses. Causal predicates outside the existing **closed veto policy** must be explicitly registered in versioned `CausalModelConfig.causal_predicates`; this does not add a veto category.
+- A correlation requires at least P-35 `n1` exposed observations plus an observed, **matched-context** unexposed base rate which is strictly lower. Review requires separately published correlation and independently sourced matched contrasting observations. Independent interventions require a previously published hypothesis and P-35 `n2` successful **distinct contexts** before `etablie`. A failed observed effect demotes `etablie` to `hypothese_causale` and invalidates previous success credit for a later re-establishment.
+- Pending inference remains invisible until phase-5 publication, emits typed `causal_inference_status_published` journal events, and belongs to Causal Model snapshot/replay; deterministic sorting and local prepared state avoid partially committed inference on invalid input. Safety status `etabli_pour_securite` remains independent.
+- `tests/test_stage9_causal_lifecycle.py` checks phase staging, mismatched base rates, distinct intervention contexts, revocation/re-establishment, causal snapshots and forbidden-origin canaries.
+- **Still open:** automatic lived observation/intervention producer through authorized Memory and AgencyComparator interfaces; observational confounder review beyond explicit matched checks; eligible causal test options routed through Exploration/Competition; read-only established-only simulator correction; Stage-9 300-step gate and golden. Typed evidence tests do not themselves prove autonomous causal inference.
+
+
+
+### Stage 9 checkpoint 6 — automatic lived observation intake (IN PROGRESS)
+
+Closed, real DC-09 autobiographical food-consumption episodes that have matching applied commands, lived transition effects and next-step Perception telemetry now create both a DC-05 safety evidence record and a **separately typed causal observation** owned by `CausalModel`. Both records share the actual Memory episode and world-transition reference. Preflight validation prevents partial evidence admission when a record is already duplicated or rejected.
+
+The observation is explicitly `cause_present=True`, never an invented control group or an intervention. Without independently lived `cause_present=False` baseline episodes, it **cannot** progress beyond `aucun` under §13.2. An alternative observed creature/zone harm prevents both safety and causal admission. New tests in `tests/test_stage9_lived_evidence.py` enforce these distinctions.
+
+**Still missing:** autonomous independent baseline producer, comparator-to-intervention source with action/episode linkage, explicit alternative-hypothesis review, Exploration/Competition causal test options, established-only simulator corrections and Stage-9 golden. This checkpoint alone is not Stage-9 completion.
+
+
+### Stage 9 checkpoint 6b — P-35 co-occurrence correctness
+
+Audit revealed that the initial correlation gate counted cause-present exposures as `n1`, including exposures without the effect. The implementation now counts only `cause_present AND effect_present` co-occurrences **in observably matched contexts**, then separately requires a strictly lower matched unexposed base rate. New `tests/test_stage9_cooccurrence_threshold.py` locks down absent effects, unmatched reference contexts and deterministic pending-observation snapshot replay.
+
+This is a normative correction to Stage-9 typed inference; it does not alter Stage-8 code or historic golden references. The autonomous lived observational intake completed in checkpoint 6 supplies only exposure-positive episodes and **cannot invent a negative control group or an intervention**. Stage 9 remains open pending an independent baseline producer, causal test-option lifecycle, and established-only Simulator correction.
+
+
+### Stage 9 checkpoint 7 — preregistered lived controls (IN PROGRESS)
+
+The Causal Model now supports `CausalModelConfig.food_control_pairs`, a **versioned, explicit, default-empty** registry of food treatments and genuinely different control foods. An actually consumed control food in a closed DC-09 episode can create a `cause_present=False` observation for its preregistered treatment, alongside its own positive-exposure record. This projects the **same observed physical transition and same Memory episode** without manufacturing a counterfactual, independent intervention or extra sample.
+
+Source constraints remain: applied goal-motivated consumption, accessible Perception integrity, matched actual `ate` outcome, no accessible sufficient alternative harm, and a closed episode. P-35 correlation still requires observed cause-effect cooccurrences above the matched lived base rate; no status is promoted merely by recording a control. The default Stage-9 reference contains no pairs and retains its prior behavior. `tests/test_stage9_lived_evidence.py` includes source-identity and registry validation.
+
+**Open:** the complete autonomous control/contrast pipeline, contextual equivalence proof across episodes, generated admissible intervention options, causal attribution from AgencyComparator beyond descriptive evidence, established-only simulator correction, and the Stage-9 golden. This is not Stage-9 closure.
+
+
+### Stage 9 checkpoint 7 — independent lived food control and snapshot protocol (IN PROGRESS)
+
+- `CausalModelConfig.food_control_pairs` is an explicit, versioned registry of pairs (hypothesized food, actually consumed different food), initially empty. Only a separately **consumed** food in a closed DC-09 episode can supply a cause-absent observational control; both projections preserve the same episode and physical observation identity and never count as separate independent episodes for a single hypothesis.
+- No observed cause-absent group is fabricated when the registry is empty. Matched-context and P-35 observed co-occurrence checks remain required before any causal correlation is published. These observations are never interventions or proofs of establishment.
+- The exact Causal Model snapshot protocol now includes `n1`, `n2`, `n_sec`, `m_sec`, the causal-predicate registry and the food-control pairs, **in addition to** its version label. Restore refuses a changed protocol even when the human-readable version is reused; the receiving state remains unchanged. Tests: `test_stage9_causal_config_contract.py`.
+- The Stage-9 CI at commit `250a4416457744eafe4a30c79abe78ccc07a44b4` must pass before this checkpoint is considered validated. Existing Stage-8 historical goldens remain immutable.
+
+**Stage 9 remains open:** independent causal intervention generation, alternative-control protocol, established-only correction layer and the Stage-9 golden are not complete.
+
+
+### Stage 9 checkpoint 8 — numeric simulator correction boundary (IN PROGRESS)
+
+- `src/i0/modules/causal_corrections.py` provides a narrowly typed, immutable numerical correction contract for **global-context body variables only**. Non-finite/out-of-range values and unknown variables or contexts are rejected, not estimated. Corrections never mutate frozen Equipment.
+- `Simulator` now supports an **optional read-only correction source**, absent by default; the legacy Stage-6/7/8 path is unchanged. The correction layer modifies only explicitly covered next-state components, preserves the frozen Equipment identifier and declared confidence, and reports unresolved conflicts between equally specific rules as explicit `unavailable`, not an arbitrary prediction.
+- `tests/test_stage9_causal_corrections.py` tests legacy equivalence, component isolation, conflict handling and unsupported-case refusal using a controlled synthetic established-rule source.
+- **Boundary at checkpoint 8:** this initial layer was tested with a synthetic established-rule source only. Its missing connection to the canonical Causal Model is addressed narrowly in checkpoint 9 below. The autonomous intervention-test-option lifecycle and categorical/probabilistic corrections remain unimplemented.
+
+Stage 9 remains **OPEN**; no new Stage-9 reference golden has been frozen and no previous stage was modified for the new optional path.
+
+
+### Stage 9 checkpoint 9 — canonical correction provenance and read-only integration (IN PROGRESS)
+
+The Stage-9 runtime now attaches **the one existing Causal Model** to Simulator as a read-only `EstablishedCorrectionSource`, with no duplicate mutable state. Earlier Stage-6/7/8 runtimes keep the correction reader unattached and their Equipment/golden baselines unchanged.
+
+The Causal Model owns and snapshots pending and published `LivedNumericOutcome` records. These are created **only** from an applied goal-motivated food command, next-step Perception telemetry, and the matching command/transition references of a *closed* DC-09 Memory episode. Missing ingestion, alternative creature/zone damage, lethal rollback, absent pre-action context or failed corroboration produce no numeric witness. New witnesses publish **only at phase 5** with the rest of causal inference, not during their phase-1 admission.
+
+A correction is exposed only when all of the following hold together:
+
+- The **same canonical contingency** has causal status `etablie`, not merely `etabli_pour_securite`. A causal refutation immediately removes the correction from the read-only view.
+- At least P-35 `n2` **distinct intervention contexts** after any revision have published, physically linked AgencyComparator evidence with consistent episode, option, emission/observation times and attribution. An unlinked synthetic intervention or raw comparator success is insufficient.
+- A separate, actually lived numeric witness is corroborated by a published comparator's observed physical value and its original option and time identity.
+- The complete accessible pre-action `SimulationState` is matched by its **canonical SHA-256 digest** in addition to the before-body/position and command target. No interpolation, broad cross-context generalization, oracle input or extra certainty is introduced. Equally specific contradictory values remain `unavailable`.
+
+Structured `causal_prediction_corrections_published` events record only meaningful changes to the published correction set, after the phase-5 transaction. Simulator also reports `corrected_contingency_refs` **only for corrections actually used in a rollout**, and Stage-6/8-style option evaluations preserve those typed refs as causal-model provenance within their simulated evidence, without relabelling them as Q values. The source is empty on the legacy Stages 4–8. The frozen Equipment artifact remains unchanged. The controlled `tests/test_stage9_canonical_corrections.py` exercises the three-source provenance gate, no premature publication, safety/causal-status separation, different inventory context refusal, actual frozen-equipment Simulator integration, exact snapshot/replay and revocation after refutation.
+
+**Still open:** automatic, safely motivated causal test-option generation via Exploration/Competition; full observational alternatives and intervening-cause attribution; robust generalization beyond exact physical state; categorical/probabilistic learned transitions; final Stage-9 300-step/golden CI gate. Typed controlled intervention fixtures do not prove autonomous intervention generation. Stage 9 remains **OPEN** and PR #18 is intentionally draft.
+
+### Stage 9 checkpoint 10 — experimental source integrity and exact software replay (DIAGNOSTICS VERIFIED)
+
+- `src/lab/stage9_registration_chronology.py`: independent commit ancestry audit for a genuine prior registration and later archived held-out report. It pins every descendant `src/` Git tree and `pyproject.toml` blob to the exact original implementation freeze, including intermediate modifications later reverted; verifies unchanged registration bytes, distinct evidence commit and matching archived JSON. Rejects shallow Git history and local Git replacement objects. It is read-only and **never** authorizes scientific acceptance.
+- `src/lab/stage9_frozen_worktree.py`: separate, explicit **pre-execution local** check of real source file bytes, executable modes, staged/uncommitted changes, and unexpected source-tree paths or symlinks, including ignored additions. Generated Python caches, external dependencies and the actual execution environment are NOT attested. In CI, a checkout-only self-check uses the currently checked-out HEAD; the scientific protocol must instead use its previously frozen complete commit SHA.
+- `src/lab/stage9_reference_replay.py`: independent 300-world-step Stage-9 reexecution, comparison of complete canonical journals and all registered causal-owner state, and retained versioned journal/report artefacts. The software reference diagnostic is **not the Stage-9 scientific Golden**. The prior Stage-8 reference remains unchanged.
+- Regression and adversarial test coverage: `tests/test_stage9_registration_chronology.py`, `tests/test_stage9_frozen_worktree.py`, and `tests/test_stage9_reference_replay.py`. The GitHub Actions job on Python 3.11 and 3.12 checks unit/regression behavior; Python 3.12 archives the local checkout diagnostic and extended replay artefacts.
+
+### Stage 9 checkpoint 11 — raw held-out artifact hash custody (PRE-SCIENTIFIC AUDIT)
+
+- `src/lab/stage9_scientific_preregistration.py` checks draft parameters, manifest digests, physical world ID/hash uniqueness, seed disjointness and supported scoring methods. It does not replace prior author approval or an immutable Git seal.
+- `src/lab/stage9_scientific_assessment.py` derives provisional causal attribution, null controls and naturally acquired false-rule metrics from each registered world × seed row, independently of claimed aggregate statistics. No empty or reused physical observation denominator is counted as scientific success; no report can self-certify a Golden.
+- `src/lab/stage9_heldout_artifact_custody.py` now compares every archived claimed raw journal/replay and causal-state/replay SHA-256 to physical bytes for every registered world × seed run. Its separate index binds to the evidence and registration digests. Missing or altered files, aliased originals and replays, reused paths or inodes, symlinks and path escapes are rejected. It cannot prove that those bytes arose from the claimed individual or physics. Tests use synthetic files only.
+- `docs/research/stage9-scientific-preregistration-template.md` documents the read-only checks and all scientific limitations; no author-approved prospective research JSON, independent physical-world/seed custody, actual observed candidate rate or full INV-25 scientific review has been fabricated.
+
+**Stage 9 remains OPEN, PR #18 remains draft and unmerged.** Software replay and code/file integrity alone cannot close Stage-9 acceptance (§20.3). A real author-approved prospective registration, sealed before hold-out outcomes, independently witnessed physical and causal observations, naturally acquired rule candidates (nonzero, independent denominator), the preregistered known-cause and superstition thresholds, and independent scientific review remain necessary. Never label diagnostic hashes or green CI as a scientific Golden.
+
+
+### Stage 9 checkpoint 12 — independent structural journal custody (SOFTWARE AUDIT)
+
+- `src/lab/stage9_canonical_journal_audit.py` verifies the exact canonical JSON-lines representation of an archived `HashChainedJournal`, including contiguous indices, unique event identifiers, genesis-to-head event hash linkage and no trailing line terminator. It refuses a signed-but-noncanonical file rather than accepting the same nominal events after JSON reformatting.
+- A prospective held-out `observation_ref` is structurally traceable only when an archived `world_transition_experienced` event has an earlier `command_experienced` with matching world step and attempt, and both appear in exactly one later `auto_segment_commit`. The separate raw-artifact custody checker now requires this for all known-cause and spontaneous-false-rule rows. It retains the original/replay SHA-256 and byte-exact comparisons, per-run world/seed and hardlink/path safeguards.
+- The retrospective raw-artifact index protocol is now `stage9-heldout-raw-artifact-index-v2`. v1 checked hashes but did not independently verify the causal journal chain or physically linked observations. Historical v1 reports are not silently upgraded. Synthetic adversarial fixtures show that re-hashing the evidence and replacing all reported SHA-256 values cannot make a broken chain, nonexistent physical source, duplicate event ID or unattested command pass.
+- **Limit:** a valid hash-chained technical journal is not proof that events physically occurred, that the subject's declared Memory episode really closed, or that independent held-out worlds and seeds were used. The oracle and real execution remain externally witnessed; no scientific Golden can be frozen by this software verifier.
+
+### Stage 9 checkpoint 13 — technical journal identity and lookup integrity
+
+- A Stage-9 custody adversarial test revealed that the shared `HashChainedJournal` writer previously permitted identical event IDs to be appended twice, leaving both entries in the canonical chain but silently overwriting the first in the read-only lookup index. The hash link alone could remain valid despite that ambiguity. This conflicts with the unique technical occurrence and provenance requirements of INV-44/49.
+- The narrow fix in `src/lab/journal.py` fails closed on duplicate IDs **before any append**, requires nonempty NFC-normalized string IDs consistent with the canonical causal encoding, and makes `verify()` reject duplicate/noncanonical IDs or a corrupted event-ID lookup index. Ordinary unique IDs, canonical bytes and hash-chain order remain unchanged.
+- Regression coverage in `tests/test_causal_journal.py` checks no partial write on collision, a rehashed duplicate occurrence, invalid/noncanonical identity and corrupted lookup indexing. The Stage-9 raw-artifact-custody attack test constructs its duplicate event with a forged canonical hash chain, no longer using the production journal writer.
+- Stage-1 snapshot reexecution exposed a preexisting duplicate: the scripted runtime computed technical command/transition event IDs solely from restored logical time and attempt reference, so a second replay in the *same append-only journal* re-used those IDs. `src/lab/stage1_runtime.py` now adds a deterministic noncausal occurrence discriminator **only when an ID is already present**; normal first-run IDs and archived reference bytes remain unchanged. `tests/test_stage1_runtime.py` checks both unchanged causal-state continuation and distinct lookup-preserved technical occurrences.
+- Since the journal is a shared Stage-1-through-Stage-9 primitive, this correction is contingent on green Python 3.11/3.12 CI and unchanged historical reference journals. It does not create a scientific witness or freeze the Stage-9 Golden.
+
+### Stage 9 checkpoint 14 — retained exact causal-owner replay bytes (SOFTWARE DIAGNOSTIC)
+
+- `src/lab/stage9_reference_replay.py` supports `--causal-state` to archive the exact `canonical_causal_bytes` of the complete owner-state map from the first 300-step reference run. The already computed `causal_state_sha256` is now independently reproducible directly from that archived file rather than an unrecoverable in-memory state. A second fresh reexecution must still match the first owner map and full journal before either artefact is written.
+- The reference diagnostic protocol is explicitly versioned `stage9-extended-reference-diagnostic-v3`. Historical v1/v2 artifacts stay untouched; v3 retains both canonical JSONL journal bytes and the normalized causal-state JSON bytes and their independent SHA-256 values.
+- Tests compare archived bytes with the reported digest, require correct canonical decoding and owner coverage, verify unchanged metrics with or without archiving, and detect post-archive byte tampering. GitHub Actions Python 3.12 independently hashes both retained files and uploads them together in the existing `stage9-extended-reference-diagnostic` artifact. Python 3.11/3.12 unit coverage and historical Stage 8 references must remain green.
+- A separate **post-archive read-only integrity pass** uses `stage9_canonical_journal_audit.audit_raw_causal_journal` on the saved reference journal itself, with no claimed physical observations (this is only a software reference). It checks every canonical JSONL event and hash link and compares the recovered head hash to the report. The saved causal-state file is decoded and re-canonicalized byte-for-byte in CI before archiving; both protections can fail despite a formally matched external checksum if an archive is noncanonical or internally inconsistent.
+- This improves **software custody only**; it does not establish a prospective frozen world or source provenance, actual physical experiments, independent oracle labels, autonomous superstition candidates or scientific Golden acceptance under §20.3.
+
+
+### Stage 9 checkpoint 15 — nonlethal physical attempt cardinality (SOFTWARE AUDIT)
+
+- `src/lab/stage9_canonical_journal_audit.py` now indexes recorded commands, world transitions and AutoSegmentCommits by **(attempt_ref, t_monde)**. A Stage-9 physical `observation_ref` is structurally admissible only when the selected execution attempt has exactly one command, exactly one world advancement, an ordered command-before-transition, and exactly one later commit for that attempt. The commit must contain both source refs with no duplicates, future refs or cross-attempt provenance. Even an **unreferenced** extra command/transition or a second commit cannot be hidden by an otherwise valid SHA-256 chain. This is the technical-cardinality part of INV-44/53, not physical truth.
+- A cancelled/rolled-back attempt with a **different attempt_ref** at the same world step is not conflated with an accepted step. Adversarial tests create fully rehashed synthetic raw journals and re-seal both archived journal digests and the evidence manifest, exercising extra commands/transitions, multiple commits, foreign/future commit refs, repeated refs and the valid cancelled-attempt distinction.
+- The retrospective raw custody index is explicitly versioned `stage9-heldout-raw-artifact-index-v3`: v2 checked the journal chain but did not enforce the new per-attempt cardinality. Historical v1/v2 indexes remain historical and fail the v3 schema gate rather than being silently certified. The evidence-report schema is unchanged; no prior scientific artifact is rewritten.
+- Real prospective Memory episode closure, independent physical-world/seed custody, oracle isolation and scientific Golden/INV-25 acceptance are **still unproven**. Successful parser fixtures and CI do not satisfy §19.5/20.3.
+
+
+### Stage 9 checkpoint 16 — archived closed Memory episode membership (SOFTWARE AUDIT)
+
+- `src/lab/stage9_memory_custody.py` performs a separate read-only audit of the exact, already SHA-256-verified causal owner-state bytes saved for each held-out world/seed run. It requires canonical JSON and the actual `memory` causal owner; it validates unique closed episode identities, typed time ranges and per-episode event references, and rejects event reuse across supposedly independent closed episodes or references missing from Memory's own seen-event ledger.
+- The independent `stage9_canonical_journal_audit.py` now returns its **structurally validated** command/source pairing for each claimed physical observation. The custody verifier requires each reported `observation_ref` and its command to be in the same reported closed `episode_ref`, in a time window containing that physical world step. Neither a made-up episode name nor a re-hashed but altered owner snapshot may be substituted silently. This does **not** prove the state was produced by the real individual.
+- The separate retrospective path index is versioned `stage9-heldout-raw-artifact-index-v4`: v1-v3 archives remain as originally recorded and do not imply this additional Memory-state check. Synthetic adversarial tests re-seal causal-state raw bytes, both state SHA-256 fields and the full evidence digest while deleting/renaming episodes, removing command sources, moving episode times, duplicating refs or falsifying seen-event membership. Any such inconsistency must fail before a scientific verdict.
+- `memory_episode_closure_attested=false`, `memory_runtime_attested=false`, `physical_truth_attested=false`, `scientific_verdict=null` and `golden_stage9_frozen=false` remain explicit. Actual independent Memory execution, causal rule origin, oracle isolation, world/seed custody and prospective experiment validity still require external evidence.

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from lab.determinism import deterministic_id
+from lab.determinism import canonical_causal_bytes, deterministic_id, sha256_hex
 from lab.journal import GENESIS_HASH, HashChainedJournal, JournalEntry
 
 
@@ -71,6 +71,69 @@ class HashChainedJournalTests(unittest.TestCase):
         )
 
         self.assertNotEqual(first.head_hash, second.head_hash)
+
+    def test_duplicate_event_id_rejected_without_modifying_journal(self) -> None:
+        journal = self.build_journal()
+        before = journal.canonical_bytes()
+        original = journal.entries[0]
+        with self.assertRaisesRegex(ValueError, "duplicate technical journal"):
+            journal.append(
+                event_id=original.event_id,
+                causal_event={"kind": "unrelated-second-physical-transition"},
+            )
+        self.assertEqual(journal.canonical_bytes(), before)
+        self.assertIs(journal.get(original.event_id), original)
+        self.assertEqual(len(journal.entries), 2)
+        self.assertTrue(journal.verify())
+
+    def test_event_id_requires_a_string(self) -> None:
+        journal = self.build_journal()
+        before = journal.canonical_bytes()
+        for invalid in (None, 123, True, ""):
+            with self.subTest(event_id=invalid):
+                with self.assertRaisesRegex(ValueError, "nonempty string"):
+                    journal.append(
+                        event_id=invalid,  # type: ignore[arg-type]
+                        causal_event={"kind": "invalid_identity"},
+                    )
+        self.assertEqual(journal.canonical_bytes(), before)
+        self.assertTrue(journal.verify())
+
+    def test_noncanonical_unicode_event_id_is_rejected(self) -> None:
+        journal = self.build_journal()
+        prior = journal.canonical_bytes()
+        with self.assertRaisesRegex(ValueError, "NFC-normalized"):
+            journal.append(
+                event_id="physical-source:e\u0301",
+                causal_event={"kind": "invalid_equivalent_source_id"},
+            )
+        self.assertEqual(journal.canonical_bytes(), prior)
+        self.assertTrue(journal.verify())
+
+    def test_rehashed_duplicate_event_still_fails_integrity_verification(self) -> None:
+        journal = self.build_journal()
+        first, second = journal.entries
+        forged_id = first.event_id
+        # This entry has a valid SHA-256 link, but duplicates the original ID.
+        forged_hash = sha256_hex(
+            bytes.fromhex(first.event_hash)
+            + canonical_causal_bytes({
+                "event_id": forged_id,
+                "causal_event": second.causal_event,
+            })
+        )
+        journal._entries[1] = JournalEntry(
+            index=1, event_id=forged_id,
+            previous_hash=first.event_hash,
+            event_hash=forged_hash,
+            causal_event=second.causal_event,
+        )
+        self.assertFalse(journal.verify())
+
+    def test_lookup_index_corruption_cannot_validate(self) -> None:
+        journal = self.build_journal()
+        journal._by_id.pop(journal.entries[0].event_id)
+        self.assertFalse(journal.verify())
 
     def test_mutated_entry_is_detected(self) -> None:
         journal = self.build_journal()

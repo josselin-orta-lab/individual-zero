@@ -1,6 +1,6 @@
 name: CI
 
-# Automatic review gate is intentionally light; exhaustive cross-version CI is manual.
+# Budget policy: brief PR checks on reviewable code, exhaustive diagnostics on demand.
 on:
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review, labeled]
@@ -11,6 +11,8 @@ on:
       - 'world/*'
     paths:
       - '.github/workflows/**'
+      - '.gitattributes'
+      - '.gitignore'
       - 'src/**'
       - 'tests/**'
       - 'pyproject.toml'
@@ -20,10 +22,14 @@ on:
       - 'tox.ini'
       - 'scripts/**'
       - 'docs/architecture/reference/en/mvp-specification-v1.2.1.md'
+  # Full replay stays available on the default branch via manual dispatch.
+  # Draft PRs may request unit-only verification with the ci-unit label.
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.action == 'labeled' && 'manual-full' || github.event_name }}
+  # Distinct label groups prevent a short unit check from canceling an
+  # operator-requested full run, and avoid canceling either on PR updates.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.action == 'labeled' && github.event.label.name || github.event_name }}
   cancel-in-progress: true
 
 permissions:
@@ -33,28 +39,37 @@ permissions:
 jobs:
   quick-checks:
     name: quick-unit-tests (Python 3.12)
+    # PRs ready for review get this lightweight check automatically. Draft
+    # PRs get it ONLY upon explicit application of the ci-unit label.
     if: >-
       github.event_name == 'pull_request' &&
-      github.event.action != 'labeled' &&
-      !github.event.pull_request.draft
+      ((github.event.action == 'labeled' && github.event.label.name == 'ci-unit') ||
+       (github.event.action != 'labeled' && !github.event.pull_request.draft))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
           python-version: '3.12'
+
       - name: Install project
         run: python -m pip install -e .
-      - name: Run unit tests
+
+      - name: Run unit tests (without long-running reference diagnostics)
         run: python -m unittest discover -s tests -q
+
       - name: Run bootstrap smoke execution
         run: individual-zero --cycles 3 --seed 0 --run-id ci-smoke --output /tmp/individual-zero-ci.jsonl
 
   test:
     name: full-validation (Python ${{ matrix.python-version }})
+    # Preserve every existing extended test and archive for manual validation.
+    # The ci-full label gives this draft PR an immediate manual path while
+    # workflow_dispatch waits for its workflow definition on default branch.
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' &&
@@ -81,8 +96,441 @@ jobs:
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
 
+      - name: Stage 9 frozen checkout preflight (local software diagnostic)
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m lab.stage9_frozen_worktree --repo . \
+            --frozen-commit "$(git rev-parse HEAD)" \
+            > /tmp/stage9-checkout-integrity.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path(
+              "/tmp/stage9-checkout-integrity.json"
+          ).read_text(encoding="utf-8"))
+          if (
+              report["worktree_status"] != "frozen_tracked_code_matches_local_checkout"
+              or report["scientific_verdict"] is not None
+              or report["golden_stage9_frozen"]
+              or report["verified_tracked_files"] < 1
+          ):
+              raise SystemExit("Stage 9 local checkout integrity preflight failed")
+          print("stage9_checkout_preflight=local_software_only")
+          PY
+
+      - name: Upload Stage 9 local checkout integrity diagnostic
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage9-checkout-integrity-diagnostic
+          path: /tmp/stage9-checkout-integrity.json
+          if-no-files-found: error
+
       - name: Run bootstrap smoke execution
         run: individual-zero --cycles 3 --seed 0 --run-id ci-smoke --output /tmp/individual-zero-ci.jsonl
+
+      - name: Stage 9 matched hydration contrast (diagnostic, not acceptance)
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m lab.stage9_hydration_contrast_report | tee /tmp/stage9-hydration-contrast.jsonl
+
+      - name: Upload Stage 9 hydration contrast evidence
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage9-hydration-contrast-diagnostic
+          path: /tmp/stage9-hydration-contrast.jsonl
+          if-no-files-found: error
+
+      # A 300-step full-journal and all-owner comparison is a software
+      # reference diagnostic only. No Stage-9 scientific Golden is frozen.
+      - name: Stage 9 extended exact reference replay (diagnostic, not Golden)
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m lab.stage9_reference_replay --steps 300 \
+            --journal /tmp/stage9-reference-diagnostic.jsonl \
+            --causal-state /tmp/stage9-reference-causal-state.json \
+            > /tmp/stage9-reference-diagnostic.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from lab.determinism import canonical_causal_bytes, sha256_hex
+          from lab.stage9_canonical_journal_audit import audit_raw_causal_journal
+          report = json.loads(Path(
+              "/tmp/stage9-reference-diagnostic.json"
+          ).read_text(encoding="utf-8"))
+          journal = Path("/tmp/stage9-reference-diagnostic.jsonl").read_bytes()
+          state_bytes = Path("/tmp/stage9-reference-causal-state.json").read_bytes()
+          journal_audit = audit_raw_causal_journal(
+              Path("/tmp/stage9-reference-diagnostic.jsonl"),
+              physical_observation_refs=set(),
+          )
+          if (
+              report["protocol_version"] != "stage9-extended-reference-diagnostic-v3"
+              or report["classification"] != "diagnostic_only"
+              or report["golden_stage9_frozen"]
+              or report["scientific_verdict"] is not None
+              or report["steps"] != 300
+              or not report["identical_independent_reexecution"]
+              or report["journal_bytes"] != len(journal)
+              or report["journal_sha256"] != sha256_hex(journal)
+              or report["causal_state_sha256"] != sha256_hex(state_bytes)
+              or not state_bytes
+              or canonical_causal_bytes(json.loads(state_bytes)) != state_bytes
+              or journal_audit["journal_events_checked"] <= 0
+              or journal_audit["journal_head_hash"] != report["journal_head"]
+              or journal_audit["physical_truth_attested"]
+              or journal_audit["memory_episode_closure_attested"]
+          ):
+              raise SystemExit("Stage 9 300-step replay diagnostic failed")
+          print("stage9_300_step_replay_exact=true")
+          PY
+
+      - name: Upload Stage 9 extended software reference diagnostic
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage9-extended-reference-diagnostic
+          path: |
+            /tmp/stage9-reference-diagnostic.json
+            /tmp/stage9-reference-diagnostic.jsonl
+            /tmp/stage9-reference-causal-state.json
+          if-no-files-found: error
+
+      # Evidence publishing is not Stage-9 scientific acceptance. The
+      # laboratory must still preregister the threshold and obtain real
+      # independent naturally acquired causal candidates before the Golden.
+      - name: Stage 9 evidence bundle (diagnostic, not acceptance)
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m lab.stage9_acceptance_report > /tmp/stage9-acceptance-diagnostic.json
+          python - <<'PY'
+          from pathlib import Path
+          from lab.stage9_spontaneous_superstition_matrix import run_spontaneous_superstition_matrix
+          # Must match acceptance-report default (seed 42, then 43 and 44),
+          # rather than the standalone matrix's exploratory defaults.
+          result = run_spontaneous_superstition_matrix(
+              seeds=(42, 43, 44), steps=14,
+          )
+          Path("/tmp/stage9-spontaneous-matrix-diagnostic.json").write_text(
+              result.to_json(), encoding="utf-8",
+          )
+          PY
+          python - <<'PY'
+          from pathlib import Path
+          from lab.stage9_known_cause_world_matrix import run_known_cause_world_matrix
+          # Match the acceptance-report fixed diagnostic seed set exactly.
+          result = run_known_cause_world_matrix(seeds=(42, 43, 44))
+          Path("/tmp/stage9-known-cause-world-matrix.json").write_text(
+              result.to_json(), encoding="utf-8",
+          )
+          PY
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from lab.determinism import canonical_causal_bytes, sha256_hex
+
+          acceptance = json.loads(Path(
+              "/tmp/stage9-acceptance-diagnostic.json"
+          ).read_text(encoding="utf-8"))
+          expected_digest = acceptance.pop("evidence_sha256")
+          if sha256_hex(canonical_causal_bytes(acceptance)) != expected_digest:
+              raise SystemExit("Stage 9 acceptance artifact digest differs")
+          if acceptance["acceptance_status"] != "open" or acceptance["golden_stage9_frozen"]:
+              raise SystemExit("Stage 9 diagnostic was incorrectly promoted to Golden")
+          checks = {row["criterion"]: row for row in acceptance["checks"]}
+          matrix = json.loads(Path(
+              "/tmp/stage9-spontaneous-matrix-diagnostic.json"
+          ).read_text(encoding="utf-8"))
+          matrix_digest = matrix.pop("digest")
+          if sha256_hex(canonical_causal_bytes(matrix)) != matrix_digest:
+              raise SystemExit("Stage 9 full multiworld artifact digest differs")
+          runs = matrix["runs"]
+          opportunities = sum(len(row["spontaneous_candidate_refs"]) for row in runs)
+          established = sum(len(row["spontaneous_established_false_refs"]) for row in runs)
+          if (
+              opportunities != matrix["spontaneously_observed_candidates"]
+              or established != matrix["established_false_rules"]
+              or any(not set(row["spontaneous_established_false_refs"]).issubset(
+                  row["spontaneous_candidate_refs"]
+              ) for row in runs)
+              or matrix["natural_false_rule_rate"] != (
+                  None if opportunities == 0 else established / opportunities
+              )
+          ):
+              raise SystemExit("Stage 9 multiworld numerator/denominator inconsistent")
+          known = json.loads(Path(
+              "/tmp/stage9-known-cause-world-matrix.json"
+          ).read_text(encoding="utf-8"))
+          known_digest = known.pop("digest")
+          if sha256_hex(canonical_causal_bytes(known)) != known_digest:
+              raise SystemExit("Stage 9 known-cause matrix artifact digest differs")
+          known_rows = known["runs"]
+          expected_known = checks["known_cause_attribution"]["evidence"]
+          if (
+              len(known_rows) != expected_known["geometric_world_count"]
+              or known_digest != expected_known["geometric_matrix_sha256"]
+              or known["seeds"] != expected_known["geometric_matrix_seeds"]
+              or len({row["world_digest"] for row in known_rows}) != len(known_rows)
+              or sum(row["results"]["ground_truthed_cases"] for row in known_rows) != known["physically_ground_truthed_cases"]
+              or sum(row["results"]["correct_links"] for row in known_rows) != known["correct_links"]
+              or sum(row["results"]["uncertain_cases"] for row in known_rows) != known["uncertain_cases"]
+              or sum(row["results"]["false_self_links"] for row in known_rows) != known["false_self_links"]
+              or known["physically_ground_truthed_cases"] != expected_known["geometric_ground_truthed_cases"]
+              or known["correct_links"] != expected_known["geometric_correct_links"]
+              or known["uncertain_cases"] != expected_known["geometric_uncertain_cases"]
+              or known["false_self_links"] != expected_known["geometric_false_self_links"]
+              or known["observed_accuracy"] != expected_known["geometric_observed_accuracy"]
+              or known["classification"] != "diagnostic_only"
+          ):
+              raise SystemExit("Stage 9 known-cause world matrix mismatches acceptance report")
+          superstition = checks["superstitious_rules_under_random_reward"]["evidence"]
+          if (
+              matrix_digest != superstition["spontaneous_matrix_sha256"]
+              or matrix["evaluation_status"] != superstition["spontaneous_evaluation_status"]
+              or matrix["spontaneously_observed_candidates"] != superstition["spontaneous_candidate_count"]
+              or matrix["natural_false_rule_rate"] != superstition["spontaneous_diagnostic_rate"]
+          ):
+              raise SystemExit("Stage 9 multiworld evidence and acceptance report differ")
+          print("stage9_diagnostic_bundle=" + json.dumps({
+              "acceptance": acceptance["acceptance_status"],
+              "golden_frozen": acceptance["golden_stage9_frozen"],
+              "acceptance_digest": expected_digest,
+              "multiworld_digest": matrix_digest,
+              "known_cause_world_digest": known_digest,
+              "known_cause_worlds": len(known_rows),
+              "known_cause_correct_links": known["correct_links"],
+              "known_cause_total_links": known["physically_ground_truthed_cases"],
+              "natural_candidates": matrix["spontaneously_observed_candidates"],
+              "false_rule_rate": matrix["natural_false_rule_rate"],
+              "scientific_status": matrix["evaluation_status"],
+          }, sort_keys=True))
+          PY
+
+      - name: Upload Stage 9 diagnostic evidence bundle
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage9-acceptance-diagnostics
+          path: |
+            /tmp/stage9-acceptance-diagnostic.json
+            /tmp/stage9-spontaneous-matrix-diagnostic.json
+            /tmp/stage9-known-cause-world-matrix.json
+          if-no-files-found: error
+
+      - name: Stage 9 prospective scientific preflight (never Golden)
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m lab.stage9_scientific_preregistration > /tmp/stage9-scientific-preflight.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          status = json.loads(Path("/tmp/stage9-scientific-preflight.json").read_text(encoding="utf-8"))
+          if (
+              status["registration_status"] != "unregistered"
+              or status["scientific_verdict"] is not None
+              or status["golden_stage9_frozen"]
+          ):
+              raise SystemExit("Stage 9 prospective scientific preflight falsely passes")
+          print("stage9_preregistration=" + status["registration_status"])
+          PY
+
+      - name: Upload Stage 9 prospective scientific preflight
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage9-scientific-preregistration-preflight
+          path: /tmp/stage9-scientific-preflight.json
+          if-no-files-found: error
+
+      - name: Stage 9 prospective holdout assessment readiness (never Golden)
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m lab.stage9_scientific_assessment > /tmp/stage9-scientific-assessment.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path("/tmp/stage9-scientific-assessment.json").read_text())
+          if (result["assessment"] != "unregistered"
+              or result["scientific_verdict"] is not None
+              or result["golden_stage9_frozen"]):
+              raise SystemExit("unregistered Stage-9 scientific assessment must fail closed")
+          print("stage9_scientific_assessment=" + result["assessment"])
+          PY
+
+      - name: Upload Stage 9 prospective holdout assessment readiness
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage9-scientific-assessment-readiness
+          path: /tmp/stage9-scientific-assessment.json
+          if-no-files-found: error
+
+      - name: Stage 8 preregistered physical κ stress Brier gate
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from lab.stage8_calibration_stress import controlled_physical_calibration
+          report = controlled_physical_calibration()
+          result = {
+              "protocol_version": report.version,
+              "independent_physical_observations": report.credited_observations,
+              "confirmations": report.confirmations,
+              "contradictions": report.contradictions,
+              "brier_early": report.early_brier,
+              "brier_late": report.late_brier,
+              "brier_neutral": report.baseline_brier,
+          }
+          Path("/tmp/stage8-physical-kappa.json").write_text(
+              json.dumps(result, sort_keys=True, indent=2) + "\\n", encoding="utf8"
+          )
+          print("stage8_physical_kappa=" + json.dumps(result, sort_keys=True))
+          if not (report.credited_observations == 80
+                  and report.confirmations > 0 and report.contradictions > 0
+                  and report.late_brier < report.early_brier
+                  and report.late_brier < report.baseline_brier):
+              raise SystemExit("Stage 8 κ independent physical Brier gate failed")
+          second = controlled_physical_calibration()
+          if second != report:
+              raise SystemExit("Stage 8 physical calibration replay differs")
+          print("stage8_physical_kappa_replay_exact=true")
+          PY
+
+      - name: Upload Stage 8 physical κ calibration
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8-physical-kappa-calibration
+          path: /tmp/stage8-physical-kappa.json
+          if-no-files-found: error
+
+      - name: Stage 8 physical learning and prequential calibration curves
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from lab.stage8_learning_benchmark import (
+              world_learning_curve, Stage8PhysicalCalibrationRecorder,
+          )
+          from lab.stage8_reference_fixture import build_stage8_reference_runtime
+          td = world_learning_curve(pairs=80, interval=20)
+          if not td.points[-1].rmse_against_observed_return < td.points[0].rmse_against_observed_return:
+              raise SystemExit("Stage 8 physical-world TD learning did not improve")
+          recorder = Stage8PhysicalCalibrationRecorder()
+          runtime = build_stage8_reference_runtime()
+          for _ in range(300):
+              confidence = recorder.before_step(runtime)
+              result = runtime.run_step()
+              if result.execution_status != "applied":
+                  raise SystemExit("Stage 8 calibration-world execution not applied")
+              recorder.after_step(runtime, confidence)
+          curve = recorder.curve()
+          report = {
+              "protocol_version": td.protocol_version,
+              "td_world_version": td.world_version,
+              "td_sample_count": td.sample_count,
+              "td_measured_rewards": [td.measured_reward_drink, td.measured_reward_wait],
+              "td_points": [
+                  {"step": p.observed_steps, "q_drink": p.q_drink,
+                   "q_wait": p.q_wait, "rmse": p.rmse_against_observed_return}
+                  for p in td.points
+              ],
+              "calibration_count": len(curve.samples),
+              "brier_first_half": curve.initial_brier,
+              "brier_second_half": curve.late_brier,
+              "brier_neutral_baseline": curve.baseline_brier,
+              "brier_decreased": (
+                  None if curve.initial_brier is None or curve.late_brier is None
+                  else curve.late_brier < curve.initial_brier
+              ),
+          }
+          Path("/tmp/stage8-learning-benchmark.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\\n", encoding="utf-8"
+          )
+          print("stage8_learning_benchmark=" + json.dumps(report, sort_keys=True))
+          if not curve.samples:
+              print("stage8_brier_gate=inconclusive_no_credited_physical_comparisons")
+          elif report["brier_decreased"] is not True:
+              print("stage8_brier_gate=not_yet_demonstrated")
+          else:
+              print("stage8_brier_gate=observed_decrease")
+          PY
+
+      - name: Upload Stage 8 learning and calibration curves
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8-learning-benchmark
+          path: /tmp/stage8-learning-benchmark.json
+          if-no-files-found: error
+
+      - name: Stage 8 reference and online-state metrics
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from lab.stage8_reference_fixture import build_stage8_reference_runtime
+
+          runtime = build_stage8_reference_runtime()
+          for _ in range(300):
+              outcome = runtime.run_step()
+              if outcome.execution_status != "applied":
+                  raise SystemExit(f"unexpected Stage 8 outcome: {outcome.execution_status}")
+          if not runtime.journal.verify():
+              raise SystemExit("invalid Stage 8 journal")
+          payload = runtime.journal.canonical_bytes()
+          Path("/tmp/stage8-reference.jsonl").write_bytes(payload + b"\n")
+          q = runtime.q_active.export_causal_state()
+          kappa = runtime.kappa_active.export_causal_state()
+          print(f"stage8_bytes={len(payload)}")
+          print(f"stage8_head={runtime.journal.head_hash}")
+          print(f"stage8_q_signatures={len(q['weights'])}")
+          print(f"stage8_q_updates={sum(q['update_counts'].values())}")
+          print(f"stage8_kappa_version={kappa['version']}")
+          print(f"stage8_kappa_keys={len(kappa['counters'])}")
+          print(f"stage8_f_cog={runtime.metacognition.state.f_cog_uc_counter}")
+          # Fixed only after a verified second identical 300-step execution.
+          expected = "0a2dc62d4ba51722a96f307fdf6c7427d1aa3b0a8a3c0e21da81bc490eb23cf8"
+          if runtime.journal.head_hash != expected:
+              raise SystemExit(
+                  "Stage 8 golden regression: "
+                  f"{runtime.journal.head_hash} != {expected}"
+              )
+          if len(payload) != 35061323:
+              raise SystemExit(f"Stage 8 journal size regression: {len(payload)}")
+          if sum(q["update_counts"].values()) != 597 or len(q["weights"]) != 2:
+              raise SystemExit("Stage 8 Q_active evolution regression")
+          if len(kappa["counters"]) != 1 or kappa["version"] != 1498:
+              raise SystemExit("Stage 8 kappa_active evolution regression")
+          if runtime.metacognition.state.f_cog_uc_counter != 9593:
+              raise SystemExit("Stage 8 F_cog regression")
+          if not q['weights'] or not kappa['counters']:
+              raise SystemExit("Stage 8 Q and kappa must both evolve")
+          repeat = build_stage8_reference_runtime()
+          for _ in range(300):
+              if repeat.run_step().execution_status != "applied":
+                  raise SystemExit("Stage 8 replay execution diverged")
+          if repeat.journal.canonical_bytes() != payload:
+              raise SystemExit("Stage 8 300-step journal replay diverged")
+          if repeat.journal.head_hash != runtime.journal.head_hash:
+              raise SystemExit("Stage 8 300-step golden heads differ")
+          if repeat.q_active.export_causal_state() != q:
+              raise SystemExit("Stage 8 Q_active replay diverged")
+          if repeat.kappa_active.export_causal_state() != kappa:
+              raise SystemExit("Stage 8 kappa_active replay diverged")
+          print("stage8_reference_second_run_exact=true")
+          PY
+
+      - name: Upload Stage 8 reference journal
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8-reference-journal
+          path: /tmp/stage8-reference.jsonl
+          if-no-files-found: error
 
       - name: Generate Stage 1 reference journal
         if: matrix.python-version == '3.11'
@@ -114,6 +562,11 @@ jobs:
               raise SystemExit("stage1 reference journal failed verification")
           print(f"stage1_reference_bytes={len(payload)}")
           print(f"stage1_reference_head={runtime.journal.head_hash}")
+          expected = "67a43e32bb6f8bb053ece7a1d7ba36d50ec773725922b931d6bb377b023b37a4"
+          if runtime.journal.head_hash != expected:
+              raise SystemExit(
+                  f"Stage 1 reference regression: {runtime.journal.head_hash} != {expected}"
+              )
           PY
 
       - name: Upload Stage 1 reference journal
@@ -123,3 +576,362 @@ jobs:
           name: stage1-reference-journal
           path: /tmp/stage1-reference.jsonl
           if-no-files-found: error
+
+      - name: Generate Stage 2 reference journal
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from i0.config import MVP_CYCLE_PHASE_COMPONENT_ORDER
+          from lab.safety_protocol import SafetyProtocolConfig
+          from lab.stage2_runtime import ScriptedStage2Runtime
+          from lab.world import (
+              BerryEffect,
+              BodyState,
+              Command,
+              Position,
+              ToolRecipe,
+              WorldLayout,
+              WorldPhysicsConfig,
+          )
+
+          physics = WorldPhysicsConfig(
+              version="stage2-ci-reference-v1",
+              width=32,
+              height=32,
+              day_steps=300,
+              night_steps=100,
+              night_start_step=200,
+              initial_body=BodyState(50.0, 60.0, 60.0, 100.0),
+              initial_position=Position(2, 2),
+              food_decay_per_step=0.1,
+              water_decay_per_step=0.2,
+              action_energy_costs={
+                  "se_deplacer": 0.5,
+                  "collecter": 0.5,
+                  "manger": 0.2,
+                  "boire": 0.2,
+                  "poser_une_pierre": 0.5,
+                  "fabriquer_outil": 0.5,
+                  "dormir": 0.0,
+                  "attendre": 0.0,
+              },
+              sleep_energy_gain=1.0,
+              rest_integrity_gain=0.0,
+              drink_water_gain=10.0,
+              berry_effects={
+                  "berry_a": BerryEffect(5.0, 0.0),
+                  "berry_b": BerryEffect(5.0, -100.0),
+              },
+              creature_damage=10.0,
+              danger_zone_damage=15.0,
+              tool_recipe=ToolRecipe(1, 1, 2),
+          )
+          runtime = ScriptedStage2Runtime(
+              config=physics,
+              layout=WorldLayout(),
+              phase_component_order=MVP_CYCLE_PHASE_COMPONENT_ORDER,
+              safety_config=SafetyProtocolConfig(
+                  version="stage2-ci-safety-v1",
+                  lethal_max=2,
+                  mode="campaign",
+              ),
+          )
+          for _ in range(300):
+              runtime.open_step()
+              outcome = runtime.execute(Command("attendre"))
+              if outcome.status != "applied":
+                  raise SystemExit(f"unexpected Stage 2 outcome: {outcome.status}")
+
+          payload = runtime.journal.canonical_bytes()
+          path = Path("/tmp/stage2-reference.jsonl")
+          path.write_bytes(payload + (b"\n" if payload else b""))
+          if not runtime.journal.verify():
+              raise SystemExit("stage2 reference journal failed verification")
+          print(f"stage2_reference_bytes={len(payload)}")
+          print(f"stage2_reference_head={runtime.journal.head_hash}")
+          expected = "3fe29db59f10b5518ac45575d3f8ca1d8c5666ff528ad036cbe1397046ec53bd"
+          if runtime.journal.head_hash != expected:
+              raise SystemExit(
+                  f"Stage 2 reference regression: {runtime.journal.head_hash} != {expected}"
+              )
+          PY
+
+      - name: Upload Stage 2 reference journal
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage2-reference-journal
+          path: /tmp/stage2-reference.jsonl
+          if-no-files-found: error
+
+      - name: Generate Stage 3 reference journal
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from i0.config import MVP_CYCLE_PHASE_COMPONENT_ORDER
+          from i0.modules import StaticSafetyFacts
+          from lab.safety_protocol import SafetyProtocolConfig
+          from lab.stage3_runtime import Stage3Runtime
+          from lab.world import (
+              BerryEffect,
+              BodyState,
+              Position,
+              ToolRecipe,
+              WorldLayout,
+              WorldPhysicsConfig,
+          )
+
+          physics = WorldPhysicsConfig(
+              version="stage3-ci-reference-v1",
+              width=32,
+              height=32,
+              day_steps=300,
+              night_steps=100,
+              night_start_step=200,
+              initial_body=BodyState(50.0, 60.0, 60.0, 100.0),
+              initial_position=Position(2, 2),
+              food_decay_per_step=0.1,
+              water_decay_per_step=0.2,
+              action_energy_costs={
+                  "se_deplacer": 0.5,
+                  "collecter": 0.5,
+                  "manger": 0.2,
+                  "boire": 0.2,
+                  "poser_une_pierre": 0.5,
+                  "fabriquer_outil": 0.5,
+                  "dormir": 0.0,
+                  "attendre": 0.0,
+              },
+              sleep_energy_gain=1.0,
+              rest_integrity_gain=0.0,
+              drink_water_gain=10.0,
+              berry_effects={
+                  "berry_a": BerryEffect(5.0, 0.0),
+                  "berry_b": BerryEffect(5.0, -100.0),
+              },
+              creature_damage=10.0,
+              danger_zone_damage=15.0,
+              tool_recipe=ToolRecipe(1, 1, 2),
+          )
+          runtime = Stage3Runtime(
+              config=physics,
+              layout=WorldLayout(
+                  creatures=frozenset({Position(3, 2)}),
+              ),
+              phase_component_order=MVP_CYCLE_PHASE_COMPONENT_ORDER,
+              safety_config=SafetyProtocolConfig(
+                  version="stage3-ci-safety-v1",
+                  lethal_max=2,
+                  mode="campaign",
+              ),
+              safety_facts=StaticSafetyFacts(),
+              protected_integrity_threshold=20.0,
+          )
+          for _ in range(300):
+              runtime.open_step()
+              outcome = runtime.run_step()
+              if outcome.execution_status != "applied":
+                  raise SystemExit(
+                      f"unexpected Stage 3 outcome: {outcome.execution_status}"
+                  )
+
+          payload = runtime.journal.canonical_bytes()
+          path = Path("/tmp/stage3-reference.jsonl")
+          path.write_bytes(payload + (b"\n" if payload else b""))
+          if not runtime.journal.verify():
+              raise SystemExit("stage3 reference journal failed verification")
+          print(f"stage3_reference_bytes={len(payload)}")
+          print(f"stage3_reference_head={runtime.journal.head_hash}")
+          expected = "b088023fb83298e2c32b8a66cd4b2dc1fc21a587945a6c103b9a32586f210f09"
+          if runtime.journal.head_hash != expected:
+              raise SystemExit(
+                  f"Stage 3 reference regression: {runtime.journal.head_hash} != {expected}"
+              )
+          PY
+
+      - name: Upload Stage 3 reference journal
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage3-reference-journal
+          path: /tmp/stage3-reference.jsonl
+          if-no-files-found: error
+
+      - name: Generate Stage 4 reference journal
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from lab.stage4_reference_fixture import build_stage4_reference_runtime
+
+          runtime = build_stage4_reference_runtime()
+          for _ in range(300):
+              outcome = runtime.run_step()
+              if outcome.execution_status != "applied":
+                  raise SystemExit(
+                      f"unexpected Stage 4 outcome: {outcome.execution_status}"
+                  )
+
+          if runtime.world.position.x != 4 or runtime.world.position.y != 2:
+              raise SystemExit(
+                  f"unexpected Stage 4 final position: {runtime.world.position}"
+              )
+          if runtime.world.body.water != 60.0:
+              raise SystemExit(
+                  f"unexpected Stage 4 final water: {runtime.world.body.water}"
+              )
+
+          payload = runtime.journal.canonical_bytes()
+          path = Path("/tmp/stage4-reference.jsonl")
+          path.write_bytes(payload + (b"\n" if payload else b""))
+          if not runtime.journal.verify():
+              raise SystemExit("stage4 reference journal failed verification")
+          print(f"stage4_reference_bytes={len(payload)}")
+          print(f"stage4_reference_head={runtime.journal.head_hash}")
+          print(
+              "stage4_f_cog_uc="
+              f"{runtime.metacognition.state.f_cog_uc_counter}"
+          )
+          expected = "87e2de3c49f07bafa8026ef785e5e50abf38c98314e780b3e2c5107bf26bdac8"
+          if runtime.journal.head_hash != expected:
+              raise SystemExit(
+                  f"Stage 4 reference regression: {runtime.journal.head_hash} != {expected}"
+              )
+          if runtime.metacognition.state.f_cog_uc_counter != 9551:
+              raise SystemExit(
+                  "Stage 4 F_cog UC regression: "
+                  f"{runtime.metacognition.state.f_cog_uc_counter} != 9551"
+              )
+          PY
+
+      - name: Upload Stage 4 reference journal
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage4-reference-journal
+          path: /tmp/stage4-reference.jsonl
+          if-no-files-found: error
+
+
+      - name: Generate Stage 6 reference journal
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from lab.stage6_reference_fixture import build_stage6_reference_runtime
+
+          runtime = build_stage6_reference_runtime()
+          for _ in range(300):
+              outcome = runtime.run_step()
+              if outcome.execution_status != "applied":
+                  raise SystemExit(
+                      f"unexpected Stage 6 outcome: {outcome.execution_status}"
+                  )
+
+          if runtime.world.position.x != 2 or runtime.world.position.y != 2:
+              raise SystemExit(
+                  f"unexpected Stage 6 final position: {runtime.world.position}"
+              )
+          if runtime.world.body.water != 60.0:
+              raise SystemExit(
+                  f"unexpected Stage 6 final water: {runtime.world.body.water}"
+              )
+          if runtime.equipment_version != "E-v1-stage6-reference":
+              raise SystemExit(
+                  f"unexpected Stage 6 equipment: {runtime.equipment_version}"
+              )
+
+          payload = runtime.journal.canonical_bytes()
+          path = Path("/tmp/stage6-reference.jsonl")
+          path.write_bytes(payload + (b"\n" if payload else b""))
+          if not runtime.journal.verify():
+              raise SystemExit("stage6 reference journal failed verification")
+          print(f"stage6_reference_bytes={len(payload)}")
+          print(f"stage6_reference_head={runtime.journal.head_hash}")
+          print(
+              "stage6_f_cog_uc="
+              f"{runtime.metacognition.state.f_cog_uc_counter}"
+          )
+          expected = "1bbd9071a4a7e9385f537a6f43362f34cc4e7f0a6ca301204abf9100ba2012d5"
+          if runtime.journal.head_hash != expected:
+              raise SystemExit(
+                  f"Stage 6 reference regression: {runtime.journal.head_hash} != {expected}"
+              )
+          if runtime.metacognition.state.f_cog_uc_counter != 9593:
+              raise SystemExit(
+                  "Stage 6 F_cog UC regression: "
+                  f"{runtime.metacognition.state.f_cog_uc_counter} != 9593"
+              )
+          PY
+
+      - name: Upload Stage 6 reference journal
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage6-reference-journal
+          path: /tmp/stage6-reference.jsonl
+          if-no-files-found: error
+
+
+      - name: Generate Stage 7 reference journal
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from lab.stage7_reference_fixture import build_stage7_reference_runtime
+
+          runtime = build_stage7_reference_runtime()
+          for _ in range(300):
+              outcome = runtime.run_step()
+              if outcome.execution_status != "applied":
+                  raise SystemExit(
+                      f"unexpected Stage 7 outcome: {outcome.execution_status}"
+                  )
+
+          if not runtime.memory.episodes:
+              raise SystemExit("Stage 7 reference produced no closed episodes")
+          if runtime.world.body.water != 60.0:
+              raise SystemExit(
+                  f"unexpected Stage 7 final water: {runtime.world.body.water}"
+              )
+
+          payload = runtime.journal.canonical_bytes()
+          path = Path("/tmp/stage7-reference.jsonl")
+          path.write_bytes(payload + (b"\n" if payload else b""))
+          if not runtime.journal.verify():
+              raise SystemExit("stage7 reference journal failed verification")
+          print(f"stage7_reference_bytes={len(payload)}")
+          print(f"stage7_reference_head={runtime.journal.head_hash}")
+          print(f"stage7_episode_count={len(runtime.memory.episodes)}")
+          print(
+              "stage7_f_cog_uc="
+              f"{runtime.metacognition.state.f_cog_uc_counter}"
+          )
+          expected_head = "c356fe386c2480e78e485f85815ac93fc90f3b679e5806dcb61b374daee9da77"
+          if runtime.journal.head_hash != expected_head:
+              raise SystemExit(
+                  "Stage 7 reference regression: "
+                  f"{runtime.journal.head_hash} != {expected_head}"
+              )
+          if len(runtime.memory.episodes) != 298:
+              raise SystemExit(
+                  "Stage 7 episode-count regression: "
+                  f"{len(runtime.memory.episodes)} != 298"
+              )
+          if runtime.metacognition.state.f_cog_uc_counter != 9593:
+              raise SystemExit(
+                  "Stage 7 F_cog UC regression: "
+                  f"{runtime.metacognition.state.f_cog_uc_counter} != 9593"
+              )
+          PY
+
+      - name: Upload Stage 7 reference journal
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage7-reference-journal
+          path: /tmp/stage7-reference.jsonl
+          if-no-files-found: error
+
