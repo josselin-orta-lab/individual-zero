@@ -6,9 +6,11 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
+import os
 from pathlib import Path
 import subprocess
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 import unittest
 
 from lab.stage9_registration_chronology import audit_registration_chronology
@@ -753,6 +755,37 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "frozen source tree changed"):
                 _audit(repo, registered, evidence)
+
+
+    def test_repository_and_git_configuration_environment_overrides_fail_closed(self):
+        # A foreign GIT_DIR + GIT_WORK_TREE can redirect Git to a different
+        # object store while preserving the caller's physical worktree path.
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            _, registered, evidence = _create_fixture(repo)
+            for name, value in (
+                ("GIT_DIR", str(repo / ".git")),
+                ("GIT_WORK_TREE", str(repo)),
+                ("GIT_OBJECT_DIRECTORY", str(repo / ".git" / "objects")),
+                ("GIT_ALTERNATE_OBJECT_DIRECTORIES", str(repo / ".git" / "objects")),
+                ("GIT_SHALLOW_FILE", str(repo / ".git" / "shallow")),
+                ("GIT_CONFIG_COUNT", "1"),
+                ("GIT_CONFIG_KEY_0", "core.worktree"),
+                ("GIT_CONFIG_PARAMETERS", "'core.worktree=elsewhere'"),
+                ("GIT_NAMESPACE", "other"),
+                ("GIT_REPLACE_REF_BASE", "refs/malicious"),
+            ):
+                with self.subTest(name=name):
+                    with patch.dict(os.environ, {name: value}):
+                        with self.assertRaisesRegex(
+                            ValueError, "Git audit refuses repository environment overrides",
+                        ):
+                            _audit(repo, registered, evidence)
+            # Prompt and display controls do not change repository identity.
+            with patch.dict(os.environ, {"GIT_TERMINAL_PROMPT": "0"}):
+                self.assertIsNone(
+                    _audit(repo, registered, evidence)["scientific_verdict"]
+                )
 
     def test_shallow_checkout_cannot_certify_git_chronology(self):
         with TemporaryDirectory() as folder:

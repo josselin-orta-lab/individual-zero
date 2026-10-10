@@ -13,6 +13,7 @@ import stat
 
 from .stage9_registration_chronology import (
     PROJECT_INSTALL_PATH, SOURCE_TREE_PATH, _check_commit, _git,
+    reject_git_repository_overrides,
 )
 from .stage9_scientific_preregistration import SPEC_PATH
 from .stage9_secure_file_read import open_regular_no_follow
@@ -31,6 +32,7 @@ def verify_frozen_worktree(
     pyproject.toml and the English normative specification must match the freeze.
     No worktree, index, source, registration or result is modified.
     """
+    reject_git_repository_overrides()
     root = repository.resolve()
     top = Path(_git(root, "rev-parse", "--show-toplevel").decode().strip()).resolve()
     if top != root:

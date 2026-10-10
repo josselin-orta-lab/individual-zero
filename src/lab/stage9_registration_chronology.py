@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from math import isfinite
 from hashlib import sha256
 from pathlib import Path
@@ -25,7 +26,33 @@ from .stage9_secure_file_read import open_regular_no_follow
 COMMIT_ID = re.compile(r"[0-9a-f]{40}\Z")
 
 
+_GIT_REPOSITORY_OVERRIDES = frozenset({
+    "GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_OBJECT_DIRECTORY",
+    "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_INDEX_FILE", "GIT_NAMESPACE",
+    "GIT_REPLACE_REF_BASE", "GIT_SHALLOW_FILE", "GIT_QUARANTINE_PATH",
+    "GIT_CEILING_DIRECTORIES", "GIT_DISCOVERY_ACROSS_FILESYSTEM",
+})
+
+
+def reject_git_repository_overrides() -> None:
+    """Refuse process environment capable of redirecting Git's objects/history.
+
+    --no-replace-objects is not a defense against a foreign GIT_DIR or
+    injected Git configuration. This check is local, not a chronology witness.
+    """
+    overrides = sorted(
+        name for name in os.environ
+        if name in _GIT_REPOSITORY_OVERRIDES or name.startswith("GIT_CONFIG_")
+    )
+    if overrides:
+        raise ValueError(
+            "Stage-9 Git audit refuses repository environment overrides: "
+            + ", ".join(overrides)
+        )
+
+
 def _git(repository: Path, *arguments: str) -> bytes:
+    reject_git_repository_overrides()
     try:
         result = subprocess.run(
             ("git", "-C", str(repository), "--no-replace-objects", *arguments),
@@ -473,6 +500,7 @@ def audit_registration_chronology(
     preregistration preceded humans observing results, physically independent
     world generation, raw evidence provenance or independent review.
     """
+    reject_git_repository_overrides()
     root = repository.resolve()
     if _git(root, "rev-parse", "--is-shallow-repository").strip() != b"false":
         raise ValueError("chronology requires complete unshallowed Git history")

@@ -105,7 +105,11 @@ inconclusive. Archive who inspected results and when.
 ### 3. Independent post-run verification
 
 Run all of the following against the **unaltered files** and complete,
-unshallowed Git history:
+unshallowed Git history. Git chronology and frozen-source preflight reject
+environment overrides capable of redirecting the repository, object store
+or Git configuration (for example GIT_DIR, GIT_WORK_TREE,
+GIT_OBJECT_DIRECTORY and GIT_CONFIG_COUNT). Use a clean Git environment,
+investigate rejected redirections and preserve the failed audit record:
 
 ~~~bash
 python -m lab.stage9_registration_chronology \

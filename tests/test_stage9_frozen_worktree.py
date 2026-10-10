@@ -1,6 +1,7 @@
 """Synthetic Git fixtures for local Stage-9 source integrity preflight."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -241,6 +242,26 @@ class FrozenWorktreePreflightTests(unittest.TestCase):
             )
             self.assertEqual(result["git_head"], frozen)
             self.assertIsNone(result["scientific_verdict"])
+
+
+    def test_frozen_source_preflight_rejects_git_environment_redirection(self):
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            frozen, _, _ = _create_fixture(repo)
+            for name, value in (
+                ("GIT_DIR", str(repo / ".git")),
+                ("GIT_WORK_TREE", str(repo)),
+                ("GIT_OBJECT_DIRECTORY", str(repo / ".git" / "objects")),
+                ("GIT_CONFIG_COUNT", "1"),
+            ):
+                with self.subTest(name=name):
+                    with patch.dict(os.environ, {name: value}):
+                        with self.assertRaisesRegex(
+                            ValueError, "Git audit refuses repository environment overrides",
+                        ):
+                            verify_frozen_worktree(
+                                repository=repo, frozen_implementation_commit=frozen,
+                            )
 
     def test_invalid_sha_and_nested_directory_are_not_accepted(self):
         with TemporaryDirectory() as folder:
