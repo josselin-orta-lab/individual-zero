@@ -153,7 +153,23 @@ class GlobalModulation:
             if clock < self._last_cycle:
                 raise ValueError("modulation cycle cannot move backward")
         target = self._target(signals)
-        if target == self._profile:
+        # Unknown input cannot advance OR erase an already accumulated
+        # confirmation (P-24): it suspends the step counter. A different
+        # positively observed priority transition still overrides it.
+        undecidable = (
+            (self._profile == "threat" and signals.threat_risk is None)
+            or (self._profile == "recovery" and signals.recovery_need is None)
+            or (self._profile == "exploration" and (
+                signals.needs_satisfied is None or signals.boredom is None
+            ))
+            or (self._candidate == "recovery" and signals.recovery_need is None)
+            or (self._candidate == "exploration" and (
+                signals.needs_satisfied is None or signals.boredom is None
+            ))
+        )
+        if target == self._profile and self._candidate is not None and undecidable:
+            pass  # Hold the prospective transition at its prior confirmed steps.
+        elif target == self._profile:
             self._candidate = None
             self._candidate_steps = 0
             self._candidate_last_step = None
