@@ -11,6 +11,8 @@ Spec: 3.3-3.8, 6, 7, 8, 9, 20.3 Stage 4.
 
 from __future__ import annotations
 
+from .injected_scenario import ScenarioEvent
+
 from dataclasses import dataclass
 from typing import Mapping
 
@@ -99,6 +101,9 @@ class Stage4Runtime:
         safety_facts: StaticSafetyFacts,
         protected_integrity_threshold: float,
         config: Stage4Config,
+        scenario_id: str | None = None,
+        scenario_version: str | None = None,
+        scenario_events: tuple[ScenarioEvent, ...] = (),
     ) -> None:
         config.validate()
         self._config = config
@@ -110,6 +115,9 @@ class Stage4Runtime:
             safety_config=safety_config,
             safety_facts=safety_facts,
             protected_integrity_threshold=protected_integrity_threshold,
+            scenario_id=scenario_id,
+            scenario_version=scenario_version,
+            scenario_events=scenario_events,
         )
         self.value_needs = ValueAndNeeds(config.value_needs)
         self.goal_manager = GoalManager(config.goals)

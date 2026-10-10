@@ -9,6 +9,8 @@ Spec: 8.5, 11.1, 20.3 Stage 8, DC-01, DC-15, INV-07, INV-16.
 
 from __future__ import annotations
 
+from .injected_scenario import ScenarioEvent
+
 from dataclasses import dataclass
 from typing import Mapping
 
@@ -73,6 +75,9 @@ class Stage8Runtime(Stage7Runtime):
         protected_integrity_threshold: float,
         config: Stage8Config,
         equipment: EquipmentModel,
+        scenario_id: str | None = None,
+        scenario_version: str | None = None,
+        scenario_events: tuple[ScenarioEvent, ...] = (),
     ) -> None:
         config.validate()
         self._stage8_config = config
@@ -87,6 +92,9 @@ class Stage8Runtime(Stage7Runtime):
             safety_config=safety_config,
             safety_facts=safety_facts,
             protected_integrity_threshold=protected_integrity_threshold,
+            scenario_id=scenario_id,
+            scenario_version=scenario_version,
+            scenario_events=scenario_events,
             config=config.stage7,
             equipment=equipment,
         )

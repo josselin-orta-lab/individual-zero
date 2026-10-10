@@ -7,6 +7,8 @@ The evidence producer and hypothesis lifecycle remain explicit Stage-9 work.
 """
 from __future__ import annotations
 
+from .injected_scenario import ScenarioEvent
+
 from dataclasses import dataclass
 
 from i0.contracts import Contribution
@@ -56,6 +58,9 @@ class Stage9Runtime(Stage8Runtime):
         protected_integrity_threshold: float,
         config: Stage9Config,
         equipment: EquipmentModel,
+        scenario_id: str | None = None,
+        scenario_version: str | None = None,
+        scenario_events: tuple[ScenarioEvent, ...] = (),
     ) -> None:
         config.validate()
         self._stage9_config = config
@@ -69,6 +74,9 @@ class Stage9Runtime(Stage8Runtime):
             safety_config=safety_config,
             safety_facts=self._canonical_safety,
             protected_integrity_threshold=protected_integrity_threshold,
+            scenario_id=scenario_id,
+            scenario_version=scenario_version,
+            scenario_events=scenario_events,
             config=config.stage8,
             equipment=equipment,
         )

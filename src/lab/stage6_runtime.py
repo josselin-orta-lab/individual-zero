@@ -12,6 +12,8 @@ Spec: 8.5, 8.11, 12.1-12.5, 20.3 Stage 6, DC-01.
 
 from __future__ import annotations
 
+from .injected_scenario import ScenarioEvent
+
 from dataclasses import dataclass
 
 from i0.contracts import PredictionError
@@ -70,6 +72,9 @@ class Stage6Runtime(Stage4Runtime):
         protected_integrity_threshold: float,
         config: Stage6Config,
         equipment: EquipmentModel,
+        scenario_id: str | None = None,
+        scenario_version: str | None = None,
+        scenario_events: tuple[ScenarioEvent, ...] = (),
     ) -> None:
         config.validate()
         self._stage6_config = config
@@ -91,6 +96,9 @@ class Stage6Runtime(Stage4Runtime):
             safety_config=safety_config,
             safety_facts=safety_facts,
             protected_integrity_threshold=protected_integrity_threshold,
+            scenario_id=scenario_id,
+            scenario_version=scenario_version,
+            scenario_events=scenario_events,
             config=config.stage4,
         )
         self.planning = SimulatorPlanner(
