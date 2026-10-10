@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from lab.determinism import canonical_causal_bytes, sha256_hex
+from lab.stage9_canonical_journal_audit import audit_raw_causal_journal
 from lab.stage9_reference_replay import (
     PROTOCOL_VERSION, generate_stage9_reference_diagnostic,
 )
@@ -37,6 +38,13 @@ class Stage9ReferenceReplayTests(unittest.TestCase):
             self.assertGreater(len(payload), 0)
             self.assertEqual(result.journal_bytes, len(payload))
             self.assertEqual(result.journal_sha256, sha256_hex(payload))
+            independent = audit_raw_causal_journal(
+                path, physical_observation_refs=set(),
+            )
+            self.assertGreater(independent["journal_events_checked"], 0)
+            self.assertEqual(independent["journal_head_hash"], result.journal_head)
+            self.assertFalse(independent["physical_truth_attested"])
+            self.assertFalse(independent["memory_episode_closure_attested"])
             state_bytes = state_path.read_bytes()
             self.assertGreater(len(state_bytes), 0)
             self.assertEqual(result.causal_state_sha256, sha256_hex(state_bytes))
