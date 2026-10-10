@@ -13,3 +13,13 @@
 Development-only source: [Stage-9 behavior](stage9-development-behavior-2026-10-10.en.md) and [Stage-9 NO-GO](stage9-heldout-prelaunch-decision-record.md). Public seeds 41 and 42 may be used for non-held-out comparisons; no result from I0-vNext retroactively validates the Stage-9 implementation.
 
 The I0-vNext branch must not be merged into `main` automatically. Use targeted local Python tests before commits and draft pull requests without CI labels while the GitHub Actions quota is constrained.
+
+## First P-48 software increment (2026-10-10)
+
+- Added `src/i0/modules/exploration.py`: canonical-causal-proof-based intrinsic interest, visit counters, habituation, stagnation/noisy-TV guard, derived exploration temperament coefficient, snapshot restoration.
+- Added `src/i0/modules/stage11_evaluator.py`: additive intrinsic score for safe causal-test options. Ordinary Stage-8 extrinsic evidence and Competition remain in force; Stage-9 evaluator is unchanged.
+- Added `src/lab/stage11_runtime.py` and `stage11_reference_fixture.py`: additive cycle phase-1 Exploration hook, logical UC envelope, logs, snapshot owner and vNext-only runtime.
+- Added `tests/test_stage11_exploration.py`: seven targeted unit/integration/replay tests. **Repository-wide execution not verified**: the available local container cannot clone this private GitHub repository (DNS/network restriction). A local standalone draft of the Exploration module passed five isolated tests, but this does **not** certify the committed integration code.
+- Still missing: integrated CI/test execution on actual checkout, side-by-side public-world diagnostic, intrinsic targets beyond causal tests, boredom, modulation profiles/hysteresis, Stage 10 and Stage 12. No behavior change is asserted without a run.
+- Important limitation: the development fixture injects immutable temperament parameters derived by the Stage-5 reference fixture. Complete I0-vNext temperament mapping integration and preregistration of P-15/P-48 values remain open.
+- Before review: run `python -m unittest discover -s tests -p test_stage11_exploration.py -v` on the branch, repair failures, then compare public-development worlds without accessing held-out materials. Use a draft PR without `ci-unit` / `ci-full` labels unless necessary.
