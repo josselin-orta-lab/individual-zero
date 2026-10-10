@@ -655,6 +655,32 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     index=index, artifact_root=root,
                 )
 
+    def test_rehashed_commit_rejects_wrong_step_with_same_attempt(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            original = (root / index["runs"][0]["journal_path"]).read_bytes()
+            forged_journal = HashChainedJournal()
+            for line in original.split(b"\\n"):
+                record = json.loads(line)
+                event = record["causal_event"]
+                if record["event_id"] == "command:0:1":
+                    event["t_monde"] = 99
+                forged_journal.append(
+                    event_id=record["event_id"], causal_event=event,
+                )
+            self.assertTrue(forged_journal.verify())
+            forged = _replace_journal_bytes(
+                root, report, index, forged_journal.canonical_bytes(),
+            )
+            with self.assertRaisesRegex(
+                ValueError, "nonunique command or world advancement",
+            ):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=forged,
+                    index=index, artifact_root=root,
+                )
+
     def test_rehashed_commit_cannot_launder_foreign_or_future_source(self):
         for scenario in ("future_foreign", "repeated_ref"):
             with self.subTest(scenario=scenario):
