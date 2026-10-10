@@ -1051,8 +1051,8 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             ("false_base_rate", "correlation lacks controlled base-rate contrast"),
             ("mismatched_control", "correlation lacks controlled base-rate contrast"),
             ("fabricated_review", "review lacks independent matched physical controls"),
-            ("missing_review", "lacks historical correlation and review"),
-            ("missing_correlation", "lacks historical correlation and review"),
+            ("missing_review", "causal hypothesis lacks matched review proof"),
+            ("missing_correlation", "promoted causal status lacks historical correlation"),
         )
         for scenario, error in scenarios:
             with self.subTest(scenario=scenario):
