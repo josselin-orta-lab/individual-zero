@@ -168,7 +168,8 @@ def run_public_hydration_funnel(
     ]
     published_comparisons = [
         row for row in state["agency_evidence"]
-        if row.get("option_ref", "").startswith(TEST_PREFIX)
+        if isinstance(row.get("option_ref"), str)
+        and row["option_ref"].startswith(TEST_PREFIX)
     ]
     assessments = [
         event["data"]
