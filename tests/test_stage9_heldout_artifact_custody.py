@@ -661,7 +661,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             reg, report, index = _prepared(root)
             original = (root / index["runs"][0]["journal_path"]).read_bytes()
             forged_journal = HashChainedJournal()
-            for line in original.split(b"\\n"):
+            for line in original.split(b"\n"):
                 record = json.loads(line)
                 event = record["causal_event"]
                 if record["event_id"] == "command:0:1":
