@@ -41,3 +41,11 @@ The I0-vNext branch must not be merged into `main` automatically. Use targeted l
 - Measured separately: proposal emissions, intrinsically evaluated options, actual applied causal-test commands and independent Memory-closed physically verified interventions. Neither proposals nor choices are counted as physical evidence.
 - Both journals remain independent; test output records both head hashes and a canonical digest, with `scientific_verdict: null` and `golden_stage9_frozen: false`.
 - The runner is a **development regression probe**, never a held-out campaign or a Stage-9 Golden. It does not settle P-48 calibration, coverage, the noisy-TV science criterion, INV-25 or independent Stage-9 acceptance.
+
+
+## Verified development checkpoint: 2026-10-10
+
+- Latest independently reexecuted **software test suite** for I0-vNext: 700 / 700 tests under Python 3.12, plus smoke, on commit `85685f353b30c8e43355c066d98b774e22b92445`, [CI #38090244262](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38090244262). This is not independent **scientific** verification and does not check the full Golden matrix.
+- [English exact public diagnostic and limits](stage11-public-hydration-development-2026-10-10.en.md); [French summary](stage11-public-hydration-development-2026-10-10.fr.md).
+- The fixed 18-step positive hydration fixture produced **3 applied I0-vNext test commands versus 0 in Stage 9**, **4 P-48-scored evaluations**, but **0 verified interventions**. All four test options had `equipment_input_unseen` and no test-specific published AgencyComparator evidence. Do not treat this as scientific intervention acceptance.
+- Global Modulation P-23/P-24 and a partial P-48 Exploration producer are integrated; Stage 11 remains **IN_PROGRESS**. Full exploration target coverage, threat/recovery behavioral gates, independently grounded prospective test prediction, Stage 10, Stage 12 and scientific held-out review remain outstanding.
