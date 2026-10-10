@@ -244,7 +244,8 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                         failure = "not byte-canonical"
                     else:
                         forged_bytes = canonical_causal_bytes(
-                            {"causal_model": {"published": []}},
+                            {"causal_model": {"published": [], "causal_observations": [],
+                                              "causal_interventions": [], "causal_credits": []}},
                         )
                         failure = "lacks Memory owner"
                     forged = _replace_causal_state_bytes(
