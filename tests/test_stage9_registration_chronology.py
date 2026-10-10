@@ -83,10 +83,13 @@ def _create_fixture(
             "transient_placeholder",
             "alternate_path_identical",
             "transient_alternate_path_identical",
+            "alternate_path_equivalent",
+            "transient_alternate_path_equivalent",
         }:
             raise ValueError("unrecognized synthetic prior evidence scenario")
         alternate_name = earlier_evidence in {
             "alternate_path_identical", "transient_alternate_path_identical",
+            "alternate_path_equivalent", "transient_alternate_path_equivalent",
         }
         early_relative = (
             "preseal/private-outcomes.json"
@@ -94,10 +97,21 @@ def _create_fixture(
         )
         (repo / Path(early_relative).parent).mkdir(exist_ok=True)
         early_file = repo / early_relative
-        if earlier_evidence.endswith("identical"):
+        if earlier_evidence.endswith(("identical", "equivalent")):
+            # The equivalent variant has the *same JSON meaning* as the
+            # final report, but different Git blob bytes, field order and
+            # whitespace. This must not bypass prospective custody.
             early_file.write_text(
-                json.dumps(make_report(draft, candidates=20), sort_keys=True, indent=2)
-                + "\n", encoding="utf-8",
+                json.dumps(
+                    make_report(draft, candidates=20),
+                    sort_keys=earlier_evidence.endswith("identical"),
+                    indent=(2 if earlier_evidence.endswith("identical") else None),
+                    separators=(
+                        None if earlier_evidence.endswith("identical")
+                        else (",", ":")
+                    ),
+                ) + ("\n" if earlier_evidence.endswith("identical") else ""),
+                encoding="utf-8",
             )
         else:
             early_file.write_text(
@@ -187,6 +201,10 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
                 result["pre_registration_evidence_path_commits_checked"], 0,
             )
             self.assertGreater(result["pre_registration_git_objects_checked"], 0)
+            self.assertGreater(result["pre_registration_json_blobs_checked"], 0)
+            self.assertGreaterEqual(
+                result["pre_registration_oversized_blobs_not_checked"], 0,
+            )
             self.assertIsNone(result["scientific_verdict"])
             self.assertFalse(result["golden_stage9_frozen"])
             self.assertTrue(result["outstanding"])
@@ -223,6 +241,33 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
                     with self.assertRaisesRegex(
                         ValueError,
                         "heldout evidence bytes existed in Git before prospective registration",
+                    ):
+                        _audit(repo, registered, evidence)
+
+    def test_json_equivalent_report_at_another_path_is_not_prospective(self):
+        for scenario in (
+            "alternate_path_equivalent",
+            "transient_alternate_path_equivalent",
+        ):
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    repo = Path(folder)
+                    _, registered, evidence = _create_fixture(
+                        repo, earlier_evidence=scenario,
+                    )
+                    early_path = repo / "preseal/private-outcomes.json"
+                    archived = repo / "results/heldout.json"
+                    if early_path.exists():
+                        self.assertNotEqual(
+                            early_path.read_bytes(), archived.read_bytes()
+                        )
+                        self.assertEqual(
+                            json.loads(early_path.read_text()),
+                            json.loads(archived.read_text()),
+                        )
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "semantically identical heldout evidence existed in Git",
                     ):
                         _audit(repo, registered, evidence)
 
