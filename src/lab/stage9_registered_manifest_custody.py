@@ -13,7 +13,9 @@ from __future__ import annotations
 import argparse
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
+import stat
 from typing import Mapping
 
 from .determinism import canonical_causal_bytes, sha256_hex
@@ -100,18 +102,69 @@ def _file_without_aliases(root: Path, supplied: object) -> Path:
 
 
 def _hash_bytes(path: Path) -> tuple[str, int]:
-    digest = sha256()
-    size = 0
-    with path.open("rb") as stream:
-        while True:
-            chunk = stream.read(1024 * 1024)
-            if not chunk:
-                break
-            size += len(chunk)
-            digest.update(chunk)
-    if not size:
-        raise ValueError("empty physical manifest cannot establish file custody")
-    return digest.hexdigest(), size
+    """Hash a regular file through no-follow directory and file descriptors.
+
+    Checking is_symlink() only before Path.open() leaves a TOCTOU gap: an
+    attacker can replace the leaf or a parent with a symlink just before the
+    actual open. Open every directory component relative to its already-open
+    parent, with O_NOFOLLOW, and check the leaf with fstat. This remains only
+    a local filesystem check, never a signature or external custody witness.
+    """
+    if not hasattr(os, "O_NOFOLLOW") or not hasattr(os, "O_DIRECTORY"):
+        raise ValueError("physical manifest custody requires no-follow file opens")
+    absolute = path.absolute()
+    parts = absolute.parts
+    if len(parts) < 2:
+        raise ValueError("physical manifest path must identify a regular file")
+    directory_flags = (
+        os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+        | getattr(os, "O_CLOEXEC", 0)
+    )
+    file_flags = (
+        os.O_RDONLY | os.O_NOFOLLOW | getattr(os, "O_NONBLOCK", 0)
+        | getattr(os, "O_CLOEXEC", 0)
+    )
+    directory_fd = None
+    file_fd = None
+    try:
+        directory_fd = os.open(parts[0], directory_flags)
+        for part in parts[1:-1]:
+            nested_fd = os.open(part, directory_flags, dir_fd=directory_fd)
+            os.close(directory_fd)
+            directory_fd = nested_fd
+        file_fd = os.open(parts[-1], file_flags, dir_fd=directory_fd)
+        opened = os.fstat(file_fd)
+        if not stat.S_ISREG(opened.st_mode):
+            raise ValueError("physical manifest is not a regular file")
+        current = path.lstat()
+        if (
+            not stat.S_ISREG(current.st_mode)
+            or (current.st_dev, current.st_ino)
+            != (opened.st_dev, opened.st_ino)
+        ):
+            raise ValueError("physical manifest changed during descriptor open")
+        digest = sha256()
+        size = 0
+        with os.fdopen(file_fd, "rb") as stream:
+            file_fd = None
+            while True:
+                chunk = stream.read(1024 * 1024)
+                if not chunk:
+                    break
+                size += len(chunk)
+                digest.update(chunk)
+            if os.fstat(stream.fileno()).st_size != size:
+                raise ValueError("physical manifest size changed while reading")
+        if not size:
+            raise ValueError("empty physical manifest cannot establish file custody")
+        return digest.hexdigest(), size
+    except OSError as exc:
+        raise ValueError("physical manifest path changed or traversed a symlink") from exc
+    finally:
+        if file_fd is not None:
+            os.close(file_fd)
+        if directory_fd is not None:
+            os.close(directory_fd)
 
 
 def audit_registered_manifest_files(
