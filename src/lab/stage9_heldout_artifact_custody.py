@@ -311,13 +311,11 @@ def audit_heldout_raw_artifacts(
                 if key in expected_credits:
                     raise ValueError("duplicate archived causal evidence credit")
                 expected_credits.add(key)
-        # An observation_ref is a physical identity: it cannot be credited
-        # to two independent causal rows, even if their contingency differs.
-        credited_physical_refs = [
-            key[1] for key in expected_credits
-        ]
-        if len(set(credited_physical_refs)) != len(credited_physical_refs):
-            raise ValueError("physical observation reused across causal evidence credits")
+        # A passive physical observation can inform different contingencies.
+        # The (contingency_ref, observation_ref, kind) ledger key above
+        # prevents re-crediting it *within* one rule. Interventions require a
+        # stronger globally unique physical action and are checked below,
+        # matching CausalModel.restore_causal_state().
         actual_credits = []
         for entry in credits:
             if (
@@ -363,6 +361,31 @@ def audit_heldout_raw_artifacts(
                     validated_interventions.append(admitted)
                 else:
                     validated_observations[admitted.identifier] = admitted
+        # §13.2 independent intervention contexts cannot be manufactured
+        # by reusing one physical transition, comparator, emitted step or
+        # observed world step. These are per-rule except the physical
+        # transition, exactly as in the canonical owner's snapshot restore.
+        intervention_physical = set()
+        intervention_comparators = set()
+        intervention_emissions = set()
+        intervention_observed_steps = set()
+        for trial in validated_interventions:
+            comparator = (trial.contingency_ref, trial.comparator_ref)
+            emission = (trial.contingency_ref, trial.emitted_step)
+            observed = (trial.contingency_ref, trial.observed_step)
+            if (
+                trial.observation_ref in intervention_physical
+                or comparator in intervention_comparators
+                or emission in intervention_emissions
+                or observed in intervention_observed_steps
+            ):
+                raise ValueError(
+                    "archived intervention reuses physical or comparator provenance"
+                )
+            intervention_physical.add(trial.observation_ref)
+            intervention_comparators.add(comparator)
+            intervention_emissions.add(emission)
+            intervention_observed_steps.add(observed)
         # A frozen causal status is not independent evidence. Reconstruct
         # §13.2's negative-result revision boundary and its subsequent
         # successful independent intervention contexts from admitted lived
