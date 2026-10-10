@@ -9,6 +9,8 @@ normative English v1.2.1 text prevails.
 
 For the full exact schemas and scientific criteria, see
 [the preregistration template](stage9-scientific-preregistration-template.md).
+For the actual sealed-world runner and its manifest/annotation formats, see
+[the held-out executor instructions](stage9-heldout-executor.md).
 Do not run the deliberately synthetic test fixtures as if they were real data.
 
 Before a held-out campaign, complete the separate
