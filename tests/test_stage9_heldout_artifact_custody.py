@@ -448,6 +448,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     "contingency_ref": candidate["contingency_ref"],
                     "observation_ref": observation_ref,
                     "episode_ref": candidates[0]["episode_ref"],
+                    "observed_step": 1 + len(run["known_cause_cases"]),
                 })
                 state["causal_model"]["causal_credits"].append([
                     candidate["contingency_ref"], observation_ref, "observation",
@@ -519,6 +520,42 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     registration=reg, evidence=altered, index=index, artifact_root=root,
                 )
 
+    def test_rehashed_causal_observation_cannot_forge_world_step(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            run = next(
+                row for row in report["runs"]
+                if row["naturally_acquired_false_candidates"]
+            )
+            item = next(
+                row for row in index["runs"]
+                if (row["world_id"], row["seed"]) == (run["world_id"], run["seed"])
+            )
+            candidate = run["naturally_acquired_false_candidates"][0]
+            state = json.loads((root / item["causal_state_path"]).read_bytes())
+            state["causal_model"]["causal_observations"].append({
+                "contingency_ref": candidate["contingency_ref"],
+                "observation_ref": candidate["observation_ref"],
+                "episode_ref": candidate["episode_ref"],
+                "observed_step": 999,
+            })
+            state["causal_model"]["causal_credits"].append([
+                candidate["contingency_ref"], candidate["observation_ref"],
+                "observation",
+            ])
+            altered = _replace_causal_state_bytes(
+                root, report, index, canonical_causal_bytes(state),
+                run_index=index["runs"].index(item),
+            )
+            with self.assertRaisesRegex(
+                ValueError, "causal evidence world step disagrees with physical source",
+            ):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=altered,
+                    index=index, artifact_root=root,
+                )
+
     def test_rehashed_intervention_cannot_forge_committed_command(self):
         with TemporaryDirectory() as folder:
             root = Path(folder)
@@ -538,7 +575,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                 "observation_ref": candidate["observation_ref"],
                 "episode_ref": candidate["episode_ref"],
                 "command_ref": "forged:applied-command",
-                "observed_step": 1,
+                "observed_step": 1 + len(run["known_cause_cases"]),
             })
             state["causal_model"]["causal_credits"].append([
                 candidate["contingency_ref"], candidate["observation_ref"],
