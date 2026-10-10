@@ -177,6 +177,26 @@ class Stage11Runtime(Stage9Runtime):
         hooks[1]["exploration"] = exploration_hook
         return hooks
 
+    def _dispatch_decision(
+        self, *, proposal, prepared, admission, cycle, sent_t_monde,
+    ):
+        # Visit counters follow the verified Action Control application,
+        # never phase-1 proposals or Competition threshold crossings.
+        # A lethal rollback restores Exploration alongside other owners.
+        execution = super()._dispatch_decision(
+            proposal=proposal, prepared=prepared, admission=admission,
+            cycle=cycle, sent_t_monde=sent_t_monde,
+        )
+        if (
+            execution.status == "applied"
+            and prepared.command.primitive == "boire"
+            and self.stage8_option_evaluator._safe_causal_test_shape(proposal)
+        ):
+            self.exploration.record_applied_causal_test(
+                option=proposal.option, sent_step=sent_t_monde,
+            )
+        return execution
+
     def _evaluate_competition_cycle(self, *, capture, cycle):
         result = super()._evaluate_competition_cycle(capture=capture, cycle=cycle)
         for assessment in result.evaluations:
