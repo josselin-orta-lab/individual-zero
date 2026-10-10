@@ -228,6 +228,21 @@ def audit_independent_heldout_handoff(
         review_blockers.append(
             "pre_registration_ambiguous_stage9_json_requires_prospectivity_review"
         )
+    collisions = provisional.get("cross_run_identical_archives")
+    if (
+        not isinstance(collisions, dict)
+        or set(collisions) != {"journal_sha256", "causal_state_sha256"}
+        or any(not isinstance(groups, list) for groups in collisions.values())
+    ):
+        raise ValueError("heldout scorer omitted cross-run archive provenance audit")
+    if collisions["journal_sha256"]:
+        review_blockers.append(
+            "identical_journal_bytes_across_distinct_heldout_runs_requires_review"
+        )
+    if collisions["causal_state_sha256"]:
+        review_blockers.append(
+            "identical_causal_owner_bytes_across_distinct_heldout_runs_requires_review"
+        )
     handoff = {
         "protocol_version": HANDOFF_VERSION,
         "handoff_status": (
@@ -248,6 +263,7 @@ def audit_independent_heldout_handoff(
         "registration_commit": registration_commit,
         "evidence_commit": evidence_commit,
         "provisional_metric_assessment": provisional["assessment"],
+        "cross_run_identical_archives": collisions,
         "git_chronology": chronology,
         "current_checkout_preflight": checkout,
         "physical_manifest_custody": manifests,
