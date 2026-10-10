@@ -682,6 +682,7 @@ def audit_heldout_raw_artifacts(
         ):
             raise ValueError("invalid archived agency comparison ledgers")
         agency_by_id = {}
+        agency_raw_by_id = {}
         all_agency_ids = set()
         agency_event_refs = set()
         for rows in (agency_rows, pending_agency_rows):
@@ -705,6 +706,7 @@ def audit_heldout_raw_artifacts(
                 agency_event_refs.add(comparison.event_ref)
                 if rows is agency_rows:
                     agency_by_id[comparison.identifier] = comparison
+                    agency_raw_by_id[comparison.identifier] = entry
         for trial in validated_interventions:
             comparison = agency_by_id.get(trial.comparator_ref)
             if (
@@ -736,6 +738,27 @@ def audit_heldout_raw_artifacts(
             if reconstructed != comparison:
                 raise ValueError(
                     "archived agency comparison disagrees with raw P-47 source"
+                )
+            # Python treats 1 and 1.0 as equal, but the v1.2.1 causal
+            # representation does not: an integer and a canonical $f64
+            # measurement have different provenance bytes. Compare the
+            # serialized P-47 effect slots, not only decoded numeric values.
+            source_effects = source["data"].get("effects")
+            if (
+                not isinstance(source_effects, list)
+                or any(not isinstance(effect, dict) for effect in source_effects)
+            ):
+                raise ValueError("invalid raw P-47 effect encoding")
+            encoded_effects = [
+                [
+                    effect.get("variable"), effect.get("status"),
+                    effect.get("predicted"), effect.get("observed"),
+                    effect.get("precision"), effect.get("comparator_version"),
+                ] for effect in source_effects
+            ]
+            if encoded_effects != agency_raw_by_id[comparison.identifier]["effects"]:
+                raise ValueError(
+                    "archived P-47 numerical encoding disagrees with raw journal"
                 )
         memory_audit = audit_archived_closed_memory_sources(
             paths["causal_state_path"],
