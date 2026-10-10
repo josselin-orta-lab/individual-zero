@@ -15,6 +15,8 @@ class Stage11HydrationProbeTests(unittest.TestCase):
         self.assertIsNone(first.scientific_verdict)
         self.assertFalse(first.golden_stage9_frozen)
         self.assertFalse(first.prospective_prediction_enabled)
+        self.assertEqual(first.exploration_visit_ceiling, 2)
+        self.assertEqual(first.exploration_policy_version, "p48-development-v2")
         self.assertEqual(first.stage11_prospective_prediction_count, 0)
         self.assertEqual(first.stage11_prospective_source_count, 0)
         self.assertEqual(first.schedule_sha256, second.schedule_sha256)
@@ -114,11 +116,37 @@ class Stage11HydrationProbeTests(unittest.TestCase):
             diagnostic.as_dict(), sort_keys=True, separators=(",", ":")
         ))
 
+    def test_declared_public_three_visit_prediction_opportunity(self):
+        # Predeclared public seed, world, time window, and *alternative*
+        # development-only P-48 ceiling. Zero forecasts is a valid result.
+        row = run_public_hydration_funnel(
+            seed=41, world="small_water_gain", steps=24,
+            enable_lived_prediction=True,
+            exploration_policy="three_visit_window",
+        )
+        self.assertEqual(row.classification, "development_only_not_heldout")
+        self.assertEqual(row.protocol_version, "stage11-public-hydration-funnel-dev-v4")
+        self.assertEqual(row.exploration_policy_version, "p48-three-visit-window-dev-v1")
+        self.assertEqual(row.exploration_visit_ceiling, 3)
+        self.assertLessEqual(row.stage11_exploration_visits, 3)
+        self.assertLessEqual(row.stage11_prospective_prediction_count,
+                             row.stage11_executed_test_commands)
+        self.assertGreaterEqual(row.stage11_prospective_source_count,
+                                row.stage11_prospective_prediction_count)
+        self.assertIsNone(row.scientific_verdict)
+        self.assertFalse(row.golden_stage9_frozen)
+        self.assertLessEqual(row.stage11_verified_interventions,
+                             row.stage11_causal_intervention_stagings)
+        print("stage11_three_visit_opportunity_diagnostic=" + json.dumps(
+            row.as_dict(), sort_keys=True, separators=(",", ":")
+        ))
+
     def test_rejects_nonpublic_variants_and_invalid_seeds(self):
         for args in (
             {"seed": -1}, {"seed": True}, {"steps": 0},
             {"world": "sealed_hidden"}, {"world": "null_water_reference"},
             {"enable_lived_prediction": "yes"},
+            {"exploration_policy": "sealed_hindsight"},
         ):
             with self.subTest(args=args):
                 with self.assertRaises(ValueError):
