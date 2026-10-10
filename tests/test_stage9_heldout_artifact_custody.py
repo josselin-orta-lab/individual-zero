@@ -317,6 +317,25 @@ def _attach_synthetic_historical_proof(
     )
 
 
+def _synthetic_passive_observation(
+    *, identifier: str, rule_ref: str, candidate: dict[str, object],
+    observation_ref: str, episode_ref: str, observed_step: int,
+) -> dict[str, object]:
+    """A valid passive row; cross-rule observational reuse is permitted."""
+    return {
+        "identifier": identifier, "contingency_ref": rule_ref,
+        "predicate": "synthetic_effect", "subject_ref": "synthetic:subject",
+        "application_context": "synthetic:context",
+        "observation_context": "synthetic:context",
+        "episode_ref": episode_ref, "observation_ref": observation_ref,
+        "observed_step": observed_step,
+        "cause_present": True, "effect_present": True,
+        "controlled_variables": [], "source": "monde",
+        "independent_episode": True, "oracle_derived": False,
+        "rollback_cancelled": False, "counterfactual": False,
+    }
+
+
 class Stage9RawArtifactCustodyTests(unittest.TestCase):
     def test_real_bytes_match_declared_digests_but_are_not_scientific_proof(self):
         with TemporaryDirectory() as folder:
@@ -546,7 +565,10 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     index=index, artifact_root=root,
                 )
 
-    def test_rehashed_physical_observation_cannot_credit_two_rules(self):
+    def test_rehashed_passive_observation_can_support_distinct_rules(self):
+        # A single physical instant can provide contextual observations about
+        # multiple hypotheses. It is not multiple independent n1 credits
+        # *within the same contingency*.
         with TemporaryDirectory() as folder:
             root = Path(folder)
             reg, report, index = _prepared(root)
@@ -560,29 +582,136 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             )
             run_index = index["runs"].index(item)
             state = json.loads((root / item["causal_state_path"]).read_bytes())
-            candidates = run["naturally_acquired_false_candidates"]
-            observation_ref = candidates[0]["observation_ref"]
-            for candidate in candidates[:2]:
-                state["causal_model"]["causal_observations"].append({
-                    "contingency_ref": candidate["contingency_ref"],
-                    "observation_ref": observation_ref,
-                    "episode_ref": candidates[0]["episode_ref"],
-                    "observed_step": 1 + len(run["known_cause_cases"]),
-                })
+            first, second = run["naturally_acquired_false_candidates"][:2]
+            step = 1 + len(run["known_cause_cases"])
+            for number, candidate in enumerate((first, second)):
+                state["causal_model"]["causal_observations"].append(
+                    _synthetic_passive_observation(
+                        identifier=f"synthetic:shared-physical:{number}",
+                        rule_ref=candidate["contingency_ref"],
+                        candidate=candidate, observed_step=step,
+                        observation_ref=first["observation_ref"],
+                        episode_ref=first["episode_ref"],
+                    )
+                )
                 state["causal_model"]["causal_credits"].append([
-                    candidate["contingency_ref"], observation_ref, "observation",
+                    candidate["contingency_ref"], first["observation_ref"],
+                    "observation",
                 ])
             altered = _replace_causal_state_bytes(
                 root, report, index, canonical_causal_bytes(state),
                 run_index=run_index,
             )
+            result = audit_heldout_raw_artifacts(
+                registration=reg, evidence=altered,
+                index=index, artifact_root=root,
+            )
+            self.assertTrue(result["journal_chain_integrity_verified"])
+            self.assertIsNone(result["scientific_verdict"])
+            self.assertFalse(result["golden_stage9_frozen"])
+
+    def test_rehashed_same_rule_cannot_double_credit_one_physical_observation(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            run = next(
+                row for row in report["runs"]
+                if row["naturally_acquired_false_candidates"]
+            )
+            item = next(
+                row for row in index["runs"]
+                if (row["world_id"], row["seed"]) == (run["world_id"], run["seed"])
+            )
+            run_index = index["runs"].index(item)
+            candidate = run["naturally_acquired_false_candidates"][0]
+            step = 1 + len(run["known_cause_cases"])
+            state = json.loads((root / item["causal_state_path"]).read_bytes())
+            for number in range(2):
+                state["causal_model"]["causal_observations"].append(
+                    _synthetic_passive_observation(
+                        identifier=f"synthetic:duplicate-credit:{number}",
+                        rule_ref=candidate["contingency_ref"],
+                        candidate=candidate, observed_step=step,
+                        observation_ref=candidate["observation_ref"],
+                        episode_ref=candidate["episode_ref"],
+                    )
+                )
+            state["causal_model"]["causal_credits"].append([
+                candidate["contingency_ref"], candidate["observation_ref"],
+                "observation",
+            ])
+            altered = _replace_causal_state_bytes(
+                root, report, index, canonical_causal_bytes(state),
+                run_index=run_index,
+            )
             with self.assertRaisesRegex(
-                ValueError, "physical observation reused across causal evidence credits",
+                ValueError, "duplicate archived causal evidence credit",
             ):
                 audit_heldout_raw_artifacts(
                     registration=reg, evidence=altered,
                     index=index, artifact_root=root,
                 )
+
+    def test_rehashed_interventions_cannot_reuse_one_physical_or_comparator(self):
+        for scenario in ("shared_physical", "shared_comparator"):
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    reg, report, index = _prepared(root)
+                    run = next(
+                        row for row in report["runs"]
+                        if len(row["naturally_acquired_false_candidates"]) >= 2
+                    )
+                    item = next(
+                        row for row in index["runs"]
+                        if (row["world_id"], row["seed"])
+                        == (run["world_id"], run["seed"])
+                    )
+                    run_index = index["runs"].index(item)
+                    first, second = run["naturally_acquired_false_candidates"][:2]
+                    start_step = 1 + len(run["known_cause_cases"])
+                    state = json.loads(
+                        (root / item["causal_state_path"]).read_bytes()
+                    )
+                    first_trial = _synthetic_causal_trial(
+                        rule_ref=first["contingency_ref"], candidate=first,
+                        run_index=run_index, observed_step=start_step,
+                        identifier="synthetic:first-intervention",
+                        context="synthetic:context-first",
+                    )
+                    if scenario == "shared_physical":
+                        second_trial = _synthetic_causal_trial(
+                            rule_ref=second["contingency_ref"], candidate=first,
+                            run_index=run_index, observed_step=start_step,
+                            identifier="synthetic:second-intervention",
+                            context="synthetic:context-second",
+                        )
+                    else:
+                        second_trial = _synthetic_causal_trial(
+                            rule_ref=first["contingency_ref"], candidate=second,
+                            run_index=run_index, observed_step=start_step + 1,
+                            identifier="synthetic:second-intervention",
+                            context="synthetic:context-second",
+                        )
+                        second_trial["comparator_ref"] = first_trial["comparator_ref"]
+                    state["causal_model"]["causal_interventions"].extend(
+                        (first_trial, second_trial)
+                    )
+                    state["causal_model"]["causal_credits"].extend([
+                        [row["contingency_ref"], row["observation_ref"], "intervention"]
+                        for row in (first_trial, second_trial)
+                    ])
+                    altered = _replace_causal_state_bytes(
+                        root, report, index, canonical_causal_bytes(state),
+                        run_index=run_index,
+                    )
+                    with self.assertRaisesRegex(
+                        ValueError, "intervention reuses physical or comparator provenance",
+                    ):
+                        audit_heldout_raw_artifacts(
+                            registration=reg, evidence=altered,
+                            index=index, artifact_root=root,
+                        )
 
     def test_rehashed_causal_credit_cannot_reference_unpublished_rule(self):
         with TemporaryDirectory() as folder:
@@ -809,7 +938,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
         scenarios = (
             ("missing_treatment", "correlation lacks matched lived evidence"),
             ("wrong_control", "correlation lacks matched lived evidence"),
-            ("unearned_n1", "correlation lacks matched lived evidence"),
+            ("unearned_n1", "correlation lacks controlled base-rate contrast"),
             ("false_base_rate", "correlation lacks controlled base-rate contrast"),
             ("mismatched_control", "correlation lacks controlled base-rate contrast"),
             ("fabricated_review", "review lacks independent matched physical controls"),
