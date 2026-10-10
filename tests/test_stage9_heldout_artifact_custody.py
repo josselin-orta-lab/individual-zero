@@ -453,6 +453,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                         reason = "duplicate archived causal contingency"
                     altered = _replace_causal_state_bytes(
                         root, report, index, canonical_causal_bytes(state),
+                        run_index=index["runs"].index(item),
                     )
                     with self.assertRaisesRegex(ValueError, reason):
                         audit_heldout_raw_artifacts(
