@@ -222,6 +222,19 @@ def audit_heldout_raw_artifacts(
         closed_memory_sources_checked += memory_audit[
             "claimed_closed_memory_sources_checked"
         ]
+        # Detect durable replacement or mutation after the first hash and
+        # structural parsing passes. This is not an atomic filesystem snapshot:
+        # an external witness still needs to ensure files cannot change during
+        # the audit, including transient edits reverted before this check.
+        for index_key, expected_sha_key in RAW_HASH_FIELDS.items():
+            physical = paths[index_key]
+            if (
+                _physical_file(root, item[index_key]) != physical
+                or (physical.stat().st_dev, physical.stat().st_ino)
+                not in seen_inodes
+                or _file_hash_and_size(physical)[0] != reported[expected_sha_key]
+            ):
+                raise ValueError("raw artifact changed during custody audit")
     if seen_runs != set(original_runs):
         raise ValueError("raw artifact index did not cover every heldout run")
 
