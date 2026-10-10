@@ -20,6 +20,16 @@ class Stage11HydrationProbeTests(unittest.TestCase):
         self.assertGreaterEqual(first.stage11_scored_intrinsic_evaluations, 0)
         self.assertLessEqual(first.stage11_scored_distinct_options,
                              first.stage11_scored_intrinsic_evaluations)
+        self.assertLessEqual(first.stage11_unpredicted_proposals,
+                             first.stage11_test_proposals)
+        self.assertEqual(
+            first.stage11_unpredicted_proposals,
+            sum(value for _, value in first.stage11_prediction_unavailability),
+        )
+        self.assertLessEqual(first.stage11_lived_actions_physically_closed,
+                             first.stage11_lived_causal_actions_pending)
+        self.assertLessEqual(first.stage11_published_agency_reports_for_tests,
+                             first.stage11_executed_test_commands)
         self.assertLessEqual(first.stage11_verified_interventions,
                              first.stage11_executed_test_commands)
         data = first.as_dict()
