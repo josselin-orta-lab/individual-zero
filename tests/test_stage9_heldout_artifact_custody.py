@@ -2031,7 +2031,10 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             forged = _replace_journal_bytes(
                 root, report, index, source.canonical_bytes(),
             )
-            with self.assertRaisesRegex(ValueError, "unique committed same-attempt"):
+            with self.assertRaisesRegex(
+                ValueError,
+                "unique committed same-attempt|committed physical attempt lacks ordered",
+            ):
                 audit_heldout_raw_artifacts(
                     registration=reg, evidence=forged,
                     index=index, artifact_root=root,
@@ -2135,7 +2138,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                 ),
             )
             with self.assertRaisesRegex(
-                ValueError, "unique same-attempt Memory commit",
+                ValueError, "unique same-attempt Memory commit|physical attempt has multiple Memory commits",
             ):
                 audit_heldout_raw_artifacts(
                     registration=reg, evidence=forged,
@@ -2229,7 +2232,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     )
                     with self.assertRaisesRegex(
                         ValueError,
-                        "foreign or future event|unique committed same-attempt",
+                        "foreign or future event|unique committed same-attempt|invalid committed physical event references",
                     ):
                         audit_heldout_raw_artifacts(
                             registration=reg, evidence=forged,

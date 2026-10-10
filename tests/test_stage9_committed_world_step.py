@@ -55,7 +55,11 @@ def synthetic_journal(
             refs = (
                 [command]
                 if label == "second" and second_fault == "omit_transition_ref"
-                else [command, transition]
+                else (
+                    [transition]
+                    if label == "second" and second_fault == "no_command"
+                    else [command, transition]
+                )
             )
             event = {
                 "kind": "auto_segment_commit",
