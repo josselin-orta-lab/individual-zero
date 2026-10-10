@@ -427,6 +427,42 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     index=index, artifact_root=root,
                 )
 
+    def test_rehashed_physical_observation_cannot_credit_two_rules(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            run = next(
+                row for row in report["runs"]
+                if len(row["naturally_acquired_false_candidates"]) >= 2
+            )
+            item = next(
+                row for row in index["runs"]
+                if (row["world_id"], row["seed"]) == (run["world_id"], run["seed"])
+            )
+            run_index = index["runs"].index(item)
+            state = json.loads((root / item["causal_state_path"]).read_bytes())
+            candidates = run["naturally_acquired_false_candidates"]
+            observation_ref = candidates[0]["observation_ref"]
+            for candidate in candidates[:2]:
+                state["causal_model"]["causal_observations"].append({
+                    "contingency_ref": candidate["contingency_ref"],
+                    "observation_ref": observation_ref,
+                })
+                state["causal_model"]["causal_credits"].append([
+                    candidate["contingency_ref"], observation_ref, "observation",
+                ])
+            altered = _replace_causal_state_bytes(
+                root, report, index, canonical_causal_bytes(state),
+                run_index=run_index,
+            )
+            with self.assertRaisesRegex(
+                ValueError, "physical observation reused across causal evidence credits",
+            ):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=altered,
+                    index=index, artifact_root=root,
+                )
+
     def test_rehashed_causal_credit_cannot_reference_unpublished_rule(self):
         with TemporaryDirectory() as folder:
             root = Path(folder)
