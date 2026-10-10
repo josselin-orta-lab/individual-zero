@@ -75,6 +75,15 @@ def audit_independent_heldout_handoff(
     )
     if chronology.get("chronology_status") not in CHRONOLOGY_STATUSES:
         raise ValueError("unrecognized or incomplete Stage-9 chronology result")
+    prior_evidence = chronology.get("evidence_path_present_at_registration")
+    if (
+        type(prior_evidence) is not bool
+        or (
+            chronology["chronology_status"]
+            == "prior_evidence_path_requires_independent_review"
+        ) != prior_evidence
+    ):
+        raise ValueError("Git chronology evidence-path status is inconsistent")
     # The present checkout must also match the frozen bytes. This is a
     # *retrospective* local check, not an attestation of the historical
     # executable or process that produced the heldout artifacts.
@@ -169,10 +178,29 @@ def audit_independent_heldout_handoff(
     ):
         raise ValueError("Stage-9 handoff has incomplete registered coverage")
 
+    # Distinguish a complete machine-custody pass from *eligibility* for an
+    # independent acceptance review. A preexisting report path can be an
+    # innocent placeholder, but it must never be silently reported as clean
+    # prospectivity. Likewise, unfavorable or nonevaluable metrics are not
+    # equivalent to a preregistered confidence pass.
+    review_blockers = []
+    if prior_evidence:
+        review_blockers.append(
+            "evidence_path_preexisted_registration_requires_prospectivity_review"
+        )
+    if provisional["assessment"] != "metrics_eligible_for_independent_review":
+        review_blockers.append(
+            "preregistered_metrics_not_eligible_for_independent_acceptance"
+        )
     handoff = {
         "protocol_version": HANDOFF_VERSION,
-        "handoff_status":
-            "machine_checks_consistent_requires_independent_scientific_review",
+        "handoff_status": (
+            "machine_checks_complete_with_explicit_review_blockers"
+            if review_blockers
+            else "machine_checks_consistent_requires_independent_scientific_review"
+        ),
+        "review_blockers": review_blockers,
+        "evidence_path_present_at_registration": prior_evidence,
         "registration_digest": digest,
         "evidence_sha256": provisional["evidence_sha256"],
         "frozen_implementation_commit":
