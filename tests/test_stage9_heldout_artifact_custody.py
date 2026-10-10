@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 import unittest
 
 from lab.stage9_heldout_artifact_custody import (
@@ -330,6 +331,29 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     registration=reg, evidence=report,
                     index=index, artifact_root=alias / "raw",
                 )
+
+    def test_mutation_after_structural_journal_audit_is_rejected(self):
+        from lab.stage9_canonical_journal_audit import audit_raw_causal_journal
+
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            original = root / index["runs"][0]["journal_path"]
+
+            def tamper_after_parse(*args, **kwargs):
+                outcome = audit_raw_causal_journal(*args, **kwargs)
+                original.write_bytes(original.read_bytes() + b"forged")
+                return outcome
+
+            with patch(
+                "lab.stage9_heldout_artifact_custody.audit_raw_causal_journal",
+                side_effect=tamper_after_parse,
+            ):
+                with self.assertRaisesRegex(ValueError, "changed during custody audit"):
+                    audit_heldout_raw_artifacts(
+                        registration=reg, evidence=report,
+                        index=index, artifact_root=root,
+                    )
 
     def test_tampering_with_actual_journal_or_replay_fails(self):
         for key in ("journal_path", "replay_journal_path",
