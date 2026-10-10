@@ -11,6 +11,8 @@ on:
       - 'world/*'
     paths:
       - '.github/workflows/**'
+      - '.gitattributes'
+      - '.gitignore'
       - 'src/**'
       - 'tests/**'
       - 'pyproject.toml'
