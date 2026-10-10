@@ -26,7 +26,7 @@ from .stage9_positive_hydration_benchmark import (
 from .stage9_random_reward_benchmark import preregistered_food_rewards
 
 
-PROTOCOL_VERSION = "stage11-public-hydration-funnel-dev-v3"
+PROTOCOL_VERSION = "stage11-public-hydration-funnel-dev-v4"
 TEST_PREFIX = "option:causal-test:"
 
 
@@ -72,6 +72,8 @@ class PublicHydrationFunnel:
     stage11_prospective_prediction_count: int
     stage11_prospective_source_count: int
     prospective_prediction_enabled: bool
+    exploration_policy_version: str
+    exploration_visit_ceiling: int
     scientific_verdict: None = None
     golden_stage9_frozen: bool = False
 
@@ -88,10 +90,12 @@ class PublicHydrationFunnel:
 def run_public_hydration_funnel(
     *, seed: int = 41, world: str = "small_water_gain", steps: int = 18,
     enable_lived_prediction: bool = False,
+    exploration_policy: str = "reference",
 ) -> PublicHydrationFunnel:
     if (type(seed) is not int or seed < 0 or type(steps) is not int
         or steps < 6 or world not in POSITIVE_HYDRATION_VARIANTS
-        or type(enable_lived_prediction) is not bool):
+        or type(enable_lived_prediction) is not bool
+        or exploration_policy not in {"reference", "three_visit_window"}):
         raise ValueError("only explicitly public Stage-9 development settings are allowed")
     gain, decay = POSITIVE_HYDRATION_VARIANTS[world]
     rewards = preregistered_food_rewards(campaign_seed=seed, steps=steps)
@@ -109,6 +113,15 @@ def run_public_hydration_funnel(
     baseline = build_stage11_reference_runtime(
         enable_lived_prediction=enable_lived_prediction,
     )
+    # Public development opportunity probe: permit exactly one additional
+    # real attempt AFTER the two-visit reference's habituation ceiling.
+    # Not a scientific P-48 calibration and never a hidden-world search.
+    exploration_cfg = baseline._stage11_config.exploration
+    if exploration_policy == "three_visit_window":
+        exploration_cfg = replace(
+            exploration_cfg, version="p48-three-visit-window-dev-v1",
+            stagnant_visit_limit=3,
+        )
     stage9_config = replace(
         baseline._stage11_config.stage9,
         version=STAGE9_PUBLIC_PROTOCOL + ":runtime",
@@ -131,7 +144,10 @@ def run_public_hydration_funnel(
         protected_integrity_threshold=(
             baseline.stage3.control._config.protected_integrity_threshold
         ),
-        config=replace(baseline._stage11_config, stage9=stage9_config),
+        config=replace(
+            baseline._stage11_config, stage9=stage9_config,
+            exploration=exploration_cfg,
+        ),
         equipment=baseline.equipment,
     )
     vnext.stage3.substrate.scenario = InjectedScenario(
@@ -344,6 +360,8 @@ def run_public_hydration_funnel(
             len(row["source_transition_refs"]) for row in prospective
         ),
         prospective_prediction_enabled=enable_lived_prediction,
+        exploration_policy_version=exploration_cfg.version,
+        exploration_visit_ceiling=exploration_cfg.stagnant_visit_limit,
     )
 
 
