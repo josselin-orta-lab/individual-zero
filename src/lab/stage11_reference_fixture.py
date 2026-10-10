@@ -21,7 +21,7 @@ def build_stage11_reference_runtime():
             version="i0-vnext-stage11-dev-v1",
             stage9=baseline._stage9_config,
             exploration=ExplorationConfig(
-                version="p48-development-v1",
+                version="p48-development-v2",
                 novelty_weight=0.5, progress_weight=0.3,
                 habituation_visits=2, stagnant_visit_limit=2,
             ),
