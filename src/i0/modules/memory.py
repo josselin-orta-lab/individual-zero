@@ -137,8 +137,17 @@ class RecallResult:
 class EpisodicMemory:
     owner_id = "memory"
 
-    def __init__(self, config: MemoryConfig) -> None:
+    def __init__(
+        self, config: MemoryConfig, *,
+        atomic_world_step_length_boundary: bool = False,
+    ) -> None:
         config.validate()
+        if type(atomic_world_step_length_boundary) is not bool:
+            raise ValueError("world-step episode boundary mode must be bool")
+        # The default preserves Stage-7--9 historical event-for-event
+        # segmentation. Stage-11 opts into a distinct versioned memory
+        # contract that never splits a *max-length* boundary within one step.
+        self._atomic_world_step_length_boundary = atomic_world_step_length_boundary
         self._config = config
         self._episodes: list[Episode] = []
         self._seen_event_refs: set[str] = set()
@@ -493,7 +502,7 @@ class EpisodicMemory:
             )
         )
 
-        for event in new_events:
+        for index, event in enumerate(new_events):
             t_monde = self._event_t(event)
             if t_monde is None:
                 continue
@@ -551,10 +560,18 @@ class EpisodicMemory:
                     closed.append(closed_episode)
                 continue
 
+            same_world_step_follows = (
+                index + 1 < len(new_events)
+                and self._event_t(new_events[index + 1]) == t_monde
+            )
             if (
                 self._open_start_t is not None
                 and t_monde - self._open_start_t + 1
                 >= self._config.max_episode_steps
+                and (
+                    not self._atomic_world_step_length_boundary
+                    or not same_world_step_follows
+                )
             ):
                 closed_episode = self._close(
                     end_t_monde=t_monde,
@@ -764,6 +781,10 @@ class EpisodicMemory:
     def export_causal_state(self) -> object:
         return {
             "config_version": self._config.version,
+            **(
+                {"boundary_semantics": "atomic-world-step-length-v1"}
+                if self._atomic_world_step_length_boundary else {}
+            ),
             "episodes": [episode.as_dict() for episode in self._episodes],
             "seen_event_refs": sorted(self._seen_event_refs),
             "open_event_refs": list(self._open_event_refs),
@@ -807,6 +828,12 @@ class EpisodicMemory:
             raise ValueError("Memory state must be a mapping")
         if state.get("config_version") != self._config.version:
             raise ValueError("Memory config version mismatch")
+        mode = state.get("boundary_semantics")
+        if self._atomic_world_step_length_boundary:
+            if mode != "atomic-world-step-length-v1":
+                raise ValueError("missing Stage-11 atomic Memory semantics")
+        elif mode is not None:
+            raise ValueError("unexpected alternative Memory boundary semantics")
 
         raw_episodes = state.get("episodes")
         if not isinstance(raw_episodes, list):
