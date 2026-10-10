@@ -193,10 +193,10 @@ class Stage10SleepPressureTests(unittest.TestCase):
         ):
             with self.subTest(bad=bad):
                 with self.assertRaises(ValueError):
-                    rules.waking_cycle_fatigue(
-                        f_cog=0.1, consumed_uc=20, c_max=2,
-                        b_cycle_uc=100, **bad,
-                    )
+                    rules.waking_cycle_fatigue(**{
+                        "f_cog": 0.1, "consumed_uc": 20, "c_max": 2,
+                        "b_cycle_uc": 100, **bad,
+                    })
 
     def test_untrusted_wake_signals_do_not_imply_wake(self):
         rules = SleepPressureRules(config())
