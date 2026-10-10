@@ -32,6 +32,37 @@ class Stage11HydrationProbeTests(unittest.TestCase):
                              first.stage11_executed_test_commands)
         self.assertLessEqual(first.stage11_verified_interventions,
                              first.stage11_executed_test_commands)
+        self.assertEqual(
+            sum(row[3] for row in first.stage11_test_comparison_classes),
+            first.stage11_test_comparison_events,
+        )
+        self.assertLessEqual(
+            first.stage11_test_comparison_events,
+            first.stage11_executed_test_commands,
+        )
+        self.assertLessEqual(
+            first.stage11_published_test_agency_reports,
+            first.stage11_test_comparison_events,
+        )
+        self.assertLessEqual(
+            first.stage11_causal_action_memory_closed,
+            first.stage11_executed_test_commands,
+        )
+        self.assertLessEqual(
+            first.stage11_verified_interventions,
+            first.stage11_causal_intervention_stagings,
+        )
+        self.assertLessEqual(
+            first.stage11_causal_intervention_stagings,
+            first.stage11_causal_action_memory_closed,
+        )
+        self.assertGreaterEqual(first.stage11_pending_test_actions, 0)
+        self.assertTrue(all(
+            count > 0 and isinstance(status, str)
+            and isinstance(attribution, str) and isinstance(water, str)
+            for status, attribution, water, count
+            in first.stage11_test_comparison_classes
+        ))
         data = first.as_dict()
         digest = data.pop("evidence_sha256")
         self.assertEqual(digest, sha256_hex(canonical_causal_bytes(data)))
