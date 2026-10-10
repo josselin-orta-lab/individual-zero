@@ -1048,7 +1048,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             ("unwitnessed_hypothesis", "promoted causal status lacks historical correlation"),
             ("unreviewed_hypothesis", "causal hypothesis lacks matched review proof"),
             ("correlation_only", None),
-            ("premature_review", "causal hypothesis lacks matched review proof"),
+            ("premature_review", "archived review lacks published causal hypothesis"),
         )
         for scenario, expected in scenarios:
             with self.subTest(scenario=scenario):
