@@ -67,6 +67,17 @@ def open_regular_no_follow(path: Path) -> Iterator[BinaryIO]:
                  opened.st_mtime_ns, opened.st_ctime_ns)
             ):
                 raise ValueError("raw artifact changed during descriptor read")
+            # The open inode may stay unchanged while a parent directory is
+            # replaced: recheck the named path, not just the descriptor.
+            if any(part.is_symlink() for part in (absolute, *absolute.parents)):
+                raise ValueError("raw artifact path changed to a symlink")
+            current_after = absolute.lstat()
+            if (
+                not stat.S_ISREG(current_after.st_mode)
+                or (current_after.st_dev, current_after.st_ino)
+                != (opened.st_dev, opened.st_ino)
+            ):
+                raise ValueError("raw artifact path changed during descriptor read")
     except OSError as exc:
         raise ValueError(
             "raw artifact path changed or traversed a symlink during open"

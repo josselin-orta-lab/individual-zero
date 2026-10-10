@@ -210,10 +210,13 @@ again if custody changed hands. If any tool reports a mismatch, block
 acceptance and retain the failure. The raw-artifact reader also opens each
 journal, replay and archived causal-owner file through guarded regular-file
 descriptors, rejecting symlink replacements of file or parent directories and
-detectable in-read mutations. This local filesystem safeguard requires
-no-follow descriptor support; it cannot establish independent custody,
-prevent every transient filesystem attack, or witness the actual execution. The raw-artifact checker validates physical
-event identities, same-attempt commands/transitions, canonical P-47 source
+detectable in-read mutations. After each read it also checks that the named
+path still resolves to the opened inode, catching persistent parent-directory
+swaps even when the opened file itself was never modified. This local
+filesystem safeguard requires no-follow descriptor support; it cannot
+establish independent custody, prevent transient changes reverted before the
+checks, or witness the actual execution. The raw-artifact checker validates
+physical event identities, same-attempt commands/transitions, canonical P-47 source
 measurements, causal evidence, reviews, intervention contexts and closed
 Memory references. It does **not** attest that these events occurred in the
 claimed independent physical environment.

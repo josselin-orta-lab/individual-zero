@@ -137,5 +137,41 @@ class Stage9SecureFileReadTests(unittest.TestCase):
             self.assertTrue(replaced)
 
 
+    def test_parent_directory_swap_while_reading_is_rejected(self):
+        # Renaming the parent does not mutate the originally opened file.
+        # fstat() alone cannot detect that its registered path now names
+        # different bytes.
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            raw = root / "raw"
+            raw.mkdir()
+            path = raw / "journal.jsonl"
+            path.write_bytes(b"synthetic-original")
+            substitute = root / "substitute"
+            substitute.mkdir()
+            (substitute / path.name).write_bytes(b"synthetic-forged")
+            with self.assertRaisesRegex(ValueError, "changed during descriptor read"):
+                with open_regular_no_follow(path) as stream:
+                    self.assertEqual(stream.read(), b"synthetic-original")
+                    raw.rename(root / "relocated")
+                    substitute.rename(raw)
+
+    def test_parent_directory_becomes_symlink_while_reading_is_rejected(self):
+        # The opened file inode and timestamps remain stable, but a
+        # symlink now redirects the original custody path.
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            raw = root / "raw"
+            raw.mkdir()
+            path = raw / "journal.jsonl"
+            path.write_bytes(b"synthetic-original")
+            with self.assertRaisesRegex(ValueError, "symlink"):
+                with open_regular_no_follow(path) as stream:
+                    self.assertEqual(stream.read(), b"synthetic-original")
+                    raw.rename(root / "relocated")
+                    raw.symlink_to(root / "relocated", target_is_directory=True)
+
+
+
 if __name__ == "__main__":
     unittest.main()
