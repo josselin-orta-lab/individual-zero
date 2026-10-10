@@ -1059,6 +1059,98 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                             index=index, artifact_root=root,
                         )
 
+    def test_resealed_intervention_requires_published_matching_p47_report(self):
+        scenarios = (
+            ("missing", "lacks matching published agency comparison"),
+            ("pending_only", "lacks matching published agency comparison"),
+            ("wrong_command", "lacks matching published agency comparison"),
+            ("wrong_episode", "lacks matching published agency comparison"),
+            ("wrong_emitted_step", "lacks matching published agency comparison"),
+            ("wrong_observed_step", "lacks matching published agency comparison"),
+            ("wrong_status", "lacks matching published agency comparison"),
+            ("wrong_attribution", "lacks matching published agency comparison"),
+            ("duplicate_event", "duplicate published or pending agency comparison"),
+            ("unversioned_effect", "invalid archived agency comparison"),
+        )
+        for scenario, expected in scenarios:
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    reg, report, index = _prepared(root)
+                    run = next(
+                        row for row in report["runs"]
+                        if len(row["naturally_acquired_false_candidates"]) >= 2
+                    )
+                    item = next(
+                        row for row in index["runs"]
+                        if (row["world_id"], row["seed"])
+                        == (run["world_id"], run["seed"])
+                    )
+                    run_index = index["runs"].index(item)
+                    first, second = run["naturally_acquired_false_candidates"][:2]
+                    rule_ref = first["contingency_ref"]
+                    state = json.loads(
+                        (root / item["causal_state_path"]).read_bytes()
+                    )
+                    record = next(
+                        row for row in state["causal_model"]["published"]
+                        if row["ref"] == rule_ref
+                    )
+                    record["causal_status"] = "etablie"
+                    first["causal_status"] = "etablie"
+                    start = 1 + len(run["known_cause_cases"])
+                    trials = [
+                        _synthetic_causal_trial(
+                            rule_ref=rule_ref, candidate=candidate,
+                            run_index=run_index, observed_step=start + offset,
+                            identifier=f"synthetic:p47-trial:{offset}",
+                            context=f"synthetic:independent:{offset}",
+                        )
+                        for offset, candidate in enumerate((first, second))
+                    ]
+                    state["causal_model"]["causal_interventions"].extend(trials)
+                    state["causal_model"]["causal_credits"].extend([
+                        [rule_ref, trial["observation_ref"], "intervention"]
+                        for trial in trials
+                    ])
+                    baseline = _attach_synthetic_historical_proof(
+                        root, report, index, state, run_index=run_index,
+                        rule_ref=rule_ref,
+                    )
+                    owner = state["causal_model"]
+                    agency = owner["agency_evidence"]
+                    if scenario == "missing":
+                        agency.pop(0)
+                    elif scenario == "pending_only":
+                        owner["pending_agency_evidence"] = [agency.pop(0)]
+                    elif scenario == "wrong_command":
+                        agency[0]["option_ref"] = "synthetic:forged-command"
+                    elif scenario == "wrong_episode":
+                        agency[0]["episode_ref"] = "synthetic:forged-episode"
+                    elif scenario == "wrong_emitted_step":
+                        agency[0]["sent_t_monde"] -= 1
+                    elif scenario == "wrong_observed_step":
+                        agency[0]["observed_t_monde"] += 1
+                    elif scenario == "wrong_status":
+                        agency[0]["status"] = "nonconforming"
+                        agency[0]["effects"][0][1] = "nonconforming"
+                        agency[0]["effects"][0][3] = 0.0
+                    elif scenario == "wrong_attribution":
+                        agency[0]["attribution"] = "uncertain"
+                    elif scenario == "duplicate_event":
+                        agency[1]["event_ref"] = agency[0]["event_ref"]
+                    elif scenario == "unversioned_effect":
+                        agency[0]["effects"][0][5] = ""
+                    altered = _replace_causal_state_bytes(
+                        root, baseline, index, canonical_causal_bytes(state),
+                        run_index=run_index,
+                    )
+                    with self.assertRaisesRegex(ValueError, expected):
+                        audit_heldout_raw_artifacts(
+                            registration=reg, evidence=altered,
+                            index=index, artifact_root=root,
+                        )
+
     def test_synthetic_admissible_causal_rows_remain_structurally_accepted(self):
         # This is a parser/consistency fixture, not a scientifically witnessed
         # intervention or evidence that the synthetic rule was actually learned.
