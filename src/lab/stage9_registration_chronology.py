@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from hashlib import sha256
 from pathlib import Path
 import re
 import subprocess
@@ -16,7 +17,7 @@ import subprocess
 from .stage9_scientific_assessment import (
     assess_heldout_campaign, load_heldout_evidence,
 )
-from .stage9_scientific_preregistration import load_registration
+from .stage9_scientific_preregistration import SPEC_PATH, load_registration
 
 
 COMMIT_ID = re.compile(r"[0-9a-f]{40}\Z")
@@ -166,6 +167,46 @@ def _verify_frozen_source_tree(
     )
 
 
+def _verify_frozen_normative_specification(
+    repository: Path, frozen_commit: str, evidence_commit: str,
+    expected_sha256: str,
+) -> tuple[str, int]:
+    """Keep the English normative rules byte-identical across the Git DAG.
+
+    Source and installer code may remain frozen even while the specification
+    used to interpret outcomes is changed and then reverted. Verify the
+    normative blob at *every* descendant from software freeze to evidence,
+    including the prospective registration commit and merged descendants.
+    """
+    def blob_at(commit: str) -> bytes:
+        try:
+            oid = _git(repository, "rev-parse", f"{commit}:{SPEC_PATH}").strip()
+        except ValueError as exc:
+            raise ValueError(
+                "frozen normative specification missing in Git ancestry"
+            ) from exc
+        if _git(repository, "cat-file", "-t", oid.decode("ascii")).strip() != b"blob":
+            raise ValueError("normative specification must be a Git blob")
+        return oid
+
+    original_blob = blob_at(frozen_commit)
+    original_bytes = _git(repository, "cat-file", "blob", original_blob.decode("ascii"))
+    if sha256(original_bytes).hexdigest() != expected_sha256:
+        raise ValueError(
+            "frozen normative specification digest disagrees with preregistration"
+        )
+    descendants = _git(
+        repository, "rev-list", "--ancestry-path", "--topo-order",
+        f"{frozen_commit}..{evidence_commit}",
+    ).splitlines()
+    if not descendants:
+        raise ValueError("missing normative specification ancestry to evidence")
+    for commit in descendants:
+        if blob_at(commit.decode("ascii")) != original_blob:
+            raise ValueError("normative specification changed within Git ancestry")
+    return original_blob.decode("ascii"), len(descendants)
+
+
 def audit_registration_chronology(
     *, repository: Path, registration_path: Path, registration_commit: str,
     evidence_path: Path, evidence_commit: str,
@@ -195,6 +236,10 @@ def audit_registration_chronology(
     _require_ancestor(root, registration_commit, evidence_commit)
     source_tree_sha, installer_blob_sha, source_commits_checked = _verify_frozen_source_tree(
         root, frozen, evidence_commit,
+    )
+    normative_blob_sha, normative_commits_checked = _verify_frozen_normative_specification(
+        root, frozen, evidence_commit,
+        registration["normative_specification_sha256"],
     )
 
     frozen_registration = _git(root, "show", f"{registration_commit}:{registration_name}")
@@ -231,6 +276,10 @@ def audit_registration_chronology(
         "frozen_implementation_commit": frozen,
         "frozen_source_tree_sha": source_tree_sha,
         "frozen_pyproject_blob_sha": installer_blob_sha,
+        "frozen_normative_specification_blob_sha": normative_blob_sha,
+        "normative_specification_unchanged_descendant_commits_checked": (
+            normative_commits_checked
+        ),
         "source_tree_unchanged_descendant_commits_checked": source_commits_checked,
         "evidence_commit": evidence_commit,
         "registration_digest": provisional["registration_digest"],
