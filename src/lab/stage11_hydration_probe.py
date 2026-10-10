@@ -67,6 +67,8 @@ class PublicHydrationFunnel:
     stage11_published_test_agency_reports: int
     stage11_pending_test_actions: int
     stage11_causal_intervention_stagings: int
+    stage11_exploration_visits: int
+    stage11_exploration_stagnant_visits: int
     scientific_verdict: None = None
     golden_stage9_frozen: bool = False
 
@@ -151,6 +153,9 @@ def run_public_hydration_funnel(
     if not vnext.journal.verify():
         raise AssertionError("stage11 software diagnostic has invalid journal")
     state = vnext.causal_model.export_causal_state()
+    exploration_questions = vnext.exploration.export_causal_state()["questions"]
+    exploration_visits = sum(row["visits"] for _, row in exploration_questions)
+    exploration_stagnant = sum(row["stagnant"] for _, row in exploration_questions)
     record = vnext.causal_model.get("causal:hydration")
     events = tuple(entry.causal_event for entry in vnext.journal.entries)
     proposals = {
@@ -298,6 +303,8 @@ def run_public_hydration_funnel(
         stage11_published_test_agency_reports=published_agency,
         stage11_pending_test_actions=pending_actions,
         stage11_causal_intervention_stagings=staged_interventions,
+        stage11_exploration_visits=exploration_visits,
+        stage11_exploration_stagnant_visits=exploration_stagnant,
     )
 
 
