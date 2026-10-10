@@ -162,7 +162,17 @@ heuristics cannot prove the absence of differently encoded data, unpublished
 results, or objects outside reachable Git history; independent prospectivity
 review remains essential. A structurally complete receipt with those flags is **not** a
 passing held-out campaign. A report with no flags is also **not** an
-independent scientific witness. It writes no source or scientific result,
+independent scientific witness. A separate cross-run check reports any
+byte-identical original journal or canonical causal-owner state in two or
+more distinct registered world/seed cells. These are explicit
+`cross_run_identical_archives` groups, with separate `review_blockers`
+for reused journal and causal-state bytes. Even when individual per-file
+SHA-256, replay, canonical journal, physical event and Memory closure
+checks all pass, copying one cell's files under fresh paths does not
+establish independent execution. **Byte collisions are a reason for
+independent provenance review, not automatic proof that the scientific
+outcome is false:** two truly independent executions can occasionally
+produce identical serialized state. It writes no source or scientific result,
 cannot return a Golden and cannot replace an independent reviewer. Checking
 the **current** checkout does not retrospectively prove that it was the binary
 actually executed; preserve the separate pre-run receipt from step 1.
