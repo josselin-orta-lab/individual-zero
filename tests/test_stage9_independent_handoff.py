@@ -24,6 +24,7 @@ from tests.test_stage9_scientific_assessment import sealed
 def _synthetic_bundle(
     root: Path, *, insufficient: bool = False,
     review_eligible: bool = False, prior_evidence_path: bool = False,
+    transient_prior_evidence: bool = False,
 ) -> dict:
     """Disposable Git+world+raw bundle, NO real causal experiment."""
     repo, manifest_root, raw_root = (
@@ -65,6 +66,18 @@ def _synthetic_bundle(
         registration["minimum_naturally_acquired_candidates"] = 2
     digest = validate_registration(registration)
     manifest_index["registration_digest"] = digest
+    if prior_evidence_path and transient_prior_evidence:
+        raise ValueError("select one synthetic prior evidence condition")
+    if transient_prior_evidence:
+        (repo / "results").mkdir()
+        (repo / "results" / "heldout.json").write_text(
+            "SYNTHETIC PRE-REGISTRATION PLACEHOLDER, NOT RESULTS\n",
+            encoding="utf-8",
+        )
+        _git(repo, "add", "results/heldout.json")
+        _git(repo, "commit", "-qm", "synthetic early outcome-path")
+        _git(repo, "rm", "results/heldout.json")
+        _git(repo, "commit", "-qm", "hide early outcome-path before registration")
     (repo / "research").mkdir()
     registration_path = Path("research/registration.json")
     (repo / registration_path).write_text(
@@ -166,6 +179,9 @@ class Stage9IndependentHandoffTests(unittest.TestCase):
                 "machine_checks_complete_with_explicit_review_blockers",
             )
             self.assertFalse(result["evidence_path_present_at_registration"])
+            self.assertFalse(
+                result["evidence_path_seen_in_pre_registration_git_history"]
+            )
             self.assertFalse(result["independent_world_custody_attested"])
             self.assertFalse(result["prospective_approval_attested"])
             self.assertFalse(result["frozen_runtime_execution_attested"])
@@ -218,6 +234,30 @@ class Stage9IndependentHandoffTests(unittest.TestCase):
                 result["handoff_status"],
                 "machine_checks_complete_with_explicit_review_blockers",
             )
+            self.assertFalse(result["golden_stage9_frozen"])
+
+    def test_transient_pre_registration_evidence_path_requires_review(self):
+        with TemporaryDirectory() as folder:
+            options = _synthetic_bundle(
+                Path(folder), review_eligible=True,
+                transient_prior_evidence=True,
+            )
+            result = audit_independent_heldout_handoff(**options)
+            self.assertFalse(result["evidence_path_present_at_registration"])
+            self.assertTrue(
+                result["evidence_path_seen_in_pre_registration_git_history"]
+            )
+            self.assertEqual(
+                result["review_blockers"],
+                [
+                    "evidence_path_existed_earlier_in_git_history_requires_prospectivity_review"
+                ],
+            )
+            self.assertEqual(
+                result["handoff_status"],
+                "machine_checks_complete_with_explicit_review_blockers",
+            )
+            self.assertIsNone(result["scientific_verdict"])
             self.assertFalse(result["golden_stage9_frozen"])
 
     def test_inconsistent_prospectivity_claim_from_component_fails_closed(self):
