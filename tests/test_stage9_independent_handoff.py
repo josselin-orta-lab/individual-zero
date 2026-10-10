@@ -26,6 +26,7 @@ def _synthetic_bundle(
     review_eligible: bool = False, prior_evidence_path: bool = False,
     transient_prior_evidence: bool = False,
     large_unexamined_prior_blob: bool = False,
+    ambiguous_prior_stage9_json: bool = False,
 ) -> dict:
     """Disposable Git+world+raw bundle, NO real causal experiment."""
     repo, manifest_root, raw_root = (
@@ -88,6 +89,19 @@ def _synthetic_bundle(
         path.write_bytes(b"0" * (2 * 1024 * 1024))
         _git(repo, "add", "bench/raw-large.bin")
         _git(repo, "commit", "-qm", "archive unrelated large bench blob")
+    if ambiguous_prior_stage9_json:
+        # A pre-registration Stage-9-like report with forbidden nonfinite
+        # content cannot be counted as a successfully inspected old blob.
+        path = repo / "preseal/ambiguous.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            '{"protocol_version":"stage9-heldout-evidence-v2",'
+            '"registration_digest":"synthetic","runs":[],'
+            '"untrusted_extra":NaN}',
+            encoding="utf-8",
+        )
+        _git(repo, "add", "preseal/ambiguous.json")
+        _git(repo, "commit", "-qm", "synthetic ambiguous preseal JSON")
     (repo / "research").mkdir()
     registration_path = Path("research/registration.json")
     (repo / registration_path).write_text(
@@ -223,6 +237,9 @@ class Stage9IndependentHandoffTests(unittest.TestCase):
                 result["pre_registration_oversized_blobs_not_checked"], 0,
             )
             self.assertEqual(
+                result["pre_registration_ambiguous_stage9_json_blobs"], 0,
+            )
+            self.assertEqual(
                 result["handoff_status"],
                 "machine_checks_consistent_requires_independent_scientific_review",
             )
@@ -288,6 +305,32 @@ class Stage9IndependentHandoffTests(unittest.TestCase):
             self.assertFalse(result["pre_registration_semantic_scan_complete"])
             self.assertGreater(
                 result["pre_registration_oversized_blobs_not_checked"], 0,
+            )
+            self.assertEqual(
+                result["handoff_status"],
+                "machine_checks_complete_with_explicit_review_blockers",
+            )
+            self.assertIsNone(result["scientific_verdict"])
+            self.assertFalse(result["golden_stage9_frozen"])
+
+    def test_ambiguous_prior_stage9_json_is_a_review_blocker(self):
+        with TemporaryDirectory() as folder:
+            options = _synthetic_bundle(
+                Path(folder), review_eligible=True,
+                ambiguous_prior_stage9_json=True,
+            )
+            result = audit_independent_heldout_handoff(**options)
+            self.assertEqual(
+                result["provisional_metric_assessment"],
+                "metrics_eligible_for_independent_review",
+            )
+            self.assertFalse(result["pre_registration_semantic_scan_complete"])
+            self.assertEqual(
+                result["pre_registration_ambiguous_stage9_json_blobs"], 1,
+            )
+            self.assertEqual(
+                result["review_blockers"],
+                ["pre_registration_ambiguous_stage9_json_requires_prospectivity_review"],
             )
             self.assertEqual(
                 result["handoff_status"],
