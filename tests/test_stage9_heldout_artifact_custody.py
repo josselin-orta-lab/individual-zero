@@ -89,7 +89,13 @@ def _prepared(root: Path):
                 "seen_event_refs": sorted(memory_seen_events),
                 "episode_sequence": len(memory_episodes),
             },
-            "causal_model": {"published": []},
+            "causal_model": {"published": [
+                {
+                    "ref": entry["contingency_ref"],
+                    "causal_status": entry["causal_status"],
+                }
+                for entry in run["naturally_acquired_false_candidates"]
+            ]},
         })
         files = {
             "journal_path": (f"{name}/original.jsonl", journal),
@@ -381,6 +387,41 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                         registration=reg, evidence=report,
                         index=index, artifact_root=root,
                     )
+
+    def test_rehashed_report_cannot_invent_archived_established_rule(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            run = next(
+                (row for row in report["runs"]
+                 if row["naturally_acquired_false_candidates"]),
+                None,
+            )
+            self.assertIsNotNone(run)
+            candidate = run["naturally_acquired_false_candidates"][0]
+            item = next(
+                item for item in index["runs"]
+                if (item["world_id"], item["seed"])
+                == (run["world_id"], run["seed"])
+            )
+            state = json.loads((root / item["causal_state_path"]).read_bytes())
+            status = next(
+                row for row in state["causal_model"]["published"]
+                if row["ref"] == candidate["contingency_ref"]
+            )
+            status["causal_status"] = (
+                "etablie" if candidate["causal_status"] != "etablie"
+                else "hypothese_causale"
+            )
+            replacement = canonical_causal_bytes(state)
+            altered = _replace_causal_state_bytes(
+                root, report, index, replacement,
+            )
+            with self.assertRaisesRegex(ValueError, "disagrees with archived causal status"):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=altered,
+                    index=index, artifact_root=root,
+                )
 
     def test_tampering_with_actual_journal_or_replay_fails(self):
         for key in ("journal_path", "replay_journal_path",
