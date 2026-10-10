@@ -805,6 +805,103 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                         self.assertIsNone(result["scientific_verdict"])
                         self.assertFalse(result["golden_stage9_frozen"])
 
+    def test_resealed_historical_proofs_cannot_invent_controlled_correlation(self):
+        scenarios = (
+            ("missing_treatment", "correlation lacks matched lived evidence"),
+            ("wrong_control", "correlation lacks matched lived evidence"),
+            ("unearned_n1", "correlation lacks matched lived evidence"),
+            ("false_base_rate", "correlation lacks controlled base-rate contrast"),
+            ("mismatched_control", "correlation lacks controlled base-rate contrast"),
+            ("fabricated_review", "review lacks independent matched physical controls"),
+            ("missing_review", "lacks historical correlation and review"),
+            ("missing_correlation", "lacks historical correlation and review"),
+        )
+        for scenario, error in scenarios:
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    reg, report, index = _prepared(root)
+                    run = next(
+                        row for row in report["runs"]
+                        if len(row["naturally_acquired_false_candidates"]) >= 2
+                    )
+                    item = next(
+                        row for row in index["runs"]
+                        if (row["world_id"], row["seed"])
+                        == (run["world_id"], run["seed"])
+                    )
+                    run_index = index["runs"].index(item)
+                    first, second = run["naturally_acquired_false_candidates"][:2]
+                    rule_ref = first["contingency_ref"]
+                    state = json.loads(
+                        (root / item["causal_state_path"]).read_bytes()
+                    )
+                    record = next(
+                        row for row in state["causal_model"]["published"]
+                        if row["ref"] == rule_ref
+                    )
+                    record["causal_status"] = "etablie"
+                    first["causal_status"] = "etablie"
+                    first_step = 1 + len(run["known_cause_cases"])
+                    trials = [
+                        _synthetic_causal_trial(
+                            rule_ref=rule_ref, candidate=candidate,
+                            run_index=run_index, observed_step=first_step + offset,
+                            identifier=f"synthetic:proof-trial:{offset}",
+                            context=f"synthetic:independent-context:{offset}",
+                        )
+                        for offset, candidate in enumerate((first, second))
+                    ]
+                    state["causal_model"]["causal_interventions"].extend(trials)
+                    state["causal_model"]["causal_credits"].extend([
+                        [rule_ref, row["observation_ref"], "intervention"]
+                        for row in trials
+                    ])
+                    baseline = _attach_synthetic_historical_proof(
+                        root, report, index, state, run_index=run_index,
+                        rule_ref=rule_ref,
+                    )
+                    owner = state["causal_model"]
+                    witness = owner["causal_correlation_witnesses"][0]
+                    treated_id = witness[1][0]
+                    control_id = witness[2][0]
+                    if scenario == "missing_treatment":
+                        witness[1] = ["synthetic:invented-observation"]
+                    elif scenario == "wrong_control":
+                        witness[2] = [treated_id]
+                    elif scenario == "unearned_n1":
+                        owner["config_contract"]["n1"] = 2
+                    elif scenario == "false_base_rate":
+                        target = next(
+                            row for row in owner["causal_observations"]
+                            if row["identifier"] == treated_id
+                        )
+                        target["effect_present"] = False
+                    elif scenario == "mismatched_control":
+                        target = next(
+                            row for row in owner["causal_observations"]
+                            if row["identifier"] == control_id
+                        )
+                        target["controlled_variables"] = [["weather", "rain"]]
+                    elif scenario == "fabricated_review":
+                        owner["causal_review_proofs"][0]["contrasting_pairs"] = [
+                            [control_id, treated_id]
+                        ]
+                    elif scenario == "missing_review":
+                        owner["causal_reviews"] = []
+                        owner["causal_review_proofs"] = []
+                    elif scenario == "missing_correlation":
+                        owner["causal_correlation_witnesses"] = []
+                    altered = _replace_causal_state_bytes(
+                        root, baseline, index, canonical_causal_bytes(state),
+                        run_index=run_index,
+                    )
+                    with self.assertRaisesRegex(ValueError, error):
+                        audit_heldout_raw_artifacts(
+                            registration=reg, evidence=altered,
+                            index=index, artifact_root=root,
+                        )
+
     def test_synthetic_admissible_causal_rows_remain_structurally_accepted(self):
         # This is a parser/consistency fixture, not a scientifically witnessed
         # intervention or evidence that the synthetic rule was actually learned.
