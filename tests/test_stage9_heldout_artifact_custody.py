@@ -1377,15 +1377,22 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     )
                     run_index = index["runs"].index(item)
                     candidate = run["naturally_acquired_false_candidates"][0]
-                    observed_step = 1 + len(run["known_cause_cases"])
+                    physical = (
+                        run["naturally_acquired_false_candidates"][2]
+                        if kind == "observation" else candidate
+                    )
+                    observed_step = (
+                        len(run["known_cause_cases"])
+                        + (3 if kind == "observation" else 1)
+                    )
                     state = json.loads(
                         (root / item["causal_state_path"]).read_bytes()
                     )
                     common = {
                         "identifier": "synthetic:admitted-causal-evidence",
                         "contingency_ref": candidate["contingency_ref"],
-                        "episode_ref": candidate["episode_ref"],
-                        "observation_ref": candidate["observation_ref"],
+                        "episode_ref": physical["episode_ref"],
+                        "observation_ref": physical["observation_ref"],
                         "observed_step": observed_step,
                         "source": "monde",
                         "oracle_derived": False,
@@ -1423,7 +1430,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     state["causal_model"][ledger].append(entry)
                     state["causal_model"]["causal_credits"].append([
                         candidate["contingency_ref"],
-                        candidate["observation_ref"], kind,
+                        physical["observation_ref"], kind,
                     ])
                     altered = _replace_causal_state_bytes(
                         root, report, index, canonical_causal_bytes(state),
