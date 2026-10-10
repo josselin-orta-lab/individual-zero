@@ -28,6 +28,8 @@ def _synthetic_bundle(
     large_unexamined_prior_blob: bool = False,
     ambiguous_prior_stage9_json: bool = False,
     reused_archives: bool = False,
+    omit_one_negative_run: bool = False,
+    share_candidate_episode: bool = False,
 ) -> dict:
     """Disposable Git+world+raw bundle, NO real causal experiment."""
     repo, manifest_root, raw_root = (
@@ -123,7 +125,14 @@ def _synthetic_bundle(
     _git(repo, "commit", "-qm", "synthetic prospective registration")
     registration_commit = _git(repo, "rev-parse", "HEAD")
 
-    _unused_registration, evidence, raw_index = _prepared(raw_root)
+    _unused_registration, evidence, raw_index = _prepared(
+        raw_root,
+        omit_negative_seed=(
+            registration["holdout_seeds"][0]
+            if omit_one_negative_run else None
+        ),
+        share_candidate_episode=share_candidate_episode,
+    )
     evidence["frozen_implementation_commit"] = frozen
     evidence["registration_digest"] = digest
     for row in evidence["runs"]:
@@ -314,6 +323,90 @@ class Stage9IndependentHandoffTests(unittest.TestCase):
             )
             self.assertIsNone(result["scientific_verdict"])
             self.assertFalse(result["golden_stage9_frozen"])
+
+    def test_heldout_handoff_flags_one_missing_null_run_despite_pooled_pass(self):
+        with TemporaryDirectory() as folder:
+            options = _synthetic_bundle(
+                Path(folder), review_eligible=True, omit_one_negative_run=True,
+            )
+            result = audit_independent_heldout_handoff(**options)
+            self.assertEqual(
+                result["provisional_metric_assessment"],
+                "metrics_eligible_for_independent_review",
+            )
+            self.assertEqual(
+                result["negative_runs_without_natural_candidates"],
+                [{"world_id": "holdout:null", "seed": 1001}],
+            )
+            self.assertEqual(
+                result["negative_runs_without_natural_candidates"],
+                result["raw_artifact_custody"][
+                    "negative_runs_without_natural_candidates"
+                ],
+            )
+            self.assertIn(
+                "natural_candidate_sampling_absent_in_some_null_runs_requires_review",
+                result["review_blockers"],
+            )
+            self.assertIsNone(result["scientific_verdict"])
+            self.assertFalse(result["golden_stage9_frozen"])
+
+    def test_heldout_handoff_flags_multi_rule_episode_without_fabricating_samples(self):
+        with TemporaryDirectory() as folder:
+            options = _synthetic_bundle(
+                Path(folder), review_eligible=True, share_candidate_episode=True,
+            )
+            result = audit_independent_heldout_handoff(**options)
+            self.assertEqual(
+                result["provisional_metric_assessment"],
+                "metrics_eligible_for_independent_review",
+            )
+            clusters = result["reused_closed_memory_candidate_episodes"]
+            self.assertEqual(len(clusters), 2)
+            self.assertEqual(
+                [cluster["candidate_count"] for cluster in clusters], [2, 2],
+            )
+            self.assertEqual(
+                clusters,
+                result["raw_artifact_custody"][
+                    "reused_closed_memory_candidate_episodes"
+                ],
+            )
+            self.assertIn(
+                "multiple_false_rules_from_one_closed_memory_episode_require_independence_review",
+                result["review_blockers"],
+            )
+            self.assertFalse(result["golden_stage9_frozen"])
+            self.assertIsNone(result["scientific_verdict"])
+
+    def test_diagnostic_mismatch_between_scorer_and_raw_reader_fails_closed(self):
+        with TemporaryDirectory() as folder:
+            options = _synthetic_bundle(
+                Path(folder), review_eligible=True,
+            )
+            from lab.stage9_scientific_assessment import (
+                assess_heldout_campaign, load_heldout_evidence,
+            )
+            from lab.stage9_scientific_preregistration import load_registration
+            draft = load_registration(
+                options["repository"] / options["registration_path"]
+            )
+            report = load_heldout_evidence(
+                options["repository"] / options["evidence_path"]
+            )
+            real = assess_heldout_campaign(draft, report)
+            forged = dict(real)
+            forged["negative_runs_without_natural_candidates"] = [
+                {"world_id": "holdout:null", "seed": 1001},
+            ]
+            with patch(
+                "lab.stage9_independent_handoff.assess_heldout_campaign",
+                return_value=forged,
+            ):
+                with self.assertRaisesRegex(
+                    ValueError, "raw artifact and metric scorer disagree",
+                ):
+                    audit_independent_heldout_handoff(**options)
 
     def test_existing_placeholder_evidence_path_is_explicit_review_blocker(self):
         with TemporaryDirectory() as folder:
