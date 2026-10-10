@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Mapping
 
 from .determinism import canonical_causal_bytes
+from .stage9_secure_file_read import open_regular_no_follow
 from .stage9_scientific_assessment import (
     _reject_duplicate_keys, _reject_nonfinite_constant,
 )
@@ -23,17 +24,30 @@ from .stage9_scientific_assessment import (
 def audit_archived_closed_memory_sources(
     state_path: Path, *,
     claimed_episodes: Mapping[str, str],
+    verified_state_bytes: bytes | None = None,
     physical_source_provenance: Mapping[str, Mapping[str, object]],
     claimed_agency_comparisons: Mapping[str, tuple[str, int]] | None = None,
     claimed_agency_physical_sources: Mapping[
         str, Mapping[str, object]
     ] | None = None,
 ) -> dict[str, object]:
-    """Validate exact serialized Memory closure without mutating any file."""
+    """Validate exact Memory closure on one byte image.
+
+    When verified_state_bytes is supplied by the raw custody audit, that
+    caller has already checked its actual bytes against the registered SHA.
+    Standalone use opens the original path through the no-follow guard.
+    Neither mode establishes independent physical authenticity.
+    """
     if set(claimed_episodes) != set(physical_source_provenance):
         raise ValueError("archived Memory claims disagree with physical sources")
     try:
-        raw = state_path.read_bytes()
+        if verified_state_bytes is None:
+            with open_regular_no_follow(state_path) as stream:
+                raw = stream.read()
+        else:
+            if not isinstance(verified_state_bytes, bytes):
+                raise ValueError("verified owner-state image must be bytes")
+            raw = verified_state_bytes
         causal_owners = json.loads(
             raw.decode("utf-8"),
             object_pairs_hook=_reject_duplicate_keys,

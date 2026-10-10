@@ -239,10 +239,16 @@ path still resolves to the opened inode, catching persistent parent-directory
 swaps even when the opened file itself was never modified. This local
 filesystem safeguard requires no-follow descriptor support; it cannot
 establish independent custody, prevent transient changes reverted before the
-checks, or witness the actual execution. The raw-artifact checker validates
-physical event identities, same-attempt commands/transitions, canonical P-47 source
-measurements, causal evidence, reviews, intervention contexts and closed
-Memory references. It does **not** attest that these events occurred in the
+checks, or witness the actual execution. During one custody audit,
+the archived causal-owner file is parsed from one guarded byte image whose
+SHA-256 is checked against the registered report. The same frozen in-memory
+image must serve causal evidence, P-47 and closed-Memory checks; standalone
+Memory file reads also reject symlink paths. This prevents mixing snapshots
+read at different moments, but does not prevent transient tampering outside
+the guarded reads or establish an independent physical witness. The raw-artifact
+checker validates physical event identities, same-attempt commands/transitions,
+canonical P-47 source measurements, causal evidence, reviews, intervention
+contexts and closed Memory references. It does **not** attest that these events occurred in the
 claimed independent physical environment.
 
 The scientific scorer produces **provisional** Wilson intervals and per-run

@@ -312,9 +312,16 @@ def audit_heldout_raw_artifacts(
         }
         # Audit every admitted causal physical source, including interventions
         # omitted from the held-out report's selected scoring rows.
+        # Hash the exact in-memory owner-state image consumed by all later
+        # checks. A prior read's hash alone cannot bind a swapped parse.
+        archived_bytes = _read_raw_bytes(paths["causal_state_path"])
+        if sha256(archived_bytes).hexdigest() != reported["causal_state_sha256"]:
+            raise ValueError(
+                "archived causal owner-state bytes changed between custody hash and parsing"
+            )
         try:
             archived = json.loads(
-                _read_raw_bytes(paths["causal_state_path"]).decode("utf-8"),
+                archived_bytes.decode("utf-8"),
                 object_pairs_hook=_reject_duplicate_keys,
                 parse_constant=_reject_nonfinite_constant,
             )
@@ -363,14 +370,9 @@ def audit_heldout_raw_artifacts(
         # canonical contingency and its archived causal status. Matching only
         # physical episodes would let a forged report invent an established
         # rule without any such rule in the frozen causal owner.
-        try:
-            state = json.loads(
-                _read_raw_bytes(paths["causal_state_path"]).decode("utf-8"),
-                object_pairs_hook=_reject_duplicate_keys,
-                parse_constant=_reject_nonfinite_constant,
-            )
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            raise ValueError("invalid archived causal owner-state JSON") from exc
+        # Use this very same parsed object for canonical status and P-47
+        # verification; never combine independently reread state versions.
+        state = archived
         if not isinstance(state, dict):
             raise ValueError("archived causal owners must be an object")
         owner = state.get("causal_model")
@@ -785,6 +787,7 @@ def audit_heldout_raw_artifacts(
                 )
         memory_audit = audit_archived_closed_memory_sources(
             paths["causal_state_path"],
+            verified_state_bytes=archived_bytes,
             claimed_episodes=claimed_episodes,
             physical_source_provenance=journal_audit["physical_source_provenance"],
             claimed_agency_comparisons={
