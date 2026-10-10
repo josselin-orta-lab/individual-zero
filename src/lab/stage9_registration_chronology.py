@@ -270,6 +270,19 @@ def _reject_pre_registration_evidence_blob(
     return len(objects)
 
 
+def _reject_duplicate_candidate_keys(pairs: list[tuple[str, object]]) -> dict:
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate key in earlier candidate JSON")
+        result[key] = value
+    return result
+
+
+def _reject_nonfinite_candidate_constant(value: str) -> None:
+    raise ValueError("nonfinite earlier candidate JSON constant")
+
+
 def _reject_semantic_pre_registration_evidence(
     repository: Path, registration_commit: str, evidence: dict[str, object],
     archived_size: int,
@@ -329,7 +342,11 @@ def _reject_semantic_pre_registration_evidence(
             continue
         compared += 1
         try:
-            candidate = json.loads(raw)
+            candidate = json.loads(
+                raw,
+                object_pairs_hook=_reject_duplicate_candidate_keys,
+                parse_constant=_reject_nonfinite_candidate_constant,
+            )
         except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
             continue
         if candidate == evidence:
