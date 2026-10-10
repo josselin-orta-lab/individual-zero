@@ -43,7 +43,15 @@ class Exploration:
         self._questions = {}
 
     def observe_causal_state(self, state):
-        """Read published, independently matched physical proofs only."""
+        """Only confirmed causal publications can create learning progress.
+
+        A previously *executed* information-seeking action is an activity
+        visit, regardless of whether its physical result later passes P-47.
+        A subsequent canonical intervention for the SAME command/step must
+        not increment that visit a second time (INV-14).
+        """
+        if not isinstance(state, dict):
+            raise ValueError("canonical causal state must be a mapping")
         observations = {
             v["identifier"]: v for v in state.get("causal_observations", ())
             if v.get("source") == "monde" and v.get("independent_episode") is True
@@ -61,28 +69,79 @@ class Exploration:
                     and a["cause_present"] is True and b["cause_present"] is False):
                     proofs.setdefault(ref, review["identifier"])
         observed = {}
-        for v in state.get("causal_interventions", ()):
-            if (v.get("action_applied") is True and v.get("source") == "monde"
-                and not v.get("oracle_derived") and not v.get("counterfactual")
-                and not v.get("rollback_cancelled")):
-                observed.setdefault(v["contingency_ref"], set()).add(v["identifier"])
+        for row in state.get("causal_interventions", ()):
+            if (row.get("action_applied") is True and row.get("source") == "monde"
+                and not row.get("oracle_derived") and not row.get("counterfactual")
+                and not row.get("rollback_cancelled")):
+                observed.setdefault(row["contingency_ref"], {})[row["identifier"]] = row
+        updates = {}
         for row in state.get("published", ()):
             ref, status = row["ref"], row["causal_status"]
             if status not in self._rank or row["safety_status"] != "aucun":
-                self._questions.pop(ref, None)
                 continue
-            earlier = self._questions.get(ref)
-            previous_ids = set() if earlier is None else set(earlier["ids"])
-            ids = previous_ids | observed.get(ref, set())
-            visits = len(ids - previous_ids)
-            advanced = earlier is not None and self._rank[status] > self._rank[earlier["status"]]
-            self._questions[ref] = {
+            old = self._questions.get(ref)
+            prior_ids = set() if old is None else set(old["ids"])
+            accepted = observed.get(ref, {})
+            now_ids = prior_ids | set(accepted)
+            new_ids = set(accepted) - prior_ids
+            attempts = () if old is None else old["executed_keys"]
+            # A physically applied and recorded test was counted when the
+            # command was executed. Its later independently verified
+            # intervention must not create a fictitious extra exploration.
+            not_yet_counted = sum(
+                f"{accepted[ident].get('command_ref')}@"
+                f"{accepted[ident].get('emitted_step')}" not in attempts
+                for ident in new_ids
+            )
+            progress = (
+                old is not None
+                and self._rank[status] > self._rank[old["status"]]
+            )
+            updates[ref] = {
                 "version": row["version"], "status": status,
-                "proof": proofs.get(ref), "ids": tuple(sorted(ids)),
-                "visits": (0 if earlier is None else earlier["visits"]) + visits,
-                "stagnant": (0 if advanced else (0 if earlier is None else earlier["stagnant"]) + visits),
-                "progress": 1.0 if advanced else (0.0 if visits else (0.0 if earlier is None else earlier["progress"])),
+                "proof": proofs.get(ref),
+                "ids": tuple(sorted(now_ids)),
+                "executed_keys": attempts,
+                "visits": (0 if old is None else old["visits"]) + not_yet_counted,
+                "stagnant": 0 if progress else (
+                    (0 if old is None else old["stagnant"]) + not_yet_counted
+                ),
+                "progress": (
+                    1.0 if progress else
+                    0.0 if not_yet_counted else
+                    (0.0 if old is None else old["progress"])
+                ),
             }
+        # A removed/invalidated canonical question cannot survive in local
+        # curiosity counters and keep motivating a stale test.
+        self._questions = updates
+
+    def record_applied_causal_test(self, *, option, sent_step: int) -> bool:
+        """Record an ACTUALLY applied command received from Action Control.
+
+        This is an activity/habituation counter, NEVER causal confirmation.
+        An ordinary proposal, planned command, or rolled-back action must
+        not call this method. The vNext runtime owns that dispatch boundary.
+        """
+        if type(sent_step) is not int or sent_step < 1:
+            raise ValueError("applied exploratory command needs world time")
+        if self.motivation(option).status != "available":
+            return False
+        ref = option.motive_ref.id[len("test_causal:"):]
+        q = self._questions[ref]
+        key = f"{option.id}@{sent_step}"
+        previous = set(q["executed_keys"])
+        if key in previous:
+            return False
+        previous.add(key)
+        self._questions[ref] = {
+            **q,
+            "executed_keys": tuple(sorted(previous)),
+            "visits": q["visits"] + 1,
+            "stagnant": q["stagnant"] + 1,
+            "progress": 0.0,
+        }
+        return True
 
     def motivation(self, option):
         motive = option.motive_ref
@@ -129,15 +188,60 @@ class Exploration:
         )
 
     def export_causal_state(self):
-        return {"config_version": self.config.version, "coefficient": self.coefficient,
-                "questions": [[key, dict(value)] for key,value in sorted(self._questions.items())]}
+        return {
+            "state_schema": "exploration-activity-v2",
+            "config_version": self.config.version,
+            "coefficient": self.coefficient,
+            "questions": [
+                [ref, dict(q)] for ref, q in sorted(self._questions.items())
+            ],
+        }
 
     def restore_causal_state(self, state):
-        if state["config_version"] != self.config.version or state["coefficient"] != self.coefficient:
-            raise ValueError("exploration snapshot mismatch")
+        """Reject a corrupted snapshot before mutating owner state."""
+        if (
+            not isinstance(state, dict)
+            or state.get("state_schema") != "exploration-activity-v2"
+            or state.get("config_version") != self.config.version
+            or state.get("coefficient") != self.coefficient
+            or not isinstance(state.get("questions"), list)
+        ):
+            raise ValueError("incompatible exploration snapshot")
+        expected = {
+            "version", "status", "proof", "ids", "executed_keys",
+            "visits", "stagnant", "progress",
+        }
         restored = {}
-        for ref, q in state["questions"]:
-            if ref in restored or q["status"] not in self._rank or q["visits"] < 0 or q["stagnant"] < 0:
-                raise ValueError("invalid exploration snapshot")
-            restored[ref] = {**q, "ids": tuple(q["ids"])}
+        for raw in state["questions"]:
+            if (
+                not isinstance(raw, (list, tuple)) or len(raw) != 2
+                or not isinstance(raw[0], str) or not raw[0]
+                or raw[0] in restored or not isinstance(raw[1], dict)
+                or set(raw[1]) != expected
+            ):
+                raise ValueError("invalid exploration snapshot entry")
+            ref, q = raw
+            ids, applied = q["ids"], q["executed_keys"]
+            if (
+                type(q["version"]) is not int or q["version"] < 1
+                or q["status"] not in self._rank
+                or q["proof"] is not None
+                and (not isinstance(q["proof"], str) or not q["proof"])
+                or any(
+                    not isinstance(values, (list, tuple))
+                    or any(not isinstance(x, str) or not x for x in values)
+                    or tuple(values) != tuple(sorted(set(values)))
+                    for values in (ids, applied)
+                )
+                or type(q["visits"]) is not int or q["visits"] < 0
+                or type(q["stagnant"]) is not int
+                or not 0 <= q["stagnant"] <= q["visits"]
+                or type(q["progress"]) not in (int, float)
+                or q["progress"] not in (0.0, 1.0)
+            ):
+                raise ValueError("corrupt exploration learning counters")
+            restored[ref] = {
+                **q, "ids": tuple(ids), "executed_keys": tuple(applied),
+            }
         self._questions = restored
+
