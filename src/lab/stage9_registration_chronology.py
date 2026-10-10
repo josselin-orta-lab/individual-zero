@@ -304,7 +304,7 @@ def _reject_semantic_pre_registration_evidence(
     # Large unrelated blobs (e.g. the normative specification) must not
     # exhaust the audit. The soft cap allows substantial JSON reformatting
     # while disclosing the unexamined object count.
-    size_limit = min(max(archived_size * 8 + 4096, 65536), 64 * 1024 * 1024)
+    size_limit = min(max(archived_size * 8 + 4096, 1024 * 1024), 64 * 1024 * 1024)
     compared = skipped = 0
     for oid, row in zip(ids, rows):
         fields = row.split()
@@ -436,6 +436,7 @@ def audit_registration_chronology(
         "pre_registration_git_objects_checked": prior_objects_checked,
         "pre_registration_json_blobs_checked": semantic_blobs_checked,
         "pre_registration_oversized_blobs_not_checked": oversized_blobs_not_checked,
+        "pre_registration_semantic_scan_complete": oversized_blobs_not_checked == 0,
         "registration_unchanged_descendant_commits_checked": (
             audited_descendant_commits
         ),
