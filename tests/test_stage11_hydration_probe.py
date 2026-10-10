@@ -19,6 +19,8 @@ class Stage11HydrationProbeTests(unittest.TestCase):
         self.assertEqual(first.exploration_policy_version, "p48-development-v2")
         self.assertEqual(first.stage11_prospective_prediction_count, 0)
         self.assertEqual(first.stage11_prospective_source_count, 0)
+        self.assertEqual(first.stage11_physical_comparator_join_candidates, 0)
+        self.assertEqual(first.stage11_comparison_water_values, ())
         self.assertEqual(first.schedule_sha256, second.schedule_sha256)
         self.assertGreaterEqual(first.stage11_test_proposals, 0)
         self.assertGreaterEqual(first.stage11_unscored_evaluations, 0)
@@ -125,7 +127,7 @@ class Stage11HydrationProbeTests(unittest.TestCase):
             exploration_policy="three_visit_window",
         )
         self.assertEqual(row.classification, "development_only_not_heldout")
-        self.assertEqual(row.protocol_version, "stage11-public-hydration-funnel-dev-v4")
+        self.assertEqual(row.protocol_version, "stage11-public-hydration-funnel-dev-v5")
         self.assertEqual(row.exploration_policy_version, "p48-three-visit-window-dev-v1")
         self.assertEqual(row.exploration_visit_ceiling, 3)
         self.assertLessEqual(row.stage11_exploration_visits, 3)
@@ -137,8 +139,45 @@ class Stage11HydrationProbeTests(unittest.TestCase):
         self.assertFalse(row.golden_stage9_frozen)
         self.assertLessEqual(row.stage11_verified_interventions,
                              row.stage11_causal_intervention_stagings)
+        for entry in row.stage11_test_comparison_classes:
+            self.assertNotEqual(entry[2], "unreported")
+        for sent, observed_step, predicted, observed, precision, status in (
+            row.stage11_comparison_water_values
+        ):
+            self.assertGreater(observed_step, sent)
+            self.assertTrue(0 <= predicted <= 100 and 0 <= observed <= 100)
+            self.assertGreaterEqual(precision, 0)
+            if status == "conforming":
+                self.assertLessEqual(abs(observed-predicted), precision)
+        self.assertLessEqual(row.stage11_physical_comparator_join_candidates,
+                             row.stage11_published_test_agency_reports)
         print("stage11_three_visit_opportunity_diagnostic=" + json.dumps(
             row.as_dict(), sort_keys=True, separators=(",", ":")
+        ))
+
+    def test_predeclared_public_32step_memory_comparator_join_window(self):
+        # A fixed public extension of the 24-step result, not scientific
+        # confirmation, tuning, or manipulation of physical memory records.
+        result = run_public_hydration_funnel(
+            seed=41, world="small_water_gain", steps=32,
+            enable_lived_prediction=True,
+            exploration_policy="three_visit_window",
+        )
+        self.assertIsNone(result.scientific_verdict)
+        self.assertEqual(result.classification, "development_only_not_heldout")
+        self.assertFalse(result.golden_stage9_frozen)
+        self.assertEqual(result.exploration_visit_ceiling, 3)
+        self.assertLessEqual(result.stage11_verified_interventions,
+                             result.stage11_causal_intervention_stagings)
+        self.assertLessEqual(
+            result.stage11_physical_comparator_join_candidates,
+            result.stage11_published_test_agency_reports,
+        )
+        for status, attribution, water_effect, count in result.stage11_test_comparison_classes:
+            self.assertGreater(count, 0)
+            self.assertNotEqual(water_effect, "unreported")
+        print("stage11_32step_physical_comparator_followup=" + json.dumps(
+            result.as_dict(), sort_keys=True, separators=(",", ":")
         ))
 
     def test_rejects_nonpublic_variants_and_invalid_seeds(self):
