@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 import unittest
 
 from lab.stage9_registered_manifest_custody import (
@@ -185,6 +186,58 @@ class Stage9RegisteredManifestCustodyTests(unittest.TestCase):
             alias.symlink_to(root, target_is_directory=True)
             with self.assertRaisesRegex(ValueError, "root may not be a symlink"):
                 _audit(alias, draft, index)
+
+    def test_mid_audit_symlink_to_same_inode_is_rejected(self):
+        # Synthetic TOCTOU: the first SHA read is valid. Afterwards an
+        # operator relocates the very same inode and leaves a symlink at
+        # the registered path. A second stat+hash alone would pass.
+        from lab import stage9_registered_manifest_custody as custody
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            draft, index = _fixture(root)
+            original = root / index["frozen_manifests"]["equipment"]
+            relocated = root / "relocated-equipment.manifest"
+            real_hash = custody._hash_bytes
+            modified = False
+
+            def replace_after_first_hash(path: Path) -> tuple[str, int]:
+                nonlocal modified
+                result = real_hash(path)
+                if path == original and not modified:
+                    modified = True
+                    original.rename(relocated)
+                    original.symlink_to(relocated)
+                    self.assertEqual(original.stat().st_ino, relocated.stat().st_ino)
+                return result
+
+            with patch.object(custody, "_hash_bytes", side_effect=replace_after_first_hash):
+                with self.assertRaisesRegex(ValueError, "symlink"):
+                    _audit(root, draft, index)
+            self.assertTrue(modified)
+
+    def test_mid_audit_replacement_with_same_bytes_is_rejected(self):
+        from lab import stage9_registered_manifest_custody as custody
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            draft, index = _fixture(root)
+            original = root / index["frozen_manifests"]["equipment"]
+            payload = original.read_bytes()
+            real_hash = custody._hash_bytes
+            modified = False
+
+            def replace_after_first_hash(path: Path) -> tuple[str, int]:
+                nonlocal modified
+                result = real_hash(path)
+                if path == original and not modified:
+                    modified = True
+                    original.unlink()
+                    original.write_bytes(payload)
+                return result
+
+            with patch.object(custody, "_hash_bytes", side_effect=replace_after_first_hash):
+                with self.assertRaisesRegex(ValueError, "changed during custody audit"):
+                    _audit(root, draft, index)
+            self.assertTrue(modified)
 
     def test_index_requires_exact_worlds_roles_and_digest(self):
         edits = (
