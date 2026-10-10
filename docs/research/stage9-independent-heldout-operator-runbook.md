@@ -207,7 +207,12 @@ actually executed; preserve the separate pre-run receipt from step 1.
 
 Retain the manifest-file audit from step 1 and compare the physical manifests
 again if custody changed hands. If any tool reports a mismatch, block
-acceptance and retain the failure. The raw-artifact checker validates physical
+acceptance and retain the failure. The raw-artifact reader also opens each
+journal, replay and archived causal-owner file through guarded regular-file
+descriptors, rejecting symlink replacements of file or parent directories and
+detectable in-read mutations. This local filesystem safeguard requires
+no-follow descriptor support; it cannot establish independent custody,
+prevent every transient filesystem attack, or witness the actual execution. The raw-artifact checker validates physical
 event identities, same-attempt commands/transitions, canonical P-47 source
 measurements, causal evidence, reviews, intervention contexts and closed
 Memory references. It does **not** attest that these events occurred in the
