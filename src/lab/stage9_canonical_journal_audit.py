@@ -52,6 +52,7 @@ def audit_raw_causal_journal(
     commits_by_attempt: dict[
         tuple[str, int], list[tuple[int, Mapping[str, object]]]
     ] = {}
+    attempt_steps: dict[str, int] = {}
     previous_hash = GENESIS_HASH
     index = 0
 
@@ -110,6 +111,9 @@ def audit_raw_causal_journal(
                 raise ValueError(
                     "invalid physical journal event attempt and world step"
                 )
+            prior_step = attempt_steps.setdefault(attempt, step)
+            if prior_step != step:
+                raise ValueError("physical attempt reused across world steps")
             key = (attempt, step)
             if kind == "auto_segment_commit":
                 commits_by_attempt.setdefault(key, []).append((index, event))
