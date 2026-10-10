@@ -86,6 +86,30 @@ class ModulationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             m.freeze(signals=signals(), world_step=1, cycle=1)
 
+    def test_missing_confirmation_signal_suspends_not_resets_counter(self):
+        entering = GlobalModulation(config())
+        self.assertEqual(entering.freeze(
+            signals=signals(recovery=0.8), world_step=1, cycle=1,
+        ), "normal")
+        self.assertEqual(entering.freeze(
+            signals=signals(recovery=None), world_step=2, cycle=1,
+        ), "normal")
+        self.assertEqual(entering.freeze(
+            signals=signals(recovery=0.8), world_step=3, cycle=1,
+        ), "recovery")
+
+        exiting = GlobalModulation(config())
+        exiting.freeze(signals=signals(threat=0.9), world_step=1, cycle=1)
+        self.assertEqual(exiting.freeze(
+            signals=signals(threat=0.0), world_step=2, cycle=1,
+        ), "threat")
+        self.assertEqual(exiting.freeze(
+            signals=signals(threat=None), world_step=3, cycle=1,
+        ), "threat")
+        self.assertEqual(exiting.freeze(
+            signals=signals(threat=0.0), world_step=4, cycle=1,
+        ), "normal")
+
     def test_only_published_st_fixed_and_preempted_slot_infer_indicators(self):
         st = SimpleNamespace(
             fixed={"body": {"energy": 20.0, "integrity": 100.0},
