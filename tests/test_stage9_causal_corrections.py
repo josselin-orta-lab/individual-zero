@@ -116,8 +116,18 @@ class EstablishedCorrectionTests(unittest.TestCase):
                 self.assertEqual(outcome.corrected_contingency_refs, (winner,))
 
         # Exact-context observations never propagate into unobserved states.
+        # Keep the frozen Equipment prediction object intact on fallback.
+        command = PrimitiveCommand("se_deplacer", {"direction": "east"})
+        frozen_prediction = simulator()._equipment.predict(
+            state=before, command=command,
+        )
         changed = state(x=3)
-        self.assertNotEqual((changed.x, changed.y), measured.observed_before_position)
+        unchanged, refs = correct_equipment_prediction(
+            source=PublishedEstablishedRules((measured, exact)),
+            command=command, state=changed, prediction=frozen_prediction,
+        )
+        self.assertIs(unchanged, frozen_prediction)
+        self.assertEqual(refs, ())
 
     def test_incomparable_target_and_state_evidence_does_not_choose_arbitrarily(self):
         before = state(x=2)
@@ -162,6 +172,19 @@ class EstablishedCorrectionTests(unittest.TestCase):
         self.assertEqual(refs, ("target-and-body",))
         self.assertEqual(corrected.next_state.body["energy"], 25.0)
         self.assertEqual(base_prediction.next_state.body["energy"], 50.0)
+
+        # Incomparable matching facts that agree numerically do not create
+        # a conflict. The credited source remains deterministic under reorder.
+        agreeing = replace(body_only, observed_after=40.0)
+        for rules in (
+            (target_only, agreeing), (agreeing, target_only),
+        ):
+            same, credited = correct_equipment_prediction(
+                source=PublishedEstablishedRules(rules),
+                command=command, state=before, prediction=base_prediction,
+            )
+            self.assertEqual(same.next_state.body["energy"], 40.0)
+            self.assertEqual(credited, ("body-only",))
 
     def test_unregistered_context_and_variable_are_not_silently_supported(self):
         with self.assertRaises(ValueError):
