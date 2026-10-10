@@ -38,6 +38,7 @@ from .stage9_registered_manifest_custody import (
 )
 from .stage9_registration_chronology import (
     _check_commit, _file_in_repo, _git, _require_ancestor,
+    _verify_frozen_source_tree, _verify_frozen_normative_specification,
     reject_git_repository_overrides,
 )
 from .stage9_runtime import Stage9Config, Stage9Runtime
@@ -394,6 +395,8 @@ def _check_preregistration(
 ) -> dict:
     reject_git_repository_overrides()
     root = repository.resolve()
+    if _git(root, "rev-parse", "--is-shallow-repository").strip() != b"false":
+        raise ValueError("operator seal requires complete unshallowed Git history")
     _check_commit(root, registration_commit)
     freeze = registration["frozen_implementation_commit"]
     _check_commit(root, freeze)
@@ -417,9 +420,27 @@ def _check_preregistration(
     )
     if canonical_causal_bytes(committed) != canonical_causal_bytes(registration):
         raise ValueError("operator registration parse differs from sealed Git bytes")
-    return verify_frozen_worktree(
+    frozen_tree, frozen_package, source_commits = _verify_frozen_source_tree(
+        root, freeze, registration_commit,
+    )
+    frozen_spec, specification_commits = _verify_frozen_normative_specification(
+        root, freeze, registration_commit,
+        registration["normative_specification_sha256"],
+    )
+    checked = verify_frozen_worktree(
         repository=root, frozen_implementation_commit=freeze,
     )
+    if (
+        checked["source_tree_sha"] != frozen_tree
+        or checked["pyproject_blob_sha"] != frozen_package
+        or checked["normative_specification_blob_sha"] != frozen_spec
+    ):
+        raise ValueError("operator source checkout and ancestry disagree")
+    return {
+        **checked,
+        "source_ancestry_commits_verified": source_commits,
+        "normative_specification_ancestry_commits_verified": specification_commits,
+    }
 
 
 def _cell_run(
