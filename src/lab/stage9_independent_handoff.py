@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 
 from .determinism import canonical_causal_bytes, sha256_hex
+from .stage9_frozen_worktree import verify_frozen_worktree
 from .stage9_heldout_artifact_custody import (
     audit_heldout_raw_artifacts, load_raw_artifact_index,
 )
@@ -74,6 +75,29 @@ def audit_independent_heldout_handoff(
     )
     if chronology.get("chronology_status") not in CHRONOLOGY_STATUSES:
         raise ValueError("unrecognized or incomplete Stage-9 chronology result")
+    # The present checkout must also match the frozen bytes. This is a
+    # *retrospective* local check, not an attestation of the historical
+    # executable or process that produced the heldout artifacts.
+    checkout = _require_uncertified(
+        verify_frozen_worktree(
+            repository=root,
+            frozen_implementation_commit=chronology[
+                "frozen_implementation_commit"
+            ],
+        ),
+        name="current frozen worktree",
+    )
+    if (
+        checkout.get("frozen_implementation_commit")
+        != chronology["frozen_implementation_commit"]
+        or checkout.get("source_tree_sha")
+        != chronology["frozen_source_tree_sha"]
+        or checkout.get("pyproject_blob_sha")
+        != chronology["frozen_pyproject_blob_sha"]
+        or checkout.get("normative_specification_blob_sha")
+        != chronology["frozen_normative_specification_blob_sha"]
+    ):
+        raise ValueError("current checkout differs from frozen Git chronology")
     # Resolve the same files as the committed-Git reader, not a caller-supplied
     # out-of-repository replacement of a sealed registration or report.
     registered_file, _ = _file_in_repo(root, registration_path)
@@ -157,6 +181,7 @@ def audit_independent_heldout_handoff(
         "evidence_commit": evidence_commit,
         "provisional_metric_assessment": provisional["assessment"],
         "git_chronology": chronology,
+        "current_checkout_preflight": checkout,
         "physical_manifest_custody": manifests,
         "raw_artifact_custody": raw,
         "provisional_metrics": provisional,
