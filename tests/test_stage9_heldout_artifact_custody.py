@@ -427,6 +427,31 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     index=index, artifact_root=root,
                 )
 
+    def test_rehashed_causal_credit_cannot_reference_unpublished_rule(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            state = json.loads(
+                (root / index["runs"][0]["causal_state_path"]).read_bytes()
+            )
+            state["causal_model"]["causal_observations"].append({
+                "contingency_ref": "invented:unpublished",
+                "observation_ref": "invented:observation",
+            })
+            state["causal_model"]["causal_credits"].append([
+                "invented:unpublished", "invented:observation", "observation",
+            ])
+            altered = _replace_causal_state_bytes(
+                root, report, index, canonical_causal_bytes(state),
+            )
+            with self.assertRaisesRegex(
+                ValueError, "evidence refers to unpublished contingency",
+            ):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=altered,
+                    index=index, artifact_root=root,
+                )
+
     def test_rehashed_forged_causal_credit_is_rejected(self):
         with TemporaryDirectory() as folder:
             root = Path(folder)
