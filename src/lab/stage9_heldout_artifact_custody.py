@@ -147,11 +147,16 @@ def load_raw_artifact_index(path: Path) -> dict[str, object]:
 def _physical_file(root: Path, supplied: object) -> Path:
     if not isinstance(supplied, str) or not supplied.strip():
         raise ValueError("artifact paths must be nonempty strings")
-    relative = Path(supplied)
+    # Path() removes dot segments and repeated separators; reject these
+    # *before* normalization so a retrospective custody index has one
+    # unambiguous spelling for every raw file.
     if (
-        relative.is_absolute() or not relative.parts
-        or any(part in (".", "..") for part in relative.parts)
+        supplied.startswith("/")
+        or any(part in ("", ".", "..") for part in supplied.split("/"))
     ):
+        raise ValueError("artifact path must be canonical relative without traversal")
+    relative = Path(supplied)
+    if relative.is_absolute() or not relative.parts:
         raise ValueError("artifact path must be relative and without traversal")
     current = root
     for part in relative.parts:
