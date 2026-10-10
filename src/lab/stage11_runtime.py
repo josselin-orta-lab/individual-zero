@@ -192,6 +192,48 @@ class Stage11Runtime(Stage9Runtime):
                 )
 
         hooks[1]["exploration"] = exploration_hook
+
+        # Stage-9's canonical Causal Model still proposes supported tests.
+        # In vNext, a *previously known* Exploration target with no
+        # remaining information interest must not be converted by Planning
+        # into another autonomous option just because the hypothesis
+        # remains published. This avoids noisy-TV repetition and clears
+        # already registered, now-stale tests via Stage-9 registration.
+        #
+        # Capture this read-only decision BEFORE phase 1. The Planning
+        # producer cannot borrow Exploration state newly written during
+        # the same phase; first-seen hypotheses keep the Stage-9 path until
+        # their next-cycle Exploration state is available (INV-08).
+        known = {
+            ref for ref, _ in self.exploration.export_causal_state()["questions"]
+        }
+        interested = set(self.exploration.cibles())
+        previous_plan = hooks[1]["planning"]
+
+        def plan_only_informational_targets(ctx):
+            emitted = self._causal_test_targets_this_cycle
+            permitted = tuple(
+                item for item in emitted
+                if item.contingency_ref not in known
+                or item.contingency_ref in interested
+            )
+            for item in emitted:
+                if item not in permitted:
+                    self._write(
+                        kind="stage11_exploration_target_suppressed",
+                        cycle=cycle,
+                        data={
+                            "contingency_ref": item.contingency_ref,
+                            "reason": "no_positive_informational_interest",
+                            "exploration_version": (
+                                self._stage11_config.exploration.version
+                            ),
+                        },
+                    )
+            self._causal_test_targets_this_cycle = permitted
+            previous_plan(ctx)
+
+        hooks[1]["planning"] = plan_only_informational_targets
         return hooks
 
     def _dispatch_decision(
