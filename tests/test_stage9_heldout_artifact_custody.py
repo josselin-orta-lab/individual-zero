@@ -674,7 +674,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                 root, report, index, forged_journal.canonical_bytes(),
             )
             with self.assertRaisesRegex(
-                ValueError, "nonunique command or world advancement",
+                ValueError, "attempt reused across world steps",
             ):
                 audit_heldout_raw_artifacts(
                     registration=reg, evidence=forged,
