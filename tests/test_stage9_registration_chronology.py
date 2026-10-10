@@ -87,6 +87,7 @@ def _create_fixture(
             "transient_alternate_path_equivalent",
             "alternate_path_ambiguous_duplicate",
             "alternate_path_ambiguous_nonfinite",
+            "alternate_path_ambiguous_exponent",
             "alternate_path_reordered",
             "transient_alternate_path_reordered",
             "alternate_path_utf8_bom",
@@ -103,6 +104,7 @@ def _create_fixture(
             "alternate_path_equivalent", "transient_alternate_path_equivalent",
             "alternate_path_ambiguous_duplicate",
             "alternate_path_ambiguous_nonfinite",
+            "alternate_path_ambiguous_exponent",
             "alternate_path_reordered",
             "transient_alternate_path_reordered",
             "alternate_path_utf8_bom",
@@ -133,6 +135,10 @@ def _create_fixture(
                 # Lenient JSON parsing yields the exact archived report, but
                 # duplicate keys are forbidden by the scientific reader.
                 insertion = marker + '\n  ' + marker
+            elif earlier_evidence.endswith("exponent"):
+                # Python's ordinary float parser otherwise turns a valid
+                # JSON exponent into Infinity without calling parse_constant.
+                insertion = marker + '\n  "synthetic_malformed": 1e999,'
             else:
                 insertion = marker + '\n  "synthetic_malformed": NaN,'
             early_file.write_text(
@@ -431,19 +437,26 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
                 _audit(repo, registered, evidence)
 
     def test_earlier_nonfinite_stage9_report_makes_scan_incomplete(self):
-        with TemporaryDirectory() as folder:
-            repo = Path(folder)
-            _, registered, evidence = _create_fixture(
-                repo, earlier_evidence="alternate_path_ambiguous_nonfinite",
-            )
-            result = _audit(repo, registered, evidence)
-            self.assertFalse(result["pre_registration_semantic_scan_complete"])
-            self.assertEqual(
-                result["pre_registration_ambiguous_stage9_json_blobs"], 1,
-            )
-            self.assertFalse(result["evidence_path_seen_in_pre_registration_git_history"])
-            self.assertIsNone(result["scientific_verdict"])
-            self.assertFalse(result["golden_stage9_frozen"])
+        for scenario in (
+            "alternate_path_ambiguous_nonfinite",
+            "alternate_path_ambiguous_exponent",
+        ):
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    repo = Path(folder)
+                    _, registered, evidence = _create_fixture(
+                        repo, earlier_evidence=scenario,
+                    )
+                    result = _audit(repo, registered, evidence)
+                    self.assertFalse(result["pre_registration_semantic_scan_complete"])
+                    self.assertEqual(
+                        result["pre_registration_ambiguous_stage9_json_blobs"], 1,
+                    )
+                    self.assertFalse(
+                        result["evidence_path_seen_in_pre_registration_git_history"]
+                    )
+                    self.assertIsNone(result["scientific_verdict"])
+                    self.assertFalse(result["golden_stage9_frozen"])
 
     def test_prior_placeholder_never_appears_as_clean_git_chronology(self):
         for scenario, at_registration in (
