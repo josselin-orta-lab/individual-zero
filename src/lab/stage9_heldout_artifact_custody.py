@@ -600,16 +600,29 @@ def audit_heldout_raw_artifacts(
             reviewed_refs.add(proof.contingency_ref)
         if set(review_ids) != seen_proofs:
             raise ValueError("archived causal review ids disagree with proofs")
-        for row in published:
-            if row["causal_status"] in {
-                "testee_par_intervention", "etablie",
-            } and (
-                row["ref"] not in correlated_refs
-                or row["ref"] not in reviewed_refs
-            ):
-                raise ValueError(
-                    "archived tested or established rule lacks historical correlation and review"
-                )
+        # §13.2 applies to *all* published causal levels: observed
+        # correlations must retain their matched historical controls, and
+        # every hypothesis must retain an independently contrasted review.
+        # Restricting this gate to tested/established claims would let a
+        # rehashed snapshot invent hypotheses eligible for test proposals.
+        correlated_expected = {
+            row["ref"] for row in published
+            if row.get("causal_status") != "aucun"
+        }
+        reviewed_expected = {
+            row["ref"] for row in published
+            if row.get("causal_status") in {
+                "hypothese_causale", "testee_par_intervention", "etablie",
+            }
+        }
+        if correlated_refs != correlated_expected:
+            raise ValueError(
+                "archived promoted causal status lacks historical correlation"
+            )
+        if reviewed_refs != reviewed_expected:
+            raise ValueError(
+                "archived causal hypothesis lacks matched review proof"
+            )
         # A published intervention is not backed by its own comparator
         # labels. Preserve the canonical owner's publication boundary:
         # only the published DC-09/P-47 agency ledger can corroborate a
