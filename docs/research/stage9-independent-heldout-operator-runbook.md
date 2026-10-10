@@ -143,8 +143,11 @@ any scientific decision. It explicitly flags a report path already present
 at preregistration **or anywhere earlier in its Git ancestry**
 (including a different placeholder later deleted, which requires
 prospectivity review), or metrics that do not meet the registered confidence
-criteria. A byte-identical outcome already committed before registration is
-rejected rather than receiving a machine receipt. A structurally complete receipt with those flags is **not** a
+criteria. A byte-identical outcome already committed **anywhere in the
+Git history reachable from registration**, even under a different path or
+after deletion, is rejected rather than receiving a machine receipt. An
+earlier result in an outside archive, or an independently re-encoded copy,
+still requires a separate external prospectivity review. A structurally complete receipt with those flags is **not** a
 passing held-out campaign. A report with no flags is also **not** an
 independent scientific witness. It writes no source or scientific result,
 cannot return a Golden and cannot replace an independent reviewer. Checking
