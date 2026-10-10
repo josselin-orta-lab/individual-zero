@@ -217,11 +217,6 @@ def audit_heldout_raw_artifacts(
             for name in ("known_cause_cases", "naturally_acquired_false_candidates")
             for entry in reported[name]
         }
-        memory_audit = audit_archived_closed_memory_sources(
-            paths["causal_state_path"],
-            claimed_episodes=claimed_episodes,
-            physical_source_provenance=journal_audit["physical_source_provenance"],
-        )
         # A reported natural candidate must correspond to the actual
         # canonical contingency and its archived causal status. Matching only
         # physical episodes would let a forged report invent an established
@@ -248,6 +243,11 @@ def audit_heldout_raw_artifacts(
                 or actual.get("causal_status") != candidate["causal_status"]
             ):
                 raise ValueError("reported natural candidate disagrees with archived causal status")
+        memory_audit = audit_archived_closed_memory_sources(
+            paths["causal_state_path"],
+            claimed_episodes=claimed_episodes,
+            physical_source_provenance=journal_audit["physical_source_provenance"],
+        )
         memory_episodes_scanned += memory_audit["closed_memory_episodes_scanned"]
         closed_memory_sources_checked += memory_audit[
             "claimed_closed_memory_sources_checked"
