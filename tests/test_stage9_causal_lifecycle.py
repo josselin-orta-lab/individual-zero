@@ -276,6 +276,85 @@ class CausalLifecycleTests(unittest.TestCase):
             self.assertEqual(len(snapshot["causal_credits"]), 2)
         self.assertEqual(m.export_causal_state(), twin.export_causal_state())
 
+
+    def test_shared_transition_across_contingencies_preserves_one_physical_clock(self):
+        # Different causal hypotheses can read the same physical instant,
+        # without creating two independent worlds or inconsistent provenance.
+        m = model()
+        first = obs(1, cause=True, effect=True)
+        other = replace(
+            first, identifier="observation:other-rule",
+            contingency_ref="causal:other-food",
+            observation_context="other-hypothesis-context",
+        )
+        m.integrate_causal_observation(first)
+        m.integrate_causal_observation(other)
+        self.assertEqual(m.publish_causal_inference(), ())
+        snap = m.export_causal_state()
+        self.assertEqual(len(snap["causal_observations"]), 2)
+        self.assertEqual(len(snap["causal_credits"]), 2)
+        self.assertEqual(
+            {row["observation_ref"] for row in snap["causal_observations"]},
+            {first.observation_ref},
+        )
+        restored = model()
+        restored.restore_causal_state(snap)
+        self.assertEqual(restored.export_causal_state(), snap)
+
+    def test_cross_contingency_source_cannot_rewrite_episode_or_world_step(self):
+        original = obs(1, cause=True, effect=True)
+        for published_first in (False, True):
+            for field, changed in (
+                ("episode_ref", "episode:forged"),
+                ("observed_step", 999),
+            ):
+                with self.subTest(published_first=published_first, field=field):
+                    m = model()
+                    m.integrate_causal_observation(original)
+                    if published_first:
+                        self.assertEqual(m.publish_causal_inference(), ())
+                    other = replace(
+                        original,
+                        identifier="observation:other-rule",
+                        contingency_ref="causal:other-food",
+                        **{field: changed},
+                    )
+                    m.integrate_causal_observation(other)
+                    snapshot = m.export_causal_state()
+                    twin = model()
+                    twin.restore_causal_state(snapshot)
+                    for owner in (m, twin):
+                        with self.assertRaisesRegex(
+                            ValueError,
+                            "conflicting cross-contingency physical observation provenance",
+                        ):
+                            owner.publish_causal_inference()
+                        self.assertEqual(owner.export_causal_state(), snapshot)
+
+    def test_replayed_published_snapshot_rejects_cross_rule_source_reassignment(self):
+        m = model()
+        first = obs(1, cause=True, effect=True)
+        other = replace(
+            first, identifier="observation:other-rule",
+            contingency_ref="causal:other-food",
+        )
+        for row in (first, other):
+            m.integrate_causal_observation(row)
+        self.assertEqual(m.publish_causal_inference(), ())
+        snapshot = m.export_causal_state()
+        tampered = deepcopy(snapshot)
+        for row in tampered["causal_observations"]:
+            if row["contingency_ref"] == "causal:other-food":
+                row["observed_step"] = 999
+                break
+        else:
+            self.fail("missing second causal observation")
+        with self.assertRaisesRegex(
+            ValueError, "conflicting cross-contingency physical observation provenance",
+        ):
+            m.restore_causal_state(tampered)
+        self.assertEqual(m.export_causal_state(), snapshot)
+
     def test_conflicting_labels_for_one_physical_observation_fail_atomically(self):
         original = obs(1, cause=True, effect=True)
         variations = (

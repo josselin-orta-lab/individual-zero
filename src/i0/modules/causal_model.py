@@ -38,6 +38,32 @@ CAUSAL_STATUSES = frozenset({
 SAFETY_STATUSES = frozenset({"aucun", "etabli_pour_securite"})
 
 
+def _verify_shared_observation_provenance(
+    rows: Sequence[CausalObservation],
+) -> None:
+    """One physical transition keeps its episode and world step across rules.
+
+    One transition may inform several different contingencies. Its causality,
+    candidate subject, and contextual controls can differ by hypothesis, but
+    the originating closed Memory episode and world step cannot. Same-rule
+    physical aliases are checked separately with their full factual content.
+    """
+    sources: dict[str, tuple[str, int, str]] = {}
+    for row in rows:
+        prior = sources.get(row.observation_ref)
+        if prior is None:
+            sources[row.observation_ref] = (
+                row.episode_ref, row.observed_step, row.contingency_ref,
+            )
+        elif (
+            prior[2] != row.contingency_ref
+            and prior[:2] != (row.episode_ref, row.observed_step)
+        ):
+            raise ValueError(
+                "conflicting cross-contingency physical observation provenance"
+            )
+
+
 def _ambiguous_closed_projection_steps(
     events: Sequence[Mapping[str, object]],
 ) -> set[int]:
@@ -1672,6 +1698,13 @@ class CausalModel:
         revisions = dict(self._causal_revision_boundaries)
         changes: list[CausalInferenceChange] = []
 
+        # Cross-rule causal interpretations may share a physical transition,
+        # but cannot manufacture a different Memory episode or world clock
+        # for that single source. Check the whole batch before publication.
+        _verify_shared_observation_provenance((
+            *observations.values(), *self._pending_causal_observations,
+        ))
+
         # Batch arrival never bypasses the prior published lifecycle level.
         for o in sorted(self._pending_causal_observations, key=lambda x: x.identifier):
             if o.predicate not in SAFETY_PREDICATES and o.predicate not in self.config.causal_predicates:
@@ -2491,6 +2524,7 @@ class CausalModel:
             raise ValueError(
                 "causal snapshot reuses published observational physical transition"
             )
+        _verify_shared_observation_provenance(observation_rows)
 
         intervention_rows = [
             decode_intervention(v) for v in state.get("causal_interventions", [])
