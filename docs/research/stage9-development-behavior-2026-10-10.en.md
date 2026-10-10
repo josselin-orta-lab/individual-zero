@@ -4,6 +4,9 @@
 
 [Version française](stage9-development-behavior-2026-10-10.fr.md).
 
+**Observer quickstart (French):** [minimal local diagnostic reproduction guide](stage9-behavioral-test-quickstart.fr.md).
+
+
 ## Question and provenance
 
 **Question:** In the integrated Stage-9 development fixture, does the individual form a causal hypothesis from lived effects of drinking, produce testing options, and then actually select and execute a verified intervention?
