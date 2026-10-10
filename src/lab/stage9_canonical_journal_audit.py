@@ -19,6 +19,7 @@ from typing import Mapping
 
 from .determinism import canonical_causal_bytes, sha256_hex
 from .journal import GENESIS_HASH
+from .stage9_secure_file_read import open_regular_no_follow
 from .stage9_scientific_assessment import (
     _reject_duplicate_keys, _reject_nonfinite_constant,
 )
@@ -136,7 +137,7 @@ def audit_raw_causal_journal(
     # Hashing is handled by the artifact-custody caller. This second pass
     # examines exact canonical records, never a transformed JSON rendering.
     # The canonical journal format has LF *between* records but no terminal LF.
-    with path.open("rb") as stream:
+    with open_regular_no_follow(path) as stream:
         buffered: bytes | None = None
         for line in stream:
             if buffered is not None:
