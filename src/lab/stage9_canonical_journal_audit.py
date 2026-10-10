@@ -165,6 +165,32 @@ def audit_raw_causal_journal(
             raise ValueError("canonical journal has extra final line terminator")
         check(buffered)
 
+    # INV-53 is per *world step*, not per attempt_ref. After rollback the
+    # technical journal may retain cancelled commands and transitions on
+    # different attempts for one world time, but those uncommitted attempts
+    # cannot become second accepted advancements. Two distinct attempts that
+    # each contain a command, transition and autobiographical commit at the
+    # same t_monde claim two completed world advancements: reject regardless
+    # of whether the operator selected both as held-out observations.
+    accepted_steps: dict[int, str] = {}
+    for (attempt, step), commits in sorted(commits_by_attempt.items()):
+        if not commits:
+            continue
+        pair = physical_by_attempt.get((attempt, step), {})
+        if not (
+            pair.get("command_experienced")
+            and pair.get("world_transition_experienced")
+        ):
+            # Incomplete/blocked attempts remain subject to their own
+            # source checks, but are not additional completed advancements.
+            continue
+        previous_attempt = accepted_steps.get(step)
+        if previous_attempt is not None and previous_attempt != attempt:
+            raise ValueError(
+                "multiple committed physical advancements at one world step"
+            )
+        accepted_steps[step] = attempt
+
     matched = 0
     physical_source_provenance: dict[str, dict[str, object]] = {}
     for ref in sorted(physical_observation_refs):
