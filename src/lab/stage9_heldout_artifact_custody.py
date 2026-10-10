@@ -245,6 +245,43 @@ def audit_heldout_raw_artifacts(
             ):
                 raise ValueError("invalid or duplicate archived causal contingency")
             by_ref[row["ref"]] = row
+        # Credits are only an index of admitted lived observations and
+        # interventions, never independent evidence. Detect invented credits
+        # even when a forged snapshot is canonically encoded and rehashed.
+        observations = owner.get("causal_observations")
+        interventions = owner.get("causal_interventions")
+        credits = owner.get("causal_credits")
+        if not all(isinstance(rows, list) for rows in (
+            observations, interventions, credits,
+        )):
+            raise ValueError("archived causal provenance ledgers are missing")
+        expected_credits = set()
+        for rows, kind in ((observations, "observation"),
+                           (interventions, "intervention")):
+            for entry in rows:
+                if not isinstance(entry, dict):
+                    raise ValueError("invalid archived causal evidence entry")
+                ref = entry.get("contingency_ref")
+                observation = entry.get("observation_ref")
+                if not all(isinstance(v, str) and v for v in (ref, observation)):
+                    raise ValueError("invalid archived causal evidence credit identity")
+                key = (ref, observation, kind)
+                if key in expected_credits:
+                    raise ValueError("duplicate archived causal evidence credit")
+                expected_credits.add(key)
+        actual_credits = []
+        for entry in credits:
+            if (
+                not isinstance(entry, list) or len(entry) != 3
+                or any(not isinstance(value, str) or not value for value in entry)
+            ):
+                raise ValueError("invalid archived causal credit")
+            actual_credits.append(tuple(entry))
+        if (
+            len(set(actual_credits)) != len(actual_credits)
+            or set(actual_credits) != expected_credits
+        ):
+            raise ValueError("archived causal credits disagree with admitted evidence")
         for candidate in reported["naturally_acquired_false_candidates"]:
             actual = by_ref.get(candidate["contingency_ref"])
             if (
