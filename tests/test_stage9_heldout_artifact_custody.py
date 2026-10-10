@@ -1043,6 +1043,75 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                         self.assertIsNone(result["scientific_verdict"])
                         self.assertFalse(result["golden_stage9_frozen"])
 
+    def test_every_published_hypothesis_requires_historical_evidence(self):
+        scenarios = (
+            ("unwitnessed_hypothesis", "promoted causal status lacks historical correlation"),
+            ("unreviewed_hypothesis", "causal hypothesis lacks matched review proof"),
+            ("correlation_only", None),
+            ("premature_review", "causal hypothesis lacks matched review proof"),
+        )
+        for scenario, expected in scenarios:
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    reg, report, index = _prepared(root)
+                    run = next(
+                        row for row in report["runs"]
+                        if row["naturally_acquired_false_candidates"]
+                    )
+                    item = next(
+                        row for row in index["runs"]
+                        if (row["world_id"], row["seed"])
+                        == (run["world_id"], run["seed"])
+                    )
+                    run_index = index["runs"].index(item)
+                    state = json.loads(
+                        (root / item["causal_state_path"]).read_bytes()
+                    )
+                    owner = state["causal_model"]
+                    candidate = run["naturally_acquired_false_candidates"][0]
+                    ref = candidate["contingency_ref"]
+                    if scenario == "unwitnessed_hypothesis":
+                        owner["causal_correlation_witnesses"] = [
+                            row for row in owner["causal_correlation_witnesses"]
+                            if row[0] != ref
+                        ]
+                    elif scenario == "unreviewed_hypothesis":
+                        proofs = owner["causal_review_proofs"]
+                        proof = next(row for row in proofs if row["contingency_ref"] == ref)
+                        proofs.remove(proof)
+                        owner["causal_reviews"].remove(proof["identifier"])
+                    elif scenario in ("correlation_only", "premature_review"):
+                        published = next(
+                            row for row in owner["published"] if row["ref"] == ref
+                        )
+                        published["causal_status"] = "correlation_observee"
+                        candidate["causal_status"] = "correlation_observee"
+                        if scenario == "correlation_only":
+                            proof = next(
+                                row for row in owner["causal_review_proofs"]
+                                if row["contingency_ref"] == ref
+                            )
+                            owner["causal_review_proofs"].remove(proof)
+                            owner["causal_reviews"].remove(proof["identifier"])
+                    altered = _replace_causal_state_bytes(
+                        root, report, index, canonical_causal_bytes(state),
+                        run_index=run_index,
+                    )
+                    if expected is None:
+                        result = audit_heldout_raw_artifacts(
+                            registration=reg, evidence=altered,
+                            index=index, artifact_root=root,
+                        )
+                        self.assertIsNone(result["scientific_verdict"])
+                        self.assertFalse(result["golden_stage9_frozen"])
+                    else:
+                        with self.assertRaisesRegex(ValueError, expected):
+                            audit_heldout_raw_artifacts(
+                                registration=reg, evidence=altered,
+                                index=index, artifact_root=root,
+                            )
+
     def test_resealed_historical_proofs_cannot_invent_controlled_correlation(self):
         scenarios = (
             ("missing_treatment", "correlation lacks matched lived evidence"),
