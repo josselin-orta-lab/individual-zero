@@ -135,6 +135,23 @@ def _rewrite_chain(
     return fresh.canonical_bytes()
 
 
+def _append_rehashed_event(
+    original: bytes, *, event_id: str, causal_event: dict[str, object],
+) -> bytes:
+    """Make a valid SHA-linked *forgery*, not a physical execution."""
+    journal = HashChainedJournal()
+    for line in original.split(b"\n"):
+        record = json.loads(line)
+        journal.append(
+            event_id=record["event_id"],
+            causal_event=record["causal_event"],
+        )
+    journal.append(event_id=event_id, causal_event=causal_event)
+    if not journal.verify():
+        raise AssertionError("forgery fixture must have an intact hash chain")
+    return journal.canonical_bytes()
+
+
 class Stage9RawArtifactCustodyTests(unittest.TestCase):
     def test_real_bytes_match_declared_digests_but_are_not_scientific_proof(self):
         with TemporaryDirectory() as folder:
@@ -295,6 +312,129 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     index=index, artifact_root=root,
                 )
 
+    def test_rehashed_extra_physical_command_or_advancement_is_rejected(self):
+        # Previously, an unreferenced duplicate in the *same applied
+        # attempt* could be hidden outside the selected AutoSegmentCommit.
+        for kind in ("command_experienced", "world_transition_experienced"):
+            with self.subTest(kind=kind):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    reg, report, index = _prepared(root)
+                    journal = (root / index["runs"][0]["journal_path"]).read_bytes()
+                    extra = {
+                        "kind": kind,
+                        "attempt_ref": "synthetic-attempt:0:1",
+                        "t_monde": 1,
+                    }
+                    forged = _replace_journal_bytes(
+                        root, report, index,
+                        _append_rehashed_event(
+                            journal,
+                            event_id=f"uncommitted-extra:{kind}",
+                            causal_event=extra,
+                        ),
+                    )
+                    with self.assertRaisesRegex(
+                        ValueError, "nonunique command or world advancement",
+                    ):
+                        audit_heldout_raw_artifacts(
+                            registration=reg, evidence=forged,
+                            index=index, artifact_root=root,
+                        )
+
+    def test_rehashed_second_memory_commit_cannot_reuse_an_observation(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            original = (root / index["runs"][0]["journal_path"]).read_bytes()
+            physical = report["runs"][0]["known_cause_cases"][0]["observation_ref"]
+            forged = _replace_journal_bytes(
+                root, report, index,
+                _append_rehashed_event(
+                    original,
+                    event_id="second-commit-for-same-attempt",
+                    causal_event={
+                        "kind": "auto_segment_commit",
+                        "attempt_ref": "synthetic-attempt:0:1",
+                        "t_monde": 1,
+                        "event_refs": ["command:0:1", physical],
+                        "filter_version": "stage9-synthetic-parser-fixture",
+                    },
+                ),
+            )
+            with self.assertRaisesRegex(
+                ValueError, "unique same-attempt Memory commit",
+            ):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=forged,
+                    index=index, artifact_root=root,
+                )
+
+    def test_rehashed_commit_cannot_launder_foreign_or_future_source(self):
+        for scenario in ("future_foreign", "repeated_ref"):
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    reg, report, index = _prepared(root)
+                    original = (root / index["runs"][0]["journal_path"]).read_bytes()
+                    forged_journal = HashChainedJournal()
+                    for line in original.split(b"\n"):
+                        record = json.loads(line)
+                        event = record["causal_event"]
+                        if record["event_id"] == "commit:0:1":
+                            event["event_refs"].append(
+                                "command:0:2"
+                                if scenario == "future_foreign"
+                                else "command:0:1"
+                            )
+                        forged_journal.append(
+                            event_id=record["event_id"], causal_event=event,
+                        )
+                    self.assertTrue(forged_journal.verify())
+                    forged = _replace_journal_bytes(
+                        root, report, index, forged_journal.canonical_bytes(),
+                    )
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "foreign or future event|unique committed same-attempt",
+                    ):
+                        audit_heldout_raw_artifacts(
+                            registration=reg, evidence=forged,
+                            index=index, artifact_root=root,
+                        )
+
+    def test_cancelled_attempt_at_same_world_step_is_not_double_counted(self):
+        # A rollback may reuse the world step, but has a *distinct attempt*
+        # and no autobiographical commit. INV-44 forbids counting it.
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            original = (root / index["runs"][0]["journal_path"]).read_bytes()
+            command = _append_rehashed_event(
+                original, event_id="cancelled-command",
+                causal_event={
+                    "kind": "command_experienced",
+                    "attempt_ref": "cancelled-attempt:0:1",
+                    "t_monde": 1,
+                },
+            )
+            cancelled = _append_rehashed_event(
+                command, event_id="cancelled-transition",
+                causal_event={
+                    "kind": "world_transition_experienced",
+                    "attempt_ref": "cancelled-attempt:0:1",
+                    "t_monde": 1,
+                },
+            )
+            forged = _replace_journal_bytes(root, report, index, cancelled)
+            result = audit_heldout_raw_artifacts(
+                registration=reg, evidence=forged,
+                index=index, artifact_root=root,
+            )
+            self.assertEqual(result["committed_physical_sources_checked"], 44)
+            self.assertEqual(result["journal_events_checked"], 134)
+            self.assertFalse(result["physical_truth_attested"])
+
     def test_digest_can_not_be_forged_in_report_or_index(self):
         with TemporaryDirectory() as folder:
             root = Path(folder)
@@ -379,6 +519,17 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                             registration=reg, evidence=evidence,
                             index=index, artifact_root=root,
                         )
+
+    def test_older_v2_index_does_not_claim_stronger_v3_provenance(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            index["protocol_version"] = "stage9-heldout-raw-artifact-index-v2"
+            with self.assertRaisesRegex(ValueError, "schema mismatch"):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=report,
+                    index=index, artifact_root=root,
+                )
 
     def test_ambiguous_json_and_invalid_schema_fail_closed(self):
         with TemporaryDirectory() as folder:

@@ -43,7 +43,15 @@ def audit_raw_causal_journal(
     ):
         raise ValueError("physical observation references must be nonempty IDs")
     events: dict[str, tuple[int, Mapping[str, object]]] = {}
-    commits: list[tuple[int, Mapping[str, object]]] = []
+    # Separate technical occurrences (including cancelled retries) by the
+    # execution attempt and world step. An accepted physical step cannot
+    # silently conceal a second command, advancement, or Memory commit.
+    physical_by_attempt: dict[
+        tuple[str, int], dict[str, list[tuple[int, str]]]
+    ] = {}
+    commits_by_attempt: dict[
+        tuple[str, int], list[tuple[int, Mapping[str, object]]]
+    ] = {}
     previous_hash = GENESIS_HASH
     index = 0
 
@@ -88,8 +96,27 @@ def audit_raw_causal_journal(
             raise ValueError("broken causal journal event hash")
         previous_hash = digest
         events[event_id] = (index, event)
-        if event.get("kind") == "auto_segment_commit":
-            commits.append((index, event))
+        kind = event.get("kind")
+        if kind in {
+            "command_experienced", "world_transition_experienced",
+            "auto_segment_commit",
+        }:
+            attempt = event.get("attempt_ref")
+            step = event.get("t_monde")
+            if (
+                not isinstance(attempt, str) or not attempt
+                or type(step) is not int or step < 0
+            ):
+                raise ValueError(
+                    "invalid physical journal event attempt and world step"
+                )
+            key = (attempt, step)
+            if kind == "auto_segment_commit":
+                commits_by_attempt.setdefault(key, []).append((index, event))
+            else:
+                physical_by_attempt.setdefault(key, {}).setdefault(
+                    kind, []
+                ).append((index, event_id))
         index += 1
 
     # Hashing is handled by the artifact-custody caller. This second pass
@@ -123,33 +150,52 @@ def audit_raw_causal_journal(
             or type(t_monde) is not int
         ):
             raise ValueError("reported observation is not a physical transition")
-        matched_commits = 0
-        for commit_index, commit in commits:
-            if commit_index <= transition_index:
-                continue
-            refs = commit.get("event_refs")
-            if (
-                commit.get("attempt_ref") != attempt
-                or commit.get("t_monde") != t_monde
-                or not isinstance(refs, list)
-                or ref not in refs
-            ):
-                continue
-            has_command = any(
-                isinstance(command_ref, str)
-                and command_ref in events
-                and events[command_ref][0] < transition_index
-                and events[command_ref][1].get("kind") == "command_experienced"
-                and events[command_ref][1].get("attempt_ref") == attempt
-                and events[command_ref][1].get("t_monde") == t_monde
-                for command_ref in refs
+        # INV-53 concerns the *actual attempt*, not only the event_refs
+        # chosen by a purported commit. An unreferenced extra command or
+        # transition would otherwise disappear from the claimed denominator.
+        paired = physical_by_attempt.get((attempt, t_monde), {})
+        commands = paired.get("command_experienced", ())
+        transitions = paired.get("world_transition_experienced", ())
+        if (
+            len(commands) != 1
+            or len(transitions) != 1
+            or transitions[0] != (transition_index, ref)
+        ):
+            raise ValueError(
+                "physical observation has nonunique command or world advancement"
             )
-            if has_command:
-                matched_commits += 1
-        if matched_commits != 1:
+        command_index, command_ref = commands[0]
+        if command_index >= transition_index:
+            raise ValueError("physical observation precedes its applied command")
+
+        # INV-44: exactly one autobiographical commit can close the accepted
+        # attempt. Check the *whole* event_refs list, not just two convenient
+        # members, so a rehashed foreign or future source cannot be laundered.
+        closed = commits_by_attempt.get((attempt, t_monde), ())
+        if len(closed) != 1:
+            raise ValueError(
+                "physical observation lacks unique same-attempt Memory commit"
+            )
+        commit_index, commit = closed[0]
+        refs = commit.get("event_refs")
+        if (
+            commit_index <= transition_index
+            or not isinstance(refs, list)
+            or any(not isinstance(value, str) or not value for value in refs)
+            or len(set(refs)) != len(refs)
+            or ref not in refs
+            or command_ref not in refs
+        ):
             raise ValueError(
                 "physical observation lacks unique committed same-attempt command"
             )
+        if any(
+            event_ref not in events
+            or events[event_ref][0] >= commit_index
+            or events[event_ref][1].get("attempt_ref") != attempt
+            for event_ref in refs
+        ):
+            raise ValueError("Memory commit refers to foreign or future event")
         matched += 1
 
     return {

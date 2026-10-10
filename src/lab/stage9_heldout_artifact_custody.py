@@ -24,7 +24,7 @@ from .stage9_scientific_assessment import (
 from .stage9_scientific_preregistration import load_registration
 
 
-INDEX_VERSION = "stage9-heldout-raw-artifact-index-v2"
+INDEX_VERSION = "stage9-heldout-raw-artifact-index-v3"
 INDEX_FIELDS = frozenset({
     "protocol_version", "registration_digest", "evidence_sha256", "runs",
 })
@@ -111,8 +111,9 @@ def audit_heldout_raw_artifacts(
     """Compare physically present files to already-validated evidence claims.
 
     Two differently named paths (or hardlinks) to the same file are rejected.
-    In v2, canonical journal structure, its hash chain, and reported physical
-    source/command/commit references are also independently checked.
+    In v3, canonical journal structure, its hash chain, and the one-command,
+    one-world-advancement and one-Memory-commit cardinality of each claimed
+    nonlethal physical attempt are independently checked (INV-44/53).
     The index is retrospective file custody metadata, NOT a preregistration or
     a proof that independent world steps really occurred.
     """
