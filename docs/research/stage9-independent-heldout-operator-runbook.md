@@ -138,10 +138,16 @@ python -m lab.stage9_independent_handoff \
 
 The combined output includes a deterministic machine-receipt SHA-256, all
 underlying machine reports, the recorded metric status and explicit
-unattested claims. It writes no source or scientific result, cannot return a
-Golden and cannot replace an independent reviewer. Checking the **current**
-checkout does not retrospectively prove that it was the binary actually
-executed; preserve the separate pre-run receipt from step 1.
+unattested claims. The `review_blockers` field must be examined **before**
+any scientific decision. It explicitly flags a report path already present
+at preregistration (including a different placeholder that requires
+prospectivity review), or metrics that do not meet the registered confidence
+criteria. A structurally complete receipt with those flags is **not** a
+passing held-out campaign. A report with no flags is also **not** an
+independent scientific witness. It writes no source or scientific result,
+cannot return a Golden and cannot replace an independent reviewer. Checking
+the **current** checkout does not retrospectively prove that it was the binary
+actually executed; preserve the separate pre-run receipt from step 1.
 
 Retain the manifest-file audit from step 1 and compare the physical manifests
 again if custody changed hands. If any tool reports a mismatch, block
