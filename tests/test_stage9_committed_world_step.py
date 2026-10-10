@@ -43,12 +43,37 @@ def synthetic_journal(
                 "attempt_ref": attempt, "t_monde": step,
             },
         )
+        if label == "first" and second_fault == "foreign_cognitive_ref":
+            journal.append(
+                event_id="synthetic-cognitive:first",
+                causal_event={
+                    "kind": "s_t_published",
+                    "attempt_ref": attempt, "t_monde": step,
+                    "data": {"synthetic": True},
+                },
+            )
         if label == "second" and second_fault == "extra_transition":
             journal.append(
                 event_id=f"synthetic-extra-transition:{label}",
                 causal_event={
                     "kind": "world_transition_experienced",
                     "attempt_ref": attempt, "t_monde": step,
+                },
+            )
+        if label == "second" and second_fault in (
+            "technical_leak", "wrong_step_cognitive", "valid_cognitive",
+        ):
+            event_kind = (
+                "oracle_annotation" if second_fault == "technical_leak"
+                else "s_t_published"
+            )
+            journal.append(
+                event_id="synthetic-secondary-event",
+                causal_event={
+                    "kind": event_kind,
+                    "attempt_ref": attempt,
+                    "t_monde": 999 if second_fault == "wrong_step_cognitive" else step,
+                    "data": {"synthetic": True},
                 },
             )
         if committed:
@@ -61,6 +86,12 @@ def synthetic_journal(
                     else [command, transition]
                 )
             )
+            if label == "second" and second_fault in (
+                "technical_leak", "wrong_step_cognitive", "valid_cognitive",
+            ):
+                refs.append("synthetic-secondary-event")
+            if label == "second" and second_fault == "foreign_cognitive_ref":
+                refs.append("synthetic-cognitive:first")
             event = {
                 "kind": "auto_segment_commit",
                 "attempt_ref": attempt,
@@ -157,6 +188,40 @@ class Stage9CommittedWorldStepTests(unittest.TestCase):
                 )
                 self.assertEqual(result["claimed_physical_transitions_checked"], 1)
                 self.assertFalse(result["physical_truth_attested"])
+
+
+    def test_unreported_commit_rejects_foreign_or_wrong_step_cognitive_ref(self):
+        # Both sources pass the hash chain and refer to an existing, earlier
+        # event of an autobiographically allowed kind. A source from another
+        # attempt or world step must still fail.
+        for fault in ("foreign_cognitive_ref", "wrong_step_cognitive"):
+            with self.subTest(fault=fault):
+                with self.assertRaisesRegex(
+                    ValueError, "committed Memory reference crosses attempts",
+                ):
+                    self.inspect(
+                        second_step=2, second_committed=True, second_fault=fault,
+                    )
+
+    def test_unreported_commit_rejects_technical_oracle_event(self):
+        # Unknown technical kinds are *not* added to DC-09 by mentioning them
+        # in a syntactically valid autobio commit.
+        with self.assertRaisesRegex(
+            ValueError, "exposes technical event",
+        ):
+            self.inspect(
+                second_step=2, second_committed=True,
+                second_fault="technical_leak",
+            )
+
+    def test_unreported_commit_allows_same_attempt_perceptible_event(self):
+        # Match the versioned Stage-7 allowlist actually used by Stage 9.
+        result = self.inspect(
+            second_step=2, second_committed=True,
+            second_fault="valid_cognitive",
+        )
+        self.assertEqual(result["claimed_physical_transitions_checked"], 1)
+        self.assertFalse(result["physical_truth_attested"])
 
     def test_distinct_completed_world_steps_are_still_accepted(self):
         result = self.inspect(second_step=2, second_committed=True)

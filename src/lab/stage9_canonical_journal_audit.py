@@ -20,6 +20,7 @@ from typing import Mapping
 
 from .determinism import canonical_causal_bytes, sha256_hex
 from .journal import GENESIS_HASH
+from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY
 from .stage9_secure_file_read import open_regular_no_follow
 from .stage9_scientific_assessment import (
     _reject_duplicate_keys, _reject_nonfinite_constant,
@@ -28,6 +29,11 @@ from .stage9_scientific_assessment import (
 ENTRY_FIELDS = frozenset({
     "index", "event_id", "previous_hash", "event_hash", "causal_event",
 })
+# Stage 8/9 inherit this exact Stage-7 autobiographical projection policy.
+# Refer to its owned allowlist, never an independently maintained audit copy.
+_DC09_ALLOWED_KINDS = frozenset(
+    STAGE7_AUTOBIOGRAPHICAL_POLICY.allowed_fields_by_kind
+)
 
 
 def audit_raw_causal_journal(
@@ -192,6 +198,15 @@ def audit_raw_causal_journal(
             )
         ):
             raise ValueError("invalid committed physical event references")
+        if any(
+            events[value][1].get("attempt_ref") != attempt
+            or events[value][1].get("t_monde") != step
+            or events[value][1].get("kind") not in _DC09_ALLOWED_KINDS
+            for value in refs
+        ):
+            raise ValueError(
+                "committed Memory reference crosses attempts or exposes technical event"
+            )
         pair = physical_by_attempt.get((attempt, step), {})
         commands = pair.get("command_experienced", ())
         transitions = pair.get("world_transition_experienced", ())

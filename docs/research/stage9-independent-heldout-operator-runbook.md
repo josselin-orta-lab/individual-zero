@@ -257,9 +257,13 @@ commit containing both original event references, **even if that attempt
 does not appear in held-out scoring rows**. Attempts with zero applied commands
 and zero advancement are not misclassified as successful physical steps.
 Uncommitted rollback attempts may remain in the technical journal (INV-49)
-without becoming accepted physical samples. The checker
-also validates canonical P-47 source measurements, causal evidence, reviews,
-intervention contexts and closed Memory references. It does **not** attest that these events occurred in the
+without becoming accepted physical samples. Every committed `event_refs` entry must also belong to the same
+`attempt_ref` and `t_monde` and be a perceptible event kind authorized by the
+versioned Stage-7/DC-09 autobiographical allowlist. This prevents even
+unreported commits from laundering oracle, technical or foreign-attempt
+events into Memory. The checker also validates canonical P-47 source
+measurements, causal evidence, reviews, intervention contexts and closed
+Memory references. It does **not** attest that these events occurred in the
 claimed independent physical environment.
 
 The scientific scorer produces **provisional** Wilson intervals and per-run
