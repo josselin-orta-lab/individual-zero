@@ -379,20 +379,32 @@ def _attach_synthetic_historical_proof(
         ])
     state["memory"]["seen_event_refs"].sort()
     state["memory"]["episode_sequence"] += 2
-    state["causal_model"]["config_contract"] = {"n1": 1, "n2": 2}
-    state["causal_model"]["causal_correlation_witnesses"] = [
-        [rule_ref, [source_ids[0]], [source_ids[1]]]
-    ]
-    proof_id = f"synthetic:historical-review:{rule_ref}"
-    state["causal_model"]["causal_reviews"] = [proof_id]
-    state["causal_model"]["causal_review_proofs"] = [{
-        "identifier": proof_id, "contingency_ref": rule_ref,
-        "alternatives": ["synthetic:alternative"],
-        "contrasting_pairs": [[source_ids[0], source_ids[1]]],
-    }]
+    owner = state["causal_model"]
+    owner["config_contract"] = {"n1": 1, "n2": 2}
+    witness = [rule_ref, [source_ids[0]], [source_ids[1]]]
+    for index, previous in enumerate(owner["causal_correlation_witnesses"]):
+        if previous[0] == rule_ref:
+            owner["causal_correlation_witnesses"][index] = witness
+            break
+    else:
+        owner["causal_correlation_witnesses"].append(witness)
+    existing_review = next(
+        (row for row in owner["causal_review_proofs"]
+         if row["contingency_ref"] == rule_ref),
+        None,
+    )
+    if existing_review is not None:
+        existing_review["contrasting_pairs"] = [[source_ids[0], source_ids[1]]]
+    else:
+        proof_id = f"synthetic:historical-review:{rule_ref}"
+        owner["causal_reviews"].append(proof_id)
+        owner["causal_review_proofs"].append({
+            "identifier": proof_id, "contingency_ref": rule_ref,
+            "alternatives": ["synthetic:alternative"],
+            "contrasting_pairs": [[source_ids[0], source_ids[1]]],
+        })
     # Admitted interventions need already-published comparator reports.
     # These fabricated reports exercise only the archived structural join.
-    owner = state["causal_model"]
     owner.setdefault("agency_evidence", []).extend(
         _synthetic_agency_comparison(trial)
         for trial in owner.get("causal_interventions", [])
