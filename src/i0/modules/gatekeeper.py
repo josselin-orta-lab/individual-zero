@@ -186,8 +186,11 @@ class Gatekeeper:
         active_goal: Goal | None,
         occupant: bool,
         subjects_present_before_new: set[str],
-        scoring_weights: Mapping[str, float],
+        scoring_weights: Mapping[str, float] | None = None,
     ) -> _Scored:
+        # Preserve the documented Stage-8 direct scoring interface.
+        if scoring_weights is None:
+            scoring_weights = self._config.weights
         relevance = (
             1.0
             if active_goal is not None and contribution.goal_ref == active_goal.id
