@@ -25,6 +25,9 @@ def audit_archived_closed_memory_sources(
     claimed_episodes: Mapping[str, str],
     physical_source_provenance: Mapping[str, Mapping[str, object]],
     claimed_agency_comparisons: Mapping[str, tuple[str, int]] | None = None,
+    claimed_agency_physical_sources: Mapping[
+        str, Mapping[str, object]
+    ] | None = None,
 ) -> dict[str, object]:
     """Validate exact serialized Memory closure without mutating any file."""
     if set(claimed_episodes) != set(physical_source_provenance):
@@ -114,6 +117,11 @@ def audit_archived_closed_memory_sources(
         {} if claimed_agency_comparisons is None
         else claimed_agency_comparisons
     )
+    if (
+        claimed_agency_physical_sources is not None
+        and set(claimed_agency_physical_sources) != set(agency_claims)
+    ):
+        raise ValueError("published agency physical claims disagree with archived ledger")
     for event_ref, claimed in sorted(agency_claims.items()):
         if (
             not isinstance(event_ref, str) or not event_ref
@@ -133,6 +141,24 @@ def audit_archived_closed_memory_sources(
             raise ValueError(
                 "published agency comparison absent from its closed Memory episode"
             )
+        if claimed_agency_physical_sources is not None:
+            physical = claimed_agency_physical_sources[event_ref]
+            if not isinstance(physical, Mapping):
+                raise ValueError("invalid physical source for published agency comparison")
+            command_ref = physical.get("command_ref")
+            transition_ref = physical.get("transition_ref")
+            step = physical.get("t_monde")
+            if (
+                not isinstance(command_ref, str) or not command_ref
+                or not isinstance(transition_ref, str) or not transition_ref
+                or type(step) is not int or step != observed_step
+                or command_ref == transition_ref
+                or command_ref not in item[0]
+                or transition_ref not in item[0]
+            ):
+                raise ValueError(
+                    "published agency comparison lacks same-attempt physical Memory events"
+                )
 
     return {
         "archived_causal_owner_state_canonical": True,
