@@ -25,3 +25,9 @@
 ## Validation
 
 Run `python -m unittest discover -s tests -p 'test_stage10*.py' -v` on this child branch, then short all-unit validation and smoke only if it is needed. Record the exact commit and CI receipt. **Do not merge to `main`**, or silently rebase/overwrite the actively developing `i0/vnext-stages-10-12` branch. After verification, offer this child branch via a draft PR into I0-vNext for controlled review.
+
+## Verified software checkpoint (11 October 2026)
+
+- **PASS, Python 3.12 quick unit/integration suite:** [GitHub Actions run #38092596375](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38092596375) on child commit `022624ed9451580fc30627c5101ce45763648a02`, **736 tests passed** in 59.965 seconds, and three-cycle bootstrap smoke passed. The full two-Python-version Golden replay was deliberately not executed.
+- This validation includes the Stage-10 `SleepHealth` and `Stage10HealthRuntime` tests together with existing project unit tests. The historical Stage-9 scientific NO-GO and all sealed campaign materials remain untouched.
+- The successful CI only establishes the submitted waking-readiness software slice. It does not prove sleep safety, consolidation, rebase, or scientific acceptance. The PR is stacked over `i0/vnext-stages-10-12` and must remain a draft until reviewed.
