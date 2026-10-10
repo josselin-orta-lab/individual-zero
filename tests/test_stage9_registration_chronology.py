@@ -14,7 +14,7 @@ import unittest
 from lab.stage9_registration_chronology import audit_registration_chronology
 from lab.stage9_scientific_preregistration import SPEC_PATH
 from tests.test_stage9_scientific_preregistration import example_draft
-from tests.test_stage9_scientific_assessment import make_report
+from tests.test_stage9_scientific_assessment import make_report, sealed
 
 
 def _git(repo: Path, *command: str) -> str:
@@ -87,6 +87,8 @@ def _create_fixture(
             "transient_alternate_path_equivalent",
             "alternate_path_ambiguous_duplicate",
             "alternate_path_ambiguous_nonfinite",
+            "alternate_path_reordered",
+            "transient_alternate_path_reordered",
         }:
             raise ValueError("unrecognized synthetic prior evidence scenario")
         alternate_name = earlier_evidence in {
@@ -94,6 +96,8 @@ def _create_fixture(
             "alternate_path_equivalent", "transient_alternate_path_equivalent",
             "alternate_path_ambiguous_duplicate",
             "alternate_path_ambiguous_nonfinite",
+            "alternate_path_reordered",
+            "transient_alternate_path_reordered",
         }
         early_relative = (
             "preseal/private-outcomes.json"
@@ -119,6 +123,23 @@ def _create_fixture(
                 insertion = marker + '\n  "synthetic_malformed": NaN,'
             early_file.write_text(
                 encoded.replace(marker, insertion, 1) + "\n",
+                encoding="utf-8",
+            )
+        elif earlier_evidence.endswith("reordered"):
+            # Same physical rows and same source hashes, but different
+            # presentation ordering and a correctly recomputed full digest.
+            # None of these changes represents a prospective new sample.
+            reordered = make_report(draft, candidates=20)
+            reordered["runs"].reverse()
+            for run in reordered["runs"]:
+                run["known_cause_cases"].reverse()
+                run["naturally_acquired_false_candidates"].reverse()
+            reordered = sealed(reordered)
+            original = make_report(draft, candidates=20)
+            if reordered["evidence_sha256"] == original["evidence_sha256"]:
+                raise AssertionError("synthetic reordering must change report digest")
+            early_file.write_text(
+                json.dumps(reordered, sort_keys=True, indent=2) + "\n",
                 encoding="utf-8",
             )
         elif earlier_evidence.endswith(("identical", "equivalent")):
@@ -295,6 +316,35 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
                     with self.assertRaisesRegex(
                         ValueError,
                         "semantically identical heldout evidence existed in Git",
+                    ):
+                        _audit(repo, registered, evidence)
+
+    def test_reordered_prior_worlds_and_candidates_are_not_new_scientific_samples(self):
+        for scenario in (
+            "alternate_path_reordered",
+            "transient_alternate_path_reordered",
+        ):
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    repo = Path(folder)
+                    _, registered, evidence = _create_fixture(
+                        repo, earlier_evidence=scenario,
+                    )
+                    if (repo / "preseal/private-outcomes.json").exists():
+                        earlier = json.loads(
+                            (repo / "preseal/private-outcomes.json").read_text()
+                        )
+                        published = json.loads(
+                            (repo / "results/heldout.json").read_text()
+                        )
+                        self.assertNotEqual(
+                            earlier["evidence_sha256"],
+                            published["evidence_sha256"],
+                        )
+                        self.assertNotEqual(earlier["runs"], published["runs"])
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "reordered heldout observations existed in Git",
                     ):
                         _audit(repo, registered, evidence)
 
