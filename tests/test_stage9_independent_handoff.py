@@ -30,6 +30,7 @@ def _synthetic_bundle(
     reused_archives: bool = False,
     omit_one_negative_run: bool = False,
     share_candidate_episode: bool = False,
+    share_known_case_episode: bool = False,
 ) -> dict:
     """Disposable Git+world+raw bundle, NO real causal experiment."""
     repo, manifest_root, raw_root = (
@@ -132,6 +133,7 @@ def _synthetic_bundle(
             if omit_one_negative_run else None
         ),
         share_candidate_episode=share_candidate_episode,
+        share_known_case_episode=share_known_case_episode,
     )
     evidence["frozen_implementation_commit"] = frozen
     evidence["registration_digest"] = digest
@@ -378,6 +380,36 @@ class Stage9IndependentHandoffTests(unittest.TestCase):
             )
             self.assertFalse(result["golden_stage9_frozen"])
             self.assertIsNone(result["scientific_verdict"])
+
+    def test_shared_known_cause_memory_episode_requires_review(self):
+        with TemporaryDirectory() as folder:
+            options = _synthetic_bundle(
+                Path(folder), review_eligible=True,
+                share_known_case_episode=True,
+            )
+            result = audit_independent_heldout_handoff(**options)
+            self.assertEqual(
+                result["provisional_metric_assessment"],
+                "metrics_eligible_for_independent_review",
+            )
+            known_clusters = result["reused_closed_memory_known_case_episodes"]
+            self.assertEqual(len(known_clusters), 2)
+            self.assertEqual(
+                [cluster["known_case_count"] for cluster in known_clusters],
+                [2, 2],
+            )
+            self.assertEqual(
+                known_clusters,
+                result["raw_artifact_custody"][
+                    "reused_closed_memory_known_case_episodes"
+                ],
+            )
+            self.assertIn(
+                "multiple_known_cause_cases_from_one_closed_memory_episode_require_independence_review",
+                result["review_blockers"],
+            )
+            self.assertIsNone(result["scientific_verdict"])
+            self.assertFalse(result["golden_stage9_frozen"])
 
     def test_diagnostic_mismatch_between_scorer_and_raw_reader_fails_closed(self):
         with TemporaryDirectory() as folder:
