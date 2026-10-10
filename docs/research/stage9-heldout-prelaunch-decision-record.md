@@ -6,9 +6,9 @@ The normative source remains `docs/architecture/reference/en/mvp-specification-v
 
 ## Known development checkpoint, not a scientific freeze
 
-- Last inspected development candidate: `74bf90414d8fae3bffd782fbfa97a1a82711c156` (2026-10-10); it is **not** an approved freeze. Replace this reference with the **actual full 40-character implementation commit** selected by the owner and evaluator, after any further software change.
-- PR #18 is a **draft**, not merged. No Stage-9 Golden exists.
-- The last recorded narrow CI at that candidate passed 638 unit tests and CLI smoke on Python 3.12; a new exhaustive Python 3.11/3.12 run and archived reference checks have **not** been claimed for this handoff.
+- Integrated software baseline: [`8cefa193a003e812bb7eee19395157c1385a8156`](https://github.com/josselin-orta-lab/individual-zero/commit/8cefa193a003e812bb7eee19395157c1385a8156) (2026-10-10); it is **not** an approved scientific freeze. The independent owner and evaluator must prospectively choose the **actual full 40-character final implementation commit** from the integrated `main` history, after any further software change.
+- Historical PR #18 was **closed as superseded** by software-integration PR #20, merged into `main` by squash. This changes integration status only. No Stage-9 scientific Golden exists.
+- Stage-9 source commit `96abfa089fd52f12b7e35c334289088583645125` passed full software CI with 652 tests each under Python 3.11 and 3.12 ([run #38067542568](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38067542568)). The combined Stage-1–9 and parallel Stage-5 integration passed 678 tests on Python 3.12 ([run #38075526900](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38075526900)); **a full combined-tree Python 3.11/3.12 run is not claimed**. Neither software result establishes independent science.
 - Current independent review, prospectively sealed worlds/seeds, original physical witness and protocol approval: **NOT VERIFIED**.
 
 ## A. Named responsible people and incompatible access
@@ -81,7 +81,7 @@ Only a real prospective, attributable and independently witnessed approval can r
 
 ## E. Permitted work while NO-GO
 
-Continue development-only unit tests, static checks, mock-world adversarial custody tests, code review, preregistration-format drafts **without withheld secrets**, documentation and control rehearsal on publicly designated development worlds. Keep PR #18 draft and unmerged; retain candidate commits and unfavorable test results.
+Continue development-only unit tests, static checks, mock-world adversarial custody tests, code review, preregistration-format drafts **without withheld secrets**, documentation and control rehearsal on publicly designated development worlds. Retain historical PR #18 and the candidate commits as traceable closed development history; preserve unfavorable test results. Software changes in integrated `main` still require a new prospective freeze before any held-out study.
 
 **Forbidden until authorized:** opening the sealed world/seed material in the development environment, running a held-out evaluation, adjusting thresholds after results, creating a scientific Golden, publishing bench-only oracle truth or declaring Stage 9 scientifically closed.
 
