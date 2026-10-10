@@ -241,6 +241,35 @@ def _audit_pre_registration_evidence_history(
     return bool(commits), len(commits)
 
 
+def _reject_pre_registration_evidence_blob(
+    repository: Path, registration_commit: str, evidence_commit: str,
+    evidence_name: str,
+) -> int:
+    """Reject early byte-identical results, even at a *different* Git path.
+
+    A path-specific Git log is insufficient: a preexisting result can be
+    committed under another name and later copied into the reported path.
+    Git blob IDs commit to the exact file bytes, not its name. Enumerate
+    all objects reachable from the sealed registration commit, including
+    deleted ancestors and merged history. This cannot detect re-encoding,
+    external results, or data inspected but never committed.
+    """
+    evidence_blob = _git(
+        repository, "rev-parse", f"{evidence_commit}:{evidence_name}",
+    ).strip()
+    if _git(repository, "cat-file", "-t", evidence_blob.decode("ascii")).strip() != b"blob":
+        raise ValueError("heldout evidence must be a committed Git blob")
+    objects = _git(
+        repository, "rev-list", "--objects", "--no-object-names",
+        registration_commit,
+    ).splitlines()
+    if evidence_blob in objects:
+        raise ValueError(
+            "heldout evidence bytes existed in Git before prospective registration"
+        )
+    return len(objects)
+
+
 def audit_registration_chronology(
     *, repository: Path, registration_path: Path, registration_commit: str,
     evidence_path: Path, evidence_commit: str,
@@ -302,6 +331,9 @@ def audit_registration_chronology(
     # Git log normally records any create/delete of the path, but a commit
     # can carry a preexisting file unchanged. Preserve the endpoint check.
     earlier_evidence = earlier_evidence or prior_evidence
+    prior_objects_checked = _reject_pre_registration_evidence_blob(
+        root, registration_commit, evidence_commit, evidence_name,
+    )
     provisional = assess_heldout_campaign(registration, evidence)
     return {
         "chronology_status": (
@@ -327,6 +359,7 @@ def audit_registration_chronology(
         "pre_registration_evidence_path_commits_checked": (
             prior_evidence_commits_checked
         ),
+        "pre_registration_git_objects_checked": prior_objects_checked,
         "registration_unchanged_descendant_commits_checked": (
             audited_descendant_commits
         ),
