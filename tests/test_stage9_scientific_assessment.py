@@ -79,6 +79,51 @@ class Stage9ScientificAssessmentTests(unittest.TestCase):
         self.assertIsNone(pending["scientific_verdict"])
         self.assertFalse(pending["golden_stage9_frozen"])
 
+    def test_cross_run_identical_raw_archives_are_disclosed_not_certified(self):
+        draft = example_draft()
+        draft["minimum_known_cause_accuracy"] = 0.20
+        draft["maximum_superstitious_rule_rate"] = 0.80
+        draft["minimum_naturally_acquired_candidates"] = 2
+        # These fixture bytes are intentionally identical in ALL cells.
+        # They are not proof of independent executions. The scorer must
+        # disclose this even when the Wilson criteria are numerically met.
+        result = assess_heldout_campaign(draft, make_report(draft, candidates=20))
+        self.assertEqual(
+            result["assessment"], "metrics_eligible_for_independent_review",
+        )
+        for field, repeated in (
+            ("journal_sha256", "1" * 64),
+            ("causal_state_sha256", "2" * 64),
+        ):
+            groups = result["cross_run_identical_archives"][field]
+            self.assertEqual(len(groups), 1)
+            self.assertEqual(groups[0]["sha256"], repeated)
+            self.assertEqual(
+                len(groups[0]["runs"]),
+                len(draft["holdout_world_ids"]) * len(draft["holdout_seeds"]),
+            )
+            self.assertEqual(
+                groups[0]["runs"],
+                sorted(
+                    groups[0]["runs"],
+                    key=lambda cell: (cell["world_id"], cell["seed"]),
+                ),
+            )
+        self.assertIsNone(result["scientific_verdict"])
+        self.assertFalse(result["golden_stage9_frozen"])
+
+    def test_distinct_run_archive_digests_have_no_cross_run_collision(self):
+        draft = example_draft()
+        report = make_report(draft, candidates=20)
+        for n, row in enumerate(report["runs"], 1):
+            row["journal_sha256"] = row["replay_journal_sha256"] = f"{n:064x}"
+            row["causal_state_sha256"] = row["replay_causal_state_sha256"] = f"{n+100:064x}"
+        scored = assess_heldout_campaign(draft, sealed(report))
+        self.assertEqual(
+            scored["cross_run_identical_archives"],
+            {"journal_sha256": [], "causal_state_sha256": []},
+        )
+
     def test_zero_candidates_is_not_a_zero_percent_success(self):
         draft = example_draft()
         draft["confidence_method"] = "wilson_95"
