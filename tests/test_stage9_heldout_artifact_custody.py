@@ -446,7 +446,8 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             for candidate in candidates[:2]:
                 state["causal_model"]["causal_observations"].append({
                     "contingency_ref": candidate["contingency_ref"],
-                    "observation_ref": observation_ref,\n                    "episode_ref": candidates[0]["episode_ref"],
+                    "observation_ref": observation_ref,
+                    "episode_ref": candidates[0]["episode_ref"],
                 })
                 state["causal_model"]["causal_credits"].append([
                     candidate["contingency_ref"], observation_ref, "observation",
