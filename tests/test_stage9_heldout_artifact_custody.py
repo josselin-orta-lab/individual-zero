@@ -1071,6 +1071,10 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             ("wrong_attribution", "lacks matching published agency comparison"),
             ("duplicate_event", "duplicate published or pending agency comparison"),
             ("unversioned_effect", "invalid archived agency comparison"),
+            ("malformed_float", "invalid archived agency comparison"),
+            ("noncanonical_float", "invalid archived agency comparison"),
+            ("negative_zero_float", "invalid archived agency comparison"),
+            ("overflow_float", "invalid archived agency comparison"),
         )
         for scenario, expected in scenarios:
             with self.subTest(scenario=scenario):
@@ -1141,6 +1145,14 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                         agency[1]["event_ref"] = agency[0]["event_ref"]
                     elif scenario == "unversioned_effect":
                         agency[0]["effects"][0][5] = ""
+                    elif scenario == "malformed_float":
+                        agency[0]["effects"][0][2] = {"$f64": "not-a-float"}
+                    elif scenario == "noncanonical_float":
+                        agency[0]["effects"][0][2] = {"$f64": "0x1p+0"}
+                    elif scenario == "negative_zero_float":
+                        agency[0]["effects"][0][2] = {"$f64": "-0x0.0p+0"}
+                    elif scenario == "overflow_float":
+                        agency[0]["effects"][0][2] = {"$f64": "0x1p+1024"}
                     altered = _replace_causal_state_bytes(
                         root, baseline, index, canonical_causal_bytes(state),
                         run_index=run_index,
