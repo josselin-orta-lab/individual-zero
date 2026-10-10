@@ -3,14 +3,18 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 import unittest
 
 from lab.stage9_scientific_preregistration import (
     REGISTRATION_VERSION, SPEC_PATH, load_registration,
     normative_specification_digest, preflight, validate_registration,
 )
+from lab import stage9_scientific_preregistration as registration_module
+from lab import stage9_secure_file_read as guarded
 
 
 def example_draft() -> dict[str, object]:
@@ -54,6 +58,66 @@ def example_draft() -> dict[str, object]:
 
 
 class Stage9PreregistrationTests(unittest.TestCase):
+
+    def test_normative_digest_refuses_symlinked_file_and_parent(self):
+        # The normative English source itself may not be silently redirected
+        # by a link, even if the linked file contains byte-identical text.
+        for part in ("leaf", "parent"):
+            with self.subTest(part=part):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    target = root / SPEC_PATH
+                    target.parent.mkdir(parents=True)
+                    target.write_bytes(b"synthetic-normative-specification")
+                    fake_module = root / "src" / "lab" / "module.py"
+                    with patch.object(registration_module, "__file__", str(fake_module)):
+                        self.assertEqual(len(normative_specification_digest()), 64)
+                        if part == "leaf":
+                            relocated = root / "relocated-normative.md"
+                            target.rename(relocated)
+                            target.symlink_to(relocated)
+                        else:
+                            relocated = root / "relocated-en"
+                            target.parent.rename(relocated)
+                            target.parent.symlink_to(
+                                relocated, target_is_directory=True,
+                            )
+                        with self.assertRaisesRegex(ValueError, "symlink"):
+                            normative_specification_digest()
+
+    def test_normative_digest_detects_mutation_during_descriptor_read(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            target = root / SPEC_PATH
+            target.parent.mkdir(parents=True)
+            target.write_bytes(b"synthetic-normative-specification")
+            fake_module = root / "src" / "lab" / "module.py"
+            before = target.stat()
+            original = target.read_bytes()
+            real_fdopen = guarded.os.fdopen
+            mutated = False
+
+            def rewrite_after_open(fd, mode):
+                nonlocal mutated
+                stream = real_fdopen(fd, mode)
+                if not mutated:
+                    mutated = True
+                    target.write_bytes(b"X" + original[1:])
+                    os.utime(target, ns=(
+                        before.st_atime_ns, before.st_mtime_ns + 2_000_000_000,
+                    ))
+                return stream
+
+            with patch.object(registration_module, "__file__", str(fake_module)):
+                with patch.object(
+                    guarded.os, "fdopen", side_effect=rewrite_after_open,
+                ):
+                    with self.assertRaisesRegex(
+                        ValueError, "changed during descriptor read",
+                    ):
+                        normative_specification_digest()
+            self.assertTrue(mutated)
+
     def test_absence_means_unregistered_not_golden(self):
         result = preflight()
         self.assertEqual(result["registration_status"], "unregistered")

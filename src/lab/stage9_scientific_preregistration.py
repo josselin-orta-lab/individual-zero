@@ -16,7 +16,7 @@ import re
 from typing import Mapping
 
 from .determinism import canonical_causal_bytes, sha256_hex
-from .stage9_secure_file_read import read_text_no_follow
+from .stage9_secure_file_read import open_regular_no_follow, read_text_no_follow
 
 
 SPEC_PATH = "docs/architecture/reference/en/mvp-specification-v1.2.1.md"
@@ -41,8 +41,13 @@ REQUIRED_FIELDS = frozenset({
 
 
 def normative_specification_digest() -> str:
+    """Hash the actual English normative file through a guarded descriptor.
+
+    This does not substitute for the frozen Git-tree identity checks.
+    """
     root = Path(__file__).resolve().parents[2]
-    return sha256((root / SPEC_PATH).read_bytes()).hexdigest()
+    with open_regular_no_follow(root / SPEC_PATH) as stream:
+        return sha256(stream.read()).hexdigest()
 
 
 def _ids(rows: object, minimum: int = 1) -> set[str]:

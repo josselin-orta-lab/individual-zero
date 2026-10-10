@@ -31,6 +31,9 @@ the research plan is frozen, never to the simulated individual.
 
 1. Freeze the exact implementation Git commit, root 'pyproject.toml', English
    v1.2.1 normative specification and parameter/ontology/equipment versions.
+   The draft registration checks the actual normative file using a guarded
+   descriptor; Git chronology and pre-run checkout checks must still establish
+   the unchanged frozen specification bytes independently.
 2. Complete and author-approve the registration JSON using the existing exact
    'stage9-preregistration-schema-v2'; designate calibration and held-out
    worlds, positive/null controls, disjoint seeds, candidate definition,
