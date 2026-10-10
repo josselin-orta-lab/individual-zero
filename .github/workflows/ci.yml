@@ -1,18 +1,80 @@
 name: CI
 
+# Budget policy: brief PR checks on reviewable code, exhaustive diagnostics on demand.
 on:
   pull_request:
-  push:
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
     branches:
       - main
+      - 'i0/stage*'
+      - 'runtime/*'
+      - 'world/*'
+    paths:
+      - '.github/workflows/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - 'setup.py'
+      - 'setup.cfg'
+      - 'tox.ini'
+      - 'scripts/**'
+      - 'docs/architecture/reference/en/mvp-specification-v1.2.1.md'
+  # Available from the Actions UI after this workflow reaches default branch.
+  # Until then, manually apply the ci-full label to the Stage-9 PR.
+  workflow_dispatch:
+
+concurrency:
+  # Cancel stale PR updates, but never cancel a requested full run on the
+  # same PR merely because another commit or ready-for-review event arrived.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.action == 'labeled' && 'manual-full' || github.event_name }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
   actions: read
 
 jobs:
-  test:
+  quick-checks:
+    name: quick-unit-tests (Python 3.12)
+    # Draft PRs are development checkpoints, not release validation events.
+    # A labeled PR only requests a full run when explicitly labeled ci-full.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.action != 'labeled' &&
+      !github.event.pull_request.draft
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install project
+        run: python -m pip install -e .
+
+      - name: Run unit tests (without long-running reference diagnostics)
+        run: python -m unittest discover -s tests -q
+
+      - name: Run bootstrap smoke execution
+        run: individual-zero --cycles 3 --seed 0 --run-id ci-smoke --output /tmp/individual-zero-ci.jsonl
+
+  test:
+    name: full-validation (Python ${{ matrix.python-version }})
+    # Preserve every existing extended test and archive for manual validation.
+    # The ci-full label gives this draft PR an immediate manual path while
+    # workflow_dispatch waits for its workflow definition on default branch.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == 'ci-full')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
