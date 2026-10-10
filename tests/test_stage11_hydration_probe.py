@@ -1,5 +1,6 @@
 """Stage-11 public developmental hydration funnel, NEVER held-out acceptance."""
 import unittest
+import json
 
 from lab.determinism import canonical_causal_bytes, sha256_hex
 from lab.stage11_hydration_probe import run_public_hydration_funnel
@@ -26,7 +27,9 @@ class Stage11HydrationProbeTests(unittest.TestCase):
         self.assertEqual(digest, sha256_hex(canonical_causal_bytes(data)))
         # Preserve the diagnostic readout in the small software CI log.
         # This is NOT an independent protocol registration or scientific GO.
-        print("stage11_public_hydration_diagnostic=" + first.to_json().replace("\\n", " "))
+        print("stage11_public_hydration_diagnostic=" + json.dumps(
+            first.as_dict(), sort_keys=True, separators=(",", ":")
+        ))
 
     def test_rejects_nonpublic_variants_and_invalid_seeds(self):
         for args in (
