@@ -26,7 +26,7 @@ from .stage9_positive_hydration_benchmark import (
 from .stage9_random_reward_benchmark import preregistered_food_rewards
 
 
-PROTOCOL_VERSION = "stage11-public-hydration-funnel-dev-v2"
+PROTOCOL_VERSION = "stage11-public-hydration-funnel-dev-v3"
 TEST_PREFIX = "option:causal-test:"
 
 
@@ -69,6 +69,9 @@ class PublicHydrationFunnel:
     stage11_causal_intervention_stagings: int
     stage11_exploration_visits: int
     stage11_exploration_stagnant_visits: int
+    stage11_prospective_prediction_count: int
+    stage11_prospective_source_count: int
+    prospective_prediction_enabled: bool
     scientific_verdict: None = None
     golden_stage9_frozen: bool = False
 
@@ -84,9 +87,11 @@ class PublicHydrationFunnel:
 
 def run_public_hydration_funnel(
     *, seed: int = 41, world: str = "small_water_gain", steps: int = 18,
+    enable_lived_prediction: bool = False,
 ) -> PublicHydrationFunnel:
     if (type(seed) is not int or seed < 0 or type(steps) is not int
-        or steps < 6 or world not in POSITIVE_HYDRATION_VARIANTS):
+        or steps < 6 or world not in POSITIVE_HYDRATION_VARIANTS
+        or type(enable_lived_prediction) is not bool):
         raise ValueError("only explicitly public Stage-9 development settings are allowed")
     gain, decay = POSITIVE_HYDRATION_VARIANTS[world]
     rewards = preregistered_food_rewards(campaign_seed=seed, steps=steps)
@@ -101,7 +106,9 @@ def run_public_hydration_funnel(
     if schedule_digest != control.schedule_sha256:
         raise AssertionError("development controls did not share physical schedule")
 
-    baseline = build_stage11_reference_runtime()
+    baseline = build_stage11_reference_runtime(
+        enable_lived_prediction=enable_lived_prediction,
+    )
     stage9_config = replace(
         baseline._stage11_config.stage9,
         version=STAGE9_PUBLIC_PROTOCOL + ":runtime",
@@ -192,6 +199,33 @@ def run_public_hydration_funnel(
         and isinstance(event.get("data"), Mapping)
         and event["data"]["option_ref"].startswith(TEST_PREFIX)
     ]
+    # A descriptive forecast must exist BEFORE sending its particular
+    # physical action. Its source references may be checked by the lab but
+    # are never counted as additional causal interventions.
+    prospective = [
+        event["data"] for event in events
+        if event.get("kind") == "stage11_prospective_prediction_frozen"
+        and isinstance(event.get("data"), Mapping)
+    ]
+    for row in prospective:
+        steps_before = row.get("source_steps")
+        transitions = row.get("source_transition_refs")
+        episodes = row.get("source_episode_refs")
+        if (
+            row.get("prediction_source") != "prior_closed_lived_observation"
+            or row.get("causal_validation") is not False
+            or not isinstance(steps_before, list)
+            or not isinstance(transitions, list)
+            or not isinstance(episodes, list)
+            or not steps_before
+            or not (len(steps_before) == len(transitions) == len(episodes))
+            or len(set(steps_before)) != len(steps_before)
+            or len(set(transitions)) != len(transitions)
+            or len(set(episodes)) != len(episodes)
+            or any(type(step) is not int or step >= row["sent_t_monde"]
+                   for step in steps_before)
+        ):
+            raise AssertionError("prospective forecast has invalid prior witnesses")
     # The P-47 report is produced from the actual next-step capture, not
     # merely from the selected command. Count independently stored statuses
     # without guessing the cause of a missing or uncredited intervention.
@@ -305,6 +339,11 @@ def run_public_hydration_funnel(
         stage11_causal_intervention_stagings=staged_interventions,
         stage11_exploration_visits=exploration_visits,
         stage11_exploration_stagnant_visits=exploration_stagnant,
+        stage11_prospective_prediction_count=len(prospective),
+        stage11_prospective_source_count=sum(
+            len(row["source_transition_refs"]) for row in prospective
+        ),
+        prospective_prediction_enabled=enable_lived_prediction,
     )
 
 
