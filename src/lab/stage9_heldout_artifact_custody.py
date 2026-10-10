@@ -829,6 +829,9 @@ def audit_heldout_raw_artifacts(
         "reused_closed_memory_candidate_episodes": (
             scored["reused_closed_memory_candidate_episodes"]
         ),
+        "reused_closed_memory_known_case_episodes": (
+            scored["reused_closed_memory_known_case_episodes"]
+        ),
         "negative_runs_without_natural_candidates": (
             scored["negative_runs_without_natural_candidates"]
         ),
