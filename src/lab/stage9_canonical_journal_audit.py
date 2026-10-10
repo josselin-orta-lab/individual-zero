@@ -174,16 +174,54 @@ def audit_raw_causal_journal(
     # of whether the operator selected both as held-out observations.
     accepted_steps: dict[int, str] = {}
     for (attempt, step), commits in sorted(commits_by_attempt.items()):
-        if not commits:
-            continue
-        pair = physical_by_attempt.get((attempt, step), {})
-        if not (
-            pair.get("command_experienced")
-            and pair.get("world_transition_experienced")
+        # Every autobiographical commit is part of the committed journal,
+        # even if its transition is not selected for the scientific score.
+        # The per-source checks below alone cannot reject a duplicated or
+        # malformed *unreported* completed physical step.
+        if len(commits) != 1:
+            raise ValueError("physical attempt has multiple Memory commits")
+        commit_index, commit = commits[0]
+        refs = commit.get("event_refs")
+        if (
+            not isinstance(refs, list)
+            or any(not isinstance(value, str) or not value for value in refs)
+            or len(set(refs)) != len(refs)
+            or any(
+                value not in events or events[value][0] >= commit_index
+                for value in refs
+            )
         ):
-            # Incomplete/blocked attempts remain subject to their own
-            # source checks, but are not additional completed advancements.
+            raise ValueError("invalid committed physical event references")
+        pair = physical_by_attempt.get((attempt, step), {})
+        commands = pair.get("command_experienced", ())
+        transitions = pair.get("world_transition_experienced", ())
+        if not commands and not transitions:
+            # An admissibility block before sending can close a step with
+            # zero applied commands and zero world advancement (INV-53).
             continue
+        if len(commands) != 1 or len(transitions) != 1:
+            raise ValueError(
+                "committed physical attempt has nonunique command or world advancement"
+            )
+        command_index, command_ref = commands[0]
+        transition_index, transition_ref = transitions[0]
+        if (
+            not command_index < transition_index < commit_index
+            or command_ref not in refs
+            or transition_ref not in refs
+        ):
+            raise ValueError("committed physical attempt lacks ordered applied events")
+        if any(
+            events[value][1].get("kind") in {
+                "command_experienced", "world_transition_experienced",
+            }
+            and (
+                events[value][1].get("attempt_ref"),
+                events[value][1].get("t_monde"),
+            ) != (attempt, step)
+            for value in refs
+        ):
+            raise ValueError("committed physical attempt references foreign physical source")
         previous_attempt = accepted_steps.get(step)
         if previous_attempt is not None and previous_attempt != attempt:
             raise ValueError(

@@ -250,10 +250,14 @@ read at different moments, but does not prevent transient tampering outside
 the guarded reads or establish an independent physical witness. The raw-artifact
 checker validates physical event identities, same-attempt commands/transitions,
 and the INV-53 condition that two separately committed attempts cannot
-claim two normally completed advancements of the same world step. Uncommitted
-rollback attempts may remain in the technical journal (INV-49) without
-becoming accepted physical samples. This is checked even when the second
-committed attempt is absent from reported held-out scoring rows. The checker
+claim two normally completed advancements of the same world step. Every
+committed attempt with physical events is also checked globally for one
+command, one transition, their chronological order, and one autobiographical
+commit containing both original event references, **even if that attempt
+does not appear in held-out scoring rows**. Attempts with zero applied commands
+and zero advancement are not misclassified as successful physical steps.
+Uncommitted rollback attempts may remain in the technical journal (INV-49)
+without becoming accepted physical samples. The checker
 also validates canonical P-47 source measurements, causal evidence, reviews,
 intervention contexts and closed Memory references. It does **not** attest that these events occurred in the
 claimed independent physical environment.
