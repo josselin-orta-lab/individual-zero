@@ -167,7 +167,24 @@ heuristics cannot prove the absence of differently encoded data, unpublished
 results, or objects outside reachable Git history; independent prospectivity
 review remains essential. A structurally complete receipt with those flags is **not** a
 passing held-out campaign. A report with no flags is also **not** an
-independent scientific witness. A separate cross-run check reports any
+independent scientific witness. The provisional scorer also exposes
+`reused_closed_memory_candidate_episodes` for distinct candidate rules
+sharing one closed Memory episode, and
+`negative_runs_without_natural_candidates` for registered null-world/seed
+cells contributing no naturally acquired candidate. Both become explicit
+`review_blockers` when they threaten interpretation of the pooled
+confidence intervals. A Memory episode can legitimately contain multiple
+distinct applied physical transitions; an episode identifier is **neither**
+a uniquely independent physical trial nor an invalid observation. Likewise,
+a null run can legitimately produce zero hypotheses. Do not fabricate
+additional observations, drop that run, alter preregistered thresholds or
+assume trial independence from unique event IDs. Preserve the original
+counts and have the reviewer assess physical contexts, within-episode
+dependence, run-level clustering and the registered sampling plan. The
+raw-artifact reader independently recomputes these diagnostics and the
+single handoff command requires exact agreement between readers.
+
+A separate cross-run check reports any
 byte-identical original journal or canonical causal-owner state in two or
 more distinct registered world/seed cells. These are explicit
 `cross_run_identical_archives` groups, with separate `review_blockers`
