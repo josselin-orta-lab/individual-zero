@@ -25,6 +25,7 @@ def _synthetic_bundle(
     root: Path, *, insufficient: bool = False,
     review_eligible: bool = False, prior_evidence_path: bool = False,
     transient_prior_evidence: bool = False,
+    large_unexamined_prior_blob: bool = False,
 ) -> dict:
     """Disposable Git+world+raw bundle, NO real causal experiment."""
     repo, manifest_root, raw_root = (
@@ -78,6 +79,15 @@ def _synthetic_bundle(
         _git(repo, "commit", "-qm", "synthetic early outcome-path")
         _git(repo, "rm", "results/heldout.json")
         _git(repo, "commit", "-qm", "hide early outcome-path before registration")
+    if large_unexamined_prior_blob:
+        # This is unrelated binary content, not fabricated heldout evidence.
+        # The machine scanner cannot establish what every oversized blob
+        # means; it must report that boundary to the independent reviewer.
+        path = repo / "bench/raw-large.bin"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"0" * (2 * 1024 * 1024))
+        _git(repo, "add", "bench/raw-large.bin")
+        _git(repo, "commit", "-qm", "archive unrelated large bench blob")
     (repo / "research").mkdir()
     registration_path = Path("research/registration.json")
     (repo / registration_path).write_text(
@@ -208,6 +218,10 @@ class Stage9IndependentHandoffTests(unittest.TestCase):
                 "metrics_eligible_for_independent_review",
             )
             self.assertEqual(result["review_blockers"], [])
+            self.assertTrue(result["pre_registration_semantic_scan_complete"])
+            self.assertEqual(
+                result["pre_registration_oversized_blobs_not_checked"], 0,
+            )
             self.assertEqual(
                 result["handoff_status"],
                 "machine_checks_consistent_requires_independent_scientific_review",
@@ -252,6 +266,28 @@ class Stage9IndependentHandoffTests(unittest.TestCase):
                 [
                     "evidence_path_existed_earlier_in_git_history_requires_prospectivity_review"
                 ],
+            )
+            self.assertEqual(
+                result["handoff_status"],
+                "machine_checks_complete_with_explicit_review_blockers",
+            )
+            self.assertIsNone(result["scientific_verdict"])
+            self.assertFalse(result["golden_stage9_frozen"])
+
+    def test_large_unexamined_prior_blobs_require_independent_review(self):
+        with TemporaryDirectory() as folder:
+            options = _synthetic_bundle(
+                Path(folder), review_eligible=True,
+                large_unexamined_prior_blob=True,
+            )
+            result = audit_independent_heldout_handoff(**options)
+            self.assertEqual(
+                result["review_blockers"],
+                ["pre_registration_large_git_blobs_not_semantically_inspected"],
+            )
+            self.assertFalse(result["pre_registration_semantic_scan_complete"])
+            self.assertGreater(
+                result["pre_registration_oversized_blobs_not_checked"], 0,
             )
             self.assertEqual(
                 result["handoff_status"],
