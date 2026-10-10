@@ -16,7 +16,9 @@ from pathlib import Path
 from typing import Mapping
 
 from .determinism import canonical_causal_bytes, sha256_hex
-from i0.modules.causal_lifecycle import decode_intervention, decode_observation, decode_review
+from i0.modules.causal_lifecycle import (
+    decode_agency_evidence, decode_intervention, decode_observation, decode_review,
+)
 from .stage9_canonical_journal_audit import audit_raw_causal_journal
 from .stage9_memory_custody import audit_archived_closed_memory_sources
 from .stage9_scientific_assessment import (
@@ -566,6 +568,56 @@ def audit_heldout_raw_artifacts(
             ):
                 raise ValueError(
                     "archived tested or established rule lacks historical correlation and review"
+                )
+        # A published intervention is not backed by its own comparator
+        # labels. Preserve the canonical owner's publication boundary:
+        # only the published DC-09/P-47 agency ledger can corroborate a
+        # trial. Pending comparisons never count as causal evidence.
+        agency_rows = owner.get("agency_evidence", [])
+        pending_agency_rows = owner.get("pending_agency_evidence", [])
+        if (
+            not isinstance(agency_rows, list)
+            or not isinstance(pending_agency_rows, list)
+        ):
+            raise ValueError("invalid archived agency comparison ledgers")
+        agency_by_id = {}
+        all_agency_ids = set()
+        agency_event_refs = set()
+        for rows in (agency_rows, pending_agency_rows):
+            for entry in rows:
+                if not isinstance(entry, dict):
+                    raise ValueError("invalid archived agency comparison")
+                try:
+                    comparison = decode_agency_evidence(entry)
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise ValueError(
+                        "invalid archived agency comparison"
+                    ) from exc
+                if (
+                    comparison.identifier in all_agency_ids
+                    or comparison.event_ref in agency_event_refs
+                ):
+                    raise ValueError(
+                        "duplicate published or pending agency comparison provenance"
+                    )
+                all_agency_ids.add(comparison.identifier)
+                agency_event_refs.add(comparison.event_ref)
+                if rows is agency_rows:
+                    agency_by_id[comparison.identifier] = comparison
+        for trial in validated_interventions:
+            comparison = agency_by_id.get(trial.comparator_ref)
+            if (
+                comparison is None
+                or comparison.source != "agency_comparator"
+                or comparison.episode_ref != trial.episode_ref
+                or comparison.option_ref != trial.command_ref
+                or comparison.sent_t_monde != trial.emitted_step
+                or comparison.observed_t_monde != trial.observed_step
+                or comparison.status != trial.comparator_status
+                or comparison.attribution != trial.attribution
+            ):
+                raise ValueError(
+                    "archived causal intervention lacks matching published agency comparison"
                 )
         memory_audit = audit_archived_closed_memory_sources(
             paths["causal_state_path"],
