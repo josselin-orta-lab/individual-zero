@@ -148,7 +148,7 @@ def audit_registered_manifest_files(
     root = _root_without_aliases(artifact_root)
     filenames: set[Path] = set()
     inodes: set[tuple[int, int]] = set()
-    pinned: list[tuple[Path, tuple[int, int], str]] = []
+    pinned: list[tuple[str, Path, tuple[int, int], str]] = []
     total_bytes = 0
     count = 0
 
@@ -175,16 +175,24 @@ def audit_registered_manifest_files(
                 raise ValueError(
                     f"{group} physical manifest digest mismatch: {label}"
                 )
-            pinned.append((source, inode, observed))
+            pinned.append((files[label], source, inode, observed))
             total_bytes += size
             count += 1
 
     # Rehash after the complete sweep: a file replaced mid-audit must not
     # silently pass merely because its first read preceded the replacement.
     # This is not a filesystem signature or evidence of external custody.
-    for path, inode, expected in pinned:
-        meta = path.stat()
-        if (meta.st_dev, meta.st_ino) != inode or _hash_bytes(path)[0] != expected:
+    for relative, original_path, inode, expected in pinned:
+        # Revalidate the *declared* path, not just the original inode.
+        # Moving a file and replacing its old name with a symlink to that
+        # same inode preserves stat() and SHA-256 but violates file custody.
+        current_path = _file_without_aliases(root, relative)
+        meta = current_path.stat()
+        if (
+            current_path != original_path
+            or (meta.st_dev, meta.st_ino) != inode
+            or _hash_bytes(current_path)[0] != expected
+        ):
             raise ValueError("physical manifest changed during custody audit")
 
     return {
