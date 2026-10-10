@@ -1394,7 +1394,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
     def test_rehashed_raw_p47_event_cannot_forge_published_comparison(self):
         scenarios = (
             ("missing_event", "published agency comparison absent from raw journal"),
-            ("wrong_kind", "published agency comparison absent from raw journal"),
+            ("wrong_kind", "committed Memory reference crosses attempts or exposes technical event"),
             ("uncommitted_event", "absent from its autobiographical commit"),
             ("late_comparison", "violates physical comparator event order"),
             ("orphan_attempt", "lacks same-attempt physical execution"),
