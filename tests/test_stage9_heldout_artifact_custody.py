@@ -237,7 +237,7 @@ def _attach_synthetic_historical_proof(
     original = (root / run_files["journal_path"]).read_bytes()
     journal = HashChainedJournal()
     last_step = 0
-    for raw in original.split(b"\\n"):
+    for raw in original.split(b"\n"):
         record = json.loads(raw)
         event = record["causal_event"]
         last_step = max(last_step, event.get("t_monde", 0))
