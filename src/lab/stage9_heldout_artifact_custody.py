@@ -335,17 +335,93 @@ def audit_heldout_raw_artifacts(
         # physical/journal/credit checks. A rehashed owner snapshot must not
         # launder oracle-derived, rolled-back, counterfactual, or unapplied
         # evidence into the causal history.
+        validated_interventions = []
         for records, decoder in (
             (observations, decode_observation),
             (interventions, decode_intervention),
         ):
+            seen_evidence_ids = set()
             for entry in records:
                 try:
-                    decoder(entry)
+                    admitted = decoder(entry)
                 except (KeyError, TypeError, ValueError) as exc:
                     raise ValueError(
                         "archived causal evidence is not admissible"
                     ) from exc
+                if admitted.identifier in seen_evidence_ids:
+                    raise ValueError("duplicate archived causal evidence identifier")
+                seen_evidence_ids.add(admitted.identifier)
+                if decoder is decode_intervention:
+                    validated_interventions.append(admitted)
+        # A frozen causal status is not independent evidence. Reconstruct
+        # §13.2's negative-result revision boundary and its subsequent
+        # successful independent intervention contexts from admitted lived
+        # trials rather than trusting the snapshot's claimed status.
+        revision_rows = owner.get("causal_revision_boundaries", [])
+        if not isinstance(revision_rows, list):
+            raise ValueError("invalid archived causal revision boundaries")
+        archived_revisions = {}
+        for entry in revision_rows:
+            if (
+                not isinstance(entry, list) or len(entry) != 3
+                or not isinstance(entry[0], str) or entry[0] not in by_ref
+                or type(entry[1]) is not int or entry[1] < 1
+                or not isinstance(entry[2], str) or not entry[2]
+                or entry[0] in archived_revisions
+            ):
+                raise ValueError("invalid archived causal revision boundary")
+            archived_revisions[entry[0]] = (entry[1], entry[2])
+        witnessed_revisions = {}
+        for trial in sorted(
+            validated_interventions,
+            key=lambda entry: (entry.observed_step, entry.identifier),
+        ):
+            if trial.observed_effect:
+                continue
+            previous = witnessed_revisions.get(
+                trial.contingency_ref, (-1, ""),
+            )[0]
+            if trial.observed_step > previous:
+                witnessed_revisions[trial.contingency_ref] = (
+                    trial.observed_step, trial.identifier,
+                )
+        if archived_revisions != witnessed_revisions:
+            raise ValueError(
+                "archived causal revision boundary disagrees with lived counterexamples"
+            )
+        for row in published:
+            if row["causal_status"] not in {
+                "testee_par_intervention", "etablie",
+            }:
+                continue
+            ref = row["ref"]
+            successes = [
+                trial for trial in validated_interventions
+                if trial.contingency_ref == ref
+                and trial.observed_effect
+                and trial.attribution == "self_compatible"
+            ]
+            if not successes:
+                raise ValueError(
+                    "archived tested causal status lacks lived intervention"
+                )
+            if row["causal_status"] != "etablie":
+                continue
+            contract = owner.get("config_contract")
+            n2 = contract.get("n2") if isinstance(contract, dict) else None
+            if type(n2) is not int or n2 < 1:
+                raise ValueError(
+                    "archived established causal status lacks frozen n2 threshold"
+                )
+            last_failure = witnessed_revisions.get(ref, (-1, ""))[0]
+            contexts = {
+                trial.context_signature for trial in successes
+                if trial.observed_step > last_failure
+            }
+            if len(contexts) < n2:
+                raise ValueError(
+                    "archived established causal status lacks independent post-revision contexts"
+                )
         for candidate in reported["naturally_acquired_false_candidates"]:
             actual = by_ref.get(candidate["contingency_ref"])
             if (
