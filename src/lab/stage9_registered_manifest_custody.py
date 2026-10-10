@@ -17,9 +17,6 @@ from pathlib import Path
 from typing import Mapping
 
 from .determinism import canonical_causal_bytes, sha256_hex
-from .stage9_scientific_assessment import (
-    _reject_duplicate_keys, _reject_nonfinite_constant,
-)
 from .stage9_scientific_preregistration import (
     load_registration, validate_registration,
 )
@@ -38,12 +35,27 @@ FROZEN_MANIFEST_DIGESTS = {
 }
 
 
+def _reject_duplicate_manifest_keys(
+    pairs: list[tuple[str, object]],
+) -> dict[str, object]:
+    values: dict[str, object] = {}
+    for key, value in pairs:
+        if key in values:
+            raise ValueError(f"duplicate physical manifest index JSON key: {key}")
+        values[key] = value
+    return values
+
+
+def _reject_nonfinite_manifest_constant(value: str) -> None:
+    raise ValueError(f"non-finite physical manifest index JSON constant: {value}")
+
+
 def load_manifest_index(path: Path) -> dict[str, object]:
     """Reject duplicate keys/nonfinite JSON before any file access."""
     index = json.loads(
         path.read_text(encoding="utf-8"),
-        object_pairs_hook=_reject_duplicate_keys,
-        parse_constant=_reject_nonfinite_constant,
+        object_pairs_hook=_reject_duplicate_manifest_keys,
+        parse_constant=_reject_nonfinite_manifest_constant,
     )
     if not isinstance(index, dict):
         raise ValueError("physical manifest index must be a JSON object")
