@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from lab.stage9_frozen_worktree import verify_frozen_worktree
+from lab.stage9_scientific_preregistration import SPEC_PATH
 from tests.test_stage9_registration_chronology import _create_fixture, _git
 
 
@@ -25,7 +26,11 @@ class FrozenWorktreePreflightTests(unittest.TestCase):
                 result["pyproject_blob_sha"],
                 _git(repo, "rev-parse", f"{frozen}:pyproject.toml"),
             )
-            self.assertGreaterEqual(result["verified_tracked_files"], 2)
+            self.assertEqual(
+                result["normative_specification_blob_sha"],
+                _git(repo, "rev-parse", f"{frozen}:{SPEC_PATH}"),
+            )
+            self.assertGreaterEqual(result["verified_tracked_files"], 3)
             self.assertEqual(
                 result["worktree_status"],
                 "frozen_tracked_code_matches_local_checkout",
@@ -35,7 +40,7 @@ class FrozenWorktreePreflightTests(unittest.TestCase):
             self.assertTrue(result["outstanding"])
 
     def test_uncommitted_tracked_source_or_packaging_change_fails(self):
-        for name in ("src/engine.py", "pyproject.toml"):
+        for name in ("src/engine.py", "pyproject.toml", SPEC_PATH):
             with self.subTest(name=name):
                 with TemporaryDirectory() as folder:
                     repo = Path(folder)
@@ -138,6 +143,35 @@ class FrozenWorktreePreflightTests(unittest.TestCase):
             _git(repo, "add", "src/engine.py")
             _git(repo, "commit", "-qm", "modify implementation")
             with self.assertRaisesRegex(ValueError, "current HEAD differs"):
+                verify_frozen_worktree(
+                    repository=repo, frozen_implementation_commit=frozen,
+                )
+
+    def test_committed_normative_specification_change_breaks_frozen_checkout(self):
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            frozen, _, _ = _create_fixture(repo)
+            normative = repo / SPEC_PATH
+            normative.write_bytes(normative.read_bytes() + b"\n# forged change\n")
+            _git(repo, "add", SPEC_PATH)
+            _git(repo, "commit", "-qm", "alter normative spec after frozen commit")
+            with self.assertRaisesRegex(
+                ValueError, "current HEAD differs from frozen English normative specification",
+            ):
+                verify_frozen_worktree(
+                    repository=repo, frozen_implementation_commit=frozen,
+                )
+
+    def test_ignored_untracked_normative_specification_mutation_is_detected(self):
+        # A local filter or Git index camouflage cannot make physical bytes
+        # equivalent to the frozen normative specification.
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            frozen, _, _ = _create_fixture(repo)
+            normative = repo / SPEC_PATH
+            expected = normative.read_bytes()
+            normative.write_bytes(expected + b"\n# not committed\n")
+            with self.assertRaisesRegex(ValueError, "local Git changes"):
                 verify_frozen_worktree(
                     repository=repo, frozen_implementation_commit=frozen,
                 )
