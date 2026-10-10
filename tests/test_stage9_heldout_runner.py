@@ -106,6 +106,14 @@ class Stage9HeldoutRunnerTests(unittest.TestCase):
         self.assertEqual(rebuilt.artifact_digest, example.equipment.artifact_digest)
         self.assertEqual(rebuilt.version, example.equipment.version)
 
+    def test_frozen_asset_export_matches_original_versioned_values(self):
+        from lab.stage9_heldout_runner import export_frozen_stage9_assets
+
+        example, expected_parameters, expected_equipment = _components()
+        parameters, equipment = export_frozen_stage9_assets(example)
+        self.assertEqual(parameters, expected_parameters)
+        self.assertEqual(equipment, expected_equipment)
+
     def test_nested_unexpected_config_or_corrupt_equipment_fail_closed(self):
         _, params, equip = _components()
         params["stage9_config"]["stage8"]["extra_calibration"] = 0.0
