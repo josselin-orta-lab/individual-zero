@@ -2,9 +2,12 @@
 import unittest
 from dataclasses import replace
 from types import SimpleNamespace
+from unittest.mock import patch, sentinel
 
 from i0.modules.exploration import Exploration, ExplorationConfig
 from i0.modules.causal_model import CausalModelConfig
+from i0.modules.causal_test_planning import Stage9OptionEvaluator
+from i0.interfaces import PrimitiveCommand
 from lab.stage11_reference_fixture import build_stage11_reference_runtime
 from lab.stage11_runtime import Stage11Runtime
 from lab.stage9_reference_fixture import build_stage9_reference_runtime
@@ -144,6 +147,62 @@ class Stage11IntegratedTests(unittest.TestCase):
             runtime.competition._config.gain,
             build_stage9_reference_runtime().competition._config.gain,
         )
+
+    def test_forged_causal_plan_cannot_earn_intrinsic_evidence(self):
+        runtime = hydration_runtime()
+        hypothesis(runtime.causal_model)
+        runtime.run_step()
+        proposal = next(
+            p for p in runtime.competition.candidate_proposals
+            if p.option.motive_ref.type == "test_causal"
+        )
+        evaluator = runtime.stage8_option_evaluator
+        self.assertTrue(evaluator._safe_causal_test_shape(proposal))
+        step = proposal.plan.steps[0]
+        malformed = (
+            replace(proposal, plan=None),
+            replace(proposal, plan=replace(
+                proposal.plan, steps=(
+                    replace(step, command=PrimitiveCommand(
+                        "manger", {"target": "berry_b"},
+                    )),
+                ),
+            )),
+            replace(proposal, plan=replace(
+                proposal.plan, steps=(
+                    replace(step, command=PrimitiveCommand(
+                        "boire", {"target": "unknown"},
+                    )),
+                ),
+            )),
+            replace(proposal, option=replace(
+                proposal.option, learning_signature="false_intrinsic_reward",
+            )),
+            replace(proposal, option=replace(
+                proposal.option, goal_ref="arbitrary_goal",
+            )),
+            replace(proposal, plan=replace(
+                proposal.plan, steps=(step, step),
+            )),
+        )
+        for candidate in malformed:
+            with self.subTest(candidate=candidate):
+                self.assertFalse(evaluator._safe_causal_test_shape(candidate))
+                # Invalid option never consults Exploration's motivational
+                # valuation, even if its motive/id imitates a valid test.
+                with patch.object(
+                    Stage9OptionEvaluator, "evaluate",
+                    return_value=sentinel.historical_unscored,
+                ) as historical, patch.object(
+                    runtime.exploration, "motivation",
+                    side_effect=AssertionError("forged plan was rewarded"),
+                ):
+                    result = evaluator.evaluate(
+                        proposal=candidate, evaluation_state=None,
+                        initial_state=None, cycle=1, t_monde=1,
+                    )
+                self.assertIs(result, sentinel.historical_unscored)
+                historical.assert_called_once()
 
     def test_exact_reexecution_on_public_fixture(self):
         left, right = hydration_runtime(), hydration_runtime()
