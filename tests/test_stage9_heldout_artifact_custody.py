@@ -556,6 +556,80 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     index=index, artifact_root=root,
                 )
 
+    def test_synthetic_admissible_causal_rows_remain_structurally_accepted(self):
+        # This is a parser/consistency fixture, not a scientifically witnessed
+        # intervention or evidence that the synthetic rule was actually learned.
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            run = next(
+                row for row in report["runs"]
+                if len(row["naturally_acquired_false_candidates"]) >= 2
+            )
+            item = next(
+                row for row in index["runs"]
+                if (row["world_id"], row["seed"]) == (run["world_id"], run["seed"])
+            )
+            run_index = index["runs"].index(item)
+            state = json.loads((root / item["causal_state_path"]).read_bytes())
+            first, second = run["naturally_acquired_false_candidates"][:2]
+            first_step = 1 + len(run["known_cause_cases"])
+            second_step = first_step + 1
+            state["causal_model"]["causal_observations"].append({
+                "identifier": "synthetic:accepted-observation",
+                "contingency_ref": first["contingency_ref"],
+                "predicate": "synthetic_effect",
+                "subject_ref": "synthetic:subject",
+                "application_context": "synthetic:context",
+                "observation_context": "synthetic:context",
+                "episode_ref": first["episode_ref"],
+                "observation_ref": first["observation_ref"],
+                "observed_step": first_step,
+                "cause_present": True,
+                "effect_present": True,
+                "controlled_variables": [],
+                "source": "monde",
+                "independent_episode": True,
+                "oracle_derived": False,
+                "rollback_cancelled": False,
+                "counterfactual": False,
+            })
+            state["causal_model"]["causal_interventions"].append({
+                "identifier": "synthetic:accepted-intervention",
+                "contingency_ref": second["contingency_ref"],
+                "episode_ref": second["episode_ref"],
+                "observation_ref": second["observation_ref"],
+                "command_ref": f"command:{run_index}:{second_step}",
+                "comparator_ref": "synthetic:comparator",
+                "context_signature": "synthetic:context",
+                "emitted_step": second_step - 1,
+                "observed_step": second_step,
+                "observed_effect": True,
+                "comparator_status": "conforming",
+                "attribution": "self_compatible",
+                "controlled_variables": [],
+                "action_applied": True,
+                "source": "monde",
+                "oracle_derived": False,
+                "rollback_cancelled": False,
+                "counterfactual": False,
+            })
+            state["causal_model"]["causal_credits"].extend([
+                [first["contingency_ref"], first["observation_ref"], "observation"],
+                [second["contingency_ref"], second["observation_ref"], "intervention"],
+            ])
+            altered = _replace_causal_state_bytes(
+                root, report, index, canonical_causal_bytes(state),
+                run_index=run_index,
+            )
+            result = audit_heldout_raw_artifacts(
+                registration=reg, evidence=altered,
+                index=index, artifact_root=root,
+            )
+            self.assertTrue(result["journal_chain_integrity_verified"])
+            self.assertFalse(result["golden_stage9_frozen"])
+            self.assertIsNone(result["scientific_verdict"])
+
     def test_rehashed_causal_evidence_rejects_inadmissible_sources(self):
         for kind, field, forged_value in (
             ("observation", "oracle_derived", True),
