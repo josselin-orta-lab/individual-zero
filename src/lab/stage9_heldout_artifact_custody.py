@@ -222,6 +222,32 @@ def audit_heldout_raw_artifacts(
             claimed_episodes=claimed_episodes,
             physical_source_provenance=journal_audit["physical_source_provenance"],
         )
+        # A reported natural candidate must correspond to the actual
+        # canonical contingency and its archived causal status. Matching only
+        # physical episodes would let a forged report invent an established
+        # rule without any such rule in the frozen causal owner.
+        state = json.loads(paths["causal_state_path"].read_bytes())
+        owner = state.get("causal_model")
+        published = owner.get("published") if isinstance(owner, dict) else None
+        if not isinstance(published, list):
+            raise ValueError("archived causal model published state is missing")
+        by_ref = {}
+        for row in published:
+            if (
+                not isinstance(row, dict)
+                or not isinstance(row.get("ref"), str)
+                or not row["ref"]
+                or row["ref"] in by_ref
+            ):
+                raise ValueError("invalid or duplicate archived causal contingency")
+            by_ref[row["ref"]] = row
+        for candidate in reported["naturally_acquired_false_candidates"]:
+            actual = by_ref.get(candidate["contingency_ref"])
+            if (
+                actual is None
+                or actual.get("causal_status") != candidate["causal_status"]
+            ):
+                raise ValueError("reported natural candidate disagrees with archived causal status")
         memory_episodes_scanned += memory_audit["closed_memory_episodes_scanned"]
         closed_memory_sources_checked += memory_audit[
             "claimed_closed_memory_sources_checked"
