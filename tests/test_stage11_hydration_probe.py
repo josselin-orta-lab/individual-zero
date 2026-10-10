@@ -39,6 +39,14 @@ class Stage11HydrationProbeTests(unittest.TestCase):
                              first.stage11_executed_test_commands)
         self.assertLessEqual(first.stage11_verified_interventions,
                              first.stage11_executed_test_commands)
+        self.assertEqual(len(first.stage11_applied_test_steps),
+                         first.stage11_executed_test_commands)
+        self.assertEqual(len(first.stage11_physical_action_custody),
+                         first.stage11_pending_test_actions)
+        self.assertEqual(len(first.stage11_test_comparator_sent_steps),
+                         first.stage11_test_comparison_events)
+        self.assertEqual(len(first.stage11_prospective_lineage),
+                         first.stage11_prospective_prediction_count)
         self.assertEqual(
             sum(row[3] for row in first.stage11_test_comparison_classes),
             first.stage11_test_comparison_events,
@@ -127,7 +135,7 @@ class Stage11HydrationProbeTests(unittest.TestCase):
             exploration_policy="three_visit_window",
         )
         self.assertEqual(row.classification, "development_only_not_heldout")
-        self.assertEqual(row.protocol_version, "stage11-public-hydration-funnel-dev-v5")
+        self.assertEqual(row.protocol_version, "stage11-public-hydration-funnel-dev-v6")
         self.assertEqual(row.exploration_policy_version, "p48-three-visit-window-dev-v1")
         self.assertEqual(row.exploration_visit_ceiling, 3)
         self.assertLessEqual(row.stage11_exploration_visits, 3)
@@ -151,6 +159,15 @@ class Stage11HydrationProbeTests(unittest.TestCase):
                 self.assertLessEqual(abs(observed-predicted), precision)
         self.assertLessEqual(row.stage11_physical_comparator_join_candidates,
                              row.stage11_published_test_agency_reports)
+        self.assertEqual(row.stage11_physical_comparator_join_candidates,
+                         sum(closed and joined for _, _, _, closed, joined
+                             in row.stage11_physical_action_custody))
+        for sent, source_steps in row.stage11_prospective_lineage:
+            self.assertIn(sent, row.stage11_applied_test_steps)
+            self.assertTrue(all(old < sent for old in source_steps))
+        self.assertTrue(set(row.stage11_test_comparator_sent_steps).issubset(
+            set(row.stage11_applied_test_steps)
+        ))
         print("stage11_three_visit_opportunity_diagnostic=" + json.dumps(
             row.as_dict(), sort_keys=True, separators=(",", ":")
         ))
@@ -172,6 +189,19 @@ class Stage11HydrationProbeTests(unittest.TestCase):
         self.assertLessEqual(
             result.stage11_physical_comparator_join_candidates,
             result.stage11_published_test_agency_reports,
+        )
+        self.assertEqual(
+            len(result.stage11_physical_action_custody),
+            result.stage11_pending_test_actions,
+        )
+        self.assertEqual(
+            len(result.stage11_applied_test_steps),
+            result.stage11_executed_test_commands,
+        )
+        self.assertEqual(
+            result.stage11_physical_comparator_join_candidates,
+            sum(closed and matched for _, _, _, closed, matched
+                in result.stage11_physical_action_custody),
         )
         for status, attribution, water_effect, count in result.stage11_test_comparison_classes:
             self.assertGreater(count, 0)
