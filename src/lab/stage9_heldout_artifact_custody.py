@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Mapping
 
 from .determinism import canonical_causal_bytes, sha256_hex
-from i0.modules.causal_lifecycle import decode_intervention, decode_observation
+from i0.modules.causal_lifecycle import decode_intervention, decode_observation, decode_review
 from .stage9_canonical_journal_audit import audit_raw_causal_journal
 from .stage9_memory_custody import audit_archived_closed_memory_sources
 from .stage9_scientific_assessment import (
@@ -342,6 +342,7 @@ def audit_heldout_raw_artifacts(
         # physical/journal/credit checks. A rehashed owner snapshot must not
         # launder oracle-derived, rolled-back, counterfactual, or unapplied
         # evidence into the causal history.
+        validated_observations = {}
         validated_interventions = []
         for records, decoder in (
             (observations, decode_observation),
@@ -360,6 +361,8 @@ def audit_heldout_raw_artifacts(
                 seen_evidence_ids.add(admitted.identifier)
                 if decoder is decode_intervention:
                     validated_interventions.append(admitted)
+                else:
+                    validated_observations[admitted.identifier] = admitted
         # A frozen causal status is not independent evidence. Reconstruct
         # §13.2's negative-result revision boundary and its subsequent
         # successful independent intervention contexts from admitted lived
@@ -428,6 +431,118 @@ def audit_heldout_raw_artifacts(
             if len(contexts) < n2:
                 raise ValueError(
                     "archived established causal status lacks independent post-revision contexts"
+                )
+        # Restore §13.2's historical correlation and matched-hypothesis
+        # evidence rather than accepting references in a resealed snapshot
+        # as if they were independent proof. These observations were already
+        # linked above to committed physical transitions and closed Memory.
+        correlation_rows = owner.get("causal_correlation_witnesses", [])
+        if not isinstance(correlation_rows, list):
+            raise ValueError("invalid archived causal correlation witness ledger")
+        correlated_refs = set()
+        for witness in correlation_rows:
+            if (
+                not isinstance(witness, list) or len(witness) != 3
+                or not isinstance(witness[0], str)
+                or witness[0] not in by_ref
+                or witness[0] in correlated_refs
+                or not all(
+                    isinstance(ids, list) and ids
+                    and all(isinstance(ref, str) and ref for ref in ids)
+                    and ids == sorted(set(ids))
+                    for ids in witness[1:]
+                )
+            ):
+                raise ValueError("invalid archived causal correlation witness")
+            ref, treated_ids, control_ids = witness
+            treated = [validated_observations.get(key) for key in treated_ids]
+            controls = [validated_observations.get(key) for key in control_ids]
+            contract = owner.get("config_contract")
+            n1 = contract.get("n1") if isinstance(contract, dict) else None
+            if (
+                type(n1) is not int or n1 < 1
+                or any(row is None or row.contingency_ref != ref
+                       or not row.cause_present for row in treated)
+                or any(row is None or row.contingency_ref != ref
+                       or row.cause_present for row in controls)
+            ):
+                raise ValueError("archived correlation lacks matched lived evidence")
+            if (
+                not all(any(
+                    a.observation_context == b.observation_context
+                    and a.controlled_variables == b.controlled_variables
+                    for b in controls
+                ) for a in treated)
+                or not all(any(
+                    a.observation_context == b.observation_context
+                    and a.controlled_variables == b.controlled_variables
+                    for a in treated
+                ) for b in controls)
+                or sum(row.effect_present for row in treated) < n1
+                or (
+                    sum(row.effect_present for row in treated) * len(controls)
+                    <= sum(row.effect_present for row in controls) * len(treated)
+                )
+            ):
+                raise ValueError("archived correlation lacks controlled base-rate contrast")
+            correlated_refs.add(ref)
+        review_ids = owner.get("causal_reviews", [])
+        proof_rows = owner.get("causal_review_proofs", [])
+        if not isinstance(review_ids, list) or not isinstance(proof_rows, list):
+            raise ValueError("invalid archived causal review ledger")
+        if (
+            any(not isinstance(ref, str) or not ref for ref in review_ids)
+            or len(review_ids) != len(set(review_ids))
+        ):
+            raise ValueError("invalid archived causal review identity")
+        reviewed_refs = set()
+        seen_proofs = set()
+        for proof_row in proof_rows:
+            if not isinstance(proof_row, dict):
+                raise ValueError("invalid archived causal review proof")
+            try:
+                proof = decode_review(proof_row)
+            except (KeyError, TypeError, ValueError) as exc:
+                raise ValueError("invalid archived causal review proof") from exc
+            if proof.identifier in seen_proofs:
+                raise ValueError("duplicate archived causal review proof")
+            seen_proofs.add(proof.identifier)
+            rule = by_ref.get(proof.contingency_ref)
+            if (
+                rule is None
+                or rule.get("causal_status") not in {
+                    "hypothese_causale", "testee_par_intervention", "etablie",
+                }
+            ):
+                raise ValueError("archived review lacks published causal hypothesis")
+            for treated_id, control_id in proof.contrasting_pairs:
+                treated = validated_observations.get(treated_id)
+                control = validated_observations.get(control_id)
+                if (
+                    treated is None or control is None
+                    or treated.contingency_ref != proof.contingency_ref
+                    or control.contingency_ref != proof.contingency_ref
+                    or not treated.cause_present or control.cause_present
+                    or treated.controlled_variables != control.controlled_variables
+                    or treated.observation_context != control.observation_context
+                    or treated.observation_ref == control.observation_ref
+                    or treated.observed_step == control.observed_step
+                ):
+                    raise ValueError(
+                        "archived review lacks independent matched physical controls"
+                    )
+            reviewed_refs.add(proof.contingency_ref)
+        if set(review_ids) != seen_proofs:
+            raise ValueError("archived causal review ids disagree with proofs")
+        for row in published:
+            if row["causal_status"] in {
+                "testee_par_intervention", "etablie",
+            } and (
+                row["ref"] not in correlated_refs
+                or row["ref"] not in reviewed_refs
+            ):
+                raise ValueError(
+                    "archived tested or established rule lacks historical correlation and review"
                 )
         memory_audit = audit_archived_closed_memory_sources(
             paths["causal_state_path"],
