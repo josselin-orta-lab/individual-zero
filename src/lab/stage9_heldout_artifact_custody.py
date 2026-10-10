@@ -27,6 +27,7 @@ from .stage9_scientific_assessment import (
     _reject_duplicate_keys, _reject_nonfinite_constant,
     assess_heldout_campaign, load_heldout_evidence,
 )
+from .stage9_secure_file_read import open_regular_no_follow
 from .stage9_scientific_preregistration import load_registration
 
 
@@ -176,7 +177,7 @@ def _physical_file(root: Path, supplied: object) -> Path:
 def _file_hash_and_size(path: Path) -> tuple[str, int]:
     digest = sha256()
     total = 0
-    with path.open("rb") as stream:
+    with open_regular_no_follow(path) as stream:
         while True:
             chunk = stream.read(1024 * 1024)
             if not chunk:
@@ -189,7 +190,7 @@ def _file_hash_and_size(path: Path) -> tuple[str, int]:
 
 
 def _equal_bytes(first: Path, second: Path) -> bool:
-    with first.open("rb") as a, second.open("rb") as b:
+    with open_regular_no_follow(first) as a, open_regular_no_follow(second) as b:
         for left, right in zip_longest(
             iter(lambda: a.read(1024 * 1024), b""),
             iter(lambda: b.read(1024 * 1024), b""),
@@ -197,6 +198,11 @@ def _equal_bytes(first: Path, second: Path) -> bool:
             if left != right:
                 return False
     return True
+
+
+def _read_raw_bytes(path: Path) -> bytes:
+    with open_regular_no_follow(path) as stream:
+        return stream.read()
 
 
 def audit_heldout_raw_artifacts(
@@ -308,7 +314,7 @@ def audit_heldout_raw_artifacts(
         # omitted from the held-out report's selected scoring rows.
         try:
             archived = json.loads(
-                paths["causal_state_path"].read_bytes().decode("utf-8"),
+                _read_raw_bytes(paths["causal_state_path"]).decode("utf-8"),
                 object_pairs_hook=_reject_duplicate_keys,
                 parse_constant=_reject_nonfinite_constant,
             )
@@ -359,7 +365,7 @@ def audit_heldout_raw_artifacts(
         # rule without any such rule in the frozen causal owner.
         try:
             state = json.loads(
-                paths["causal_state_path"].read_bytes().decode("utf-8"),
+                _read_raw_bytes(paths["causal_state_path"]).decode("utf-8"),
                 object_pairs_hook=_reject_duplicate_keys,
                 parse_constant=_reject_nonfinite_constant,
             )
