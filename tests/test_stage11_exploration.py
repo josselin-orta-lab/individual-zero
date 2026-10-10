@@ -1,0 +1,160 @@
+"""Unit and integration tests for Stage 11 developmental P-48 slice."""
+import unittest
+from dataclasses import replace
+from types import SimpleNamespace
+
+from i0.modules.exploration import Exploration, ExplorationConfig
+from i0.modules.causal_model import CausalModelConfig
+from lab.stage11_reference_fixture import build_stage11_reference_runtime
+from lab.stage11_runtime import Stage11Runtime
+from lab.stage9_reference_fixture import build_stage9_reference_runtime
+from test_stage9_causal_test_targets import hypothesis
+
+
+def causal_option(version=1):
+    return SimpleNamespace(
+        motive_ref=SimpleNamespace(
+            type="test_causal", id="test_causal:causal:hydration",
+        ),
+        id=f"option:causal-test:causal:hydration:v{version}",
+        provenance="test_causal",
+    )
+
+
+def grounded_state(interventions=()):
+    return {
+        "published": [{
+            "ref": "causal:hydration", "version": 1,
+            "causal_status": "hypothese_causale", "safety_status": "aucun",
+        }],
+        "causal_observations": [
+            {"identifier": "treated", "contingency_ref": "causal:hydration",
+             "observation_ref": "world:1", "source": "monde",
+             "independent_episode": True, "cause_present": True},
+            {"identifier": "control", "contingency_ref": "causal:hydration",
+             "observation_ref": "world:2", "source": "monde",
+             "independent_episode": True, "cause_present": False},
+        ],
+        "causal_review_proofs": [{
+            "identifier": "review:water", "contingency_ref": "causal:hydration",
+            "contrasting_pairs": [["treated", "control"]],
+        }],
+        "causal_interventions": [
+            {"identifier": key, "contingency_ref": "causal:hydration",
+             "action_applied": True, "source": "monde"}
+            for key in interventions
+        ],
+    }
+
+
+def dev_exploration(coefficient=0.0):
+    return Exploration(
+        ExplorationConfig("p48-test-v1", 0.5, 0.3, 2, 2),
+        coefficient=coefficient,
+    )
+
+
+def hydration_runtime():
+    base = build_stage11_reference_runtime()
+    causal = CausalModelConfig(
+        version="stage11-dev-hydration-v1", n1=2, n2=2, n_sec=2, m_sec=2,
+        causal_predicates=("hydration_effect",),
+        safe_test_actions=(("hydration_effect", "water", "boire"),),
+    )
+    config = replace(
+        base._stage11_config,
+        stage9=replace(base._stage11_config.stage9, causal=causal),
+    )
+    return Stage11Runtime(
+        world_config=base.world.config, layout=base.world._layout,
+        safety_config=base.stage3.substrate.safety._config,
+        safety_facts=base._canonical_safety._innate,
+        protected_integrity_threshold=(
+            base.stage3.control._config.protected_integrity_threshold
+        ),
+        config=config, equipment=base.equipment,
+    )
+
+
+class ExplorationTests(unittest.TestCase):
+    def test_missing_proof_is_unavailable_not_zero(self):
+        model = dev_exploration()
+        self.assertEqual(model.motivation(causal_option()).status, "unavailable")
+        source = grounded_state()
+        source["causal_review_proofs"] = []
+        model.observe_causal_state(source)
+        self.assertEqual(model.motivation(causal_option()).status, "unavailable")
+
+    def test_repeated_proposals_do_not_create_visits_or_progress(self):
+        model = dev_exploration()
+        source = grounded_state()
+        model.observe_causal_state(source)
+        initial = model.motivation(causal_option())
+        self.assertGreater(initial.value, 0)
+        for _ in range(20):
+            model.observe_causal_state(source)
+        self.assertEqual(model.motivation(causal_option()), initial)
+        self.assertEqual(model.export_causal_state()["questions"][0][1]["visits"], 0)
+
+    def test_noisy_tv_and_snapshot_replay(self):
+        model = dev_exploration()
+        model.observe_causal_state(grounded_state())
+        model.observe_causal_state(grounded_state(("first",)))
+        model.observe_causal_state(grounded_state(("first", "second")))
+        self.assertEqual(model.motivation(causal_option()).value, 0.0)
+        self.assertEqual(model.cibles(), ())
+        restored = dev_exploration()
+        restored.restore_causal_state(model.export_causal_state())
+        self.assertEqual(restored.export_causal_state(), model.export_causal_state())
+
+    def test_temperament_affects_intrinsic_only(self):
+        low, high = dev_exploration(-1), dev_exploration(1)
+        for model in (low, high):
+            model.observe_causal_state(grounded_state())
+        self.assertEqual(low.motivation(causal_option()).value, 0)
+        self.assertGreater(high.motivation(causal_option()).value, 0)
+        self.assertEqual(high.motivation(causal_option(version=2)).status, "unavailable")
+
+
+class Stage11IntegratedTests(unittest.TestCase):
+    def test_stage11_runs_without_duplicate_snapshot_owner(self):
+        runtime = build_stage11_reference_runtime()
+        names = [owner.owner_id for owner in runtime.causal_owners]
+        self.assertEqual(names.count("exploration"), 1)
+        self.assertEqual(len(names), len(set(names)))
+        self.assertEqual(runtime.run_step().execution_status, "applied")
+        self.assertTrue(runtime.journal.verify())
+
+    def test_lived_proof_candidate_reaches_ordinary_competition(self):
+        runtime = hydration_runtime()
+        hypothesis(runtime.causal_model)
+        runtime.run_step()
+        entries = [
+            item.causal_event for item in runtime.journal.entries
+            if item.causal_event.get("kind") == "stage11_intrinsic_evaluation"
+        ]
+        self.assertTrue(entries)
+        self.assertTrue(any(
+            row["data"]["status"] == "evaluated"
+            and row["data"]["intrinsic_value"] > 0
+            for row in entries
+        ))
+        self.assertTrue(runtime.journal.verify())
+        self.assertEqual(
+            runtime.competition._config.gain,
+            build_stage9_reference_runtime().competition._config.gain,
+        )
+
+    def test_exact_reexecution_on_public_fixture(self):
+        left, right = hydration_runtime(), hydration_runtime()
+        for runtime in (left, right):
+            hypothesis(runtime.causal_model)
+            for _ in range(4):
+                runtime.run_step()
+        self.assertEqual(left.journal.canonical_bytes(), right.journal.canonical_bytes())
+        self.assertEqual(left.exploration.export_causal_state(),
+                         right.exploration.export_causal_state())
+
+
+if __name__ == "__main__":
+    unittest.main()
