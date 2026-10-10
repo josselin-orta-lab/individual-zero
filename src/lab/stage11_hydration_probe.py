@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from collections import Counter
+from math import isfinite
 from typing import Mapping
 import json
 
@@ -26,7 +27,7 @@ from .stage9_positive_hydration_benchmark import (
 from .stage9_random_reward_benchmark import preregistered_food_rewards
 
 
-PROTOCOL_VERSION = "stage11-public-hydration-funnel-dev-v4"
+PROTOCOL_VERSION = "stage11-public-hydration-funnel-dev-v5"
 TEST_PREFIX = "option:causal-test:"
 
 
@@ -63,6 +64,8 @@ class PublicHydrationFunnel:
     # published AgencyComparator comparison or a causal intervention.
     stage11_test_comparison_events: int
     stage11_test_comparison_classes: tuple[tuple[str, str, str, int], ...]
+    stage11_comparison_water_values: tuple[tuple[int, int, float, float, float, str], ...]
+    stage11_physical_comparator_join_candidates: int
     stage11_causal_action_memory_closed: int
     stage11_published_test_agency_reports: int
     stage11_pending_test_actions: int
@@ -254,18 +257,49 @@ def run_public_hydration_funnel(
         and event["data"]["option_ref"].startswith(TEST_PREFIX)
     ]
     comparator_classes = Counter()
+    comparison_water_values: list[tuple[int, int, float, float, float, str]] = []
     for report in comparisons:
-        water_effect = next(
-            (effect[1] for effect in report.get("effects", ())
-             if isinstance(effect, (tuple, list)) and len(effect) >= 2
-             and effect[0] == "water"),
-            "unreported",
+        # The real AgencyComparator's effects are *dictionaries*, not
+        # tuple pairs. Earlier diagnostic versions displayed "unreported"
+        # even when P-47 had checked an accessible water value.
+        effect = next(
+            (value for value in report.get("effects", ())
+             if isinstance(value, Mapping) and value.get("variable") == "water"),
+            None,
         )
+        effect_status = (
+            "missing_water_effect" if effect is None
+            else str(effect.get("status", "unknown"))
+        )
+        if report.get("status") == "conforming" and effect_status != "conforming":
+            raise AssertionError("conforming P-47 hydration report lacks conforming water")
+        if effect is not None:
+            values = tuple(effect.get(k) for k in (
+                "predicted", "observed", "precision",
+            ))
+            if all(type(v) in (float, int) and isfinite(v) for v in values):
+                comparison_water_values.append((
+                    report["sent_t_monde"], report["observed_t_monde"],
+                    *map(float, values), effect_status,
+                ))
         comparator_classes[(
             str(report.get("status", "unknown")),
             str(report.get("attribution", "unknown")),
-            str(water_effect),
+            effect_status,
         )] += 1
+    comparator_keys = {
+        (report["option_ref"], report["sent_t_monde"],
+         report["observed_t_monde"])
+        for report in published_comparisons
+    }
+    joined_candidates = sum(
+        row.get("physical_episode_ref") is not None
+        and (row["option_ref"], row["sent_t_monde"],
+             row["observed_t_monde"]) in comparator_keys
+        for row in state["lived_causal_actions"]
+        if isinstance(row.get("option_ref"), str)
+        and row["option_ref"].startswith(TEST_PREFIX)
+    )
     comparison_classes = tuple(
         (status, attribution, water_effect, count)
         for (status, attribution, water_effect), count
@@ -350,6 +384,8 @@ def run_public_hydration_funnel(
         ),
         stage11_test_comparison_events=len(comparisons),
         stage11_test_comparison_classes=comparison_classes,
+        stage11_comparison_water_values=tuple(sorted(comparison_water_values)),
+        stage11_physical_comparator_join_candidates=joined_candidates,
         stage11_causal_action_memory_closed=memory_closed,
         stage11_published_test_agency_reports=published_agency,
         stage11_pending_test_actions=pending_test_action_count,
