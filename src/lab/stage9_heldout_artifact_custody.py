@@ -265,6 +265,8 @@ def audit_heldout_raw_artifacts(
                 observation = entry.get("observation_ref")
                 if not all(isinstance(v, str) and v for v in (ref, observation)):
                     raise ValueError("invalid archived causal evidence credit identity")
+                if ref not in by_ref:
+                    raise ValueError("archived causal evidence refers to unpublished contingency")
                 key = (ref, observation, kind)
                 if key in expected_credits:
                     raise ValueError("duplicate archived causal evidence credit")
