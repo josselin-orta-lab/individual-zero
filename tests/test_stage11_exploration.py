@@ -1,6 +1,7 @@
 """Unit and integration tests for Stage 11 developmental P-48 slice."""
 import unittest
 from dataclasses import replace
+from copy import deepcopy
 from types import SimpleNamespace
 from unittest.mock import patch, sentinel
 
@@ -109,6 +110,83 @@ class ExplorationTests(unittest.TestCase):
         restored = dev_exploration()
         restored.restore_causal_state(model.export_causal_state())
         self.assertEqual(restored.export_causal_state(), model.export_causal_state())
+
+    def test_applied_actions_habituate_without_fabricating_interventions(self):
+        exploration = dev_exploration()
+        exploration.observe_causal_state(grounded_state())
+        option = causal_option()
+        self.assertEqual(exploration.export_causal_state()["questions"][0][1]["ids"], ())
+        self.assertTrue(exploration.record_applied_causal_test(
+            option=option, sent_step=8,
+        ))
+        self.assertFalse(exploration.record_applied_causal_test(
+            option=option, sent_step=8,
+        ))
+        self.assertTrue(exploration.record_applied_causal_test(
+            option=option, sent_step=9,
+        ))
+        q = exploration.export_causal_state()["questions"][0][1]
+        self.assertEqual(q["visits"], 2)
+        self.assertEqual(q["stagnant"], 2)
+        self.assertEqual(q["ids"], ())
+        self.assertEqual(exploration.motivation(option).value, 0.0)
+        self.assertTrue(exploration.boredom_detected())
+        self.assertEqual(exploration.cibles(), ())
+        self.assertFalse(exploration.record_applied_causal_test(
+            option=causal_option(version=999), sent_step=10,
+        ))
+        with self.assertRaises(ValueError):
+            exploration.record_applied_causal_test(
+                option=option, sent_step=True,
+            )
+
+    def test_later_physically_joined_intervention_is_not_second_visit(self):
+        exploration = dev_exploration()
+        exploration.observe_causal_state(grounded_state())
+        option = causal_option()
+        exploration.record_applied_causal_test(option=option, sent_step=8)
+        next_state = grounded_state(("trial:first",))
+        next_state["causal_interventions"][0].update({
+            "command_ref": option.id, "emitted_step": 8,
+        })
+        exploration.observe_causal_state(next_state)
+        q = exploration.export_causal_state()["questions"][0][1]
+        self.assertEqual(q["ids"], ("trial:first",))
+        self.assertEqual(q["visits"], 1)
+        self.assertEqual(q["stagnant"], 1)
+        self.assertEqual(q["progress"], 0.0)
+
+    def test_invalidated_question_cannot_survive_and_earn_interest(self):
+        exploration = dev_exploration()
+        exploration.observe_causal_state(grounded_state())
+        self.assertEqual(exploration.motivation(causal_option()).status, "available")
+        empty = grounded_state()
+        empty["published"] = []
+        exploration.observe_causal_state(empty)
+        self.assertEqual(exploration.motivation(causal_option()).status, "unavailable")
+        self.assertEqual(exploration.cibles(), ())
+        self.assertEqual(exploration.export_causal_state()["questions"], [])
+
+    def test_snapshot_rejects_corrupted_visit_ledger_atomically(self):
+        exploration = dev_exploration()
+        exploration.observe_causal_state(grounded_state())
+        exploration.record_applied_causal_test(
+            option=causal_option(), sent_step=8,
+        )
+        saved = exploration.export_causal_state()
+        for mutation in ("negative_visits", "duplicate_applied", "wrong_schema"):
+            corrupted = deepcopy(saved)
+            if mutation == "negative_visits":
+                corrupted["questions"][0][1]["visits"] = -5
+            elif mutation == "duplicate_applied":
+                keys = corrupted["questions"][0][1]["executed_keys"]
+                corrupted["questions"][0][1]["executed_keys"] = keys * 2
+            else:
+                corrupted["state_schema"] = "untrusted"
+            with self.subTest(mutation=mutation):
+                with self.assertRaises(ValueError):
+                    exploration.restore_causal_state(corrupted)
+                self.assertEqual(exploration.export_causal_state(), saved)
 
     def test_temperament_affects_intrinsic_only(self):
         low, high = dev_exploration(-1), dev_exploration(1)
