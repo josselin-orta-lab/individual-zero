@@ -207,6 +207,40 @@ def _verify_frozen_normative_specification(
     return original_blob.decode("ascii"), len(descendants)
 
 
+def _audit_pre_registration_evidence_history(
+    repository: Path, registration_commit: str, evidence_name: str,
+    archived_bytes: bytes,
+) -> tuple[bool, int]:
+    """Detect an early result at its final path, including create/delete.
+
+    Looking only at the registration commit misses a pre-registration Git
+    outcome deliberately deleted immediately before sealing the protocol.
+    Search the registration commit's *own ancestors*, not unrelated branches.
+    A byte-identical result in earlier history is incompatible with a
+    prospective heldout claim. Different earlier contents (e.g. a placeholder)
+    remain ambiguous and must be independently reviewed.
+    """
+    commits = _git(
+        repository, "log", "--full-history", "--format=%H",
+        registration_commit, "--", evidence_name,
+    ).splitlines()
+    for commit in commits:
+        commit_hex = commit.decode("ascii")
+        exists = subprocess.run(
+            ("git", "-C", str(repository), "--no-replace-objects",
+             "cat-file", "-e", f"{commit_hex}:{evidence_name}"),
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+        )
+        if exists.returncode == 0 and (
+            _git(repository, "show", f"{commit_hex}:{evidence_name}")
+            == archived_bytes
+        ):
+            raise ValueError(
+                "heldout evidence was already committed before prospective registration"
+            )
+    return bool(commits), len(commits)
+
+
 def audit_registration_chronology(
     *, repository: Path, registration_path: Path, registration_commit: str,
     evidence_path: Path, evidence_commit: str,
@@ -260,16 +294,19 @@ def audit_registration_chronology(
          f"{registration_commit}:{evidence_name}"),
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
     ).returncode == 0
-    if prior_evidence and (
-        _git(root, "show", f"{registration_commit}:{evidence_name}")
-        == committed_evidence
-    ):
-        raise ValueError("heldout evidence was already committed at registration")
+    earlier_evidence, prior_evidence_commits_checked = (
+        _audit_pre_registration_evidence_history(
+            root, registration_commit, evidence_name, committed_evidence,
+        )
+    )
+    # Git log normally records any create/delete of the path, but a commit
+    # can carry a preexisting file unchanged. Preserve the endpoint check.
+    earlier_evidence = earlier_evidence or prior_evidence
     provisional = assess_heldout_campaign(registration, evidence)
     return {
         "chronology_status": (
             "git_lineage_consistent_requires_independent_review"
-            if not prior_evidence else
+            if not earlier_evidence else
             "prior_evidence_path_requires_independent_review"
         ),
         "registration_commit": registration_commit,
@@ -286,6 +323,10 @@ def audit_registration_chronology(
         "evidence_sha256": provisional["evidence_sha256"],
         "provisional_metric_assessment": provisional["assessment"],
         "evidence_path_present_at_registration": prior_evidence,
+        "evidence_path_seen_in_pre_registration_git_history": earlier_evidence,
+        "pre_registration_evidence_path_commits_checked": (
+            prior_evidence_commits_checked
+        ),
         "registration_unchanged_descendant_commits_checked": (
             audited_descendant_commits
         ),
