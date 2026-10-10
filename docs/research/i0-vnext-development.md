@@ -32,3 +32,12 @@ The I0-vNext branch must not be merged into `main` automatically. Use targeted l
 - `src/i0/modules/gatekeeper.py` and `src/lab/stage4_runtime.py`: backward-compatible optional selection-time multiplier and hook methods; reference Stage-4--9 paths supply `None` and the former `normal` S_t profile, so historical configuration and intended causal behavior remain untouched. **Full historical golden regression is still to be verified.**
 - New dedicated P-23/P-24 unit and Stage-11 integration/replay tests. Parameter numbers and the recovery multiplier are strictly **software-development values**, not frozen campaign P-23/P-24 calibration.
 - Boredom currently covers stalled, physically grounded causal-test questions only. Independent geography/target coverage, verified threat-clear producers, and Stage-10/12 functionality remain incomplete; in the absence of a verifiable threat-clear input the threat profile deliberately does not exit merely because an alert vanishes.
+
+
+## Stage-11 causal-test behavior diagnostic (public inputs only)
+
+- Development runner: `python -m lab.stage11_hydration_probe` (public seed 41, 18 steps, known `small_water_gain` world).
+- A distinct fixed public Stage-9 software control is executed with identical seed, original food-reward schedule, reference Equipment and physical water parameters. The runner rejects a mismatched reward schedule digest.
+- Measured separately: proposal emissions, intrinsically evaluated options, actual applied causal-test commands and independent Memory-closed physically verified interventions. Neither proposals nor choices are counted as physical evidence.
+- Both journals remain independent; test output records both head hashes and a canonical digest, with `scientific_verdict: null` and `golden_stage9_frozen: false`.
+- The runner is a **development regression probe**, never a held-out campaign or a Stage-9 Golden. It does not settle P-48 calibration, coverage, the noisy-TV science criterion, INV-25 or independent Stage-9 acceptance.
