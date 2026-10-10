@@ -265,6 +265,26 @@ def assess_heldout_campaign(
                 )
             },
         })
+    # Byte-identical archives reused between distinct registered world/seed
+    # cells are a concrete provenance warning, even when filenames and inodes
+    # differ. This is NOT, by itself, proof of fraud or lack of independence:
+    # an unchanged state can legitimately be identical in separate runs.
+    # Therefore expose deterministic collision groups for external review,
+    # without silently changing the preregistered metric denominator.
+    archive_digest_collisions: dict[str, list[dict[str, object]]] = {}
+    for field in ("journal_sha256", "causal_state_sha256"):
+        by_digest: dict[str, list[dict[str, object]]] = {}
+        for row in rows:
+            by_digest.setdefault(row[field], []).append({
+                "world_id": row["world_id"], "seed": row["seed"],
+            })
+        archive_digest_collisions[field] = [
+            {"sha256": digest, "runs": sorted(
+                cells, key=lambda cell: (cell["world_id"], cell["seed"]),
+            )}
+            for digest, cells in sorted(by_digest.items())
+            if len(cells) > 1
+        ]
     # Sorting prevents the report from concealing concentration via run order.
     # Run breakdown remains diagnostic, not a proof of sample independence.
     run_metrics.sort(key=lambda item: (item["world_id"], item["seed"]))
@@ -305,6 +325,7 @@ def assess_heldout_campaign(
         "evidence_sha256": supplied_digest,
         "runs": len(rows),
         "per_run_metrics": run_metrics,
+        "cross_run_identical_archives": archive_digest_collisions,
         "negative_runs_with_candidates": negative_runs_with_candidates,
         "registered_negative_runs": (
             len(registration["negative_world_ids"]) * len(seeds)
