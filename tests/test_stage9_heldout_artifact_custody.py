@@ -295,6 +295,23 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                             index=index, artifact_root=root,
                         )
 
+    def test_symlinked_artifact_root_is_rejected(self):
+        with TemporaryDirectory() as folder:
+            parent = Path(folder)
+            root = parent / "raw"
+            root.mkdir()
+            reg, report, index = _prepared(root)
+            alias = parent / "swappable-root"
+            try:
+                alias.symlink_to(root, target_is_directory=True)
+            except (OSError, NotImplementedError) as exc:
+                self.skipTest(f"symlinks unavailable: {exc}")
+            with self.assertRaisesRegex(ValueError, "root may not be a symlink"):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=report,
+                    index=index, artifact_root=alias,
+                )
+
     def test_tampering_with_actual_journal_or_replay_fails(self):
         for key in ("journal_path", "replay_journal_path",
                     "causal_state_path", "replay_causal_state_path"):
