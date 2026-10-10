@@ -166,9 +166,17 @@ class Exploration:
     def cibles(self, *, degraded=False):
         if degraded:
             return ()
-        return tuple(sorted(ref for ref,q in self._questions.items()
-                            if q["proof"] and q["status"] in ("hypothese_causale", "testee_par_intervention")
-                            and q["stagnant"] < self.config.stagnant_visit_limit))
+        return tuple(sorted(
+            ref for ref, q in self._questions.items()
+            if q["proof"]
+            and q["status"] in ("hypothese_causale", "testee_par_intervention")
+            and q["stagnant"] < self.config.stagnant_visit_limit
+            and (1 + self.coefficient) * (
+                self.config.novelty_weight / (
+                    1 + q["visits"] / self.config.habituation_visits
+                ) + self.config.progress_weight * q["progress"]
+            ) > 0
+        ))
 
     def boredom_detected(self) -> bool:
         """Development-only evidence of stagnation, not a synthetic reward.
