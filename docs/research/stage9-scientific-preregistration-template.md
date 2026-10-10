@@ -111,9 +111,15 @@ python -m lab.stage9_registered_manifest_custody \
 The checker rejects missing, empty, aliased or duplicated file paths
 (including symlinks and hardlinks), incorrect digests, extra world IDs,
 incorrect manifest roles and mismatch with the registered protocol digest.
-It hashes the original bytes and performs a second stability sweep. It does
-not invent or normalize a world manifest format; the preregistered SHA-256
-is over its original **file bytes**. The operator must separately inspect
+It hashes the original bytes and performs a second stability sweep,
+re-resolving **each originally declared relative path** and its symlink
+ancestry as well as checking its original device/inode and SHA-256.
+An attacker cannot make a moved manifest pass merely by replacing its
+registered path with a symlink to the same original inode. This is still
+a local read-only filesystem check, **not** an immutable filesystem snapshot,
+a proof of absence of all concurrent races, or independent physical custody.
+It does not invent or normalize a world manifest format; the preregistered
+SHA-256 is over its original **file bytes**. The operator must separately inspect
 the manifest's physical, layout and scenario semantics and independently
 custody held-out seed selection. The machine result remains
 `scientific_verdict=null` and `golden_stage9_frozen=false`.
