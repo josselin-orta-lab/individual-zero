@@ -140,8 +140,11 @@ def audit_heldout_raw_artifacts(
     # The selected custody root itself must not be an alias. Otherwise a
     # symlink swap can redirect every relative evidence path even when
     # individual paths below the resolved root contain no symlink.
-    if artifact_root.is_symlink():
-        raise ValueError("raw artifact root may not be a symlink")
+    # An alias in *any ancestor* redirects the custody root just as surely
+    # as an alias at its last path component.
+    root_path = artifact_root.absolute()
+    if any(part.is_symlink() for part in (root_path, *root_path.parents)):
+        raise ValueError("raw artifact root or ancestor may not be a symlink")
     root = artifact_root.resolve()
     if not root.is_dir():
         raise ValueError("raw artifact root must be a directory")
