@@ -14,6 +14,9 @@ class Stage11HydrationProbeTests(unittest.TestCase):
         self.assertEqual(first.classification, "development_only_not_heldout")
         self.assertIsNone(first.scientific_verdict)
         self.assertFalse(first.golden_stage9_frozen)
+        self.assertFalse(first.prospective_prediction_enabled)
+        self.assertEqual(first.stage11_prospective_prediction_count, 0)
+        self.assertEqual(first.stage11_prospective_source_count, 0)
         self.assertEqual(first.schedule_sha256, second.schedule_sha256)
         self.assertGreaterEqual(first.stage11_test_proposals, 0)
         self.assertGreaterEqual(first.stage11_unscored_evaluations, 0)
@@ -83,10 +86,39 @@ class Stage11HydrationProbeTests(unittest.TestCase):
             first.as_dict(), sort_keys=True, separators=(",", ":")
         ))
 
+    def test_prior_lived_forecast_is_separately_opt_in_and_never_scientific(self):
+        # Public world and seed, isolated run. Prediction means prospective
+        # descriptive expectation, not proof that the individual caused it.
+        diagnostic = run_public_hydration_funnel(
+            seed=41, world="small_water_gain", steps=18,
+            enable_lived_prediction=True,
+        )
+        self.assertTrue(diagnostic.prospective_prediction_enabled)
+        self.assertEqual(diagnostic.classification,
+                         "development_only_not_heldout")
+        self.assertIsNone(diagnostic.scientific_verdict)
+        self.assertFalse(diagnostic.golden_stage9_frozen)
+        self.assertLessEqual(
+            diagnostic.stage11_prospective_prediction_count,
+            diagnostic.stage11_executed_test_commands,
+        )
+        self.assertGreaterEqual(
+            diagnostic.stage11_prospective_source_count,
+            diagnostic.stage11_prospective_prediction_count,
+        )
+        self.assertLessEqual(
+            diagnostic.stage11_verified_interventions,
+            diagnostic.stage11_causal_intervention_stagings,
+        )
+        print("stage11_prospective_hydration_diagnostic=" + json.dumps(
+            diagnostic.as_dict(), sort_keys=True, separators=(",", ":")
+        ))
+
     def test_rejects_nonpublic_variants_and_invalid_seeds(self):
         for args in (
             {"seed": -1}, {"seed": True}, {"steps": 0},
             {"world": "sealed_hidden"}, {"world": "null_water_reference"},
+            {"enable_lived_prediction": "yes"},
         ):
             with self.subTest(args=args):
                 with self.assertRaises(ValueError):
