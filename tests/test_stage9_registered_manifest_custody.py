@@ -230,7 +230,7 @@ class Stage9RegisteredManifestCustodyTests(unittest.TestCase):
                 result = real_hash(path)
                 if path == original and not modified:
                     modified = True
-                    original.unlink()
+                    original.rename(root / "old-equipment.manifest")
                     original.write_bytes(payload)
                 return result
 
