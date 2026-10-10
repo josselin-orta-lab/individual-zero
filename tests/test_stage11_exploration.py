@@ -194,6 +194,8 @@ class ExplorationTests(unittest.TestCase):
             model.observe_causal_state(grounded_state())
         self.assertEqual(low.motivation(causal_option()).value, 0)
         self.assertGreater(high.motivation(causal_option()).value, 0)
+        self.assertEqual(low.cibles(), ())
+        self.assertEqual(high.cibles(), ("causal:hydration",))
         self.assertEqual(high.motivation(causal_option(version=2)).status, "unavailable")
 
 
@@ -281,6 +283,31 @@ class Stage11IntegratedTests(unittest.TestCase):
                     )
                 self.assertIs(result, sentinel.historical_unscored)
                 historical.assert_called_once()
+
+    def test_known_stagnant_question_is_not_planned_again(self):
+        # These visits are deliberately seeded in a UNIT fixture to probe
+        # phase scheduling, not to create real experimental evidence.
+        runtime = hydration_runtime()
+        hypothesis(runtime.causal_model)
+        runtime.exploration.observe_causal_state(
+            runtime.causal_model.export_causal_state()
+        )
+        target = runtime.causal_model.proposer_test()[0]
+        option = causal_option(version=target.contingency_version)
+        self.assertTrue(runtime.exploration.record_applied_causal_test(
+            option=option, sent_step=10,
+        ))
+        self.assertTrue(runtime.exploration.record_applied_causal_test(
+            option=option, sent_step=11,
+        ))
+        self.assertEqual(runtime.exploration.cibles(), ())
+        runtime.run_step()
+        kinds = [
+            entry.causal_event.get("kind") for entry in runtime.journal.entries
+        ]
+        self.assertIn("stage11_exploration_target_suppressed", kinds)
+        self.assertNotIn("causal_test_option_proposed", kinds)
+        self.assertTrue(runtime.journal.verify())
 
     def test_exact_reexecution_on_public_fixture(self):
         left, right = hydration_runtime(), hydration_runtime()
