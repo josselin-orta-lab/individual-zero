@@ -27,7 +27,7 @@ from .stage9_positive_hydration_benchmark import (
 from .stage9_random_reward_benchmark import preregistered_food_rewards
 
 
-PROTOCOL_VERSION = "stage11-public-hydration-funnel-dev-v6"
+PROTOCOL_VERSION = "stage11-public-hydration-funnel-dev-v7"
 TEST_PREFIX = "option:causal-test:"
 
 
@@ -70,6 +70,7 @@ class PublicHydrationFunnel:
     stage11_physical_action_custody: tuple[tuple[int, float, float | None, bool, bool], ...]
     stage11_test_comparator_sent_steps: tuple[int, ...]
     stage11_prospective_lineage: tuple[tuple[int, tuple[int, ...]], ...]
+    stage11_action_custody_at_send: tuple[tuple[int, str, float, int | None, bool], ...]
     stage11_causal_action_memory_closed: int
     stage11_published_test_agency_reports: int
     stage11_pending_test_actions: int
@@ -168,6 +169,7 @@ def run_public_hydration_funnel(
     first_hypothesis = None
     applied_tests = 0
     applied_test_steps: list[int] = []
+    application_custody: list[tuple[int, str, float, int | None, bool]] = []
     for t in range(1, steps + 1):
         outcome = vnext.run_step()
         if (outcome.execution_status == "applied"
@@ -176,6 +178,25 @@ def run_public_hydration_funnel(
             and outcome.command_primitive == "boire"):
             applied_tests += 1
             applied_test_steps.append(t)
+            # A development-bench read of *post-dispatch canonical state*
+            # only. It cannot influence the individual or become evidence.
+            # Distinguishes "never registered" from "later retired".
+            post_dispatch = vnext.causal_model.export_causal_state()
+            current = vnext.causal_model.get("causal:hydration")
+            trackable = any(
+                row["sent_t_monde"] == t
+                and row["option_ref"] == outcome.option_ref
+                for row in (
+                    *post_dispatch["lived_causal_actions"],
+                    *post_dispatch["causal_action_witnesses"],
+                )
+            )
+            pre_action_water = vnext.s_t.current.fixed["body"]["water"]
+            application_custody.append((
+                t, outcome.option_ref, float(pre_action_water),
+                None if current is None else current.version,
+                trackable,
+            ))
         record = vnext.causal_model.get("causal:hydration")
         if (first_hypothesis is None and record is not None
             and record.causal_status in {
@@ -412,6 +433,7 @@ def run_public_hydration_funnel(
             (row["sent_t_monde"], tuple(row["source_steps"]))
             for row in prospective
         )),
+        stage11_action_custody_at_send=tuple(application_custody),
         stage11_causal_action_memory_closed=memory_closed,
         stage11_published_test_agency_reports=published_agency,
         stage11_pending_test_actions=pending_test_action_count,
