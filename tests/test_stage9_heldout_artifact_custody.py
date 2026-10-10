@@ -681,6 +681,36 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     index=index, artifact_root=root,
                 )
 
+    def test_rehashed_attempt_cannot_span_multiple_world_steps(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            original = (root / index["runs"][0]["journal_path"]).read_bytes()
+            forged_journal = HashChainedJournal()
+            for line in original.split(b"\n"):
+                record = json.loads(line)
+                event = record["causal_event"]
+                if (
+                    event.get("attempt_ref") == "synthetic-attempt:0:2"
+                    and event.get("kind") in {
+                        "command_experienced", "world_transition_experienced",
+                        "auto_segment_commit",
+                    }
+                ):
+                    event["attempt_ref"] = "synthetic-attempt:0:1"
+                forged_journal.append(
+                    event_id=record["event_id"], causal_event=event,
+                )
+            self.assertTrue(forged_journal.verify())
+            forged = _replace_journal_bytes(
+                root, report, index, forged_journal.canonical_bytes(),
+            )
+            with self.assertRaisesRegex(ValueError, "attempt reused across world steps"):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=forged,
+                    index=index, artifact_root=root,
+                )
+
     def test_rehashed_commit_cannot_launder_foreign_or_future_source(self):
         for scenario in ("future_foreign", "repeated_ref"):
             with self.subTest(scenario=scenario):
