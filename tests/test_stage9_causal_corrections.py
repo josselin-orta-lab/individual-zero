@@ -118,9 +118,9 @@ class EstablishedCorrectionTests(unittest.TestCase):
         # Exact-context observations never propagate into unobserved states.
         # Keep the frozen Equipment prediction object intact on fallback.
         command = PrimitiveCommand("se_deplacer", {"direction": "east"})
-        frozen_prediction = simulator()._equipment.predict(
-            state=before, command=command,
-        )
+        frozen_prediction = train_exact_transition_table(
+            corpus=corpus(), equipment_version="E-frozen-context-control",
+        ).predict(state=before, command=command)
         changed = state(x=3)
         unchanged, refs = correct_equipment_prediction(
             source=PublishedEstablishedRules((measured, exact)),
