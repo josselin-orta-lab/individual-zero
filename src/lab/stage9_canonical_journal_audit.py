@@ -30,6 +30,7 @@ ENTRY_FIELDS = frozenset({
 
 def audit_raw_causal_journal(
     path: Path, *, physical_observation_refs: set[str],
+    published_agency_event_refs: set[str] | None = None,
 ) -> dict[str, object]:
     """Read a canonical journal without modifying it or trusting its claims.
 
@@ -42,6 +43,15 @@ def audit_raw_causal_journal(
         for value in physical_observation_refs
     ):
         raise ValueError("physical observation references must be nonempty IDs")
+    agency_refs = (
+        set() if published_agency_event_refs is None
+        else published_agency_event_refs
+    )
+    if not isinstance(agency_refs, set) or any(
+        not isinstance(ref, str) or not ref.strip()
+        for ref in agency_refs
+    ):
+        raise ValueError("published agency references must be nonempty IDs")
     events: dict[str, tuple[int, Mapping[str, object]]] = {}
     # Separate technical occurrences (including cancelled retries) by the
     # execution attempt and world step. An accepted physical step cannot
@@ -209,11 +219,54 @@ def audit_raw_causal_journal(
         }
         matched += 1
 
+    # P-47 evidence that is already published must originate from its
+    # *actual* DC-09-committed comparator occurrence, not merely an event ID
+    # appended to a resealed Memory snapshot. An independent physical source
+    # still requires external witness; this is a structural byte-level join.
+    agency_source_events: dict[str, Mapping[str, object]] = {}
+    for ref in sorted(agency_refs):
+        source = events.get(ref)
+        if source is None or source[1].get("kind") != "agency_comparison":
+            raise ValueError("published agency comparison absent from raw journal")
+        source_index, event = source
+        attempt = event.get("attempt_ref")
+        step = event.get("t_monde")
+        if (
+            not isinstance(attempt, str) or not attempt
+            or type(step) is not int or step < 0
+            or not isinstance(event.get("data"), dict)
+        ):
+            raise ValueError("invalid raw agency comparison provenance")
+        commits = commits_by_attempt.get((attempt, step), ())
+        if len(commits) != 1:
+            raise ValueError("published agency source lacks same-attempt commit")
+        commit_index, commit = commits[0]
+        refs = commit.get("event_refs")
+        if (
+            source_index >= commit_index
+            or not isinstance(refs, list)
+            or ref not in refs
+            or len(refs) != len(set(refs))
+            or any(
+                v not in events
+                or events[v][0] >= commit_index
+                or events[v][1].get("attempt_ref") != attempt
+                or events[v][1].get("t_monde") != step
+                for v in refs
+            )
+        ):
+            raise ValueError(
+                "published agency comparison absent from its autobiographical commit"
+            )
+        agency_source_events[ref] = event
+
     return {
         "journal_events_checked": index,
         "journal_head_hash": previous_hash,
         "claimed_physical_transitions_checked": matched,
         "physical_source_provenance": physical_source_provenance,
+        "published_agency_source_events": agency_source_events,
+        "published_agency_sources_checked": len(agency_source_events),
         "structural_status": "canonical_chain_and_committed_sources_verified",
         "physical_truth_attested": False,
         "memory_episode_closure_attested": False,
