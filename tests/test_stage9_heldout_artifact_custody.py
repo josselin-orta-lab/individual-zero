@@ -423,6 +423,41 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     index=index, artifact_root=root,
                 )
 
+    def test_rehashed_missing_or_duplicate_canonical_rule_is_rejected(self):
+        for scenario in ("missing", "duplicate"):
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    reg, report, index = _prepared(root)
+                    item = next(
+                        entry for entry in index["runs"]
+                        if any(
+                            r["world_id"] == entry["world_id"]
+                            and r["seed"] == entry["seed"]
+                            and r["naturally_acquired_false_candidates"]
+                            for r in report["runs"]
+                        )
+                    )
+                    state = json.loads(
+                        (root / item["causal_state_path"]).read_bytes()
+                    )
+                    published = state["causal_model"]["published"]
+                    self.assertTrue(published)
+                    if scenario == "missing":
+                        published.pop(0)
+                        reason = "disagrees with archived causal status"
+                    else:
+                        published.append(deepcopy(published[0]))
+                        reason = "duplicate archived causal contingency"
+                    altered = _replace_causal_state_bytes(
+                        root, report, index, canonical_causal_bytes(state),
+                    )
+                    with self.assertRaisesRegex(ValueError, reason):
+                        audit_heldout_raw_artifacts(
+                            registration=reg, evidence=altered,
+                            index=index, artifact_root=root,
+                        )
+
     def test_tampering_with_actual_journal_or_replay_fails(self):
         for key in ("journal_path", "replay_journal_path",
                     "causal_state_path", "replay_causal_state_path"):
