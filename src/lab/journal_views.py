@@ -63,7 +63,12 @@ class JournalViews:
 
     def __init__(self, *, journal: HashChainedJournal) -> None:
         self._journal = journal
-        self._commit_sequence = 0
+        self._commit_event_ids = [
+            entry.event_id
+            for entry in journal.entries
+            if entry.causal_event.get("kind") == "auto_segment_commit"
+        ]
+        self._commit_sequence = len(self._commit_event_ids)
 
     def technical(self) -> tuple[JournalEntry, ...]:
         return self._journal.entries
@@ -84,10 +89,9 @@ class JournalViews:
         if len(event_refs) != len(set(event_refs)):
             raise ValueError("AutoSegmentCommit event references must be unique")
 
-        by_id = {entry.event_id: entry for entry in self._journal.entries}
         validated: list[str] = []
         for event_ref in event_refs:
-            entry = by_id.get(event_ref)
+            entry = self._journal.get(event_ref)
             if entry is None:
                 raise ValueError(f"unknown technical event reference: {event_ref}")
             entry_attempt = entry.causal_event.get("attempt_ref")
@@ -121,6 +125,7 @@ class JournalViews:
                 "filter_version": policy.version,
             },
         )
+        self._commit_event_ids.append(commit_event_id)
         return AutoSegmentCommit(
             event_id=commit_event_id,
             t_monde=t_monde,
@@ -134,12 +139,12 @@ class JournalViews:
         *,
         policies: Mapping[str, AutobiographicalPolicy],
     ) -> tuple[dict[str, object], ...]:
-        by_id = {entry.event_id: entry for entry in self._journal.entries}
         projected: list[dict[str, object]] = []
 
-        for entry in self._journal.entries:
-            if entry.causal_event.get("kind") != "auto_segment_commit":
-                continue
+        for commit_event_id in self._commit_event_ids:
+            entry = self._journal.get(commit_event_id)
+            if entry is None:
+                raise ValueError("autobiographical commit index references unknown event")
 
             version = entry.causal_event.get("filter_version")
             refs = entry.causal_event.get("event_refs")
@@ -153,9 +158,12 @@ class JournalViews:
             policy.validate()
 
             for event_ref in refs:
-                if not isinstance(event_ref, str) or event_ref not in by_id:
+                if not isinstance(event_ref, str):
+                    raise ValueError("AutoSegmentCommit references invalid event id")
+                source = self._journal.get(event_ref)
+                if source is None:
                     raise ValueError("AutoSegmentCommit references unknown event")
-                projected.append(policy.project(by_id[event_ref]))
+                projected.append(policy.project(source))
 
         return tuple(projected)
 

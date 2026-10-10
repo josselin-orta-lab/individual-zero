@@ -155,6 +155,34 @@ class ScriptedStage1Runtime:
                     hooks[phase][component_name] = lambda context: None
         return hooks
 
+    def _unique_technical_event_id(
+        self, *, t_monde: int, attempt_ref: str, kind: str,
+    ) -> str:
+        """Disambiguate replay occurrences without changing causal state.
+
+        A snapshot restores model state but not the append-only technical
+        journal. Reexecuting an already journaled logical step must never
+        overwrite the first occurrence in the journal's event-ID lookup.
+        Unbranched execution retains its historical deterministic ID.
+        """
+        ordinary_id = deterministic_id(
+            "journal-event-v1", "stage1-runtime",
+            t_monde, attempt_ref, kind,
+        )
+        if self.journal.get(ordinary_id) is None:
+            return ordinary_id
+        # This extra discriminator describes the technical *occurrence*, not
+        # a new command, physical outcome or cognitive learning signal.
+        candidate_index = len(self.journal.entries)
+        while True:
+            occurrence_id = deterministic_id(
+                "stage1-snapshot-reexecution-occurrence-v1",
+                ordinary_id, candidate_index,
+            )
+            if self.journal.get(occurrence_id) is None:
+                return occurrence_id
+            candidate_index += 1
+
     def run_step(self, *, cycle: int = 1) -> None:
         """Execute one normal scripted world step."""
 
@@ -173,12 +201,9 @@ class ScriptedStage1Runtime:
             "attendre",
         )
         self.journal.append(
-            event_id=deterministic_id(
-                "journal-event-v1",
-                "stage1-runtime",
-                attempt.t_monde,
-                attempt.attempt_ref,
-                "command",
+            event_id=self._unique_technical_event_id(
+                t_monde=attempt.t_monde, attempt_ref=attempt.attempt_ref,
+                kind="command",
             ),
             causal_event={
                 "emitter": "stage1-runtime",
@@ -192,12 +217,9 @@ class ScriptedStage1Runtime:
         )
         self.world.apply_wait()
         self.journal.append(
-            event_id=deterministic_id(
-                "journal-event-v1",
-                "stage1-runtime",
-                attempt.t_monde,
-                attempt.attempt_ref,
-                "world_transition",
+            event_id=self._unique_technical_event_id(
+                t_monde=attempt.t_monde, attempt_ref=attempt.attempt_ref,
+                kind="world_transition",
             ),
             causal_event={
                 "emitter": "stage1-runtime",
