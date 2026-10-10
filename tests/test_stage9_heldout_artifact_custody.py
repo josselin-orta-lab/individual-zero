@@ -141,7 +141,7 @@ def _replace_journal_bytes(
 
 def _replace_causal_state_bytes(
     root: Path, evidence: dict[str, object], index: dict[str, object],
-    payload: bytes,
+    payload: bytes, *, run_index: int = 0,
 ):
     """Reseal both claimed owner-state checksums and the evidence manifest."""
     revised = deepcopy(evidence)
@@ -149,8 +149,8 @@ def _replace_causal_state_bytes(
         ("causal_state_path", "causal_state_sha256"),
         ("replay_causal_state_path", "replay_causal_state_sha256"),
     ):
-        (root / index["runs"][0][key]).write_bytes(payload)
-        revised["runs"][0][sha_key] = sha256(payload).hexdigest()
+        (root / index["runs"][run_index][key]).write_bytes(payload)
+        revised["runs"][run_index][sha_key] = sha256(payload).hexdigest()
     revised = sealed(revised)
     index["evidence_sha256"] = revised["evidence_sha256"]
     return revised
@@ -295,6 +295,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                         failure = "reused or unseen event"
                     forged = _replace_causal_state_bytes(
                         root, report, index, canonical_causal_bytes(state),
+                        run_index=index["runs"].index(item),
                     )
                     with self.assertRaisesRegex(ValueError, failure):
                         audit_heldout_raw_artifacts(
@@ -416,6 +417,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             replacement = canonical_causal_bytes(state)
             altered = _replace_causal_state_bytes(
                 root, report, index, replacement,
+                run_index=index["runs"].index(item),
             )
             with self.assertRaisesRegex(ValueError, "disagrees with archived causal status"):
                 audit_heldout_raw_artifacts(
