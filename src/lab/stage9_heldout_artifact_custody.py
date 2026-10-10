@@ -92,18 +92,18 @@ def _published_p47_from_journal(
     data = causal_event.get("data")
     if not isinstance(data, dict) or not isinstance(data.get("effects"), list):
         raise ValueError("invalid raw P-47 comparator data")
-    source_data = dict(data)
-    source_data["effects"] = [
-        {
-            key: (
-                _decode_archived_p47_float(value)
-                if key in {"predicted", "observed", "precision"} else value
-            )
-            for key, value in effect.items()
-        } if isinstance(effect, dict) else effect
-        for effect in data["effects"]
-    ]
     try:
+        source_data = dict(data)
+        source_data["effects"] = [
+            {
+                key: (
+                    _decode_archived_p47_float(value)
+                    if key in {"predicted", "observed", "precision"} else value
+                )
+                for key, value in effect.items()
+            } if isinstance(effect, dict) else effect
+            for effect in data["effects"]
+        ]
         result = agency_evidence_from_autobiography(
             episode_ref=episode_ref,
             event={
