@@ -137,6 +137,11 @@ def audit_heldout_raw_artifacts(
     }
     if len(rows) != len(original_runs):
         raise ValueError("raw artifact index missing or adding registered runs")
+    # The selected custody root itself must not be an alias. Otherwise a
+    # symlink swap can redirect every relative evidence path even when
+    # individual paths below the resolved root contain no symlink.
+    if artifact_root.is_symlink():
+        raise ValueError("raw artifact root may not be a symlink")
     root = artifact_root.resolve()
     if not root.is_dir():
         raise ValueError("raw artifact root must be a directory")
