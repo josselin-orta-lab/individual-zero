@@ -124,7 +124,7 @@ def _prepared(root: Path):
 
 def _replace_journal_bytes(
     root: Path, evidence: dict[str, object], index: dict[str, object],
-    payload: bytes,
+    payload: bytes, *, run_index: int = 0,
 ):
     """Re-seal forged *metadata*, proving SHA agreement is not authenticity."""
     revised = deepcopy(evidence)
@@ -132,8 +132,8 @@ def _replace_journal_bytes(
         ("journal_path", "journal_sha256"),
         ("replay_journal_path", "replay_journal_sha256"),
     ):
-        (root / index["runs"][0][key]).write_bytes(payload)
-        revised["runs"][0][sha_key] = sha256(payload).hexdigest()
+        (root / index["runs"][run_index][key]).write_bytes(payload)
+        revised["runs"][run_index][sha_key] = sha256(payload).hexdigest()
     revised = sealed(revised)
     index["evidence_sha256"] = revised["evidence_sha256"]
     return revised
@@ -685,25 +685,30 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
         with TemporaryDirectory() as folder:
             root = Path(folder)
             reg, report, index = _prepared(root)
-            original = (root / index["runs"][0]["journal_path"]).read_bytes()
+            run_index = next(
+                i for i, row in enumerate(report["runs"])
+                if len(row["known_cause_cases"] + row["naturally_acquired_false_candidates"]) >= 2
+            )
+            original = (root / index["runs"][run_index]["journal_path"]).read_bytes()
             forged_journal = HashChainedJournal()
             for line in original.split(b"\n"):
                 record = json.loads(line)
                 event = record["causal_event"]
                 if (
-                    event.get("attempt_ref") == "synthetic-attempt:0:2"
+                    event.get("attempt_ref") == f"synthetic-attempt:{run_index}:2"
                     and event.get("kind") in {
                         "command_experienced", "world_transition_experienced",
                         "auto_segment_commit",
                     }
                 ):
-                    event["attempt_ref"] = "synthetic-attempt:0:1"
+                    event["attempt_ref"] = f"synthetic-attempt:{run_index}:1"
                 forged_journal.append(
                     event_id=record["event_id"], causal_event=event,
                 )
             self.assertTrue(forged_journal.verify())
             forged = _replace_journal_bytes(
                 root, report, index, forged_journal.canonical_bytes(),
+                run_index=run_index,
             )
             with self.assertRaisesRegex(ValueError, "attempt reused across world steps"):
                 audit_heldout_raw_artifacts(
