@@ -1283,8 +1283,9 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             run_index = index["runs"].index(item)
             state = json.loads((root / item["causal_state_path"]).read_bytes())
             first, second = run["naturally_acquired_false_candidates"][:2]
-            first_step = 1 + len(run["known_cause_cases"])
-            second_step = first_step + 1
+            extra_source = run["known_cause_cases"][0]
+            first_step = 1
+            second_step = len(run["known_cause_cases"]) + 2
             state["causal_model"]["causal_observations"].append({
                 "identifier": "synthetic:accepted-observation",
                 "contingency_ref": first["contingency_ref"],
@@ -1292,8 +1293,8 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                 "subject_ref": "synthetic:subject",
                 "application_context": "synthetic:context",
                 "observation_context": "synthetic:context",
-                "episode_ref": first["episode_ref"],
-                "observation_ref": first["observation_ref"],
+                "episode_ref": extra_source["episode_ref"],
+                "observation_ref": extra_source["observation_ref"],
                 "observed_step": first_step,
                 "cause_present": True,
                 "effect_present": True,
@@ -1325,7 +1326,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                 "counterfactual": False,
             })
             state["causal_model"]["causal_credits"].extend([
-                [first["contingency_ref"], first["observation_ref"], "observation"],
+                [first["contingency_ref"], extra_source["observation_ref"], "observation"],
                 [second["contingency_ref"], second["observation_ref"], "intervention"],
             ])
             state["causal_model"]["agency_evidence"] = [
