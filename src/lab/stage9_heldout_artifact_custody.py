@@ -18,7 +18,8 @@ from typing import Mapping
 
 from .determinism import canonical_causal_bytes, sha256_hex
 from i0.modules.causal_lifecycle import (
-    decode_agency_evidence, decode_intervention, decode_observation, decode_review,
+    agency_evidence_from_autobiography, decode_agency_evidence,
+    decode_intervention, decode_observation, decode_review,
 )
 from .stage9_canonical_journal_audit import audit_raw_causal_journal
 from .stage9_memory_custody import audit_archived_closed_memory_sources
@@ -82,6 +83,41 @@ def _decode_archived_agency_evidence(entry: dict[str, object]):
             for effect in effects
         ]
     return decode_agency_evidence(fields)
+
+
+def _published_p47_from_journal(
+    *, event_ref: str, episode_ref: str, causal_event: Mapping[str, object],
+):
+    """Rebuild the typed P-47 evidence from its exact canonical journal data."""
+    data = causal_event.get("data")
+    if not isinstance(data, dict) or not isinstance(data.get("effects"), list):
+        raise ValueError("invalid raw P-47 comparator data")
+    source_data = dict(data)
+    source_data["effects"] = [
+        {
+            key: (
+                _decode_archived_p47_float(value)
+                if key in {"predicted", "observed", "precision"} else value
+            )
+            for key, value in effect.items()
+        } if isinstance(effect, dict) else effect
+        for effect in data["effects"]
+    ]
+    try:
+        result = agency_evidence_from_autobiography(
+            episode_ref=episode_ref,
+            event={
+                "event_id": event_ref,
+                "kind": "agency_comparison",
+                "t_monde": causal_event.get("t_monde"),
+                "data": source_data,
+            },
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("invalid raw P-47 comparator data") from exc
+    if result is None:
+        raise ValueError("raw P-47 comparator has no admissible evidence")
+    return result
 
 
 def load_raw_artifact_index(path: Path) -> dict[str, object]:
@@ -269,8 +305,19 @@ def audit_heldout_raw_artifacts(
                     for entry in entries:
                         if isinstance(entry, dict) and isinstance(entry.get("observation_ref"), str):
                             references.add(entry["observation_ref"])
+        published_agency_refs = set()
+        if isinstance(causal_owner, dict) and isinstance(
+            causal_owner.get("agency_evidence"), list,
+        ):
+            for entry in causal_owner["agency_evidence"]:
+                if (
+                    isinstance(entry, dict)
+                    and isinstance(entry.get("event_ref"), str)
+                ):
+                    published_agency_refs.add(entry["event_ref"])
         journal_audit = audit_raw_causal_journal(
             paths["journal_path"], physical_observation_refs=references,
+            published_agency_event_refs=published_agency_refs,
         )
         journal_events_checked += journal_audit["journal_events_checked"]
         physical_sources_checked += journal_audit["claimed_physical_transitions_checked"]
@@ -672,6 +719,23 @@ def audit_heldout_raw_artifacts(
             ):
                 raise ValueError(
                     "archived causal intervention lacks matching published agency comparison"
+                )
+        # The archived P-47 measurements, version and comparator outcome
+        # must be the exact projection of the canonical source occurrence.
+        # Source event IDs, closed Memory membership and hashes alone would
+        # allow two contradictory measurements to masquerade as one event.
+        for comparison in agency_by_id.values():
+            source = journal_audit["published_agency_source_events"][
+                comparison.event_ref
+            ]
+            reconstructed = _published_p47_from_journal(
+                event_ref=comparison.event_ref,
+                episode_ref=comparison.episode_ref,
+                causal_event=source,
+            )
+            if reconstructed != comparison:
+                raise ValueError(
+                    "archived agency comparison disagrees with raw P-47 source"
                 )
         memory_audit = audit_archived_closed_memory_sources(
             paths["causal_state_path"],
