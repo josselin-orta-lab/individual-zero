@@ -137,6 +137,7 @@ def audit_raw_causal_journal(
         check(buffered)
 
     matched = 0
+    physical_source_provenance: dict[str, dict[str, object]] = {}
     for ref in sorted(physical_observation_refs):
         transition_entry = events.get(ref)
         if transition_entry is None:
@@ -196,12 +197,18 @@ def audit_raw_causal_journal(
             for event_ref in refs
         ):
             raise ValueError("Memory commit refers to foreign or future event")
+        physical_source_provenance[ref] = {
+            "command_ref": command_ref,
+            "attempt_ref": attempt,
+            "t_monde": t_monde,
+        }
         matched += 1
 
     return {
         "journal_events_checked": index,
         "journal_head_hash": previous_hash,
         "claimed_physical_transitions_checked": matched,
+        "physical_source_provenance": physical_source_provenance,
         "structural_status": "canonical_chain_and_committed_sources_verified",
         "physical_truth_attested": False,
         "memory_episode_closure_attested": False,

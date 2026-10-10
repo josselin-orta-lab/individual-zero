@@ -17,6 +17,7 @@ from typing import Mapping
 
 from .determinism import canonical_causal_bytes, sha256_hex
 from .stage9_canonical_journal_audit import audit_raw_causal_journal
+from .stage9_memory_custody import audit_archived_closed_memory_sources
 from .stage9_scientific_assessment import (
     _reject_duplicate_keys, _reject_nonfinite_constant,
     assess_heldout_campaign, load_heldout_evidence,
@@ -24,7 +25,7 @@ from .stage9_scientific_assessment import (
 from .stage9_scientific_preregistration import load_registration
 
 
-INDEX_VERSION = "stage9-heldout-raw-artifact-index-v3"
+INDEX_VERSION = "stage9-heldout-raw-artifact-index-v4"
 INDEX_FIELDS = frozenset({
     "protocol_version", "registration_digest", "evidence_sha256", "runs",
 })
@@ -111,9 +112,9 @@ def audit_heldout_raw_artifacts(
     """Compare physically present files to already-validated evidence claims.
 
     Two differently named paths (or hardlinks) to the same file are rejected.
-    In v3, canonical journal structure, its hash chain, and the one-command,
-    one-world-advancement and one-Memory-commit cardinality of each claimed
-    nonlethal physical attempt are independently checked (INV-44/53).
+    In v4, the canonical closed-Memory owner state is also read from disk and
+    reported episode membership is cross-checked against the unique committed
+    physical command/transition source (DC-09, INV-33/44/53).
     The index is retrospective file custody metadata, NOT a preregistration or
     a proof that independent world steps really occurred.
     """
@@ -147,6 +148,8 @@ def audit_heldout_raw_artifacts(
     verified_files = 0
     journal_events_checked = 0
     physical_sources_checked = 0
+    memory_episodes_scanned = 0
+    closed_memory_sources_checked = 0
     for item in rows:
         if not isinstance(item, dict) or set(item) != RUN_INDEX_FIELDS:
             raise ValueError("invalid raw artifact run index")
@@ -197,6 +200,20 @@ def audit_heldout_raw_artifacts(
         )
         journal_events_checked += journal_audit["journal_events_checked"]
         physical_sources_checked += journal_audit["claimed_physical_transitions_checked"]
+        claimed_episodes = {
+            entry["observation_ref"]: entry["episode_ref"]
+            for name in ("known_cause_cases", "naturally_acquired_false_candidates")
+            for entry in reported[name]
+        }
+        memory_audit = audit_archived_closed_memory_sources(
+            paths["causal_state_path"],
+            claimed_episodes=claimed_episodes,
+            physical_source_provenance=journal_audit["physical_source_provenance"],
+        )
+        memory_episodes_scanned += memory_audit["closed_memory_episodes_scanned"]
+        closed_memory_sources_checked += memory_audit[
+            "claimed_closed_memory_sources_checked"
+        ]
     if seen_runs != set(original_runs):
         raise ValueError("raw artifact index did not cover every heldout run")
 
@@ -215,6 +232,11 @@ def audit_heldout_raw_artifacts(
         "journal_chain_integrity_verified": True,
         "journal_events_checked": journal_events_checked,
         "committed_physical_sources_checked": physical_sources_checked,
+        "archived_causal_owner_state_canonical": True,
+        "closed_memory_episodes_scanned": memory_episodes_scanned,
+        "claimed_closed_memory_sources_checked": closed_memory_sources_checked,
+        "closed_episode_membership_structurally_verified": True,
+        "memory_runtime_attested": False,
         "physical_truth_attested": False,
         "memory_episode_closure_attested": False,
         "scientific_verdict": None,
@@ -222,7 +244,7 @@ def audit_heldout_raw_artifacts(
         "outstanding": [
             "attest that archived files were produced by the declared frozen code",
             "independently witness physical world provenance and oracle custody",
-            "audit real Memory episode closure for each source reference",
+            "independently attest that archived Memory state was produced by the real run",
             "verify prospective registration, sampling independence and INV-25",
         ],
     }

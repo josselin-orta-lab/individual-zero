@@ -35,6 +35,8 @@ def _prepared(root: Path):
             run["known_cause_cases"]
             + run["naturally_acquired_false_candidates"]
         )
+        memory_episodes = []
+        memory_seen_events = set()
         for step, observation in enumerate(observations, start=1):
             attempt = f"synthetic-attempt:{i}:{step}"
             command_id = f"command:{i}:{step}"
@@ -55,6 +57,14 @@ def _prepared(root: Path):
                     "effects": {"rest": "attendre"},
                 },
             )
+            memory_episodes.append({
+                "id": observation["episode_ref"],
+                "start_t_monde": step,
+                "end_t_monde": step,
+                "event_refs": [command_id, transition_id],
+                "boundary_type": "max_length",
+            })
+            memory_seen_events.update((command_id, transition_id))
             journal_builder.append(
                 event_id=f"commit:{i}:{step}",
                 causal_event={
@@ -68,7 +78,18 @@ def _prepared(root: Path):
         if not self_audit:
             raise AssertionError("synthetic fixture's journal must be consistent")
         journal = journal_builder.canonical_bytes()
-        state = f"synthetic causal state bytes {i}\n".encode()
+        # A *synthetic* canonical owner-state envelope, not a lived Memory
+        # or scientific heldout run. The new audit checks exact references
+        # against the serialized Memory owner after journal verification.
+        state = canonical_causal_bytes({
+            "memory": {
+                "config_version": "stage9-synthetic-parser-fixture",
+                "episodes": memory_episodes,
+                "seen_event_refs": sorted(memory_seen_events),
+                "episode_sequence": len(memory_episodes),
+            },
+            "causal_model": {"published": []},
+        })
         files = {
             "journal_path": (f"{name}/original.jsonl", journal),
             "replay_journal_path": (f"{name}/replay.jsonl", journal),
@@ -103,6 +124,23 @@ def _replace_journal_bytes(
     for key, sha_key in (
         ("journal_path", "journal_sha256"),
         ("replay_journal_path", "replay_journal_sha256"),
+    ):
+        (root / index["runs"][0][key]).write_bytes(payload)
+        revised["runs"][0][sha_key] = sha256(payload).hexdigest()
+    revised = sealed(revised)
+    index["evidence_sha256"] = revised["evidence_sha256"]
+    return revised
+
+
+def _replace_causal_state_bytes(
+    root: Path, evidence: dict[str, object], index: dict[str, object],
+    payload: bytes,
+):
+    """Reseal both claimed owner-state checksums and the evidence manifest."""
+    revised = deepcopy(evidence)
+    for key, sha_key in (
+        ("causal_state_path", "causal_state_sha256"),
+        ("replay_causal_state_path", "replay_causal_state_sha256"),
     ):
         (root / index["runs"][0][key]).write_bytes(payload)
         revised["runs"][0][sha_key] = sha256(payload).hexdigest()
@@ -169,12 +207,88 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             self.assertEqual(result["committed_physical_sources_checked"], 44)
             self.assertFalse(result["physical_truth_attested"])
             self.assertFalse(result["memory_episode_closure_attested"])
+            self.assertTrue(result["archived_causal_owner_state_canonical"])
+            self.assertTrue(result["closed_episode_membership_structurally_verified"])
+            self.assertEqual(result["closed_memory_episodes_scanned"], 44)
+            self.assertEqual(result["claimed_closed_memory_sources_checked"], 44)
+            self.assertFalse(result["memory_runtime_attested"])
             self.assertGreater(result["total_bytes_checked"], 0)
             self.assertEqual(len(result["index_sha256"]), 64)
             self.assertIsNone(result["scientific_verdict"])
             self.assertFalse(result["golden_stage9_frozen"])
             self.assertTrue(result["outstanding"])
             self.assertNotEqual(result["provisional_metric_assessment"], "accepted")
+
+    def test_rehashed_invalid_or_noncanonical_owner_state_is_rejected(self):
+        for scenario in ("invalid_json", "noncanonical", "missing_memory"):
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    reg, report, index = _prepared(root)
+                    original = (
+                        root / index["runs"][0]["causal_state_path"]
+                    ).read_bytes()
+                    if scenario == "invalid_json":
+                        forged_bytes = b"not an owner snapshot"
+                        failure = "invalid archived causal owner-state JSON"
+                    elif scenario == "noncanonical":
+                        forged_bytes = b" " + original
+                        failure = "not byte-canonical"
+                    else:
+                        forged_bytes = canonical_causal_bytes(
+                            {"causal_model": {"published": []}},
+                        )
+                        failure = "lacks Memory owner"
+                    forged = _replace_causal_state_bytes(
+                        root, report, index, forged_bytes,
+                    )
+                    with self.assertRaisesRegex(ValueError, failure):
+                        audit_heldout_raw_artifacts(
+                            registration=reg, evidence=forged,
+                            index=index, artifact_root=root,
+                        )
+
+    def test_rehashed_missing_or_forged_memory_closure_is_rejected(self):
+        for scenario in (
+            "missing_episode", "misnamed_episode", "omitted_command",
+            "wrong_step", "unseen_event", "reused_event",
+        ):
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    reg, report, index = _prepared(root)
+                    state = json.loads((
+                        root / index["runs"][0]["causal_state_path"]
+                    ).read_bytes())
+                    episodes = state["memory"]["episodes"]
+                    command_ref = episodes[0]["event_refs"][0]
+                    if scenario == "missing_episode":
+                        episodes.pop(0)
+                        failure = "not archived as closed"
+                    elif scenario == "misnamed_episode":
+                        episodes[0]["id"] = "forged-closed-episode"
+                        failure = "not archived as closed"
+                    elif scenario == "omitted_command":
+                        episodes[0]["event_refs"].remove(command_ref)
+                        failure = "not in one closed Memory episode"
+                    elif scenario == "wrong_step":
+                        episodes[0]["start_t_monde"] = 0
+                        episodes[0]["end_t_monde"] = 0
+                        failure = "not in one closed Memory episode"
+                    elif scenario == "unseen_event":
+                        state["memory"]["seen_event_refs"].remove(command_ref)
+                        failure = "reused or unseen event"
+                    else:
+                        episodes[1]["event_refs"].append(command_ref)
+                        failure = "reused or unseen event"
+                    forged = _replace_causal_state_bytes(
+                        root, report, index, canonical_causal_bytes(state),
+                    )
+                    with self.assertRaisesRegex(ValueError, failure):
+                        audit_heldout_raw_artifacts(
+                            registration=reg, evidence=forged,
+                            index=index, artifact_root=root,
+                        )
 
     def test_tampering_with_actual_journal_or_replay_fails(self):
         for key in ("journal_path", "replay_journal_path",
