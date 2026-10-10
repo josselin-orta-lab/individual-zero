@@ -57,6 +57,17 @@ class Stage11HydrationProbeTests(unittest.TestCase):
             first.stage11_causal_action_memory_closed,
         )
         self.assertGreaterEqual(first.stage11_pending_test_actions, 0)
+        # Actual executed information-seeking acts now create visit
+        # counters, even when P-47 cannot later confirm an intervention.
+        self.assertGreaterEqual(
+            first.stage11_exploration_visits,
+            first.stage11_executed_test_commands,
+        )
+        self.assertGreaterEqual(first.stage11_exploration_stagnant_visits, 0)
+        self.assertLessEqual(
+            first.stage11_exploration_stagnant_visits,
+            first.stage11_exploration_visits,
+        )
         self.assertTrue(all(
             count > 0 and isinstance(status, str)
             and isinstance(attribution, str) and isinstance(water, str)
