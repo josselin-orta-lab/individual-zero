@@ -14,6 +14,7 @@ import stat
 from .stage9_registration_chronology import (
     PROJECT_INSTALL_PATH, SOURCE_TREE_PATH, _check_commit, _git,
 )
+from .stage9_scientific_preregistration import SPEC_PATH
 
 # Cache and packaging metadata are explicitly excluded from this preflight.
 # They need separate runtime custody; all other unexpected source paths fail.
@@ -26,7 +27,7 @@ def verify_frozen_worktree(
     """Reject modified, staged, untracked or byte-different runnable source.
 
     HEAD may contain later registration/evidence commits, but its src/ tree
-    and pyproject.toml must remain identical to the immutable frozen commit.
+    pyproject.toml and the English normative specification must match the freeze.
     No worktree, index, source, registration or result is modified.
     """
     root = repository.resolve()
@@ -41,10 +42,15 @@ def verify_frozen_worktree(
     expected_package = _git(
         root, "rev-parse", f"{frozen_implementation_commit}:{PROJECT_INSTALL_PATH}",
     ).strip()
+    expected_spec = _git(
+        root, "rev-parse", f"{frozen_implementation_commit}:{SPEC_PATH}",
+    ).strip()
     if _git(root, "cat-file", "-t", expected_tree.decode()).strip() != b"tree":
         raise ValueError("frozen source path is not a Git tree")
     if _git(root, "cat-file", "-t", expected_package.decode()).strip() != b"blob":
         raise ValueError("frozen package manifest is not a Git blob")
+    if _git(root, "cat-file", "-t", expected_spec.decode()).strip() != b"blob":
+        raise ValueError("frozen normative specification is not a Git blob")
 
     current_head = _git(root, "rev-parse", "HEAD").decode().strip()
     if current_head != frozen_implementation_commit:
@@ -58,6 +64,7 @@ def verify_frozen_worktree(
     for path, expected, description in (
         (SOURCE_TREE_PATH, expected_tree, "source tree"),
         (PROJECT_INSTALL_PATH, expected_package, "package manifest"),
+        (SPEC_PATH, expected_spec, "English normative specification"),
     ):
         if _git(root, "rev-parse", f"HEAD:{path}").strip() != expected:
             raise ValueError(f"current HEAD differs from frozen {description}")
@@ -67,13 +74,13 @@ def verify_frozen_worktree(
     # that local clean/smudge filters might otherwise normalize away.
     if _git(
         root, "status", "--porcelain=v1", "--untracked-files=all",
-        "--", SOURCE_TREE_PATH, PROJECT_INSTALL_PATH,
+        "--", SOURCE_TREE_PATH, PROJECT_INSTALL_PATH, SPEC_PATH,
     ):
         raise ValueError("frozen source or package has local Git changes")
 
     manifest = _git(
         root, "ls-tree", "-r", "-z", frozen_implementation_commit,
-        "--", SOURCE_TREE_PATH, PROJECT_INSTALL_PATH,
+        "--", SOURCE_TREE_PATH, PROJECT_INSTALL_PATH, SPEC_PATH,
     )
     tracked: set[str] = set()
     for entry in manifest.split(b"\0"):
@@ -109,6 +116,8 @@ def verify_frozen_worktree(
         raise ValueError("no source files verified in frozen tree")
     if PROJECT_INSTALL_PATH not in tracked:
         raise ValueError("frozen package manifest not checked")
+    if SPEC_PATH not in tracked:
+        raise ValueError("frozen normative specification not checked")
 
     src = root / SOURCE_TREE_PATH
     if not src.is_dir() or src.is_symlink():
@@ -140,6 +149,7 @@ def verify_frozen_worktree(
         "frozen_implementation_commit": frozen_implementation_commit,
         "source_tree_sha": expected_tree.decode(),
         "pyproject_blob_sha": expected_package.decode(),
+        "normative_specification_blob_sha": expected_spec.decode(),
         "verified_tracked_files": len(tracked),
         "scientific_verdict": None,
         "golden_stage9_frozen": False,
