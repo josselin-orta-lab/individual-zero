@@ -1683,22 +1683,14 @@ class CausalModel:
                 and v.observation_ref == o.observation_ref
             )
             for existing in same_physical:
-                # It is safe to ignore an alias of an already credited
-                # physical transition, never to silently prefer one of two
-                # contradictory cause/effect labels for that same witness.
-                # Memory episode IDs and world-step values are not used to
-                # deduplicate independent source events.
-                if (
-                    existing.predicate, existing.subject_ref,
-                    existing.application_context, existing.observation_context,
-                    existing.cause_present, existing.effect_present,
-                    existing.controlled_variables,
-                ) != (
-                    o.predicate, o.subject_ref,
-                    o.application_context, o.observation_context,
-                    o.cause_present, o.effect_present,
-                    o.controlled_variables,
-                ):
+                # A second identifier for the same physical transition is
+                # harmless only if every claim about its provenance and
+                # observation matches. Merely comparing cause/effect labels
+                # would silently discard a contradictory world step or
+                # Memory episode, contaminating n1 provenance. Distinct
+                # physical references remain independent even when an
+                # autobiographical episode contains multiple transitions.
+                if replace(existing, identifier=o.identifier) != o:
                     raise ValueError(
                         "conflicting causal labels for one physical observation"
                     )

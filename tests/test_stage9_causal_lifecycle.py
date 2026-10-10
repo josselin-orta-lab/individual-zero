@@ -267,7 +267,7 @@ class CausalLifecycleTests(unittest.TestCase):
         twin = model()
         twin.restore_causal_state(state)
         self.assertEqual(twin.export_causal_state(), state)
-        alias = replace(obs(5, cause=True, effect=True), observation_ref=first.observation_ref)
+        alias = replace(first, identifier="observation:1:alias")
         for owner in (m, twin):
             owner.integrate_causal_observation(alias)
             self.assertEqual(owner.publish_causal_inference(), ())
@@ -286,6 +286,9 @@ class CausalLifecycleTests(unittest.TestCase):
                 "controlled_variables": (("time", "night"),),
             }),
             ("subject", {"subject_ref": "different_food"}),
+            ("episode", {"episode_ref": "episode:forged"}),
+            ("world_step", {"observed_step": 77}),
+            ("application_context", {"application_context": "other_context"}),
         )
         for already_published in (False, True):
             for case, mutation in variations:
