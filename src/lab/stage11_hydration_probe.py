@@ -25,7 +25,7 @@ from .stage9_positive_hydration_benchmark import (
 from .stage9_random_reward_benchmark import preregistered_food_rewards
 
 
-PROTOCOL_VERSION = "stage11-public-hydration-funnel-dev-v1"
+PROTOCOL_VERSION = "stage11-public-hydration-funnel-dev-v2"
 TEST_PREFIX = "option:causal-test:"
 
 
@@ -47,6 +47,11 @@ class PublicHydrationFunnel:
     stage11_unscored_evaluations: int
     stage11_scored_intrinsic_evaluations: int
     stage11_scored_distinct_options: int
+    stage11_unpredicted_proposals: int
+    stage11_prediction_unavailability: tuple[tuple[str, int], ...]
+    stage11_lived_causal_actions_pending: int
+    stage11_lived_actions_physically_closed: int
+    stage11_published_agency_reports_for_tests: int
     stage11_first_hypothesis_step: int | None
     stage11_executed_test_commands: int
     stage11_verified_interventions: int
@@ -145,6 +150,26 @@ def run_public_hydration_funnel(
         if event.get("kind") == "causal_test_option_proposed"
         and isinstance(event.get("data"), Mapping)
     }
+    missing_predictions: dict[str, int] = {}
+    for event in events:
+        if event.get("kind") != "causal_test_option_proposed":
+            continue
+        data = event.get("data")
+        if not isinstance(data, Mapping):
+            continue
+        if data.get("simulation_status") == "unavailable":
+            reason = data.get("simulation_reason")
+            if not isinstance(reason, str) or not reason:
+                raise AssertionError("unpredicted causal option needs an explicit reason")
+            missing_predictions[reason] = missing_predictions.get(reason, 0) + 1
+    pending_actions = [
+        row for row in state["lived_causal_actions"]
+        if row["contingency_ref"] == "causal:hydration"
+    ]
+    published_comparisons = [
+        row for row in state["agency_evidence"]
+        if row.get("option_ref", "").startswith(TEST_PREFIX)
+    ]
     assessments = [
         event["data"]
         for event in events
@@ -189,6 +214,14 @@ def run_public_hydration_funnel(
         stage11_scored_distinct_options=len({
             row["option_ref"] for row in scored
         }),
+        stage11_unpredicted_proposals=sum(missing_predictions.values()),
+        stage11_prediction_unavailability=tuple(sorted(missing_predictions.items())),
+        stage11_lived_causal_actions_pending=len(pending_actions),
+        stage11_lived_actions_physically_closed=sum(
+            row.get("physical_episode_ref") is not None
+            for row in pending_actions
+        ),
+        stage11_published_agency_reports_for_tests=len(published_comparisons),
         stage11_first_hypothesis_step=first_hypothesis,
         stage11_executed_test_commands=applied_tests,
         stage11_verified_interventions=len(physical_trials),
