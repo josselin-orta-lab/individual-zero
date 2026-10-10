@@ -271,6 +271,13 @@ def audit_heldout_raw_artifacts(
                 if key in expected_credits:
                     raise ValueError("duplicate archived causal evidence credit")
                 expected_credits.add(key)
+        # An observation_ref is a physical identity: it cannot be credited
+        # to two independent causal rows, even if their contingency differs.
+        credited_physical_refs = [
+            key[1] for key in expected_credits
+        ]
+        if len(set(credited_physical_refs)) != len(credited_physical_refs):
+            raise ValueError("physical observation reused across causal evidence credits")
         actual_credits = []
         for entry in credits:
             if (
