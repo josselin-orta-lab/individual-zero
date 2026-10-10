@@ -556,6 +556,89 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     index=index, artifact_root=root,
                 )
 
+    def test_rehashed_causal_evidence_rejects_inadmissible_sources(self):
+        for kind, field, forged_value in (
+            ("observation", "oracle_derived", True),
+            ("observation", "independent_episode", False),
+            ("intervention", "action_applied", False),
+            ("intervention", "rollback_cancelled", True),
+            ("intervention", "counterfactual", True),
+        ):
+            with self.subTest(kind=kind, field=field):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    reg, report, index = _prepared(root)
+                    run = next(
+                        row for row in report["runs"]
+                        if row["naturally_acquired_false_candidates"]
+                    )
+                    item = next(
+                        row for row in index["runs"]
+                        if (row["world_id"], row["seed"])
+                        == (run["world_id"], run["seed"])
+                    )
+                    run_index = index["runs"].index(item)
+                    candidate = run["naturally_acquired_false_candidates"][0]
+                    observed_step = 1 + len(run["known_cause_cases"])
+                    state = json.loads(
+                        (root / item["causal_state_path"]).read_bytes()
+                    )
+                    common = {
+                        "identifier": "synthetic:admitted-causal-evidence",
+                        "contingency_ref": candidate["contingency_ref"],
+                        "episode_ref": candidate["episode_ref"],
+                        "observation_ref": candidate["observation_ref"],
+                        "observed_step": observed_step,
+                        "source": "monde",
+                        "oracle_derived": False,
+                        "rollback_cancelled": False,
+                        "counterfactual": False,
+                    }
+                    if kind == "observation":
+                        entry = {
+                            **common,
+                            "predicate": "synthetic_effect",
+                            "subject_ref": "synthetic:subject",
+                            "application_context": "synthetic:context",
+                            "observation_context": "synthetic:context",
+                            "cause_present": True,
+                            "effect_present": True,
+                            "controlled_variables": [],
+                            "independent_episode": True,
+                        }
+                        ledger = "causal_observations"
+                    else:
+                        entry = {
+                            **common,
+                            "command_ref": f"command:{run_index}:{observed_step}",
+                            "comparator_ref": "synthetic:agency-comparator",
+                            "context_signature": "synthetic:context",
+                            "emitted_step": observed_step - 1,
+                            "observed_effect": True,
+                            "comparator_status": "conforming",
+                            "attribution": "self_compatible",
+                            "controlled_variables": [],
+                            "action_applied": True,
+                        }
+                        ledger = "causal_interventions"
+                    entry[field] = forged_value
+                    state["causal_model"][ledger].append(entry)
+                    state["causal_model"]["causal_credits"].append([
+                        candidate["contingency_ref"],
+                        candidate["observation_ref"], kind,
+                    ])
+                    altered = _replace_causal_state_bytes(
+                        root, report, index, canonical_causal_bytes(state),
+                        run_index=run_index,
+                    )
+                    with self.assertRaisesRegex(
+                        ValueError, "archived causal evidence is not admissible",
+                    ):
+                        audit_heldout_raw_artifacts(
+                            registration=reg, evidence=altered,
+                            index=index, artifact_root=root,
+                        )
+
     def test_rehashed_intervention_cannot_forge_committed_command(self):
         with TemporaryDirectory() as folder:
             root = Path(folder)
