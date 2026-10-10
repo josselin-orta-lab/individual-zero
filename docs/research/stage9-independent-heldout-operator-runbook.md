@@ -162,10 +162,13 @@ ignored**: it is recorded under
 `pre_registration_ambiguous_stage9_json_blobs` with the review blocker
 `pre_registration_ambiguous_stage9_json_requires_prospectivity_review`.
 If even permissive parsing of such an ambiguous document reproduces the
-exact archived evidence, the audit rejects the campaign outright. These
-heuristics cannot prove the absence of differently encoded data, unpublished
-results, or objects outside reachable Git history; independent prospectivity
-review remains essential. A structurally complete receipt with those flags is **not** a
+exact archived evidence, the audit rejects the campaign outright. The scan
+also recognizes Unicode-encoded JSON objects (UTF-8 with BOM, UTF-16 and
+UTF-32, with supported byte-order detection) before comparing their decoded
+content, so a format change alone cannot disguise an identical prior report.
+These heuristics cannot prove the absence of compressed, wrapped or otherwise
+transformed data, unpublished results, or objects outside reachable Git
+history; independent prospectivity review remains essential. A structurally complete receipt with those flags is **not** a
 passing held-out campaign. A report with no flags is also **not** an
 independent scientific witness. The provisional scorer also exposes
 `reused_closed_memory_candidate_episodes` for distinct false-candidate rules
