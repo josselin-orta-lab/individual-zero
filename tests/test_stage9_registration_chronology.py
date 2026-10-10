@@ -114,6 +114,15 @@ def _create_fixture(
         + "\n", encoding="utf-8",
     )
     _git(repo, "add", "results/heldout.json")
+    if earlier_evidence == "identical":
+        # The eventual evidence file is already byte-identical to the
+        # premature Git blob. A separate archival receipt ensures an actual
+        # distinct post-registration commit exists for the chronology audit.
+        (repo / "results" / "archival-note.txt").write_text(
+            "SYNTHETIC late archive note, not a new result\n",
+            encoding="utf-8",
+        )
+        _git(repo, "add", "results/archival-note.txt")
     _git(repo, "commit", "-qm", "archive claimed heldout data")
     evidence_commit = _git(repo, "rev-parse", "HEAD")
     return implementation, registration_commit, evidence_commit
