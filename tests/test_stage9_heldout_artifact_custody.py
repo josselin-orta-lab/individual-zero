@@ -1296,6 +1296,8 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             ("missing_event", "published agency comparison absent from raw journal"),
             ("wrong_kind", "published agency comparison absent from raw journal"),
             ("uncommitted_event", "absent from its autobiographical commit"),
+            ("late_comparison", "violates physical comparator event order"),
+            ("orphan_attempt", "lacks same-attempt physical execution"),
             ("forged_option", "disagrees with raw P-47 source"),
             ("forged_measurement", "disagrees with raw P-47 source"),
             ("forged_version", "disagrees with raw P-47 source"),
@@ -1349,14 +1351,20 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     )
                     source_ref = owner["agency_evidence"][0]["event_ref"]
                     raw = (root / item["journal_path"]).read_bytes()
+                    records = [json.loads(line) for line in raw.split(b"\n")]
+                    original_p47 = next(
+                        row["causal_event"] for row in records
+                        if row["event_id"] == source_ref
+                    )
                     builder = HashChainedJournal()
-                    for line in raw.split(b"\n"):
-                        event_row = json.loads(line)
+                    for event_row in records:
                         event = event_row["causal_event"]
                         if event_row["event_id"] == source_ref:
-                            if scenario == "missing_event":
+                            if scenario in {"missing_event", "late_comparison"}:
                                 continue
                             event = deepcopy(event)
+                            if scenario == "orphan_attempt":
+                                event["attempt_ref"] = "synthetic:orphan-p47-attempt"
                             if scenario == "wrong_kind":
                                 event["kind"] = "synthetic_non_comparator"
                             elif scenario == "forged_option":
@@ -1374,20 +1382,38 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                                     "$f64": "not-a-measurement"
                                 }
                         if (
-                            scenario in {"missing_event", "uncommitted_event"}
-                            and event.get("kind") == "auto_segment_commit"
+                            event.get("kind") == "auto_segment_commit"
                             and source_ref in event.get("event_refs", [])
                         ):
-                            event = {
-                                **event,
-                                "event_refs": [
-                                    ref for ref in event["event_refs"]
-                                    if ref != source_ref
-                                ],
-                            }
+                            if scenario == "late_comparison":
+                                builder.append(
+                                    event_id=source_ref, causal_event=original_p47,
+                                )
+                            if scenario in {
+                                "missing_event", "uncommitted_event",
+                                "orphan_attempt",
+                            }:
+                                event = {
+                                    **event,
+                                    "event_refs": [
+                                        ref for ref in event["event_refs"]
+                                        if ref != source_ref
+                                    ],
+                                }
                         builder.append(
                             event_id=event_row["event_id"],
                             causal_event=event,
+                        )
+                    if scenario == "orphan_attempt":
+                        builder.append(
+                            event_id="synthetic:orphan-p47-commit",
+                            causal_event={
+                                "kind": "auto_segment_commit",
+                                "attempt_ref": "synthetic:orphan-p47-attempt",
+                                "t_monde": original_p47["t_monde"],
+                                "event_refs": [source_ref],
+                                "filter_version": "stage9-synthetic-parser-fixture",
+                            },
                         )
                     self.assertTrue(builder.verify())
                     altered = _replace_journal_bytes(
