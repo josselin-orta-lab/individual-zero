@@ -13,6 +13,7 @@ import unittest
 from lab.stage9_heldout_artifact_custody import (
     INDEX_VERSION, audit_heldout_raw_artifacts, load_raw_artifact_index,
 )
+from lab.stage9_memory_custody import audit_archived_closed_memory_sources
 from lab.stage9_scientific_preregistration import validate_registration
 from lab.journal import HashChainedJournal
 from lab.determinism import canonical_causal_bytes
@@ -1290,6 +1291,67 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                             registration=reg, evidence=altered,
                             index=index, artifact_root=root,
                         )
+
+    def test_closed_memory_agency_source_requires_same_attempt_physical_pair(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            path = root / "synthetic-memory.json"
+            source_ref = "synthetic:p47-event"
+            command_ref = "synthetic:command"
+            transition_ref = "synthetic:transition"
+            episode_ref = "synthetic:episode"
+            state = {
+                "memory": {
+                    "episodes": [{
+                        "id": episode_ref,
+                        "start_t_monde": 3,
+                        "end_t_monde": 3,
+                        "event_refs": [
+                            source_ref, command_ref, transition_ref,
+                        ],
+                    }],
+                    "seen_event_refs": sorted(
+                        [source_ref, command_ref, transition_ref]
+                    ),
+                },
+            }
+            claim = {source_ref: (episode_ref, 3)}
+            provenance = {source_ref: {
+                "attempt_ref": "synthetic:attempt",
+                "command_ref": command_ref,
+                "transition_ref": transition_ref,
+                "t_monde": 3,
+            }}
+            def check():
+                path.write_bytes(canonical_causal_bytes(state))
+                return audit_archived_closed_memory_sources(
+                    path, claimed_episodes={},
+                    physical_source_provenance={},
+                    claimed_agency_comparisons=claim,
+                    claimed_agency_physical_sources=provenance,
+                )
+            self.assertEqual(
+                check()["published_agency_comparisons_checked"], 1,
+            )
+            for missing in (command_ref, transition_ref):
+                with self.subTest(missing=missing):
+                    state["memory"]["episodes"][0]["event_refs"].remove(missing)
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "agency comparison lacks same-attempt physical Memory events",
+                    ):
+                        check()
+                    state["memory"]["episodes"][0]["event_refs"].append(missing)
+            with self.assertRaisesRegex(
+                ValueError, "physical claims disagree with archived ledger",
+            ):
+                path.write_bytes(canonical_causal_bytes(state))
+                audit_archived_closed_memory_sources(
+                    path, claimed_episodes={},
+                    physical_source_provenance={},
+                    claimed_agency_comparisons=claim,
+                    claimed_agency_physical_sources={},
+                )
 
     def test_rehashed_raw_p47_event_cannot_forge_published_comparison(self):
         scenarios = (
