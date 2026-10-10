@@ -331,6 +331,13 @@ def audit_heldout_raw_artifacts(
             or set(actual_credits) != expected_credits
         ):
             raise ValueError("archived causal credits disagree with admitted evidence")
+        for candidate in reported["naturally_acquired_false_candidates"]:
+            actual = by_ref.get(candidate["contingency_ref"])
+            if (
+                actual is None
+                or actual.get("causal_status") != candidate["causal_status"]
+            ):
+                raise ValueError("reported natural candidate disagrees with archived causal status")
         # Cross-check syntactic and normative admissibility after independent
         # physical/journal/credit checks. A rehashed owner snapshot must not
         # launder oracle-derived, rolled-back, counterfactual, or unapplied
@@ -422,13 +429,6 @@ def audit_heldout_raw_artifacts(
                 raise ValueError(
                     "archived established causal status lacks independent post-revision contexts"
                 )
-        for candidate in reported["naturally_acquired_false_candidates"]:
-            actual = by_ref.get(candidate["contingency_ref"])
-            if (
-                actual is None
-                or actual.get("causal_status") != candidate["causal_status"]
-            ):
-                raise ValueError("reported natural candidate disagrees with archived causal status")
         memory_audit = audit_archived_closed_memory_sources(
             paths["causal_state_path"],
             claimed_episodes=claimed_episodes,
