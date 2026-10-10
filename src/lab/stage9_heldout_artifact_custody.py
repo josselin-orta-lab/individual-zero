@@ -826,6 +826,12 @@ def audit_heldout_raw_artifacts(
         "registration_digest": scored["registration_digest"],
         "evidence_sha256": scored["evidence_sha256"],
         "provisional_metric_assessment": scored["assessment"],
+        "reused_closed_memory_candidate_episodes": (
+            scored["reused_closed_memory_candidate_episodes"]
+        ),
+        "negative_runs_without_natural_candidates": (
+            scored["negative_runs_without_natural_candidates"]
+        ),
         "runs_checked": len(seen_runs),
         "raw_files_checked": verified_files,
         "total_bytes_checked": total_size,
