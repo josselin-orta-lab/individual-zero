@@ -1363,6 +1363,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             ("forged_option", "disagrees with raw P-47 source"),
             ("forged_measurement", "disagrees with raw P-47 source"),
             ("integer_alias", "P-47 numerical encoding disagrees with raw journal"),
+            ("false_conforming", "P-47 comparator status contradicts numerical tolerance"),
             ("forged_version", "disagrees with raw P-47 source"),
             ("malformed_measurement", "invalid raw P-47 comparator data"),
         )
@@ -1440,6 +1441,10 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                                 # 1 == 1.0 in Python, but canonical $f64 is
                                 # not a JSON integer on the wire.
                                 event["data"]["effects"][0]["predicted"] = 1
+                            elif scenario == "false_conforming":
+                                # Reseal *both* P-47 ledgers with an impossible
+                                # success claim: |observed-predicted| > tolerance.
+                                event["data"]["effects"][0]["observed"] = 9.0
                             elif scenario == "forged_version":
                                 event["data"]["effects"][0]["comparator_version"] = (
                                     "synthetic:forged-p47-version"
@@ -1487,6 +1492,12 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                         root, baseline, index, builder.canonical_bytes(),
                         run_index=run_index,
                     )
+                    if scenario == "false_conforming":
+                        owner["agency_evidence"][0]["effects"][0][3] = 9.0
+                        altered = _replace_causal_state_bytes(
+                            root, altered, index, canonical_causal_bytes(state),
+                            run_index=run_index,
+                        )
                     with self.assertRaisesRegex(ValueError, error):
                         audit_heldout_raw_artifacts(
                             registration=reg, evidence=altered,
