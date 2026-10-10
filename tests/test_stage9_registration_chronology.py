@@ -12,6 +12,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from lab.stage9_registration_chronology import audit_registration_chronology
+from lab.stage9_scientific_preregistration import SPEC_PATH
 from tests.test_stage9_scientific_preregistration import example_draft
 from tests.test_stage9_scientific_assessment import make_report
 
@@ -28,6 +29,9 @@ def _create_fixture(
     repo: Path, *, source_tree: bool = True,
     modify_before_registration: bool = False,
     project_installer: bool = True,
+    normative_specification: bool = True,
+    alter_frozen_normative: bool = False,
+    modify_normative_before_registration: bool = False,
 ) -> tuple[str, str, str]:
     _git(repo, "init", "-q")
     _git(repo, "config", "user.name", "Stage 9 Test")
@@ -45,8 +49,24 @@ def _create_fixture(
             "print('frozen source')\n", encoding="utf-8",
         )
         _git(repo, "add", "src/engine.py")
+    if normative_specification:
+        normative = repo / SPEC_PATH
+        normative.parent.mkdir(parents=True, exist_ok=True)
+        original_spec = (
+            Path(__file__).resolve().parents[1] / SPEC_PATH
+        ).read_bytes()
+        normative.write_bytes(
+            original_spec + b"\n# synthetic divergent normative byte\n"
+            if alter_frozen_normative else original_spec
+        )
+        _git(repo, "add", SPEC_PATH)
     _git(repo, "commit", "-qm", "freeze implementation")
     implementation = _git(repo, "rev-parse", "HEAD")
+    if modify_normative_before_registration:
+        normative = repo / SPEC_PATH
+        normative.write_bytes(normative.read_bytes() + b"\n# unsealed change\n")
+        _git(repo, "add", SPEC_PATH)
+        _git(repo, "commit", "-qm", "mutate normative rules after freeze")
     if modify_before_registration:
         (repo / "src" / "engine.py").write_text(
             "print('changed before registration')\n", encoding="utf-8",
@@ -99,6 +119,14 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
             self.assertEqual(
                 result["frozen_pyproject_blob_sha"],
                 _git(repo, "rev-parse", f"{freeze}:pyproject.toml"),
+            )
+            self.assertEqual(
+                result["frozen_normative_specification_blob_sha"],
+                _git(repo, "rev-parse", f"{freeze}:{SPEC_PATH}"),
+            )
+            self.assertEqual(
+                result["normative_specification_unchanged_descendant_commits_checked"],
+                2,
             )
             self.assertEqual(
                 result["source_tree_unchanged_descendant_commits_checked"], 2,
@@ -219,6 +247,51 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "frozen source tree changed"):
                 _audit(repo, registered, evidence)
+
+    def test_frozen_normative_specification_cannot_be_missing_or_forged(self):
+        for mode in ("missing", "wrong_digest", "changed_before_registration"):
+            with self.subTest(mode=mode):
+                with TemporaryDirectory() as folder:
+                    repo = Path(folder)
+                    _, registered, evidence = _create_fixture(
+                        repo,
+                        normative_specification=mode != "missing",
+                        alter_frozen_normative=mode == "wrong_digest",
+                        modify_normative_before_registration=(
+                            mode == "changed_before_registration"
+                        ),
+                    )
+                    reason = {
+                        "missing": "frozen normative specification missing",
+                        "wrong_digest": "normative specification digest disagrees",
+                        "changed_before_registration": "normative specification changed",
+                    }[mode]
+                    with self.assertRaisesRegex(ValueError, reason):
+                        _audit(repo, registered, evidence)
+
+    def test_transient_normative_specification_edit_or_deletion_is_rejected(self):
+        for mode in ("rewrite", "delete"):
+            with self.subTest(mode=mode):
+                with TemporaryDirectory() as folder:
+                    repo = Path(folder)
+                    _, registered, _ = _create_fixture(repo)
+                    normative = repo / SPEC_PATH
+                    original = normative.read_bytes()
+                    if mode == "delete":
+                        _git(repo, "rm", SPEC_PATH)
+                    else:
+                        normative.write_bytes(original + b"\n# temporary rules\n")
+                        _git(repo, "add", SPEC_PATH)
+                    _git(repo, "commit", "-qm", "temporarily modify normative rules")
+                    normative.parent.mkdir(parents=True, exist_ok=True)
+                    normative.write_bytes(original)
+                    _git(repo, "add", SPEC_PATH)
+                    _git(repo, "commit", "-qm", "restore original normative rules")
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "normative specification changed|normative specification missing",
+                    ):
+                        _audit(repo, registered, _git(repo, "rev-parse", "HEAD"))
 
     def test_frozen_commit_without_source_tree_fails_closed(self):
         with TemporaryDirectory() as folder:
