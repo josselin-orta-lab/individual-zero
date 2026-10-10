@@ -309,6 +309,80 @@ def _synthetic_agency_comparison(trial: dict[str, object]) -> dict[str, object]:
     }
 
 
+def _attach_synthetic_p47_journal_sources(
+    root: Path, evidence: dict[str, object], index: dict[str, object],
+    state: dict[str, object], *, run_index: int,
+):
+    """Rebuild a fully hash-linked *synthetic* DC-09 comparator trace.
+
+    This is a custody parser fixture, not an independently witnessed P-47
+    experiment. The comparator is emitted before its step's applied command
+    and admitted by the original same-attempt autobiographical commit.
+    """
+    rows = state["causal_model"].get("agency_evidence", [])
+    if not rows:
+        return evidence
+    comparisons_by_step = {}
+    for comparison in rows:
+        comparisons_by_step.setdefault(
+            comparison["observed_t_monde"], []
+        ).append(comparison)
+    source = (root / index["runs"][run_index]["journal_path"]).read_bytes()
+    builder = HashChainedJournal()
+    witnessed = set()
+    for raw in source.split(b"\n"):
+        item = json.loads(raw)
+        event = item["causal_event"]
+        step = event.get("t_monde")
+        if event.get("kind") == "command_experienced":
+            for comparison in comparisons_by_step.get(step, []):
+                effects = [
+                    {
+                        "variable": row[0], "status": row[1],
+                        "predicted": row[2], "observed": row[3],
+                        "precision": row[4],
+                        "comparator_version": row[5],
+                    }
+                    for row in comparison["effects"]
+                ]
+                builder.append(
+                    event_id=comparison["event_ref"],
+                    causal_event={
+                        "kind": "agency_comparison",
+                        "attempt_ref": event["attempt_ref"],
+                        "t_monde": step,
+                        "data": {
+                            "option_ref": comparison["option_ref"],
+                            "sent_t_monde": comparison["sent_t_monde"],
+                            "observed_t_monde": comparison["observed_t_monde"],
+                            "status": comparison["status"],
+                            "attribution": comparison["attribution"],
+                            "effects": effects,
+                        },
+                    },
+                )
+                witnessed.add(comparison["event_ref"])
+        if event.get("kind") == "auto_segment_commit":
+            source_refs = [
+                comparison["event_ref"]
+                for comparison in comparisons_by_step.get(step, [])
+            ]
+            if source_refs:
+                event = {
+                    **event,
+                    "event_refs": [*source_refs, *event["event_refs"]],
+                }
+        builder.append(event_id=item["event_id"], causal_event=event)
+    if witnessed != {row["event_ref"] for row in rows}:
+        raise AssertionError("synthetic P-47 source has no physical step")
+    if not builder.verify():
+        raise AssertionError("synthetic P-47 journal chain must verify")
+    return _replace_journal_bytes(
+        root, evidence, index, builder.canonical_bytes(),
+        run_index=run_index,
+    )
+
+
 def _attach_synthetic_historical_proof(
     root: Path, evidence: dict[str, object], index: dict[str, object],
     state: dict[str, object], *, run_index: int, rule_ref: str,
@@ -419,6 +493,9 @@ def _attach_synthetic_historical_proof(
     state["memory"]["seen_event_refs"].sort()
     revised = _replace_journal_bytes(
         root, evidence, index, journal.canonical_bytes(), run_index=run_index,
+    )
+    revised = _attach_synthetic_p47_journal_sources(
+        root, revised, index, state, run_index=run_index,
     )
     return _replace_causal_state_bytes(
         root, revised, index, canonical_causal_bytes(state), run_index=run_index,
@@ -1411,8 +1488,11 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             episode["event_refs"].append(agency_event)
             state["memory"]["seen_event_refs"].append(agency_event)
             state["memory"]["seen_event_refs"].sort()
+            journal_report = _attach_synthetic_p47_journal_sources(
+                root, report, index, state, run_index=run_index,
+            )
             altered = _replace_causal_state_bytes(
-                root, report, index, canonical_causal_bytes(state),
+                root, journal_report, index, canonical_causal_bytes(state),
                 run_index=run_index,
             )
             result = audit_heldout_raw_artifacts(
