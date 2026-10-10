@@ -270,6 +270,75 @@ def _reject_pre_registration_evidence_blob(
     return len(objects)
 
 
+def _reject_semantic_pre_registration_evidence(
+    repository: Path, registration_commit: str, evidence: dict[str, object],
+    archived_size: int,
+) -> tuple[int, int]:
+    """Detect earlier JSON reports with identical content but different bytes.
+
+    Exact Git-blob equality is checked separately, without a size limit.
+    This bounded supplementary scan catches reordered and reformatted JSON
+    anywhere in the registration's reachable Git history. Oversized objects
+    are counted as unexamined; external custody still decides prospectivity.
+    """
+    ids = _git(
+        repository, "rev-list", "--objects", "--no-object-names",
+        registration_commit,
+    ).splitlines()
+    if not ids:
+        raise ValueError("missing pre-registration Git objects")
+    try:
+        metadata = subprocess.run(
+            ("git", "-C", str(repository), "--no-replace-objects",
+             "cat-file", "--batch-check"),
+            input=b"".join(oid + b"\n" for oid in ids),
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+        )
+    except OSError as exc:
+        raise ValueError("Git unavailable for semantic evidence scan") from exc
+    if metadata.returncode:
+        raise ValueError("pre-registration Git metadata scan failed")
+    rows = metadata.stdout.splitlines()
+    if len(rows) != len(ids):
+        raise ValueError("incomplete pre-registration Git metadata scan")
+    # Large unrelated blobs (e.g. the normative specification) must not
+    # exhaust the audit. The soft cap allows substantial JSON reformatting
+    # while disclosing the unexamined object count.
+    size_limit = min(max(archived_size * 8 + 4096, 65536), 64 * 1024 * 1024)
+    compared = skipped = 0
+    for oid, row in zip(ids, rows):
+        fields = row.split()
+        if (
+            len(fields) != 3 or fields[0] != oid or
+            fields[1] not in (b"blob", b"tree", b"commit", b"tag")
+        ):
+            raise ValueError("invalid pre-registration Git object metadata")
+        if fields[1] != b"blob":
+            continue
+        try:
+            size = int(fields[2])
+        except ValueError as exc:
+            raise ValueError("invalid pre-registration Git blob size") from exc
+        if size > size_limit:
+            skipped += 1
+            continue
+        raw = _git(repository, "cat-file", "blob", oid.decode("ascii"))
+        compared += 1
+        # Do not require a known filename extension. A JSON report can be
+        # hidden behind a .txt, .bin or extensionless tracked path.
+        if not raw.lstrip().startswith(b"{"):
+            continue
+        try:
+            candidate = json.loads(raw)
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
+            continue
+        if candidate == evidence:
+            raise ValueError(
+                "semantically identical heldout evidence existed in Git before preregistration"
+            )
+    return compared, skipped
+
+
 def audit_registration_chronology(
     *, repository: Path, registration_path: Path, registration_commit: str,
     evidence_path: Path, evidence_commit: str,
@@ -334,6 +403,11 @@ def audit_registration_chronology(
     prior_objects_checked = _reject_pre_registration_evidence_blob(
         root, registration_commit, evidence_commit, evidence_name,
     )
+    semantic_blobs_checked, oversized_blobs_not_checked = (
+        _reject_semantic_pre_registration_evidence(
+            root, registration_commit, evidence, len(committed_evidence),
+        )
+    )
     provisional = assess_heldout_campaign(registration, evidence)
     return {
         "chronology_status": (
@@ -360,6 +434,8 @@ def audit_registration_chronology(
             prior_evidence_commits_checked
         ),
         "pre_registration_git_objects_checked": prior_objects_checked,
+        "pre_registration_json_blobs_checked": semantic_blobs_checked,
+        "pre_registration_oversized_blobs_not_checked": oversized_blobs_not_checked,
         "registration_unchanged_descendant_commits_checked": (
             audited_descendant_commits
         ),
