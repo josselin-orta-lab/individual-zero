@@ -16,6 +16,8 @@ For a quick orientation, read:
 
 Then identify the nature of your proposed change.
 
+Before submitting or merging a PR, read the [access and merge policy](docs/governance/GITHUB_ACCESS_POLICY.md). Public forks may propose changes, but only explicitly authorized maintainers may merge into the canonical protected `main`. A PR template and CODEOWNERS file are not substitutes for enforced GitHub protection rules.
+
 ## Contribution paths
 
 ### Technical contribution
