@@ -24,6 +24,7 @@ def audit_archived_closed_memory_sources(
     state_path: Path, *,
     claimed_episodes: Mapping[str, str],
     physical_source_provenance: Mapping[str, Mapping[str, object]],
+    claimed_agency_comparisons: Mapping[str, tuple[str, int]] | None = None,
 ) -> dict[str, object]:
     """Validate exact serialized Memory closure without mutating any file."""
     if set(claimed_episodes) != set(physical_source_provenance):
@@ -106,10 +107,38 @@ def audit_archived_closed_memory_sources(
                 "physical command and observation are not in one closed Memory episode"
             )
 
+    # The observed P-47 comparison is a separate DC-09 autobiographical
+    # event, not the world-transition ID. Its published source must be
+    # present in the exact closed episode that admitted the report.
+    agency_claims = (
+        {} if claimed_agency_comparisons is None
+        else claimed_agency_comparisons
+    )
+    for event_ref, claimed in sorted(agency_claims.items()):
+        if (
+            not isinstance(event_ref, str) or not event_ref
+            or not isinstance(claimed, (tuple, list)) or len(claimed) != 2
+            or not isinstance(claimed[0], str) or not claimed[0]
+            or type(claimed[1]) is not int or claimed[1] < 0
+        ):
+            raise ValueError("invalid published agency Memory provenance")
+        episode_ref, observed_step = claimed
+        item = closed.get(episode_ref)
+        if (
+            item is None
+            or event_ref not in item[0]
+            or event_ref not in seen_refs
+            or not (item[1] <= observed_step <= item[2])
+        ):
+            raise ValueError(
+                "published agency comparison absent from its closed Memory episode"
+            )
+
     return {
         "archived_causal_owner_state_canonical": True,
         "closed_memory_episodes_scanned": len(closed),
         "claimed_closed_memory_sources_checked": len(claimed_episodes),
+        "published_agency_comparisons_checked": len(agency_claims),
         "closed_episode_membership_structurally_verified": True,
         "memory_runtime_attested": False,
         "physical_truth_attested": False,
