@@ -42,7 +42,10 @@ from .stage9_registration_chronology import (
 )
 from .stage9_runtime import Stage9Config, Stage9Runtime
 from .stage9_scientific_assessment import assess_heldout_campaign
-from .stage9_scientific_preregistration import load_registration, validate_registration
+from .stage9_scientific_preregistration import (
+    _unique_pairs, _reject_nonfinite_registration_constant,
+    load_registration, validate_registration,
+)
 from .stage9_secure_file_read import read_text_no_follow, open_regular_no_follow
 from .world import (
     WorldPhysicsConfig, WorldLayout, Position,
@@ -62,8 +65,8 @@ RAW_INDEX_VERSION = "stage9-heldout-raw-artifact-index-v4"
 EVIDENCE_VERSION = "stage9-heldout-evidence-v2"
 
 
-def _json_file(path: Path) -> dict[str, object]:
-    """Strict, no-follow input: never interpret duplicate or nonfinite JSON."""
+def _json_bytes(source: bytes) -> dict[str, object]:
+    """Interpret precisely the already hashed input byte image."""
     def pairs(items: list[tuple[str, object]]) -> dict[str, object]:
         out: dict[str, object] = {}
         for name, value in items:
@@ -76,13 +79,18 @@ def _json_file(path: Path) -> dict[str, object]:
         raise ValueError("nonfinite Stage-9 operator JSON constant: " + value)
 
     document = json.loads(
-        read_text_no_follow(path),
+        source.decode("utf-8"),
         object_pairs_hook=pairs, parse_constant=reject,
     )
     if not isinstance(document, dict):
         raise ValueError("Stage-9 operator input must be a JSON object")
     canonical_causal_bytes(document)  # Also rejects overflowing numeric JSON.
     return document
+
+
+def _json_file(path: Path) -> dict[str, object]:
+    """Strict input through a no-follow guarded descriptor."""
+    return _json_bytes(read_text_no_follow(path).encode("utf-8"))
 
 
 def _exact(obj: object, names: set[str], role: str) -> dict:
@@ -396,10 +404,19 @@ def _check_preregistration(
         # later source commits, even reverted ones, must not be executable.
         raise ValueError("execution checkout must be at preregistration commit")
     physical, name = _file_in_repo(root, registration_path)
-    with physical.open("rb") as stream:
+    with open_regular_no_follow(physical) as stream:
         original = stream.read()
-    if _git(root, "show", registration_commit + ":" + name) != original:
+    sealed = _git(root, "show", registration_commit + ":" + name)
+    if sealed != original:
         raise ValueError("preregistration bytes differ from Git-sealed original")
+    # Bind the earlier parsed registration object to exactly the immutable
+    # Git bytes, not an independently replaceable physical parse result.
+    committed = json.loads(
+        sealed.decode("utf-8"), object_pairs_hook=_unique_pairs,
+        parse_constant=_reject_nonfinite_registration_constant,
+    )
+    if canonical_causal_bytes(committed) != canonical_causal_bytes(registration):
+        raise ValueError("operator registration parse differs from sealed Git bytes")
     return verify_frozen_worktree(
         repository=root, frozen_implementation_commit=freeze,
     )
@@ -493,14 +510,23 @@ def execute_campaign(
     if custody["registration_digest"] != digest:
         raise ValueError("manifest custody disagrees with sealed registration")
     root = _root_without_aliases(manifest_root)
-    def manifest(path: str) -> dict:
-        return _json_file(_file_without_aliases(root, path))
+    def manifest(path: str, expected_digest: str) -> dict:
+        physical = _file_without_aliases(root, path)
+        with open_regular_no_follow(physical) as stream:
+            raw = stream.read()
+        if sha256_hex(raw) != expected_digest:
+            raise ValueError("operator-decoded manifest differs from registered original bytes")
+        return _json_bytes(raw)
 
     frozen = index["frozen_manifests"]
-    parameter = _frozen_parameters(manifest(frozen["parameter_registry"]))
-    equipment = _frozen_equipment(manifest(frozen["equipment"]))
+    parameter = _frozen_parameters(manifest(
+        frozen["parameter_registry"], registration["parameter_registry_sha256"],
+    ))
+    equipment = _frozen_equipment(manifest(
+        frozen["equipment"], registration["equipment_sha256"],
+    ))
     generator_doc = _exact(
-        manifest(frozen["world_generator"]),
+        manifest(frozen["world_generator"], registration["world_generator_sha256"]),
         {"protocol_version", "generation"}, "world generator manifest",
     )
     if generator_doc["protocol_version"] != GENERATOR_VERSION:
@@ -510,7 +536,7 @@ def execute_campaign(
         raise ValueError("world generator version differs from preregistration")
     # The ontology file is registered/custodied. Its semantics are frozen by
     # code and must be separately checked by the independent reviewer.
-    ontology = manifest(frozen["ontology"])
+    ontology = manifest(frozen["ontology"], registration["ontology_sha256"])
     if ontology.get("protocol_version") != "stage9-heldout-ontology-v1":
         raise ValueError("unrecognized frozen ontology manifest")
     if output_root.exists():
@@ -521,7 +547,10 @@ def execute_campaign(
     worlds = {}
     for world_id in registration["holdout_world_ids"]:
         worlds[world_id] = _world(
-            manifest(index["holdout_worlds"][world_id]),
+            manifest(
+                index["holdout_worlds"][world_id],
+                registration["holdout_world_sha256"][world_id],
+            ),
             world_id=world_id, steps=registration["steps_per_run"],
         )
     # No selected subset: execute the entire registered Cartesian product.
