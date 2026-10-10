@@ -691,19 +691,20 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             run_index = index["runs"].index(item)
             state = json.loads((root / item["causal_state_path"]).read_bytes())
             first, second = run["naturally_acquired_false_candidates"][:2]
-            step = 1 + len(run["known_cause_cases"])
+            shared_source = run["known_cause_cases"][0]
+            step = 1
             for number, candidate in enumerate((first, second)):
                 state["causal_model"]["causal_observations"].append(
                     _synthetic_passive_observation(
                         identifier=f"synthetic:shared-physical:{number}",
                         rule_ref=candidate["contingency_ref"],
                         candidate=candidate, observed_step=step,
-                        observation_ref=first["observation_ref"],
-                        episode_ref=first["episode_ref"],
+                        observation_ref=shared_source["observation_ref"],
+                        episode_ref=shared_source["episode_ref"],
                     )
                 )
                 state["causal_model"]["causal_credits"].append([
-                    candidate["contingency_ref"], first["observation_ref"],
+                    candidate["contingency_ref"], shared_source["observation_ref"],
                     "observation",
                 ])
             altered = _replace_causal_state_bytes(
