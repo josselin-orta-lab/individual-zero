@@ -24,6 +24,9 @@ class Stage11HydrationProbeTests(unittest.TestCase):
         data = first.as_dict()
         digest = data.pop("evidence_sha256")
         self.assertEqual(digest, sha256_hex(canonical_causal_bytes(data)))
+        # Preserve the diagnostic readout in the small software CI log.
+        # This is NOT an independent protocol registration or scientific GO.
+        print("stage11_public_hydration_diagnostic=" + first.to_json().replace("\\n", " "))
 
     def test_rejects_nonpublic_variants_and_invalid_seeds(self):
         for args in (
