@@ -228,6 +228,95 @@ def _synthetic_causal_trial(
     }
 
 
+def _attach_synthetic_historical_proof(
+    root: Path, evidence: dict[str, object], index: dict[str, object],
+    state: dict[str, object], *, run_index: int, rule_ref: str,
+):
+    """Build a full physical-journal/Memory history for a parser-only proof."""
+    run_files = index["runs"][run_index]
+    original = (root / run_files["journal_path"]).read_bytes()
+    journal = HashChainedJournal()
+    last_step = 0
+    for raw in original.split(b"\\n"):
+        record = json.loads(raw)
+        event = record["causal_event"]
+        last_step = max(last_step, event.get("t_monde", 0))
+        journal.append(event_id=record["event_id"], causal_event=event)
+    source_ids = []
+    for offset, cause_present in ((1, True), (2, False)):
+        step = last_step + offset
+        attempt = f"synthetic:historical-attempt:{run_index}:{step}"
+        command = f"synthetic:historical-command:{run_index}:{step}"
+        transition = f"synthetic:historical-transition:{run_index}:{step}"
+        episode = f"synthetic:historical-episode:{run_index}:{step}"
+        observation_id = f"synthetic:historical-observation:{run_index}:{step}"
+        source_ids.append(observation_id)
+        journal.append(
+            event_id=command,
+            causal_event={
+                "kind": "command_experienced",
+                "attempt_ref": attempt, "t_monde": step,
+                "primitive": "attendre", "parameters": {},
+            },
+        )
+        journal.append(
+            event_id=transition,
+            causal_event={
+                "kind": "world_transition_experienced",
+                "attempt_ref": attempt, "t_monde": step,
+                "effects": {"rest": "attendre"},
+            },
+        )
+        journal.append(
+            event_id=f"synthetic:historical-commit:{run_index}:{step}",
+            causal_event={
+                "kind": "auto_segment_commit",
+                "attempt_ref": attempt, "t_monde": step,
+                "event_refs": [command, transition],
+                "filter_version": "stage9-synthetic-parser-fixture",
+            },
+        )
+        state["memory"]["episodes"].append({
+            "id": episode, "start_t_monde": step, "end_t_monde": step,
+            "event_refs": [command, transition], "boundary_type": "max_length",
+        })
+        state["memory"]["seen_event_refs"].extend((command, transition))
+        state["causal_model"]["causal_observations"].append({
+            "identifier": observation_id, "contingency_ref": rule_ref,
+            "predicate": "synthetic_effect", "subject_ref": "synthetic:subject",
+            "application_context": "synthetic:history",
+            "observation_context": "synthetic:history",
+            "episode_ref": episode, "observation_ref": transition,
+            "observed_step": step, "cause_present": cause_present,
+            "effect_present": cause_present, "controlled_variables": [],
+            "source": "monde", "independent_episode": True,
+            "oracle_derived": False, "rollback_cancelled": False,
+            "counterfactual": False,
+        })
+        state["causal_model"]["causal_credits"].append([
+            rule_ref, transition, "observation",
+        ])
+    state["memory"]["seen_event_refs"].sort()
+    state["memory"]["episode_sequence"] += 2
+    state["causal_model"]["config_contract"] = {"n1": 1, "n2": 2}
+    state["causal_model"]["causal_correlation_witnesses"] = [
+        [rule_ref, [source_ids[0]], [source_ids[1]]]
+    ]
+    proof_id = f"synthetic:historical-review:{rule_ref}"
+    state["causal_model"]["causal_reviews"] = [proof_id]
+    state["causal_model"]["causal_review_proofs"] = [{
+        "identifier": proof_id, "contingency_ref": rule_ref,
+        "alternatives": ["synthetic:alternative"],
+        "contrasting_pairs": [[source_ids[0], source_ids[1]]],
+    }]
+    revised = _replace_journal_bytes(
+        root, evidence, index, journal.canonical_bytes(), run_index=run_index,
+    )
+    return _replace_causal_state_bytes(
+        root, revised, index, canonical_causal_bytes(state), run_index=run_index,
+    )
+
+
 class Stage9RawArtifactCustodyTests(unittest.TestCase):
     def test_real_bytes_match_declared_digests_but_are_not_scientific_proof(self):
         with TemporaryDirectory() as folder:
@@ -695,9 +784,9 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                         [rule_ref, trial["observation_ref"], "intervention"]
                         for trial in trials
                     ])
-                    altered = _replace_causal_state_bytes(
-                        root, report, index, canonical_causal_bytes(state),
-                        run_index=run_index,
+                    altered = _attach_synthetic_historical_proof(
+                        root, report, index, state, run_index=run_index,
+                        rule_ref=rule_ref,
                     )
                     if expected is not None:
                         with self.assertRaisesRegex(ValueError, expected):
