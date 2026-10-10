@@ -187,6 +187,50 @@ class Stage9RegisteredManifestCustodyTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "root may not be a symlink"):
                 _audit(alias, draft, index)
 
+    def test_symlink_swap_at_descriptor_open_is_rejected(self):
+        # The file is ordinary when the index path is checked, but becomes
+        # a symlink immediately before open(). A preflight is_symlink()
+        # followed by Path.open() would follow it without noticing.
+        from lab import stage9_registered_manifest_custody as custody
+        for scenario in ("leaf", "parent"):
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    _draft, index = _fixture(root)
+                    filename = root / index["frozen_manifests"]["equipment"]
+                    relocated = (
+                        root / "moved-equipment.manifest"
+                        if scenario == "leaf"
+                        else root / "relocated-manifests"
+                    )
+                    target_component = (
+                        filename.name if scenario == "leaf" else filename.parent.name
+                    )
+                    real_open = custody.os.open
+                    switched = False
+
+                    def swap_at_open(path, flags, *, dir_fd=None):
+                        nonlocal switched
+                        if (
+                            not switched and path == target_component
+                            and dir_fd is not None
+                        ):
+                            switched = True
+                            original = (
+                                filename if scenario == "leaf"
+                                else filename.parent
+                            )
+                            original.rename(relocated)
+                            original.symlink_to(
+                                relocated, target_is_directory=scenario == "parent",
+                            )
+                        return real_open(path, flags, dir_fd=dir_fd)
+
+                    with patch.object(custody.os, "open", side_effect=swap_at_open):
+                        with self.assertRaisesRegex(ValueError, "symlink"):
+                            custody._hash_bytes(filename)
+                    self.assertTrue(switched)
+
     def test_mid_audit_symlink_to_same_inode_is_rejected(self):
         # Synthetic TOCTOU: the first SHA read is valid. Afterwards an
         # operator relocates the very same inode and leaves a symlink at
