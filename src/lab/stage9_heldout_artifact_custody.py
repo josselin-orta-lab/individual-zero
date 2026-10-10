@@ -203,6 +203,7 @@ def audit_heldout_raw_artifacts(
     physical_sources_checked = 0
     memory_episodes_scanned = 0
     closed_memory_sources_checked = 0
+    published_agency_comparisons_checked = 0
     for item in rows:
         if not isinstance(item, dict) or set(item) != RUN_INDEX_FIELDS:
             raise ValueError("invalid raw artifact run index")
@@ -663,7 +664,14 @@ def audit_heldout_raw_artifacts(
             paths["causal_state_path"],
             claimed_episodes=claimed_episodes,
             physical_source_provenance=journal_audit["physical_source_provenance"],
+            claimed_agency_comparisons={
+                report.event_ref: (report.episode_ref, report.observed_t_monde)
+                for report in agency_by_id.values()
+            },
         )
+        published_agency_comparisons_checked += memory_audit[
+            "published_agency_comparisons_checked"
+        ]
         memory_episodes_scanned += memory_audit["closed_memory_episodes_scanned"]
         closed_memory_sources_checked += memory_audit[
             "claimed_closed_memory_sources_checked"
@@ -713,6 +721,7 @@ def audit_heldout_raw_artifacts(
         "archived_causal_owner_state_canonical": True,
         "closed_memory_episodes_scanned": memory_episodes_scanned,
         "claimed_closed_memory_sources_checked": closed_memory_sources_checked,
+        "published_agency_comparisons_checked": published_agency_comparisons_checked,
         "closed_episode_membership_structurally_verified": True,
         "memory_runtime_attested": False,
         "physical_truth_attested": False,
