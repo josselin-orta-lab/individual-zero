@@ -323,11 +323,11 @@ def _reject_semantic_pre_registration_evidence(
             skipped += 1
             continue
         raw = _git(repository, "cat-file", "blob", oid.decode("ascii"))
-        compared += 1
         # Do not require a known filename extension. A JSON report can be
         # hidden behind a .txt, .bin or extensionless tracked path.
         if not raw.lstrip().startswith(b"{"):
             continue
+        compared += 1
         try:
             candidate = json.loads(raw)
         except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
