@@ -283,6 +283,49 @@ def _reject_nonfinite_candidate_constant(value: str) -> None:
     raise ValueError("nonfinite earlier candidate JSON constant")
 
 
+def _unordered_stage9_report_payload(value: object) -> dict[str, object] | None:
+    """Canonicalize only *presentation* order for Stage-9 prior-result checks.
+
+    The report-level SHA-256 changes when the same records are presented in
+    another order. World/seed cells, known-cause cases and false-rule rows
+    are identified independently of list position, so reordering these
+    arrays or recalculating evidence_sha256 is not a new heldout experiment.
+    This is a screening comparison, never a way to validate scientific data.
+    """
+    if (
+        not isinstance(value, dict)
+        or value.get("protocol_version") != "stage9-heldout-evidence-v2"
+        or not isinstance(value.get("runs"), list)
+    ):
+        return None
+
+    def sorted_json_rows(rows: list[object]) -> list[object]:
+        return sorted(
+            rows,
+            key=lambda item: json.dumps(
+                item, ensure_ascii=False, sort_keys=True,
+                separators=(",", ":"), allow_nan=False,
+            ),
+        )
+
+    payload = {key: item for key, item in value.items()
+               if key != "evidence_sha256"}
+    normalized_runs = []
+    for row in value["runs"]:
+        if not isinstance(row, dict):
+            return None
+        normalized = dict(row)
+        for field in (
+            "known_cause_cases", "naturally_acquired_false_candidates",
+        ):
+            if not isinstance(row.get(field), list):
+                return None
+            normalized[field] = sorted_json_rows(row[field])
+        normalized_runs.append(normalized)
+    payload["runs"] = sorted_json_rows(normalized_runs)
+    return payload
+
+
 def _reject_semantic_pre_registration_evidence(
     repository: Path, registration_commit: str, evidence: dict[str, object],
     archived_size: int,
@@ -319,6 +362,9 @@ def _reject_semantic_pre_registration_evidence(
     # while disclosing the unexamined object count.
     size_limit = min(max(archived_size * 8 + 4096, 1024 * 1024), 64 * 1024 * 1024)
     compared = skipped = ambiguous_stage9 = 0
+    archived_unordered = _unordered_stage9_report_payload(evidence)
+    if archived_unordered is None:
+        raise ValueError("archived heldout evidence has no comparable Stage-9 rows")
     for oid, row in zip(ids, rows):
         fields = row.split()
         if (
@@ -378,6 +424,14 @@ def _reject_semantic_pre_registration_evidence(
         if candidate == evidence:
             raise ValueError(
                 "semantically identical heldout evidence existed in Git before preregistration"
+            )
+        try:
+            unordered = _unordered_stage9_report_payload(candidate)
+        except (TypeError, ValueError, RecursionError):
+            unordered = None
+        if unordered is not None and unordered == archived_unordered:
+            raise ValueError(
+                "reordered heldout observations existed in Git before preregistration"
             )
     return compared, skipped, ambiguous_stage9
 
