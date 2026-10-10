@@ -488,6 +488,34 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     index=index, artifact_root=root,
                 )
 
+    def test_unreported_intervention_requires_real_physical_transition(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            run = next(row for row in report["runs"] if row["naturally_acquired_false_candidates"])
+            item = next(row for row in index["runs"] if
+                        (row["world_id"], row["seed"]) == (run["world_id"], run["seed"]))
+            candidate = run["naturally_acquired_false_candidates"][0]
+            state = json.loads((root / item["causal_state_path"]).read_bytes())
+            state["causal_model"]["causal_interventions"].append({
+                "contingency_ref": candidate["contingency_ref"],
+                "observation_ref": "forged:unreported-physical-transition",
+                "episode_ref": candidate["episode_ref"],
+                "command_ref": "forged:command",
+                "observed_step": 1,
+            })
+            state["causal_model"]["causal_credits"].append([
+                candidate["contingency_ref"], "forged:unreported-physical-transition", "intervention",
+            ])
+            altered = _replace_causal_state_bytes(
+                root, report, index, canonical_causal_bytes(state),
+                run_index=index["runs"].index(item),
+            )
+            with self.assertRaisesRegex(ValueError, "physical transition absent from raw journal"):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=altered, index=index, artifact_root=root,
+                )
+
     def test_rehashed_intervention_cannot_forge_committed_command(self):
         with TemporaryDirectory() as folder:
             root = Path(folder)
