@@ -8,6 +8,7 @@ Stage-9 positive-hydration fixtures. Not a Stage-9 retrospective rerun.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from collections import Counter
 from typing import Mapping
 import json
 
@@ -58,6 +59,14 @@ class PublicHydrationFunnel:
     stage9_executed_test_commands: int
     stage9_verified_interventions: int
     stage11_modulation_transitions: int
+    # Read-only evidence funnel. A physical command is not automatically a
+    # published AgencyComparator comparison or a causal intervention.
+    stage11_test_comparison_events: int
+    stage11_test_comparison_classes: tuple[tuple[str, str, str, int], ...]
+    stage11_causal_action_memory_closed: int
+    stage11_published_test_agency_reports: int
+    stage11_pending_test_actions: int
+    stage11_causal_intervention_stagings: int
     scientific_verdict: None = None
     golden_stage9_frozen: bool = False
 
@@ -178,6 +187,57 @@ def run_public_hydration_funnel(
         and isinstance(event.get("data"), Mapping)
         and event["data"]["option_ref"].startswith(TEST_PREFIX)
     ]
+    # The P-47 report is produced from the actual next-step capture, not
+    # merely from the selected command. Count independently stored statuses
+    # without guessing the cause of a missing or uncredited intervention.
+    comparisons = [
+        event["data"] for event in events
+        if event.get("kind") == "agency_comparison"
+        and isinstance(event.get("data"), Mapping)
+        and isinstance(event["data"].get("option_ref"), str)
+        and event["data"]["option_ref"].startswith(TEST_PREFIX)
+    ]
+    comparator_classes = Counter()
+    for report in comparisons:
+        water_effect = next(
+            (effect[1] for effect in report.get("effects", ())
+             if isinstance(effect, (tuple, list)) and len(effect) >= 2
+             and effect[0] == "water"),
+            "unreported",
+        )
+        comparator_classes[(
+            str(report.get("status", "unknown")),
+            str(report.get("attribution", "unknown")),
+            str(water_effect),
+        )] += 1
+    comparison_classes = tuple(
+        (status, attribution, water_effect, count)
+        for (status, attribution, water_effect), count
+        in sorted(comparator_classes.items())
+    )
+    memory_closed = sum(
+        event.get("kind") == "causal_applied_action_memory_verified"
+        and isinstance(event.get("data"), Mapping)
+        and isinstance(event["data"].get("option_ref"), str)
+        and event["data"]["option_ref"].startswith(TEST_PREFIX)
+        for event in events
+    )
+    published_agency = sum(
+        isinstance(row.get("option_ref"), str)
+        and row["option_ref"].startswith(TEST_PREFIX)
+        for row in state["agency_evidence"]
+    )
+    pending_actions = sum(
+        isinstance(row.get("option_ref"), str)
+        and row["option_ref"].startswith(TEST_PREFIX)
+        for row in state["lived_causal_actions"]
+    )
+    staged_interventions = sum(
+        event.get("kind") == "causal_lived_intervention_staged"
+        and isinstance(event.get("data"), Mapping)
+        and event["data"].get("contingency_ref") == "causal:hydration"
+        for event in events
+    )
     evaluation_count = len(assessments)
     scored = [
         row for row in assessments
@@ -232,6 +292,12 @@ def run_public_hydration_funnel(
             event.get("kind") == "stage11_modulation_transition"
             for event in events
         ),
+        stage11_test_comparison_events=len(comparisons),
+        stage11_test_comparison_classes=comparison_classes,
+        stage11_causal_action_memory_closed=memory_closed,
+        stage11_published_test_agency_reports=published_agency,
+        stage11_pending_test_actions=pending_actions,
+        stage11_causal_intervention_stagings=staged_interventions,
     )
 
 
