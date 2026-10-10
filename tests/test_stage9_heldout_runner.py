@@ -132,7 +132,7 @@ class Stage9HeldoutRunnerTests(unittest.TestCase):
             _frozen_parameters(bad)
 
     def test_real_stage9_execution_replays_and_external_scenario_is_logged(self):
-        journal, state, truth = _run_cell(
+        journal, state, replay_journal, replay_state, truth = _run_cell(
             scenario=("dev-scenario", "dev-v1", (
                 ScenarioEvent(
                     t_monde=1, sequence=0, operation="set_body",
@@ -141,6 +141,8 @@ class Stage9HeldoutRunnerTests(unittest.TestCase):
             )),
         )
         self.assertGreater(len(journal), 0)
+        self.assertEqual(journal, replay_journal)
+        self.assertEqual(state, replay_state)
         self.assertIn(b"external_input_received", journal)
         self.assertIn(b"external_input_applied", journal)
         self.assertIn(b"auto_segment_commit", journal)
@@ -235,7 +237,7 @@ class Stage9HeldoutRunnerTests(unittest.TestCase):
             labels = []
             for wi, world in enumerate(registration["holdout_world_ids"]):
                 for si, seed in enumerate(registration["holdout_seeds"]):
-                    journal, state, _ = _run_cell(seed=seed)
+                    journal, state, replay_journal, replay_state, _ = _run_cell(seed=seed)
                     directory = f"cell-{wi:03d}-{si:03d}"
                     file_paths = {
                         "journal_path": directory + "/journal.jsonl",
@@ -247,7 +249,9 @@ class Stage9HeldoutRunnerTests(unittest.TestCase):
                         destination = run_root / file
                         destination.parent.mkdir(parents=True, exist_ok=True)
                         destination.write_bytes(
-                            journal if "journal" in k else state
+                            (journal if k == "journal_path" else
+                             replay_journal if k == "replay_journal_path" else
+                             state if k == "causal_state_path" else replay_state)
                         )
                     rows.append({
                         "world_id": world, "seed": seed,
