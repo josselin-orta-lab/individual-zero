@@ -24,10 +24,23 @@ from tests.test_stage9_scientific_preregistration import example_draft
 def _prepared(
     root: Path, *, omit_negative_seed: int | None = None,
     share_candidate_episode: bool = False,
+    share_known_case_episode: bool = False,
 ):
     registration = example_draft()
     report = make_report(registration, candidates=20)
     for row in report["runs"]:
+        if (
+            share_known_case_episode
+            and row["world_id"] in registration["positive_world_ids"]
+        ):
+            # Two separately applied physical events in a shared closed
+            # Memory episode, not two independent known-cause samples.
+            extra = deepcopy(row["known_cause_cases"][0])
+            extra["id"] = "case:second"
+            extra["observation_ref"] = (
+                f"synthetic:case-second:{row['world_id']}:{row['seed']}"
+            )
+            row["known_cause_cases"].append(extra)
         if row["world_id"] not in registration["negative_world_ids"]:
             continue
         if row["seed"] == omit_negative_seed:
