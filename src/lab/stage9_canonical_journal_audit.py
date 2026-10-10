@@ -194,6 +194,7 @@ def audit_raw_causal_journal(
             event_ref not in events
             or events[event_ref][0] >= commit_index
             or events[event_ref][1].get("attempt_ref") != attempt
+            or events[event_ref][1].get("t_monde") != t_monde
             for event_ref in refs
         ):
             raise ValueError("Memory commit refers to foreign or future event")
