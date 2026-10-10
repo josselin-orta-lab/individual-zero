@@ -157,15 +157,16 @@ bounded (currently at least 1 MiB per candidate blob and at most 64 MiB).
 Unexamined larger Git objects are counted and become an explicit
 `pre_registration_large_git_blobs_not_semantically_inspected`
 review blocker. A pre-registration Stage-9-looking JSON blob containing
-duplicate keys, non-finite constants or invalid syntax is **not silently
-ignored**: it is recorded under
+duplicate keys, non-finite constants (including numeric overflow such as
+`1e999`) or invalid syntax is **not silently ignored**: it is recorded under
 `pre_registration_ambiguous_stage9_json_blobs` with the review blocker
 `pre_registration_ambiguous_stage9_json_requires_prospectivity_review`.
 If even permissive parsing of such an ambiguous document reproduces the
 exact archived evidence, the audit rejects the campaign outright. The scan
-also recognizes Unicode-encoded JSON objects (UTF-8 with BOM, UTF-16 and
-UTF-32, with supported byte-order detection) before comparing their decoded
-content, so a format change alone cannot disguise an identical prior report.
+strictly parses all size-bounded earlier Git blobs (without trusting
+filename extensions or first-byte signatures), including Unicode-encoded
+JSON in UTF-8 with BOM, UTF-16 or UTF-32. A change in encoding, including
+leading Unicode whitespace, cannot by itself disguise an identical report.
 These heuristics cannot prove the absence of compressed, wrapped or otherwise
 transformed data, unpublished results, or objects outside reachable Git
 history; independent prospectivity review remains essential. A structurally complete receipt with those flags is **not** a
