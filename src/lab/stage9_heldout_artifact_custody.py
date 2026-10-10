@@ -295,17 +295,17 @@ def audit_heldout_raw_artifacts(
                     raise ValueError("invalid archived causal evidence credit identity")
                 if ref not in by_ref:
                     raise ValueError("archived causal evidence refers to unpublished contingency")
-                # When the same physical transition was independently
-                # checked for the held-out report, an intervention may not
-                # claim a different applied command, world step or episode.
-                if kind == "intervention" and observation in claimed_episodes:
-                    physical = journal_audit["physical_source_provenance"][observation]
-                    if (
-                        entry.get("command_ref") != physical["command_ref"]
-                        or entry.get("observed_step") != physical["t_monde"]
-                        or entry.get("episode_ref") != claimed_episodes[observation]
-                    ):
-                        raise ValueError("archived intervention disagrees with physical source")
+                # All admitted causal observations and interventions must
+                # agree with the journal's physical world step, including
+                # evidence that was not selected for the held-out score.
+                physical = journal_audit["physical_source_provenance"][observation]
+                if entry.get("observed_step") != physical["t_monde"]:
+                    raise ValueError("archived causal evidence world step disagrees with physical source")
+                if kind == "intervention" and (
+                    entry.get("command_ref") != physical["command_ref"]
+                    or entry.get("episode_ref") != claimed_episodes[observation]
+                ):
+                    raise ValueError("archived intervention disagrees with physical source")
                 key = (ref, observation, kind)
                 if key in expected_credits:
                     raise ValueError("duplicate archived causal evidence credit")
