@@ -49,7 +49,7 @@ the research plan is frozen, never to the simulated individual.
 
 5. Archive original bytes and SHA-256 for all physical world/layout/scenario
    manifests and the four frozen manifests. The **custody index** contains
-   paths only and may be produced separately: it does not amend registration.
+   role-to-path mappings and the registration digest; it may be created separately and does not amend registration.
    Use the exact 'stage9-registered-physical-manifest-index-v1' JSON structure
    defined in the preregistration template.
 
