@@ -209,7 +209,14 @@ def audit_heldout_raw_artifacts(
         }
         # Audit every admitted causal physical source, including interventions
         # omitted from the held-out report's selected scoring rows.
-        archived = json.loads(paths["causal_state_path"].read_bytes())
+        try:
+            archived = json.loads(
+                paths["causal_state_path"].read_bytes().decode("utf-8"),
+                object_pairs_hook=_reject_duplicate_keys,
+                parse_constant=_reject_nonfinite_constant,
+            )
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError("invalid archived causal owner-state JSON") from exc
         causal_owner = archived.get("causal_model") if isinstance(archived, dict) else None
         if isinstance(causal_owner, dict):
             for ledger in ("causal_observations", "causal_interventions"):
