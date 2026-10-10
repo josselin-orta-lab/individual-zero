@@ -326,6 +326,27 @@ def _unordered_stage9_report_payload(value: object) -> dict[str, object] | None:
     return payload
 
 
+def _may_be_encoded_json_object(raw: bytes) -> bool:
+    """Sniff bounded JSON blobs without discarding valid Unicode encodings.
+
+    json.loads(bytes) accepts BOM-bearing UTF-8/16/32 as well as unmarked
+    UTF-16/32. An ASCII-only leading-brace shortcut would incorrectly skip
+    byte-different, semantically identical evidence archived before sealing.
+    This is only a cheap filter; strict duplicate-key parsing follows.
+    """
+    if raw.lstrip().startswith(b"{"):
+        return True
+    return raw.startswith((
+        b"\xef\xbb\xbf",     # UTF-8 BOM
+        b"\xff\xfe",         # UTF-16 LE, UTF-32 LE BOM
+        b"\xfe\xff",         # UTF-16 BE BOM
+        b"\x00\x00\xfe\xff", # UTF-32 BE BOM
+        b"{\x00",             # UTF-16 LE without BOM
+        b"\x00{",             # UTF-16 BE without BOM
+        b"\x00\x00\x00{",   # UTF-32 BE without BOM
+    ))
+
+
 def _reject_semantic_pre_registration_evidence(
     repository: Path, registration_commit: str, evidence: dict[str, object],
     archived_size: int,
@@ -384,7 +405,7 @@ def _reject_semantic_pre_registration_evidence(
         raw = _git(repository, "cat-file", "blob", oid.decode("ascii"))
         # Do not require a known filename extension. A JSON report can be
         # hidden behind a .txt, .bin or extensionless tracked path.
-        if not raw.lstrip().startswith(b"{"):
+        if not _may_be_encoded_json_object(raw):
             continue
         compared += 1
         try:
