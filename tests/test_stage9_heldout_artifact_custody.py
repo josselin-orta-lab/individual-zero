@@ -279,7 +279,12 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                         state["memory"]["seen_event_refs"].remove(command_ref)
                         failure = "reused or unseen event"
                     else:
-                        episodes[1]["event_refs"].append(command_ref)
+                        # Some positive runs have only one closed episode:
+                        # explicitly forge another closed episode that
+                        # reuses the *same* physical Memory event.
+                        duplicate = deepcopy(episodes[0])
+                        duplicate["id"] = "forged-second-closed-episode"
+                        episodes.append(duplicate)
                         failure = "reused or unseen event"
                     forged = _replace_causal_state_bytes(
                         root, report, index, canonical_causal_bytes(state),
