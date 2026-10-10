@@ -355,6 +355,33 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                         index=index, artifact_root=root,
                     )
 
+    def test_later_run_cannot_modify_previously_verified_artifact(self):
+        from lab.stage9_memory_custody import audit_archived_closed_memory_sources
+
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            first_journal = root / index["runs"][0]["journal_path"]
+            calls = 0
+
+            def tamper_on_later_run(*args, **kwargs):
+                nonlocal calls
+                result = audit_archived_closed_memory_sources(*args, **kwargs)
+                calls += 1
+                if calls == 2:
+                    first_journal.write_bytes(first_journal.read_bytes() + b"forged")
+                return result
+
+            with patch(
+                "lab.stage9_heldout_artifact_custody.audit_archived_closed_memory_sources",
+                side_effect=tamper_on_later_run,
+            ):
+                with self.assertRaisesRegex(ValueError, "changed before custody audit completion"):
+                    audit_heldout_raw_artifacts(
+                        registration=reg, evidence=report,
+                        index=index, artifact_root=root,
+                    )
+
     def test_tampering_with_actual_journal_or_replay_fails(self):
         for key in ("journal_path", "replay_journal_path",
                     "causal_state_path", "replay_causal_state_path"):
