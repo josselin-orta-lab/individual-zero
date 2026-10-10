@@ -307,7 +307,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                 alias.symlink_to(root, target_is_directory=True)
             except (OSError, NotImplementedError) as exc:
                 self.skipTest(f"symlinks unavailable: {exc}")
-            with self.assertRaisesRegex(ValueError, "root may not be a symlink"):
+            with self.assertRaisesRegex(ValueError, "root or ancestor may not be a symlink"):
                 audit_heldout_raw_artifacts(
                     registration=reg, evidence=report,
                     index=index, artifact_root=alias,
