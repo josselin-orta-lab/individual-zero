@@ -21,9 +21,23 @@ from tests.test_stage9_scientific_assessment import make_report, sealed
 from tests.test_stage9_scientific_preregistration import example_draft
 
 
-def _prepared(root: Path):
+def _prepared(
+    root: Path, *, omit_negative_seed: int | None = None,
+    share_candidate_episode: bool = False,
+):
     registration = example_draft()
     report = make_report(registration, candidates=20)
+    for row in report["runs"]:
+        if row["world_id"] not in registration["negative_world_ids"]:
+            continue
+        if row["seed"] == omit_negative_seed:
+            row["naturally_acquired_false_candidates"] = []
+        elif share_candidate_episode:
+            # Two distinct world transitions share one synthetic Memory
+            # episode. This tests pseudoreplication disclosure, not science.
+            candidates = row["naturally_acquired_false_candidates"]
+            if len(candidates) >= 2:
+                candidates[1]["episode_ref"] = candidates[0]["episode_ref"]
     index_runs = []
     for i, run in enumerate(report["runs"]):
         name = f"run{i}"
@@ -59,13 +73,24 @@ def _prepared(root: Path):
                     "effects": {"rest": "attendre"},
                 },
             )
-            memory_episodes.append({
-                "id": observation["episode_ref"],
-                "start_t_monde": step,
-                "end_t_monde": step,
-                "event_refs": [command_id, transition_id],
-                "boundary_type": "max_length",
-            })
+            earlier_episode = next(
+                (episode for episode in memory_episodes
+                 if episode["id"] == observation["episode_ref"]),
+                None,
+            )
+            if earlier_episode is None:
+                memory_episodes.append({
+                    "id": observation["episode_ref"],
+                    "start_t_monde": step,
+                    "end_t_monde": step,
+                    "event_refs": [command_id, transition_id],
+                    "boundary_type": "max_length",
+                })
+            else:
+                earlier_episode["end_t_monde"] = step
+                earlier_episode["event_refs"].extend(
+                    (command_id, transition_id)
+                )
             memory_seen_events.update((command_id, transition_id))
             journal_builder.append(
                 event_id=f"commit:{i}:{step}",
