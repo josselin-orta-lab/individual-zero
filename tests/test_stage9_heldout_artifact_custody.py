@@ -79,6 +79,56 @@ def _prepared(root: Path):
         if not self_audit:
             raise AssertionError("synthetic fixture's journal must be consistent")
         journal = journal_builder.canonical_bytes()
+        # The synthetic false candidates still need genuine *structural*
+        # correlation/review lineage. Each rule uses its own physical
+        # transition as treatment and a distinct candidate's transition as
+        # its matched negative control. This is NOT a scientific sample.
+        synthetic_observations = []
+        synthetic_credits = []
+        synthetic_correlations = []
+        synthetic_reviews = []
+        synthetic_review_proofs = []
+        candidates = run["naturally_acquired_false_candidates"]
+        for offset, candidate in enumerate(candidates):
+            control_candidate = candidates[(offset + 1) % len(candidates)]
+            rule_ref = candidate["contingency_ref"]
+            treated_id = f"synthetic:matched:{i}:{offset}:treated"
+            control_id = f"synthetic:matched:{i}:{offset}:control"
+            treated_step = len(run["known_cause_cases"]) + offset + 1
+            control_step = (
+                len(run["known_cause_cases"])
+                + (offset + 1) % len(candidates) + 1
+            )
+            treated = _synthetic_passive_observation(
+                identifier=treated_id, rule_ref=rule_ref, candidate=candidate,
+                observation_ref=candidate["observation_ref"],
+                episode_ref=candidate["episode_ref"],
+                observed_step=treated_step,
+            )
+            control = _synthetic_passive_observation(
+                identifier=control_id, rule_ref=rule_ref,
+                candidate=control_candidate,
+                observation_ref=control_candidate["observation_ref"],
+                episode_ref=control_candidate["episode_ref"],
+                observed_step=control_step,
+            )
+            control["cause_present"] = False
+            control["effect_present"] = False
+            synthetic_observations.extend((treated, control))
+            synthetic_credits.extend([
+                [rule_ref, treated["observation_ref"], "observation"],
+                [rule_ref, control["observation_ref"], "observation"],
+            ])
+            synthetic_correlations.append([
+                rule_ref, [treated_id], [control_id],
+            ])
+            review_id = f"synthetic:matched-review:{i}:{offset}"
+            synthetic_reviews.append(review_id)
+            synthetic_review_proofs.append({
+                "identifier": review_id, "contingency_ref": rule_ref,
+                "alternatives": ["synthetic:alternative"],
+                "contrasting_pairs": [[treated_id, control_id]],
+            })
         # A *synthetic* canonical owner-state envelope, not a lived Memory
         # or scientific heldout run. The new audit checks exact references
         # against the serialized Memory owner after journal verification.
@@ -95,8 +145,18 @@ def _prepared(root: Path):
                     "causal_status": entry["causal_status"],
                 }
                 for entry in run["naturally_acquired_false_candidates"]
-            ], "causal_observations": [],
-                "causal_interventions": [], "causal_credits": []},
+            ],
+                "config_contract": {"n1": 1, "n2": 2},
+                "causal_observations": synthetic_observations,
+                "causal_interventions": [],
+                "causal_credits": synthetic_credits,
+                "causal_correlation_witnesses": synthetic_correlations,
+                "causal_reviews": synthetic_reviews,
+                "causal_review_proofs": synthetic_review_proofs,
+                "causal_revision_boundaries": [],
+                "agency_evidence": [],
+                "pending_agency_evidence": [],
+            },
         })
         files = {
             "journal_path": (f"{name}/original.jsonl", journal),
