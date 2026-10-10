@@ -1860,28 +1860,22 @@ class CausalModel:
                     )
                 )
             )
-            # Two published P-47 comparisons may disagree while describing
-            # one alleged physical transition. Ignoring the later *negative*
-            # claim would hide a causal counterexample and preserve an
-            # unearned established status. Reusing the source gives no
-            # additional credit, but contradictory outcome labels fail closed.
-            # For distinct contingencies the same physical step can describe
-            # different effects; only compare outcomes within one contingency.
+            # A reused physical source grants no extra n2 credit. It is only
+            # a harmless alias if every physical claim matches: action,
+            # Memory episode, context, controls, world steps, comparator,
+            # and outcome. Checking outcomes alone misses fabricated context
+            # changes that could hide a contradictory observation. Normalize
+            # only the row identifier; dataclass equality covers all other
+            # present and future physical provenance fields.
+            # Other contingencies may describe other effects of the same
+            # source but still receive no second intervention credit here.
             if any(
                 other.contingency_ref == trial.contingency_ref
-                and (
-                    other.observed_effect,
-                    other.comparator_status,
-                    other.attribution,
-                ) != (
-                    trial.observed_effect,
-                    trial.comparator_status,
-                    trial.attribution,
-                )
+                and replace(other, identifier=trial.identifier) != trial
                 for other in prior_uses
             ):
                 raise ValueError(
-                    "conflicting causal intervention outcomes for one physical source"
+                    "conflicting causal intervention claims for one physical source"
                 )
             if key in credits or prior_uses:
                 continue

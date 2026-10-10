@@ -449,7 +449,7 @@ class CausalLifecycleTests(unittest.TestCase):
         self.assertEqual(m.export_causal_state(), twin.export_causal_state())
         self.assertEqual(m.publish_causal_inference(), ())
 
-    def test_reused_comparison_or_world_step_is_not_a_second_context(self):
+    def test_reused_comparison_or_world_step_with_changed_context_fails_closed(self):
         for mode in ("same_comparator", "same_step"):
             with self.subTest(mode=mode):
                 m = model()
@@ -473,16 +473,15 @@ class CausalLifecycleTests(unittest.TestCase):
                     publish_matching_agency(m, second)
                 m.integrate_causal_intervention(first)
                 m.integrate_causal_intervention(second)
-                self.assertEqual(
-                    [v.after for v in m.publish_causal_inference()],
-                    ["testee_par_intervention"],
-                )
-                state = m.export_causal_state()
-                self.assertEqual(len(state["causal_interventions"]), 1)
-                self.assertEqual(m.publish_causal_inference(), ())
-                self.assertEqual(
-                    m.get(REF).causal_status, "testee_par_intervention",
-                )
+                before = m.export_causal_state()
+                twin = model()
+                twin.restore_causal_state(before)
+                for owner in (m, twin):
+                    with self.assertRaisesRegex(
+                        ValueError, "conflicting causal intervention claims",
+                    ):
+                        owner.publish_causal_inference()
+                    self.assertEqual(owner.export_causal_state(), before)
 
     def test_conflicting_physical_intervention_alias_is_rejected_atomically(self):
         # Alias suppression must not conceal a negative observation behind
@@ -522,7 +521,7 @@ class CausalLifecycleTests(unittest.TestCase):
                     for owner in (m, replay):
                         with self.assertRaisesRegex(
                             ValueError,
-                            "conflicting causal intervention outcomes for one physical source",
+                            "conflicting causal intervention claims for one physical source",
                         ):
                             owner.publish_causal_inference()
                         self.assertEqual(owner.export_causal_state(), frozen)
@@ -557,22 +556,65 @@ class CausalLifecycleTests(unittest.TestCase):
                 before = m.export_causal_state()
                 replay = model()
                 replay.restore_causal_state(before)
-                changes = m.publish_causal_inference()
-                self.assertEqual(changes, replay.publish_causal_inference())
-                self.assertEqual(
-                    [v.after for v in changes],
-                    [] if separate_publications else ["testee_par_intervention"],
-                )
-                self.assertEqual(m.export_causal_state(), replay.export_causal_state())
-                state = m.export_causal_state()
-                self.assertEqual(len(state["causal_interventions"]), 1)
-                self.assertEqual(
-                    len([item for item in state["causal_credits"]
-                         if item[2] == "intervention"]),
-                    1,
-                )
-                self.assertEqual(m.get(REF).causal_status, "testee_par_intervention")
-                self.assertEqual(m.publish_causal_inference(), ())
+                for owner in (m, replay):
+                    with self.assertRaisesRegex(
+                        ValueError, "conflicting causal intervention claims",
+                    ):
+                        owner.publish_causal_inference()
+                    self.assertEqual(owner.export_causal_state(), before)
+
+    def test_identical_physical_intervention_alias_has_zero_extra_credit(self):
+        # An exact duplicate claim with a new record ID must be harmless,
+        # irrespective of whether the original was already published.
+        for separately_published in (False, True):
+            with self.subTest(separately_published=separately_published):
+                m = model()
+                hypothesized(m)
+                first = trial(10, context="zone1")
+                alias = replace(first, identifier="intervention:10:alias")
+                publish_matching_agency(m, first)
+                m.integrate_causal_intervention(first)
+                if separately_published:
+                    self.assertEqual(
+                        [c.after for c in m.publish_causal_inference()],
+                        ["testee_par_intervention"],
+                    )
+                m.integrate_causal_intervention(alias)
+                frozen = m.export_causal_state()
+                twin = model()
+                twin.restore_causal_state(frozen)
+                for owner in (m, twin):
+                    changes = owner.publish_causal_inference()
+                    self.assertEqual(
+                        [c.after for c in changes],
+                        [] if separately_published else ["testee_par_intervention"],
+                    )
+                    state = owner.export_causal_state()
+                    self.assertEqual(len(state["causal_interventions"]), 1)
+                    self.assertEqual(
+                        len([row for row in state["causal_credits"]
+                             if row[2] == "intervention"]), 1,
+                    )
+                    self.assertEqual(owner.get(REF).causal_status, "testee_par_intervention")
+                self.assertEqual(m.export_causal_state(), twin.export_causal_state())
+
+    def test_changed_physical_controls_cannot_be_suppressed_as_alias(self):
+        # Matching comparator and outcome must not hide a changed contextual
+        # control on the *same* world event.
+        m = model()
+        hypothesized(m)
+        first = trial(10, context="zone1")
+        conflicting = replace(
+            first, identifier="intervention:10:forged-controls",
+            controlled_variables=(("time", "night"),),
+        )
+        publish_matching_agency(m, first)
+        m.integrate_causal_intervention(first)
+        m.integrate_causal_intervention(conflicting)
+        before = m.export_causal_state()
+        with self.assertRaisesRegex(ValueError, "conflicting causal intervention claims"):
+            m.publish_causal_inference()
+        self.assertEqual(before, m.export_causal_state())
 
     def test_failed_intervention_blocks_stale_n2_establishment(self):
         m = model()
