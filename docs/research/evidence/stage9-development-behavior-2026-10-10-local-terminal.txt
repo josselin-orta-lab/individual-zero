@@ -1,0 +1,110 @@
+User-reported local terminal excerpts, received in conversation 2026-10-10.
+Transcribed from the user's messages, NOT an original unedited machine artifact.
+No raw results.txt, local full Git SHA, exact execution timestamp, journal or signed host receipt was supplied.
+
+=== FIRST USER-REPORTED OUTPUT ===
+Monde : null_water_reference
+Graine : 41
+État causal : aucun
+Tests proposés : None
+Tests exécutés : None
+Interventions validées : None
+Preuves manquantes : null_physics_has_no_positive_effect
+Blocages : None
+
+Monde : small_water_gain
+Graine : 41
+État causal : hypothese_causale
+Tests proposés : 37
+Tests exécutés : 0
+Interventions validées : 0
+Preuves manquantes : verified_intervention_required
+Blocages : [['equipment_input_unseen', 37]]
+
+Monde : recurrent_water_need
+Graine : 41
+État causal : hypothese_causale
+Tests proposés : 44
+Tests exécutés : 0
+Interventions validées : 0
+Preuves manquantes : verified_intervention_required
+Blocages : [['equipment_input_unseen', 44]]
+
+Monde : model_aligned_water_gain
+Graine : 41
+État causal : aucun
+Tests proposés : 0
+Tests exécutés : 0
+Interventions validées : 0
+Preuves manquantes : insufficient_positive_closed_episodes
+Blocages : []
+
+Monde : null_water_reference
+Graine : 42
+État causal : aucun
+Tests proposés : None
+Tests exécutés : None
+Interventions validées : None
+Preuves manquantes : null_physics_has_no_positive_effect
+Blocages : None
+
+Monde : small_water_gain
+Graine : 42
+État causal : hypothese_causale
+Tests proposés : 39
+Tests exécutés : 0
+Interventions validées : 0
+Preuves manquantes : verified_intervention_required
+Blocages : [['equipment_input_unseen', 39]]
+
+Monde : recurrent_water_need
+Graine : 42
+État causal : hypothese_causale
+Tests proposés : 43
+Tests exécutés : 0
+Interventions validées : 0
+Preuves manquantes : verified_intervention_required
+Blocages : [['equipment_input_unseen', 43]]
+
+Monde : model_aligned_water_gain
+Graine : 42
+État causal : aucun
+Tests proposés : 0
+Tests exécutés : 0
+Interventions validées : 0
+Preuves manquantes : insufficient_positive_closed_episodes
+Blocages : []
+
+=== SECOND USER-REPORTED OUTPUT ===
+small_water_gain | graine 41
+Options distinctes : 1
+Enregistrements acceptés : 37
+Évaluations impossibles : 37
+Contextes accessibles : 9
+Actions boire après hypothèse : 0
+Diagnostics Planning : []
+
+recurrent_water_need | graine 41
+Options distinctes : 1
+Enregistrements acceptés : 44
+Évaluations impossibles : 44
+Contextes accessibles : 13
+Actions boire après hypothèse : 0
+Diagnostics Planning : []
+
+small_water_gain | graine 42
+Options distinctes : 1
+Enregistrements acceptés : 39
+Évaluations impossibles : 39
+Contextes accessibles : 9
+Actions boire après hypothèse : 0
+Diagnostics Planning : []
+
+recurrent_water_need | graine 42
+Options distinctes : 1
+Enregistrements acceptés : 43
+Évaluations impossibles : 43
+Contextes accessibles : 13
+Actions boire après hypothèse : 0
+Diagnostics Planning : []
+=== END OF USER EXCERPTS ===
