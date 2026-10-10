@@ -168,10 +168,12 @@ results, or objects outside reachable Git history; independent prospectivity
 review remains essential. A structurally complete receipt with those flags is **not** a
 passing held-out campaign. A report with no flags is also **not** an
 independent scientific witness. The provisional scorer also exposes
-`reused_closed_memory_candidate_episodes` for distinct candidate rules
-sharing one closed Memory episode, and
+`reused_closed_memory_candidate_episodes` for distinct false-candidate rules
+sharing one closed Memory episode,
+`reused_closed_memory_known_case_episodes` for multiple known-cause
+observations sharing an episode, and
 `negative_runs_without_natural_candidates` for registered null-world/seed
-cells contributing no naturally acquired candidate. Both become explicit
+cells contributing no naturally acquired candidate. These become explicit
 `review_blockers` when they threaten interpretation of the pooled
 confidence intervals. A Memory episode can legitimately contain multiple
 distinct applied physical transitions; an episode identifier is **neither**
