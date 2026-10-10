@@ -80,7 +80,9 @@ class Stage9SecureFileReadTests(unittest.TestCase):
                         with self.assertRaisesRegex(ValueError, "symlink"):
                             _file_hash_and_size(source)
                     self.assertTrue(swapped)
-                    self.assertTrue(source.is_symlink())
+                    self.assertTrue(
+                        (source if scenario == "leaf" else subdir).is_symlink()
+                    )
 
     def test_in_place_mutation_during_read_is_rejected(self):
         with TemporaryDirectory() as folder:
