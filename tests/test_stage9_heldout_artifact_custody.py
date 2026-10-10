@@ -1083,6 +1083,9 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
             ("noncanonical_float", "invalid archived agency comparison"),
             ("negative_zero_float", "invalid archived agency comparison"),
             ("overflow_float", "invalid archived agency comparison"),
+            ("memory_event_missing", "published agency comparison absent from its closed Memory episode"),
+            ("memory_event_moved", "published agency comparison absent from its closed Memory episode"),
+            ("memory_event_unseen", "reused or unseen event in archived Memory episode"),
         )
         for scenario, expected in scenarios:
             with self.subTest(scenario=scenario):
@@ -1161,6 +1164,25 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                         agency[0]["effects"][0][2] = {"$f64": "-0x0.0p+0"}
                     elif scenario == "overflow_float":
                         agency[0]["effects"][0][2] = {"$f64": "0x1p+1024"}
+                    elif scenario in {
+                        "memory_event_missing", "memory_event_moved",
+                        "memory_event_unseen",
+                    }:
+                        event_ref = agency[0]["event_ref"]
+                        episode = next(
+                            row for row in state["memory"]["episodes"]
+                            if row["id"] == agency[0]["episode_ref"]
+                        )
+                        if scenario == "memory_event_unseen":
+                            state["memory"]["seen_event_refs"].remove(event_ref)
+                        else:
+                            episode["event_refs"].remove(event_ref)
+                            if scenario == "memory_event_moved":
+                                other = next(
+                                    row for row in state["memory"]["episodes"]
+                                    if row["id"] == agency[1]["episode_ref"]
+                                )
+                                other["event_refs"].append(event_ref)
                     altered = _replace_causal_state_bytes(
                         root, baseline, index, canonical_causal_bytes(state),
                         run_index=run_index,
