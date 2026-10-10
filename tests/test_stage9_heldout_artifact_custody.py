@@ -1434,6 +1434,11 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                             elif scenario == "forged_option":
                                 event["data"]["option_ref"] = "synthetic:forged-option"
                             elif scenario == "forged_measurement":
+                                # Keep the forged source internally conforming;
+                                # the archive must still disagree with its bytes.
+                                event["data"]["effects"][0]["predicted"] = {
+                                    "$f64": "0x1.0000000000000p+1"
+                                }
                                 event["data"]["effects"][0]["observed"] = {
                                     "$f64": "0x1.0000000000000p+1"
                                 }
