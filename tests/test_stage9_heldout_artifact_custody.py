@@ -382,9 +382,9 @@ def _attach_synthetic_historical_proof(
     owner = state["causal_model"]
     owner["config_contract"] = {"n1": 1, "n2": 2}
     witness = [rule_ref, [source_ids[0]], [source_ids[1]]]
-    for index, previous in enumerate(owner["causal_correlation_witnesses"]):
+    for witness_index, previous in enumerate(owner["causal_correlation_witnesses"]):
         if previous[0] == rule_ref:
-            owner["causal_correlation_witnesses"][index] = witness
+            owner["causal_correlation_witnesses"][witness_index] = witness
             break
     else:
         owner["causal_correlation_witnesses"].append(witness)
