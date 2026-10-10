@@ -484,6 +484,49 @@ class CausalLifecycleTests(unittest.TestCase):
                     m.get(REF).causal_status, "testee_par_intervention",
                 )
 
+    def test_conflicting_physical_intervention_alias_is_rejected_atomically(self):
+        # Alias suppression must not conceal a negative observation behind
+        # an earlier positive P-47 comparison, even after snapshot/resume.
+        # These are deliberately contradictory *synthetic* claims, not real
+        # independent physical evidence.
+        first = trial(10, context="zone1")
+        for alias_kind in ("same_world_event", "same_observation_step"):
+            for separate_publications in (False, True):
+                with self.subTest(
+                    alias_kind=alias_kind, separate_publications=separate_publications,
+                ):
+                    m = model()
+                    hypothesized(m)
+                    rejected = trial(11, context="zone2", effect=False)
+                    if alias_kind == "same_world_event":
+                        rejected = replace(
+                            rejected, observation_ref=first.observation_ref,
+                        )
+                    else:
+                        rejected = replace(
+                            rejected, emitted_step=first.emitted_step - 1,
+                            observed_step=first.observed_step,
+                        )
+                    for row in (first, rejected):
+                        publish_matching_agency(m, row)
+                    m.integrate_causal_intervention(first)
+                    if separate_publications:
+                        self.assertEqual(
+                            [c.after for c in m.publish_causal_inference()],
+                            ["testee_par_intervention"],
+                        )
+                    m.integrate_causal_intervention(rejected)
+                    frozen = m.export_causal_state()
+                    replay = model()
+                    replay.restore_causal_state(frozen)
+                    for owner in (m, replay):
+                        with self.assertRaisesRegex(
+                            ValueError,
+                            "conflicting causal intervention outcomes for one physical source",
+                        ):
+                            owner.publish_causal_inference()
+                        self.assertEqual(owner.export_causal_state(), frozen)
+
     def test_same_observation_step_cannot_supply_two_independent_contexts(self):
         # Two different sent commands and comparator IDs using one accessible
         # Perception capture are NOT two independently observed experiments.

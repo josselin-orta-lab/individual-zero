@@ -1848,8 +1848,9 @@ class CausalModel:
             # contingency. Different event IDs pointing to the same observed
             # step cannot manufacture an additional independent context.
             key = (trial.contingency_ref, trial.observation_ref, "intervention")
-            if key in credits or any(
-                other.observation_ref == trial.observation_ref
+            prior_uses = tuple(
+                other for other in interventions.values()
+                if other.observation_ref == trial.observation_ref
                 or (
                     other.contingency_ref == trial.contingency_ref
                     and (
@@ -1858,8 +1859,31 @@ class CausalModel:
                         or other.observed_step == trial.observed_step
                     )
                 )
-                for other in interventions.values()
+            )
+            # Two published P-47 comparisons may disagree while describing
+            # one alleged physical transition. Ignoring the later *negative*
+            # claim would hide a causal counterexample and preserve an
+            # unearned established status. Reusing the source gives no
+            # additional credit, but contradictory outcome labels fail closed.
+            # For distinct contingencies the same physical step can describe
+            # different effects; only compare outcomes within one contingency.
+            if any(
+                other.contingency_ref == trial.contingency_ref
+                and (
+                    other.observed_effect,
+                    other.comparator_status,
+                    other.attribution,
+                ) != (
+                    trial.observed_effect,
+                    trial.comparator_status,
+                    trial.attribution,
+                )
+                for other in prior_uses
             ):
+                raise ValueError(
+                    "conflicting causal intervention outcomes for one physical source"
+                )
+            if key in credits or prior_uses:
                 continue
             credits.add(key)
             interventions[trial.identifier] = trial
