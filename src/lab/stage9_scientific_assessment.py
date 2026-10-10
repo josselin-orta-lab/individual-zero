@@ -17,6 +17,7 @@ import re
 from typing import Mapping
 
 from .determinism import canonical_causal_bytes, sha256_hex
+from .stage9_secure_file_read import read_text_no_follow
 from .stage9_scientific_preregistration import validate_registration
 
 
@@ -441,7 +442,7 @@ def _reject_nonfinite_constant(value: str) -> None:
 def load_heldout_evidence(path: Path) -> dict[str, object]:
     """Parse an untrusted scientific report without lossy JSON key merging."""
     payload = json.loads(
-        path.read_text(encoding="utf-8"),
+        read_text_no_follow(path),
         object_pairs_hook=_reject_duplicate_keys,
         parse_constant=_reject_nonfinite_constant,
     )

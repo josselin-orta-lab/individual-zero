@@ -87,3 +87,9 @@ def open_regular_no_follow(path: Path) -> Iterator[BinaryIO]:
             os.close(file_fd)
         if directory_fd is not None:
             os.close(directory_fd)
+
+
+def read_text_no_follow(path: Path) -> str:
+    """Decode UTF-8 evidence from the same guarded file descriptor."""
+    with open_regular_no_follow(path) as stream:
+        return stream.read().decode("utf-8")

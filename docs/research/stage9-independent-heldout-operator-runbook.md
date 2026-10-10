@@ -210,6 +210,11 @@ cannot return a Golden and cannot replace an independent reviewer. Checking
 the **current** checkout does not retrospectively prove that it was the binary
 actually executed; preserve the separate pre-run receipt from step 1.
 
+The registration, held-out evidence and both custody-index JSON readers use
+guarded UTF-8 file descriptors. A syntactically valid JSON document reached
+through a symlink or detectably changed while reading is rejected; this
+does not prove independent physical custody or prospective approval.
+
 Retain the manifest-file audit from step 1 and compare the physical manifests
 again if custody changed hands. Physical-manifest hashing uses the same guarded
 descriptor reader as raw evidence, rejecting detectable same-size in-place

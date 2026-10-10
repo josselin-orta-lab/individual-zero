@@ -14,6 +14,10 @@ from lab.stage9_heldout_artifact_custody import (
     _equal_bytes, _file_hash_and_size, _read_raw_bytes,
 )
 from lab.stage9_secure_file_read import open_regular_no_follow
+from lab.stage9_scientific_preregistration import load_registration
+from lab.stage9_scientific_assessment import load_heldout_evidence
+from lab.stage9_registered_manifest_custody import load_manifest_index
+from lab.stage9_heldout_artifact_custody import load_raw_artifact_index
 from lab import stage9_secure_file_read as guarded
 
 
@@ -171,6 +175,60 @@ class Stage9SecureFileReadTests(unittest.TestCase):
                     raw.rename(root / "relocated")
                     raw.symlink_to(root / "relocated", target_is_directory=True)
 
+
+    def test_scientific_json_readers_reject_symlink_aliases(self):
+        # Registration, report and custody indexes are all untrusted evidence.
+        readers = (
+            load_registration, load_heldout_evidence,
+            load_manifest_index, load_raw_artifact_index,
+        )
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            original = root / "source.json"
+            original.write_text('{"synthetic":true}', encoding="utf-8")
+            alias = root / "alias.json"
+            alias.symlink_to(original)
+            for reader in readers:
+                with self.subTest(reader=reader.__name__):
+                    with self.assertRaisesRegex(ValueError, "symlink"):
+                        reader(alias)
+
+    def test_scientific_json_readers_reject_mutation_during_read(self):
+        # Rewriting a source with the same number of bytes must not silently
+        # allow the JSON reader to consume a changed evidence document.
+        readers = (
+            load_registration, load_heldout_evidence,
+            load_manifest_index, load_raw_artifact_index,
+        )
+        for reader in readers:
+            with self.subTest(reader=reader.__name__):
+                with TemporaryDirectory() as folder:
+                    path = Path(folder) / "claimed-evidence.json"
+                    path.write_bytes(b'{"synthetic":true}')
+                    before = path.stat()
+                    real_fdopen = guarded.os.fdopen
+                    modified = False
+
+                    def modify_after_open(fd, mode):
+                        nonlocal modified
+                        stream = real_fdopen(fd, mode)
+                        if not modified:
+                            modified = True
+                            path.write_bytes(b'{"synthetic":null}')
+                            os.utime(path, ns=(
+                                before.st_atime_ns,
+                                before.st_mtime_ns + 2_000_000_000,
+                            ))
+                        return stream
+
+                    with patch.object(
+                        guarded.os, "fdopen", side_effect=modify_after_open,
+                    ):
+                        with self.assertRaisesRegex(
+                            ValueError, "changed during descriptor read",
+                        ):
+                            reader(path)
+                    self.assertTrue(modified)
 
 
 if __name__ == "__main__":

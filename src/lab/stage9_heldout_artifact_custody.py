@@ -27,7 +27,7 @@ from .stage9_scientific_assessment import (
     _reject_duplicate_keys, _reject_nonfinite_constant,
     assess_heldout_campaign, load_heldout_evidence,
 )
-from .stage9_secure_file_read import open_regular_no_follow
+from .stage9_secure_file_read import open_regular_no_follow, read_text_no_follow
 from .stage9_scientific_preregistration import load_registration
 
 
@@ -136,7 +136,7 @@ def _published_p47_from_journal(
 def load_raw_artifact_index(path: Path) -> dict[str, object]:
     """Reject ambiguous JSON; shape validation occurs before any disk reads."""
     index = json.loads(
-        path.read_text(encoding="utf-8"),
+        read_text_no_follow(path),
         object_pairs_hook=_reject_duplicate_keys,
         parse_constant=_reject_nonfinite_constant,
     )

@@ -16,6 +16,7 @@ import re
 from typing import Mapping
 
 from .determinism import canonical_causal_bytes, sha256_hex
+from .stage9_secure_file_read import read_text_no_follow
 
 
 SPEC_PATH = "docs/architecture/reference/en/mvp-specification-v1.2.1.md"
@@ -174,7 +175,7 @@ def _reject_nonfinite_registration_constant(value: str) -> None:
 
 def load_registration(path: Path) -> dict[str, object]:
     data = json.loads(
-        path.read_text(encoding="utf-8"),
+        read_text_no_follow(path),
         object_pairs_hook=_unique_pairs,
         parse_constant=_reject_nonfinite_registration_constant,
     )

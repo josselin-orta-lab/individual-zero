@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Mapping
 
 from .determinism import canonical_causal_bytes, sha256_hex
-from .stage9_secure_file_read import open_regular_no_follow
+from .stage9_secure_file_read import open_regular_no_follow, read_text_no_follow
 from .stage9_scientific_preregistration import (
     load_registration, validate_registration,
 )
@@ -54,7 +54,7 @@ def _reject_nonfinite_manifest_constant(value: str) -> None:
 def load_manifest_index(path: Path) -> dict[str, object]:
     """Reject duplicate keys/nonfinite JSON before any file access."""
     index = json.loads(
-        path.read_text(encoding="utf-8"),
+        read_text_no_follow(path),
         object_pairs_hook=_reject_duplicate_manifest_keys,
         parse_constant=_reject_nonfinite_manifest_constant,
     )
