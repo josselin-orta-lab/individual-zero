@@ -83,3 +83,43 @@ jobs:
 
       - name: Run bootstrap smoke execution
         run: individual-zero --cycles 3 --seed 0 --run-id ci-smoke --output /tmp/individual-zero-ci.jsonl
+
+      - name: Generate Stage 1 reference journal
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from lab.compute_budget import ComputeBudgetConfig
+          from lab.stage1_runtime import ScriptedStage1Runtime
+
+          budget = ComputeBudgetConfig(
+              version="stage1-ci-v1",
+              cycle_ceiling=100,
+              module_envelopes={"stage1_fixture": 100},
+              protected_modules=frozenset({"stage1_fixture"}),
+              protected_capacity=10,
+              operation_costs={"fixture_op": 1},
+          )
+          runtime = ScriptedStage1Runtime(
+              campaign_seed=17,
+              budget_config=budget,
+          )
+          for _ in range(3):
+              runtime.run_step(cycle=1)
+
+          path = Path("/tmp/stage1-reference.jsonl")
+          payload = runtime.journal.canonical_bytes()
+          path.write_bytes(payload + (b"\n" if payload else b""))
+          if not runtime.journal.verify():
+              raise SystemExit("stage1 reference journal failed verification")
+          print(f"stage1_reference_bytes={len(payload)}")
+          print(f"stage1_reference_head={runtime.journal.head_hash}")
+          PY
+
+      - name: Upload Stage 1 reference journal
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage1-reference-journal
+          path: /tmp/stage1-reference.jsonl
+          if-no-files-found: error
