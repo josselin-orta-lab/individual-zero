@@ -490,6 +490,17 @@ class Stage4Runtime:
     def _request_statuses_for_st(self) -> Mapping[str, str]:
         return {}
 
+    # Optional Stage-11 seam. Defaults preserve existing Stage-4--9 journals,
+    # competition, and the immutable baseline Gatekeeper configuration.
+    def _gatekeeper_profile_multipliers(self) -> Mapping[str, float] | None:
+        return None
+
+    def _profile_state(self) -> Mapping[str, object]:
+        return {"name": "normal"}
+
+    def _st_additional_fixed(self) -> Mapping[str, object]:
+        return {}
+
     def _phase_hooks(
         self,
         *,
@@ -635,6 +646,7 @@ class Stage4Runtime:
                 self._admitted_contributions,
                 active_goal=self.goal_manager.active_goal,
                 t_monde=capture.t_monde,
+                profile_multipliers=self._gatekeeper_profile_multipliers(),
             )
             current_step = self.stage3.control.current_step
             version = self.s_t.publish(
@@ -650,7 +662,7 @@ class Stage4Runtime:
                         "plan_ref": current_step[1],
                         "step_index": current_step[2],
                     },
-                    "profile": {"name": "normal"},
+                    "profile": self._profile_state(),
                     "budget": {
                         "state": (
                             "degraded"
@@ -661,6 +673,7 @@ class Stage4Runtime:
                     "last_action": self._comparison_as_dict(
                         self.stage3.control.last_comparison
                     ),
+                    **self._st_additional_fixed(),
                 },
                 competitive=selection.elements,
                 requests=self._request_statuses_for_st(),
