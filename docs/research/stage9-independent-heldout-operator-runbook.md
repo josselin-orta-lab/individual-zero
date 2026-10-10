@@ -145,9 +145,15 @@ at preregistration **or anywhere earlier in its Git ancestry**
 prospectivity review), or metrics that do not meet the registered confidence
 criteria. A byte-identical outcome already committed **anywhere in the
 Git history reachable from registration**, even under a different path or
-after deletion, is rejected rather than receiving a machine receipt. An
-earlier result in an outside archive, or an independently re-encoded copy,
-still requires a separate external prospectivity review. A structurally complete receipt with those flags is **not** a
+after deletion, is rejected rather than receiving a machine receipt.
+The audit also detects JSON reports with the **same parsed content** but
+different whitespace, field order or file name. This supplementary scan is
+bounded (currently at least 1 MiB per candidate blob and at most 64 MiB).
+Unexamined larger Git objects are counted and become an explicit
+`pre_registration_large_git_blobs_not_semantically_inspected`
+review blocker. External results, differently encoded data that changes the
+parsed structure, and objects outside reachable Git history still require
+separate prospectivity review. A structurally complete receipt with those flags is **not** a
 passing held-out campaign. A report with no flags is also **not** an
 independent scientific witness. It writes no source or scientific result,
 cannot return a Golden and cannot replace an independent reviewer. Checking
