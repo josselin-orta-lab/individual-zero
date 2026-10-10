@@ -228,6 +228,39 @@ def audit_independent_heldout_handoff(
         review_blockers.append(
             "pre_registration_ambiguous_stage9_json_requires_prospectivity_review"
         )
+    episode_clusters = provisional.get(
+        "reused_closed_memory_candidate_episodes"
+    )
+    empty_negative_runs = provisional.get(
+        "negative_runs_without_natural_candidates"
+    )
+    if (
+        not isinstance(episode_clusters, list)
+        or not isinstance(empty_negative_runs, list)
+        or any(
+            not isinstance(item, dict)
+            or set(item) != {"world_id", "seed", "episode_ref", "candidate_count"}
+            or type(item["candidate_count"]) is not int
+            or item["candidate_count"] < 2
+            for item in episode_clusters
+        )
+        or any(
+            not isinstance(item, dict)
+            or set(item) != {"world_id", "seed"}
+            for item in empty_negative_runs
+        )
+    ):
+        raise ValueError(
+            "heldout scorer omitted per-episode or null-run sampling review"
+        )
+    if episode_clusters:
+        review_blockers.append(
+            "multiple_false_rules_from_one_closed_memory_episode_require_independence_review"
+        )
+    if empty_negative_runs and provisional["natural_false_candidate_count"] > 0:
+        review_blockers.append(
+            "natural_candidate_sampling_absent_in_some_null_runs_requires_review"
+        )
     collisions = provisional.get("cross_run_identical_archives")
     if (
         not isinstance(collisions, dict)
@@ -264,6 +297,8 @@ def audit_independent_heldout_handoff(
         "evidence_commit": evidence_commit,
         "provisional_metric_assessment": provisional["assessment"],
         "cross_run_identical_archives": collisions,
+        "reused_closed_memory_candidate_episodes": episode_clusters,
+        "negative_runs_without_natural_candidates": empty_negative_runs,
         "git_chronology": chronology,
         "current_checkout_preflight": checkout,
         "physical_manifest_custody": manifests,
