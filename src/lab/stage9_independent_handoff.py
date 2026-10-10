@@ -253,6 +253,14 @@ def audit_independent_heldout_handoff(
         raise ValueError(
             "heldout scorer omitted per-episode or null-run sampling review"
         )
+    if (
+        raw.get("reused_closed_memory_candidate_episodes") != episode_clusters
+        or raw.get("negative_runs_without_natural_candidates")
+        != empty_negative_runs
+    ):
+        raise ValueError(
+            "raw artifact and metric scorer disagree on episode or null-run coverage"
+        )
     if episode_clusters:
         review_blockers.append(
             "multiple_false_rules_from_one_closed_memory_episode_require_independence_review"
