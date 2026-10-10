@@ -53,7 +53,7 @@ def _components():
     # This is the historical software fixture, not scientifically calibrated
     # equipment. Its exact table is for the synthetic runner regression only.
     artifact = example.equipment._artifact
-    records = list(example.equipment._records.values())
+    records = [row for _, row in sorted(example.equipment._records.items())]
     equipment = {
         "protocol_version": EQUIPMENT_VERSION,
         "artifact": _plain(artifact),
