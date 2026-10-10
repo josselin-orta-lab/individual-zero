@@ -19,6 +19,15 @@ These distinctions are what make a result understandable after the original cont
 
 ## Research documents
 
+### Stage 9 independent held-out evaluation
+
+- [Complete independent evaluator and operator manual (English)](stage9-independent-heldout-evaluation-manual.en.md): step-by-step isolated setup, actual file schemas, sealed protocol, commands, expected machine results, evidence review and signed verdict.
+- [Manuel complet d'évaluation indépendante (français)](stage9-independent-heldout-evaluation-manual.fr.md) : même procédure, avec commandes et modèles.
+- [Stage 9 operator runbook](stage9-independent-heldout-operator-runbook.md) and [prelaunch NO-GO decision record](stage9-heldout-prelaunch-decision-record.md) remain the scientific governance references.
+
+**Software integration is not scientific acceptance.** The manuals do not authorize the held-out campaign or freeze a Stage-9 Golden. Held-out seeds and oracle truth belong outside developer-accessible Git history.
+
+
 - [RAI](rai.md): how to decide whether to reuse, adapt, or implement.
 - [Experiments vs tests](experiments-vs-tests.md): when a software test is enough and when an EXP is required.
 - [Experiment lifecycle](experiment-lifecycle.md): how a question becomes evidence and possibly reference behavior.
