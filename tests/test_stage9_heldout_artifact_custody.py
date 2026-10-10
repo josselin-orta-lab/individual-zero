@@ -198,6 +198,36 @@ def _append_rehashed_event(
     return journal.canonical_bytes()
 
 
+def _synthetic_causal_trial(
+    *, rule_ref: str, candidate: dict[str, object], run_index: int,
+    observed_step: int, identifier: str, context: str,
+    observed_effect: bool = True,
+) -> dict[str, object]:
+    """Structurally admissible parser fixture, not witnessed world evidence."""
+    return {
+        "identifier": identifier,
+        "contingency_ref": rule_ref,
+        "episode_ref": candidate["episode_ref"],
+        "observation_ref": candidate["observation_ref"],
+        "command_ref": f"command:{run_index}:{observed_step}",
+        "comparator_ref": f"synthetic:comparator:{identifier}",
+        "context_signature": context,
+        "emitted_step": observed_step - 1,
+        "observed_step": observed_step,
+        "observed_effect": observed_effect,
+        "comparator_status": (
+            "conforming" if observed_effect else "nonconforming"
+        ),
+        "attribution": "self_compatible" if observed_effect else "uncertain",
+        "controlled_variables": [],
+        "action_applied": True,
+        "source": "monde",
+        "oracle_derived": False,
+        "rollback_cancelled": False,
+        "counterfactual": False,
+    }
+
+
 class Stage9RawArtifactCustodyTests(unittest.TestCase):
     def test_real_bytes_match_declared_digests_but_are_not_scientific_proof(self):
         with TemporaryDirectory() as folder:
@@ -555,6 +585,136 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     registration=reg, evidence=altered,
                     index=index, artifact_root=root,
                 )
+
+    def test_resealed_established_status_without_intervention_is_rejected(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            reg, report, index = _prepared(root)
+            run = next(
+                row for row in report["runs"]
+                if row["naturally_acquired_false_candidates"]
+            )
+            item = next(
+                row for row in index["runs"]
+                if (row["world_id"], row["seed"])
+                == (run["world_id"], run["seed"])
+            )
+            run_index = index["runs"].index(item)
+            candidate = run["naturally_acquired_false_candidates"][0]
+            state = json.loads((root / item["causal_state_path"]).read_bytes())
+            target = next(
+                row for row in state["causal_model"]["published"]
+                if row["ref"] == candidate["contingency_ref"]
+            )
+            target["causal_status"] = "etablie"
+            candidate["causal_status"] = "etablie"
+            altered = _replace_causal_state_bytes(
+                root, report, index, canonical_causal_bytes(state),
+                run_index=run_index,
+            )
+            with self.assertRaisesRegex(
+                ValueError, "tested causal status lacks lived intervention",
+            ):
+                audit_heldout_raw_artifacts(
+                    registration=reg, evidence=altered,
+                    index=index, artifact_root=root,
+                )
+
+    def test_established_status_requires_independent_post_revision_contexts(self):
+        for scenario, expected in (
+            ("one_success", "lacks independent post-revision contexts"),
+            ("same_context", "lacks independent post-revision contexts"),
+            ("two_contexts", None),
+            ("stale_after_counterexample", "lacks independent post-revision contexts"),
+            ("fabricated_boundary", "boundary disagrees with lived counterexamples"),
+        ):
+            with self.subTest(scenario=scenario):
+                with TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    reg, report, index = _prepared(root)
+                    run = next(
+                        row for row in report["runs"]
+                        if len(row["naturally_acquired_false_candidates"]) >= 3
+                    )
+                    item = next(
+                        row for row in index["runs"]
+                        if (row["world_id"], row["seed"])
+                        == (run["world_id"], run["seed"])
+                    )
+                    run_index = index["runs"].index(item)
+                    candidates = run["naturally_acquired_false_candidates"]
+                    rule_ref = candidates[0]["contingency_ref"]
+                    state = json.loads(
+                        (root / item["causal_state_path"]).read_bytes()
+                    )
+                    state["causal_model"]["config_contract"] = {"n2": 2}
+                    record = next(
+                        row for row in state["causal_model"]["published"]
+                        if row["ref"] == rule_ref
+                    )
+                    record["causal_status"] = "etablie"
+                    candidates[0]["causal_status"] = "etablie"
+                    start = 1 + len(run["known_cause_cases"])
+                    trials = [
+                        _synthetic_causal_trial(
+                            rule_ref=rule_ref, candidate=candidates[0],
+                            run_index=run_index, observed_step=start,
+                            identifier="synthetic:positive-1",
+                            context="synthetic:context-a",
+                        )
+                    ]
+                    if scenario != "one_success":
+                        trials.append(_synthetic_causal_trial(
+                            rule_ref=rule_ref, candidate=candidates[1],
+                            run_index=run_index, observed_step=start + 1,
+                            identifier="synthetic:positive-2",
+                            context=(
+                                "synthetic:context-a"
+                                if scenario == "same_context"
+                                else "synthetic:context-b"
+                            ),
+                        ))
+                    if scenario == "stale_after_counterexample":
+                        failed = _synthetic_causal_trial(
+                            rule_ref=rule_ref, candidate=candidates[2],
+                            run_index=run_index, observed_step=start + 2,
+                            identifier="synthetic:negative",
+                            context="synthetic:context-c",
+                            observed_effect=False,
+                        )
+                        trials.append(failed)
+                        state["causal_model"]["causal_revision_boundaries"] = [
+                            [rule_ref, start + 2, failed["identifier"]]
+                        ]
+                    if scenario == "fabricated_boundary":
+                        state["causal_model"]["causal_revision_boundaries"] = [
+                            [rule_ref, start + 1, "synthetic:invented-failure"]
+                        ]
+                    state["causal_model"]["causal_interventions"].extend(trials)
+                    state["causal_model"]["causal_credits"].extend([
+                        [rule_ref, trial["observation_ref"], "intervention"]
+                        for trial in trials
+                    ])
+                    altered = _replace_causal_state_bytes(
+                        root, report, index, canonical_causal_bytes(state),
+                        run_index=run_index,
+                    )
+                    if expected is not None:
+                        with self.assertRaisesRegex(ValueError, expected):
+                            audit_heldout_raw_artifacts(
+                                registration=reg, evidence=altered,
+                                index=index, artifact_root=root,
+                            )
+                    else:
+                        result = audit_heldout_raw_artifacts(
+                            registration=reg, evidence=altered,
+                            index=index, artifact_root=root,
+                        )
+                        self.assertTrue(
+                            result["journal_chain_integrity_verified"]
+                        )
+                        self.assertIsNone(result["scientific_verdict"])
+                        self.assertFalse(result["golden_stage9_frozen"])
 
     def test_synthetic_admissible_causal_rows_remain_structurally_accepted(self):
         # This is a parser/consistency fixture, not a scientifically witnessed
