@@ -199,6 +199,62 @@ def _world_layout(data: object) -> WorldLayout:
     )
 
 
+def _json_safe(value: object) -> object:
+    """Explicit exporter for already calibrated/frozen config value objects."""
+    if is_dataclass(value):
+        return {field.name: _json_safe(getattr(value, field.name))
+                for field in fields(value)}
+    if isinstance(value, MappingABC):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (set, frozenset)):
+        return [_json_safe(item) for item in sorted(value)]
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    canonical_causal_bytes(value)
+    return value
+
+
+def export_frozen_stage9_assets(
+    runtime: Stage9Runtime,
+) -> tuple[dict[str, object], dict[str, object]]:
+    """Serialize an *operator-selected* trained Stage-9 runtime for custody.
+
+    This does NOT calibrate, approve or freeze scientific parameters. The
+    research owner must provide an independently calibrated runtime, and
+    independently inspect both outputs before preregistering their bytes.
+    Reference fixtures are software examples, not scientific calibration.
+    """
+    if not isinstance(runtime, Stage9Runtime):
+        raise ValueError("only a Stage-9 cognitive runtime can be exported")
+    if not isinstance(runtime.equipment, FrozenTableEquipment):
+        raise ValueError("only the frozen exact-transition Equipment model is supported")
+    innate = runtime.stage3.control._facts._innate
+    if not isinstance(innate, StaticSafetyFacts):
+        raise ValueError("cannot attest a nonstandard innate safety policy")
+    parameters = {
+        "protocol_version": PARAMETER_VERSION,
+        "stage9_config": _json_safe(runtime._stage9_config),
+        "safety_config": _json_safe(runtime.stage3.substrate.safety._config),
+        "protected_integrity_threshold":
+            runtime.stage3.control._config.protected_integrity_threshold,
+        "innate_safety_facts": _json_safe(innate),
+    }
+    equipment = {
+        "protocol_version": EQUIPMENT_VERSION,
+        "artifact": _json_safe(runtime.equipment._artifact),
+        "records": [
+            _json_safe(row)
+            for _, row in sorted(runtime.equipment._records.items())
+        ],
+    }
+    # Round-trip the exact exported content; no runtime recalibration.
+    _frozen_parameters(parameters)
+    decoded = _frozen_equipment(equipment)
+    if decoded.artifact_digest != runtime.equipment.artifact_digest:
+        raise ValueError("frozen equipment export changed its provenance digest")
+    return parameters, equipment
+
+
 def _frozen_parameters(document: dict) -> tuple[Stage9Config, SafetyProtocolConfig, float, StaticSafetyFacts]:
     raw = _exact(document, {
         "protocol_version", "stage9_config", "safety_config",
