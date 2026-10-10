@@ -769,6 +769,57 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "unshallowed Git history"):
                 _audit(shallow, registered, evidence)
 
+
+    def test_chronology_rejects_sealed_file_symlink_aliases(self):
+        # Canonicalizing Path.resolve() first used to silently turn an alias
+        # into the committed file, concealing the path actually supplied.
+        for role, parent_alias in (
+            ("registration", False), ("registration", True),
+            ("evidence", False), ("evidence", True),
+        ):
+            with self.subTest(role=role, parent_alias=parent_alias):
+                with TemporaryDirectory() as folder:
+                    repo = Path(folder)
+                    _frozen, registered, evidence = _create_fixture(repo)
+                    component, basename = (
+                        ("research", "registration.json") if role == "registration"
+                        else ("results", "heldout.json")
+                    )
+                    original = repo / component / basename
+                    if parent_alias:
+                        alias = repo / ("linked-" + component)
+                        alias.symlink_to(repo / component, target_is_directory=True)
+                        supplied = Path(alias.name) / basename
+                    else:
+                        alias = original.parent / ("alias-" + basename)
+                        alias.symlink_to(original)
+                        supplied = Path(component) / alias.name
+                    options = {
+                        "repository": repo,
+                        "registration_path": Path("research/registration.json"),
+                        "registration_commit": registered,
+                        "evidence_path": Path("results/heldout.json"),
+                        "evidence_commit": evidence,
+                    }
+                    options[
+                        "registration_path" if role == "registration" else "evidence_path"
+                    ] = supplied
+                    with self.assertRaisesRegex(ValueError, "symlink"):
+                        audit_registration_chronology(**options)
+
+    def test_noncanonical_chronology_path_cannot_hide_traversal(self):
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            _, registered, evidence = _create_fixture(repo)
+            with self.assertRaisesRegex(ValueError, "inside the repository"):
+                audit_registration_chronology(
+                    repository=repo,
+                    registration_path=Path("research/../research/registration.json"),
+                    registration_commit=registered,
+                    evidence_path=Path("results/heldout.json"),
+                    evidence_commit=evidence,
+                )
+
     def test_paths_outside_worktree_are_rejected(self):
         with TemporaryDirectory() as folder:
             repo = Path(folder) / "repo"

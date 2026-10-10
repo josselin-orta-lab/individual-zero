@@ -210,6 +210,11 @@ cannot return a Golden and cannot replace an independent reviewer. Checking
 the **current** checkout does not retrospectively prove that it was the binary
 actually executed; preserve the separate pre-run receipt from step 1.
 
+The Git chronology reader also rejects aliases, noncanonical traversal and
+symlinks in paths supplied for sealed registration and evidence artifacts. It
+compares the committed bytes to separately guarded physical reads, not to
+path-resolved aliases. These controls cannot attest the experimenter's history.
+
 The registration, held-out evidence and both custody-index JSON readers use
 guarded UTF-8 file descriptors. A syntactically valid JSON document reached
 through a symlink or detectably changed while reading is rejected; this

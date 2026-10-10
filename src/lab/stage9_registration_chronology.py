@@ -19,6 +19,7 @@ from .stage9_scientific_assessment import (
     assess_heldout_campaign, load_heldout_evidence,
 )
 from .stage9_scientific_preregistration import SPEC_PATH, load_registration
+from .stage9_secure_file_read import open_regular_no_follow
 
 
 COMMIT_ID = re.compile(r"[0-9a-f]{40}\Z")
@@ -41,12 +42,21 @@ def _git(repository: Path, *arguments: str) -> bytes:
 
 
 def _file_in_repo(repository: Path, supplied: Path) -> tuple[Path, str]:
-    file = (repository / supplied).resolve()
+    # Do not resolve symlinks before checking them. Resolving first erases
+    # evidence that the caller supplied an alias to a sealed Git file.
+    root = repository.resolve()
+    file = (root / supplied).absolute()
     try:
-        relative = file.relative_to(repository)
+        relative = file.relative_to(root)
     except ValueError as exc:
         raise ValueError("chronology input must be inside the repository") from exc
-    if not file.is_file() or not relative.parts or ".git" in relative.parts:
+    if ".." in relative.parts:
+        raise ValueError("chronology input must be inside the repository")
+    if not relative.parts or ".git" in relative.parts:
+        raise ValueError("chronology input must be a regular project file")
+    if any(part.is_symlink() for part in (file, *file.parents)):
+        raise ValueError("chronology input may not traverse symlinks")
+    if not file.is_file():
         raise ValueError("chronology input must be a regular project file")
     return file, relative.as_posix()
 
@@ -489,7 +499,9 @@ def audit_registration_chronology(
     )
 
     frozen_registration = _git(root, "show", f"{registration_commit}:{registration_name}")
-    if frozen_registration != registered_file.read_bytes():
+    with open_regular_no_follow(registered_file) as stream:
+        physical_registration = stream.read()
+    if frozen_registration != physical_registration:
         raise ValueError("registration bytes differ from prospective Git seal")
     carried_registration = _git(root, "show", f"{evidence_commit}:{registration_name}")
     if carried_registration != frozen_registration:
@@ -498,7 +510,9 @@ def audit_registration_chronology(
         root, registration_commit, evidence_commit, registration_name,
     )
     committed_evidence = _git(root, "show", f"{evidence_commit}:{evidence_name}")
-    if committed_evidence != evidence_file.read_bytes():
+    with open_regular_no_follow(evidence_file) as stream:
+        physical_evidence = stream.read()
+    if committed_evidence != physical_evidence:
         raise ValueError("heldout evidence bytes differ from committed Git artifact")
 
     prior_evidence = subprocess.run(
