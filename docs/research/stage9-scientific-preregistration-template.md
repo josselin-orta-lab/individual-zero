@@ -4,6 +4,10 @@
 
 Normative reference: `docs/architecture/reference/en/mvp-specification-v1.2.1.md`, sections 9.6, 13.2-13.4, 19.5, 20.3 (Stage 9), and INV-25. The English v1.2.1 specification always prevails.
 
+For the **operator-facing step sequence and custody responsibilities**, see
+[Stage 9 independent held-out operator runbook](stage9-independent-heldout-operator-runbook.md).
+The runbook is guidance, never an experimental result or scientific approval.
+
 ## Purpose and boundary
 
 Evaluate whether the Stage-9 Causal Model and Action Control correctly associate actions and observable consequences in independent worlds with known causes; reject inappropriate self-attribution; avoid `etablie` for noncausal or random associations; preserve the distinction between `etablie` (simulator corrections) and `etabli_pour_securite` (existing veto rules). All causal input to the individual must come from actual accessible Perception and independently closed autobiographical episodes. World truth, random schedules and the oracle remain exclusively on the bench side.
