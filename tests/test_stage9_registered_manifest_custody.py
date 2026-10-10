@@ -212,8 +212,8 @@ class Stage9RegisteredManifestCustodyTests(unittest.TestCase):
             path = Path(folder) / "index.json"
             for contents, error in (
                 ('{"protocol_version":"a","protocol_version":"b"}',
-                 "duplicate heldout evidence JSON key"),
-                ('{"protocol_version":NaN}', "non-finite heldout JSON constant"),
+                 "duplicate physical manifest index JSON key"),
+                ('{"protocol_version":NaN}', "non-finite physical manifest index JSON constant"),
                 ('[]', "physical manifest index must be a JSON object"),
             ):
                 with self.subTest(contents=contents):
