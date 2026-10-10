@@ -226,6 +226,50 @@ class Stage9ScientificAssessmentTests(unittest.TestCase):
         self.assertEqual(replay["per_run_metrics"], breakdown)
         self.assertEqual(replay["negative_runs_with_candidates"], 1)
 
+    def test_known_cause_wilson_pool_does_not_hide_shared_episode_clusters(self):
+        draft = example_draft()
+        draft["minimum_known_cause_accuracy"] = 0.20
+        draft["maximum_superstitious_rule_rate"] = 0.80
+        draft["minimum_naturally_acquired_candidates"] = 2
+        report = make_report(draft, candidates=20)
+        positive = next(
+            row for row in report["runs"]
+            if row["world_id"] in draft["positive_world_ids"]
+            and row["seed"] == draft["holdout_seeds"][0]
+        )
+        extra = deepcopy(positive["known_cause_cases"][0])
+        extra.update({
+            "id": "case:2",
+            "observation_ref": "new-physical-transition:2",
+        })
+        positive["known_cause_cases"].append(extra)
+        result = assess_heldout_campaign(draft, sealed(report))
+        self.assertEqual(
+            result["assessment"], "metrics_eligible_for_independent_review",
+        )
+        self.assertEqual(result["known_cause_cases"], 5)
+        self.assertEqual(result["correct_links"], 5)
+        self.assertEqual(
+            result["total_distinct_known_case_episode_refs_by_run"], 4,
+        )
+        self.assertEqual(
+            result["reused_closed_memory_known_case_episodes"],
+            [{
+                "world_id": positive["world_id"], "seed": positive["seed"],
+                "episode_ref": extra["episode_ref"], "known_case_count": 2,
+            }],
+        )
+        row = next(
+            x for x in result["per_run_metrics"]
+            if x["world_id"] == positive["world_id"]
+            and x["seed"] == positive["seed"]
+        )
+        self.assertEqual(row["known_cause_cases"], 2)
+        self.assertEqual(row["distinct_known_case_episode_refs"], 1)
+        self.assertEqual(row["max_known_cases_per_episode"], 2)
+        self.assertIsNone(result["scientific_verdict"])
+        self.assertFalse(result["golden_stage9_frozen"])
+
     def test_multiple_physical_trials_in_one_closed_episode_are_disclosed(self):
         draft = example_draft()
         draft["minimum_known_cause_accuracy"] = 0.20
