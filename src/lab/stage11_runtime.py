@@ -8,6 +8,7 @@ from math import isfinite
 
 from i0.modules.exploration import Exploration, ExplorationConfig
 from i0.modules.global_modulation import GlobalModulation, ModulationConfig
+from i0.modules.lived_prediction import LivedPredictionConfig, LivedWaterPredictor
 from i0.modules.stage11_evaluator import Stage11OptionEvaluator
 from i0.temperament import ParametresTemperament
 
@@ -24,6 +25,8 @@ class Stage11Config:
     intrinsic_weight: float
     exploration_envelope_uc: int
     exploration_observe_cost_uc: int
+    # None retains the Stage-11 reference's prediction-unavailable behavior.
+    prospective_water: LivedPredictionConfig | None = None
 
     def validate(self):
         if not self.version:
@@ -32,6 +35,8 @@ class Stage11Config:
         self.exploration.validate()
         self.modulation.validate()
         self.temperament_parameters.validate()
+        if self.prospective_water is not None:
+            self.prospective_water.validate()
         if not isfinite(self.intrinsic_weight) or self.intrinsic_weight < 0:
             raise ValueError("invalid P-15")
         if (type(self.exploration_envelope_uc) is not int
@@ -74,6 +79,14 @@ class Stage11Runtime(Stage9Runtime):
                  scenario_id=None, scenario_version=None, scenario_events=()):
         config.validate()
         self._stage11_config = config
+        # Stateless descriptive forecaster: reads the canonical owner's
+        # frozen prior physical evidence, never corrects frozen Equipment.
+        self.lived_water_predictor = (
+            None if config.prospective_water is None
+            else LivedWaterPredictor(config.prospective_water)
+        )
+        self._stage11_prospective_state = None
+        self._stage11_prospective_capture = None
         super().__init__(
             world_config=world_config, layout=layout,
             safety_config=safety_config, safety_facts=safety_facts,
@@ -117,6 +130,10 @@ class Stage11Runtime(Stage9Runtime):
     def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
         # Frozen input precedes all producers of phase 1 (INV-08).
         frozen = self.causal_model.export_causal_state()
+        self._stage11_prospective_state = frozen
+        self._stage11_prospective_capture = (
+            capture.t_monde, (capture.x, capture.y), float(capture.body["water"]),
+        )
         # These phase-2 S_t fields are captured BEFORE phase-1 producers run.
         # The current step's physical needs and previous Exploration state
         # cannot influence the profile until S_t publishes for a NEXT cycle.
@@ -183,6 +200,55 @@ class Stage11Runtime(Stage9Runtime):
         # Visit counters follow the verified Action Control application,
         # never phase-1 proposals or Competition threshold crossings.
         # A lethal rollback restores Exploration alongside other owners.
+        if (
+            self.lived_water_predictor is not None
+            and prepared.command.primitive == "boire"
+            and not prepared.predicted_consequences
+            and self.stage8_option_evaluator._safe_causal_test_shape(proposal)
+            and self._stage11_prospective_state is not None
+            and self._stage11_prospective_capture is not None
+        ):
+            captured_t, captured_position, captured_water = (
+                self._stage11_prospective_capture
+            )
+            if captured_t != sent_t_monde:
+                raise ValueError("stale prospective Perception capture")
+            prior = self.lived_water_predictor.predict(
+                canonical_state=self._stage11_prospective_state,
+                t_monde=sent_t_monde,
+                position=captured_position,
+                water_before=captured_water,
+            )
+            if prior is not None:
+                # Add one P-47 prediction BEFORE the send. This is
+                # descriptive and comes exclusively from earlier independently
+                # Memory-closed real steps. The original Option/Plan, E_sim,
+                # and frozen Equipment predictions are not modified.
+                prepared = replace(
+                    prepared,
+                    predicted_consequences=(prior.consequence,),
+                )
+                self._write(
+                    kind="stage11_prospective_prediction_frozen",
+                    cycle=cycle,
+                    data={
+                        "option_ref": proposal.option.id,
+                        "sent_t_monde": sent_t_monde,
+                        "prediction_source": "prior_closed_lived_observation",
+                        "predictor_version": prior.config_version,
+                        "variable": prior.consequence.variable,
+                        "predicted": prior.consequence.value_or_delta,
+                        "precision": prior.consequence.precision,
+                        "source_transition_refs": list(
+                            prior.source_transition_refs
+                        ),
+                        "source_episode_refs": list(
+                            prior.source_episode_refs
+                        ),
+                        "source_steps": list(prior.source_steps),
+                        "causal_validation": False,
+                    },
+                )
         execution = super()._dispatch_decision(
             proposal=proposal, prepared=prepared, admission=admission,
             cycle=cycle, sent_t_monde=sent_t_monde,
