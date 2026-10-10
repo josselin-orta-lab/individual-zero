@@ -220,7 +220,13 @@ actually executed; preserve the separate pre-run receipt from step 1.
 The Git chronology reader also rejects aliases, noncanonical traversal and
 symlinks in paths supplied for sealed registration and evidence artifacts. It
 compares the committed bytes to separately guarded physical reads, not to
-path-resolved aliases. These controls cannot attest the experimenter's history.
+path-resolved aliases. The decoded registration and report used for metrics
+are independently compared, under strict JSON decoding, with the objects in
+the prospectively sealed and later evidence Git blobs. A transient file swap
+that affects only an early JSON parse cannot substitute a different protocol
+or outcome while a later physical-file comparison sees the restored bytes.
+These local controls cannot attest the experimenter's history or independent
+custody.
 
 The registration, held-out evidence and both custody-index JSON readers use
 guarded UTF-8 file descriptors. A syntactically valid JSON document reached

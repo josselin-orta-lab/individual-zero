@@ -539,10 +539,9 @@ def audit_registration_chronology(
     # The loader ran *before* the Git blob and physical file were compared.
     # A transient substitution confined to that parse could otherwise make
     # the scorer use a different protocol while the later file check passed.
-    try_marker = frozen_registration
     try:
         committed_registration = json.loads(
-            try_marker.decode("utf-8"),
+            frozen_registration.decode("utf-8"),
             object_pairs_hook=_unique_pairs,
             parse_constant=_reject_nonfinite_registration_constant,
         )
