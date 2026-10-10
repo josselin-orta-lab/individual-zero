@@ -113,6 +113,8 @@ See [RESEARCH_MAP.md](RESEARCH_MAP.md).
 
 You do not need to understand the entire architecture before contributing.
 
+For contribution permissions and public-release governance, see [repository governance](docs/governance/README.md).
+
 Start by identifying whether the change is:
 
 - **technical**: the software or infrastructure changes, but the scientific behavior is not expected to change;

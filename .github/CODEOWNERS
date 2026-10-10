@@ -1,0 +1,11 @@
+# Preliminary code ownership for the canonical Individual Zero repository.
+# After transfer, verify this GitHub account still has explicit write access.
+# A CODEOWNERS file alone does NOT enforce approval. Configure protected
+# branch rules and "Require review from Code Owners" before public release.
+# Never add an unknown organization/team name before it actually exists.
+* @josselin-orta-lab
+
+# Protect governance and security configuration from ownership overrides.
+/.github/ @josselin-orta-lab
+/docs/governance/ @josselin-orta-lab
+/docs/architecture/reference/ @josselin-orta-lab
