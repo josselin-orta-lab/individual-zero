@@ -95,6 +95,7 @@ def _create_fixture(
             "alternate_path_utf16_no_bom",
             "alternate_path_utf32_le",
             "transient_alternate_path_utf16_le",
+            "alternate_path_utf16_whitespace",
         }:
             raise ValueError("unrecognized synthetic prior evidence scenario")
         alternate_name = earlier_evidence in {
@@ -110,6 +111,7 @@ def _create_fixture(
             "alternate_path_utf16_no_bom",
             "alternate_path_utf32_le",
             "transient_alternate_path_utf16_le",
+            "alternate_path_utf16_whitespace",
         }
         early_relative = (
             "preseal/private-outcomes.json"
@@ -138,7 +140,7 @@ def _create_fixture(
                 encoding="utf-8",
             )
         elif earlier_evidence.endswith((
-            "utf8_bom", "utf16_le", "utf16_be", "utf16_no_bom", "utf32_le",
+            "utf8_bom", "utf16_le", "utf16_be", "utf16_no_bom", "utf32_le", "utf16_whitespace",
         )):
             # Python's JSON parser accepts multiple real Unicode encodings.
             # A previous bytewise ASCII-brace shortcut mistakenly skipped
@@ -153,10 +155,13 @@ def _create_fixture(
                 "utf16_be": "utf-16-be",
                 "utf16_no_bom": "utf-16-le",
                 "utf32_le": "utf-32",
+                "utf16_whitespace": "utf-16-le",
             }
             variant = next(
                 name for name in codec if earlier_evidence.endswith(name)
             )
+            if variant == "utf16_whitespace":
+                text = " \n\t" + text
             early_file.write_bytes(text.encode(codec[variant]))
         elif earlier_evidence.endswith("reordered"):
             # Same physical rows and same source hashes, but different
@@ -360,6 +365,7 @@ class Stage9RegistrationChronologyTests(unittest.TestCase):
             "alternate_path_utf16_no_bom",
             "alternate_path_utf32_le",
             "transient_alternate_path_utf16_le",
+            "alternate_path_utf16_whitespace",
         ):
             with self.subTest(scenario=scenario):
                 with TemporaryDirectory() as folder:
