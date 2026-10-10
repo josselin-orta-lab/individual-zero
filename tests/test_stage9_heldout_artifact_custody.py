@@ -1524,7 +1524,7 @@ class Stage9RawArtifactCustodyTests(unittest.TestCase):
                     self.assertTrue(published)
                     if scenario == "missing":
                         published.pop(0)
-                        reason = "disagrees with archived causal status"
+                        reason = "archived causal evidence refers to unpublished contingency"
                     else:
                         published.append(deepcopy(published[0]))
                         reason = "duplicate archived causal contingency"
