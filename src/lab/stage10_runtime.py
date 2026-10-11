@@ -840,6 +840,40 @@ class Stage10Runtime(Stage9Runtime):
         )
 
     def run_step(self):
+        """Do not continue a mortal life after an uncertain step-phase error.
+
+        Failure may precede physical dispatch, or happen after the Scheduler
+        has CLOSED an already applied physical step. Neither case permits
+        rollback, and absence of an active attempt does not prove safety.
+
+        Already blocked/stopped identities are distinct from a new technical
+        failure. Refuse those known states BEFORE the fallible step body so
+        a previous safety block never becomes a synthetic technical halt.
+        """
+        substrate = self.stage3.substrate
+        status = substrate.mortal_status
+        if status is not None:
+            if status.value != "active":
+                raise RuntimeError("dead or halted individual cannot advance")
+            if substrate.safety.blocked:
+                raise RuntimeError("safety-blocked mortal individual cannot advance")
+            if substrate.scenario is not None and substrate.scenario.halted:
+                raise RuntimeError("cannot advance a rejected external scenario")
+        try:
+            return self._run_step_with_mortal_guard()
+        except BaseException:
+            substrate = self.stage3.substrate
+            status = substrate.mortal_status
+            if status is not None and status.value == "active":
+                attempt = self.scheduler.active_attempt
+                failure_step = (
+                    attempt.t_monde if attempt is not None
+                    else max(1, self.scheduler.t_monde)
+                )
+                substrate._mortal_boundary.halt(failed_step=failure_step)
+            raise
+
+    def _run_step_with_mortal_guard(self):
         if (self.sleep_session.mode == "sleeping"
                 or self.sleep_session.export_causal_state()["admitted_sleep_step"] is not None):
             return self._sleep_step()
