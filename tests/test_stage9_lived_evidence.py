@@ -122,6 +122,59 @@ class LivedEvidenceTests(unittest.TestCase):
         self.assertIsNone(m.get("toxic:berry_a"))
         self.assertEqual(m.export_causal_state()["pending_numeric_witnesses"], [])
 
+    def test_invalid_combined_episode_does_not_partially_verify_control(self):
+        from i0.modules.causal_model import SafetyEvidence
+        m = model()
+        m.record_applied_ambient_integrity_control(
+            t_monde=1, option_ref="option:wait", position=(2,2),
+            integrity_before=100.0,
+        )
+        m.observe_followup_capture(t_monde=2, integrity=100.0)
+        m.record_applied_food_exposure(
+            t_monde=2, resource_kind="berry_b", option_ref="option:food",
+            motive_ref="goal:food", integrity_before=100.0,
+            position_before=(2,2),
+            body_before={"energy":50.0,"food":60.0,
+                         "water":50.0,"integrity":100.0},
+        )
+        m.observe_followup_capture(t_monde=3, integrity=90.0)
+        # The forged preexisting pending identifier forces a *late*
+        # preflight rejection, after the real waiting pair was examined.
+        m.integrate(SafetyEvidence(
+            identifier="dc05:episode:combined:food-w",
+            contingency_ref="toxic:berry_b", predicate="toxic_item",
+            subject_ref="berry_b", context_signature="global",
+            episode_ref="episode:combined", observation_ref="food-w",
+            emission_step=2, observation_step=3, harm_observed=True,
+            source="monde", independent_episode=True,
+            comparable_context=True, alternative_cause_sufficient=False,
+            exposure_motivated_independently=True,
+        ))
+        events = (
+            {"event_id":"wait-c","kind":"command_experienced",
+             "t_monde":1,"primitive":"attendre","parameters":{}},
+            {"event_id":"wait-w","kind":"world_transition_experienced",
+             "t_monde":1,"position_after":{"x":2,"y":2},
+             "body_after":{"integrity":100.0},"effects":{"rest":"attendre"}},
+            {"event_id":"food-c","kind":"command_experienced",
+             "t_monde":2,"primitive":"manger",
+             "parameters":{"target":"berry_b"}},
+            {"event_id":"food-w","kind":"world_transition_experienced",
+             "t_monde":2,"position_after":{"x":2,"y":2},
+             "body_after":{"integrity":90.0},"effects":{"ate":"berry_b"}},
+        )
+        snapshot = m.export_causal_state()
+        with self.assertRaisesRegex(ValueError, "duplicate closed Memory safety evidence"):
+            m.ingest_closed_autobiographical_episode(
+                episode_ref="episode:combined",
+                event_refs=tuple(row["event_id"] for row in events),
+                autobiographical_events=events,
+            )
+        self.assertEqual(m.export_causal_state(), snapshot)
+        self.assertIsNone(
+            m.export_causal_state()["lived_ambient_integrity_controls"][0]["episode_ref"]
+        )
+
     def test_control_snapshot_roundtrip_and_forged_control_rejected(self):
         m = model()
         pair(m)
