@@ -42,8 +42,8 @@ Long-form reference documents are organized by language under [`reference/`](ref
 
 For the current French documentation:
 
-0. [MVP v1.3.0 target](reference/fr/mvp-specification-v1.3.0.md) is the **approved post-Stage-10/11 migration contract**, not yet active. The [read-only migration audit](../research/audits/post-stage10-11-mortal-mvp-audit.md) must run on frozen and operator-validated stage results before any runtime change.
-1. [Normative MVP specification v1.2.1](reference/fr/mvp-specification-v1.2.1.md) is the **implementation authority for ongoing Stage 10 and 11 work**.
+0. [MVP v1.3.1 migration target](reference/fr/mvp-specification-v1.3.1.md) **retains the full causal journal**, independently audits its complete export and makes Oracle/Bench optional observers.
+1. [Normative MVP v1.2.1](reference/fr/mvp-specification-v1.2.1.md) is the historical Stage 10/11 development baseline; [v1.3.0](reference/fr/mvp-specification-v1.3.0.md) is a superseded proposal.
 2. [Conceptual architecture v2](reference/fr/architecture-v2.md) is the broader conceptual and scientific architecture.
 3. Repository-specific notes such as the I0 overview and bootstrap runtime document the current codebase and must remain consistent with the normative MVP specification.
 

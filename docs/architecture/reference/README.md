@@ -9,7 +9,7 @@ Two document families currently coexist:
 - **Conceptual architecture**: explains the broader model, scientific hypotheses, building blocks, implementation diagrams, limitations, and research framing.
 - **Normative MVP specification**: defines the software contract for the MVP and is the implementation authority for that version.
 
-**Activation note:** The [English MVP v1.3.0](en/mvp-specification-v1.3.0.md) and [French translation](fr/mvp-specification-v1.3.0.md) are the approved next contract, not a declaration that the current runtime already conforms. The [post-Stage-10/11 audit](../../research/audits/post-stage10-11-mortal-mvp-audit.md) gates migration. v1.2.1 remains authoritative for the agents currently completing Stage 10 and Stage 11.
+**Current target:** [MVP v1.3.1 English](en/mvp-specification-v1.3.1.md) / [French](fr/mvp-specification-v1.3.1.md) explicitly supersedes v1.3.0's proposal to delete the full causal journal. The complete journal and consolidated history remain distinct, while Oracle/Bench become optional external observers. v1.3.0 and v1.2.1 remain historical; software migration is incomplete.
 
 The conceptual architecture informs the project. The normative MVP specification tells an implementation team what must actually be built, tested, replayed, owned, and versioned for the MVP.
 
@@ -22,11 +22,13 @@ reference/
 ├── fr/
 │   ├── architecture-v2.md
 │   ├── mvp-specification-v1.2.1.md
-│   └── mvp-specification-v1.3.0.md
+│   ├── mvp-specification-v1.3.0.md
+│   └── mvp-specification-v1.3.1.md
 └── en/
     ├── mvp-specification-v1.2.md
     ├── mvp-specification-v1.2.1.md
-    └── mvp-specification-v1.3.0.md
+    ├── mvp-specification-v1.3.0.md
+    └── mvp-specification-v1.3.1.md
 ```
 
 The **basename and document version stay identical across languages**. The language is expressed by the directory, not by changing the filename.
@@ -54,7 +56,9 @@ en/mvp-specification-v1.2.md
 | Reference document | French | English | Source language | Role |
 | --- | --- | --- | --- | --- |
 | Conceptual architecture v2 | current | pending | French | conceptual reference |
-| Normative MVP specification v1.2.1 | current | current | French | active Stage 10/11 implementation baseline |\n| Normative MVP specification v1.3.0 | target | target | English | approved future contract; inactive until post-Stage-10/11 operator approval |
+| Normative MVP specification v1.2.1 | retained | retained | English | historical implementation baseline |
+| Normative MVP specification v1.3.0 | superseded | superseded | English | historical proposal to remove full journal |
+| Normative MVP specification v1.3.1 | target | target | English | retain exhaustive journal; decouple Oracle and Bench |
 
 When an English equivalent is added, it should use the exact matching path under `en/`.
 
