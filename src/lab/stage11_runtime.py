@@ -10,7 +10,7 @@ from i0.modules.exploration import Exploration, ExplorationConfig
 from i0.contracts import Contribution
 from i0.modules.geographic_exploration import GeographicExplorationConfig
 from i0.modules.geographic_planning import propose_geographic_frontier
-from i0.modules.action_control import Admissibility
+from i0.modules.action_control import Admissibility, PreparedCommand
 from i0.modules.simulator import state_from_capture
 from i0.modules.global_modulation import GlobalModulation, ModulationConfig
 from i0.modules.lived_prediction import LivedPredictionConfig, LivedWaterPredictor
@@ -403,6 +403,16 @@ class Stage11Runtime(Stage9Runtime):
                 if proposal is None or (
                     self.stage3.control.verifier_plan_connu(proposal)
                     is Admissibility.INADMISSIBLE
+                ) or (
+                    proposal is not None
+                    and self.stage3.control.verifier_admissibilite(
+                        capture=capture,
+                        prepared=PreparedCommand(
+                            command=proposal.plan.steps[0].command,
+                            source="decision",
+                            option_ref=proposal.option.id,
+                        ),
+                    ) is Admissibility.INADMISSIBLE
                 ):
                     self._write(
                         kind="stage11_geographic_planning_unavailable",
