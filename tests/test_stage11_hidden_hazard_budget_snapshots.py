@@ -390,8 +390,33 @@ class Stage11HiddenDangerStrictUCTests(TestCase):
                 independent = build_scheduled(
                     planning_uc, exploration_uc, hazard=True,
                 )
-                for _ in range(6):
+                for replay_step in range(1, 7):
                     independent.run_step()
+                    if replay_step in (4, 5):
+                        replay_manager = independent.stage3.substrate.snapshots
+                        replay_snapshot = replay_manager.take(
+                            snapshot_type=SnapshotType.PERIODIC,
+                            individual_id=independent.individual_id,
+                            t_monde=replay_step, cycle=0, attempt_ref=None,
+                            owners=independent.causal_owners,
+                            versions={
+                                "stage11": independent._stage11_config.version,
+                            },
+                        )
+                        self.assertEqual(
+                            replay_snapshot.id,
+                            (
+                                checkpoint_active.id
+                                if replay_step == 4
+                                else checkpoint_cleared.id
+                            ),
+                        )
+                        self.assertTrue(
+                            replay_manager.verify(replay_snapshot.id),
+                        )
+                # SnapshotManager.take journals its own event. Replay must
+                # use the SAME snapshot schedule, not just the same world
+                # actions, for a legitimate full-byte journal comparison.
                 self.assertEqual(
                     independent.journal.canonical_bytes(),
                     hazard.journal.canonical_bytes(),
