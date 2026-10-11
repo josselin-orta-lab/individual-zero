@@ -79,6 +79,56 @@ def reseal(rows):
     return b"\n".join(canonical_causal_bytes(row) for row in rows)
 
 
+
+def valid_stage10_journal(*, stale_postcut=False):
+    """One physically complete step with an actual-form consolidation receipt.
+
+    This fixture checks exported record consistency; it does not reproduce the
+    six scientific/semantic consolidation passes or claim real-world truth.
+    """
+    j = HashChainedJournal()
+    record(j, "open1", "step_opened", emitter="scheduler", data={"attempt_index": 0})
+    record(j, "cmd1", "command_experienced", command_hash="command-hash",
+           primitive="attendre", parameters={})
+    record(j, "physical1", "world_transition_experienced",
+           position_after={"x": 2, "y": 2}, body_after={"water": 50}, effects={})
+    record(j, "autobio1", "auto_segment_commit",
+           event_refs=["cmd1", "physical1"], filter_version="stage2-autobio-v1")
+    frozen_index = len(j.entries) - 1
+    frozen_hash = j.head_hash
+    if stale_postcut:
+        record(j, "td-update-late", "td_update_published",
+               emitter="value_needs", data={"delta": 1})
+    activation_index = len(j.entries)
+    record(
+        j, "activation1", "stage10_consolidation_version_activated",
+        emitter="scheduler",
+        data={
+            "source_history_version": "h:0",
+            "new_history_version": "h:1",
+            "consolidation_id": "c:1",
+            "cut": {
+                "world_step": 1, "journal_index": 0,
+                "journal_event_id": "open1",
+                "journal_hash": j.entries[0].event_hash,
+                "history_version": "h:0",
+            },
+            "batch": ["episode1"],
+            "batch_digest": "a" * 64,
+            "candidate_digest": "b" * 64,
+            "postcut_journal_end_index": frozen_index,
+            "postcut_journal_end_hash": frozen_hash,
+            "commit_index": activation_index,
+        },
+    )
+    record(j, "close1", "step_closed", emitter="scheduler", data={
+        "outcome": "normal", "applied_command_count": 1,
+        "world_advance_count": 1,
+    })
+    assert j.verify()
+    return j
+
+
 class IndependentJournalAuditTests(unittest.TestCase):
     def test_ordinary_and_terminal_export_are_auditable_after_stopping(self):
         for dead in (False, True):
@@ -149,14 +199,64 @@ class IndependentJournalAuditTests(unittest.TestCase):
     def test_stage10_false_cut_and_postcut_references_are_rejected(self):
         j = stable_journal()
         record(j, "bad-activation", "stage10_consolidation_version_activated",
-               data={"cut": {
-                   "journal_index": 0, "journal_event_id": "wrong",
-                   "journal_hash": "deadbeef",
-               }, "postcut_journal_end_index": 3,
-               "postcut_journal_end_hash": j.entries[3].event_hash,
-               "commit_index": 5})
+               emitter="scheduler",
+               data={
+                   "source_history_version": "h:0",
+                   "new_history_version": "h:1",
+                   "consolidation_id": "c:1",
+                   "batch": [], "batch_digest": "a" * 64,
+                   "candidate_digest": "b" * 64,
+                   "cut": {
+                       "world_step": 1, "history_version": "h:0",
+                       "journal_index": 0, "journal_event_id": "wrong",
+                       "journal_hash": "deadbeef",
+                   },
+                   "postcut_journal_end_index": 4,
+                   "postcut_journal_end_hash": j.entries[4].event_hash,
+                   "commit_index": 5,
+               })
         with self.assertRaisesRegex(ValueError, "cut"):
             audit_export_bytes(j.canonical_bytes())
+
+    def test_nonlethal_commit_must_reference_the_actual_physical_result(self):
+        journal = stable_journal()
+        rows = [json.loads(raw) for raw in journal.canonical_bytes().split(b"\n")]
+        rows[3]["causal_event"]["event_refs"] = ["cmd1"]
+        # Even a recomputed valid chain cannot turn an incomplete lived-source
+        # receipt into a genuinely committed command+transition pair.
+        with self.assertRaisesRegex(ValueError, "omits command/transition"):
+            audit_export_bytes(reseal(rows))
+
+    def test_valid_stage10_cut_version_and_postcut_receipt(self):
+        journal = valid_stage10_journal()
+        result = audit_export_bytes(
+            journal.canonical_bytes(), expected_head=journal.head_hash,
+            expected_count=len(journal.entries),
+        )
+        self.assertEqual(result.consolidation_publications, 1)
+        self.assertEqual(result.world_steps_closed, 1)
+        self.assertEqual(result.autobiographical_commits, 1)
+
+    def test_rehashed_stale_stage10_freeze_cannot_drop_postcut_learning(self):
+        journal = valid_stage10_journal(stale_postcut=True)
+        self.assertTrue(journal.verify())
+        with self.assertRaisesRegex(ValueError, "latest causal head"):
+            audit_export_bytes(journal.canonical_bytes())
+
+    def test_rehashed_invalid_consolidation_history_lineage_is_rejected(self):
+        journal = valid_stage10_journal()
+        rows = [json.loads(raw) for raw in journal.canonical_bytes().split(b"\n")]
+        cases = (
+            ("source_history_version", "unrelated-history", "history version"),
+            ("batch_digest", "not-a-sha256", "invalid digest"),
+            ("new_history_version", "h:0", "version"),
+        )
+        for field, forged, message in cases:
+            with self.subTest(field=field):
+                modified = json.loads(json.dumps(rows))
+                modified[4]["causal_event"]["data"][field] = forged
+                with self.assertRaisesRegex(ValueError, message):
+                    audit_export_bytes(reseal(modified))
 
     def test_operator_cli_runs_without_importing_i0_or_scientific_services(self):
         journal = stable_journal(death=True)
