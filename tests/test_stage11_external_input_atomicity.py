@@ -1,0 +1,209 @@
+"""Stage 11 external scenario application boundary: public software tests.
+
+No synthetic input is a lived observation or a scientific acceptance result.
+External stop must preserve the WorldBody before the aborted input batch.
+"""
+from copy import deepcopy
+from unittest import TestCase
+
+from lab.injected_scenario import ScenarioEvent, ScenarioInputRejected
+from lab.stage11_routed_junction_probe import build_public_route_runtime
+from lab.world import Position
+
+
+def external(*, t, seq, op, x, y, **extra):
+    return ScenarioEvent(
+        t_monde=t, sequence=seq, operation=op,
+        payload={"position": {"x": x, "y": y}, **extra},
+    )
+
+
+def logged(runtime, kind, *, t=None):
+    return [
+        entry.causal_event
+        for entry in runtime.journal.entries
+        if entry.causal_event.get("kind") == kind
+        and (t is None or entry.causal_event.get("t_monde") == t)
+    ]
+
+
+def failed_batch_runner():
+    events = (
+        external(t=2, seq=0, op="set_danger_zone",
+                 x=2, y=3, active=True),
+        external(t=2, seq=1, op="set_position", x=0, y=2),
+    )
+    return build_public_route_runtime(
+        layout_variant="junction_open",
+        survey_refresh=True, scenario_events=events,
+    )
+
+
+class Stage11ExternalBatchFailureTests(TestCase):
+    def test_multiple_inputs_revert_full_world_and_fail_stop_cleanly(self):
+        runtime = failed_batch_runner()
+        runtime.run_step()
+        before_world = deepcopy(runtime.world.export_causal_state())
+        before_others = {
+            owner.owner_id: deepcopy(owner.export_causal_state())
+            for owner in runtime.causal_owners
+            if owner.owner_id not in {"scheduler.clock", "scenario"}
+        }
+        before_scenario = deepcopy(
+            runtime.stage3.substrate.scenario.export_causal_state()
+        )
+        self.assertEqual(before_scenario["next_index"], 0)
+        self.assertEqual(runtime.world.position, Position(3, 2))
+        with self.assertRaises(ScenarioInputRejected):
+            runtime.run_step()
+
+        self.assertEqual(runtime.world.export_causal_state(), before_world)
+        self.assertEqual(runtime.world.position, Position(3, 2))
+        for owner in runtime.causal_owners:
+            if owner.owner_id in before_others:
+                self.assertEqual(
+                    owner.export_causal_state(), before_others[owner.owner_id],
+                    owner.owner_id,
+                )
+        self.assertEqual(runtime.scheduler.t_monde, 2)
+        self.assertIsNone(runtime.scheduler.active_attempt)
+        scenario = runtime.stage3.substrate.scenario
+        self.assertTrue(scenario.halted)
+        status = scenario.export_causal_state()
+        self.assertEqual(status["next_index"], 0)
+        self.assertEqual(status["rejected_event"],
+                         {"t_monde": 2, "sequence": 1})
+
+        received = logged(runtime, "external_input_received", t=2)
+        applied = logged(runtime, "external_input_applied", t=2)
+        rejected = logged(runtime, "external_input_rejected", t=2)
+        reverted = logged(runtime, "external_input_batch_rolled_back", t=2)
+        self.assertEqual([e["sequence"] for e in received], [0, 1])
+        self.assertEqual([e["sequence"] for e in applied], [0])
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(rejected[0]["sequence"], 1)
+        self.assertEqual(rejected[0]["reason"], "invalid_operation_or_payload")
+        self.assertEqual(rejected[0]["world_recovered"], True)
+        self.assertEqual(rejected[0]["previous_inputs_reverted"], 1)
+        self.assertEqual(len(reverted), 1)
+        self.assertEqual(reverted[0]["previous_inputs_reverted"], 1)
+        self.assertEqual(reverted[0]["world_recovered"], True)
+        kinds = [e.causal_event["kind"] for e in runtime.journal.entries]
+        self.assertLess(
+            kinds.index("external_input_received"),
+            kinds.index("external_input_applied"),
+        )
+        self.assertLess(
+            kinds.index("external_input_applied"),
+            kinds.index("external_input_rejected"),
+        )
+        self.assertLess(
+            kinds.index("external_input_rejected"),
+            kinds.index("external_input_batch_rolled_back"),
+        )
+        self.assertFalse(logged(runtime, "perceptual_capture", t=2))
+        self.assertFalse(logged(runtime, "command_experienced", t=2))
+        self.assertFalse(logged(runtime, "world_transition_experienced", t=2))
+        closed = logged(runtime, "step_closed", t=2)
+        self.assertEqual(len(closed), 1)
+        self.assertEqual(
+            closed[0]["data"],
+            {"outcome": "external_stop",
+             "applied_command_count": 0,
+             "world_advance_count": 0},
+        )
+        self.assertTrue(runtime.journal.verify())
+
+        technical_before = runtime.journal.canonical_bytes()
+        with self.assertRaisesRegex(RuntimeError, "rejected external scenario"):
+            runtime.run_step()
+        self.assertEqual(runtime.scheduler.t_monde, 2)
+        self.assertEqual(runtime.journal.canonical_bytes(), technical_before)
+
+        # Exact owner snapshot of the *halt marker* is restorable. A
+        # checkpoint predating rejection may be inspected, but resuming
+        # that step requires a NEW branch and journal occurrence namespace.
+        scenario.restore_causal_state(deepcopy(before_scenario))
+        self.assertFalse(scenario.halted)
+        scenario.restore_causal_state(deepcopy(status))
+        self.assertTrue(scenario.halted)
+        self.assertEqual(scenario.export_causal_state(), status)
+
+    def test_single_rejected_input_stops_before_any_perception_or_command(self):
+        runtime = build_public_route_runtime(
+            scenario_events=(
+                external(t=1, seq=0, op="set_position", x=0, y=2),
+            ),
+        )
+        before = deepcopy(runtime.world.export_causal_state())
+        with self.assertRaises(ScenarioInputRejected):
+            runtime.run_step()
+        self.assertEqual(runtime.world.export_causal_state(), before)
+        self.assertFalse(logged(runtime, "external_input_applied"))
+        self.assertFalse(logged(runtime, "external_input_batch_rolled_back"))
+        self.assertEqual(len(logged(runtime, "external_input_rejected")), 1)
+        self.assertEqual(len(logged(runtime, "external_input_received")), 1)
+        self.assertFalse(logged(runtime, "perceptual_capture"))
+        self.assertFalse(logged(runtime, "command_experienced"))
+        self.assertIsNone(runtime.scheduler.active_attempt)
+        self.assertEqual(runtime.scheduler.t_monde, 1)
+        self.assertEqual(logged(runtime, "step_closed")[0]["data"]["outcome"],
+                         "external_stop")
+        self.assertTrue(runtime.journal.verify())
+
+    def test_two_valid_inputs_preserve_world_step_and_logged_provenance(self):
+        runner = build_public_route_runtime(
+            scenario_events=(
+                external(t=2, seq=0, op="set_danger_zone",
+                         x=2, y=3, active=True),
+                external(t=2, seq=1, op="set_position", x=4, y=2),
+            ),
+            survey_refresh=True,
+        )
+        runner.run_step()
+        second = runner.run_step()
+        self.assertEqual(second.execution_status, "applied")
+        self.assertEqual(
+            [event["sequence"] for event in logged(
+                runner, "external_input_received", t=2,
+            )],
+            [0, 1],
+        )
+        self.assertEqual(
+            [event["sequence"] for event in logged(
+                runner, "external_input_applied", t=2,
+            )],
+            [0, 1],
+        )
+        self.assertFalse(logged(runner, "external_input_rejected"))
+        self.assertFalse(logged(runner, "external_input_batch_rolled_back"))
+        self.assertEqual(
+            logged(runner, "perceptual_capture", t=2)[0]["data"]["position"],
+            {"x": 4, "y": 2},
+        )
+        self.assertFalse(runner.stage3.substrate.scenario.halted)
+        self.assertEqual(runner.scheduler.t_monde, 2)
+        self.assertIsNone(runner.scheduler.active_attempt)
+        self.assertTrue(runner.journal.verify())
+
+    def test_independent_external_batch_failure_replays_exactly(self):
+        def run():
+            runner = failed_batch_runner()
+            runner.run_step()
+            with self.assertRaises(ScenarioInputRejected):
+                runner.run_step()
+            return runner
+
+        a, b = run(), run()
+        self.assertEqual(a.journal.canonical_bytes(), b.journal.canonical_bytes())
+        self.assertEqual(
+            {o.owner_id: o.export_causal_state() for o in a.causal_owners},
+            {o.owner_id: o.export_causal_state() for o in b.causal_owners},
+        )
+        self.assertTrue(a.journal.verify())
+        self.assertTrue(b.journal.verify())
+
+
+if __name__ == "__main__":
+    import unittest
+    unittest.main()
