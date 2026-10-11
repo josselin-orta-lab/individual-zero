@@ -29,6 +29,34 @@ _COMPARISON_EFFECT = {
     )
 }
 
+# Stage-2 physically accessible projections. The technical WorldBody
+# effects include diagnostic action-failure schedules, forced-failure flags
+# and the physics engine's hidden damage attribution. None of those are
+# perceptual facts. Keep every such event unaltered in the full journal,
+# but project only the outcome of the individual's own primitive.
+_POSITION = {"x": _LEAF, "y": _LEAF}
+_LIVED_COMMAND_PARAMETERS = {
+    "direction": _LEAF, "target": _LEAF,
+}
+_LIVED_TRANSITION_EFFECTS = {
+    "movement": _LEAF,
+    "collected": {"kind": _LEAF, "quantity": _LEAF},
+    "ate": _LEAF,
+    "drank": _LEAF,
+    "placed_stone_count": _LEAF,
+    "shelter_formed": _LEAF,
+    "tool_crafted": _LEAF,
+    "rest": _LEAF,
+}
+_LIVED_FIELD_SCHEMAS = {
+    ("observation_perceived", "perceptible"): _LEAF,
+    ("command_experienced", "parameters"): _LIVED_COMMAND_PARAMETERS,
+    ("world_transition_experienced", "position_after"): _POSITION,
+    ("world_transition_experienced", "body_after"): _BODY,
+    ("world_transition_experienced", "effects"): _LIVED_TRANSITION_EFFECTS,
+}
+
+
 # Current lived Stage-7 event shapes, NOT technical journal schemas. New
 # nested cognitive fields require explicit review here; unknown fields are
 # still retained without loss in the full technical journal.
@@ -229,8 +257,12 @@ def project_lived_field(*, kind: str, field: str, value: object) -> object:
         if schema is None or not isinstance(value, Mapping):
             raise ValueError("unregistered nested autobiographical event data")
         result = _project_selected(value, schema)
+    elif (kind, field) in _LIVED_FIELD_SCHEMAS:
+        result = _project_selected(value, _LIVED_FIELD_SCHEMAS[(kind, field)])
     else:
-        result = deepcopy(value)
+        # Other allowed fields are first-person scalar metadata only; no
+        # unreviewed nested object can cross this read interface.
+        result = _project_selected(value, _LEAF)
     if has_external_truth(result) or _has_forbidden_lived_key(result):
         raise ValueError("hidden technical/oracle facts cannot enter autobiography")
     return result
