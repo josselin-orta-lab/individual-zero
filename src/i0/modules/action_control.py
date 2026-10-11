@@ -379,8 +379,26 @@ class ActionControl:
                 for creature in creatures
             )
 
+        # Normative §9.2: an avoidance reflex must move *away* from the
+        # adjacent threat. Ranking solely among available movements can
+        # otherwise select the creature-occupied cell itself when cornered.
+        # Only the actually captured stimulus/adjacency is used; no oracle.
+        present_distance_squared = min(
+            (capture.x - creature.x) ** 2
+            + (capture.y - creature.y) ** 2
+            for creature in creatures
+        )
+        outward = tuple(
+            cell for cell in passable
+            if nearest_creature_distance_squared(cell)
+            > present_distance_squared
+        )
+        if not outward:
+            # No genuine retreat exists. Let ordinary deliberation proceed;
+            # never present an approach toward a creature as escape.
+            return None
         ranked = sorted(
-            passable,
+            outward,
             key=lambda cell: (
                 -nearest_creature_distance_squared(cell),
                 CANONICAL_DIRECTION_ORDER.index(cell.direction),
