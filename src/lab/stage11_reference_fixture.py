@@ -2,15 +2,22 @@
 from i0.modules.exploration import ExplorationConfig
 from i0.modules.global_modulation import ModulationConfig
 from i0.modules.lived_prediction import LivedPredictionConfig
+from i0.modules.geographic_exploration import GeographicExplorationConfig
 from .stage5_reference_fixture import build_stage5_reference_runtime
 from .stage9_reference_fixture import build_stage9_reference_runtime
 from .stage11_runtime import Stage11Config, Stage11Runtime
 
 
-def build_stage11_reference_runtime(*, enable_lived_prediction: bool = False):
-    # An opt-in public diagnostic, never a trained Equipment replacement.
-    if type(enable_lived_prediction) is not bool:
-        raise ValueError("development predictor flag must be boolean")
+def build_stage11_reference_runtime(
+    *, enable_lived_prediction: bool = False,
+    enable_geography: bool = False,
+):
+    # Both new mechanisms require explicit development-only opt-in.
+    if (
+        type(enable_lived_prediction) is not bool
+        or type(enable_geography) is not bool
+    ):
+        raise ValueError("development option flags must be boolean")
     baseline = build_stage9_reference_runtime()
     temperament = build_stage5_reference_runtime().temperament_parameters
     return Stage11Runtime(
@@ -49,6 +56,14 @@ def build_stage11_reference_runtime(*, enable_lived_prediction: bool = False):
             intrinsic_weight=0.75,
             exploration_envelope_uc=4,
             exploration_observe_cost_uc=1,
+            geographic=(
+                GeographicExplorationConfig(
+                    version="p48-geographic-development-v1",
+                    novelty_weight=0.7,
+                    max_distinct_sites=1024,
+                    max_targets_per_cycle=1,
+                ) if enable_geography else None
+            ),
             prospective_water=(
                 LivedPredictionConfig(
                     version="p47-prior-lived-observation-dev-v1",
