@@ -13,7 +13,7 @@ from .stage11_geographic_probe import _positions
 from .stage11_routed_junction_probe import build_public_route_runtime
 from .stage11_stale_route_safety_probe import VARIANTS, registered_events
 
-PROTOCOL = "stage11-public-survey-refresh-dev-v1"
+PROTOCOL = "stage11-public-survey-refresh-dev-v2"
 
 
 @dataclass(frozen=True, slots=True)
