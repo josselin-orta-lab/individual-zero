@@ -122,6 +122,55 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
         )
 
     @staticmethod
+    def _safe_transit_shape(proposal, target):
+        """No route label can authorize an arbitrary movement or inflated m_a."""
+        option, plan = proposal.option, proposal.plan
+        if (
+            option.motive_ref.type != "cible_exploration"
+            or option.motive_ref.id != target.ref
+            or option.id != f"option:geographic:{target.ref}:t{target.source_t_monde}"
+            or option.provenance != "exploration"
+            or option.type != "primitive"
+            or option.goal_ref is not None
+            or option.preconditions != ("adjacent_passable",)
+            or option.success_condition != "target_position_observed"
+            or option.failure_condition != "target_position_not_observed"
+            or option.invalidation_condition != "route_objective_visited_or_context_changed"
+            or option.learning_signature != (
+                f"geographic_transit:{target.observed_frontier[0]}:"
+                f"{target.observed_frontier[1]}:via:"
+                f"{target.destination[0]}:{target.destination[1]}"
+            )
+            or plan is None or plan.id != option.plan_ref
+            or plan.option_ref != option.id
+            or plan.goal_ref is not None
+            or plan.status != "valid"
+            or plan.st_version != option.founding_st_version
+            or len(plan.steps) != 1
+        ):
+            return False
+        step = plan.steps[0]
+        forecast = {v.variable: v.value_or_delta for v in step.predicted_consequences}
+        expected = {"position_x": target.destination[0],
+                    "position_y": target.destination[1]}
+        changed = "position_y" if target.direction in ("north", "south") else "position_x"
+        return (
+            step.index == 0
+            and step.command.primitive == "se_deplacer"
+            and step.command.parameters == {"direction": target.direction}
+            and step.preconditions == ("adjacent_passable",)
+            and step.observation_window_steps == 1
+            and len(forecast) == len(step.predicted_consequences)
+            and (
+                (not step.predicted_consequences
+                 and proposal.preliminary_admissibility == "indeterminate")
+                or (proposal.preliminary_admissibility is None
+                    and forecast.get(changed) == expected[changed]
+                    and all(forecast.get(k, v) == v for k, v in expected.items()))
+            )
+        )
+
+    @staticmethod
     def _unscored_geographic(proposal, *, cycle, t_monde):
         evaluation = EvaluationOption(
             option_ref=proposal.option.id,
@@ -145,10 +194,21 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
                 None if geographic is None
                 else geographic.target_for(proposal.option)
             )
+            transit = (
+                None if geographic is None
+                else geographic.transit_for(proposal.option)
+            )
             if (
-                target is None
-                or target.source_t_monde != t_monde
-                or not self._safe_geographic_shape(proposal, target)
+                (target is None and transit is None)
+                or (target is not None and transit is not None)
+                or (target is not None and (
+                    target.source_t_monde != t_monde
+                    or not self._safe_geographic_shape(proposal, target)
+                ))
+                or (transit is not None and (
+                    transit.source_t_monde != t_monde
+                    or not self._safe_transit_shape(proposal, transit)
+                ))
             ):
                 return self._unscored_geographic(
                     proposal, cycle=cycle, t_monde=t_monde,
@@ -157,7 +217,13 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
                 self, proposal=proposal, evaluation_state=evaluation_state,
                 initial_state=initial_state, cycle=cycle, t_monde=t_monde,
             )
-            intrinsic = self._exploration.geographic_motivation(proposal.option)
+            intrinsic = (
+                self._exploration.geographic_motivation(proposal.option)
+                if target is not None
+                else self._exploration.geographic_transit_motivation(
+                    proposal.option
+                )
+            )
             signals = tuple(original.evaluation.signal_ids)
             if (
                 intrinsic.status != "available"
