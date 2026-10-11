@@ -81,3 +81,36 @@ python -m unittest discover -s tests -p 'test_stage11_scenario_snapshot_schedule
 **Limitation de validation inchangée :** le dépôt privé n'est pas accessible au clone Git depuis l'environnement local de cette session (résolution réseau indisponible), et GitHub Actions a précédemment retourné un échec de démarrage sans runner ni étape de test (exécution #38124663847). Aucun résultat de la suite indiquée ci-dessus ne doit être supposé. **Dernier PASS vérifié : 861/861 sur `2680283940c10c555238d55814146cb7a3c6129e` exclusivement.**
 
 **Stage 11 EN COURS ; Stage 9 NO-GO scientifique ; PR #25 Draft, non fusionnée.**
+
+## Addendum : fidélité des quantités physiques externes et CI indisponible
+
+**11 octobre 2026.** La référence normative reste `docs/architecture/reference/en/mvp-specification-v1.2.1.md`, inchangée. Aucun résultat scientifique nouveau.
+
+### Changements de code
+
+- `d33c610beb57e6a24f41e67e7ed7ebb7a2444127` : `WorldBody.apply_scenario_event` refuse les conversions implicites de `place_resource.kind` et `place_resource.quantity` (booléen, fraction, chaîne, valeur négative ou autre type incorrect), ainsi que les valeurs de `set_body` qui ne sont pas de véritables `int` ou `float`. Les contraintes préexistantes `BodyState.validate` restent effectives. Les valeurs numériques valides et les quantités entières attendues par les scénarios P-54 restent admises.
+- `fa32615400055e6a32ad9f6e7d4a90be1a634627` : tests complémentaires dans `tests/test_stage11_external_input_atomicity.py` vérifiant la non-mutation de WorldBody pour les entrées invalides, la compatibilité des valeurs réellement numériques, puis la journalisation de `external_input_received` et `external_input_rejected` avec `world_recovered=true`, l'absence de commande/perception fictive et l'arrêt du scénario.
+- L'addendum de protocole a été déposé **avant** le correctif dans `docs/research/stage11-external-scenario-payload-custody-protocol.en.md`.
+
+### Résultat de vérification GitHub Actions
+
+[CI #38126170696](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38126170696) sur **`fa32615400055e6a32ad9f6e7d4a90be1a634627`** : GitHub conclut `failure`, mais le job `quick-unit-tests (Python 3.12)` porte `runner_id=0`, `runner_name=""`, **`steps=[]`**, aucune exécution attestée de `pip install`, `unittest` ou du bootstrap, et aucun journal de job lisible (`BlobNotFound`). C'est un **blocage CI avant test**, et non un échec démontré de l'implémentation. Sa cause précise (quota, facturation, ordonnanceur ou autre infrastructure) **n'a pas été vérifiée**. Aucun redéclenchement automatique supplémentaire ; l'étiquette `ci-unit` a été retirée.
+
+L'échec précoce [#38124663847](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38124663847) a été conservé séparément. **La dernière suite réellement réussie demeure 861/861 Python 3.12 sur `2680283940c10c555238d55814146cb7a3c6129e`, plus bootstrap réussi.** Tous les changements ultérieurs, dont le test de danger actif puis supprimé avec snapshots, restent **implémentés mais non validés**.
+
+### Reprise technique prioritaire
+
+Dans un clone local sur le SHA source `fa32615400055e6a32ad9f6e7d4a90be1a634627`, exécuter en priorité :
+
+```bash
+python -m unittest discover -s tests -p 'test_stage11_external_input_atomicity.py' -v
+python -m unittest discover -s tests -p 'test_stage11_hidden_hazard_budget_snapshots.py' -v
+python -m unittest discover -s tests -p 'test_stage11_scenario_payload_custody.py' -v
+python -m unittest discover -s tests -p 'test_stage11_scenario_snapshot_schedule.py' -v
+python -m unittest discover -s tests -p 'test_stage2_runtime.py' -v
+python -m unittest discover -s tests -p 'test_battery_scenarios.py' -v
+```
+
+Si les contrôles ciblés passent, vérifier la suite Python 3.12 selon le budget disponible ; lancer les campagnes Python 3.11 et Goldens uniquement comme contrôles distincts, jamais comme validation scientifique par défaut.
+
+**Stage 11 : EN COURS. Stage 9 : NO-GO scientifique. PR #25 : ouverte, brouillon, non fusionnée.**
