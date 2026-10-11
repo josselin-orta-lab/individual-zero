@@ -254,6 +254,155 @@ class Stage11ExternalBatchFailureTests(TestCase):
         self.assertFalse(logged(runtime, "perceptual_capture", t=2))
         self.assertTrue(runtime.journal.verify())
 
+    def test_applied_journal_receipt_failure_reverts_entire_physical_batch(self):
+        # A valid physical input must not survive loss of its *applied*
+        # technical receipt, even after an earlier input was accepted.
+        def run_with_same_fault():
+            runtime = build_public_route_runtime(
+                layout_variant="junction_open", survey_refresh=True,
+                scenario_events=(
+                    external(t=2, seq=0, op="set_danger_zone",
+                             x=2, y=3, active=True),
+                    external(t=2, seq=1, op="set_position", x=4, y=2),
+                ),
+            )
+            runtime.run_step()
+            world_before = deepcopy(runtime.world.export_causal_state())
+            original_append = runtime.journal.append
+            failures = []
+
+            def journal_append(*, event_id, causal_event, **kwargs):
+                if (causal_event.get("kind") == "external_input_applied"
+                        and causal_event.get("sequence") == 1):
+                    failures.append("synthetic-applied-receipt-failure")
+                    raise RuntimeError("synthetic applied receipt unavailable")
+                return original_append(
+                    event_id=event_id, causal_event=causal_event, **kwargs,
+                )
+
+            with patch.object(runtime.journal, "append", side_effect=journal_append):
+                with self.assertRaises(ScenarioInputRejected):
+                    runtime.run_step()
+            self.assertEqual(failures, ["synthetic-applied-receipt-failure"])
+            self.assertEqual(runtime.world.export_causal_state(), world_before)
+            self.assertEqual(runtime.scheduler.t_monde, 2)
+            self.assertIsNone(runtime.scheduler.active_attempt)
+            scenario = runtime.stage3.substrate.scenario
+            self.assertTrue(scenario.halted)
+            self.assertEqual(scenario.export_causal_state()["next_index"], 0)
+            self.assertEqual(
+                scenario.export_causal_state()["rejected_event"],
+                {"t_monde": 2, "sequence": 1},
+            )
+            self.assertEqual(
+                [x["sequence"] for x in logged(
+                    runtime, "external_input_received", t=2,
+                )], [0, 1],
+            )
+            self.assertEqual(
+                [x["sequence"] for x in logged(
+                    runtime, "external_input_applied", t=2,
+                )], [0],
+            )
+            rejected = logged(runtime, "external_input_rejected", t=2)
+            self.assertEqual(len(rejected), 1)
+            self.assertEqual(rejected[0]["reason"], "technical_journal_failure")
+            self.assertEqual(rejected[0]["error_type"], "RuntimeError")
+            self.assertTrue(rejected[0]["world_recovered"])
+            self.assertEqual(rejected[0]["previous_inputs_reverted"], 1)
+            reverted = logged(runtime, "external_input_batch_rolled_back", t=2)
+            self.assertEqual(len(reverted), 1)
+            self.assertTrue(reverted[0]["world_recovered"])
+            self.assertEqual(reverted[0]["previous_inputs_reverted"], 1)
+            self.assertFalse(logged(runtime, "perceptual_capture", t=2))
+            self.assertFalse(logged(runtime, "command_experienced", t=2))
+            self.assertEqual(logged(runtime, "step_closed", t=2)[0]["data"], {
+                "outcome": "external_stop",
+                "applied_command_count": 0,
+                "world_advance_count": 0,
+            })
+            self.assertTrue(runtime.journal.verify())
+            technical_before = runtime.journal.canonical_bytes()
+            with self.assertRaisesRegex(RuntimeError, "rejected external scenario"):
+                runtime.run_step()
+            self.assertEqual(runtime.journal.canonical_bytes(), technical_before)
+            return runtime
+
+        first = run_with_same_fault()
+        second = run_with_same_fault()
+        self.assertEqual(
+            first.journal.canonical_bytes(), second.journal.canonical_bytes(),
+        )
+        self.assertEqual(first.journal.head_hash, second.journal.head_hash)
+        self.assertEqual(
+            {o.owner_id: o.export_causal_state() for o in first.causal_owners},
+            {o.owner_id: o.export_causal_state() for o in second.causal_owners},
+        )
+
+    def test_received_journal_failure_reverts_previous_physical_inputs(self):
+        # Even a failed *received* append for input 2 must compensate the
+        # already applied input 1 from the same world-step batch.
+        runtime = build_public_route_runtime(
+            layout_variant="junction_open",
+            scenario_events=(
+                external(t=2, seq=0, op="set_danger_zone",
+                         x=2, y=3, active=True),
+                external(t=2, seq=1, op="set_position", x=4, y=2),
+            ),
+        )
+        runtime.run_step()
+        world_before = deepcopy(runtime.world.export_causal_state())
+        original_append = runtime.journal.append
+        failures = []
+
+        def journal_append(*, event_id, causal_event, **kwargs):
+            if (causal_event.get("kind") == "external_input_received"
+                    and causal_event.get("sequence") == 1):
+                failures.append("synthetic-received-receipt-failure")
+                raise RuntimeError("synthetic received receipt unavailable")
+            return original_append(
+                event_id=event_id, causal_event=causal_event, **kwargs,
+            )
+
+        with patch.object(runtime.journal, "append", side_effect=journal_append):
+            with self.assertRaises(ScenarioInputRejected):
+                runtime.run_step()
+        self.assertEqual(failures, ["synthetic-received-receipt-failure"])
+        self.assertEqual(runtime.world.export_causal_state(), world_before)
+        self.assertEqual(
+            [x["sequence"] for x in logged(
+                runtime, "external_input_received", t=2,
+            )], [0],
+        )
+        self.assertEqual(
+            [x["sequence"] for x in logged(
+                runtime, "external_input_applied", t=2,
+            )], [0],
+        )
+        rejected = logged(runtime, "external_input_rejected", t=2)
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(rejected[0]["sequence"], 1)
+        self.assertEqual(rejected[0]["reason"], "technical_journal_failure")
+        self.assertTrue(rejected[0]["world_recovered"])
+        self.assertEqual(rejected[0]["previous_inputs_reverted"], 1)
+        self.assertEqual(len(logged(
+            runtime, "external_input_batch_rolled_back", t=2,
+        )), 1)
+        self.assertFalse(logged(runtime, "perceptual_capture", t=2))
+        self.assertFalse(logged(runtime, "command_experienced", t=2))
+        self.assertEqual(logged(runtime, "step_closed", t=2)[0]["data"], {
+            "outcome": "external_stop",
+            "applied_command_count": 0,
+            "world_advance_count": 0,
+        })
+        self.assertEqual(runtime.scheduler.t_monde, 2)
+        self.assertIsNone(runtime.scheduler.active_attempt)
+        self.assertTrue(runtime.stage3.substrate.scenario.halted)
+        self.assertEqual(
+            runtime.stage3.substrate.scenario.export_causal_state()["next_index"], 0,
+        )
+        self.assertTrue(runtime.journal.verify())
+
     def test_failed_world_recovery_never_claims_a_successful_rollback(self):
         runtime = build_public_route_runtime(
             scenario_events=(
