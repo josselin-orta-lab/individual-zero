@@ -21,9 +21,14 @@ class PublicCoverageTests(TestCase):
         self.assertIsNone(result.scientific_verdict)
         self.assertFalse(result.heldout)
         self.assertEqual(result.stage9_applied_geographic_moves, 0)
+        self.assertEqual(result.stage11_without_geography_applied_moves, 0)
         self.assertGreater(
             result.stage11_distinct_perceived_sites,
             result.stage9_distinct_perceived_sites,
+        )
+        self.assertGreater(
+            result.stage11_distinct_perceived_sites,
+            result.stage11_without_geography_distinct_sites,
         )
         self.assertEqual(
             result.stage11_confirmed_distinct_visits,
