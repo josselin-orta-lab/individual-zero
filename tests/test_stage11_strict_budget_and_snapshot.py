@@ -125,9 +125,18 @@ class Stage11StrictBudgetTests(TestCase):
                 == "geographic_admissibility_preflight"
                 and entry.causal_event["data"].get("accepted") is True
             ]
-            if len(accepted) != 1:
+            phase_opens = [
+                entry.causal_event for entry in runtime.journal.entries
+                if entry.causal_event.get("kind") == "phase_opened"
+                and entry.causal_event.get("t_monde") == capture.t_monde
+                and entry.causal_event.get("cycle")
+                == runtime.compute_budget.cycle
+            ]
+            if len(accepted) != 1 or not phase_opens or (
+                phase_opens[-1].get("phase") != 1
+            ):
                 raise AssertionError(
-                    "canonical safety preflight ran before paid UC"
+                    "canonical safety preflight not charged within Planning phase1"
                 )
             observed.append((capture.t_monde, runtime.compute_budget.cycle))
             return original(runtime, capture, raw_targets=raw_targets)
