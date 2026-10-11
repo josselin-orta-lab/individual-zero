@@ -179,6 +179,9 @@ class Stage12OperatorConsole:
                 decision_ref=decision_ref, policy_version=self._policy_version,
             )
             for step in gaps:
+                self._substrate.acknowledge_nonphysical_clocks(
+                    world_step=step,
+                )
                 self._substrate._mortal_boundary.acknowledge_nonphysical_step(
                     t_monde=step,
                 )
