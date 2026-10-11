@@ -60,12 +60,14 @@ class Exploration:
     def geographic_cibles(
         self, capture, *, degraded=False,
         inadmissible_directions: frozenset[str] = frozenset(),
+        candidate_limit: int | None = None,
     ):
         if self._geographic is None:
             return ()
         return self._geographic.cibles(
             capture, degraded=degraded,
             inadmissible_directions=inadmissible_directions,
+            candidate_limit=candidate_limit,
         )
 
     def observe_geographic_capture(self, capture, *, frozen_targets=()):
