@@ -18,6 +18,7 @@ from typing import Mapping, Sequence
 
 from .determinism import canonical_causal_bytes, sha256_hex
 from .journal_views import AutobiographicalPolicy
+from .epistemic_guard import project_lived_field
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,7 +97,9 @@ class BoundedLivedStream:
             projected: dict[str, object] = {"event_id": event_id, "kind": kind}
             for field in self._policy.allowed_fields_by_kind[kind]:
                 if field != "event_id" and field in source:
-                    projected[field] = deepcopy(source[field])
+                    projected[field] = project_lived_field(
+                        kind=kind, field=field, value=source[field],
+                    )
             # Reject non-causal objects before modifying queue or cursor.
             canonical_causal_bytes(projected)
             committed.append(projected)
