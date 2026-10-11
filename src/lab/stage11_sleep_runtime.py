@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from .mortal_execution import MortalStatus
 from .stage10_runtime import Stage10Config, Stage10Runtime
 from .stage11_runtime import Stage11Config, Stage11Runtime
 
@@ -56,3 +57,31 @@ class Stage11SleepRuntime(Stage11Runtime, Stage10Runtime):
             self._combined_sleep_config,
             stage9=config.with_budget(),
         )
+
+    def run_step(self):
+        """Fail closed on every uncertain unified mortal cognitive step.
+
+        An exception after opening a world step might have consumed UCs,
+        published learning or even committed a physical transition. We can
+        neither rewind nor retry that life. Preserve the available WAL prefix,
+        freeze WorldBody and refuse further cognitive/physical execution.
+
+        A *previously recorded* safety block is an expected waiting state:
+        the independent diagnostic console may later resolve it from a
+        verified zero-advance closure. It is not a technical corruption.
+        """
+        substrate = self.stage3.substrate
+        boundary = substrate._mortal_boundary
+        if boundary is None or substrate.mortal_status is not MortalStatus.ACTIVE:
+            raise RuntimeError("dead, halted or stopped individual cannot execute")
+        if substrate.safety.blocked:
+            raise RuntimeError("mortal individual is in an unresolved safety block")
+        try:
+            return super().run_step()
+        except Exception:
+            # Do not mask a confirmed physical death or authorized operator
+            # stop with a fake technical halt. Otherwise the state is now
+            # uncertain, even when no actual command reached WorldBody.
+            if substrate.mortal_status is MortalStatus.ACTIVE:
+                boundary.halt(failed_step=self.scheduler.t_monde)
+            raise

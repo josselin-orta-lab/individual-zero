@@ -115,6 +115,20 @@ class V131MortalStage12SixHundredSteps(unittest.TestCase):
             self.assertEqual(kinds["world_transition_experienced"], 600)
             self.assertEqual(kinds["auto_segment_commit"], 600)
             self.assertEqual(kinds["stage12_lived_diagnostics_published"], 600)
+            charges = [
+                row.causal_event["data"]
+                for row in journal.entries
+                if (row.causal_event.get("kind") == "compute_charge"
+                    and row.causal_event.get("data", {}).get("operation")
+                        == "stage12_diagnostic_sample")
+            ]
+            self.assertEqual(len(charges), 600)
+            self.assertTrue(all(
+                charge["accepted"] is True
+                and charge["requested_uc"] == 1
+                and charge["reason"] is None
+                for charge in charges
+            ))
             self.assertEqual(kinds["experiment_stopped"], 1)
             self.assertFalse(any("rollback" in str(k) for k in kinds))
             self.assertFalse(individual.stage3.substrate.snapshots._snapshots)

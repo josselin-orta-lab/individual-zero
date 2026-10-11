@@ -48,10 +48,15 @@ class _Stage12MetacognitionCustody:
             raise ValueError("invalid observed goal deficit")
         previous = self.last_goal_deficit
         progress = None
-        if previous is not None and previous["goal_ref"] == goal_ref:
+        if previous is not None:
             if world_step <= previous["world_step"]:
                 raise ValueError("goal progress cannot repeat or rewind world time")
-            progress = max(0.0, previous["deficit"] - float(deficit))
+            # A skipped diagnosis (insufficient UC) is not a zero-progress
+            # observation. Nor can its next result attribute several physical
+            # steps' cumulative progress to a single observed cycle.
+            if (previous["goal_ref"] == goal_ref
+                    and world_step == previous["world_step"] + 1):
+                progress = max(0.0, previous["deficit"] - float(deficit))
         self.last_goal_deficit = {
             "goal_ref": goal_ref, "deficit": float(deficit),
             "world_step": world_step,
@@ -173,6 +178,10 @@ class Stage12Runtime(Stage11SleepRuntime):
                 "reason": charge.reason,
             })
             if not charge.accepted:
+                # Reflect an actually refused optional module in the *next*
+                # cycle's synthetic budget state; do not retrospectively
+                # rewrite the already published S_t or invent diagnostic data.
+                self._cycle_degraded = True
                 self._write(
                     kind="stage12_lived_diagnostics_deferred",
                     cycle=cycle,

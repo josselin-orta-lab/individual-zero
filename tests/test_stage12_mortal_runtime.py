@@ -127,10 +127,32 @@ class Stage12RuntimeMortalTests(unittest.TestCase):
                 result = runtime.run_step()
             self.assertEqual(result.execution_status, "applied")
             self.assertEqual(runtime.detection_report.evidence_samples, 0)
+            self.assertEqual(runtime.metacognition.state.budget_state, "degraded")
             kinds = [row.causal_event["kind"] for row in runtime.journal.entries]
             self.assertIn("stage12_lived_diagnostics_deferred", kinds)
             self.assertNotIn("stage12_lived_diagnostics_published", kinds)
             self.assertTrue(runtime.journal.verify())
+
+    def test_gap_in_diagnostic_sampling_cannot_invent_per_step_progress(self):
+        with TemporaryDirectory() as directory:
+            runtime = stage12_runtime(str(Path(directory) / "gap-progress.jsonl"))
+            owner = runtime._meta_custody
+            self.assertIsNone(owner.observe_goal_progress(
+                goal_ref="g:water", deficit=8.0, world_step=1,
+            ))
+            # Physical step 2 was not measured because the optional
+            # diagnostic module ran out of UC. Step 3 cannot claim the
+            # entire interval's improvement was a single-step change.
+            self.assertIsNone(owner.observe_goal_progress(
+                goal_ref="g:water", deficit=5.0, world_step=3,
+            ))
+            self.assertEqual(owner.observe_goal_progress(
+                goal_ref="g:water", deficit=4.0, world_step=4,
+            ), 1.0)
+            with self.assertRaises(ValueError):
+                owner.observe_goal_progress(
+                    goal_ref="g:other", deficit=3.0, world_step=4,
+                )
 
     def test_invalid_or_free_detector_cost_is_rejected_before_birth(self):
         with TemporaryDirectory() as directory:
