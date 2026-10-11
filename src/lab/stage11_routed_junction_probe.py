@@ -77,11 +77,16 @@ def build_public_route_runtime(
     planning_uc: int | None = None,
     scenario_events: tuple[ScenarioEvent, ...] = (),
     survey_refresh: bool = False,
+    exploration_uc: int | None = None,
 ) -> Stage11Runtime:
     if layout_variant not in ("junction_open", "junction_sealed"):
         raise ValueError("unregistered public junction layout")
     if type(survey_refresh) is not bool:
         raise ValueError("survey-refresh opt-in must be boolean")
+    if exploration_uc is not None and (
+        type(exploration_uc) is not int or exploration_uc not in (0, 4)
+    ):
+        raise ValueError("public Exploration envelope must be None, 0 or 4")
     if (not isinstance(scenario_events, tuple)
         or any(not isinstance(event, ScenarioEvent) for event in scenario_events)):
         raise ValueError("route fixture needs a tuple of logged scenario events")
@@ -107,6 +112,12 @@ def build_public_route_runtime(
             refresh_surveys=survey_refresh,
         ),
     )
+    if exploration_uc is not None:
+        cfg = replace(
+            cfg,
+            version=cfg.version + f"+exploration-envelope-{exploration_uc}",
+            exploration_envelope_uc=exploration_uc,
+        )
     if planning_uc is not None:
         stage9 = cfg.stage9
         stage8 = stage9.stage8
