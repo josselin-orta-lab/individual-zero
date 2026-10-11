@@ -109,6 +109,78 @@ class EpistemicIsolationTests(unittest.TestCase):
                         kind="command_experienced", field=key, value="untrusted",
                     )
 
+    def test_lived_physics_effects_do_not_reveal_hidden_cause(self):
+        from lab.stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY
+        journal = HashChainedJournal()
+        views = JournalViews(journal=journal)
+        journal.append(event_id="world:visible", causal_event={
+            "kind": "world_transition_experienced",
+            "emitter": "world_and_body", "attempt_ref": "a",
+            "t_monde": 1,
+            "position_after": {"x": 2, "y": 3,
+                               "hidden_destination": {"x": 5, "y": 9}},
+            "body_after": {"integrity": 90.0, "energy": 49.5},
+            "effects": {
+                "ate": "berry_b", "drank": False,
+                "scenario_failure_attempt": {
+                    "forced": True, "primitive": "manger",
+                },
+                "scenario_forced_failure": "manger",
+                "danger_zone_damage": 4.0,
+                "creature_damage": 2.0,
+                "future_hazards": {"at": [5, 9]},
+            },
+        })
+        raw = journal.canonical_bytes()
+        views.commit_autobiographical(
+            t_monde=1, attempt_ref="a",
+            event_refs=("world:visible",),
+            policy=STAGE2_AUTOBIOGRAPHICAL_POLICY,
+        )
+        lived = views.autobiographical(policies={
+            STAGE2_AUTOBIOGRAPHICAL_POLICY.version:
+                STAGE2_AUTOBIOGRAPHICAL_POLICY,
+        })
+        self.assertEqual(lived[0]["position_after"], {"x": 2, "y": 3})
+        self.assertEqual(lived[0]["effects"], {
+            "ate": "berry_b", "drank": False,
+        })
+        self.assertEqual(lived[0]["body_after"], {
+            "integrity": 90.0, "energy": 49.5,
+        })
+        self.assertNotIn("scenario_failure_attempt", repr(lived))
+        self.assertNotIn("danger_zone_damage", repr(lived))
+        self.assertNotIn("creature_damage", repr(lived))
+        self.assertIn(b"scenario_failure_attempt", raw)
+        self.assertIn(b"danger_zone_damage", journal.canonical_bytes())
+        self.assertTrue(journal.verify())
+
+    def test_lived_command_parameters_have_no_unreviewed_keys(self):
+        from lab.stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY
+        journal = HashChainedJournal()
+        views = JournalViews(journal=journal)
+        journal.append(event_id="command:only-lived", causal_event={
+            "kind": "command_experienced", "attempt_ref": "a",
+            "t_monde": 1, "primitive": "manger",
+            "parameters": {
+                "target": "berry_b", "hidden_physics": {
+                    "lethal_location": [2, 9],
+                },
+            },
+        })
+        views.commit_autobiographical(
+            t_monde=1, attempt_ref="a",
+            event_refs=("command:only-lived",),
+            policy=STAGE2_AUTOBIOGRAPHICAL_POLICY,
+        )
+        lived = views.autobiographical(policies={
+            STAGE2_AUTOBIOGRAPHICAL_POLICY.version:
+                STAGE2_AUTOBIOGRAPHICAL_POLICY,
+        })
+        self.assertEqual(lived[0]["parameters"], {"target": "berry_b"})
+        self.assertNotIn("lethal_location", repr(lived))
+        self.assertIn(b"lethal_location", journal.canonical_bytes())
+
     def test_custom_policy_cannot_promote_hidden_scenario_payload(self):
         journal = HashChainedJournal()
         views = JournalViews(journal=journal)
