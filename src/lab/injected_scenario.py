@@ -12,7 +12,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Mapping, Sequence
 
-from .determinism import deterministic_id
+from .determinism import canonical_causal_bytes, deterministic_id
 from .journal import HashChainedJournal
 from .world import WorldBody
 
@@ -54,6 +54,29 @@ class InjectedScenario:
             raise ValueError("scenario id and version must not be empty")
         self._scenario_id = scenario_id
         self._version = version
+        # Inputs which cannot be canonically journaled before application
+        # must be rejected at scenario registration, not at world-step open
+        # after Scheduler has already advanced (normative 4.6 / INV-33).
+        checked: list[ScenarioEvent] = []
+        for event in events:
+            if (
+                not isinstance(event, ScenarioEvent)
+                or type(event.t_monde) is not int
+                or event.t_monde < 1
+                or type(event.sequence) is not int
+                or event.sequence < 0
+                or not isinstance(event.operation, str)
+                or not event.operation.strip()
+                or not isinstance(event.payload, Mapping)
+            ):
+                raise ValueError("malformed external scenario event schema")
+            try:
+                canonical_causal_bytes(event.as_dict())
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "external scenario event is not canonically encodable"
+                ) from exc
+            checked.append(event)
         # The source ScenarioEvent dataclass is frozen, but its nested
         # payload Mapping may not be. Own a complete detached program:
         # neither the caller nor exported/returned views can rewrite it.
@@ -65,7 +88,7 @@ class InjectedScenario:
                 payload=deepcopy(dict(event.payload)),
             )
             for event in sorted(
-                events, key=lambda row: (row.t_monde, row.sequence),
+                checked, key=lambda row: (row.t_monde, row.sequence),
             )
         )
         if len({(e.t_monde, e.sequence) for e in self._events}) != len(self._events):
