@@ -84,6 +84,10 @@ class Stage11Config:
             operation_costs={
                 **budget.operation_costs,
                 "exploration_observe": self.exploration_observe_cost_uc,
+                **(
+                    {"geographic_admissibility_preflight": 1}
+                    if self.geographic is not None else {}
+                ),
             },
         )
         return replace(self.stage9, stage8=replace(
@@ -421,28 +425,6 @@ class Stage11Runtime(Stage9Runtime):
 
         def plan_only_informational_targets(ctx):
             self._stage11_geographic_proposals_this_cycle = ()
-            # One diagnostic per real step; never repeatedly charge Planning
-            # for a direction that Action Control already said was forbidden.
-            if cycle == 1 and excluded_geo:
-                self._write(
-                    kind="stage11_geographic_admissibility_prefiltered",
-                    cycle=cycle,
-                    data={
-                        "source": "action_control.verifier_admissibilite",
-                        "admissibility": "inadmissible",
-                        "world_step": capture.t_monde,
-                        "excluded": [
-                            {
-                                "direction": direction,
-                                "destination": list(destination),
-                            }
-                            for direction, destination in excluded_geo
-                        ],
-                        "count": len(excluded_geo),
-                        "cached": False,
-                        "global_safety_claim": False,
-                    },
-                )
             emitted = self._causal_test_targets_this_cycle
             permitted = tuple(
                 item for item in emitted
@@ -466,9 +448,40 @@ class Stage11Runtime(Stage9Runtime):
             previous_plan(ctx)
             if (
                 self.exploration.geographic is None
-                or not frozen_geo_targets
                 or self._cycle_degraded or st_before_cycle is None
             ):
+                return
+            # Fixed 1 UC is a versioned Planning cost for one bounded
+            # four-neighbor read-only safety-service preflight per cycle.
+            # No hidden uncharged cognitive work or transfer from protected
+            # Action Control capacity. Inadequate budget means NO targets.
+            if not self._charge(
+                module="planning",
+                operation="geographic_admissibility_preflight",
+            ):
+                return
+            if cycle == 1 and excluded_geo:
+                self._write(
+                    kind="stage11_geographic_admissibility_prefiltered",
+                    cycle=cycle,
+                    data={
+                        "source": "action_control.verifier_admissibilite",
+                        "admissibility": "inadmissible",
+                        "world_step": capture.t_monde,
+                        "excluded": [
+                            {
+                                "direction": direction,
+                                "destination": list(destination),
+                            }
+                            for direction, destination in excluded_geo
+                        ],
+                        "count": len(excluded_geo),
+                        "cached": False,
+                        "global_safety_claim": False,
+                        "preflight_uc": 1,
+                    },
+                )
+            if not frozen_geo_targets:
                 return
             initial_state = state_from_capture(
                 capture=capture,
