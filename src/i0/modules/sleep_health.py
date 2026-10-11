@@ -31,6 +31,7 @@ class SleepHealth:
         self._step: int | None = None
         self._frozen: SleepPressureAssessment | None = None
         self._last_cycle: tuple[int, int] | None = None
+        self._last_recovered_step: int | None = None
 
     @property
     def fatigue(self) -> float:
@@ -90,6 +91,21 @@ class SleepHealth:
         self._last_cycle = clock
         return updated
 
+    def recover_sleep_step(self, *, world_step: int) -> float:
+        """One recovery for an actually completed physical sleeping step.
+
+        Call only after the admitted command advances WorldBody. No budget
+        credit and no energy/body reward is manufactured here.
+        """
+        if (type(world_step) is not int or world_step < 1
+                or self._step is None or world_step <= self._step
+                or (self._last_recovered_step is not None
+                    and world_step <= self._last_recovered_step)):
+            raise ValueError("sleep recovery requires a fresh physical world step")
+        self._fatigue = self.rules.sleep_step_fatigue(f_cog=self._fatigue)
+        self._last_recovered_step = world_step
+        return self._fatigue
+
     def export_causal_state(self) -> dict[str, object]:
         return {
             "state_schema": self.snapshot_schema,
@@ -98,6 +114,7 @@ class SleepHealth:
             "frozen_world_step": self._step,
             "frozen": None if self._frozen is None else asdict(self._frozen),
             "last_cycle": self._last_cycle,
+            "last_recovered_step": self._last_recovered_step,
         }
 
     def restore_causal_state(self, state: object) -> None:
@@ -106,6 +123,7 @@ class SleepHealth:
             or set(state) != {
                 "state_schema", "config_version", "fatigue",
                 "frozen_world_step", "frozen", "last_cycle",
+                "last_recovered_step",
             }
             or state.get("state_schema") != self.snapshot_schema
             or state.get("config_version") != self.rules.config.version
@@ -117,6 +135,12 @@ class SleepHealth:
             or not isfinite(fatigue) or not 0 <= fatigue <= 1
         ):
             raise ValueError("invalid restored cognitive fatigue")
+        recovered = state.get("last_recovered_step")
+        if (recovered is not None and (
+                type(recovered) is not int or recovered < 1
+                or (state.get("frozen_world_step") is not None
+                    and recovered <= state["frozen_world_step"]))):
+            raise ValueError("invalid sleep-recovery chronology")
         step, raw, clock = (
             state.get("frozen_world_step"),
             state.get("frozen"),
@@ -146,7 +170,7 @@ class SleepHealth:
                     raise ValueError("nonphysical frozen pressure")
             if raw["intrinsic_status"] != "applicable" or (
                 raw["intrinsic_value"] != raw["sleep_pressure"]
-                or raw["fatigue"] > fatigue
+                or (raw["fatigue"] > fatigue and recovered is None)
             ):
                 raise ValueError("incoherent waking intrinsic sleep pressure")
             frozen = SleepPressureAssessment(**raw)
@@ -165,3 +189,4 @@ class SleepHealth:
         self._step = step
         self._frozen = frozen
         self._last_cycle = clock
+        self._last_recovered_step = recovered

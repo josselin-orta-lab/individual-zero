@@ -939,8 +939,17 @@ class Stage4Runtime:
         """
         return None
 
+    def _open_step_capture(self):
+        """One-shot opening seam for Stage-10 wake in the *same* physical step.
+
+        Default preserves all historical Stage-4 through Stage-11 behavior.
+        Stage-10 may hand back a pre-opened single lived capture after waking
+        without opening the scheduler or reading WorldBody a second time.
+        """
+        return self.stage3.open_step()
+
     def run_step(self) -> Stage4StepResult:
-        capture = self.stage3.open_step()
+        capture = self._open_step_capture()
         self._on_open_step_capture(capture)
         comparison = self.stage3.control.compare_capture(capture)
         if comparison is not None:
