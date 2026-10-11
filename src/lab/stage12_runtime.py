@@ -120,7 +120,15 @@ class Stage12Runtime(Stage11SleepRuntime):
             cycle_ceiling=old.cycle_ceiling + cost,
             module_envelopes={
                 **old.module_envelopes,
-                "metacognition_health": old.module_envelopes["metacognition_health"] + cost,
+                # Stage11 has not yet called Stage10Config.with_budget().
+                # Reserve the Stage10 sleep preparation floor first, THEN
+                # add the independent P-43 Stage12 diagnostic allowance.
+                # Using the unmodified Stage11 envelope directly fails when
+                # the metacognition facet is absent at this composition point.
+                "metacognition_health": max(
+                    old.module_envelopes.get("metacognition_health", 0),
+                    base.sleep_option_uc,
+                ) + cost,
             },
             operation_costs={
                 **old.operation_costs,
