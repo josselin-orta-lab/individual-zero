@@ -147,14 +147,20 @@ class ScriptedStage2Runtime:
         attempt = self.scheduler.open_step()
         if self.scenario is not None:
             try:
-                self.scenario.apply_for_step(
-                    t_monde=attempt.t_monde,
-                    world=self.world,
-                )
+                if self._mortal_boundary is None:
+                    self.scenario.apply_for_step(
+                        t_monde=attempt.t_monde, world=self.world,
+                    )
+                else:
+                    self.scenario.apply_for_step_irreversible(
+                        t_monde=attempt.t_monde, world=self.world,
+                    )
             except Exception:
-                # Input reception/rejection and any compensating WorldBody
-                # rollback have already been technically journaled by the
-                # scenario. No perception, command or world transition ran.
+                if self._mortal_boundary is not None:
+                    # A failed publication may already have changed the real
+                    # world. Halt without restoring or retrying anything.
+                    self._mortal_boundary.halt(failed_step=attempt.t_monde)
+                # No individual command or cognitive cycle was dispatched.
                 self.scheduler.close_step(
                     outcome="external_stop",
                     applied_command_count=0,
