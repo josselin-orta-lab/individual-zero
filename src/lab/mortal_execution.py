@@ -59,6 +59,7 @@ class MortalWorldBoundary:
         # directly, bypassing the SnapshotManager's ban on life restoration.
         world.forbid_historical_restore()
         self._world = world
+        self._world_dispatch_key = world._install_mortal_dispatch_authority()
         self._status = MortalStatus.ACTIVE
         self._last_world_step = 0
         self._death: TerminalDeath | None = None
@@ -101,7 +102,10 @@ class MortalWorldBoundary:
         # classify hidden world hazards or invent an oracle-informed veto.
         validate_command(command)
         try:
-            result = self._world.apply(command, t_monde=t_monde)
+            # No direct WorldBody.apply is permitted on a mortal world.
+            # The physical authority is scoped to this one boundary call.
+            with self._world._admit_mortal_dispatch(self._world_dispatch_key):
+                result = self._world.apply(command, t_monde=t_monde)
             if (
                 not isinstance(result, TransitionResult)
                 or result.t_monde != t_monde
