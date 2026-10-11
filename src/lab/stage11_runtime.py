@@ -115,6 +115,10 @@ class Stage11Config:
                         and self.geographic_preflight
                     ) else ""
                 )
+                + (
+                    "+route-site-cap-stop-v1"
+                    if self.geographic_route_enabled else ""
+                )
             ),
             module_envelopes={
                 **budget.module_envelopes,
@@ -638,6 +642,28 @@ class Stage11Runtime(Stage9Runtime):
             # frontier inputs frozen BEFORE all Phase-1 producers (INV-08).
             # No Phase-0 cross-component work or same-phase owner reread.
             if demand_skip_geo_preflight and self._stage11_config.geographic_route_enabled:
+                # Capacity is already exhausted in the pre-Phase-1 *physical*
+                # visit ledger. A route across old sites cannot produce a
+                # lawful new geographic visit. Do not consume search UC or
+                # offer endless motivational transits toward that objective.
+                # This is no claim about hidden safety or external movement.
+                geo = self.exploration.geographic
+                if len(frozen_geography["visits"]) >= geo.config.max_distinct_sites:
+                    if cycle == 1:
+                        self._write(
+                            kind="stage11_geographic_route_capacity_exhausted",
+                            cycle=cycle,
+                            data={
+                                "source": "pre_phase1_physical_visit_ledger",
+                                "world_step": capture.t_monde,
+                                "distinct_sites": len(frozen_geography["visits"]),
+                                "max_distinct_sites": geo.config.max_distinct_sites,
+                                "route_search_uc_consumed": 0,
+                                "safety_decision": None,
+                                "scientific_verdict": None,
+                            },
+                        )
+                    return
                 if not self._charge(
                     module="planning", operation="geographic_route_search",
                 ):
