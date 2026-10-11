@@ -924,9 +924,15 @@ class WorldBody:
 
         if operation == "place_resource":
             position = position_from_payload()
-            kind = str(payload.get("kind"))
-            quantity = int(payload.get("quantity", 0))
-            if kind not in RESOURCE_KINDS or quantity < 0:
+            kind = payload.get("kind")
+            quantity = payload.get("quantity", 0)
+            # The literal external quantities must survive the logged
+            # input interface unchanged. int(1.9), int(True), and int("2")
+            # would silently assert different physical evidence.
+            if (
+                type(kind) is not str or kind not in RESOURCE_KINDS
+                or type(quantity) is not int or quantity < 0
+            ):
                 raise ValueError("invalid scenario resource")
             self._resources[(position, kind)] = quantity
             return
@@ -953,7 +959,12 @@ class WorldBody:
             updates = dict(self._body.as_dict())
             for key in ("energy", "food", "water", "integrity"):
                 if key in payload:
-                    updates[key] = float(payload[key])
+                    value = payload[key]
+                    if type(value) not in (int, float):
+                        raise ValueError(
+                            "scenario body value must be a number, not a coercion"
+                        )
+                    updates[key] = float(value)
             body = BodyState(**updates)
             body.validate()
             self._body = body
