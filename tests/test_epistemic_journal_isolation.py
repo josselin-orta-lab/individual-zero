@@ -88,13 +88,26 @@ class EpistemicIsolationTests(unittest.TestCase):
         self.assertNotIn("NOT_LIVED", repr(output))
 
     def test_policy_cannot_request_technical_or_oracle_field(self):
-        for key in ("event_hash", "ground_truth", "oracle_canary", "danger_zones"):
+        journal = HashChainedJournal()
+        source = journal.append(event_id="command:policy", causal_event={
+            "kind": "command_experienced", "t_monde": 1,
+            "attempt_ref": "secret-attempt", "primitive": "attendre",
+            "parameters": {}, "ground_truth": "NOT_A_MEMORY",
+        })
+        for key in ("attempt_ref", "event_hash", "ground_truth", "oracle_canary", "danger_zones"):
             policy = AutobiographicalPolicy(
                 version="adversarial",
                 allowed_fields_by_kind={"command_experienced": (key,)},
             )
-            with self.subTest(key=key), self.assertRaises(ValueError):
-                policy.validate()
+            with self.subTest(key=key):
+                with self.assertRaises(ValueError):
+                    policy.validate()
+                with self.assertRaises(ValueError):
+                    policy.project(source)
+                with self.assertRaises(ValueError):
+                    project_lived_field(
+                        kind="command_experienced", field=key, value="untrusted",
+                    )
 
     def test_reconstructed_commit_cannot_cross_steps_at_read_time(self):
         journal = HashChainedJournal()
