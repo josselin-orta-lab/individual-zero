@@ -259,8 +259,9 @@ class Stage11Runtime(Stage9Runtime):
         EN normative §9.4 allows early Planning filtering of definitely
         prohibited options. This is not a duplicate or a cache of safety
         facts; only the existing Action Control service can decide.
-        "Indeterminate" is still a candidate. Recompute on every phase-0
-        snapshot so any later safety fact reclassification takes effect.
+        "Indeterminate" is still a candidate. Re-query in Phase-1 Planning
+        from the pre-phase frozen inputs on every eligible cycle so later
+        canonical safety reclassification can take effect.
         """
         if self.exploration.geographic is None:
             return (), ()
@@ -324,7 +325,6 @@ class Stage11Runtime(Stage9Runtime):
         )
         frozen_geo_targets = ()
         excluded_geo = ()
-        preflight_paid = False
         deferred_geo_this_cycle = False
 
         def defer_geo_once(operation):
@@ -533,7 +533,7 @@ class Stage11Runtime(Stage9Runtime):
         previous_plan = hooks[1]["planning"]
 
         def plan_only_informational_targets(ctx):
-            nonlocal frozen_geo_targets, excluded_geo, preflight_paid
+            nonlocal frozen_geo_targets, excluded_geo
             self._stage11_geographic_proposals_this_cycle = ()
             emitted = self._causal_test_targets_this_cycle
             permitted = tuple(
@@ -590,7 +590,6 @@ class Stage11Runtime(Stage9Runtime):
                 ):
                     defer_geo_once("geographic_admissibility_preflight")
                     return
-                preflight_paid = True
                 frozen_geo_targets, excluded_geo = (
                     self._geographic_frontier_targets(
                         capture, raw_targets=raw_geo_targets,
