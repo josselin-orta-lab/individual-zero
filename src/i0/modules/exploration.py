@@ -6,6 +6,10 @@ A proposed option is not evidence of progress. Normative MVP sections 8.5/14.
 from dataclasses import dataclass, asdict
 from math import isfinite
 
+from .geographic_exploration import (
+    GeographicExploration, GeographicExplorationConfig,
+)
+
 @dataclass(frozen=True)
 class ExplorationConfig:
     version: str
@@ -34,13 +38,55 @@ class Exploration:
     _rank = {"aucun": 0, "correlation_observee": 1,
              "hypothese_causale": 2, "testee_par_intervention": 3, "etablie": 4}
 
-    def __init__(self, config: ExplorationConfig, *, coefficient: float):
+    def __init__(
+        self, config: ExplorationConfig, *, coefficient: float,
+        geographic_config: GeographicExplorationConfig | None = None,
+    ):
         config.validate()
         if not isfinite(coefficient) or not -1 <= coefficient <= 1:
             raise ValueError("invalid derived exploration coefficient")
         self.config = config
         self.coefficient = float(coefficient)
         self._questions = {}
+        self._geographic = (
+            None if geographic_config is None
+            else GeographicExploration(geographic_config)
+        )
+
+    @property
+    def geographic(self) -> GeographicExploration | None:
+        return self._geographic
+
+    def geographic_cibles(self, capture, *, degraded=False):
+        if self._geographic is None:
+            return ()
+        return self._geographic.cibles(capture, degraded=degraded)
+
+    def observe_geographic_capture(self, capture, *, frozen_targets=()):
+        if self._geographic is None:
+            return False
+        changed = self._geographic.observe_capture(capture)
+        self._geographic.freeze_targets(tuple(frozen_targets))
+        return changed
+
+    def geographic_motivation(self, option) -> IntrinsicAssessment:
+        geo = self._geographic
+        if geo is None or geo.target_for(option) is None:
+            return IntrinsicAssessment(
+                "unavailable", None, "not_a_current_physical_frontier",
+            )
+        target = geo.target_for(option)
+        value = min(1.0, max(0.0,
+            (1 + self.coefficient) * geo.config.novelty_weight
+        ))
+        if value <= 0.0:
+            return IntrinsicAssessment(
+                "unavailable", None, "zero_geographic_information_interest",
+            )
+        return IntrinsicAssessment(
+            "available", value, "previously_unvisited_accessible_frontier",
+            (f"exploration:frontier:{target.ref}:t{target.source_t_monde}",),
+        )
 
     def observe_causal_state(self, state):
         """Only confirmed causal publications can create learning progress.
@@ -196,20 +242,31 @@ class Exploration:
         )
 
     def export_causal_state(self):
-        return {
-            "state_schema": "exploration-activity-v2",
+        state = {
+            "state_schema": (
+                "exploration-activity-v2" if self._geographic is None
+                else "exploration-activity-v3-geographic"
+            ),
             "config_version": self.config.version,
             "coefficient": self.coefficient,
             "questions": [
                 [ref, dict(q)] for ref, q in sorted(self._questions.items())
             ],
         }
+        if self._geographic is not None:
+            state["geography"] = self._geographic.export_causal_state()
+        return state
 
     def restore_causal_state(self, state):
         """Reject a corrupted snapshot before mutating owner state."""
+        schema = (
+            "exploration-activity-v2" if self._geographic is None
+            else "exploration-activity-v3-geographic"
+        )
         if (
             not isinstance(state, dict)
-            or state.get("state_schema") != "exploration-activity-v2"
+            or state.get("state_schema") != schema
+            or (self._geographic is None) != ("geography" not in state)
             or state.get("config_version") != self.config.version
             or state.get("coefficient") != self.coefficient
             or not isinstance(state.get("questions"), list)
@@ -251,5 +308,14 @@ class Exploration:
             restored[ref] = {
                 **q, "ids": tuple(ids), "executed_keys": tuple(applied),
             }
+        restored_geography = None
+        if self._geographic is not None:
+            restored_geography = GeographicExploration(
+                self._geographic.config,
+            )
+            restored_geography.restore_causal_state(state["geography"])
+        # Commit both components only after validating the entire snapshot.
         self._questions = restored
+        if restored_geography is not None:
+            self._geographic = restored_geography
 
