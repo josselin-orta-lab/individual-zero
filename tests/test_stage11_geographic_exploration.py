@@ -8,7 +8,7 @@ from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import patch
 
-from i0.modules.action_control import Admissibility
+from i0.modules.action_control import Admissibility, StaticSafetyFacts
 
 from i0.modules.exploration import Exploration, ExplorationConfig
 from i0.modules.geographic_exploration import (
@@ -17,7 +17,7 @@ from i0.modules.geographic_exploration import (
 from lab.stage9_reference_fixture import build_stage9_reference_runtime
 from lab.stage11_reference_fixture import build_stage11_reference_runtime
 from lab.stage11_runtime import Stage11Runtime
-from lab.world import BodyState
+from lab.world import BodyState, Position
 
 
 def config(*, sites=15, weight=0.7):
@@ -200,6 +200,51 @@ class GeographicRuntimeTests(TestCase):
             self.assertEqual(two[0].direction, "north")
             self.assertGreaterEqual(consulted.count("north"), 2)
         runtime.stage3._capture = None
+
+    def test_phase1_cap_one_filters_known_lethal_before_offering_east(self):
+        base = build_stage11_reference_runtime(enable_geography=True)
+        geography = replace(
+            base._stage11_config.geographic,
+            version="p48-public-cap-one-phase1-v1",
+            max_targets_per_cycle=1,
+        )
+        cfg = replace(
+            base._stage11_config,
+            version="stage11-phase1-cap-one-test-v1",
+            geographic=geography,
+        )
+        owner = Stage11Runtime(
+            world_config=replace(
+                base.world.config,
+                initial_body=BodyState(
+                    energy=50, food=60, water=60, integrity=100,
+                ),
+            ),
+            layout=replace(
+                base.world._layout,
+                lethal_zones=frozenset({Position(2, 1)}),
+            ),
+            safety_config=base.stage3.substrate.safety._config,
+            safety_facts=StaticSafetyFacts(
+                known_lethal_positions=frozenset({(2, 1)}),
+            ),
+            protected_integrity_threshold=(
+                base.stage3.control._config.protected_integrity_threshold
+            ),
+            config=cfg, equipment=base.equipment,
+        )
+        for _ in range(4):
+            owner.run_step()
+        proposed = [
+            entry.causal_event["data"]["direction"]
+            for entry in owner.journal.entries
+            if entry.causal_event.get("kind")
+            == "stage11_geographic_option_proposed"
+        ]
+        self.assertTrue(proposed)
+        self.assertEqual(proposed[0], "east")
+        self.assertNotIn("north", proposed)
+        self.assertTrue(owner.journal.verify())
 
     def test_disabled_by_default_preserves_stage9_and_stage11_schema(self):
         baseline = build_stage9_reference_runtime()
