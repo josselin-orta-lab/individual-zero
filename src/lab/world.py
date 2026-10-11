@@ -886,15 +886,23 @@ class WorldBody:
 
         def position_from_payload() -> Position:
             raw = payload.get("position")
-            if not isinstance(raw, Mapping):
-                raise ValueError("scenario event requires position")
-            position = Position(int(raw["x"]), int(raw["y"]))
+            if (
+                not isinstance(raw, Mapping)
+                or set(raw) != {"x", "y"}
+                or any(type(raw[name]) is not int for name in ("x", "y"))
+            ):
+                raise ValueError(
+                    "scenario event requires exact integer x,y position"
+                )
+            position = Position(raw["x"], raw["y"])
             self._config._validate_interior(position)
             return position
 
         if operation in {"set_danger_zone", "set_lethal_zone"}:
             position = position_from_payload()
-            active = bool(payload.get("active", True))
+            active = payload.get("active", True)
+            if type(active) is not bool:
+                raise ValueError("scenario zone active must be a boolean")
             target = (
                 self._danger_zones
                 if operation == "set_danger_zone"
