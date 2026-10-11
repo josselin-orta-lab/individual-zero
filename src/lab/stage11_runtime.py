@@ -175,6 +175,14 @@ class Stage11Config:
 class Stage11Runtime(Stage9Runtime):
     individual_id = "i0-vnext-stage11"
 
+    def _parent_runtime_config(self, config: Stage11Config):
+        """Pass the Stage-11 UC profile through an optional later runtime.
+
+        Standalone Stage 11 still constructs the exact Stage-9 substrate.
+        Cooperative subclasses can add Stage-10 sleep without a second I0.
+        """
+        return config.with_budget()
+
     def __init__(self, *, world_config, layout, safety_config, safety_facts,
                  protected_integrity_threshold, config: Stage11Config, equipment,
                  scenario_id=None, scenario_version=None, scenario_events=(),
@@ -193,7 +201,7 @@ class Stage11Runtime(Stage9Runtime):
             world_config=world_config, layout=layout,
             safety_config=safety_config, safety_facts=safety_facts,
             protected_integrity_threshold=protected_integrity_threshold,
-            config=config.with_budget(), equipment=equipment,
+            config=self._parent_runtime_config(config), equipment=equipment,
             scenario_id=scenario_id, scenario_version=scenario_version,
             scenario_events=scenario_events,
             autonomous_mortal=autonomous_mortal,
