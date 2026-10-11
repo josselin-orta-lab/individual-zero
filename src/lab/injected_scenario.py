@@ -250,10 +250,30 @@ class InjectedScenario:
                 or set(rejected) != {"t_monde", "sequence"}
                 or type(rejected["t_monde"]) is not int
                 or type(rejected["sequence"]) is not int
-                or (rejected["t_monde"], rejected["sequence"])
-                not in {(event.t_monde, event.sequence) for event in self._events}
             ):
                 raise ValueError("invalid rejected scenario input marker")
             rejected_at = (rejected["t_monde"], rejected["sequence"])
+            failed_event_positions = [
+                index for index, event in enumerate(self._events)
+                if (event.t_monde, event.sequence) == rejected_at
+            ]
+            first_at_step = next(
+                (
+                    index for index, event in enumerate(self._events)
+                    if event.t_monde == rejected_at[0]
+                ),
+                None,
+            )
+            # apply_for_step always compensates the WHOLE input batch
+            # and rewinds the cursor to its first event, even if an
+            # error happened after earlier inputs for this step.
+            if (
+                not failed_event_positions
+                or first_at_step is None
+                or next_index != first_at_step
+            ):
+                raise ValueError(
+                    "invalid rejected scenario input marker or cursor"
+                )
         self._next_index = next_index
         self._rejected_event = rejected_at
