@@ -58,6 +58,44 @@ class SnapshotManagerTests(unittest.TestCase):
         self.assertEqual(first.value, 10)
         self.assertEqual(second.value, 20)
 
+    def test_incompatible_late_owner_restores_all_original_states(self) -> None:
+        # A valid snapshot hash does not establish compatibility with
+        # today's owner validators. The second owner intentionally mutates
+        # first and then rejects to exercise the failure compensation path.
+        class RejectAfterMutation(FakeOwner):
+            def restore_causal_state(self, state: object) -> None:
+                super().restore_causal_state(state)
+                if self.value == 2:
+                    raise ValueError("synthetic incompatible owner version")
+
+        manager, journal = self.make_manager()
+        a = FakeOwner("a", 1)
+        b = RejectAfterMutation("b", 2)
+        record = manager.take(
+            snapshot_type=SnapshotType.PERIODIC,
+            individual_id="i0-snapshot-atomic-unit",
+            t_monde=2, cycle=0, attempt_ref=None,
+            owners=(a, b), versions={"runtime": "synthetic-unit-only"},
+        )
+        self.assertTrue(manager.verify(record.id))
+        a.value = 11
+        b.value = 22
+        journal_before = journal.canonical_bytes()
+        with self.assertRaisesRegex(
+            ValueError, "synthetic incompatible owner version",
+        ):
+            manager.restore(record.id, owners=(b, a))
+        self.assertEqual((a.value, b.value), (11, 22))
+        self.assertEqual(journal.canonical_bytes(), journal_before)
+        self.assertTrue(journal.verify())
+        self.assertTrue(manager.verify(record.id))
+
+        # The same verified snapshot is still valid for a compatible owner.
+        normal_b = FakeOwner("b", 22)
+        manager.restore(record.id, owners=(a, normal_b))
+        self.assertEqual((a.value, normal_b.value), (1, 2))
+        self.assertTrue(journal.verify())
+
     def test_rng_state_continuation_is_restored_exactly(self) -> None:
         manager, _ = self.make_manager()
         rng = RandomStreamRegistry(campaign_seed=42)
