@@ -109,6 +109,47 @@ class EpistemicIsolationTests(unittest.TestCase):
                         kind="command_experienced", field=key, value="untrusted",
                     )
 
+    def test_actual_world_hazard_does_not_publish_hidden_cause_to_memory(self):
+        # This executes the real WorldBody transition and the Stage-2
+        # autobiographical commit; it is not an artificial journal payload.
+        from lab.stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY
+        from lab.stage4_reference_fixture import build_stage4_reference_runtime
+        from lab.world import Command
+
+        runtime = build_stage4_reference_runtime(autonomous_mortal=True)
+        physical_position = runtime.world.position.as_dict()
+        runtime.world.apply_scenario_event(
+            "set_danger_zone",
+            {"position": physical_position, "active": True},
+        )
+        substrate = runtime.stage3.substrate
+        substrate.open_step()
+        result = substrate.execute(Command("attendre"))
+        self.assertEqual(result.status, "applied")
+        raw_transitions = [
+            entry.causal_event
+            for entry in runtime.journal.entries
+            if entry.causal_event.get("kind") == "world_transition_experienced"
+        ]
+        self.assertEqual(len(raw_transitions), 1)
+        self.assertGreater(raw_transitions[0]["effects"]["danger_zone_damage"], 0)
+        lived = substrate.views.autobiographical(policies={
+            STAGE2_AUTOBIOGRAPHICAL_POLICY.version:
+                STAGE2_AUTOBIOGRAPHICAL_POLICY,
+        })
+        observed_transitions = [
+            event for event in lived
+            if event["kind"] == "world_transition_experienced"
+        ]
+        self.assertEqual(len(observed_transitions), 1)
+        self.assertEqual(
+            observed_transitions[0]["body_after"],
+            raw_transitions[0]["body_after"],
+        )
+        self.assertNotIn("danger_zone_damage", repr(lived))
+        self.assertNotIn("lethal_zone", repr(lived))
+        self.assertTrue(runtime.journal.verify())
+
     def test_lived_physics_effects_do_not_reveal_hidden_cause(self):
         from lab.stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY
         journal = HashChainedJournal()
