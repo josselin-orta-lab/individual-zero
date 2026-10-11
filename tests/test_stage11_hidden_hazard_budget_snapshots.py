@@ -6,7 +6,7 @@ only by the test harness; the individual receives ordinary local Perception.
 from copy import deepcopy
 from unittest import TestCase
 
-from lab.injected_scenario import ScenarioEvent
+from lab.injected_scenario import ScenarioEvent, ScenarioInputRejected
 from lab.snapshots import SnapshotType
 from lab.stage11_routed_junction_probe import build_public_route_runtime
 
@@ -68,6 +68,89 @@ def run_three(*, planning_uc, exploration_uc, dangerous):
 
 
 class Stage11HiddenDangerStrictUCTests(TestCase):
+    def test_world_rejects_lossy_zone_activity_and_coordinates_atomically(self):
+        runtime = build(
+            planning_uc=4, exploration_uc=4, dangerous=False,
+        )
+        world = runtime.world
+        baseline = deepcopy(world.export_causal_state())
+        for operation in ("set_danger_zone", "set_lethal_zone"):
+            for invalid_active in ("false", "true", 0, 1, None, []):
+                with self.subTest(
+                    operation=operation, active=invalid_active,
+                ), self.assertRaisesRegex(
+                    ValueError, "scenario zone active must be a boolean",
+                ):
+                    world.apply_scenario_event(operation, {
+                        "position": dict(DANGER_POS),
+                        "active": invalid_active,
+                    })
+                self.assertEqual(world.export_causal_state(), baseline)
+
+            # Explicit Boolean false must actually remove the real zone.
+            world.apply_scenario_event(operation, {
+                "position": dict(DANGER_POS), "active": True,
+            })
+            name = (
+                "danger_zones" if operation == "set_danger_zone"
+                else "lethal_zones"
+            )
+            self.assertEqual(
+                world.export_causal_state()[name], [DANGER_POS],
+            )
+            world.apply_scenario_event(operation, {
+                "position": dict(DANGER_POS), "active": False,
+            })
+            self.assertEqual(world.export_causal_state(), baseline)
+
+        invalid_positions = (
+            {"x": 3.7, "y": 2},
+            {"x": "3", "y": 2},
+            {"x": True, "y": 2},
+            {"x": 3, "y": 2, "extra": "not_a_coordinate"},
+            {"x": 3},
+            None,
+        )
+        for operation in (
+            "set_danger_zone", "set_lethal_zone",
+            "place_creature", "remove_creature",
+        ):
+            for position in invalid_positions:
+                with self.subTest(
+                    operation=operation, position=position,
+                ), self.assertRaisesRegex(
+                    ValueError, "exact integer x,y position",
+                ):
+                    world.apply_scenario_event(
+                        operation, {"position": position},
+                    )
+                self.assertEqual(world.export_causal_state(), baseline)
+
+    def test_untruthful_hazard_active_text_is_rejected_at_runtime(self):
+        runtime = build_public_route_runtime(
+            scenario_events=(ScenarioEvent(
+                t_monde=1, sequence=0, operation="set_danger_zone",
+                payload={
+                    "position": dict(DANGER_POS),
+                    "active": "false",  # previously coerced to True
+                },
+            ),),
+        )
+        original = deepcopy(runtime.world.export_causal_state())
+        with self.assertRaises(ScenarioInputRejected):
+            runtime.run_step()
+        self.assertEqual(runtime.world.export_causal_state(), original)
+        self.assertIsNone(runtime.scheduler.active_attempt)
+        self.assertTrue(runtime.stage3.substrate.scenario.halted)
+        self.assertFalse(entries(runtime, "external_input_applied"))
+        self.assertFalse(entries(runtime, "perceptual_capture"))
+        rejected = entries(runtime, "external_input_rejected")
+        self.assertEqual(len(rejected), 1)
+        received = entries(runtime, "external_input_received")
+        self.assertEqual(received[0]["payload"]["active"], "false")
+        self.assertTrue(rejected[0]["world_recovered"])
+        self.assertTrue(runtime.journal.verify())
+
     def test_external_hidden_danger_does_not_enter_decision_before_observation(self):
         for planning_uc, exploration_uc in BUDGETS:
             with self.subTest(
