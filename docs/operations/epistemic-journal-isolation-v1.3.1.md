@@ -14,6 +14,22 @@ Stage-7 cognitive event types. Explicit Oracle/Bench evidence is rejected
 even if buried inside an otherwise accepted source value. This prevents the
 technical journal from silently becoming a semantic memory as schemas grow.
 
+Custom policies cannot authorize arbitrary technical event kinds or
+extra fields: there is a global, reviewed kind/field permission ceiling for
+the Stage-2/7 first-person surface. A versioned policy can only narrow it.
+The laboratory-only `external_input_received`, postmortem, snapshot, Oracle
+and evaluation events therefore remain technical, even if a caller asks for
+their payloads.
+
+The physical `world_transition_experienced.effects` journal event is still
+complete. Its *cognitive projection* retains experienced action outcomes
+such as `ate`, `drank`, `movement`, `collected`, `rest`, crafting and
+placement. It drops scenario-driven failure internals and physics-origin
+cause attribution (`scenario_failure_attempt`,
+`scenario_forced_failure`, `danger_zone_damage`,
+`creature_damage`). The latter report hidden simulation causes, not
+necessarily evidence that an individual could perceive them.
+
 The independent journal auditor rejects external Oracle/Bench provenance,
 including nested fields, and checks that candidate Stage-7 projection data
 conforms to the same accepted semantic shape. It does **not** treat legitimate
@@ -34,6 +50,16 @@ This is module-level data-flow isolation in an in-process Python runtime,
 inside the interpreter. Fully adversarial plugins or runtime introspection
 need separate address spaces, restricted process permissions and a future
 migration decision; they cannot be made safe merely by renaming properties.
+
+**Stage 9 epistemic follow-up:** its preexisting toxic-food evidence code
+consults `creature_damage` and `danger_zone_damage` in a lived transition
+when available to rule out competing harm. Those simulator-attributed
+causes are no longer handed to cognition. Their *absence* is not evidence
+that no alternative harm occurred. Treat Stage 9 causal claims as
+**NO-GO/unproven** pending an operator-reviewed redesign using genuinely
+perceived competing-cause evidence or conservative uncertainty, never an
+Oracle-informed cognitive shortcut. This security hardening is not a
+scientific reclassification or proof of causal attribution.
 
 No modification here deletes the technical journal, alters world physics,
 changes the Stage-10 post-cut owner receipt stream, makes an Oracle mandatory,
