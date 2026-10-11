@@ -57,6 +57,9 @@ class PublicChangedRouteResult:
     observed_positions: tuple[tuple[int, int], ...]
     confirmed_visit_sites: tuple[tuple[int, int], ...]
     actions: tuple[tuple[str, str | None, str | None], ...]
+    action_sources: tuple[str, ...]
+    applied_reflex_steps: tuple[int, ...]
+    applied_reflex_moves_into_active_creature: int
     external_input_steps: tuple[int, ...]
     external_input_operations: tuple[str, ...]
     external_inputs_applied: int
@@ -154,6 +157,21 @@ def run_public_changed_route(
         and ":via:3:2:" in result.option_ref
         for step, result in enumerate(results, start=1)
     )
+    # A reflex bypasses geographic option selection and must be reported
+    # separately from the no-route-into-creature property. Lab scores the
+    # already-journaled physical transition, never feeds its truth to the agent.
+    reflex_steps = tuple(
+        step for step, result in enumerate(results, start=1)
+        if result.source == "reflex"
+        and result.execution_status == "applied"
+    )
+    occupied_reflex_entries = sum(
+        step in blocked_step_numbers
+        and step in reflex_steps
+        and result.command_primitive == "se_deplacer"
+        and physical[step-1]["position_after"] == {"x": 3, "y": 2}
+        for step, result in enumerate(results, start=1)
+    )
     after_end = (
         observed[observed.index((4, 2)) + 1:]
         if (4, 2) in observed else ()
@@ -178,6 +196,9 @@ def run_public_changed_route(
             result.execution_status, result.command_primitive,
             result.option_ref,
         ) for result in results),
+        action_sources=tuple(result.source for result in results),
+        applied_reflex_steps=reflex_steps,
+        applied_reflex_moves_into_active_creature=occupied_reflex_entries,
         external_input_steps=tuple(e["t_monde"] for e in received),
         external_input_operations=tuple(e["operation"] for e in received),
         external_inputs_applied=len(applied),
