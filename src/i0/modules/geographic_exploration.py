@@ -343,8 +343,6 @@ class GeographicExploration:
                     survey.position not in visited
                     or survey.position in restored_surveys
                     or last is None or survey.world_step > last[0]
-                    or (survey.position == last[1:]
-                        and survey.world_step != last[0])
                 ):
                     raise ValueError("unowned or future snapshot survey")
                 restored_surveys[survey.position] = survey
