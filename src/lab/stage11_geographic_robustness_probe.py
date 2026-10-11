@@ -17,7 +17,7 @@ from .stage11_reference_fixture import build_stage11_reference_runtime
 from .stage11_runtime import Stage11Runtime
 from .world import Position
 
-PROTOCOL = "stage11-public-frontier-layout-robustness-dev-v2"
+PROTOCOL = "stage11-public-frontier-layout-robustness-dev-v3"
 VARIANTS = (
     "north_obstacle", "east_corridor", "visible_creature_north",
     "known_lethal_north",
@@ -37,6 +37,8 @@ class PublicLayoutCoverage:
     proposed_frontiers: int
     proposed_directions: tuple[str, ...]
     blocked_frontier_rejections: int
+    prefiltered_inadmissible_frontiers: int
+    prefilter_event_steps: tuple[int, ...]
     known_lethal_visits: int
     creature_occupied_visits: int
     actually_observed_sites: tuple[tuple[int, int], ...]
@@ -132,6 +134,22 @@ def run_public_layout_coverage(
         row["data"] for row in records
         if row.get("kind") == "stage11_geographic_planning_unavailable"
     ]
+    prefiltered = [
+        row for row in records
+        if row.get("kind") == "stage11_geographic_admissibility_prefiltered"
+    ]
+    if any(
+        row["data"].get("source") != "action_control.verifier_admissibilite"
+        or row["data"].get("admissibility") != "inadmissible"
+        or row["data"].get("cached") is not False
+        or row["data"].get("global_safety_claim") is not False
+        or row["data"].get("count") != len(row["data"].get("excluded", ()))
+        or not row["data"].get("excluded")
+        for row in prefiltered
+    ):
+        raise AssertionError("inadmissible frontier optimization without authoritative provenance")
+    if len({row["t_monde"] for row in prefiltered}) != len(prefiltered):
+        raise AssertionError("multiple prefilter records for one physically captured step")
     excluded_lethal = {(p.x, p.y) for p in layout.lethal_zones}
     excluded_creature = {(p.x, p.y) for p in layout.creatures}
     applied = [
@@ -150,6 +168,12 @@ def run_public_layout_coverage(
         proposed_frontiers=len(proposed),
         proposed_directions=tuple(row["direction"] for row in proposed),
         blocked_frontier_rejections=len(rejected),
+        prefiltered_inadmissible_frontiers=sum(
+            row["data"]["count"] for row in prefiltered
+        ),
+        prefilter_event_steps=tuple(
+            row["t_monde"] for row in prefiltered
+        ),
         known_lethal_visits=len(set(witnessed) & excluded_lethal),
         creature_occupied_visits=len(set(witnessed) & excluded_creature),
         actually_observed_sites=witnessed,
