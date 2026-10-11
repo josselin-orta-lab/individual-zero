@@ -236,14 +236,21 @@ class GeographicRuntimeTests(TestCase):
         for _ in range(4):
             owner.run_step()
         proposed = [
-            entry.causal_event["data"]["direction"]
+            entry.causal_event["data"]
             for entry in owner.journal.entries
             if entry.causal_event.get("kind")
             == "stage11_geographic_option_proposed"
         ]
         self.assertTrue(proposed)
-        self.assertEqual(proposed[0], "east")
-        self.assertNotIn("north", proposed)
+        self.assertEqual(proposed[0]["direction"], "east")
+        # A later northward step from a different position can be safe.
+        # Forbid the known lethal PHYSICAL CELL, not a global direction.
+        self.assertFalse(any(
+            tuple(row["destination"]) == (2, 1)
+            for row in proposed
+        ))
+        visits = owner.exploration.geographic.export_causal_state()["visits"]
+        self.assertNotIn((2, 1), {tuple(row[:2]) for row in visits})
         self.assertTrue(owner.journal.verify())
 
     def test_disabled_by_default_preserves_stage9_and_stage11_schema(self):
