@@ -72,18 +72,23 @@ class Stage11IntrinsicGainIsolationTests(TestCase):
                     )
                     self.assertTrue(manager.verify(captured_snapshot.id))
             events = [entry.causal_event for entry in runner.journal.entries]
-            intrinsic_rows = [
+            all_intrinsic_rows = [
                 event["data"]
                 for event in events
                 if event.get("kind") == "stage11_intrinsic_evaluation"
-                and event["data"]["option_ref"].startswith("option:geographic:")
             ]
-            # INV-14: an informational observation cannot be paid twice
-            # into one option by reusing the same signal identifier.
-            for row in intrinsic_rows:
-                self.assertEqual(
-                    len(row["signal_ids"]), len(set(row["signal_ids"])),
-                )
+            # INV-14 applies to every genuinely evaluated informational
+            # option, not only geographical targets. Preserve the complete
+            # logged signal multiset and fail when any identifier repeats.
+            self.assertTrue(all_intrinsic_rows)
+            for row in all_intrinsic_rows:
+                with self.subTest(axis=axis, option=row["option_ref"]):
+                    ids = row["signal_ids"]
+                    self.assertEqual(len(ids), len(set(ids)))
+            intrinsic_rows = [
+                row for row in all_intrinsic_rows
+                if row["option_ref"].startswith("option:geographic:")
+            ]
             intrinsic = [row["intrinsic_value"] for row in intrinsic_rows]
             visits = [
                 (
