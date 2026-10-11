@@ -37,9 +37,28 @@ def model():
     ))
 
 
-def physical_meal(m, *, step=1, option="option:meal"):
+def physical_meal(m, *, step=2, option="option:meal"):
     before = state(x=2)
-    suffix = "" if step == 1 else f":{step}"
+    suffix = "" if step == 2 else f":{step}"
+    # Only an independently applied, closed, uneventful wait immediately
+    # before the meal permits the harmful food observation to become evidence.
+    m.record_applied_ambient_integrity_control(
+        t_monde=step-1, option_ref=f"option:wait:{step}",
+        position=(2, 2), integrity_before=100.0,
+    )
+    m.observe_followup_capture(t_monde=step, integrity=100.0)
+    wait_events = (
+        {"event_id":f"cmd:wait:{step}", "kind":"command_experienced",
+         "t_monde":step-1, "primitive":"attendre", "parameters":{}},
+        {"event_id":f"world:wait:{step}", "kind":"world_transition_experienced",
+         "t_monde":step-1, "position_after":{"x":2,"y":2},
+         "body_after":{"integrity":100.0}, "effects":{"rest":"attendre"}},
+    )
+    assert m.ingest_closed_autobiographical_episode(
+        episode_ref=f"episode:wait:{step}",
+        event_refs=(f"cmd:wait:{step}",f"world:wait:{step}"),
+        autobiographical_events=wait_events,
+    ) == ()
     command_ref = "cmd:meal" + suffix
     transition_ref = "world:meal" + suffix
     m.record_applied_food_exposure(
@@ -100,7 +119,7 @@ def hypothesis(m):
         application_context="global",
         observation_context="food_consumption",
         episode_ref="episode:second",
-        observation_ref="world:second", observed_step=3,
+        observation_ref="world:second", observed_step=4,
         cause_present=True, effect_present=True,
         controlled_variables=(("primitive", "manger"),),
     ))
@@ -110,7 +129,7 @@ def hypothesis(m):
         application_context="global",
         observation_context="food_consumption",
         episode_ref="episode:control",
-        observation_ref="world:control", observed_step=4,
+        observation_ref="world:control", observed_step=5,
         cause_present=False, effect_present=False,
         controlled_variables=(("primitive", "manger"),),
     ))
@@ -181,7 +200,7 @@ class CanonicalCorrectionTests(unittest.TestCase):
         m.publish_causal_inference()
         self.assertEqual(m.established_prediction_corrections(), ())
         hypothesis(m)
-        agency_report(m, "meal", step=1, option="option:meal",
+        agency_report(m, "meal", step=2, option="option:meal",
                       observed=90.0, predicted=100.0, conforms=False)
         self.assertEqual(
             [x.after for x in intervention(m, "first", step=5,
@@ -329,7 +348,7 @@ class CanonicalCorrectionTests(unittest.TestCase):
         m.publish_causal_inference()
         hypothesis(m)
         agency_report(
-            m, "meal", step=1, option="option:meal",
+            m, "meal", step=2, option="option:meal",
             observed=90.0, predicted=100.0, conforms=False,
         )
         intervention(m, "first", step=5, context="zone1")
@@ -406,9 +425,9 @@ class CanonicalCorrectionTests(unittest.TestCase):
 
     def test_numeric_witness_needs_exact_published_comparator_value_and_identity(self):
         for option, step, observed in (
-            ("option:meal", 1, 89.0),  # different bodily observation
-            ("option:unrelated", 1, 90.0),  # different executed option
-            ("option:meal", 2, 90.0),  # different world-step lineage
+            ("option:meal", 2, 89.0),  # different bodily observation
+            ("option:unrelated", 2, 90.0),  # different executed option
+            ("option:meal", 1, 90.0),  # different world-step lineage
         ):
             with self.subTest(option=option, step=step, observed=observed):
                 m = model()
