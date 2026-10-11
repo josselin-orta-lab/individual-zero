@@ -19,7 +19,7 @@ from lab.stage12_runtime import Stage12Runtime
 from lab.world import Command
 
 
-def stage12_runtime(path):
+def stage12_runtime(path, *, detector_cost=1):
     stage11 = build_stage11_reference_runtime(autonomous_mortal=True)
     stage10 = build_stage10_reference_runtime(autonomous_mortal=True)
     sleep = replace(
@@ -45,7 +45,7 @@ def stage12_runtime(path):
         equipment=stage11.equipment,
         wal_path=path,
         autonomous_mortal=True,
-        diagnostic_sample_cost_uc=1,
+        diagnostic_sample_cost_uc=detector_cost,
         detector_policy=Stage12DetectionPolicy(
             version="stage12-mortal-live-dev-v1",
             window=12, stagnation_steps=3, stagnation_tolerance=0.05,
@@ -106,6 +106,46 @@ class Stage12RuntimeMortalTests(unittest.TestCase):
             )
             self.assertEqual(offline.world_steps_closed, runtime.scheduler.t_monde)
             self.assertEqual(offline.terminal_deaths, 0)
+
+    def test_stage12_budget_is_additive_to_stage10_sleep_allowance(self):
+        # The Stage11 parent config has not yet installed Stage10 sleep UC.
+        # Check both independent allowances survive cooperative construction,
+        # instead of a missing key, silent overwrite or a second Meta owner.
+        for detector_cost in (1, 3):
+            with self.subTest(detector_cost=detector_cost), TemporaryDirectory() as directory:
+                runtime = stage12_runtime(
+                    str(Path(directory) / "additive-stage12-wal.jsonl"),
+                    detector_cost=detector_cost,
+                )
+                before_sleep = (
+                    runtime._stage11_config.with_budget()
+                    .stage8.stage7.stage6.stage4.compute_budget
+                )
+                actual = runtime.compute_budget._config
+                sleep_uc = runtime._stage10_config.sleep_option_uc
+                expected_meta_uc = max(
+                    before_sleep.module_envelopes.get("metacognition_health", 0),
+                    sleep_uc,
+                ) + detector_cost
+                self.assertEqual(
+                    actual.module_envelopes["metacognition_health"], expected_meta_uc,
+                )
+                self.assertEqual(
+                    actual.cycle_ceiling,
+                    before_sleep.cycle_ceiling + sleep_uc + 1 + detector_cost,
+                )
+                self.assertEqual(
+                    actual.operation_costs["sleep_option_prepare"], sleep_uc,
+                )
+                self.assertEqual(
+                    actual.operation_costs["stage12_diagnostic_sample"], detector_cost,
+                )
+                self.assertEqual(
+                    [owner.owner_id for owner in runtime.causal_owners].count(
+                        "metacognition_health"
+                    ), 1,
+                )
+                self.assertTrue(runtime.journal.durable_wal_enabled)
 
     def test_budget_refusal_creates_no_synthetic_metacognitive_observation(self):
         with TemporaryDirectory() as directory:
