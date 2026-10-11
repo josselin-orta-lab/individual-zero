@@ -49,6 +49,12 @@ def configured_runtime():
         original,
         sleep=replace(
             original.sleep,
+            # Force genuine waking autobiographical episodes before the
+            # explicitly injected fatigue stress. This is a versioned software
+            # integration fixture, not a normative sleep calibration.
+            fatigue_gain=0.0,
+            night_weight=0.0,
+            consolidation_weight=0.0,
             max_consecutive_sleep_steps=18,
             natural_wake_threshold=0.000001,
         ),
@@ -77,12 +83,18 @@ class LiveConsolidationRuntimeTests(unittest.TestCase):
         initial_h = runtime.slow_history.current_version
 
         # Every episode must originate in an applied physical waking life.
-        for _ in range(8):
+        waking_trace = []
+        for _ in range(12):
             if runtime.memory.episodes:
                 break
             result = runtime.run_step()
+            waking_trace.append((result.source, result.command_primitive))
             self.assertEqual(result.execution_status, "applied")
-        self.assertTrue(runtime.memory.episodes, "no lived episode available for consolidation")
+        self.assertTrue(
+            runtime.memory.episodes,
+            f"no lived episode after waking trace {waking_trace}; "
+            f"auto commits={sum(e.causal_event['kind'] == 'auto_segment_commit' for e in runtime.journal.entries)}",
+        )
 
         # Physical sleep must first win Competition and Action Control.
         state = runtime.sleep_health.export_causal_state()
