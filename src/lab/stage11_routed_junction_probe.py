@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass, replace
 import json
 
 from .determinism import canonical_causal_bytes, sha256_hex
+from .injected_scenario import ScenarioEvent
 from .stage11_geographic_probe import START_BODY, _positions
 from .stage11_junction_probe import (
     ALLOWED_OPEN, ALLOWED_SEALED, BASE, run_public_junction,
@@ -74,9 +75,13 @@ class PublicRoutedJunctionResult:
 def build_public_route_runtime(
     *, layout_variant: str = "junction_open",
     planning_uc: int | None = None,
+    scenario_events: tuple[ScenarioEvent, ...] = (),
 ) -> Stage11Runtime:
     if layout_variant not in ("junction_open", "junction_sealed"):
         raise ValueError("unregistered public junction layout")
+    if (not isinstance(scenario_events, tuple)
+        or any(not isinstance(event, ScenarioEvent) for event in scenario_events)):
+        raise ValueError("route fixture needs a tuple of logged scenario events")
     if planning_uc is not None and (
         type(planning_uc) is not int or planning_uc not in range(5)
     ):
@@ -132,6 +137,12 @@ def build_public_route_runtime(
             reference.stage3.control._config.protected_integrity_threshold
         ),
         config=cfg, equipment=reference.equipment,
+        scenario_id=(
+            "stage11-observed-route-world-change"
+            if scenario_events else None
+        ),
+        scenario_version=("public-v1" if scenario_events else None),
+        scenario_events=scenario_events,
     )
 
 
