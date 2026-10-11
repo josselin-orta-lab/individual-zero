@@ -70,7 +70,9 @@ class GeographicUCAblation:
         )
 
 
-def _run_condition(*, ref, shared, config, condition, steps):
+def _run_condition(
+    *, ref, shared, config, condition, steps, report_skip_events=False,
+):
     runtime = Stage11Runtime(config=config, **shared)
     results = [runtime.run_step() for _ in range(steps)]
     if not runtime.journal.verify():
@@ -129,7 +131,7 @@ def _run_condition(*, ref, shared, config, condition, steps):
         and r.option_ref is not None
         and r.option_ref.startswith("option:geographic:")
     ]
-    return UCCondition(
+    result = UCCondition(
         condition=condition, config_version=config.version,
         preflight_enabled=config.geographic_preflight,
         accepted_uc_total=total,
@@ -168,6 +170,29 @@ def _run_condition(*, ref, shared, config, condition, steps):
         creature_occupied_visits=len(set(visits) & occupied),
         journal_sha256=runtime.journal.head_hash,
     )
+    if report_skip_events:
+        skips = [
+            row for row in events
+            if row.get("kind") == "stage11_geographic_preflight_skipped"
+        ]
+        if any(
+            row["data"].get("reason")
+            != "no_currently_novel_accessible_frontier"
+            or row["data"].get("source")
+            != "perception_and_physical_visit_ledger"
+            or row["data"].get("safety_decision") is not None
+            or row["data"].get("cached") is not False
+            or row["data"].get("preflight_uc_avoided_against_eager") != 1
+            for row in skips
+        ):
+            raise AssertionError("unsupported frontier-gate skip provenance")
+        if skips and (
+            not config.geographic_preflight
+            or not config.geographic_preflight_requires_frontier
+        ):
+            raise AssertionError("skip markers occurred with gate disabled")
+        return result, len(skips)
+    return result
 
 
 def run_public_geographic_total_uc(
@@ -197,6 +222,9 @@ def run_public_geographic_total_uc(
         replace(
             original, geographic=geographical,
             geographic_preflight=enabled,
+            # Freeze historical eager behavior: UC report v1 must not
+            # silently switch to the new v4 demand-driven preflight.
+            geographic_preflight_requires_frontier=False,
             version=original.version + (
                 "+geo-preflight-dev-v1" if enabled
                 else "+geo-legacy-no-preflight-dev-v1"
