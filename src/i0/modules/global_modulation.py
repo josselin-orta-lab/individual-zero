@@ -96,6 +96,23 @@ class GlobalModulation:
             for element in st.competitive
             if element.preempted
         ]
+        # EN §6.4 names a *retained risk alert* as the threat-profile
+        # trigger, not solely a Gatekeeper security-preempted slot.
+        # The Stage-11 physical creature alert is produced by Perception
+        # and must itself have survived ordinary Gatekeeper retention.
+        # Its declared local sensor risk, not generic uncalibrated κ=0.5,
+        # determines the precautionary profile. κ continues independently
+        # to weight retention/scoring; this does not create safety evidence.
+        risk.extend(
+            min(1.0, element.decomposition.get("risk", 0.0))
+            for element in st.competitive
+            if (
+                element.contribution_ref.startswith(
+                    "stage11:local-creature-alert:"
+                )
+                and element.summary == "adjacent creature physically observed"
+            )
+        )
         if risk:
             threat = max(risk)
         elif signals.get("threat_clear") is True:
