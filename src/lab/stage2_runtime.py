@@ -127,6 +127,16 @@ class ScriptedStage2Runtime:
         self._mortal_boundary = MortalWorldBoundary(world=self.world)
         self.snapshots.forbid_life_restoration()
 
+    def protocol_mask_for_control(self, command: Command) -> bool:
+        """Legacy rollback masks have no authority over mortal cognition.
+
+        Actual learned vetoes and reflex safety checks stay in ActionControl.
+        This adapter does not reveal hidden hazards or oracle knowledge.
+        """
+        if self._mortal_boundary is not None:
+            return False
+        return self.safety.is_masked(command)
+
     @property
     def mortal_status(self) -> MortalStatus | None:
         return (
@@ -302,9 +312,6 @@ class ScriptedStage2Runtime:
         attempt = self.scheduler.active_attempt
         if attempt is None:
             raise RuntimeError("open_step must be called before command send")
-        if self.safety.blocked:
-            raise RuntimeError("branch is in safety block")
-
         if self._mortal_boundary is not None:
             return self._send_mortal_command(
                 command,
@@ -313,6 +320,9 @@ class ScriptedStage2Runtime:
                 autobiographical_policy=autobiographical_policy,
                 extra_autobiographical_event_refs=extra_autobiographical_event_refs,
             )
+
+        if self.safety.blocked:
+            raise RuntimeError("branch is in safety block")
 
         if self.safety.is_masked(command):
             self.journal.append(
