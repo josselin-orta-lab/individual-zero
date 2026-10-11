@@ -302,11 +302,12 @@ class InjectedScenario:
                     },
                 )
 
-            # WorldBody.restore_causal_state validates all fields before its
-            # first assignment. Here it publishes a NEW prepared state only;
-            # it never rewinds an already committed physical transition.
+            # Forward commit accepts only the already checked operation batch.
+            # No arbitrary historical state can be imported into mortal I0.
             publication_attempted = True
-            world.restore_causal_state(proposed_state)
+            world.apply_scenario_batch_atomically(tuple(
+                (event.operation, event.payload) for event in due
+            ))
             published = True
             self._next_index = start + len(due)
             for event in due:
