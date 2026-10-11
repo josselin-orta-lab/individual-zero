@@ -124,6 +124,41 @@ class Stage12OperatorConsole:
         # becomes permanently frozen. Stop cannot append cognitive events.
         self._substrate._mortal_boundary.stop_experiment()
 
+    def _verified_nonphysical_gaps(self) -> tuple[int, ...]:
+        """Attest every closed zero-advance attempt since the last WorldBody call.
+
+        This reads technical custody ONLY on the external operator side.
+        I0's Memory, perception, and decision system do not receive it.
+        """
+        sub = self._substrate
+        boundary = sub._mortal_boundary
+        if not sub.journal.verify():
+            raise RuntimeError("cannot resolve block from an unverified causal journal")
+        first = boundary.last_world_step + 1
+        final = sub.scheduler.t_monde
+        if first > final:
+            raise RuntimeError("no stopped physical attempt to reconcile")
+        entries = sub.journal.entries
+        for t in range(first, final + 1):
+            rows = [
+                entry.causal_event
+                for entry in entries
+                if entry.causal_event.get("t_monde") == t
+            ]
+            opens = [row for row in rows if row.get("kind") == "step_opened"]
+            closes = [row for row in rows if row.get("kind") == "step_closed"]
+            if (len(opens) != 1 or len(closes) != 1
+                    or opens[0].get("attempt_ref") != closes[0].get("attempt_ref")
+                    or closes[0].get("data", {}).get("outcome") != "blocked"
+                    or closes[0].get("data", {}).get("applied_command_count") != 0
+                    or closes[0].get("data", {}).get("world_advance_count") != 0
+                    or any(row.get("kind") in {
+                        "command_experienced", "world_transition_experienced",
+                        "auto_segment_commit", "individual_death_confirmed",
+                    } for row in rows)):
+                raise RuntimeError("diagnostic resume lacks verified zero-advance closure")
+        return tuple(range(first, final + 1))
+
     def resoudre_blocage(self, *, decision: str, decision_ref: str) -> None:
         """Diagnostic only: release a technical block, not a physical death."""
         self._require_live_boundary()
@@ -136,10 +171,17 @@ class Stage12OperatorConsole:
             return
         if decision != "resume":
             raise ValueError("diagnostic decision must be resume or stop")
+        if not self._substrate.safety.blocked:
+            raise RuntimeError("there is no active diagnostic block")
+        gaps = self._verified_nonphysical_gaps()
         try:
             self._substrate.safety.resolve_diagnostic_block(
                 decision_ref=decision_ref, policy_version=self._policy_version,
             )
+            for step in gaps:
+                self._substrate._mortal_boundary.acknowledge_nonphysical_step(
+                    t_monde=step,
+                )
         except Exception:
             self._substrate._mortal_boundary.halt(
                 failed_step=self._substrate.scheduler.t_monde,
