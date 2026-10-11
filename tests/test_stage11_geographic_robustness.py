@@ -35,7 +35,18 @@ class PublicGeographicRobustnessTests(TestCase):
                 if variant in ("north_obstacle", "known_lethal_north"):
                     self.assertNotEqual(row.proposed_directions[:1], ("north",))
                 if variant == "known_lethal_north":
-                    self.assertGreater(row.blocked_frontier_rejections, 0)
+                    # v2 tried the same known forbidden frontier 21 times
+                    # in 6 world steps, spending Planning UC before the veto.
+                    # v3 must filter it through Action Control *before* UC.
+                    self.assertEqual(row.blocked_frontier_rejections, 0)
+                    self.assertGreater(
+                        row.prefiltered_inadmissible_frontiers, 0,
+                    )
+                    self.assertTrue(row.prefilter_event_steps)
+                else:
+                    self.assertEqual(
+                        row.prefiltered_inadmissible_frontiers, 0,
+                    )
                 print("stage11_public_geographic_layout=" + row.to_json())
 
     def test_known_creature_layout_reexecutes_identically(self):
