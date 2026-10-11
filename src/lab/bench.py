@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping, TYPE_CHECKING
 
-from .journal_views import EvaluationTrace
+from .evaluation_trace import EvaluationTrace
 if TYPE_CHECKING:
     from .oracle import Oracle, OracleCapability
 
