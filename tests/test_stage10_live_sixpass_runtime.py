@@ -50,7 +50,7 @@ def configured_runtime():
         sleep=replace(
             original.sleep,
             max_consecutive_sleep_steps=18,
-            natural_wake_threshold=0.0,
+            natural_wake_threshold=0.000001,
         ),
         sleep_work=budget, selection_policy=selection,
         semantic_policy=semantic, p_cons_min=0.0,
