@@ -11,11 +11,13 @@ from .stage11_runtime import Stage11Config, Stage11Runtime
 def build_stage11_reference_runtime(
     *, enable_lived_prediction: bool = False,
     enable_geography: bool = False,
+    enable_local_threats: bool = False,
 ):
     # Both new mechanisms require explicit development-only opt-in.
     if (
         type(enable_lived_prediction) is not bool
         or type(enable_geography) is not bool
+        or type(enable_local_threats) is not bool
     ):
         raise ValueError("development option flags must be boolean")
     baseline = build_stage9_reference_runtime()
@@ -64,6 +66,7 @@ def build_stage11_reference_runtime(
                     max_targets_per_cycle=1,
                 ) if enable_geography else None
             ),
+            local_threat_alerts=enable_local_threats,
             prospective_water=(
                 LivedPredictionConfig(
                     version="p47-prior-lived-observation-dev-v1",
