@@ -17,7 +17,7 @@ from .stage11_reference_fixture import build_stage11_reference_runtime
 from .stage11_runtime import Stage11Runtime
 from .world import Position
 
-PROTOCOL = "stage11-public-frontier-layout-robustness-dev-v3"
+PROTOCOL = "stage11-public-frontier-layout-robustness-dev-v4"
 VARIANTS = (
     "north_obstacle", "east_corridor", "visible_creature_north",
     "known_lethal_north",
