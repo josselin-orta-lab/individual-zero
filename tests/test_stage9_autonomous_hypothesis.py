@@ -22,21 +22,47 @@ def model() -> CausalModel:
 
 
 def lived_meal(m: CausalModel, *, t: int, food: str, after: float) -> None:
-    m.record_applied_food_exposure(
-        t_monde=t, resource_kind=food, option_ref=f"option:{t}",
-        motive_ref="goal:food", integrity_before=100.0,
+    actual_step = t + 1
+    # A genuine no-food same-site control, rather than a hidden WorldBody
+    # damage label, is now prerequisite for harmful food causal observations.
+    m.record_applied_ambient_integrity_control(
+        t_monde=t, option_ref=f"option:wait:{t}",
+        position=(2, 2), integrity_before=100.0,
     )
-    m.observe_followup_capture(t_monde=t + 1, integrity=after)
+    m.observe_followup_capture(t_monde=actual_step, integrity=100.0)
+    control = (
+        {"event_id": f"wait-command:{t}", "kind": "command_experienced",
+         "t_monde": t, "primitive": "attendre", "parameters": {}},
+        {"event_id": f"wait-transition:{t}",
+         "kind": "world_transition_experienced", "t_monde": t,
+         "position_after": {"x": 2, "y": 2},
+         "body_after": {"integrity": 100.0},
+         "effects": {"rest": "attendre"}},
+    )
+    assert m.ingest_closed_autobiographical_episode(
+        episode_ref=f"episode:wait:{t}",
+        event_refs=tuple(row["event_id"] for row in control),
+        autobiographical_events=control,
+    ) == ()
+    m.record_applied_food_exposure(
+        t_monde=actual_step, resource_kind=food, option_ref=f"option:{t}",
+        motive_ref="goal:food", integrity_before=100.0,
+        position_before=(2, 2),
+        body_before={"energy":50.0, "food":60.0,
+                     "water":50.0, "integrity":100.0},
+    )
+    m.observe_followup_capture(t_monde=actual_step + 1, integrity=after)
     events = (
         {
             "event_id": f"command:{t}", "kind": "command_experienced",
-            "t_monde": t, "primitive": "manger",
+            "t_monde": actual_step, "primitive": "manger",
             "parameters": {"target": food},
         },
         {
             "event_id": f"transition:{t}",
             "kind": "world_transition_experienced",
-            "t_monde": t,
+            "t_monde": actual_step,
+            "position_after": {"x": 2, "y": 2},
             "body_after": {"integrity": after},
             "effects": {"ate": food},
         },

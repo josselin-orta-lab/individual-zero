@@ -250,6 +250,60 @@ class LivedFoodExposure:
 
 
 @dataclass(frozen=True, slots=True)
+class LivedAmbientIntegrityControl:
+    """Observed no-food wait, not an Oracle declaration of environmental safety.
+
+    A control is eligible only after its actual command and transition appear
+    in a closed DC-09 memory episode, followed by matching Perception
+    telemetry. A clean wait at the same position on the immediately
+    preceding world step is *limited* evidence against a persistent ambient
+    injury. It cannot prove a time-varying hazard absent.
+    """
+
+    t_monde: int
+    option_ref: str
+    position: tuple[int, int]
+    integrity_before: float
+    observed_step: int | None = None
+    integrity_observed: float | None = None
+    episode_ref: str | None = None
+    command_ref: str | None = None
+    transition_ref: str | None = None
+
+    def validate(self) -> None:
+        if (
+            type(self.t_monde) is not int or self.t_monde < 1
+            or not isinstance(self.option_ref, str) or not self.option_ref
+            or not isinstance(self.position, (tuple, list))
+            or len(self.position) != 2
+            or any(type(v) is not int for v in self.position)
+            or type(self.integrity_before) not in (int, float)
+            or not isfinite(self.integrity_before)
+            or not 0 <= self.integrity_before <= 100
+        ):
+            raise ValueError("invalid lived ambient control context")
+        if (self.observed_step is None) != (self.integrity_observed is None):
+            raise ValueError("incomplete ambient control observation")
+        if self.observed_step is not None and (
+            type(self.observed_step) is not int
+            or self.observed_step != self.t_monde + 1
+            or type(self.integrity_observed) not in (int, float)
+            or not isfinite(self.integrity_observed)
+            or not 0 <= self.integrity_observed <= 100
+        ):
+            raise ValueError("ambient control must have next-step Perception telemetry")
+        refs = (self.episode_ref, self.command_ref, self.transition_ref)
+        if any(ref is not None for ref in refs):
+            if (
+                any(not isinstance(ref, str) or not ref for ref in refs)
+                or self.command_ref == self.transition_ref
+                or self.observed_step is None
+                or self.integrity_observed != self.integrity_before
+            ):
+                raise ValueError("ambient control lacks independently lived proof")
+
+
+@dataclass(frozen=True, slots=True)
 class LivedHydrationExposure:
     """Passive, independently selected water action; no hypothesis needed.
 
@@ -406,6 +460,7 @@ class CausalModel:
         self._credited_observations: set[tuple[str, str]] = set()
         self._version = 0
         self._lived_food_exposures: dict[int, LivedFoodExposure] = {}
+        self._lived_ambient_integrity_controls: dict[int, LivedAmbientIntegrityControl] = {}
         self._lived_hydration_exposures: dict[int, LivedHydrationExposure] = {}
         # Exact DC-09 physical command/transition references, not oracle facts.
         self._hydration_observation_witnesses: dict[str, tuple[str, str]] = {}
@@ -1052,6 +1107,20 @@ class CausalModel:
             del self._lived_causal_actions[identifier]
         return tuple(trials)
 
+    def record_applied_ambient_integrity_control(
+        self, *, t_monde: int, option_ref: str,
+        position: tuple[int, int], integrity_before: float,
+    ) -> None:
+        """Observe an already applied ordinary wait, never request an action."""
+        control = LivedAmbientIntegrityControl(
+            t_monde=t_monde, option_ref=option_ref,
+            position=position, integrity_before=float(integrity_before),
+        )
+        control.validate()
+        if t_monde in self._lived_ambient_integrity_controls:
+            raise ValueError("duplicate ambient control on world step")
+        self._lived_ambient_integrity_controls[t_monde] = control
+
     def record_applied_food_exposure(
         self, *, t_monde: int, resource_kind: str,
         option_ref: str, motive_ref: str, integrity_before: float,
@@ -1087,13 +1156,29 @@ class CausalModel:
         if t_monde < 1 or not isfinite(integrity) or not 0 <= integrity <= 100:
             raise ValueError("invalid physical capture")
         item = self._lived_food_exposures.get(t_monde - 1)
-        if item is None or item.observed_step is not None:
-            return
-        updated = replace(
-            item, observed_step=t_monde, integrity_observed=float(integrity),
-        )
-        updated.validate()
-        self._lived_food_exposures[item.t_monde] = updated
+        if item is not None and item.observed_step is None:
+            updated = replace(
+                item, observed_step=t_monde, integrity_observed=float(integrity),
+            )
+            updated.validate()
+            self._lived_food_exposures[item.t_monde] = updated
+        control = self._lived_ambient_integrity_controls.get(t_monde - 1)
+        if control is not None and control.observed_step is None:
+            updated_control = replace(
+                control, observed_step=t_monde, integrity_observed=float(integrity),
+            )
+            updated_control.validate()
+            self._lived_ambient_integrity_controls[control.t_monde] = updated_control
+        # No need to retain old controls forever. Preserve any wait whose
+        # immediately following meal still awaits an actual DC-09 closure;
+        # everything else is ineligible to control a later food exposure.
+        expired = [
+            step for step in self._lived_ambient_integrity_controls
+            if step + 2 < t_monde
+            and step + 1 not in self._lived_food_exposures
+        ]
+        for step in expired:
+            del self._lived_ambient_integrity_controls[step]
 
     def ingest_closed_autobiographical_episode(
         self, *, episode_ref: str, event_refs: Sequence[str],
@@ -1162,6 +1247,49 @@ class CausalModel:
                     continue
                 transitions[t] = event
 
+        # Verify independently executed non-ingestion controls using ONLY the
+        # same closed first-person command/transition pairs as food exposures.
+        # A forged or missing half-pair is retired, never silently credited.
+        staged_controls = dict(self._lived_ambient_integrity_controls)
+        for control_step, control in sorted(staged_controls.items()):
+            if control.episode_ref is not None or control.observed_step is None:
+                continue
+            if control_step in ambiguous_steps:
+                del staged_controls[control_step]
+                continue
+            command = commands.get(control_step)
+            physical = transitions.get(control_step)
+            if command is None and physical is None:
+                continue
+            position = physical.get("position_after") if physical is not None else None
+            body = physical.get("body_after") if physical is not None else None
+            effects = physical.get("effects") if physical is not None else None
+            command_ref = command.get("event_id") if command is not None else None
+            transition_ref = physical.get("event_id") if physical is not None else None
+            if (
+                command is None or physical is None
+                or command.get("primitive") != "attendre"
+                or command.get("parameters") != {}
+                or not isinstance(position, Mapping)
+                or (position.get("x"), position.get("y")) != control.position
+                or not isinstance(body, Mapping)
+                or body.get("integrity") != control.integrity_observed
+                or not isinstance(effects, Mapping)
+                or effects.get("rest") != "attendre"
+                or control.integrity_observed != control.integrity_before
+                or not isinstance(command_ref, str) or not command_ref
+                or not isinstance(transition_ref, str) or not transition_ref
+                or command_ref == transition_ref
+            ):
+                del staged_controls[control_step]
+                continue
+            verified = replace(
+                control, episode_ref=episode_ref,
+                command_ref=command_ref, transition_ref=transition_ref,
+            )
+            verified.validate()
+            staged_controls[control_step] = verified
+
         candidate: list[SafetyEvidence] = []
         causal_observations: list[CausalObservation] = []
         numeric_witnesses: list[LivedNumericOutcome] = []
@@ -1192,14 +1320,32 @@ class CausalModel:
                 # Scenario changed telemetry, or the following capture is
                 # missing; neither should masquerade as an observed consequence.
                 continue
-            # The allowed autobiographical effects may reveal other physical
-            # harm (creature/danger zone). When present, independent attribution
-            # to food is impossible and the candidate is withheld.
+            # Historic technical effects once exposed WorldBody's hidden
+            # damage source. Under MVP 1.3.1 those causes are correctly
+            # absent from autobiography, and ABSENCE is not proof of safety.
+            # A potentially harmful food outcome needs a verified clean
+            # non-ingestion wait at this same site on the preceding step.
+            # With no matched lived control it remains a personal experience
+            # in Memory, but supplies no DC-05 credit, numeric correction or
+            # causal hypothesis witness.
             if any(
                 isinstance(effects.get(key), (int, float))
                 and effects[key] > 0
                 for key in ("creature_damage", "danger_zone_damage")
             ):
+                # Legacy unredacted records are never promoted either.
+                continue
+            harm_observed = after < exposure.integrity_before
+            baseline = staged_controls.get(t - 1)
+            matched_control = bool(
+                baseline is not None
+                and baseline.episode_ref is not None
+                and baseline.observed_step == t
+                and exposure.position_before is not None
+                and baseline.position == exposure.position_before
+                and baseline.integrity_observed == exposure.integrity_before
+            )
+            if harm_observed and not matched_control:
                 continue
             event = transition
             candidate.append(SafetyEvidence(
@@ -1309,6 +1455,9 @@ class CausalModel:
                 )
             ):
                 raise ValueError("duplicated closed physical numeric outcome")
+        # Publish verified control state only AFTER the entire incoming
+        # episode has passed its existing atomic evidence preflight.
+        self._lived_ambient_integrity_controls = staged_controls
         for item in candidate:
             self.integrate(item)
         for item in causal_observations:
@@ -2123,7 +2272,7 @@ class CausalModel:
         return tuple(changes)
 
     def export_causal_state(self) -> object:
-        return {
+        state = {
             "config_version": self.config.version,
             "config_contract": {
                 "n1": self.config.n1, "n2": self.config.n2,
@@ -2215,6 +2364,18 @@ class CausalModel:
                 for trial_ref, v in sorted(self._causal_action_witnesses.items())
             ],
         }
+        # Exact backward compatibility: historic no-control snapshots and
+        # their hash-chained Stage-11 journal digests must not gain an empty
+        # field purely because this optional safeguard now exists.
+        if self._lived_ambient_integrity_controls:
+            state["lived_ambient_integrity_controls"] = [
+                {
+                    **{name: getattr(v, name) for name in v.__dataclass_fields__},
+                    "position": list(v.position),
+                }
+                for _, v in sorted(self._lived_ambient_integrity_controls.items())
+            ]
+        return state
 
     @staticmethod
     def _safety_ledger_sha256(rows: Sequence[SafetyEvidence]) -> str:
@@ -2428,6 +2589,27 @@ class CausalModel:
                 raise ValueError("duplicate pending lived exposure")
             exposures[exposure.t_monde] = exposure
         self._lived_food_exposures = exposures
+        controls: dict[int, LivedAmbientIntegrityControl] = {}
+        used_control_sources: set[str] = set()
+        for raw in state.get("lived_ambient_integrity_controls", []):
+            if not isinstance(raw, Mapping):
+                raise ValueError("invalid ambient-control snapshot row")
+            item = LivedAmbientIntegrityControl(**{
+                **raw, "position": tuple(raw["position"]),
+            })
+            item.validate()
+            if (
+                item.t_monde in controls
+                or (item.command_ref is not None
+                    and (item.command_ref in used_control_sources
+                         or item.transition_ref in used_control_sources))
+            ):
+                raise ValueError("duplicate lived ambient-control provenance")
+            controls[item.t_monde] = item
+            if item.command_ref is not None:
+                used_control_sources.add(item.command_ref)
+                used_control_sources.add(item.transition_ref)
+        self._lived_ambient_integrity_controls = controls
         hydration = {}
         for raw in state.get("lived_hydration_exposures", []):
             if not isinstance(raw, Mapping):
