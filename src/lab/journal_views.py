@@ -40,6 +40,9 @@ class AutobiographicalPolicy:
         return isinstance(kind, str) and kind in self.allowed_fields_by_kind
 
     def project(self, event: JournalEntry) -> dict[str, object]:
+        # Also protect direct policy.project callers, not only the
+        # JournalViews commit/read entrypoints which validate policies.
+        self.validate()
         kind = event.causal_event.get("kind")
         if not isinstance(kind, str) or kind not in self.allowed_fields_by_kind:
             raise ValueError("event kind is not autobiographically allowed")
