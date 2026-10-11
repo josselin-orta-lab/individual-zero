@@ -485,6 +485,25 @@ class Stage11Runtime(Stage9Runtime):
             new_geo_visit = self.exploration.observe_geographic_capture(
                 capture, frozen_targets=(),
             )
+            geo = self.exploration.geographic
+            if geo is not None and geo.config.observe_routes:
+                # After the real Exploration observation charge only. This
+                # captures local passability; it does not grant a new target
+                # or let Phase-1 Planning read same-phase observations.
+                if geo.record_survey(capture):
+                    self._write(
+                        kind="stage11_route_survey_recorded", cycle=cycle,
+                        data={
+                            "source": "paid_phase1_exploration_perception",
+                            "world_step": capture.t_monde,
+                            "position": [capture.x, capture.y],
+                            "known_neighbor_count": len(next(
+                                survey.free_neighbors for survey in geo.surveys
+                                if survey.position == (capture.x, capture.y)
+                            )),
+                            "hidden_safety_claim": False,
+                        },
+                    )
             if new_geo_visit:
                 self._write(
                     kind="stage11_geographic_visit_observed", cycle=cycle,
