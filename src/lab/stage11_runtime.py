@@ -224,6 +224,41 @@ class Stage11Runtime(Stage9Runtime):
         geo = self.exploration.geographic
         if geo is None:
             return
+        # An externally imposed WorldBody arrival can exceed the bounded
+        # *information ledger*. The world is authoritative; do not roll its
+        # physical position back, credit a fabricated visit or block reflexes.
+        # Preserve GeographicExploration.observe_capture's atomic rejection
+        # contract for direct owner callers.
+        over_capacity = (
+            (capture.x, capture.y) not in {
+                tuple(site[:2])
+                for site in geo.export_causal_state()["visits"]
+            }
+            and geo.distinct_sites >= geo.config.max_distinct_sites
+        )
+        self._stage11_unregistered_physical_step = (
+            capture.t_monde if over_capacity else None
+        )
+        if over_capacity:
+            geo.freeze_targets(())
+            geo.freeze_transits(())
+            self._write(
+                kind="stage11_geographic_physical_capture_unregistered",
+                cycle=1,
+                data={
+                    "world_step": capture.t_monde,
+                    "physical_position": [capture.x, capture.y],
+                    "source": "actual_perception_capture",
+                    "reason": "geographic_visit_register_capacity_exhausted",
+                    "registered_distinct_sites": geo.distinct_sites,
+                    "max_distinct_sites": geo.config.max_distinct_sites,
+                    "new_registered_visit": False,
+                    "autonomous_movement_claim": False,
+                    "safety_decision": None,
+                    "scientific_verdict": None,
+                },
+            )
+            return
         observed = self.exploration.observe_geographic_capture(capture)
         if observed:
             self._write(
