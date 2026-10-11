@@ -592,91 +592,153 @@ class WorldBody:
         return truth
 
     def restore_causal_state(self, state: object) -> None:
+        """Restore one complete, validated physical state atomically.
+
+        A malformed late field must not leave the world at a mixed causal
+        instant. The caller's snapshot is never mutated or retained.
+        """
         if not isinstance(state, Mapping):
             raise ValueError("world/body state must be a mapping")
+        if state.get("physics_version") != self._config.version:
+            raise ValueError("world physics version mismatch")
 
-        position = state.get("position")
-        body = state.get("body")
-        inventory = state.get("inventory")
-        resources = state.get("resources")
-        if not isinstance(position, Mapping) or not isinstance(body, Mapping):
-            raise ValueError("world/body snapshot is missing position/body")
-        if not isinstance(inventory, Mapping) or not isinstance(resources, list):
-            raise ValueError("world/body snapshot is missing inventory/resources")
+        def read_position(raw: object, label: str) -> Position:
+            if (
+                not isinstance(raw, Mapping)
+                or set(raw) != {"x", "y"}
+                or type(raw["x"]) is not int
+                or type(raw["y"]) is not int
+            ):
+                raise ValueError(f"invalid {label} position")
+            result = Position(raw["x"], raw["y"])
+            self._config._validate_interior(result)
+            return result
 
-        self._position = Position(int(position["x"]), int(position["y"]))
-        restored_body = BodyState(
-            energy=float(body["energy"]),
-            food=float(body["food"]),
-            water=float(body["water"]),
-            integrity=float(body["integrity"]),
-        )
+        position = read_position(state.get("position"), "world")
+        raw_body = state.get("body")
+        body_fields = ("energy", "food", "water", "integrity")
+        if (
+            not isinstance(raw_body, Mapping)
+            or set(raw_body) != set(body_fields)
+            or any(type(raw_body[name]) not in (int, float)
+                   for name in body_fields)
+        ):
+            raise ValueError("invalid world/body snapshot body")
+        restored_body = BodyState(**{
+            name: float(raw_body[name]) for name in body_fields
+        })
         restored_body.validate()
-        self._body = restored_body
-        self._inventory = {str(k): int(v) for k, v in inventory.items()}
-        self._resources = {}
-        for row in resources:
-            if not isinstance(row, Mapping):
+
+        raw_inventory = state.get("inventory")
+        if (
+            not isinstance(raw_inventory, Mapping)
+            or set(raw_inventory) != RESOURCE_KINDS | {"tool"}
+            or any(type(quantity) is not int or quantity < 0
+                   for quantity in raw_inventory.values())
+        ):
+            raise ValueError("invalid world inventory snapshot")
+        inventory = dict(raw_inventory)
+
+        raw_resources = state.get("resources")
+        if not isinstance(raw_resources, list):
+            raise ValueError("world/body snapshot is missing resources")
+        resources: dict[tuple[Position, str], int] = {}
+        for row in raw_resources:
+            if not isinstance(row, Mapping) or set(row) != {
+                "position", "kind", "quantity"
+            }:
                 raise ValueError("malformed resource row")
-            raw_position = row["position"]
-            if not isinstance(raw_position, Mapping):
-                raise ValueError("malformed resource position")
-            p = Position(int(raw_position["x"]), int(raw_position["y"]))
-            self._resources[(p, str(row["kind"]))] = int(row["quantity"])
+            location = read_position(row["position"], "resource")
+            kind, quantity = row["kind"], row["quantity"]
+            if (
+                type(kind) is not str or kind not in RESOURCE_KINDS
+                or type(quantity) is not int or quantity < 0
+                or (location, kind) in resources
+            ):
+                raise ValueError("invalid or duplicate snapshot resource")
+            resources[(location, kind)] = quantity
 
         def positions(name: str) -> set[Position]:
             raw = state.get(name)
             if not isinstance(raw, list):
                 raise ValueError(f"missing {name} state")
-            result = set()
+            result: set[Position] = set()
             for row in raw:
-                if not isinstance(row, Mapping):
-                    raise ValueError(f"malformed {name} row")
-                result.add(Position(int(row["x"]), int(row["y"])))
+                location = read_position(row, name)
+                if location in result:
+                    raise ValueError(f"duplicate {name} position")
+                result.add(location)
             return result
 
-        self._obstacles = positions("obstacles")
-        self._water_sources = positions("water_sources")
-        self._creatures = positions("creatures")
-        self._danger_zones = positions("danger_zones")
-        self._lethal_zones = positions("lethal_zones")
-        self._shelters = positions("shelters")
+        obstacles = positions("obstacles")
+        water_sources = positions("water_sources")
+        creatures = positions("creatures")
+        danger_zones = positions("danger_zones")
+        lethal_zones = positions("lethal_zones")
+        shelters = positions("shelters")
+        if position in obstacles:
+            raise ValueError("world/body snapshot position is obstructed")
 
         raw_stones = state.get("placed_stones")
         if not isinstance(raw_stones, list):
             raise ValueError("missing placed stone state")
-        self._placed_stones = {}
+        placed_stones: dict[Position, int] = {}
         for row in raw_stones:
-            if not isinstance(row, Mapping):
+            if not isinstance(row, Mapping) or set(row) != {
+                "position", "count"
+            }:
                 raise ValueError("malformed placed stone state")
-            raw_position = row["position"]
-            if not isinstance(raw_position, Mapping):
-                raise ValueError("malformed placed stone position")
-            p = Position(int(raw_position["x"]), int(raw_position["y"]))
-            self._placed_stones[p] = int(row["count"])
+            location = read_position(row["position"], "placed stone")
+            count = row["count"]
+            if (
+                type(count) is not int or count < 1
+                or location in placed_stones
+            ):
+                raise ValueError("invalid or duplicate placed stone count")
+            placed_stones[location] = count
 
         raw_failures = state.get("scenario_action_failures", [])
         if not isinstance(raw_failures, list):
             raise ValueError("malformed scenario action-failure state")
-        self._action_failure_schedules = {}
-        self._action_failure_indices = {}
+        failure_schedules: dict[str, tuple[bool, ...]] = {}
+        failure_indices: dict[str, int] = {}
         for row in raw_failures:
-            if not isinstance(row, Mapping):
+            if not isinstance(row, Mapping) or set(row) != {
+                "primitive", "schedule", "next_index"
+            }:
                 raise ValueError("malformed scenario action-failure row")
-            primitive = str(row.get("primitive"))
-            raw_schedule = row.get("schedule")
-            if primitive not in PRIMITIVE_ACTIONS or not isinstance(raw_schedule, list):
+            primitive = row["primitive"]
+            schedule = row["schedule"]
+            next_index = row["next_index"]
+            if (
+                type(primitive) is not str
+                or primitive not in PRIMITIVE_ACTIONS
+                or primitive in failure_schedules
+                or not isinstance(schedule, list) or not schedule
+                or any(type(value) is not bool for value in schedule)
+                or type(next_index) is not int
+                or not 0 <= next_index <= len(schedule)
+            ):
                 raise ValueError("invalid scenario action-failure program")
-            if any(type(value) is not bool for value in raw_schedule):
-                raise ValueError("action-failure schedule values must be booleans")
-            next_index = int(row.get("next_index", 0))
-            if not 0 <= next_index <= len(raw_schedule):
-                raise ValueError("action-failure schedule index out of bounds")
-            self._action_failure_schedules[primitive] = tuple(raw_schedule)
-            self._action_failure_indices[primitive] = next_index
+            failure_schedules[primitive] = tuple(schedule)
+            failure_indices[primitive] = next_index
 
-        if state.get("physics_version") != self._config.version:
-            raise ValueError("world physics version mismatch")
+        # No validation or coercion occurs after the first assignment.
+        # Owner snapshots, journal hashes and replay data remain unchanged
+        # for states that WorldBody can actually export.
+        self._position = position
+        self._body = restored_body
+        self._inventory = inventory
+        self._resources = resources
+        self._obstacles = obstacles
+        self._water_sources = water_sources
+        self._creatures = creatures
+        self._danger_zones = danger_zones
+        self._lethal_zones = lethal_zones
+        self._shelters = shelters
+        self._placed_stones = placed_stones
+        self._action_failure_schedules = failure_schedules
+        self._action_failure_indices = failure_indices
 
     @staticmethod
     def _clamp(value: float) -> float:
