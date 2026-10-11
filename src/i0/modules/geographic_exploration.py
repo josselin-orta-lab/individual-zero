@@ -382,6 +382,13 @@ class GeographicExploration:
                 or (raw_last[1], raw_last[2]) not in visited):
                 raise ValueError("invalid last geographic capture")
             last = tuple(raw_last)
+        # Real owner exports always pair an observed visit ledger with its
+        # latest physical Perception capture. A nonempty visit history with
+        # no last capture is not an alternate empty state: accepting it
+        # silently breaks replay chronology, especially after a rollback.
+        # Reject before assigning any restored owner fields (atomic failure).
+        if (last is None) != (not visited):
+            raise ValueError("visit ledger and last physical capture disagree")
         offered = []
         for raw in state["offered"]:
             if not isinstance(raw, Mapping) or set(raw) != {
