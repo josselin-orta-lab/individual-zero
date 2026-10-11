@@ -111,12 +111,27 @@ class ScriptedStage2Runtime:
         return tuple(owners)
 
     def open_step(self) -> None:
+        # A rejected external input is a stopped branch, not an omitted
+        # event to be silently skipped in a later world step.
+        if self.scenario is not None and self.scenario.halted:
+            raise RuntimeError("cannot advance a rejected external scenario")
         attempt = self.scheduler.open_step()
         if self.scenario is not None:
-            self.scenario.apply_for_step(
-                t_monde=attempt.t_monde,
-                world=self.world,
-            )
+            try:
+                self.scenario.apply_for_step(
+                    t_monde=attempt.t_monde,
+                    world=self.world,
+                )
+            except Exception:
+                # Input reception/rejection and any compensating WorldBody
+                # rollback have already been technically journaled by the
+                # scenario. No perception, command or world transition ran.
+                self.scheduler.close_step(
+                    outcome="external_stop",
+                    applied_command_count=0,
+                    world_advance_count=0,
+                )
+                raise
 
     def _write_command_event(self, *, command: Command, emitter: str) -> str:
         attempt = self.scheduler.active_attempt
