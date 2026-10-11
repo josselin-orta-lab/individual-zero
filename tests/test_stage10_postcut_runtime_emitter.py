@@ -51,6 +51,17 @@ class RuntimePostCutPublicationTests(unittest.TestCase):
             .for_owner("value_needs")[0].payload["delta"],1.5,
         )
 
+    def test_long_td_segment_published_after_cut_keeps_older_decision_t(self):
+        self.journal.append(event_id="td:deferred",causal_event={
+            "emitter":"value_needs", "kind":"td_update_published",
+            "t_monde":2, "cycle":1,
+            "data":{"delta":0.25, "updated_signatures":["sleep","drink"]},
+        })
+        result=Stage10PostCutJournal(journal=self.journal).freeze(cut=self.cut)
+        self.assertEqual([r.event_id for r in result.for_owner("value_needs")],
+                         ["td:deferred"])
+        self.assertLess(result.updates[0].t_monde,result.cut.world_step)
+
     def test_malformed_real_precision_event_fails_closed(self):
         self.journal.append(event_id="bad", causal_event={
             "emitter":"perception", "kind":"perceptual_precision_update_published",

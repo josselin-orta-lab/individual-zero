@@ -118,8 +118,12 @@ class Stage10PostCutJournal:
             if owner is None:
                 continue
             t = record.get("t_monde")
-            if type(t) is not int or t < cut.world_step:
-                raise ValueError("postcut published owner event predates cut")
+            # Event occurrence is ordered by append-only journal index,
+            # not the semantic t_monde of the source decision. DC-15 can
+            # publish an update *after* the cut for a TD segment opened well
+            # before sleep. Reject invalid clocks, never that valid lag.
+            if type(t) is not int or t < 1:
+                raise ValueError("invalid published owner event source world-step")
             if kind == "perceptual_precision_update_published" and (
                 emitter == "perception" and "data" not in record
             ):

@@ -118,12 +118,17 @@ class Stage10PublicationCoordinator:
         self, *, journal: HashChainedJournal,
         history: SlowHistory, slot: ConsolidationSlot,
         owners: Mapping[str, CausalOwner],
+        additional_owners: tuple[str, ...] = (),
     ) -> None:
         if not isinstance(journal, HashChainedJournal):
             raise TypeError("technical journal must be real HashChainedJournal")
         if type(history) is not SlowHistory or not isinstance(slot, ConsolidationSlot):
             raise ValueError("canonical slow history and slot required")
-        if set(owners) != self.REQUIRED:
+        self.required = self.REQUIRED | frozenset(additional_owners)
+        if (len(set(additional_owners)) != len(additional_owners)
+                or self.REQUIRED.intersection(additional_owners)):
+            raise ValueError("duplicate or overridden canonical owner")
+        if set(owners) != self.required:
             raise ValueError("every active-form causal owner must be supplied")
         if (len({id(o) for o in owners.values()}) != len(owners)
                 or any(o.owner_id != key for key, o in owners.items())
@@ -146,7 +151,7 @@ class Stage10PublicationCoordinator:
         if (self.slot.current is not transaction
                 or transaction.status != "active"
                 or self.history.current_version != transaction.cut.history_version
-                or set(owner_rebasers) != self.REQUIRED):
+                or set(owner_rebasers) != self.required):
             raise ValueError("transaction, history source or owner rebasers mismatch")
         candidate = _copy_causal(transaction.validated_candidate(
             validator=technical_validator))
@@ -170,10 +175,17 @@ class Stage10PublicationCoordinator:
                 raise ValueError("owner preparer illegally mutated active state")
         if self.history.current_version != transaction.cut.history_version:
             raise ValueError("slow history changed during preparation")
+        # All owner forms become simultaneously visible as h_new. The
+        # completed six-pass candidate itself remains private, while these
+        # forms contain exact post-cut rebases computed by their sole owners.
+        final_candidate = deepcopy(candidate)
+        final_candidate["forms"] = deepcopy(prepared)
+        final_candidate["forms_postcut_journal_hash"] = slice_.end_hash
         previous_history = self.history.export_causal_state()
         version = "h:" + sha256_hex(canonical_causal_bytes({
             "source": transaction.cut.history_version,
             "id": transaction.id, "candidate": transaction.candidate_digest,
+            "rebased_candidate":sha256_hex(canonical_causal_bytes(final_candidate)),
             "postcut": slice_.digest,
         }))[:32]
         if version == self.history.current_version:
@@ -183,7 +195,7 @@ class Stage10PublicationCoordinator:
             source_version=transaction.cut.history_version,
             destination_version=version,
             candidate_digest=transaction.candidate_digest,
-            candidate_history=candidate,
+            candidate_history=final_candidate,
             batch_digest=transaction.batch_digest,
             postcut_slice=slice_,
             source_history_state=previous_history,

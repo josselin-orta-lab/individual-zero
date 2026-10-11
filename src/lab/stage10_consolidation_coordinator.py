@@ -8,6 +8,8 @@ private six-pass candidate remain invisible until the separate atomic commit.
 from __future__ import annotations
 
 from copy import deepcopy
+from typing import Mapping
+from .determinism import canonical_causal_bytes, sha256_hex
 from typing import Callable
 
 from i0.modules.consolidation_batch import (
@@ -104,6 +106,7 @@ class Stage10ConsolidationCoordinator:
     def start_if_eligible(
         self, *, world_step: int, consolidation_pressure: float,
         threshold: float, on_event: EventSink,
+        owner_form_snapshot: Mapping[str, object] | None = None,
     ) -> bool:
         if self.slot.current is not None:
             return False
@@ -139,13 +142,23 @@ class Stage10ConsolidationCoordinator:
             return False
         if not batch.episode_refs:
             return False
+        candidate = self.history.read_committed()
+        if owner_form_snapshot is not None:
+            required = {"value_needs","metacognition_health","perception","causal_model"}
+            if not isinstance(owner_form_snapshot, Mapping) or not required.issubset(owner_form_snapshot):
+                raise ValueError("cut-point forms require all canonical owner snapshots")
+            forms = deepcopy(dict(owner_form_snapshot))
+            canonical_causal_bytes(forms)
+            candidate["forms"] = forms
+            candidate["form_source"] = "owner_active_causal_cut"
+            candidate["form_cut_digest"] = sha256_hex(canonical_causal_bytes(forms))
         tx = ConsolidationTransaction(
             consolidation_id=deterministic_id(
                 "stage10-consolidation-v1",batch.digest,self.history.current_version,
             ),
             cut=cut, episode_refs=batch.episode_refs,
             episode_payloads=batch.episode_payloads_copy(),
-            history_candidate=self.history.read_committed(),
+            history_candidate=candidate,
         )
         self.slot.begin(tx)
         self._construct()
@@ -261,6 +274,13 @@ class Stage10ConsolidationCoordinator:
             "next_pass":None if tx.cursor==len(PASSES) else PASSES[tx.cursor],
         })
         return True
+
+    def committed(self) -> None:
+        """Release orphaned private engine state only after a real receipt."""
+        if self.slot.current is not None:
+            raise ValueError("cannot retire uncommitted private work")
+        self._runner = self._algorithm = self._builder = None
+        self._evidence_digest = None
 
     def export_causal_state(self):
         tx = self.slot.current
