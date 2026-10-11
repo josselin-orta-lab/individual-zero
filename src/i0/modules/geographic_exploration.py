@@ -9,6 +9,8 @@ from dataclasses import asdict, dataclass
 from math import isfinite
 from typing import Mapping
 
+from .observed_frontier_routing import ObservedSurvey
+
 DIRECTION_DELTAS = {"north": (0, -1), "east": (1, 0),
                     "south": (0, 1), "west": (-1, 0)}
 DIRECTION_ORDER = tuple(DIRECTION_DELTAS)
@@ -20,6 +22,7 @@ class GeographicExplorationConfig:
     novelty_weight: float
     max_distinct_sites: int
     max_targets_per_cycle: int
+    observe_routes: bool = False
 
     def validate(self) -> None:
         if not isinstance(self.version, str) or not self.version:
@@ -28,6 +31,8 @@ class GeographicExplorationConfig:
             or not isfinite(self.novelty_weight)
             or not 0 <= self.novelty_weight <= 1):
             raise ValueError("geographic P-48 interest must be bounded")
+        if type(self.observe_routes) is not bool:
+            raise ValueError("route survey flag must be boolean")
         if (type(self.max_distinct_sites) is not int or self.max_distinct_sites < 1
             or type(self.max_targets_per_cycle) is not int
             or not 1 <= self.max_targets_per_cycle <= 4):
@@ -68,6 +73,7 @@ class GeographicExploration:
         self._visits: dict[tuple[int, int], int] = {}
         self._last_capture: tuple[int, int, int] | None = None
         self._offered: tuple[GeographicTarget, ...] = ()
+        self._surveys: dict[tuple[int, int], ObservedSurvey] = {}
 
     @property
     def distinct_sites(self) -> int:
@@ -102,6 +108,49 @@ class GeographicExploration:
             raise ValueError("geographic visit register capacity exhausted")
         self._visits[(x, y)] = self._visits.get((x, y), 0) + 1
         self._last_capture = (t, x, y)
+        return True
+
+    @property
+    def surveys(self) -> tuple[ObservedSurvey, ...]:
+        return tuple(self._surveys[key] for key in sorted(self._surveys))
+
+    def record_survey(self, capture) -> bool:
+        """Only an accepted Exploration observation may store local topology.
+
+        The owner never consumes a world layout or a future observation.
+        A second cognitive cycle in the same world step is idempotent.
+        """
+        if not self.config.observe_routes:
+            return False
+        position = (capture.x, capture.y)
+        if position not in self._visits or self._last_capture != (
+            capture.t_monde, capture.x, capture.y,
+        ):
+            raise ValueError("survey requires actual current physical visit")
+        cells = tuple(capture.adjacent)
+        if (len(cells) != 4
+            or {cell.direction for cell in cells} != set(DIRECTION_DELTAS)):
+            raise ValueError("incomplete local survey is not route evidence")
+        for cell in cells:
+            dx, dy = DIRECTION_DELTAS[cell.direction]
+            if (cell.x, cell.y) != (capture.x + dx, capture.y + dy):
+                raise ValueError("survey neighbor coordinate mismatch")
+            if type(cell.passable) is not bool or type(cell.creature) is not bool:
+                raise ValueError("unknown passability is not a free neighbor")
+        record = ObservedSurvey(
+            position=position, world_step=capture.t_monde,
+            free_neighbors=tuple(sorted(
+                (c.x, c.y) for c in cells
+                if c.passable is True and c.creature is False
+            )),
+        )
+        record.validate()
+        old = self._surveys.get(position)
+        if old is not None:
+            return False
+        if len(self._surveys) >= self.config.max_distinct_sites:
+            raise ValueError("route survey capacity exceeded")
+        self._surveys[position] = record
         return True
 
     def cibles(
@@ -205,7 +254,9 @@ class GeographicExploration:
 
     def export_causal_state(self) -> dict[str, object]:
         return {
-            "schema": "geographic-exploration-v1",
+            "schema": ("geographic-exploration-v2-survey"
+                       if self.config.observe_routes
+                       else "geographic-exploration-v1"),
             "version": self.config.version,
             "visits": [
                 [x, y, count] for (x, y), count in sorted(self._visits.items())
@@ -215,11 +266,16 @@ class GeographicExploration:
                 else list(self._last_capture)
             ),
             "offered": [asdict(t) for t in self._offered],
+            **({"surveys": [asdict(x) for x in self.surveys]}
+               if self.config.observe_routes else {}),
         }
 
     def restore_causal_state(self, state: object) -> None:
         if (not isinstance(state, Mapping)
-            or state.get("schema") != "geographic-exploration-v1"
+            or state.get("schema") != (
+                "geographic-exploration-v2-survey"
+                if self.config.observe_routes else "geographic-exploration-v1"
+            )
             or state.get("version") != self.config.version
             or not isinstance(state.get("visits"), list)
             or not isinstance(state.get("offered"), list)):
@@ -265,6 +321,36 @@ class GeographicExploration:
             target.ref for target in offered
         }) != len(offered):
             raise ValueError("invalid offered target counts")
+        restored_surveys = {}
+        if self.config.observe_routes:
+            raw_surveys = state.get("surveys")
+            if not isinstance(raw_surveys, list) or len(raw_surveys) > len(visited):
+                raise ValueError("corrupt route-survey snapshot")
+            for row in raw_surveys:
+                if not isinstance(row, Mapping) or set(row) != {
+                    "position", "world_step", "free_neighbors",
+                }:
+                    raise ValueError("malformed snapshot survey")
+                survey = ObservedSurvey(
+                    position=tuple(row["position"]),
+                    world_step=row["world_step"],
+                    free_neighbors=tuple(
+                        tuple(p) for p in row["free_neighbors"]
+                    ),
+                )
+                survey.validate()
+                if (
+                    survey.position not in visited
+                    or survey.position in restored_surveys
+                    or last is None or survey.world_step > last[0]
+                    or (survey.position == last[1:]
+                        and survey.world_step != last[0])
+                ):
+                    raise ValueError("unowned or future snapshot survey")
+                restored_surveys[survey.position] = survey
+        elif "surveys" in state:
+            raise ValueError("legacy geographic snapshot cannot contain surveys")
         self._visits = visited
         self._last_capture = last
         self._offered = tuple(offered)
+        self._surveys = restored_surveys
