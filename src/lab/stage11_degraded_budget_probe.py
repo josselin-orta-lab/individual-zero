@@ -14,7 +14,7 @@ from .stage11_geographic_probe import START_BODY, _positions
 from .stage11_reference_fixture import build_stage11_reference_runtime
 from .stage11_runtime import Stage11Runtime
 
-PROTOCOL = "stage11-public-strict-geographic-budget-dev-v1"
+PROTOCOL = "stage11-public-strict-geographic-budget-dev-v2"
 VARIANTS = ("planning_0", "planning_1", "planning_3", "exploration_0")
 
 
@@ -30,6 +30,8 @@ class PublicStrictBudgetResult:
     budget_config_version: str
     accepted_preflight_uc: int
     rejected_preflight_attempts: int
+    charged_preflight_consultations: int
+    preflight_charge_order_violations: int
     accepted_build_uc: int
     rejected_build_attempts: int
     rejected_exploration_attempts: int
@@ -128,6 +130,43 @@ def run_public_strict_geographic_budget(
         row["data"] for row in events
         if row.get("kind") == "stage11_geographic_budget_deferred"
     ]
+    consulted = [
+        (index, row) for index, row in enumerate(events)
+        if row.get("kind") == "stage11_geographic_preflight_consulted"
+    ]
+    order_violations = 0
+    for index, entry in consulted:
+        data = entry["data"]
+        previous_charges = [
+            prior for prior in events[:index]
+            if prior.get("kind") == "compute_charge"
+            and prior.get("t_monde") == entry["t_monde"]
+            and prior.get("cycle") == entry.get("cycle")
+            and prior.get("data", {}).get("module") == "planning"
+            and prior.get("data", {}).get("operation")
+            == "geographic_admissibility_preflight"
+            and prior["data"].get("accepted") is True
+        ]
+        if (
+            len(previous_charges) != 1
+            or data.get("boundary") != "phase0_after_accepted_charge"
+            or data.get("charged_operation")
+            != "geographic_admissibility_preflight"
+            or data.get("charged_module") != "planning"
+            or data.get("charged_uc") != 1
+            or data.get("source") != "action_control.verifier_admissibilite"
+            or data.get("safety_policy_modified") is not False
+        ):
+            order_violations += 1
+    if len(consulted) != len(charged(
+        "geographic_admissibility_preflight", True,
+    )):
+        order_violations += 1
+    if order_violations:
+        raise AssertionError(
+            "early safety preflight was not charged before consultation"
+        )
+
     malformed = sum(
         row.get("reason") != "incomplete_budget"
         or row.get("source") != "compute_budget"
@@ -162,6 +201,8 @@ def run_public_strict_geographic_budget(
         rejected_preflight_attempts=len(charged(
             "geographic_admissibility_preflight", False,
         )),
+        charged_preflight_consultations=len(consulted),
+        preflight_charge_order_violations=order_violations,
         accepted_build_uc=sum(row["requested_uc"] for row in charged(
             "planning_build", True,
         )),
