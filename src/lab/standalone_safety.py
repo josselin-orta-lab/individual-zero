@@ -10,18 +10,18 @@ from typing import Mapping
 from .determinism import deterministic_id
 from .journal import HashChainedJournal
 from .scheduler import Scheduler
+from .safety_protocol import SafetyProtocolConfig
 
 
 class StandaloneSafetyOwner:
     owner_id = "scheduler.safety_protocol"
 
     def __init__(
-        self, *, config_version: str,
+        self, *, config: SafetyProtocolConfig,
         scheduler: Scheduler, journal: HashChainedJournal,
     ) -> None:
-        if not isinstance(config_version, str) or not config_version:
-            raise ValueError("standalone safety config_version is required")
-        self._config = type("_StandaloneConfig", (), {"version": config_version})()
+        config.validate()
+        self._config = config
         self._scheduler = scheduler
         self._journal = journal
         self._blocked = False

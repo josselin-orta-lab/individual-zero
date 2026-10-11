@@ -82,7 +82,7 @@ class ScriptedStage2Runtime:
             self.evaluation_trace = None
             self.bench = None
             self.safety = StandaloneSafetyOwner(
-                config_version=safety_config.version,
+                config=safety_config,
                 scheduler=self.scheduler, journal=self.journal,
             )
         else:
