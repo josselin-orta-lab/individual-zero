@@ -28,7 +28,9 @@ from i0.modules.sleep_session import SleepSession
 from i0.modules.stage10_causal_model import Stage10CausalModel
 from i0.modules.simulator import state_from_capture
 
-from .consolidation_publication import SlowHistory
+from .consolidation_publication import SlowHistory, Stage10PublicationCoordinator
+from .stage10_rebase_adapters import make_stage10_rebasers
+from .determinism import deterministic_id
 from .stage10_consolidation_coordinator import Stage10ConsolidationCoordinator
 from .stage4_runtime import Stage4StepResult
 from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY
@@ -201,6 +203,16 @@ class Stage10Runtime(Stage9Runtime):
                 STAGE7_AUTOBIOGRAPHICAL_POLICY.version:STAGE7_AUTOBIOGRAPHICAL_POLICY,
             },
         )
+        self.publication = Stage10PublicationCoordinator(
+            journal=self.journal, history=self.slow_history,
+            slot=self.consolidation,
+            owners={
+                "value_needs":self.value_needs,
+                "metacognition_health":self._meta_custody,
+                "perception":self.stage3.perception,
+                "causal_model":self.causal_model,
+            },
+        )
         self._preopened_waking_capture = None
         self._last_applied_decision = None
         self._last_sleep_proposal = None
@@ -367,6 +379,73 @@ class Stage10Runtime(Stage9Runtime):
             self._last_applied_decision = (admission,prepared,proposal)
         return execution
 
+    def _owner_form_snapshot(self):
+        return {
+            name:owner.export_causal_state()
+            for name,owner in sorted(self.publication.owners.items())
+        }
+
+    def _try_publish_completed_consolidation(self, *, world_step: int) -> bool:
+        """Publish once at the *post-physical-step* scheduler sync boundary.
+
+        This is after Action Control's completed sleep command. No other
+        component is called between private validation and atomic activation.
+        """
+        if not self.consolidation_driver.done:
+            return False
+        tx=self.consolidation.current
+        if tx is None:
+            raise RuntimeError("completed private consolidation disappeared")
+        price=self.consolidation_work.config.operation_costs
+        required={"rebase_prepare","publish_commit"}
+        if not required.issubset(price) or any(price[k]<1 for k in required):
+            raise ValueError("consolidation publication must have positive P-42 costs")
+        a=self.consolidation_work.charge(operation="rebase_prepare")
+        b=(self.consolidation_work.charge(operation="publish_commit")
+           if a.accepted else None)
+        # Journal the real P-42 debit before freezing the rebase journal suffix.
+        self.journal.append(
+            event_id=deterministic_id(
+                "stage10-commit-budget-v1",tx.id,world_step,len(self.journal.entries),
+            ),
+            causal_event={
+                "emitter":"scheduler","kind":"stage10_publication_work_charged",
+                "t_monde":world_step,
+                "data":{
+                    "consolidation_id":tx.id,
+                    "rebase_uc":a.requested_uc if a.accepted else 0,
+                    "commit_uc":b.requested_uc if b is not None and b.accepted else 0,
+                    "accepted":a.accepted and b is not None and b.accepted,
+                    "deferral_reason":(
+                        a.reason if not a.accepted
+                        else (b.reason if b is not None and not b.accepted else None)
+                    ),
+                },
+            },
+        )
+        if not a.accepted or b is None or not b.accepted:
+            return False
+        algo=self.consolidation_driver._algorithm
+        if algo is None:
+            raise ValueError("cannot publish without real validated six-pass algorithm")
+        rebasers=make_stage10_rebasers(
+            model=self.causal_model,transaction=tx,
+            journal=self.journal,views=self.stage3.substrate.views,
+            policies=self.consolidation_driver.projection_policies,
+        )
+        staged=self.publication.prepare(
+            transaction=tx,technical_validator=algo.validate,
+            owner_rebasers=rebasers,
+        )
+        receipt=self.publication.publish(
+            prepared=staged,transaction=tx,world_step=world_step,
+            scheduler_sync_authorized=True,
+        )
+        self.consolidation_driver.committed()
+        if self.slow_history.current_version != receipt.new_history_version:
+            raise RuntimeError("atomic publication failed to activate canonical h")
+        return True
+
     def _wake_score(self, reduced):
         cfg = self._stage10_config
         observed = []
@@ -527,6 +606,7 @@ class Stage10Runtime(Stage9Runtime):
                 consolidation_pressure=frozen.consolidation_pressure,
                 threshold=self._stage10_config.p_cons_min,
                 on_event=emit,
+                owner_form_snapshot=self._owner_form_snapshot(),
             )
         if self.consolidation.current is not None:
             self.consolidation_driver.run_slot(on_event=emit)
@@ -551,6 +631,7 @@ class Stage10Runtime(Stage9Runtime):
                 command_sent=True,world_advanced=True,
                 consolidation_interrupted=False,
             )
+            self._try_publish_completed_consolidation(world_step=t)
         return Stage4StepResult(
             source="sleep",execution_status=execution.status,
             command_primitive="dormir",option_ref=None,

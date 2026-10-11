@@ -7,7 +7,7 @@ from i0.modules.consolidation_replay_agenda import ReplayAgendaPolicy
 from .stage9_reference_fixture import build_stage9_reference_runtime
 from .stage10_runtime import Stage10Runtime, Stage10Config
 
-def build_stage10_reference_runtime(*, start_fatigued=False):
+def build_stage10_reference_runtime(*, start_fatigued=False, consolidation_life=False):
     base = build_stage9_reference_runtime()
     runtime = Stage10Runtime(
         world_config=base.world.config,
@@ -20,16 +20,16 @@ def build_stage10_reference_runtime(*, start_fatigued=False):
             stage9=base._stage9_config,
             sleep=SleepPressureConfig(
                 version="stage10-sleep-p39-p40-test-v1",
-                fatigue_gain=0.7,sleep_fatigue_recovery=0.3,
+                fatigue_gain=(0.0 if consolidation_life else 0.7),sleep_fatigue_recovery=0.3,
                 waking_recovery_profile_relief=0.0,
                 fatigue_weight=1.0,consolidation_weight=0.5,night_weight=0.3,
                 unconsolidated_episode_reference=2.0,memory_saturation_reference=1.0,
                 natural_wake_threshold=0.1,alert_wake_threshold=0.7,
-                max_consecutive_sleep_steps=2,
+                max_consecutive_sleep_steps=(24 if consolidation_life else 2),
             ),
             sleep_work=ConsolidationBudgetConfig(
                 version="stage10-work-p42-test-v1",
-                period_capacity_uc=30,step_slot_uc=8,
+                period_capacity_uc=(180 if consolidation_life else 30),step_slot_uc=8,
                 operation_costs={
                     "episode_scan":1,"episode_replay":1,"rule_extraction":1,
                     "skill_compilation":1,"kappa_recalibration":1,
@@ -38,6 +38,7 @@ def build_stage10_reference_runtime(*, start_fatigued=False):
                     "replay_agenda_scan":1,"replay_agenda_event":1,
                     "replay_agenda_compare":1,"replay_agenda_insert":1,
                     "replay_agenda_emit":1,
+                    "rebase_prepare":1,"publish_commit":1,
                 },
             ),
             batch_policy=BatchSelectionPolicy(

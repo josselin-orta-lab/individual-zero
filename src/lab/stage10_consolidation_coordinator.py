@@ -8,6 +8,7 @@ private six-pass candidate remain invisible until the separate atomic commit.
 from __future__ import annotations
 
 from copy import deepcopy
+from json import loads
 from typing import Mapping
 from .determinism import canonical_causal_bytes, sha256_hex
 from typing import Callable
@@ -147,8 +148,10 @@ class Stage10ConsolidationCoordinator:
             required = {"value_needs","metacognition_health","perception","causal_model"}
             if not isinstance(owner_form_snapshot, Mapping) or not required.issubset(owner_form_snapshot):
                 raise ValueError("cut-point forms require all canonical owner snapshots")
-            forms = deepcopy(dict(owner_form_snapshot))
-            canonical_causal_bytes(forms)
+            # Canonical owner snapshots may contain tuples (for example
+            # Causal Model witnesses); the frozen private transaction accepts
+            # exact JSON trees. Normalize without changing their information.
+            forms = loads(canonical_causal_bytes(dict(owner_form_snapshot)).decode("utf-8"))
             candidate["forms"] = forms
             candidate["form_source"] = "owner_active_causal_cut"
             candidate["form_cut_digest"] = sha256_hex(canonical_causal_bytes(forms))

@@ -9,6 +9,7 @@ restores the complete prior states before the Scheduler continues.
 from __future__ import annotations
 
 from copy import deepcopy
+from json import loads
 from dataclasses import dataclass
 from typing import Callable, Mapping, Protocol
 
@@ -179,7 +180,7 @@ class Stage10PublicationCoordinator:
         # completed six-pass candidate itself remains private, while these
         # forms contain exact post-cut rebases computed by their sole owners.
         final_candidate = deepcopy(candidate)
-        final_candidate["forms"] = deepcopy(prepared)
+        final_candidate["forms"] = loads(canonical_causal_bytes(prepared).decode("utf-8"))
         final_candidate["forms_postcut_journal_hash"] = slice_.end_hash
         previous_history = self.history.export_causal_state()
         version = "h:" + sha256_hex(canonical_causal_bytes({
