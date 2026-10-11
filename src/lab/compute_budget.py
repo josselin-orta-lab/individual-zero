@@ -8,7 +8,7 @@ Spec: 5.3, 16.2-16.3, 20.3 Stage 1, P-43, INV-21, INV-22.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Mapping
 
 
@@ -101,7 +101,15 @@ class CycleComputeBudget:
 
     def __init__(self, *, config: ComputeBudgetConfig) -> None:
         config.validate()
-        self._config = config
+        # A frozen configuration dataclass does not freeze caller-owned dicts.
+        # Copy both registered UC vocabularies before any owner state can be
+        # published, so later producer writes cannot change work prices.
+        # Keep normal private dicts for deepcopy/asdict compatibility.
+        self._config = replace(
+            config,
+            module_envelopes=dict(config.module_envelopes),
+            operation_costs=dict(config.operation_costs),
+        )
         self._cycle: int | None = None
         self._consumed_cycle = 0
         self._consumed_by_module: dict[str, int] = {}
