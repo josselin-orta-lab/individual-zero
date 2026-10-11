@@ -137,6 +137,10 @@ class Stage11PhysicalOverCapacityTests(TestCase):
             {"x": 0, "y": 2},  # impassable world border
             {"x": 3, "y": 3},  # known blocked cell in public junction
             {"x": 999, "y": 999},
+            {"x": 4.9, "y": 2},  # reject silent integer truncation
+            {"x": True, "y": 2},  # bool is not a grid coordinate
+            {"x": "4", "y": 2},  # reject numeric-looking string coercion
+            {"x": 4, "y": 2, "extra": 0},
             None,
         ):
             with self.subTest(position=position), self.assertRaises((ValueError, TypeError, KeyError)):
