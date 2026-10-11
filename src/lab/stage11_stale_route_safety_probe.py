@@ -13,7 +13,7 @@ from .injected_scenario import ScenarioEvent
 from .stage11_geographic_probe import _positions
 from .stage11_routed_junction_probe import build_public_route_runtime
 
-PROTOCOL = "stage11-public-stale-route-safety-dev-v1"
+PROTOCOL = "stage11-public-stale-route-safety-dev-v2"
 VARIANTS = (
     "unchanged_control", "creature_blocks_return",
     "creature_removed", "unknown_danger",
