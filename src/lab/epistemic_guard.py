@@ -163,6 +163,7 @@ def _project_selected(value: object, schema: object) -> object:
 
 def project_lived_field(*, kind: str, field: str, value: object) -> object:
     """Return detached cognitive data, stripping unapproved nested fields."""
+    validate_lived_field_name(field)
     if has_external_truth(value):
         raise ValueError("hidden oracle/bench facts cannot enter autobiography")
     if field == "data":
