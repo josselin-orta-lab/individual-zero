@@ -118,7 +118,7 @@ class HashChainedJournal:
             raise ValueError("offline WAL audit requires an absolute path")
         with open(path, "rb") as stream:
             contents = stream.read()
-        if contents and not contents.endswith(b"\\n"):
+        if contents and not contents.endswith(b"\n"):
             raise ValueError("unterminated durable journal record")
         replay = HashChainedJournal()
         for raw in contents.splitlines():
@@ -207,7 +207,7 @@ class HashChainedJournal:
         if self._wal_faulted:
             raise RuntimeError("durable journal has suffered an unrecoverable I/O error")
         if self._wal_fd is not None:
-            record = canonical_causal_bytes(entry.as_dict()) + b"\\n"
+            record = canonical_causal_bytes(entry.as_dict()) + b"\n"
             try:
                 sent = 0
                 while sent != len(record):
