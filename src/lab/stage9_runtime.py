@@ -456,7 +456,13 @@ class Stage9Runtime(Stage8Runtime):
             cycle=cycle, sent_t_monde=sent_t_monde,
         )
         if (
-            execution.status == "applied"
+            # Stage-10 and Stage-11 approved reference lives inherit this
+            # runtime, but must keep their exact causal-state and journal
+            # digests. Only the Stage-9 development instance opts into new
+            # ambient controls until a separately versioned later-stage
+            # migration is explicitly approved.
+            type(self) is Stage9Runtime
+            and execution.status == "applied"
             and captured is not None
             and prepared.command.primitive == "attendre"
         ):
