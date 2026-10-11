@@ -100,8 +100,10 @@ def find_observed_frontier_route(
             raise ValueError("untrusted survey object")
         survey.validate()
         if (survey.position not in visits or survey.position in observed
-            or survey.world_step >= current_world_step):
-            raise ValueError("survey must be prior physical capture of visited site")
+            or survey.world_step > current_world_step
+            or (survey.world_step == current_world_step
+                and survey.position != origin)):
+            raise ValueError("survey must be a captured, not future, visited site")
         observed[survey.position] = survey
     if origin not in observed:
         return None
