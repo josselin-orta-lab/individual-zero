@@ -14,6 +14,10 @@ The frozen `ScenarioEvent` dataclass currently contains a mutable `Mapping` payl
 4. No new cognitive channel, operator intervention, world oracle, internal action, reward or safety claim. Existing fully valid input schedules MUST yield unchanged canonical journals, commands and world states under normal execution.
 5. This covers ordinary supported JSON-like nested scenario payloads. Arbitrary hostile mutation of private Python internals or of a public JournalEntry itself is not included in this specific contract.
 
+## Admission-time canonical-input validation addendum (2026-10-11, preimplementation)
+
+Inputs that cannot be encoded in the normative canonical causal format cannot be safely written to the mandatory pre-application journal event. Validate the event schedule at `InjectedScenario` construction: each item is a `ScenarioEvent`, its `t_monde` is an exact positive integer, `sequence` an exact non-negative integer, `operation` a non-empty string, `payload` a mapping, and its complete detached `as_dict()` is accepted by `canonical_causal_bytes` (reject NaN/Infinity, sets, invalid map keys and unsupported causal types). Unknown but serializable operation names and semantically invalid world positions remain injectable for the **runtime** rejection protocol, which must log reception and rejection. Reject malformed/unserializable scenario programs before a world step or journal input is started; do not substitute a dropped event, coerce a bad timestamp or advance the scheduler. Add unit tests for malformed timestamps, Boolean sequence/timestamp, and unencodable payloads.
+
 ## Fixed public unit inputs
 
 - Schedule a `set_position` input at the public junction's world step 2 to `(4,2)`, with a nested caller-provided position dictionary. After constructing the runtime, mutate that caller dictionary to `(0,2)`; independently mutate the `events` in an exported causal-state copy to another position. The owner must keep its originally scheduled `(4,2)` and execute that world-only arrival on step 2. Hash-chain verification and source/reference hashes must remain stable.
