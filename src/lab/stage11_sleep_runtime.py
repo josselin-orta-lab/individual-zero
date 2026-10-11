@@ -1,0 +1,51 @@
+"""One autonomous mortal I0 with Stage-10 sleep and Stage-11 exploration.
+
+The historical Stage-10 and Stage-11 development fixtures stay unchanged.
+Multiple inheritance here is cooperative rather than parallel execution:
+one Stage-9 substrate constructs one Scheduler, WorldBody, journal and
+Memory. Stage-11 awake hooks and Stage-10 sleep hooks share that substrate.
+This is a software integration entrypoint, not scientific stage acceptance.
+"""
+from __future__ import annotations
+
+from dataclasses import replace
+
+from .stage10_runtime import Stage10Config, Stage10Runtime
+from .stage11_runtime import Stage11Config, Stage11Runtime
+
+
+class Stage11SleepRuntime(Stage11Runtime, Stage10Runtime):
+    """Single physical and causal authority for awake exploration and sleep."""
+
+    individual_id = "i0-v1.3.1-stage11-sleep-integrated"
+
+    def __init__(
+        self, *, stage11_config: Stage11Config,
+        stage10_config: Stage10Config, **kwargs,
+    ):
+        stage11_config.validate()
+        stage10_config.validate()
+        if stage11_config.stage9 != stage10_config.stage9:
+            raise ValueError("Stages 10 and 11 must share the same Stage-9 baseline")
+        if kwargs.get("autonomous_mortal") is not True:
+            raise ValueError("integrated v1.3.1 I0 must be autonomous and mortal")
+        self._combined_sleep_config = stage10_config
+        super().__init__(config=stage11_config, **kwargs)
+        if self.stage3.substrate.mortal_status is None:
+            raise RuntimeError("integrated runtime was not born mortal")
+        if self.stage3.substrate.bench is not None:
+            raise RuntimeError("integrated runtime must not load an evaluation bench")
+        if self.stage3.substrate.evaluation_trace is not None:
+            raise RuntimeError("integrated runtime must not load an oracle trace")
+        ids = [owner.owner_id for owner in self.causal_owners]
+        if len(ids) != len(set(ids)):
+            raise RuntimeError("integrated runtime has duplicate causal custody")
+
+    def _parent_runtime_config(self, config: Stage11Config) -> Stage10Config:
+        """Stage-11 UC amendments precede Stage-10 UC amendments at birth."""
+        if config != self._stage11_config:
+            raise ValueError("unexpected Stage-11 configuration during construction")
+        return replace(
+            self._combined_sleep_config,
+            stage9=config.with_budget(),
+        )
