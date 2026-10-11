@@ -147,6 +147,50 @@ class CoordinatedPublicationTests(unittest.TestCase):
         self.assertEqual(history.current_version,"h:0")
         self.assertIs(slot.current,tx)
 
+    def test_acknowledgement_failure_never_rolls_back_committed_version(self):
+        journal, tx, slot, history, owners, coord = fixture()
+        staged = prepare(coord, tx)
+        with patch.object(
+            slot, "acknowledge_coordinated_commit",
+            side_effect=RuntimeError("acknowledgement unavailable"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "irreversible"):
+                coord.publish(
+                    prepared=staged, transaction=tx, world_step=5,
+                    scheduler_sync_authorized=True,
+                )
+        self.assertEqual(
+            history.current_version, staged.destination_version,
+        )
+        self.assertTrue(all(o.state["generation"] == 1 for o in owners.values()))
+        self.assertEqual(
+            journal.entries[-1].causal_event["kind"],
+            "stage10_consolidation_version_activated",
+        )
+        self.assertTrue(journal.verify())
+
+    def test_append_then_raises_cannot_rewind_committed_history(self):
+        journal, tx, slot, history, owners, coord = fixture()
+        staged = prepare(coord, tx)
+        original_append = journal.append
+
+        def persisted_then_raised(**kwargs):
+            original_append(**kwargs)
+            raise OSError("simulated post-write exception")
+
+        with patch.object(journal, "append", side_effect=persisted_then_raised):
+            with self.assertRaisesRegex(RuntimeError, "irreversible"):
+                coord.publish(
+                    prepared=staged, transaction=tx, world_step=5,
+                    scheduler_sync_authorized=True,
+                )
+        self.assertEqual(
+            history.current_version, staged.destination_version,
+        )
+        self.assertEqual(len(journal.entries), 2)
+        self.assertTrue(all(o.state["generation"] == 1 for o in owners.values()))
+        self.assertTrue(journal.verify())
+
     def test_commit_refused_outside_scheduler_sync(self):
         journal,tx,slot,history,owners,coord=fixture()
         staged=prepare(coord,tx)

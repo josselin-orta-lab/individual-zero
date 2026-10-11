@@ -77,6 +77,12 @@ class HashChainedJournal:
         # Non-causal lookup index. The append order and canonical bytes remain
         # exactly those of _entries.
         self._by_id: dict[str, JournalEntry] = {}
+        # A fatal result is recorded before its one terminal step closure.
+        # No other event may intervene and nothing may follow that closure.
+        # This is a forward-only runtime guard, never a replacement for the
+        # independent auditor's checks on potentially forged export bytes.
+        self._pending_death_closure: tuple[int, str] | None = None
+        self._death_sealed = False
 
     def enable_durable_wal(self, *, path: str) -> None:
         """Birth-only append-before-ack fsync journal, never life restoration.
@@ -183,6 +189,32 @@ class HashChainedJournal:
             raise ValueError("journal event_id must be NFC-normalized")
         if event_id in self._by_id:
             raise ValueError("duplicate technical journal event_id")
+        if self._death_sealed:
+            raise RuntimeError("terminal journal is sealed after death")
+        # A malformed physical closure is not an opportunity to inject a new
+        # cognitive event between death and final technical step closure.
+        kind = causal_event.get("kind")
+        pending = self._pending_death_closure
+        if pending is not None:
+            closure = causal_event.get("data")
+            if not (
+                kind == "step_closed"
+                and causal_event.get("t_monde") == pending[0]
+                and causal_event.get("attempt_ref") == pending[1]
+                and isinstance(closure, Mapping)
+                and closure.get("outcome") == "dead"
+                and closure.get("applied_command_count") == 1
+                and closure.get("world_advance_count") == 1
+            ):
+                raise RuntimeError("terminal death requires its unique technical closure")
+        elif kind == "individual_death_confirmed":
+            if (
+                type(causal_event.get("t_monde")) is not int
+                or causal_event["t_monde"] < 1
+                or not isinstance(causal_event.get("attempt_ref"), str)
+                or not causal_event["attempt_ref"]
+            ):
+                raise ValueError("terminal death needs a valid world attempt")
 
         # Own the complete nested payload, not just the outer dictionary.
         # Canonicalize exactly the copy retained in the append-only chain:
@@ -221,6 +253,13 @@ class HashChainedJournal:
                 raise
         self._entries.append(entry)
         self._by_id[event_id] = entry
+        if kind == "individual_death_confirmed":
+            self._pending_death_closure = (
+                retained_event["t_monde"], retained_event["attempt_ref"],
+            )
+        elif pending is not None:
+            self._pending_death_closure = None
+            self._death_sealed = True
         return entry
 
     def canonical_bytes(self) -> bytes:
