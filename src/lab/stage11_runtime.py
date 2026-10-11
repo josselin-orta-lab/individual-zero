@@ -399,6 +399,27 @@ class Stage11Runtime(Stage9Runtime):
                             capture, raw_targets=raw_geo_targets,
                         )
                     )
+                    self._write(
+                        kind="stage11_geographic_preflight_consulted",
+                        cycle=cycle,
+                        data={
+                            "boundary": "phase0_after_accepted_charge",
+                            "source": "action_control.verifier_admissibilite",
+                            "charged_module": "planning",
+                            "charged_operation": (
+                                "geographic_admissibility_preflight"
+                            ),
+                            "charged_uc": 1,
+                            "raw_frontier_count": len(raw_geo_targets),
+                            "admissible_frontier_count": len(
+                                frozen_geo_targets
+                            ),
+                            "inadmissible_directions_count": len(
+                                excluded_geo
+                            ),
+                            "safety_policy_modified": False,
+                        },
+                    )
                 else:
                     # Incomplete budget does NOT mean no frontier or safe.
                     defer_geo_once("geographic_admissibility_preflight")
