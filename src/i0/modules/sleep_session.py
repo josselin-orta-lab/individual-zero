@@ -106,6 +106,21 @@ class SleepSession:
             raise ValueError("sleep entry requires actually applied ordinary admitted dormir")
         self._admitted_sleep_step = world_step
 
+    def acknowledge_nonphysical_step(self, *, world_step: int) -> None:
+        """Account only the clock of an independently verified stopped step.
+
+        No sleep recovery, cognition, physical transition or autobiographical
+        experience is synthesized. A sleeping or wake-pending session cannot
+        be advanced this way: it requires a real admitted physical step.
+        """
+        if (type(world_step) is not int
+                or world_step != self._last_world_step + 1
+                or self._mode != "awake"
+                or self._admitted_sleep_step is not None
+                or self._pending_result is not None):
+            raise ValueError("only idle awake sleep-clock gaps may be acknowledged")
+        self._last_world_step = world_step
+
     def open_world_step(self, world_step: int) -> str:
         """One chronological opening, with sleep entry delayed to next step.
 
