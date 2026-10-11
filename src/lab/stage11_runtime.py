@@ -7,6 +7,10 @@ from dataclasses import dataclass, replace
 from math import isfinite
 
 from i0.modules.exploration import Exploration, ExplorationConfig
+from i0.modules.geographic_exploration import GeographicExplorationConfig
+from i0.modules.geographic_planning import propose_geographic_frontier
+from i0.modules.action_control import Admissibility
+from i0.modules.simulator import state_from_capture
 from i0.modules.global_modulation import GlobalModulation, ModulationConfig
 from i0.modules.lived_prediction import LivedPredictionConfig, LivedWaterPredictor
 from i0.modules.memory import EpisodicMemory
@@ -28,6 +32,8 @@ class Stage11Config:
     exploration_observe_cost_uc: int
     # None retains the Stage-11 reference's prediction-unavailable behavior.
     prospective_water: LivedPredictionConfig | None = None
+    # Off by default: public geographical frontier integration, Stage-11 only.
+    geographic: GeographicExplorationConfig | None = None
 
     def validate(self):
         if not self.version:
@@ -38,6 +44,8 @@ class Stage11Config:
         self.temperament_parameters.validate()
         if self.prospective_water is not None:
             self.prospective_water.validate()
+        if self.geographic is not None:
+            self.geographic.validate()
         if not isfinite(self.intrinsic_weight) or self.intrinsic_weight < 0:
             raise ValueError("invalid P-15")
         if (type(self.exploration_envelope_uc) is not int
@@ -117,7 +125,10 @@ class Stage11Runtime(Stage9Runtime):
         self.exploration = Exploration(
             config.exploration,
             coefficient=config.temperament_parameters.exploration_coefficient,
+            geographic_config=config.geographic,
         )
+        self._stage11_geographic_proposals_this_cycle = ()
+
         self.modulation = GlobalModulation(config.modulation)
         self._stage11_modulation_signals = {
             "boredom": False, "needs_satisfied": False,
@@ -149,6 +160,9 @@ class Stage11Runtime(Stage9Runtime):
     def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
         # Frozen input precedes all producers of phase 1 (INV-08).
         frozen = self.causal_model.export_causal_state()
+        # Read-only frontier inputs are frozen BEFORE phase-1. No Planning
+        # producer may read Exploration output from the same phase (INV-08).
+        frozen_geo_targets = self.exploration.geographic_cibles(capture)
         self._stage11_prospective_state = frozen
         self._stage11_prospective_capture = (
             capture.t_monde, (capture.x, capture.y), float(capture.body["water"]),
@@ -197,6 +211,24 @@ class Stage11Runtime(Stage9Runtime):
                 return
             previous = self.exploration.export_causal_state()
             self.exploration.observe_causal_state(frozen)
+            new_geo_visit = self.exploration.observe_geographic_capture(
+                capture, frozen_targets=frozen_geo_targets,
+            )
+            if new_geo_visit:
+                self._write(
+                    kind="stage11_geographic_visit_observed", cycle=cycle,
+                    data={
+                        "source": "perception_capture",
+                        "world_step": capture.t_monde,
+                        "position": [capture.x, capture.y],
+                        "new_distinct_sites": (
+                            self.exploration.geographic.distinct_sites
+                        ),
+                        "visit_count": (
+                            self.exploration.geographic.visit_count
+                        ),
+                    },
+                )
             current = self.exploration.export_causal_state()
             if current != previous:
                 self._write(
@@ -230,6 +262,7 @@ class Stage11Runtime(Stage9Runtime):
         previous_plan = hooks[1]["planning"]
 
         def plan_only_informational_targets(ctx):
+            self._stage11_geographic_proposals_this_cycle = ()
             emitted = self._causal_test_targets_this_cycle
             permitted = tuple(
                 item for item in emitted
@@ -251,8 +284,106 @@ class Stage11Runtime(Stage9Runtime):
                     )
             self._causal_test_targets_this_cycle = permitted
             previous_plan(ctx)
+            if (
+                self.exploration.geographic is None
+                or not frozen_geo_targets
+                or self._cycle_degraded or st_before_cycle is None
+            ):
+                return
+            initial_state = state_from_capture(
+                capture=capture,
+                is_night=self.world.is_night(capture.t_monde),
+            )
+            geo_proposals = []
+            for target in frozen_geo_targets:
+                if not self._charge(
+                    module="planning", operation="planning_build",
+                ):
+                    break
+                proposal = propose_geographic_frontier(
+                    target=target, initial_state=initial_state,
+                    simulator=self.simulator,
+                    st_version=st_before_cycle.version,
+                    t_monde=capture.t_monde,
+                    ttl_steps=self._stage6_config.planning.option_ttl_steps,
+                )
+                if proposal is None or (
+                    self.stage3.control.verifier_plan_connu(proposal)
+                    is Admissibility.INADMISSIBLE
+                ):
+                    self._write(
+                        kind="stage11_geographic_planning_unavailable",
+                        cycle=cycle,
+                        data={
+                            "target_ref": target.ref,
+                            "reason": "simulation_or_admissibility_unavailable",
+                        },
+                    )
+                    continue
+                self._publish_contribution(
+                    self._planning_contribution(
+                        proposal, t_monde=capture.t_monde, cycle=cycle,
+                    )
+                )
+                geo_proposals.append(proposal)
+                self._write(
+                    kind="stage11_geographic_option_proposed", cycle=cycle,
+                    data={
+                        "target_ref": target.ref,
+                        "option_ref": proposal.option.id,
+                        "source": "single_perceptual_capture",
+                        "destination": list(target.destination),
+                        "direction": target.direction,
+                        "goal_ref": None,
+                        "simulated": True,
+                    },
+                )
+            self._stage11_geographic_proposals_this_cycle = tuple(
+                geo_proposals
+            )
 
         hooks[1]["planning"] = plan_only_informational_targets
+
+        previous_register = hooks[3]["competition"]
+
+        def register_geographic_targets(ctx):
+            previous_register(ctx)
+            current = {
+                proposal.option.id
+                for proposal in self._stage11_geographic_proposals_this_cycle
+            }
+            for old in self.competition.candidate_proposals:
+                if (
+                    old.option.motive_ref.type == "cible_exploration"
+                    and old.option.id not in current
+                ):
+                    self.competition.invalidate_candidate(old.option.id)
+                    self.stage3.control.clear_option_step(old.option.id)
+            if self._cycle_degraded:
+                return
+            for proposal in self._stage11_geographic_proposals_this_cycle:
+                if not self._charge(
+                    module="competition", operation="competition_register",
+                ):
+                    break
+                accepted = self._register_option_proposal(
+                    proposal=proposal,
+                    active_goal_id=(
+                        None if self.goal_manager.active_goal is None
+                        else self.goal_manager.active_goal.id
+                    ),
+                    t_monde=capture.t_monde,
+                    cycle=cycle,
+                )
+                self._write(
+                    kind="stage11_geographic_option_registration",
+                    cycle=cycle,
+                    data={
+                        "option_ref": proposal.option.id,
+                        "registered": accepted,
+                    },
+                )
+        hooks[3]["competition"] = register_geographic_targets
         return hooks
 
     def _dispatch_decision(
