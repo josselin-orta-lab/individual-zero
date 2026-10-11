@@ -65,7 +65,6 @@ class SleepFailClosedTests(unittest.TestCase):
         first = runtime.run_step()
         self.assertEqual(first.command_primitive, "dormir")
         before_time = runtime.scheduler.t_monde
-        old_world = deepcopy(runtime.world.export_causal_state())
         with patch.object(
             runtime.sleep_health, "recover_sleep_step",
             side_effect=OSError("injected postphysics sleep error"),
@@ -74,7 +73,22 @@ class SleepFailClosedTests(unittest.TestCase):
                 runtime.run_step()
         self.assertEqual(runtime.scheduler.t_monde, before_time + 1)
         self.assertIsNone(runtime.scheduler.active_attempt)
-        self.assertNotEqual(runtime.world.export_causal_state(), old_world)
+        self.assertEqual(
+            runtime.stage3.substrate._mortal_boundary.last_world_step,
+            before_time + 1,
+        )
+        # An applied 'dormir' can legitimately leave position/body values
+        # unchanged in this physics version. Compare the actual receipt,
+        # not a fabricated requirement that every action changes the body.
+        transitions = [
+            row.causal_event for row in runtime.journal.entries
+            if row.causal_event["kind"] == "world_transition_experienced"
+        ]
+        self.assertEqual(transitions[-1]["t_monde"], before_time + 1)
+        self.assertEqual(runtime.world.position.as_dict(),
+                         transitions[-1]["position_after"])
+        self.assertEqual(runtime.world.body.as_dict(),
+                         transitions[-1]["body_after"])
         self.assertEqual(runtime.stage3.substrate.mortal_status,
                          MortalStatus.TECHNICAL_HALT)
         self.assertTrue(runtime.journal.verify())
