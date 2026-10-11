@@ -95,6 +95,13 @@ class Stage11Config:
                         and self.geographic_preflight_requires_frontier)
                     else ""
                 )
+                + (
+                    "+charge-before-geographic-preflight-v2"
+                    if (
+                        self.geographic is not None
+                        and self.geographic_preflight
+                    ) else ""
+                )
             ),
             module_envelopes={
                 **budget.module_envelopes,
@@ -302,9 +309,27 @@ class Stage11Runtime(Stage9Runtime):
         # Read-only frontier inputs are frozen BEFORE phase-1. No Planning
         # producer may read Exploration output from the same phase (INV-08).
         raw_geo_targets = self.exploration.geographic_cibles(capture)
-        frozen_geo_targets, excluded_geo = self._geographic_frontier_targets(
-            capture, raw_targets=raw_geo_targets,
+        # Freeze the raw, physically grounded candidate list BEFORE Phase-1.
+        # The *safety* classification must wait until Phase-0 has opened
+        # and charged the current logical compute budget. No unpaid lookup
+        # is permitted during preparation of a Scheduler hook.
+        frozen_geo_targets = (
+            raw_geo_targets if not self._stage11_config.geographic_preflight
+            else ()
         )
+        excluded_geo = ()
+        preflight_paid = False
+        deferred_geo_this_cycle = False
+
+        def defer_geo_once(operation):
+            nonlocal deferred_geo_this_cycle
+            if deferred_geo_this_cycle:
+                return
+            deferred_geo_this_cycle = True
+            self._suspend_geographic_budget_targets(
+                capture=capture, cycle=cycle, operation=operation,
+            )
+
         demand_skip_geo_preflight = (
             self.exploration.geographic is not None
             and self._stage11_config.geographic_preflight
@@ -352,7 +377,31 @@ class Stage11Runtime(Stage9Runtime):
         previous_modulation_hook = hooks[0]["global_modulation"]
 
         def modulation_hook(ctx):
+            nonlocal frozen_geo_targets, excluded_geo, preflight_paid
+            # This opens the cycle's P-43 budget before *any* extra work.
             previous_modulation_hook(ctx)
+            if (
+                self.exploration.geographic is not None
+                and self._stage11_config.geographic_preflight
+                and st_before_cycle is not None
+                and not demand_skip_geo_preflight
+            ):
+                if self._charge(
+                    module="planning",
+                    operation="geographic_admissibility_preflight",
+                ):
+                    preflight_paid = True
+                    # Canonical Action Control is queried only after an
+                    # accepted charge. Inputs remain from the pre-phase
+                    # physical Perception capture and Exploration ledger.
+                    frozen_geo_targets, excluded_geo = (
+                        self._geographic_frontier_targets(
+                            capture, raw_targets=raw_geo_targets,
+                        )
+                    )
+                else:
+                    # Incomplete budget does NOT mean no frontier or safe.
+                    defer_geo_once("geographic_admissibility_preflight")
             old = self.modulation.profile
             indicators = self.modulation.indicators_from_st(st_before_cycle)
             new = self.modulation.freeze(
@@ -439,10 +488,7 @@ class Stage11Runtime(Stage9Runtime):
 
         def exploration_hook(_context):
             if not self._charge(module="exploration", operation="exploration_observe"):
-                self._suspend_geographic_budget_targets(
-                    capture=capture, cycle=cycle,
-                    operation="exploration_observe",
-                )
+                defer_geo_once("exploration_observe")
                 return
             previous = self.exploration.export_causal_state()
             self.exploration.observe_causal_state(frozen)
@@ -527,17 +573,14 @@ class Stage11Runtime(Stage9Runtime):
             if self.exploration.geographic is None:
                 return
             if self._cycle_degraded:
-                self._suspend_geographic_budget_targets(
-                    capture=capture, cycle=cycle,
-                    operation="upstream_cognitive_charge",
-                )
+                defer_geo_once("upstream_cognitive_charge")
                 return
             if st_before_cycle is None:
                 return
-            # Fixed 1 UC is a versioned Planning cost for one bounded
-            # four-neighbor read-only safety-service preflight per cycle.
-            # No hidden uncharged cognitive work or transfer from protected
-            # Action Control capacity. Inadequate budget means NO targets.
+            # The bounded 1-UC early safety consultation has already been
+            # charged within Phase-0, immediately BEFORE that consultation.
+            # Phase-1 reads only its frozen result, never new Exploration
+            # output from another producer in this same phase (INV-08).
             if demand_skip_geo_preflight:
                 # Technical accounting only. No missing-budget claim and no
                 # false "safe" classification, target or learning reward.
@@ -554,16 +597,15 @@ class Stage11Runtime(Stage9Runtime):
                     },
                 )
                 return
-            if self._stage11_config.geographic_preflight:
-                if not self._charge(
-                    module="planning",
-                    operation="geographic_admissibility_preflight",
-                ):
-                    self._suspend_geographic_budget_targets(
-                        capture=capture, cycle=cycle,
-                        operation="geographic_admissibility_preflight",
-                    )
-                    return
+            if (
+                self._stage11_config.geographic_preflight
+                and not preflight_paid
+            ):
+                # For a nonempty raw frontier, a rejected precharge causes
+                # degraded-mode return above. Never use an unpaid preflight.
+                raise AssertionError(
+                    "geographic Planning cannot use unpaid safety preflight"
+                )
             if cycle == 1 and excluded_geo:
                 self._write(
                     kind="stage11_geographic_admissibility_prefiltered",
@@ -596,10 +638,7 @@ class Stage11Runtime(Stage9Runtime):
                 if not self._charge(
                     module="planning", operation="planning_build",
                 ):
-                    self._suspend_geographic_budget_targets(
-                        capture=capture, cycle=cycle,
-                        operation="planning_build",
-                    )
+                    defer_geo_once("planning_build")
                     break
                 proposal = propose_geographic_frontier(
                     target=target, initial_state=initial_state,
