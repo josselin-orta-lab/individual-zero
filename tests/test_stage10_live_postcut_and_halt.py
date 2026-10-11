@@ -85,6 +85,36 @@ class SleepFailClosedTests(unittest.TestCase):
             runtime.run_step()
         self.assertEqual(runtime.world.export_causal_state(), last_body)
 
+    def test_preexisting_safety_block_is_not_an_invented_technical_halt(self):
+        runtime = configured_runtime()
+        substrate = runtime.stage3.substrate
+        substrate.safety.enter_safety_block(reason="external_diagnostic_block")
+        before_world = deepcopy(runtime.world.export_causal_state())
+        before_journal = runtime.journal.canonical_bytes()
+        before_time = runtime.scheduler.t_monde
+        with self.assertRaisesRegex(RuntimeError, "safety-blocked"):
+            runtime.run_step()
+        self.assertEqual(substrate.mortal_status, MortalStatus.ACTIVE)
+        self.assertTrue(substrate.safety.blocked)
+        self.assertEqual(runtime.world.export_causal_state(), before_world)
+        self.assertEqual(runtime.journal.canonical_bytes(), before_journal)
+        self.assertEqual(runtime.scheduler.t_monde, before_time)
+
+    def test_rejected_external_scenario_stays_distinct_from_technical_halt(self):
+        from types import SimpleNamespace
+        runtime = configured_runtime()
+        substrate = runtime.stage3.substrate
+        prior = runtime.world.export_causal_state()
+        prior_journal = runtime.journal.canonical_bytes()
+        # Construct only the pre-existing scenario status; an actual bad
+        # mutation is a separate mortal halt path tested by Stage2.
+        with patch.object(substrate, "scenario", SimpleNamespace(halted=True)):
+            with self.assertRaisesRegex(RuntimeError, "rejected external scenario"):
+                runtime.run_step()
+        self.assertEqual(substrate.mortal_status, MortalStatus.ACTIVE)
+        self.assertEqual(runtime.world.export_causal_state(), prior)
+        self.assertEqual(runtime.journal.canonical_bytes(), prior_journal)
+
     def test_semantic_identity_rebase_keeps_real_postcut_owner_state(self):
         journal, tx, slot, history, owners, coordinator = fixture()
         journal.append(
