@@ -5,6 +5,8 @@ from copy import deepcopy
 from decimal import Decimal
 from fractions import Fraction
 from math import inf, nan
+from dataclasses import replace
+from types import MappingProxyType
 
 from lab.compute_budget import ComputeBudgetConfig, CycleComputeBudget
 from lab.determinism import canonical_causal_bytes
@@ -735,6 +737,191 @@ class ComputeBudgetTests(unittest.TestCase):
             )
 
         self.assertEqual(one_independent_run(), one_independent_run())
+
+    def test_versioned_config_rejects_noncanonical_uc_values_and_types(self):
+        base = self.config()
+        invalid = []
+
+        def broken(label, **changes):
+            invalid.append((label, replace(base, **changes)))
+
+        for label, value in (
+            ("bool_true", True), ("bool_false", False), ("float_integer", 10.0),
+            ("float_fraction", 10.5), ("nan", nan), ("inf", inf),
+            ("negative_inf", -inf), ("decimal", Decimal("10")),
+            ("fraction", Fraction(1, 2)), ("text", "10"),
+            ("none", None), ("list", [10]), ("negative", -1),
+        ):
+            broken("cycle_ceiling_" + label, cycle_ceiling=value)
+            broken("protected_capacity_" + label, protected_capacity=value)
+            broken("module_envelope_" + label, module_envelopes={
+                "worker": value, "control": 4,
+            })
+            broken("operation_cost_" + label, operation_costs={
+                "small": value, "large": 5,
+            })
+        broken("reserve_exceeds_ceiling", protected_capacity=11)
+        broken("empty_version", version="")
+        for label, value in (
+            ("bool", True), ("integer", 1), ("none", None),
+            ("list", ["v1"]), ("tuple", ("v1",)),
+        ):
+            broken("version_" + label, version=value)
+
+        for label, value in (
+            ("none", None), ("list", [("worker", 6)]),
+            ("empty_dict", {}), ("text", "worker"),
+            ("nonstring_module_key", {1: 6, "control": 4}),
+            ("bool_module_key", {True: 6, "control": 4}),
+            ("empty_module_key", {"": 6, "control": 4}),
+            ("negative_envelope", {"worker": -1, "control": 4}),
+            ("missing_protected_module", {"worker": 6}),
+        ):
+            broken("envelopes_" + label, module_envelopes=value)
+        for label, value in (
+            ("none", None), ("list", [("small", 2)]),
+            ("empty_dict", {}), ("text", "small"),
+            ("nonstring_cost_key", {1: 2, "large": 5}),
+            ("bool_cost_key", {True: 2, "large": 5}),
+            ("empty_cost_key", {"": 2, "large": 5}),
+            ("negative_cost", {"small": -1, "large": 5}),
+        ):
+            broken("costs_" + label, operation_costs=value)
+        for label, value in (
+            ("mutable_set", {"control"}),
+            ("list", ["control"]), ("tuple", ("control",)),
+            ("none", None), ("text", "control"),
+            ("bool_module", frozenset({True})),
+            ("numeric_module", frozenset({1})),
+            ("empty_module", frozenset({""})),
+            ("unregistered_module", frozenset({"unknown"})),
+        ):
+            broken("protected_members_" + label, protected_modules=value)
+
+        # The constructor itself must fail before any owner can be opened.
+        # Neither an annotation nor a frozen dataclass coerces invalid data.
+        for label, config in invalid:
+            with self.subTest(label=label):
+                with self.assertRaises(ValueError):
+                    config.validate()
+                with self.assertRaises(ValueError):
+                    CycleComputeBudget(config=config)
+
+        # Repeated validation of the original valid input is unchanged.
+        for _ in range(2):
+            base.validate()
+        owner = CycleComputeBudget(config=base)
+        owner.open_cycle(1)
+        receipt = owner.charge(module="worker", operation="small")
+        self.assertTrue(receipt.accepted)
+        self.assertIs(type(receipt.requested_uc), int)
+        self.assertEqual(receipt.requested_uc, 2)
+
+    def test_immutable_mapping_and_zero_uc_config_stay_valid(self):
+        standard = self.config()
+        immutable_mapping_config = replace(
+            standard, version="fixture-mappingproxy-v1",
+            module_envelopes=MappingProxyType(dict(standard.module_envelopes)),
+            operation_costs=MappingProxyType(dict(standard.operation_costs)),
+        )
+        zero_config = ComputeBudgetConfig(
+            version="fixture-zero-uc-v1", cycle_ceiling=0,
+            module_envelopes={"worker": 0},
+            protected_modules=frozenset(),
+            protected_capacity=0,
+            operation_costs={"zero": 0},
+        )
+        multiple_protected = ComputeBudgetConfig(
+            version="fixture-two-protected-v1", cycle_ceiling=10,
+            module_envelopes={"worker": 7, "control": 4, "gatekeeper": 3},
+            protected_modules=frozenset({"control", "gatekeeper"}),
+            protected_capacity=3,
+            operation_costs={"small": 2, "one": 1, "zero": 0},
+        )
+        no_protected = ComputeBudgetConfig(
+            version="fixture-no-protected-v1", cycle_ceiling=10,
+            module_envelopes={"worker": 10},
+            protected_modules=frozenset(), protected_capacity=0,
+            operation_costs={"small": 2, "zero": 0},
+        )
+
+        for config, module, operation in (
+            (standard, "worker", "small"),
+            (immutable_mapping_config, "worker", "small"),
+            (zero_config, "worker", "zero"),
+            (multiple_protected, "control", "one"),
+            (no_protected, "worker", "small"),
+        ):
+            with self.subTest(version=config.version):
+                original_envelopes = dict(config.module_envelopes)
+                original_costs = dict(config.operation_costs)
+                config.validate()
+                config.validate()
+                self.assertEqual(dict(config.module_envelopes), original_envelopes)
+                self.assertEqual(dict(config.operation_costs), original_costs)
+
+                def independent():
+                    journal = HashChainedJournal()
+                    manager = SnapshotManager(journal=journal)
+                    budget = CycleComputeBudget(config=config)
+                    budget.open_cycle(1)
+                    first = budget.charge(
+                        module=module, operation=operation, count=1,
+                    )
+                    self.assertTrue(first.accepted)
+                    self.assertIs(type(first.requested_uc), int)
+                    expected = config.operation_costs[operation]
+                    self.assertEqual(first.requested_uc, expected)
+                    owner = deepcopy(budget.export_causal_state())
+                    snapshot = manager.take(
+                        snapshot_type=SnapshotType.PERIODIC,
+                        individual_id="i0-stage11-uc-config-validation-v1",
+                        t_monde=1, cycle=0, attempt_ref=None,
+                        owners=(budget,),
+                        versions={"scheduler": config.version},
+                    )
+                    self.assertTrue(manager.verify(snapshot.id))
+                    budget.open_cycle(2)
+                    budget.charge(module=module, operation=operation)
+                    manager.restore(snapshot.id, owners=(budget,))
+                    self.assertEqual(budget.export_causal_state(), owner)
+                    self.assertTrue(manager.verify(snapshot.id))
+                    self.assertTrue(journal.verify())
+                    self.assertEqual(
+                        [e.causal_event["kind"] for e in journal.entries],
+                        ["snapshot_taken", "snapshot_restored"],
+                    )
+                    return (
+                        first, snapshot, canonical_causal_bytes(owner),
+                        journal.canonical_bytes(), journal.head_hash,
+                    )
+                self.assertEqual(independent(), independent())
+
+    def test_invalid_nan_budget_config_never_reaches_a_scheduler_owner(self):
+        config = replace(self.config(), operation_costs={
+            "small": nan, "large": 5,
+        })
+        with self.assertRaises(ValueError):
+            config.validate()
+        with self.assertRaises(ValueError):
+            CycleComputeBudget(config=config)
+        # Verify the same operation on a valid declared config remains
+        # an integer-valued UC charge and has exact deterministic state.
+        owner = CycleComputeBudget(config=self.config())
+        owner.open_cycle(1)
+        recorded = owner.charge(module="worker", operation="small")
+        self.assertEqual(recorded.requested_uc, 2)
+        self.assertEqual(recorded.consumed_cycle_uc, 2)
+        self.assertIs(type(recorded.requested_uc), int)
+        self.assertEqual(
+            canonical_causal_bytes(owner.export_causal_state()),
+            canonical_causal_bytes({
+                "config_version": "fixture-v1",
+                "cycle": 1,
+                "consumed_cycle_uc": 2,
+                "consumed_by_module": {"worker": 2},
+            }),
+        )
 
     def test_budget_never_uses_machine_time(self) -> None:
         budget_a = CycleComputeBudget(config=self.config())
