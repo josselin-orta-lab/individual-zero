@@ -223,7 +223,7 @@ class LivedSixPassAlgorithm:
             output.append((rule_ref,{
                 "id":rule_ref,"predicate":predicate,"status":"hypothese_causale",
                 "source_episode_refs":[ep_ref],
-                "source_event_refs":[command["event_id"],physical["event_id"]],
+                "source_event_refs":sorted({command["event_id"],physical["event_id"]}),
                 "expires_at_step":cut.world_step+self.policy.rule_expiry_steps,
                 "validated_for_safety":False,
             }))

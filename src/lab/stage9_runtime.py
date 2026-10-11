@@ -64,7 +64,7 @@ class Stage9Runtime(Stage8Runtime):
     ) -> None:
         config.validate()
         self._stage9_config = config
-        self.causal_model = CausalModel(config.causal)
+        self.causal_model = self._make_causal_model(config.causal)
         self._canonical_safety = CanonicalSafetyFacts(
             innate=safety_facts, causal_model=self.causal_model,
         )
@@ -92,6 +92,10 @@ class Stage9Runtime(Stage8Runtime):
             q_values=self.q_active,
         )
         self._causal_test_proposals_this_cycle = ()
+
+    def _make_causal_model(self, config):
+        """Stable constructor seam; historical Stages 9/11 stay unchanged."""
+        return CausalModel(config)
 
     @property
     def causal_owners(self):

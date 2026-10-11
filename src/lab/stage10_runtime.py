@@ -25,6 +25,7 @@ from i0.modules.sleep_health import SleepHealth
 from i0.modules.sleep_pressure import SleepPressureConfig, WakeSignals
 from i0.modules.sleep_reduced import reduced_sleep_capture
 from i0.modules.sleep_session import SleepSession
+from i0.modules.stage10_causal_model import Stage10CausalModel
 from i0.modules.simulator import state_from_capture
 
 from .consolidation_publication import SlowHistory
@@ -203,6 +204,9 @@ class Stage10Runtime(Stage9Runtime):
         self._preopened_waking_capture = None
         self._last_applied_decision = None
         self._last_sleep_proposal = None
+
+    def _make_causal_model(self, config):
+        return Stage10CausalModel(config)
 
     @property
     def causal_owners(self):
