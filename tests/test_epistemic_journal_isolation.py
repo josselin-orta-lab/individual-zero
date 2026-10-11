@@ -109,6 +109,80 @@ class EpistemicIsolationTests(unittest.TestCase):
                         kind="command_experienced", field=key, value="untrusted",
                     )
 
+    def test_custom_policy_cannot_promote_hidden_scenario_payload(self):
+        journal = HashChainedJournal()
+        views = JournalViews(journal=journal)
+        source = journal.append(event_id="technical:scenario", causal_event={
+            "kind": "external_input_received",
+            "emitter": "injected_scenario",
+            "t_monde": 1, "attempt_ref": "a",
+            "payload": {
+                "operation": "set_lethal_zone",
+                "position": {"x": 7, "y": 9},
+            },
+        })
+        bypass = AutobiographicalPolicy(
+            version="operator-forged-bypass",
+            allowed_fields_by_kind={
+                "external_input_received": ("t_monde", "payload"),
+            },
+        )
+        original = journal.canonical_bytes()
+        with self.assertRaisesRegex(ValueError, "technical"):
+            bypass.validate()
+        with self.assertRaisesRegex(ValueError, "technical"):
+            bypass.project(source)
+        with self.assertRaises(ValueError):
+            views.commit_autobiographical(
+                t_monde=1, attempt_ref="a",
+                event_refs=("technical:scenario",), policy=bypass,
+            )
+        self.assertEqual(original, journal.canonical_bytes())
+        self.assertEqual(views.autobiographical(policies={}), ())
+
+    def test_custom_policy_cannot_promote_unapproved_source_field(self):
+        for kind, field in (
+            ("command_experienced", "payload"),
+            ("world_transition_experienced", "scenario_schedule"),
+            ("active_goal_changed", "world_snapshot"),
+            ("observation_perceived", "hidden_geometry"),
+            ("auto_segment_commit", "event_refs"),
+            ("individual_death_confirmed", "reasons"),
+        ):
+            with self.subTest(kind=kind, field=field):
+                policy = AutobiographicalPolicy(
+                    version="forged",
+                    allowed_fields_by_kind={kind: (field,)},
+                )
+                with self.assertRaises(ValueError):
+                    policy.validate()
+                with self.assertRaises(ValueError):
+                    project_lived_field(
+                        kind=kind, field=field, value={"x": 7, "y": 9},
+                    )
+
+    def test_reopened_journal_rejects_forged_technical_commit_policy(self):
+        journal = HashChainedJournal()
+        journal.append(event_id="technical:1", causal_event={
+            "kind": "external_input_received", "t_monde": 1,
+            "attempt_ref": "attempt:1",
+            "payload": {"location": {"x": 5, "y": 8}},
+        })
+        journal.append(event_id="commit:1", causal_event={
+            "kind": "auto_segment_commit", "t_monde": 1,
+            "attempt_ref": "attempt:1", "event_refs": ["technical:1"],
+            "filter_version": "malicious",
+        })
+        views = JournalViews(journal=journal)
+        policy = AutobiographicalPolicy(
+            version="malicious",
+            allowed_fields_by_kind={
+                "external_input_received": ("payload",),
+            },
+        )
+        with self.assertRaisesRegex(ValueError, "technical"):
+            views.autobiographical(policies={"malicious": policy})
+
     def test_reconstructed_commit_cannot_cross_steps_at_read_time(self):
         journal = HashChainedJournal()
         views = JournalViews(journal=journal)
