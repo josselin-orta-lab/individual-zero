@@ -154,6 +154,8 @@ class MortalityProtocol:
                 raise ValueError("invalid mortality protocol state")
         if state["dead"] and (state["blocked"] or state["suspended"]):
             raise ValueError("a terminal death is not a safety block")
+        if self._dead and not state["dead"]:
+            raise ValueError("a dead individual cannot be resurrected by restoration")
         self._dead = state["dead"]
         self._blocked = state["blocked"]
         self._suspended = state["suspended"]
