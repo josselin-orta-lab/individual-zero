@@ -87,6 +87,7 @@ class MortalWorldBoundary:
         """
         if self._status is MortalStatus.DEAD:
             return
+        self._world.freeze_terminal_state()
         self._status = MortalStatus.TECHNICAL_HALT
         if failed_step is not None:
             self._failed_step = failed_step
@@ -109,7 +110,9 @@ class MortalWorldBoundary:
                 raise RuntimeError("physical world produced an invalid receipt")
         except Exception:
             # No world state is restored, even if its mutation was partial.
-            # Caller must not continue from uncertain state.
+            # Caller must not continue from uncertain state or mutate it
+            # through another WorldBody API entry point.
+            self._world.freeze_terminal_state()
             self._failed_step = t_monde
             self._status = MortalStatus.TECHNICAL_HALT
             raise
@@ -125,5 +128,6 @@ class MortalWorldBoundary:
             position=result.position_after,
             body=result.body_after,
         )
+        self._world.freeze_terminal_state()
         self._status = MortalStatus.DEAD
         return MortalStepResult(status="dead", transition=result)
