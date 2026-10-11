@@ -14,6 +14,10 @@
 4. The rejected schedule is immutable. The branch is **fail-stopped** rather than moving on to `t+1`, which would skip a causal external input. Further `open_step` calls must fail without advancing clock or journal. The halt marker is part of the scenario's restorable causal state (conditional, absent from all successful historical snapshots). A corrected schedule requires a separate initialized branch, not silently editing a running scenario.
 5. If recovery of WorldBody's pre-batch state itself fails, report an explicit critical error. Never report a successful rollback. Keep the technical journal append-only. Do not hide application errors as an individual decision, veto, safety fact, or scientific verdict.
 
+## Snapshot halt-marker cursor-coherence addendum (2026-10-11, preimplementation)
+
+The existing fail-stop marker's `rejected_event` is meaningful only with the cursor rewound to the **first scheduled external event for the rejected world step**. A syntactically valid but inconsistent `rejected_event` plus `next_index` can silently represent a different branch. Restore MUST reject such combinations before changing `_next_index` or `_rejected_event`; check that the marker references a registered event and that the cursor is the index of the earliest event for its `t_monde` in the sorted immutable program. Earlier valid snapshots without a rejection marker remain unaffected. Include malformed-marker and shifted-cursor unit tests; no extra scientific claim.
+
 ## Frozen public fixtures
 
 - Use the existing public `junction_open` Stage11 runtime, with no active world dangers and no change to the normative Action Control policy.
