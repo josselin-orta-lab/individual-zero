@@ -31,6 +31,50 @@ def scenario(journal):
 
 
 class Stage11ScenarioSnapshotScheduleTests(TestCase):
+    def test_unjournalable_external_input_rejected_before_world_step(self):
+        # An unencodable causal input cannot be received into a valid
+        # hash-chained journal and must fail before any Scheduler tick.
+        bad = (
+            ScenarioEvent(0, 0, "set_position", {"position": {"x": 4, "y": 2}}),
+            ScenarioEvent(True, 0, "set_position", {"position": {"x": 4, "y": 2}}),
+            ScenarioEvent(1, -1, "set_position", {"position": {"x": 4, "y": 2}}),
+            ScenarioEvent(1, False, "set_position", {"position": {"x": 4, "y": 2}}),
+            ScenarioEvent(1, 0, "  ", {"position": {"x": 4, "y": 2}}),
+            ScenarioEvent(1, 0, "set_position", None),
+            ScenarioEvent(1, 0, "set_danger_zone", {"active": float("nan")}),
+            ScenarioEvent(1, 0, "set_danger_zone", {"active": float("inf")}),
+            ScenarioEvent(1, 0, "set_danger_zone", {"extra": {1, 2}}),
+            ScenarioEvent(1, 0, "set_danger_zone", {3: "invalid_key"}),
+        )
+        for index, bad_event in enumerate(bad):
+            journal = HashChainedJournal()
+            with self.subTest(case=index), self.assertRaisesRegex(
+                ValueError,
+                "malformed external scenario event schema|not canonically encodable",
+            ):
+                InjectedScenario(
+                    scenario_id="stage11-input-schema-unit",
+                    version="canonical-v1",
+                    events=(bad_event,),
+                    journal=journal,
+                )
+            self.assertEqual(journal.entries, ())
+            self.assertTrue(journal.verify())
+
+        # A semantically invalid but canonically representable physical
+        # destination is a runtime rejection, never a registration error.
+        journal = HashChainedJournal()
+        admitted = InjectedScenario(
+            scenario_id="stage11-input-schema-unit",
+            version="canonical-v1",
+            events=(ScenarioEvent(
+                1, 0, "set_position", {"position": {"x": 0, "y": 2}},
+            ),),
+            journal=journal,
+        )
+        self.assertEqual(admitted.export_causal_state()["next_index"], 0)
+        self.assertEqual(journal.entries, ())
+
     def test_restores_only_the_exact_original_external_event_program(self):
         journal = HashChainedJournal()
         runner = build_public_route_runtime(
