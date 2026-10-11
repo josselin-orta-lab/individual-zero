@@ -19,6 +19,10 @@ These distinctions are what make a result understandable after the original cont
 
 ## Research documents
 
+### MVP v1.3.0 migration preparation (not executed)
+
+- [Post-Stage-10/11 mortal-world and journal-removal audit](audits/post-stage10-11-mortal-mvp-audit.md): read-only dependency inventory, operator approval gates, lossless memory/consolidation requirements and staged migration plan. No final audit result is asserted while the agents are still developing.
+
 ### Stage 9 independent held-out evaluation
 
 - [Complete independent evaluator and operator manual (English)](stage9-independent-heldout-evaluation-manual.en.md): step-by-step isolated setup, actual file schemas, sealed protocol, commands, expected machine results, evidence review and signed verdict.
