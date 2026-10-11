@@ -135,6 +135,56 @@ print("independent_bench_without_oracle:OK")
         self.assertEqual(output.returncode, 0, output.stderr)
         self.assertIn("independent_bench_without_oracle:OK", output.stdout)
 
+
+    def test_oracle_has_minimal_truth_reader_and_explicit_close(self) -> None:
+        from copy import deepcopy
+
+        class IndependentTruthSource:
+            def __init__(self):
+                self._truth = {"nested": {"world": "unchanged"}}
+            def ground_truth(self):
+                return self._truth
+
+        source = IndependentTruthSource()
+        oracle, cap = create_oracle(source)
+        truth = oracle.read_ground_truth(cap)
+        truth["nested"]["world"] = "tampered-on-bench-side"
+        self.assertEqual(source.ground_truth()["nested"]["world"], "unchanged")
+        oracle.close()
+        with self.assertRaises(OracleAccessDenied):
+            oracle.read_ground_truth(cap)
+        self.assertEqual(source.ground_truth()["nested"]["world"], "unchanged")
+
+    def test_oracle_package_import_does_not_require_cognitive_or_physics_model(self):
+        import subprocess
+        import sys
+        program = r'''
+import importlib.abc, sys
+class BanCoupling(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname in {"i0", "lab.world", "lab.bench"}:
+            raise ImportError("unexpected Oracle coupling: " + fullname)
+        return None
+sys.meta_path.insert(0, BanCoupling())
+from lab.oracle import create_oracle
+class Truth:
+    def ground_truth(self):
+        return {"status": "real_without_worldbody_import"}
+oracle, cap = create_oracle(Truth())
+assert oracle.read_ground_truth(cap)["status"] == "real_without_worldbody_import"
+oracle.close()
+assert "i0" not in sys.modules
+assert "lab.world" not in sys.modules
+assert "lab.bench" not in sys.modules
+print("oracle_minimal_interface:OK")
+'''
+        result = subprocess.run(
+            [sys.executable, "-c", program], capture_output=True, text=True,
+            timeout=35,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("oracle_minimal_interface:OK", result.stdout)
+
     def test_evaluation_metrics_are_external(self) -> None:
         instance = world()
         oracle, capability = create_oracle(instance)
