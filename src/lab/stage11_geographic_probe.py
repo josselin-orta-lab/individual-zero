@@ -17,7 +17,7 @@ from .stage11_runtime import Stage11Runtime
 from .world import BodyState
 
 
-PROTOCOL = "stage11-public-frontier-coverage-dev-v3"
+PROTOCOL = "stage11-public-frontier-coverage-dev-v4"
 START_BODY = BodyState(energy=50.0, food=60.0, water=60.0, integrity=100.0)
 
 
