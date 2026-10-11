@@ -210,14 +210,20 @@ class Stage7Runtime(Stage6Runtime):
         return delivered
 
     def _autobiographical_events(self, *, cycle: int):
-        events = self.stage3.substrate.views.autobiographical(
-            policies={
-                STAGE2_AUTOBIOGRAPHICAL_POLICY.version:
-                    STAGE2_AUTOBIOGRAPHICAL_POLICY,
-                STAGE7_AUTOBIOGRAPHICAL_POLICY.version:
-                    STAGE7_AUTOBIOGRAPHICAL_POLICY,
-            }
-        )
+        stream = self.stage3.substrate.lived_stream
+        if stream is None:
+            events = self.stage3.substrate.views.autobiographical(
+                policies={
+                    STAGE2_AUTOBIOGRAPHICAL_POLICY.version:
+                        STAGE2_AUTOBIOGRAPHICAL_POLICY,
+                    STAGE7_AUTOBIOGRAPHICAL_POLICY.version:
+                        STAGE7_AUTOBIOGRAPHICAL_POLICY,
+                }
+            )
+        else:
+            # Same allowlisted lived facts, only unconsumed arrivals.
+            # No complete-life journal scan and no oracle access by Memory.
+            events = stream.drain_for_memory()
         # Q14: access is technically logged, but the access record is not part
         # of the autobiographical projection and therefore cannot become a
         # memory merely because Memory read its source.
