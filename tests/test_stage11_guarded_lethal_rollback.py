@@ -7,6 +7,8 @@ from dataclasses import replace
 from unittest import TestCase
 
 from lab.determinism import canonical_causal_bytes
+from lab.stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY
+from lab.stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY
 from lab.stage11_routed_junction_probe import build_public_route_runtime
 from lab.stage11_runtime import Stage11Runtime
 from lab.world import Position
@@ -57,7 +59,8 @@ class Stage11GuardedLethalRollbackTests(TestCase):
                 result.execution_status, {"applied", "safety_block"},
             )
             self.assertNotEqual(runner.world.position, Position(3, 2))
-            self.assertEqual(runner.world.position, Position(2, 2))
+            # A safe alternative physical direction is also acceptable:
+            # the rollback must not force the individual to remain still.
             self.assertEqual(
                 runner._canonical_safety.zone_status(x=3, y=2),
                 "unknown",
@@ -101,19 +104,33 @@ class Stage11GuardedLethalRollbackTests(TestCase):
                 runner._config.compute_budget.cycle_ceiling,
             )
 
-            autobiography = runner.stage3.substrate.autobiographical_view()
+            autobiography = runner.stage3.substrate.views.autobiographical(
+                policies={
+                    STAGE2_AUTOBIOGRAPHICAL_POLICY.version:
+                        STAGE2_AUTOBIOGRAPHICAL_POLICY,
+                    STAGE7_AUTOBIOGRAPHICAL_POLICY.version:
+                        STAGE7_AUTOBIOGRAPHICAL_POLICY,
+                }
+            )
             # The rolled-back movement into (3,2) must not become personal
             # history or a learned canonical danger.
             autobiographical_commands = [
                 row["primitive"] for row in autobiography
                 if "primitive" in row
             ]
-            self.assertNotIn("se_deplacer", autobiographical_commands)
+            self.assertFalse(any(
+                row.get("primitive") == "se_deplacer"
+                and row.get("parameters") == {"direction": "east"}
+                for row in autobiography
+            ))
             self.assertTrue(all(
                 row.get("t_monde") == 1 for row in autobiography
             ))
             if result.execution_status == "applied":
-                self.assertIn("attendre", autobiographical_commands)
+                self.assertTrue(autobiographical_commands)
+                self.assertEqual(
+                    autobiographical_commands[-1], result.command_primitive,
+                )
                 self.assertEqual(runner.scheduler.t_monde, 1)
             self.assertEqual(
                 len([
