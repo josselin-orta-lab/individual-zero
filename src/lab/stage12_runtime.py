@@ -120,7 +120,14 @@ class Stage12Runtime(Stage11SleepRuntime):
             cycle_ceiling=old.cycle_ceiling + cost,
             module_envelopes={
                 **old.module_envelopes,
-                "metacognition_health": old.module_envelopes["metacognition_health"] + cost,
+                # Stage11 has no Stage10 metacognition envelope yet.
+                # Reserve the upcoming sleep proposal AND Stage12 sample,
+                # instead of overwriting the diagnostic capacity during the
+                # later Stage10 with_budget() configuration step.
+                "metacognition_health": max(
+                    old.module_envelopes.get("metacognition_health", 0),
+                    base.sleep_option_uc,
+                ) + cost,
             },
             operation_costs={
                 **old.operation_costs,
