@@ -57,6 +57,11 @@ class Stage11RoutedDecisionDivergenceTraceTests(TestCase):
                     row["kind"] == "competition_cycle"
                     for row in observed.step5_causal_events
                 ))
+                self.assertTrue(any(
+                    event["kind"] == "compute_charge"
+                    and event["data"]["module"] == "planning"
+                    for event in observed.step5_causal_events
+                ))
                 for event in observed.step5_causal_events:
                     if event["kind"] != "competition_cycle":
                         continue
@@ -79,6 +84,17 @@ class Stage11RoutedDecisionDivergenceTraceTests(TestCase):
         self.assertIn("frontier:2:3:", control.step5_action[2])
         self.assertEqual(hazard.step5_action[1], "attendre")
         self.assertEqual(hazard.step5_action[3], "fallback")
+        deferred = [
+            event["data"] for event in hazard.step5_causal_events
+            if event["kind"] == "stage11_geographic_budget_deferred"
+        ]
+        self.assertTrue(deferred)
+        self.assertTrue(all(
+            event["reason"] == "incomplete_budget"
+            and isinstance(event["failed_operation"], str)
+            and event["failed_operation"]
+            for event in deferred
+        ))
         self.assertEqual(
             control.integrity_after_steps_3_to_5[0][1], 100.0,
         )
