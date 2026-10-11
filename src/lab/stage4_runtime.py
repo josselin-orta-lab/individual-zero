@@ -928,8 +928,17 @@ class Stage4Runtime:
             self.stage3.control.clear_option_step(comparison.option_ref)
             self.planning.invalidate_current()
 
+    def _on_open_step_capture(self, capture) -> None:
+        """Extension seam for specialized observers of the one real capture.
+
+        No-op for historical Stages 4–9. The hook cannot act on the world
+        and must not publish same-phase producer outputs into S_t.
+        """
+        return None
+
     def run_step(self) -> Stage4StepResult:
         capture = self.stage3.open_step()
+        self._on_open_step_capture(capture)
         comparison = self.stage3.control.compare_capture(capture)
         if comparison is not None:
             self._handle_agency_comparison(
