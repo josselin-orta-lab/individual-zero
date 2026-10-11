@@ -8,6 +8,7 @@ Spec: 4.6, 17.6, 19.2, 20.3 Stage 2, INV-33.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Mapping, Sequence
 
@@ -30,6 +31,10 @@ class ScenarioEvent:
             "operation": self.operation,
             "payload": dict(self.payload),
         }
+
+
+class ScenarioInputRejected(ValueError):
+    """An external input was rejected; its world-step batch is cancelled."""
 
 
 class InjectedScenario:
@@ -56,8 +61,28 @@ class InjectedScenario:
             raise ValueError("scenario event coordinates must be unique")
         self._journal = journal
         self._next_index = 0
+        # Only failure paths carry this causal halt marker. Successful
+        # historical scenario snapshots retain exactly their previous bytes.
+        self._rejected_event: tuple[int, int] | None = None
+
+    @property
+    def halted(self) -> bool:
+        return self._rejected_event is not None
 
     def apply_for_step(self, *, t_monde: int, world: WorldBody) -> tuple[ScenarioEvent, ...]:
+        if self.halted:
+            raise RuntimeError("rejected external scenario branch cannot continue")
+
+        # External events for one world-step opening are a single operation
+        # for causal recovery. Snapshot the real WorldBody, never its oracle,
+        # only when an input is actually due at this simulated instant.
+        batch_start = self._next_index
+        before_world = (
+            deepcopy(world.export_causal_state())
+            if batch_start < len(self._events)
+            and self._events[batch_start].t_monde == t_monde
+            else None
+        )
         applied: list[ScenarioEvent] = []
         while self._next_index < len(self._events):
             event = self._events[self._next_index]
@@ -87,7 +112,72 @@ class InjectedScenario:
                     "payload": dict(event.payload),
                 },
             )
-            world.apply_scenario_event(event.operation, event.payload)
+            try:
+                world.apply_scenario_event(event.operation, event.payload)
+            except Exception as error:
+                # Any failure at this world-input boundary is fail-closed.
+                # Earlier successful inputs in this *same* step and even a
+                # partially applied failing input must leave no world change.
+                self._next_index = batch_start
+                self._rejected_event = (event.t_monde, event.sequence)
+                recovery_error = None
+                try:
+                    if before_world is None:
+                        raise RuntimeError("missing external input batch recovery point")
+                    world.restore_causal_state(deepcopy(before_world))
+                except Exception as exc:
+                    recovery_error = exc
+
+                self._journal.append(
+                    event_id=deterministic_id(
+                        "journal-event-v1",
+                        "scenario", self._scenario_id, self._version,
+                        event.t_monde, event.sequence, "rejected",
+                    ),
+                    causal_event={
+                        "emitter": "scenario",
+                        "kind": "external_input_rejected",
+                        "scenario_id": self._scenario_id,
+                        "scenario_version": self._version,
+                        "t_monde": event.t_monde,
+                        "sequence": event.sequence,
+                        "operation": event.operation,
+                        "reason": (
+                            "invalid_operation_or_payload"
+                            if isinstance(
+                                error, (ValueError, TypeError, KeyError, OverflowError),
+                            ) else "application_error"
+                        ),
+                        "error_type": type(error).__name__,
+                        "world_recovered": recovery_error is None,
+                        "previous_inputs_reverted": len(applied),
+                    },
+                )
+                if applied:
+                    self._journal.append(
+                        event_id=deterministic_id(
+                            "journal-event-v1",
+                            "scenario", self._scenario_id, self._version,
+                            event.t_monde, event.sequence, "batch-rollback",
+                        ),
+                        causal_event={
+                            "emitter": "scenario",
+                            "kind": "external_input_batch_rolled_back",
+                            "scenario_id": self._scenario_id,
+                            "scenario_version": self._version,
+                            "t_monde": event.t_monde,
+                            "sequence": event.sequence,
+                            "previous_inputs_reverted": len(applied),
+                            "world_recovered": recovery_error is None,
+                        },
+                    )
+                if recovery_error is not None:
+                    raise RuntimeError(
+                        "external input rejected and WorldBody rollback failed"
+                    ) from recovery_error
+                raise ScenarioInputRejected(
+                    "external scenario input rejected; branch fail-stopped"
+                ) from error
             self._journal.append(
                 event_id=deterministic_id(
                     "journal-event-v1",
@@ -113,12 +203,18 @@ class InjectedScenario:
         return tuple(applied)
 
     def export_causal_state(self) -> object:
-        return {
+        state = {
             "scenario_id": self._scenario_id,
             "version": self._version,
             "next_index": self._next_index,
             "events": [event.as_dict() for event in self._events],
         }
+        if self._rejected_event is not None:
+            state["rejected_event"] = {
+                "t_monde": self._rejected_event[0],
+                "sequence": self._rejected_event[1],
+            }
+        return state
 
     def restore_causal_state(self, state: object) -> None:
         if not isinstance(state, Mapping):
@@ -135,4 +231,18 @@ class InjectedScenario:
         next_index = state.get("next_index")
         if type(next_index) is not int or not 0 <= next_index <= len(self._events):
             raise ValueError("invalid scenario next_index")
+        rejected = state.get("rejected_event")
+        rejected_at = None
+        if rejected is not None:
+            if (
+                not isinstance(rejected, Mapping)
+                or set(rejected) != {"t_monde", "sequence"}
+                or type(rejected["t_monde"]) is not int
+                or type(rejected["sequence"]) is not int
+                or (rejected["t_monde"], rejected["sequence"])
+                not in {(event.t_monde, event.sequence) for event in self._events}
+            ):
+                raise ValueError("invalid rejected scenario input marker")
+            rejected_at = (rejected["t_monde"], rejected["sequence"])
         self._next_index = next_index
+        self._rejected_event = rejected_at
