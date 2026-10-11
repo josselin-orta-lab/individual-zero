@@ -93,6 +93,9 @@ def propose_geographic_frontier(
     )
     if consequences is None:
         return None
+    command = PrimitiveCommand(
+        "se_deplacer", {"direction": target.direction},
+    )
     option_id = (
         f"option:geographic:{target.ref}:t{target.source_t_monde}"
     )
