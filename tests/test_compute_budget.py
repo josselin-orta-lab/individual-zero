@@ -113,6 +113,105 @@ class ComputeBudgetTests(unittest.TestCase):
         self.assertFalse(second.accepted)
         self.assertEqual(budget.consumed_cycle_uc, 5)
 
+    def test_scheduler_capacity_quote_is_pure_and_matches_real_charges(self):
+        budget = CycleComputeBudget(config=self.config())
+        control = CycleComputeBudget(config=self.config())
+        for owner in (budget, control):
+            owner.open_cycle(2)
+            self.assertTrue(
+                owner.charge(module="worker", operation="small").accepted,
+            )
+        before = budget.export_causal_state()
+        first = budget.quote_operations(
+            module="worker", operations=("small", "small"),
+        )
+        self.assertEqual((first.required_uc, first.available_uc), (4, 4))
+        self.assertTrue(first.affordable)
+        second = budget.quote_operations(
+            module="worker", operations=("small", "large"),
+        )
+        self.assertEqual(second.required_uc, 7)
+        self.assertFalse(second.affordable)
+        self.assertEqual(budget.export_causal_state(), before)
+        for owner in (budget, control):
+            self.assertTrue(
+                owner.charge(module="worker", operation="small").accepted,
+            )
+            self.assertTrue(
+                owner.charge(module="worker", operation="small").accepted,
+            )
+        self.assertEqual(
+            budget.export_causal_state(), control.export_causal_state(),
+        )
+        self.assertEqual(
+            budget.quote_operations(
+                module="worker", operations=("small",),
+            ).available_uc, 0,
+        )
+
+    def test_scheduler_capacity_quote_preserves_protected_reservation(self):
+        config = ComputeBudgetConfig(
+            version="quote-protected-v1", cycle_ceiling=10,
+            module_envelopes={"worker": 10, "control": 4},
+            protected_modules=frozenset({"control"}),
+            protected_capacity=3,
+            operation_costs={"large": 5, "small": 2},
+        )
+        budget = CycleComputeBudget(config=config)
+        budget.open_cycle(1)
+        self.assertTrue(
+            budget.charge(module="worker", operation="large").accepted,
+        )
+        before = budget.export_causal_state()
+        denied = budget.quote_operations(
+            module="worker", operations=("small", "small"),
+        )
+        self.assertEqual(denied.available_uc, 2)
+        self.assertEqual(denied.required_uc, 4)
+        self.assertFalse(denied.affordable)
+        allowed = budget.quote_operations(
+            module="control", operations=("small", "small"),
+        )
+        self.assertEqual(allowed.available_uc, 4)
+        self.assertTrue(allowed.affordable)
+        self.assertEqual(before, budget.export_causal_state())
+        self.assertEqual(
+            budget.charge(module="worker", operation="small").accepted,
+            True,
+        )
+        self.assertFalse(
+            budget.charge(module="worker", operation="small").accepted,
+        )
+        self.assertTrue(
+            budget.charge(module="control", operation="small").accepted,
+        )
+
+    def test_scheduler_capacity_quote_rejects_invalid_or_unopened_inputs(self):
+        budget = CycleComputeBudget(config=self.config())
+        with self.assertRaises(RuntimeError):
+            budget.quote_operations(
+                module="worker", operations=("small",),
+            )
+        budget.open_cycle(1)
+        original = budget.export_causal_state()
+        for module, operations in (
+            ("missing", ("small",)),
+            ("worker", ()),
+            ("worker", ("missing",)),
+            ("worker", ("small", 1)),
+            ("worker", ["small"]),
+            ("worker", "small"),
+            (True, ("small",)),
+        ):
+            with self.subTest(module=module, operations=operations):
+                with self.assertRaises(ValueError):
+                    budget.quote_operations(
+                        module=module, operations=operations,
+                    )
+                self.assertEqual(
+                    budget.export_causal_state(), original,
+                )
+
     def test_budget_state_is_snapshot_restorable(self) -> None:
         budget = CycleComputeBudget(config=self.config())
         budget.open_cycle(4)
