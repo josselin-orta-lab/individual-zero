@@ -545,11 +545,16 @@ class Stage11Runtime(Stage9Runtime):
             # Phase-1 Exploration observes the real capture but does not
             # consume a same-phase Planning output. The bounded, funded
             # targets will be offered through the phase-3 service instead.
-            new_geo_visit = self.exploration.observe_geographic_capture(
-                capture, frozen_targets=(),
+            over_capacity = (
+                self._stage11_unregistered_physical_step == capture.t_monde
             )
+            new_geo_visit = False
+            if not over_capacity:
+                new_geo_visit = self.exploration.observe_geographic_capture(
+                    capture, frozen_targets=(),
+                )
             geo = self.exploration.geographic
-            if geo is not None and geo.config.observe_routes:
+            if geo is not None and geo.config.observe_routes and not over_capacity:
                 # After an accepted Phase-1 Exploration observation charge.
                 # A v3 revision can only replace topology at the *current*
                 # physically captured site; never grant an extra visit.
