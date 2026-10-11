@@ -164,6 +164,19 @@ class ConsolidationTransaction:
     def frozen_episodes_copy(self) -> dict[str, object]:
         return deepcopy(self._frozen_episodes)
 
+    def frozen_episode_subset_copy(self, refs: tuple[str, ...]) -> dict[str, object]:
+        """Detach only the priced unit's required autobiography, not all Memory.
+
+        The pass runner must charge before using this operation. A missing
+        reference cannot be silently replaced with a WorldBody oracle read.
+        """
+        if type(refs) is not tuple or len(set(refs)) != len(refs):
+            raise ValueError("invalid frozen episode unit reference set")
+        try:
+            return deepcopy({ref: self._frozen_episodes[ref] for ref in refs})
+        except KeyError as exc:
+            raise ValueError("episode absent from cut-point batch") from exc
+
     @property
     def batch_digest(self) -> str:
         return self._batch_digest
