@@ -26,8 +26,8 @@ L'audit ne modifie aucun fichier de runtime, aucune politique d'accès GitHub, a
 
 | Gate | Preuve exigée | État au 11/10/2026 |
 | --- | --- | --- |
-| G-01 | Stage 10 terminé selon périmètre et preuves logiciel/600 pas ; décision de l'opérateur explicite | **NON ATTESTÉ** |
-| G-02 | Stage 11 terminé selon périmètre et preuves logiciel/600 pas ; décision de l'opérateur explicite | **NON ATTESTÉ** |
+| G-01 | Stage 10 terminé et validé par l'opérateur selon son contrat de développement ; ne pas imposer rétroactivement la v1.3.0 | **NON ATTESTÉ** |
+| G-02 | Stage 11 terminé et validé par l'opérateur selon son contrat de développement ; ne pas imposer rétroactivement la v1.3.0 | **NON ATTESTÉ** |
 | G-03 | Toutes les branches de travail effectivement retenues sont connues et figées à des SHA identifiés ; aucune écriture concurrente sur la base d'audit | **NON ATTESTÉ** |
 | G-04 | Les PR empilées Stage 10 ont un plan d'intégration sans ambiguïté, sans retcon scientifique | **NON ATTESTÉ** |
 | G-05 | L'opérateur autorise explicitement l'**audit final en lecture seule** de la base intégrée | **EN ATTENTE** |
@@ -130,7 +130,7 @@ Tout module non listé qui utilise `JournalEvent`, `SnapshotManager.restore`, de
 
 ## 5. Exécution reproductible de l'audit après validation
 
-Le script `scripts/audit_mvp_v1_3_dependencies.py` fournit un **inventaire statique en lecture seule** du checkout sélectionné. Ses alertes ne sont ni des preuves de défaut ni des validations automatiques. Les matches appartenant à des commentaires, tests historiques ou fixtures isolées doivent être classifiés manuellement.
+Le script `scripts/audit_mvp_v1_3_dependencies.py` fournit un **inventaire statique en lecture seule** du checkout sélectionné. Si la branche documentaire n'est pas encore intégrée à la base auditée, lancer ce script depuis un autre checkout de la branche documentaire avec `--root /chemin/du/checkout-fige` ; ne jamais modifier ni fusionner la base figée pour y ajouter l'outil. Ses alertes ne sont ni des preuves de défaut ni des validations automatiques. Les matches appartenant à des commentaires, tests historiques ou fixtures isolées doivent être classifiés manuellement.
 
 Mode d'emploi **uniquement après G-01 à G-05**, sur un clone local de la base intégrée gelée :
 
