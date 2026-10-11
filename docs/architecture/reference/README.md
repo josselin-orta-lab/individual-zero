@@ -9,13 +9,15 @@ Two document families currently coexist:
 - **Conceptual architecture**: explains the broader model, scientific hypotheses, building blocks, implementation diagrams, limitations, and research framing.
 - **Normative MVP specification**: defines the software contract for the MVP and is the implementation authority for that version.
 
-**Activation note:** The [English MVP v1.3.0](en/mvp-specification-v1.3.0.md) and [French translation](fr/mvp-specification-v1.3.0.md) are the approved next contract, not a declaration that the current runtime already conforms. The [post-Stage-10/11 audit](../../research/audits/post-stage10-11-mortal-mvp-audit.md) gates migration. v1.2.1 remains authoritative for the agents currently completing Stage 10 and Stage 11.\n\nThe conceptual architecture informs the project. The normative MVP specification tells an implementation team what must actually be built, tested, replayed, owned, and versioned for the MVP.
+**Activation note:** The [English MVP v1.3.0](en/mvp-specification-v1.3.0.md) and [French translation](fr/mvp-specification-v1.3.0.md) are the approved next contract, not a declaration that the current runtime already conforms. The [post-Stage-10/11 audit](../../research/audits/post-stage10-11-mortal-mvp-audit.md) gates migration. v1.2.1 remains authoritative for the agents currently completing Stage 10 and Stage 11.
+
+The conceptual architecture informs the project. The normative MVP specification tells an implementation team what must actually be built, tested, replayed, owned, and versioned for the MVP.
 
 ## Language layout
 
 Reference documents are organized by ISO 639-1 language code:
 
-\`\`\`text
+```text
 reference/
 ├── fr/
 │   ├── architecture-v2.md
