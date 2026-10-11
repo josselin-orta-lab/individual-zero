@@ -40,6 +40,18 @@ _FORBIDDEN_KINDS = frozenset({
 _FORBIDDEN_KEYS = frozenset({"oracle_canary", "oracle_ground_truth"})
 
 
+def _contains_forbidden_truth_keys(value):
+    """Detect forbidden truth fields even inside nested technical payloads."""
+    if isinstance(value, dict):
+        return any(
+            key in _FORBIDDEN_KEYS or _contains_forbidden_truth_keys(item)
+            for key, item in value.items()
+        )
+    if isinstance(value, list):
+        return any(_contains_forbidden_truth_keys(item) for item in value)
+    return False
+
+
 def _unique_pairs(items):
     result = {}
     for key, value in items:
@@ -196,7 +208,7 @@ def audit_export_bytes(
         kind = event.get("kind")
         if not isinstance(kind, str) or not kind:
             raise ValueError("missing causal event kind")
-        if kind in _FORBIDDEN_KINDS or any(k in _FORBIDDEN_KEYS for k in event):
+        if kind in _FORBIDDEN_KINDS or _contains_forbidden_truth_keys(event):
             raise ValueError("external oracle evidence leaked into I0 journal")
         # The hash chain alone cannot establish that a physical receipt
         # actually contains the state it claims to bind. A resealed archive
