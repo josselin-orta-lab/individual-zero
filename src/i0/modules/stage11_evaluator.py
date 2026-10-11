@@ -94,8 +94,19 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             and step.command.parameters == {"direction": target.direction}
             and step.preconditions == ("adjacent_passable",)
             and step.observation_window_steps == 1
-            and observed.get("position_x") == target.destination[0]
-            and observed.get("position_y") == target.destination[1]
+            and (
+                # No Equipment numeric prediction means explicit uncertainty
+                # as at Stage 9, not a fabricated zero-movement forecast.
+                (
+                    not step.predicted_consequences
+                    and proposal.preliminary_admissibility == "indeterminate"
+                )
+                or (
+                    proposal.preliminary_admissibility is None
+                    and observed.get("position_x") == target.destination[0]
+                    and observed.get("position_y") == target.destination[1]
+                )
+            )
         )
 
     @staticmethod
