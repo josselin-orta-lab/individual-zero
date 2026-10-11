@@ -91,8 +91,13 @@ class MortalLiveSleepDurabilityTests(unittest.TestCase):
             )
             self.assertEqual(audit.terminal_deaths, 0)
             self.assertEqual(audit.world_steps_closed, i0.scheduler.t_monde)
-            self.assertEqual(i0.slow_history.read_committed()["hypotheses"][0]["status"],
-                             "hypothese_causale")
+            h = i0.slow_history.read_committed()
+            self.assertTrue(h["consolidated_episode_refs"])
+            self.assertTrue(all(
+                rule["status"] == "hypothese_causale"
+                and rule["validated_for_safety"] is False
+                for rule in h["hypotheses"]
+            ))
 
 
 if __name__ == "__main__":
