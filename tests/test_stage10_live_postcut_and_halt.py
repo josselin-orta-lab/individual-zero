@@ -88,7 +88,12 @@ class SleepFailClosedTests(unittest.TestCase):
     def test_preexisting_safety_block_is_not_an_invented_technical_halt(self):
         runtime = configured_runtime()
         substrate = runtime.stage3.substrate
+        substrate.open_step()
         substrate.safety.enter_safety_block(reason="external_diagnostic_block")
+        runtime.scheduler.close_step(
+            outcome="blocked", applied_command_count=0,
+            world_advance_count=0,
+        )
         before_world = deepcopy(runtime.world.export_causal_state())
         before_journal = runtime.journal.canonical_bytes()
         before_time = runtime.scheduler.t_monde
