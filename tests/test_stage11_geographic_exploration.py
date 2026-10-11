@@ -6,6 +6,9 @@ from copy import deepcopy
 from dataclasses import replace
 from types import SimpleNamespace
 from unittest import TestCase
+from unittest.mock import patch
+
+from i0.modules.action_control import Admissibility
 
 from i0.modules.exploration import Exploration, ExplorationConfig
 from i0.modules.geographic_exploration import (
@@ -72,6 +75,25 @@ class GeographicOwnerTests(TestCase):
         self.assertFalse(geo.observe_capture(source))
         self.assertEqual(geo.visit_count, 1)
         self.assertEqual(geo.cibles(source, degraded=True), ())
+
+    def test_inadmissible_north_does_not_starve_single_target_capacity(self):
+        geo = GeographicExploration(config())
+        source = capture()
+        self.assertEqual(geo.cibles(source)[0].direction, "north")
+        filtered = geo.cibles(
+            source, inadmissible_directions=frozenset({"north"}),
+        )
+        self.assertEqual(len(filtered), 1)
+        self.assertEqual(filtered[0].direction, "east")
+        self.assertEqual(filtered[0].destination, (3,2))
+        # An unknown status is NOT prohibited and must remain eligible.
+        self.assertEqual(geo.cibles(source)[0].direction, "north")
+        for malformed in (
+            {"north"}, frozenset({"north", "invisible"}),
+            frozenset({False}), None,
+        ):
+            with self.subTest(value=malformed), self.assertRaises(ValueError):
+                geo.cibles(source, inadmissible_directions=malformed)
 
     def test_real_new_capture_retires_the_old_frontier(self):
         geo = GeographicExploration(config())
@@ -152,6 +174,33 @@ class GeographicOwnerTests(TestCase):
 
 
 class GeographicRuntimeTests(TestCase):
+    def test_preflight_requeries_action_control_no_unsafe_private_cache(self):
+        runtime = build_stage11_reference_runtime(enable_geography=True)
+        capture = runtime.stage3.open_step()
+        statuses = {"north": Admissibility.INADMISSIBLE}
+        consulted = []
+
+        def decide(*, capture, prepared):
+            direction = prepared.command.parameters["direction"]
+            consulted.append(direction)
+            return statuses.get(direction, Admissibility.INDETERMINATE)
+
+        with patch.object(
+            runtime.stage3.control, "verifier_admissibilite",
+            side_effect=decide,
+        ):
+            one, excluded = runtime._geographic_frontier_targets(capture)
+            self.assertEqual(one[0].direction, "east")
+            self.assertIn(("north", (2,1)), excluded)
+            # The canonical service reclassifies this cell: no permanent
+            # Exploration-local 'forbidden map' may hide it on re-query.
+            statuses["north"] = Admissibility.INDETERMINATE
+            two, new_excluded = runtime._geographic_frontier_targets(capture)
+            self.assertEqual(new_excluded, ())
+            self.assertEqual(two[0].direction, "north")
+            self.assertGreaterEqual(consulted.count("north"), 2)
+        runtime.stage3._capture = None
+
     def test_disabled_by_default_preserves_stage9_and_stage11_schema(self):
         baseline = build_stage9_reference_runtime()
         stage11 = build_stage11_reference_runtime()
