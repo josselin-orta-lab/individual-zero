@@ -923,6 +923,145 @@ class ComputeBudgetTests(unittest.TestCase):
             }),
         )
 
+    def test_scheduler_owner_detaches_caller_owned_uc_mappings(self):
+        source_envelopes = {"worker": 7, "control": 3}
+        source_costs = {"small": 2, "zero": 0}
+        config = ComputeBudgetConfig(
+            version="stage11-uc-mapping-ownership-unit-v1",
+            cycle_ceiling=10,
+            module_envelopes=source_envelopes,
+            protected_modules=frozenset({"control"}),
+            protected_capacity=3,
+            operation_costs=source_costs,
+        )
+        owner = CycleComputeBudget(config=config)
+        owner.open_cycle(1)
+        baseline_quote = owner.quote_operations(
+            module="worker", operations=("small", "small"),
+        )
+        self.assertEqual(
+            (baseline_quote.required_uc, baseline_quote.available_uc),
+            (4, 7),
+        )
+        original = owner.export_causal_state()
+        original_bytes = canonical_causal_bytes(original)
+
+        # The producer, NOT the owner, mutates aliased dicts after init.
+        # A public owner must not silently accept altered/free P-43 prices.
+        source_envelopes["worker"] = 0
+        source_envelopes["unregistered"] = 500
+        source_costs["small"] = 0
+        source_costs["zero"] = 9
+        source_costs["unregistered"] = 0
+        source_envelopes.clear()
+        source_costs.clear()
+
+        self.assertEqual(owner.export_causal_state(), original)
+        self.assertEqual(
+            canonical_causal_bytes(owner.export_causal_state()),
+            original_bytes,
+        )
+        self.assertEqual(
+            owner.quote_operations(
+                module="worker", operations=("small", "small"),
+            ),
+            baseline_quote,
+        )
+        self.assertEqual(
+            owner.charge(
+                module="worker", operation="small", count=2,
+            ).requested_uc,
+            4,
+        )
+        self.assertEqual(owner.consumed_module_uc("worker"), 4)
+        self.assertEqual(owner.consumed_cycle_uc, 4)
+        with self.assertRaises(ValueError):
+            owner.charge(module="worker", operation="unregistered")
+        with self.assertRaises(ValueError):
+            owner.charge(module="unregistered", operation="small")
+        with self.assertRaises(ValueError):
+            owner.quote_operations(
+                module="worker", operations=("unregistered",),
+            )
+        self.assertEqual(owner.consumed_cycle_uc, 4)
+        rejected = owner.charge(
+            module="worker", operation="small", count=2,
+        )
+        self.assertFalse(rejected.accepted)
+        self.assertEqual(rejected.reason, "protected_capacity")
+        self.assertEqual(owner.consumed_cycle_uc, 4)
+        bad = deepcopy(owner.export_causal_state())
+        bad["consumed_cycle_uc"] = 8
+        bad["consumed_by_module"] = {"worker": 8}
+        previous = canonical_causal_bytes(owner.export_causal_state())
+        with self.assertRaises(ValueError):
+            owner.restore_causal_state(bad)
+        self.assertEqual(
+            canonical_causal_bytes(owner.export_causal_state()), previous,
+        )
+        # A zero-cost operation remains zero; the producer's later
+        # replacement of that cost with 9 cannot make it expensive.
+        free = owner.charge(module="worker", operation="zero")
+        self.assertTrue(free.accepted)
+        self.assertEqual(free.requested_uc, 0)
+
+    def test_mappingproxy_producer_mutation_keeps_guarded_snapshot_replay(self):
+        def independent():
+            envelope_source = {"worker": 7, "control": 3}
+            operation_source = {"small": 2, "zero": 0}
+            config = ComputeBudgetConfig(
+                version="stage11-uc-mapping-ownership-guarded-v1",
+                cycle_ceiling=10,
+                module_envelopes=MappingProxyType(envelope_source),
+                protected_modules=frozenset({"control"}),
+                protected_capacity=3,
+                operation_costs=MappingProxyType(operation_source),
+                cycle_occurrence_guard=True,
+            )
+            budget = CycleComputeBudget(config=config)
+            journal = HashChainedJournal()
+            manager = SnapshotManager(journal=journal)
+            budget.open_cycle(1, occurrence=(1, "first-attempt", 1))
+            first = budget.charge(module="worker", operation="small")
+            self.assertEqual((first.accepted, first.requested_uc), (True, 2))
+            saved = deepcopy(budget.export_causal_state())
+            snapshot = manager.take(
+                snapshot_type=SnapshotType.PERIODIC,
+                individual_id="i0-uc-owner-custody-v1", t_monde=1,
+                cycle=0, attempt_ref=None, owners=(budget,),
+                versions={"scheduler": config.version},
+            )
+            self.assertTrue(manager.verify(snapshot.id))
+
+            envelope_source["worker"] = 0
+            operation_source["small"] = 0
+            operation_source["zero"] = 500
+            envelope_source.clear()
+            operation_source.clear()
+
+            quoted = budget.quote_operations(
+                module="worker", operations=("small",),
+            )
+            self.assertEqual(
+                (quoted.required_uc, quoted.available_uc), (2, 5),
+            )
+            budget.open_cycle(1, occurrence=(2, "next-step-attempt", 1))
+            second = budget.charge(module="worker", operation="small")
+            self.assertEqual((second.accepted, second.requested_uc), (True, 2))
+            manager.restore(snapshot.id, owners=(budget,))
+            self.assertEqual(budget.export_causal_state(), saved)
+            with self.assertRaises(RuntimeError):
+                budget.open_cycle(1, occurrence=(1, "first-attempt", 1))
+            self.assertEqual(budget.export_causal_state(), saved)
+            self.assertTrue(manager.verify(snapshot.id))
+            self.assertTrue(journal.verify())
+            return (
+                first, second, snapshot.id, snapshot.sha256,
+                canonical_causal_bytes(budget.export_causal_state()),
+                journal.canonical_bytes(), journal.head_hash,
+            )
+        self.assertEqual(independent(), independent())
+
     def test_budget_never_uses_machine_time(self) -> None:
         budget_a = CycleComputeBudget(config=self.config())
         budget_b = CycleComputeBudget(config=self.config())
