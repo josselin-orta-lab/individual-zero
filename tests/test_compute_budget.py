@@ -988,7 +988,9 @@ class ComputeBudgetTests(unittest.TestCase):
             module="worker", operation="small", count=2,
         )
         self.assertFalse(rejected.accepted)
-        self.assertEqual(rejected.reason, "protected_capacity")
+        # The original worker envelope is 7 UC, so the first refusal
+        # remains module_envelope; later source mutation cannot alter it.
+        self.assertEqual(rejected.reason, "module_envelope")
         self.assertEqual(owner.consumed_cycle_uc, 4)
         bad = deepcopy(owner.export_causal_state())
         bad["consumed_cycle_uc"] = 8
