@@ -289,9 +289,25 @@ class Stage10PublicationCoordinator:
                 },
             )
             self.slot.acknowledge_coordinated_commit(receipt)
-        except Exception:
-            # Scheduler remains single-threaded. Restore old h and all owners
-            # before propagating the failure; do not clear the transaction.
+        except Exception as error:
+            # A successful journal append is an irreversible publication
+            # boundary. If acknowledgement fails AFTER the append, rolling
+            # the active owners or h back would contradict the durable causal
+            # journal and permit a second publication of the same life.
+            #
+            # A failed fsync may have left a torn WAL: a poisoned journal
+            # likewise cannot authorize restoring active published forms.
+            journal_committed = (
+                len(self.journal.entries) != event_index
+                or self.journal.head_hash != prepared.postcut_slice.end_hash
+            )
+            if journal_committed or not self.journal.verify():
+                raise RuntimeError(
+                    "irreversible consolidation journal fault after publication; "
+                    "halt the individual, never restore committed active state"
+                ) from error
+            # Before the journal event exists, all states were private and
+            # the scheduler has not exposed an activation; safe to discard.
             self.history.restore_causal_state(before_history)
             for name in sorted(self.owners):
                 self.owners[name].restore_causal_state(
