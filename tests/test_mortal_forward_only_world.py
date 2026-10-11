@@ -21,10 +21,15 @@ class ForwardOnlyWorldTests(unittest.TestCase):
     def test_direct_import_of_earlier_world_is_forbidden_before_death(self):
         runtime = self.make_mortal()
         before = runtime.world.export_causal_state()
-        result = runtime.run_step()
-        self.assertEqual(result.execution_status, "applied")
+        # The reference cognitive policy may elect a zero-cost wait, which
+        # changes no body channel. Exercise an actual physical movement.
+        runtime.stage3.substrate.open_step()
+        result = runtime.stage3.substrate.execute(
+            Command("se_deplacer", {"direction": "east"}),
+        )
+        self.assertEqual(result.status, "applied")
         committed = runtime.world.export_causal_state()
-        self.assertNotEqual(committed["body"], before["body"])
+        self.assertNotEqual(committed["position"], before["position"])
         with self.assertRaisesRegex(RuntimeError, "historical WorldBody"):
             runtime.world.restore_causal_state(before)
         self.assertEqual(runtime.world.export_causal_state(), committed)
