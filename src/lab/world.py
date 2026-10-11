@@ -925,7 +925,16 @@ class WorldBody:
 
         if operation == "set_position":
             # External world intervention, never an individual movement command.
-            # Validate before changing any causal state.
+            # Grid coordinates are discrete; silently coercing a fractional,
+            # Boolean or string input could relocate the body to a different
+            # location than the actual logged external scenario command.
+            raw = payload.get("position")
+            if (
+                not isinstance(raw, Mapping)
+                or set(raw) != {"x", "y"}
+                or any(type(raw[k]) is not int for k in ("x", "y"))
+            ):
+                raise ValueError("scenario set_position requires exact integer x,y")
             position = position_from_payload()
             if position in self._obstacles:
                 raise ValueError("scenario position is obstructed")
