@@ -88,8 +88,17 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             effect.variable: effect.value_or_delta
             for effect in step.predicted_consequences
         }
+        expected = {
+            "position_x": target.destination[0],
+            "position_y": target.destination[1],
+        }
+        required_axis = (
+            "position_y" if target.direction in ("north", "south")
+            else "position_x"
+        )
         return (
-            step.index == 0
+            len(observed) == len(step.predicted_consequences)
+            and step.index == 0
             and step.command.primitive == "se_deplacer"
             and step.command.parameters == {"direction": target.direction}
             and step.preconditions == ("adjacent_passable",)
@@ -103,8 +112,11 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
                 )
                 or (
                     proposal.preliminary_admissibility is None
-                    and observed.get("position_x") == target.destination[0]
-                    and observed.get("position_y") == target.destination[1]
+                    and observed.get(required_axis) == expected[required_axis]
+                    and all(
+                        observed.get(name, value) == value
+                        for name, value in expected.items()
+                    )
                 )
             )
         )
