@@ -93,6 +93,48 @@ class OracleBoundaryTests(unittest.TestCase):
 
         self.assertEqual(offenders, [])
 
+
+    def test_bench_runs_without_oracle_and_cannot_query_hidden_truth(self) -> None:
+        bench = EvaluationBench(trace=EvaluationTrace())
+        bench.count_lethal_transition(data={"t_monde": 1})
+        bench.count_safety_block(data={"t_monde": 2})
+        self.assertEqual(bench.metrics.lethal_transitions, 1)
+        self.assertEqual(bench.metrics.safety_blocks, 1)
+        with self.assertRaisesRegex(RuntimeError, "not attached"):
+            bench.oracle_truth()
+        with self.assertRaises(ValueError):
+            EvaluationBench(trace=EvaluationTrace(), oracle=create_oracle(world())[0])
+        with self.assertRaises(ValueError):
+            EvaluationBench(trace=EvaluationTrace(), capability=OracleCapability(object()))
+
+    def test_bench_import_is_independent_of_oracle_module(self) -> None:
+        import subprocess
+        import sys
+        program = r'''
+import importlib.abc
+import sys
+class NoOracle(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == "lab.oracle" or fullname == "i0":
+            raise ImportError("forbidden external module: " + fullname)
+        return None
+sys.meta_path.insert(0, NoOracle())
+from lab.bench import EvaluationBench
+from lab.journal_views import EvaluationTrace
+b = EvaluationBench(trace=EvaluationTrace())
+b.count_safety_block(data={"step": 1})
+assert b.metrics.safety_blocks == 1
+assert "lab.oracle" not in sys.modules
+assert "i0" not in sys.modules
+print("independent_bench_without_oracle:OK")
+'''
+        output = subprocess.run(
+            [sys.executable, "-c", program], capture_output=True,
+            text=True, timeout=30,
+        )
+        self.assertEqual(output.returncode, 0, output.stderr)
+        self.assertIn("independent_bench_without_oracle:OK", output.stdout)
+
     def test_evaluation_metrics_are_external(self) -> None:
         instance = world()
         oracle, capability = create_oracle(instance)
