@@ -104,7 +104,22 @@ class GeographicExploration:
         self._last_capture = (t, x, y)
         return True
 
-    def cibles(self, capture, *, degraded: bool = False) -> tuple[GeographicTarget, ...]:
+    def cibles(
+        self, capture, *, degraded: bool = False,
+        inadmissible_directions: frozenset[str] = frozenset(),
+    ) -> tuple[GeographicTarget, ...]:
+        """Bound the visible frontier after the read-only Action Control veto.
+
+        The caller supplies only directions that Action Control explicitly
+        marked INADMISSIBLE for this captured context. Unknown directions
+        must NOT enter this set. No private safety cache is created here:
+        the canonical policy can change on a later decision or world step.
+        """
+        if (
+            not isinstance(inadmissible_directions, frozenset)
+            or not inadmissible_directions <= set(DIRECTION_DELTAS)
+        ):
+            raise ValueError("invalid Action Control excluded directions")
         if degraded or self.config.novelty_weight == 0:
             return ()
         t, x, y = capture.t_monde, capture.x, capture.y
@@ -124,8 +139,11 @@ class GeographicExploration:
             if (type(cell.x) is not int or type(cell.y) is not int
                 or (cell.x, cell.y) != destination):
                 raise ValueError("Perception neighbor position mismatch")
-            if (cell.passable is not True or cell.creature is True
-                or destination in self._visits):
+            if (
+                cell.passable is not True or cell.creature is True
+                or destination in self._visits
+                or direction in inadmissible_directions
+            ):
                 continue
             target = GeographicTarget(
                 ref=f"frontier:{destination[0]}:{destination[1]}:from:{x}:{y}",
