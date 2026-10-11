@@ -7,6 +7,7 @@ from dataclasses import dataclass, replace
 from math import isfinite
 
 from i0.modules.exploration import Exploration, ExplorationConfig
+from i0.contracts import Contribution
 from i0.modules.geographic_exploration import GeographicExplorationConfig
 from i0.modules.geographic_planning import propose_geographic_frontier
 from i0.modules.action_control import Admissibility
@@ -34,6 +35,8 @@ class Stage11Config:
     prospective_water: LivedPredictionConfig | None = None
     # Off by default: public geographical frontier integration, Stage-11 only.
     geographic: GeographicExplorationConfig | None = None
+    # Local physically perceived risk alerts; historical vNext reference OFF.
+    local_threat_alerts: bool = False
 
     def validate(self):
         if not self.version:
@@ -46,6 +49,8 @@ class Stage11Config:
             self.prospective_water.validate()
         if self.geographic is not None:
             self.geographic.validate()
+        if type(self.local_threat_alerts) is not bool:
+            raise ValueError("local threat sensor switch must be boolean")
         if not isfinite(self.intrinsic_weight) or self.intrinsic_weight < 0:
             raise ValueError("invalid P-15")
         if (type(self.exploration_envelope_uc) is not int
@@ -171,11 +176,29 @@ class Stage11Runtime(Stage9Runtime):
         # The current step's physical needs and previous Exploration state
         # cannot influence the profile until S_t publishes for a NEXT cycle.
         need_state = self._step_need_state
+        adjacent = capture.adjacent
+        complete_local_scan = (
+            len(adjacent) == 4
+            and {item.direction for item in adjacent}
+            == {"north", "south", "east", "west"}
+            and all(type(item.creature) is bool for item in adjacent)
+        )
         self._stage11_modulation_signals = {
             "boredom": self.exploration.boredom_detected(),
             "needs_satisfied": (
                 False if need_state is None
                 else all(float(v) == 0.0 for v in need_state.deficits.values())
+            ),
+            # An actual full local scan with no adjacent creature is
+            # affirmative LOCAL clearance, never a global safety oracle.
+            # This field is read only from the subsequently published S_t,
+            # and profile exit still requires hysteresis plus confirmed steps.
+            **(
+                {"threat_clear": True}
+                if (self._stage11_config.local_threat_alerts
+                    and complete_local_scan
+                    and not capture.adjacent_creatures)
+                else {}
             ),
         }
         hooks = super()._phase_hooks(
@@ -205,6 +228,71 @@ class Stage11Runtime(Stage9Runtime):
                     },
                 )
         hooks[0]["global_modulation"] = modulation_hook
+
+        previous_perception_hook = hooks[1]["perception"]
+
+        def local_threat_perception_hook(ctx):
+            previous_perception_hook(ctx)
+            if (
+                not self._stage11_config.local_threat_alerts
+                or cycle != 1 or not complete_local_scan
+                or not capture.adjacent_creatures
+            ):
+                return
+            if not self._charge(
+                module="perception", operation="perception_publish",
+            ):
+                return
+            observed = tuple(
+                sorted((cell.x, cell.y)
+                       for cell in capture.adjacent_creatures)
+            )
+            event_refs = tuple(
+                f"local-percept:{capture.t_monde}:creature:{x}:{y}"
+                for x, y in observed
+            )
+            alert = Contribution(
+                id=f"stage11:local-creature-alert:{capture.t_monde}",
+                schema_version="mvp-v1.2.1",
+                type="alert",
+                summary="adjacent creature physically observed",
+                subject_ref="local:adjacent-creature-threat",
+                emitter_module="perception",
+                signal_family="world_symbolic",
+                confidence=1.0,
+                urgency=1.0,
+                risk=1.0,
+                value=0.0,
+                production_t=capture.t_monde,
+                production_cycle=cycle,
+                expires_at_step=capture.t_monde + 1,
+                payload={
+                    "kind": "locally_observed_adjacent_creature",
+                    "source": "single_perceptual_capture",
+                    "observed_positions": [
+                        [x, y] for x, y in observed
+                    ],
+                    "local_radius": 1,
+                    "global_threat_clearance": False,
+                },
+                provenance_inputs=event_refs,
+                signal_ids=event_refs,
+            )
+            self._publish_contribution(alert)
+            self._write(
+                kind="stage11_local_threat_alert_proposed", cycle=cycle,
+                data={
+                    "contribution_ref": alert.id,
+                    "source": "local_perception",
+                    "observed_positions": [
+                        [x, y] for x, y in observed
+                    ],
+                    "risk": 1.0,
+                    "global_threat_clearance": False,
+                },
+            )
+
+        hooks[1]["perception"] = local_threat_perception_hook
 
         def exploration_hook(_context):
             if not self._charge(module="exploration", operation="exploration_observe"):
