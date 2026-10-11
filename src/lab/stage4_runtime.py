@@ -513,7 +513,10 @@ class Stage4Runtime:
             return None
 
         def modulation_hook(_ctx: PhaseContext) -> None:
-            self.compute_budget.open_cycle(cycle)
+            self.compute_budget.open_cycle(
+                cycle,
+                occurrence=(_ctx.t_monde, _ctx.attempt_ref, _ctx.cycle),
+            )
             self._cycle_degraded = False
 
         def perception_hook(_ctx: PhaseContext) -> None:
