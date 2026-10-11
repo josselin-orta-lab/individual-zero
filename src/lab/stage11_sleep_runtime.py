@@ -75,6 +75,13 @@ class Stage11SleepRuntime(Stage11Runtime, Stage10Runtime):
         if boundary is None or substrate.mortal_status is not MortalStatus.ACTIVE:
             raise RuntimeError("dead, halted or stopped individual cannot execute")
         if substrate.safety.blocked:
+            # The EXTERNAL campaign console must still see this blocked
+            # boundary so it can durably publish experiment_stopped. In
+            # diagnostic mode the console only observes it and the distinct
+            # safety block remains eligible for a verified operator release.
+            console = getattr(substrate, "_operator_control", None)
+            if console is not None:
+                console.before_open_step()
             raise RuntimeError("mortal individual is in an unresolved safety block")
         try:
             return super().run_step()
