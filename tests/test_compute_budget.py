@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import unittest
 from copy import deepcopy
+from decimal import Decimal
+from fractions import Fraction
+from math import inf, nan
 
 from lab.compute_budget import ComputeBudgetConfig, CycleComputeBudget
 from lab.determinism import canonical_causal_bytes
@@ -531,6 +534,207 @@ class ComputeBudgetTests(unittest.TestCase):
 
         self.assertEqual(operations_completed, 3)
         self.assertLessEqual(budget.consumed_cycle_uc, self.config().cycle_ceiling)
+
+    def test_open_cycle_only_accepts_exact_positive_int_before_reset(self):
+        budget = CycleComputeBudget(config=self.config())
+        budget.open_cycle(4)
+        self.assertTrue(budget.charge(
+            module="worker", operation="small",
+        ).accepted)
+        original = budget.export_causal_state()
+        original_bytes = canonical_causal_bytes(original)
+        quote = budget.quote_operations(
+            module="worker", operations=("small",),
+        )
+
+        invalid_cycles = (
+            True, False, 0, -1, 0.0, 1.0, 1.25, -0.5,
+            nan, inf, -inf, Decimal("2"), Fraction(3, 2),
+            "5", None, [], {}, (5,),
+        )
+        for value in invalid_cycles:
+            with self.subTest(value=repr(value)):
+                with self.assertRaises(ValueError):
+                    budget.open_cycle(value)
+                self.assertEqual(budget.export_causal_state(), original)
+                self.assertEqual(
+                    canonical_causal_bytes(budget.export_causal_state()),
+                    original_bytes,
+                )
+                self.assertEqual(
+                    budget.quote_operations(
+                        module="worker", operations=("small",),
+                    ),
+                    quote,
+                )
+        # A rejected open never resets the current ledger. Only a
+        # legitimate next cycle may renew the envelope.
+        self.assertEqual(budget.cycle, 4)
+        self.assertTrue(budget.charge(
+            module="worker", operation="small",
+        ).accepted)
+        self.assertEqual(budget.consumed_cycle_uc, 4)
+        budget.open_cycle(5)
+        self.assertEqual(budget.cycle, 5)
+        self.assertEqual(budget.consumed_cycle_uc, 0)
+        self.assertEqual(budget.consumed_module_uc("worker"), 0)
+
+    def test_charge_count_rejects_noncanonical_numeric_types_atomically(self):
+        budget = CycleComputeBudget(config=self.config())
+        budget.open_cycle(3)
+        self.assertTrue(budget.charge(
+            module="worker", operation="small",
+        ).accepted)
+        before = budget.export_causal_state()
+        before_bytes = canonical_causal_bytes(before)
+        expected_quote = budget.quote_operations(
+            module="worker", operations=("small",),
+        )
+        invalid_counts = (
+            True, False, -1, -3, 0.0, 1.0, 1.5, -0.1,
+            nan, inf, -inf, Decimal("1"), Decimal("1.5"),
+            Fraction(1, 2), "2", None, [], {}, (2,),
+        )
+        for value in invalid_counts:
+            with self.subTest(value=repr(value)):
+                with self.assertRaises(ValueError):
+                    budget.charge(
+                        module="worker", operation="small", count=value,
+                    )
+                self.assertEqual(budget.export_causal_state(), before)
+                self.assertEqual(
+                    canonical_causal_bytes(budget.export_causal_state()),
+                    before_bytes,
+                )
+                self.assertEqual(
+                    budget.quote_operations(
+                        module="worker", operations=("small",),
+                    ),
+                    expected_quote,
+                )
+        # Invalid calls have not consumed, reserved or silently rounded UC.
+        receipt = budget.charge(module="worker", operation="small")
+        self.assertTrue(receipt.accepted)
+        self.assertIs(type(receipt.requested_uc), int)
+        self.assertEqual(receipt.requested_uc, 2)
+        self.assertEqual(budget.consumed_cycle_uc, 4)
+
+    def test_charge_identifiers_fail_cleanly_without_mutating_uc(self):
+        budget = CycleComputeBudget(config=self.config())
+        # Keep the original missing-open-cycle contract, even if the
+        # request itself contains malformed identifiers or count.
+        with self.assertRaises(RuntimeError):
+            budget.charge(module=[], operation=[], count=1.5)
+        budget.open_cycle(1)
+        original = budget.export_causal_state()
+        encoded = canonical_causal_bytes(original)
+        invalid_requests = (
+            ([], "small"), ({}, "small"), (True, "small"),
+            (None, "small"), (1, "small"), ("missing", "small"),
+            ("worker", []), ("worker", {}), ("worker", True),
+            ("worker", None), ("worker", 1), ("worker", "missing"),
+        )
+        for module, operation in invalid_requests:
+            with self.subTest(module=repr(module), operation=repr(operation)):
+                with self.assertRaises(ValueError):
+                    budget.charge(
+                        module=module, operation=operation, count=1,
+                    )
+                self.assertEqual(
+                    canonical_causal_bytes(budget.export_causal_state()),
+                    encoded,
+                )
+                self.assertEqual(budget.export_causal_state(), original)
+        self.assertTrue(budget.charge(
+            module="worker", operation="small",
+        ).accepted)
+
+    def test_integer_counts_and_snapshot_replay_preserve_old_uc_semantics(self):
+        config = self.protected_snapshot_config()
+
+        def one_independent_run():
+            budget = CycleComputeBudget(config=config)
+            journal = HashChainedJournal()
+            manager = SnapshotManager(journal=journal)
+            budget.open_cycle(2)
+            zero_count = budget.charge(
+                module="worker", operation="small", count=0,
+            )
+            double_count = budget.charge(
+                module="worker", operation="small", count=2,
+            )
+            zero_cost = budget.charge(
+                module="control", operation="zero", count=2,
+            )
+            default_count = budget.charge(
+                module="control", operation="one",
+            )
+            self.assertEqual(
+                (zero_count.accepted, zero_count.requested_uc), (True, 0),
+            )
+            self.assertEqual(
+                (double_count.accepted, double_count.requested_uc), (True, 4),
+            )
+            self.assertEqual(
+                (zero_cost.accepted, zero_cost.requested_uc), (True, 0),
+            )
+            self.assertEqual(
+                (default_count.accepted, default_count.requested_uc), (True, 1),
+            )
+            self.assertEqual(
+                budget.export_causal_state()["consumed_by_module"],
+                {"control": 1, "worker": 4},
+            )
+            self.assertEqual(budget.consumed_cycle_uc, 5)
+            before_refusal = canonical_causal_bytes(
+                budget.export_causal_state()
+            )
+            unaffordable = budget.charge(
+                module="worker", operation="large",
+            )
+            self.assertEqual(
+                (unaffordable.accepted, unaffordable.reason),
+                (False, "protected_capacity"),
+            )
+            self.assertEqual(
+                canonical_causal_bytes(budget.export_causal_state()),
+                before_refusal,
+            )
+
+            state_at_capture = deepcopy(budget.export_causal_state())
+            record = manager.take(
+                snapshot_type=SnapshotType.PERIODIC,
+                individual_id="i0-stage11-canonical-count-snapshot-unit",
+                t_monde=2, cycle=0, attempt_ref=None,
+                owners=(budget,),
+                versions={"scheduler": config.version},
+            )
+            self.assertTrue(manager.verify(record.id))
+            budget.open_cycle(3)
+            self.assertTrue(budget.charge(
+                module="control", operation="small",
+            ).accepted)
+            manager.restore(record.id, owners=(budget,))
+            self.assertEqual(budget.export_causal_state(), state_at_capture)
+            self.assertEqual(
+                canonical_causal_bytes(budget.export_causal_state()),
+                canonical_causal_bytes(state_at_capture),
+            )
+            self.assertTrue(manager.verify(record.id))
+            self.assertTrue(journal.verify())
+            self.assertEqual(
+                [event.causal_event["kind"] for event in journal.entries],
+                ["snapshot_taken", "snapshot_restored"],
+            )
+            return (
+                (zero_count, double_count, zero_cost, default_count, unaffordable),
+                record,
+                canonical_causal_bytes(budget.export_causal_state()),
+                journal.canonical_bytes(),
+                journal.head_hash,
+            )
+
+        self.assertEqual(one_independent_run(), one_independent_run())
 
     def test_budget_never_uses_machine_time(self) -> None:
         budget_a = CycleComputeBudget(config=self.config())
