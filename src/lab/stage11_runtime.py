@@ -96,7 +96,7 @@ class Stage11Config:
                     else ""
                 )
                 + (
-                    "+charge-before-geographic-preflight-v2"
+                    "+phase1-charged-geographic-preflight-v3"
                     if (
                         self.geographic is not None
                         and self.geographic_preflight
@@ -265,12 +265,15 @@ class Stage11Runtime(Stage9Runtime):
         if self.exploration.geographic is None:
             return (), ()
         if raw_targets is None:
-            raw_targets = self.exploration.geographic_cibles(capture)
+            raw_targets = self.exploration.geographic_cibles(
+                capture, candidate_limit=4,
+            )
         if not self._stage11_config.geographic_preflight:
-            # Controlled replay of the pre-v3 geometric target construction.
-            # Only an early Planning optimization is absent. The final
-            # canonical Action Control veto is NEVER switched off.
-            return raw_targets, ()
+            # Public compatibility ablation only. The final canonical
+            # Action Control veto always remains authoritative.
+            return raw_targets[
+                :self.exploration.geographic.config.max_targets_per_cycle
+            ], ()
         if (
             self._stage11_config.geographic_preflight_requires_frontier
             and not raw_targets
@@ -295,12 +298,16 @@ class Stage11Runtime(Stage9Runtime):
                 forbidden.append(
                     (cell.direction, (cell.x, cell.y))
                 )
-        targets = self.exploration.geographic_cibles(
-            capture,
-            inadmissible_directions=frozenset(
+        # Use ONLY the raw list frozen from the *pre-Phase-1* owner state.
+        # Never reread Exploration after its Phase-1 producer has run.
+        # Known-inadmissible directions are removed BEFORE the configured
+        # target cap, preserving an east alternative when north is denied.
+        targets = tuple(
+            target for target in raw_targets
+            if target.direction not in {
                 direction for direction, _ in forbidden
-            ),
-        )
+            }
+        )[:self.exploration.geographic.config.max_targets_per_cycle]
         return targets, tuple(sorted(forbidden))
 
     def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
@@ -308,15 +315,14 @@ class Stage11Runtime(Stage9Runtime):
         frozen = self.causal_model.export_causal_state()
         # Read-only frontier inputs are frozen BEFORE phase-1. No Planning
         # producer may read Exploration output from the same phase (INV-08).
-        raw_geo_targets = self.exploration.geographic_cibles(capture)
-        # Freeze the raw, physically grounded candidate list BEFORE Phase-1.
-        # The *safety* classification must wait until Phase-0 has opened
-        # and charged the current logical compute budget. No unpaid lookup
-        # is permitted during preparation of a Scheduler hook.
-        frozen_geo_targets = (
-            raw_geo_targets if not self._stage11_config.geographic_preflight
-            else ()
+        # Phase-0 only freezes the previous owner state and one physical
+        # capture. It never computes an Action Control safety classification.
+        # Up to four candidates are read BEFORE the configured target cap;
+        # Phase-1 Planning applies canonical safety and THEN this cap.
+        raw_geo_targets = self.exploration.geographic_cibles(
+            capture, candidate_limit=4,
         )
+        frozen_geo_targets = ()
         excluded_geo = ()
         preflight_paid = False
         deferred_geo_this_cycle = False
@@ -377,52 +383,9 @@ class Stage11Runtime(Stage9Runtime):
         previous_modulation_hook = hooks[0]["global_modulation"]
 
         def modulation_hook(ctx):
-            nonlocal frozen_geo_targets, excluded_geo, preflight_paid
-            # This opens the cycle's P-43 budget before *any* extra work.
+            # Only the scheduler freeze and Global Modulation run in Phase-0.
+            # The Planning safety service call happens in Planning Phase-1.
             previous_modulation_hook(ctx)
-            if (
-                self.exploration.geographic is not None
-                and self._stage11_config.geographic_preflight
-                and st_before_cycle is not None
-                and not demand_skip_geo_preflight
-            ):
-                if self._charge(
-                    module="planning",
-                    operation="geographic_admissibility_preflight",
-                ):
-                    preflight_paid = True
-                    # Canonical Action Control is queried only after an
-                    # accepted charge. Inputs remain from the pre-phase
-                    # physical Perception capture and Exploration ledger.
-                    frozen_geo_targets, excluded_geo = (
-                        self._geographic_frontier_targets(
-                            capture, raw_targets=raw_geo_targets,
-                        )
-                    )
-                    self._write(
-                        kind="stage11_geographic_preflight_consulted",
-                        cycle=cycle,
-                        data={
-                            "boundary": "phase0_after_accepted_charge",
-                            "source": "action_control.verifier_admissibilite",
-                            "charged_module": "planning",
-                            "charged_operation": (
-                                "geographic_admissibility_preflight"
-                            ),
-                            "charged_uc": 1,
-                            "raw_frontier_count": len(raw_geo_targets),
-                            "admissible_frontier_count": len(
-                                frozen_geo_targets
-                            ),
-                            "inadmissible_directions_count": len(
-                                excluded_geo
-                            ),
-                            "safety_policy_modified": False,
-                        },
-                    )
-                else:
-                    # Incomplete budget does NOT mean no frontier or safe.
-                    defer_geo_once("geographic_admissibility_preflight")
             old = self.modulation.profile
             indicators = self.modulation.indicators_from_st(st_before_cycle)
             new = self.modulation.freeze(
@@ -516,10 +479,11 @@ class Stage11Runtime(Stage9Runtime):
             # DC-07: even when the present cycle is degraded, a genuine
             # physical capture may update the visited ledger, but NO new
             # target is designated or retained as offered for that cycle.
+            # Phase-1 Exploration observes the real capture but does not
+            # consume a same-phase Planning output. The bounded, funded
+            # targets will be offered through the phase-3 service instead.
             new_geo_visit = self.exploration.observe_geographic_capture(
-                capture, frozen_targets=(
-                    () if self._cycle_degraded else frozen_geo_targets
-                ),
+                capture, frozen_targets=(),
             )
             if new_geo_visit:
                 self._write(
@@ -569,6 +533,7 @@ class Stage11Runtime(Stage9Runtime):
         previous_plan = hooks[1]["planning"]
 
         def plan_only_informational_targets(ctx):
+            nonlocal frozen_geo_targets, excluded_geo, preflight_paid
             self._stage11_geographic_proposals_this_cycle = ()
             emitted = self._causal_test_targets_this_cycle
             permitted = tuple(
@@ -598,10 +563,10 @@ class Stage11Runtime(Stage9Runtime):
                 return
             if st_before_cycle is None:
                 return
-            # The bounded 1-UC early safety consultation has already been
-            # charged within Phase-0, immediately BEFORE that consultation.
-            # Phase-1 reads only its frozen result, never new Exploration
-            # output from another producer in this same phase (INV-08).
+            # The 1-UC Planning charge and the canonical read-only safety
+            # lookup both execute here in Phase-1 Planning, using only raw
+            # frontier inputs frozen BEFORE all Phase-1 producers (INV-08).
+            # No Phase-0 cross-component work or same-phase owner reread.
             if demand_skip_geo_preflight:
                 # Technical accounting only. No missing-budget claim and no
                 # false "safe" classification, target or learning reward.
@@ -618,15 +583,40 @@ class Stage11Runtime(Stage9Runtime):
                     },
                 )
                 return
-            if (
-                self._stage11_config.geographic_preflight
-                and not preflight_paid
-            ):
-                # For a nonempty raw frontier, a rejected precharge causes
-                # degraded-mode return above. Never use an unpaid preflight.
-                raise AssertionError(
-                    "geographic Planning cannot use unpaid safety preflight"
+            if self._stage11_config.geographic_preflight:
+                if not self._charge(
+                    module="planning",
+                    operation="geographic_admissibility_preflight",
+                ):
+                    defer_geo_once("geographic_admissibility_preflight")
+                    return
+                preflight_paid = True
+                frozen_geo_targets, excluded_geo = (
+                    self._geographic_frontier_targets(
+                        capture, raw_targets=raw_geo_targets,
+                    )
                 )
+                self._write(
+                    kind="stage11_geographic_preflight_consulted",
+                    cycle=cycle,
+                    data={
+                        "boundary": "phase1_planning_after_accepted_charge",
+                        "source": "action_control.verifier_admissibilite",
+                        "charged_module": "planning",
+                        "charged_operation": (
+                            "geographic_admissibility_preflight"
+                        ),
+                        "charged_uc": 1,
+                        "raw_frontier_count": len(raw_geo_targets),
+                        "admissible_frontier_count": len(frozen_geo_targets),
+                        "inadmissible_directions_count": len(excluded_geo),
+                        "safety_policy_modified": False,
+                    },
+                )
+            else:
+                frozen_geo_targets = raw_geo_targets[
+                    :self.exploration.geographic.config.max_targets_per_cycle
+                ]
             if cycle == 1 and excluded_geo:
                 self._write(
                     kind="stage11_geographic_admissibility_prefiltered",
@@ -728,6 +718,24 @@ class Stage11Runtime(Stage9Runtime):
         previous_register = hooks[3]["competition"]
 
         def register_geographic_targets(ctx):
+            # DC-11 explicitly allows Competition's phase-3 service call to
+            # Exploration. Only genuinely funded Phase-1 Planning proposals
+            # may become currently offered intrinsic targets. No phase-1
+            # producer reads another producer's same-phase output.
+            geo = self.exploration.geographic
+            if geo is not None:
+                funded = {
+                    proposal.option.motive_ref.id
+                    for proposal in self._stage11_geographic_proposals_this_cycle
+                }
+                geo.freeze_targets(
+                    ()
+                    if self._cycle_degraded
+                    else tuple(
+                        target for target in frozen_geo_targets
+                        if target.ref in funded
+                    )
+                )
             previous_register(ctx)
             current = {
                 proposal.option.id
