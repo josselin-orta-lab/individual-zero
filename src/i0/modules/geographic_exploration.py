@@ -23,6 +23,7 @@ class GeographicExplorationConfig:
     max_distinct_sites: int
     max_targets_per_cycle: int
     observe_routes: bool = False
+    refresh_surveys: bool = False
 
     def validate(self) -> None:
         if not isinstance(self.version, str) or not self.version:
@@ -33,6 +34,10 @@ class GeographicExplorationConfig:
             raise ValueError("geographic P-48 interest must be bounded")
         if type(self.observe_routes) is not bool:
             raise ValueError("route survey flag must be boolean")
+        if type(self.refresh_surveys) is not bool:
+            raise ValueError("survey refresh flag must be boolean")
+        if self.refresh_surveys and not self.observe_routes:
+            raise ValueError("survey refresh requires opted-in route observations")
         if (type(self.max_distinct_sites) is not int or self.max_distinct_sites < 1
             or type(self.max_targets_per_cycle) is not int
             or not 1 <= self.max_targets_per_cycle <= 4):
@@ -75,6 +80,13 @@ class GeographicExploration:
         self._offered: tuple[GeographicTarget, ...] = ()
         self._surveys: dict[tuple[int, int], ObservedSurvey] = {}
         self._transit_offered: tuple[GeographicTransitTarget, ...] = ()
+
+    def _snapshot_schema(self) -> str:
+        if self.config.refresh_surveys:
+            return "geographic-exploration-v3-survey-refresh"
+        if self.config.observe_routes:
+            return "geographic-exploration-v2-survey"
+        return "geographic-exploration-v1"
 
     @property
     def distinct_sites(self) -> int:
@@ -154,7 +166,21 @@ class GeographicExploration:
         record.validate()
         old = self._surveys.get(position)
         if old is not None:
-            return False
+            if not self.config.refresh_surveys:
+                return False
+            if record.world_step < old.world_step:
+                raise ValueError("retrograde survey revision")
+            if record.world_step == old.world_step:
+                if record.free_neighbors != old.free_neighbors:
+                    raise ValueError("conflicting same-world-step physical survey")
+                return False
+            if record.free_neighbors == old.free_neighbors:
+                return False
+            # Replace only the *current* local physical adjacency after a
+            # new world-step capture and accepted Exploration observation.
+            # The visit ledger and its novelty count are never rewritten.
+            self._surveys[position] = record
+            return True
         if len(self._surveys) >= self.config.max_distinct_sites:
             raise ValueError("route survey capacity exceeded")
         self._surveys[position] = record
@@ -311,9 +337,7 @@ class GeographicExploration:
 
     def export_causal_state(self) -> dict[str, object]:
         return {
-            "schema": ("geographic-exploration-v2-survey"
-                       if self.config.observe_routes
-                       else "geographic-exploration-v1"),
+            "schema": self._snapshot_schema(),
             "version": self.config.version,
             "visits": [
                 [x, y, count] for (x, y), count in sorted(self._visits.items())
@@ -331,10 +355,7 @@ class GeographicExploration:
 
     def restore_causal_state(self, state: object) -> None:
         if (not isinstance(state, Mapping)
-            or state.get("schema") != (
-                "geographic-exploration-v2-survey"
-                if self.config.observe_routes else "geographic-exploration-v1"
-            )
+            or state.get("schema") != self._snapshot_schema()
             or state.get("version") != self.config.version
             or not isinstance(state.get("visits"), list)
             or not isinstance(state.get("offered"), list)):
