@@ -18,22 +18,21 @@ class MortalWorldTerminalFreezeTests(unittest.TestCase):
     def instance():
         return build_stage4_reference_runtime(autonomous_mortal=True)
 
-    @staticmethod
-    def assert_cannot_mutate(world):
+    def assert_cannot_mutate(self, world):
         before = world.export_causal_state()
-        with unittest.TestCase().assertRaisesRegex(RuntimeError, "terminal or halted"):
+        with self.assertRaisesRegex(RuntimeError, "terminal or halted"):
             world.apply(Command("attendre"), t_monde=2)
-        with unittest.TestCase().assertRaisesRegex(RuntimeError, "terminal or halted"):
+        with self.assertRaisesRegex(RuntimeError, "terminal or halted"):
             world.apply_scenario_event("set_danger_zone", {
                 "position": {"x": 3, "y": 3}, "active": True,
             })
-        with unittest.TestCase().assertRaisesRegex(RuntimeError, "terminal or halted"):
+        with self.assertRaisesRegex(RuntimeError, "terminal or halted"):
             world.apply_scenario_batch_atomically((
                 ("set_danger_zone", {
                     "position": {"x": 3, "y": 3}, "active": True,
                 }),
             ))
-        assert world.export_causal_state() == before
+        self.assertEqual(world.export_causal_state(), before)
 
     def test_fatal_world_transition_matches_unmodified_world_and_freezes(self):
         individual = self.instance()
