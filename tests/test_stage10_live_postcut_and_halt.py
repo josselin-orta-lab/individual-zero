@@ -36,6 +36,55 @@ class SleepFailClosedTests(unittest.TestCase):
             runtime.run_step()
         self.assertEqual(runtime.world.export_causal_state(), physical)
 
+    def test_failed_sleep_admission_after_semantic_work_halts_without_physics(self):
+        runtime = configured_runtime()
+        fatigued = runtime.sleep_health.export_causal_state()
+        fatigued["fatigue"] = 1.0
+        runtime.sleep_health.restore_causal_state(fatigued)
+        first = runtime.run_step()
+        self.assertEqual(first.command_primitive, "dormir")
+        physical = deepcopy(runtime.world.export_causal_state())
+        with patch.object(
+            runtime.stage3.control, "admit",
+            side_effect=OSError("injected postconsolidation control error"),
+        ):
+            with self.assertRaisesRegex(OSError, "postconsolidation control"):
+                runtime.run_step()
+        self.assertEqual(runtime.world.export_causal_state(), physical)
+        self.assertEqual(runtime.stage3.substrate.mortal_status,
+                         MortalStatus.TECHNICAL_HALT)
+        self.assertTrue(runtime.journal.verify())
+        with self.assertRaises(RuntimeError):
+            runtime.run_step()
+
+    def test_physical_sleep_committed_then_recovery_error_halts_without_rollback(self):
+        runtime = configured_runtime()
+        fatigued = runtime.sleep_health.export_causal_state()
+        fatigued["fatigue"] = 1.0
+        runtime.sleep_health.restore_causal_state(fatigued)
+        first = runtime.run_step()
+        self.assertEqual(first.command_primitive, "dormir")
+        before_time = runtime.scheduler.t_monde
+        old_world = deepcopy(runtime.world.export_causal_state())
+        with patch.object(
+            runtime.sleep_health, "recover_sleep_step",
+            side_effect=OSError("injected postphysics sleep error"),
+        ):
+            with self.assertRaisesRegex(OSError, "postphysics sleep"):
+                runtime.run_step()
+        self.assertEqual(runtime.scheduler.t_monde, before_time + 1)
+        self.assertIsNone(runtime.scheduler.active_attempt)
+        self.assertNotEqual(runtime.world.export_causal_state(), old_world)
+        self.assertEqual(runtime.stage3.substrate.mortal_status,
+                         MortalStatus.TECHNICAL_HALT)
+        self.assertTrue(runtime.journal.verify())
+        kinds = [entry.causal_event["kind"] for entry in runtime.journal.entries]
+        self.assertEqual(kinds[-1], "step_closed")
+        last_body = deepcopy(runtime.world.export_causal_state())
+        with self.assertRaises(RuntimeError):
+            runtime.run_step()
+        self.assertEqual(runtime.world.export_causal_state(), last_body)
+
     def test_semantic_identity_rebase_keeps_real_postcut_owner_state(self):
         journal, tx, slot, history, owners, coordinator = fixture()
         journal.append(
