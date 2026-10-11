@@ -20,7 +20,7 @@ from .stage11_runtime import Stage11Runtime
 from .world import Position
 
 
-PROTOCOL = "stage11-public-observed-route-integration-dev-v1"
+PROTOCOL = "stage11-public-observed-route-integration-dev-v2"
 CONDITIONS = (
     ("junction_open", None),
     ("junction_sealed", None),
