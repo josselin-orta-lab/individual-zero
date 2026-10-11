@@ -188,7 +188,7 @@ class SleepSession:
         actual_primitive = getattr(admission.command, "primitive", None)
         actual_source = getattr(prepared, "source", None)
         if decision.require_sleep_command:
-            if actual_primitive != "dormir" or actual_source != "decision":
+            if actual_primitive != "dormir" or actual_source not in {"sleep", "decision"}:
                 raise ValueError("sleep step needs an admitted sleep command")
         elif decision.reason == "reflex":
             if actual_source != "reflex" or actual_primitive == "dormir":
