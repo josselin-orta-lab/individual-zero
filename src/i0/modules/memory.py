@@ -874,7 +874,21 @@ class EpisodicMemory:
                 )
             )
 
+        # The set of recall signals currently above threshold is causal:
+        # omitting it on restore can either repeat an already-published recall
+        # or suppress the next legitimate threshold crossing after replay.
+        # Validate before mutating any owner fields.
+        raw_above = state.get("recall_above_threshold")
+        if (
+            not isinstance(raw_above, list)
+            or any(type(ref) is not str or not ref for ref in raw_above)
+            or len(set(raw_above)) != len(raw_above)
+        ):
+            raise ValueError("invalid Memory recall threshold snapshot")
+        restored_above = set(raw_above)
+
         self._episodes = restored
+        self._recall_above_threshold = restored_above
         self._seen_event_refs = {
             str(x) for x in state.get("seen_event_refs", [])
         }
