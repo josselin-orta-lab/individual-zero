@@ -8,6 +8,7 @@ from math import isfinite
 
 from i0.modules.exploration import Exploration, ExplorationConfig
 from i0.contracts import Contribution
+from i0.interfaces import PrimitiveCommand
 from i0.modules.geographic_exploration import GeographicExplorationConfig
 from i0.modules.geographic_planning import propose_geographic_frontier
 from i0.modules.action_control import Admissibility, PreparedCommand
@@ -189,12 +190,49 @@ class Stage11Runtime(Stage9Runtime):
         # Captured before phase 1. The next cycle reads it via frozen S_t.
         return {"modulation_signals": dict(self._stage11_modulation_signals)}
 
+    def _geographic_frontier_targets(self, capture):
+        """Use Action Control's published *contextual* admissibility service.
+
+        EN normative §9.4 allows early Planning filtering of definitely
+        prohibited options. This is not a duplicate or a cache of safety
+        facts; only the existing Action Control service can decide.
+        "Indeterminate" is still a candidate. Recompute on every phase-0
+        snapshot so any later safety fact reclassification takes effect.
+        """
+        if self.exploration.geographic is None:
+            return (), ()
+        forbidden = []
+        for cell in capture.adjacent:
+            if cell.passable is not True or cell.creature is True:
+                continue
+            prepared = PreparedCommand(
+                command=PrimitiveCommand(
+                    "se_deplacer", {"direction": cell.direction},
+                ),
+                source="decision",
+            )
+            if self.stage3.control.verifier_admissibilite(
+                capture=capture, prepared=prepared,
+            ) is Admissibility.INADMISSIBLE:
+                forbidden.append(
+                    (cell.direction, (cell.x, cell.y))
+                )
+        targets = self.exploration.geographic_cibles(
+            capture,
+            inadmissible_directions=frozenset(
+                direction for direction, _ in forbidden
+            ),
+        )
+        return targets, tuple(sorted(forbidden))
+
     def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
         # Frozen input precedes all producers of phase 1 (INV-08).
         frozen = self.causal_model.export_causal_state()
         # Read-only frontier inputs are frozen BEFORE phase-1. No Planning
         # producer may read Exploration output from the same phase (INV-08).
-        frozen_geo_targets = self.exploration.geographic_cibles(capture)
+        frozen_geo_targets, excluded_geo = self._geographic_frontier_targets(
+            capture,
+        )
         self._stage11_prospective_state = frozen
         self._stage11_prospective_capture = (
             capture.t_monde, (capture.x, capture.y), float(capture.body["water"]),
@@ -383,6 +421,28 @@ class Stage11Runtime(Stage9Runtime):
 
         def plan_only_informational_targets(ctx):
             self._stage11_geographic_proposals_this_cycle = ()
+            # One diagnostic per real step; never repeatedly charge Planning
+            # for a direction that Action Control already said was forbidden.
+            if cycle == 1 and excluded_geo:
+                self._write(
+                    kind="stage11_geographic_admissibility_prefiltered",
+                    cycle=cycle,
+                    data={
+                        "source": "action_control.verifier_admissibilite",
+                        "admissibility": "inadmissible",
+                        "world_step": capture.t_monde,
+                        "excluded": [
+                            {
+                                "direction": direction,
+                                "destination": list(destination),
+                            }
+                            for direction, destination in excluded_geo
+                        ],
+                        "count": len(excluded_geo),
+                        "cached": False,
+                        "global_safety_claim": False,
+                    },
+                )
             emitted = self._causal_test_targets_this_cycle
             permitted = tuple(
                 item for item in emitted
