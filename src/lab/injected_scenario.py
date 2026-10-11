@@ -127,7 +127,12 @@ class InjectedScenario:
             raise ValueError("scenario id mismatch")
         if state.get("version") != self._version:
             raise ValueError("scenario version mismatch")
+        # The schedule is causal external state. Matching only the ID,
+        # version and cursor would accept a different future while falsely
+        # claiming an exact interval replay (INV-33).
+        if state.get("events") != [event.as_dict() for event in self._events]:
+            raise ValueError("scenario event schedule mismatch")
         next_index = state.get("next_index")
-        if not isinstance(next_index, int) or not 0 <= next_index <= len(self._events):
+        if type(next_index) is not int or not 0 <= next_index <= len(self._events):
             raise ValueError("invalid scenario next_index")
         self._next_index = next_index
