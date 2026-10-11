@@ -130,6 +130,40 @@ class Stage11ExternalBatchFailureTests(TestCase):
         self.assertTrue(scenario.halted)
         self.assertEqual(scenario.export_causal_state(), status)
 
+    def test_rejected_snapshot_marker_and_cursor_must_describe_same_batch(self):
+        runtime = failed_batch_runner()
+        runtime.run_step()
+        with self.assertRaises(ScenarioInputRejected):
+            runtime.run_step()
+        scenario = runtime.stage3.substrate.scenario
+        frozen = deepcopy(scenario.export_causal_state())
+        self.assertEqual(frozen["next_index"], 0)
+        self.assertEqual(frozen["rejected_event"],
+                         {"t_monde": 2, "sequence": 1})
+        for index in (1, 2):
+            corrupted = deepcopy(frozen)
+            corrupted["next_index"] = index
+            with self.subTest(next_index=index), self.assertRaisesRegex(
+                ValueError, "invalid rejected scenario input marker",
+            ):
+                scenario.restore_causal_state(corrupted)
+            self.assertEqual(scenario.export_causal_state(), frozen)
+        for marker in (
+            {"t_monde": 2, "sequence": 99},
+            {"t_monde": 1, "sequence": 1},
+        ):
+            corrupted = deepcopy(frozen)
+            corrupted["rejected_event"] = marker
+            with self.subTest(marker=marker), self.assertRaisesRegex(
+                ValueError, "invalid rejected scenario input marker",
+            ):
+                scenario.restore_causal_state(corrupted)
+            self.assertEqual(scenario.export_causal_state(), frozen)
+        scenario.restore_causal_state(deepcopy(frozen))
+        self.assertTrue(scenario.halted)
+        self.assertEqual(scenario.export_causal_state(), frozen)
+        self.assertTrue(runtime.journal.verify())
+
     def test_single_rejected_input_stops_before_any_perception_or_command(self):
         runtime = build_public_route_runtime(
             scenario_events=(
