@@ -103,6 +103,8 @@ class ScriptedStage2Runtime:
                 bench=self.bench,
             )
         self._mortal_boundary: MortalWorldBoundary | None = None
+        # Optional external operator control: never a cognitive or Oracle owner.
+        self._operator_control = None
         if scenario_id is None and (scenario_version is not None or scenario_events):
             raise ValueError("scenario_id is required when scenario data is supplied")
         if scenario_id is not None and scenario_version is None:
@@ -125,6 +127,8 @@ class ScriptedStage2Runtime:
         owners = [self.scheduler, self.world, self.safety]
         if self.scenario is not None:
             owners.append(self.scenario)
+        if self._operator_control is not None:
+            owners.append(self._operator_control)
         return tuple(owners)
 
     def enable_mortal_world(self) -> None:
@@ -160,12 +164,24 @@ class ScriptedStage2Runtime:
             else self._mortal_boundary.status
         )
 
+    def attach_operator_control(self, control) -> None:
+        """A single operator may attach only before a new mortal world step."""
+        if (self._mortal_boundary is None
+                or self._mortal_boundary.status is not MortalStatus.ACTIVE
+                or self.scheduler.active_attempt is not None
+                or self._operator_control is not None
+                or getattr(control, "owner_id", None) != "operator_console"):
+            raise RuntimeError("operator control requires an active mortal boundary")
+        self._operator_control = control
+
     def open_step(self) -> None:
         if (
             self._mortal_boundary is not None
             and self._mortal_boundary.status is not MortalStatus.ACTIVE
         ):
             raise RuntimeError("dead or halted individual cannot advance")
+        if self._operator_control is not None:
+            self._operator_control.before_open_step()
         if self._mortal_boundary is not None and self.safety.blocked:
             raise RuntimeError("safety-blocked mortal individual cannot advance")
         # A rejected external input is a stopped branch, not an omitted
