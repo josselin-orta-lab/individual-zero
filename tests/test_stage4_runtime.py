@@ -458,6 +458,78 @@ class Stage4IntegratedLoopTests(unittest.TestCase):
         self.assertIn("lethal_rollback_completed", technical_kinds)
         self.assertIn("command_vetoed", technical_kinds)
 
+    def test_guarded_uc_occurrence_survives_actual_cognitive_lethal_rollback(self):
+        # This exercises the actual Stage-4 lethal checkpoint and new
+        # Scheduler attempt, rather than a synthetic owner-only restore.
+        # Stage-11 inherits this Stage-4 cognitive/physical dispatch path.
+        def independent():
+            prior = stage4_config()
+            guarded = replace(
+                prior,
+                version=prior.version + "+uc-occurrence-lethal-dev-v1",
+                compute_budget=replace(
+                    prior.compute_budget,
+                    version=prior.compute_budget.version
+                    + "+uc-occurrence-lethal-dev-v1",
+                    cycle_occurrence_guard=True,
+                ),
+            )
+            instance = runtime(
+                layout=WorldLayout(
+                    water_sources=frozenset({Position(4, 2)}),
+                    lethal_zones=frozenset({Position(3, 2)}),
+                ),
+                config=guarded,
+            )
+            result = instance.run_step()
+            self.assertEqual(instance.bench.metrics.lethal_transitions, 1)
+            self.assertEqual(instance.bench.metrics.lethal_rollbacks, 1)
+            self.assertEqual(result.execution_status, "applied")
+            self.assertTrue(result.fallback_used)
+            self.assertEqual(result.command_primitive, "attendre")
+            self.assertEqual(instance.world.position, Position(2, 2))
+
+            technical = [entry.causal_event for entry in instance.journal.entries]
+            kinds = [entry["kind"] for entry in technical]
+            self.assertEqual(kinds.count("lethal_transition_detected"), 1)
+            self.assertEqual(kinds.count("lethal_rollback_completed"), 1)
+            self.assertGreaterEqual(kinds.count("snapshot_restored"), 1)
+            cycles = [
+                (event["t_monde"], event["attempt_ref"], event["cycle"])
+                for event in technical if event["kind"] == "cycle_opened"
+            ]
+            self.assertGreaterEqual(len(cycles), 2)
+            self.assertEqual(cycles[0][0], 1)
+            self.assertEqual(cycles[1][0], 1)
+            self.assertNotEqual(cycles[0][1], cycles[1][1])
+            self.assertNotEqual(cycles[0][2], cycles[1][2])
+            budget = instance.compute_budget.export_causal_state()
+            self.assertEqual(
+                budget["active_occurrence"],
+                {
+                    "t_monde": cycles[-1][0],
+                    "attempt_ref": cycles[-1][1],
+                    "cycle": cycles[-1][2],
+                },
+            )
+            self.assertGreater(budget["consumed_cycle_uc"], 0)
+            self.assertEqual(
+                instance.stage3.substrate.autobiographical_view()[0]["primitive"],
+                "attendre",
+            )
+            self.assertTrue(instance.journal.verify())
+            return (
+                result,
+                budget,
+                instance.journal.canonical_bytes(),
+                instance.journal.head_hash,
+                {
+                    owner.owner_id: owner.export_causal_state()
+                    for owner in instance.causal_owners
+                },
+            )
+        self.assertEqual(independent(), independent())
+
     def test_same_minimal_cognitive_run_replays_identically(self) -> None:
         def execute():
             instance = runtime(
