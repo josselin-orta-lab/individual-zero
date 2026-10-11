@@ -137,6 +137,12 @@ def run_public_strict_geographic_budget(
     order_violations = 0
     for index, entry in consulted:
         data = entry["data"]
+        preceding_phase_opens = [
+            prior for prior in events[:index]
+            if prior.get("kind") == "phase_opened"
+            and prior.get("t_monde") == entry["t_monde"]
+            and prior.get("cycle") == entry.get("cycle")
+        ]
         previous_charges = [
             prior for prior in events[:index]
             if prior.get("kind") == "compute_charge"
@@ -149,6 +155,8 @@ def run_public_strict_geographic_budget(
         ]
         if (
             len(previous_charges) != 1
+            or not preceding_phase_opens
+            or preceding_phase_opens[-1].get("phase") != 1
             or data.get("boundary") != "phase1_planning_after_accepted_charge"
             or data.get("charged_operation")
             != "geographic_admissibility_preflight"
