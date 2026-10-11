@@ -20,6 +20,9 @@ class ComputeBudgetConfig:
     protected_modules: frozenset[str]
     protected_capacity: int
     operation_costs: Mapping[str, int]
+    # Public, default-off versioned software custody mode. Legacy v1 states
+    # retain exactly the same keys, hashes, and cycle-renewal semantics.
+    cycle_occurrence_guard: bool = False
 
     def validate(self) -> None:
         """Fail closed on noncanonical logical UC configuration inputs.
@@ -30,6 +33,8 @@ class ComputeBudgetConfig:
         """
         if type(self.version) is not str or not self.version:
             raise ValueError("budget config version must not be empty")
+        if type(self.cycle_occurrence_guard) is not bool:
+            raise ValueError("cycle occurrence guard must be boolean")
         if type(self.cycle_ceiling) is not int or self.cycle_ceiling < 0:
             raise ValueError("B_cycle must be a non-negative integer")
         if type(self.protected_capacity) is not int or self.protected_capacity < 0:
@@ -100,6 +105,7 @@ class CycleComputeBudget:
         self._cycle: int | None = None
         self._consumed_cycle = 0
         self._consumed_by_module: dict[str, int] = {}
+        self._active_occurrence: tuple[int, str, int] | None = None
 
     @property
     def owner_id(self) -> str:
@@ -159,14 +165,34 @@ class CycleComputeBudget:
             affordable=required <= available,
         )
 
-    def open_cycle(self, cycle: int) -> None:
+    def open_cycle(
+        self, cycle: int, *,
+        occurrence: tuple[int, str, int] | None = None,
+    ) -> None:
         # A bool or fractional value must never become a causal cycle index.
         # Reject before the new cycle can reset any live UC counters.
         if type(cycle) is not int or cycle < 1:
             raise ValueError("cycle must be >= 1")
+        active_occurrence = None
+        if self._config.cycle_occurrence_guard:
+            # Identify an actual Scheduler occurrence by world step, attempt
+            # and cognitive cycle. A new step may legitimately start at 1.
+            # Context is supplied by the Scheduler, not inferred from
+            # speculative world truth or from the previous integer alone.
+            if (
+                type(occurrence) is not tuple or len(occurrence) != 3
+                or type(occurrence[0]) is not int or occurrence[0] < 1
+                or type(occurrence[1]) is not str or not occurrence[1]
+                or type(occurrence[2]) is not int or occurrence[2] != cycle
+            ):
+                raise ValueError("invalid Scheduler cycle occurrence identity")
+            if occurrence == self._active_occurrence:
+                raise RuntimeError("Scheduler cycle occurrence already opened")
+            active_occurrence = occurrence
         self._cycle = cycle
         self._consumed_cycle = 0
         self._consumed_by_module = {}
+        self._active_occurrence = active_occurrence
 
     def charge(
         self,
@@ -234,12 +260,22 @@ class CycleComputeBudget:
         )
 
     def export_causal_state(self) -> object:
-        return {
+        state = {
             "config_version": self._config.version,
             "cycle": self._cycle,
             "consumed_cycle_uc": self._consumed_cycle,
             "consumed_by_module": dict(sorted(self._consumed_by_module.items())),
         }
+        if self._config.cycle_occurrence_guard:
+            occurrence = self._active_occurrence
+            state["active_occurrence"] = (
+                None if occurrence is None else {
+                    "t_monde": occurrence[0],
+                    "attempt_ref": occurrence[1],
+                    "cycle": occurrence[2],
+                }
+            )
+        return state
 
     def restore_causal_state(self, state: object) -> None:
         """Restore a complete and attainable Scheduler UC ledger atomically.
@@ -252,6 +288,8 @@ class CycleComputeBudget:
             "config_version", "cycle", "consumed_cycle_uc",
             "consumed_by_module",
         }
+        if self._config.cycle_occurrence_guard:
+            required_keys.add("active_occurrence")
         if not isinstance(state, Mapping) or set(state) != required_keys:
             raise ValueError("invalid compute budget snapshot schema")
         if state["config_version"] != self._config.version:
@@ -291,7 +329,34 @@ class CycleComputeBudget:
         ):
             raise ValueError("restored ordinary UC exceeds protected reserve")
 
+        occurrence = None
+        if self._config.cycle_occurrence_guard:
+            raw_occurrence = state["active_occurrence"]
+            if cycle is None:
+                if raw_occurrence is not None:
+                    raise ValueError("unopened budget has an active occurrence")
+            else:
+                if (
+                    not isinstance(raw_occurrence, Mapping)
+                    or set(raw_occurrence) != {
+                        "t_monde", "attempt_ref", "cycle",
+                    }
+                ):
+                    raise ValueError("invalid restored Scheduler occurrence")
+                world_step = raw_occurrence["t_monde"]
+                attempt_ref = raw_occurrence["attempt_ref"]
+                occurrence_cycle = raw_occurrence["cycle"]
+                if (
+                    type(world_step) is not int or world_step < 1
+                    or type(attempt_ref) is not str or not attempt_ref
+                    or type(occurrence_cycle) is not int
+                    or occurrence_cycle != cycle
+                ):
+                    raise ValueError("invalid restored Scheduler occurrence")
+                occurrence = (world_step, attempt_ref, occurrence_cycle)
+
         # All checks have passed; no state validation or coercion follows.
         self._cycle = cycle
         self._consumed_cycle = consumed_cycle
         self._consumed_by_module = restored
+        self._active_occurrence = occurrence
