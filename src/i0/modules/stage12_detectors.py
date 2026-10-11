@@ -167,25 +167,30 @@ class Stage12LivedDetectors:
             stagnation = sum(row.progress_delta for row in recent) <= p.stagnation_tolerance
 
         loop: bool | None = None
-        if len(rows) >= p.loop_repetitions:
-            valid = [r for r in rows if r.progress_delta is not None]
-            if len(valid) == len(rows):
-                loop = False
-                for period in range(1, p.loop_max_period + 1):
-                    required = period * p.loop_repetitions
-                    if len(rows) < required:
-                        continue
-                    tail = rows[-required:]
-                    identities = [
-                        (r.context_signature, r.active_goal_ref, r.option_ref)
-                        for r in tail
-                    ]
-                    if (all(r.option_ref is not None for r in tail)
-                            and all(r.progress_delta <= p.stagnation_tolerance for r in tail)
-                            and all(identities[i] == identities[i % period]
-                                    for i in range(len(identities)))):
-                        loop = True
-                        break
+        for period in range(1, p.loop_max_period + 1):
+            required = period * p.loop_repetitions
+            if len(rows) < required:
+                continue
+            tail = rows[-required:]
+            if any(r.progress_delta is None for r in tail):
+                continue
+            identities = [
+                (r.context_signature, r.active_goal_ref, r.option_ref)
+                for r in tail
+            ]
+            if (all(r.option_ref is not None for r in tail)
+                    and all(r.progress_delta <= p.stagnation_tolerance for r in tail)
+                    and all(identities[i] == identities[i % period]
+                            for i in range(len(identities)))):
+                loop = True
+                break
+        # Absence is meaningful only when there was enough complete evidence
+        # to rule out every configured period, not merely the period-1 loop.
+        if (loop is None
+                and len(rows) >= p.loop_repetitions * p.loop_max_period
+                and all(r.progress_delta is not None
+                        for r in rows[-p.loop_repetitions * p.loop_max_period:])):
+            loop = False
 
         low_entropy: bool | None = None
         if len(rows) >= p.entropy_min_samples:
@@ -260,5 +265,11 @@ class Stage12LivedDetectors:
         # no already accepted attribution may silently disappear.
         if not self._verified_refs.issubset(set(refs)):
             raise ValueError("cannot forget previously integrated verifications")
+        if self._rows and (
+            not restored._rows
+            or (restored._rows[-1].world_step, restored._rows[-1].cycle)
+            < (self._rows[-1].world_step, self._rows[-1].cycle)
+        ):
+            raise ValueError("cannot restore an earlier committed diagnostic cycle")
         self._rows = list(restored._rows)
         self._verified_refs = set(refs)
