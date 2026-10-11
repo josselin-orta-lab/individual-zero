@@ -10,7 +10,12 @@ from i0.modules.exploration import Exploration, ExplorationConfig
 from i0.contracts import Contribution
 from i0.interfaces import PrimitiveCommand
 from i0.modules.geographic_exploration import GeographicExplorationConfig
-from i0.modules.geographic_planning import propose_geographic_frontier
+from i0.modules.geographic_planning import (
+    propose_geographic_frontier, propose_geographic_transit,
+)
+from i0.modules.observed_frontier_routing import (
+    find_observed_frontier_route, GeographicTransitTarget,
+)
 from i0.modules.action_control import Admissibility, PreparedCommand
 from i0.modules.simulator import state_from_capture
 from i0.modules.global_modulation import GlobalModulation, ModulationConfig
@@ -44,6 +49,7 @@ class Stage11Config:
     geographic_preflight_requires_frontier: bool = True
     # Local physically perceived risk alerts; historical vNext reference OFF.
     local_threat_alerts: bool = False
+    geographic_route_enabled: bool = False
 
     def validate(self):
         if not self.version:
@@ -60,6 +66,13 @@ class Stage11Config:
             raise ValueError("geographic safety preflight flag must be bool")
         if type(self.geographic_preflight_requires_frontier) is not bool:
             raise ValueError("geographic frontier preflight gate flag must be bool")
+        if type(self.geographic_route_enabled) is not bool:
+            raise ValueError("route enabled flag must be bool")
+        if self.geographic_route_enabled and (
+            self.geographic is None or not self.geographic.observe_routes
+            or not self.geographic_preflight
+        ):
+            raise ValueError("route requires opted-in surveys and charged preflight")
         if type(self.local_threat_alerts) is not bool:
             raise ValueError("local threat sensor switch must be boolean")
         if not isfinite(self.intrinsic_weight) or self.intrinsic_weight < 0:
@@ -110,6 +123,8 @@ class Stage11Config:
             operation_costs={
                 **budget.operation_costs,
                 "exploration_observe": self.exploration_observe_cost_uc,
+                **({"geographic_route_search": 1}
+                   if self.geographic_route_enabled else {}),
                 **(
                     {"geographic_admissibility_preflight": 1}
                     if (
@@ -237,6 +252,7 @@ class Stage11Runtime(Stage9Runtime):
         if geo is None:
             return
         geo.freeze_targets(())
+        geo.freeze_transits(())
         self._stage11_geographic_proposals_this_cycle = ()
         self._write(
             kind="stage11_geographic_budget_deferred", cycle=cycle,
@@ -324,6 +340,13 @@ class Stage11Runtime(Stage9Runtime):
             capture, candidate_limit=4,
         )
         frozen_geo_targets = ()
+        frozen_transit_target = None
+        # Copy only already-owned pre-Phase-1 state; current Phase-1 surveys
+        # cannot become same-phase Planning knowledge (INV-08).
+        frozen_geography = (
+            None if self.exploration.geographic is None
+            else self.exploration.geographic.export_causal_state()
+        )
         excluded_geo = ()
         deferred_geo_this_cycle = False
 
@@ -552,7 +575,7 @@ class Stage11Runtime(Stage9Runtime):
         previous_plan = hooks[1]["planning"]
 
         def plan_only_informational_targets(ctx):
-            nonlocal frozen_geo_targets, excluded_geo
+            nonlocal frozen_geo_targets, frozen_transit_target, excluded_geo
             self._stage11_geographic_proposals_this_cycle = ()
             emitted = self._causal_test_targets_this_cycle
             permitted = tuple(
@@ -586,7 +609,59 @@ class Stage11Runtime(Stage9Runtime):
             # lookup both execute here in Phase-1 Planning, using only raw
             # frontier inputs frozen BEFORE all Phase-1 producers (INV-08).
             # No Phase-0 cross-component work or same-phase owner reread.
-            if demand_skip_geo_preflight:
+            if demand_skip_geo_preflight and self._stage11_config.geographic_route_enabled:
+                if not self._charge(
+                    module="planning", operation="geographic_route_search",
+                ):
+                    defer_geo_once("geographic_route_search")
+                    return
+                geo = self.exploration.geographic
+                from i0.modules.observed_frontier_routing import ObservedSurvey
+                prior_surveys = tuple(ObservedSurvey(
+                    position=tuple(row["position"]),
+                    world_step=row["world_step"],
+                    free_neighbors=tuple(tuple(p) for p in row["free_neighbors"]),
+                ) for row in frozen_geography["surveys"])
+                route = find_observed_frontier_route(
+                    origin=(capture.x, capture.y),
+                    visits=frozenset(
+                        tuple(row[:2]) for row in frozen_geography["visits"]
+                    ),
+                    surveys=prior_surveys,
+                    current_free_neighbors=frozenset(
+                        (cell.x, cell.y) for cell in capture.adjacent
+                        if cell.passable is True and cell.creature is False
+                    ),
+                    current_world_step=capture.t_monde,
+                )
+                self._write(
+                    kind="stage11_route_search", cycle=cycle,
+                    data={
+                        "source": "frozen_prior_exploration_surveys",
+                        "charged_operation": "geographic_route_search",
+                        "world_step": capture.t_monde,
+                        "route_found": route is not None,
+                        "oracle_access": False,
+                    },
+                )
+                if route is not None:
+                    frozen_transit_target = GeographicTransitTarget(
+                        ref=(
+                            f"frontier_route:{route.observed_frontier[0]}:"
+                            f"{route.observed_frontier[1]}:via:"
+                            f"{route.next_position[0]}:{route.next_position[1]}:"
+                            f"from:{capture.x}:{capture.y}"
+                        ),
+                        source_t_monde=capture.t_monde,
+                        origin=(capture.x, capture.y),
+                        destination=route.next_position,
+                        direction=route.direction,
+                        observed_frontier=route.observed_frontier,
+                        visited_path=route.visited_path,
+                        objective_observed_step=route.source_world_step,
+                    )
+                    frozen_transit_target.validate()
+            if demand_skip_geo_preflight and frozen_transit_target is None:
                 # Technical accounting only. No missing-budget claim and no
                 # false "safe" classification, target or learning reward.
                 self._write(
@@ -656,20 +731,29 @@ class Stage11Runtime(Stage9Runtime):
                         "preflight_uc": 1,
                     },
                 )
-            if not frozen_geo_targets:
+            if not frozen_geo_targets and frozen_transit_target is None:
                 return
             initial_state = state_from_capture(
                 capture=capture,
                 is_night=self.world.is_night(capture.t_monde),
             )
             geo_proposals = []
-            for target in frozen_geo_targets:
+            for target in (
+                frozen_geo_targets + (
+                    (frozen_transit_target,)
+                    if frozen_transit_target is not None else ()
+                )
+            ):
                 if not self._charge(
                     module="planning", operation="planning_build",
                 ):
                     defer_geo_once("planning_build")
                     break
-                proposal = propose_geographic_frontier(
+                proposal = (
+                    propose_geographic_frontier
+                    if not isinstance(target, GeographicTransitTarget)
+                    else propose_geographic_transit
+                )(
                     target=target, initial_state=initial_state,
                     simulator=self.simulator,
                     st_version=st_before_cycle.version,
@@ -710,7 +794,11 @@ class Stage11Runtime(Stage9Runtime):
                     data={
                         "target_ref": target.ref,
                         "option_ref": proposal.option.id,
-                        "source": "single_perceptual_capture",
+                        "source": (
+                            "frozen_prior_observed_frontier_route"
+                            if isinstance(target, GeographicTransitTarget)
+                            else "single_perceptual_capture"
+                        ),
                         "destination": list(target.destination),
                         "direction": target.direction,
                         "goal_ref": None,
@@ -746,6 +834,12 @@ class Stage11Runtime(Stage9Runtime):
                     proposal.option.motive_ref.id
                     for proposal in self._stage11_geographic_proposals_this_cycle
                 }
+                geo.freeze_transits(
+                    () if self._cycle_degraded
+                    or frozen_transit_target is None
+                    or frozen_transit_target.ref not in funded
+                    else (frozen_transit_target,)
+                )
                 geo.freeze_targets(
                     ()
                     if self._cycle_degraded
