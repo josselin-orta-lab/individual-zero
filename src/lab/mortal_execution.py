@@ -55,6 +55,9 @@ class MortalWorldBoundary:
     def __init__(self, *, world: WorldBody) -> None:
         if not isinstance(world, WorldBody):
             raise TypeError("mortality boundary requires the real WorldBody")
+        # A snapshot owner might otherwise call WorldBody.restore_causal_state
+        # directly, bypassing the SnapshotManager's ban on life restoration.
+        world.forbid_historical_restore()
         self._world = world
         self._status = MortalStatus.ACTIVE
         self._last_world_step = 0

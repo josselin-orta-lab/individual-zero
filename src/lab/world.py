@@ -8,6 +8,7 @@ Spec: 4.1, 7.1, 18.3, 19.5, 20.3 Stage 2, P-52, P-53.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Mapping, Sequence
 
@@ -392,6 +393,14 @@ class WorldBody:
     """Single owner of simulated real world and body causal state."""
 
     owner_id = "world_and_body"
+    # Only mutable physical state advances when an externally prepared batch
+    # is committed. Immutable physics/configuration objects retain identity.
+    _SCENARIO_MUTABLE_FIELDS = (
+        "_position", "_body", "_inventory", "_resources", "_placed_stones",
+        "_shelters", "_obstacles", "_water_sources", "_creatures",
+        "_danger_zones", "_lethal_zones", "_action_failure_schedules",
+        "_action_failure_indices",
+    )
 
     def __init__(
         self,
@@ -429,6 +438,36 @@ class WorldBody:
         # encodings remain unchanged. P-54 supplies primitive + schedule.
         self._action_failure_schedules: dict[str, tuple[bool, ...]] = {}
         self._action_failure_indices: dict[str, int] = {}
+        # Monotonic custody bit: not part of the individual's physical or
+        # cognitive state; a detached copy has a different identity.
+        self._historical_restore_forbidden = False
+
+    def forbid_historical_restore(self) -> None:
+        """Permanently forbid changing this living world's past via import."""
+        self._historical_restore_forbidden = True
+
+    def apply_scenario_batch_atomically(
+        self, operations: Sequence[tuple[str, Mapping[str, object]]],
+    ) -> None:
+        """Commit only forward external operations prepared on a private copy.
+
+        An invalid later operation has no effect on the actual world. Only
+        after the entire private batch succeeds do we replace all mutable
+        physical fields with ONE dictionary publication. There is no saved
+        public state to restore and no retroactive compensation on error.
+        """
+        if not self._historical_restore_forbidden:
+            raise RuntimeError("forward batch requires mortal-world custody")
+        if not operations:
+            return
+        candidate = deepcopy(self)
+        for operation, payload in operations:
+            candidate.apply_scenario_event(operation, deepcopy(dict(payload)))
+        # No operation that can fail occurs after publication begins.
+        replacement = dict(self.__dict__)
+        for name in self._SCENARIO_MUTABLE_FIELDS:
+            replacement[name] = getattr(candidate, name)
+        self.__dict__ = replacement
 
     @property
     def position(self) -> Position:
@@ -592,11 +631,9 @@ class WorldBody:
         return truth
 
     def restore_causal_state(self, state: object) -> None:
-        """Restore one complete, validated physical state atomically.
-
-        A malformed late field must not leave the world at a mixed causal
-        instant. The caller's snapshot is never mutated or retained.
-        """
+        """Import an independent historical fixture, never rewind live I0."""
+        if self._historical_restore_forbidden:
+            raise RuntimeError("historical WorldBody restoration is forbidden")
         if not isinstance(state, Mapping):
             raise ValueError("world/body state must be a mapping")
         if state.get("physics_version") != self._config.version:
