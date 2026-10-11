@@ -53,7 +53,7 @@ L'opt-in a **un autre** manifeste de configuration, un autre journal et des hash
 | --- | --- | --- |
 | 4/4 témoin | `9882f1ee3ae90aaf635545053539d01adf810d94cc6c6edfbfaa6bc2e5241acf` | `f45d8072bd8503c7d209c2a01e6d9c5ffa18d69cacb9ac637936e1c578d6d0c4` |
 | 4/4 danger caché | `646d946405c96f8b7dded65d01b617827dbb40df4f8bcd699417925270f80e33` | `9e4cdbedb55e4724e9e2c02ab1d1932c2a2ec95de4d86f76081a0b80879e6b41` |
-| 3/4 témoin | `b816b70b0e21bb52e554aa4625b1c5c2a7cb5eb7394265032e213c52b6cfe37b` | `72b1aa9a7bf0a5b7aa326719fd26c6c60f9abde7d106ff1cc9d89b963a4` |
+| 3/4 témoin | `b816b70b0e21bb52e554aa4625b1c5c2a7cb5eb7394265032e213c52b6cfe37b` | `72b1aa9a7bf0a5b7aa326719fd26c6c60f9abde7d106ff1ccf4b9c1d89b963a4` |
 | 0/0 témoin | `6ed73e9405f5f4995486b9fe2e56d8a32c62898df124289fbe7a3f12d070932e` | `c4024effd08fd45104bf81f8302f629b2c247f33cbf1f14c7fb3025bc77374a2` |
 
 Les deux snapshots périodiques par trajectoire sont vérifiés puis restaurés intégralement. Les restaurations ajoutent leurs propres événements au journal append-only : l'empreinte après restauration est légitimement différente de celle d'avant. Les comparaisons byte-à-byte indépendantes reproduisent exactement **les mêmes** points de capture, dans le même ordre, pour une même configuration.
