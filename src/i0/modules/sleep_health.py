@@ -140,7 +140,7 @@ class SleepHealth:
         if (recovered is not None and (
                 type(recovered) is not int or recovered < 1
                 or (state.get("frozen_world_step") is not None
-                    and recovered <= state["frozen_world_step"])):
+                    and recovered <= state["frozen_world_step"]))):
             raise ValueError("invalid sleep-recovery chronology")
         step, raw, clock = (
             state.get("frozen_world_step"),
@@ -171,7 +171,7 @@ class SleepHealth:
                     raise ValueError("nonphysical frozen pressure")
             if raw["intrinsic_status"] != "applicable" or (
                 raw["intrinsic_value"] != raw["sleep_pressure"]
-                or raw["fatigue"] > fatigue
+                or (raw["fatigue"] > fatigue and recovered is None)
             ):
                 raise ValueError("incoherent waking intrinsic sleep pressure")
             frozen = SleepPressureAssessment(**raw)
