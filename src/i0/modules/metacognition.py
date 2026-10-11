@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from typing import Mapping
 
 from .active_kappa import ActiveKappa, KappaConfig, KappaVerification
+from .sleep_pressure import SleepPressureConfig
+from .sleep_health import SleepHealth
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +32,8 @@ class MinimalMetacognition:
         self._last_cycle_uc = 0
         self._budget_state = "normal"
         self._active_kappa: ActiveKappa | None = None
+        # Optional Stage-10 extension, absent from historical Stage-4--9.
+        self._sleep_health: SleepHealth | None = None
 
     def attach_active_kappa(self, config: KappaConfig) -> None:
         if self._active_kappa is not None:
@@ -39,6 +43,15 @@ class MinimalMetacognition:
     @property
     def active_kappa(self) -> ActiveKappa | None:
         return self._active_kappa
+
+    def attach_sleep_health(self, config: SleepPressureConfig) -> None:
+        if self._sleep_health is not None:
+            raise ValueError("sleep-health policy already attached")
+        self._sleep_health = SleepHealth(config)
+
+    @property
+    def sleep_health(self) -> SleepHealth | None:
+        return self._sleep_health
 
     @property
     def state(self) -> MinimalMetacognitionState:
@@ -81,6 +94,8 @@ class MinimalMetacognition:
         }
         if self._active_kappa is not None:
             state["kappa_active"] = self._active_kappa.export_causal_state()
+        if self._sleep_health is not None:
+            state["sleep_health"] = self._sleep_health.export_causal_state()
         return state
 
     def restore_causal_state(self, state: object) -> None:
@@ -95,6 +110,14 @@ class MinimalMetacognition:
             raise ValueError("invalid last-cycle UC")
         if budget_state not in {"normal", "constrained", "degraded"}:
             raise ValueError("invalid synthetic budget state")
+        # Validate Stage-10 snapshot before mutating any canonical counters.
+        if self._sleep_health is not None:
+            if "sleep_health" not in state:
+                raise ValueError("missing Stage-10 sleep health snapshot")
+            preview = SleepHealth(self._sleep_health.rules.config)
+            preview.restore_causal_state(state["sleep_health"])
+        elif "sleep_health" in state:
+            raise ValueError("unattached Stage-10 sleep health snapshot")
         self._f_cog_uc_counter = total
         self._last_cycle_uc = last
         self._budget_state = str(budget_state)
@@ -102,3 +125,5 @@ class MinimalMetacognition:
             if "kappa_active" not in state:
                 raise ValueError("missing active kappa snapshot")
             self._active_kappa.restore_causal_state(state["kappa_active"])
+        if self._sleep_health is not None:
+            self._sleep_health.restore_causal_state(state["sleep_health"])

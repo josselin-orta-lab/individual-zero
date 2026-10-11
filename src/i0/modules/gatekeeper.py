@@ -11,6 +11,7 @@ Spec: 6.3-6.6, DC-04, 20.3 Stage 4.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import isfinite
 from typing import Callable, Mapping, Sequence
 
 from i0.contracts import Contribution, Goal, STElement
@@ -185,7 +186,11 @@ class Gatekeeper:
         active_goal: Goal | None,
         occupant: bool,
         subjects_present_before_new: set[str],
+        scoring_weights: Mapping[str, float] | None = None,
     ) -> _Scored:
+        # Preserve the documented Stage-8 direct scoring interface.
+        if scoring_weights is None:
+            scoring_weights = self._config.weights
         relevance = (
             1.0
             if active_goal is not None and contribution.goal_ref == active_goal.id
@@ -207,7 +212,7 @@ class Gatekeeper:
             "value": contribution.value,
         }
         score = sum(
-            self._config.weights[name] * decomposition[name]
+            scoring_weights[name] * decomposition[name]
             for name in decomposition
         )
         if self._reliability is not None:
@@ -226,7 +231,23 @@ class Gatekeeper:
         *,
         active_goal: Goal | None,
         t_monde: int,
+        profile_multipliers: Mapping[str, float] | None = None,
     ) -> GatekeeperSelection:
+        # vNext injects a frozen per-cycle P-23 profile; this is NOT a
+        # replacement or mutation of the Gatekeeper's base configuration.
+        # A None profile preserves all Stage-4--9 reference behavior.
+        scoring_weights: Mapping[str, float] = self._config.weights
+        if profile_multipliers is not None:
+            if set(profile_multipliers) != set(self._config.weights) or any(
+                not isinstance(v, (int, float)) or isinstance(v, bool)
+                or not isfinite(v) or v <= 0
+                for v in profile_multipliers.values()
+            ):
+                raise ValueError("invalid frozen gatekeeper profile multipliers")
+            scoring_weights = {
+                key: base * profile_multipliers[key]
+                for key, base in self._config.weights.items()
+            }
         self._trim_histories(t_monde=t_monde)
 
         feedback: list[GatekeeperFeedback] = []
@@ -262,6 +283,7 @@ class Gatekeeper:
                     active_goal=active_goal,
                     occupant=contribution.id in self._retained,
                     subjects_present_before_new=subjects_before,
+                    scoring_weights=scoring_weights,
                 )
             )
         for contribution in admitted:
@@ -271,6 +293,7 @@ class Gatekeeper:
                     active_goal=active_goal,
                     occupant=False,
                     subjects_present_before_new=subjects_before,
+                    scoring_weights=scoring_weights,
                 )
             )
 

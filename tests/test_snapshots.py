@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from lab.determinism import RandomStreamRegistry, deterministic_id
 from lab.journal import HashChainedJournal
@@ -57,6 +58,133 @@ class SnapshotManagerTests(unittest.TestCase):
 
         self.assertEqual(first.value, 10)
         self.assertEqual(second.value, 20)
+
+    def test_incompatible_late_owner_restores_all_original_states(self) -> None:
+        # A valid snapshot hash does not establish compatibility with
+        # today's owner validators. The second owner intentionally mutates
+        # first and then rejects to exercise the failure compensation path.
+        class RejectAfterMutation(FakeOwner):
+            def restore_causal_state(self, state: object) -> None:
+                super().restore_causal_state(state)
+                if self.value == 2:
+                    raise ValueError("synthetic incompatible owner version")
+
+        manager, journal = self.make_manager()
+        a = FakeOwner("a", 1)
+        b = RejectAfterMutation("b", 2)
+        record = manager.take(
+            snapshot_type=SnapshotType.PERIODIC,
+            individual_id="i0-snapshot-atomic-unit",
+            t_monde=2, cycle=0, attempt_ref=None,
+            owners=(a, b), versions={"runtime": "synthetic-unit-only"},
+        )
+        self.assertTrue(manager.verify(record.id))
+        a.value = 11
+        b.value = 22
+        journal_before = journal.canonical_bytes()
+        with self.assertRaisesRegex(
+            ValueError, "synthetic incompatible owner version",
+        ):
+            manager.restore(record.id, owners=(b, a))
+        self.assertEqual((a.value, b.value), (11, 22))
+        self.assertEqual(journal.canonical_bytes(), journal_before)
+        self.assertTrue(journal.verify())
+        self.assertTrue(manager.verify(record.id))
+
+        # The same verified snapshot is still valid for a compatible owner.
+        normal_b = FakeOwner("b", 22)
+        manager.restore(record.id, owners=(a, normal_b))
+        self.assertEqual((a.value, normal_b.value), (1, 2))
+        self.assertTrue(journal.verify())
+
+    def test_failed_snapshot_taken_receipt_leaves_no_orphan_or_sequence_gap(self):
+        manager, journal = self.make_manager()
+        owner = FakeOwner("physical", 7)
+        kwargs = dict(
+            snapshot_type=SnapshotType.PERIODIC,
+            individual_id="i0-receipt-boundary-unit",
+            t_monde=4, cycle=0, attempt_ref=None,
+            owners=(owner,), versions={"runtime": "unit-v1"},
+        )
+        with patch.object(
+            journal, "append",
+            side_effect=RuntimeError("synthetic snapshot_taken receipt failure"),
+        ):
+            with self.assertRaisesRegex(
+                RuntimeError, "synthetic snapshot_taken receipt failure",
+            ):
+                manager.take(**kwargs)
+        self.assertEqual(manager._snapshots, {})
+        self.assertEqual(manager._journal_sequence, 0)
+        self.assertEqual(journal.entries, ())
+        self.assertTrue(journal.verify())
+
+        # Retrying an otherwise identical successful snapshot must not
+        # consume a phantom journal occurrence or fabricate a lost snapshot.
+        actual = manager.take(**kwargs)
+        independent_manager, independent_journal = self.make_manager()
+        expected = independent_manager.take(**kwargs)
+        self.assertEqual(actual, expected)
+        self.assertEqual(manager._journal_sequence, 1)
+        self.assertEqual(
+            journal.canonical_bytes(), independent_journal.canonical_bytes(),
+        )
+        self.assertEqual(journal.head_hash, independent_journal.head_hash)
+        self.assertTrue(manager.verify(actual.id))
+        self.assertTrue(journal.verify())
+
+    def test_failed_snapshot_restored_receipt_recovers_both_owner_states(self):
+        manager, journal = self.make_manager()
+        first, second = FakeOwner("a", 1), FakeOwner("b", 2)
+        kwargs = dict(
+            snapshot_type=SnapshotType.PERIODIC,
+            individual_id="i0-restore-receipt-unit",
+            t_monde=3, cycle=0, attempt_ref=None,
+            owners=(second, first), versions={"runtime": "unit-v1"},
+        )
+        record = manager.take(**kwargs)
+        first.value, second.value = 11, 22
+        before = journal.canonical_bytes()
+        sequence_before = manager._journal_sequence
+
+        def reject_receipt(*, event_id, causal_event, **kwargs):
+            self.assertEqual(causal_event["kind"], "snapshot_restored")
+            raise RuntimeError("synthetic snapshot_restored receipt failure")
+
+        with patch.object(journal, "append", side_effect=reject_receipt):
+            with self.assertRaisesRegex(
+                RuntimeError, "synthetic snapshot_restored receipt failure",
+            ):
+                manager.restore(record.id, owners=(first, second))
+        self.assertEqual((first.value, second.value), (11, 22))
+        self.assertEqual(journal.canonical_bytes(), before)
+        self.assertEqual(manager._journal_sequence, sequence_before)
+        self.assertTrue(journal.verify())
+        self.assertTrue(manager.verify(record.id))
+
+        # Compare the post-failure valid restore with an independent clean
+        # timeline: no extra occurrence, no altered snapshot identity/hash.
+        independent_manager, independent_journal = self.make_manager()
+        other_first, other_second = FakeOwner("a", 1), FakeOwner("b", 2)
+        independent_record = independent_manager.take(
+            snapshot_type=SnapshotType.PERIODIC,
+            individual_id="i0-restore-receipt-unit",
+            t_monde=3, cycle=0, attempt_ref=None,
+            owners=(other_second, other_first),
+            versions={"runtime": "unit-v1"},
+        )
+        self.assertEqual(record, independent_record)
+        other_first.value, other_second.value = 11, 22
+        independent_manager.restore(
+            independent_record.id, owners=(other_first, other_second),
+        )
+        manager.restore(record.id, owners=(first, second))
+        self.assertEqual((first.value, second.value), (1, 2))
+        self.assertEqual(
+            journal.canonical_bytes(), independent_journal.canonical_bytes(),
+        )
+        self.assertEqual(journal.head_hash, independent_journal.head_hash)
+        self.assertTrue(journal.verify())
 
     def test_rng_state_continuation_is_restored_exactly(self) -> None:
         manager, _ = self.make_manager()

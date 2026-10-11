@@ -76,7 +76,7 @@ jobs:
        github.event.action == 'labeled' &&
        github.event.label.name == 'ci-full')
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 40
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
@@ -95,6 +95,48 @@ jobs:
 
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
+
+      # Stage-11 prospective public 600-world-step diagnostic. The protocol
+      # is software-only, uses the unchanged public Stage-11 reference world,
+      # and compares TWO independently instantiated lives with the exact
+      # same full-owner snapshot schedule. No held-out or Golden promotion.
+      - name: Stage 11 public 600-step exact independent replay (software only)
+        if: matrix.python-version == '3.12'
+        timeout-minutes: 25
+        run: |
+          python -m lab.stage11_600_step_software_probe | tee /tmp/stage11-600-step-software.jsonl
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from lab.determinism import canonical_causal_bytes, sha256_hex
+
+          line = Path("/tmp/stage11-600-step-software.jsonl").read_text(encoding="utf-8").strip()
+          prefix = "stage11_600_step_software="
+          if not line.startswith(prefix):
+              raise SystemExit("Stage11 600-step diagnostic missing receipt")
+          report = json.loads(line[len(prefix):])
+          digest = report.pop("evidence_sha256")
+          if (
+              report["protocol_version"] != "stage11-public-600-step-software-v1"
+              or report["classification"] != "public_software_diagnostic_not_heldout"
+              or report["scientific_verdict"] is not None
+              or report["steps_completed"] != 600
+              or report["physical_capture_count"] != 600
+              or not report["identical_independent_reexecution"]
+              or [item[0] for item in report["snapshot_receipts"]] != [1, 300, 600]
+              or sha256_hex(canonical_causal_bytes(report)) != digest
+          ):
+              raise SystemExit("Stage11 600-step software diagnostic failed")
+          print("stage11_600_world_steps_independent_replay=true")
+          PY
+
+      - name: Upload Stage 11 600-step public software diagnostic
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage11-600-step-software-diagnostic
+          path: /tmp/stage11-600-step-software.jsonl
+          if-no-files-found: error
 
       - name: Stage 9 frozen checkout preflight (local software diagnostic)
         if: matrix.python-version == '3.12'

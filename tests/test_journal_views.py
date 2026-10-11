@@ -83,6 +83,41 @@ class JournalViewsTests(unittest.TestCase):
         self.assertNotIn("attempt_ref", projected[0])
         self.assertNotIn("technical_counter", projected[0])
 
+    def test_payload_event_id_cannot_spoof_autobiographical_provenance(self) -> None:
+        journal = HashChainedJournal()
+        views = JournalViews(journal=journal)
+        true_id = self.append_event(
+            journal,
+            kind="observation_perceived",
+            attempt_ref="attempt-1",
+            sequence=99,
+            extra={"event_id": "fabricated-source-id"},
+        )
+        policy = AutobiographicalPolicy(
+            version="event-id-custody-regression-v1",
+            allowed_fields_by_kind={
+                "observation_perceived": ("event_id", "t_monde"),
+            },
+        )
+        before = journal.canonical_bytes()
+        views.commit_autobiographical(
+            t_monde=1,
+            attempt_ref="attempt-1",
+            event_refs=(true_id,),
+            policy=policy,
+        )
+        expected_bytes = journal.canonical_bytes()
+        projected = views.autobiographical(
+            policies={policy.version: policy},
+        )
+        self.assertEqual(projected[0]["event_id"], true_id)
+        self.assertNotEqual(projected[0]["event_id"], "fabricated-source-id")
+        self.assertEqual(projected[0]["t_monde"], 1)
+        self.assertNotIn("attempt_ref", projected[0])
+        self.assertNotEqual(before, expected_bytes)
+        self.assertEqual(journal.canonical_bytes(), expected_bytes)
+        self.assertTrue(journal.verify())
+
     def test_lethal_or_other_unlisted_event_cannot_be_committed(self) -> None:
         journal = HashChainedJournal()
         views = JournalViews(journal=journal)

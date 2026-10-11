@@ -5,6 +5,7 @@ Spec: 17.4, 20.3 Stage 1, INV-22, INV-33, INV-44.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Mapping
 from unicodedata import normalize
@@ -13,6 +14,31 @@ from .determinism import canonical_causal_bytes, sha256_hex
 
 
 GENESIS_HASH = "00" * 32
+
+
+class _DetachedCausalEvent(Mapping[str, object]):
+    """Read-only technical view whose nested reads never alias journal state."""
+
+    __slots__ = ("__contents",)
+
+    def __init__(self, source: Mapping[str, object]) -> None:
+        self.__contents = deepcopy(dict(source))
+
+    def __getitem__(self, key: str) -> object:
+        return deepcopy(self.__contents[key])
+
+    def __iter__(self):
+        return iter(self.__contents)
+
+    def __len__(self) -> int:
+        return len(self.__contents)
+
+    def copy(self) -> dict[str, object]:
+        """Compatibility helper: like dict.copy(), without leaking aliases."""
+        return dict(self)
+
+    def __repr__(self) -> str:
+        return repr(dict(self))
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,12 +51,16 @@ class JournalEntry:
     event_hash: str
     causal_event: Mapping[str, object]
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "causal_event", _DetachedCausalEvent(self.causal_event))
+
     def as_dict(self) -> dict[str, object]:
         return {
             "index": self.index,
             "event_id": self.event_id,
             "previous_hash": self.previous_hash,
             "event_hash": self.event_hash,
+            # An exported document must not alias the hash-chained record.
             "causal_event": dict(self.causal_event),
         }
 
@@ -80,9 +110,13 @@ class HashChainedJournal:
         if event_id in self._by_id:
             raise ValueError("duplicate technical journal event_id")
 
+        # Own the complete nested payload, not just the outer dictionary.
+        # Canonicalize exactly the copy retained in the append-only chain:
+        # subsequent caller mutations cannot alter an already hashed event.
+        retained_event = deepcopy(dict(causal_event))
         previous_hash = self.head_hash
         event_bytes = canonical_causal_bytes(
-            {"event_id": event_id, "causal_event": causal_event}
+            {"event_id": event_id, "causal_event": retained_event}
         )
         event_hash = sha256_hex(bytes.fromhex(previous_hash) + event_bytes)
 
@@ -91,7 +125,7 @@ class HashChainedJournal:
             event_id=event_id,
             previous_hash=previous_hash,
             event_hash=event_hash,
-            causal_event=dict(causal_event),
+            causal_event=retained_event,
         )
         self._entries.append(entry)
         self._by_id[event_id] = entry
