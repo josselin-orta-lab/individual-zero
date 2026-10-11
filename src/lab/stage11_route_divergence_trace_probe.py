@@ -38,6 +38,7 @@ TRACE_KINDS_STEP5 = frozenset({
     "stage11_geographic_budget_deferred",
     "stage11_geographic_planning_unavailable",
     "stage11_route_search",
+    "compute_charge",
     "s_t_published",
     "command_admitted",
     "command_vetoed",
@@ -58,11 +59,15 @@ FIELDS_BY_KIND = {
         "inadmissible_directions_count", "charged_uc",
     ),
     "stage11_geographic_budget_deferred": (
-        "operation", "reason", "world_step",
+        "failed_operation", "reason", "world_step",
     ),
     "stage11_geographic_planning_unavailable": ("target_ref", "reason"),
     "stage11_route_search": ("route_found", "world_step", "charged_operation"),
     "s_t_published": ("version", "competitive_refs"),
+    "compute_charge": (
+        "module", "operation", "count", "requested_uc",
+        "accepted", "reason",
+    ),
     "command_admitted": (
         "option_ref", "source", "primitive", "reason", "rule_id",
     ),
@@ -168,6 +173,8 @@ def run_public_route_divergence_trace(*, variant: str) -> RouteDivergenceTraceRe
         if time != 5 or kind not in TRACE_KINDS_STEP5:
             continue
         data = event.get("data", {})
+        if kind == "compute_charge" and data.get("module") != "planning":
+            continue
         if kind == "competition_cycle":
             # Only existing registered options appear in the actual
             # competition trace; no counterfactual option is invented.
