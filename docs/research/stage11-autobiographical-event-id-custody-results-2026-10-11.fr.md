@@ -35,3 +35,7 @@ Les suites intégrées `test_stage11_external_input_atomicity.py`, `test_stage11
 Exécuter les cinq groupes ciblés sur un checkout complet du HEAD publié, puis les régressions voisines ; vérifier la provenance physique et la restauration transactionnelle. Ensuite seulement étendre les diagnostics des impasses, dangers inconnus et UC limités sans extrapolation scientifique.
 
 **PR #25 conservée ouverte, Draft, non fusionnée.**
+
+## Reprise contrôlée de la CI sur le dépôt public (2026-10-11)
+
+Le dépôt est désormais public. Un premier ajout du label `ci-unit` à la PR #25 n'a pas produit de nouvelle exécution, car le HEAD portait l'instruction `[skip ci]` dans le message de commit. Cette section enregistre la reprise du contrôle logiciel : un checkpoint documentaire sans instruction de saut permet de demander les vérifications Python 3.12 du workflow existant via l'événement `pull_request:labeled`. Ce checkpoint n'altère aucune source, aucun résultat antérieur, aucun protocole scientifique, ni aucun Golden. Les résultats CI et leurs SHA seront qualifiés séparément après exécution réelle ; aucune réussite n'est présumée ici.
