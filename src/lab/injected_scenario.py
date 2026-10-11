@@ -29,7 +29,7 @@ class ScenarioEvent:
             "t_monde": self.t_monde,
             "sequence": self.sequence,
             "operation": self.operation,
-            "payload": dict(self.payload),
+            "payload": deepcopy(dict(self.payload)),
         }
 
 
@@ -54,8 +54,19 @@ class InjectedScenario:
             raise ValueError("scenario id and version must not be empty")
         self._scenario_id = scenario_id
         self._version = version
+        # The source ScenarioEvent dataclass is frozen, but its nested
+        # payload Mapping may not be. Own a complete detached program:
+        # neither the caller nor exported/returned views can rewrite it.
         self._events = tuple(
-            sorted(events, key=lambda event: (event.t_monde, event.sequence))
+            ScenarioEvent(
+                t_monde=event.t_monde,
+                sequence=event.sequence,
+                operation=event.operation,
+                payload=deepcopy(dict(event.payload)),
+            )
+            for event in sorted(
+                events, key=lambda row: (row.t_monde, row.sequence),
+            )
         )
         if len({(e.t_monde, e.sequence) for e in self._events}) != len(self._events):
             raise ValueError("scenario event coordinates must be unique")
@@ -109,7 +120,7 @@ class InjectedScenario:
                     "t_monde": event.t_monde,
                     "sequence": event.sequence,
                     "operation": event.operation,
-                    "payload": dict(event.payload),
+                    "payload": deepcopy(dict(event.payload)),
                 },
             )
             try:
@@ -200,7 +211,7 @@ class InjectedScenario:
             self._next_index += 1
             applied.append(event)
 
-        return tuple(applied)
+        return tuple(deepcopy(event) for event in applied)
 
     def export_causal_state(self) -> object:
         state = {
