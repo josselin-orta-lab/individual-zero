@@ -74,8 +74,11 @@ class Stage11Config:
             raise ValueError("geographic capacity guard must be boolean")
         if self.geographic_capacity_guard_enabled and (
             self.geographic is None or not self.geographic_preflight
+            or not self.geographic_preflight_requires_frontier
         ):
-            raise ValueError("capacity guard requires charged geographic preflight")
+            raise ValueError(
+                "capacity guard requires demand-gated charged geographic preflight"
+            )
         if self.geographic_route_enabled and (
             self.geographic is None or not self.geographic.observe_routes
             or not self.geographic_preflight
