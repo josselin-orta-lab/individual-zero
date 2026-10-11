@@ -21,18 +21,30 @@ class PublicRoutedJunctionBudgetTests(TestCase):
         self.assertEqual(row.rejected_route_search_uc, 0)
 
     def test_budget_denials_are_not_fictional_transits(self):
-        for budget in (0, 1, 2, 3):
+        for budget in (0, 1, 2):
             with self.subTest(planning_uc=budget):
                 row = run_public_routed_junction(planning_uc=budget)
                 self.assertEqual(row.applied_route_steps, 0)
                 self.assertEqual(row.offered_transits_remaining, 0)
                 self.assertEqual(row.accepted_route_search_uc, 0)
                 self.assertFalse(row.observed_alternate_branch)
-        # 4 UC is the registered lower bound to pay search, preflight
-        # and one 2-UC build, not a promise that Competition selects it.
-        row = run_public_routed_junction(planning_uc=4)
-        self.assertGreaterEqual(row.accepted_route_search_uc, 0)
-        self.assertEqual(row.rejected_route_search_uc, 0)
+        # Real negative result from CI #38118919050, preserved rather than
+        # concealing paid searches: 3 UC funds search + safety preflight,
+        # but cannot also fund the 2-UC route plan-build in the same cycle.
+        three_uc = run_public_routed_junction(planning_uc=3)
+        self.assertGreater(three_uc.accepted_route_search_uc, 0)
+        self.assertGreater(three_uc.searches_with_candidate, 0)
+        self.assertEqual(three_uc.applied_route_steps, 0)
+        self.assertEqual(three_uc.route_proposals, 0)
+        self.assertEqual(three_uc.offered_transits_remaining, 0)
+        self.assertFalse(three_uc.observed_alternate_branch)
+        # 4 UC funds search (1), preflight (1), build (2).
+        four_uc = run_public_routed_junction(planning_uc=4)
+        self.assertGreater(four_uc.accepted_route_search_uc, 0)
+        self.assertGreater(four_uc.route_proposals, 0)
+        self.assertEqual(four_uc.rejected_route_search_uc, 0)
+        self.assertEqual(four_uc.applied_route_steps, 2)
+        self.assertTrue(four_uc.observed_alternate_branch)
 
     def test_sealed_control_does_not_fabricate_alternate_branch(self):
         row = run_public_routed_junction(layout_variant="junction_sealed")
