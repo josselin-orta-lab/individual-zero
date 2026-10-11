@@ -210,6 +210,48 @@ class EpisodicMemoryTests(unittest.TestCase):
         self.assertIsNotNone(first)
         self.assertIsNone(second)
 
+    def test_spontaneous_threshold_snapshot_restores_both_sides_of_crossing(self) -> None:
+        # A recall already published before the checkpoint cannot be
+        # published a second time after restoring that checkpoint.
+        memory = EpisodicMemory(config(max_episode_steps=1, recall_threshold=0.0))
+        memory.ingest_autobiographical(
+            [transition("e1", 1)],
+            current_t_monde=2, current_goal_ref=None, current_reward=0.0,
+        )
+        prior = memory.export_causal_state()
+        self.assertEqual(prior["recall_above_threshold"], [])
+        first = memory.spontaneous_contribution(st=None, t_monde=2, cycle=1)
+        self.assertIsNotNone(first)
+        after_crossing = memory.export_causal_state()
+        self.assertEqual(after_crossing["recall_above_threshold"], ["episode:0"])
+
+        memory.restore_causal_state(after_crossing)
+        self.assertEqual(memory.export_causal_state(), after_crossing)
+        self.assertIsNone(memory.spontaneous_contribution(
+            st=None, t_monde=2, cycle=2,
+        ))
+
+        # Rewind to the real earlier state: the threshold crossing must be
+        # observed and signalled again on actual re-execution of that phase.
+        memory.restore_causal_state(prior)
+        self.assertEqual(memory.export_causal_state(), prior)
+        repeated = memory.spontaneous_contribution(
+            st=None, t_monde=2, cycle=1,
+        )
+        self.assertEqual(repeated, first)
+
+    def test_corrupt_recall_threshold_state_rejected_without_owner_mutation(self) -> None:
+        memory = EpisodicMemory(config(max_episode_steps=1, recall_threshold=0.0))
+        pristine = memory.export_causal_state()
+        for invalid in (None, "episode:0", ["episode:0", "episode:0"], [0]):
+            with self.subTest(invalid=invalid):
+                broken = dict(pristine, recall_above_threshold=invalid)
+                with self.assertRaisesRegex(
+                    ValueError, "invalid Memory recall threshold snapshot",
+                ):
+                    memory.restore_causal_state(broken)
+                self.assertEqual(memory.export_causal_state(), pristine)
+
     def test_dated_intention_uses_goal_manager_deadline_pressure(self) -> None:
         memory = EpisodicMemory(config())
         manager = GoalManager(
