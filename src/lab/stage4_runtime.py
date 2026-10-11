@@ -970,7 +970,7 @@ class Stage4Runtime:
             and reflex_admission is not None
             and reflex_admission.ok
             and reflex_execution is not None
-            and reflex_execution.status in {"applied", "safety_block"}
+            and reflex_execution.status in {"applied", "dead", "safety_block"}
         ):
             self.stage3._capture = None
             return Stage4StepResult(
