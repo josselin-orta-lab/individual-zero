@@ -125,6 +125,7 @@ class ScriptedStage2Runtime:
         ):
             raise RuntimeError("mortal runtime must be selected before birth")
         self._mortal_boundary = MortalWorldBoundary(world=self.world)
+        self.snapshots.forbid_life_restoration()
 
     @property
     def mortal_status(self) -> MortalStatus | None:

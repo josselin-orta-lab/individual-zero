@@ -8,6 +8,7 @@ from __future__ import annotations
 import unittest
 
 from lab.mortal_execution import MortalStatus
+from lab.snapshots import SnapshotType
 from lab.stage4_reference_fixture import build_stage4_reference_runtime
 from lab.stage10_reference_fixture import build_stage10_reference_runtime
 from lab.stage11_reference_fixture import build_stage11_reference_runtime
@@ -138,6 +139,33 @@ class MortalRuntimeIntegrationTests(unittest.TestCase):
         self.assertEqual(runtime.bench.metrics.lethal_rollbacks, 0)
         with self.assertRaises(RuntimeError):
             runtime.run_step()
+
+    def test_mortal_mode_cannot_rewind_even_an_explicit_old_snapshot(self):
+        runtime = build_stage4_reference_runtime()
+        substrate = runtime.stage3.substrate
+        record = substrate.snapshots.take(
+            snapshot_type=SnapshotType.PERIODIC,
+            individual_id=runtime.individual_id,
+            t_monde=0, cycle=0, attempt_ref=None,
+            owners=(runtime.world,), versions={},
+        )
+        enable(runtime)
+        with self.assertRaisesRegex(RuntimeError, "lethal checkpoints"):
+            substrate.snapshots.take(
+                snapshot_type=SnapshotType.LETHAL_CHECKPOINT,
+                individual_id=runtime.individual_id,
+                t_monde=0, cycle=0, attempt_ref="a:1",
+                owners=(runtime.world,), versions={},
+            )
+        fatal_neighborhood(runtime)
+        self.assertEqual(runtime.run_step().execution_status, "dead")
+        dead_world = runtime.world.export_causal_state()
+        with self.assertRaisesRegex(RuntimeError, "life restoration"):
+            substrate.snapshots.restore(
+                record.id, owners=(runtime.world,),
+            )
+        self.assertEqual(runtime.world.export_causal_state(), dead_world)
+        self.assertEqual(substrate.mortal_status, MortalStatus.DEAD)
 
     def test_mode_must_be_selected_before_birth(self):
         runtime = build_stage4_reference_runtime()
