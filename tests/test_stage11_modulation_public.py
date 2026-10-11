@@ -16,7 +16,10 @@ class LocalThreatAndRecoveryTests(TestCase):
         )
         self.assertEqual(a, b)
         self.assertTrue(a.local_threat_alert_steps)
-        self.assertTrue(a.risk_preempted_st_steps)
+        # κ is initially 0.5 while the Gatekeeper's reserved security
+        # threshold is 0.8. A physically grounded local risk alert must
+        # survive ordinary S_t retention; it need not be preempted.
+        self.assertTrue(a.local_risk_retained_st_steps)
         self.assertTrue(a.positively_scanned_local_clear_steps)
         self.assertTrue(any(after == "threat" for _, _, after in
                             a.profile_transitions))
@@ -35,6 +38,7 @@ class LocalThreatAndRecoveryTests(TestCase):
             variant="trapped_no_local_alert", steps=8,
         )
         self.assertEqual(ref.local_threat_alert_steps, ())
+        self.assertEqual(ref.local_risk_retained_st_steps, ())
         self.assertFalse(any(after == "threat"
                              for _, _, after in ref.profile_transitions))
         self.assertEqual(ref.final_profile, "normal")
