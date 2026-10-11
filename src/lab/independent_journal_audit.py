@@ -17,6 +17,8 @@ import re
 from typing import Mapping
 from unicodedata import normalize
 
+from .epistemic_guard import has_external_truth, project_lived_field
+
 
 GENESIS_HASH = "00" * 32
 _HASH = re.compile(r"[0-9a-f]{64}\Z")
@@ -208,7 +210,11 @@ def audit_export_bytes(
         kind = event.get("kind")
         if not isinstance(kind, str) or not kind:
             raise ValueError("missing causal event kind")
-        if kind in _FORBIDDEN_KINDS or _contains_forbidden_truth_keys(event):
+        if (
+            kind in _FORBIDDEN_KINDS
+            or _contains_forbidden_truth_keys(event)
+            or has_external_truth(event)
+        ):
             raise ValueError("external oracle evidence leaked into I0 journal")
         # The hash chain alone cannot establish that a physical receipt
         # actually contains the state it claims to bind. A resealed archive
@@ -295,6 +301,21 @@ def audit_export_bytes(
                     or origin.get("t_monde") != t
                 ):
                     raise ValueError("technical/oracle event exposed as lived source")
+                # Apply the same Stage-2 and Stage-7 nested-lived schemas
+                # as the live boundary. Unknown technical metadata is retained
+                # in the audit record, never handed to Memory.
+                source_kind = origin["kind"]
+                if source_kind == "command_experienced":
+                    lived_fields = ("parameters",)
+                elif source_kind == "world_transition_experienced":
+                    lived_fields = ("position_after", "body_after", "effects")
+                else:
+                    lived_fields = ("data",)
+                for field in lived_fields:
+                    if field in origin:
+                        project_lived_field(
+                            kind=source_kind, field=field, value=origin[field],
+                        )
 
         if kind == "stage10_consolidation_version_activated":
             examined.add(kind)
