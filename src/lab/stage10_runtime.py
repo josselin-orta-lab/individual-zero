@@ -454,7 +454,7 @@ class Stage10Runtime(Stage9Runtime):
             )
             # Verify provenance BEFORE exposing a transaction to the slot.
             FrozenLivedReplayEvidence(
-                journal=self.journal, views=self.views, transaction=tx,
+                journal=self.journal, views=self.stage3.substrate.views, transaction=tx,
                 policies={
                     STAGE7_AUTOBIOGRAPHICAL_POLICY.version:
                         STAGE7_AUTOBIOGRAPHICAL_POLICY,
@@ -484,7 +484,7 @@ class Stage10Runtime(Stage9Runtime):
             self._publish_live_consolidation(tx=tx, world_step=world_step)
             return
         evidence = FrozenLivedReplayEvidence(
-            journal=self.journal, views=self.views, transaction=tx,
+            journal=self.journal, views=self.stage3.substrate.views, transaction=tx,
             policies={
                 STAGE7_AUTOBIOGRAPHICAL_POLICY.version:
                     STAGE7_AUTOBIOGRAPHICAL_POLICY,
