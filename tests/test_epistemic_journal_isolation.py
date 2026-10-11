@@ -1,0 +1,141 @@
+"""Adversarial no-oracle/no-technical-memory tests for MVP 1.3.1."""
+
+from __future__ import annotations
+
+import unittest
+
+from lab.epistemic_guard import has_external_truth
+from lab.independent_journal_audit import audit_export_bytes
+from lab.journal import HashChainedJournal
+from lab.journal_views import AutobiographicalPolicy, JournalViews
+from lab.stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY
+
+
+class EpistemicIsolationTests(unittest.TestCase):
+    def test_hidden_nested_scenario_stays_in_full_journal_not_memory(self):
+        journal = HashChainedJournal()
+        views = JournalViews(journal=journal)
+        journal.append(event_id="scenario:1", causal_event={
+            "emitter": "scenario", "kind": "external_input_received",
+            "t_monde": 1, "attempt_ref": "step:1",
+            "operation": "set_lethal_zone",
+            "payload": {"position": {"x": 7, "y": 9}},
+        })
+        journal.append(event_id="goal:1", causal_event={
+            "emitter": "stage4-runtime", "kind": "active_goal_changed",
+            "t_monde": 1, "attempt_ref": "step:1", "cycle": 1,
+            "data": {
+                "before": None,
+                "after": {"id": "goal:water", "goal_type": "drink",
+                          "target": "water", "hidden_danger": [7, 9]},
+                "future_scenario_schedule": [{"x": 7, "y": 9}],
+            },
+        })
+        views.commit_autobiographical(
+            t_monde=1, attempt_ref="step:1", event_refs=("goal:1",),
+            policy=STAGE7_AUTOBIOGRAPHICAL_POLICY,
+        )
+        seen = views.autobiographical(policies={
+            STAGE7_AUTOBIOGRAPHICAL_POLICY.version: STAGE7_AUTOBIOGRAPHICAL_POLICY,
+        })
+        self.assertEqual(seen[0]["data"]["after"], {
+            "id": "goal:water", "goal_type": "drink", "target": "water",
+        })
+        self.assertEqual(len(seen), 1)
+        self.assertNotIn("future_scenario_schedule", str(seen))
+        self.assertNotIn("hidden_danger", str(seen))
+        self.assertIn(b"set_lethal_zone", journal.canonical_bytes())
+        self.assertIn(b"future_scenario_schedule", journal.canonical_bytes())
+        self.assertTrue(journal.verify())
+
+    def test_hidden_data_in_recognized_projection_is_rejected(self):
+        journal = HashChainedJournal()
+        views = JournalViews(journal=journal)
+        journal.append(event_id="goal:2", causal_event={
+            "emitter": "stage4-runtime", "kind": "active_goal_changed",
+            "t_monde": 1, "attempt_ref": "a",
+            "data": {"after": {"id": "goal:1",
+                               "oracle_canary": "SECRET"}}
+        })
+        before = journal.canonical_bytes()
+        with self.assertRaisesRegex(ValueError, "hidden"):
+            views.commit_autobiographical(
+                t_monde=1, attempt_ref="a", event_refs=("goal:2",),
+                policy=STAGE7_AUTOBIOGRAPHICAL_POLICY,
+            )
+        self.assertEqual(journal.canonical_bytes(), before)
+        self.assertEqual(views.autobiographical(policies={}), ())
+
+    def test_unknown_nested_fields_are_dropped_even_on_later_reads(self):
+        journal = HashChainedJournal()
+        views = JournalViews(journal=journal)
+        journal.append(event_id="st:1", causal_event={
+            "kind": "s_t_published", "emitter": "stage4-runtime",
+            "t_monde": 1, "attempt_ref": "a", "cycle": 1,
+            "data": {"version": "s:1", "competitive_refs": ["c:1"],
+                     "undocumented_detail": {"secret": "NOT_LIVED"}},
+        })
+        views.commit_autobiographical(
+            t_monde=1, attempt_ref="a", event_refs=("st:1",),
+            policy=STAGE7_AUTOBIOGRAPHICAL_POLICY,
+        )
+        output = views.autobiographical(policies={
+            STAGE7_AUTOBIOGRAPHICAL_POLICY.version: STAGE7_AUTOBIOGRAPHICAL_POLICY,
+        })
+        self.assertEqual(output[0]["data"], {
+            "version": "s:1", "competitive_refs": ["c:1"],
+        })
+        self.assertNotIn("NOT_LIVED", repr(output))
+
+    def test_policy_cannot_request_technical_or_oracle_field(self):
+        for key in ("event_hash", "ground_truth", "oracle_canary", "danger_zones"):
+            policy = AutobiographicalPolicy(
+                version="adversarial",
+                allowed_fields_by_kind={"command_experienced": (key,)},
+            )
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                policy.validate()
+
+    def test_reconstructed_commit_cannot_cross_steps_at_read_time(self):
+        journal = HashChainedJournal()
+        views = JournalViews(journal=journal)
+        journal.append(event_id="cmd:1", causal_event={
+            "kind": "command_experienced", "attempt_ref": "a",
+            "t_monde": 1, "primitive": "attendre", "parameters": {},
+        })
+        journal.append(event_id="commit:bad", causal_event={
+            "kind": "auto_segment_commit", "attempt_ref": "b",
+            "t_monde": 2, "event_refs": ["cmd:1"],
+            "filter_version": "stage2-autobio-v1",
+        })
+        policy = AutobiographicalPolicy(version="stage2-autobio-v1", allowed_fields_by_kind={
+            "command_experienced": ("t_monde", "primitive", "parameters"),
+        })
+        with self.assertRaisesRegex(ValueError, "provenance"):
+            views.autobiographical(policies={policy.version: policy})
+
+    def test_external_truth_detected_at_arbitrary_depth(self):
+        self.assertTrue(has_external_truth({
+            "data": {"nested": [{"oracle_ground_truth": {"x": 3}}]},
+        }))
+        self.assertTrue(has_external_truth({
+            "data": {"meta": {"source": "evaluation_bench"}},
+        }))
+        self.assertFalse(has_external_truth({
+            "kind": "external_input_received",
+            "payload": {"position": {"x": 3, "y": 4}},
+        }))
+
+    def test_standalone_auditor_rejects_rehashed_nested_oracle_fact(self):
+        journal = HashChainedJournal()
+        journal.append(event_id="standalone:oracle-fault", causal_event={
+            "kind": "technical_statement", "t_monde": 0,
+            "data": {"meta": [{"oracle_ground_truth": {"x": 4}}]},
+        })
+        self.assertTrue(journal.verify())
+        with self.assertRaisesRegex(ValueError, "oracle"):
+            audit_export_bytes(journal.canonical_bytes())
+
+
+if __name__ == "__main__":
+    unittest.main()
