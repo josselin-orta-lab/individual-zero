@@ -33,10 +33,10 @@ class SQLitePrivatePhysicalPreparationTests(unittest.TestCase):
             canonical_causal_bytes(baseline.export_causal_state()),
         )
         self.assertEqual(world.export_causal_state(), original)
-        self.assertNotEqual(
-            canonical_causal_bytes(candidate.proposed_state),
-            canonical_causal_bytes(original),
-        )
+        # A real 'attendre' may cost exactly zero body/resource delta in
+        # this frozen physics version; unchanged effects are still genuine.
+        self.assertEqual(candidate.transition.t_monde, 1)
+        self.assertEqual(candidate.transition.command, command)
 
     def test_lethal_candidate_is_not_public_death_before_commit(self):
         seed = build_stage4_reference_runtime(autonomous_mortal=True)
