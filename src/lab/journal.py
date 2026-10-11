@@ -6,6 +6,8 @@ Spec: 17.4, 20.3 Stage 1, INV-22, INV-33, INV-44.
 from __future__ import annotations
 
 from copy import deepcopy
+import json
+import os
 from dataclasses import dataclass
 from typing import Mapping
 from unicodedata import normalize
@@ -69,6 +71,8 @@ class HashChainedJournal:
     """Append-only in-memory journal with normative SHA-256 chaining."""
 
     def __init__(self) -> None:
+        self._wal_fd: int | None = None
+        self._wal_faulted = False
         self._entries: list[JournalEntry] = []
         # Non-causal lookup index. The append order and canonical bytes remain
         # exactly those of _entries.
@@ -79,6 +83,76 @@ class HashChainedJournal:
         # independent auditor's checks on potentially forged export bytes.
         self._pending_death_closure: tuple[int, str] | None = None
         self._death_sealed = False
+
+    def enable_durable_wal(self, *, path: str) -> None:
+        """Birth-only append-before-ack fsync journal, never life restoration.
+
+        A new exclusive file is required; an existing life cannot be resumed
+        or overwritten. The parent directory is fsynced for creation safety.
+        """
+        if (type(path) is not str or not os.path.isabs(path) or not path
+                or self._entries or self._wal_fd is not None or self._wal_faulted):
+            raise ValueError("WAL must be enabled on a fresh journal with an absolute path")
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        fd = os.open(path, flags, 0o600)
+        try:
+            directory = os.open(os.path.dirname(path), os.O_RDONLY)
+            try:
+                os.fsync(directory)
+            finally:
+                os.close(directory)
+        except BaseException:
+            os.close(fd)
+            self._wal_faulted = True
+            raise
+        self._wal_fd = fd
+
+    @property
+    def durable_wal_enabled(self) -> bool:
+        return self._wal_fd is not None and not self._wal_faulted
+
+    @staticmethod
+    def audit_durable_wal(path: str) -> dict[str, object]:
+        """Verify a complete durable file offline; never resurrect an individual.
+
+        A torn last record or any rewritten, duplicated or reordered event
+        fails closed. Only an attestation is returned, not a runnable journal.
+        """
+        if type(path) is not str or not os.path.isabs(path):
+            raise ValueError("offline WAL audit requires an absolute path")
+        with open(path, "rb") as stream:
+            contents = stream.read()
+        if contents and not contents.endswith(b"\n"):
+            raise ValueError("unterminated durable journal record")
+        replay = HashChainedJournal()
+        for raw in contents.splitlines():
+            if not raw:
+                raise ValueError("empty durable journal record")
+            try:
+                payload = json.loads(raw.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as error:
+                raise ValueError("invalid durable journal JSON") from error
+            if (type(payload) is not dict or set(payload) != {
+                "index", "event_id", "previous_hash", "event_hash", "causal_event",
+            } or type(payload["index"]) is not int
+                    or type(payload["event_id"]) is not str
+                    or type(payload["causal_event"]) is not dict
+                    or canonical_causal_bytes(payload) != raw):
+                raise ValueError("noncanonical durable journal record")
+            if (payload["index"] != len(replay.entries)
+                    or payload["previous_hash"] != replay.head_hash):
+                raise ValueError("durable journal occurrence order or chain broken")
+            reconstructed = replay.append(
+                event_id=payload["event_id"],
+                causal_event=payload["causal_event"],
+            )
+            if reconstructed.event_hash != payload["event_hash"]:
+                raise ValueError("durable journal entry hash mismatch")
+        if not replay.verify():
+            raise ValueError("durable journal internal consistency failed")
+        return {"verified_entries": len(replay.entries), "head_hash": replay.head_hash}
 
     @property
     def entries(self) -> tuple[JournalEntry, ...]:
@@ -159,6 +233,24 @@ class HashChainedJournal:
             event_hash=event_hash,
             causal_event=retained_event,
         )
+        # The durable receipt becomes visible in memory only AFTER write+fsync.
+        # An I/O fault permanently poisons this life rather than rolling back
+        # a potentially partially persisted physical history.
+        if self._wal_faulted:
+            raise RuntimeError("durable journal has suffered an unrecoverable I/O error")
+        if self._wal_fd is not None:
+            record = canonical_causal_bytes(entry.as_dict()) + b"\n"
+            try:
+                sent = 0
+                while sent != len(record):
+                    written = os.write(self._wal_fd, record[sent:])
+                    if written <= 0:
+                        raise OSError("durable journal write made no progress")
+                    sent += written
+                os.fsync(self._wal_fd)
+            except BaseException:
+                self._wal_faulted = True
+                raise
         self._entries.append(entry)
         self._by_id[event_id] = entry
         if kind == "individual_death_confirmed":
@@ -180,6 +272,8 @@ class HashChainedJournal:
     def verify(self) -> bool:
         """Recompute the complete chain and reject any broken link or mutation."""
 
+        if self._wal_faulted:
+            return False
         previous_hash = GENESIS_HASH
         seen_ids: set[str] = set()
         if len(self._by_id) != len(self._entries):
