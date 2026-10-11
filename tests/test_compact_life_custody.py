@@ -99,7 +99,7 @@ class LivedStreamTests(unittest.TestCase):
                 self.assertNotIn("ground_truth", repr(result))
                 self.assertNotIn("attempt_ref", repr(result))
 
-    def test_six_hundred_real_steps_have_constant_custody_footprint(self):
+    def test_six_hundred_accepted_step_projections_have_constant_footprint(self):
         stream = BoundedLivedStream(
             policy=STAGE2_AUTOBIOGRAPHICAL_POLICY, max_pending_events=2,
         )
