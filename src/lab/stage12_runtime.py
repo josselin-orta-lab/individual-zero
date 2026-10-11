@@ -6,6 +6,7 @@ new source of motor authority. Owner provenance stays in I0's causal journal.
 """
 from __future__ import annotations
 
+from dataclasses import replace
 from math import isfinite
 
 from i0.modules.stage12_detectors import (
@@ -86,9 +87,14 @@ class Stage12Runtime(Stage11SleepRuntime):
     individual_id = "i0-v1.3.1-stage12-mortal"
 
     def __init__(
-        self, *, detector_policy: Stage12DetectionPolicy, **kwargs,
+        self, *, detector_policy: Stage12DetectionPolicy,
+        diagnostic_sample_cost_uc: int, **kwargs,
     ):
         detector_policy.validate()
+        if type(diagnostic_sample_cost_uc) is not int or diagnostic_sample_cost_uc < 1:
+            raise ValueError("Stage12 diagnostics need a positive injected P-43 UC cost")
+        self._stage12_detector_policy = detector_policy
+        self._stage12_diagnostic_cost_uc = diagnostic_sample_cost_uc
         super().__init__(**kwargs)
         self._stage12_detectors = Stage12LivedDetectors(detector_policy)
         self._meta_custody = _Stage12MetacognitionCustody(
@@ -97,6 +103,36 @@ class Stage12Runtime(Stage11SleepRuntime):
         ids = [owner.owner_id for owner in self.causal_owners]
         if ids.count("metacognition_health") != 1 or len(ids) != len(set(ids)):
             raise RuntimeError("Stage12 must not multiply Metacognition ownership")
+
+    def _parent_runtime_config(self, config):
+        """Version P-43 work BEFORE birth; no unpriced Stage12 operation."""
+        base = super()._parent_runtime_config(config)
+        stage9 = base.stage9
+        stage8 = stage9.stage8
+        stage7 = stage8.stage7
+        stage6 = stage7.stage6
+        stage4 = stage6.stage4
+        old = stage4.compute_budget
+        cost = self._stage12_diagnostic_cost_uc
+        budget = replace(
+            old, version=(old.version + "+" + self._stage12_detector_policy.version
+                          + "+stage12-diagnostics-charged-v1"),
+            cycle_ceiling=old.cycle_ceiling + cost,
+            module_envelopes={
+                **old.module_envelopes,
+                "metacognition_health": old.module_envelopes["metacognition_health"] + cost,
+            },
+            operation_costs={
+                **old.operation_costs,
+                "stage12_diagnostic_sample": cost,
+            },
+        )
+        upgraded = replace(stage9, stage8=replace(stage8, stage7=replace(
+            stage7, stage6=replace(
+                stage6, stage4=replace(stage4, compute_budget=budget),
+            ),
+        )))
+        return replace(base, stage9=upgraded)
 
     @property
     def detection_report(self) -> Stage12DetectionReport:
@@ -112,10 +148,32 @@ class Stage12Runtime(Stage11SleepRuntime):
         previous = hooks[5]["metacognition_health"]
 
         def publish_lived_diagnostic(ctx):
-            previous(ctx)
-            # Only one sample per real waking *world step*. Multiple
-            # deliberation cycles do not create fictitious physical progress.
+            # One actual metacognitive service charge per lived world step.
+            # The sample is optional under DC-07, and must be absent, never
+            # silently inferred, if its scheduler-owned UC debit is refused.
             if self.detection_report.world_step == capture.t_monde:
+                previous(ctx)
+                return
+            charge = self.compute_budget.charge(
+                module="metacognition_health",
+                operation="stage12_diagnostic_sample",
+            )
+            self._write(kind="compute_charge", cycle=cycle, data={
+                "module": "metacognition_health",
+                "operation": "stage12_diagnostic_sample",
+                "requested_uc": charge.requested_uc,
+                "accepted": charge.accepted,
+                "reason": charge.reason,
+            })
+            if not charge.accepted:
+                self._write(
+                    kind="stage12_lived_diagnostics_deferred",
+                    cycle=cycle,
+                    data={"world_step": capture.t_monde,
+                          "reason": charge.reason,
+                          "diagnostic_incomplete": True},
+                )
+                previous(ctx)
                 return
             goal = self.goal_manager.active_goal
             goal_ref = None if goal is None else goal.id
@@ -164,8 +222,13 @@ class Stage12Runtime(Stage11SleepRuntime):
                     "evidence_samples": report.evidence_samples,
                     "progress_observed": progress is not None,
                     "operator_only_diagnostic": True,
+                    "charged_diagnostic_uc": charge.requested_uc,
+                    "diagnostic_policy_version": self._stage12_detector_policy.version,
                 },
             )
+            # Close fatigue AFTER the accepted cost, so real diagnostic work
+            # contributes to the exact same waking cycle's F_cog accounting.
+            previous(ctx)
 
         hooks[5]["metacognition_health"] = publish_lived_diagnostic
         return hooks
