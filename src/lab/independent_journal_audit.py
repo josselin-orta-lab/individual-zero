@@ -198,6 +198,34 @@ def audit_export_bytes(
             raise ValueError("missing causal event kind")
         if kind in _FORBIDDEN_KINDS or any(k in _FORBIDDEN_KEYS for k in event):
             raise ValueError("external oracle evidence leaked into I0 journal")
+        # The hash chain alone cannot establish that a physical receipt
+        # actually contains the state it claims to bind. A resealed archive
+        # omitting both sides of the terminal comparison previously passed
+        # because None == None. Enforce minimal public schema before linking.
+        if kind == "command_experienced":
+            if (
+                not isinstance(event.get("command_hash"), str)
+                or not event["command_hash"]
+                or not isinstance(event.get("primitive"), str)
+                or not event["primitive"]
+                or not isinstance(event.get("parameters"), dict)
+            ):
+                raise ValueError("executed command is missing physical provenance")
+        if kind in ("world_transition_experienced", "individual_death_confirmed"):
+            pos = event.get("position_after")
+            body = event.get("body_after")
+            if (
+                not isinstance(pos, dict)
+                or type(pos.get("x")) is not int
+                or type(pos.get("y")) is not int
+                or not isinstance(body, dict) or not body
+            ):
+                raise ValueError("physical outcome lacks terminal position/body state")
+            if kind == "individual_death_confirmed" and (
+                not isinstance(event.get("command_hash"), str)
+                or not event["command_hash"]
+            ):
+                raise ValueError("terminal death lacks executed command digest")
         all_kinds.add(kind)
         if death_index is not None and kind != "step_closed":
             raise ValueError("technical/cognitive event occurred after death")
