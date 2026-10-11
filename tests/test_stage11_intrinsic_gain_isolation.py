@@ -149,6 +149,9 @@ class Stage11IntrinsicGainIsolationTests(TestCase):
             for _, status, command, option in high_a["actions"]
         ))
         self.assertGreater(len(set(high_a["visits"])), 1)
+        # The prospective §20.3 Stage-11 acceptance specifies B explores
+        # north: require a genuine next-step physical capture at (2,1).
+        self.assertIn((2, 1), high_a["visits"])
         self.assertTrue(all(
             not (status == "applied"
                  and option is not None
