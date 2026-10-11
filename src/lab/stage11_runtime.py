@@ -177,7 +177,8 @@ class Stage11Runtime(Stage9Runtime):
 
     def __init__(self, *, world_config, layout, safety_config, safety_facts,
                  protected_integrity_threshold, config: Stage11Config, equipment,
-                 scenario_id=None, scenario_version=None, scenario_events=()):
+                 scenario_id=None, scenario_version=None, scenario_events=(),
+                 autonomous_mortal=False):
         config.validate()
         self._stage11_config = config
         # Stateless descriptive forecaster: reads the canonical owner's
@@ -195,6 +196,7 @@ class Stage11Runtime(Stage9Runtime):
             config=config.with_budget(), equipment=equipment,
             scenario_id=scenario_id, scenario_version=scenario_version,
             scenario_events=scenario_events,
+            autonomous_mortal=autonomous_mortal,
         )
         # Construct the vNext-only Memory variant before the first world
         # step. Stage 7--9 historical Memory objects remain in their

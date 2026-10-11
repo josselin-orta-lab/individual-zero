@@ -104,6 +104,7 @@ class Stage4Runtime:
         scenario_id: str | None = None,
         scenario_version: str | None = None,
         scenario_events: tuple[ScenarioEvent, ...] = (),
+        autonomous_mortal: bool = False,
     ) -> None:
         config.validate()
         self._config = config
@@ -118,6 +119,7 @@ class Stage4Runtime:
             scenario_id=scenario_id,
             scenario_version=scenario_version,
             scenario_events=scenario_events,
+            autonomous_mortal=autonomous_mortal,
         )
         self.value_needs = ValueAndNeeds(config.value_needs)
         self.goal_manager = GoalManager(config.goals)
