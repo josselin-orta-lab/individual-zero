@@ -48,7 +48,7 @@ Ces 49 cas d'entrée malformée sont des **sous-cas synthétiques au sein de tro
 | [CI complète #38139987533](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38139987533) | **même SHA** | **Python 3.11.17** | **908/908 PASS**, 92,268 s, job complet **SUCCESS** |
 | [CI complète #38139987533](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38139987533) | **même SHA** | **Python 3.12.15** | **908/908 PASS**, 140,171 s, job complet **SUCCESS** |
 
-Le workflow complet comprend **deux jobs exécutés avec succès et aucun échec**, ainsi que **15 artefacts techniques** : journaux de référence Stages 1–8 disponibles, diagnostics Stage 9 et états de préparation scientifique. Son job unitaire supplémentaire a été intentionnellement `skipped` par le contrôle de coûts et ne compte pas comme troisième validation. Les exécutions automatiques ignorées en Draft ne sont pas présentées comme des tests exécutés. Ces diagnostics techniques ne constituent ni un Golden scientifique gelé ni une campagne prospective held-out.
+Le workflow complet comprend **deux jobs exécutés avec succès et aucun échec**, ainsi que **15 artefacts techniques** : journaux de référence Stages 1–4 et 6–8 disponibles, diagnostics Stage 9 et états de préparation scientifique. Son job unitaire supplémentaire a été intentionnellement `skipped` par le contrôle de coûts et ne compte pas comme troisième validation. Les exécutions automatiques ignorées en Draft ne sont pas présentées comme des tests exécutés. Ces diagnostics techniques ne constituent ni un Golden scientifique gelé ni une campagne prospective held-out.
 
 ## Portée réelle et travaux restants
 
