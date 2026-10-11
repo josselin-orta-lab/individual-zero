@@ -6,6 +6,7 @@ None of these tests use an oracle read or change WorldBody physics.
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from lab.mortal_execution import MortalStatus
 from lab.snapshots import SnapshotType
@@ -178,6 +179,31 @@ class MortalRuntimeIntegrationTests(unittest.TestCase):
         self.assertEqual(runtime.stage3.substrate.mortal_status, MortalStatus.ACTIVE)
         with self.assertRaises(RuntimeError):
             enable(runtime)
+
+    def test_legacy_rollback_mask_does_not_block_mortal_actions(self):
+        runtime = build_stage4_reference_runtime()
+        substrate = runtime.stage3.substrate
+        control = runtime.stage3.control
+        command = Command("attendre")
+        # The legacy mask must remain authoritative ONLY for its historical
+        # mode, not for a new mortal individual.
+        with patch.object(substrate.safety, "is_masked", return_value=True):
+            self.assertTrue(substrate.protocol_mask_for_control(command))
+            enable(runtime)
+            self.assertFalse(substrate.protocol_mask_for_control(command))
+            runtime.stage3.open_step()
+            from i0.modules.action_control import PreparedCommand
+            prepared = PreparedCommand(command=command, source="stage3_wait_stub")
+            admission = control.admit(
+                capture=runtime.stage3._capture,
+                prepared=prepared,
+            )
+            self.assertTrue(admission.ok)
+            applied = substrate.send_admitted_command(command, source="test")
+            self.assertEqual(applied.status, "applied")
+            self.assertEqual(substrate.mortal_status, MortalStatus.ACTIVE)
+            self.assertEqual(runtime.bench.metrics.lethal_rollbacks, 0)
+            self.assertIsNone(runtime.scheduler.active_attempt)
 
     def test_default_legacy_mode_is_unchanged_for_historical_fixtures(self):
         runtime = build_stage4_reference_runtime()
