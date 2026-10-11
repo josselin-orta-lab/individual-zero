@@ -1,8 +1,10 @@
 """Fatal autonomous WorldBody transitions match original physics byte for byte.
 
 No Oracle, Bench, lethal rollback, hidden safety rescue or retroactive learning.
-These scripted Stage2 controls cover actual v1.3.1 world hazards; they do not
-claim that hunger/thirst alone inflict damage in the unchanged physical model.
+The Stage4 fixture deliberately configures creature_damage=0, so the two
+creature scenarios use explicitly versioned, nonzero-damage test configurations
+on BOTH the unchanged WorldBody baseline and autonomous execution. No engine
+physics are modified. Food/water depletion alone is not a lethal predicate.
 """
 from __future__ import annotations
 
@@ -33,16 +35,22 @@ class MortalLethalPhysicsMatrixTests(unittest.TestCase):
              WorldLayout(resources=((home, "berry_b", 1),)),
              (Command("collecter", {"target": "berry_b"}),
               Command("manger", {"target": "berry_b"})), "zero_integrity"),
-            ("night_creature", replace(cfg, night_start_step=0,
-             initial_body=BodyState(50.0, 60.0, 60.0, 5.0)),
+            ("night_creature", replace(
+                 cfg, version="stage4-creature-damage-parity-v1",
+                 night_start_step=0, creature_damage=10.0,
+                 initial_body=BodyState(50.0, 60.0, 60.0, 5.0),
+             ),
              WorldLayout(creatures=frozenset({near})),
              (Command("attendre"),), "zero_integrity"),
             ("danger_exhaustion", replace(cfg,
              initial_body=BodyState(50.0, 60.0, 60.0, 10.0)),
              WorldLayout(danger_zones=frozenset({home})),
              (Command("attendre"),), "zero_integrity"),
-            ("creature_plus_danger", replace(cfg, night_start_step=0,
-             initial_body=BodyState(50.0, 60.0, 60.0, 20.0)),
+            ("creature_plus_danger", replace(
+                 cfg, version="stage4-combined-hazards-parity-v1",
+                 night_start_step=0, creature_damage=10.0,
+                 initial_body=BodyState(50.0, 60.0, 60.0, 15.0),
+             ),
              WorldLayout(creatures=frozenset({near}),
                          danger_zones=frozenset({home})),
              (Command("attendre"),), "zero_integrity"),
