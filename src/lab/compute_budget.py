@@ -214,33 +214,56 @@ class CycleComputeBudget:
         }
 
     def restore_causal_state(self, state: object) -> None:
-        if not isinstance(state, Mapping):
-            raise ValueError("compute budget state must be a mapping")
-        if state.get("config_version") != self._config.version:
+        """Restore a complete and attainable Scheduler UC ledger atomically.
+
+        Parsing into a detached map is not enough: a syntactically plausible
+        state must also obey every envelope and the reserved safety capacity
+        that ordinary charge() enforces. Validate everything before writing.
+        """
+        required_keys = {
+            "config_version", "cycle", "consumed_cycle_uc",
+            "consumed_by_module",
+        }
+        if not isinstance(state, Mapping) or set(state) != required_keys:
+            raise ValueError("invalid compute budget snapshot schema")
+        if state["config_version"] != self._config.version:
             raise ValueError("compute budget configuration version mismatch")
-        cycle = state.get("cycle")
-        consumed_cycle = state.get("consumed_cycle_uc")
-        consumed_by_module = state.get("consumed_by_module")
-        if cycle is not None and (not isinstance(cycle, int) or cycle < 1):
+
+        cycle = state["cycle"]
+        consumed_cycle = state["consumed_cycle_uc"]
+        consumed_by_module = state["consumed_by_module"]
+        if cycle is not None and (type(cycle) is not int or cycle < 1):
             raise ValueError("invalid budget cycle")
-        if not isinstance(consumed_cycle, int) or consumed_cycle < 0:
+        if type(consumed_cycle) is not int or consumed_cycle < 0:
             raise ValueError("invalid consumed cycle UC")
         if not isinstance(consumed_by_module, Mapping):
             raise ValueError("invalid per-module UC state")
 
         restored: dict[str, int] = {}
+        ordinary_consumed = 0
         for module, value in consumed_by_module.items():
-            if module not in self._config.module_envelopes:
-                raise ValueError(f"unknown module in budget state: {module}")
-            if not isinstance(value, int) or value < 0:
+            if type(module) is not str or module not in self._config.module_envelopes:
+                raise ValueError(f"unknown or invalid module in budget state: {module!r}")
+            if type(value) is not int or value < 0:
                 raise ValueError("invalid module UC value")
-            restored[str(module)] = value
+            if value > self._config.module_envelopes[module]:
+                raise ValueError("restored module UC exceeds envelope")
+            restored[module] = value
+            if module not in self._config.protected_modules:
+                ordinary_consumed += value
 
+        if cycle is None and (consumed_cycle != 0 or restored):
+            raise ValueError("unopened cycle cannot have charged work")
         if sum(restored.values()) != consumed_cycle:
             raise ValueError("cycle UC must equal sum of module UC")
         if consumed_cycle > self._config.cycle_ceiling:
             raise ValueError("restored cycle UC exceeds B_cycle")
+        if ordinary_consumed > (
+            self._config.cycle_ceiling - self._config.protected_capacity
+        ):
+            raise ValueError("restored ordinary UC exceeds protected reserve")
 
+        # All checks have passed; no state validation or coercion follows.
         self._cycle = cycle
         self._consumed_cycle = consumed_cycle
         self._consumed_by_module = restored
