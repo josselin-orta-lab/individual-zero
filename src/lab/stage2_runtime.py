@@ -89,7 +89,7 @@ class ScriptedStage2Runtime:
             # Historical evaluated fixtures retain their exact default.
             from .oracle import create_oracle
             from .bench import EvaluationBench
-            from .journal_views import EvaluationTrace
+            from .evaluation_trace import EvaluationTrace
 
             self.evaluation_trace = EvaluationTrace()
             oracle, capability = create_oracle(self.world)
