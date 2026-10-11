@@ -20,6 +20,11 @@ class PublicGeographicRobustnessTests(TestCase):
                 self.assertEqual(row.known_lethal_visits, 0)
                 self.assertEqual(row.creature_occupied_visits, 0)
                 self.assertGreaterEqual(row.geographic_distinct_sites, 1)
+                self.assertGreater(
+                    row.preflight_uc_accepted, 0,
+                    "bounded per-cycle Planning safety checks must be billed",
+                )
+                self.assertEqual(row.preflight_uc_rejected, 0)
                 self.assertGreaterEqual(
                     row.proposed_frontiers, row.geographic_applied_commands,
                 )
