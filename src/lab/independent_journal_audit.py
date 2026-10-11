@@ -17,6 +17,8 @@ import re
 from typing import Mapping
 from unicodedata import normalize
 
+from .epistemic_guard import has_external_truth, project_lived_field
+
 
 GENESIS_HASH = "00" * 32
 _HASH = re.compile(r"[0-9a-f]{64}\Z")
@@ -38,6 +40,18 @@ _FORBIDDEN_KINDS = frozenset({
     "benchmark_truth_injected",
 })
 _FORBIDDEN_KEYS = frozenset({"oracle_canary", "oracle_ground_truth"})
+
+
+def _contains_forbidden_truth_keys(value):
+    """Detect forbidden truth fields even inside nested technical payloads."""
+    if isinstance(value, dict):
+        return any(
+            key in _FORBIDDEN_KEYS or _contains_forbidden_truth_keys(item)
+            for key, item in value.items()
+        )
+    if isinstance(value, list):
+        return any(_contains_forbidden_truth_keys(item) for item in value)
+    return False
 
 
 def _unique_pairs(items):
@@ -197,8 +211,38 @@ def audit_export_bytes(
         kind = event.get("kind")
         if not isinstance(kind, str) or not kind:
             raise ValueError("missing causal event kind")
-        if kind in _FORBIDDEN_KINDS or any(k in _FORBIDDEN_KEYS for k in event):
+        if (kind in _FORBIDDEN_KINDS
+                or _contains_forbidden_truth_keys(event)
+                or has_external_truth(event)):
             raise ValueError("external oracle evidence leaked into I0 journal")
+        # The hash chain alone cannot establish that a physical receipt
+        # actually contains the state it claims to bind. A resealed archive
+        # omitting both sides of the terminal comparison previously passed
+        # because None == None. Enforce minimal public schema before linking.
+        if kind == "command_experienced":
+            if (
+                not isinstance(event.get("command_hash"), str)
+                or not event["command_hash"]
+                or not isinstance(event.get("primitive"), str)
+                or not event["primitive"]
+                or not isinstance(event.get("parameters"), dict)
+            ):
+                raise ValueError("executed command is missing physical provenance")
+        if kind in ("world_transition_experienced", "individual_death_confirmed"):
+            pos = event.get("position_after")
+            body = event.get("body_after")
+            if (
+                not isinstance(pos, dict)
+                or type(pos.get("x")) is not int
+                or type(pos.get("y")) is not int
+                or not isinstance(body, dict) or not body
+            ):
+                raise ValueError("physical outcome lacks terminal position/body state")
+            if kind == "individual_death_confirmed" and (
+                not isinstance(event.get("command_hash"), str)
+                or not event["command_hash"]
+            ):
+                raise ValueError("terminal death lacks executed command digest")
         all_kinds.add(kind)
         if experiment_stop_index is not None:
             raise ValueError("technical/cognitive event occurred after experiment stop")
@@ -269,6 +313,10 @@ def audit_export_bytes(
                     or origin.get("t_monde") != t
                 ):
                     raise ValueError("technical/oracle event exposed as lived source")
+                if "data" in origin and origin.get("kind") in _STAGE7_ALLOWED - _STAGE2_ALLOWED:
+                    project_lived_field(
+                        kind=origin["kind"], field="data", value=origin["data"],
+                    )
 
         if kind == "stage10_consolidation_version_activated":
             examined.add(kind)
@@ -401,8 +449,15 @@ def audit_export_bytes(
             if (data.get("applied_command_count"),
                     data.get("world_advance_count")) != (0, 0):
                 raise ValueError("stopped step claims nonexistent world advance")
-            if transitions or terminal:
-                raise ValueError("stopped step contains physical terminal transition")
+            # A blocked or externally stopped world step has executed no
+            # admitted command. A syntactically valid rehashed archive must
+            # not relabel a sent command, lived commitment or physical effect
+            # as a harmless zero-advance stop.
+            if commands or autobios or transitions or terminal:
+                raise ValueError(
+                    "stopped step contains executed command, autobiographical "
+                    "commit or physical transition"
+                )
         else:
             raise ValueError("unknown world-step closure status")
     if sorted(open_steps) != sorted(closed_steps):
