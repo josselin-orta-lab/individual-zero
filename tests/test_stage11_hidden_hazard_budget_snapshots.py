@@ -267,6 +267,159 @@ class Stage11HiddenDangerStrictUCTests(TestCase):
                 self.assertTrue(manager.verify(record.id))
                 self.assertTrue(runtime.journal.verify())
 
+    def test_danger_appears_then_disappears_without_fabricated_knowledge(self):
+        def build_scheduled(planning_uc, exploration_uc, *, hazard):
+            return build_public_route_runtime(
+                layout_variant="junction_open",
+                planning_uc=planning_uc,
+                exploration_uc=exploration_uc,
+                survey_refresh=True,
+                scenario_events=(
+                    ScenarioEvent(
+                        t_monde=3, sequence=0,
+                        operation="set_danger_zone",
+                        payload={
+                            "position": dict(DANGER_POS), "active": hazard,
+                        },
+                    ),
+                    ScenarioEvent(
+                        t_monde=5, sequence=0,
+                        operation="set_danger_zone",
+                        payload={
+                            "position": dict(DANGER_POS), "active": False,
+                        },
+                    ),
+                ),
+            )
+
+        for planning_uc, exploration_uc in ((0, 0), (4, 4)):
+            with self.subTest(
+                planning_uc=planning_uc, exploration_uc=exploration_uc,
+            ):
+                hazard = build_scheduled(
+                    planning_uc, exploration_uc, hazard=True,
+                )
+                control = build_scheduled(
+                    planning_uc, exploration_uc, hazard=False,
+                )
+
+                hazard_actions = []
+                control_actions = []
+                for step in range(1, 5):
+                    hazard_actions.append(action(hazard.run_step()))
+                    control_actions.append(action(control.run_step()))
+                    if step == 2:
+                        # The two worlds and choices match before the
+                        # scheduled external hazard change at world step 3.
+                        self.assertEqual(hazard_actions, control_actions)
+                        self.assertEqual(
+                            [e["data"] for e in entries(
+                                hazard, "perceptual_capture",
+                            )],
+                            [e["data"] for e in entries(
+                                control, "perceptual_capture",
+                            )],
+                        )
+
+                self.assertEqual(
+                    hazard.world.export_causal_state()["danger_zones"],
+                    [DANGER_POS],
+                )
+                self.assertEqual(
+                    control.world.export_causal_state()["danger_zones"], [],
+                )
+                manager = hazard.stage3.substrate.snapshots
+                before_removal = owner_states(hazard)
+                checkpoint_active = manager.take(
+                    snapshot_type=SnapshotType.PERIODIC,
+                    individual_id=hazard.individual_id,
+                    t_monde=4, cycle=0, attempt_ref=None,
+                    owners=hazard.causal_owners,
+                    versions={"stage11": hazard._stage11_config.version},
+                )
+                self.assertTrue(manager.verify(checkpoint_active.id))
+                self.assertEqual(
+                    before_removal["scenario"]["next_index"], 1,
+                )
+
+                hazard.run_step()
+                control.run_step()
+                self.assertEqual(
+                    hazard.world.export_causal_state()["danger_zones"], [],
+                )
+                self.assertEqual(
+                    control.world.export_causal_state()["danger_zones"], [],
+                )
+                after_removal = owner_states(hazard)
+                self.assertEqual(
+                    after_removal["scenario"]["next_index"], 2,
+                )
+                checkpoint_cleared = manager.take(
+                    snapshot_type=SnapshotType.PERIODIC,
+                    individual_id=hazard.individual_id,
+                    t_monde=5, cycle=0, attempt_ref=None,
+                    owners=hazard.causal_owners,
+                    versions={"stage11": hazard._stage11_config.version},
+                )
+                self.assertTrue(manager.verify(checkpoint_cleared.id))
+                hazard.run_step()
+                control.run_step()
+
+                received = entries(hazard, "external_input_received")
+                applied = entries(hazard, "external_input_applied")
+                self.assertEqual(
+                    [(e["t_monde"], e["sequence"], e["operation"])
+                     for e in received],
+                    [(3, 0, "set_danger_zone"),
+                     (5, 0, "set_danger_zone")],
+                )
+                self.assertEqual(
+                    [e["payload"]["active"] for e in received],
+                    [True, False],
+                )
+                self.assertEqual(
+                    [(e["t_monde"], e["sequence"]) for e in applied],
+                    [(3, 0), (5, 0)],
+                )
+                self.assertFalse(entries(hazard, "external_input_rejected"))
+                self.assertTrue(hazard.journal.verify())
+                self.assertTrue(control.journal.verify())
+
+                # Independent re-execution compares the run, not a journal
+                # from which a cancelled step was synthetically replayed.
+                independent = build_scheduled(
+                    planning_uc, exploration_uc, hazard=True,
+                )
+                for _ in range(6):
+                    independent.run_step()
+                self.assertEqual(
+                    independent.journal.canonical_bytes(),
+                    hazard.journal.canonical_bytes(),
+                )
+                self.assertEqual(
+                    owner_states(independent), owner_states(hazard),
+                )
+                self.assertTrue(independent.journal.verify())
+
+                manager.restore(
+                    checkpoint_active.id, owners=hazard.causal_owners,
+                )
+                self.assertEqual(owner_states(hazard), before_removal)
+                self.assertEqual(
+                    hazard.world.export_causal_state()["danger_zones"],
+                    [DANGER_POS],
+                )
+                manager.restore(
+                    checkpoint_cleared.id, owners=hazard.causal_owners,
+                )
+                self.assertEqual(owner_states(hazard), after_removal)
+                self.assertEqual(
+                    hazard.world.export_causal_state()["danger_zones"], [],
+                )
+                self.assertTrue(manager.verify(checkpoint_active.id))
+                self.assertTrue(manager.verify(checkpoint_cleared.id))
+                self.assertTrue(hazard.journal.verify())
+
     def test_same_versioned_inputs_independently_replay(self):
         for planning_uc, exploration_uc in BUDGETS:
             with self.subTest(
