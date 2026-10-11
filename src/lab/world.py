@@ -8,6 +8,7 @@ Spec: 4.1, 7.1, 18.3, 19.5, 20.3 Stage 2, P-52, P-53.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Mapping, Sequence
@@ -445,6 +446,30 @@ class WorldBody:
         # A terminal individual's physical consequences cannot be changed
         # through the public WorldBody mutation API.
         self._terminal_frozen = False
+        # Direct WorldBody.apply would otherwise bypass Action Control,
+        # the once-only mortal boundary and its causal journal receipts.
+        self._mortal_dispatch_key: object | None = None
+        self._mortal_dispatch_active = False
+
+    def _install_mortal_dispatch_authority(self) -> object:
+        """Bind exactly one forward-only physical dispatcher to this world."""
+        if self._mortal_dispatch_key is not None:
+            raise RuntimeError("mortal WorldBody already has a physical owner")
+        key = object()
+        self._mortal_dispatch_key = key
+        return key
+
+    @contextmanager
+    def _admit_mortal_dispatch(self, key: object):
+        """Authorize one synchronous boundary-owned WorldBody.apply call."""
+        self._require_mutable_world()
+        if key is not self._mortal_dispatch_key or self._mortal_dispatch_active:
+            raise RuntimeError("unauthorized or reentrant mortal world dispatch")
+        self._mortal_dispatch_active = True
+        try:
+            yield
+        finally:
+            self._mortal_dispatch_active = False
 
     def freeze_terminal_state(self) -> None:
         """Forbid further physical and scenario mutation on this world owner."""
@@ -841,6 +866,8 @@ class WorldBody:
         """Apply one primitive command and detect lethality before continuation."""
 
         self._require_mutable_world()
+        if self._mortal_dispatch_key is not None and not self._mortal_dispatch_active:
+            raise RuntimeError("mortal world transitions require Action Control dispatch")
         validate_command(command)
         if t_monde < 1:
             raise ValueError("t_monde must be >= 1")
