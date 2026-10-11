@@ -40,18 +40,28 @@ def propose_geographic_frontier(
     predicted = simulator.rollout(
         initial_state=initial_state, commands=(command,), r_eff=1, h_eff=1,
     )
-    if not predicted.complete or len(predicted.completed_rollouts) != 1:
-        return None
-    predictions = predicted.completed_rollouts[0].predictions
-    if (len(predictions) != 1
-        or (predictions[0].next_state.x, predictions[0].next_state.y)
-        != target.destination):
-        return None
-    consequences = SimulatorPlanner._predicted_consequences(predictions[0])
-    if not {"position_x", "position_y"}.issubset({
-        consequence.variable for consequence in consequences
-    }):
-        return None
+    # Frozen E-v1 is an exact corpus table: an unseen input is UNKNOWN, not
+    # evidence that a physically perceived adjacent step cannot be attempted.
+    # As at Stage 9, a local one-step exploratory plan may remain indeterminate
+    # without inventing numeric predicted consequences. A conflicting learned
+    # causal correction, invalid rollout or other model failure is NOT ignored.
+    if not predicted.complete:
+        if predicted.reason != "equipment_input_unseen":
+            return None
+        consequences = ()
+    else:
+        if len(predicted.completed_rollouts) != 1:
+            return None
+        predictions = predicted.completed_rollouts[0].predictions
+        if (len(predictions) != 1
+            or (predictions[0].next_state.x, predictions[0].next_state.y)
+            != target.destination):
+            return None
+        consequences = SimulatorPlanner._predicted_consequences(predictions[0])
+        if not {"position_x", "position_y"}.issubset({
+            consequence.variable for consequence in consequences
+        }):
+            return None
     option_id = (
         f"option:geographic:{target.ref}:t{target.source_t_monde}"
     )
@@ -83,6 +93,11 @@ def propose_geographic_frontier(
         plan_ref=plan_id,
         state="proposed",
     )
-    proposal = OptionProposal(option=option, plan=plan)
+    proposal = OptionProposal(
+        option=option, plan=plan,
+        preliminary_admissibility=(
+            "indeterminate" if not consequences else None
+        ),
+    )
     proposal.validate()
     return proposal
