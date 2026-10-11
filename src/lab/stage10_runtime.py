@@ -17,6 +17,8 @@ from i0.interfaces import PrimitiveCommand
 from i0.modules.action_control import PreparedCommand
 from i0.modules.competition import OptionEvidenceInput
 from i0.modules.consolidation_budget import ConsolidationBudgetConfig, ConsolidationWorkBudget
+from i0.modules.consolidation_batch import BatchSelectionPolicy
+from i0.modules.consolidation_semantics import SemanticPassPolicy
 from i0.modules.consolidation_transaction import ConsolidationSlot
 from i0.modules.sleep_competition import create_sleep_proposal, assemble_sleep_evidence
 from i0.modules.sleep_health import SleepHealth
@@ -26,8 +28,10 @@ from i0.modules.sleep_session import SleepSession
 from i0.modules.simulator import state_from_capture
 
 from .consolidation_publication import SlowHistory
+from .stage10_consolidation_coordinator import Stage10ConsolidationCoordinator
 from .stage4_runtime import Stage4StepResult
 from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY
+from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY
 from .stage9_runtime import Stage9Config, Stage9Runtime
 
 
@@ -37,6 +41,8 @@ class Stage10Config:
     stage9: Stage9Config
     sleep: SleepPressureConfig
     sleep_work: ConsolidationBudgetConfig
+    batch_policy: BatchSelectionPolicy
+    semantic_policy: SemanticPassPolicy
     intrinsic_weight: float
     memory_reference_capacity: int
     sleep_option_uc: int
@@ -53,6 +59,8 @@ class Stage10Config:
         self.stage9.validate()
         self.sleep.validate()
         self.sleep_work.validate()
+        self.batch_policy.validate()
+        self.semantic_policy.validate()
         if (type(self.memory_reference_capacity) is not int
                 or self.memory_reference_capacity < 1
                 or type(self.sleep_option_uc) is not int or self.sleep_option_uc < 1):
@@ -178,6 +186,20 @@ class Stage10Runtime(Stage9Runtime):
         )
         self.consolidation = ConsolidationSlot()
         self.consolidation_work = ConsolidationWorkBudget(config.sleep_work)
+        self.consolidation_driver = Stage10ConsolidationCoordinator(
+            journal=self.journal,
+            views=self.stage3.substrate.views,
+            memory=self.memory,
+            history=self.slow_history,
+            slot=self.consolidation,
+            budget=self.consolidation_work,
+            batch_policy=config.batch_policy,
+            semantic_policy=config.semantic_policy,
+            projection_policies={
+                STAGE2_AUTOBIOGRAPHICAL_POLICY.version:STAGE2_AUTOBIOGRAPHICAL_POLICY,
+                STAGE7_AUTOBIOGRAPHICAL_POLICY.version:STAGE7_AUTOBIOGRAPHICAL_POLICY,
+            },
+        )
         self._preopened_waking_capture = None
         self._last_applied_decision = None
         self._last_sleep_proposal = None
@@ -192,6 +214,7 @@ class Stage10Runtime(Stage9Runtime):
         owners.extend((
             self.sleep_session, self.slow_history,
             self.consolidation, self.consolidation_work,
+            self.consolidation_driver,
         ))
         ids = [owner.owner_id for owner in owners]
         if len(ids) != len(set(ids)):
@@ -415,10 +438,11 @@ class Stage10Runtime(Stage9Runtime):
         )
         if outcome.woke:
             if active:
-                # The running work unit must cancel its current private pass.
-                # Integration of the pass runner is required before activating
-                # any live consolidation. Never publish partial work.
-                old.interrupt()
+                # Cancel only the unvalidated pass/builder; all validated
+                # checkpoints stay inside the single transaction owner.
+                self.consolidation_driver.interrupt_for_waking(
+                    on_event=lambda kind,data:self._write(kind=kind,data=data),
+                )
             self._write(kind="stage10_sleep_woke",data={
                 "world_step":t,"reason":outcome.reason,
                 "consolidation_interrupted":active,
@@ -488,6 +512,20 @@ class Stage10Runtime(Stage9Runtime):
         self.stage3.record_admission(prepared=prepared,admission=admission)
         if not admission.ok:
             raise RuntimeError("sleep command was refused; no fabricated world advance")
+        # Run private P-42 work only after the actual sleeping command
+        # passed Action Control. No cognitive cycle or extra WorldBody step.
+        emit = lambda kind,data:self._write(kind=kind,data=data)
+        if self.consolidation.current is not None and self.consolidation.current.status == "suspended":
+            self.consolidation_driver.resume(on_event=emit)
+        elif self.consolidation.current is None:
+            self.consolidation_driver.start_if_eligible(
+                world_step=t,
+                consolidation_pressure=frozen.consolidation_pressure,
+                threshold=self._stage10_config.p_cons_min,
+                on_event=emit,
+            )
+        if self.consolidation.current is not None:
+            self.consolidation_driver.run_slot(on_event=emit)
         execution = self.stage3.control.dispatch_prechecked(
             admission=admission,
             sender=lambda command:self.stage3.substrate.send_admitted_command(
