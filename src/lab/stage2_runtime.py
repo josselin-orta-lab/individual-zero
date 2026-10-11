@@ -166,11 +166,21 @@ class ScriptedStage2Runtime:
             and self._mortal_boundary.status is not MortalStatus.ACTIVE
         ):
             raise RuntimeError("dead or halted individual cannot advance")
+        if self._mortal_boundary is not None and self.safety.blocked:
+            raise RuntimeError("safety-blocked mortal individual cannot advance")
         # A rejected external input is a stopped branch, not an omitted
         # event to be silently skipped in a later world step.
         if self.scenario is not None and self.scenario.halted:
             raise RuntimeError("cannot advance a rejected external scenario")
-        attempt = self.scheduler.open_step()
+        try:
+            attempt = self.scheduler.open_step()
+        except Exception:
+            # Scheduler increments its clock before publishing step_opened.
+            # A failed publication must never leave a dispatchable mortal
+            # attempt lacking its opening event; do not rewind the clock.
+            if self._mortal_boundary is not None:
+                self._mortal_boundary.halt(failed_step=self.scheduler.t_monde)
+            raise
         if self.scenario is not None:
             try:
                 if self._mortal_boundary is None:
@@ -262,6 +272,8 @@ class ScriptedStage2Runtime:
             raise RuntimeError("mortal command requires active world step")
         if boundary.status is not MortalStatus.ACTIVE:
             raise RuntimeError("dead or halted individual cannot act")
+        if self.safety.blocked:
+            raise RuntimeError("safety-blocked mortal individual cannot act")
         try:
             command_ref = self._write_command_event(
                 command=command, emitter=event_emitter or source,

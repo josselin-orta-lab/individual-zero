@@ -44,7 +44,7 @@ class JournalViewsTests(unittest.TestCase):
             version="autobio-v1",
             allowed_fields_by_kind={
                 "observation_perceived": ("t_monde", "perceptible"),
-                "command_experienced": ("t_monde", "perceptible"),
+                "command_experienced": ("t_monde", "primitive", "parameters"),
             },
         )
 
