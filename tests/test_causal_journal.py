@@ -72,6 +72,91 @@ class HashChainedJournalTests(unittest.TestCase):
 
         self.assertNotEqual(first.head_hash, second.head_hash)
 
+    def test_append_owns_nested_payload_after_caller_mutation(self) -> None:
+        source = {
+            "kind": "external_input_received",
+            "data": {"position": {"x": 3, "y": 2}},
+            "evidence_refs": ["source-1"],
+        }
+        journal = HashChainedJournal()
+        event_id = deterministic_id(
+            "journal-event-v1", "scenario", 1, "external-input",
+        )
+        entry = journal.append(event_id=event_id, causal_event=source)
+        expected_bytes = journal.canonical_bytes()
+        expected_hash = journal.head_hash
+
+        source["data"]["position"]["x"] = 999
+        source["evidence_refs"].append("unpublished")
+        source["new_causal_key"] = "after append"
+
+        self.assertEqual(entry.causal_event["data"]["position"],
+                         {"x": 3, "y": 2})
+        self.assertEqual(entry.causal_event["evidence_refs"], ["source-1"])
+        self.assertIs(journal.get(event_id), entry)
+        self.assertEqual(journal.canonical_bytes(), expected_bytes)
+        self.assertEqual(journal.head_hash, expected_hash)
+        self.assertTrue(journal.verify())
+
+        independent = HashChainedJournal()
+        independent.append(
+            event_id=event_id,
+            causal_event={
+                "kind": "external_input_received",
+                "data": {"position": {"x": 3, "y": 2}},
+                "evidence_refs": ["source-1"],
+            },
+        )
+        self.assertEqual(independent.canonical_bytes(), expected_bytes)
+        self.assertEqual(independent.head_hash, expected_hash)
+
+    def test_entry_export_cannot_mutate_nested_journal_history(self) -> None:
+        journal = HashChainedJournal()
+        event_id = deterministic_id(
+            "journal-event-v1", "perception", 1, "capture",
+        )
+        entry = journal.append(
+            event_id=event_id,
+            causal_event={
+                "kind": "perceptual_capture",
+                "data": {"position": {"x": 2, "y": 3}},
+                "evidence_refs": ["physical-source"],
+            },
+        )
+        frozen_bytes = journal.canonical_bytes()
+        exported = entry.as_dict()
+        exported["causal_event"]["data"]["position"]["x"] = 999
+        exported["causal_event"]["evidence_refs"].append("retroactive")
+        exported["causal_event"]["kind"] = "fake_event"
+        self.assertEqual(
+            journal.get(event_id).causal_event["data"]["position"],
+            {"x": 2, "y": 3},
+        )
+        self.assertEqual(
+            journal.get(event_id).causal_event["evidence_refs"],
+            ["physical-source"],
+        )
+        self.assertEqual(journal.canonical_bytes(), frozen_bytes)
+        self.assertTrue(journal.verify())
+
+    def test_uncanonical_nested_input_fails_before_journal_append(self) -> None:
+        journal = self.build_journal()
+        prior_bytes = journal.canonical_bytes()
+        prior_hash = journal.head_hash
+        with self.assertRaises(TypeError):
+            journal.append(
+                event_id=deterministic_id(
+                    "journal-event-v1", "scenario", "malformed",
+                ),
+                causal_event={
+                    "kind": "external_input_received",
+                    "payload": {"invalid_set": {1, 2}},
+                },
+            )
+        self.assertEqual(journal.canonical_bytes(), prior_bytes)
+        self.assertEqual(journal.head_hash, prior_hash)
+        self.assertTrue(journal.verify())
+
     def test_duplicate_event_id_rejected_without_modifying_journal(self) -> None:
         journal = self.build_journal()
         before = journal.canonical_bytes()
