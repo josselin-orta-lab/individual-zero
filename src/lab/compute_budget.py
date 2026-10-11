@@ -137,7 +137,9 @@ class CycleComputeBudget:
         )
 
     def open_cycle(self, cycle: int) -> None:
-        if cycle < 1:
+        # A bool or fractional value must never become a causal cycle index.
+        # Reject before the new cycle can reset any live UC counters.
+        if type(cycle) is not int or cycle < 1:
             raise ValueError("cycle must be >= 1")
         self._cycle = cycle
         self._consumed_cycle = 0
@@ -152,11 +154,14 @@ class CycleComputeBudget:
     ) -> BudgetCharge:
         if self._cycle is None:
             raise RuntimeError("compute budget requires an open cycle")
-        if module not in self._config.module_envelopes:
+        if type(module) is not str or module not in self._config.module_envelopes:
             raise ValueError(f"unknown module envelope: {module}")
-        if operation not in self._config.operation_costs:
+        if type(operation) is not str or operation not in self._config.operation_costs:
             raise ValueError(f"unknown operation cost: {operation}")
-        if count < 0:
+        # P-43 logical work is integral. Python bool is an int subclass;
+        # checking only count < 0 also accepts fractional/NaN requests.
+        # Validate before arithmetic, charge, or any state publication.
+        if type(count) is not int or count < 0:
             raise ValueError("operation count must be non-negative")
 
         requested = self._config.operation_costs[operation] * count
