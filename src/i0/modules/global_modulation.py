@@ -107,10 +107,14 @@ class GlobalModulation:
             min(1.0, element.decomposition.get("risk", 0.0))
             for element in st.competitive
             if (
-                element.contribution_ref.startswith(
+                isinstance(
+                    getattr(element, "contribution_ref", None), str
+                )
+                and element.contribution_ref.startswith(
                     "stage11:local-creature-alert:"
                 )
-                and element.summary == "adjacent creature physically observed"
+                and getattr(element, "summary", None)
+                == "adjacent creature physically observed"
             )
         )
         if risk:
