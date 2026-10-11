@@ -62,8 +62,16 @@ class Stage11ChangedWorldRouteTests(TestCase):
                          ("place_creature",))
         self.assertEqual(blocked.external_input_steps, (3,))
         self.assertEqual(blocked.applied_route_into_active_creature, 0)
-        # No forced escape success or fabricated intrinsic novelty claim.
-        self.assertFalse(blocked.observed_alternate_branch)
+        # Preserved negative result from CI #38120585742:
+        # the geographic route *did not* enter the occupied neighbor, but
+        # a separate, canonical Stage-3 reflex moved into that cell at t3
+        # and the individual later reached the southern branch.
+        # Never relabel that reflex transit as a successful route veto.
+        self.assertEqual(blocked.applied_reflex_moves_into_active_creature, 1)
+        self.assertIn(3, blocked.applied_reflex_steps)
+        self.assertEqual(blocked.action_sources[2], "reflex")
+        self.assertIsNone(blocked.actions[2][2])
+        self.assertTrue(blocked.observed_alternate_branch)
         self.assertEqual(blocked.danger_damage_total, 0.0)
 
     def test_removed_obstruction_is_reobserved_before_any_reuse(self):
@@ -72,7 +80,11 @@ class Stage11ChangedWorldRouteTests(TestCase):
                          ("place_creature", "remove_creature"))
         self.assertEqual(restored.external_input_steps, (3, 5))
         self.assertEqual(restored.applied_route_into_active_creature, 0)
-        # Whether it actually returns is an observed endpoint, not a promise.
+        self.assertEqual(restored.applied_reflex_moves_into_active_creature, 1)
+        # The independently governed reflex already traverses the occupied
+        # cell at t3, so this experiment does NOT establish that removal at
+        # t5 enables a stalled route. Preserve that limitation.
+        self.assertTrue(restored.observed_alternate_branch)
         self.assertTrue(all(isinstance(p, tuple)
                             for p in restored.observed_positions))
 
