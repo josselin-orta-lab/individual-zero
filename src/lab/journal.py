@@ -16,6 +16,31 @@ from .determinism import canonical_causal_bytes, sha256_hex
 GENESIS_HASH = "00" * 32
 
 
+class _DetachedCausalEvent(Mapping[str, object]):
+    """Read-only technical view whose nested reads never alias journal state."""
+
+    __slots__ = ("__contents",)
+
+    def __init__(self, source: Mapping[str, object]) -> None:
+        self.__contents = deepcopy(dict(source))
+
+    def __getitem__(self, key: str) -> object:
+        return deepcopy(self.__contents[key])
+
+    def __iter__(self):
+        return iter(self.__contents)
+
+    def __len__(self) -> int:
+        return len(self.__contents)
+
+    def copy(self) -> dict[str, object]:
+        """Compatibility helper: like dict.copy(), without leaking aliases."""
+        return dict(self)
+
+    def __repr__(self) -> str:
+        return repr(dict(self))
+
+
 @dataclass(frozen=True, slots=True)
 class JournalEntry:
     """One immutable technical-journal occurrence."""
@@ -26,6 +51,9 @@ class JournalEntry:
     event_hash: str
     causal_event: Mapping[str, object]
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "causal_event", _DetachedCausalEvent(self.causal_event))
+
     def as_dict(self) -> dict[str, object]:
         return {
             "index": self.index,
@@ -33,7 +61,7 @@ class JournalEntry:
             "previous_hash": self.previous_hash,
             "event_hash": self.event_hash,
             # An exported document must not alias the hash-chained record.
-            "causal_event": deepcopy(dict(self.causal_event)),
+            "causal_event": dict(self.causal_event),
         }
 
 
