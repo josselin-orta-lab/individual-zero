@@ -22,6 +22,7 @@ from .journal_views import (
 )
 from .oracle import create_oracle
 from .mortal_execution import MortalStatus, MortalWorldBoundary
+from .compact_life_custody import BoundedLivedStream
 from .safety_protocol import (
     LethalHandlingResult,
     LethalSafetyProtocol,
@@ -90,6 +91,7 @@ class ScriptedStage2Runtime:
             bench=self.bench,
         )
         self._mortal_boundary: MortalWorldBoundary | None = None
+        self._lived_stream: BoundedLivedStream | None = None
         if scenario_id is None and (scenario_version is not None or scenario_events):
             raise ValueError("scenario_id is required when scenario data is supplied")
         if scenario_id is not None and scenario_version is None:
@@ -126,6 +128,28 @@ class ScriptedStage2Runtime:
             raise RuntimeError("mortal runtime must be selected before birth")
         self._mortal_boundary = MortalWorldBoundary(world=self.world)
         self.snapshots.forbid_life_restoration()
+
+    def enable_compact_memory_delivery(
+        self, *, policy: AutobiographicalPolicy,
+        max_pending_events: int = 2048,
+    ) -> None:
+        """Select bounded experienced-event delivery before the first step.
+
+        This migration seam stays off by default until Memory parity and
+        Stage-10 consolidation can use it without the full technical log.
+        """
+        if self._mortal_boundary is None:
+            raise RuntimeError("compact memory delivery requires mortal custody")
+        if (self._lived_stream is not None or self.scheduler.t_monde != 0
+                or self.scheduler.active_attempt is not None):
+            raise RuntimeError("compact memory mode must be selected before birth")
+        self._lived_stream = BoundedLivedStream(
+            policy=policy, max_pending_events=max_pending_events,
+        )
+
+    @property
+    def lived_stream(self) -> BoundedLivedStream | None:
+        return self._lived_stream
 
     @property
     def mortal_status(self) -> MortalStatus | None:
@@ -243,6 +267,8 @@ class ScriptedStage2Runtime:
             physical = boundary.execute(command, t_monde=attempt.t_monde)
             physical_ref = self._write_transition_event(physical.transition)
             if physical.status == "dead":
+                if self._lived_stream is not None:
+                    self._lived_stream.seal_terminal()
                 self.bench.count_lethal_transition(data={
                     "t_monde": physical.transition.t_monde,
                     "command_hash": command_digest(command),
@@ -256,17 +282,35 @@ class ScriptedStage2Runtime:
                     status="dead", transition=physical.transition,
                     lethal_handling=None,
                 )
+            authorized_refs = (
+                tuple(extra_autobiographical_event_refs)
+                + (command_ref, physical_ref)
+            )
             self.views.commit_autobiographical(
                 t_monde=attempt.t_monde,
                 attempt_ref=attempt.attempt_ref,
-                event_refs=(tuple(extra_autobiographical_event_refs)
-                            + (command_ref, physical_ref)),
+                event_refs=authorized_refs,
                 policy=(
                     STAGE2_AUTOBIOGRAPHICAL_POLICY
                     if autobiographical_policy is None
                     else autobiographical_policy
                 ),
             )
+            if self._lived_stream is not None:
+                # Transitional producer adapter: same authorized committed
+                # refs, but the Memory reader receives only its bounded queue
+                # instead of rebuilding every preceding step from the log.
+                experienced = []
+                for event_ref in authorized_refs:
+                    record = self.journal.get(event_ref)
+                    if record is None:
+                        raise RuntimeError("committed lived event is missing")
+                    experienced.append((event_ref, record.causal_event))
+                self._lived_stream.commit_step(
+                    t_monde=attempt.t_monde,
+                    attempt_ref=attempt.attempt_ref,
+                    experienced=tuple(experienced),
+                )
             self.scheduler.close_step(
                 outcome="normal", applied_command_count=1,
                 world_advance_count=1,
