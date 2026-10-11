@@ -199,12 +199,22 @@ class IndependentJournalAuditTests(unittest.TestCase):
     def test_stage10_false_cut_and_postcut_references_are_rejected(self):
         j = stable_journal()
         record(j, "bad-activation", "stage10_consolidation_version_activated",
-               data={"cut": {
-                   "journal_index": 0, "journal_event_id": "wrong",
-                   "journal_hash": "deadbeef",
-               }, "postcut_journal_end_index": 3,
-               "postcut_journal_end_hash": j.entries[3].event_hash,
-               "commit_index": 5})
+               emitter="scheduler",
+               data={
+                   "source_history_version": "h:0",
+                   "new_history_version": "h:1",
+                   "consolidation_id": "c:1",
+                   "batch": [], "batch_digest": "a" * 64,
+                   "candidate_digest": "b" * 64,
+                   "cut": {
+                       "world_step": 1, "history_version": "h:0",
+                       "journal_index": 0, "journal_event_id": "wrong",
+                       "journal_hash": "deadbeef",
+                   },
+                   "postcut_journal_end_index": 4,
+                   "postcut_journal_end_hash": j.entries[4].event_hash,
+                   "commit_index": 5,
+               })
         with self.assertRaisesRegex(ValueError, "cut"):
             audit_export_bytes(j.canonical_bytes())
 
