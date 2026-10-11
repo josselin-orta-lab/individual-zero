@@ -1,5 +1,6 @@
 """Public Stage-11 geographic coverage and adversarial motive spoofing tests."""
 from dataclasses import replace
+from types import SimpleNamespace
 import json
 from unittest import TestCase
 
@@ -56,6 +57,73 @@ class PublicCoverageTests(TestCase):
 
 
 class GeographicProposalIntegrityTests(TestCase):
+    def test_complete_equipment_prediction_needs_only_changed_axis(self):
+        runtime = build_stage11_reference_runtime(enable_geography=True)
+        capture = runtime.stage3.open_step()
+        target = runtime.exploration.geographic_cibles(capture)[0]
+        self.assertEqual(target.direction, "north")
+        runtime.exploration.observe_geographic_capture(
+            capture, frozen_targets=(target,),
+        )
+        initial = state_from_capture(
+            capture=capture, is_night=runtime.world.is_night(capture.t_monde),
+        )
+
+        def simulator(y_value, *, x_value=None):
+            command = PrimitiveCommand(
+                "se_deplacer", {"direction": target.direction},
+            )
+            effects = [SimpleNamespace(
+                variable="y", after=y_value,
+            )]
+            if x_value is not None:
+                effects.append(SimpleNamespace(
+                    variable="x", after=x_value,
+                ))
+            prediction = SimpleNamespace(
+                command=command,
+                next_state=SimpleNamespace(
+                    x=target.destination[0], y=target.destination[1],
+                ),
+                effects=tuple(effects),
+            )
+            return SimpleNamespace(rollout=lambda **kwargs: SimpleNamespace(
+                complete=True,
+                completed_rollouts=(
+                    SimpleNamespace(predictions=(prediction,)),
+                ),
+            ))
+
+        base = dict(
+            target=target, initial_state=initial,
+            st_version="unit:st-before-cycle",
+            t_monde=capture.t_monde, ttl_steps=5,
+        )
+        valid = propose_geographic_frontier(
+            **base, simulator=simulator(target.destination[1]),
+        )
+        self.assertIsNotNone(valid)
+        self.assertIsNone(valid.preliminary_admissibility)
+        self.assertEqual(
+            tuple(c.variable for c in valid.plan.steps[0].predicted_consequences),
+            ("position_y",),
+        )
+        self.assertTrue(
+            runtime.stage8_option_evaluator._safe_geographic_shape(
+                valid, target,
+            )
+        )
+        # A next_state claim cannot compensate for a contradictory effect.
+        self.assertIsNone(propose_geographic_frontier(
+            **base, simulator=simulator(target.destination[1] + 1),
+        ))
+        self.assertIsNone(propose_geographic_frontier(
+            **base, simulator=simulator(
+                target.destination[1],
+                x_value=target.destination[0] + 1,
+            ),
+        ))
+
     def test_forged_plan_cannot_borrow_frontier_interest(self):
         runtime = build_stage11_reference_runtime(enable_geography=True)
         capture = runtime.stage3.open_step()
