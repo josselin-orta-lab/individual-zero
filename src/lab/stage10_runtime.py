@@ -845,7 +845,20 @@ class Stage10Runtime(Stage9Runtime):
         Failure may precede physical dispatch, or happen after the Scheduler
         has CLOSED an already applied physical step. Neither case permits
         rollback, and absence of an active attempt does not prove safety.
+
+        Already blocked/stopped identities are distinct from a new technical
+        failure. Refuse those known states BEFORE the fallible step body so
+        a previous safety block never becomes a synthetic technical halt.
         """
+        substrate = self.stage3.substrate
+        status = substrate.mortal_status
+        if status is not None:
+            if status.value != "active":
+                raise RuntimeError("dead or halted individual cannot advance")
+            if substrate.safety.blocked:
+                raise RuntimeError("safety-blocked mortal individual cannot advance")
+            if substrate.scenario is not None and substrate.scenario.halted:
+                raise RuntimeError("cannot advance a rejected external scenario")
         try:
             return self._run_step_with_mortal_guard()
         except BaseException:
