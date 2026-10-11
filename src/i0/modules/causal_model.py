@@ -2272,7 +2272,7 @@ class CausalModel:
         return tuple(changes)
 
     def export_causal_state(self) -> object:
-        return {
+        state = {
             "config_version": self.config.version,
             "config_contract": {
                 "n1": self.config.n1, "n2": self.config.n2,
@@ -2336,13 +2336,6 @@ class CausalModel:
                 {name: getattr(v, name) for name in v.__dataclass_fields__}
                 for _, v in sorted(self._lived_food_exposures.items())
             ],
-            "lived_ambient_integrity_controls": [
-                {
-                    **{name: getattr(v, name) for name in v.__dataclass_fields__},
-                    "position": list(v.position),
-                }
-                for _, v in sorted(self._lived_ambient_integrity_controls.items())
-            ],
             "lived_hydration_exposures": [
                 {
                     **{name: getattr(v, name) for name in v.__dataclass_fields__},
@@ -2371,6 +2364,18 @@ class CausalModel:
                 for trial_ref, v in sorted(self._causal_action_witnesses.items())
             ],
         }
+        # Exact backward compatibility: historic no-control snapshots and
+        # their hash-chained Stage-11 journal digests must not gain an empty
+        # field purely because this optional safeguard now exists.
+        if self._lived_ambient_integrity_controls:
+            state["lived_ambient_integrity_controls"] = [
+                {
+                    **{name: getattr(v, name) for name in v.__dataclass_fields__},
+                    "position": list(v.position),
+                }
+                for _, v in sorted(self._lived_ambient_integrity_controls.items())
+            ]
+        return state
 
     @staticmethod
     def _safety_ledger_sha256(rows: Sequence[SafetyEvidence]) -> str:
