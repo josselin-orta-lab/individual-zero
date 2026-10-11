@@ -66,6 +66,61 @@ _LIVED_DATA_SCHEMAS = {
     },
 }
 
+# Global runtime boundary: a caller-provided policy can only narrow these
+# permissions, never reinterpret a technical event as first-person evidence.
+# The synthetic observation_perceived shape remains supported for legacy
+# JournalViews clients; adding a production lived kind requires explicit
+# security review of its provenance and projection schema.
+_AUTHORIZED_LIVED_FIELDS = {
+    "observation_perceived": frozenset({
+        "t_monde", "perceptible", "event_id",
+    }),
+    "command_experienced": frozenset({
+        "t_monde", "primitive", "parameters", "event_id",
+    }),
+    "world_transition_experienced": frozenset({
+        "t_monde", "position_after", "body_after", "effects", "event_id",
+    }),
+    "active_goal_changed": frozenset({
+        "t_monde", "cycle", "data", "event_id",
+    }),
+    "s_t_published": frozenset({
+        "t_monde", "cycle", "data", "event_id",
+    }),
+    "agency_comparison": frozenset({
+        "t_monde", "data", "event_id",
+    }),
+    "episode_closed": frozenset({
+        "t_monde", "cycle", "data", "event_id",
+    }),
+    "memory_recall_proposed": frozenset({
+        "t_monde", "cycle", "data", "event_id",
+    }),
+    "intention_created": frozenset({
+        "t_monde", "cycle", "data", "event_id",
+    }),
+    "intention_triggered": frozenset({
+        "t_monde", "cycle", "data", "event_id",
+    }),
+}
+
+
+def validate_lived_kind_fields(kind: str, fields: object) -> None:
+    """Do not allow custom policies to elevate technical events to memory."""
+    allowed = _AUTHORIZED_LIVED_FIELDS.get(kind)
+    if allowed is None:
+        raise ValueError("technical event kind cannot become autobiographical")
+    if (
+        not isinstance(fields, (tuple, list))
+        or any(not isinstance(field, str) for field in fields)
+    ):
+        raise ValueError("autobiographical projection fields must be names")
+    if any(field not in allowed for field in fields):
+        raise ValueError("unauthorized autobiographical field for event kind")
+    for field in fields:
+        validate_lived_field_name(field)
+
+
 # Forbidden even nested under neutral-looking fields. Do not reject danger
 # zones or scenario payloads in general: valid hidden-hazard operations MUST
 # remain in the full technical journal for independent audit.
@@ -163,6 +218,7 @@ def _project_selected(value: object, schema: object) -> object:
 
 def project_lived_field(*, kind: str, field: str, value: object) -> object:
     """Return detached cognitive data, stripping unapproved nested fields."""
+    validate_lived_kind_fields(kind, (field,))
     validate_lived_field_name(field)
     if has_external_truth(value):
         raise ValueError("hidden oracle/bench facts cannot enter autobiography")
