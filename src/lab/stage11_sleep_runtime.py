@@ -21,7 +21,7 @@ class Stage11SleepRuntime(Stage11Runtime, Stage10Runtime):
 
     def __init__(
         self, *, stage11_config: Stage11Config,
-        stage10_config: Stage10Config, **kwargs,
+        stage10_config: Stage10Config, wal_path: str, **kwargs,
     ):
         stage11_config.validate()
         stage10_config.validate()
@@ -29,8 +29,15 @@ class Stage11SleepRuntime(Stage11Runtime, Stage10Runtime):
             raise ValueError("Stages 10 and 11 must share the same Stage-9 baseline")
         if kwargs.get("autonomous_mortal") is not True:
             raise ValueError("integrated v1.3.1 I0 must be autonomous and mortal")
+        if not wal_path:
+            raise ValueError("integrated mortal I0 requires an exclusive durable WAL path")
         self._combined_sleep_config = stage10_config
         super().__init__(config=stage11_config, **kwargs)
+        if self.journal.entries:
+            raise RuntimeError("integrated I0 was already born without WAL custody")
+        self.journal.enable_durable_wal(path=wal_path)
+        if not self.journal.durable_wal_enabled:
+            raise RuntimeError("integrated I0 requires fsynced causal journal custody")
         if self.stage3.substrate.mortal_status is None:
             raise RuntimeError("integrated runtime was not born mortal")
         if self.stage3.substrate.bench is not None:

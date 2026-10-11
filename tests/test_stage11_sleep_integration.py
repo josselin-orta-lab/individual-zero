@@ -1,7 +1,11 @@
 """v1.3.1: one mortal substrate for Stage-10 sleep and Stage-11 cognition."""
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
 import unittest
+
+from lab.journal import HashChainedJournal
 
 from lab.mortal_execution import MortalStatus
 from lab.stage10_reference_fixture import build_stage10_reference_runtime
@@ -17,7 +21,10 @@ def integrated_runtime(*, geography=False, fatigued=False):
         enable_geography=geography, autonomous_mortal=True,
     )
     stage10 = build_stage10_reference_runtime(autonomous_mortal=True)
+    wal_directory = tempfile.TemporaryDirectory()
+    wal_path = str(Path(wal_directory.name) / "mortal-life.jsonl")
     result = Stage11SleepRuntime(
+        wal_path=wal_path,
         world_config=stage11.world.config,
         layout=stage11.world._layout,
         safety_config=stage11.stage3.substrate.safety._config,
@@ -30,6 +37,8 @@ def integrated_runtime(*, geography=False, fatigued=False):
         equipment=stage11.equipment,
         autonomous_mortal=True,
     )
+    result._test_wal_directory = wal_directory
+    result._test_wal_path = wal_path
     if fatigued:
         state = result.sleep_health.export_causal_state()
         state["fatigue"] = 1.0
@@ -56,6 +65,11 @@ class IntegratedStage10Stage11Tests(unittest.TestCase):
         self.assertEqual(result.execution_status, "applied")
         self.assertEqual(runtime.scheduler.t_monde, 1)
         self.assertTrue(runtime.journal.verify())
+        self.assertEqual(
+            HashChainedJournal.audit_durable_wal(runtime._test_wal_path),
+            {"verified_entries": len(runtime.journal.entries),
+             "head_hash": runtime.journal.head_hash},
+        )
         kinds = [entry.causal_event["kind"] for entry in runtime.journal.entries]
         self.assertIn("stage10_sleep_pressure_frozen", kinds)
 
@@ -82,6 +96,10 @@ class IntegratedStage10Stage11Tests(unittest.TestCase):
         }
         self.assertEqual(owners_before, owners_after)
         self.assertTrue(runtime.journal.verify())
+        self.assertEqual(
+            HashChainedJournal.audit_durable_wal(runtime._test_wal_path)["head_hash"],
+            runtime.journal.head_hash,
+        )
 
     def test_combined_runtime_forbids_legacy_nonmortal_mode(self):
         stage11 = build_stage11_reference_runtime()
@@ -97,6 +115,7 @@ class IntegratedStage10Stage11Tests(unittest.TestCase):
                 ),
                 stage11_config=stage11._stage11_config,
                 stage10_config=stage10._stage10_config,
+                wal_path="unused-only-in-nonmortal-negative-test",
                 equipment=stage11.equipment,
                 autonomous_mortal=False,
             )
