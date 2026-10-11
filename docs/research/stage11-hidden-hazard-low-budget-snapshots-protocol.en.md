@@ -17,6 +17,12 @@ Existing public software fixtures exercise (a) a hidden `set_danger_zone` at wor
 - For the `(0,0)` and `(4,4)` hazard branches, take a complete periodic snapshot after step 3, run step 4, restore, compare every exported causal-owner state exactly, including WorldBody hazards, scenario cursor, canonical safety, scheduler and Memory. Technical journal remains append-only.
 - Reconstruct each budget+hazard program independently and compare normalized journals and complete owner states after the first 3 steps, without re-running a rewound step on the same journal.
 
+## World-only hazard input type fidelity addendum (2026-10-11, before implementation)
+
+WorldBody's current scenario interface silently coerces `payload.active` using `bool(...)`; nonempty text such as `"false"` consequently activates a hazard. It also coerces grid coordinates through `int(...)` for danger/lethal-zone and creature inputs. These conversions change physical truth without matching the logged input's declared type and value. The external scenario interface MUST require `active` to be a literal Boolean for `set_danger_zone` and `set_lethal_zone` (default `True` when absent); any explicit non-Boolean is rejected. All world-only `position` inputs MUST contain exactly `x` and `y` as true integers (not bool, float or text), validated before mutation. This constraint is on **external world input interpretation**, not the individual's Action Control admissibility or spatial movement.
+
+Fixed unit cases: `set_danger_zone` and `set_lethal_zone` reject `"false"`, `0`, `1`, `None` and array-typed activation; reject fractional, Boolean, string and extra-key grid positions. Preserve `world.export_causal_state()` exactly after each rejected call. Verify that a valid Boolean deactivation removes an actually active zone and that successful scenario programs still record receipt/application before Perception. No hidden world hazard is leaked to cognition.
+
 ## Limits
 
 These are public deterministic software tests, not a measurement of independent scientific learning or unknown-hazard generalization. No oracle-derived safety fact, synthetic DC-05 evidence or safety guarantee is introduced. The test must never require a particular *action* when budget exhaustion legitimately changes selection. A failed test is preserved and diagnosed, not weakened into a misleading success.
