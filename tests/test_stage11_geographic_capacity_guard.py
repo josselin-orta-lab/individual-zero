@@ -55,6 +55,14 @@ class Stage11GeographicCapacityGuardTests(TestCase):
                 geographic_capacity_guard_enabled=True,
                 geographic=None,
             ).validate()
+        # The legacy eager preflight ablation is deliberately incompatible:
+        # quoting without any observed candidate cannot become free work.
+        with self.assertRaises(ValueError):
+            replace(
+                cfg._stage11_config,
+                geographic_capacity_guard_enabled=True,
+                geographic_preflight_requires_frontier=False,
+            ).validate()
 
     def test_four_uc_hazard_and_control_need_priority_and_charges(self):
         matrix = {}
