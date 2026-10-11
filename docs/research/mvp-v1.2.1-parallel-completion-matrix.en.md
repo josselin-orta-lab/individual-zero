@@ -51,3 +51,21 @@ Agent B latest behavior-change SHA: `19f23c3ffd6f276e4a5e0b585ee5a094f358166a` (
 **Explicit residual risk:** The current batch adapter debits the logical budget prior to scanning, but a batch larger than the one-step slot is refused rather than incrementally processed. A future true multi-step, cursor-based scan is required for finite progress with large Memory, without doing unpaid work. Candidate callbacks in the transaction are still unit-test fixtures; they are not six scientific or semantic consolidation passes.
 
 **Noninterference:** no change to Agent A's Stage-11 paths, shared scheduler, journal, snapshot manager, shared world or CI trigger. Stage 9 scientific NO-GO is unchanged. No full INV-01..INV-53 certification is claimed.
+
+## Agent B Stage-10 replay agenda / private pass integration (2026-10-11)
+
+**Newest tested software commit:** `c5183dd669849c9c8dee05374ed35cb133b914f6` (source and new test blobs verified; tests executed in an isolated local staging copy, not against a full Git checkout). Concurrent Agent-B work already added `consolidation_pass_runner.py` and its three smoke tests; this increment added the previously unpushed replay agenda and extended test suites without overwriting those files.
+
+| Reference | Causal owner | Status | Source | Tests / SHA proof | Dependency | Next action |
+| --- | --- | --- | --- | --- | --- | --- |
+| §15.6 pass 1-6 private progress, INV-21/23/24/47 | Consolidation transaction and sleep-work budget | **partial, infrastructure only** | `src/i0/modules/consolidation_pass_runner.py`, `consolidation_transaction.py` | `tests/test_stage10_consolidation_pass_runner.py`, `test_stage10_pass_runner_contract.py`; exact blobs `fcbfecc16ae5ec2fd786e8c48ef8edfbdd9cefa0`, `0da01f51ee754eaea7230fd369a0e3742a78936a` | Scheduler and six semantic owners | Charge plan construction, journal charges, integrate genuine per-pass owners, private rebases and atomic publication |
+| §15.6 pass 2 replay, P-42, DC-16 | Memory-sourced, consolidation-private interleaving | **partial, agenda only** | `src/i0/modules/consolidation_replay_agenda.py` | `tests/test_stage10_consolidation_replay_agenda.py`; exact source/test blobs `8b40b926e40075340e604913c75cd67ffcc041cc` / `968401797a8040abf42b78763f6b465da2ee0c3c` | Memory and Causal Model / Procedural Memory | Real episode replay, physical provenance validation, no duplicated rule evidence |
+| §17.6, INV-23/24, snapshot continuity | Consolidation and Scheduler | **unit-only, integration missing** | `src/i0/modules/consolidation_pass_runner.py`, `consolidation_budget.py` | 64/64 isolated unit tests under Python 3.13.5, PYTHONHASHSEED 0 and 314159 | Agent A runtime coordination | Integrated snapshot world replay, refusal consistency, Python 3.11 and Python 3.12 |
+| §20.3 Stage 10 acceptance | Competition/Action Control/WorldBody/Metacognition | **not demonstrated** | Existing sleep-pressure rules only | No complete sleeping-world/rewaking trace on Agent B HEAD | Agent A and Agent B | Real `dormir`, reflex/reduced perception, wake rules, bound, world advancement |
+| §20.3 Stage 12 and 13 | Metacognition and Bench | **not complete** | Earlier scaffolds only | No end-to-end independent experiment | Stage 10 and 11 | Degraded modes/console after integration; final campaign only after preregistered freeze |
+
+**Verification actually performed:** `PYTHONPATH=src:tests PYTHONHASHSEED=0 python -m unittest discover -s tests -p 'test_stage10*.py' -v` and the equivalent with `PYTHONHASHSEED=314159`; each **64 PASS, 0 FAIL, 0 skipped** on Python 3.13.5. The local `lab.determinism` dependency is a copy and does not certify its current GitHub blob. The stacked PR target is still outside the current pull-request CI branch filters. No CI, Golden or scientific campaign is claimed.
+
+**Open scaling issue:** the charged replay-agenda construction requires the full batch scan to fit a single sleeping work slot; a resumable per-slot cursor and dedicated provenance verification must precede large-memory acceptance. This must not be evaded by free computation.
+
+**Stage 9 NO-GO scientific unchanged. Stage 10 partial. Stage 12 not integrated. Stage 13 campaign not started.**
