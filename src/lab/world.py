@@ -441,6 +441,18 @@ class WorldBody:
         # Monotonic custody bit: not part of the individual's physical or
         # cognitive state; a detached copy has a different identity.
         self._historical_restore_forbidden = False
+        # Monotonic runtime guard, deliberately excluded from causal state.
+        # A terminal individual's physical consequences cannot be changed
+        # through the public WorldBody mutation API.
+        self._terminal_frozen = False
+
+    def freeze_terminal_state(self) -> None:
+        """Forbid further physical and scenario mutation on this world owner."""
+        self._terminal_frozen = True
+
+    def _require_mutable_world(self) -> None:
+        if self._terminal_frozen:
+            raise RuntimeError("terminal or halted WorldBody cannot be mutated")
 
     def forbid_historical_restore(self) -> None:
         """Permanently forbid changing this living world's past via import."""
@@ -456,6 +468,7 @@ class WorldBody:
         physical fields with ONE dictionary publication. There is no saved
         public state to restore and no retroactive compensation on error.
         """
+        self._require_mutable_world()
         if not self._historical_restore_forbidden:
             raise RuntimeError("forward batch requires mortal-world custody")
         if not operations:
@@ -827,6 +840,7 @@ class WorldBody:
     def apply(self, command: Command, *, t_monde: int) -> TransitionResult:
         """Apply one primitive command and detect lethality before continuation."""
 
+        self._require_mutable_world()
         validate_command(command)
         if t_monde < 1:
             raise ValueError("t_monde must be >= 1")
@@ -983,6 +997,7 @@ class WorldBody:
     def apply_scenario_event(self, operation: str, payload: Mapping[str, object]) -> None:
         """Apply a logged external scenario input to world/body only."""
 
+        self._require_mutable_world()
         def position_from_payload() -> Position:
             raw = payload.get("position")
             if (
