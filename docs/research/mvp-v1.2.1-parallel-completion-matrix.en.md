@@ -32,3 +32,22 @@ No `h_new` or Q/κ/precision/causal representation is published. The coordinator
 The stacked PR targets `i0/vnext-stages-10-12`, which is **not** in the current `.github/workflows/ci.yml` pull-request base filter. Do not assume applying `ci-unit` triggers anything. No unexecuted test is treated as green. Validate with `python -m unittest discover -s tests -p 'test_stage10_consolidation_transaction.py' -v`, then relevant neighbors, Python 3.12, and Python 3.11 before updating this matrix. Do not modify CI triggers or claim scientific results.
 
 **Agent B exclusive files in this increment:** `src/i0/modules/consolidation_transaction.py`, `tests/test_stage10_consolidation_transaction.py`, this document. No Agent A file is changed.
+
+## Agent B Stage-10 increment update, 2026-10-11 (software-only)
+
+Agent B latest behavior-change SHA: `19f23c3ffd6f276e4a5e0b585ee5a094f358166a` (subsequent documentation-only commits may follow). This supplements the initial matrix above; earlier unverified statements refer to the initial checkpoint, **not** this updated work.
+
+| Normative requirement | Owner / causal boundary | Status | Actual code and tests | Exact tested code / proof | Dependency | Remaining gate |
+| --- | --- | --- | --- | --- | --- | --- |
+| 15.6, P-42, INV-21 | Memory-authorized batch selection | partial | `src/i0/modules/consolidation_batch.py`; `tests/test_stage10_consolidation_batch.py` | `c36713dab0cf75f80db6585f707caa4a48dd8976`, unit-only isolated local, 13/13 | Agent B, then actual Memory owner | Authoritative Memory ledger; incremental bounded scanning when full scan exceeds UC |
+| 15.6, P-42, 16.3, INV-21 | Stage-10 consolidation work ledger | partial | `src/i0/modules/consolidation_budget.py`; `tests/test_stage10_consolidation_budget.py` | `19f23c3ffd6f276e4a5e0b585ee5a094f358166a`, unit-only isolated local, 11/11 | Agent B, Scheduler integration with Agent A | Journal real sleep-step work charges and restrict work to actually admitted sleeping mode |
+| 15.6, INV-23/24/47 | Private checkpoint transactions | partial | `src/i0/modules/consolidation_transaction.py`; `tests/test_stage10_consolidation_transaction.py` | exact Git blobs `d12c657fb17896d2b9e2d2c3014bcb1801688dda` and `9de0cf075b77e0d305e95e66eb4aa2a90ea9adb5`, unit-only isolated local, 11/11 | Agent B plus scheduler and owners | Six *real* passes, post-cut ordered rebases and one atomic publication |
+| 20.3 Stage 10 behavioral acceptance | Competition, Action Control, Perception, WorldBody, Goal Manager | **unverified** | Stage-10 sleep rules exist but no full living sleep integration | no verified integrated SHA | Agent A / B coordinated | Real `dormir`, reduced perception, wake/intentions, full sleep world-step and journal replay |
+| 20.3 Stage 12, INV-46/48 | Metacognition, Budget, Supervision | pending | no Stage-12 change in current Agent B increments | none | Stages 10, 11 | Detect/degrade/console/alignment tests |
+| 20.3 Stage 13, INV-32/33 | Bench scientific campaign | blocked | no Stage-13 campaign change | none | Stages 1 through 12 and frozen registry | Preregistered independent campaign only after software prerequisites |
+
+**Aggregate targeted local test run:** `PYTHONPATH=src:tests python -m unittest discover -s tests -p 'test_stage10_consolidation*.py' -q`, Python 3.13.5, **35/35 PASS, 0 FAIL, 0 skip**. Source/test files correspond to verified Git blobs, but `lab.determinism` was a separately copied local implementation. This is not a full checkout, native Python 3.11/3.12 CI, integrated replay or scientific acceptance.
+
+**Explicit residual risk:** The current batch adapter debits the logical budget prior to scanning, but a batch larger than the one-step slot is refused rather than incrementally processed. A future true multi-step, cursor-based scan is required for finite progress with large Memory, without doing unpaid work. Candidate callbacks in the transaction are still unit-test fixtures; they are not six scientific or semantic consolidation passes.
+
+**Noninterference:** no change to Agent A's Stage-11 paths, shared scheduler, journal, snapshot manager, shared world or CI trigger. Stage 9 scientific NO-GO is unchanged. No full INV-01..INV-53 certification is claimed.
