@@ -211,8 +211,13 @@ class Stage11Runtime(Stage9Runtime):
                 return
             previous = self.exploration.export_causal_state()
             self.exploration.observe_causal_state(frozen)
+            # DC-07: even when the present cycle is degraded, a genuine
+            # physical capture may update the visited ledger, but NO new
+            # target is designated or retained as offered for that cycle.
             new_geo_visit = self.exploration.observe_geographic_capture(
-                capture, frozen_targets=frozen_geo_targets,
+                capture, frozen_targets=(
+                    () if self._cycle_degraded else frozen_geo_targets
+                ),
             )
             if new_geo_visit:
                 self._write(
