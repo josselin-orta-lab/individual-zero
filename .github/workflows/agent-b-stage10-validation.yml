@@ -1,0 +1,58 @@
+name: Agent B Stage 10 Validation
+
+# Temporary, isolated branch-scoped full software CI for the stacked Draft PR.
+# The standard ci.yml PR base filter excludes i0/vnext-stages-10-12.
+# Remove or disable this workflow after dedicated Stage-10 integration validation.
+on:
+  push:
+    branches:
+      - i0/mvp-parallel-completion
+    paths:
+      - '.github/workflows/agent-b-stage10-validation.yml'
+      - 'src/i0/modules/consolidation_*.py'
+      - 'src/i0/modules/sleep_*.py'
+      - 'src/lab/stage10_*.py'
+      - 'tests/test_stage10*.py'
+      - 'docs/research/stage10-agent-b-*.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-b-stage10-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stage10-unit-and-regression:
+    name: Stage10 and full suite (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout exact Agent B commit
+        uses: actions/checkout@v7
+      - name: Configure Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Compile runtime and tests
+        run: python -m compileall -q src tests
+      - name: Stage 10 tests, deterministic PYTHONHASHSEED
+        env:
+          PYTHONHASHSEED: '314159'
+        run: python -m unittest discover -s tests -p 'test_stage10*.py' -v
+      - name: Whole repository software regression
+        env:
+          PYTHONHASHSEED: '0'
+        run: python -m unittest discover -s tests -q
+      - name: Stage 10 validation manifest
+        run: |
+          python --version
+          git rev-parse HEAD
+          git status --porcelain
