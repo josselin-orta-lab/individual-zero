@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import unittest
 
-from lab.epistemic_guard import has_external_truth
+from lab.epistemic_guard import has_external_truth, project_lived_field
 from lab.independent_journal_audit import audit_export_bytes
 from lab.journal import HashChainedJournal
 from lab.journal_views import AutobiographicalPolicy, JournalViews
@@ -129,6 +129,54 @@ class EpistemicIsolationTests(unittest.TestCase):
             "kind": "external_input_received",
             "payload": {"position": {"x": 3, "y": 4}},
         }))
+
+    def test_independent_canonical_float_marker_preserves_lived_numeric_data(self):
+        lived = project_lived_field(
+            kind="active_goal_changed", field="data",
+            value={"after": {"current_pressure": {
+                "$f64": "0x1.0000000000000p-1",
+            }}},
+        )
+        self.assertEqual(
+            lived, {"after": {"current_pressure": {
+                "$f64": "0x1.0000000000000p-1",
+            }}},
+        )
+        with self.assertRaises(ValueError):
+            project_lived_field(
+                kind="active_goal_changed", field="data",
+                value={"after": {"current_pressure": {
+                    "$f64": "0x1.0000000000000p-1", "oracle_canary": "forged",
+                }}},
+            )
+
+    def test_optional_lived_stream_uses_exact_same_nested_guard(self):
+        from lab.compact_life_custody import BoundedLivedStream
+        events = (
+            ("goal:1", {
+                "kind": "active_goal_changed", "t_monde": 1,
+                "attempt_ref": "a", "cycle": 1,
+                "data": {"after": {"id": "g", "oracle_canary": "FORBIDDEN"}},
+            }),
+            ("command:1", {
+                "kind": "command_experienced", "t_monde": 1,
+                "attempt_ref": "a", "primitive": "attendre",
+                "parameters": {},
+            }),
+            ("world:1", {
+                "kind": "world_transition_experienced", "t_monde": 1,
+                "attempt_ref": "a", "position_after": {"x": 1, "y": 1},
+                "body_after": {}, "effects": {},
+            }),
+        )
+        cache = BoundedLivedStream(
+            policy=STAGE7_AUTOBIOGRAPHICAL_POLICY,
+            max_pending_events=4,
+        )
+        with self.assertRaisesRegex(ValueError, "hidden"):
+            cache.commit_step(t_monde=1, attempt_ref="a", experienced=events)
+        self.assertEqual(cache.pending_count, 0)
+        self.assertEqual(cache.last_step, 0)
 
     def test_standalone_auditor_rejects_rehashed_nested_oracle_fact(self):
         journal = HashChainedJournal()
