@@ -510,22 +510,50 @@ class Stage11Runtime(Stage9Runtime):
             )
             geo = self.exploration.geographic
             if geo is not None and geo.config.observe_routes:
-                # After the real Exploration observation charge only. This
-                # captures local passability; it does not grant a new target
-                # or let Phase-1 Planning read same-phase observations.
+                # After an accepted Phase-1 Exploration observation charge.
+                # A v3 revision can only replace topology at the *current*
+                # physically captured site; never grant an extra visit.
+                earlier_survey = (
+                    next((q for q in geo.surveys
+                          if q.position == (capture.x, capture.y)), None)
+                    if geo.config.refresh_surveys else None
+                )
                 if geo.record_survey(capture):
+                    current_survey = next(
+                        q for q in geo.surveys
+                        if q.position == (capture.x, capture.y)
+                    )
+                    data = {
+                        "source": "paid_phase1_exploration_perception",
+                        "world_step": capture.t_monde,
+                        "position": [capture.x, capture.y],
+                        "known_neighbor_count": len(
+                            current_survey.free_neighbors
+                        ),
+                        "hidden_safety_claim": False,
+                    }
+                    if geo.config.refresh_surveys:
+                        data.update({
+                            "survey_revision": earlier_survey is not None,
+                            "prior_observed_world_step": (
+                                None if earlier_survey is None
+                                else earlier_survey.world_step
+                            ),
+                            "previous_free_neighbors": (
+                                [] if earlier_survey is None
+                                else [list(p) for p in earlier_survey.free_neighbors]
+                            ),
+                            "observed_free_neighbors": [
+                                list(p) for p in current_survey.free_neighbors
+                            ],
+                            "physical_visit_count_unchanged": (
+                                not new_geo_visit
+                            ),
+                            "hidden_world_oracle_used": False,
+                        })
                     self._write(
                         kind="stage11_route_survey_recorded", cycle=cycle,
-                        data={
-                            "source": "paid_phase1_exploration_perception",
-                            "world_step": capture.t_monde,
-                            "position": [capture.x, capture.y],
-                            "known_neighbor_count": len(next(
-                                survey.free_neighbors for survey in geo.surveys
-                                if survey.position == (capture.x, capture.y)
-                            )),
-                            "hidden_safety_claim": False,
-                        },
+                        data=data,
                     )
             if new_geo_visit:
                 self._write(
