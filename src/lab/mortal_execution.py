@@ -19,6 +19,7 @@ class MortalStatus(str, Enum):
     ACTIVE = "active"
     DEAD = "dead"
     TECHNICAL_HALT = "technical_halt"
+    EXPERIMENT_STOPPED = "experiment_stopped"
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,12 +87,23 @@ class MortalWorldBoundary:
 
         A confirmed death stays a death; this function never restores state.
         """
-        if self._status is MortalStatus.DEAD:
+        if self._status is not MortalStatus.ACTIVE:
             return
         self._world.freeze_terminal_state()
         self._status = MortalStatus.TECHNICAL_HALT
         if failed_step is not None:
             self._failed_step = failed_step
+
+    def stop_experiment(self) -> None:
+        """Externally stop this test identity, permanently, without death.
+
+        A stopped simulation never becomes the same individual's restarted
+        life; it may be inspected only as an immutable completed trajectory.
+        """
+        if self._status is not MortalStatus.ACTIVE:
+            raise RuntimeError("only a living individual may be stopped by an operator")
+        self._world.freeze_terminal_state()
+        self._status = MortalStatus.EXPERIMENT_STOPPED
 
     def execute(self, command: Command, *, t_monde: int) -> MortalStepResult:
         if self._status is not MortalStatus.ACTIVE:
