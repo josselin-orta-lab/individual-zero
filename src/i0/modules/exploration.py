@@ -96,6 +96,36 @@ class Exploration:
             (f"exploration:frontier:{target.ref}:t{target.source_t_monde}",),
         )
 
+    def geographic_transit_motivation(self, option) -> IntrinsicAssessment:
+        """Interest in a witnessed *unvisited objective*, never transit novelty."""
+        geo = self._geographic
+        target = None if geo is None else geo.transit_for(option)
+        if target is None:
+            return IntrinsicAssessment(
+                "unavailable", None, "not_a_funded_observed_frontier_route",
+            )
+        if target.observed_frontier in {
+            tuple(v[:2]) for v in geo.export_causal_state()["visits"]
+        }:
+            return IntrinsicAssessment(
+                "unavailable", None, "route_objective_already_visited",
+            )
+        # A bounded informational interest scaled by transit distance.
+        value = min(1.0, max(0.0,
+            (1 + self.coefficient) * geo.config.novelty_weight
+            / len(target.visited_path)
+        ))
+        if value <= 0:
+            return IntrinsicAssessment(
+                "unavailable", None, "zero_remote_frontier_interest",
+            )
+        return IntrinsicAssessment(
+            "available", value, "prior_physically_observed_remote_frontier",
+            (f"exploration:remote-frontier:{target.observed_frontier}:"
+             f"observed-t{target.objective_observed_step}:"
+             f"sent-t{target.source_t_monde}",),
+        )
+
     def observe_causal_state(self, state):
         """Only confirmed causal publications can create learning progress.
 
