@@ -832,12 +832,15 @@ class Stage10Runtime(Stage9Runtime):
             substrate = self.stage3.substrate
             attempt = self.scheduler.active_attempt
             status = substrate.mortal_status
-            if (
-                status is not None
-                and status.value == "active"
-                and attempt is not None
-            ):
-                substrate._mortal_boundary.halt(failed_step=attempt.t_monde)
+            if status is not None and status.value == "active":
+                # An exception may happen *after* WorldBody, the technical
+                # journal, and Scheduler have already closed their step.
+                # No open attempt does not imply a safe/undoable error.
+                failed_step = (
+                    attempt.t_monde if attempt is not None
+                    else max(1, self.scheduler.t_monde)
+                )
+                substrate._mortal_boundary.halt(failed_step=failed_step)
             raise
 
     def _run_step_with_open_attempt(self):
