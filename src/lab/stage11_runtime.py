@@ -689,6 +689,31 @@ class Stage11Runtime(Stage9Runtime):
                         capture, raw_targets=raw_geo_targets,
                     )
                 )
+                if frozen_transit_target is not None:
+                    transit_status = self.stage3.control.verifier_admissibilite(
+                        capture=capture,
+                        prepared=PreparedCommand(
+                            command=PrimitiveCommand(
+                                "se_deplacer",
+                                {"direction": frozen_transit_target.direction},
+                            ),
+                            source="decision",
+                        ),
+                    )
+                    if transit_status is Admissibility.INADMISSIBLE:
+                        self._write(
+                            kind="stage11_route_transit_prefiltered",
+                            cycle=cycle,
+                            data={
+                                "source": "action_control.verifier_admissibilite",
+                                "admissibility": "inadmissible",
+                                "destination": list(frozen_transit_target.destination),
+                                "cached": False,
+                                "global_safety_claim": False,
+                                "charged_operation": "geographic_admissibility_preflight",
+                            },
+                        )
+                        frozen_transit_target = None
                 self._write(
                     kind="stage11_geographic_preflight_consulted",
                     cycle=cycle,
