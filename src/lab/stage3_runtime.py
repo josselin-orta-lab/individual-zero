@@ -69,7 +69,7 @@ class Stage3Runtime:
                 protected_integrity_threshold=protected_integrity_threshold,
             ),
             safety_facts=safety_facts,
-            protocol_mask=self.substrate.safety.is_masked,
+            protocol_mask=self.substrate.protocol_mask_for_control,
         )
         self._capture: PerceptualCapture | None = None
         self._capture_attempt_ref: str | None = None
