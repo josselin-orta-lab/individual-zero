@@ -50,6 +50,8 @@ class Stage11Config:
     # Local physically perceived risk alerts; historical vNext reference OFF.
     local_threat_alerts: bool = False
     geographic_route_enabled: bool = False
+    # Strict opt-in: passive Scheduler UC admission before paid geo preflight.
+    geographic_capacity_guard_enabled: bool = False
 
     def validate(self):
         if not self.version:
@@ -68,6 +70,12 @@ class Stage11Config:
             raise ValueError("geographic frontier preflight gate flag must be bool")
         if type(self.geographic_route_enabled) is not bool:
             raise ValueError("route enabled flag must be bool")
+        if type(self.geographic_capacity_guard_enabled) is not bool:
+            raise ValueError("geographic capacity guard must be boolean")
+        if self.geographic_capacity_guard_enabled and (
+            self.geographic is None or not self.geographic_preflight
+        ):
+            raise ValueError("capacity guard requires charged geographic preflight")
         if self.geographic_route_enabled and (
             self.geographic is None or not self.geographic.observe_routes
             or not self.geographic_preflight
@@ -118,6 +126,10 @@ class Stage11Config:
                 + (
                     "+route-site-cap-stop-v1"
                     if self.geographic_route_enabled else ""
+                )
+                + (
+                    "+scheduler-geo-capacity-guard-v1"
+                    if self.geographic_capacity_guard_enabled else ""
                 )
             ),
             module_envelopes={
@@ -773,6 +785,40 @@ class Stage11Runtime(Stage9Runtime):
                 )
                 return
             if self._stage11_config.geographic_preflight:
+                if self._stage11_config.geographic_capacity_guard_enabled:
+                    # Scheduler admission bookkeeping only. This does not
+                    # consult Action Control or build a speculative plan.
+                    # Prior goal-directed Planning has already run first.
+                    # If there is no capacity for BOTH real charges, do not
+                    # waste the preflight or record a fictional UC refusal.
+                    quote = self.compute_budget.quote_operations(
+                        module="planning",
+                        operations=(
+                            "geographic_admissibility_preflight",
+                            "planning_build",
+                        ),
+                    )
+                    if not quote.affordable:
+                        geo = self.exploration.geographic
+                        geo.freeze_targets(())
+                        geo.freeze_transits(())
+                        self._stage11_geographic_proposals_this_cycle = ()
+                        self._write(
+                            kind="stage11_geographic_capacity_deferred",
+                            cycle=cycle,
+                            data={
+                                "source": "scheduler_current_cycle_uc_ledger",
+                                "world_step": capture.t_monde,
+                                "required_uc": quote.required_uc,
+                                "available_uc": quote.available_uc,
+                                "charged_uc": 0,
+                                "canonical_admissibility_consulted": False,
+                                "safety_decision": None,
+                                "no_new_option": True,
+                                "planning_need_priority_preserved": True,
+                            },
+                        )
+                        return
                 if not self._charge(
                     module="planning",
                     operation="geographic_admissibility_preflight",
