@@ -25,8 +25,8 @@ from .stage6_runtime import Stage6Config, Stage6Runtime
 from .world import Position, WorldBody, WorldLayout
 
 
-def build_stage6_reference_runtime() -> Stage6Runtime:
-    stage4 = build_stage4_reference_runtime()
+def build_stage6_reference_runtime(*, autonomous_mortal: bool = False) -> Stage6Runtime:
+    stage4 = build_stage4_reference_runtime(autonomous_mortal=autonomous_mortal)
     world_config = stage4.world.config
     layout = WorldLayout(
         water_sources=frozenset({Position(2, 2)}),
@@ -109,4 +109,5 @@ def build_stage6_reference_runtime() -> Stage6Runtime:
             ),
         ),
         equipment=equipment,
+        autonomous_mortal=autonomous_mortal,
     )

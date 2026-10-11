@@ -15,8 +15,8 @@ from .stage7_reference_fixture import build_stage7_reference_runtime
 from .stage8_runtime import Stage8Config, Stage8Runtime
 
 
-def build_stage8_reference_runtime() -> Stage8Runtime:
-    stage7 = build_stage7_reference_runtime()
+def build_stage8_reference_runtime(*, autonomous_mortal: bool = False) -> Stage8Runtime:
+    stage7 = build_stage7_reference_runtime(autonomous_mortal=autonomous_mortal)
     beta = stage7._stage7_config.stage6.evaluation.beta
     evidence_scale = (
         stage7._stage7_config.stage6.evaluation.evidence_scale
@@ -82,4 +82,5 @@ def build_stage8_reference_runtime() -> Stage8Runtime:
             ),
         ),
         equipment=stage7.equipment,
+        autonomous_mortal=autonomous_mortal,
     )
