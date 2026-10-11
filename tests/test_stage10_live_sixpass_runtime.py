@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 import unittest
+from unittest.mock import patch
 
 from i0.modules.consolidation_batch import BatchSelectionPolicy
 from i0.modules.consolidation_budget import ConsolidationBudgetConfig
@@ -10,6 +11,7 @@ from i0.modules.consolidation_replay_agenda import ReplayAgendaPolicy
 from i0.modules.consolidation_semantics import SemanticPassPolicy
 from lab.stage10_reference_fixture import build_stage10_reference_runtime
 from lab.stage10_runtime import Stage10Runtime
+from lab.mortal_execution import MortalStatus
 
 
 def configured_runtime():
@@ -133,6 +135,36 @@ class LiveConsolidationRuntimeTests(unittest.TestCase):
         )
         self.assertTrue(runtime.journal.verify())
         self.assertEqual(runtime.bench, None)
+
+    def test_semantic_sleep_failure_halts_mortal_without_physical_replay(self):
+        runtime = configured_runtime()
+        pressure = runtime.sleep_health.export_causal_state()
+        pressure["fatigue"] = 1.0
+        runtime.sleep_health.restore_causal_state(pressure)
+        for _ in range(12):
+            result = runtime.run_step()
+            self.assertEqual(result.execution_status, "applied")
+            if result.command_primitive == "dormir":
+                break
+        else:
+            self.fail("no applied sleep decision before fault injection")
+        baseline_world = runtime.world.export_causal_state()
+        baseline_step = runtime.scheduler.t_monde
+        with patch.object(
+            runtime, "_run_live_consolidation",
+            side_effect=OSError("injected semantic journal failure"),
+        ):
+            with self.assertRaisesRegex(OSError, "semantic journal failure"):
+                runtime.run_step()
+        # The attempt may have prephysical receipts; it must never replay an
+        # action, produce an unearned world transition or continue this life.
+        self.assertEqual(runtime.scheduler.t_monde, baseline_step)
+        self.assertEqual(runtime.world.export_causal_state(), baseline_world)
+        self.assertEqual(runtime.stage3.substrate.mortal_status,
+                         MortalStatus.TECHNICAL_HALT)
+        self.assertTrue(runtime.journal.verify())
+        with self.assertRaisesRegex(RuntimeError, "dead or halted"):
+            runtime.run_step()
 
     def test_live_custody_cannot_activate_in_legacy_or_without_prices(self):
         base = build_stage10_reference_runtime()
