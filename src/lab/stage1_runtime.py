@@ -186,8 +186,11 @@ class ScriptedStage1Runtime:
     def run_step(self, *, cycle: int = 1) -> None:
         """Execute one normal scripted world step."""
 
-        self.scheduler.open_step()
-        self.compute_budget.open_cycle(cycle)
+        opened = self.scheduler.open_step()
+        self.compute_budget.open_cycle(
+            cycle,
+            occurrence=(opened.t_monde, opened.attempt_ref, cycle),
+        )
         self.scheduler.run_cycle(cycle=cycle, hooks=self._hooks())
 
         attempt = self.scheduler.active_attempt
