@@ -59,6 +59,15 @@ class BudgetCharge:
     reason: str | None
 
 
+@dataclass(frozen=True, slots=True)
+class BudgetCapacityQuote:
+    """Passive Scheduler admission quote, not a charged cognitive service."""
+
+    required_uc: int
+    available_uc: int
+    affordable: bool
+
+
 class CycleComputeBudget:
     """Scheduler-owned per-cycle UC accounting with no carryover."""
 
@@ -83,6 +92,49 @@ class CycleComputeBudget:
 
     def consumed_module_uc(self, module: str) -> int:
         return self._consumed_by_module.get(module, 0)
+
+    def quote_operations(
+        self, *, module: str, operations: tuple[str, ...],
+    ) -> BudgetCapacityQuote:
+        """Ask the Scheduler if an entire named sequence can fit right now.
+
+        This is a pure admission check of already-owned UC counters: it
+        never runs any operation, reserves UC, publishes a safety fact,
+        advances a cycle, or mutates causal state. Every actual operation
+        still requires its separate ordinary charge() call.
+        """
+        if self._cycle is None:
+            raise RuntimeError("compute budget requires an open cycle")
+        if type(module) is not str or module not in self._config.module_envelopes:
+            raise ValueError("unknown module envelope")
+        if (
+            type(operations) is not tuple or not operations
+            or any(type(op) is not str or op not in self._config.operation_costs
+                   for op in operations)
+        ):
+            raise ValueError("quote requires nonempty known operations")
+        required = sum(self._config.operation_costs[op] for op in operations)
+        available = min(
+            self._config.module_envelopes[module]
+            - self.consumed_module_uc(module),
+            self._config.cycle_ceiling - self._consumed_cycle,
+        )
+        if module not in self._config.protected_modules:
+            ordinary_consumed = sum(
+                value for owner, value in self._consumed_by_module.items()
+                if owner not in self._config.protected_modules
+            )
+            available = min(
+                available,
+                self._config.cycle_ceiling
+                - self._config.protected_capacity
+                - ordinary_consumed,
+            )
+        available = max(0, available)
+        return BudgetCapacityQuote(
+            required_uc=required, available_uc=available,
+            affordable=required <= available,
+        )
 
     def open_cycle(self, cycle: int) -> None:
         if cycle < 1:
