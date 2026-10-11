@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from typing import Mapping, Sequence
 from types import MappingProxyType
 
+from lab.determinism import canonical_causal_bytes, sha256_hex
+
 
 @dataclass(frozen=True, slots=True)
 class ConsolidationBudgetConfig:
@@ -64,6 +66,12 @@ class ConsolidationWorkBudget:
             step_slot_uc=config.step_slot_uc,
             operation_costs=MappingProxyType(dict(config.operation_costs)),
         )
+        self._config_digest = sha256_hex(canonical_causal_bytes({
+            "version": self.config.version,
+            "period_capacity_uc": self.config.period_capacity_uc,
+            "step_slot_uc": self.config.step_slot_uc,
+            "operation_costs": dict(self.config.operation_costs),
+        }))
         self._period_ref: str | None = None
         self._used_period_refs: set[str] = set()
         self._entry_step: int | None = None
@@ -158,6 +166,7 @@ class ConsolidationWorkBudget:
     def export_causal_state(self) -> dict[str, object]:
         return {
             "schema": self.schema, "config_version": self.config.version,
+            "config_digest": self._config_digest,
             "period_ref": self._period_ref,
             "used_period_refs": sorted(self._used_period_refs),
             "entry_step": self._entry_step,
@@ -169,11 +178,12 @@ class ConsolidationWorkBudget:
 
     def restore_causal_state(self, raw: object) -> None:
         if (not isinstance(raw, Mapping) or set(raw) != {
-            "schema", "config_version", "period_ref", "used_period_refs",
+            "schema", "config_version", "config_digest", "period_ref", "used_period_refs",
             "entry_step", "step", "consumed_period_uc", "consumed_step_uc",
             "last_closed_step",
         } or raw.get("schema") != self.schema
-                or raw.get("config_version") != self.config.version):
+                or raw.get("config_version") != self.config.version
+                or raw.get("config_digest") != self._config_digest):
             raise ValueError("incompatible P-42 budget snapshot")
         period = raw["period_ref"]
         used = raw["used_period_refs"]

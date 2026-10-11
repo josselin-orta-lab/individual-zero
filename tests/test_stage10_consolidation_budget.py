@@ -100,9 +100,12 @@ class SleepConsolidationBudgetTests(unittest.TestCase):
         restored = ConsolidationWorkBudget(config())
         restored.restore_causal_state(json.loads(json.dumps(valid)))
         self.assertEqual(restored.export_causal_state(), valid)
+        with self.assertRaises(ValueError):
+            ConsolidationWorkBudget(config(step_slot_uc=7)).restore_causal_state(valid)
         for forged in (
             {**valid, "consumed_step_uc": 100},
             {**valid, "config_version": "P-42:changed"},
+            {**valid, "config_digest": "f" * 64},
             {**valid, "step": 1},
             {**valid, "period_ref": "not-in-ledger"},
             {**valid, "used_period_refs": []},
