@@ -13,7 +13,9 @@ from dataclasses import dataclass
 from typing import Mapping, Sequence
 
 from .determinism import deterministic_id
-from .epistemic_guard import project_lived_field, validate_lived_field_name
+from .epistemic_guard import (
+    project_lived_field, validate_lived_kind_fields,
+)
 from .journal import HashChainedJournal, JournalEntry
 
 
@@ -28,12 +30,9 @@ class AutobiographicalPolicy:
         if not self.version:
             raise ValueError("autobiographical policy version must not be empty")
         for kind, fields in self.allowed_fields_by_kind.items():
-            if not kind:
-                raise ValueError("autobiographical event kind must not be empty")
+            validate_lived_kind_fields(kind, fields)
             if len(fields) != len(set(fields)):
                 raise ValueError(f"duplicate projection field for kind {kind!r}")
-            for field in fields:
-                validate_lived_field_name(field)
 
     def allows(self, event: JournalEntry) -> bool:
         kind = event.causal_event.get("kind")

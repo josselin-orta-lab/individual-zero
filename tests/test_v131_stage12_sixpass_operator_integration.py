@@ -42,6 +42,7 @@ def integrated_all_module_runtime(path):
         equipment=stage11.equipment,
         autonomous_mortal=True,
         wal_path=path,
+        diagnostic_sample_cost_uc=1,
         detector_policy=Stage12DetectionPolicy(
             version="stage12-sixpass-live-cross-dev-v1",
             window=12, stagnation_steps=4, stagnation_tolerance=0.05,

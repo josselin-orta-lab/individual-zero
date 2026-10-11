@@ -54,7 +54,8 @@ class V131MortalStage12SixHundredSteps(unittest.TestCase):
                 equipment=baseline.equipment,
                 autonomous_mortal=True,
                 wal_path=wal_path,
-                detector_policy=Stage12DetectionPolicy(
+                diagnostic_sample_cost_uc=1,
+        detector_policy=Stage12DetectionPolicy(
                     version="stage12-600-lived-dev-v1",
                     window=12, stagnation_steps=4, stagnation_tolerance=0.05,
                     loop_repetitions=3, loop_max_period=2,

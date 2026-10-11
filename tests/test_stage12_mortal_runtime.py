@@ -4,11 +4,13 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 from tempfile import TemporaryDirectory
 import unittest
 
 from i0.modules.stage12_detectors import Stage12DetectionPolicy
 from lab.independent_journal_audit import audit_export_bytes
+from lab.compute_budget import BudgetCharge
 from lab.journal import HashChainedJournal
 from lab.mortal_execution import MortalStatus
 from lab.stage10_reference_fixture import build_stage10_reference_runtime
@@ -43,6 +45,7 @@ def stage12_runtime(path):
         equipment=stage11.equipment,
         wal_path=path,
         autonomous_mortal=True,
+        diagnostic_sample_cost_uc=1,
         detector_policy=Stage12DetectionPolicy(
             version="stage12-mortal-live-dev-v1",
             window=12, stagnation_steps=3, stagnation_tolerance=0.05,
@@ -77,6 +80,7 @@ class Stage12RuntimeMortalTests(unittest.TestCase):
             self.assertEqual(len(reports), runtime.detection_report.evidence_samples)
             self.assertTrue(all(
                 entry["data"]["operator_only_diagnostic"] is True
+                and entry["data"]["charged_diagnostic_uc"] == 1
                 for entry in reports
             ))
             self.assertTrue(all(
@@ -102,6 +106,43 @@ class Stage12RuntimeMortalTests(unittest.TestCase):
             )
             self.assertEqual(offline.world_steps_closed, runtime.scheduler.t_monde)
             self.assertEqual(offline.terminal_deaths, 0)
+
+    def test_budget_refusal_creates_no_synthetic_metacognitive_observation(self):
+        with TemporaryDirectory() as directory:
+            runtime = stage12_runtime(str(Path(directory) / "insufficient-uc.jsonl"))
+            original = runtime.compute_budget.charge
+
+            def refuse_diagnostic(*, module, operation, count=1):
+                if operation == "stage12_diagnostic_sample":
+                    return BudgetCharge(
+                        accepted=False, module=module, operation=operation,
+                        requested_uc=1,
+                        consumed_cycle_uc=runtime.compute_budget.consumed_cycle_uc,
+                        consumed_module_uc=runtime.compute_budget.consumed_module_uc(module),
+                        reason="module_envelope",
+                    )
+                return original(module=module, operation=operation, count=count)
+
+            with patch.object(runtime.compute_budget, "charge", side_effect=refuse_diagnostic):
+                result = runtime.run_step()
+            self.assertEqual(result.execution_status, "applied")
+            self.assertEqual(runtime.detection_report.evidence_samples, 0)
+            kinds = [row.causal_event["kind"] for row in runtime.journal.entries]
+            self.assertIn("stage12_lived_diagnostics_deferred", kinds)
+            self.assertNotIn("stage12_lived_diagnostics_published", kinds)
+            self.assertTrue(runtime.journal.verify())
+
+    def test_invalid_or_free_detector_cost_is_rejected_before_birth(self):
+        with TemporaryDirectory() as directory:
+            runtime = stage12_runtime(str(Path(directory) / "positive-uc.jsonl"))
+            policy = runtime._stage12_detector_policy
+            for cost in (0, -1, True, 0.5):
+                with self.subTest(cost=cost):
+                    with self.assertRaises(ValueError):
+                        Stage12Runtime(
+                            detector_policy=policy,
+                            diagnostic_sample_cost_uc=cost,
+                        )
 
     def test_no_new_diagnostic_after_actual_physical_death(self):
         with TemporaryDirectory() as directory:

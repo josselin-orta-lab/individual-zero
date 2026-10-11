@@ -313,10 +313,20 @@ def audit_export_bytes(
                     or origin.get("t_monde") != t
                 ):
                     raise ValueError("technical/oracle event exposed as lived source")
-                if "data" in origin and origin.get("kind") in _STAGE7_ALLOWED - _STAGE2_ALLOWED:
-                    project_lived_field(
-                        kind=origin["kind"], field="data", value=origin["data"],
-                    )
+                # The same Stage-2/Stage-7 field-by-field guard must hold
+                # for offline validation and the live cognitive projection.
+                source_kind = origin["kind"]
+                if source_kind == "command_experienced":
+                    lived_fields = ("parameters",)
+                elif source_kind == "world_transition_experienced":
+                    lived_fields = ("position_after", "body_after", "effects")
+                else:
+                    lived_fields = ("data",)
+                for field in lived_fields:
+                    if field in origin:
+                        project_lived_field(
+                            kind=source_kind, field=field, value=origin[field],
+                        )
 
         if kind == "stage10_consolidation_version_activated":
             examined.add(kind)
