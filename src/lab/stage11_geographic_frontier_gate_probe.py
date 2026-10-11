@@ -19,7 +19,7 @@ from .stage11_reference_fixture import build_stage11_reference_runtime
 from .stage11_geographic_probe import START_BODY
 from .world import Position
 
-PROTOCOL = "stage11-public-geographic-demand-preflight-dev-v1"
+PROTOCOL = "stage11-public-geographic-demand-preflight-dev-v2"
 EXTRA_VARIANTS = ("all_adjacent_obstacles", "sole_north_known_lethal")
 VARIANTS = (*ORIGINAL_VARIANTS, *EXTRA_VARIANTS)
 
