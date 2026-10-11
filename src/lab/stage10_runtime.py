@@ -820,6 +820,27 @@ class Stage10Runtime(Stage9Runtime):
         )
 
     def run_step(self):
+        """Fail closed if a mortal Step-10 phase raises mid-transaction.
+
+        A sleep consolidation may have appended journal receipts or changed
+        committed history before the physical command is attempted. Never
+        leave that same mortal identity dispatchable after an uncertain error.
+        """
+        try:
+            return self._run_step_with_open_attempt()
+        except BaseException:
+            substrate = self.stage3.substrate
+            attempt = self.scheduler.active_attempt
+            status = substrate.mortal_status
+            if (
+                status is not None
+                and status.value == "active"
+                and attempt is not None
+            ):
+                substrate._mortal_boundary.halt(failed_step=attempt.t_monde)
+            raise
+
+    def _run_step_with_open_attempt(self):
         if (self.sleep_session.mode == "sleeping"
                 or self.sleep_session.export_causal_state()["admitted_sleep_step"] is not None):
             return self._sleep_step()
