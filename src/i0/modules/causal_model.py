@@ -1169,6 +1169,16 @@ class CausalModel:
             )
             updated_control.validate()
             self._lived_ambient_integrity_controls[control.t_monde] = updated_control
+        # No need to retain old controls forever. Preserve any wait whose
+        # immediately following meal still awaits an actual DC-09 closure;
+        # everything else is ineligible to control a later food exposure.
+        expired = [
+            step for step in self._lived_ambient_integrity_controls
+            if step + 2 < t_monde
+            and step + 1 not in self._lived_food_exposures
+        ]
+        for step in expired:
+            del self._lived_ambient_integrity_controls[step]
 
     def ingest_closed_autobiographical_episode(
         self, *, episode_ref: str, event_refs: Sequence[str],
