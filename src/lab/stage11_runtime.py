@@ -186,6 +186,7 @@ class Stage11Runtime(Stage9Runtime):
             geographic_config=config.geographic,
         )
         self._stage11_geographic_proposals_this_cycle = ()
+        self._stage11_unregistered_physical_step = None
 
         self.modulation = GlobalModulation(config.modulation)
         self._stage11_modulation_signals = {
