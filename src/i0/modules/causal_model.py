@@ -1250,11 +1250,12 @@ class CausalModel:
         # Verify independently executed non-ingestion controls using ONLY the
         # same closed first-person command/transition pairs as food exposures.
         # A forged or missing half-pair is retired, never silently credited.
-        for control_step, control in sorted(self._lived_ambient_integrity_controls.items()):
+        staged_controls = dict(self._lived_ambient_integrity_controls)
+        for control_step, control in sorted(staged_controls.items()):
             if control.episode_ref is not None or control.observed_step is None:
                 continue
             if control_step in ambiguous_steps:
-                del self._lived_ambient_integrity_controls[control_step]
+                del staged_controls[control_step]
                 continue
             command = commands.get(control_step)
             physical = transitions.get(control_step)
@@ -1280,14 +1281,14 @@ class CausalModel:
                 or not isinstance(transition_ref, str) or not transition_ref
                 or command_ref == transition_ref
             ):
-                del self._lived_ambient_integrity_controls[control_step]
+                del staged_controls[control_step]
                 continue
             verified = replace(
                 control, episode_ref=episode_ref,
                 command_ref=command_ref, transition_ref=transition_ref,
             )
             verified.validate()
-            self._lived_ambient_integrity_controls[control_step] = verified
+            staged_controls[control_step] = verified
 
         candidate: list[SafetyEvidence] = []
         causal_observations: list[CausalObservation] = []
@@ -1335,7 +1336,7 @@ class CausalModel:
                 # Legacy unredacted records are never promoted either.
                 continue
             harm_observed = after < exposure.integrity_before
-            baseline = self._lived_ambient_integrity_controls.get(t - 1)
+            baseline = staged_controls.get(t - 1)
             matched_control = bool(
                 baseline is not None
                 and baseline.episode_ref is not None
@@ -1454,6 +1455,9 @@ class CausalModel:
                 )
             ):
                 raise ValueError("duplicated closed physical numeric outcome")
+        # Publish verified control state only AFTER the entire incoming
+        # episode has passed its existing atomic evidence preflight.
+        self._lived_ambient_integrity_controls = staged_controls
         for item in candidate:
             self.integrate(item)
         for item in causal_observations:
