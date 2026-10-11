@@ -104,6 +104,8 @@ class LivedEvidenceTests(unittest.TestCase):
             t_monde=2, resource_kind="berry_a", option_ref="food:2",
             motive_ref="goal:food", integrity_before=90.0,
             position_before=(2,2),
+            body_before={"energy":50.0,"food":60.0,
+                         "water":50.0,"integrity":90.0},
         )
         m.observe_followup_capture(t_monde=3, integrity=80.0)
         food = (
