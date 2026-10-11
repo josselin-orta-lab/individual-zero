@@ -76,7 +76,7 @@ jobs:
        github.event.action == 'labeled' &&
        github.event.label.name == 'ci-full')
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
@@ -95,6 +95,57 @@ jobs:
 
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
+
+      # Independent v1.3.1 mortal cognition: 600 actually executed world
+      # steps, no Oracle/Bench loading, no life snapshots or rollback.
+      # Kept separate from the historical Stage-11 replay diagnostic.
+      - name: Stage 11 mortal autonomous 600 physical steps (software only)
+        if: matrix.python-version == '3.12'
+        timeout-minutes: 25
+        run: |
+          python -m lab.stage11_autonomous_600_step_probe --steps 600 \
+            | tee /tmp/stage11-autonomous-600.jsonl
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from lab.determinism import canonical_causal_bytes, sha256_hex
+
+          raw = Path("/tmp/stage11-autonomous-600.jsonl").read_text(
+              encoding="utf-8",
+          ).strip()
+          prefix = "stage11_autonomous_600_step="
+          if not raw.startswith(prefix):
+              raise SystemExit("missing Stage11 autonomous receipt")
+          report = json.loads(raw[len(prefix):])
+          evidence = report.pop("evidence_sha256")
+          if (
+              sha256_hex(canonical_causal_bytes(report)) != evidence
+              or report["protocol_version"] != "stage11-autonomous-600-journal-v1"
+              or report["classification"] != "public_development_diagnostic_not_heldout"
+              or report["scientific_verdict"] is not None
+              or report["steps_physically_executed"] != 600
+              or report["perceptual_captures"] != 600
+              or report["world_transitions"] != 600
+              or report["cognitive_autobiographical_commits"] != 600
+              or report["terminal_deaths"] != 0
+              or [a["world_step"] for a in report["journal_prefix_anchors"]] != [1, 300, 600]
+              or not report["offline_audit_completed"]
+              or report["external_oracle_loaded"]
+              or report["external_bench_loaded"]
+              or report["historical_life_snapshot_or_restore_used"]
+              or report["physical_truth_attested_by_independent_oracle"]
+          ):
+              raise SystemExit("Stage11 autonomous 600-step audit failed")
+          print("stage11_autonomous_600_world_steps_full_journal_verified=true")
+          PY
+
+      - name: Upload Stage 11 mortal autonomous 600-step diagnostic
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage11-autonomous-600-mortal-software-diagnostic
+          path: /tmp/stage11-autonomous-600.jsonl
+          if-no-files-found: error
 
       # Stage-11 prospective public 600-world-step diagnostic. The protocol
       # is software-only, uses the unchanged public Stage-11 reference world,
