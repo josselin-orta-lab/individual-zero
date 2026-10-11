@@ -122,6 +122,34 @@ class ModulationTests(unittest.TestCase):
         empty = SimpleNamespace(fixed={"body": {}}, competitive=())
         self.assertEqual(GlobalModulation.indicators_from_st(empty).threat_risk, None)
 
+    def test_physically_retained_local_risk_is_distinct_from_preempted_slot(self):
+        # A retained P-23 local creature alert must not need security
+        # reservation at κ=0.5, but another arbitrary novelty signal
+        # cannot invent this source type or a threat profile.
+        alert = SimpleNamespace(
+            contribution_ref="stage11:local-creature-alert:3",
+            summary="adjacent creature physically observed",
+            preempted=False, reliability=0.5,
+            decomposition={"risk": 1.0},
+        )
+        st = SimpleNamespace(
+            fixed={"body": {"energy": 100, "integrity": 100}},
+            competitive=(alert,),
+        )
+        signals = GlobalModulation.indicators_from_st(st)
+        self.assertEqual(signals.threat_risk, 1.0)
+        mod = GlobalModulation(config())
+        self.assertEqual(mod.freeze(
+            signals=signals, world_step=3, cycle=1,
+        ), "threat")
+        forged = SimpleNamespace(
+            **{**vars(alert),
+               "contribution_ref": "untrusted:other-risk-source"}
+        )
+        self.assertIsNone(GlobalModulation.indicators_from_st(
+            SimpleNamespace(fixed=st.fixed, competitive=(forged,))
+        ).threat_risk)
+
     def test_no_undocumented_or_invalid_configuration(self):
         with self.assertRaises(ValueError):
             replace(config(), multipliers={"normal": dict(TERMS)}).validate()
