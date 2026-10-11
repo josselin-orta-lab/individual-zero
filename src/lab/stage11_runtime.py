@@ -52,6 +52,9 @@ class Stage11Config:
     geographic_route_enabled: bool = False
     # Strict opt-in: passive Scheduler UC admission before paid geo preflight.
     geographic_capacity_guard_enabled: bool = False
+    # Public software custody ablation: world-step/attempt/cycle identity
+    # is tracked in the causal UC owner; all historical runs default OFF.
+    cycle_occurrence_guard_enabled: bool = False
 
     def validate(self):
         if not self.version:
@@ -72,6 +75,8 @@ class Stage11Config:
             raise ValueError("route enabled flag must be bool")
         if type(self.geographic_capacity_guard_enabled) is not bool:
             raise ValueError("geographic capacity guard must be boolean")
+        if type(self.cycle_occurrence_guard_enabled) is not bool:
+            raise ValueError("cycle occurrence guard must be boolean")
         if self.geographic_capacity_guard_enabled and (
             self.geographic is None or not self.geographic_preflight
             or not self.geographic_preflight_requires_frontier
@@ -134,7 +139,12 @@ class Stage11Config:
                     "+scheduler-geo-capacity-guard-v1"
                     if self.geographic_capacity_guard_enabled else ""
                 )
+                + (
+                    "+scheduler-cycle-occurrence-custody-v1"
+                    if self.cycle_occurrence_guard_enabled else ""
+                )
             ),
+            cycle_occurrence_guard=self.cycle_occurrence_guard_enabled,
             module_envelopes={
                 **budget.module_envelopes,
                 "exploration": self.exploration_envelope_uc,
