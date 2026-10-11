@@ -171,6 +171,68 @@ class SQLiteLifeCustodyTests(unittest.TestCase):
                 with self.assertRaises(RecoveryBlocked):
                     ledger.begin_intent(expected_generation=1, intent_ref="step:2")
 
+    def test_one_writer_per_identity_but_independent_readonly_audit(self):
+        with TemporaryDirectory() as tmp:
+            path = str(Path(tmp) / "individual.db")
+            with SQLiteLifeLedger.birth(
+                path=path, individual_id="i0:birth:1", initial_state=state(),
+            ) as ledger:
+                receipt = SQLiteLifeLedger.audit_read_only(
+                    path=path, expected_individual_id="i0:birth:1",
+                )
+                self.assertEqual(receipt.generation, 0)
+                self.assertTrue(receipt.may_recover)
+                with self.assertRaises(RecoveryBlocked):
+                    SQLiteLifeLedger.open_existing(
+                        path=path, expected_individual_id="i0:birth:1",
+                    )
+                ledger.begin_intent(expected_generation=0, intent_ref="step:1")
+                frozen = SQLiteLifeLedger.audit_read_only(
+                    path=path, expected_individual_id="i0:birth:1",
+                )
+                self.assertTrue(frozen.pending_intent)
+                self.assertFalse(frozen.may_recover)
+            with SQLiteLifeLedger.open_existing(
+                path=path, expected_individual_id="i0:birth:1",
+            ) as ledger:
+                self.assertEqual(ledger.seal_uncertain().status, "technical_halt")
+            self.assertFalse(SQLiteLifeLedger.audit_read_only(
+                path=path, expected_individual_id="i0:birth:1",
+            ).may_recover)
+            with self.assertRaises(RecoveryBlocked):
+                SQLiteLifeLedger.audit_read_only(
+                    path=path, expected_individual_id="another-life",
+                )
+
+    def test_operator_cli_verifies_exact_anchor_without_loading_runtime(self):
+        with TemporaryDirectory() as tmp:
+            path = str(Path(tmp) / "operator-life.db")
+            with SQLiteLifeLedger.birth(
+                path=path, individual_id="i0:birth:1", initial_state=state(),
+            ):
+                command = [
+                    sys.executable, "scripts/audit_i0_sqlite.py",
+                    "--db", path, "--identity", "i0:birth:1",
+                    "--expect-generation", "0", "--expect-head", "00" * 32,
+                ]
+                accepted = subprocess.run(
+                    command, capture_output=True, text=True, timeout=20,
+                )
+                self.assertEqual(accepted.returncode, 0, accepted.stderr)
+                report = json.loads(accepted.stdout)
+                self.assertEqual(report["journal_count"], 0)
+                self.assertTrue(report["may_recover"])
+                self.assertEqual(
+                    report["claim"],
+                    "internal_consistency_only_not_independent_physical_truth",
+                )
+                rejected = subprocess.run(
+                    command[:-1] + ["f" * 64],
+                    capture_output=True, text=True, timeout=20,
+                )
+                self.assertNotEqual(rejected.returncode, 0)
+                self.assertIn("trusted operator anchor", rejected.stderr)
+
     def test_corrupted_state_and_chain_are_rejected(self):
         for corruption in ("state_hash", "event"):
             with self.subTest(corruption=corruption), TemporaryDirectory() as tmp:

@@ -8,6 +8,7 @@ No Oracle, evaluation bench, snapshots of older lives or physics changes.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -82,6 +83,19 @@ class SQLiteLifeLedger:
 
     def __init__(self, connection: sqlite3.Connection, *, path: str,
                  fault: Callable[[str], None] | None = None) -> None:
+        # Process-lifetime owner lock: a second live writer cannot open the
+        # same identity while the first runtime is between transactions.
+        flags = os.O_CREAT | os.O_RDWR
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        fd = os.open(path + ".writer.lock", flags, 0o600)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as exc:
+            os.close(fd)
+            connection.close()
+            raise RecoveryBlocked("individual already has an active process writer") from exc
+        self._lock_fd: int | None = fd
         self._db = connection
         self.path = path
         self._fault = fault
@@ -165,7 +179,7 @@ class SQLiteLifeLedger:
         except BaseException:
             if db.in_transaction:
                 db.execute("ROLLBACK")
-            db.close()
+            instance.close()
             raise
         return instance
 
@@ -183,9 +197,36 @@ class SQLiteLifeLedger:
             if receipt.individual_id != expected_individual_id:
                 raise RecoveryBlocked("individual identity mismatch")
         except BaseException:
-            db.close()
+            store.close()
             raise
         return store
+
+    @classmethod
+    def audit_read_only(cls, *, path: str, expected_individual_id: str) -> LifeReceipt:
+        """Consistent external snapshot without acquiring I0's writer lease.
+
+        No live runtime, Oracle or evaluation bench is constructed. An in-flight
+        commit is seen entirely before or entirely after, never half-updated.
+        """
+        _validate_identity(expected_individual_id)
+        if type(path) is not str or not os.path.isabs(path) or not Path(path).is_file():
+            raise ValueError("existing absolute SQLite audit path required")
+        uri = "file:" + quote(path, safe="/") + "?mode=ro"
+        db = sqlite3.connect(uri, uri=True, isolation_level=None, timeout=5.0)
+        try:
+            db.execute("PRAGMA query_only=ON")
+            db.execute("BEGIN")
+            reader = object.__new__(cls)
+            reader._db = db
+            reader._poisoned = False
+            receipt = reader.audit()
+            if receipt.individual_id != expected_individual_id:
+                raise RecoveryBlocked("individual identity mismatch")
+            return receipt
+        finally:
+            if db.in_transaction:
+                db.execute("ROLLBACK")
+            db.close()
 
     def __enter__(self) -> "SQLiteLifeLedger":
         return self
@@ -195,6 +236,10 @@ class SQLiteLifeLedger:
 
     def close(self) -> None:
         self._db.close()
+        if self._lock_fd is not None:
+            fcntl.flock(self._lock_fd, fcntl.LOCK_UN)
+            os.close(self._lock_fd)
+            self._lock_fd = None
 
     def _pulse(self, point: str) -> None:
         if self._fault is not None:
