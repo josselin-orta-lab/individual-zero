@@ -39,6 +39,8 @@ class PublicLayoutCoverage:
     blocked_frontier_rejections: int
     prefiltered_inadmissible_frontiers: int
     prefilter_event_steps: tuple[int, ...]
+    preflight_uc_accepted: int
+    preflight_uc_rejected: int
     known_lethal_visits: int
     creature_occupied_visits: int
     actually_observed_sites: tuple[tuple[int, int], ...]
@@ -150,6 +152,23 @@ def run_public_layout_coverage(
         raise AssertionError("inadmissible frontier optimization without authoritative provenance")
     if len({row["t_monde"] for row in prefiltered}) != len(prefiltered):
         raise AssertionError("multiple prefilter records for one physically captured step")
+    preflight_charges = [
+        row["data"] for row in records
+        if row.get("kind") == "compute_charge"
+        and row.get("data", {}).get("module") == "planning"
+        and row.get("data", {}).get("operation")
+        == "geographic_admissibility_preflight"
+    ]
+    if any(
+        row["requested_uc"] != 1
+        or row["count"] != 1
+        for row in preflight_charges
+    ):
+        raise AssertionError("unbudgeted or incorrectly versioned safety preflight")
+    if prefiltered and not any(
+        row["accepted"] is True for row in preflight_charges
+    ):
+        raise AssertionError("prefilter claims without accepted Planning UC")
     excluded_lethal = {(p.x, p.y) for p in layout.lethal_zones}
     excluded_creature = {(p.x, p.y) for p in layout.creatures}
     applied = [
@@ -173,6 +192,14 @@ def run_public_layout_coverage(
         ),
         prefilter_event_steps=tuple(
             row["t_monde"] for row in prefiltered
+        ),
+        preflight_uc_accepted=sum(
+            row["requested_uc"] for row in preflight_charges
+            if row["accepted"] is True
+        ),
+        preflight_uc_rejected=sum(
+            row["requested_uc"] for row in preflight_charges
+            if row["accepted"] is not True
         ),
         known_lethal_visits=len(set(witnessed) & excluded_lethal),
         creature_occupied_visits=len(set(witnessed) & excluded_creature),
