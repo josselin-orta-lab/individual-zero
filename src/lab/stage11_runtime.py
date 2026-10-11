@@ -36,6 +36,9 @@ class Stage11Config:
     prospective_water: LivedPredictionConfig | None = None
     # Off by default: public geographical frontier integration, Stage-11 only.
     geographic: GeographicExplorationConfig | None = None
+    # Public development-only matched legacy/no-prefilter compatibility
+    # ablation. Default True when geography is enabled; veto unchanged.
+    geographic_preflight: bool = True
     # Local physically perceived risk alerts; historical vNext reference OFF.
     local_threat_alerts: bool = False
 
@@ -50,6 +53,8 @@ class Stage11Config:
             self.prospective_water.validate()
         if self.geographic is not None:
             self.geographic.validate()
+        if type(self.geographic_preflight) is not bool:
+            raise ValueError("geographic safety preflight flag must be bool")
         if type(self.local_threat_alerts) is not bool:
             raise ValueError("local threat sensor switch must be boolean")
         if not isfinite(self.intrinsic_weight) or self.intrinsic_weight < 0:
@@ -86,7 +91,10 @@ class Stage11Config:
                 "exploration_observe": self.exploration_observe_cost_uc,
                 **(
                     {"geographic_admissibility_preflight": 1}
-                    if self.geographic is not None else {}
+                    if (
+                        self.geographic is not None
+                        and self.geographic_preflight
+                    ) else {}
                 ),
             },
         )
@@ -205,6 +213,11 @@ class Stage11Runtime(Stage9Runtime):
         """
         if self.exploration.geographic is None:
             return (), ()
+        if not self._stage11_config.geographic_preflight:
+            # Controlled replay of the pre-v3 geometric target construction.
+            # Only an early Planning optimization is absent. The final
+            # canonical Action Control veto is NEVER switched off.
+            return self.exploration.geographic_cibles(capture), ()
         forbidden = []
         for cell in capture.adjacent:
             if cell.passable is not True or cell.creature is True:
@@ -455,11 +468,12 @@ class Stage11Runtime(Stage9Runtime):
             # four-neighbor read-only safety-service preflight per cycle.
             # No hidden uncharged cognitive work or transfer from protected
             # Action Control capacity. Inadequate budget means NO targets.
-            if not self._charge(
-                module="planning",
-                operation="geographic_admissibility_preflight",
-            ):
-                return
+            if self._stage11_config.geographic_preflight:
+                if not self._charge(
+                    module="planning",
+                    operation="geographic_admissibility_preflight",
+                ):
+                    return
             if cycle == 1 and excluded_geo:
                 self._write(
                     kind="stage11_geographic_admissibility_prefiltered",
