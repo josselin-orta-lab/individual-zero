@@ -158,7 +158,11 @@ class LiveConsolidationRuntimeTests(unittest.TestCase):
                 runtime.run_step()
         # The attempt may have prephysical receipts; it must never replay an
         # action, produce an unearned world transition or continue this life.
-        self.assertEqual(runtime.scheduler.t_monde, baseline_step)
+        # Scheduler reserves the next t_monde when it opens an attempt,
+        # even when no physical transition occurs. This is not a replayed
+        # world step: only the prior world/body state remains physically real.
+        self.assertEqual(runtime.scheduler.t_monde, baseline_step + 1)
+        self.assertIsNotNone(runtime.scheduler.active_attempt)
         self.assertEqual(runtime.world.export_causal_state(), baseline_world)
         self.assertEqual(runtime.stage3.substrate.mortal_status,
                          MortalStatus.TECHNICAL_HALT)
