@@ -67,10 +67,6 @@ class PublicCapacityGuardResult:
         return json.dumps(payload, sort_keys=True, separators=(",", ":"))
 
 
-def _sha(value: object) -> str:
-    return sha256_hex(canonical_cusal_bytes(value))
-
-
 def _owner_states(runtime):
     return {
         owner.owner_id: deepcopy(owner.export_causal_state())
