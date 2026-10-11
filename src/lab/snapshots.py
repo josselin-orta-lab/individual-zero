@@ -80,7 +80,6 @@ class SnapshotManager:
             kind,
             record.id,
         )
-        self._journal_sequence += 1
         self._journal.append(
             event_id=event_id,
             causal_event={
@@ -94,6 +93,8 @@ class SnapshotManager:
                 "snapshot_sha256": record.sha256,
             },
         )
+        # A rejected journal append must not consume an occurrence index.
+        self._journal_sequence += 1
 
     def take(
         self,
@@ -157,11 +158,15 @@ class SnapshotManager:
             scenario_included=scenario_state is not None,
             sha256=fingerprint,
         )
-        self._snapshots[snapshot_id] = _StoredSnapshot(
+        # Prepare the retained payload before technical publication, then
+        # expose it only after snapshot_taken was accepted by the journal.
+        # A failed receipt therefore cannot leave an addressable snapshot.
+        stored = _StoredSnapshot(
             record=record,
             payload=deepcopy(payload),
         )
         self._write_journal(kind="snapshot_taken", record=record)
+        self._snapshots[snapshot_id] = stored
         return record
 
     def record(self, snapshot_id: str) -> SnapshotRecord:
@@ -235,6 +240,9 @@ class SnapshotManager:
                 owner_map[owner_id].restore_causal_state(
                     deepcopy(stored_states[owner_id])
                 )
+            # A restore without its append-only technical receipt is not a
+            # successful restoration. Compensate all owners if writing fails.
+            self._write_journal(kind="snapshot_restored", record=stored.record)
         except Exception as original_error:
             failed_rollback = []
             for owner_id in reversed(owner_ids):
@@ -251,5 +259,4 @@ class SnapshotManager:
                 ) from original_error
             raise
 
-        self._write_journal(kind="snapshot_restored", record=stored.record)
         return stored.record
