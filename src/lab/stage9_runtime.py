@@ -455,6 +455,20 @@ class Stage9Runtime(Stage8Runtime):
             proposal=proposal, prepared=prepared, admission=admission,
             cycle=cycle, sent_t_monde=sent_t_monde,
         )
+        if (
+            execution.status == "applied"
+            and captured is not None
+            and prepared.command.primitive == "attendre"
+        ):
+            # Own-action evidence only. A post-wait Perception capture and
+            # closed DC-09 command/transition pair must corroborate it.
+            # The hidden ambient causes in WorldBody.effects are never read.
+            self.causal_model.record_applied_ambient_integrity_control(
+                t_monde=sent_t_monde,
+                option_ref=proposal.option.id,
+                position=(captured.x, captured.y),
+                integrity_before=float(captured.body["integrity"]),
+            )
         if (execution.status == "applied"
             and prepared.command.primitive == "manger"
             and captured is not None
