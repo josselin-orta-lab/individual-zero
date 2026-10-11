@@ -5,6 +5,7 @@ External stop must preserve the WorldBody before the aborted input batch.
 """
 from copy import deepcopy
 from unittest import TestCase
+from unittest.mock import patch
 
 from lab.injected_scenario import ScenarioEvent, ScenarioInputRejected
 from lab.stage11_routed_junction_probe import build_public_route_runtime
@@ -185,6 +186,64 @@ class Stage11ExternalBatchFailureTests(TestCase):
         self.assertEqual(runner.scheduler.t_monde, 2)
         self.assertIsNone(runner.scheduler.active_attempt)
         self.assertTrue(runner.journal.verify())
+
+    def test_rejection_recovers_even_if_failing_input_already_mutated_world(self):
+        runtime = build_public_route_runtime(
+            scenario_events=(
+                external(t=2, seq=0, op="set_danger_zone",
+                         x=2, y=3, active=True),
+            ),
+        )
+        runtime.run_step()
+        before_world = deepcopy(runtime.world.export_causal_state())
+        apply_original = runtime.world.apply_scenario_event
+
+        def broken_after_world_application(operation, payload):
+            apply_original(operation, payload)
+            raise ValueError("synthetic error after applying world input")
+
+        with patch.object(
+            runtime.world, "apply_scenario_event",
+            side_effect=broken_after_world_application,
+        ):
+            with self.assertRaises(ScenarioInputRejected):
+                runtime.run_step()
+        self.assertEqual(runtime.world.export_causal_state(), before_world)
+        self.assertEqual(runtime.scheduler.t_monde, 2)
+        self.assertIsNone(runtime.scheduler.active_attempt)
+        self.assertTrue(runtime.stage3.substrate.scenario.halted)
+        rejected = logged(runtime, "external_input_rejected", t=2)
+        self.assertEqual(len(rejected), 1)
+        self.assertTrue(rejected[0]["world_recovered"])
+        self.assertEqual(rejected[0]["previous_inputs_reverted"], 0)
+        self.assertFalse(logged(runtime, "external_input_applied", t=2))
+        self.assertFalse(logged(runtime, "perceptual_capture", t=2))
+        self.assertTrue(runtime.journal.verify())
+
+    def test_failed_world_recovery_never_claims_a_successful_rollback(self):
+        runtime = build_public_route_runtime(
+            scenario_events=(
+                external(t=1, seq=0, op="set_position", x=0, y=2),
+            ),
+        )
+        with patch.object(
+            runtime.world, "restore_causal_state",
+            side_effect=ValueError("synthetic compensation failure"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "WorldBody rollback failed"):
+                runtime.run_step()
+        rejected = logged(runtime, "external_input_rejected", t=1)
+        self.assertEqual(len(rejected), 1)
+        self.assertFalse(rejected[0]["world_recovered"])
+        self.assertTrue(runtime.stage3.substrate.scenario.halted)
+        self.assertEqual(runtime.scheduler.t_monde, 1)
+        self.assertIsNone(runtime.scheduler.active_attempt)
+        self.assertFalse(logged(runtime, "perceptual_capture", t=1))
+        self.assertEqual(
+            logged(runtime, "step_closed", t=1)[0]["data"]["outcome"],
+            "external_stop",
+        )
+        self.assertTrue(runtime.journal.verify())
 
     def test_independent_external_batch_failure_replays_exactly(self):
         def run():
