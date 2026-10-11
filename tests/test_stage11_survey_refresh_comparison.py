@@ -29,22 +29,32 @@ class Stage11PhysicalAdjacencyRefreshTests(TestCase):
         self.assertFalse(old.survey_revisions)
         self.assertFalse(old.seen_return_junction_after_dead_end)
         self.assertFalse(old.captured_southern_alternative)
+        self.assertEqual(len(new.survey_revisions), 1)
+        revision = new.survey_revisions[0]
         self.assertEqual(
-            new.survey_revisions,
-            ({
+            {key: revision[key] for key in (
+                "world_step", "position", "old_neighbors", "new_neighbors",
+                "old_observed_step", "source",
+            )},
+            {
                 "world_step": 5,
                 "position": [4, 2],
                 "old_neighbors": [],
                 "new_neighbors": [[3, 2]],
                 "old_observed_step": 3,
                 "source": "paid_phase1_exploration_perception",
-            },),
+            },
         )
-        self.assertNotIn(5, new.route_candidate_steps)
-        self.assertTrue(all(t >= 6 for t in new.applied_route_steps))
+        # There are multiple cognitive cycles per physical step. The new
+        # survey is inaccessible to *same-cycle* Planning (INV-08), but a
+        # later cycle of world step 5 may legitimately use it.
+        for step, cycle in new.route_candidate_step_cycles:
+            if step == 5:
+                self.assertGreater(cycle, revision["cycle"])
+        self.assertTrue(all(t >= 5 for t in new.applied_route_steps))
         self.assertTrue(new.seen_return_junction_after_dead_end)
         self.assertTrue(new.captured_southern_alternative)
-        self.assertIn((3, 2), new.observed_positions[6:])
+        self.assertIn((3, 2), new.observed_positions[5:])
         self.assertEqual(set(new.confirmed_visit_sites),
                          set(new.observed_positions))
         self.assertEqual(new.applied_route_into_occupied_neighbor, 0)
