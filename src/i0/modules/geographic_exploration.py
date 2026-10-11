@@ -107,6 +107,7 @@ class GeographicExploration:
     def cibles(
         self, capture, *, degraded: bool = False,
         inadmissible_directions: frozenset[str] = frozenset(),
+        candidate_limit: int | None = None,
     ) -> tuple[GeographicTarget, ...]:
         """Bound the visible frontier after the read-only Action Control veto.
 
@@ -120,6 +121,14 @@ class GeographicExploration:
             or not inadmissible_directions <= set(DIRECTION_DELTAS)
         ):
             raise ValueError("invalid Action Control excluded directions")
+        if (
+            candidate_limit is not None
+            and (
+                type(candidate_limit) is not int
+                or not 1 <= candidate_limit <= len(DIRECTION_DELTAS)
+            )
+        ):
+            raise ValueError("raw frontier limit must be 1..4")
         if degraded or self.config.novelty_weight == 0:
             return ()
         t, x, y = capture.t_monde, capture.x, capture.y
@@ -154,10 +163,17 @@ class GeographicExploration:
             candidates.append(target)
         return tuple(sorted(
             candidates, key=lambda q: (DIRECTION_ORDER.index(q.direction), q.ref)
-        )[:self.config.max_targets_per_cycle])
+        )[:(
+            self.config.max_targets_per_cycle
+            if candidate_limit is None else candidate_limit
+        )])
 
     def freeze_targets(self, targets: tuple[GeographicTarget, ...]) -> None:
-        """Receive an already-frozen pre-phase-1 list, never inferred from a plan."""
+        """Accept pre-phase-grounded targets through the phase-3 service.
+
+        Only Planning's funded, filtered options may be offered for intrinsic
+        evaluation. This owner never invents a destination from the plan.
+        """
         if (not isinstance(targets, tuple)
             or len(targets) > self.config.max_targets_per_cycle):
             raise ValueError("invalid offered frontier count")
