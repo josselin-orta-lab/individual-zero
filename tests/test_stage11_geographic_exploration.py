@@ -177,10 +177,18 @@ class GeographicRuntimeTests(TestCase):
             if row.get("kind") == "stage11_geographic_option_proposed"
         ]
         self.assertTrue(proposed)
-        self.assertTrue(all(row["source"] == "single_perceptual_capture"
-                            and row["goal_ref"] is None
-                            and row["simulated"] is True
-                            for row in proposed))
+        self.assertTrue(all(
+            row["source"] == "single_perceptual_capture"
+            and row["goal_ref"] is None
+            and row["simulation_status"] in ("complete", "unavailable")
+            and row["simulated"] == (row["simulation_status"] == "complete")
+            and (
+                row["simulation_reason"] == "equipment_input_unseen"
+                if not row["simulated"]
+                else row["simulation_reason"] is None
+            )
+            for row in proposed
+        ))
         intrinsic = [
             row["data"] for row in events
             if row.get("kind") == "stage11_intrinsic_evaluation"
