@@ -91,6 +91,28 @@ class CompactMemoryIntegrationTests(unittest.TestCase):
             )
         self.assertEqual(runtime.run_step().execution_status, "applied")
 
+    def test_full_memory_queue_halts_before_physical_dispatch(self):
+        from lab.world import Command
+        runtime = build_stage7_reference_runtime()
+        substrate = runtime.stage3.substrate
+        substrate.enable_mortal_world()
+        substrate.enable_compact_memory_delivery(
+            policy=STAGE7_AUTOBIOGRAPHICAL_POLICY,
+            max_pending_events=2,
+        )
+        substrate.open_step()
+        self.assertEqual(substrate.execute(Command("attendre")).status, "applied")
+        self.assertEqual(substrate.lived_stream.pending_count, 2)
+        substrate.open_step()
+        physical_before = runtime.world.export_causal_state()
+        with self.assertRaisesRegex(RuntimeError, "no silent eviction"):
+            substrate.execute(Command("attendre"))
+        self.assertEqual(runtime.world.export_causal_state(), physical_before)
+        self.assertEqual(substrate.mortal_status, MortalStatus.TECHNICAL_HALT)
+        self.assertEqual(substrate.lived_stream.pending_count, 2)
+        with self.assertRaises(RuntimeError):
+            substrate.open_step()
+
     def test_physical_death_seals_unconsumed_memory_queue(self):
         runtime = build_stage10_reference_runtime(start_fatigued=True)
         start(runtime, compact=True)

@@ -66,6 +66,33 @@ class BoundedLivedStream:
     def last_step(self) -> int:
         return self._last_step
 
+    def require_capacity(self, incoming: int) -> None:
+        """Preflight room before physically applying a new world command."""
+        if self._terminal:
+            raise RuntimeError("terminal life cannot accept future events")
+        if type(incoming) is not int or incoming < 0:
+            raise ValueError("invalid capacity reservation")
+        if len(self._pending) + incoming > self._limit:
+            raise RuntimeError("lived events not yet consumed; no silent eviction")
+
+    def peek_for_memory(self) -> tuple[dict[str, object], ...]:
+        """Detach a batch without erasing evidence before Memory accepts it."""
+        if self._terminal:
+            raise RuntimeError("no postmortem cognitive consumption")
+        return deepcopy(tuple(self._pending))
+
+    def acknowledge_memory(
+        self, delivered: Sequence[Mapping[str, object]],
+    ) -> None:
+        """Release only the *same* projection after successful Memory ingestion."""
+        if self._terminal:
+            raise RuntimeError("no postmortem cognitive acknowledgement")
+        if not isinstance(delivered, (tuple, list)) or (
+            list(delivered) != self._pending
+        ):
+            raise ValueError("Memory acknowledgement differs from pending evidence")
+        self._pending.clear()
+
     def commit_step(
         self,
         *, t_monde: int, attempt_ref: str,
@@ -104,8 +131,7 @@ class BoundedLivedStream:
         if (observed_kinds.count("command_experienced") != 1
                 or observed_kinds.count("world_transition_experienced") != 1):
             raise ValueError("exactly one real command and world result required")
-        if len(self._pending) + len(committed) > self._limit:
-            raise RuntimeError("lived events not yet consumed; no silent eviction")
+        self.require_capacity(len(committed))
         self._pending.extend(committed)
         self._last_step = t_monde
 

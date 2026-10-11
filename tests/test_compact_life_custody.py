@@ -158,6 +158,37 @@ class LivedStreamTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             stream.commit_step(t_monde=1, attempt_ref=attempt, experienced=events)
 
+    def test_peek_does_not_destroy_events_before_memory_acknowledges(self):
+        stream = BoundedLivedStream(
+            policy=STAGE2_AUTOBIOGRAPHICAL_POLICY, max_pending_events=2,
+        )
+        attempt, events = source_step(1)
+        stream.commit_step(t_monde=1, attempt_ref=attempt, experienced=events)
+        ready = stream.peek_for_memory()
+        self.assertEqual(stream.pending_count, 2)
+        ready[0]["primitive"] = "tampered"
+        with self.assertRaisesRegex(ValueError, "differs from pending"):
+            stream.acknowledge_memory(ready)
+        self.assertEqual(stream.pending_count, 2)
+        real = stream.peek_for_memory()
+        self.assertEqual(real[0]["primitive"], "attendre")
+        stream.acknowledge_memory(real)
+        self.assertEqual(stream.pending_count, 0)
+        self.assertEqual(stream.peek_for_memory(), ())
+
+    def test_capacity_can_be_checked_before_any_world_command(self):
+        stream = BoundedLivedStream(
+            policy=STAGE2_AUTOBIOGRAPHICAL_POLICY, max_pending_events=2,
+        )
+        attempt, events = source_step(1)
+        stream.commit_step(t_monde=1, attempt_ref=attempt, experienced=events)
+        with self.assertRaisesRegex(RuntimeError, "no silent eviction"):
+            stream.require_capacity(2)
+        self.assertEqual(stream.pending_count, 2)
+        self.assertEqual(stream.last_step, 1)
+        stream.acknowledge_memory(stream.peek_for_memory())
+        stream.require_capacity(2)
+
     def test_terminal_seals_without_posthumous_memory_delivery(self):
         stream = BoundedLivedStream(
             policy=STAGE2_AUTOBIOGRAPHICAL_POLICY, max_pending_events=2,

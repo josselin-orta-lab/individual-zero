@@ -223,7 +223,7 @@ class Stage7Runtime(Stage6Runtime):
         else:
             # Same allowlisted lived facts, only unconsumed arrivals.
             # No complete-life journal scan and no oracle access by Memory.
-            events = stream.drain_for_memory()
+            events = stream.peek_for_memory()
         # Q14: access is technically logged, but the access record is not part
         # of the autobiographical projection and therefore cannot become a
         # memory merely because Memory read its source.
@@ -266,6 +266,11 @@ class Stage7Runtime(Stage6Runtime):
                 current_goal_ref=None if goal is None else goal.id,
                 current_reward=self._step_reward,
             )
+            stream = self.stage3.substrate.lived_stream
+            if stream is not None:
+                # Never release the only copy of lived evidence on a failed
+                # cognitive ingestion. A successful Memory commit owns it.
+                stream.acknowledge_memory(autobiography)
             for episode in closed:
                 self._write(
                     kind="episode_closed",

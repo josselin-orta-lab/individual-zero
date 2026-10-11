@@ -261,6 +261,12 @@ class ScriptedStage2Runtime:
         if boundary.status is not MortalStatus.ACTIVE:
             raise RuntimeError("dead or halted individual cannot act")
         try:
+            if self._lived_stream is not None:
+                # Fail closed BEFORE any world effect rather than discovering
+                # a full memory queue after a committed physical action.
+                self._lived_stream.require_capacity(
+                    len(extra_autobiographical_event_refs) + 2,
+                )
             command_ref = self._write_command_event(
                 command=command, emitter=event_emitter or source,
             )
