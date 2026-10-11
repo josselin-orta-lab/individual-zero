@@ -15,7 +15,7 @@ from .stage11_reference_fixture import build_stage11_reference_runtime
 from .stage11_runtime import Stage11Runtime
 from .world import BodyState, Position
 
-PROTOCOL = "stage11-public-local-modulation-dev-v1"
+PROTOCOL = "stage11-public-local-modulation-dev-v2"
 NEUTRAL_BODY = BodyState(energy=50.0, food=60.0, water=60.0, integrity=100.0)
 
 
@@ -30,6 +30,7 @@ class LocalModulationDevelopmentResult:
     profile_transitions: tuple[tuple[int, str, str], ...]
     local_threat_alert_steps: tuple[int, ...]
     risk_preempted_st_steps: tuple[int, ...]
+    local_risk_retained_st_steps: tuple[int, ...]
     positively_scanned_local_clear_steps: tuple[int, ...]
     body_energy_by_step: tuple[tuple[int, float], ...]
     reflex_steps: tuple[int, ...]
@@ -121,6 +122,7 @@ def run_public_local_modulation(
         scenario_events=events,
     )
     preempted = []
+    retained = []
     clear = []
     body = []
     reflex = []
@@ -140,6 +142,13 @@ def run_public_local_modulation(
                 for entry in st.competitive
             ):
                 preempted.append(step)
+            if any(
+                entry.contribution_ref.startswith(
+                    "stage11:local-creature-alert:"
+                )
+                for entry in st.competitive
+            ):
+                retained.append(step)
             body.append((step, float(st.fixed["body"]["energy"])))
     if not runtime.journal.verify():
         raise AssertionError("public modulation journal integrity failed")
@@ -162,6 +171,7 @@ def run_public_local_modulation(
         profile_transitions=tuple(transitions),
         local_threat_alert_steps=tuple(alert_steps),
         risk_preempted_st_steps=tuple(preempted),
+        local_risk_retained_st_steps=tuple(retained),
         positively_scanned_local_clear_steps=tuple(clear),
         body_energy_by_step=tuple(body),
         reflex_steps=tuple(reflex),
