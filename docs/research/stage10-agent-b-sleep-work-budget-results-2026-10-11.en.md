@@ -40,3 +40,13 @@ The GitHub upload initially produced mismatched detached blobs due to transport 
 - Stage 12 integration and Stage 13 are not accepted. Stage 9 scientific NO-GO remains unchanged.
 
 **Coordination:** stacked Draft PR #29 against Agent A's branch `i0/vnext-stages-10-12`; no merges, retargeting, history rewrite or force-push. The Agent-A branch continues independently and compatibility must be reviewed at integration.
+
+## Subsequent verified software hardening: full P-42 digest (same date)
+
+**Updated code commit**: `19f23c3ffd6f276e4a5e0b585ee5a094f358166a`.
+**Final source Git blob**: `47badb42cf12e031dcc44a4880cfb4f538ce976b`.
+**Final test Git blob**: `27b71e5a8fcd80809c4ca1f4ba08bbae771dce72`.
+
+The original v1 budget snapshot validated its `config_version` string but could accept a different numeric P-42 cost schedule under the same version label. This new software fix hashes the complete canonical configuration, including both capacity bounds and every versioned operation cost, and stores `config_digest` in the causal snapshot. Restore now rejects changes of capacity/cost even when a version label was reused. The new test for same-label, different-capacity restoration and the corrupted-digest rejection both pass locally.
+
+**Command actually rerun:** `PYTHONPATH=src:tests python -m unittest discover -s tests -p 'test_stage10_consolidation*.py' -q`, Python 3.13.5, **35 tests / 35 PASS / 0 FAIL / 0 excluded**. Isolated-local limitations described above remain fully applicable. The SHA 19f23 was pushed after the tested file bytes were independently matched to their Git blobs. No Python 3.11/3.12 full-suite or GitHub Actions result applies to this SHA.
