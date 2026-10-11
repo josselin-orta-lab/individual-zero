@@ -1,76 +1,64 @@
-"""Technical lethal-rollback protocol for normative Stage 2.
+"""Terminal mortality and independent safety-block protocol for I0 vNext.
 
-The protocol mask and consecutive-lethal counter are technical Scheduler state.
-They are not knowledge and are never exposed through the autobiographical view.
-
-Spec: 18.3-18.6, DC-08, DC-14, INV-27-29, INV-44, INV-49.
+WorldBody owns the actual physical consequences, including lethal transitions.
+This protocol records a terminal outcome; it never restores an earlier world,
+body, cognitive state, or random stream, and never retries a lethal action.
+Technical death detection stays outside the individual's learning interfaces.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping, Sequence
+from typing import Mapping
 
 from .bench import EvaluationBench
 from .determinism import deterministic_id
 from .journal import HashChainedJournal
 from .scheduler import Scheduler
-from .snapshots import CausalStateOwner, SnapshotManager
 from .world import Command, TransitionResult, command_digest
 
 
 @dataclass(frozen=True, slots=True)
 class SafetyProtocolConfig:
     version: str
-    lethal_max: int
-    mode: str  # campaign | diagnostic
+    lethal_max: int  # Legacy fixture input; ignored in the mortal runtime.
+    mode: str  # campaign | diagnostic; for nonlethal safety blocks only
 
     def validate(self) -> None:
         if not self.version:
             raise ValueError("safety protocol version must not be empty")
-        if self.lethal_max < 1:
-            raise ValueError("R_letal_max must be >= 1")
+        if not isinstance(self.lethal_max, int):
+            raise ValueError("legacy lethal_max must be an integer")
         if self.mode not in {"campaign", "diagnostic"}:
             raise ValueError("safety protocol mode must be campaign or diagnostic")
 
 
-@dataclass(frozen=True, slots=True)
-class LethalHandlingResult:
-    blocked: bool
-    resumed: bool
-    attempt_ref: str | None
-    consecutive_lethal: int
+class MortalityProtocol:
+    """External terminal-state owner; no rewind, rescue mask or retry."""
 
-
-class LethalSafetyProtocol:
-    """Owns rollback mask/counter without turning death into cognition."""
-
-    owner_id = "scheduler.safety_protocol"
+    owner_id = "scheduler.mortality_protocol"
 
     def __init__(
         self,
         *,
         config: SafetyProtocolConfig,
         scheduler: Scheduler,
-        snapshots: SnapshotManager,
         journal: HashChainedJournal,
         bench: EvaluationBench,
     ) -> None:
         config.validate()
         self._config = config
         self._scheduler = scheduler
-        self._snapshots = snapshots
         self._journal = journal
         self._bench = bench
-        self._masked_command_hashes: set[str] = set()
-        self._consecutive_lethal = 0
+        self._dead = False
         self._blocked = False
         self._suspended = False
         self._event_sequence = 0
 
     @property
-    def consecutive_lethal(self) -> int:
-        return self._consecutive_lethal
+    def dead(self) -> bool:
+        return self._dead
 
     @property
     def blocked(self) -> bool:
@@ -80,15 +68,12 @@ class LethalSafetyProtocol:
     def suspended(self) -> bool:
         return self._suspended
 
-    def is_masked(self, command: Command) -> bool:
-        return command_digest(command) in self._masked_command_hashes
-
     def _write(self, *, kind: str, data: Mapping[str, object]) -> None:
         attempt = self._scheduler.active_attempt
         attempt_ref = attempt.attempt_ref if attempt is not None else None
         event_id = deterministic_id(
             "journal-event-v1",
-            "safety-protocol",
+            "mortality-protocol",
             self._scheduler.t_monde,
             attempt_ref,
             self._event_sequence,
@@ -98,7 +83,7 @@ class LethalSafetyProtocol:
         self._journal.append(
             event_id=event_id,
             causal_event={
-                "emitter": "scheduler.safety_protocol",
+                "emitter": self.owner_id,
                 "kind": kind,
                 "t_monde": self._scheduler.t_monde,
                 "attempt_ref": attempt_ref,
@@ -106,154 +91,69 @@ class LethalSafetyProtocol:
             },
         )
 
-    def handle_lethal(
-        self,
-        *,
-        checkpoint_id: str,
-        command: Command,
-        transition: TransitionResult,
-        restore_owners: Sequence[CausalStateOwner],
-    ) -> LethalHandlingResult:
+    def confirm_death(
+        self, *, command: Command, transition: TransitionResult,
+    ) -> None:
+        """Seal an already-applied lethal world transition, exactly once."""
+        if self._dead:
+            raise RuntimeError("individual is already dead")
         if not transition.lethal:
-            raise ValueError("handle_lethal requires a lethal transition")
-
-        command_hash = command_digest(command)
-        self._write(
-            kind="lethal_transition_detected",
-            data={
-                "command_hash": command_hash,
-                "reasons": list(transition.lethal_reasons),
-            },
-        )
+            raise ValueError("death requires a lethal world transition")
+        attempt = self._scheduler.active_attempt
+        if attempt is None or attempt.t_monde != transition.t_monde:
+            raise RuntimeError("death requires the active physical world step")
+        data = {
+            "command_hash": command_digest(command),
+            "reasons": list(transition.lethal_reasons),
+        }
+        self._write(kind="death_confirmed", data=data)
         self._bench.count_lethal_transition(
-            data={
-                "t_monde": transition.t_monde,
-                "command_hash": command_hash,
-                "reasons": list(transition.lethal_reasons),
-            }
+            data={"t_monde": transition.t_monde, **data}
         )
-
-        self._snapshots.restore(
-            checkpoint_id,
-            owners=restore_owners,
-        )
-        self._bench.count_lethal_rollback(
-            data={
-                "t_monde": transition.t_monde,
-                "checkpoint_id": checkpoint_id,
-            }
-        )
-
-        self._consecutive_lethal += 1
-        self._masked_command_hashes.add(command_hash)
-        self._write(
-            kind="lethal_rollback_completed",
-            data={
-                "checkpoint_id": checkpoint_id,
-                "command_hash": command_hash,
-                "R_letal_consecutif": self._consecutive_lethal,
-            },
-        )
-
-        if self._consecutive_lethal > self._config.lethal_max:
-            self._blocked = True
-            self._suspended = self._config.mode == "diagnostic"
-            self._write(
-                kind="safety_block",
-                data={
-                    "mode": self._config.mode,
-                    "R_letal_consecutif": self._consecutive_lethal,
-                },
-            )
-            self._bench.count_safety_block(
-                data={
-                    "t_monde": transition.t_monde,
-                    "mode": self._config.mode,
-                    "R_letal_consecutif": self._consecutive_lethal,
-                }
-            )
-            self._bench.alert_operator(
-                data={
-                    "t_monde": transition.t_monde,
-                    "reason": "R_letal_max_exceeded",
-                }
-            )
-            return LethalHandlingResult(
-                blocked=True,
-                resumed=False,
-                attempt_ref=None,
-                consecutive_lethal=self._consecutive_lethal,
-            )
-
-        attempt = self._scheduler.new_attempt_after_rollback()
-        return LethalHandlingResult(
-            blocked=False,
-            resumed=True,
-            attempt_ref=attempt.attempt_ref,
-            consecutive_lethal=self._consecutive_lethal,
-        )
+        self._dead = True
 
     def enter_safety_block(self, *, reason: str) -> None:
-        """Block a step when no admissible safe command exists."""
-
+        """Freeze an unexecuted step if no command is admissible."""
+        if self._dead:
+            raise RuntimeError("dead individuals cannot enter a safety block")
         if not reason:
             raise ValueError("safety block reason must not be empty")
         self._blocked = True
         self._suspended = self._config.mode == "diagnostic"
         self._write(
             kind="safety_block",
-            data={
-                "mode": self._config.mode,
-                "reason": reason,
-                "R_letal_consecutif": self._consecutive_lethal,
-            },
+            data={"mode": self._config.mode, "reason": reason},
         )
         self._bench.count_safety_block(
             data={
                 "t_monde": self._scheduler.t_monde,
                 "mode": self._config.mode,
                 "reason": reason,
-                "R_letal_consecutif": self._consecutive_lethal,
             }
         )
         self._bench.alert_operator(
-            data={
-                "t_monde": self._scheduler.t_monde,
-                "reason": reason,
-            }
+            data={"t_monde": self._scheduler.t_monde, "reason": reason}
         )
-
-    def complete_nonlethal_step(self) -> None:
-        self._masked_command_hashes.clear()
-        self._consecutive_lethal = 0
-        self._blocked = False
-        self._suspended = False
 
     def export_causal_state(self) -> object:
         return {
             "config_version": self._config.version,
-            "masked_command_hashes": sorted(self._masked_command_hashes),
-            "consecutive_lethal": self._consecutive_lethal,
+            "dead": self._dead,
             "blocked": self._blocked,
             "suspended": self._suspended,
         }
 
     def restore_causal_state(self, state: object) -> None:
+        """Snapshot import for offline copies/tests, never an active-life retry."""
         if not isinstance(state, Mapping):
-            raise ValueError("safety protocol state must be a mapping")
+            raise ValueError("mortality protocol state must be a mapping")
         if state.get("config_version") != self._config.version:
             raise ValueError("safety protocol configuration version mismatch")
-        hashes = state.get("masked_command_hashes")
-        count = state.get("consecutive_lethal")
-        blocked = state.get("blocked")
-        suspended = state.get("suspended")
-        if not isinstance(hashes, list) or not all(isinstance(x, str) for x in hashes):
-            raise ValueError("invalid protocol mask state")
-        if not isinstance(count, int) or count < 0:
-            raise ValueError("invalid consecutive lethal counter")
-        if not isinstance(blocked, bool) or not isinstance(suspended, bool):
-            raise ValueError("invalid safety block state")
-        self._masked_command_hashes = set(hashes)
-        self._consecutive_lethal = count
-        self._blocked = blocked
-        self._suspended = suspended
+        for key in ("dead", "blocked", "suspended"):
+            if not isinstance(state.get(key), bool):
+                raise ValueError("invalid mortality protocol state")
+        if state["dead"] and (state["blocked"] or state["suspended"]):
+            raise ValueError("a terminal death is not a safety block")
+        self._dead = state["dead"]
+        self._blocked = state["blocked"]
+        self._suspended = state["suspended"]

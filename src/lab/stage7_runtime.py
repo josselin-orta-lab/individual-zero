@@ -361,9 +361,6 @@ class Stage7Runtime(Stage6Runtime):
             sender=lambda command: self.stage3.substrate.send_admitted_command(
                 command,
                 source="action_control",
-                checkpoint_owners=self.causal_owners,
-                individual_id=self.individual_id,
-                checkpoint_cycle=cycle,
                 autobiographical_policy=STAGE7_AUTOBIOGRAPHICAL_POLICY,
                 extra_autobiographical_event_refs=(
                     self._current_autobiographical_refs()

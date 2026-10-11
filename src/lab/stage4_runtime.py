@@ -897,9 +897,6 @@ class Stage4Runtime:
             sender=lambda command: self.stage3.substrate.send_admitted_command(
                 command,
                 source="action_control",
-                checkpoint_owners=self.causal_owners,
-                individual_id=self.individual_id,
-                checkpoint_cycle=cycle,
             ),
         )
         if not isinstance(execution, CommandExecution):
@@ -952,16 +949,13 @@ class Stage4Runtime:
         self._step_need_state = self.value_needs.assess(capture.body)
         self._step_reward = self.value_needs.reward_for(self._step_need_state)
 
-        reflex, reflex_admission, reflex_execution = self.stage3.attempt_reflex(
-            checkpoint_owners=self.causal_owners,
-            individual_id=self.individual_id,
-        )
+        reflex, reflex_admission, reflex_execution = self.stage3.attempt_reflex()
         if (
             reflex is not None
             and reflex_admission is not None
             and reflex_admission.ok
             and reflex_execution is not None
-            and reflex_execution.status in {"applied", "safety_block"}
+            and reflex_execution.status in {"applied", "dead", "safety_block"}
         ):
             self.stage3._capture = None
             return Stage4StepResult(
@@ -1043,12 +1037,6 @@ class Stage4Runtime:
                 cycle=cycle,
                 sent_t_monde=capture.t_monde,
             )
-            if execution.status == "rolled_back":
-                # The cognitive checkpoint restored all causal owners, while
-                # the technical journal remained append-only. Continue with
-                # the next cycle under the rollback protocol mask.
-                continue
-
             if execution.status == "applied":
                 self.competition.close_deliberation(proposal)
             self.stage3._capture = None

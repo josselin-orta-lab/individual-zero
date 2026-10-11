@@ -1,4 +1,4 @@
-"""Stage-3 Action Control: reflex, veto, mask and admissibility.
+"""Stage-3 Action Control: reflex, veto and admissibility.
 
 Action Control decides whether a prepared command may be sent. It does not own
 the world and does not read oracle/bench/journal state.
@@ -122,12 +122,10 @@ class ActionControl:
         *,
         config: ActionControlConfig,
         safety_facts: SafetyFactSource,
-        protocol_mask: Callable[[PrimitiveCommand], bool],
     ) -> None:
         config.validate()
         self._config = config
         self._facts = safety_facts
-        self._protocol_mask = protocol_mask
         self._current_option_ref: str | None = None
         self._current_plan_ref: str | None = None
         self._current_step_index = 0
@@ -567,17 +565,6 @@ class ActionControl:
                 scope="option",
                 rule_id="protected_invariant_violation",
                 rule_type="protected_invariant",
-                policy_version=self._config.safety_policy_version,
-                command=command,
-            )
-
-        if self._protocol_mask(command):
-            return AdmissionResult(
-                ok=False,
-                reason="protocol_mask",
-                scope="protocol",
-                rule_id="rollback_sequence_mask",
-                rule_type="protocol",
                 policy_version=self._config.safety_policy_version,
                 command=command,
             )

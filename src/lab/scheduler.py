@@ -184,26 +184,6 @@ class Scheduler:
         )
         return attempt
 
-    def new_attempt_after_rollback(self) -> StepAttempt:
-        if self._active_attempt is None:
-            raise RuntimeError("rollback retry requires an active world step")
-
-        attempt = StepAttempt(
-            t_monde=self._t_monde,
-            attempt_index=self._active_attempt.attempt_index + 1,
-            attempt_ref=deterministic_id(
-                "attempt-v1",
-                self._t_monde,
-                self._active_attempt.attempt_index + 1,
-            ),
-        )
-        self._active_attempt = attempt
-        self._write(
-            kind="step_attempt_reopened_after_rollback",
-            data={"attempt_index": attempt.attempt_index},
-        )
-        return attempt
-
     def run_cycle(
         self,
         *,
@@ -261,7 +241,7 @@ class Scheduler:
         if self._active_attempt is None:
             raise RuntimeError("cannot close a world step when none is active")
 
-        if outcome == "normal":
+        if outcome in {"normal", "dead"}:
             expected = (1, 1)
         elif outcome in {"blocked", "external_stop"}:
             expected = (0, 0)

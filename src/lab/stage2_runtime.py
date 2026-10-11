@@ -1,7 +1,7 @@
 """Integrated scripted Stage-2 world/body/bench runtime.
 
 This runtime uses a scripted agent, not cognition. Its purpose is to close the
-tier-0 environment, oracle-isolation and lethal-rollback gates.
+tier-0 environment, oracle-isolation and terminal-mortality gates.
 
 Spec: 18, 19, 20.3 Stage 2, INV-02, INV-27-29, INV-33, INV-39, INV-44.
 """
@@ -21,13 +21,9 @@ from .journal_views import (
     JournalViews,
 )
 from .oracle import create_oracle
-from .safety_protocol import (
-    LethalHandlingResult,
-    LethalSafetyProtocol,
-    SafetyProtocolConfig,
-)
+from .safety_protocol import MortalityProtocol, SafetyProtocolConfig
 from .scheduler import Scheduler
-from .snapshots import SnapshotManager, SnapshotType
+from .snapshots import SnapshotManager
 from .world import Command, TransitionResult, WorldBody, WorldLayout, WorldPhysicsConfig, command_digest
 
 
@@ -47,9 +43,8 @@ STAGE2_AUTOBIOGRAPHICAL_POLICY = AutobiographicalPolicy(
 
 @dataclass(frozen=True, slots=True)
 class CommandExecution:
-    status: str  # applied | rolled_back | safety_block | masked
+    status: str  # applied | dead | safety_block
     transition: TransitionResult | None
-    lethal_handling: LethalHandlingResult | None
 
 
 class ScriptedStage2Runtime:
@@ -81,10 +76,9 @@ class ScriptedStage2Runtime:
             capability=capability,
             trace=self.evaluation_trace,
         )
-        self.safety = LethalSafetyProtocol(
+        self.safety = MortalityProtocol(
             config=safety_config,
             scheduler=self.scheduler,
-            snapshots=self.snapshots,
             journal=self.journal,
             bench=self.bench,
         )
@@ -111,6 +105,10 @@ class ScriptedStage2Runtime:
         return tuple(owners)
 
     def open_step(self) -> None:
+        if self.safety.dead:
+            raise RuntimeError("cannot advance a dead individual")
+        if self.safety.blocked:
+            raise RuntimeError("cannot advance a blocked individual")
         # A rejected external input is a stopped branch, not an omitted
         # event to be silently skipped in a later world step.
         if self.scenario is not None and self.scenario.halted:
@@ -191,9 +189,6 @@ class ScriptedStage2Runtime:
         *,
         source: str,
         event_emitter: str | None = None,
-        checkpoint_owners=None,
-        individual_id: str = "stage2-scripted",
-        checkpoint_cycle: int = 0,
         autobiographical_policy: AutobiographicalPolicy | None = None,
         extra_autobiographical_event_refs: tuple[str, ...] = (),
     ) -> CommandExecution:
@@ -206,55 +201,10 @@ class ScriptedStage2Runtime:
         attempt = self.scheduler.active_attempt
         if attempt is None:
             raise RuntimeError("open_step must be called before command send")
+        if self.safety.dead:
+            raise RuntimeError("dead individual cannot issue commands")
         if self.safety.blocked:
             raise RuntimeError("branch is in safety block")
-
-        if self.safety.is_masked(command):
-            self.journal.append(
-                event_id=deterministic_id(
-                    "journal-event-v1",
-                    "safety-protocol",
-                    attempt.t_monde,
-                    attempt.attempt_ref,
-                    command_digest(command),
-                    "masked",
-                ),
-                causal_event={
-                    "emitter": "scheduler.safety_protocol",
-                    "kind": "protocol_mask_rejected_command",
-                    "t_monde": attempt.t_monde,
-                    "attempt_ref": attempt.attempt_ref,
-                    "command_hash": command_digest(command),
-                },
-            )
-            return CommandExecution(
-                status="masked",
-                transition=None,
-                lethal_handling=None,
-            )
-
-        checkpoint = self.snapshots.take(
-            snapshot_type=SnapshotType.LETHAL_CHECKPOINT,
-            individual_id=individual_id,
-            t_monde=attempt.t_monde,
-            cycle=checkpoint_cycle,
-            attempt_ref=attempt.attempt_ref,
-            owners=(
-                self.causal_owners
-                if checkpoint_owners is None
-                else tuple(checkpoint_owners)
-            ),
-            versions={
-                "world_physics": self.world.config.version,
-                "safety_protocol": self.safety.export_causal_state()["config_version"],
-            },
-            context={
-                "command_source": source,
-                "command_hash": command_digest(command),
-                "mask": self.safety.export_causal_state()["masked_command_hashes"],
-                "R_letal_consecutif": self.safety.consecutive_lethal,
-            },
-        )
 
         command_event = self._write_command_event(
             command=command,
@@ -262,35 +212,16 @@ class ScriptedStage2Runtime:
         )
         transition = self.world.apply(command, t_monde=attempt.t_monde)
 
-        if transition.lethal:
-            handling = self.safety.handle_lethal(
-                checkpoint_id=checkpoint.id,
-                command=command,
-                transition=transition,
-                restore_owners=(
-                    self.causal_owners
-                    if checkpoint_owners is None
-                    else tuple(checkpoint_owners)
-                ),
-            )
-            if handling.blocked:
-                self.scheduler.close_step(
-                    outcome="blocked",
-                    applied_command_count=0,
-                    world_advance_count=0,
-                )
-                return CommandExecution(
-                    status="safety_block",
-                    transition=transition,
-                    lethal_handling=handling,
-                )
-            return CommandExecution(
-                status="rolled_back",
-                transition=transition,
-                lethal_handling=handling,
-            )
-
         transition_event = self._write_transition_event(transition)
+        if transition.lethal:
+            self.safety.confirm_death(command=command, transition=transition)
+            self.scheduler.close_step(
+                outcome="dead",
+                applied_command_count=1,
+                world_advance_count=1,
+            )
+            return CommandExecution(status="dead", transition=transition)
+
         active = self.scheduler.active_attempt
         if active is None:
             raise RuntimeError("normal transition lost active attempt")
@@ -308,7 +239,6 @@ class ScriptedStage2Runtime:
                 else autobiographical_policy
             ),
         )
-        self.safety.complete_nonlethal_step()
         self.scheduler.close_step(
             outcome="normal",
             applied_command_count=1,
@@ -317,7 +247,6 @@ class ScriptedStage2Runtime:
         return CommandExecution(
             status="applied",
             transition=transition,
-            lethal_handling=None,
         )
 
     def execute(self, command: Command) -> CommandExecution:

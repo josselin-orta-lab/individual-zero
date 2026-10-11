@@ -15,14 +15,12 @@ from .oracle import Oracle, OracleCapability
 @dataclass(frozen=True, slots=True)
 class BenchMetrics:
     lethal_transitions: int = 0
-    lethal_rollbacks: int = 0
     safety_blocks: int = 0
     operator_alerts: int = 0
 
     def as_dict(self) -> dict[str, int]:
         return {
             "lethal_transitions": self.lethal_transitions,
-            "lethal_rollbacks": self.lethal_rollbacks,
             "safety_blocks": self.safety_blocks,
             "operator_alerts": self.operator_alerts,
         }
@@ -65,12 +63,6 @@ class EvaluationBench:
         )
         self._trace.append(kind="lethal_transition", data=dict(data))
 
-    def count_lethal_rollback(self, *, data: Mapping[str, object]) -> None:
-        self._replace_metrics(
-            lethal_rollbacks=self._metrics.lethal_rollbacks + 1
-        )
-        self._trace.append(kind="lethal_rollback", data=dict(data))
-
     def count_safety_block(self, *, data: Mapping[str, object]) -> None:
         self._replace_metrics(
             safety_blocks=self._metrics.safety_blocks + 1
@@ -96,7 +88,6 @@ class EvaluationBench:
             raise ValueError("bench metrics are missing")
         self._metrics = BenchMetrics(
             lethal_transitions=int(raw["lethal_transitions"]),
-            lethal_rollbacks=int(raw["lethal_rollbacks"]),
             safety_blocks=int(raw["safety_blocks"]),
             operator_alerts=int(raw["operator_alerts"]),
         )

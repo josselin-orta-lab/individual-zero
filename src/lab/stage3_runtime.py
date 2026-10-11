@@ -69,7 +69,6 @@ class Stage3Runtime:
                 protected_integrity_threshold=protected_integrity_threshold,
             ),
             safety_facts=safety_facts,
-            protocol_mask=self.substrate.safety.is_masked,
         )
         self._capture: PerceptualCapture | None = None
         self._capture_attempt_ref: str | None = None
@@ -187,8 +186,6 @@ class Stage3Runtime:
         self,
         *,
         prepared: PreparedCommand,
-        checkpoint_owners=None,
-        individual_id: str = "stage2-scripted",
     ) -> tuple[AdmissionResult, CommandExecution | None]:
         capture = self._capture_required()
 
@@ -202,8 +199,6 @@ class Stage3Runtime:
             sender=lambda command: self.substrate.send_admitted_command(
                 command,
                 source="action_control",
-                checkpoint_owners=checkpoint_owners,
-                individual_id=individual_id,
             ),
         )
         if execution is not None and not isinstance(execution, CommandExecution):
@@ -221,13 +216,11 @@ class Stage3Runtime:
     def attempt_reflex(
         self,
         *,
-        checkpoint_owners=None,
-        individual_id: str = "stage2-scripted",
     ):
         """Attempt only the direct reflex path, with no ordinary fallback.
 
-        Returns (proposal, admission, execution). A refused or rolled-back
-        reflex leaves the current world step open for cognitive deliberation.
+        Returns (proposal, admission, execution). A refused reflex leaves the
+        step open for deliberation; a fatal reflex ends the individual.
         """
 
         capture = self._capture_required()
@@ -244,8 +237,6 @@ class Stage3Runtime:
         )
         admission, execution = self._dispatch(
             prepared=reflex.prepared,
-            checkpoint_owners=checkpoint_owners,
-            individual_id=individual_id,
         )
         if not admission.ok:
             self._write(
@@ -271,16 +262,15 @@ class Stage3Runtime:
                         reflex_triggered=True,
                         admission=admission,
                     )
-                if execution.status == "safety_block":
+                if execution.status in {"safety_block", "dead"}:
                     self._capture = None
                     return Stage3StepResult(
                         source="reflex",
                         command=reflex.prepared.command,
-                        execution_status="safety_block",
+                        execution_status=execution.status,
                         reflex_triggered=True,
                         admission=admission,
                     )
-                # Lethal rollback: reflex is not replayed. Continue to wait stub.
 
         wait = PreparedCommand(
             command=PrimitiveCommand("attendre"),
