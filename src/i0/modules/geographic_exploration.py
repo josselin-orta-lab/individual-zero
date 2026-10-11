@@ -9,7 +9,7 @@ from dataclasses import asdict, dataclass
 from math import isfinite
 from typing import Mapping
 
-from .observed_frontier_routing import ObservedSurvey
+from .observed_frontier_routing import ObservedSurvey, GeographicTransitTarget
 
 DIRECTION_DELTAS = {"north": (0, -1), "east": (1, 0),
                     "south": (0, 1), "west": (-1, 0)}
@@ -74,6 +74,7 @@ class GeographicExploration:
         self._last_capture: tuple[int, int, int] | None = None
         self._offered: tuple[GeographicTarget, ...] = ()
         self._surveys: dict[tuple[int, int], ObservedSurvey] = {}
+        self._transit_offered: tuple[GeographicTransitTarget, ...] = ()
 
     @property
     def distinct_sites(self) -> int:
@@ -98,6 +99,8 @@ class GeographicExploration:
             raise ValueError("geographic visits require real world-step coordinates")
         if self._last_capture is not None:
             old_t, old_x, old_y = self._last_capture
+            if t > old_t:
+                self._transit_offered = ()
             if t < old_t or (t == old_t and (x, y) != (old_x, old_y)):
                 raise ValueError("contradictory/retrograde physical capture")
             if t == old_t or (x, y) == (old_x, old_y):
@@ -109,6 +112,10 @@ class GeographicExploration:
         self._visits[(x, y)] = self._visits.get((x, y), 0) + 1
         self._last_capture = (t, x, y)
         return True
+
+    @property
+    def transit_offered(self) -> tuple[GeographicTransitTarget, ...]:
+        return self._transit_offered
 
     @property
     def surveys(self) -> tuple[ObservedSurvey, ...]:
@@ -239,6 +246,56 @@ class GeographicExploration:
             raise ValueError("duplicate geographic target")
         self._offered = targets
 
+    def freeze_transits(
+        self, targets: tuple[GeographicTransitTarget, ...],
+    ) -> None:
+        """Freeze only funded transit options tied to witnessed topology.
+
+        A transit is NOT a novel visit. Its objective must remain unvisited,
+        and every intermediate hop must already have a physical survey.
+        """
+        if (not isinstance(targets, tuple)
+            or len(targets) > 1
+            or len(targets) > self.config.max_targets_per_cycle
+            or (targets and not self.config.observe_routes)):
+            raise ValueError("invalid offered geographic transit count")
+        for target in targets:
+            if not isinstance(target, GeographicTransitTarget):
+                raise ValueError("not a canonical route target")
+            target.validate()
+            if (self._last_capture is None
+                or target.source_t_monde != self._last_capture[0]
+                or target.origin != self._last_capture[1:]
+                or target.observed_frontier in self._visits
+                or target.destination not in self._visits
+                or not set(target.visited_path) <= set(self._visits)):
+                raise ValueError("route transit not tied to physical visit ledger")
+            for a, b in zip(target.visited_path, target.visited_path[1:]):
+                if a not in self._surveys or b not in self._surveys[a].free_neighbors:
+                    raise ValueError("route crosses a non-observed transit edge")
+            objective_source = self._surveys.get(target.visited_path[-1])
+            if (objective_source is None
+                or target.observed_frontier not in objective_source.free_neighbors
+                or target.objective_observed_step != objective_source.world_step):
+                raise ValueError("route objective not witnessed at physical site")
+        self._transit_offered = targets
+
+    def transit_for(self, option) -> GeographicTransitTarget | None:
+        motive = getattr(option, "motive_ref", None)
+        if (getattr(motive, "type", None) != "cible_exploration"
+            or getattr(option, "provenance", None) != "exploration"
+            or getattr(option, "goal_ref", None) is not None):
+            return None
+        for target in self._transit_offered:
+            if (motive.id == target.ref
+                and option.id == (
+                    f"option:geographic:{target.ref}:t{target.source_t_monde}"
+                )
+                and target.observed_frontier not in self._visits
+                and target.destination in self._visits):
+                return target
+        return None
+
     def target_for(self, option) -> GeographicTarget | None:
         motive = getattr(option, "motive_ref", None)
         if (getattr(motive, "type", None) != "cible_exploration"
@@ -266,8 +323,10 @@ class GeographicExploration:
                 else list(self._last_capture)
             ),
             "offered": [asdict(t) for t in self._offered],
-            **({"surveys": [asdict(x) for x in self.surveys]}
-               if self.config.observe_routes else {}),
+            **({
+                "surveys": [asdict(x) for x in self.surveys],
+                "transit_offered": [asdict(x) for x in self._transit_offered],
+            } if self.config.observe_routes else {}),
         }
 
     def restore_causal_state(self, state: object) -> None:
@@ -346,9 +405,41 @@ class GeographicExploration:
                 ):
                     raise ValueError("unowned or future snapshot survey")
                 restored_surveys[survey.position] = survey
-        elif "surveys" in state:
-            raise ValueError("legacy geographic snapshot cannot contain surveys")
+        elif "surveys" in state or "transit_offered" in state:
+            raise ValueError("legacy geographic snapshot cannot contain routing")
+        restored_transits = ()
+        if self.config.observe_routes:
+            raw_transits = state.get("transit_offered")
+            if not isinstance(raw_transits, list) or len(raw_transits) > 1:
+                raise ValueError("invalid routed target snapshot")
+            transits = []
+            for row in raw_transits:
+                if not isinstance(row, Mapping) or set(row) != {
+                    "ref", "source_t_monde", "origin", "destination",
+                    "direction", "observed_frontier", "visited_path",
+                    "objective_observed_step",
+                }:
+                    raise ValueError("invalid routed target snapshot fields")
+                transit = GeographicTransitTarget(
+                    ref=row["ref"], source_t_monde=row["source_t_monde"],
+                    origin=tuple(row["origin"]),
+                    destination=tuple(row["destination"]),
+                    direction=row["direction"],
+                    observed_frontier=tuple(row["observed_frontier"]),
+                    visited_path=tuple(tuple(p) for p in row["visited_path"]),
+                    objective_observed_step=row["objective_observed_step"],
+                )
+                transit.validate()
+                transits.append(transit)
+            # Validate the complete prospective owner before any mutation.
+            trial = GeographicExploration(self.config)
+            trial._visits = visited
+            trial._last_capture = last
+            trial._surveys = restored_surveys
+            trial.freeze_transits(tuple(transits))
+            restored_transits = trial.transit_offered
         self._visits = visited
         self._last_capture = last
         self._offered = tuple(offered)
         self._surveys = restored_surveys
+        self._transit_offered = restored_transits
