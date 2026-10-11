@@ -82,6 +82,7 @@ class MortalRuntimeIntegrationTests(unittest.TestCase):
             "set_lethal_zone",
             {"position": {"x": 1, "y": 2}, "active": True},
         )
+        runtime.stage3.open_step()  # Stage 3 control consumes one pre-opened capture.
         result = runtime.stage3.run_step()
         self.assertTrue(result.reflex_triggered)
         self.assertEqual(result.source, "reflex")
