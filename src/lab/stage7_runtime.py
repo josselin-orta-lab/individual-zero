@@ -317,6 +317,8 @@ class Stage7Runtime(Stage6Runtime):
         return hooks
 
     def create_intention(self, intention) -> None:
+        if self.stage3.substrate.autonomous_mortal and self.stage3.substrate.mortal_status.value != "active":
+            raise RuntimeError("terminal mortal individual cannot create intentions")
         self.memory.create_intention(intention)
         attempt = self.scheduler.active_attempt
         if attempt is not None:
