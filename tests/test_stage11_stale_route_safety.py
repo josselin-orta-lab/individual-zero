@@ -62,16 +62,13 @@ class Stage11ChangedWorldRouteTests(TestCase):
                          ("place_creature",))
         self.assertEqual(blocked.external_input_steps, (3,))
         self.assertEqual(blocked.applied_route_into_active_creature, 0)
-        # Preserved negative result from CI #38120585742:
-        # the geographic route *did not* enter the occupied neighbor, but
-        # a separate, canonical Stage-3 reflex moved into that cell at t3
-        # and the individual later reached the southern branch.
-        # Never relabel that reflex transit as a successful route veto.
-        self.assertEqual(blocked.applied_reflex_moves_into_active_creature, 1)
-        self.assertIn(3, blocked.applied_reflex_steps)
-        self.assertEqual(blocked.action_sources[2], "reflex")
-        self.assertIsNone(blocked.actions[2][2])
-        self.assertTrue(blocked.observed_alternate_branch)
+        # Original pre-repair physical counterexample remains archived at
+        # CI #38120585742 and the SHA-pinned French results. After the
+        # separately registered normative §9.2 repair, a false avoidance
+        # reflex cannot move toward the adjacent creature at world step 3.
+        self.assertEqual(blocked.applied_reflex_moves_into_active_creature, 0)
+        self.assertNotIn(3, blocked.applied_reflex_steps)
+        self.assertNotEqual(blocked.action_sources[2], "reflex")
         self.assertEqual(blocked.danger_damage_total, 0.0)
 
     def test_removed_obstruction_is_reobserved_before_any_reuse(self):
@@ -80,11 +77,10 @@ class Stage11ChangedWorldRouteTests(TestCase):
                          ("place_creature", "remove_creature"))
         self.assertEqual(restored.external_input_steps, (3, 5))
         self.assertEqual(restored.applied_route_into_active_creature, 0)
-        self.assertEqual(restored.applied_reflex_moves_into_active_creature, 1)
-        # The independently governed reflex already traverses the occupied
-        # cell at t3, so this experiment does NOT establish that removal at
-        # t5 enables a stalled route. Preserve that limitation.
-        self.assertTrue(restored.observed_alternate_branch)
+        self.assertEqual(restored.applied_reflex_moves_into_active_creature, 0)
+        self.assertNotIn(3, restored.applied_reflex_steps)
+        # Observe and report any eventual recovery after removal at t5
+        # without requiring an invented route or a scripted return.
         self.assertTrue(all(isinstance(p, tuple)
                             for p in restored.observed_positions))
 
