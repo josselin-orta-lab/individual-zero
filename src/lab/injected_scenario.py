@@ -133,21 +133,43 @@ class InjectedScenario:
                 event.t_monde,
                 event.sequence,
             )
-            self._journal.append(
-                event_id=event_id,
-                causal_event={
-                    "emitter": "scenario",
-                    "kind": "external_input_received",
-                    "scenario_id": self._scenario_id,
-                    "scenario_version": self._version,
-                    "t_monde": event.t_monde,
-                    "sequence": event.sequence,
-                    "operation": event.operation,
-                    "payload": deepcopy(dict(event.payload)),
-                },
-            )
+            receipt_stage = "received"
             try:
+                self._journal.append(
+                    event_id=event_id,
+                    causal_event={
+                        "emitter": "scenario",
+                        "kind": "external_input_received",
+                        "scenario_id": self._scenario_id,
+                        "scenario_version": self._version,
+                        "t_monde": event.t_monde,
+                        "sequence": event.sequence,
+                        "operation": event.operation,
+                        "payload": deepcopy(dict(event.payload)),
+                    },
+                )
+                receipt_stage = "application"
                 world.apply_scenario_event(event.operation, event.payload)
+                receipt_stage = "applied"
+                self._journal.append(
+                    event_id=deterministic_id(
+                        "journal-event-v1",
+                        "scenario",
+                        self._scenario_id,
+                        self._version,
+                        event.t_monde,
+                        event.sequence,
+                        "applied",
+                    ),
+                    causal_event={
+                        "emitter": "scenario",
+                        "kind": "external_input_applied",
+                        "scenario_id": self._scenario_id,
+                        "scenario_version": self._version,
+                        "t_monde": event.t_monde,
+                        "sequence": event.sequence,
+                    },
+                )
             except Exception as error:
                 # Any failure at this world-input boundary is fail-closed.
                 # Earlier successful inputs in this *same* step and even a
@@ -177,10 +199,14 @@ class InjectedScenario:
                         "sequence": event.sequence,
                         "operation": event.operation,
                         "reason": (
-                            "invalid_operation_or_payload"
-                            if isinstance(
-                                error, (ValueError, TypeError, KeyError, OverflowError),
-                            ) else "application_error"
+                            "technical_journal_failure"
+                            if receipt_stage != "application"
+                            else (
+                                "invalid_operation_or_payload"
+                                if isinstance(
+                                    error, (ValueError, TypeError, KeyError, OverflowError),
+                                ) else "application_error"
+                            )
                         ),
                         "error_type": type(error).__name__,
                         "world_recovered": recovery_error is None,
@@ -212,25 +238,6 @@ class InjectedScenario:
                 raise ScenarioInputRejected(
                     "external scenario input rejected; branch fail-stopped"
                 ) from error
-            self._journal.append(
-                event_id=deterministic_id(
-                    "journal-event-v1",
-                    "scenario",
-                    self._scenario_id,
-                    self._version,
-                    event.t_monde,
-                    event.sequence,
-                    "applied",
-                ),
-                causal_event={
-                    "emitter": "scenario",
-                    "kind": "external_input_applied",
-                    "scenario_id": self._scenario_id,
-                    "scenario_version": self._version,
-                    "t_monde": event.t_monde,
-                    "sequence": event.sequence,
-                },
-            )
             self._next_index += 1
             applied.append(event)
 
