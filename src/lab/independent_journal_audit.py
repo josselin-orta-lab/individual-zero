@@ -261,12 +261,21 @@ def audit_export_bytes(
                     or origin.get("t_monde") != t
                 ):
                     raise ValueError("technical/oracle event exposed as lived source")
-                # Enforce the same nested projection schema as the live
-                # cognitive boundary, without loading the I0 runtime.
-                if "data" in origin and origin.get("kind") in _STAGE7_ALLOWED - _STAGE2_ALLOWED:
-                    project_lived_field(
-                        kind=origin["kind"], field="data", value=origin["data"],
-                    )
+                # Apply the same Stage-2 and Stage-7 nested-lived schemas
+                # as the live boundary. Unknown technical metadata is retained
+                # in the audit record, never handed to Memory.
+                source_kind = origin["kind"]
+                if source_kind == "command_experienced":
+                    lived_fields = ("parameters",)
+                elif source_kind == "world_transition_experienced":
+                    lived_fields = ("position_after", "body_after", "effects")
+                else:
+                    lived_fields = ("data",)
+                for field in lived_fields:
+                    if field in origin:
+                        project_lived_field(
+                            kind=source_kind, field=field, value=origin[field],
+                        )
 
         if kind == "stage10_consolidation_version_activated":
             examined.add(kind)
