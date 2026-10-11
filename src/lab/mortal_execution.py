@@ -77,6 +77,17 @@ class MortalWorldBoundary:
     def failed_step(self) -> int | None:
         return self._failed_step
 
+    def halt(self, *, failed_step: int | None = None) -> None:
+        """Permanently fail closed after an uncertain external commit.
+
+        A confirmed death stays a death; this function never restores state.
+        """
+        if self._status is MortalStatus.DEAD:
+            return
+        self._status = MortalStatus.TECHNICAL_HALT
+        if failed_step is not None:
+            self._failed_step = failed_step
+
     def execute(self, command: Command, *, t_monde: int) -> MortalStepResult:
         if self._status is not MortalStatus.ACTIVE:
             raise RuntimeError("dead or halted individual cannot execute")

@@ -271,12 +271,12 @@ class Stage3Runtime:
                         reflex_triggered=True,
                         admission=admission,
                     )
-                if execution.status == "safety_block":
+                if execution.status in {"safety_block", "dead"}:
                     self._capture = None
                     return Stage3StepResult(
                         source="reflex",
                         command=reflex.prepared.command,
-                        execution_status="safety_block",
+                        execution_status=execution.status,
                         reflex_triggered=True,
                         admission=admission,
                     )
