@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import unittest
+from copy import deepcopy
+
+from lab.determinism import canonical_causal_bytes
 
 from lab.world import (
     BerryEffect,
@@ -191,6 +194,155 @@ class WorldPhysicsTests(unittest.TestCase):
         self.assertEqual(world.export_causal_state(), state)
 
 
+
+
+class WorldSnapshotAtomicityTests(unittest.TestCase):
+    """Synthetic owner-state tests, not physical experimental observations."""
+
+    @staticmethod
+    def populated_world() -> WorldBody:
+        world = WorldBody(
+            config=physics(),
+            layout=WorldLayout(
+                resources=((Position(2, 2), "stone", 2),),
+                danger_zones=frozenset({Position(6, 6)}),
+                creatures=frozenset({Position(7, 7)}),
+            ),
+        )
+        world.apply_scenario_event(
+            "set_action_failure_schedule",
+            {"primitive": "se_deplacer", "schedule": [True, False]},
+        )
+        # A real simulated primitive consumes the first failure occurrence.
+        world.apply(Command("se_deplacer", {"direction": "east"}), t_monde=1)
+        world.apply(Command("collecter", {"target": "stone"}), t_monde=2)
+        world.apply(Command("poser_une_pierre"), t_monde=3)
+        world.apply_scenario_event(
+            "set_position", {"position": {"x": 3, "y": 2}},
+        )
+        world.apply_scenario_event(
+            "place_resource",
+            {"position": {"x": 4, "y": 2}, "kind": "berry_a", "quantity": 1},
+        )
+        world.apply_scenario_event("set_body", {"water": 70})
+        return world
+
+    def test_populated_world_owner_snapshot_is_exact_on_independent_restore(self):
+        world = self.populated_world()
+        state = deepcopy(world.export_causal_state())
+        self.assertTrue(state["resources"])
+        self.assertTrue(state["placed_stones"])
+        self.assertTrue(state["danger_zones"])
+        self.assertTrue(state["scenario_action_failures"])
+        self.assertEqual(state["scenario_action_failures"][0]["next_index"], 1)
+        original_bytes = canonical_causal_bytes(state)
+
+        independently_restored = WorldBody(config=physics(), layout=WorldLayout())
+        independently_restored.restore_causal_state(deepcopy(state))
+        self.assertEqual(independently_restored.export_causal_state(), state)
+        self.assertEqual(
+            canonical_causal_bytes(independently_restored.export_causal_state()),
+            original_bytes,
+        )
+        # No snapshot alias: editing the producer's exported dict afterward
+        # never alters the restored owner.
+        state["position"]["x"] = 22
+        self.assertEqual(independently_restored.position, Position(3, 2))
+        self.assertEqual(
+            canonical_causal_bytes(independently_restored.export_causal_state()),
+            original_bytes,
+        )
+
+    def test_invalid_late_world_snapshot_and_lossy_types_reject_atomically(self):
+        world = self.populated_world()
+        source = deepcopy(world.export_causal_state())
+        # The receiver begins at another legitimate causal state.
+        world.apply_scenario_event(
+            "set_position", {"position": {"x": 5, "y": 5}},
+        )
+        world.apply_scenario_event("set_body", {"energy": 31.5})
+        before = deepcopy(world.export_causal_state())
+        before_bytes = canonical_causal_bytes(before)
+        cases = []
+
+        def altered(label, change):
+            bad = deepcopy(source)
+            change(bad)
+            cases.append((label, bad))
+
+        altered("late_physics_version",
+                lambda s: s.update(physics_version="incompatible"))
+        altered("noncanonical_position_fraction",
+                lambda s: s["position"].update(x=3.75))
+        altered("noncanonical_position_boolean",
+                lambda s: s["position"].update(x=True))
+        altered("noncanonical_position_text",
+                lambda s: s["position"].update(x="3"))
+        altered("position_outside_world",
+                lambda s: s["position"].update(x=0))
+        altered("position_in_obstacle",
+                lambda s: s["obstacles"].append({"x": 3, "y": 2}))
+        altered("body_nan",
+                lambda s: s["body"].update(water=float("nan")))
+        altered("body_boolean",
+                lambda s: s["body"].update(food=True))
+        altered("inventory_text",
+                lambda s: s["inventory"].update(stone="2"))
+        altered("inventory_negative",
+                lambda s: s["inventory"].update(stone=-1))
+        altered("resource_fraction",
+                lambda s: s["resources"][0].update(quantity=1.9))
+        altered("resource_unknown_kind",
+                lambda s: s["resources"][0].update(kind="unknown"))
+        altered("resource_duplicate",
+                lambda s: s["resources"].append(deepcopy(s["resources"][0])))
+        altered("obstacle_border",
+                lambda s: s["obstacles"].append({"x": 0, "y": 2}))
+        altered("zone_duplicate",
+                lambda s: s["danger_zones"].append(
+                    deepcopy(s["danger_zones"][0])
+                ))
+        altered("stone_boolean",
+                lambda s: s["placed_stones"][0].update(count=True))
+        altered("stone_duplicate",
+                lambda s: s["placed_stones"].append(
+                    deepcopy(s["placed_stones"][0])
+                ))
+        altered("late_failure_cursor_boolean",
+                lambda s: s["scenario_action_failures"][0].update(
+                    next_index=True
+                ))
+        altered("late_failure_cursor_out_of_range",
+                lambda s: s["scenario_action_failures"][0].update(
+                    next_index=3
+                ))
+        altered("late_failure_program_duplicate",
+                lambda s: s["scenario_action_failures"].append(
+                    deepcopy(s["scenario_action_failures"][0])
+                ))
+        altered("late_failure_schedule_text",
+                lambda s: s["scenario_action_failures"][0].update(
+                    schedule=[True, "false"]
+                ))
+
+        for label, invalid in cases:
+            with self.subTest(label=label):
+                with self.assertRaises(ValueError):
+                    world.restore_causal_state(invalid)
+                self.assertEqual(world.export_causal_state(), before)
+                self.assertEqual(
+                    canonical_causal_bytes(world.export_causal_state()),
+                    before_bytes,
+                )
+
+        # No rejected candidate polluted resources, safety zones or the
+        # failure-program cursor; an authentic restore still works exactly.
+        world.restore_causal_state(deepcopy(source))
+        self.assertEqual(world.export_causal_state(), source)
+        self.assertEqual(
+            canonical_causal_bytes(world.export_causal_state()),
+            canonical_causal_bytes(source),
+        )
 
 
 class ScenarioForcedFailureTests(unittest.TestCase):
