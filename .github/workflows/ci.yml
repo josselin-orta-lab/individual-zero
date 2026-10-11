@@ -22,6 +22,7 @@ on:
       - 'tox.ini'
       - 'scripts/**'
       - 'docs/architecture/reference/en/mvp-specification-v1.2.1.md'
+      - 'docs/architecture/reference/en/mvp-specification-v1.3.1.md'
   # Full replay stays available on the default branch via manual dispatch.
   # Draft PRs may request unit-only verification with the ci-unit label.
   workflow_dispatch:
