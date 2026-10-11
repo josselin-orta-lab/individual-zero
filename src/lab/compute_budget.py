@@ -22,30 +22,53 @@ class ComputeBudgetConfig:
     operation_costs: Mapping[str, int]
 
     def validate(self) -> None:
-        if not self.version:
+        """Fail closed on noncanonical logical UC configuration inputs.
+
+        A frozen dataclass does not validate annotations at runtime. Validate
+        the complete P-43 vocabulary and every cost before a Scheduler owner
+        can be constructed. Do not round or coerce units of logical work.
+        """
+        if type(self.version) is not str or not self.version:
             raise ValueError("budget config version must not be empty")
-        if self.cycle_ceiling < 0:
-            raise ValueError("B_cycle must be non-negative")
-        if self.protected_capacity < 0:
-            raise ValueError("protected capacity must be non-negative")
+        if type(self.cycle_ceiling) is not int or self.cycle_ceiling < 0:
+            raise ValueError("B_cycle must be a non-negative integer")
+        if type(self.protected_capacity) is not int or self.protected_capacity < 0:
+            raise ValueError("protected capacity must be a non-negative integer")
         if self.protected_capacity > self.cycle_ceiling:
             raise ValueError("protected capacity cannot exceed B_cycle")
-        if not self.module_envelopes:
+        if not isinstance(self.module_envelopes, Mapping) or not self.module_envelopes:
             raise ValueError("module envelopes must be explicit")
         for module, envelope in self.module_envelopes.items():
-            if not module or envelope < 0:
-                raise ValueError("module envelopes require non-empty ids and non-negative values")
+            if (
+                type(module) is not str or not module
+                or type(envelope) is not int or envelope < 0
+            ):
+                raise ValueError(
+                    "module envelopes require non-empty string ids "
+                    "and non-negative integer values"
+                )
+        if type(self.protected_modules) is not frozenset:
+            raise ValueError("protected modules must be a frozenset")
+        if any(type(module) is not str or not module
+               for module in self.protected_modules):
+            raise ValueError("protected module ids must be non-empty strings")
         missing_protected = self.protected_modules - set(self.module_envelopes)
         if missing_protected:
             raise ValueError(
                 "protected modules missing envelopes: "
                 + ", ".join(sorted(missing_protected))
             )
-        if not self.operation_costs:
+        if not isinstance(self.operation_costs, Mapping) or not self.operation_costs:
             raise ValueError("operation costs must be explicit")
         for operation, cost in self.operation_costs.items():
-            if not operation or cost < 0:
-                raise ValueError("operation costs require non-empty ids and non-negative values")
+            if (
+                type(operation) is not str or not operation
+                or type(cost) is not int or cost < 0
+            ):
+                raise ValueError(
+                    "operation costs require non-empty string ids "
+                    "and non-negative integer values"
+                )
 
 
 @dataclass(frozen=True, slots=True)
