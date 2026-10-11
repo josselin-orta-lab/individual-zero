@@ -166,6 +166,38 @@ class LiveConsolidationRuntimeTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "dead or halted"):
             runtime.run_step()
 
+    def test_exception_after_applied_sleep_world_step_still_halts_mortal(self):
+        runtime = configured_runtime()
+        state = runtime.sleep_health.export_causal_state()
+        state["fatigue"] = 1.0
+        runtime.sleep_health.restore_causal_state(state)
+        for _ in range(12):
+            result = runtime.run_step()
+            self.assertEqual(result.execution_status, "applied")
+            if result.command_primitive == "dormir":
+                break
+        else:
+            self.fail("no admitted initial sleep decision")
+        before = runtime.scheduler.t_monde
+        with patch.object(
+            runtime.sleep_health, "recover_sleep_step",
+            side_effect=OSError("postphysics sleep recovery failure"),
+        ):
+            with self.assertRaisesRegex(OSError, "postphysics sleep"):
+                runtime.run_step()
+        # This exception happens after the primitive was committed and
+        # Scheduler already closed the attempt. Its physical consequence and
+        # autobiographical receipt must remain, but life cannot continue.
+        self.assertEqual(runtime.scheduler.t_monde, before + 1)
+        self.assertIsNone(runtime.scheduler.active_attempt)
+        self.assertEqual(runtime.stage3.substrate.mortal_status,
+                         MortalStatus.TECHNICAL_HALT)
+        self.assertTrue(runtime.journal.verify())
+        kinds = [e.causal_event["kind"] for e in runtime.journal.entries]
+        self.assertEqual(kinds[-1], "step_closed")
+        with self.assertRaisesRegex(RuntimeError, "dead or halted"):
+            runtime.run_step()
+
     def test_live_custody_cannot_activate_in_legacy_or_without_prices(self):
         base = build_stage10_reference_runtime()
         policy = BatchSelectionPolicy(
