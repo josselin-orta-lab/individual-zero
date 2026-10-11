@@ -105,6 +105,21 @@ class MortalWorldBoundary:
         self._world.freeze_terminal_state()
         self._status = MortalStatus.EXPERIMENT_STOPPED
 
+    def acknowledge_nonphysical_step(self, *, t_monde: int) -> None:
+        """Account for one verified, closed blocked attempt with NO world effect.
+
+        The external Scheduler/Operator must attest a unique, hash-chained
+        `step_closed` with zero command and world advances before invoking.
+        No physics, clock rewind, WorldBody command or cognitive result is
+        synthesized here. This makes a diagnostic nonlethal block resumable
+        at the next original Scheduler time without rewriting prior steps.
+        """
+        if (self._status is not MortalStatus.ACTIVE
+                or type(t_monde) is not int
+                or t_monde != self._last_world_step + 1):
+            raise RuntimeError("nonphysical step acknowledgement is not consecutive")
+        self._last_world_step = t_monde
+
     def execute(self, command: Command, *, t_monde: int) -> MortalStepResult:
         if self._status is not MortalStatus.ACTIVE:
             raise RuntimeError("dead or halted individual cannot execute")
