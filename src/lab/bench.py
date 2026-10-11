@@ -6,10 +6,11 @@ Spec: 18, 19.1-19.5, DC-14, INV-02, INV-27-29.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping
+from typing import Mapping, TYPE_CHECKING
 
 from .journal_views import EvaluationTrace
-from .oracle import Oracle, OracleCapability
+if TYPE_CHECKING:
+    from .oracle import Oracle, OracleCapability
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,10 +37,12 @@ class EvaluationBench:
     def __init__(
         self,
         *,
-        oracle: Oracle,
-        capability: OracleCapability,
         trace: EvaluationTrace,
+        oracle: Oracle | None = None,
+        capability: OracleCapability | None = None,
     ) -> None:
+        if (oracle is None) != (capability is None):
+            raise ValueError("oracle and capability must both be set or absent")
         self._oracle = oracle
         self._capability = capability
         self._trace = trace
@@ -50,6 +53,8 @@ class EvaluationBench:
         return self._metrics
 
     def oracle_truth(self) -> Mapping[str, object]:
+        if self._oracle is None or self._capability is None:
+            raise RuntimeError("Oracle is not attached to this independent Bench")
         truth = self._oracle.read_ground_truth(self._capability)
         self._trace.append(kind="oracle_read", data={"keys": sorted(truth)})
         return truth
