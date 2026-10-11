@@ -316,9 +316,20 @@ class Stage7Runtime(Stage6Runtime):
         hooks[1]["memory"] = memory_hook
         return hooks
 
+    def _require_active_mortal_causal_step(self) -> None:
+        """No out-of-step or terminal cognitive writes in an autonomous life."""
+        substrate = self.stage3.substrate
+        status = substrate.mortal_status
+        if status is None:
+            # Historical nonmortal reference fixtures retain their API.
+            return
+        if status.value != "active" or getattr(substrate.safety, "blocked", False):
+            raise RuntimeError("terminal or safety-blocked mortal cognitive mutation")
+        if self.scheduler.active_attempt is None:
+            raise RuntimeError("mortal cognitive mutation requires a live world step")
+
     def create_intention(self, intention) -> None:
-        if self.stage3.substrate.mortal_status is not None and self.stage3.substrate.mortal_status.value != "active":
-            raise RuntimeError("terminal mortal individual cannot create intentions")
+        self._require_active_mortal_causal_step()
         self.memory.create_intention(intention)
         attempt = self.scheduler.active_attempt
         if attempt is not None:
