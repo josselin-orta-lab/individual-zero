@@ -16,8 +16,21 @@ from typing import Mapping
 from i0.interfaces import PrimitiveCommand
 from i0.modules.action_control import PreparedCommand
 from i0.modules.competition import OptionEvidenceInput
-from i0.modules.consolidation_budget import ConsolidationBudgetConfig, ConsolidationWorkBudget
-from i0.modules.consolidation_transaction import ConsolidationSlot
+from i0.modules.consolidation_budget import (
+    ConsolidationBudgetConfig, ConsolidationWorkBudget,
+    select_batch_with_charged_work,
+)
+from i0.modules.consolidation_batch import (
+    BatchSelectionPolicy, ConsolidationBatchSelector, BatchSelectionBudgetError,
+)
+from i0.modules.consolidation_transaction import (
+    ConsolidationCut, ConsolidationTransaction, ConsolidationSlot, PASSES,
+)
+from i0.modules.consolidation_pass_runner import ConsolidationPassRunner
+from i0.modules.consolidation_replay_agenda import (
+    ReplayAgendaPolicy, ReplayAgendaBudgetError, build_charged_replay_agenda,
+)
+from i0.modules.consolidation_semantics import LivedSixPassAlgorithm, SemanticPassPolicy
 from i0.modules.sleep_competition import create_sleep_proposal, assemble_sleep_evidence
 from i0.modules.sleep_health import SleepHealth
 from i0.modules.sleep_pressure import SleepPressureConfig, WakeSignals
@@ -25,7 +38,9 @@ from i0.modules.sleep_reduced import reduced_sleep_capture
 from i0.modules.sleep_session import SleepSession
 from i0.modules.simulator import state_from_capture
 
-from .consolidation_publication import SlowHistory
+from .consolidation_publication import SlowHistory, Stage10PublicationCoordinator
+from .consolidation_lived_evidence import FrozenLivedReplayEvidence
+from .determinism import deterministic_id
 from .stage4_runtime import Stage4StepResult
 from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY
 from .stage9_runtime import Stage9Config, Stage9Runtime
@@ -46,6 +61,8 @@ class Stage10Config:
     critical_body_intensity: float
     critical_body_risk: float
     p_cons_min: float
+    selection_policy: BatchSelectionPolicy | None = None
+    semantic_policy: SemanticPassPolicy | None = None
 
     def validate(self) -> None:
         if not self.version:
@@ -53,6 +70,21 @@ class Stage10Config:
         self.stage9.validate()
         self.sleep.validate()
         self.sleep_work.validate()
+        if (self.selection_policy is None) != (self.semantic_policy is None):
+            raise ValueError("live consolidation policies must be supplied together")
+        if self.selection_policy is not None:
+            self.selection_policy.validate()
+            self.semantic_policy.validate()
+            costs = self.sleep_work.operation_costs
+            required = {
+                "semantic_plan_build", "replay_agenda_scan", "pass_prepare",
+                "pass_validate", "episode_scan", "episode_replay",
+                "rule_extraction", "skill_compilation", "kappa_recalibration",
+                "index_maintenance",
+            }
+            if (not required.issubset(costs)
+                    or costs["episode_scan"] != self.selection_policy.scan_uc_per_episode):
+                raise ValueError("live consolidation requires fully priced P-42 work")
         if (type(self.memory_reference_capacity) is not int
                 or self.memory_reference_capacity < 1
                 or type(self.sleep_option_uc) is not int or self.sleep_option_uc < 1):
@@ -180,6 +212,10 @@ class Stage10Runtime(Stage9Runtime):
         )
         self.consolidation = ConsolidationSlot()
         self.consolidation_work = ConsolidationWorkBudget(config.sleep_work)
+        self._consolidation_selector = (
+            None if config.selection_policy is None
+            else ConsolidationBatchSelector(config.selection_policy)
+        )
         self._preopened_waking_capture = None
         self._last_applied_decision = None
         self._last_sleep_proposal = None
