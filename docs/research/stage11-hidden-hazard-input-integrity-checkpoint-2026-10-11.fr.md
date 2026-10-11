@@ -51,3 +51,33 @@ Si ces vérifications passent, examiner l'effet réel de ces modifications sur l
 3. Traiter distinctement la conformité de rejeu dans l'environnement normatif **Python 3.11**, les Goldens, puis toute campagne scientifique nouvelle lorsque son protocole sera fixé.
 
 **Ne pas clôturer Stage 11 sur la seule base de ces ajouts. Stage 9 reste NO-GO scientifique.**
+
+## Addendum : danger activé puis retiré et deux snapshots (11 octobre 2026)
+
+**SHA du dernier code modifié (non validé) :** `2ba0a347b665d307b184c2f04c81c7045cda55a5`. **Cette section est uniquement un état de développement, pas un résultat d'exécution.**
+
+Le protocole `stage11-hidden-hazard-low-budget-snapshots-protocol.en.md` a été enrichi **avant le nouveau test**. `tests/test_stage11_hidden_hazard_budget_snapshots.py` inclut à présent `test_danger_appears_then_disappears_without_fabricated_knowledge` avec :
+
+- deux interventions techniques du monde à `(3,2)`, activation d'une zone dangereuse au pas 3, désactivation au pas 5 ;
+- un témoin recevant les mêmes dates d'intervention avec `active=False` pour les deux événements ;
+- deux configurations à budget cognitif versionné : `(Planning UC, Exploration UC)=(0,0)` et `(4,4)` ;
+- comparaison des décisions et captures **avant l'activation**, sans imposer l'identité des choix une fois les conséquences physiques possiblement divergentes ;
+- vérification au pas 4 que seul le monde exposé possède encore la zone dangereuse, puis au pas 5 que les deux mondes en sont dépourvus ;
+- deux snapshots périodiques complets sur le monde exposé, aux frontières des pas 4 et 5, restauration des états de **tous les propriétaires causaux** (y compris l'état du programme externe), journal append-only et hachages vérifiés ;
+- réexécution indépendante des six pas avec **exactement le même calendrier de snapshots** : les prises de snapshots sont elles-mêmes des événements techniques, de sorte que les omettre dans une réexécution empêcherait toute comparaison honnête des octets du journal.
+
+Le test ne prétend jamais que le retrait d'un danger du monde produit spontanément une connaissance sûre chez l'individu. Toute observation de ses conséquences doit rester ancrée dans la Perception et le comportement réellement exécuté.
+
+**À exécuter dès qu'un environnement local compatible est disponible :**
+
+```bash
+python -m unittest discover -s tests -p 'test_stage11_hidden_hazard_budget_snapshots.py' -v
+python -m unittest discover -s tests -p 'test_stage11_multistep_unknown_danger_budget.py' -v
+python -m unittest discover -s tests -p 'test_stage11_scenario_payload_custody.py' -v
+python -m unittest discover -s tests -p 'test_stage11_external_input_atomicity.py' -v
+python -m unittest discover -s tests -p 'test_stage11_scenario_snapshot_schedule.py' -v
+```
+
+**Limitation de validation inchangée :** le dépôt privé n'est pas accessible au clone Git depuis l'environnement local de cette session (résolution réseau indisponible), et GitHub Actions a précédemment retourné un échec de démarrage sans runner ni étape de test (exécution #38124663847). Aucun résultat de la suite indiquée ci-dessus ne doit être supposé. **Dernier PASS vérifié : 861/861 sur `2680283940c10c555238d55814146cb7a3c6129e` exclusivement.**
+
+**Stage 11 EN COURS ; Stage 9 NO-GO scientifique ; PR #25 Draft, non fusionnée.**
