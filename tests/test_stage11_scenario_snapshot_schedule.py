@@ -4,6 +4,7 @@ from unittest import TestCase
 
 from lab.injected_scenario import InjectedScenario, ScenarioEvent
 from lab.journal import HashChainedJournal
+from lab.snapshots import SnapshotType
 from lab.stage11_routed_junction_probe import build_public_route_runtime
 from lab.world import Position
 
@@ -88,6 +89,64 @@ class Stage11ScenarioSnapshotScheduleTests(TestCase):
             independently_instantiated.export_causal_state(), checkpoint,
         )
         self.assertTrue(journal.verify())
+
+
+    def test_runtime_full_owner_restore_rejects_different_scenario_atomically(self):
+        # Both runtimes use the same public world and scenario id/version,
+        # but different *external physical event* programs. A snapshot of
+        # the first must not partially overwrite the second one's life.
+        first = build_public_route_runtime(
+            scenario_events=SCHEDULE, survey_refresh=True,
+        )
+        alternative = (
+            ScenarioEvent(
+                t_monde=2, sequence=1, operation="set_position",
+                payload={"position": {"x": 3, "y": 2}},
+            ),
+            SCHEDULE[1],
+        )
+        second = build_public_route_runtime(
+            scenario_events=alternative, survey_refresh=True,
+        )
+        first.run_step()
+        snapshots = first.stage3.substrate.snapshots
+        saved = snapshots.take(
+            snapshot_type=SnapshotType.PERIODIC,
+            individual_id=first.individual_id,
+            t_monde=1, cycle=0, attempt_ref=None,
+            owners=first.causal_owners,
+            versions={"stage11": first._stage11_config.version},
+        )
+        second.run_step()
+        second.run_step()
+        before = {
+            owner.owner_id: deepcopy(owner.export_causal_state())
+            for owner in second.causal_owners
+        }
+        first_journal = first.journal.canonical_bytes()
+        second_journal = second.journal.canonical_bytes()
+        self.assertIn("scenario", before)
+        self.assertNotEqual(
+            before["scenario"]["events"], snapshots.export_payload(
+                saved.id,
+            )["owner_states"]["scenario"]["events"],
+        )
+        with self.assertRaisesRegex(
+            ValueError, "scenario event schedule mismatch",
+        ):
+            snapshots.restore(saved.id, owners=second.causal_owners)
+        self.assertEqual(
+            {
+                owner.owner_id: owner.export_causal_state()
+                for owner in second.causal_owners
+            },
+            before,
+        )
+        self.assertEqual(first.journal.canonical_bytes(), first_journal)
+        self.assertEqual(second.journal.canonical_bytes(), second_journal)
+        self.assertTrue(snapshots.verify(saved.id))
+        self.assertTrue(first.journal.verify())
+        self.assertTrue(second.journal.verify())
 
 
 if __name__ == "__main__":
