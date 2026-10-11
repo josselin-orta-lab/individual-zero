@@ -160,6 +160,11 @@ def audit_export_bytes(
     death_index: int | None = None
     death_attempt: tuple[int, str] | None = None
     commits = publications = deaths = 0
+    # Only committed, chronologically consecutive SlowHistory versions are
+    # accepted; technical claims do not themselves prove a semantic learning.
+    latest_history_version: str | None = None
+    activated_versions: set[str] = set()
+    activated_transactions: set[str] = set()
     examined = set()
     all_kinds = set()
 
@@ -254,9 +259,35 @@ def audit_export_bytes(
         if kind == "stage10_consolidation_version_activated":
             examined.add(kind)
             publications += 1
+            if event.get("emitter") != "scheduler":
+                raise ValueError("consolidation activation must be scheduler-owned")
             data = event.get("data")
             if not isinstance(data, dict):
                 raise ValueError("consolidation has no provenance data")
+            source_version = data.get("source_history_version")
+            new_version = data.get("new_history_version")
+            transaction_id = data.get("consolidation_id")
+            if any(type(item) is not str or not item for item in (
+                source_version, new_version, transaction_id,
+            )):
+                raise ValueError("consolidation missing history version or transaction")
+            if (source_version == new_version
+                    or new_version in activated_versions
+                    or transaction_id in activated_transactions):
+                raise ValueError("duplicate/reused consolidation version or transaction")
+            if (latest_history_version is not None
+                    and source_version != latest_history_version):
+                raise ValueError("consolidated history version lineage is broken")
+            for digest_name in ("batch_digest", "candidate_digest"):
+                digest_value = data.get(digest_name)
+                if (type(digest_value) is not str
+                        or _HASH.fullmatch(digest_value) is None):
+                    raise ValueError("consolidation has an invalid digest")
+            batch = data.get("batch")
+            if (not isinstance(batch, list)
+                    or any(type(ref) is not str or not ref for ref in batch)
+                    or len(set(batch)) != len(batch)):
+                raise ValueError("consolidation batch needs unique episode references")
             cut = data.get("cut")
             if not isinstance(cut, dict):
                 raise ValueError("consolidation has no verified cut")
@@ -268,14 +299,29 @@ def audit_export_bytes(
                 raise ValueError("invalid consolidation journal cut index")
             if rows[ci]["event_id"] != cid or rows[ci]["event_hash"] != ch:
                 raise ValueError("false consolidation cut identity or hash")
+            cut_step = cut.get("world_step")
+            origin_step = rows[ci]["causal_event"].get("t_monde")
+            if (type(cut_step) is not int or cut_step < 1
+                    or type(t) is not int or cut_step > t
+                    or type(origin_step) is not int
+                    or not 1 <= origin_step <= cut_step):
+                raise ValueError("invalid consolidation cut world-step provenance")
+            if cut.get("history_version") != source_version:
+                raise ValueError("consolidation cut history version does not match source")
             end_index = data.get("postcut_journal_end_index")
             end_hash = data.get("postcut_journal_end_hash")
+            # Stage10PublicationCoordinator.publish() validates that no
+            # event, including a learned post-cut delta, arrived after its
+            # frozen end. Its activation must directly follow that end.
             if (type(end_index) is not int or
-                    end_index < ci or end_index >= number or
+                    end_index < ci or end_index != number - 1 or
                     rows[end_index]["event_hash"] != end_hash):
-                raise ValueError("false Stage10 postcut journal provenance")
+                raise ValueError("Stage10 postcut freeze is not the latest causal head")
             if data.get("commit_index") != number:
                 raise ValueError("consolidation activation index mismatch")
+            latest_history_version = new_version
+            activated_versions.add(new_version)
+            activated_transactions.add(transaction_id)
 
         by_id[event_id] = (number, event, digest)
         rows.append(row)
@@ -322,8 +368,21 @@ def audit_export_bytes(
                     raise ValueError("terminal physical state disagrees with recorded outcome")
             elif terminal or (death_index is not None and step >= death_attempt[0]):
                 raise ValueError("nonterminal step or cognition after a death")
-            if outcome == "normal" and len(autobios) != 1:
-                raise ValueError("nonlethal physical step lacks autobiographical commit")
+            if outcome == "normal":
+                if len(autobios) != 1:
+                    raise ValueError("nonlethal physical step lacks autobiographical commit")
+                commit_index, commit_event = autobios[0]
+                if not transitions[0][0] < commit_index < closes[0][0]:
+                    raise ValueError("autobiographical commitment precedes physical effect")
+                refs = commit_event.get("event_refs")
+                required = {
+                    rows[commands[0][0]]["event_id"],
+                    rows[transitions[0][0]]["event_id"],
+                }
+                if not isinstance(refs, list) or not required.issubset(refs):
+                    raise ValueError(
+                        "applied physical Memory commit omits command/transition"
+                    )
         elif outcome in ("blocked", "external_stop"):
             if (data.get("applied_command_count"),
                     data.get("world_advance_count")) != (0, 0):
