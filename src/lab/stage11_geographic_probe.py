@@ -30,10 +30,12 @@ class PublicGeographicCoverage:
     equipment_version: str
     initial_body: dict[str, float]
     stage9_distinct_perceived_sites: int
+    stage11_without_geography_distinct_sites: int
     stage11_distinct_perceived_sites: int
     stage11_confirmed_distinct_visits: int
     stage11_visit_count: int
     stage9_applied_geographic_moves: int
+    stage11_without_geography_applied_moves: int
     stage11_applied_geographic_moves: int
     stage11_applied_north_moves: int
     stage11_frontier_proposals: int
@@ -41,6 +43,7 @@ class PublicGeographicCoverage:
     stage11_autonomous_options_evaluated: int
     stage11_witnessed_positions: tuple[tuple[int, int], ...]
     stage9_journal_sha256: str
+    stage11_without_geography_journal_sha256: str
     stage11_journal_sha256: str
     scientific_verdict: None = None
     heldout: bool = False
@@ -78,6 +81,7 @@ def run_public_geographic_coverage(*, steps: int = 8) -> PublicGeographicCoverag
         raise ValueError("only bounded public geographic software runs supported")
     reference = build_stage9_reference_runtime()
     prepared = build_stage11_reference_runtime(enable_geography=True)
+    neutral = build_stage11_reference_runtime(enable_geography=False)
     world_config = replace(
         reference.world.config, initial_body=START_BODY,
     )
@@ -97,14 +101,20 @@ def run_public_geographic_coverage(*, steps: int = 8) -> PublicGeographicCoverag
     new = Stage11Runtime(
         config=prepared._stage11_config, **shared,
     )
+    ablation = Stage11Runtime(
+        config=neutral._stage11_config, **shared,
+    )
     old_results = [old.run_step() for _ in range(steps)]
+    ablation_results = [ablation.run_step() for _ in range(steps)]
     new_results = [new.run_step() for _ in range(steps)]
-    if not old.journal.verify() or not new.journal.verify():
+    if (not old.journal.verify() or not new.journal.verify()
+        or not ablation.journal.verify()):
         raise AssertionError("geographic contrast journal integrity failed")
     physical = _positions(new)
     baseline = _positions(old)
+    neutral_positions = _positions(ablation)
     geo = new.exploration.geographic
-    if geo is None or not physical or not baseline:
+    if geo is None or not physical or not baseline or not neutral_positions:
         raise AssertionError("missing published perception or geographic owner")
     geo_snapshot = new.exploration.export_causal_state()["geography"]
     sites = {tuple(row[:2]) for row in geo_snapshot["visits"]}
@@ -149,6 +159,7 @@ def run_public_geographic_coverage(*, steps: int = 8) -> PublicGeographicCoverag
             "integrity": float(START_BODY.integrity),
         },
         stage9_distinct_perceived_sites=len(set(baseline)),
+        stage11_without_geography_distinct_sites=len(set(neutral_positions)),
         stage11_distinct_perceived_sites=len(set(physical)),
         stage11_confirmed_distinct_visits=geo.distinct_sites,
         stage11_visit_count=geo.visit_count,
@@ -157,6 +168,12 @@ def run_public_geographic_coverage(*, steps: int = 8) -> PublicGeographicCoverag
             and outcome.option_ref is not None
             and outcome.option_ref.startswith("option:geographic:")
             for outcome in old_results
+        ),
+        stage11_without_geography_applied_moves=sum(
+            outcome.execution_status == "applied"
+            and outcome.option_ref is not None
+            and outcome.option_ref.startswith("option:geographic:")
+            for outcome in ablation_results
         ),
         stage11_applied_geographic_moves=len(geographic_moves),
         stage11_applied_north_moves=sum(
@@ -172,6 +189,7 @@ def run_public_geographic_coverage(*, steps: int = 8) -> PublicGeographicCoverag
         stage11_autonomous_options_evaluated=len(evaluated),
         stage11_witnessed_positions=physical,
         stage9_journal_sha256=old.journal.head_hash,
+        stage11_without_geography_journal_sha256=ablation.journal.head_hash,
         stage11_journal_sha256=new.journal.head_hash,
     )
 
