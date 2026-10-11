@@ -31,7 +31,7 @@ from lab.world import (
 )
 
 
-def build_stage4_reference_runtime() -> Stage4Runtime:
+def build_stage4_reference_runtime(*, autonomous_mortal=False) -> Stage4Runtime:
     world = WorldPhysicsConfig(
         version="stage4-reference-world-v1",
         width=32,
@@ -196,4 +196,5 @@ def build_stage4_reference_runtime() -> Stage4Runtime:
         safety_facts=StaticSafetyFacts(),
         protected_integrity_threshold=20.0,
         config=stage4,
+        autonomous_mortal=autonomous_mortal,
     )

@@ -12,6 +12,7 @@ def build_stage11_reference_runtime(
     *, enable_lived_prediction: bool = False,
     enable_geography: bool = False,
     enable_local_threats: bool = False,
+    autonomous_mortal: bool = False,
 ):
     # Both new mechanisms require explicit development-only opt-in.
     if (
@@ -78,4 +79,5 @@ def build_stage11_reference_runtime(
             ),
         ),
         equipment=baseline.equipment,
+        autonomous_mortal=autonomous_mortal,
     )

@@ -4,7 +4,7 @@ from i0.modules.consolidation_budget import ConsolidationBudgetConfig
 from .stage9_reference_fixture import build_stage9_reference_runtime
 from .stage10_runtime import Stage10Runtime, Stage10Config
 
-def build_stage10_reference_runtime(*, start_fatigued=False):
+def build_stage10_reference_runtime(*, start_fatigued=False, autonomous_mortal=False):
     base = build_stage9_reference_runtime()
     runtime = Stage10Runtime(
         world_config=base.world.config,
@@ -40,6 +40,7 @@ def build_stage10_reference_runtime(*, start_fatigued=False):
             p_cons_min=0.5,
         ),
         equipment=base.equipment,
+        autonomous_mortal=autonomous_mortal,
     )
     if start_fatigued:
         state = runtime.sleep_health.export_causal_state()
