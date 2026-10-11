@@ -63,6 +63,15 @@ class SnapshotManager:
         self._journal = journal
         self._snapshots: dict[str, _StoredSnapshot] = {}
         self._journal_sequence = 0
+        self._life_restoration_forbidden = False
+
+    def forbid_life_restoration(self) -> None:
+        """Permanently disable historical restoration for a mortal instance.
+
+        Snapshot export for a distinct experimental copy remains available.
+        This flag is monotonic and is not itself restorable state.
+        """
+        self._life_restoration_forbidden = True
 
     def _write_journal(
         self,
@@ -109,6 +118,11 @@ class SnapshotManager:
         scenario_state: object | None = None,
         context: Mapping[str, object] | None = None,
     ) -> SnapshotRecord:
+        if (
+            self._life_restoration_forbidden
+            and snapshot_type is SnapshotType.LETHAL_CHECKPOINT
+        ):
+            raise RuntimeError("lethal checkpoints are forbidden for mortal lives")
         if not individual_id:
             raise ValueError("individual_id must not be empty")
         if t_monde < 0 or cycle < 0:
@@ -201,6 +215,8 @@ class SnapshotManager:
         *,
         owners: Sequence[CausalStateOwner],
     ) -> SnapshotRecord:
+        if self._life_restoration_forbidden:
+            raise RuntimeError("historical life restoration is forbidden")
         stored = self._snapshots.get(snapshot_id)
         if stored is None:
             raise KeyError(f"unknown snapshot: {snapshot_id}")

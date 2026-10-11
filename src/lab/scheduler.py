@@ -261,7 +261,7 @@ class Scheduler:
         if self._active_attempt is None:
             raise RuntimeError("cannot close a world step when none is active")
 
-        if outcome == "normal":
+        if outcome in {"normal", "dead"}:
             expected = (1, 1)
         elif outcome in {"blocked", "external_stop"}:
             expected = (0, 0)

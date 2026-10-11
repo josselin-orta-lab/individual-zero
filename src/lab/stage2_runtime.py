@@ -21,6 +21,7 @@ from .journal_views import (
     JournalViews,
 )
 from .oracle import create_oracle
+from .mortal_execution import MortalStatus, MortalWorldBoundary
 from .safety_protocol import (
     LethalHandlingResult,
     LethalSafetyProtocol,
@@ -47,7 +48,7 @@ STAGE2_AUTOBIOGRAPHICAL_POLICY = AutobiographicalPolicy(
 
 @dataclass(frozen=True, slots=True)
 class CommandExecution:
-    status: str  # applied | rolled_back | safety_block | masked
+    status: str  # applied | dead (opt-in v1.3) | rolled_back | safety_block | masked
     transition: TransitionResult | None
     lethal_handling: LethalHandlingResult | None
 
@@ -88,6 +89,7 @@ class ScriptedStage2Runtime:
             journal=self.journal,
             bench=self.bench,
         )
+        self._mortal_boundary: MortalWorldBoundary | None = None
         if scenario_id is None and (scenario_version is not None or scenario_events):
             raise ValueError("scenario_id is required when scenario data is supplied")
         if scenario_id is not None and scenario_version is None:
@@ -110,7 +112,34 @@ class ScriptedStage2Runtime:
             owners.append(self.scenario)
         return tuple(owners)
 
+    def enable_mortal_world(self) -> None:
+        """Opt into irreversible mortality before the first world step.
+
+        Historical v1.2.1 mode stays unchanged until its regression fixtures
+        have been migrated. No switching the safety contract midlife.
+        """
+        if (
+            self._mortal_boundary is not None
+            or self.scheduler.t_monde != 0
+            or self.scheduler.active_attempt is not None
+        ):
+            raise RuntimeError("mortal runtime must be selected before birth")
+        self._mortal_boundary = MortalWorldBoundary(world=self.world)
+        self.snapshots.forbid_life_restoration()
+
+    @property
+    def mortal_status(self) -> MortalStatus | None:
+        return (
+            None if self._mortal_boundary is None
+            else self._mortal_boundary.status
+        )
+
     def open_step(self) -> None:
+        if (
+            self._mortal_boundary is not None
+            and self._mortal_boundary.status is not MortalStatus.ACTIVE
+        ):
+            raise RuntimeError("dead or halted individual cannot advance")
         # A rejected external input is a stopped branch, not an omitted
         # event to be silently skipped in a later world step.
         if self.scenario is not None and self.scenario.halted:
@@ -185,6 +214,67 @@ class ScriptedStage2Runtime:
         )
         return event_id
 
+    def _send_mortal_command(
+        self,
+        command: Command,
+        *,
+        source: str,
+        event_emitter: str | None,
+        autobiographical_policy: AutobiographicalPolicy | None,
+        extra_autobiographical_event_refs: tuple[str, ...],
+    ) -> CommandExecution:
+        """Physically execute once, with no lethal snapshot, rewind or mask."""
+        boundary = self._mortal_boundary
+        attempt = self.scheduler.active_attempt
+        if boundary is None or attempt is None:
+            raise RuntimeError("mortal command requires active world step")
+        if boundary.status is not MortalStatus.ACTIVE:
+            raise RuntimeError("dead or halted individual cannot act")
+        try:
+            command_ref = self._write_command_event(
+                command=command, emitter=event_emitter or source,
+            )
+            physical = boundary.execute(command, t_monde=attempt.t_monde)
+            physical_ref = self._write_transition_event(physical.transition)
+            if physical.status == "dead":
+                self.bench.count_lethal_transition(data={
+                    "t_monde": physical.transition.t_monde,
+                    "command_hash": command_digest(command),
+                    "reasons": list(physical.transition.lethal_reasons),
+                })
+                self.scheduler.close_step(
+                    outcome="dead", applied_command_count=1,
+                    world_advance_count=1,
+                )
+                return CommandExecution(
+                    status="dead", transition=physical.transition,
+                    lethal_handling=None,
+                )
+            self.views.commit_autobiographical(
+                t_monde=attempt.t_monde,
+                attempt_ref=attempt.attempt_ref,
+                event_refs=(tuple(extra_autobiographical_event_refs)
+                            + (command_ref, physical_ref)),
+                policy=(
+                    STAGE2_AUTOBIOGRAPHICAL_POLICY
+                    if autobiographical_policy is None
+                    else autobiographical_policy
+                ),
+            )
+            self.scheduler.close_step(
+                outcome="normal", applied_command_count=1,
+                world_advance_count=1,
+            )
+            return CommandExecution(
+                status="applied", transition=physical.transition,
+                lethal_handling=None,
+            )
+        except Exception:
+            # A failed receipt after physical execution is uncertain: never
+            # replay the command or restore the world as compensation.
+            boundary.halt(failed_step=attempt.t_monde)
+            raise
+
     def send_admitted_command(
         self,
         command: Command,
@@ -208,6 +298,15 @@ class ScriptedStage2Runtime:
             raise RuntimeError("open_step must be called before command send")
         if self.safety.blocked:
             raise RuntimeError("branch is in safety block")
+
+        if self._mortal_boundary is not None:
+            return self._send_mortal_command(
+                command,
+                source=source,
+                event_emitter=event_emitter,
+                autobiographical_policy=autobiographical_policy,
+                extra_autobiographical_event_refs=extra_autobiographical_event_refs,
+            )
 
         if self.safety.is_masked(command):
             self.journal.append(
