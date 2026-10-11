@@ -27,6 +27,20 @@ _OWNER_EVENTS = {
         "causal_prediction_corrections_published",
     }),
 }
+# The existing Stage-8/9 runtime publishes kappa and causal updates via
+# Stage4Runtime._write, whose *technical* emitter is "stage4-runtime".
+# The causal owner is not the journal emitter. Never silently drop them.
+_RUNTIME_OWNER_EVENTS = {
+    ("stage4-runtime", "kappa_update_published"): "metacognition_health",
+    ("stage4-runtime", "causal_inference_status_published"): "causal_model",
+    ("stage4-runtime", "causal_safety_status_published"): "causal_model",
+    ("stage4-runtime", "causal_prediction_corrections_published"): "causal_model",
+}
+# Stage8 publishes precision directly with these fields at the event root,
+# unlike every other online update, which carries a nested "data" object.
+_PRECISION_ROOT_FIELDS = (
+    "source", "verification_ref", "before", "after", "precision_version",
+)
 
 
 @dataclass(frozen=True)
@@ -96,13 +110,24 @@ class Stage10PostCutJournal:
         items: list[VerifiedOnlineUpdate] = []
         for event in entries[cut.journal_index + 1:]:
             record = event.causal_event
-            owner, kind = record.get("emitter"), record.get("kind")
-            if owner not in _OWNER_EVENTS or kind not in _OWNER_EVENTS[owner]:
+            emitter, kind = record.get("emitter"), record.get("kind")
+            owner = _RUNTIME_OWNER_EVENTS.get((emitter, kind))
+            if owner is None:
+                owner = (emitter if emitter in _OWNER_EVENTS
+                         and kind in _OWNER_EVENTS[emitter] else None)
+            if owner is None:
                 continue
             t = record.get("t_monde")
             if type(t) is not int or t < cut.world_step:
                 raise ValueError("postcut published owner event predates cut")
-            payload = record.get("data")
+            if kind == "perceptual_precision_update_published" and (
+                emitter == "perception" and "data" not in record
+            ):
+                if not all(key in record for key in _PRECISION_ROOT_FIELDS):
+                    raise ValueError("precision publication missing mandatory root fields")
+                payload = {key: record[key] for key in _PRECISION_ROOT_FIELDS}
+            else:
+                payload = record.get("data")
             if not isinstance(payload, Mapping):
                 raise ValueError("published online owner event needs typed data")
             items.append(VerifiedOnlineUpdate(
