@@ -57,10 +57,16 @@ class Exploration:
     def geographic(self) -> GeographicExploration | None:
         return self._geographic
 
-    def geographic_cibles(self, capture, *, degraded=False):
+    def geographic_cibles(
+        self, capture, *, degraded=False,
+        inadmissible_directions: frozenset[str] = frozenset(),
+    ):
         if self._geographic is None:
             return ()
-        return self._geographic.cibles(capture, degraded=degraded)
+        return self._geographic.cibles(
+            capture, degraded=degraded,
+            inadmissible_directions=inadmissible_directions,
+        )
 
     def observe_geographic_capture(self, capture, *, frozen_targets=()):
         if self._geographic is None:
