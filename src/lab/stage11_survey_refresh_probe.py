@@ -34,6 +34,7 @@ class PublicSurveyRefreshTrace:
     recorded_survey_steps: tuple[int, ...]
     survey_revisions: tuple[dict[str, object], ...]
     route_candidate_steps: tuple[int, ...]
+    route_candidate_step_cycles: tuple[tuple[int, int], ...]
     route_proposal_steps: tuple[int, ...]
     applied_route_steps: tuple[int, ...]
     applied_route_into_occupied_neighbor: int
@@ -166,6 +167,7 @@ def run_public_survey_refresh(
                     raise AssertionError("uncharged Phase-1 survey revision")
                 revision_events.append({
                     "world_step": e["t_monde"],
+                    "cycle": e["cycle"],
                     "position": data["position"],
                     "old_neighbors": data["previous_free_neighbors"],
                     "new_neighbors": data["observed_free_neighbors"],
@@ -235,6 +237,11 @@ def run_public_survey_refresh(
         survey_revisions=tuple(revision_events),
         route_candidate_steps=tuple(
             e["t_monde"] for e in entries
+            if e.get("kind") == "stage11_route_search"
+            and e["data"]["route_found"] is True
+        ),
+        route_candidate_step_cycles=tuple(
+            (e["t_monde"], e["cycle"]) for e in entries
             if e.get("kind") == "stage11_route_search"
             and e["data"]["route_found"] is True
         ),
