@@ -107,6 +107,8 @@ _AUTHORIZED_LIVED_FIELDS = {
 
 def validate_lived_kind_fields(kind: str, fields: object) -> None:
     """Do not allow custom policies to elevate technical events to memory."""
+    if type(kind) is not str or not kind:
+        raise ValueError("autobiographical event kind must be a nonempty name")
     allowed = _AUTHORIZED_LIVED_FIELDS.get(kind)
     if allowed is None:
         raise ValueError("technical event kind cannot become autobiographical")
