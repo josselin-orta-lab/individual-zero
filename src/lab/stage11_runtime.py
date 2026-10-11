@@ -39,6 +39,9 @@ class Stage11Config:
     # Public development-only matched legacy/no-prefilter compatibility
     # ablation. Default True when geography is enabled; veto unchanged.
     geographic_preflight: bool = True
+    # v4: gate the 1-UC preflight on an existing *raw* physical frontier.
+    # False pins the eager-v3 software comparison. No safety cache.
+    geographic_preflight_requires_frontier: bool = True
     # Local physically perceived risk alerts; historical vNext reference OFF.
     local_threat_alerts: bool = False
 
@@ -55,6 +58,8 @@ class Stage11Config:
             self.geographic.validate()
         if type(self.geographic_preflight) is not bool:
             raise ValueError("geographic safety preflight flag must be bool")
+        if type(self.geographic_preflight_requires_frontier) is not bool:
+            raise ValueError("geographic frontier preflight gate flag must be bool")
         if type(self.local_threat_alerts) is not bool:
             raise ValueError("local threat sensor switch must be boolean")
         if not isfinite(self.intrinsic_weight) or self.intrinsic_weight < 0:
@@ -81,7 +86,16 @@ class Stage11Config:
         stage4 = stage6.stage4
         budget = stage4.compute_budget
         amended = replace(
-            budget, version=budget.version + "+" + self.version,
+            budget, version=(
+                budget.version + "+" + self.version
+                + (
+                    "+geographic-demand-preflight-v1"
+                    if (self.geographic is not None
+                        and self.geographic_preflight
+                        and self.geographic_preflight_requires_frontier)
+                    else ""
+                )
+            ),
             module_envelopes={
                 **budget.module_envelopes,
                 "exploration": self.exploration_envelope_uc,
@@ -202,7 +216,7 @@ class Stage11Runtime(Stage9Runtime):
         # Captured before phase 1. The next cycle reads it via frozen S_t.
         return {"modulation_signals": dict(self._stage11_modulation_signals)}
 
-    def _geographic_frontier_targets(self, capture):
+    def _geographic_frontier_targets(self, capture, *, raw_targets=None):
         """Use Action Control's published *contextual* admissibility service.
 
         EN normative §9.4 allows early Planning filtering of definitely
@@ -213,11 +227,21 @@ class Stage11Runtime(Stage9Runtime):
         """
         if self.exploration.geographic is None:
             return (), ()
+        if raw_targets is None:
+            raw_targets = self.exploration.geographic_cibles(capture)
         if not self._stage11_config.geographic_preflight:
             # Controlled replay of the pre-v3 geometric target construction.
             # Only an early Planning optimization is absent. The final
             # canonical Action Control veto is NEVER switched off.
-            return self.exploration.geographic_cibles(capture), ()
+            return raw_targets, ()
+        if (
+            self._stage11_config.geographic_preflight_requires_frontier
+            and not raw_targets
+        ):
+            # A bounded read of *existing* Exploration/Perception state
+            # proves only absence of a currently NEW navigable frontier.
+            # It does not classify any location as safe or dangerous.
+            return (), ()
         forbidden = []
         for cell in capture.adjacent:
             if cell.passable is not True or cell.creature is True:
@@ -247,8 +271,15 @@ class Stage11Runtime(Stage9Runtime):
         frozen = self.causal_model.export_causal_state()
         # Read-only frontier inputs are frozen BEFORE phase-1. No Planning
         # producer may read Exploration output from the same phase (INV-08).
+        raw_geo_targets = self.exploration.geographic_cibles(capture)
         frozen_geo_targets, excluded_geo = self._geographic_frontier_targets(
-            capture,
+            capture, raw_targets=raw_geo_targets,
+        )
+        demand_skip_geo_preflight = (
+            self.exploration.geographic is not None
+            and self._stage11_config.geographic_preflight
+            and self._stage11_config.geographic_preflight_requires_frontier
+            and not raw_geo_targets
         )
         self._stage11_prospective_state = frozen
         self._stage11_prospective_capture = (
@@ -468,6 +499,22 @@ class Stage11Runtime(Stage9Runtime):
             # four-neighbor read-only safety-service preflight per cycle.
             # No hidden uncharged cognitive work or transfer from protected
             # Action Control capacity. Inadequate budget means NO targets.
+            if demand_skip_geo_preflight:
+                # Technical accounting only. No missing-budget claim and no
+                # false "safe" classification, target or learning reward.
+                self._write(
+                    kind="stage11_geographic_preflight_skipped",
+                    cycle=cycle,
+                    data={
+                        "reason": "no_currently_novel_accessible_frontier",
+                        "source": "perception_and_physical_visit_ledger",
+                        "world_step": capture.t_monde,
+                        "preflight_uc_avoided_against_eager": 1,
+                        "safety_decision": None,
+                        "cached": False,
+                    },
+                )
+                return
             if self._stage11_config.geographic_preflight:
                 if not self._charge(
                     module="planning",
