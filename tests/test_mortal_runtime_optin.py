@@ -23,6 +23,22 @@ def fatal_current_cell(runtime) -> None:
     )
 
 
+def fatal_neighborhood(runtime) -> None:
+    """Make any admissible move or wait from the starting tile truly lethal."""
+    position = runtime.world.position
+    for x, y in (
+        (position.x, position.y),
+        (position.x + 1, position.y),
+        (position.x - 1, position.y),
+        (position.x, position.y + 1),
+        (position.x, position.y - 1),
+    ):
+        runtime.world.apply_scenario_event(
+            "set_lethal_zone",
+            {"position": {"x": x, "y": y}, "active": True},
+        )
+
+
 def enable(runtime) -> None:
     runtime.stage3.substrate.enable_mortal_world()
 
@@ -78,7 +94,7 @@ class MortalRuntimeIntegrationTests(unittest.TestCase):
     def test_stage4_cognitive_step_reports_terminal_without_retry(self):
         runtime = build_stage4_reference_runtime()
         enable(runtime)
-        fatal_current_cell(runtime)
+        fatal_neighborhood(runtime)
         result = runtime.run_step()
         self.assertEqual(result.execution_status, "dead")
         self.assertGreaterEqual(result.cycles_used, 1)
@@ -103,7 +119,7 @@ class MortalRuntimeIntegrationTests(unittest.TestCase):
     def test_stage10_sleep_owner_cannot_continue_after_fatal_waking_step(self):
         runtime = build_stage10_reference_runtime()
         enable(runtime)
-        fatal_current_cell(runtime)
+        fatal_neighborhood(runtime)
         result = runtime.run_step()
         self.assertEqual(result.execution_status, "dead")
         self.assertEqual(runtime.stage3.substrate.mortal_status, MortalStatus.DEAD)
@@ -114,7 +130,7 @@ class MortalRuntimeIntegrationTests(unittest.TestCase):
     def test_stage11_exploration_stops_after_dead_world_transition(self):
         runtime = build_stage11_reference_runtime(enable_geography=True)
         enable(runtime)
-        fatal_current_cell(runtime)
+        fatal_neighborhood(runtime)
         result = runtime.run_step()
         self.assertEqual(result.execution_status, "dead")
         self.assertEqual(runtime.stage3.substrate.mortal_status, MortalStatus.DEAD)
