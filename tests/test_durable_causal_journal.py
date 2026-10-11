@@ -59,6 +59,34 @@ class DurableJournalTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 HashChainedJournal.audit_durable_wal(path)
 
+    def test_operator_cli_audits_wal_without_runtime_imports_and_trusted_anchor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = str(Path(directory) / "operator-life.jsonl")
+            journal = HashChainedJournal()
+            journal.enable_durable_wal(path=path)
+            for i in (1, 2, 3):
+                journal.append(
+                    event_id=f"unexamined-lived:{i}",
+                    causal_event={"kind": "unexamined_lived", "t_monde": i},
+                )
+            verifier = (
+                Path(__file__).resolve().parents[1]
+                / "scripts" / "verify_i0_journal.py"
+            )
+            args = [
+                sys.executable, str(verifier), path, "--durable-wal",
+                "--expected-head", journal.head_hash,
+                "--expected-count", "3",
+            ]
+            good = subprocess.run(args, capture_output=True, text=True)
+            self.assertEqual(good.returncode, 0, good.stdout + good.stderr)
+            self.assertIn('"valid": true', good.stdout)
+            truncated = Path(path).read_bytes().splitlines(keepends=True)[:-1]
+            Path(path).write_bytes(b"".join(truncated))
+            failed = subprocess.run(args, capture_output=True, text=True)
+            self.assertEqual(failed.returncode, 1)
+            self.assertIn('"valid": false', failed.stdout)
+
     def test_activation_is_birth_only_and_io_failure_poison_is_permanent(self):
         with tempfile.TemporaryDirectory() as directory:
             old = HashChainedJournal()
