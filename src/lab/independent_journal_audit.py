@@ -387,8 +387,15 @@ def audit_export_bytes(
             if (data.get("applied_command_count"),
                     data.get("world_advance_count")) != (0, 0):
                 raise ValueError("stopped step claims nonexistent world advance")
-            if transitions or terminal:
-                raise ValueError("stopped step contains physical terminal transition")
+            # A blocked or externally stopped world step has executed no
+            # admitted command. A syntactically valid rehashed archive must
+            # not relabel a sent command, lived commitment or physical effect
+            # as a harmless zero-advance stop.
+            if commands or autobios or transitions or terminal:
+                raise ValueError(
+                    "stopped step contains executed command, autobiographical "
+                    "commit or physical transition"
+                )
         else:
             raise ValueError("unknown world-step closure status")
     if sorted(open_steps) != sorted(closed_steps):
