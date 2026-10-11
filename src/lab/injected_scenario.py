@@ -243,6 +243,123 @@ class InjectedScenario:
 
         return tuple(deepcopy(event) for event in applied)
 
+    def apply_for_step_irreversible(
+        self, *, t_monde: int, world: WorldBody,
+    ) -> tuple[ScenarioEvent, ...]:
+        """Prepare a whole external batch privately, then commit without rewind.
+
+        v1.3 opt-in only. The physical world is unchanged while the detached
+        candidate is being validated. Once publication starts, *no* failure
+        attempts to restore a prior living state. A failed receipt stops the
+        entire runtime through the caller's technical-halt boundary.
+
+        All scenario evidence stays in the Lab. No individual is given the
+        future schedule, the private candidate or an oracle read.
+        """
+        if self.halted:
+            raise RuntimeError("halted external scenario cannot continue")
+        if type(t_monde) is not int or t_monde < 1:
+            raise ValueError("invalid scenario world step")
+        start = self._next_index
+        due: list[ScenarioEvent] = []
+        for event in self._events[start:]:
+            if event.t_monde > t_monde:
+                break
+            if event.t_monde < t_monde:
+                raise RuntimeError("scenario event was skipped before application")
+            due.append(event)
+        if not due:
+            return ()
+
+        # Private candidate construction is not a rollback of the living
+        # world. It is an uncommitted proposal under the world owner's rules.
+        publication_attempted = False
+        published = False
+        try:
+            candidate = deepcopy(world)
+            for event in due:
+                candidate.apply_scenario_event(
+                    event.operation, deepcopy(dict(event.payload)),
+                )
+            proposed_state = candidate.export_causal_state()
+            canonical_causal_bytes(proposed_state)
+
+            for event in due:
+                self._journal.append(
+                    event_id=deterministic_id(
+                        "journal-event-v1", "scenario", self._scenario_id,
+                        self._version, event.t_monde, event.sequence,
+                    ),
+                    causal_event={
+                        "emitter": "scenario",
+                        "kind": "external_input_received",
+                        "scenario_id": self._scenario_id,
+                        "scenario_version": self._version,
+                        "t_monde": event.t_monde,
+                        "sequence": event.sequence,
+                        "operation": event.operation,
+                        "payload": deepcopy(dict(event.payload)),
+                    },
+                )
+
+            # WorldBody.restore_causal_state validates all fields before its
+            # first assignment. Here it publishes a NEW prepared state only;
+            # it never rewinds an already committed physical transition.
+            publication_attempted = True
+            world.restore_causal_state(proposed_state)
+            published = True
+            self._next_index = start + len(due)
+            for event in due:
+                self._journal.append(
+                    event_id=deterministic_id(
+                        "journal-event-v1", "scenario", self._scenario_id,
+                        self._version, event.t_monde, event.sequence, "applied",
+                    ),
+                    causal_event={
+                        "emitter": "scenario",
+                        "kind": "external_input_applied",
+                        "scenario_id": self._scenario_id,
+                        "scenario_version": self._version,
+                        "t_monde": event.t_monde,
+                        "sequence": event.sequence,
+                    },
+                )
+            return tuple(deepcopy(event) for event in due)
+        except Exception as original:
+            # A publication failure is potentially a partial external
+            # transition. Even after an invalid private proposal, fail closed.
+            # NEVER call world.restore_causal_state(previous_state).
+            self._rejected_event = (due[0].t_monde, due[0].sequence)
+            self._next_index = start
+            try:
+                self._journal.append(
+                    event_id=deterministic_id(
+                        "journal-event-v1", "scenario", self._scenario_id,
+                        self._version, due[0].t_monde, due[0].sequence,
+                        "irreversible-halt",
+                    ),
+                    causal_event={
+                        "emitter": "scenario",
+                        "kind": "external_input_batch_halted",
+                        "scenario_id": self._scenario_id,
+                        "scenario_version": self._version,
+                        "t_monde": due[0].t_monde,
+                        "sequence": due[0].sequence,
+                        "input_count": len(due),
+                        "world_publication_attempted": publication_attempted,
+                        "world_publication_confirmed": published,
+                        "error_type": type(original).__name__,
+                    },
+                )
+            except Exception:
+                # If the journal itself is unavailable, a missing receipt
+                # is not permission to resume or to re-apply the batch.
+                pass
+            raise ScenarioInputRejected(
+                "irreversible external scenario halted; no world rewind"
+            ) from original
+
+
     def export_causal_state(self) -> object:
         state = {
             "scenario_id": self._scenario_id,
