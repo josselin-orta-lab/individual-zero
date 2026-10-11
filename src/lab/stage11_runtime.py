@@ -216,6 +216,36 @@ class Stage11Runtime(Stage9Runtime):
         # Captured before phase 1. The next cycle reads it via frozen S_t.
         return {"modulation_signals": dict(self._stage11_modulation_signals)}
 
+    def _suspend_geographic_budget_targets(
+        self, *, capture, cycle: int, operation: str,
+    ) -> None:
+        """Withdraw only the owner-local offers after a real budget refusal.
+
+        A budget-incomplete candidate is neither an unsafe frontier nor an
+        observed no-novelty result. Keep previously observed physical visits
+        and all canonical safety knowledge unchanged. Registration cannot
+        borrow any stale intrinsic option from an unfunded cycle (DC-07).
+        """
+        geo = self.exploration.geographic
+        if geo is None:
+            return
+        geo.freeze_targets(())
+        self._stage11_geographic_proposals_this_cycle = ()
+        self._write(
+            kind="stage11_geographic_budget_deferred", cycle=cycle,
+            data={
+                "reason": "incomplete_budget",
+                "failed_operation": operation,
+                "source": "compute_budget",
+                "world_step": capture.t_monde,
+                "physical_position": [capture.x, capture.y],
+                "new_targets_designated": False,
+                "safety_decision": None,
+                "novelty_absence_claim": False,
+                "physical_visits_preserved": True,
+            },
+        )
+
     def _geographic_frontier_targets(self, capture, *, raw_targets=None):
         """Use Action Control's published *contextual* admissibility service.
 
@@ -409,6 +439,10 @@ class Stage11Runtime(Stage9Runtime):
 
         def exploration_hook(_context):
             if not self._charge(module="exploration", operation="exploration_observe"):
+                self._suspend_geographic_budget_targets(
+                    capture=capture, cycle=cycle,
+                    operation="exploration_observe",
+                )
                 return
             previous = self.exploration.export_causal_state()
             self.exploration.observe_causal_state(frozen)
@@ -490,10 +524,15 @@ class Stage11Runtime(Stage9Runtime):
                     )
             self._causal_test_targets_this_cycle = permitted
             previous_plan(ctx)
-            if (
-                self.exploration.geographic is None
-                or self._cycle_degraded or st_before_cycle is None
-            ):
+            if self.exploration.geographic is None:
+                return
+            if self._cycle_degraded:
+                self._suspend_geographic_budget_targets(
+                    capture=capture, cycle=cycle,
+                    operation="upstream_cognitive_charge",
+                )
+                return
+            if st_before_cycle is None:
                 return
             # Fixed 1 UC is a versioned Planning cost for one bounded
             # four-neighbor read-only safety-service preflight per cycle.
@@ -520,6 +559,10 @@ class Stage11Runtime(Stage9Runtime):
                     module="planning",
                     operation="geographic_admissibility_preflight",
                 ):
+                    self._suspend_geographic_budget_targets(
+                        capture=capture, cycle=cycle,
+                        operation="geographic_admissibility_preflight",
+                    )
                     return
             if cycle == 1 and excluded_geo:
                 self._write(
@@ -553,6 +596,10 @@ class Stage11Runtime(Stage9Runtime):
                 if not self._charge(
                     module="planning", operation="planning_build",
                 ):
+                    self._suspend_geographic_budget_targets(
+                        capture=capture, cycle=cycle,
+                        operation="planning_build",
+                    )
                     break
                 proposal = propose_geographic_frontier(
                     target=target, initial_state=initial_state,
