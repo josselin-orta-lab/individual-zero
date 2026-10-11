@@ -40,13 +40,24 @@ class Stage11ScenarioPayloadCustodyTests(TestCase):
 
         runtime.run_step()
         runtime.run_step()
-        self.assertEqual(runtime.world.position, Position(4, 2))
+        # The external arrival is verified at the true physical Perception
+        # boundary. After that capture, a legitimately selected autonomous
+        # command may move the body again in the very same world step.
+        captured = [
+            row.causal_event for row in runtime.journal.entries
+            if row.causal_event.get("kind") == "perceptual_capture"
+            and row.causal_event.get("t_monde") == 2
+        ]
+        self.assertEqual(len(captured), 1)
+        self.assertEqual(captured[0]["data"]["position"], {"x": 4, "y": 2})
         actual = [
             row.causal_event for row in runtime.journal.entries
             if row.causal_event.get("kind") == "external_input_received"
         ]
         self.assertEqual(len(actual), 1)
         self.assertEqual(actual[0]["payload"]["position"], {"x": 4, "y": 2})
+        self.assertEqual(scenario.export_causal_state()["events"],
+                         expected_program["events"])
         self.assertTrue(runtime.journal.verify())
 
     def test_returned_applied_events_cannot_rewrite_custody_or_journal(self):
