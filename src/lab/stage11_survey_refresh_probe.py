@@ -106,17 +106,35 @@ def run_public_survey_refresh(
     if set(visits) != set(observations):
         raise AssertionError("owner credited an unobserved geographic site")
     entries = tuple(e.causal_event for e in runtime.journal.entries)
+    external_received = tuple(
+        e for e in entries if e.get("kind") == "external_input_received"
+    )
     external_applied = tuple(
         e for e in entries if e.get("kind") == "external_input_applied"
     )
     if (
-        len(external_applied) != len(schedule)
-        or tuple(e["operation"] for e in external_applied)
+        len(external_received) != len(schedule)
+        or len(external_applied) != len(schedule)
+        or tuple(e["operation"] for e in external_received)
         != tuple(e.operation for e in schedule)
+        or tuple(e["t_monde"] for e in external_received)
+        != tuple(e.t_monde for e in schedule)
         or tuple(e["t_monde"] for e in external_applied)
         != tuple(e.t_monde for e in schedule)
     ):
-        raise AssertionError("external physics input missing or out of order")
+        raise AssertionError("external physical inputs missing or out of order")
+    # 'operation' belongs to received records; applied records attest that
+    # the already declared input was enacted, not a second command source.
+    for original in schedule:
+        received_indices = tuple(i for i, row in enumerate(entries)
+                                 if row.get("kind") == "external_input_received"
+                                 and row["t_monde"] == original.t_monde)
+        applied_indices = tuple(i for i, row in enumerate(entries)
+                                if row.get("kind") == "external_input_applied"
+                                and row["t_monde"] == original.t_monde)
+        if (len(received_indices) != 1 or len(applied_indices) != 1
+            or received_indices[0] >= applied_indices[0]):
+            raise AssertionError("external input applied before received")
     survey_events = tuple(
         (index, e) for index, e in enumerate(entries)
         if e.get("kind") == "stage11_route_survey_recorded"
@@ -165,7 +183,7 @@ def run_public_survey_refresh(
     occupied_steps = set()
     creature_present = False
     for step in range(1, steps + 1):
-        for event in external_applied:
+        for event in external_received:
             if event["t_monde"] == step:
                 if event["operation"] == "place_creature":
                     creature_present = True
@@ -228,7 +246,7 @@ def run_public_survey_refresh(
         applied_route_steps=applied_routes,
         applied_route_into_occupied_neighbor=route_into_creature,
         externally_applied_operations=tuple(
-            e["operation"] for e in external_applied
+            e["operation"] for e in external_received
         ),
         seen_return_junction_after_dead_end=(2, 2) in after_end,
         captured_southern_alternative=any(
