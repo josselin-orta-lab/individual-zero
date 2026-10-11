@@ -64,6 +64,48 @@ class FrontierRoute:
             raise ValueError("invalid route first hop or objective")
 
 
+
+@dataclass(frozen=True, slots=True)
+class GeographicTransitTarget:
+    """One normal adjacent option toward a prior observed, unvisited frontier.
+
+    A transit destination is already visited. Its motivational source is the
+    separate, previously perceived informational frontier, never a fictional
+    novel visit or a claim that the transit cell is globally safe.
+    """
+    ref: str
+    source_t_monde: int
+    origin: tuple[int, int]
+    destination: tuple[int, int]
+    direction: str
+    observed_frontier: tuple[int, int]
+    visited_path: tuple[tuple[int, int], ...]
+    objective_observed_step: int
+
+    def validate(self):
+        if (type(self.source_t_monde) is not int or self.source_t_monde < 1
+            or type(self.objective_observed_step) is not int
+            or not 1 <= self.objective_observed_step <= self.source_t_monde
+            or not _coordinate(self.origin)):
+            raise ValueError("invalid transit target chronology/origin")
+        FrontierRoute(
+            next_position=self.destination,
+            direction=self.direction,
+            observed_frontier=self.observed_frontier,
+            visited_path=self.visited_path,
+            source_world_step=self.objective_observed_step,
+        ).validate()
+        if (self.visited_path[0] != self.origin
+            or len(self.visited_path) - 1 > 8):
+            raise ValueError("transit cannot leave its current observed origin")
+        expected = (
+            f"frontier_route:{self.observed_frontier[0]}:"
+            f"{self.observed_frontier[1]}:via:{self.destination[0]}:"
+            f"{self.destination[1]}:from:{self.origin[0]}:{self.origin[1]}"
+        )
+        if self.ref != expected:
+            raise ValueError("invalid canonical transit target reference")
+
 def _coordinate(p):
     return (isinstance(p, tuple) and len(p) == 2
             and all(type(x) is int for x in p))
