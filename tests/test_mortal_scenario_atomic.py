@@ -123,6 +123,33 @@ class MortalScenarioBatchTests(unittest.TestCase):
             sub.open_step()
         self.assertEqual(runtime.world.export_causal_state(), final)
 
+    def test_six_hundred_nonlethal_world_steps_keep_physics_identical(self):
+        # Public development stability only: not a biological survival
+        # scenario, an independent held-out or scientific acceptance.
+        runtime = self.make_runtime((
+            ScenarioEvent(601, 0, "set_danger_zone", {
+                "position": {"x": 3, "y": 3},
+            }),
+        ))
+        comparator = WorldBody(
+            config=runtime.world.config, layout=runtime.world._layout,
+        )
+        sub = runtime.stage3.substrate
+        for step in range(1, 601):
+            sub.open_step()
+            result = sub.execute(Command("attendre"))
+            reference = comparator.apply(Command("attendre"), t_monde=step)
+            self.assertEqual(result.status, "applied")
+            self.assertEqual(result.transition.as_dict(), reference.as_dict())
+        self.assertEqual(sub.mortal_status, MortalStatus.ACTIVE)
+        self.assertEqual(sub.scheduler.t_monde, 600)
+        self.assertEqual(
+            runtime.world.export_causal_state(),
+            comparator.export_causal_state(),
+        )
+        self.assertEqual(runtime.bench.metrics.lethal_rollbacks, 0)
+        self.assertTrue(runtime.journal.verify())
+
     def test_no_external_event_does_not_produce_fake_receipt(self):
         runtime = self.make_runtime((
             ScenarioEvent(3, 0, "set_danger_zone", {
