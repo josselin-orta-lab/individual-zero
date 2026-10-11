@@ -8,6 +8,7 @@ objects are projected field-by-field, never copied as opaque dictionaries.
 from __future__ import annotations
 
 from copy import deepcopy
+from math import isfinite
 from typing import Mapping
 
 
@@ -32,7 +33,7 @@ _COMPARISON_EFFECT = {
 # nested cognitive fields require explicit review here; unknown fields are
 # still retained without loss in the full technical journal.
 _LIVED_DATA_SCHEMAS = {
-    "active_goal_changed": {"before": _GOAL, "after": _GOAL},
+    "active_goal_changed": {"before": _GOAL, "after": _GOAL, "goal_type": _LEAF},
     "s_t_published": {
         "version": _LEAF, "competitive_refs": (_LEAF,),
     },
@@ -130,6 +131,19 @@ def _project_selected(value: object, schema: object) -> object:
     if schema is _LEAF:
         if value is None or type(value) in (str, int, float, bool):
             return deepcopy(value)
+        # Independent exports encode every finite float as a canonical
+        # {"$f64": "..."} map. Treat that *single* typed wrapper as a
+        # scalar, but never accept arbitrary nested metadata in its place.
+        if (isinstance(value, Mapping) and set(value) == {"$f64"}
+                and type(value["$f64"]) is str):
+            try:
+                number = float.fromhex(value["$f64"])
+            except (ValueError, OverflowError) as exc:
+                raise ValueError("invalid canonical floating point marker") from exc
+            if (isfinite(number)
+                    and (0.0 if number == 0.0 else number).hex().lower()
+                    == value["$f64"]):
+                return {"$f64": value["$f64"]}
         raise ValueError("autobiographical scalar cannot contain hidden nested data")
     if value is None:
         return None
