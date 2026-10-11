@@ -219,10 +219,37 @@ class SnapshotManager:
                 f"snapshot owner mismatch; missing={missing}, extra={extra}"
             )
 
-        for owner_id in sorted(stored_states):
-            owner_map[owner_id].restore_causal_state(
-                deepcopy(stored_states[owner_id])
-            )
+        # A verified snapshot may still be incompatible with a *current*
+        # owner's schema. All causal owners must be recovered together if a
+        # later restore fails, including a failing owner that mutated before
+        # raising. The technical journal is never rolled back (DC-08).
+        owner_ids = tuple(sorted(stored_states))
+        recovery: dict[str, object] = {}
+        for owner_id in owner_ids:
+            prior = deepcopy(owner_map[owner_id].export_causal_state())
+            canonical_causal_bytes(prior)
+            recovery[owner_id] = prior
+
+        try:
+            for owner_id in owner_ids:
+                owner_map[owner_id].restore_causal_state(
+                    deepcopy(stored_states[owner_id])
+                )
+        except Exception as original_error:
+            failed_rollback = []
+            for owner_id in reversed(owner_ids):
+                try:
+                    owner_map[owner_id].restore_causal_state(
+                        deepcopy(recovery[owner_id])
+                    )
+                except Exception:
+                    failed_rollback.append(owner_id)
+            if failed_rollback:
+                raise RuntimeError(
+                    "snapshot restore failed and causal-owner rollback "
+                    f"is incomplete: {sorted(failed_rollback)}"
+                ) from original_error
+            raise
 
         self._write_journal(kind="snapshot_restored", record=stored.record)
         return stored.record
