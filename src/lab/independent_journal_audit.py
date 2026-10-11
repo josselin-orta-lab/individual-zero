@@ -17,6 +17,8 @@ import re
 from typing import Mapping
 from unicodedata import normalize
 
+from .epistemic_guard import has_external_truth, project_lived_field
+
 
 GENESIS_HASH = "00" * 32
 _HASH = re.compile(r"[0-9a-f]{64}\Z")
@@ -196,7 +198,11 @@ def audit_export_bytes(
         kind = event.get("kind")
         if not isinstance(kind, str) or not kind:
             raise ValueError("missing causal event kind")
-        if kind in _FORBIDDEN_KINDS or any(k in _FORBIDDEN_KEYS for k in event):
+        if (
+            kind in _FORBIDDEN_KINDS
+            or any(k in _FORBIDDEN_KEYS for k in event)
+            or has_external_truth(event)
+        ):
             raise ValueError("external oracle evidence leaked into I0 journal")
         all_kinds.add(kind)
         if death_index is not None and kind != "step_closed":
@@ -255,6 +261,12 @@ def audit_export_bytes(
                     or origin.get("t_monde") != t
                 ):
                     raise ValueError("technical/oracle event exposed as lived source")
+                # Enforce the same nested projection schema as the live
+                # cognitive boundary, without loading the I0 runtime.
+                if "data" in origin and origin.get("kind") in _STAGE7_ALLOWED - _STAGE2_ALLOWED:
+                    project_lived_field(
+                        kind=origin["kind"], field="data", value=origin["data"],
+                    )
 
         if kind == "stage10_consolidation_version_activated":
             examined.add(kind)
