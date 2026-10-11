@@ -89,7 +89,6 @@ class SleepHealth:
         )
         self._fatigue = updated
         self._last_cycle = clock
-        self._last_recovered_step = recovered
         return updated
 
     def recover_sleep_step(self, *, world_step: int) -> float:
@@ -190,3 +189,4 @@ class SleepHealth:
         self._step = step
         self._frozen = frozen
         self._last_cycle = clock
+        self._last_recovered_step = recovered
