@@ -80,6 +80,7 @@ class Stage5Runtime(Stage4Runtime):
         scenario_id: str | None = None,
         scenario_version: str | None = None,
         scenario_events: tuple[ScenarioEvent, ...] = (),
+        autonomous_mortal: bool = False,
     ) -> None:
         config.validate()
         if not individual_id:
@@ -134,6 +135,7 @@ class Stage5Runtime(Stage4Runtime):
             scenario_id=scenario_id,
             scenario_version=scenario_version,
             scenario_events=scenario_events,
+            autonomous_mortal=autonomous_mortal,
         )
 
     @property

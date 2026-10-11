@@ -11,17 +11,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping
 
-from .bench import EvaluationBench
 from .determinism import deterministic_id
 from .injected_scenario import InjectedScenario, ScenarioEvent
 from .journal import HashChainedJournal
 from .journal_views import (
     AutobiographicalPolicy,
-    EvaluationTrace,
     JournalViews,
 )
-from .oracle import create_oracle
 from .mortal_execution import MortalStatus, MortalWorldBoundary
+from .standalone_safety import StandaloneSafetyOwner
 from .safety_protocol import (
     LethalHandlingResult,
     LethalSafetyProtocol,
@@ -66,29 +64,44 @@ class ScriptedStage2Runtime:
         scenario_id: str | None = None,
         scenario_version: str | None = None,
         scenario_events: tuple[ScenarioEvent, ...] = (),
+        autonomous_mortal: bool = False,
     ) -> None:
         self.journal = HashChainedJournal()
         self.views = JournalViews(journal=self.journal)
-        self.evaluation_trace = EvaluationTrace()
         self.world = WorldBody(config=config, layout=layout)
         self.scheduler = Scheduler(
             journal=self.journal,
             phase_component_order=phase_component_order,
         )
         self.snapshots = SnapshotManager(journal=self.journal)
-        oracle, capability = create_oracle(self.world)
-        self.bench = EvaluationBench(
-            oracle=oracle,
-            capability=capability,
-            trace=self.evaluation_trace,
-        )
-        self.safety = LethalSafetyProtocol(
-            config=safety_config,
-            scheduler=self.scheduler,
-            snapshots=self.snapshots,
-            journal=self.journal,
-            bench=self.bench,
-        )
+        if type(autonomous_mortal) is not bool:
+            raise TypeError("autonomous_mortal must be a boolean")
+        # No external Oracle/Bench modules are loaded in autonomous mode.
+        self._standalone_mortal = autonomous_mortal
+        if autonomous_mortal:
+            self.evaluation_trace = None
+            self.bench = None
+            self.safety = StandaloneSafetyOwner(
+                config=safety_config,
+                scheduler=self.scheduler, journal=self.journal,
+            )
+        else:
+            # Historical evaluated fixtures retain their exact default.
+            from .oracle import create_oracle
+            from .bench import EvaluationBench
+            from .journal_views import EvaluationTrace
+
+            self.evaluation_trace = EvaluationTrace()
+            oracle, capability = create_oracle(self.world)
+            self.bench = EvaluationBench(
+                oracle=oracle, capability=capability,
+                trace=self.evaluation_trace,
+            )
+            self.safety = LethalSafetyProtocol(
+                config=safety_config, scheduler=self.scheduler,
+                snapshots=self.snapshots, journal=self.journal,
+                bench=self.bench,
+            )
         self._mortal_boundary: MortalWorldBoundary | None = None
         if scenario_id is None and (scenario_version is not None or scenario_events):
             raise ValueError("scenario_id is required when scenario data is supplied")
@@ -104,6 +117,8 @@ class ScriptedStage2Runtime:
                 journal=self.journal,
             )
         )
+        if autonomous_mortal:
+            self.enable_mortal_world()
 
     @property
     def causal_owners(self):
@@ -126,6 +141,7 @@ class ScriptedStage2Runtime:
             raise RuntimeError("mortal runtime must be selected before birth")
         self._mortal_boundary = MortalWorldBoundary(world=self.world)
         self.snapshots.forbid_life_restoration()
+        self.world.forbid_historical_restore()
 
     def protocol_mask_for_control(self, command: Command) -> bool:
         """Legacy rollback masks have no authority over mortal cognition.
@@ -253,15 +269,39 @@ class ScriptedStage2Runtime:
             physical = boundary.execute(command, t_monde=attempt.t_monde)
             physical_ref = self._write_transition_event(physical.transition)
             if physical.status == "dead":
-                self.bench.count_lethal_transition(data={
-                    "t_monde": physical.transition.t_monde,
-                    "command_hash": command_digest(command),
-                    "reasons": list(physical.transition.lethal_reasons),
-                })
+                # I0's own exhaustive causal journal records terminal truth.
+                # Neither Oracle nor Bench owns this occurrence.
+                self.journal.append(
+                    event_id=deterministic_id(
+                        "journal-event-v1", "mortal-world",
+                        attempt.t_monde, attempt.attempt_ref,
+                        command_digest(command), "death-confirmed",
+                    ),
+                    causal_event={
+                        "emitter": "world_and_body",
+                        "kind": "individual_death_confirmed",
+                        "t_monde": attempt.t_monde,
+                        "attempt_ref": attempt.attempt_ref,
+                        "command_hash": command_digest(command),
+                        "reasons": list(physical.transition.lethal_reasons),
+                        "position_after": physical.transition.position_after.as_dict(),
+                        "body_after": physical.transition.body_after.as_dict(),
+                    },
+                )
                 self.scheduler.close_step(
                     outcome="dead", applied_command_count=1,
                     world_advance_count=1,
                 )
+                # Scientific metrics are strictly optional and non-blocking.
+                if self.bench is not None:
+                    try:
+                        self.bench.count_lethal_transition(data={
+                            "t_monde": physical.transition.t_monde,
+                            "command_hash": command_digest(command),
+                            "reasons": list(physical.transition.lethal_reasons),
+                        })
+                    except Exception:
+                        pass
                 return CommandExecution(
                     status="dead", transition=physical.transition,
                     lethal_handling=None,

@@ -9,9 +9,10 @@ Spec: 18.3-18.6, DC-08, DC-14, INV-27-29, INV-44, INV-49.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping, Sequence
+from typing import Mapping, Sequence, TYPE_CHECKING
 
-from .bench import EvaluationBench
+if TYPE_CHECKING:
+    from .bench import EvaluationBench
 from .determinism import deterministic_id
 from .journal import HashChainedJournal
 from .scheduler import Scheduler

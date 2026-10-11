@@ -52,6 +52,7 @@ class Stage3Runtime:
         scenario_id: str | None = None,
         scenario_version: str | None = None,
         scenario_events: tuple[ScenarioEvent, ...] = (),
+        autonomous_mortal: bool = False,
     ) -> None:
         self.substrate = ScriptedStage2Runtime(
             config=config,
@@ -61,6 +62,7 @@ class Stage3Runtime:
             scenario_id=scenario_id,
             scenario_version=scenario_version,
             scenario_events=scenario_events,
+            autonomous_mortal=autonomous_mortal,
         )
         self.perception = SymbolicPerception()
         self.control = ActionControl(

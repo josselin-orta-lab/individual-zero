@@ -61,6 +61,7 @@ class Stage9Runtime(Stage8Runtime):
         scenario_id: str | None = None,
         scenario_version: str | None = None,
         scenario_events: tuple[ScenarioEvent, ...] = (),
+        autonomous_mortal: bool = False,
     ) -> None:
         config.validate()
         self._stage9_config = config
@@ -77,6 +78,7 @@ class Stage9Runtime(Stage8Runtime):
             scenario_id=scenario_id,
             scenario_version=scenario_version,
             scenario_events=scenario_events,
+            autonomous_mortal=autonomous_mortal,
             config=config.stage8,
             equipment=equipment,
         )

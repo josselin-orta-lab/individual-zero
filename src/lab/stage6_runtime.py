@@ -75,6 +75,7 @@ class Stage6Runtime(Stage4Runtime):
         scenario_id: str | None = None,
         scenario_version: str | None = None,
         scenario_events: tuple[ScenarioEvent, ...] = (),
+        autonomous_mortal: bool = False,
     ) -> None:
         config.validate()
         self._stage6_config = config
@@ -99,6 +100,7 @@ class Stage6Runtime(Stage4Runtime):
             scenario_id=scenario_id,
             scenario_version=scenario_version,
             scenario_events=scenario_events,
+            autonomous_mortal=autonomous_mortal,
             config=config.stage4,
         )
         self.planning = SimulatorPlanner(
