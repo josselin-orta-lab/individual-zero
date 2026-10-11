@@ -1,8 +1,8 @@
-"""Journal views and isolated evaluation trace for MVP v1.2.1.
+"""Authorized autobiographical journal views for MVP v1.3.1.
 
-The technical journal remains the single append-only causal trace. The
-autobiographical view is a deterministic projection authorized only through
-AutoSegmentCommit records. Evaluation data is stored separately.
+The complete technical journal remains I0's append-only causal trace.
+Autobiographical knowledge is projected only via explicit AutoSegmentCommit.
+Scientific EvaluationTrace is loaded lazily from an external-only module.
 
 Spec: 17.4-17.5, DC-09, INV-02, INV-27, INV-44, INV-49.
 """
@@ -172,30 +172,18 @@ class JournalViews:
         return tuple(projected)
 
 
-@dataclass(frozen=True, slots=True)
-class EvaluationRecord:
-    sequence: int
-    kind: str
-    data: Mapping[str, object]
+
+def __getattr__(name: str):
+    """Backward-compatible lazy scientific facade, never eagerly loaded by I0."""
+    if name in {"EvaluationTrace", "EvaluationRecord"}:
+        from .evaluation_trace import EvaluationTrace, EvaluationRecord
+
+        return {
+            "EvaluationTrace": EvaluationTrace,
+            "EvaluationRecord": EvaluationRecord,
+        }[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
-class EvaluationTrace:
-    """Separate bench/operator trace, never part of individual causal state."""
-
-    def __init__(self) -> None:
-        self._records: list[EvaluationRecord] = []
-
-    @property
-    def records(self) -> tuple[EvaluationRecord, ...]:
-        return tuple(self._records)
-
-    def append(self, *, kind: str, data: Mapping[str, object]) -> EvaluationRecord:
-        if not kind:
-            raise ValueError("evaluation record kind must not be empty")
-        record = EvaluationRecord(
-            sequence=len(self._records),
-            kind=kind,
-            data=dict(data),
-        )
-        self._records.append(record)
-        return record
+def __dir__():
+    return sorted(set(globals()) | {"EvaluationTrace", "EvaluationRecord"})
