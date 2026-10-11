@@ -279,6 +279,81 @@ class Stage11ExternalBatchFailureTests(TestCase):
         )
         self.assertTrue(runtime.journal.verify())
 
+    def test_external_resource_and_body_values_do_not_coerce_types(self):
+        runner = build_public_route_runtime()
+        world = runner.world
+        before = deepcopy(world.export_causal_state())
+        position = {"x": 2, "y": 2}
+        for bad_kind, bad_quantity in (
+            ("wood", True), ("wood", "2"), ("wood", 1.9),
+            ("wood", None), ("wood", -1), ("wood", [2]),
+            (123, 2), (None, 2), ("unsupported_resource", 2),
+        ):
+            with self.subTest(
+                kind=bad_kind, quantity=bad_quantity,
+            ), self.assertRaisesRegex(ValueError, "invalid scenario resource"):
+                world.apply_scenario_event("place_resource", {
+                    "position": dict(position),
+                    "kind": bad_kind, "quantity": bad_quantity,
+                })
+            self.assertEqual(world.export_causal_state(), before)
+
+        for field, value in (
+            ("energy", True), ("food", "63"), ("water", None),
+            ("integrity", [98]), ("energy", float("inf")),
+            ("energy", float("nan")), ("food", -1), ("water", 101.0),
+        ):
+            with self.subTest(
+                field=field, value=value,
+            ), self.assertRaises(ValueError):
+                world.apply_scenario_event("set_body", {field: value})
+            self.assertEqual(world.export_causal_state(), before)
+
+        # Ordinary P-54 resource quantities and genuine numeric body values
+        # still apply. They are external physical inputs, not actions.
+        world.apply_scenario_event("place_resource", {
+            "position": dict(position), "kind": "wood", "quantity": 2,
+        })
+        self.assertNotEqual(world.export_causal_state(), before)
+        world.apply_scenario_event("set_body", {"food": 63, "water": 62.5})
+        self.assertEqual(world.body.food, 63.0)
+        self.assertEqual(world.body.water, 62.5)
+        world.restore_causal_state(deepcopy(before))
+        self.assertEqual(world.export_causal_state(), before)
+
+    def test_invalid_external_physical_quantities_reject_at_step_boundary(self):
+        for operation, payload in (
+            ("place_resource", {
+                "position": {"x": 2, "y": 2},
+                "kind": "wood", "quantity": 1.9,
+            }),
+            ("set_body", {"integrity": True}),
+        ):
+            with self.subTest(operation=operation):
+                runtime = build_public_route_runtime(
+                    scenario_events=(ScenarioEvent(
+                        t_monde=1, sequence=0, operation=operation,
+                        payload=payload,
+                    ),),
+                )
+                before = deepcopy(runtime.world.export_causal_state())
+                with self.assertRaises(ScenarioInputRejected):
+                    runtime.run_step()
+                self.assertEqual(runtime.world.export_causal_state(), before)
+                self.assertTrue(runtime.stage3.substrate.scenario.halted)
+                self.assertIsNone(runtime.scheduler.active_attempt)
+                self.assertEqual(runtime.scheduler.t_monde, 1)
+                received = logged(runtime, "external_input_received")
+                rejected = logged(runtime, "external_input_rejected")
+                self.assertEqual(len(received), 1)
+                self.assertEqual(received[0]["payload"], payload)
+                self.assertEqual(len(rejected), 1)
+                self.assertEqual(rejected[0]["world_recovered"], True)
+                self.assertFalse(logged(runtime, "external_input_applied"))
+                self.assertFalse(logged(runtime, "perceptual_capture"))
+                self.assertFalse(logged(runtime, "command_experienced"))
+                self.assertTrue(runtime.journal.verify())
+
     def test_independent_external_batch_failure_replays_exactly(self):
         def run():
             runner = failed_batch_runner()
