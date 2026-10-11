@@ -117,8 +117,7 @@ class Stage8Runtime(Stage7Runtime):
 
     def integrate_precision_verification(self, verification: PrecisionVerification) -> None:
         """Perception alone learns per-source active precision; no oracle labels."""
-        if self.stage3.substrate.mortal_status is not None and self.stage3.substrate.mortal_status.value != "active":
-            raise RuntimeError("terminal mortal individual cannot integrate precision")
+        self._require_active_mortal_causal_step()
         self.precision_active.integrate(verification)
 
     @property
@@ -176,8 +175,7 @@ class Stage8Runtime(Stage7Runtime):
         Evidence provenance must be supplied by the owning verifier.
         Only Metacognition can mutate counters, and only at phase 5.
         """
-        if self.stage3.substrate.mortal_status is not None and self.stage3.substrate.mortal_status.value != "active":
-            raise RuntimeError("terminal mortal individual cannot integrate kappa")
+        self._require_active_mortal_causal_step()
         self.kappa_active.integrate(verification)
 
     def _evaluation_state(self, capture) -> EvaluationState:
