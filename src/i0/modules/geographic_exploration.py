@@ -111,10 +111,13 @@ class GeographicExploration:
             raise ValueError("geographic visits require real world-step coordinates")
         if self._last_capture is not None:
             old_t, old_x, old_y = self._last_capture
-            if t > old_t:
-                self._transit_offered = ()
             if t < old_t or (t == old_t and (x, y) != (old_x, old_y)):
                 raise ValueError("contradictory/retrograde physical capture")
+            if ((x, y) not in self._visits
+                and len(self._visits) >= self.config.max_distinct_sites):
+                raise ValueError("geographic visit register capacity exhausted")
+            if t > old_t:
+                self._transit_offered = ()
             if t == old_t or (x, y) == (old_x, old_y):
                 self._last_capture = (t, x, y)
                 return False
