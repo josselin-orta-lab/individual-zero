@@ -494,15 +494,31 @@ class Stage4IntegratedLoopTests(unittest.TestCase):
             self.assertEqual(kinds.count("lethal_transition_detected"), 1)
             self.assertEqual(kinds.count("lethal_rollback_completed"), 1)
             self.assertGreaterEqual(kinds.count("snapshot_restored"), 1)
-            cycles = [
+            # The first attempt may legitimately require several cycles
+            # BEFORE the lethal command. Partition by the actual rollback
+            # receipt, not by the first two cycle_opened records.
+            rollback_at = kinds.index("lethal_rollback_completed")
+            cycles_before = [
                 (event["t_monde"], event["attempt_ref"], event["cycle"])
-                for event in technical if event["kind"] == "cycle_opened"
+                for index, event in enumerate(technical)
+                if event["kind"] == "cycle_opened" and index < rollback_at
             ]
-            self.assertGreaterEqual(len(cycles), 2)
-            self.assertEqual(cycles[0][0], 1)
-            self.assertEqual(cycles[1][0], 1)
-            self.assertNotEqual(cycles[0][1], cycles[1][1])
-            self.assertNotEqual(cycles[0][2], cycles[1][2])
+            cycles_after = [
+                (event["t_monde"], event["attempt_ref"], event["cycle"])
+                for index, event in enumerate(technical)
+                if event["kind"] == "cycle_opened" and index > rollback_at
+            ]
+            self.assertTrue(cycles_before)
+            self.assertTrue(cycles_after)
+            self.assertEqual(cycles_before[-1][0], 1)
+            self.assertEqual(cycles_after[0][0], 1)
+            self.assertNotEqual(
+                cycles_before[-1][1], cycles_after[0][1],
+            )
+            self.assertGreater(
+                cycles_after[0][2], cycles_before[-1][2],
+            )
+            cycles = cycles_before + cycles_after
             budget = instance.compute_budget.export_causal_state()
             self.assertEqual(
                 budget["active_occurrence"],
