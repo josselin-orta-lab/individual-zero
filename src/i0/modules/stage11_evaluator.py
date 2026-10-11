@@ -4,6 +4,7 @@ from math import isfinite
 
 from .causal_test_planning import Stage9OptionEvaluator
 from .competition import OptionEvidenceInput
+from i0.contracts import EvaluationOption
 from .stage8_evaluator import Stage8OptionEvaluator
 
 
@@ -55,7 +56,121 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             and step.observation_window_steps == 1
         )
 
+    @staticmethod
+    def _safe_geographic_shape(proposal, target):
+        option, plan = proposal.option, proposal.plan
+        if (
+            option.motive_ref.type != "cible_exploration"
+            or option.motive_ref.id != target.ref
+            or option.id != (
+                f"option:geographic:{target.ref}:t{target.source_t_monde}"
+            )
+            or option.provenance != "exploration"
+            or option.type != "primitive"
+            or option.goal_ref is not None
+            or option.preconditions != ("adjacent_passable",)
+            or option.success_condition != "target_position_observed"
+            or option.failure_condition != "target_position_not_observed"
+            or option.invalidation_condition != "target_visited_or_context_changed"
+            or option.learning_signature != (
+                f"geographic_frontier:{target.destination[0]}:{target.destination[1]}"
+            )
+            or plan is None or option.plan_ref != plan.id
+            or plan.option_ref != option.id
+            or plan.goal_ref is not None
+            or plan.status != "valid"
+            or plan.st_version != option.founding_st_version
+            or len(plan.steps) != 1
+        ):
+            return False
+        step = plan.steps[0]
+        observed = {
+            effect.variable: effect.value_or_delta
+            for effect in step.predicted_consequences
+        }
+        return (
+            step.index == 0
+            and step.command.primitive == "se_deplacer"
+            and step.command.parameters == {"direction": target.direction}
+            and step.preconditions == ("adjacent_passable",)
+            and step.observation_window_steps == 1
+            and observed.get("position_x") == target.destination[0]
+            and observed.get("position_y") == target.destination[1]
+        )
+
+    @staticmethod
+    def _unscored_geographic(proposal, *, cycle, t_monde):
+        evaluation = EvaluationOption(
+            option_ref=proposal.option.id,
+            option_version=proposal.option.version,
+            cycle=cycle, t_monde=t_monde,
+            status="not_evaluated",
+            learned_value_status="unlearned", learned_value=None,
+            simulated_value_status="unavailable", simulated_value=None,
+            intrinsic_status="applicable", intrinsic_value=None,
+            risk_status="unknown", risk=None,
+            safety_uncertainty=0.0, protection=False,
+            signal_ids=(), producers=("exploration:unverified_frontier",),
+        )
+        evaluation.validate()
+        return OptionEvidenceInput(evaluation=evaluation, evidence=None)
+
     def evaluate(self, *, proposal, evaluation_state, initial_state, cycle, t_monde):
+        if proposal.option.motive_ref.type == "cible_exploration":
+            geographic = self._exploration.geographic
+            target = (
+                None if geographic is None
+                else geographic.target_for(proposal.option)
+            )
+            if (
+                target is None
+                or target.source_t_monde != t_monde
+                or not self._safe_geographic_shape(proposal, target)
+            ):
+                return self._unscored_geographic(
+                    proposal, cycle=cycle, t_monde=t_monde,
+                )
+            original = Stage8OptionEvaluator.evaluate(
+                self, proposal=proposal, evaluation_state=evaluation_state,
+                initial_state=initial_state, cycle=cycle, t_monde=t_monde,
+            )
+            intrinsic = self._exploration.geographic_motivation(proposal.option)
+            signals = tuple(original.evaluation.signal_ids)
+            if (
+                intrinsic.status != "available"
+                or set(signals) & set(intrinsic.signal_ids)
+            ):
+                assessment = replace(
+                    original.evaluation, status="not_evaluated",
+                    intrinsic_status="applicable", intrinsic_value=None,
+                    producers=tuple(dict.fromkeys(
+                        original.evaluation.producers + (
+                            "exploration:geographic_interest_unavailable",
+                        )
+                    )),
+                )
+                result = OptionEvidenceInput(assessment, None)
+                result.validate()
+                return result
+            ext = 0.0 if original.evidence is None else original.evidence
+            score = max(-1.0, min(1.0, ext + (
+                self._intrinsic_weight * intrinsic.value
+            )))
+            assessment = replace(
+                original.evaluation, status="evaluated",
+                intrinsic_status="applicable",
+                intrinsic_value=intrinsic.value,
+                signal_ids=signals + intrinsic.signal_ids,
+                producers=tuple(dict.fromkeys(
+                    original.evaluation.producers + (
+                        "exploration:p48_geographic",
+                    )
+                )),
+            )
+            result = OptionEvidenceInput(assessment, score)
+            result.validate()
+            return result
+
         if proposal.option.motive_ref.type != "test_causal":
             return super().evaluate(
                 proposal=proposal, evaluation_state=evaluation_state,
