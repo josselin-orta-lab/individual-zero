@@ -17,7 +17,7 @@ from .stage11_geographic_robustness_probe import (
 from .stage11_reference_fixture import build_stage11_reference_runtime
 from .stage11_runtime import Stage11Runtime
 
-PROTOCOL = "stage11-public-geography-total-uc-ablation-dev-v1"
+PROTOCOL = "stage11-public-geography-total-uc-ablation-dev-v2"
 
 
 @dataclass(frozen=True, slots=True)
