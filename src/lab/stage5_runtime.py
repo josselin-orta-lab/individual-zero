@@ -20,6 +20,7 @@ from i0.temperament import (
 
 from .determinism import deterministic_id
 from .injected_scenario import ScenarioEvent
+from .mortal_execution import MortalStatus
 from .safety_protocol import SafetyProtocolConfig
 from .snapshots import SnapshotRecord, SnapshotType
 from .stage4_runtime import Stage4Config, Stage4Runtime
@@ -162,6 +163,20 @@ class Stage5Runtime(Stage4Runtime):
         """Create an isolated individual from a complete coherent copy snapshot."""
         if not copy_ref:
             raise ValueError("copy_ref must not be empty")
+        # A mortal copy must inherit its parent's irreversible lifecycle and
+        # never briefly instantiate the legacy Oracle/Bench constructor.
+        # Independent birth-time state seeding and journal-prefix custody are
+        # not yet implemented for mortal copies. Refuse before taking a
+        # snapshot or writing any new event, rather than silently downgrading.
+        mortal = self.stage3.substrate.mortal_status
+        if mortal is MortalStatus.DEAD:
+            raise RuntimeError("dead individual cannot create a copy")
+        if mortal is MortalStatus.TECHNICAL_HALT:
+            raise RuntimeError("technically halted individual cannot create a copy")
+        if mortal is not None:
+            raise RuntimeError(
+                "autonomous mortal copy needs separate safe birth and journal-prefix custody"
+            )
         if self.scheduler.active_attempt is not None:
             raise RuntimeError("copies may be created only at a coherent step boundary")
 
