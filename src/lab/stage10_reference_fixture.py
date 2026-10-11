@@ -5,7 +5,7 @@ from .stage9_reference_fixture import build_stage9_reference_runtime
 from .stage10_runtime import Stage10Runtime, Stage10Config
 
 def build_stage10_reference_runtime(*, start_fatigued=False, autonomous_mortal=False):
-    base = build_stage9_reference_runtime()
+    base = build_stage9_reference_runtime(autonomous_mortal=autonomous_mortal)
     runtime = Stage10Runtime(
         world_config=base.world.config,
         layout=base.world._layout,

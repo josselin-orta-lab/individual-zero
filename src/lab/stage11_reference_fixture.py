@@ -21,8 +21,10 @@ def build_stage11_reference_runtime(
         or type(enable_local_threats) is not bool
     ):
         raise ValueError("development option flags must be boolean")
-    baseline = build_stage9_reference_runtime()
-    temperament = build_stage5_reference_runtime().temperament_parameters
+    baseline = build_stage9_reference_runtime(autonomous_mortal=autonomous_mortal)
+    temperament = build_stage5_reference_runtime(
+        autonomous_mortal=autonomous_mortal,
+    ).temperament_parameters
     return Stage11Runtime(
         world_config=baseline.world.config,
         layout=baseline.world._layout,

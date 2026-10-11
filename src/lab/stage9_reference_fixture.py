@@ -7,8 +7,8 @@ from .stage8_reference_fixture import build_stage8_reference_runtime
 from .stage9_runtime import Stage9Config, Stage9Runtime
 
 
-def build_stage9_reference_runtime() -> Stage9Runtime:
-    previous = build_stage8_reference_runtime()
+def build_stage9_reference_runtime(*, autonomous_mortal: bool = False) -> Stage9Runtime:
+    previous = build_stage8_reference_runtime(autonomous_mortal=autonomous_mortal)
     return Stage9Runtime(
         world_config=previous.world.config,
         layout=previous.world._layout,
@@ -33,4 +33,5 @@ def build_stage9_reference_runtime() -> Stage9Runtime:
             ),
         ),
         equipment=previous.equipment,
+        autonomous_mortal=autonomous_mortal,
     )

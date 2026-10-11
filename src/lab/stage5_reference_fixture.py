@@ -18,8 +18,9 @@ def build_stage5_reference_runtime(
     *,
     temperament: Temperament | None = None,
     individual_id: str = "i0-stage5-reference",
+    autonomous_mortal: bool = False,
 ) -> Stage5Runtime:
-    stage4 = build_stage4_reference_runtime()
+    stage4 = build_stage4_reference_runtime(autonomous_mortal=autonomous_mortal)
     tau = temperament or Temperament(0.0, 0.0, 0.0, 0.0, 0.0)
 
     mapping = TemperamentMappingConfig(
@@ -67,4 +68,5 @@ def build_stage5_reference_runtime(
             stage4=stage4._config,
         ),
         individual_id=individual_id,
+        autonomous_mortal=autonomous_mortal,
     )
