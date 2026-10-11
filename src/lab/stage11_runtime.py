@@ -335,7 +335,17 @@ class Stage11Runtime(Stage9Runtime):
                         "destination": list(target.destination),
                         "direction": target.direction,
                         "goal_ref": None,
-                        "simulated": True,
+                        "simulated": bool(
+                            proposal.plan.steps[0].predicted_consequences
+                        ),
+                        "simulation_status": (
+                            "complete" if proposal.plan.steps[0].predicted_consequences
+                            else "unavailable"
+                        ),
+                        "simulation_reason": (
+                            None if proposal.plan.steps[0].predicted_consequences
+                            else "equipment_input_unseen"
+                        ),
                     },
                 )
             self._stage11_geographic_proposals_this_cycle = tuple(
