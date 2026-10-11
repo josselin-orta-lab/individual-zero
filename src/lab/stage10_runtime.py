@@ -350,6 +350,9 @@ class Stage10Runtime(Stage9Runtime):
         return max(observed) if observed else None
 
     def _sleep_step(self) -> Stage4StepResult:
+        # Sleep and reflex are nondecision steps of the existing DC-15 TD
+        # segment: their physical rewards must enter G once, at completion.
+        body_before = dict(self.world.body.as_dict())
         self.stage3.substrate.open_step()
         attempt = self.scheduler.active_attempt
         if attempt is None:
@@ -432,6 +435,11 @@ class Stage10Runtime(Stage9Runtime):
                     ),
                 )
                 if execution.status == "applied":
+                    self.q_active.append_experienced_reward(
+                        self.value_needs.reward_between(
+                            body_before, dict(self.world.body.as_dict()),
+                        ),
+                    )
                     self.sleep_session.finish_sleep_step(
                         decision=outcome,admission=reflex_admission,
                         prepared=reflex.prepared,command_sent=True,
@@ -490,6 +498,11 @@ class Stage10Runtime(Stage9Runtime):
             ),
         )
         if execution.status == "applied":
+            self.q_active.append_experienced_reward(
+                self.value_needs.reward_between(
+                    body_before, dict(self.world.body.as_dict()),
+                ),
+            )
             self.sleep_health.recover_sleep_step(world_step=t)
             self.sleep_session.finish_sleep_step(
                 decision=outcome,admission=admission,prepared=prepared,
