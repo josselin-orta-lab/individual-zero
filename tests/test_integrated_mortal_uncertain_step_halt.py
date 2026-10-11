@@ -16,8 +16,11 @@ class UncertainMortalCycleHaltTests(unittest.TestCase):
         journal = runtime.journal.canonical_bytes()
         with self.assertRaises(RuntimeError):
             runtime.run_step()
+        # This PR guards the unified mortal dispatch boundary. Direct
+        # WorldBody method sealing is the separate PR #61 invariant and
+        # is checked in the full integrated security matrix.
         with self.assertRaises(RuntimeError):
-            runtime.world.apply(
+            runtime.stage3.substrate._mortal_boundary.execute(
                 Command("attendre"), t_monde=runtime.scheduler.t_monde + 1,
             )
         self.assertEqual(runtime.world.export_causal_state(), world)
