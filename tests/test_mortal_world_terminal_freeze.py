@@ -34,6 +34,24 @@ class MortalWorldTerminalFreezeTests(unittest.TestCase):
             ))
         self.assertEqual(world.export_causal_state(), before)
 
+    def test_direct_unaudited_physical_apply_is_blocked_during_mortal_life(self):
+        individual = self.instance()
+        world = individual.world
+        substrate = individual.stage3.substrate
+        before = world.export_causal_state()
+        journal = individual.journal.canonical_bytes()
+        with self.assertRaisesRegex(RuntimeError, "Action Control dispatch"):
+            world.apply(Command("se_deplacer", {"direction": "east"}), t_monde=1)
+        self.assertEqual(world.export_causal_state(), before)
+        self.assertEqual(individual.journal.canonical_bytes(), journal)
+        self.assertEqual(individual.scheduler.t_monde, 0)
+        substrate.open_step()
+        result = substrate.execute(Command("se_deplacer", {"direction": "east"}))
+        self.assertEqual(result.status, "applied")
+        self.assertEqual(result.transition.position_after.x, before["position"]["x"] + 1)
+        self.assertEqual(individual.scheduler.t_monde, 1)
+        self.assertTrue(individual.journal.verify())
+
     def test_fatal_world_transition_matches_unmodified_world_and_freezes(self):
         individual = self.instance()
         world = individual.world
