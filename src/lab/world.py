@@ -923,6 +923,15 @@ class WorldBody:
             self._resources[(position, kind)] = quantity
             return
 
+        if operation == "set_position":
+            # External world intervention, never an individual movement command.
+            # Validate before changing any causal state.
+            position = position_from_payload()
+            if position in self._obstacles:
+                raise ValueError("scenario position is obstructed")
+            self._position = position
+            return
+
         if operation == "set_body":
             updates = dict(self._body.as_dict())
             for key in ("energy", "food", "water", "integrity"):
