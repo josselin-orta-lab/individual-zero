@@ -44,6 +44,10 @@ class AutobiographicalPolicy:
             raise ValueError("event kind is not autobiographically allowed")
         projected = {"event_id": event.event_id, "kind": kind}
         for field in self.allowed_fields_by_kind[kind]:
+            # The technical occurrence identity belongs to JournalEntry,
+            # not to any producer-supplied field within the causal payload.
+            if field == "event_id":
+                continue
             if field in event.causal_event:
                 projected[field] = event.causal_event[field]
         return projected
