@@ -14,7 +14,7 @@ from .stage11_geographic_probe import START_BODY, _positions
 from .stage11_reference_fixture import build_stage11_reference_runtime
 from .stage11_runtime import Stage11Runtime
 
-PROTOCOL = "stage11-public-strict-geographic-budget-dev-v2"
+PROTOCOL = "stage11-public-strict-geographic-budget-dev-v3"
 VARIANTS = ("planning_0", "planning_1", "planning_3", "exploration_0")
 
 
@@ -149,7 +149,7 @@ def run_public_strict_geographic_budget(
         ]
         if (
             len(previous_charges) != 1
-            or data.get("boundary") != "phase0_after_accepted_charge"
+            or data.get("boundary") != "phase1_planning_after_accepted_charge"
             or data.get("charged_operation")
             != "geographic_admissibility_preflight"
             or data.get("charged_module") != "planning"
