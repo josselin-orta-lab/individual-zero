@@ -22,7 +22,11 @@ from tests.test_stage9_scientific_assessment import make_report, sealed
 
 def _git(repo: Path, *command: str) -> str:
     result = subprocess.run(
-        ("git", "-C", str(repo), *command),
+        # Synthetic Git repos are destroyed immediately after each test.
+        # Disable asynchronous auto-maintenance, whose background pack writes
+        # can race TemporaryDirectory cleanup on CI runners.
+        ("git", "-C", str(repo), "-c", "gc.auto=0",
+         "-c", "maintenance.auto=false", *command),
         check=True, capture_output=True, text=True,
     )
     return result.stdout.strip()
