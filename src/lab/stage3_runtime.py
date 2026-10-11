@@ -213,10 +213,7 @@ class Stage3Runtime:
 
         return self._dispatch(prepared=prepared)
 
-    def attempt_reflex(
-        self,
-        *,
-    ):
+    def attempt_reflex(self):
         """Attempt only the direct reflex path, with no ordinary fallback.
 
         Returns (proposal, admission, execution). A refused reflex leaves the
