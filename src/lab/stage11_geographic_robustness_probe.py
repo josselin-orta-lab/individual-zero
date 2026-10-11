@@ -55,13 +55,14 @@ class PublicLayoutCoverage:
         return json.dumps(data, sort_keys=True, separators=(",", ":"))
 
 
-def run_public_layout_coverage(
-    *, variant: str, steps: int = 6,
-) -> PublicLayoutCoverage:
-    if variant not in VARIANTS or type(steps) is not int or not 4 <= steps <= 12:
-        raise ValueError("only registered bounded public layouts are supported")
-    ref = build_stage11_reference_runtime(enable_geography=True)
-    no_geo = build_stage11_reference_runtime(enable_geography=False)
+def _public_variant_inputs(ref, variant: str):
+    """Only Lab owns these declared public layouts, never Exploration.
+
+    The same helper is reused by coverage and total-UC compatibility ablation
+    to prevent accidentally comparing different safety physics.
+    """
+    if variant not in VARIANTS:
+        raise ValueError("unknown public geographic layout")
     layout = ref.world._layout
     safety_facts = ref._canonical_safety._innate
     world = replace(ref.world.config, initial_body=START_BODY)
@@ -88,6 +89,17 @@ def run_public_layout_coverage(
         safety_facts = StaticSafetyFacts(
             known_lethal_positions=frozenset({(2, 1)}),
         )
+    return world, layout, safety_facts
+
+
+def run_public_layout_coverage(
+    *, variant: str, steps: int = 6,
+) -> PublicLayoutCoverage:
+    if variant not in VARIANTS or type(steps) is not int or not 4 <= steps <= 12:
+        raise ValueError("only registered bounded public layouts are supported")
+    ref = build_stage11_reference_runtime(enable_geography=True)
+    no_geo = build_stage11_reference_runtime(enable_geography=False)
+    world, layout, safety_facts = _public_variant_inputs(ref, variant)
     config = replace(
         ref._stage11_config,
         geographic=replace(
