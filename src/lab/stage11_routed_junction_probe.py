@@ -76,9 +76,12 @@ def build_public_route_runtime(
     *, layout_variant: str = "junction_open",
     planning_uc: int | None = None,
     scenario_events: tuple[ScenarioEvent, ...] = (),
+    survey_refresh: bool = False,
 ) -> Stage11Runtime:
     if layout_variant not in ("junction_open", "junction_sealed"):
         raise ValueError("unregistered public junction layout")
+    if type(survey_refresh) is not bool:
+        raise ValueError("survey-refresh opt-in must be boolean")
     if (not isinstance(scenario_events, tuple)
         or any(not isinstance(event, ScenarioEvent) for event in scenario_events)):
         raise ValueError("route fixture needs a tuple of logged scenario events")
@@ -89,12 +92,19 @@ def build_public_route_runtime(
     reference = build_stage11_reference_runtime(enable_geography=True)
     cfg = replace(
         reference._stage11_config,
-        version="stage11-observed-route-integration-dev-v1",
+        version=(
+            "stage11-observed-route-integration-dev-v1+survey-refresh-v1"
+            if survey_refresh else "stage11-observed-route-integration-dev-v1"
+        ),
         geographic_route_enabled=True,
         geographic=replace(
             reference._stage11_config.geographic,
-            version="p48-observed-route-integrated-v1",
+            version=(
+                "p48-observed-route-integrated-v1+survey-refresh-v1"
+                if survey_refresh else "p48-observed-route-integrated-v1"
+            ),
             observe_routes=True,
+            refresh_surveys=survey_refresh,
         ),
     )
     if planning_uc is not None:
