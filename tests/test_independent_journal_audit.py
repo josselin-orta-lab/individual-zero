@@ -190,11 +190,20 @@ class IndependentJournalAuditTests(unittest.TestCase):
             audit_export_bytes(j.canonical_bytes())
 
     def test_postmortem_cognitive_event_is_rejected_even_if_hashes_match(self):
+        # I0's live journal now seals after death; attackers may still submit
+        # a self-consistent forged archive to the offline independent auditor.
         j = stable_journal(death=True)
-        record(j, "postmortem-cognition", "episode_closed", step=1, attempt="a1")
         self.assertTrue(j.verify())
+        rows = [json.loads(raw) for raw in j.canonical_bytes().split(b"\n")]
+        rows.append({
+            "index": len(rows), "event_id": "postmortem-cognition",
+            "causal_event": {
+                "kind": "episode_closed", "emitter": "test",
+                "t_monde": 1, "attempt_ref": "a1",
+            },
+        })
         with self.assertRaisesRegex(ValueError, "after death"):
-            audit_export_bytes(j.canonical_bytes())
+            audit_export_bytes(reseal(rows))
 
     def test_stage10_false_cut_and_postcut_references_are_rejected(self):
         j = stable_journal()
