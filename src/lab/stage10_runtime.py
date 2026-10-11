@@ -188,6 +188,8 @@ class Stage10Runtime(Stage9Runtime):
                  scenario_id=None, scenario_version=None, scenario_events=(),
                  autonomous_mortal=False):
         config.validate()
+        if config.selection_policy is not None and not autonomous_mortal:
+            raise ValueError("live six-pass consolidation requires mortal mode")
         self._stage10_config = config
         super().__init__(
             world_config=world_config, layout=layout,
@@ -387,6 +389,243 @@ class Stage10Runtime(Stage9Runtime):
             observed.append(cfg.critical_body_intensity * cfg.critical_body_risk)
         return max(observed) if observed else None
 
+    def _run_live_consolidation(self, *, world_step: int, attempt_ref: str) -> None:
+        """Perform at most one fully priced semantic pass in admitted sleep.
+
+        Every pass is synchronous, private, and either produces a validated
+        transaction checkpoint or does not start. Thus there is never a
+        half-computed working candidate across Scheduler synchronization
+        points. No WorldBody or Oracle state reaches the semantic handler.
+        """
+        selector = self._consolidation_selector
+        policy = self._stage10_config.semantic_policy
+        if selector is None or policy is None:
+            return
+        tx = self.consolidation.current
+        if tx is None:
+            frozen = self.sleep_health.frozen
+            if (frozen is None
+                    or frozen.consolidation_pressure < self._stage10_config.p_cons_min):
+                return
+            old_refs = set(
+                self.slow_history.read_committed()["consolidated_episode_refs"]
+            )
+            episodes = self.memory.episodes
+            pending = tuple(
+                ep.id for ep in episodes
+                if ep.id not in old_refs and ep.end_t_monde < world_step
+            )
+            if not pending:
+                return
+            anchor = next((
+                entry for entry in reversed(self.journal.entries)
+                if (entry.causal_event.get("kind") == "step_opened"
+                    and entry.causal_event.get("attempt_ref") == attempt_ref)
+            ), None)
+            if anchor is None:
+                raise RuntimeError("sleep cut has no real Scheduler anchor")
+            cut = ConsolidationCut(
+                world_step=world_step, journal_index=anchor.index,
+                journal_event_id=anchor.event_id, journal_hash=anchor.event_hash,
+                history_version=self.slow_history.current_version,
+            )
+            try:
+                selected = select_batch_with_charged_work(
+                    budget=self.consolidation_work, selector=selector, cut=cut,
+                    episodes=episodes, pending_episode_refs=pending,
+                )
+            except BatchSelectionBudgetError:
+                self._write(
+                    kind="stage10_consolidation_work_deferred",
+                    data={"world_step": world_step, "stage": "batch_selection",
+                          "reason": "insufficient_charged_scan_budget"},
+                )
+                return
+            if not selected.episode_refs:
+                return
+            tx = ConsolidationTransaction(
+                consolidation_id=deterministic_id(
+                    "stage10-live-consolidation-v1", world_step, attempt_ref,
+                    selected.digest,
+                ),
+                cut=cut, episode_refs=selected.episode_refs,
+                episode_payloads=selected.episode_payloads_copy(),
+                history_candidate=self.slow_history.read_committed(),
+            )
+            # Verify provenance BEFORE exposing a transaction to the slot.
+            FrozenLivedReplayEvidence(
+                journal=self.journal, views=self.views, transaction=tx,
+                policies={
+                    STAGE7_AUTOBIOGRAPHICAL_POLICY.version:
+                        STAGE7_AUTOBIOGRAPHICAL_POLICY,
+                },
+            )
+            self.consolidation.begin(tx)
+            self._write(
+                kind="stage10_consolidation_batch_frozen",
+                data={"world_step": world_step, "consolidation_id": tx.id,
+                      "episode_refs": list(tx.batch),
+                      "cut": cut.as_dict(),
+                      "batch_digest": tx.batch_digest,
+                      "selection_policy_version": selector.policy.version},
+            )
+        elif tx.status == "suspended":
+            tx.resume()
+            self._write(
+                kind="stage10_consolidation_resumed",
+                data={"world_step": world_step,
+                      "consolidation_id": tx.id,
+                      "validated_passes": list(tx.completed_passes)},
+            )
+
+        if tx.status != "active":
+            raise RuntimeError("consolidation work lacks an active transaction")
+        if tx.cursor == len(PASSES):
+            self._publish_live_consolidation(tx=tx, world_step=world_step)
+            return
+        evidence = FrozenLivedReplayEvidence(
+            journal=self.journal, views=self.views, transaction=tx,
+            policies={
+                STAGE7_AUTOBIOGRAPHICAL_POLICY.version:
+                    STAGE7_AUTOBIOGRAPHICAL_POLICY,
+            },
+        )
+        algorithm = LivedSixPassAlgorithm(
+            transaction=tx, evidence=evidence, policy=policy,
+        )
+        if PASSES[tx.cursor] == "interleaved_replay":
+            try:
+                agenda = build_charged_replay_agenda(
+                    tx=tx, policy=policy.replay,
+                    budget=self.consolidation_work,
+                )
+            except ReplayAgendaBudgetError:
+                self._write(
+                    kind="stage10_consolidation_work_deferred",
+                    data={"world_step": world_step,
+                          "stage": PASSES[tx.cursor],
+                          "reason": "insufficient_charged_agenda_budget"},
+                )
+                return
+            plan = algorithm.make_plan(
+                budget=self.consolidation_work,
+                replay_plan=agenda.as_pass_plan(),
+            )
+        else:
+            plan = algorithm.make_plan(budget=self.consolidation_work)
+        if plan is None:
+            self._write(
+                kind="stage10_consolidation_work_deferred",
+                data={"world_step": world_step, "stage": PASSES[tx.cursor],
+                      "reason": "insufficient_charged_plan_budget"},
+            )
+            return
+        costs = self.consolidation_work.config.operation_costs
+        needed = (costs["pass_prepare"] + costs["pass_validate"]
+                  + sum(costs[item.operation] for item in plan.units))
+        budget = self.consolidation_work
+        if (needed > budget.config.step_slot_uc - budget.consumed_step_uc
+                or needed > budget.config.period_capacity_uc - budget.consumed_period_uc):
+            # Never start a unit that cannot finish the current pass. A
+            # validated checkpoint, not a partially executed pass, survives.
+            self._write(
+                kind="stage10_consolidation_work_deferred",
+                data={"world_step": world_step, "stage": plan.pass_name,
+                      "reason": "insufficient_pass_completion_budget",
+                      "required_uc": needed},
+            )
+            return
+        runner = ConsolidationPassRunner(transaction=tx, budget=budget)
+        if not runner.start_pass(plan):
+            raise RuntimeError("quoted pass preparation unexpectedly failed")
+        for _ in plan.units:
+            advance = runner.advance_unit(algorithm.handle)
+            if advance.outcome not in ("processed", "pass_ready"):
+                raise RuntimeError("quoted semantic pass unit unexpectedly blocked")
+        if runner.finalize_pass(algorithm.validate) is not True:
+            raise RuntimeError("quoted semantic pass validation unexpectedly blocked")
+        self._write(
+            kind="stage10_consolidation_pass_checkpointed",
+            data={"world_step": world_step, "consolidation_id": tx.id,
+                  "pass": plan.pass_name, "cursor": tx.cursor,
+                  "candidate_digest": tx.candidate_digest,
+                  "consumed_period_uc": budget.consumed_period_uc,
+                  "consumed_step_uc": budget.consumed_step_uc},
+        )
+        if tx.cursor == len(PASSES):
+            self._publish_live_consolidation(tx=tx, world_step=world_step)
+
+    def _publish_live_consolidation(
+        self, *, tx: ConsolidationTransaction, world_step: int,
+    ) -> None:
+        """Publish unproven hypotheses in h, never as trusted active rules.
+
+        When owner-specific postcut replay cannot be proved, publication
+        stays pending. Existing TD / kappa / precision / causal state never
+        receives an invented update or an irreversible rewind.
+        """
+        coordinator = Stage10PublicationCoordinator(
+            journal=self.journal, history=self.slow_history,
+            slot=self.consolidation,
+            owners={
+                "value_needs": self.value_needs,
+                "metacognition_health": self._meta_custody,
+                "perception": self.stage3.perception,
+                "causal_model": self.causal_model,
+            },
+        )
+        candidate = tx.validated_candidate(
+            validator=lambda state: (
+                type(state) is dict and "forms" in state
+            ),
+        )
+        if (candidate.get("forms") != self.slow_history.read_committed()["forms"]
+                or candidate.get("procedural")):
+            self._write(
+                kind="stage10_consolidation_publication_deferred",
+                data={"world_step": world_step,
+                      "reason": "active_form_rebase_not_implemented",
+                      "consolidation_id": tx.id},
+            )
+            return
+
+        def preserve_unmodified_active_form(_candidate, baseline, updates):
+            if updates:
+                raise ValueError("postcut owner learning requires verified semantic rebase")
+            return baseline
+
+        try:
+            prepared = coordinator.prepare(
+                transaction=tx,
+                technical_validator=lambda state: (
+                    type(state) is dict and "forms" in state
+                ),
+                owner_rebasers={
+                    name: preserve_unmodified_active_form
+                    for name in Stage10PublicationCoordinator.REQUIRED
+                },
+            )
+        except ValueError:
+            self._write(
+                kind="stage10_consolidation_publication_deferred",
+                data={"world_step": world_step,
+                      "reason": "unreplayable_postcut_owner_updates",
+                      "consolidation_id": tx.id},
+            )
+            return
+        receipt = coordinator.publish(
+            prepared=prepared, transaction=tx,
+            world_step=world_step, scheduler_sync_authorized=True,
+        )
+        self._write(
+            kind="stage10_consolidation_committed",
+            data={"world_step": world_step,
+                  "consolidation_id": tx.id,
+                  "source_history_version": receipt.source_history_version,
+                  "new_history_version": receipt.new_history_version,
+                  "candidate_digest": receipt.candidate_digest},
+        )
+
     def _sleep_step(self) -> Stage4StepResult:
         # Sleep and reflex are nondecision steps of the existing DC-15 TD
         # segment: their physical rewards must enter G once, at completion.
@@ -516,6 +755,9 @@ class Stage10Runtime(Stage9Runtime):
                     consolidation_interrupted=active,
                 )
             return result
+        # This step was admitted as sleep by the reduced wake rule. All
+        # semantic work remains private until its scheduler-owned commit.
+        self._run_live_consolidation(world_step=t, attempt_ref=attempt.attempt_ref)
         # No cognitive cycle and no re-reading WorldBody while asleep.
         prepared = PreparedCommand(
             command=PrimitiveCommand("dormir"),source="sleep",
