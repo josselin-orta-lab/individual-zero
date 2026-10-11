@@ -53,7 +53,7 @@ class MortalPublicationGuardsTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(RuntimeError, "safety-blocked"):
             substrate.open_step()
-        with self.assertRaisesRegex(RuntimeError, "safety-blocked"):
+        with self.assertRaisesRegex(RuntimeError, "open_step must"):
             substrate.send_admitted_command(Command("attendre"), source="test")
         self.assertEqual(runtime.journal.canonical_bytes(), journal_before)
         self.assertEqual(runtime.world.export_causal_state(), initial)
