@@ -108,6 +108,10 @@ class EpistemicIsolationTests(unittest.TestCase):
             "t_monde": 2, "event_refs": ["cmd:1"],
             "filter_version": "stage2-autobio-v1",
         })
+        # Rehydrate the read interface from a journal containing a forged
+        # technical commitment. In the live path only JournalViews can
+        # legitimately register new commit IDs.
+        views = JournalViews(journal=journal)
         policy = AutobiographicalPolicy(version="stage2-autobio-v1", allowed_fields_by_kind={
             "command_experienced": ("t_monde", "primitive", "parameters"),
         })
