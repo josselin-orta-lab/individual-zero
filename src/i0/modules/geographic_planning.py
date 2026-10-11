@@ -58,9 +58,29 @@ def propose_geographic_frontier(
             != target.destination):
             return None
         consequences = SimulatorPlanner._predicted_consequences(predictions[0])
-        if not {"position_x", "position_y"}.issubset({
-            consequence.variable for consequence in consequences
-        }):
+        # The exact Equipment corpus records only *changed* dimensions.
+        # A north/south move may predict y alone, not a redundant x value.
+        # Require an explicit correct forecast of the changed axis and reject
+        # any contradictory forecast of the stationary axis. Never fabricate
+        # that stationary-axis numeric consequence just to satisfy P-47.
+        expected = {
+            "position_x": target.destination[0],
+            "position_y": target.destination[1],
+        }
+        predicted_positions = {
+            consequence.variable: consequence.value_or_delta
+            for consequence in consequences
+            if consequence.variable in expected
+        }
+        changed_axis = (
+            "position_y" if target.direction in ("north", "south")
+            else "position_x"
+        )
+        if (
+            predicted_positions.get(changed_axis) != expected[changed_axis]
+            or any(value != expected[name]
+                   for name, value in predicted_positions.items())
+        ):
             return None
     option_id = (
         f"option:geographic:{target.ref}:t{target.source_t_monde}"
