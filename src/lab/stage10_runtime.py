@@ -146,6 +146,29 @@ class Stage10Config:
         )
 
 
+class _Stage10ValueNeedsPublicationView:
+    """Expose the existing ValueAndNeeds owner under the Stage-10 rebase key.
+
+    The canonical owner is still `value_and_needs`. This adapter holds no
+    causal state and is never included in the individual's causal owner list.
+    It only translates the Stage-10 journal protocol's `value_needs` label
+    for the single, synchronous publication coordinator.
+    """
+
+    owner_id = "value_needs"
+
+    def __init__(self, canonical):
+        if canonical.owner_id != "value_and_needs":
+            raise ValueError("Stage-10 value owner identity changed")
+        self._canonical = canonical
+
+    def export_causal_state(self):
+        return self._canonical.export_causal_state()
+
+    def restore_causal_state(self, state):
+        self._canonical.restore_causal_state(state)
+
+
 class _MetacognitionAndSleepCustody:
     """One snapshot authority for the existing Meta owner and its new facet."""
 
@@ -568,7 +591,7 @@ class Stage10Runtime(Stage9Runtime):
             journal=self.journal, history=self.slow_history,
             slot=self.consolidation,
             owners={
-                "value_needs": self.value_needs,
+                "value_needs": _Stage10ValueNeedsPublicationView(self.value_needs),
                 "metacognition_health": self._meta_custody,
                 "perception": self.stage3.perception,
                 "causal_model": self.causal_model,
