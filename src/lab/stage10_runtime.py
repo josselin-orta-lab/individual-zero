@@ -613,8 +613,16 @@ class Stage10Runtime(Stage9Runtime):
             return
 
         def preserve_unmodified_active_form(_candidate, baseline, updates):
-            if updates:
-                raise ValueError("postcut owner learning requires verified semantic rebase")
+            # The candidate changed only private SlowHistory evidence, not
+            # active Q, kappa, precision or causal forms (checked above).
+            # Since online updates were already applied by the *canonical*
+            # owner after the cut, reapplying them would double-learn. Keep
+            # the current owner state, which includes those updates. The
+            # coordinator freezes their exact journal identity and fails
+            # if a new update is appended before the synchronized commit.
+            #
+            # This is an identity rebase ONLY. Any future semantic pass
+            # changing active forms must provide its own checked rebaser.
             return baseline
 
         try:
@@ -780,7 +788,19 @@ class Stage10Runtime(Stage9Runtime):
             return result
         # This step was admitted as sleep by the reduced wake rule. All
         # semantic work remains private until its scheduler-owned commit.
-        self._run_live_consolidation(world_step=t, attempt_ref=attempt.attempt_ref)
+        try:
+            self._run_live_consolidation(
+                world_step=t, attempt_ref=attempt.attempt_ref,
+            )
+        except Exception:
+            # The work could have reached the irreversible h + journal
+            # publication boundary before failing. Never continue a mortal
+            # life with a possibly half-published cognitive state, and never
+            # restore an earlier owner/world snapshot as compensation.
+            boundary = self.stage3.substrate._mortal_boundary
+            if boundary is not None:
+                boundary.halt(failed_step=t)
+            raise
         # No cognitive cycle and no re-reading WorldBody while asleep.
         prepared = PreparedCommand(
             command=PrimitiveCommand("dormir"),source="sleep",
