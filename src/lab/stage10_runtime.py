@@ -157,6 +157,25 @@ class _MetacognitionAndSleepCustody:
             raise
 
 
+class _ValueNeedsPublicationView:
+    """Publication-only alias to the *same* ValueAndNeeds owner.
+
+    The normative conceptual name is value_needs; the existing snapshot
+    owner_id is value_and_needs. This facade does not own duplicate state.
+    """
+
+    owner_id = "value_needs"
+
+    def __init__(self, owner):
+        self.owner = owner
+
+    def export_causal_state(self):
+        return self.owner.export_causal_state()
+
+    def restore_causal_state(self, state):
+        self.owner.restore_causal_state(state)
+
+
 class Stage10Runtime(Stage9Runtime):
     """One causal Stage-10 individual, not a second physical-world executive."""
 
@@ -203,11 +222,12 @@ class Stage10Runtime(Stage9Runtime):
                 STAGE7_AUTOBIOGRAPHICAL_POLICY.version:STAGE7_AUTOBIOGRAPHICAL_POLICY,
             },
         )
+        self._value_needs_publication = _ValueNeedsPublicationView(self.value_needs)
         self.publication = Stage10PublicationCoordinator(
             journal=self.journal, history=self.slow_history,
             slot=self.consolidation,
             owners={
-                "value_needs":self.value_needs,
+                "value_needs":self._value_needs_publication,
                 "metacognition_health":self._meta_custody,
                 "perception":self.stage3.perception,
                 "causal_model":self.causal_model,
