@@ -59,6 +59,34 @@ class EvaluationBench:
         self._trace.append(kind="oracle_read", data={"keys": sorted(truth)})
         return truth
 
+    def verify_exported_journal(
+        self, exported: bytes, *,
+        expected_head: str | None = None,
+        expected_count: int | None = None,
+    ):
+        """Audit an immutable journal EXPORT, never a live I0 owner.
+
+        Oracle is optional. The verifier is loaded only for this explicit
+        scientific operation and never modifies I0's journal or cognition.
+        """
+        from .independent_journal_audit import audit_export_bytes
+
+        result = audit_export_bytes(
+            exported, expected_head=expected_head,
+            expected_count=expected_count,
+        )
+        self._trace.append(
+            kind="journal_export_verified",
+            data={
+                "occurrences": result.occurrences,
+                "head_hash": result.head_hash,
+                "world_steps_closed": result.world_steps_closed,
+                "terminal_deaths": result.terminal_deaths,
+                "physical_truth_verified": False,
+            },
+        )
+        return result
+
     def _replace_metrics(self, **updates: int) -> None:
         current = self._metrics.as_dict()
         current.update(updates)
