@@ -13,6 +13,9 @@ from dataclasses import dataclass
 from typing import Mapping, Sequence
 
 from .determinism import deterministic_id
+from .epistemic_guard import (
+    project_lived_field, validate_lived_kind_fields,
+)
 from .journal import HashChainedJournal, JournalEntry
 
 
@@ -27,18 +30,18 @@ class AutobiographicalPolicy:
         if not self.version:
             raise ValueError("autobiographical policy version must not be empty")
         for kind, fields in self.allowed_fields_by_kind.items():
-            if not kind:
-                raise ValueError("autobiographical event kind must not be empty")
+            validate_lived_kind_fields(kind, fields)
             if len(fields) != len(set(fields)):
                 raise ValueError(f"duplicate projection field for kind {kind!r}")
-            if "attempt_ref" in fields:
-                raise ValueError("attempt_ref is never autobiographically visible")
 
     def allows(self, event: JournalEntry) -> bool:
         kind = event.causal_event.get("kind")
         return isinstance(kind, str) and kind in self.allowed_fields_by_kind
 
     def project(self, event: JournalEntry) -> dict[str, object]:
+        # Also protect direct policy.project callers, not only the
+        # JournalViews commit/read entrypoints which validate policies.
+        self.validate()
         kind = event.causal_event.get("kind")
         if not isinstance(kind, str) or kind not in self.allowed_fields_by_kind:
             raise ValueError("event kind is not autobiographically allowed")
@@ -49,7 +52,9 @@ class AutobiographicalPolicy:
             if field == "event_id":
                 continue
             if field in event.causal_event:
-                projected[field] = event.causal_event[field]
+                projected[field] = project_lived_field(
+                    kind=kind, field=field, value=event.causal_event[field],
+                )
         return projected
 
 
@@ -106,6 +111,11 @@ class JournalViews:
                     f"technical event kind is not autobiographically allowed: "
                     f"{entry.causal_event.get('kind')!r}"
                 )
+            if entry.causal_event.get("t_monde") != t_monde:
+                raise ValueError("autobiographical source world step mismatch")
+            # Check the entire authorized nested projection before publishing
+            # the append-only commitment, not only at the next Memory read.
+            policy.project(entry)
             validated.append(event_ref)
 
         commit_event_id = deterministic_id(
@@ -117,7 +127,6 @@ class JournalViews:
             tuple(validated),
             policy.version,
         )
-        self._commit_sequence += 1
         self._journal.append(
             event_id=commit_event_id,
             causal_event={
@@ -129,6 +138,7 @@ class JournalViews:
                 "filter_version": policy.version,
             },
         )
+        self._commit_sequence += 1
         self._commit_event_ids.append(commit_event_id)
         return AutoSegmentCommit(
             event_id=commit_event_id,
@@ -152,7 +162,17 @@ class JournalViews:
 
             version = entry.causal_event.get("filter_version")
             refs = entry.causal_event.get("event_refs")
-            if not isinstance(version, str) or not isinstance(refs, list):
+            attempt = entry.causal_event.get("attempt_ref")
+            t_monde = entry.causal_event.get("t_monde")
+            if (
+                entry.causal_event.get("kind") != "auto_segment_commit"
+                or not isinstance(version, str)
+                or not isinstance(attempt, str) or not attempt
+                or type(t_monde) is not int
+                or not isinstance(refs, list)
+                or any(not isinstance(ref, str) for ref in refs)
+                or len(refs) != len(set(refs))
+            ):
                 raise ValueError("malformed AutoSegmentCommit in technical journal")
             policy = policies.get(version)
             if policy is None:
@@ -162,11 +182,15 @@ class JournalViews:
             policy.validate()
 
             for event_ref in refs:
-                if not isinstance(event_ref, str):
-                    raise ValueError("AutoSegmentCommit references invalid event id")
                 source = self._journal.get(event_ref)
-                if source is None:
-                    raise ValueError("AutoSegmentCommit references unknown event")
+                if source is None or source.index >= entry.index:
+                    raise ValueError("AutoSegmentCommit references missing/future event")
+                if (
+                    source.causal_event.get("attempt_ref") != attempt
+                    or source.causal_event.get("t_monde") != t_monde
+                    or not policy.allows(source)
+                ):
+                    raise ValueError("illegal autobiographical source provenance")
                 projected.append(policy.project(source))
 
         return tuple(projected)
