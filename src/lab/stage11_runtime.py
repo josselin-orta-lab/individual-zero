@@ -158,6 +158,33 @@ class Stage11Runtime(Stage9Runtime):
             "version": self._stage11_config.modulation.version,
         }
 
+    def _on_open_step_capture(self, capture) -> None:
+        """Account for one physically observed location, even on reflex steps.
+
+        The captured position is known BEFORE the reflex sender's checkpoint.
+        No frontier is proposed here: the Phase-1 Exploration producer still
+        designates targets from its pre-phase frozen input. A reflex with no
+        cognitive cycles therefore cannot hide an actually visited site.
+        """
+        super()._on_open_step_capture(capture)
+        geo = self.exploration.geographic
+        if geo is None:
+            return
+        observed = self.exploration.observe_geographic_capture(capture)
+        if observed:
+            self._write(
+                kind="stage11_geographic_visit_observed",
+                cycle=1,
+                data={
+                    "source": "perception_capture",
+                    "world_step": capture.t_monde,
+                    "position": [capture.x, capture.y],
+                    "new_distinct_sites": geo.distinct_sites,
+                    "visit_count": geo.visit_count,
+                    "accounting_boundary": "step_open_before_reflex",
+                },
+            )
+
     def _st_additional_fixed(self):
         # Captured before phase 1. The next cycle reads it via frozen S_t.
         return {"modulation_signals": dict(self._stage11_modulation_signals)}
