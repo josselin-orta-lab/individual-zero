@@ -35,11 +35,13 @@ def run_route(*, planning_uc=None, open_branch=True):
                 "planning": planning_uc,
             },
         )
-        cfg = replace(cfg, stage9=replace(stage9, stage8=replace(
-            stage8, stage7=replace(stage7, stage6=replace(
-                stage6, stage4=replace(stage4, compute_budget=budget),
-            )),
-        ))))
+        # Keep nested configuration replacement explicit and reviewable.
+        stage4 = replace(stage4, compute_budget=budget)
+        stage6 = replace(stage6, stage4=stage4)
+        stage7 = replace(stage7, stage6=stage6)
+        stage8 = replace(stage8, stage7=stage7)
+        stage9 = replace(stage9, stage8=stage8)
+        cfg = replace(cfg, stage9=stage9)
     runtime = Stage11Runtime(
         world_config=replace(
             base.world.config, initial_body=START_BODY,
