@@ -4,6 +4,7 @@ These tests are software-contract checks only. Synthetic DC-05 safety evidence
 in the isolated unit test is NOT physical observation or scientific proof.
 """
 from unittest import TestCase
+from unittest.mock import patch
 from copy import deepcopy
 
 from i0.modules.action_control import Admissibility
@@ -13,6 +14,7 @@ from lab.stage11_degraded_budget_probe import (
     VARIANTS, run_public_strict_geographic_budget,
 )
 from lab.stage11_reference_fixture import build_stage11_reference_runtime
+from lab.stage11_runtime import Stage11Runtime
 
 
 class Stage11StrictBudgetTests(TestCase):
@@ -24,6 +26,8 @@ class Stage11StrictBudgetTests(TestCase):
         self.assertEqual(row.planning_envelope_uc, 0)
         self.assertGreater(row.rejected_preflight_attempts, 0)
         self.assertEqual(row.accepted_preflight_uc, 0)
+        self.assertEqual(row.charged_preflight_consultations, 0)
+        self.assertEqual(row.preflight_charge_order_violations, 0)
         self.assertEqual(row.applied_geographic_commands, 0)
         self.assertEqual(row.remaining_offered_targets, 0)
         self.assertGreater(row.rejected_requested_uc, 0)
@@ -42,6 +46,10 @@ class Stage11StrictBudgetTests(TestCase):
         row = run_public_strict_geographic_budget(variant="planning_1")
         self.assertEqual(row.planning_envelope_uc, 1)
         self.assertGreater(row.accepted_preflight_uc, 0)
+        self.assertEqual(
+            row.charged_preflight_consultations, row.accepted_preflight_uc,
+        )
+        self.assertEqual(row.preflight_charge_order_violations, 0)
         self.assertGreater(row.rejected_build_attempts, 0)
         self.assertEqual(row.accepted_build_uc, 0)
         self.assertEqual(row.applied_geographic_commands, 0)
@@ -54,6 +62,12 @@ class Stage11StrictBudgetTests(TestCase):
         row = run_public_strict_geographic_budget(variant="exploration_0")
         self.assertEqual(row.exploration_envelope_uc, 0)
         self.assertGreater(row.rejected_exploration_attempts, 0)
+        # Phase-0 consultations are now legitimately paid before an
+        # independent Exploration owner later rejects its own charge.
+        self.assertEqual(
+            row.charged_preflight_consultations, row.accepted_preflight_uc,
+        )
+        self.assertEqual(row.preflight_charge_order_violations, 0)
         self.assertEqual(row.applied_geographic_commands, 0)
         self.assertEqual(row.remaining_offered_targets, 0)
         self.assertIn("exploration_observe", row.budget_deferred_operations)
@@ -68,6 +82,10 @@ class Stage11StrictBudgetTests(TestCase):
         row = run_public_strict_geographic_budget(variant="planning_3")
         self.assertEqual(row.planning_envelope_uc, 3)
         self.assertGreater(row.accepted_preflight_uc, 0)
+        self.assertEqual(
+            row.charged_preflight_consultations, row.accepted_preflight_uc,
+        )
+        self.assertEqual(row.preflight_charge_order_violations, 0)
         self.assertGreater(row.accepted_build_uc, 0)
         self.assertEqual(row.rejected_preflight_attempts, 0)
         self.assertEqual(row.rejected_build_attempts, 0)
@@ -78,6 +96,51 @@ class Stage11StrictBudgetTests(TestCase):
         self.assertEqual(row.malformed_defer_events, 0)
         print("stage11_public_strict_uc=" + row.to_json())
 
+    def test_zero_uc_never_calls_early_action_control_even_before_the_charge(self):
+        # This catches the previous architectural fault, which merely
+        # recorded a rejected charge after an unpaid Phase-0 lookup.
+        with patch.object(
+            Stage11Runtime,
+            "_geographic_frontier_targets",
+            side_effect=AssertionError("unpaid early admissibility lookup"),
+        ):
+            row = run_public_strict_geographic_budget(variant="planning_0")
+        self.assertGreater(row.rejected_preflight_attempts, 0)
+        self.assertEqual(row.charged_preflight_consultations, 0)
+
+    def test_early_lookup_is_observably_after_an_accepted_charge(self):
+        original = Stage11Runtime._geographic_frontier_targets
+        observed = []
+
+        def track_after_charge(runtime, capture, *, raw_targets=None):
+            accepted = [
+                entry.causal_event for entry in runtime.journal.entries
+                if entry.causal_event.get("kind") == "compute_charge"
+                and entry.causal_event.get("t_monde") == capture.t_monde
+                and entry.causal_event.get("cycle")
+                == runtime.compute_budget.cycle
+                and entry.causal_event.get("data", {}).get("module")
+                == "planning"
+                and entry.causal_event.get("data", {}).get("operation")
+                == "geographic_admissibility_preflight"
+                and entry.causal_event["data"].get("accepted") is True
+            ]
+            if len(accepted) != 1:
+                raise AssertionError(
+                    "canonical safety preflight ran before paid UC"
+                )
+            observed.append((capture.t_monde, runtime.compute_budget.cycle))
+            return original(runtime, capture, raw_targets=raw_targets)
+
+        with patch.object(
+            Stage11Runtime, "_geographic_frontier_targets",
+            track_after_charge,
+        ):
+            row = run_public_strict_geographic_budget(variant="planning_1")
+        self.assertTrue(observed)
+        self.assertEqual(len(observed), row.charged_preflight_consultations)
+        self.assertEqual(row.preflight_charge_order_violations, 0)
+
     def test_all_strict_public_scenarios_replay_exactly_and_are_bounded(self):
         for variant in VARIANTS:
             with self.subTest(variant=variant):
@@ -87,6 +150,11 @@ class Stage11StrictBudgetTests(TestCase):
                 self.assertEqual(left.to_json(), right.to_json())
                 self.assertEqual(left.steps, 3)
                 self.assertGreaterEqual(left.confirmed_geographic_sites, 1)
+                self.assertEqual(left.preflight_charge_order_violations, 0)
+                self.assertLessEqual(
+                    len(left.budget_deferred_operations), 3 * 5,
+                    "one budget deferral per cognitive cycle at most",
+                )
         for bad in (
             {"variant": "unregistered"},
             {"variant": "planning_0", "steps": 5},
