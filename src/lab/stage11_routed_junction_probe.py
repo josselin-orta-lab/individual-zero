@@ -79,6 +79,7 @@ def build_public_route_runtime(
     survey_refresh: bool = False,
     exploration_uc: int | None = None,
     capacity_guard: bool = False,
+    cycle_occurrence_guard: bool = False,
 ) -> Stage11Runtime:
     if layout_variant not in ("junction_open", "junction_sealed"):
         raise ValueError("unregistered public junction layout")
@@ -86,6 +87,8 @@ def build_public_route_runtime(
         raise ValueError("survey-refresh opt-in must be boolean")
     if type(capacity_guard) is not bool:
         raise ValueError("Scheduler capacity-guard opt-in must be boolean")
+    if type(cycle_occurrence_guard) is not bool:
+        raise ValueError("Scheduler cycle-occurrence opt-in must be boolean")
     if exploration_uc is not None and (
         type(exploration_uc) is not int or exploration_uc not in (0, 4)
     ):
@@ -103,9 +106,11 @@ def build_public_route_runtime(
         version=(
             "stage11-observed-route-integration-dev-v1+survey-refresh-v1"
             if survey_refresh else "stage11-observed-route-integration-dev-v1"
-        ) + ("+geo-capacity-guard-v1" if capacity_guard else ""),
+        ) + ("+geo-capacity-guard-v1" if capacity_guard else "")
+        + ("+uc-occurrence-custody-v1" if cycle_occurrence_guard else ""),
         geographic_route_enabled=True,
         geographic_capacity_guard_enabled=capacity_guard,
+        cycle_occurrence_guard_enabled=cycle_occurrence_guard,
         geographic=replace(
             reference._stage11_config.geographic,
             version=(
