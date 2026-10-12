@@ -5,6 +5,8 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import sqlite3
+import subprocess
+import sys
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
@@ -194,6 +196,62 @@ class SQLiteOwnerCustodyTests(unittest.TestCase):
                     path=path, individual_id=IDENTITY, initial_state=forged,
                 )
             self.assertFalse(Path(path).exists())
+
+
+    def test_strict_roster_cannot_be_silently_downgraded_by_rehashed_state(self):
+        runtime = build_stage4_reference_runtime(autonomous_mortal=True)
+        original = capture(runtime)
+        with TemporaryDirectory() as directory:
+            path = str(Path(directory) / "life.db")
+            with SQLiteLifeLedger.birth(
+                path=path, individual_id=IDENTITY, initial_state=original,
+            ):
+                pass
+            legacy_shape = {
+                key: deepcopy(original[key])
+                for key in ("individual_id", "world", "scheduler", "owners")
+            }
+            payload = canonical_causal_bytes(legacy_shape)
+            with sqlite3.connect(path) as database:
+                pinned = database.execute(
+                    "SELECT registered_roster_hash FROM life_current WHERE slot=1"
+                ).fetchone()[0]
+                self.assertEqual(pinned, original["owner_roster_hash"])
+                database.execute(
+                    "UPDATE life_current SET state_bytes=?, state_hash=? WHERE slot=1",
+                    (payload, sha256_hex(payload)),
+                )
+            # The new state checksum and canonical bytes are valid. The
+            # separately pinned lifetime contract must still catch removal
+            # of the former strict roster from the sole-current-state image.
+            with self.assertRaisesRegex(RecoveryBlocked, "contract downgrade"):
+                SQLiteLifeLedger.audit_read_only(
+                    path=path, expected_individual_id=IDENTITY,
+                )
+
+    def test_operator_cli_discloses_registered_roster_without_recovery_claim(self):
+        runtime = build_stage4_reference_runtime(autonomous_mortal=True)
+        image = capture(runtime)
+        with TemporaryDirectory() as directory:
+            path = str(Path(directory) / "life.db")
+            with SQLiteLifeLedger.birth(
+                path=path, individual_id=IDENTITY, initial_state=image,
+            ):
+                proc = subprocess.run(
+                    [sys.executable, "scripts/audit_i0_sqlite.py",
+                     "--db", path, "--identity", IDENTITY,
+                     "--expect-generation", "0", "--expect-head", GENESIS_HASH],
+                    capture_output=True, text=True, timeout=25,
+                )
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+                report = json.loads(proc.stdout)
+                self.assertEqual(
+                    report["registered_owner_roster_hash"],
+                    image["owner_roster_hash"],
+                )
+                self.assertFalse(report["runtime_recovery_certified"])
+                self.assertEqual(report["claim"],
+                    "internal_consistency_only_not_independent_physical_truth")
 
 
 if __name__ == "__main__":
