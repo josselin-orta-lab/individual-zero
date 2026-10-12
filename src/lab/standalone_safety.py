@@ -61,6 +61,38 @@ class StandaloneSafetyOwner:
         )
         self._blocked = True
 
+    def resolve_diagnostic_block(
+        self, *, decision_ref: str, policy_version: str,
+    ) -> None:
+        """Operator-authorized release, never an undo of a physical effect.
+
+        Campaign mode has no caller access to this transition. A physically
+        dead or halted individual remains unable to act via MortalWorldBoundary.
+        """
+        if not self._blocked or self._scheduler.active_attempt is not None:
+            raise RuntimeError("only a closed diagnostic safety block may be resolved")
+        if (type(decision_ref) is not str or not decision_ref
+                or type(policy_version) is not str or not policy_version):
+            raise ValueError("operator decision and version are mandatory")
+        t = self._scheduler.t_monde
+        self._journal.append(
+            event_id=deterministic_id(
+                "stage12-operator-safety-release-v1",
+                t, decision_ref, policy_version,
+            ),
+            causal_event={
+                "emitter": self.owner_id,
+                "kind": "safety_block_resolved_by_operator",
+                "t_monde": t,
+                "data": {
+                    "decision_ref": decision_ref,
+                    "policy_version": policy_version,
+                    "physical_world_rewound": False,
+                },
+            },
+        )
+        self._blocked = False
+
     def export_causal_state(self) -> object:
         return {
             "config_version": self._config.version,

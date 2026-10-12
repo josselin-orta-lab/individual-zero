@@ -9,25 +9,37 @@ from __future__ import annotations
 from dataclasses import replace
 from math import isfinite
 
+from i0.config import MVP_PHASE1_PRODUCER_ORDER
+from i0.modules.stage12_occupancy import module_occupancy_entropy
+from i0.modules.stage12_goal_progress import (
+    ALLOWED_MEASURES, CONTRACT_VERSION, LivedGoalProgressIntent,
+    Stage12GoalProgressLedger,
+)
+from i0.modules.stage12_alerts import Stage12AlertLedger, Stage12AlertPolicy
 from i0.modules.stage12_detectors import (
     LivedCognitiveObservation, Stage12DetectionPolicy,
     Stage12DetectionReport, Stage12LivedDetectors,
 )
 
 from .determinism import canonical_causal_bytes, deterministic_id
-from .stage11_sleep_runtime import Stage11SleepRuntime
 from .world import command_digest
+from .stage11_sleep_runtime import Stage11SleepRuntime
 
 
 class _Stage12MetacognitionCustody:
     owner_id = "metacognition_health"
-    schema = "stage12-metacognition-sleep-custody-v1"
+    schema = "stage12-metacognition-sleep-alert-goal-custody-v3"
 
-    def __init__(self, *, previous, detectors: Stage12LivedDetectors):
+    def __init__(
+        self, *, previous, detectors: Stage12LivedDetectors,
+        alerts: Stage12AlertLedger,
+    ):
         if getattr(previous, "owner_id", None) != self.owner_id:
             raise ValueError("detectors require the single canonical metacognition owner")
         self.previous = previous
         self.detectors = detectors
+        self.alerts = alerts
+        self.goal_progress = Stage12GoalProgressLedger()
         self.last_goal_deficit: dict[str, object] | None = None
 
     def observe_goal_progress(
@@ -69,6 +81,8 @@ class _Stage12MetacognitionCustody:
             "schema": self.schema,
             "prior_metacognition_and_sleep": self.previous.export_causal_state(),
             "lived_detectors": self.detectors.export_causal_state(),
+            "operator_alert_ledger": self.alerts.export_causal_state(),
+            "lived_goal_progress": self.goal_progress.export_causal_state(),
             "last_visible_goal_deficit": (
                 None if self.last_goal_deficit is None
                 else dict(self.last_goal_deficit)
@@ -94,17 +108,30 @@ class Stage12Runtime(Stage11SleepRuntime):
 
     def __init__(
         self, *, detector_policy: Stage12DetectionPolicy,
-        diagnostic_sample_cost_uc: int, **kwargs,
+        diagnostic_sample_cost_uc: int,
+        module_occupancy_cost_uc: int = 1,
+        operator_alert_persistence_steps: int = 3, **kwargs,
     ):
         detector_policy.validate()
         if type(diagnostic_sample_cost_uc) is not int or diagnostic_sample_cost_uc < 1:
             raise ValueError("Stage12 diagnostics need a positive injected P-43 UC cost")
+        if type(module_occupancy_cost_uc) is not int or module_occupancy_cost_uc < 1:
+            raise ValueError("Stage12 occupancy work requires a positive versioned UC cost")
+        self._stage12_occupancy_cost_uc = module_occupancy_cost_uc
+        alert_policy = Stage12AlertPolicy(
+            version="stage12-alerts-v1+" + detector_policy.version,
+            persistence_world_steps=operator_alert_persistence_steps,
+        )
+        alert_policy.validate()
+        self._stage12_alert_policy = alert_policy
         self._stage12_detector_policy = detector_policy
         self._stage12_diagnostic_cost_uc = diagnostic_sample_cost_uc
         super().__init__(**kwargs)
         self._stage12_detectors = Stage12LivedDetectors(detector_policy)
+        self._stage12_alerts = Stage12AlertLedger(alert_policy)
         self._meta_custody = _Stage12MetacognitionCustody(
             previous=self._meta_custody, detectors=self._stage12_detectors,
+            alerts=self._stage12_alerts,
         )
         ids = [owner.owner_id for owner in self.causal_owners]
         if ids.count("metacognition_health") != 1 or len(ids) != len(set(ids)):
@@ -120,10 +147,15 @@ class Stage12Runtime(Stage11SleepRuntime):
         stage4 = stage6.stage4
         old = stage4.compute_budget
         cost = self._stage12_diagnostic_cost_uc
+        occupancy_cost = self._stage12_occupancy_cost_uc
         budget = replace(
             old, version=(old.version + "+" + self._stage12_detector_policy.version
-                          + "+stage12-diagnostics-charged-v1"),
-            cycle_ceiling=old.cycle_ceiling + cost,
+                          + "+stage12-diagnostics-charged-v1"
+                          + "+stage12-st-module-occupancy-v1"
+                          + "+" + CONTRACT_VERSION
+                          + "+stage12-alerts-v1-p"
+                          + str(self._stage12_alert_policy.persistence_world_steps)),
+            cycle_ceiling=old.cycle_ceiling + cost + occupancy_cost,
             module_envelopes={
                 **old.module_envelopes,
                 # Stage11 has no Stage10 metacognition envelope yet.
@@ -133,11 +165,12 @@ class Stage12Runtime(Stage11SleepRuntime):
                 "metacognition_health": max(
                     old.module_envelopes.get("metacognition_health", 0),
                     base.sleep_option_uc,
-                ) + cost,
+                ) + cost + occupancy_cost,
             },
             operation_costs={
                 **old.operation_costs,
                 "stage12_diagnostic_sample": cost,
+                "stage12_occupancy_entropy": occupancy_cost,
             },
         )
         upgraded = replace(stage9, stage8=replace(stage8, stage7=replace(
@@ -152,6 +185,85 @@ class Stage12Runtime(Stage11SleepRuntime):
         """Detached, warning-only report; never an implicit Action Control veto."""
         return self._stage12_detectors.detecteurs()
 
+
+    def _publish_module_occupancy(self, *, cycle: int, world_step: int) -> None:
+        """Price and publish current S_t producer occupancy, operator-only.
+
+        Stage4 Gatekeeper owns retained contributions; this projection
+        merely reads its detached export after phase2 has published S_t.
+        No Oracle, technical journal read, reward or motor veto is involved.
+        """
+        st = self.s_t.current
+        if st is None or st.t_monde != world_step or st.cycle != cycle:
+            raise RuntimeError("Stage12 cannot sample an unpublished current S_t")
+        charge = self.compute_budget.charge(
+            module="metacognition_health", operation="stage12_occupancy_entropy",
+        )
+        self._write(kind="compute_charge", cycle=cycle, data={
+            "module": "metacognition_health",
+            "operation": "stage12_occupancy_entropy",
+            "count": 1,
+            "requested_uc": charge.requested_uc,
+            "accepted": charge.accepted,
+            "reason": charge.reason,
+        })
+        if not charge.accepted:
+            self._cycle_degraded = True
+            self._write(
+                kind="stage12_st_occupancy_deferred", cycle=cycle,
+                data={
+                    "st_version": st.version, "world_step": world_step,
+                    "reason": charge.reason, "diagnostic_incomplete": True,
+                    "policy_version": "stage12-st-module-occupancy-v1",
+                },
+            )
+            return
+
+        # Retained provenance is a bounded owned-state projection. Never
+        # use world truth or previously rejected/queued bus messages.
+        retained = self.gatekeeper.export_causal_state()["retained"]
+        emitters = {entry["id"]: entry["emitter_module"] for entry in retained}
+        if len(emitters) != len(retained):
+            raise RuntimeError("duplicate retained Gatekeeper contribution")
+        refs = tuple(element.contribution_ref for element in st.competitive)
+        if len(refs) != len(set(refs)):
+            raise RuntimeError("duplicate retained S_t contribution")
+        counts = {producer: 0 for producer in MVP_PHASE1_PRODUCER_ORDER}
+        for ref in refs:
+            emitter = emitters.get(ref)
+            if emitter not in counts:
+                raise RuntimeError("S_t contribution lacks a known retained emitter")
+            counts[emitter] += 1
+
+        ratio = self._stage12_detector_policy.entropy_warning_fraction
+        result = module_occupancy_entropy(
+            counts, warning_fraction=ratio,
+            module_universe_size=len(MVP_PHASE1_PRODUCER_ORDER),
+        )
+        if result.occupied_slots != len(refs):
+            raise RuntimeError("S_t occupancy projection lost a retained slot")
+        self._write(
+            kind="stage12_st_module_occupancy_published", cycle=cycle,
+            data={
+                "schema": "stage12-st-module-occupancy-v1",
+                "st_version": st.version, "world_step": world_step,
+                "module_universe": list(MVP_PHASE1_PRODUCER_ORDER),
+                "module_counts": {
+                    producer: counts[producer]
+                    for producer in MVP_PHASE1_PRODUCER_ORDER if counts[producer]
+                },
+                "module_universe_size": len(MVP_PHASE1_PRODUCER_ORDER),
+                "warning_fraction": ratio,
+                "normalized_entropy": result.normalized_entropy,
+                "low_entropy": result.low_entropy,
+                "status": result.status,
+                "occupied_slots": result.occupied_slots,
+                "distinct_modules": result.distinct_modules,
+                "charged_uc": charge.requested_uc,
+                "operator_only_diagnostic": True,
+            },
+        )
+
     def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
         hooks = super()._phase_hooks(
             cycle=cycle, capture=capture,
@@ -161,6 +273,9 @@ class Stage12Runtime(Stage11SleepRuntime):
         previous = hooks[5]["metacognition_health"]
 
         def publish_lived_diagnostic(ctx):
+            # Occupancy is a separate *per cognitive cycle* S_t measurement.
+            # Its UC charge is reflected in the same fatigue closure below.
+            self._publish_module_occupancy(cycle=cycle, world_step=capture.t_monde)
             # One actual metacognitive service charge per lived world step.
             # The sample is optional under DC-07, and must be absent, never
             # silently inferred, if its scheduler-owned UC debit is refused.
@@ -190,6 +305,17 @@ class Stage12Runtime(Stage11SleepRuntime):
                           "reason": charge.reason,
                           "diagnostic_incomplete": True},
                 )
+                # Keep the strict debit -> deferral receipt adjacency:
+                # unknown goal followups may be published only afterwards.
+                pending = self._meta_custody.goal_progress.followup(
+                    world_step=capture.t_monde, body=None,
+                    diagnostic_paid=False,
+                )
+                if pending is not None:
+                    self._write(
+                        kind="stage12_goal_progress_followup",
+                        cycle=cycle, data=pending.as_dict(),
+                    )
                 previous(ctx)
                 return
             goal = self.goal_manager.active_goal
@@ -241,8 +367,36 @@ class Stage12Runtime(Stage11SleepRuntime):
                     "operator_only_diagnostic": True,
                     "charged_diagnostic_uc": charge.requested_uc,
                     "diagnostic_policy_version": self._stage12_detector_policy.version,
+                    "diagnostic_window": self._stage12_detector_policy.window,
+                    "operator_alert_policy_version": self._stage12_alert_policy.version,
+                    "operator_alert_persistence_steps": (
+                        self._stage12_alert_policy.persistence_world_steps
+                    ),
                 },
             )
+            # Persistence bookkeeping is included in the already charged
+            # metacognitive diagnostic sample, without new motor authority.
+            for alert in self._stage12_alerts.observe(report):
+                self._write(
+                    kind="stage12_operator_alert", cycle=cycle,
+                    data={
+                        **alert.as_dict(),
+                        "diagnostic_policy_version": self._stage12_detector_policy.version,
+                    },
+                )
+            # Preserve debit -> diagnosis -> contiguous operator-alert
+            # receipts. Only afterwards publish the separate goal-progress
+            # followup, derived from *lived* body telemetry without Oracle.
+            # The bounded work is included in the accepted diagnostic UC.
+            goal_followup = self._meta_custody.goal_progress.followup(
+                world_step=capture.t_monde, body=capture.body,
+                diagnostic_paid=True,
+            )
+            if goal_followup is not None:
+                self._write(
+                    kind="stage12_goal_progress_followup",
+                    cycle=cycle, data=goal_followup.as_dict(),
+                )
             # Close fatigue AFTER the accepted cost, so real diagnostic work
             # contributes to the exact same waking cycle's F_cog accounting.
             previous(ctx)
@@ -274,6 +428,44 @@ class Stage12Runtime(Stage11SleepRuntime):
                     "external_audit_only": True,
                 },
             )
+            # The declaration must precede the irreversible command. Only
+            # an already UC-paid metacognitive step may record it. The
+            # declared target must actually belong to the active goal.
+            capture = self.stage3._capture
+            measure = None if active is None else active.principal_measure
+            before = (
+                None if capture is None or measure not in ALLOWED_MEASURES
+                else capture.body.get(measure)
+            )
+            if (self.detection_report.world_step == sent_t_monde
+                    and active is not None
+                    and active.target == measure
+                    and proposal.option.goal_ref == active.id
+                    and proposal.option.motive_ref.type == "active_goal"
+                    and type(before) in (int, float)
+                    and isfinite(before) and before >= 0):
+                if self._meta_custody.goal_progress.pending is not None:
+                    raise RuntimeError("prior lived goal-progress criterion unclosed")
+                registered = {
+                    "contract_version": CONTRACT_VERSION,
+                    "goal_ref": active.id,
+                    "option_ref": proposal.option.id,
+                    "command_hash": command_digest(prepared.command),
+                    "measure": measure,
+                    "value_before": float(before),
+                    "sent_world_step": sent_t_monde,
+                    "observe_world_step": sent_t_monde + 1,
+                }
+                intent_ref = self._write(
+                    kind="stage12_goal_progress_preregistered",
+                    cycle=cycle, data=registered,
+                )
+                self._meta_custody.goal_progress.preregister(
+                    LivedGoalProgressIntent(
+                        intent_ref=intent_ref,
+                        **registered,
+                    )
+                )
         return super()._dispatch_decision(
             proposal=proposal, prepared=prepared, admission=admission,
             cycle=cycle, sent_t_monde=sent_t_monde,
