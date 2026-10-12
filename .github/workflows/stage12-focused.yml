@@ -1,0 +1,107 @@
+name: Stage12 focused physical and operator checks
+
+# Verify the exact source SHA, independent from an unrelated moving main.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage12-focused.yml'
+      - 'src/i0/modules/stage12_*'
+      - 'src/lab/stage12_*'
+      - 'scripts/report_stage12*'
+      - 'scripts/run_stage12*'
+      - 'tests/test_stage12*'
+      - 'tests/test_v131_stage12*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage12-focused-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  focused-stage12:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install checked source
+        run: python -m pip install -e .
+      - name: One-step outcome and externally audited operator packet
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_goal_progress.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_operator_packet.py' -v
+      - name: Provenance and no-resurrection trial
+        run: python -m unittest discover -s tests -p 'test_stage12_operator_trial.py' -v
+      - name: Alert adjacency and sleeping sixpass integration
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_operator_alert_runtime.py' -v
+          python -m unittest discover -s tests -p 'test_v131_stage12_sixpass_operator_integration.py' -v
+
+  retained-600-trial:
+    name: retained-mortal-600-step-operator-development-trial
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install exact source
+        run: python -m pip install -e .
+      - name: Execute fresh physical life and retain canonical evidence
+        run: |
+          mkdir -p /tmp/i0-stage12-retained
+          python scripts/run_stage12_operator_trial.py \
+            --output-dir /tmp/i0-stage12-retained/trial \
+            --steps 600
+      - name: Validate manifest and report actual detector coverage
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          folder = Path("/tmp/i0-stage12-retained/trial")
+          data = json.loads((folder / "trial-manifest.json").read_text())
+          packet = data["cross_auditor_packet"]
+          if (
+              data["status"] != "complete_technically_audited"
+              or data["physically_applied_steps"] != 600
+              or not data["execution_provenance_unchanged"]
+              or data["m11_atomic_recovery_certified"]
+              or data["operator_accepted"]
+              or data["scientific_validated"]
+              or packet["coverage"]["physically_executed_actions"] != 600
+              or packet["diagnostics"]["diagnostic_samples"] != 600
+              or packet["lived_attribution_evidence"]["detector_calibration_supported"]
+          ):
+              raise SystemExit("600-step retained Stage12 development trial failed")
+          report = {
+              "head_hash": data["head_hash"],
+              "occurrences": data["occurrences"],
+              "physically_applied_steps": data["physically_applied_steps"],
+              "lived_goal_progress": packet["lived_goal_progress"],
+              "lived_detector_coverage": packet["lived_detector_coverage"],
+              "lived_attribution_evidence": packet["lived_attribution_evidence"],
+              "m11_atomic_recovery_certified": False,
+              "operator_accepted": False,
+          }
+          print("stage12_retained_600_software_only=" + json.dumps(report, sort_keys=True))
+          PY
+      - name: Upload immutable trial evidence for external operator audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage12-retained-600-v131
+          path: /tmp/i0-stage12-retained/trial/
+          retention-days: 14
+          if-no-files-found: warn
