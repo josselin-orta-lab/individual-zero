@@ -221,3 +221,27 @@ Its computed head and event count come from the imported bytes; without
 The preflight is not the Core's complete independent causal audit and does
 not establish world-step closure, death sealing or physical truth. Therefore
 it never unlocks the map.
+
+### Phase 2 detached signed custody (operator verification)
+
+An imported `observer-source-v1.json` may name `world_frames`, `journal`
+and `detached_attestation` as **separate read-only files**. The detached
+attestation follows `observer/contracts/observer-detached-attestation-v1.schema.json`.
+Its Ed25519 signature covers canonical JSON bytes of the `payload`
+(`sort_keys=True`, UTF-8, `ensure_ascii=False`, compact separators).
+The private signing key must never enter the Observer, its import directory,
+the Core process or the web form. Obtain the public key and expected key ID
+through an independent operator-controlled channel, not from the archive.
+
+In **Replay historique**, enter the independently obtained public key (raw
+32-byte Ed25519 key, Base64) and key ID and select **Vérifier la signature**.
+The API `POST /api/runs/{id}/replay/frames/signed-custody` checks signature,
+frame bytes, individual identity, journal chain head and event count, and
+recorded step closure. A successful result establishes only a **signed custody
+claim**, not physical truth. The key origin is not automatically authenticated
+by a mere operator paste, and this endpoint never enables the map.
+
+The final operator acceptance gate must include independently audited
+physical world-state provenance and adversarial import tests. Until then the
+Phase 2 2D map remains intentionally disabled. The historical event timeline
+and all available diagnostics remain usable.
