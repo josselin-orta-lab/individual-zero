@@ -162,6 +162,54 @@ class SQLiteOwnerCustodyTests(unittest.TestCase):
             self.assertTrue(receipt.pending_intent)
             self.assertFalse(receipt.may_recover)
 
+    def test_uncertain_registered_identity_seals_without_unverifiable_anchor(self):
+        # The pending intent may have partially affected physics before a
+        # crash. Its previous committed world image remains archival ONLY:
+        # re-opening the identity as active must never be possible.
+        runtime = build_stage4_reference_runtime(autonomous_mortal=True)
+        original = capture(runtime)
+        with TemporaryDirectory() as directory:
+            path = str(Path(directory) / "uncertain-registered-life.db")
+            with SQLiteLifeLedger.birth(
+                path=path, individual_id=IDENTITY, initial_state=original,
+            ) as ledger:
+                ledger.begin_intent(expected_generation=0, intent_ref="uncertain:1")
+            with SQLiteLifeLedger.open_existing(
+                path=path, expected_individual_id=IDENTITY,
+            ) as ledger:
+                self.assertTrue(ledger.audit().pending_intent)
+                sealed = ledger.seal_uncertain()
+                self.assertEqual(sealed.status, "technical_halt")
+                self.assertEqual(sealed.generation, 0)
+                self.assertEqual(sealed.journal_count, 0)
+                self.assertTrue(sealed.pending_intent)
+                self.assertFalse(sealed.may_recover)
+                with self.assertRaises(RecoveryBlocked):
+                    ledger.recover_current_bytes(expected_individual_id=IDENTITY)
+                self.assertEqual(ledger.export_canonical_journal(), b"")
+            offline = SQLiteLifeLedger.audit_read_only(
+                path=path, expected_individual_id=IDENTITY,
+            )
+            self.assertEqual(offline.status, "technical_halt")
+            self.assertTrue(offline.pending_intent)
+            with sqlite3.connect(path) as conn:
+                state_bytes = conn.execute(
+                    "SELECT state_bytes FROM life_current WHERE slot=1",
+                ).fetchone()[0]
+            archived = json.loads(state_bytes)
+            original_canonical = json.loads(canonical_causal_bytes(original))
+            self.assertEqual(archived["lifecycle"], "technical_halt")
+            for key in ("world", "scheduler", "owners", "owner_ids",
+                        "rng_owner_ids", "journal", "owner_roster_hash"):
+                # JSON's canonical $f64 marker is deliberately not a Python
+                # float. Compare wire representations, not unlike types.
+                self.assertEqual(archived[key], original_canonical[key])
+            with SQLiteLifeLedger.open_existing(
+                path=path, expected_individual_id=IDENTITY,
+            ) as ledger:
+                with self.assertRaises(RecoveryBlocked):
+                    ledger.begin_intent(expected_generation=0, intent_ref="revive")
+
     def test_strict_sqlite_current_image_rejects_rehashed_false_anchor(self):
         runtime = build_stage4_reference_runtime(autonomous_mortal=True)
         original = capture(runtime)
