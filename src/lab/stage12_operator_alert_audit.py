@@ -80,7 +80,7 @@ def audit_stage12_operator_alerts(
                     "stage12_lived_diagnostics_published",
                     "stage12_lived_diagnostics_deferred",
                 ) or receipt_key != pending_charge_closure):
-                raise ValueError("Stage12 diagnostic receipt is not immediately after its debit")
+                raise ValueError("unclosed Stage12 diagnostic charge: receipt is not immediately after its debit")
             pending_charge_closure = None
         if pending and kind != "stage12_operator_alert":
             # Operator alerts are written immediately after the *paid*
