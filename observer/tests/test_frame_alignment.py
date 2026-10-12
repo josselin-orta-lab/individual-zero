@@ -49,3 +49,14 @@ def test_frame_at_unclosed_step_rejected(tmp_path):
 def test_open_only_step_rejected(tmp_path):
     frames, journal = make_files(tmp_path, close=False)
     assert compare_frames_to_journal(frames, journal)["error"] == "invalid_recorded_step_boundaries"
+
+
+def test_frame_attempt_must_match_recorded_closed_step(tmp_path):
+    frames, journal = make_files(tmp_path)
+    document = json.loads(frames.read_text())
+    document["identity"]["attempt_ref"] = "different-attempt"
+    frames.write_text(json.dumps(document))
+    result = compare_frames_to_journal(frames, journal)
+    assert result["frame_step_alignment"] is False
+    assert result["error"] == "frame_attempt_mismatch"
+    assert result["map_authorized"] is False
