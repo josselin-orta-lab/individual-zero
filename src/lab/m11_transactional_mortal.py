@@ -275,10 +275,19 @@ class M11TransactionalMortal:
                 or runtime.stage3.substrate._operator_frame_sink is not None
                 or runtime.journal.durable_wal_enabled):
             raise ValueError("M-11 requires a fresh, standalone mortal runtime without side effects")
-        state = _runtime_image(runtime, individual_id=individual_id)
+        # Acquire exclusive ownership of a DETACHED candidate. Keeping the
+        # caller's original runtime dispatchable would give one life two
+        # physical authorities, bypassing the SQLite transaction boundary.
+        private = _copy_private_runtime(runtime)
+        state = _runtime_image(private, individual_id=individual_id)
         ledger = SQLiteLifeLedger.birth(
             path=db_path, individual_id=individual_id, initial_state=state)
-        return cls(runtime=runtime, ledger=ledger, individual_id=individual_id)
+        try:
+            runtime.stage3.substrate._mortal_boundary.halt(failed_step=1)
+        except BaseException:
+            ledger.close()
+            raise
+        return cls(runtime=private, ledger=ledger, individual_id=individual_id)
 
     @classmethod
     def cold_recover(cls, *, db_path: str, individual_id: str,
@@ -310,7 +319,11 @@ class M11TransactionalMortal:
             else:
                 runtime = runtime_factory()
                 _install_trusted_current_on_fresh(runtime, image, journal)
-            return cls(runtime=runtime, ledger=ledger, individual_id=individual_id)
+            private = _copy_private_runtime(runtime)
+            # No duplicate active authority can escape through a factory.
+            runtime.stage3.substrate._mortal_boundary.halt(
+                failed_step=max(1, runtime.scheduler.t_monde))
+            return cls(runtime=private, ledger=ledger, individual_id=individual_id)
         except BaseException:
             ledger.close()
             raise
