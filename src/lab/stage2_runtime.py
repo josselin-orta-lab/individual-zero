@@ -9,7 +9,7 @@ Spec: 18, 19, 20.3 Stage 2, INV-02, INV-27-29, INV-33, INV-39, INV-44.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping
+from typing import Callable, Mapping
 
 from .determinism import deterministic_id
 from .injected_scenario import InjectedScenario, ScenarioEvent
@@ -67,6 +67,7 @@ class ScriptedStage2Runtime:
         autonomous_mortal: bool = False,
     ) -> None:
         self.journal = HashChainedJournal()
+        self._operator_frame_sink: Callable[[dict[str, object]], None] | None = None
         self.views = JournalViews(journal=self.journal)
         self.world = WorldBody(config=config, layout=layout)
         self.scheduler = Scheduler(
@@ -304,6 +305,7 @@ class ScriptedStage2Runtime:
                     outcome="dead", applied_command_count=1,
                     world_advance_count=1,
                 )
+                self._publish_operator_closed_step()
                 # Scientific metrics are strictly optional and non-blocking.
                 if self.bench is not None:
                     try:
@@ -333,6 +335,7 @@ class ScriptedStage2Runtime:
                 outcome="normal", applied_command_count=1,
                 world_advance_count=1,
             )
+            self._publish_operator_closed_step()
             return CommandExecution(
                 status="applied", transition=physical.transition,
                 lethal_handling=None,
@@ -503,6 +506,21 @@ class ScriptedStage2Runtime:
                     STAGE2_AUTOBIOGRAPHICAL_POLICY
             }
         )
+
+    def install_operator_frame_sink(
+        self, sink: Callable[[dict[str, object]], None],
+    ) -> None:
+        """Opt-in operator-only capture at birth; never feeds I0 cognition."""
+        if (not callable(sink) or self.scheduler.t_monde != 0
+                or self.scheduler.active_attempt is not None
+                or self._operator_frame_sink is not None
+                or not self.journal.durable_wal_enabled):
+            raise RuntimeError("operator frame sink requires fresh WAL-backed life")
+        self._operator_frame_sink = sink
+
+    def _publish_operator_closed_step(self) -> None:
+        if self._operator_frame_sink is not None:
+            self._operator_frame_sink(self.capture_operator_closed_step())
 
     def capture_operator_closed_step(self) -> dict[str, object]:
         """Bind an engine frame to the latest durably journaled closure.
