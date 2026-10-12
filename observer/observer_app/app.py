@@ -30,6 +30,7 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, StrictInt
 from .frame_validation import validate_frames
 from .frame_alignment import compare_frames_to_journal
+from .frame_custody import check_custody
 from .journal_preflight import check_chain
 from .step_boundaries import check_step_boundaries
 
@@ -518,6 +519,30 @@ class Observer:
                 "physical_truth_verified": False, "scientific_validation": None,
                 "warning": "Historical recorded events only; no world reconstruction or inferred positions."}
 
+    def frame_custody_diagnostic(self, rid: str, *, trusted_frame_sha256: str,
+                                 trusted_journal_head: str, trusted_journal_count: int) -> dict[str, Any]:
+        """Operator-supplied anchors are not persisted or obtained from imported claims."""
+        frame_dir, frame_name = self.file(rid, "world_frames")
+        journal_dir, journal_name = self.file(rid, "journal")
+        with open_regular(frame_dir, frame_name) as frames:
+            frame_bytes = frames.read(16 * 1024 * 1024 + 2)
+        with open_regular(journal_dir, journal_name) as journal:
+            journal_bytes = journal.read(32 * 1024 * 1024 + 2)
+        with tempfile.TemporaryDirectory(prefix="observer-custody-") as tmp:
+            frame_path = Path(tmp) / "frames"
+            journal_path = Path(tmp) / "journal"
+            frame_path.write_bytes(frame_bytes)
+            journal_path.write_bytes(journal_bytes)
+            result = check_custody(
+                frame_path, journal_path,
+                trusted_frame_sha256=trusted_frame_sha256,
+                trusted_journal_head=trusted_journal_head,
+                trusted_journal_count=trusted_journal_count,
+            )
+        return {"sources": ["world_frames", "journal"], **result,
+                "anchor_origin": "operator_supplied_not_independently_authenticated",
+                "warning": "Matching operator-supplied anchors does not prove physical truth or authorize a map."}
+
     def frame_alignment_diagnostic(self, rid: str) -> dict[str, Any]:
         frame_dir, frame_name = self.file(rid, "world_frames")
         journal_dir, journal_name = self.file(rid, "journal")
@@ -742,6 +767,17 @@ def create_app(*, core_root: Path | None = None, run_root: Path | None = None, a
     @app.get("/api/runs/{rid}/replay", dependencies=[Depends(authenticated)])
     def replay(rid: str, source: str = "journal", step: int = Query(ge=0), limit: int = Query(default=100, ge=1, le=200)):
         return observer.replay(rid, source=source, step=step, limit=limit)
+
+    @app.post("/api/runs/{rid}/replay/frames/custody", dependencies=[Depends(authenticated)])
+    def frame_custody_diagnostic(rid: str, request: Request,
+                                 anchors: dict[str, Any] = Body(...)):
+        require_same_origin(request)
+        if set(anchors) != {"trusted_frame_sha256", "trusted_journal_head", "trusted_journal_count"}:
+            raise HTTPException(422, "explicit operator anchor fields required")
+        return observer.frame_custody_diagnostic(
+            rid, trusted_frame_sha256=anchors["trusted_frame_sha256"],
+            trusted_journal_head=anchors["trusted_journal_head"],
+            trusted_journal_count=anchors["trusted_journal_count"])
 
     @app.get("/api/runs/{rid}/replay/frames/alignment", dependencies=[Depends(authenticated)])
     def frame_alignment_diagnostic(rid: str):
