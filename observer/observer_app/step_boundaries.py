@@ -39,19 +39,24 @@ def check_step_boundaries(path: Path) -> dict:
             if type(step) is not int or step < 1 or not isinstance(attempt, str) or not attempt:
                 raise ValueError("invalid_step_provenance")
             if kind == "step_opened":
-                if step != last_step + 1 or step in opened:
+                if active_step is not None or step != last_step + 1 or step in opened:
                     raise ValueError("nonconsecutive_or_duplicate_open")
                 opened[step] = attempt
+                active_step = step
                 last_step = step
             elif kind == "step_closed":
-                if opened.get(step) != attempt or step in closed:
+                if active_step != step or opened.get(step) != attempt or step in closed:
                     raise ValueError("unmatched_close")
+                if terminal and terminal_step != step:
+                    raise ValueError("invalid_terminal_close")
                 closed[step] = attempt
+                active_step = None
             else:
-                if terminal or opened.get(step) != attempt or step in closed:
+                if terminal or active_step != step or opened.get(step) != attempt or step in closed:
                     raise ValueError("invalid_terminal_event")
                 terminal = True
-        if opened != closed:
+                terminal_step = step
+        if active_step is not None or opened != closed:
             raise ValueError("incomplete_step")
         result["recorded_boundaries_valid"] = True
         result["closed_steps"] = sorted(closed)
