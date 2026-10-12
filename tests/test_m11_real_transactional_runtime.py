@@ -109,3 +109,68 @@ def test_after_committed_generation_fault_never_retries_in_process():
             assert stored.audit().may_recover is True
             # Runtime cold-restoration is a separate gate; do not select
             # an older generation or dispatch a command without it.
+
+
+def test_cold_recovery_of_current_stage11_generation_does_not_replay_physics():
+    with TemporaryDirectory() as temp:
+        path = str(Path(temp) / "life.sqlite")
+        with M11TransactionalMortal.birth(
+            db_path=path, runtime=fresh(), individual_id=IDENTITY,
+        ) as life:
+            first = life.run_step()
+            assert first.generation == 1
+            before = life.inspect()
+        with M11TransactionalMortal.cold_recover(
+            db_path=path, individual_id=IDENTITY, runtime_factory=fresh,
+        ) as life:
+            after = life.inspect()
+            assert after["generation"] == before["generation"]
+            assert after["journal_head"] == before["journal_head"]
+            assert after["world_step"] == before["world_step"]
+            continued = life.run_step()
+            assert continued.world_step == before["world_step"] + 1
+            assert continued.generation == before["generation"] + 1
+            assert continued.journal_count > before["journal_count"]
+        # A new process never reselects generation 0 or duplicates step 1.
+        with SQLiteLifeLedger.open_existing(
+            path=path, expected_individual_id=IDENTITY,
+        ) as ledger:
+            assert ledger.audit().generation == 2
+
+
+def test_cold_recovery_refuses_unresolved_intent_even_with_factory():
+    with TemporaryDirectory() as temp:
+        path = str(Path(temp) / "life.sqlite")
+        with M11TransactionalMortal.birth(
+            db_path=path, runtime=fresh(), individual_id=IDENTITY,
+        ) as life:
+            def fault(point):
+                if point == "after_intent":
+                    raise RuntimeError("interrupted")
+            with pytest.raises(RuntimeError, match="interrupted"):
+                life.run_step(test_fault=fault)
+        with pytest.raises(RecoveryBlocked):
+            M11TransactionalMortal.cold_recover(
+                db_path=path, individual_id=IDENTITY, runtime_factory=fresh,
+            )
+
+
+def test_cold_recovery_uses_current_generation_after_prepublication_crash():
+    with TemporaryDirectory() as temp:
+        path = str(Path(temp) / "life.sqlite")
+        with M11TransactionalMortal.birth(
+            db_path=path, runtime=fresh(), individual_id=IDENTITY,
+        ) as life:
+            def fault(point):
+                if point == "after_sql_commit":
+                    raise RuntimeError("published only in SQLite")
+            with pytest.raises(RuntimeError):
+                life.run_step(test_fault=fault)
+        with M11TransactionalMortal.cold_recover(
+            db_path=path, individual_id=IDENTITY, runtime_factory=fresh,
+        ) as life:
+            assert life.inspect()["generation"] == 1
+            assert life.inspect()["world_step"] == 1
+            next_step = life.run_step()
+            assert next_step.world_step == 2
+            assert next_step.generation == 2
