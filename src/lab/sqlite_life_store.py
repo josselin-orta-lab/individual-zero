@@ -524,7 +524,9 @@ class SQLiteLifeLedger:
                 "state_bytes=?, state_hash=? WHERE slot=1 AND status='active'",
                 (archived_bytes, sha256_hex(archived_bytes)),
             )
+            self._pulse("uncertain_seal_before_commit")
             self._db.execute("COMMIT")
+            self._pulse("uncertain_seal_after_commit")
         except BaseException:
             if self._db.in_transaction:
                 self._db.execute("ROLLBACK")
