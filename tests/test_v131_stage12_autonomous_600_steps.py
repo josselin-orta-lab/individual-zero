@@ -14,6 +14,8 @@ import unittest
 from i0.modules.stage12_detectors import Stage12DetectionPolicy
 from lab.independent_journal_audit import audit_export_bytes
 from lab.stage12_occupancy_audit import audit_stage12_occupancy
+from lab.stage12_diagnostic_audit import audit_stage12_diagnostics
+from lab.stage12_operator_alert_audit import audit_stage12_operator_alerts
 from lab.journal import HashChainedJournal
 from lab.mortal_execution import MortalStatus
 from lab.stage11_reference_fixture import build_stage11_reference_runtime
@@ -152,6 +154,21 @@ class V131MortalStage12SixHundredSteps(unittest.TestCase):
                 kinds["stage12_st_occupancy_deferred"],
             )
             self.assertGreaterEqual(st_occupancy.charged_uc, 600)
+            # Bounded-window counts saturate; accepted physical evidence
+            # continues for all 600 world transitions with paid receipts.
+            diagnosed = audit_stage12_diagnostics(
+                journal.canonical_bytes(), expected_head=journal.head_hash,
+                expected_count=len(journal.entries),
+            )
+            self.assertEqual(diagnosed.diagnostic_samples, 600)
+            external_alerts = audit_stage12_operator_alerts(
+                journal.canonical_bytes(), expected_head=journal.head_hash,
+                expected_count=len(journal.entries),
+            )
+            self.assertEqual(external_alerts.examined_samples, 600)
+            self.assertEqual(
+                external_alerts.emitted_alerts, kinds["stage12_operator_alert"],
+            )
             durability = HashChainedJournal.audit_durable_wal(wal_path)
             self.assertEqual(durability["verified_entries"], len(journal.entries))
             self.assertEqual(durability["head_hash"], journal.head_hash)

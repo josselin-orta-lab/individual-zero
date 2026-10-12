@@ -65,6 +65,9 @@ def audit_stage12_diagnostics(
     policy_version: str | None = None
     charged_cost: int | None = None
     most_recent_samples = 0
+    observed_accepted_samples = 0
+    diagnostic_window: int | None = None
+    legacy_counter_mode = False
     previous_sample_step = 0
 
     for index, raw in enumerate(content.split(b"\n")):
@@ -120,12 +123,33 @@ def audit_stage12_diagnostics(
                     # unique outcome/agency pair provenance. No source-backed
                     # non-null label can be verified, so fail closed.
                     raise ValueError("unverified lived attribution bias claim")
+                # The live detector exposes the number in its *bounded*
+                # evidence window, not a lifetime counter. Old v1.3.1
+                # exports without diagnostic_window remain verifiable only
+                # until the first plateau; the auditor must never infer a
+                # smaller window from a potentially forged counter.
+                supplied_window = data.get("diagnostic_window")
+                if supplied_window is None:
+                    if diagnostic_window is not None:
+                        raise ValueError("diagnostic window disappeared within one life")
+                    legacy_counter_mode = True
+                    expected_count = most_recent_samples + 1
+                else:
+                    if (type(supplied_window) is not int or supplied_window < 1
+                            or legacy_counter_mode):
+                        raise ValueError("invalid or mixed diagnostic window contract")
+                    if diagnostic_window is None:
+                        diagnostic_window = supplied_window
+                    elif diagnostic_window != supplied_window:
+                        raise ValueError("diagnostic window changed within one life")
+                    expected_count = min(observed_accepted_samples + 1, diagnostic_window)
                 count = data.get("evidence_samples")
-                if type(count) is not int or count != most_recent_samples + 1:
+                if type(count) is not int or count != expected_count:
                     raise ValueError("metacognitive diagnostic sample count drift")
                 if t <= previous_sample_step:
                     raise ValueError("Stage12 diagnostic world step did not advance")
                 most_recent_samples = count
+                observed_accepted_samples += 1
                 previous_sample_step = t
                 version = data.get("diagnostic_policy_version")
                 if type(version) is not str or not version.strip():

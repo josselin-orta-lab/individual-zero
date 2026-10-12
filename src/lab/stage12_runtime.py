@@ -11,6 +11,7 @@ from math import isfinite
 
 from i0.config import MVP_PHASE1_PRODUCER_ORDER
 from i0.modules.stage12_occupancy import module_occupancy_entropy
+from i0.modules.stage12_alerts import Stage12AlertLedger, Stage12AlertPolicy
 from i0.modules.stage12_detectors import (
     LivedCognitiveObservation, Stage12DetectionPolicy,
     Stage12DetectionReport, Stage12LivedDetectors,
@@ -23,13 +24,17 @@ from .stage11_sleep_runtime import Stage11SleepRuntime
 
 class _Stage12MetacognitionCustody:
     owner_id = "metacognition_health"
-    schema = "stage12-metacognition-sleep-custody-v1"
+    schema = "stage12-metacognition-sleep-alert-custody-v2"
 
-    def __init__(self, *, previous, detectors: Stage12LivedDetectors):
+    def __init__(
+        self, *, previous, detectors: Stage12LivedDetectors,
+        alerts: Stage12AlertLedger,
+    ):
         if getattr(previous, "owner_id", None) != self.owner_id:
             raise ValueError("detectors require the single canonical metacognition owner")
         self.previous = previous
         self.detectors = detectors
+        self.alerts = alerts
         self.last_goal_deficit: dict[str, object] | None = None
 
     def observe_goal_progress(
@@ -71,6 +76,7 @@ class _Stage12MetacognitionCustody:
             "schema": self.schema,
             "prior_metacognition_and_sleep": self.previous.export_causal_state(),
             "lived_detectors": self.detectors.export_causal_state(),
+            "operator_alert_ledger": self.alerts.export_causal_state(),
             "last_visible_goal_deficit": (
                 None if self.last_goal_deficit is None
                 else dict(self.last_goal_deficit)
@@ -97,7 +103,8 @@ class Stage12Runtime(Stage11SleepRuntime):
     def __init__(
         self, *, detector_policy: Stage12DetectionPolicy,
         diagnostic_sample_cost_uc: int,
-        module_occupancy_cost_uc: int = 1, **kwargs,
+        module_occupancy_cost_uc: int = 1,
+        operator_alert_persistence_steps: int = 3, **kwargs,
     ):
         detector_policy.validate()
         if type(diagnostic_sample_cost_uc) is not int or diagnostic_sample_cost_uc < 1:
@@ -105,12 +112,20 @@ class Stage12Runtime(Stage11SleepRuntime):
         if type(module_occupancy_cost_uc) is not int or module_occupancy_cost_uc < 1:
             raise ValueError("Stage12 occupancy work requires a positive versioned UC cost")
         self._stage12_occupancy_cost_uc = module_occupancy_cost_uc
+        alert_policy = Stage12AlertPolicy(
+            version="stage12-alerts-v1+" + detector_policy.version,
+            persistence_world_steps=operator_alert_persistence_steps,
+        )
+        alert_policy.validate()
+        self._stage12_alert_policy = alert_policy
         self._stage12_detector_policy = detector_policy
         self._stage12_diagnostic_cost_uc = diagnostic_sample_cost_uc
         super().__init__(**kwargs)
         self._stage12_detectors = Stage12LivedDetectors(detector_policy)
+        self._stage12_alerts = Stage12AlertLedger(alert_policy)
         self._meta_custody = _Stage12MetacognitionCustody(
             previous=self._meta_custody, detectors=self._stage12_detectors,
+            alerts=self._stage12_alerts,
         )
         ids = [owner.owner_id for owner in self.causal_owners]
         if ids.count("metacognition_health") != 1 or len(ids) != len(set(ids)):
@@ -130,7 +145,9 @@ class Stage12Runtime(Stage11SleepRuntime):
         budget = replace(
             old, version=(old.version + "+" + self._stage12_detector_policy.version
                           + "+stage12-diagnostics-charged-v1"
-                          + "+stage12-st-module-occupancy-v1"),
+                          + "+stage12-st-module-occupancy-v1"
+                          + "+stage12-alerts-v1-p"
+                          + str(self._stage12_alert_policy.persistence_world_steps)),
             cycle_ceiling=old.cycle_ceiling + cost + occupancy_cost,
             module_envelopes={
                 **old.module_envelopes,
@@ -332,8 +349,23 @@ class Stage12Runtime(Stage11SleepRuntime):
                     "operator_only_diagnostic": True,
                     "charged_diagnostic_uc": charge.requested_uc,
                     "diagnostic_policy_version": self._stage12_detector_policy.version,
+                    "diagnostic_window": self._stage12_detector_policy.window,
+                    "operator_alert_policy_version": self._stage12_alert_policy.version,
+                    "operator_alert_persistence_steps": (
+                        self._stage12_alert_policy.persistence_world_steps
+                    ),
                 },
             )
+            # Persistence bookkeeping is included in the already charged
+            # metacognitive diagnostic sample, without new motor authority.
+            for alert in self._stage12_alerts.observe(report):
+                self._write(
+                    kind="stage12_operator_alert", cycle=cycle,
+                    data={
+                        **alert.as_dict(),
+                        "diagnostic_policy_version": self._stage12_detector_policy.version,
+                    },
+                )
             # Close fatigue AFTER the accepted cost, so real diagnostic work
             # contributes to the exact same waking cycle's F_cog accounting.
             previous(ctx)
