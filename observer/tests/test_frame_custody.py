@@ -20,9 +20,9 @@ def sources(tmp_path):
     journal.write_bytes(b"\n".join(json.dumps(x, sort_keys=True, separators=(",", ":")).encode() for x in rows))
     frames = tmp_path / "frames"
     data = {"schema": "observer-world-frames-v1",
-            "identity": {"individual_id": "i0", "life_generation": 0, "attempt_ref": "a"},
+            "identity": {"individual_id": "i0", "life_generation": 0},
             "geometry": {"coordinate_system": "grid-xy-top-left", "width": 4, "height": 4},
-            "frames": [{"t_monde": 1, "step_boundary": "committed",
+            "frames": [{"t_monde": 1, "attempt_ref": "a", "step_boundary": "committed",
                         "individual_pose": {"x": 1, "y": 1}, "entities": []}],
             "attestation": {"journal_head_sha256": previous, "journal_event_count": 2,
                             "verifier": "untrusted", "verified_at": "2026-10-12T00:00:00Z",
