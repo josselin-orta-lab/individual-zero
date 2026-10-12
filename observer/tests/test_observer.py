@@ -406,8 +406,8 @@ def test_signed_custody_requires_explicit_key_and_never_unlocks_map(client, layo
         "files": {"world_frames": "frames.json", "journal": "journal.txt",
                   "detached_attestation": "signed.json"}}))
     endpoint = "/api/runs/import-signed-case/replay/frames/signed-custody"
-    assert client.post(endpoint, json={}).status_code == 422
-    result = client.post(endpoint, json={"trusted_public_key_b64": key,
+    assert client.post(endpoint, json={}, headers={"Origin": "http://testserver"}).status_code == 422
+    result = client.post(endpoint, headers={"Origin": "http://testserver"}, json={"trusted_public_key_b64": key,
                                          "expected_key_id": "trusted"})
     assert result.status_code == 200, result.text
     data = result.json()
@@ -416,5 +416,5 @@ def test_signed_custody_requires_explicit_key_and_never_unlocks_map(client, layo
     assert data["recorded_step_alignment"] is True
     assert data["physical_truth_verified"] is False
     assert data["map_authorized"] is False
-    assert client.post(endpoint, json={"trusted_public_key_b64": key,
+    assert client.post(endpoint, headers={"Origin": "http://testserver"}, json={"trusted_public_key_b64": key,
                                        "expected_key_id": "wrong"}).json()["signature"]["signature_valid"] is False
