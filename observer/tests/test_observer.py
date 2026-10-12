@@ -303,3 +303,28 @@ def test_imported_world_frames_structural_diagnostic_is_not_authorization(client
     frames["frames"][0]["individual_pose"]["x"] = 4
     (folder / "frames.json").write_text(json.dumps(frames))
     assert client.get(f"/api/runs/{rid}/replay/frames/diagnostic").json()["structurally_valid"] is False
+
+
+def test_imported_journal_diagnostic_never_self_trusts_chain(client, layout):
+    _, _, archive = layout
+    folder = archive / "chain-case"
+    folder.mkdir()
+    previous = "00" * 32
+    event = {"kind": "test", "t_monde": 0}
+    eid = "one"
+    body = json.dumps({"causal_event": event, "event_id": eid}, sort_keys=True, separators=(",", ":")).encode()
+    digest = hashlib.sha256(bytes.fromhex(previous) + body).hexdigest()
+    row = {"index": 0, "event_id": eid, "previous_hash": previous,
+           "event_hash": digest, "causal_event": event}
+    (folder / "journal.txt").write_bytes(json.dumps(row, sort_keys=True, separators=(",", ":")).encode())
+    (folder / "observer-source-v1.json").write_text(json.dumps({
+        "schema": "observer-source-v1", "files": {"journal": "journal.txt"}}))
+    response = client.get("/api/runs/import-chain-case/replay/journal/diagnostic")
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["chain_valid"] is True
+    assert result["trusted_tail_verified"] is False
+    assert result["full_causal_audit"] is False
+    assert result["map_authorized"] is False
+    (folder / "journal.txt").write_bytes(b"corrupt")
+    assert client.get("/api/runs/import-chain-case/replay/journal/diagnostic").json()["chain_valid"] is False
