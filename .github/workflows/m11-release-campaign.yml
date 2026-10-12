@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'scripts/run_m11_release_campaign.py'
+      - 'src/i0/modules/sleep_health.py'
+      - 'tests/test_stage10_health_runtime.py'
       - '.github/workflows/m11-release-campaign.yml'
   workflow_dispatch:
 
