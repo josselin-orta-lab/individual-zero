@@ -384,8 +384,10 @@ class Observer:
             row.update(status="CANCELLED" if cancelled else "FAILED" if not successful else "SUCCESS", exit_code=code, ended_at=utcnow(), technical_success=successful, assertions_passed=(True if assertion_receipt else None), executed_steps=(report.get("steps_physically_executed") if isinstance(report, dict) and type(report.get("steps_physically_executed")) is int else None))
             if row["test_id"] == "bootstrap" and row["status"] == "SUCCESS":
                 row["executed_steps"] = None  # CLI cycles are NOT verified physical world steps.
-            atomic_json(directory / "_status.json", row)
+            # Publish the terminal receipt only after its artifact manifest is
+            # durable. Readers use terminal status as the completion signal.
             self._make_manifest(directory, row)
+            atomic_json(directory / "_status.json", row)
         except BaseException as exc:
             row.update(status="INTERRUPTED", ended_at=utcnow(), anomaly="runner_error:" + type(exc).__name__, technical_success=None, assertions_passed=None)
             try:
