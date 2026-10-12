@@ -143,7 +143,7 @@ class SQLiteOwnerCustodyTests(unittest.TestCase):
                 ledger.begin_intent(expected_generation=1, intent_ref="metadata:2")
                 forged = deepcopy(second)
                 original = forged["owner_ids"]
-                forged["owner_ids"] = original + ["surprise-owner"]
+                forged["owner_ids"] = sorted(original + ["surprise-owner"])
                 forged["owners"]["surprise-owner"] = {"state": "unregistered"}
                 forged["owner_roster_hash"] = sha256_hex(canonical_causal_bytes(
                     forged["owner_ids"],
