@@ -172,6 +172,71 @@ class Stage12GoalProgressTests(unittest.TestCase):
                     expected_count=verified.occurrences,
                 )
 
+    def test_rehashed_executed_command_hash_must_match_public_primitive(self):
+        # Alter BOTH the motive, preregistration and physical command
+        # hash, then recompute every journal link. Matching forged labels
+        # are not proof of the digest of an actually recorded command.
+        with TemporaryDirectory() as folder:
+            runtime = actual_stage12_runtime(str(Path(folder) / "forged-receipt.wal"))
+            Stage12OperatorConsole(
+                substrate=runtime.stage3.substrate, mode="campaign",
+                policy_version="stage12-command-digest-negative-v1",
+                maximum_world_steps=4,
+            )
+            for _ in range(4):
+                self.assertEqual(runtime.run_step().execution_status, "applied")
+            records = [
+                json.loads(line)
+                for line in runtime.journal.canonical_bytes().split(b"\n")
+            ]
+            intent = next(
+                row["causal_event"] for row in records
+                if row["causal_event"]["kind"] == "stage12_goal_progress_preregistered"
+            )
+            matching = [
+                row["causal_event"] for row in records
+                if row["causal_event"].get("t_monde") == intent["t_monde"]
+                and row["causal_event"].get("attempt_ref") == intent["attempt_ref"]
+                and row["causal_event"].get("kind") in (
+                    "stage12_action_motive_attested", "command_experienced",
+                )
+            ]
+            self.assertEqual(
+                [event["kind"] for event in matching].count("command_experienced"), 1,
+            )
+            self.assertEqual(
+                [event["kind"] for event in matching].count("stage12_action_motive_attested"), 1,
+            )
+            fake = "f" * 64
+            self.assertNotEqual(intent["data"]["command_hash"], fake)
+            intent["data"]["command_hash"] = fake
+            for event in matching:
+                if event["kind"] == "command_experienced":
+                    event["command_hash"] = fake
+                else:
+                    event["data"]["command_hash"] = fake
+            previous = GENESIS_HASH
+            for index, row in enumerate(records):
+                row["index"] = index
+                row["previous_hash"] = previous
+                previous = sha256(
+                    bytes.fromhex(previous) + canonical_causal_bytes({
+                        "event_id": row["event_id"],
+                        "causal_event": row["causal_event"],
+                    }),
+                ).hexdigest()
+                row["event_hash"] = previous
+            forged = b"\n".join(canonical_causal_bytes(row) for row in records)
+            verified = audit_export_bytes(forged)
+            self.assertEqual(verified.world_steps_closed, 4)
+            with self.assertRaisesRegex(
+                ValueError, "physically executed command digest mismatch",
+            ):
+                audit_stage12_goal_progress(
+                    forged, expected_head=verified.head_hash,
+                    expected_count=verified.occurrences,
+                )
+
     def test_real_mortal_steps_never_fabricate_lived_agency(self):
         with TemporaryDirectory() as folder:
             runtime = actual_stage12_runtime(str(Path(folder) / "real-life.wal"))

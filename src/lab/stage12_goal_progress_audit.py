@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from math import isfinite
 import json
 
+from .determinism import canonical_causal_bytes, sha256_hex
 from .independent_journal_audit import audit_export_bytes
 
 
@@ -182,6 +183,21 @@ def audit_stage12_goal_progress(
                     or command_receipts[0][1].get("command_hash") != data["command_hash"]
                     or transitions[t][1].get("attempt_ref") != attempt):
                 raise ValueError("goal precommit does not match the physically executed command")
+            command = command_receipts[0][1]
+            primitive, parameters = command.get("primitive"), command.get("parameters")
+            if (type(primitive) is not str or not primitive
+                    or type(parameters) is not dict):
+                raise ValueError("physically executed command has invalid public fields")
+            # Event-to-event equality is insufficient: an attacker who
+            # rehashes motive, intent and command receipts together could
+            # otherwise substitute an invented command hash. Verify that
+            # the digest agrees with the *publicly recorded* command bytes.
+            # This does not establish independent physical-world truth.
+            expected_command_hash = sha256_hex(canonical_causal_bytes({
+                "primitive": primitive, "parameters": parameters,
+            }))
+            if expected_command_hash != data["command_hash"]:
+                raise ValueError("physically executed command digest mismatch")
             intents[ref] = (index, data, event)
         else:
             ref = data.get("intent_ref")
