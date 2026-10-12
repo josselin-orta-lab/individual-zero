@@ -362,7 +362,7 @@ class Observer:
             with self._lock:
                 cancelled = rid in self._cancel
             successful = code == 0 and not cancelled and not row["anomaly"]
-            assertion_receipt = successful and (row["test_id"] == "journal_unit" or (row["test_id"] == "mortal_stage11" and isinstance(report, dict) and type(report.get("steps_physically_executed")) is int))
+            assertion_receipt = successful and (row["test_id"] == "journal_unit" or (row["test_id"] == "mortal_stage11" and isinstance(report, dict) and report.get("protocol_version") == "stage11-autonomous-600-journal-v1" and report.get("classification") == "public_development_diagnostic_not_heldout" and report.get("scientific_verdict") is None and type(report.get("steps_physically_executed")) is int and report["steps_physically_executed"] == row["parameters"]["steps"] and report.get("offline_audit_completed") is True and report.get("external_oracle_loaded") is False and report.get("external_bench_loaded") is False))
             row.update(status="CANCELLED" if cancelled else "FAILED" if not successful else "SUCCESS", exit_code=code, ended_at=utcnow(), technical_success=successful, assertions_passed=(True if assertion_receipt else None), executed_steps=(report.get("steps_physically_executed") if isinstance(report, dict) and type(report.get("steps_physically_executed")) is int else None))
             if row["test_id"] == "bootstrap" and row["status"] == "SUCCESS":
                 row["executed_steps"] = None  # CLI cycles are NOT verified physical world steps.
