@@ -25,7 +25,7 @@ class _DenyScience(importlib.abc.MetaPathFinder):
         return None
 
 
-def run_probe(*, steps: int = STEPS) -> dict[str, object]:
+def run_probe(*, steps: int = STEPS, observer_export_dir: str | None = None) -> dict[str, object]:
     if type(steps) is not int or steps < 1:
         raise ValueError("steps must be a positive physical-step count")
     already = _DENIED.intersection(sys.modules)
@@ -38,6 +38,9 @@ def run_probe(*, steps: int = STEPS) -> dict[str, object]:
         from .independent_journal_audit import audit_export_bytes
         from .mortal_execution import MortalStatus
         from .stage11_reference_fixture import build_stage11_reference_runtime
+        if observer_export_dir is not None:
+            from .observer_world_capture import capture_closed_world, publish_recorded_world
+            from pathlib import Path
 
         individual = build_stage11_reference_runtime(
             enable_geography=True, autonomous_mortal=True,
@@ -46,6 +49,7 @@ def run_probe(*, steps: int = STEPS) -> dict[str, object]:
             raise AssertionError("autonomous I0 unexpectedly owns a Bench")
         if individual.stage3.substrate.evaluation_trace is not None:
             raise AssertionError("autonomous I0 unexpectedly owns EvaluationTrace")
+        physical_frames: list[dict] = []
         actions: Counter[str] = Counter()
         anchors: list[dict[str, object]] = []
         anchor_steps = {1, (steps + 1) // 2, steps}
@@ -67,6 +71,11 @@ def run_probe(*, steps: int = STEPS) -> dict[str, object]:
             if not isinstance(primitive, str) or not primitive:
                 raise AssertionError("applied world step has no real command")
             actions[primitive] += 1
+            if observer_export_dir is not None:
+                physical_frames.append(capture_closed_world(
+                    individual.world, t_monde=world_step,
+                    closed_event=dict(individual.journal.entries[-1].causal_event),
+                ))
             if world_step in anchor_steps:
                 # Observation-only hash/count receipt. NO snapshot or restore.
                 anchors.append({
@@ -138,6 +147,17 @@ def run_probe(*, steps: int = STEPS) -> dict[str, object]:
             "physical_truth_attested_by_independent_oracle": False,
         }
         report["evidence_sha256"] = sha256_hex(canonical_causal_bytes(report))
+        if observer_export_dir is not None:
+            publish_recorded_world(
+                directory=Path(observer_export_dir),
+                individual_id=individual.individual_id,
+                config=individual.world.config,
+                frames=physical_frames,
+                canonical_journal=image,
+                journal_head=audited.head_hash,
+                journal_count=audited.occurrences,
+                journal_sha256=sha256_hex(image),
+            )
         return report
     finally:
         sys.meta_path.remove(deny)
@@ -149,8 +169,10 @@ def main(argv=None):
         "--steps", type=int, default=STEPS,
         help="physical steps for a local smoke diagnostic (CI uses 600)",
     )
+    parser.add_argument("--observer-export-dir", type=str, default=None,
+                        help="operator-only capture directory, never a life checkpoint")
     args = parser.parse_args(argv)
-    result = run_probe(steps=args.steps)
+    result = run_probe(steps=args.steps, observer_export_dir=args.observer_export_dir)
     print("stage11_autonomous_600_step=" + json.dumps(
         result, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
     ))
