@@ -16,6 +16,20 @@ python3 -m unittest discover -s tests -p 'test_v131_stage12_autonomous_600_steps
 
 La dernière commande exécute **600 véritables transitions de monde** avec un plafond d'arrêt non létal à la dernière transition. C'est un protocole logiciel à paramètres de développement, avec sommeil rendu inactif par configuration déclarée. Il **ne valide pas les effets du sommeil**, la survie en conditions variées ni le biais d'attribution. Le test supprime son répertoire temporaire : il ne sert pas d'archive opérateur persistante.
 
+## Essai opérateur conservé (nouveau)
+
+Pour garder une vraie archive au lieu du seul répertoire temporaire des tests :
+
+```bash
+python3 scripts/run_stage12_operator_trial.py \
+  --output-dir /chemin/vers/nouvel-essai-stage12 \
+  --steps 600
+```
+
+Le répertoire cible **doit ne pas exister**. La commande crée un WAL fsync, un `canonical-export.jsonl` sans saut final et un `trial-manifest.json`, puis vérifie de façon indépendante les données techniques. Elle refuse tout écrasement ou poursuite d'une ancienne identité. Le code de retour `0` signifie que les pas demandés ont réellement été appliqués, suivis de l'arrêt opérateur terminal et d'un audit technique cohérent ; `2` signifie une campagne incomplète à ne **jamais** reprendre, et `1` une configuration ou écriture refusée. Les traces partielles d'une campagne interrompue peuvent subsister : ne pas les interpréter comme une vie toujours active.
+
+La configuration est **figée pour ce démonstrateur**, avec mode veille désactivé volontairement ; elle n'est **pas** une expérience scientifique représentative ni une campagne de sommeil. Conserver hors de ce dossier la valeur `head_hash` et `occurrences` du manifeste, avant toute manipulation de l'archive. Le manifeste seul dans le même dossier **n'est pas une ancre indépendante**.
+
 ## 2. Contrôler un export réel et conservé
 
 À partir d'un runtime Stage 12 ou d'Individual Zero Observer, conserver un **export causal canonique complet** en dehors du runtime cognitif et relever **séparément** son hachage de tête et son nombre d'occurrences dans un registre opérateur. Ne pas passer le fichier WAL brut terminant chaque enregistrement par un séparateur ; le vérificateur attend l'export canonique sans saut de ligne terminal.
