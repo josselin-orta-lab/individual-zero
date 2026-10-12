@@ -205,8 +205,8 @@ def test_cold_start_and_uninterrupted_stage11_agree_across_real_steps():
             ) as a, SQLiteLifeLedger.open_existing(
                 path=restored_path, expected_individual_id=IDENTITY,
             ) as b:
-                aa = a.export_canonical_journal().split(b"\\n")
-                bb = b.export_canonical_journal().split(b"\\n")
+                aa = a.export_canonical_journal().split(bytes([10]))
+                bb = b.export_canonical_journal().split(bytes([10]))
                 divergence = next(
                     (i for i, (x, y) in enumerate(zip(aa, bb)) if x != y),
                     min(len(aa), len(bb)),
