@@ -124,6 +124,7 @@ def run_probe(*, steps: int = STEPS, observer_export_dir: str | None = None) -> 
 
         report = {
             "protocol_version": PROTOCOL,
+            "individual_id": individual.individual_id,
             "classification": "public_development_diagnostic_not_heldout",
             "scientific_verdict": None,
             "operator_stage_acceptance_required": True,
