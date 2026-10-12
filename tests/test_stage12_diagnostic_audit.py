@@ -132,9 +132,16 @@ class Stage12IndependentDiagnosticAuditTests(unittest.TestCase):
             # the policy window. A legacy archive can only be verified
             # until the first ambiguous saturation; it must not invent a
             # window size from an attacker-controlled plateau.
-            with self.assertRaisesRegex(ValueError, "sample count drift"):
-                audit_stage12_diagnostics(raw)
             rows = [json.loads(line) for line in raw.split(b"\n")]
+            # Both older Stage12 runtimes and newer versions declaring a
+            # window can be exercised: remove the versioned field from a
+            # separate archival copy to test the ambiguous legacy case.
+            legacy = [json.loads(line) for line in raw.split(b"\n")]
+            for row in legacy:
+                if row["causal_event"]["kind"] == "stage12_lived_diagnostics_published":
+                    row["causal_event"]["data"].pop("diagnostic_window", None)
+            with self.assertRaisesRegex(ValueError, "sample count drift"):
+                audit_stage12_diagnostics(rechain(legacy))
             diagnostics = [
                 row["causal_event"]["data"] for row in rows
                 if row["causal_event"]["kind"] ==
