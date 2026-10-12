@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'observer/**'
+      - 'src/lab/observer_world_capture.py'
+      - 'src/lab/stage11_autonomous_600_step_probe.py'
       - '.github/workflows/observer.yml'
   workflow_dispatch:
 permissions:
@@ -22,6 +24,14 @@ jobs:
       - run: python -m pip install -e './observer[test]'
       - name: Run isolated Observer tests (no science campaign)
         run: python -m pytest observer/tests -q
+
+      - name: Validate replay browser JavaScript syntax
+        run: node --check observer/observer_app/web/app.js
+
+      - name: Core Stage11 original regression
+        env:
+          PYTHONPATH: src
+        run: python -m pytest -q tests/test_stage11_autonomous_600_step_probe.py tests/test_observer_engine_frame.py tests/test_operator_frame_archive.py tests/test_independent_journal_audit.py tests/test_mortal_forward_only_world.py
 
       - name: Real Core bootstrap API integration (3 cycles, no science)
         env:
@@ -73,7 +83,7 @@ jobs:
                       if result['status'] not in ('RUNNING', 'PENDING'):
                           break
                       time.sleep(0.2)
-                  assert result['status'] == 'SUCCESS', result
+                  assert result['status'] == 'SUCCESS', (result, client.get('/api/runs/'+rid+'/logs').json().get('text', '')[-4000:])
                   assert result['technical_success'] is True
                   assert result['assertions_passed'] is True, result
                   assert result['executed_steps'] == 7, result
@@ -83,4 +93,40 @@ jobs:
                   assert report['offline_audit_completed'] is True
                   assert report['external_oracle_loaded'] is False
                   assert report['external_bench_loaded'] is False
+                  artifacts = {a['alias'] for a in result['artifacts']}
+                  assert {'journal', 'world_frames'} <= artifacts, artifacts
+                  frames_response = client.get('/api/runs/'+rid+'/file/world_frames')
+                  frames_response.raise_for_status()
+                  assert b'oracle_canary' not in frames_response.content
+                  journal_response = client.get('/api/runs/'+rid+'/replay/journal/diagnostic')
+                  assert journal_response.status_code == 200, journal_response.text
+                  assert journal_response.json()['chain_valid'] is True
+                  for step in range(1, 8):
+                      response = client.get(f'/api/runs/{rid}/replay/geometry?step={step}')
+                      assert response.status_code == 200, response.text
+                      frame = response.json()
+                      assert frame['available'] is True, frame
+                      assert frame['capture_integrity_verified'] is True
+                      assert frame['engine_pose_journal_match'] is True
+                      assert frame['map_authorized'] is True
+                      assert frame['physical_truth_verified'] is False
+                      assert frame['frame']['t_monde'] == step
+                      assert frame['geometry']['width'] == 32
+                      assert frame['geometry']['height'] == 32
+                  assert client.get(f'/api/runs/{rid}/replay/geometry?step=8').json()['available'] is False
+                  # A receipt or frame edited after SUCCESS must immediately
+                  # revoke map authorization. This modifies disposable CI files.
+                  result_file = Path(temp) / 'runs' / rid / 'result.json'
+                  original_result = result_file.read_bytes()
+                  result_file.write_bytes(original_result + b' ')
+                  assert client.get(f'/api/runs/{rid}/replay/geometry?step=1').json()['available'] is False
+                  result_file.write_bytes(original_result)
+                  assert client.get(f'/api/runs/{rid}/replay/geometry?step=1').json()['available'] is True
+                  frame_file = Path(temp) / 'runs' / rid / 'world_frames.json'
+                  original_frames = frame_file.read_bytes()
+                  frame_file.write_bytes(original_frames + b' ')
+                  assert client.get(f'/api/runs/{rid}/replay/geometry?step=1').json()['available'] is False
+                  frame_file.write_bytes(original_frames)
+
+
           PY

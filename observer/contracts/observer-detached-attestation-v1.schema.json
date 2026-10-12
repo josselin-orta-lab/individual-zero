@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Observer detached signed custody attestation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "payload",
+    "signature"
+  ],
+  "properties": {
+    "schema": {
+      "const": "observer-detached-attestation-v1"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "individual_id",
+        "life_generation",
+        "attempt_ref",
+        "frames_sha256",
+        "journal_head_sha256",
+        "journal_event_count",
+        "issuer",
+        "purpose"
+      ],
+      "properties": {
+        "individual_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "life_generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "attempt_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "frames_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "journal_head_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "journal_event_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "issuer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "purpose": {
+          "const": "observer-frame-custody-only"
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "key_id",
+        "value"
+      ],
+      "properties": {
+        "algorithm": {
+          "const": "Ed25519"
+        },
+        "key_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

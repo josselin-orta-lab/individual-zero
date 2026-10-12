@@ -1,4 +1,4 @@
-# Individual Zero Observer (Phase 1 candidate)
+# Individual Zero Observer (Phase 1 + Phase 2 operator candidate)
 
 Independent, local-only web console for human operators. No `lab`, `i0` or
 `adapters` imports from the Observer process. **The Core runs without this
@@ -6,14 +6,16 @@ service.** This directory intentionally has its own Python package and static
 frontend, with no React/Vite toolchain required for the minimal MVP. A
 frontend migration can be considered after operator acceptance.
 
-## Audited integration: upstream `main` at `c74368684f7ea8ceecb60ee0e95e1a5746368942`
+## Core integration and provenance (checkout HEAD is authoritative)
 
 - `python -m lab.cli`: bootstrap LabEvents JSONL, `--seed`, `--cycles`,
   `--run-id` and `--output` supported; *not* a cognitive experiment.
 - `python -m lab.stage11_autonomous_600_step_probe --steps N`: autonomous,
-  mortal, no Oracle/Bench, reports a development diagnostic. It does not
-  export the complete journal. Reference world seed is internal, not
-  user-adjustable.
+  mortal, no Oracle/Bench, reports a development diagnostic. The optional
+  `--observer-export-dir` is an operator-only output seam that exports a
+  complete independently audited journal and actual WorldBody frames without
+  making them accessible to I0. The Observer's fixed Stage11 runner uses this
+  seam. Reference world seed is internal, not user-adjustable.
 - `python -m unittest discover -s tests -p test_causal_journal.py`: small
   fixed journal checks. Never user-supplied shell commands.
 - `scripts/verify_i0_journal.py` independently validates a complete canonical
@@ -168,9 +170,10 @@ status cannot be established. A status describes the local runner only:
 restart/cancel statuses, read-only import, event browser, original downloads,
 ZIP, SHA-256 byte checks, tests and UI.
 
-**Not claimed**: complete Core WAL recovery, independent scientific validity,
-Oracle ground-truth attestation, 2D replay or operator approval. Phase 1 stays
-**IN_PROGRESS** until reviewed and explicitly accepted. Phase 2 is design only.
+**Not claimed**: coherent post-crash Core recovery, scientific validation,
+external Oracle truth, or operator acceptance. Phase 1 and Phase 2 remain
+**PENDING OPERATOR ACCEPTANCE** until the joint final review. Phase 2 renders
+only locally produced engine-recorded maps after run/chain/step/pose checks.
 
 ## Phase 1 operator acceptance checklist (manual, no scientific verdict)
 
@@ -200,5 +203,69 @@ account write access to independent Oracle/Bench archives.
 
 Record operator name, date, OS, Python version, Core SHA, Observer SHA,
 artifacts/digests, observed failures, and an explicit **ACCEPT / REJECT**
-decision. A green CI is not an operator acceptance decision. Phase 2 replay
-remains out of scope until this Phase 1 gate is approved.
+decision. A green CI is not an operator acceptance decision. The operator
+has deferred Phase 1 and 2 acceptance to a single final gate. See
+`observer/PHASE2_OPERATOR_ACCEPTANCE.md`.
+
+## Phase 2: operator-local physical replay candidate
+
+The **Replay historique** tab browses recorded events by journal `t_monde`
+or Lab bootstrap cycle. Those timelines are not interchangeable. Imported
+`world_frames` files are validated structurally via
+`/api/runs/{id}/replay/frames/diagnostic`; the UI displays invalidity
+reasons and keeps imported 2D maps disabled. A structurally valid file is
+**not** a verified physical history, even if it carries self-declared
+attestation fields. A local Stage11 run now provides operator-only WorldBody
+captures after each completed physical step, plus the canonical journal.
+The Observer independently checks file hashes, full step coverage, closure
+attempts and journal physical positions before rendering a local 2D map.
+The Core addition is opt-in and outside I0's cognition. No Observer import
+enters the Core, and no Oracle/Bench interface is used.
+
+The replay page also shows a read-only canonical journal hash-chain preflight.
+Its computed head and event count come from the imported bytes; without
+**separately trusted** head/count they cannot prove an untruncated history.
+The preflight is not the Core's complete independent causal audit and does
+not establish world-step closure, death sealing or physical truth. Therefore
+it never unlocks the map.
+
+### Phase 2 detached signed custody (operator verification)
+
+An imported `observer-source-v1.json` may name `world_frames`, `journal`
+and `detached_attestation` as **separate read-only files**. The detached
+attestation follows `observer/contracts/observer-detached-attestation-v1.schema.json`.
+Its Ed25519 signature covers canonical JSON bytes of the `payload`
+(`sort_keys=True`, UTF-8, `ensure_ascii=False`, compact separators).
+The private signing key must never enter the Observer, its import directory,
+the Core process or the web form. Obtain the public key and expected key ID
+through an independent operator-controlled channel, not from the archive.
+
+In **Replay historique**, enter the independently obtained public key (raw
+32-byte Ed25519 key, Base64) and key ID and select **Vérifier la signature**.
+The API `POST /api/runs/{id}/replay/frames/signed-custody` checks signature,
+frame bytes, individual identity, journal chain head and event count, and
+recorded step closure. A successful result establishes only a **signed custody
+claim**, not physical truth. The key origin is not automatically authenticated
+by a mere operator paste, and this endpoint never enables the map.
+
+The final operator gate includes real runtime provenance, 600-step continuity
+and adversarial import tests. A map derived from a successfully completed,
+verified local Stage11 run is available for operator inspection; imported
+archives remain non-renderable. Neither source is presented as an Oracle
+truth or a scientific finding.
+
+### Captured local world maps
+
+Run `mortal_stage11` from **Tests** (7 steps for smoke, up to 600 for
+technical continuity). After SUCCESS, open **Replay historique**, select the
+local run and journal source, then move the time scrubber. The 32x32 grid
+shows the real WorldBody coordinates and terrain recorded immediately after
+each completed action. The technical verifier requires original canonical
+journal bytes, an operator-owned manifest and report, all closed and unique
+physical steps, and an exact pose/attempt match for **every** frame.
+
+`map_authorized` on this local route means engine recording consistency,
+not independent experimental truth. The Oracle remains outside the Core
+runner. No imported or cancelled/failed/interrupted run can authorize a map.
+The one-time joint operator acceptance protocol is in
+[`PHASE2_OPERATOR_ACCEPTANCE.md`](PHASE2_OPERATOR_ACCEPTANCE.md).

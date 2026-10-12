@@ -9,7 +9,7 @@ Spec: 18, 19, 20.3 Stage 2, INV-02, INV-27-29, INV-33, INV-39, INV-44.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping
+from typing import Callable, Mapping
 
 from .determinism import deterministic_id
 from .injected_scenario import InjectedScenario, ScenarioEvent
@@ -67,6 +67,7 @@ class ScriptedStage2Runtime:
         autonomous_mortal: bool = False,
     ) -> None:
         self.journal = HashChainedJournal()
+        self._operator_frame_sink: Callable[[dict[str, object]], None] | None = None
         self.views = JournalViews(journal=self.journal)
         self.world = WorldBody(config=config, layout=layout)
         self.scheduler = Scheduler(
@@ -304,6 +305,7 @@ class ScriptedStage2Runtime:
                     outcome="dead", applied_command_count=1,
                     world_advance_count=1,
                 )
+                self._publish_operator_closed_step()
                 # Scientific metrics are strictly optional and non-blocking.
                 if self.bench is not None:
                     try:
@@ -333,6 +335,7 @@ class ScriptedStage2Runtime:
                 outcome="normal", applied_command_count=1,
                 world_advance_count=1,
             )
+            self._publish_operator_closed_step()
             return CommandExecution(
                 status="applied", transition=physical.transition,
                 lethal_handling=None,
@@ -503,6 +506,62 @@ class ScriptedStage2Runtime:
                     STAGE2_AUTOBIOGRAPHICAL_POLICY
             }
         )
+
+    def install_operator_frame_sink(
+        self, sink: Callable[[dict[str, object]], None],
+    ) -> None:
+        """Opt-in operator-only capture at birth; never feeds I0 cognition."""
+        if (not callable(sink) or self.scheduler.t_monde != 0
+                or self.scheduler.active_attempt is not None
+                or self._operator_frame_sink is not None
+                or not self.journal.durable_wal_enabled):
+            raise RuntimeError("operator frame sink requires fresh WAL-backed life")
+        self._operator_frame_sink = sink
+
+    def enable_operator_frame_archive(self, path: str):
+        from .operator_frame_archive import OperatorFrameArchive
+        if self.scheduler.t_monde != 0 or self.scheduler.active_attempt is not None:
+            raise RuntimeError('archive must be enabled before first step')
+        if self._operator_frame_sink is not None or not self.journal.durable_wal_enabled:
+            raise RuntimeError('archive requires a fresh durable WAL')
+        archive = OperatorFrameArchive(path)
+        self.install_operator_frame_sink(archive.append)
+        return archive
+
+    def _publish_operator_closed_step(self) -> None:
+        if self._operator_frame_sink is not None:
+            self._operator_frame_sink(self.capture_operator_closed_step())
+
+    def capture_operator_closed_step(self) -> dict[str, object]:
+        """Bind an engine frame to the latest durably journaled closure.
+
+        Must be invoked synchronously after close_step, before any later
+        external world mutation. This is a capture receipt, not a persisted
+        frame archive or an independent scientific attestation.
+        """
+        if not self.journal.durable_wal_enabled:
+            raise RuntimeError("operator capture requires a durable journal WAL")
+        if self.scheduler.active_attempt is not None:
+            raise RuntimeError("cannot capture an open world step")
+        entries = self.journal.entries
+        if not entries:
+            raise RuntimeError("no journaled closure")
+        closure = entries[-1]
+        event = closure.causal_event
+        if event["kind"] != "step_closed" or event["data"]["world_advance_count"] != 1:
+            raise RuntimeError("latest journal event is not a physical step closure")
+        if event["t_monde"] != self.scheduler.t_monde:
+            raise RuntimeError("closure and world clock disagree")
+        frame = self.world.capture_operator_world_frame(t_monde=event["t_monde"])
+        frame["step_boundary"] = "committed"
+        return {
+            "frame": frame,
+            "attempt_ref": event["attempt_ref"],
+            "journal_closure_hash": closure.event_hash,
+            "journal_head_sha256": self.journal.head_hash,
+            "journal_event_count": len(entries),
+            "geometry": self.world.operator_world_geometry(),
+        }
 
     def causal_fingerprint(self) -> dict[str, object]:
         state = {

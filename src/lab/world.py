@@ -654,6 +654,55 @@ class WorldBody:
             "physics_version": self._config.version,
         }
 
+    def capture_operator_world_frame(self, *, t_monde: int) -> dict[str, object]:
+        """Capture actual engine state for an operator-owned 2D export.
+
+        This is a read-only capture, NOT an I0 observation, an Oracle result,
+        a journal commit, or proof that a step boundary was committed. The
+        caller must attest the corresponding durable closure separately.
+        """
+        if type(t_monde) is not int or t_monde < 1:
+            raise ValueError("operator frame requires a positive world step")
+        entities: list[dict[str, object]] = []
+
+        def add(kind: str, position: Position, suffix: str = "") -> None:
+            entities.append({
+                "id": f"{kind}:{position.x}:{position.y}{suffix}",
+                "kind": kind,
+                "position": position.as_dict(),
+            })
+
+        for kind, positions in (
+            ("obstacle", self._obstacles),
+            ("water", self._water_sources),
+            ("creature", self._creatures),
+            ("danger", self._danger_zones),
+            ("lethal", self._lethal_zones),
+            ("shelter", self._shelters),
+        ):
+            for position in sorted(positions):
+                add(kind, position)
+        for (position, kind), quantity in sorted(self._resources.items()):
+            if quantity > 0:
+                add("resource", position, ":" + kind)
+        for position, count in sorted(self._placed_stones.items()):
+            if count > 0:
+                add("stone", position)
+        entities.sort(key=lambda item: item["id"])
+        return {
+            "t_monde": t_monde,
+            "individual_pose": self._position.as_dict(),
+            "entities": entities,
+        }
+
+    def operator_world_geometry(self) -> dict[str, object]:
+        """Read-only engine geometry, never a cognition-facing observation."""
+        return {
+            "coordinate_system": "grid-xy-top-left",
+            "width": self._config.width,
+            "height": self._config.height,
+        }
+
     def export_causal_state(self) -> object:
         truth = dict(self.ground_truth())
         truth.pop("oracle_canary", None)

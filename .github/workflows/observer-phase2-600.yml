@@ -1,0 +1,85 @@
+name: Observer Phase 2 physical continuity (technical, not scientific)
+on:
+  pull_request:
+    paths:
+      - 'observer/**'
+      - 'src/lab/observer_world_capture.py'
+      - 'src/lab/stage11_autonomous_600_step_probe.py'
+      - '.github/workflows/observer-phase2-600.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  observer-physical-600:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e './observer[test]'
+      - name: Confirm 600 actual closed world steps and captured engine history
+        env:
+          PYTHONPATH: observer
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import time
+          from pathlib import Path
+          from tempfile import TemporaryDirectory
+          from fastapi.testclient import TestClient
+          from observer_app.app import create_app
+
+          with TemporaryDirectory() as temporary:
+              with TestClient(create_app(
+                  core_root=Path.cwd(),
+                  run_root=Path(temporary) / 'runs',
+                  token='z' * 48,
+              )) as client:
+                  client.post('/api/session', json={'token': 'z' * 48}).raise_for_status()
+                  response = client.post('/api/runs', json={
+                      'test_id': 'mortal_stage11', 'steps': 600,
+                  }, headers={'Origin': 'http://testserver'})
+                  response.raise_for_status()
+                  rid = response.json()['id']
+                  for _ in range(3600):
+                      state = client.get('/api/runs/' + rid).json()
+                      if state['status'] not in ('PENDING', 'RUNNING'):
+                          break
+                      time.sleep(0.25)
+                  if state['status'] != 'SUCCESS':
+                      raise AssertionError((state, client.get('/api/runs/'+rid+'/logs').json()['text'][-4000:]))
+                  assert state['assertions_passed'] is True
+                  assert state['executed_steps'] == 600
+                  assert state['scientific_validation'] is None
+                  report = client.get('/api/runs/' + rid + '/file/result').json()
+                  assert report['steps_physically_executed'] == 600
+                  assert report['world_transitions'] == 600
+                  assert report['offline_audit_completed'] is True
+                  assert report['external_oracle_loaded'] is False
+                  assert report['external_bench_loaded'] is False
+                  journal = client.get('/api/runs/' + rid + '/file/journal')
+                  frames = client.get('/api/runs/' + rid + '/file/world_frames')
+                  journal.raise_for_status()
+                  frames.raise_for_status()
+                  assert b'oracle_canary' not in frames.content
+                  assert b'oracle_ground_truth' not in frames.content
+                  assert hashlib.sha256(journal.content).hexdigest() == report['journal_bytes_sha256']
+                  original_frames = json.loads(frames.content)
+                  assert len(original_frames['frames']) == 600
+                  assert [x['t_monde'] for x in original_frames['frames']] == list(range(1, 601))
+                  for step in (1, 300, 600):
+                      map_response = client.get('/api/runs/' + rid + f'/replay/geometry?step={step}')
+                      map_response.raise_for_status()
+                      map_data = map_response.json()
+                      assert map_data['available'] is True, map_data
+                      assert map_data['capture_integrity_verified'] is True
+                      assert map_data['engine_pose_journal_match'] is True
+                      assert map_data['map_authorized'] is True
+                      assert map_data['physical_truth_verified'] is False
+                      assert map_data['frame']['t_monde'] == step
+                  assert client.get('/api/runs/'+rid+'/replay/geometry?step=601').json()['available'] is False
+                  print('OBSERVER_PHASE2_TECHNICAL_600_PASS: scientific verdict remains unset')
+          PY

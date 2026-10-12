@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Observer historical engine-recorded 2D frames v1 (unverified import)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "identity",
+    "geometry",
+    "frames",
+    "attestation"
+  ],
+  "properties": {
+    "schema": {
+      "const": "observer-world-frames-v1"
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "individual_id",
+        "life_generation"
+      ],
+      "properties": {
+        "individual_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "life_generation": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "geometry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "coordinate_system",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "coordinate_system": {
+          "const": "grid-xy-top-left"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        }
+      }
+    },
+    "frames": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "t_monde",
+          "step_boundary",
+          "individual_pose",
+          "entities",
+          "attempt_ref"
+        ],
+        "properties": {
+          "t_monde": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "step_boundary": {
+            "const": "committed"
+          },
+          "individual_pose": {
+            "$ref": "#/$defs/position"
+          },
+          "entities": {
+            "type": "array",
+            "maxItems": 10000,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "kind",
+                "position"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "kind": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "position": {
+                  "$ref": "#/$defs/position"
+                }
+              }
+            }
+          },
+          "attempt_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    "attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "journal_head_sha256",
+        "journal_event_count",
+        "verifier",
+        "verified_at",
+        "source_sha256"
+      ],
+      "properties": {
+        "journal_head_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "journal_event_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "verifier": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verified_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source_sha256": {
+          "$ref": "#/$defs/hash"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "position": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y"
+      ],
+      "properties": {
+        "x": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "y": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

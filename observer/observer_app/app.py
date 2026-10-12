@@ -28,20 +28,27 @@ from typing import Any, Iterator
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, StrictInt
+from .frame_validation import validate_frames
+from .engine_replay import verify_engine_recording
+from .frame_alignment import compare_frames_to_journal
+from .frame_custody import check_custody
+from .detached_attestation import verify_detached_attestation
+from .journal_preflight import check_chain
+from .step_boundaries import check_step_boundaries
 
 WEB = Path(__file__).parent / "web"
 RUN_ID = re.compile(r"r-[0-9a-f]{32}\Z")
 IMPORT_ID = re.compile(r"import-[a-zA-Z0-9_-]{1,64}\Z")
 SAFE_NAME = re.compile(r"[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}\Z")
-ALLOWED_SOURCES = frozenset({"journal", "oracle", "evaluation_trace", "lab_events"})
-LOCAL_FILES = {"lab_events": "events.jsonl", "log": "execution.log", "result": "result.json", "status": "_status.json", "manifest": "_manifest.json"}
-SOURCE_CLASSES = {"journal": "causal_journal", "oracle": "oracle_declared_source", "evaluation_trace": "independent_evaluation", "lab_events": "lab_telemetry"}
+ALLOWED_SOURCES = frozenset({"journal", "oracle", "evaluation_trace", "lab_events", "world_frames", "detached_attestation"})
+LOCAL_FILES = {"lab_events": "events.jsonl", "journal": "journal.jsonl", "world_frames": "world_frames.json", "log": "execution.log", "result": "result.json", "status": "_status.json", "manifest": "_manifest.json"}
+SOURCE_CLASSES = {"journal": "causal_journal", "oracle": "oracle_declared_source", "evaluation_trace": "independent_evaluation", "lab_events": "lab_telemetry", "world_frames": "unverified_historical_geometry", "detached_attestation": "untrusted_external_attestation"}
 MAX_PAGE = 200
 MAX_RECORD = 2 * 1024 * 1024
 
 CATALOG = (
     {"id": "bootstrap", "title": "Bootstrap deterministic smoke", "description": "LabEvent JSONL; execution infrastructure only, not an Oracle or a cognitive experiment.", "parameters": {"seed": {"min": 0, "max": 2147483647, "default": 0}, "cycles": {"min": 1, "max": 600, "default": 3}}, "timeout_seconds": 120},
-    {"id": "mortal_stage11", "title": "Stage 11 autonomous mortal diagnostic", "description": "Runs real physical steps without Oracle/Bench. Produces a report, not an exported journal or scientific verdict. Seed fixed by upstream reference fixture.", "parameters": {"steps": {"min": 1, "max": 600, "default": 20}}, "timeout_seconds": 1200},
+    {"id": "mortal_stage11", "title": "Stage 11 autonomous mortal diagnostic", "description": "Runs real physical steps without Oracle/Bench. After a complete offline audit, emits read-only operator world frames and canonical journal, never scientific truth. Seed fixed by upstream reference fixture.", "parameters": {"steps": {"min": 1, "max": 600, "default": 20}}, "timeout_seconds": 1200},
     {"id": "journal_unit", "title": "Journal unit checks", "description": "Fixed journal unit-test discovery. No operator-selectable test paths.", "parameters": {}, "timeout_seconds": 180},
 )
 CATALOG_BY_ID = {item["id"]: item for item in CATALOG}
@@ -319,7 +326,7 @@ class Observer:
         if test == "bootstrap":
             return [sys.executable, "-m", "lab.cli", "--seed", str(p["seed"]), "--cycles", str(p["cycles"]), "--run-id", rid, "--output", str(self.run_root / rid / "events.jsonl")]
         if test == "mortal_stage11":
-            return [sys.executable, "-m", "lab.stage11_autonomous_600_step_probe", "--steps", str(p["steps"])]
+            return [sys.executable, "-m", "lab.stage11_autonomous_600_step_probe", "--steps", str(p["steps"]), "--observer-export-dir", str(self.run_root / rid)]
         if test == "journal_unit":
             return [sys.executable, "-m", "unittest", "discover", "-s", str(self.core_root / "tests"), "-p", "test_causal_journal.py", "-v"]
         raise ValueError("not an explicitly authorized test")
@@ -379,8 +386,10 @@ class Observer:
             row.update(status="CANCELLED" if cancelled else "FAILED" if not successful else "SUCCESS", exit_code=code, ended_at=utcnow(), technical_success=successful, assertions_passed=(True if assertion_receipt else None), executed_steps=(report.get("steps_physically_executed") if isinstance(report, dict) and type(report.get("steps_physically_executed")) is int else None))
             if row["test_id"] == "bootstrap" and row["status"] == "SUCCESS":
                 row["executed_steps"] = None  # CLI cycles are NOT verified physical world steps.
-            atomic_json(directory / "_status.json", row)
+            # Publish the terminal receipt only after its artifact manifest is
+            # durable. Readers use terminal status as the completion signal.
             self._make_manifest(directory, row)
+            atomic_json(directory / "_status.json", row)
         except BaseException as exc:
             row.update(status="INTERRUPTED", ended_at=utcnow(), anomaly="runner_error:" + type(exc).__name__, technical_success=None, assertions_passed=None)
             try:
@@ -476,6 +485,261 @@ class Observer:
                     break
                 items.append(entry)
         return {"items": items, "next_cursor": items[-1]["line"] if more and items else None, "source": source, "record_category": SOURCE_CLASSES[source], "physical_truth_verified": False if source != "oracle" else None, "integrity": "not_verified_by_event_browser"}
+
+    def replay(self, rid: str, *, source: str, step: int, limit: int = 100) -> dict[str, Any]:
+        """Read-only historical event projection, never a simulated world state."""
+        if source not in {"journal", "lab_events"}:
+            raise HTTPException(422, "replay requires an explicit journal or lab telemetry source")
+        if step < 0:
+            raise HTTPException(422, "negative step")
+        directory, name = self.file(rid, source)
+        matched = []
+        total = 0
+        malformed = 0
+        with open_regular(directory, name) as stream:
+            for line_number, record in enumerate(stream, 1):
+                if len(record) > MAX_RECORD:
+                    malformed += 1
+                    continue
+                try:
+                    item = json.loads(record)
+                    if not isinstance(item, dict):
+                        raise ValueError("non-object event")
+                    event = item.get("causal_event", item) if source == "journal" else item
+                    if not isinstance(event, dict):
+                        raise ValueError("non-object causal event")
+                    index = event.get("t_monde") if source == "journal" else event.get("cycle")
+                    if type(index) is int and index == step:
+                        total += 1
+                        if len(matched) < limit:
+                            matched.append({"line": line_number, "kind": event.get("kind"), "raw": item})
+                except (ValueError, UnicodeDecodeError):
+                    malformed += 1
+        return {"source": source, "requested_step": step,
+                "step_semantics": "t_monde" if source == "journal" else "bootstrap_cycle_not_physical_step",
+                "events": matched, "matched_count": total, "truncated": total > limit,
+                "malformed_records": malformed, "reconstruction": "not_available",
+                "world_state": None, "geometry": None, "oracle_ground_truth": None,
+                "physical_truth_verified": False, "scientific_validation": None,
+                "warning": "Historical recorded events only; no world reconstruction or inferred positions."}
+
+    def signed_custody_diagnostic(self, rid: str, *, trusted_public_key_b64: str,
+                                  expected_key_id: str) -> dict[str, Any]:
+        """Verify detached claim with a separately supplied operator key."""
+        if not isinstance(trusted_public_key_b64, str) or len(trusted_public_key_b64) > 128 or not isinstance(expected_key_id, str) or not 0 < len(expected_key_id) <= 128:
+            raise HTTPException(422, "invalid external verification key")
+        frame_dir, frame_name = self.file(rid, "world_frames")
+        att_dir, att_name = self.file(rid, "detached_attestation")
+        journal_dir, journal_name = self.file(rid, "journal")
+        with open_regular(frame_dir, frame_name) as stream:
+            frame_bytes = stream.read(16 * 1024 * 1024 + 2)
+        with open_regular(att_dir, att_name) as stream:
+            att_bytes = stream.read(16 * 1024 + 2)
+        with open_regular(journal_dir, journal_name) as stream:
+            journal_bytes = stream.read(32 * 1024 * 1024 + 2)
+        with tempfile.TemporaryDirectory(prefix="observer-signed-") as tmp:
+            frame_path, att_path, journal_path = (Path(tmp) / name for name in ("frames", "attestation", "journal"))
+            frame_path.write_bytes(frame_bytes)
+            att_path.write_bytes(att_bytes)
+            journal_path.write_bytes(journal_bytes)
+            signed = verify_detached_attestation(
+                att_path, frame_path,
+                trusted_public_key_b64=trusted_public_key_b64,
+                expected_key_id=expected_key_id)
+            result = {"signature": signed, "journal_claim_match": False,
+                      "recorded_step_alignment": False, "frame_identity_match": False, "full_causal_audit": False,
+                      "physical_truth_verified": False, "map_authorized": False}
+            if signed["signature_valid"] and signed["frames_digest_matches"] and signed["payload"]:
+                payload = signed["payload"]
+                try:
+                    frame_doc = json.loads(frame_bytes)
+                    identity = frame_doc["identity"]
+                    identity_matches = (
+                        identity["individual_id"] == payload["individual_id"]
+                        and identity["life_generation"] == payload["life_generation"]
+                        and all(frame["attempt_ref"] == payload["attempt_ref"] for frame in frame_doc["frames"])
+                    )
+                except (ValueError, TypeError, KeyError):
+                    identity_matches = False
+                result["frame_identity_match"] = identity_matches
+                if not identity_matches:
+                    return result
+                chain = check_chain(
+                    journal_path, expected_head=payload["journal_head_sha256"],
+                    expected_count=payload["journal_event_count"])
+                result["journal_claim_match"] = chain["chain_valid"] and chain["trusted_tail_verified"]
+                if result["journal_claim_match"]:
+                    aligned = compare_frames_to_journal(frame_path, journal_path)
+                    result["recorded_step_alignment"] = aligned["frame_step_alignment"]
+            return result
+
+    def frame_custody_diagnostic(self, rid: str, *, trusted_frame_sha256: str,
+                                 trusted_journal_head: str, trusted_journal_count: int) -> dict[str, Any]:
+        """Operator-supplied anchors are not persisted or obtained from imported claims."""
+        frame_dir, frame_name = self.file(rid, "world_frames")
+        journal_dir, journal_name = self.file(rid, "journal")
+        with open_regular(frame_dir, frame_name) as frames:
+            frame_bytes = frames.read(16 * 1024 * 1024 + 2)
+        with open_regular(journal_dir, journal_name) as journal:
+            journal_bytes = journal.read(32 * 1024 * 1024 + 2)
+        with tempfile.TemporaryDirectory(prefix="observer-custody-") as tmp:
+            frame_path = Path(tmp) / "frames"
+            journal_path = Path(tmp) / "journal"
+            frame_path.write_bytes(frame_bytes)
+            journal_path.write_bytes(journal_bytes)
+            result = check_custody(
+                frame_path, journal_path,
+                trusted_frame_sha256=trusted_frame_sha256,
+                trusted_journal_head=trusted_journal_head,
+                trusted_journal_count=trusted_journal_count,
+            )
+        return {"sources": ["world_frames", "journal"], **result,
+                "anchor_origin": "operator_supplied_not_independently_authenticated",
+                "warning": "Matching operator-supplied anchors does not prove physical truth or authorize a map."}
+
+    def frame_alignment_diagnostic(self, rid: str) -> dict[str, Any]:
+        frame_dir, frame_name = self.file(rid, "world_frames")
+        journal_dir, journal_name = self.file(rid, "journal")
+        with open_regular(frame_dir, frame_name) as frames:
+            frame_bytes = frames.read(16 * 1024 * 1024 + 2)
+        with open_regular(journal_dir, journal_name) as journal:
+            journal_bytes = journal.read(32 * 1024 * 1024 + 2)
+        with tempfile.TemporaryDirectory(prefix="observer-alignment-") as tmp:
+            frame_path = Path(tmp) / "frames"
+            journal_path = Path(tmp) / "journal"
+            frame_path.write_bytes(frame_bytes)
+            journal_path.write_bytes(journal_bytes)
+            result = compare_frames_to_journal(frame_path, journal_path)
+        return {"sources": ["world_frames", "journal"], **result,
+                "warning": "Recorded timestamp alignment does not prove physical state or causal completeness."}
+
+    def step_diagnostic(self, rid: str) -> dict[str, Any]:
+        directory, name = self.file(rid, "journal")
+        with open_regular(directory, name) as stream:
+            raw = stream.read(32 * 1024 * 1024 + 2)
+        with tempfile.TemporaryDirectory(prefix="observer-steps-") as tmp:
+            destination = Path(tmp) / "journal"
+            destination.write_bytes(raw)
+            result = check_step_boundaries(destination)
+        return {"source": "journal", **result,
+                "warning": "Recorded boundaries are not independently verified physical transitions."}
+
+    def journal_diagnostic(self, rid: str) -> dict[str, Any]:
+        """Check canonical chain bytes; never take trust anchors from imports."""
+        directory, name = self.file(rid, "journal")
+        with open_regular(directory, name) as stream:
+            raw = stream.read(32 * 1024 * 1024 + 2)
+        with tempfile.TemporaryDirectory(prefix="observer-journal-") as tmp:
+            destination = Path(tmp) / "journal"
+            destination.write_bytes(raw)
+            result = check_chain(destination)
+        return {"source": "journal", **result,
+                "reference_origin": "none_independently_trusted",
+                "warning": "Self-contained hash chain does not prove complete history, committed steps or physical truth."}
+
+    def frame_diagnostic(self, rid: str) -> dict[str, Any]:
+        """Inspect declared imported frame bytes; never trust self-attestation."""
+        directory, name = self.file(rid, "world_frames")
+        # Resolve and open safely, then validate the bytes via an isolated
+        # private temporary file, avoiding a second read of an attacker-swapped
+        # imported path.
+        with open_regular(directory, name) as stream:
+            raw = stream.read(16 * 1024 * 1024 + 2)
+        with tempfile.TemporaryDirectory(prefix="observer-frames-") as tmp:
+            destination = Path(tmp) / "frames.json"
+            destination.write_bytes(raw)
+            result = validate_frames(destination)
+        return {"source": "world_frames", **result,
+                "provenance": "imported_declaration_untrusted",
+                "warning": "Structural validity is not causal or physical verification."}
+
+    def _local_engine_geometry(self, rid: str, *, step: int) -> dict[str, Any]:
+        denied = {"step": step, "available": False, "geometry": None,
+                  "frame": None, "verified": False, "map_authorized": False,
+                  "physical_truth_verified": False,
+                  "provenance": "operator_local_engine_capture",
+                  "reason": "no verified operator recording"}
+        status = self._local_status(rid)
+        if (status.get("status") != "SUCCESS"
+                or status.get("test_id") != "mortal_stage11"
+                or status.get("assertions_passed") is not True):
+            denied["reason"] = "run not accepted as successful autonomous diagnostic"
+            return denied
+        try:
+            paths = {a["alias"]: a["name"] for a in self.files(rid)}
+            if not {"journal", "world_frames", "manifest", "result"} <= set(paths):
+                denied["reason"] = "missing immutable recording files"
+                return denied
+            directory = self._dir(rid)
+            with open_regular(directory, paths["manifest"]) as stream:
+                manifest = json.load(stream)
+            with open_regular(directory, paths["result"]) as stream:
+                report_bytes = stream.read(2 * 1024 * 1024 + 1)
+            report = json.loads(report_bytes)
+            report_record = manifest["files"]["result"]
+            if (report_record["name"] != paths["result"]
+                    or report_record["sha256"] != hashlib.sha256(report_bytes).hexdigest()
+                    or report_record["bytes"] != len(report_bytes)
+                    or manifest.get("source_commit") != status.get("source_commit")
+                    or manifest.get("source_dirty") != status.get("source_dirty")):
+                denied["reason"] = "result or source custody mismatch"
+                return denied
+            if (manifest.get("schema") != "observer-artifacts-v1"
+                    or manifest.get("run_id") != rid
+                    or manifest.get("test_id") != "mortal_stage11"
+                    or report.get("protocol_version") != "stage11-autonomous-600-journal-v1"
+                    or report.get("scientific_verdict") is not None
+                    or status.get("technical_success") is not True
+                    or report.get("steps_physically_executed") != status.get("executed_steps")):
+                denied["reason"] = "inconsistent terminal custody receipts"
+                return denied
+            frames_record = manifest["files"]["world_frames"]
+            journal_record = manifest["files"]["journal"]
+            if (frames_record["name"] != paths["world_frames"]
+                    or journal_record["name"] != paths["journal"]):
+                denied["reason"] = "unexpected artifact manifest bindings"
+                return denied
+            with open_regular(directory, paths["world_frames"]) as stream:
+                frames_data = stream.read(16 * 1024 * 1024 + 1)
+            with open_regular(directory, paths["journal"]) as stream:
+                journal_data = stream.read(32 * 1024 * 1024 + 1)
+            if (frames_record.get("bytes") != len(frames_data)
+                    or journal_record.get("bytes") != len(journal_data)):
+                denied["reason"] = "artifact length changed after receipt"
+                return denied
+            with tempfile.TemporaryDirectory(prefix="observer-verified-map-") as tmp:
+                frames_path = Path(tmp) / "frames"
+                journal_path = Path(tmp) / "journal"
+                frames_path.write_bytes(frames_data)
+                journal_path.write_bytes(journal_data)
+                result = verify_engine_recording(
+                    frames_path, journal_path,
+                    report=report,
+                    frame_hash=frames_record["sha256"],
+                    journal_hash=journal_record["sha256"],
+                    step=step,
+                )
+            return {**result, "verified": result["capture_integrity_verified"],
+                    "map_authorized": result["available"],
+                    "provenance": "operator_local_engine_recorded_not_scientific_truth"}
+        except (OSError, ValueError, TypeError, KeyError, UnicodeError, json.JSONDecodeError):
+            denied["reason"] = "unreadable or corrupt local custody evidence"
+            return denied
+
+    def replay_geometry(self, rid: str, *, step: int) -> dict[str, Any]:
+        """Only verified, successful local engine captures can render a map.
+
+        Imported signed archives remain separate evidence and cannot claim
+        physical authority from self-contained hashes or signatures.
+        """
+        if RUN_ID.fullmatch(rid):
+            return self._local_engine_geometry(rid, step=step)
+        self.detail(rid)
+        return {"step": step, "available": False, "geometry": None,
+                "frame": None, "verified": False, "map_authorized": False,
+                "physical_truth_verified": False,
+                "provenance": "imported_claim_unverified",
+                "reason": "imported frames have no authenticated engine capture; diagnostics and raw files remain readable"}
 
     def verify_bytes(self, rid: str, alias: str) -> dict[str, Any]:
         directory, name = self.file(rid, alias)
@@ -631,6 +895,48 @@ def create_app(*, core_root: Path | None = None, run_root: Path | None = None, a
     @app.get("/api/runs/{rid}/events", dependencies=[Depends(authenticated)])
     def events(rid: str, source: str = "lab_events", cursor: int = Query(default=0, ge=0), limit: int = Query(default=50, ge=1, le=MAX_PAGE), kind: str = Query(default="", max_length=128), component: str = Query(default="", max_length=128), step: int | None = Query(default=None, ge=0), at: str = Query(default="", max_length=100), q: str = Query(default="", max_length=100)):
         return observer.events(rid, source=source, cursor=cursor, limit=limit, kind=kind, component=component, step=step, at=at, search=q)
+
+    @app.get("/api/runs/{rid}/replay", dependencies=[Depends(authenticated)])
+    def replay(rid: str, source: str = "journal", step: int = Query(ge=0), limit: int = Query(default=100, ge=1, le=200)):
+        return observer.replay(rid, source=source, step=step, limit=limit)
+
+    @app.post("/api/runs/{rid}/replay/frames/signed-custody", dependencies=[Depends(authenticated)])
+    def signed_custody_diagnostic(rid: str, anchors: dict[str, Any] = Body(...)):
+        if set(anchors) != {"trusted_public_key_b64", "expected_key_id"}:
+            raise HTTPException(422, "external key and key identifier required")
+        return observer.signed_custody_diagnostic(
+            rid, trusted_public_key_b64=anchors["trusted_public_key_b64"],
+            expected_key_id=anchors["expected_key_id"])
+
+    @app.post("/api/runs/{rid}/replay/frames/custody", dependencies=[Depends(authenticated)])
+    def frame_custody_diagnostic(rid: str, request: Request,
+                                 anchors: dict[str, Any] = Body(...)):
+        if set(anchors) != {"trusted_frame_sha256", "trusted_journal_head", "trusted_journal_count"}:
+            raise HTTPException(422, "explicit operator anchor fields required")
+        return observer.frame_custody_diagnostic(
+            rid, trusted_frame_sha256=anchors["trusted_frame_sha256"],
+            trusted_journal_head=anchors["trusted_journal_head"],
+            trusted_journal_count=anchors["trusted_journal_count"])
+
+    @app.get("/api/runs/{rid}/replay/frames/alignment", dependencies=[Depends(authenticated)])
+    def frame_alignment_diagnostic(rid: str):
+        return observer.frame_alignment_diagnostic(rid)
+
+    @app.get("/api/runs/{rid}/replay/steps/diagnostic", dependencies=[Depends(authenticated)])
+    def step_diagnostic(rid: str):
+        return observer.step_diagnostic(rid)
+
+    @app.get("/api/runs/{rid}/replay/journal/diagnostic", dependencies=[Depends(authenticated)])
+    def journal_diagnostic(rid: str):
+        return observer.journal_diagnostic(rid)
+
+    @app.get("/api/runs/{rid}/replay/frames/diagnostic", dependencies=[Depends(authenticated)])
+    def frame_diagnostic(rid: str):
+        return observer.frame_diagnostic(rid)
+
+    @app.get("/api/runs/{rid}/replay/geometry", dependencies=[Depends(authenticated)])
+    def replay_geometry(rid: str, step: int = Query(ge=0)):
+        return observer.replay_geometry(rid, step=step)
 
     @app.get("/api/runs/{rid}/integrity/{alias}", dependencies=[Depends(authenticated)])
     def integrity(rid: str, alias: str):

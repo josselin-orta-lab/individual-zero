@@ -35,7 +35,7 @@ print('bootstrap fixture executed')
 ''')
     (core / "src/lab/stage11_autonomous_600_step_probe.py").write_text('''
 import argparse,json,time
-p=argparse.ArgumentParser();p.add_argument('--steps',type=int);a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--steps',type=int);p.add_argument('--observer-export-dir');a=p.parse_args()
 time.sleep(1.0)
 print('stage11_autonomous_600_step='+json.dumps({'steps_physically_executed':a.steps,'classification':'fixture_only'}))
 ''')
@@ -208,7 +208,15 @@ def test_fixed_unittest_and_stage11_fixture_report(client):
     data = wait(client, r.json()["id"])
     assert data["status"] == "SUCCESS", data
     assert data["assertions_passed"] is True
-    r = client.post("/api/runs", json={"test_id": "mortal_stage11", "steps": 7}, headers={"Origin": "http://testserver"})
+    # Terminal receipt may become visible just before runner cleanup clears
+    # its active slot. Retry only the documented transient 409, not failures.
+    for _ in range(100):
+        r = client.post("/api/runs", json={"test_id": "mortal_stage11", "steps": 7}, headers={"Origin": "http://testserver"})
+        if r.status_code == 202:
+            break
+        assert r.status_code == 409, r.text
+        time.sleep(0.02)
+    assert r.status_code == 202, r.text
     data = wait(client, r.json()["id"])
     assert data["status"] == "SUCCESS", data
     assert data["executed_steps"] == 7
@@ -241,3 +249,219 @@ def test_fail_closed_after_interrupted_run_and_unreadable_receipt(layout):
         blocked = c.post("/api/runs", json={"test_id": "bootstrap"}, headers={"Origin": "http://testserver"})
         assert blocked.status_code == 409
         assert "unreadable" in blocked.json()["detail"]
+
+
+def test_replay_only_recorded_history_no_inferred_world(client, layout):
+    _, root, archive = layout
+    folder = archive / "historical"
+    folder.mkdir()
+    rows = [
+        {"index": 0, "event_id": "a", "causal_event": {"kind": "perceptual_capture", "t_monde": 2, "data": {"position": {"x": 1, "y": 2}}}},
+        {"index": 1, "event_id": "b", "causal_event": {"kind": "other", "t_monde": 3}},
+        {"index": 2, "event_id": "c", "causal_event": {"kind": "death", "t_monde": 3}},
+    ]
+    (folder / "journal.jsonl").write_text("".join(json.dumps(x) + "\n" for x in rows))
+    (folder / "observer-source-v1.json").write_text(json.dumps({"schema": "observer-source-v1", "files": {"journal": "journal.jsonl"}}))
+    response = client.get("/api/runs/import-historical/replay", params={"source": "journal", "step": 3})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["step_semantics"] == "t_monde"
+    assert data["matched_count"] == 2
+    assert [x["kind"] for x in data["events"]] == ["other", "death"]
+    assert data["world_state"] is None
+    assert data["geometry"] is None
+    assert data["oracle_ground_truth"] is None
+    assert data["scientific_validation"] is None
+    assert client.get("/api/runs/import-historical/replay", params={"source": "oracle", "step": 3}).status_code == 422
+    assert client.get("/api/runs/import-historical/replay", params={"source": "journal", "step": -1}).status_code == 422
+
+
+def test_geometry_fails_closed_without_authoritative_world_contract(client):
+    response = client.get("/api/runs/not-a-run/replay/geometry", params={"step": 0})
+    assert response.status_code == 404
+    response = client.get("/api/runs/not-a-run/replay/geometry", params={"step": -1})
+    assert response.status_code == 422
+
+
+def test_imported_world_frames_structural_diagnostic_is_not_authorization(client, layout):
+    _, _, archive = layout
+    folder = archive / "frames-case"
+    folder.mkdir()
+    frames = {
+        "schema": "observer-world-frames-v1",
+        "identity": {"individual_id": "i0", "life_generation": 0},
+        "geometry": {"coordinate_system": "grid-xy-top-left", "width": 4, "height": 3},
+        "frames": [{"t_monde": 1, "attempt_ref": "attempt", "step_boundary": "committed",
+                    "individual_pose": {"x": 2, "y": 1}, "entities": []}],
+        "attestation": {"journal_head_sha256": "a" * 64, "journal_event_count": 1,
+                        "verifier": "self-declared", "verified_at": "2026-10-12T00:00:00Z",
+                        "source_sha256": "b" * 64}
+    }
+    (folder / "frames.json").write_text(json.dumps(frames))
+    (folder / "observer-source-v1.json").write_text(json.dumps({
+        "schema": "observer-source-v1", "files": {"world_frames": "frames.json"}}))
+    rid = "import-frames-case"
+    result = client.get(f"/api/runs/{rid}/replay/frames/diagnostic")
+    assert result.status_code == 200, result.text
+    data = result.json()
+    assert data["structurally_valid"] is True
+    assert data["independently_verified"] is False
+    assert data["map_authorized"] is False
+    preview = client.get(f"/api/runs/{rid}/replay/geometry", params={"step": 1}).json()
+    assert preview["available"] is False
+    assert preview["verified"] is False
+    assert preview["map_authorized"] is False
+    assert preview["frame"] is None
+    missing = client.get(f"/api/runs/{rid}/replay/geometry", params={"step": 2}).json()
+    assert missing["available"] is False
+    frames["frames"][0]["individual_pose"]["x"] = 4
+    (folder / "frames.json").write_text(json.dumps(frames))
+    assert client.get(f"/api/runs/{rid}/replay/frames/diagnostic").json()["structurally_valid"] is False
+
+
+def test_imported_journal_diagnostic_never_self_trusts_chain(client, layout):
+    _, _, archive = layout
+    folder = archive / "chain-case"
+    folder.mkdir()
+    previous = "00" * 32
+    event = {"kind": "test", "t_monde": 0}
+    eid = "one"
+    body = json.dumps({"causal_event": event, "event_id": eid}, sort_keys=True, separators=(",", ":")).encode()
+    digest = hashlib.sha256(bytes.fromhex(previous) + body).hexdigest()
+    row = {"index": 0, "event_id": eid, "previous_hash": previous,
+           "event_hash": digest, "causal_event": event}
+    (folder / "journal.txt").write_bytes(json.dumps(row, sort_keys=True, separators=(",", ":")).encode())
+    (folder / "observer-source-v1.json").write_text(json.dumps({
+        "schema": "observer-source-v1", "files": {"journal": "journal.txt"}}))
+    response = client.get("/api/runs/import-chain-case/replay/journal/diagnostic")
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["chain_valid"] is True
+    assert result["trusted_tail_verified"] is False
+    assert result["full_causal_audit"] is False
+    assert result["map_authorized"] is False
+    (folder / "journal.txt").write_bytes(b"corrupt")
+    assert client.get("/api/runs/import-chain-case/replay/journal/diagnostic").json()["chain_valid"] is False
+
+
+def test_custody_requires_explicit_anchors_and_authentication(client):
+    rid = "import-missing"
+    endpoint = f"/api/runs/{rid}/replay/frames/custody"
+    assert client.post(endpoint, json={}, headers={"Origin": "http://testserver"}).status_code == 422
+    assert client.post(endpoint, json={
+        "trusted_frame_sha256": "a" * 64,
+        "trusted_journal_head": "b" * 64,
+        "trusted_journal_count": 1,
+    }, headers={"Origin": "http://evil.invalid"}).status_code == 403
+    assert client.post(endpoint, json={
+        "trusted_frame_sha256": "a" * 64,
+        "trusted_journal_head": "b" * 64,
+        "trusted_journal_count": 1,
+    }, headers={"Origin": "http://testserver"}).status_code == 404
+
+
+def test_signed_custody_requires_explicit_key_and_never_unlocks_map(client, layout):
+    import base64
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives import serialization
+
+    _, _, archive = layout
+    folder = archive / "signed-case"
+    folder.mkdir()
+    frames = {"schema": "observer-world-frames-v1",
+              "identity": {"individual_id": "i0", "life_generation": 0},
+              "geometry": {"coordinate_system": "grid-xy-top-left", "width": 4, "height": 4},
+              "frames": [{"t_monde": 1, "step_boundary": "committed",
+                          "individual_pose": {"x": 1, "y": 1}, "entities": [], "attempt_ref": "a"}],
+              "attestation": {"journal_head_sha256": "a" * 64, "journal_event_count": 2,
+                              "verifier": "untrusted", "verified_at": "2026-10-12T00:00:00Z",
+                              "source_sha256": "b" * 64}}
+    frame_bytes = json.dumps(frames).encode()
+    (folder / "frames.json").write_bytes(frame_bytes)
+    previous = "00" * 32
+    rows = []
+    for i, kind in enumerate(("step_opened", "step_closed")):
+        event = {"kind": kind, "t_monde": 1, "attempt_ref": "a"}
+        eid = f"e{i}"
+        body = json.dumps({"event_id": eid, "causal_event": event}, sort_keys=True, separators=(",", ":")).encode()
+        digest = hashlib.sha256(bytes.fromhex(previous) + body).hexdigest()
+        rows.append({"index": i, "event_id": eid, "previous_hash": previous,
+                     "event_hash": digest, "causal_event": event})
+        previous = digest
+    (folder / "journal.txt").write_bytes(b"\n".join(json.dumps(x, sort_keys=True, separators=(",", ":")).encode() for x in rows))
+    private = Ed25519PrivateKey.generate()
+    key = base64.b64encode(private.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw)).decode()
+    payload = {"individual_id": "i0", "life_generation": 0, "attempt_ref": "a",
+               "frames_sha256": hashlib.sha256(frame_bytes).hexdigest(),
+               "journal_head_sha256": previous, "journal_event_count": 2,
+               "issuer": "operator", "purpose": "observer-frame-custody-only"}
+    signed = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode()
+    attestation = {"schema": "observer-detached-attestation-v1", "payload": payload,
+                   "signature": {"algorithm": "Ed25519", "key_id": "trusted",
+                                 "value": base64.b64encode(private.sign(signed)).decode()}}
+    (folder / "signed.json").write_text(json.dumps(attestation))
+    (folder / "observer-source-v1.json").write_text(json.dumps({
+        "schema": "observer-source-v1",
+        "files": {"world_frames": "frames.json", "journal": "journal.txt",
+                  "detached_attestation": "signed.json"}}))
+    endpoint = "/api/runs/import-signed-case/replay/frames/signed-custody"
+    assert client.post(endpoint, json={}, headers={"Origin": "http://testserver"}).status_code == 422
+    result = client.post(endpoint, headers={"Origin": "http://testserver"}, json={"trusted_public_key_b64": key,
+                                         "expected_key_id": "trusted"})
+    assert result.status_code == 200, result.text
+    data = result.json()
+    assert data["signature"]["signature_valid"] is True
+    assert data["frame_identity_match"] is True
+    assert data["journal_claim_match"] is True
+    assert data["recorded_step_alignment"] is True
+    assert data["physical_truth_verified"] is False
+    assert data["map_authorized"] is False
+    assert client.post(endpoint, headers={"Origin": "http://testserver"}, json={"trusted_public_key_b64": key,
+                                       "expected_key_id": "wrong"}).json()["signature"]["signature_valid"] is False
+
+
+def test_signed_custody_rejects_mismatched_individual_identity(client, layout):
+    import base64
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives import serialization
+
+    _, _, archive = layout
+    folder = archive / "identity-mismatch"
+    folder.mkdir()
+    frames = {"schema": "observer-world-frames-v1",
+              "identity": {"individual_id": "other", "life_generation": 0},
+              "geometry": {"coordinate_system": "grid-xy-top-left", "width": 2, "height": 2},
+              "frames": [{"t_monde": 1, "step_boundary": "committed",
+                          "individual_pose": {"x": 0, "y": 0}, "entities": [], "attempt_ref": "a"}],
+              "attestation": {"journal_head_sha256": "a" * 64, "journal_event_count": 1,
+                              "verifier": "self", "verified_at": "2026-10-12T00:00:00Z",
+                              "source_sha256": "b" * 64}}
+    raw = json.dumps(frames).encode()
+    (folder / "frames.json").write_bytes(raw)
+    (folder / "journal.txt").write_bytes(b"not-used")
+    private = Ed25519PrivateKey.generate()
+    public = base64.b64encode(private.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw)).decode()
+    payload = {"individual_id": "i0", "life_generation": 0, "attempt_ref": "a",
+               "frames_sha256": hashlib.sha256(raw).hexdigest(),
+               "journal_head_sha256": "a" * 64, "journal_event_count": 1,
+               "issuer": "operator", "purpose": "observer-frame-custody-only"}
+    signed = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
+    (folder / "attestation.json").write_text(json.dumps({
+        "schema": "observer-detached-attestation-v1", "payload": payload,
+        "signature": {"algorithm": "Ed25519", "key_id": "trusted",
+                      "value": base64.b64encode(private.sign(signed)).decode()}}))
+    (folder / "observer-source-v1.json").write_text(json.dumps({
+        "schema": "observer-source-v1",
+        "files": {"world_frames": "frames.json", "journal": "journal.txt",
+                  "detached_attestation": "attestation.json"}}))
+    response = client.post("/api/runs/import-identity-mismatch/replay/frames/signed-custody",
+                           json={"trusted_public_key_b64": public, "expected_key_id": "trusted"},
+                           headers={"Origin": "http://testserver"})
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["signature"]["signature_valid"] is True
+    assert result["frame_identity_match"] is False
+    assert result["journal_claim_match"] is False
+    assert result["map_authorized"] is False
