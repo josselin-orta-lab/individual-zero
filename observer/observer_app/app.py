@@ -31,6 +31,7 @@ from pydantic import BaseModel, ConfigDict, StrictInt
 from .frame_validation import validate_frames
 from .frame_alignment import compare_frames_to_journal
 from .frame_custody import check_custody
+from .detached_attestation import verify_detached_attestation
 from .journal_preflight import check_chain
 from .step_boundaries import check_step_boundaries
 
@@ -38,9 +39,9 @@ WEB = Path(__file__).parent / "web"
 RUN_ID = re.compile(r"r-[0-9a-f]{32}\Z")
 IMPORT_ID = re.compile(r"import-[a-zA-Z0-9_-]{1,64}\Z")
 SAFE_NAME = re.compile(r"[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}\Z")
-ALLOWED_SOURCES = frozenset({"journal", "oracle", "evaluation_trace", "lab_events", "world_frames"})
+ALLOWED_SOURCES = frozenset({"journal", "oracle", "evaluation_trace", "lab_events", "world_frames", "detached_attestation"})
 LOCAL_FILES = {"lab_events": "events.jsonl", "log": "execution.log", "result": "result.json", "status": "_status.json", "manifest": "_manifest.json"}
-SOURCE_CLASSES = {"journal": "causal_journal", "oracle": "oracle_declared_source", "evaluation_trace": "independent_evaluation", "lab_events": "lab_telemetry", "world_frames": "unverified_historical_geometry"}
+SOURCE_CLASSES = {"journal": "causal_journal", "oracle": "oracle_declared_source", "evaluation_trace": "independent_evaluation", "lab_events": "lab_telemetry", "world_frames": "unverified_historical_geometry", "detached_attestation": "untrusted_external_attestation"}
 MAX_PAGE = 200
 MAX_RECORD = 2 * 1024 * 1024
 
@@ -521,6 +522,43 @@ class Observer:
                 "physical_truth_verified": False, "scientific_validation": None,
                 "warning": "Historical recorded events only; no world reconstruction or inferred positions."}
 
+    def signed_custody_diagnostic(self, rid: str, *, trusted_public_key_b64: str,
+                                  expected_key_id: str) -> dict[str, Any]:
+        """Verify detached claim with a separately supplied operator key."""
+        if not isinstance(trusted_public_key_b64, str) or len(trusted_public_key_b64) > 128 or not isinstance(expected_key_id, str) or not 0 < len(expected_key_id) <= 128:
+            raise HTTPException(422, "invalid external verification key")
+        frame_dir, frame_name = self.file(rid, "world_frames")
+        att_dir, att_name = self.file(rid, "detached_attestation")
+        journal_dir, journal_name = self.file(rid, "journal")
+        with open_regular(frame_dir, frame_name) as stream:
+            frame_bytes = stream.read(16 * 1024 * 1024 + 2)
+        with open_regular(att_dir, att_name) as stream:
+            att_bytes = stream.read(16 * 1024 + 2)
+        with open_regular(journal_dir, journal_name) as stream:
+            journal_bytes = stream.read(32 * 1024 * 1024 + 2)
+        with tempfile.TemporaryDirectory(prefix="observer-signed-") as tmp:
+            frame_path, att_path, journal_path = (Path(tmp) / name for name in ("frames", "attestation", "journal"))
+            frame_path.write_bytes(frame_bytes)
+            att_path.write_bytes(att_bytes)
+            journal_path.write_bytes(journal_bytes)
+            signed = verify_detached_attestation(
+                att_path, frame_path,
+                trusted_public_key_b64=trusted_public_key_b64,
+                expected_key_id=expected_key_id)
+            result = {"signature": signed, "journal_claim_match": False,
+                      "recorded_step_alignment": False, "full_causal_audit": False,
+                      "physical_truth_verified": False, "map_authorized": False}
+            if signed["signature_valid"] and signed["frames_digest_matches"] and signed["payload"]:
+                payload = signed["payload"]
+                chain = check_chain(
+                    journal_path, expected_head=payload["journal_head_sha256"],
+                    expected_count=payload["journal_event_count"])
+                result["journal_claim_match"] = chain["chain_valid"] and chain["trusted_tail_verified"]
+                if result["journal_claim_match"]:
+                    aligned = compare_frames_to_journal(frame_path, journal_path)
+                    result["recorded_step_alignment"] = aligned["frame_step_alignment"]
+            return result
+
     def frame_custody_diagnostic(self, rid: str, *, trusted_frame_sha256: str,
                                  trusted_journal_head: str, trusted_journal_count: int) -> dict[str, Any]:
         """Operator-supplied anchors are not persisted or obtained from imported claims."""
@@ -798,6 +836,14 @@ def create_app(*, core_root: Path | None = None, run_root: Path | None = None, a
     @app.get("/api/runs/{rid}/replay", dependencies=[Depends(authenticated)])
     def replay(rid: str, source: str = "journal", step: int = Query(ge=0), limit: int = Query(default=100, ge=1, le=200)):
         return observer.replay(rid, source=source, step=step, limit=limit)
+
+    @app.post("/api/runs/{rid}/replay/frames/signed-custody", dependencies=[Depends(authenticated)])
+    def signed_custody_diagnostic(rid: str, anchors: dict[str, Any] = Body(...)):
+        if set(anchors) != {"trusted_public_key_b64", "expected_key_id"}:
+            raise HTTPException(422, "external key and key identifier required")
+        return observer.signed_custody_diagnostic(
+            rid, trusted_public_key_b64=anchors["trusted_public_key_b64"],
+            expected_key_id=anchors["expected_key_id"])
 
     @app.post("/api/runs/{rid}/replay/frames/custody", dependencies=[Depends(authenticated)])
     def frame_custody_diagnostic(rid: str, request: Request,
