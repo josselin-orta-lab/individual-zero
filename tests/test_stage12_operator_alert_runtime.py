@@ -289,6 +289,40 @@ class Stage12PersistentOperatorRuntimeTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "missing operator alert"):
                 audit_stage12_operator_alerts(forged)
 
+    def test_rehashed_interposed_event_cannot_delay_paid_diagnostic(self):
+        with TemporaryDirectory() as folder:
+            runtime = actual_stage12_runtime(str(Path(folder) / "interposed.wal"))
+            for _ in range(2):
+                self.assertEqual(runtime.run_step().execution_status, "applied")
+            records = [
+                json.loads(line)
+                for line in runtime.journal.canonical_bytes().split(b"\n")
+            ]
+            diagnostic_index = next(
+                i for i, row in enumerate(records)
+                if row["causal_event"]["kind"] ==
+                "stage12_lived_diagnostics_published"
+            )
+            self.assertEqual(
+                records[diagnostic_index - 1]["causal_event"]["kind"],
+                "compute_charge",
+            )
+            inserted = deepcopy(records[diagnostic_index])
+            inserted["event_id"] = sha256(
+                b"stage12-delayed-diagnostic-fault-v1"
+            ).hexdigest()
+            inserted["causal_event"]["kind"] = (
+                "testonly_synthetic_operator_instrumentation"
+            )
+            inserted["causal_event"]["data"] = {"testonly": True}
+            records.insert(diagnostic_index, inserted)
+            forged = _rechain(records)
+            self.assertEqual(audit_export_bytes(forged).occurrences, len(records))
+            with self.assertRaisesRegex(
+                ValueError, "receipt is not immediately after its debit",
+            ):
+                audit_stage12_operator_alerts(forged)
+
     def test_operator_cli_reports_real_warnings_without_importing_i0(self):
         import subprocess
         import sys
