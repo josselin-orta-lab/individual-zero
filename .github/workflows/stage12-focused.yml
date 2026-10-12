@@ -38,6 +38,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_stage12_goal_progress.py' -v
           python -m unittest discover -s tests -p 'test_stage12_operator_packet.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_observer_mortal_interop.py' -v
       - name: Provenance and no-resurrection trial
         run: python -m unittest discover -s tests -p 'test_stage12_operator_trial.py' -v
       - name: Alert adjacency and sleeping sixpass integration
