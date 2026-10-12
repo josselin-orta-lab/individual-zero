@@ -257,6 +257,7 @@ class Stage12Runtime(Stage11SleepRuntime):
                     "operator_only_diagnostic": True,
                     "charged_diagnostic_uc": charge.requested_uc,
                     "diagnostic_policy_version": self._stage12_detector_policy.version,
+                    "diagnostic_window": self._stage12_detector_policy.window,
                     "operator_alert_policy_version": self._stage12_alert_policy.version,
                     "operator_alert_persistence_steps": (
                         self._stage12_alert_policy.persistence_world_steps
