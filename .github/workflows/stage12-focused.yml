@@ -1,0 +1,46 @@
+name: Stage12 focused physical and operator checks
+
+# Verify the exact source SHA, independent from an unrelated moving main.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage12-focused.yml'
+      - 'src/i0/modules/stage12_*'
+      - 'src/lab/stage12_*'
+      - 'scripts/report_stage12*'
+      - 'scripts/run_stage12*'
+      - 'tests/test_stage12*'
+      - 'tests/test_v131_stage12*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage12-focused-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  focused-stage12:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install checked source
+        run: python -m pip install -e .
+      - name: One-step outcome and externally audited operator packet
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_goal_progress.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_operator_packet.py' -v
+      - name: Provenance and no-resurrection trial
+        run: python -m unittest discover -s tests -p 'test_stage12_operator_trial.py' -v
+      - name: Alert adjacency and sleeping sixpass integration
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_operator_alert_runtime.py' -v
+          python -m unittest discover -s tests -p 'test_v131_stage12_sixpass_operator_integration.py' -v
