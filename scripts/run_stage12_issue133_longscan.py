@@ -111,7 +111,7 @@ def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> di
         cfg6 = cfg7.stage6
         revised6 = replace(cfg6, evaluation=replace(cfg6.evaluation, version="issue133-eval-h2-v1", h_eff=2))
         stage11_config = replace(stage11_config, stage9=replace(cfg9, stage8=replace(cfg8, stage7=replace(cfg7, stage6=revised6))))
-    combined = enabled_sixpass_config(replace(s10._stage10_config, stage9=stage11_config.stage9, sleep=sleep), maximum_episodes=3)
+    combined = enabled_sixpass_config(replace(s10._stage10_config, stage9=stage11_config.stage9, sleep=sleep, version=f"stage10-issue133-{sleep_name}-v1"), maximum_episodes=3)
     combined = replace(combined, incremental_selection=(sleep_name=="batch03_incremental"))
     life = Stage12Runtime(
         world_config=config, layout=layout,
