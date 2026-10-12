@@ -273,3 +273,33 @@ def test_geometry_fails_closed_without_authoritative_world_contract(client):
     assert response.status_code == 404
     response = client.get("/api/runs/not-a-run/replay/geometry", params={"step": -1})
     assert response.status_code == 422
+
+
+def test_imported_world_frames_structural_diagnostic_is_not_authorization(client, layout):
+    _, _, archive = layout
+    folder = archive / "frames-case"
+    folder.mkdir()
+    frames = {
+        "schema": "observer-world-frames-v1",
+        "identity": {"individual_id": "i0", "life_generation": 0, "attempt_ref": "attempt"},
+        "geometry": {"coordinate_system": "grid-xy-top-left", "width": 4, "height": 3},
+        "frames": [{"t_monde": 1, "step_boundary": "committed",
+                    "individual_pose": {"x": 2, "y": 1}, "entities": []}],
+        "attestation": {"journal_head_sha256": "a" * 64, "journal_event_count": 1,
+                        "verifier": "self-declared", "verified_at": "2026-10-12T00:00:00Z",
+                        "source_sha256": "b" * 64}
+    }
+    (folder / "frames.json").write_text(json.dumps(frames))
+    (folder / "observer-source-v1.json").write_text(json.dumps({
+        "schema": "observer-source-v1", "files": {"world_frames": "frames.json"}}))
+    rid = "import-frames-case"
+    result = client.get(f"/api/runs/{rid}/replay/frames/diagnostic")
+    assert result.status_code == 200, result.text
+    data = result.json()
+    assert data["structurally_valid"] is True
+    assert data["independently_verified"] is False
+    assert data["map_authorized"] is False
+    assert client.get(f"/api/runs/{rid}/replay/geometry", params={"step": 1}).json()["available"] is False
+    frames["frames"][0]["individual_pose"]["x"] = 4
+    (folder / "frames.json").write_text(json.dumps(frames))
+    assert client.get(f"/api/runs/{rid}/replay/frames/diagnostic").json()["structurally_valid"] is False
