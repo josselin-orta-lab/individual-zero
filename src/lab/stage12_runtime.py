@@ -11,6 +11,10 @@ from math import isfinite
 
 from i0.config import MVP_PHASE1_PRODUCER_ORDER
 from i0.modules.stage12_occupancy import module_occupancy_entropy
+from i0.modules.stage12_goal_progress import (
+    ALLOWED_MEASURES, CONTRACT_VERSION, LivedGoalProgressIntent,
+    Stage12GoalProgressLedger,
+)
 from i0.modules.stage12_alerts import Stage12AlertLedger, Stage12AlertPolicy
 from i0.modules.stage12_detectors import (
     LivedCognitiveObservation, Stage12DetectionPolicy,
@@ -35,6 +39,7 @@ class _Stage12MetacognitionCustody:
         self.previous = previous
         self.detectors = detectors
         self.alerts = alerts
+        self.goal_progress = Stage12GoalProgressLedger()
         self.last_goal_deficit: dict[str, object] | None = None
 
     def observe_goal_progress(
@@ -77,6 +82,7 @@ class _Stage12MetacognitionCustody:
             "prior_metacognition_and_sleep": self.previous.export_causal_state(),
             "lived_detectors": self.detectors.export_causal_state(),
             "operator_alert_ledger": self.alerts.export_causal_state(),
+            "lived_goal_progress": self.goal_progress.export_causal_state(),
             "last_visible_goal_deficit": (
                 None if self.last_goal_deficit is None
                 else dict(self.last_goal_deficit)
@@ -146,6 +152,7 @@ class Stage12Runtime(Stage11SleepRuntime):
             old, version=(old.version + "+" + self._stage12_detector_policy.version
                           + "+stage12-diagnostics-charged-v1"
                           + "+stage12-st-module-occupancy-v1"
+                          + "+" + CONTRACT_VERSION
                           + "+stage12-alerts-v1-p"
                           + str(self._stage12_alert_policy.persistence_world_steps)),
             cycle_ceiling=old.cycle_ceiling + cost + occupancy_cost,
@@ -287,6 +294,17 @@ class Stage12Runtime(Stage11SleepRuntime):
                 "reason": charge.reason,
             })
             if not charge.accepted:
+                # A refused optional diagnostic must never fabricate a
+                # missing goal outcome as a negative observation.
+                pending = self._meta_custody.goal_progress.followup(
+                    world_step=capture.t_monde, body=None,
+                    diagnostic_paid=False,
+                )
+                if pending is not None:
+                    self._write(
+                        kind="stage12_goal_progress_followup",
+                        cycle=cycle, data=pending.as_dict(),
+                    )
                 # Reflect an actually refused optional module in the *next*
                 # cycle's synthetic budget state; do not retrospectively
                 # rewrite the already published S_t or invent diagnostic data.
@@ -300,6 +318,19 @@ class Stage12Runtime(Stage11SleepRuntime):
                 )
                 previous(ctx)
                 return
+            # The pre-action success criterion was frozen on the previous
+            # physical step. Compare *only* the new lived body capture;
+            # the verdict is one-step progress, not goal satisfaction and
+            # not subjective agency. The diagnostic UC was already paid.
+            goal_followup = self._meta_custody.goal_progress.followup(
+                world_step=capture.t_monde, body=capture.body,
+                diagnostic_paid=True,
+            )
+            if goal_followup is not None:
+                self._write(
+                    kind="stage12_goal_progress_followup",
+                    cycle=cycle, data=goal_followup.as_dict(),
+                )
             goal = self.goal_manager.active_goal
             goal_ref = None if goal is None else goal.id
             deficit = None
@@ -397,6 +428,44 @@ class Stage12Runtime(Stage11SleepRuntime):
                     "external_audit_only": True,
                 },
             )
+            # The declaration must precede the irreversible command. Only
+            # an already UC-paid metacognitive step may record it. The
+            # declared target must actually belong to the active goal.
+            capture = self.stage3._capture
+            measure = None if active is None else active.principal_measure
+            before = (
+                None if capture is None or measure not in ALLOWED_MEASURES
+                else capture.body.get(measure)
+            )
+            if (self.detection_report.world_step == sent_t_monde
+                    and active is not None
+                    and active.target == measure
+                    and proposal.option.goal_ref == active.id
+                    and proposal.option.motive_ref.type == "active_goal"
+                    and type(before) in (int, float)
+                    and isfinite(before) and before >= 0):
+                if self._meta_custody.goal_progress.pending is not None:
+                    raise RuntimeError("prior lived goal-progress criterion unclosed")
+                registered = {
+                    "contract_version": CONTRACT_VERSION,
+                    "goal_ref": active.id,
+                    "option_ref": proposal.option.id,
+                    "command_hash": command_digest(prepared.command),
+                    "measure": measure,
+                    "value_before": float(before),
+                    "sent_world_step": sent_t_monde,
+                    "observe_world_step": sent_t_monde + 1,
+                }
+                intent_ref = self._write(
+                    kind="stage12_goal_progress_preregistered",
+                    cycle=cycle, data=registered,
+                )
+                self._meta_custody.goal_progress.preregister(
+                    LivedGoalProgressIntent(
+                        intent_ref=intent_ref,
+                        **registered,
+                    )
+                )
         return super()._dispatch_decision(
             proposal=proposal, prepared=prepared, admission=admission,
             cycle=cycle, sent_t_monde=sent_t_monde,
