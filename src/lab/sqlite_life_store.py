@@ -75,10 +75,11 @@ class _TerminalSequence:
     def __init__(self) -> None:
         self.pending: tuple[int, str] | None = None
         self.sealed = False
+        self.operator_stopped = False
 
     def accept(self, event: Mapping[str, object]) -> None:
         if self.sealed:
-            raise ValueError("terminal death: no occurrence after fatal closure")
+            raise ValueError("terminal life: no occurrence after death or operator stop")
         kind = event.get("kind")
         if self.pending is not None:
             data = event.get("data")
@@ -99,6 +100,17 @@ class _TerminalSequence:
             self.pending = None
             self.sealed = True
             return
+        if kind == "experiment_stopped":
+            if (
+                event.get("emitter") != "operator_console"
+                or type(event.get("t_monde")) is not int
+                or event["t_monde"] < 0
+                or not isinstance(event.get("data"), Mapping)
+            ):
+                raise ValueError("operator stop requires its own valid terminal receipt")
+            self.operator_stopped = True
+            self.sealed = True
+            return
         if kind == "step_closed":
             data = event.get("data")
             if isinstance(data, Mapping) and data.get("outcome") == "dead":
@@ -116,9 +128,13 @@ class _TerminalSequence:
     def finalize(self, status: str) -> None:
         if self.pending is not None:
             raise ValueError("terminal death is missing its technical closure")
+        if status == "experiment_stopped" and not self.operator_stopped:
+            raise ValueError("experiment stopped without operator terminal receipt")
+        if self.operator_stopped and status != "experiment_stopped":
+            raise ValueError("operator stop requires experiment_stopped lifecycle status")
         if status == "dead" and not self.sealed:
             raise ValueError("dead status without terminal death and closure")
-        if self.sealed and status != "dead":
+        if self.sealed and not self.operator_stopped and status != "dead":
             raise ValueError("terminal death requires dead lifecycle status")
 
 
