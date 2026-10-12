@@ -40,6 +40,9 @@
         },
         "world_frames": {
           "$ref": "#/$defs/basename"
+        },
+        "detached_attestation": {
+          "$ref": "#/$defs/basename"
         }
       }
     },
@@ -60,6 +63,9 @@
           "$ref": "#/$defs/hash"
         },
         "world_frames": {
+          "$ref": "#/$defs/hash"
+        },
+        "detached_attestation": {
           "$ref": "#/$defs/hash"
         }
       }
