@@ -184,6 +184,46 @@ class Stage12PersistentOperatorRuntimeTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "forged Stage12 operator alert"):
                 audit_stage12_operator_alerts(forged_early)
 
+    def test_operator_cli_reports_real_warnings_without_importing_i0(self):
+        import subprocess
+        import sys
+        root = Path(__file__).resolve().parents[1]
+        script = root / "scripts" / "report_stage12_operator_alerts.py"
+        audit_source = (
+            root / "src" / "lab" / "stage12_operator_alert_audit.py"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("from i0", audit_source)
+        self.assertNotIn("import i0", audit_source)
+        with TemporaryDirectory() as folder:
+            runtime = actual_stage12_runtime(str(Path(folder) / "life.wal"))
+            for _ in range(5):
+                self.assertEqual(runtime.run_step().execution_status, "applied")
+            export = Path(folder) / "canonical.jsonl"
+            export.write_bytes(runtime.journal.canonical_bytes())
+            args = [
+                sys.executable, str(script), str(export),
+                "--expected-head", runtime.journal.head_hash,
+                "--expected-count", str(len(runtime.journal.entries)),
+            ]
+            plain = subprocess.run(
+                args, cwd=root, capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(plain.returncode, 0, plain.stderr)
+            payload = json.loads(plain.stdout)
+            self.assertEqual(payload["counts_by_signal"]["low_context_entropy"], 1)
+            signalled = subprocess.run(
+                args + ["--exit-on-alert"], cwd=root, capture_output=True,
+                text=True, check=False,
+            )
+            self.assertEqual(signalled.returncode, 2, signalled.stderr)
+            invalid = subprocess.run(
+                [sys.executable, str(script), str(export),
+                 "--expected-head", "f" * 64],
+                cwd=root, capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(invalid.returncode, 1)
+            self.assertIn("refused", invalid.stderr)
+
     def test_alert_policy_is_validated_before_birth(self):
         with TemporaryDirectory() as folder:
             valid = actual_stage12_runtime(str(Path(folder) / "valid.wal"))
