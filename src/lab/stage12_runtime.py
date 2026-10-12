@@ -28,7 +28,7 @@ from .stage11_sleep_runtime import Stage11SleepRuntime
 
 class _Stage12MetacognitionCustody:
     owner_id = "metacognition_health"
-    schema = "stage12-metacognition-sleep-alert-custody-v2"
+    schema = "stage12-metacognition-sleep-alert-goal-custody-v3"
 
     def __init__(
         self, *, previous, detectors: Stage12LivedDetectors,
