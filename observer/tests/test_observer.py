@@ -241,3 +241,28 @@ def test_fail_closed_after_interrupted_run_and_unreadable_receipt(layout):
         blocked = c.post("/api/runs", json={"test_id": "bootstrap"}, headers={"Origin": "http://testserver"})
         assert blocked.status_code == 409
         assert "unreadable" in blocked.json()["detail"]
+
+
+def test_replay_only_recorded_history_no_inferred_world(client, layout):
+    _, root, archive = layout
+    folder = archive / "historical"
+    folder.mkdir()
+    rows = [
+        {"index": 0, "event_id": "a", "causal_event": {"kind": "perceptual_capture", "t_monde": 2, "data": {"position": {"x": 1, "y": 2}}}},
+        {"index": 1, "event_id": "b", "causal_event": {"kind": "other", "t_monde": 3}},
+        {"index": 2, "event_id": "c", "causal_event": {"kind": "death", "t_monde": 3}},
+    ]
+    (folder / "journal.jsonl").write_text("".join(json.dumps(x) + "\n" for x in rows))
+    (folder / "observer-source-v1.json").write_text(json.dumps({"schema": "observer-source-v1", "files": {"journal": "journal.jsonl"}}))
+    response = client.get("/api/runs/import-historical/replay", params={"source": "journal", "step": 3})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["step_semantics"] == "t_monde"
+    assert data["matched_count"] == 2
+    assert [x["kind"] for x in data["events"]] == ["other", "death"]
+    assert data["world_state"] is None
+    assert data["geometry"] is None
+    assert data["oracle_ground_truth"] is None
+    assert data["scientific_validation"] is None
+    assert client.get("/api/runs/import-historical/replay", params={"source": "oracle", "step": 3}).status_code == 422
+    assert client.get("/api/runs/import-historical/replay", params={"source": "journal", "step": -1}).status_code == 422
