@@ -12,7 +12,8 @@ pending/uncertain identities are NEVER restored as earlier lives.
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, fields, is_dataclass
 from types import MappingProxyType
 import hashlib
 import json
@@ -108,16 +109,55 @@ _PHYSICAL_MUTABLE = frozenset({
 })
 
 
-def _runtime_contract(runtime: Any) -> str:
-    """Pin the operator-chosen constructor/configuration across cold starts."""
-    fields = (
-        type(runtime).__module__, type(runtime).__qualname__,
-        repr(runtime._config), repr(runtime.world.config),
-        repr(getattr(runtime, "_stage11_config", None)),
-        repr(getattr(runtime, "_stage10_config", None)),
-        repr(getattr(runtime.world, "_layout", None)),
+def _contract_value(value: Any) -> Any:
+    """A lossless, ordering-independent representation of constructor inputs.
+
+    Never use repr() for a durable fingerprint: mapping/set representations
+    and custom objects may differ across fresh processes or Python versions.
+    Unsupported configuration types fail closed rather than being ignored.
+    """
+    if value is None or type(value) in (str, bool, int, float):
+        return value
+    if is_dataclass(value) and not isinstance(value, type):
+        return {
+            "$dataclass": type(value).__module__ + "." + type(value).__qualname__,
+            "fields": {
+                f.name: _contract_value(getattr(value, f.name))
+                for f in fields(value)
+            },
+        }
+    if isinstance(value, Mapping):
+        if any(type(key) is not str for key in value):
+            raise RecoveryBlocked("runtime contract requires string mapping keys")
+        return {key: _contract_value(item) for key, item in value.items()}
+    if isinstance(value, (set, frozenset)):
+        items = [_contract_value(item) for item in value]
+        return {
+            "$collection": type(value).__name__,
+            "items": sorted(items, key=canonical_causal_bytes),
+        }
+    if isinstance(value, (tuple, list)):
+        return {
+            "$collection": type(value).__name__,
+            "items": [_contract_value(item) for item in value],
+        }
+    raise RecoveryBlocked(
+        "unsupported runtime constructor configuration: "
+        + type(value).__module__ + "." + type(value).__qualname__
     )
-    return sha256_hex(canonical_causal_bytes(list(fields)))
+
+
+def _runtime_contract(runtime: Any) -> str:
+    """Pin actual constructor values, never unstable Python repr strings."""
+    configuration = (
+        "m11-structured-constructor-contract-v2",
+        type(runtime).__module__, type(runtime).__qualname__,
+        runtime._config, runtime.world.config,
+        getattr(runtime, "_stage11_config", None),
+        getattr(runtime, "_stage10_config", None),
+        getattr(runtime.world, "_layout", None),
+    )
+    return sha256_hex(canonical_causal_bytes(_contract_value(configuration)))
 
 
 def _runtime_image(runtime: Any, *, individual_id: str) -> dict[str, Any]:

@@ -28,6 +28,31 @@ def fresh():
     )
 
 
+def test_runtime_contract_is_stable_across_equivalent_constructor_mappings():
+    """Cold-start identity is semantic, never dict iteration or object repr."""
+    from dataclasses import replace
+    from lab.m11_transactional_mortal import _runtime_contract
+
+    original, rebuilt = fresh(), fresh()
+    assert _runtime_contract(original) == _runtime_contract(rebuilt)
+    modulation = rebuilt._stage11_config.modulation
+    reordered = {
+        key: dict(reversed(list(values.items())))
+        for key, values in reversed(list(modulation.multipliers.items()))
+    }
+    rebuilt._stage11_config = replace(
+        rebuilt._stage11_config,
+        modulation=replace(modulation, multipliers=reordered),
+    )
+    assert _runtime_contract(original) == _runtime_contract(rebuilt)
+
+    rebuilt._stage11_config = replace(
+        rebuilt._stage11_config,
+        intrinsic_weight=rebuilt._stage11_config.intrinsic_weight + 0.25,
+    )
+    assert _runtime_contract(original) != _runtime_contract(rebuilt)
+
+
 def test_live_stage11_is_prepared_then_atomically_published():
     initial = fresh()
     original = capture_registered_current_state(initial, individual_id=IDENTITY)
