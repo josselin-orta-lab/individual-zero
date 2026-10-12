@@ -556,7 +556,7 @@ class Observer:
                     identity_matches = (
                         identity["individual_id"] == payload["individual_id"]
                         and identity["life_generation"] == payload["life_generation"]
-                        and identity["attempt_ref"] == payload["attempt_ref"]
+                        and all(frame["attempt_ref"] == payload["attempt_ref"] for frame in frame_doc["frames"])
                     )
                 except (ValueError, TypeError, KeyError):
                     identity_matches = False
