@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Observer historical 2D frame v1 (untrusted until independently verified)",
+  "title": "Observer historical engine-recorded 2D frames v1 (unverified import)",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -19,8 +19,7 @@
       "additionalProperties": false,
       "required": [
         "individual_id",
-        "life_generation",
-        "attempt_ref"
+        "life_generation"
       ],
       "properties": {
         "individual_id": {
@@ -30,10 +29,6 @@
         "life_generation": {
           "type": "integer",
           "minimum": 0
-        },
-        "attempt_ref": {
-          "type": "string",
-          "minLength": 1
         }
       }
     },
@@ -71,7 +66,8 @@
           "t_monde",
           "step_boundary",
           "individual_pose",
-          "entities"
+          "entities",
+          "attempt_ref"
         ],
         "properties": {
           "t_monde": {
@@ -109,6 +105,11 @@
                 }
               }
             }
+          },
+          "attempt_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
           }
         }
       }
