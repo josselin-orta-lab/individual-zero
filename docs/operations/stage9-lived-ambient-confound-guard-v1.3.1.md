@@ -100,8 +100,10 @@ cues are omitted from exported snapshots to preserve historical owner
 digests. The stage-10/11 behavior is not retroactively relabeled as a
 scientific finding, and no action is injected to manufacture controls.
 
-New real-physics tests include a creature **visible** one cell from I0
-during its meal at simulated night, with positive creature damage,
+New real-physics tests include a creature **visible** on I0's own
+cell or one cell away during its meal at simulated night, with positive
+creature damage. A visible creature farther away is not treated as a
+concurrent injury source for the food step,
 after an independently closed clean wait; compare against a food-harm
 world with an invisible dynamically activated danger zone and another
 world with a genuinely harmful berry. Those last two can have **the exact

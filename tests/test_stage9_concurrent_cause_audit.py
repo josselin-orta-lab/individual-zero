@@ -57,11 +57,11 @@ def _exercise_physics(kind):
     The visible creature is detectable through local Perception, but its
     *actual injury amount* stays technical/oracle-inaccessible.
     """
-    if kind not in {"dynamic_hidden_zone", "toxic_berry", "visible_creature", "clean"}:
+    if kind not in {"dynamic_hidden_zone", "toxic_berry", "toxic_berry_far_creature", "visible_creature", "visible_creature_same_cell", "clean"}:
         raise ValueError(kind)
     baseline = build_stage4_reference_runtime(autonomous_mortal=True)
     effects = dict(baseline.world.config.berry_effects)
-    if kind == "toxic_berry":
+    if kind in {"toxic_berry", "toxic_berry_far_creature"}:
         effects["berry_a"] = BerryEffect(10.0, -10.0)
     physics = replace(
         baseline.world.config,
@@ -118,9 +118,17 @@ def _exercise_physics(kind):
         world.apply_scenario_event(
             "set_danger_zone", {"position": here, "active": True},
         )
-    if kind == "visible_creature":
+    if kind in {
+        "visible_creature", "visible_creature_same_cell",
+        "toxic_berry_far_creature",
+    }:
+        offset = {
+            "visible_creature": 1,
+            "visible_creature_same_cell": 0,
+            "toxic_berry_far_creature": 5,
+        }[kind]
         world.apply_scenario_event(
-            "place_creature", {"position": {"x": here["x"] + 1, "y": here["y"]}},
+            "place_creature", {"position": {"x": here["x"] + offset, "y": here["y"]}},
         )
 
     before_food = _perceive(substrate, 3)
@@ -130,7 +138,13 @@ def _exercise_physics(kind):
         integrity_before=float(before_food.body["integrity"]),
         position_before=(before_food.x, before_food.y),
         body_before=dict(before_food.body),
-        visible_creature_at_exposure=bool(before_food.adjacent_creatures),
+        visible_creature_at_exposure=(
+            bool(before_food.adjacent_creatures) or any(
+                e.entity_type == "creature"
+                and abs(e.x - before_food.x) + abs(e.y - before_food.y) <= 1
+                for e in before_food.visible_entities
+            )
+        ),
     )
     substrate.open_step()
     eaten = substrate.execute(Command("manger", {"target": "berry_a"}))
@@ -196,6 +210,38 @@ class Stage9ConcurrentCauseRegressionTests(unittest.TestCase):
                 self.assertNotIn("danger_zone_damage", repr(trial["lived"]))
                 self.assertNotIn("oracle_canary", repr(trial["lived"]))
 
+    def test_creature_on_own_cell_is_visible_and_blocks_false_berry_credit(self):
+        trial = _exercise_physics("visible_creature_same_cell")
+        # Local adjacent cells are all empty, but a visible entity is right
+        # on I0's current tile and WorldBody damages at Manhattan distance 0.
+        self.assertFalse(trial["before_food"].adjacent_creatures)
+        self.assertTrue(any(
+            entity.entity_type == "creature"
+            and (entity.x, entity.y)
+                == (trial["before_food"].x, trial["before_food"].y)
+            for entity in trial["before_food"].visible_entities
+        ))
+        self.assertEqual(trial["admitted"], ())
+        self.assertEqual(trial["model"].pending_causal_observations(), ())
+        self.assertEqual(
+            trial["model"].export_causal_state()["pending_numeric_witnesses"], [],
+        )
+        self.assertIsNone(trial["model"].get("toxic:berry_a"))
+        self.assertLess(trial["after_food"].body["integrity"], 100)
+
+    def test_distant_visible_creature_does_not_suppress_real_food_observation(self):
+        trial = _exercise_physics("toxic_berry_far_creature")
+        self.assertFalse(trial["before_food"].adjacent_creatures)
+        self.assertTrue(any(
+            entity.entity_type == "creature"
+            and abs(entity.x - trial["before_food"].x)
+                + abs(entity.y - trial["before_food"].y) > 1
+            for entity in trial["before_food"].visible_entities
+        ))
+        self.assertEqual(len(trial["admitted"]), 1)
+        self.assertTrue(trial["admitted"][0].harm_observed)
+        self.assertEqual(trial["admitted"][0].contingency_ref, "toxic:berry_a")
+        self.assertEqual(trial["model"].get("toxic:berry_a").safety_status, "aucun")
     def test_hidden_dynamic_zone_and_toxic_berry_are_lived_indistinguishably(self):
         zone = _exercise_physics("dynamic_hidden_zone")
         poison = _exercise_physics("toxic_berry")
