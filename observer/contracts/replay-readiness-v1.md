@@ -1,6 +1,6 @@
 # Replay read model proposal (not a Phase 2 implementation)
 
-Status: **design only**, approval of Phase 1 required before implementation.
+Status: **Phase 2 implementation in progress**. Historical replay and diagnostics exist; authoritative world-state export is not yet wired.
 
 The Phase 1 reader has four mutually distinct sources: `journal` (canonical I0
 technical journal), `oracle` (external authorized truth), `evaluation_trace`
@@ -76,3 +76,26 @@ head/count, source hash, frame ordering/uniqueness, bounds, and consistency of
 identity and committed step boundaries. The existing geometry endpoint
 intentionally returns `available: false` until that independent verifier is
 implemented. Oracle and cognition must remain separately labeled.
+
+
+## Operator-approved map provenance policy (2026-10-12)
+
+The operator approved a pragmatic **engine-recorded world state** requirement
+instead of a separate independent scientific proof of physical truth.
+
+A 2D frame can be displayed as **recorded engine state** when:
+1. The world engine captures geometry, pose and entities at the committed step
+   boundary, without relying on I0 beliefs, observations, or Oracle output.
+2. Capture is stored in operator-only artifacts inaccessible to I0, preserving
+   the original step and execution identity.
+3. The Observer checks source custody, frame structure, ordered committed steps,
+   execution identity and consistency with the canonical journal.
+4. The interface labels the map as **engine-recorded**, not independently
+   scientifically verified. Gaps or ambiguous provenance remain unavailable.
+
+This policy does **not** authorize the current imported frame archive by itself:
+its embedded attestation is an untrusted claim and no engine-capture producer
+is yet connected. The existing diagnostics intentionally keep map_authorized
+false until a genuine engine-state export and provenance binding are implemented.
+
+Operator acceptance is deferred until both Observer phases are ready.
