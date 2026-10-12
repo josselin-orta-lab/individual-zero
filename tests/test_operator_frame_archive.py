@@ -91,3 +91,14 @@ def test_export_rejects_regressing_journal_counts():
             OperatorFrameArchive.export_world_frames(
                 str(path), str(output), individual_id="i0", life_generation=0)
         assert not output.exists()
+
+
+def test_export_rejects_duplicate_json_keys_before_export():
+    with tempfile.TemporaryDirectory() as directory:
+        path = Path(directory) / "receipts.jsonl"
+        output = Path(directory) / "frames.json"
+        path.write_bytes(b'{"frame":{},"frame":{}}\n')
+        with pytest.raises(ValueError, match="duplicate operator receipt key"):
+            OperatorFrameArchive.export_world_frames(
+                str(path), str(output), individual_id="i0", life_generation=0)
+        assert not output.exists()
