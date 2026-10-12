@@ -69,6 +69,22 @@ class Stage12OperatorPacketTests(unittest.TestCase):
             self.assertFalse(lived["detector_calibration_supported"])
             self.assertEqual(packet["journal"]["world_steps_closed"], 4)
             self.assertEqual(packet["diagnostics"]["diagnostic_samples"], 4)
+            detector_coverage = packet["lived_detector_coverage"]
+            self.assertFalse(
+                detector_coverage["attribution_bias_calibration_supported"]
+            )
+            for name in (
+                "stagnation", "reasoning_loop", "low_context_entropy",
+            ):
+                classes = detector_coverage["detectors"][name]
+                self.assertEqual(
+                    classes["positive"] + classes["negative"]
+                    + classes["unavailable"], 4,
+                )
+                self.assertTrue(
+                    set(classes) == {"positive", "negative", "unavailable"}
+                )
+
             goal_receipts = packet["lived_goal_progress"]
             self.assertEqual(
                 goal_receipts["schema"], "stage12-independent-goal-progress-audit-v1",
