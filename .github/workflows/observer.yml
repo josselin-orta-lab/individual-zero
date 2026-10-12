@@ -28,6 +28,11 @@ jobs:
       - name: Validate replay browser JavaScript syntax
         run: node --check observer/observer_app/web/app.js
 
+      - name: Core Stage11 original regression
+        env:
+          PYTHONPATH: src
+        run: python -m pytest -q tests/test_stage11_autonomous_600_step_probe.py
+
       - name: Real Core bootstrap API integration (3 cycles, no science)
         env:
           PYTHONPATH: observer
