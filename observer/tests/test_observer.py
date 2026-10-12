@@ -231,7 +231,7 @@ def test_fail_closed_after_interrupted_run_and_unreadable_receipt(layout):
         assert recovered["status"] == "INTERRUPTED"
         assert recovered["technical_success"] is None
         assert recovered["assertions_passed"] is None
-        assert "orphan" in recovered["anomaly"]
+        assert "prior child process may still exist" in recovered["anomaly"]
         blocked = c.post("/api/runs", json={"test_id": "bootstrap"}, headers={"Origin": "http://testserver"})
         assert blocked.status_code == 409
         assert "runner locked" in blocked.json()["detail"]
