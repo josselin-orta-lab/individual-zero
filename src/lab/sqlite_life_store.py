@@ -72,6 +72,77 @@ def _validate_identity(identity: str) -> None:
         raise ValueError("a nonempty NFC individual identity is required")
 
 
+class _TerminalSequence:
+    """Validate the journal's irreversible terminal suffix at write and audit."""
+
+    def __init__(self) -> None:
+        self.pending: tuple[int, str] | None = None
+        self.sealed = False
+        self.operator_stopped = False
+
+    def accept(self, event: Mapping[str, object]) -> None:
+        if self.sealed:
+            raise ValueError("terminal life: no occurrence after death or operator stop")
+        kind = event.get("kind")
+        if self.pending is not None:
+            data = event.get("data")
+            if not (
+                kind == "step_closed"
+                and type(event.get("t_monde")) is int
+                and event["t_monde"] == self.pending[0]
+                and type(event.get("attempt_ref")) is str
+                and event["attempt_ref"] == self.pending[1]
+                and isinstance(data, Mapping)
+                and data.get("outcome") == "dead"
+                and type(data.get("applied_command_count")) is int
+                and data["applied_command_count"] == 1
+                and type(data.get("world_advance_count")) is int
+                and data["world_advance_count"] == 1
+            ):
+                raise ValueError("terminal death requires its matching unique closure")
+            self.pending = None
+            self.sealed = True
+            return
+        if kind == "experiment_stopped":
+            if (
+                event.get("emitter") != "operator_console"
+                or type(event.get("t_monde")) is not int
+                or event["t_monde"] < 0
+                or not isinstance(event.get("data"), Mapping)
+                or type(event["data"].get("reason")) is not str
+                or not event["data"]["reason"].strip()
+            ):
+                raise ValueError("operator stop requires its own valid terminal receipt")
+            self.operator_stopped = True
+            self.sealed = True
+            return
+        if kind == "step_closed":
+            data = event.get("data")
+            if isinstance(data, Mapping) and data.get("outcome") == "dead":
+                raise ValueError("terminal death closure without prior fatal receipt")
+        if kind == "individual_death_confirmed":
+            if (
+                type(event.get("t_monde")) is not int
+                or event["t_monde"] < 1
+                or type(event.get("attempt_ref")) is not str
+                or not event["attempt_ref"]
+            ):
+                raise ValueError("terminal death requires a valid world attempt")
+            self.pending = (event["t_monde"], event["attempt_ref"])
+
+    def finalize(self, status: str) -> None:
+        if self.pending is not None:
+            raise ValueError("terminal death is missing its technical closure")
+        if status == "experiment_stopped" and not self.operator_stopped:
+            raise ValueError("experiment stopped without operator terminal receipt")
+        if self.operator_stopped and status != "experiment_stopped":
+            raise ValueError("operator stop requires experiment_stopped lifecycle status")
+        if status == "dead" and not self.sealed:
+            raise ValueError("dead status without terminal death and closure")
+        if self.sealed and not self.operator_stopped and status != "dead":
+            raise ValueError("terminal death requires dead lifecycle status")
+
+
 class SQLiteLifeLedger:
     """One SQLite WAL current generation plus append-only canonical occurrences.
 
@@ -287,6 +358,7 @@ class SQLiteLifeLedger:
             raise RecoveryBlocked("current state encoding is invalid") from exc
         previous = GENESIS_HASH
         expected = 0
+        terminal = _TerminalSequence()
         for idx, event_id, prev, event_hash, raw in self._db.execute(
             "SELECT idx, event_id, previous_hash, event_hash, canonical_bytes "
             "FROM causal_occurrence ORDER BY idx"
@@ -314,6 +386,10 @@ class SQLiteLifeLedger:
                 )
             except (UnicodeError, TypeError, ValueError) as exc:
                 raise RecoveryBlocked("invalid canonical causal occurrence") from exc
+            try:
+                terminal.accept(document["causal_event"])
+            except ValueError as exc:
+                raise RecoveryBlocked(str(exc)) from exc
             if type(event_hash) is not str or not _HEX.fullmatch(event_hash):
                 raise RecoveryBlocked("invalid causal occurrence hash type/encoding")
             actual = sha256_hex(bytes.fromhex(previous) + payload)
@@ -321,6 +397,10 @@ class SQLiteLifeLedger:
                 raise RecoveryBlocked("causal chain checksum mismatch")
             previous = actual
             expected += 1
+        try:
+            terminal.finalize(status)
+        except ValueError as exc:
+            raise RecoveryBlocked(str(exc)) from exc
         if count != expected or head != previous:
             raise RecoveryBlocked("current state and causal journal are not atomic")
         # A registered-runtime envelope has an additional, independent
@@ -433,8 +513,7 @@ class SQLiteLifeLedger:
                 raise ValueError("registered causal owner roster changed within one identity")
             head = receipt.journal_head
             index = receipt.journal_count
-            seen_death = False
-            closed_death = False
+            terminal = _TerminalSequence()
             for entry in events:
                 if not isinstance(entry, Mapping):
                     raise ValueError("event must be a canonical journal entry mapping")
@@ -456,13 +535,7 @@ class SQLiteLifeLedger:
                 ))
                 if raw["event_hash"] != event_hash:
                     raise ValueError("technical journal hash mismatch")
-                kind = causal.get("kind")
-                if kind == "individual_death_confirmed":
-                    seen_death = True
-                if kind == "step_closed" and causal.get("data", {}).get("outcome") == "dead":
-                    closed_death = True
-                if status != "dead" and (seen_death or closed_death):
-                    raise ValueError("dead transition requires terminal marker")
+                terminal.accept(causal)
                 self._pulse("before_event_insert")
                 self._db.execute(
                     "INSERT INTO causal_occurrence VALUES (?, ?, ?, ?, ?)",
@@ -471,8 +544,7 @@ class SQLiteLifeLedger:
                 self._pulse("after_event_insert")
                 head = event_hash
                 index += 1
-            if status == "dead" and not (seen_death and closed_death):
-                raise ValueError("physical death requires fatal event and closure")
+            terminal.finalize(status)
             if new_metadata is not None and new_metadata[1:] != (
                 status, index, head, receipt.individual_id
             ):
@@ -503,8 +575,26 @@ class SQLiteLifeLedger:
             raise RecoveryBlocked("no unresolved intent to seal")
         try:
             self._db.execute("BEGIN IMMEDIATE")
+            previous_state = self._db.execute(
+                "SELECT state_bytes FROM life_current WHERE slot=1 AND status='active'"
+            ).fetchone()
+            if previous_state is None:
+                raise RecoveryBlocked("uncertain intent no longer has an active current record")
+            archived_bytes = previous_state[0]
+            archived = json.loads(archived_bytes)
+            if registered_current_metadata(archived) is not None:
+                # The last committed world/owner image is only historical
+                # evidence, NOT a restorable live body after an uncertain
+                # physical intent. Change only the outer lifecycle marker.
+                archived["lifecycle"] = "technical_halt"
+                archived_bytes = _canonical_state(archived, receipt.individual_id)
+            # Status, registered lifecycle and checksum must become visible
+            # atomically. Keep the unresolved intent and every causal event;
+            # no fake physical transition or life rewind is manufactured.
             self._db.execute(
-                "UPDATE life_current SET status='technical_halt' WHERE slot=1 AND status='active'"
+                "UPDATE life_current SET status='technical_halt', "
+                "state_bytes=?, state_hash=? WHERE slot=1 AND status='active'",
+                (archived_bytes, sha256_hex(archived_bytes)),
             )
             self._db.execute("COMMIT")
         except BaseException:
