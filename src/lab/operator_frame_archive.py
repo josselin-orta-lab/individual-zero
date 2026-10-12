@@ -115,19 +115,15 @@ class OperatorFrameArchive:
         geometry = receipts[0]["geometry"]
         if any(r["geometry"] != geometry for r in receipts):
             raise ValueError("geometry changed within archive")
-        # This v1 contract has a single attempt_ref; a multi-step run needs a
-        # new contract rather than falsely claiming all frames share one.
-        attempts = {r["attempt_ref"] for r in receipts}
-        if len(attempts) != 1:
-            raise ValueError("v1 frame contract cannot encode multiple attempts")
         last = receipts[-1]
         document = {
             "schema": "observer-world-frames-v1",
             "identity": {"individual_id": individual_id,
                          "life_generation": life_generation,
-                         "attempt_ref": last["attempt_ref"]},
+                         },
             "geometry": geometry,
-            "frames": [r["frame"] for r in receipts],
+            "frames": [{**r["frame"], "attempt_ref": r["attempt_ref"]}
+                       for r in receipts],
             "attestation": {
                 "journal_head_sha256": last["journal_head_sha256"],
                 "journal_event_count": last["journal_event_count"],
