@@ -358,3 +358,63 @@ def test_custody_requires_explicit_anchors_and_authentication(client):
         "trusted_journal_head": "b" * 64,
         "trusted_journal_count": 1,
     }, headers={"Origin": "http://testserver"}).status_code == 404
+
+
+def test_signed_custody_requires_explicit_key_and_never_unlocks_map(client, layout):
+    import base64
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives import serialization
+
+    _, _, archive = layout
+    folder = archive / "signed-case"
+    folder.mkdir()
+    frames = {"schema": "observer-world-frames-v1",
+              "identity": {"individual_id": "i0", "life_generation": 0, "attempt_ref": "a"},
+              "geometry": {"coordinate_system": "grid-xy-top-left", "width": 4, "height": 4},
+              "frames": [{"t_monde": 1, "step_boundary": "committed",
+                          "individual_pose": {"x": 1, "y": 1}, "entities": []}],
+              "attestation": {"journal_head_sha256": "a" * 64, "journal_event_count": 2,
+                              "verifier": "untrusted", "verified_at": "2026-10-12T00:00:00Z",
+                              "source_sha256": "b" * 64}}
+    frame_bytes = json.dumps(frames).encode()
+    (folder / "frames.json").write_bytes(frame_bytes)
+    previous = "00" * 32
+    rows = []
+    for i, kind in enumerate(("step_opened", "step_closed")):
+        event = {"kind": kind, "t_monde": 1, "attempt_ref": "a"}
+        eid = f"e{i}"
+        body = json.dumps({"event_id": eid, "causal_event": event}, sort_keys=True, separators=(",", ":")).encode()
+        digest = hashlib.sha256(bytes.fromhex(previous) + body).hexdigest()
+        rows.append({"index": i, "event_id": eid, "previous_hash": previous,
+                     "event_hash": digest, "causal_event": event})
+        previous = digest
+    (folder / "journal.txt").write_bytes(b"\n".join(json.dumps(x, sort_keys=True, separators=(",", ":")).encode() for x in rows))
+    private = Ed25519PrivateKey.generate()
+    key = base64.b64encode(private.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw)).decode()
+    payload = {"individual_id": "i0", "life_generation": 0, "attempt_ref": "a",
+               "frames_sha256": hashlib.sha256(frame_bytes).hexdigest(),
+               "journal_head_sha256": previous, "journal_event_count": 2,
+               "issuer": "operator", "purpose": "observer-frame-custody-only"}
+    signed = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode()
+    attestation = {"schema": "observer-detached-attestation-v1", "payload": payload,
+                   "signature": {"algorithm": "Ed25519", "key_id": "trusted",
+                                 "value": base64.b64encode(private.sign(signed)).decode()}}
+    (folder / "signed.json").write_text(json.dumps(attestation))
+    (folder / "observer-source-v1.json").write_text(json.dumps({
+        "schema": "observer-source-v1",
+        "files": {"world_frames": "frames.json", "journal": "journal.txt",
+                  "detached_attestation": "signed.json"}}))
+    endpoint = "/api/runs/import-signed-case/replay/frames/signed-custody"
+    assert client.post(endpoint, json={}).status_code == 422
+    result = client.post(endpoint, json={"trusted_public_key_b64": key,
+                                         "expected_key_id": "trusted"})
+    assert result.status_code == 200, result.text
+    data = result.json()
+    assert data["signature"]["signature_valid"] is True
+    assert data["journal_claim_match"] is True
+    assert data["recorded_step_alignment"] is True
+    assert data["physical_truth_verified"] is False
+    assert data["map_authorized"] is False
+    assert client.post(endpoint, json={"trusted_public_key_b64": key,
+                                       "expected_key_id": "wrong"}).json()["signature"]["signature_valid"] is False
