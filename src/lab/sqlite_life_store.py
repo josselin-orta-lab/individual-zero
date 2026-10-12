@@ -302,6 +302,7 @@ class SQLiteLifeLedger:
                     or set(document) != {
                         "index", "event_id", "previous_hash", "event_hash", "causal_event"
                     }
+                    or type(document["index"]) is not int
                     or document["index"] != idx
                     or document["event_id"] != event_id
                     or document["previous_hash"] != prev
