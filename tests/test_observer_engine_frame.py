@@ -50,7 +50,7 @@ class OperatorWorldFrameTests(unittest.TestCase):
             self.assertEqual(receipt["frame"]["individual_pose"],
                              individual.world.position.as_dict())
             self.assertEqual(receipt["journal_head_sha256"], individual.journal.head_hash)
-            self.assertEqual(receipt["journal_closure_hash"], individual.journal.entries()[-1].event_hash)
+            self.assertEqual(receipt["journal_closure_hash"], individual.journal.entries[-1].event_hash)
 
     def test_operator_archive_persists_mortal_step(self):
         individual = build_stage4_reference_runtime(autonomous_mortal=True)
