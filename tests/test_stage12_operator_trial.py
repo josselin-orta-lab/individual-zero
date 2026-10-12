@@ -131,6 +131,12 @@ class RetainedStage12TrialTests(unittest.TestCase):
             path.write_text("VERSION = 1\n", encoding="utf-8")
             subprocess.run(["git", "-C", str(repo), "add", "tracked.py"],
                            check=True, capture_output=True)
+            subprocess.run(
+                ["git", "-C", str(repo), "-c", "user.name=Test",
+                 "-c", "user.email=test@example.invalid", "commit", "-qm",
+                 "anchor tracked blob to committed HEAD"],
+                check=True, capture_output=True,
+            )
             initial, count = runner._tracked_source_fingerprint(repo)
             self.assertEqual(count, 1)
             self.assertIsNotNone(initial)
@@ -161,6 +167,12 @@ class RetainedStage12TrialTests(unittest.TestCase):
             source.chmod(0o644)
             subprocess.run(["git", "-C", str(repo), "add", "tracked.py"],
                            check=True, capture_output=True)
+            subprocess.run(
+                ["git", "-C", str(repo), "-c", "user.name=Test",
+                 "-c", "user.email=test@example.invalid", "commit", "-qm",
+                 "anchor tracked executable mode to committed HEAD"],
+                check=True, capture_output=True,
+            )
             original, count = runner._tracked_source_fingerprint(repo)
             self.assertEqual(count, 1)
             self.assertIsNotNone(original)

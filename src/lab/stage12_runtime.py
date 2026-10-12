@@ -28,7 +28,7 @@ from .stage11_sleep_runtime import Stage11SleepRuntime
 
 class _Stage12MetacognitionCustody:
     owner_id = "metacognition_health"
-    schema = "stage12-metacognition-sleep-alert-custody-v2"
+    schema = "stage12-metacognition-sleep-alert-goal-custody-v3"
 
     def __init__(
         self, *, previous, detectors: Stage12LivedDetectors,
@@ -294,17 +294,6 @@ class Stage12Runtime(Stage11SleepRuntime):
                 "reason": charge.reason,
             })
             if not charge.accepted:
-                # A refused optional diagnostic must never fabricate a
-                # missing goal outcome as a negative observation.
-                pending = self._meta_custody.goal_progress.followup(
-                    world_step=capture.t_monde, body=None,
-                    diagnostic_paid=False,
-                )
-                if pending is not None:
-                    self._write(
-                        kind="stage12_goal_progress_followup",
-                        cycle=cycle, data=pending.as_dict(),
-                    )
                 # Reflect an actually refused optional module in the *next*
                 # cycle's synthetic budget state; do not retrospectively
                 # rewrite the already published S_t or invent diagnostic data.
@@ -316,21 +305,19 @@ class Stage12Runtime(Stage11SleepRuntime):
                           "reason": charge.reason,
                           "diagnostic_incomplete": True},
                 )
+                # Keep the strict debit -> deferral receipt adjacency:
+                # unknown goal followups may be published only afterwards.
+                pending = self._meta_custody.goal_progress.followup(
+                    world_step=capture.t_monde, body=None,
+                    diagnostic_paid=False,
+                )
+                if pending is not None:
+                    self._write(
+                        kind="stage12_goal_progress_followup",
+                        cycle=cycle, data=pending.as_dict(),
+                    )
                 previous(ctx)
                 return
-            # The pre-action success criterion was frozen on the previous
-            # physical step. Compare *only* the new lived body capture;
-            # the verdict is one-step progress, not goal satisfaction and
-            # not subjective agency. The diagnostic UC was already paid.
-            goal_followup = self._meta_custody.goal_progress.followup(
-                world_step=capture.t_monde, body=capture.body,
-                diagnostic_paid=True,
-            )
-            if goal_followup is not None:
-                self._write(
-                    kind="stage12_goal_progress_followup",
-                    cycle=cycle, data=goal_followup.as_dict(),
-                )
             goal = self.goal_manager.active_goal
             goal_ref = None if goal is None else goal.id
             deficit = None
@@ -396,6 +383,19 @@ class Stage12Runtime(Stage11SleepRuntime):
                         **alert.as_dict(),
                         "diagnostic_policy_version": self._stage12_detector_policy.version,
                     },
+                )
+            # Preserve debit -> diagnosis -> contiguous operator-alert
+            # receipts. Only afterwards publish the separate goal-progress
+            # followup, derived from *lived* body telemetry without Oracle.
+            # The bounded work is included in the accepted diagnostic UC.
+            goal_followup = self._meta_custody.goal_progress.followup(
+                world_step=capture.t_monde, body=capture.body,
+                diagnostic_paid=True,
+            )
+            if goal_followup is not None:
+                self._write(
+                    kind="stage12_goal_progress_followup",
+                    cycle=cycle, data=goal_followup.as_dict(),
                 )
             # Close fatigue AFTER the accepted cost, so real diagnostic work
             # contributes to the exact same waking cycle's F_cog accounting.
