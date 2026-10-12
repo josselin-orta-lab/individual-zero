@@ -82,3 +82,40 @@ technical journal still contains the zone damage; I0 must not learn its
 physical label.
 
 **Neither the test count nor a green CI reverses the Stage-9 NO-GO.**
+
+
+## Visible competing-cause software gate (follow-up to issue #89)
+
+An actually perceived adjacent creature in the food-step Stage-3
+`PerceptualCapture` is a **plausible** independent physical source of
+injury. The Stage-9 Causal Model now stores a boolean
+`visible_creature_at_exposure` with the pending, externally applied,
+goal-motivated food action. For a harmful outcome, this lived cue blocks
+**all three** DC-05 harm safety admission, numerical outcome correction and
+observational causal evidence. The hidden technical field
+`effects.creature_damage` is not inspected to decide eligibility.
+
+The optional boolean is validated during state restoration. False/absent
+cues are omitted from exported snapshots to preserve historical owner
+digests. The stage-10/11 behavior is not retroactively relabeled as a
+scientific finding, and no action is injected to manufacture controls.
+
+New real-physics tests include a creature **visible** one cell from I0
+during its meal at simulated night, with positive creature damage,
+after an independently closed clean wait; compare against a food-harm
+world with an invisible dynamically activated danger zone and another
+world with a genuinely harmful berry. Those last two can have **the exact
+same first-person autobiography and accessible body telemetry** despite
+different physical causes, while their technical causal archives differ.
+The read-only external verifier checks both exports against externally
+trusted full-count/head anchors, with cognitive/Oracle/Bench imports denied
+in a fresh process. Its success certifies internal hash consistency, **not
+the truth of an inferred causal mechanism**.
+
+**Deliberate remaining limitation:** no purely first-person method can
+discriminate two worlds with the same observable experience and different
+unobserved causes. A previously clean wait is not proof of safety for a
+zone that activates on the meal step. Further contrasts, held-out
+interventions, independent scientific review and explicit operator
+acceptance are required before scientific causal validity can be claimed.
+**Stage 9 stays SCIENTIFIC NO-GO.**

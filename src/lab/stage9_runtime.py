@@ -488,6 +488,9 @@ class Stage9Runtime(Stage8Runtime):
                     integrity_before=float(captured.body["integrity"]),
                     body_before=dict(captured.body),
                     position_before=(captured.x, captured.y),
+                    # The actual Stage-3 Perception can see an adjacent
+                    # creature, but never its hidden physical damage cause.
+                    visible_creature_at_exposure=bool(captured.adjacent_creatures),
                     state_before_digest=sha256_hex(canonical_causal_bytes(
                         state_from_capture(
                             capture=captured,
