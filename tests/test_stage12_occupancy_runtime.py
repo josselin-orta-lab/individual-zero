@@ -114,6 +114,44 @@ class Stage12OccupancyRuntimeTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "diverges from admitted"):
                 audit_stage12_occupancy(fake)
 
+    def test_operator_cli_verifies_current_custody_without_importing_i0(self):
+        import subprocess
+        import sys
+        root = Path(__file__).resolve().parents[1]
+        script = root / "scripts" / "report_stage12_occupancy.py"
+        auditor = (
+            root / "src" / "lab" / "stage12_occupancy_audit.py"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("from i0", auditor)
+        self.assertNotIn("import i0", auditor)
+        with TemporaryDirectory() as folder:
+            export = Path(folder) / "canonical.jsonl"
+            runtime = stage12_runtime(str(Path(folder) / "life.wal"))
+            for _ in range(2):
+                self.assertEqual(runtime.run_step().execution_status, "applied")
+            export.write_bytes(runtime.journal.canonical_bytes())
+            args = [
+                sys.executable, str(script), str(export),
+                "--expected-head", runtime.journal.head_hash,
+                "--expected-count", str(len(runtime.journal.entries)),
+            ]
+            completed = subprocess.run(
+                args, cwd=root, capture_output=True, text=True,
+                check=False,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            report = json.loads(completed.stdout)
+            self.assertGreaterEqual(report["evaluated_cycles"], 2)
+            self.assertEqual(report["deferred_cycles"], 0)
+            denied = subprocess.run(
+                [sys.executable, str(script), str(export),
+                 "--expected-head", "f" * 64,
+                 "--expected-count", str(len(runtime.journal.entries))],
+                cwd=root, capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(denied.returncode, 1)
+            self.assertIn("refused", denied.stderr)
+
     def test_occupancy_cost_cannot_be_zero_or_boolean(self):
         with TemporaryDirectory() as folder:
             runtime = stage12_runtime(str(Path(folder) / "good.jsonl"))
