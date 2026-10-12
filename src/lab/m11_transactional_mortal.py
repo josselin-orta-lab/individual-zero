@@ -131,6 +131,7 @@ def _runtime_image(runtime: Any, *, individual_id: str) -> dict[str, Any]:
         "scheduler_journal_sequence": runtime.scheduler._journal_sequence,
         "stage3_event_sequence": runtime.stage3._event_sequence,
         "stage4_event_sequence": runtime._event_sequence,
+        "bus_event_sequence": runtime.bus._event_sequence,
         "autobiographical_commit_sequence": substrate.views._commit_sequence,
         "stage11_modulation_signals": dict(getattr(
             runtime, "_stage11_modulation_signals", {})),
@@ -166,7 +167,8 @@ def _install_trusted_current_on_fresh(
             or local["runtime_self_id"] != original["runtime_local"]["runtime_self_id"]):
         raise RecoveryBlocked("incompatible or incomplete runtime cold-restoration contract")
     for item in ("scheduler_journal_sequence", "stage3_event_sequence",
-                 "stage4_event_sequence", "autobiographical_commit_sequence"):
+                 "stage4_event_sequence", "bus_event_sequence",
+                 "autobiographical_commit_sequence"):
         if type(local[item]) is not int or local[item] < 0:
             raise RecoveryBlocked("invalid runtime event counter")
     if (not isinstance(local["stage11_modulation_signals"], dict)
@@ -216,6 +218,7 @@ def _install_trusted_current_on_fresh(
     boundary._last_world_step = image["scheduler"]["t_monde"]
     runtime.stage3._event_sequence = local["stage3_event_sequence"]
     runtime._event_sequence = local["stage4_event_sequence"]
+    runtime.bus._event_sequence = local["bus_event_sequence"]
     runtime.stage3.substrate.views._commit_event_ids = [
         row.event_id for row in runtime.journal.entries
         if row.causal_event.get("kind") == "auto_segment_commit"
