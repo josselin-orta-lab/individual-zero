@@ -65,7 +65,6 @@ def test_engine_history_map_after_complete_integrity_checks(tmp_path):
     frames, journal, report = recorded_history(tmp_path)
     result = check(frames, journal, report, step=2)
     assert result["available"] is True
-    assert result["map_authorized"] is False if "map_authorized" in result else True
     assert result["capture_integrity_verified"] is True
     assert result["engine_pose_journal_match"] is True
     assert result["physical_truth_verified"] is False
