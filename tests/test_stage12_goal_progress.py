@@ -61,6 +61,19 @@ class Stage12GoalProgressTests(unittest.TestCase):
                 self.assertEqual(followup.reason, reason)
                 self.assertIsNone(followup.value_after)
 
+    def test_malformed_lived_body_does_not_consume_preregistered_intent(self):
+        ledger = Stage12GoalProgressLedger()
+        ledger.preregister(intent(1))
+        before = ledger.export_causal_state()
+        for malformed in ([], "not-a-body", 27):
+            with self.subTest(malformed=malformed):
+                with self.assertRaisesRegex(ValueError, "body must be a mapping"):
+                    ledger.followup(world_step=2, body=malformed)
+                self.assertEqual(ledger.export_causal_state(), before)
+        followup = ledger.followup(world_step=2, body={"water": 42.0})
+        self.assertEqual(followup.criterion_outcome, "success")
+        self.assertIsNone(ledger.pending)
+
     def test_duplicate_intent_identity_and_physical_time_fail_closed(self):
         ledger = Stage12GoalProgressLedger()
         first = intent(1)
