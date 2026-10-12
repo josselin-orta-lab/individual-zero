@@ -109,5 +109,19 @@ jobs:
                       assert frame['geometry']['width'] == 32
                       assert frame['geometry']['height'] == 32
                   assert client.get(f'/api/runs/{rid}/replay/geometry?step=8').json()['available'] is False
+                  # A receipt or frame edited after SUCCESS must immediately
+                  # revoke map authorization. This modifies disposable CI files.
+                  result_file = Path(temp) / 'runs' / rid / 'result.json'
+                  original_result = result_file.read_bytes()
+                  result_file.write_bytes(original_result + b' ')
+                  assert client.get(f'/api/runs/{rid}/replay/geometry?step=1').json()['available'] is False
+                  result_file.write_bytes(original_result)
+                  assert client.get(f'/api/runs/{rid}/replay/geometry?step=1').json()['available'] is True
+                  frame_file = Path(temp) / 'runs' / rid / 'world_frames.json'
+                  original_frames = frame_file.read_bytes()
+                  frame_file.write_bytes(original_frames + b' ')
+                  assert client.get(f'/api/runs/{rid}/replay/geometry?step=1').json()['available'] is False
+                  frame_file.write_bytes(original_frames)
+
 
           PY
