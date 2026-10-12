@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+from types import MappingProxyType
 import os
 from pathlib import Path
 from typing import Any, Callable
@@ -22,6 +23,57 @@ from .journal import GENESIS_HASH
 from .mortal_execution import MortalStatus
 from .sqlite_life_store import SQLiteLifeLedger, RecoveryBlocked
 from .sqlite_runtime_custody import capture_registered_current_state
+
+
+def _copy_private_runtime(runtime: Any) -> Any:
+    """Clone registered runtime with frozen mapping proxies shared read-only.
+
+    `mappingproxy` is not pickleable/copyable on supported Python versions;
+    frozen S_t snapshots contain recursive proxies and are immutable views.
+    Sharing those proxy objects is safe because they contain frozen values,
+    while every mutable runtime owner is cloned by deepcopy.
+    """
+    proxies: dict[int, object] = {}
+    visited: set[int] = set()
+
+    def collect(value: object) -> None:
+        marker = id(value)
+        if marker in visited:
+            return
+        visited.add(marker)
+        if isinstance(value, MappingProxyType):
+            proxies[marker] = value
+            return
+        if value is None or isinstance(value, (str, bytes, int, float, bool, complex)):
+            return
+        if isinstance(value, dict):
+            for key, item in value.items():
+                collect(key)
+                collect(item)
+        elif isinstance(value, (list, tuple, set, frozenset)):
+            for item in value:
+                collect(item)
+        else:
+            mod = type(value).__module__
+            if not (mod.startswith("i0.") or mod.startswith("lab.")):
+                return
+            own = getattr(value, "__dict__", None)
+            if isinstance(own, dict):
+                for item in own.values():
+                    collect(item)
+            for base in type(value).__mro__:
+                slots = getattr(base, "__slots__", ())
+                if isinstance(slots, str):
+                    slots = (slots,)
+                for slot in slots:
+                    if slot not in {"__dict__", "__weakref__"}:
+                        try:
+                            collect(object.__getattribute__(value, slot))
+                        except AttributeError:
+                            continue
+
+    collect(runtime)
+    return deepcopy(runtime, proxies)
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,7 +167,7 @@ class M11TransactionalMortal:
                 expected_generation=base.generation, intent_ref=intent)
             if test_fault:
                 test_fault("after_intent")
-            candidate = deepcopy(self._runtime)
+            candidate = _copy_private_runtime(self._runtime)
             # Absolute prohibition on running private frames with Oracle,
             # Bench, a duplicate WAL owner, or an operator callback.
             if (candidate.stage3.substrate.bench is not None
