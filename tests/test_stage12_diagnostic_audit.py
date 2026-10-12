@@ -65,6 +65,44 @@ class Stage12IndependentDiagnosticAuditTests(unittest.TestCase):
             ))
             self.assertEqual(report.charged_uc, 0)
 
+    def test_rehashed_sample_count_inflation_is_rejected(self):
+        import json
+        from hashlib import sha256
+        from lab.determinism import canonical_causal_bytes
+        from lab.journal import GENESIS_HASH
+        with TemporaryDirectory() as folder:
+            runtime = stage12_runtime(str(Path(folder) / "inflated.jsonl"))
+            for _ in range(2):
+                self.assertEqual(runtime.run_step().execution_status, "applied")
+            rows = [
+                json.loads(raw)
+                for raw in runtime.journal.canonical_bytes().split(b"\\n")
+            ]
+            diagnostic = [
+                row for row in rows
+                if row["causal_event"].get("kind") ==
+                "stage12_lived_diagnostics_published"
+            ]
+            self.assertEqual(len(diagnostic), 2)
+            diagnostic[-1]["causal_event"]["data"]["evidence_samples"] = 1
+            prior = GENESIS_HASH
+            for index, row in enumerate(rows):
+                row["index"] = index
+                row["previous_hash"] = prior
+                prior = sha256(
+                    bytes.fromhex(prior) + canonical_causal_bytes({
+                        "event_id": row["event_id"],
+                        "causal_event": row["causal_event"],
+                    })
+                ).hexdigest()
+                row["event_hash"] = prior
+            forged = b"\\n".join(canonical_causal_bytes(row) for row in rows)
+            # A properly rehashed archive is still not valid evidence of
+            # diagnostic samples: each actual acceptance increments once.
+            self.assertEqual(audit_export_bytes(forged).occurrences, len(rows))
+            with self.assertRaisesRegex(ValueError, "sample count drift"):
+                audit_stage12_diagnostics(forged)
+
     def test_untrusted_content_and_head_fail_closed(self):
         with TemporaryDirectory() as folder:
             runtime = stage12_runtime(str(Path(folder) / "tamper.jsonl"))
