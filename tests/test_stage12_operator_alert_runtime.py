@@ -224,6 +224,33 @@ class Stage12PersistentOperatorRuntimeTests(unittest.TestCase):
             self.assertEqual(invalid.returncode, 1)
             self.assertIn("refused", invalid.stderr)
 
+    def test_fifteen_real_steps_preserve_bounded_diagnostic_evidence(self):
+        with TemporaryDirectory() as folder:
+            runtime = actual_stage12_runtime(str(Path(folder) / "long.wal"))
+            for _ in range(15):
+                self.assertEqual(runtime.run_step().execution_status, "applied")
+            receipts = [
+                row.causal_event for row in runtime.journal.entries
+                if row.causal_event.get("kind") ==
+                "stage12_lived_diagnostics_published"
+            ]
+            self.assertEqual(len(receipts), 15)
+            self.assertEqual(
+                [r["data"]["evidence_samples"] for r in receipts],
+                [*range(1, 13), 12, 12, 12],
+            )
+            self.assertTrue(all(
+                r["data"]["diagnostic_window"] == 12 for r in receipts
+            ))
+            audit = audit_stage12_operator_alerts(
+                runtime.journal.canonical_bytes(),
+                expected_head=runtime.journal.head_hash,
+                expected_count=len(runtime.journal.entries),
+            )
+            self.assertEqual(audit.examined_samples, 15)
+            self.assertEqual(audit.counts_by_signal["low_context_entropy"], 1)
+            self.assertTrue(runtime.journal.verify())
+
     def test_alert_policy_is_validated_before_birth(self):
         with TemporaryDirectory() as folder:
             valid = actual_stage12_runtime(str(Path(folder) / "valid.wal"))
