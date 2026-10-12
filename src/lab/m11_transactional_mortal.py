@@ -14,6 +14,8 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
 from types import MappingProxyType
+import hashlib
+import json
 import os
 from pathlib import Path
 from typing import Any, Callable
@@ -76,6 +78,138 @@ def _copy_private_runtime(runtime: Any) -> Any:
     return deepcopy(runtime, proxies)
 
 
+_PHYSICAL_MUTABLE = frozenset({
+    "_position", "_body", "_inventory", "_resources",
+    "_obstacles", "_water_sources", "_creatures", "_danger_zones",
+    "_lethal_zones", "_shelters", "_placed_stones",
+    "_action_failure_schedules", "_action_failure_indices",
+})
+
+
+def _runtime_contract(runtime: Any) -> str:
+    """Pin the operator-chosen constructor/configuration across cold starts."""
+    fields = (
+        type(runtime).__module__, type(runtime).__qualname__,
+        repr(runtime._config), repr(runtime.world.config),
+        repr(getattr(runtime, "_stage11_config", None)),
+        repr(getattr(runtime, "_stage10_config", None)),
+        repr(getattr(runtime.world, "_layout", None)),
+    )
+    return sha256_hex(canonical_causal_bytes(list(fields)))
+
+
+def _runtime_image(runtime: Any, *, individual_id: str) -> dict[str, Any]:
+    image = capture_registered_current_state(
+        runtime, individual_id=individual_id)
+    substrate = runtime.stage3.substrate
+    image["runtime_local"] = {
+        "schema": "m11-quiescent-runtime-locals-v1",
+        "runtime_contract": _runtime_contract(runtime),
+        "runtime_self_id": str(runtime.individual_id),
+        "scheduler_journal_sequence": runtime.scheduler._journal_sequence,
+        "stage3_event_sequence": runtime.stage3._event_sequence,
+        "stage4_event_sequence": runtime._event_sequence,
+        "autobiographical_commit_sequence": substrate.views._commit_sequence,
+        "stage11_modulation_signals": dict(getattr(
+            runtime, "_stage11_modulation_signals", {})),
+    }
+    return image
+
+
+def _install_trusted_current_on_fresh(
+    runtime: Any, image: dict[str, Any], journal_bytes: bytes,
+) -> None:
+    """Initialize a never-used runtime from one SQLite-validated current slot.
+
+    This is NOT WorldBody.restore_causal_state on an existing mortal life.
+    A private, newly constructed WorldBody parses the complete state first;
+    only then are its physical value fields installed in an untouched birth
+    instance. No previously committed live world is ever rolled backwards.
+    """
+    from .world import WorldBody
+    from .journal_views import JournalViews
+
+    original = _runtime_image(runtime, individual_id=image["individual_id"])
+    if (original["journal"]["count"] != 0
+            or original["scheduler"]["t_monde"] != 0
+            or runtime.stage3.substrate.mortal_status is not MortalStatus.ACTIVE):
+        raise RecoveryBlocked("cold reconstruction requires a never-executed mortal birth")
+    if original["owner_ids"] != image["owner_ids"]:
+        raise RecoveryBlocked("configured causal owner roster is not the stored roster")
+    local = image.get("runtime_local")
+    if (not isinstance(local, dict)
+            or set(local) != set(original["runtime_local"])
+            or local["schema"] != "m11-quiescent-runtime-locals-v1"
+            or local["runtime_contract"] != original["runtime_local"]["runtime_contract"]
+            or local["runtime_self_id"] != original["runtime_local"]["runtime_self_id"]):
+        raise RecoveryBlocked("incompatible or incomplete runtime cold-restoration contract")
+    for item in ("scheduler_journal_sequence", "stage3_event_sequence",
+                 "stage4_event_sequence", "autobiographical_commit_sequence"):
+        if type(local[item]) is not int or local[item] < 0:
+            raise RecoveryBlocked("invalid runtime event counter")
+    if (not isinstance(local["stage11_modulation_signals"], dict)
+            or any(type(v) is not bool for v in local["stage11_modulation_signals"].values())):
+        raise RecoveryBlocked("invalid modulation signal state")
+
+    # Restore causal occurrences, NOT physical command effects. The storage
+    # auditor has already checked their exact canonical bytes and SHA links.
+    for raw in journal_bytes.split(b"\n"):
+        entry = json.loads(raw)
+        if (not isinstance(entry, dict)
+                or not isinstance(entry.get("causal_event"), dict)):
+            raise RecoveryBlocked("malformed trusted journal event")
+        runtime.journal.append(
+            event_id=entry["event_id"],
+            causal_event=entry["causal_event"],
+        )
+        if runtime.journal.entries[-1].as_dict() != entry:
+            raise RecoveryBlocked("cold journal differs from durable occurrence")
+    if (runtime.journal.head_hash != image["journal"]["head"]
+            or len(runtime.journal.entries) != image["journal"]["count"]):
+        raise RecoveryBlocked("cold journal does not match current SQL generation")
+
+    # Build a detached, unpublished *new* world. The original public-world
+    # restore prohibition on `runtime.world` is never disabled or bypassed.
+    staging = WorldBody(config=runtime.world.config, layout=runtime.world._layout)
+    staging.restore_causal_state(image["world"])
+    if staging.export_causal_state() != image["world"]:
+        raise RecoveryBlocked("cold physical image differs from current SQL state")
+    current = dict(runtime.world.__dict__)
+    for name in _PHYSICAL_MUTABLE:
+        current[name] = deepcopy(getattr(staging, name))
+    runtime.world.__dict__ = current
+    runtime.scheduler.restore_causal_state(image["scheduler"])
+    runtime.scheduler._journal_sequence = local["scheduler_journal_sequence"]
+    current_owner_ids = {o.owner_id: o for o in runtime.causal_owners}
+    for key, value in image["owners"].items():
+        owner = current_owner_ids[key]
+        owner.restore_causal_state(deepcopy(value))
+    # Complete ledger bytes correspond to the current *generation*, not any
+    # selected historical snapshot. The new world has never executed a step.
+    boundary = runtime.stage3.substrate._mortal_boundary
+    if boundary is None or boundary.last_world_step != 0:
+        raise RecoveryBlocked("missing fresh mortal execution boundary")
+    boundary._last_world_step = image["scheduler"]["t_monde"]
+    runtime.stage3._event_sequence = local["stage3_event_sequence"]
+    runtime._event_sequence = local["stage4_event_sequence"]
+    runtime.stage3.substrate.views._commit_event_ids = [
+        row.event_id for row in runtime.journal.entries
+        if row.causal_event.get("kind") == "auto_segment_commit"
+    ]
+    runtime.stage3.substrate.views._commit_sequence = local[
+        "autobiographical_commit_sequence"]
+    if (runtime.stage3.substrate.views._commit_sequence !=
+            len(runtime.stage3.substrate.views._commit_event_ids)):
+        raise RecoveryBlocked("invalid restored autobiographical sequence")
+    if hasattr(runtime, "_stage11_modulation_signals"):
+        runtime._stage11_modulation_signals = dict(
+            local["stage11_modulation_signals"])
+    if canonical_causal_bytes(_runtime_image(
+        runtime, individual_id=image["individual_id"]
+    )) != canonical_causal_bytes(image):
+        raise RecoveryBlocked("cold reconstructed world/owners do not match committed state")
+
+
 @dataclass(frozen=True, slots=True)
 class TransactionalStepReceipt:
     generation: int
@@ -114,10 +248,43 @@ class M11TransactionalMortal:
                 or runtime.stage3.substrate._operator_frame_sink is not None
                 or runtime.journal.durable_wal_enabled):
             raise ValueError("M-11 requires a fresh, standalone mortal runtime without side effects")
-        state = capture_registered_current_state(runtime, individual_id=individual_id)
+        state = _runtime_image(runtime, individual_id=individual_id)
         ledger = SQLiteLifeLedger.birth(
             path=db_path, individual_id=individual_id, initial_state=state)
         return cls(runtime=runtime, ledger=ledger, individual_id=individual_id)
+
+    @classmethod
+    def cold_recover(cls, *, db_path: str, individual_id: str,
+                     runtime_factory: Callable[[], Any]) -> "M11TransactionalMortal":
+        """Resume only the *current*, nonterminal, wholly committed generation.
+
+        No physical command is replayed. Factory must build exactly the same
+        never-run autonomous runtime configuration as at original birth.
+        Incomplete, terminal, or mismatched owner graphs fail permanently.
+        """
+        ledger = SQLiteLifeLedger.open_existing(
+            path=db_path, expected_individual_id=individual_id)
+        try:
+            raw = ledger.recover_current_bytes(
+                expected_individual_id=individual_id)
+            image = json.loads(raw)
+            if not isinstance(image, dict) or image.get("lifecycle") != "active":
+                raise RecoveryBlocked("no active current generation to rehydrate")
+            journal = ledger.export_canonical_journal()
+            if not journal:
+                # Zero-genesis state is allowed, with no past command.
+                if ledger.audit().generation != 0:
+                    raise RecoveryBlocked("non-genesis current state lacks canonical events")
+                runtime = runtime_factory()
+                if _runtime_image(runtime, individual_id=individual_id) != image:
+                    raise RecoveryBlocked("genesis factory does not match anchored state")
+            else:
+                runtime = runtime_factory()
+                _install_trusted_current_on_fresh(runtime, image, journal)
+            return cls(runtime=runtime, ledger=ledger, individual_id=individual_id)
+        except BaseException:
+            ledger.close()
+            raise
 
     def inspect(self) -> dict[str, object]:
         """No mutable runtime owner is ever returned to a caller."""
@@ -152,9 +319,7 @@ class M11TransactionalMortal:
             raise RecoveryBlocked("terminal or uncertain current generation")
         if self._runtime.stage3.substrate.mortal_status is not MortalStatus.ACTIVE:
             raise RecoveryBlocked("current runtime has already stopped")
-        old_state = capture_registered_current_state(
-            self._runtime, individual_id=self.individual_id,
-        )
+        old_state = _runtime_image(self._runtime, individual_id=self.individual_id)
         if (base.state_hash != sha256_hex(canonical_causal_bytes(old_state))
                 or base.journal_head != self._runtime.journal.head_hash
                 or base.journal_count != len(self._runtime.journal.entries)):
@@ -180,8 +345,7 @@ class M11TransactionalMortal:
             if test_fault:
                 test_fault("after_private_execution")
             # A live owner MUST NOT have observed the candidate's private effects.
-            if capture_registered_current_state(
-                self._runtime, individual_id=self.individual_id) != old_state:
+            if _runtime_image(self._runtime, individual_id=self.individual_id) != old_state:
                 raise RecoveryBlocked("candidate mutated previously published owner")
             status = candidate.stage3.substrate.mortal_status
             lifecycle = (
@@ -191,10 +355,9 @@ class M11TransactionalMortal:
             )
             if lifecycle == "technical_halt":
                 raise RecoveryBlocked("uncertain private execution cannot commit")
-            proposed = capture_registered_current_state(
-                candidate, individual_id=self.individual_id,
-                expected_owner_ids=tuple(old_state["owner_ids"]),
-            )
+            proposed = _runtime_image(candidate, individual_id=self.individual_id)
+            if proposed["owner_ids"] != old_state["owner_ids"]:
+                raise RecoveryBlocked("private candidate lost a causal owner")
             if proposed.get("lifecycle") != lifecycle:
                 raise RecoveryBlocked("candidate lifecycle and registered image diverged")
             events = [
