@@ -193,15 +193,17 @@ class Stage12PersistentOperatorRuntimeTests(unittest.TestCase):
                 json.loads(row)
                 for row in runtime.journal.canonical_bytes().split(b"\n")
             ]
-            dropped = False
-            without = []
-            for row in entries:
-                if (not dropped and row["causal_event"]["kind"] ==
-                        "stage12_lived_diagnostics_published"):
-                    dropped = True
-                    continue
-                without.append(row)
-            self.assertTrue(dropped)
+            # Removing the final sample specifically exercises the
+            # charge-closure invariant. Removing an earlier sample is also
+            # rejected, but first by the independent bounded sample counter.
+            final_sample_index = max(
+                i for i, row in enumerate(entries)
+                if row["causal_event"]["kind"] ==
+                "stage12_lived_diagnostics_published"
+            )
+            without = [
+                row for i, row in enumerate(entries) if i != final_sample_index
+            ]
             forged = _rechain(without)
             self.assertEqual(audit_export_bytes(forged).occurrences, len(without))
             with self.assertRaisesRegex(ValueError, "unclosed Stage12 diagnostic charge"):
