@@ -141,11 +141,11 @@ class Stage12LivedDetectors:
         if type(record) is not LivedCognitiveObservation:
             raise TypeError("lived cognitive observation required")
         record.validate()
-        if self._rows and (
-            (record.world_step, record.cycle) <=
-            (self._rows[-1].world_step, self._rows[-1].cycle)
-        ):
-            raise ValueError("out-of-order or duplicate metacognition cycle")
+        # A diagnostic sample represents one actually observed world step.
+        # Advancing the cognitive cycle alone cannot manufacture another
+        # physical observation or inflate evidence counts.
+        if self._rows and record.world_step <= self._rows[-1].world_step:
+            raise ValueError("duplicate or out-of-order metacognition world step")
         if (record.attribution_ref is not None
                 and record.attribution_ref in self._verified_refs):
             raise ValueError("duplicate lived attribution cannot inflate bias")
@@ -271,5 +271,12 @@ class Stage12LivedDetectors:
             < (self._rows[-1].world_step, self._rows[-1].cycle)
         ):
             raise ValueError("cannot restore an earlier committed diagnostic cycle")
+        # An already active owner may only accept its own current snapshot.
+        # Loading an independently persisted state belongs to a fresh owner
+        # after the coordinator has verified the current committed generation.
+        # Otherwise a same-step or later-looking snapshot could silently
+        # rewrite previously published lived evidence.
+        if self._rows and raw != self.export_causal_state():
+            raise ValueError("cannot replace committed metacognitive observations")
         self._rows = list(restored._rows)
         self._verified_refs = set(refs)

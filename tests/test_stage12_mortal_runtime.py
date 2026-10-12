@@ -19,7 +19,7 @@ from lab.stage12_runtime import Stage12Runtime
 from lab.world import Command
 
 
-def stage12_runtime(path, *, detector_cost=1):
+def stage12_runtime(path, *, detector_cost=1, occupancy_cost=1):
     stage11 = build_stage11_reference_runtime(autonomous_mortal=True)
     stage10 = build_stage10_reference_runtime(autonomous_mortal=True)
     sleep = replace(
@@ -46,6 +46,7 @@ def stage12_runtime(path, *, detector_cost=1):
         wal_path=path,
         autonomous_mortal=True,
         diagnostic_sample_cost_uc=detector_cost,
+        module_occupancy_cost_uc=occupancy_cost,
         detector_policy=Stage12DetectionPolicy(
             version="stage12-mortal-live-dev-v1",
             window=12, stagnation_steps=3, stagnation_tolerance=0.05,
@@ -126,19 +127,22 @@ class Stage12RuntimeMortalTests(unittest.TestCase):
                 expected_meta_uc = max(
                     before_sleep.module_envelopes.get("metacognition_health", 0),
                     sleep_uc,
-                ) + detector_cost
+                ) + detector_cost + 1
                 self.assertEqual(
                     actual.module_envelopes["metacognition_health"], expected_meta_uc,
                 )
                 self.assertEqual(
                     actual.cycle_ceiling,
-                    before_sleep.cycle_ceiling + sleep_uc + 1 + detector_cost,
+                    before_sleep.cycle_ceiling + sleep_uc + 1 + detector_cost + 1,
                 )
                 self.assertEqual(
                     actual.operation_costs["sleep_option_prepare"], sleep_uc,
                 )
                 self.assertEqual(
                     actual.operation_costs["stage12_diagnostic_sample"], detector_cost,
+                )
+                self.assertEqual(
+                    actual.operation_costs["stage12_occupancy_entropy"], 1,
                 )
                 self.assertEqual(
                     [owner.owner_id for owner in runtime.causal_owners].count(

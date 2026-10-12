@@ -225,6 +225,8 @@ class Stage10Runtime(Stage9Runtime):
         )
         self.sleep_health = SleepHealth(config.sleep)
         self.sleep_session = SleepSession(wake_policy_version=config.sleep.version)
+        if autonomous_mortal:
+            self.stage3.substrate.register_nonphysical_step_clock(self.sleep_session)
         self._meta_custody = _MetacognitionAndSleepCustody(
             self.metacognition, self.sleep_health,
         )

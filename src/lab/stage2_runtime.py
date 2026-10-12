@@ -104,6 +104,8 @@ class ScriptedStage2Runtime:
                 bench=self.bench,
             )
         self._mortal_boundary: MortalWorldBoundary | None = None
+        self._operator_control = None
+        self._nonphysical_step_clocks = []
         if scenario_id is None and (scenario_version is not None or scenario_events):
             raise ValueError("scenario_id is required when scenario data is supplied")
         if scenario_id is not None and scenario_version is None:
@@ -124,6 +126,8 @@ class ScriptedStage2Runtime:
     @property
     def causal_owners(self):
         owners = [self.scheduler, self.world, self.safety]
+        if self._operator_control is not None:
+            owners.append(self._operator_control)
         if self.scenario is not None:
             owners.append(self.scenario)
         return tuple(owners)
@@ -161,12 +165,43 @@ class ScriptedStage2Runtime:
             else self._mortal_boundary.status
         )
 
+    def attach_operator_control(self, control) -> None:
+        """A single operator may attach only before a new mortal world step."""
+        if (self._mortal_boundary is None
+                or self._mortal_boundary.status is not MortalStatus.ACTIVE
+                or self.scheduler.active_attempt is not None
+                or self._operator_control is not None
+                or getattr(control, "owner_id", None) != "operator_console"):
+            raise RuntimeError("operator control requires an active mortal boundary")
+        self._operator_control = control
+
+    def register_nonphysical_step_clock(self, clock) -> None:
+        """A single lifecycle facet may track externally attested empty steps."""
+        if (self._mortal_boundary is None
+                or self._mortal_boundary.status is not MortalStatus.ACTIVE
+                or self.scheduler.active_attempt is not None
+                or self.scheduler.t_monde != 0
+                or self._nonphysical_step_clocks
+                or not callable(getattr(clock, "acknowledge_nonphysical_step", None))):
+            raise RuntimeError("nonphysical clock must attach once at mortal birth")
+        self._nonphysical_step_clocks.append(clock)
+
+    def acknowledge_nonphysical_clocks(self, *, world_step: int) -> None:
+        if (self._mortal_boundary is None
+                or self._mortal_boundary.status is not MortalStatus.ACTIVE
+                or self.scheduler.active_attempt is not None):
+            raise RuntimeError("only externally attested stopped steps may be accounted")
+        for clock in self._nonphysical_step_clocks:
+            clock.acknowledge_nonphysical_step(world_step=world_step)
+
     def open_step(self) -> None:
         if (
             self._mortal_boundary is not None
             and self._mortal_boundary.status is not MortalStatus.ACTIVE
         ):
             raise RuntimeError("dead or halted individual cannot advance")
+        if self._operator_control is not None:
+            self._operator_control.before_open_step()
         if self._mortal_boundary is not None and self.safety.blocked:
             raise RuntimeError("safety-blocked mortal individual cannot advance")
         # A rejected external input is a stopped branch, not an omitted
