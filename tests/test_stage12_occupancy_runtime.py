@@ -114,6 +114,33 @@ class Stage12OccupancyRuntimeTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "diverges from admitted"):
                 audit_stage12_occupancy(fake)
 
+    def test_rehashed_bus_producer_forgery_is_rejected(self):
+        with TemporaryDirectory() as folder:
+            runtime = stage12_runtime(str(Path(folder) / "producer.wal"))
+            for _ in range(2):
+                self.assertEqual(runtime.run_step().execution_status, "applied")
+            rows = [
+                json.loads(line) for line in
+                runtime.journal.canonical_bytes().split(b"\n")
+            ]
+            bus = next(
+                row["causal_event"]["data"]["message"]
+                for row in rows
+                if row["causal_event"].get("kind") == "bus_message_admitted"
+                and row["causal_event"]["data"]["message"].get("schema_name")
+                    == "Contribution"
+            )
+            original = bus["producer"]
+            bus["producer"] = (
+                "planning" if original != "planning" else "perception"
+            )
+            forged = _rechain(rows)
+            self.assertEqual(audit_export_bytes(forged).occurrences, len(rows))
+            with self.assertRaisesRegex(
+                ValueError, "conflicting admitted contribution producer",
+            ):
+                audit_stage12_occupancy(forged)
+
     def test_operator_cli_verifies_current_custody_without_importing_i0(self):
         import subprocess
         import sys
