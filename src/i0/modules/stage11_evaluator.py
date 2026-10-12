@@ -187,7 +187,8 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
         evaluation.validate()
         return OptionEvidenceInput(evaluation=evaluation, evidence=None)
 
-    def evaluate(self, *, proposal, evaluation_state, initial_state, cycle, t_monde):
+    def evaluate(self, *, proposal, evaluation_state, initial_state, cycle, t_monde,
+                 remaining_plan_index=0):
         if proposal.option.motive_ref.type == "cible_exploration":
             geographic = self._exploration.geographic
             target = (
@@ -216,6 +217,7 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             original = Stage8OptionEvaluator.evaluate(
                 self, proposal=proposal, evaluation_state=evaluation_state,
                 initial_state=initial_state, cycle=cycle, t_monde=t_monde,
+                remaining_plan_index=remaining_plan_index,
             )
             intrinsic = (
                 self._exploration.geographic_motivation(proposal.option)
@@ -264,6 +266,7 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             return super().evaluate(
                 proposal=proposal, evaluation_state=evaluation_state,
                 initial_state=initial_state, cycle=cycle, t_monde=t_monde,
+                remaining_plan_index=remaining_plan_index,
             )
         if not self._safe_causal_test_shape(proposal):
             # Fail closed to the historical Stage-9 unscored behavior.
@@ -271,12 +274,14 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             return super().evaluate(
                 proposal=proposal, evaluation_state=evaluation_state,
                 initial_state=initial_state, cycle=cycle, t_monde=t_monde,
+                remaining_plan_index=remaining_plan_index,
             )
         # Stage-8 supplies only the extrinsic term. The Stage-9 P-48 guard
         # remains unchanged on all pre-vNext runtimes.
         original = Stage8OptionEvaluator.evaluate(
             self, proposal=proposal, evaluation_state=evaluation_state,
             initial_state=initial_state, cycle=cycle, t_monde=t_monde,
+                remaining_plan_index=remaining_plan_index,
         )
         intrinsic = self._exploration.motivation(proposal.option)
         ids = tuple(original.evaluation.signal_ids)
