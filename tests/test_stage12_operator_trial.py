@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import platform
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -34,6 +36,24 @@ class RetainedStage12TrialTests(unittest.TestCase):
             self.assertIsNone(manifest["audit_failure"])
             self.assertFalse(manifest["operator_accepted"])
             self.assertFalse(manifest["m11_atomic_recovery_certified"])
+            self.assertTrue(manifest["execution_provenance_unchanged"])
+            provenance = manifest["execution_provenance"]
+            self.assertEqual(
+                provenance["python_patch_version"], platform.python_version(),
+            )
+            self.assertEqual(provenance["python_implementation"],
+                             platform.python_implementation())
+            for digest_key in (
+                "normative_spec_sha256", "deterministic_engine_sha256",
+                "package_manifest_sha256",
+            ):
+                self.assertRegex(provenance[digest_key], r"^[0-9a-f]{64}$")
+            if provenance["code_commit"] is not None:
+                self.assertRegex(provenance["code_commit"], r"^[0-9a-f]{40,64}$")
+            self.assertFalse(provenance["fully_locked_reference_environment"])
+            self.assertFalse(
+                provenance["human_execution_provenance_independently_attested"]
+            )
             self.assertEqual(stdout["head_hash"], manifest["head_hash"])
             self.assertEqual(stdout["occurrences"], manifest["occurrences"])
             content = (output / "canonical-export.jsonl").read_bytes()

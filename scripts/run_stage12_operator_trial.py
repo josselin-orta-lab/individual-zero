@@ -11,9 +11,13 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 from dataclasses import replace
+from hashlib import sha256
 import json
 import os
+import platform
+import re
 from pathlib import Path
+import subprocess
 import sys
 
 from i0.modules.stage12_detectors import Stage12DetectionPolicy
@@ -107,11 +111,67 @@ def _build_trial(*, wal_path: str, steps: int) -> Stage12Runtime:
     return individual
 
 
+
+def _execution_provenance() -> dict[str, object]:
+    """Detached operator metadata, never passed to I0's causal decisions.
+
+    The code commit and file digests support subsequent reference replay
+    review. A clean checkout is not a dependency lock or scientific proof.
+    """
+    repo = Path(__file__).resolve().parents[1]
+
+    def digest(relative_path: str) -> str | None:
+        file = repo / relative_path
+        if not file.is_file() or file.is_symlink():
+            return None
+        return sha256(file.read_bytes()).hexdigest()
+
+    code_commit: str | None = None
+    tracked_clean: bool | None = None
+    try:
+        revision = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "--verify", "HEAD"],
+            capture_output=True, text=True, check=False, timeout=5,
+        )
+        if revision.returncode == 0:
+            candidate = revision.stdout.strip()
+            if re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", candidate):
+                code_commit = candidate
+                status = subprocess.run(
+                    ["git", "-C", str(repo), "status", "--porcelain",
+                     "--untracked-files=no"],
+                    capture_output=True, text=True, check=False, timeout=5,
+                )
+                if status.returncode == 0:
+                    tracked_clean = not bool(status.stdout.strip())
+    except (FileNotFoundError, OSError, subprocess.TimeoutExpired):
+        pass
+
+    return {
+        "schema": "stage12-operator-execution-provenance-v1",
+        "code_commit": code_commit,
+        "tracked_checkout_clean": tracked_clean,
+        "python_implementation": platform.python_implementation(),
+        "python_patch_version": platform.python_version(),
+        "normative_spec_sha256": digest(
+            "docs/architecture/reference/en/mvp-specification-v1.3.1.md"
+        ),
+        "deterministic_engine_sha256": digest("src/lab/determinism.py"),
+        "package_manifest_sha256": digest("pyproject.toml"),
+        # There is currently no committed, patch-exact dependency lock in
+        # this repository; an exact cross-machine deterministic replay
+        # claim therefore still requires a retained reference environment.
+        "fully_locked_reference_environment": False,
+        "human_execution_provenance_independently_attested": False,
+    }
+
+
 def run_trial(output_dir: Path, steps: int) -> tuple[int, dict[str, object]]:
     if type(steps) is not int or not 1 <= steps <= 600:
         raise ValueError("software trial steps must be an integer in [1,600]")
     target = output_dir.expanduser().absolute()
     _new_exclusive_dir(target)
+    before_environment = _execution_provenance()
     wal = target / "individual-zero-life.wal"
     individual = _build_trial(wal_path=str(wal), steps=steps)
     actions: Counter[str] = Counter()
@@ -158,11 +218,20 @@ def run_trial(output_dir: Path, steps: int) -> tuple[int, dict[str, object]]:
             )
     except (ValueError, RuntimeError, OSError, TypeError) as exc:
         audit_error = f"{type(exc).__name__}: {exc}"
+    after_environment = _execution_provenance()
+    environment_unchanged = before_environment == after_environment
+    if not environment_unchanged:
+        audit_error = (
+            (audit_error + "; " if audit_error else "")
+            + "operator checkout provenance changed during the trial"
+        )
     successful = complete and audit_error is None
     manifest: dict[str, object] = {
         "schema": "stage12-retained-operator-development-trial-v1",
         "status": "complete_technically_audited" if successful else "incomplete_do_not_resume",
         "fixed_development_fixture": "stage11-geographic-and-stage10-awake-stage12-v1",
+        "execution_provenance": before_environment,
+        "execution_provenance_unchanged": environment_unchanged,
         "sleep_calibration_covered": False,
         "physical_truth_independently_verified": False,
         "m11_atomic_recovery_certified": False,
