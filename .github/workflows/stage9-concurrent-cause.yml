@@ -1,0 +1,38 @@
+name: Stage9 lived confound regression
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/i0/modules/causal_model.py'
+      - 'src/lab/stage9_runtime.py'
+      - 'tests/test_stage9_concurrent_cause_audit.py'
+      - '.github/workflows/stage9-concurrent-cause.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage9-confound-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  epistemic-physics:
+    name: Real-physics confounds (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install individual-zero
+        run: python -m pip install -e .
+      - name: Execute independent causal contrasts
+        run: |
+          python -m unittest discover -s tests -p 'test_stage9_concurrent_cause_audit.py' -v
+          python -m unittest discover -s tests -p 'test_stage9_lived_*py' -v
