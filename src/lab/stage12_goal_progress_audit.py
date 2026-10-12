@@ -85,6 +85,9 @@ def audit_stage12_goal_progress(
     success = failure = unknown = 0
     transitions: dict[int, tuple[int, dict]] = {}
     motives: dict[tuple[int, str, int], list[tuple[int, dict]]] = {}
+    commands: dict[tuple[int, str], list[tuple[int, dict]]] = {}
+    captures: dict[tuple[int, str], list[int]] = {}
+    diagnostic_receipts: dict[tuple[int, str, int], list[tuple[int, str]]] = {}
     diagnostic_steps: set[int] = set()
     records = [json.loads(line)["causal_event"] for line in content.split(b"\n")]
     identities = [json.loads(line)["event_id"] for line in content.split(b"\n")]
@@ -96,6 +99,14 @@ def audit_stage12_goal_progress(
             if type(t) is not int or t in transitions:
                 raise ValueError("duplicate or noncanonical physical transition")
             transitions[t] = (index, event)
+        elif kind == "command_experienced":
+            if (type(t) is not int or type(event.get("attempt_ref")) is not str):
+                raise ValueError("invalid physical command provenance")
+            commands.setdefault((t, event["attempt_ref"]), []).append((index, event))
+        elif kind == "perceptual_capture":
+            if (type(t) is not int or type(event.get("attempt_ref")) is not str):
+                raise ValueError("invalid lived capture provenance")
+            captures.setdefault((t, event["attempt_ref"]), []).append(index)
         elif kind == "stage12_action_motive_attested":
             if (type(t) is not int or type(event.get("cycle")) is not int
                     or type(event.get("attempt_ref")) is not str):
@@ -107,7 +118,13 @@ def audit_stage12_goal_progress(
             "stage12_lived_diagnostics_published",
             "stage12_lived_diagnostics_deferred",
         ):
+            if (type(t) is not int or type(event.get("attempt_ref")) is not str
+                    or type(event.get("cycle")) is not int):
+                raise ValueError("invalid diagnostic origin for goal followup")
             diagnostic_steps.add(t)
+            diagnostic_receipts.setdefault(
+                (t, event["attempt_ref"], event["cycle"]), [],
+            ).append((index, kind))
 
     for index, event in enumerate(records):
         kind = event.get("kind")
@@ -157,6 +174,14 @@ def audit_stage12_goal_progress(
                 raise ValueError("goal criterion lacks an independently declared active motive")
             if t not in transitions or transitions[t][0] <= index:
                 raise ValueError("goal criterion was not preregistered before physical command")
+            command_receipts = commands.get((t, attempt), [])
+            if (len(command_receipts) != 1
+                    or command_receipts[0][0] <= index
+                    or command_receipts[0][0] >= transitions[t][0]
+                    or command_receipts[0][1].get("emitter") != "action_control"
+                    or command_receipts[0][1].get("command_hash") != data["command_hash"]
+                    or transitions[t][1].get("attempt_ref") != attempt):
+                raise ValueError("goal precommit does not match the physically executed command")
             intents[ref] = (index, data, event)
         else:
             ref = data.get("intent_ref")
@@ -171,6 +196,15 @@ def audit_stage12_goal_progress(
                     or _number(data["value_before"]) != _number(intent["value_before"])
                     or t <= intent["sent_world_step"]):
                 raise ValueError("goal followup does not match frozen pre-action criterion")
+            observed_captures = captures.get((t, attempt), [])
+            diag = diagnostic_receipts.get((t, attempt, cycle), [])
+            if (len(observed_captures) != 1
+                    or observed_captures[0] >= index
+                    or len(diag) != 1 or diag[0][0] >= index):
+                raise ValueError("goal followup lacks one prior lived capture and diagnostic receipt")
+            if (diag[0][1] == "stage12_lived_diagnostics_deferred") != (
+                    data.get("reason") == "diagnostic_uc_not_available"):
+                raise ValueError("goal followup does not match charged diagnostic availability")
             before = _number(intent["value_before"])
             if before is None:
                 raise ValueError("invalid frozen goal-progress baseline")
