@@ -87,7 +87,10 @@ class MortalWorldBoundary:
 
         A confirmed death stays a death; this function never restores state.
         """
-        if self._status is MortalStatus.DEAD:
+        # Both physical death and a durably sealed operator stop are
+        # terminal classifications. A later technical incident cannot
+        # reclassify either completed life or reopen its event journal.
+        if self._status in (MortalStatus.DEAD, MortalStatus.EXPERIMENT_STOPPED):
             return
         self._world.freeze_terminal_state()
         self._status = MortalStatus.TECHNICAL_HALT
