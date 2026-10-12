@@ -602,13 +602,42 @@ class Observer:
                 "warning": "Structural validity is not causal or physical verification."}
 
     def replay_geometry(self, rid: str, *, step: int) -> dict[str, Any]:
-        """Display only independently supplied exact geometry, never inferred positions."""
+        """Read an exact imported frame for an operator preview, never infer it.
+
+        The archive is untrusted input. This endpoint does not authorize an
+        authenticated physical replay, even when the frame matches a journal
+        step. Its provenance label must remain visible to the operator.
+        """
         result = {"step": step, "available": False, "geometry": None,
-                  "verified": False, "reason": "no independently verified geometry contract"}
-        # Neither journal observations nor Stage 11 summaries are authoritative
-        # world-state anchors. Require a separate future versioned export
-        # contract and chain/step-boundary verification before drawing a map.
-        self.detail(rid)  # Reject unknown run IDs without opening arbitrary paths.
+                  "frame": None, "verified": False, "map_authorized": False,
+                  "provenance": "imported_engine_state_claim_unverified",
+                  "reason": "frame unavailable"}
+        try:
+            directory, name = self.file(rid, "world_frames")
+        except HTTPException as exc:
+            if exc.status_code == 404:
+                self.detail(rid)
+                return result
+            raise
+        with open_regular(directory, name) as stream:
+            raw = stream.read(16 * 1024 * 1024 + 1)
+        if len(raw) > 16 * 1024 * 1024:
+            result["reason"] = "archive too large"
+            return result
+        with tempfile.TemporaryDirectory(prefix="observer-map-") as tmp:
+            archive = Path(tmp) / "frames.json"
+            archive.write_bytes(raw)
+            diagnostic = validate_frames(archive)
+        if not diagnostic["structurally_valid"]:
+            result["reason"] = "invalid frame archive"
+            return result
+        data = json.loads(raw)
+        frame = next((item for item in data["frames"] if item["t_monde"] == step), None)
+        if frame is None:
+            result["reason"] = "step not recorded"
+            return result
+        result.update(available=True, geometry=data["geometry"], frame=frame,
+                      reason="unverified imported frame; not a certified physical replay")
         return result
 
     def verify_bytes(self, rid: str, alias: str) -> dict[str, Any]:
