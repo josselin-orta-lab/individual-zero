@@ -53,9 +53,9 @@ def validate_frames(path: Path) -> dict[str, Any]:
     if document["schema"] != "observer-world-frames-v1":
         return reject("unknown_schema")
     identity = document["identity"]
-    if not isinstance(identity, dict) or set(identity) != {"individual_id", "life_generation", "attempt_ref"}:
+    if not isinstance(identity, dict) or set(identity) != {"individual_id", "life_generation"}:
         return reject("invalid_identity")
-    if not all(isinstance(identity[k], str) and 0 < len(identity[k]) <= 128 for k in ("individual_id", "attempt_ref")) or type(identity["life_generation"]) is not int or identity["life_generation"] < 0:
+    if not all(isinstance(identity[k], str) and 0 < len(identity[k]) <= 128 for k in ("individual_id",)) or type(identity["life_generation"]) is not int or identity["life_generation"] < 0:
         return reject("invalid_identity_values")
     geometry = document["geometry"]
     if not isinstance(geometry, dict) or set(geometry) != {"coordinate_system", "width", "height"}:
@@ -78,12 +78,14 @@ def validate_frames(path: Path) -> dict[str, Any]:
         return isinstance(p, dict) and set(p) == {"x", "y"} and type(p["x"]) is int and type(p["y"]) is int and 0 <= p["x"] < width and 0 <= p["y"] < height
     previous = -1
     for frame in frames:
-        if not isinstance(frame, dict) or set(frame) != {"t_monde", "step_boundary", "individual_pose", "entities"}:
+        if not isinstance(frame, dict) or set(frame) != {"t_monde", "step_boundary", "individual_pose", "entities", "attempt_ref"}:
             return reject("invalid_frame")
         step = frame["t_monde"]
         if type(step) is not int or step <= previous or frame["step_boundary"] != "committed":
             return reject("unordered_or_uncommitted_step")
         previous = step
+        if not isinstance(frame["attempt_ref"], str) or not 0 < len(frame["attempt_ref"]) <= 128:
+            return reject("invalid_frame_attempt_ref")
         if not position(frame["individual_pose"]):
             return reject("invalid_individual_position")
         entities = frame["entities"]
