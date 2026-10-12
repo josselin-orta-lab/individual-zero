@@ -11,6 +11,9 @@ class OperatorWorldFrameTests(unittest.TestCase):
         before = world.export_causal_state()
         journal_before = individual.journal.canonical_bytes()
         frame = world.capture_operator_world_frame(t_monde=1)
+        self.assertEqual(world.operator_world_geometry(), {
+            "coordinate_system": "grid-xy-top-left", "width": 32, "height": 32,
+        })
         self.assertEqual(frame["individual_pose"], before["position"])
         self.assertEqual(frame["step_boundary"], "committed")
         self.assertEqual(frame["t_monde"], 1)
