@@ -144,7 +144,9 @@ class Stage12OccupancyRuntimeTests(unittest.TestCase):
             self.assertGreaterEqual(report["evaluated_cycles"], 2)
             self.assertEqual(report["deferred_cycles"], 0)
             denied = subprocess.run(
-                args[:-3] + ["--expected-head", "f" * 64],
+                [sys.executable, str(script), str(export),
+                 "--expected-head", "f" * 64,
+                 "--expected-count", str(len(runtime.journal.entries))],
                 cwd=root, capture_output=True, text=True, check=False,
             )
             self.assertEqual(denied.returncode, 1)
