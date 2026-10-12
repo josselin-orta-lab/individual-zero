@@ -695,6 +695,14 @@ class WorldBody:
             "entities": entities,
         }
 
+    def operator_world_geometry(self) -> dict[str, object]:
+        """Read-only engine geometry, never a cognition-facing observation."""
+        return {
+            "coordinate_system": "grid-xy-top-left",
+            "width": self._config.width,
+            "height": self._config.height,
+        }
+
     def export_causal_state(self) -> object:
         truth = dict(self.ground_truth())
         truth.pop("oracle_canary", None)
