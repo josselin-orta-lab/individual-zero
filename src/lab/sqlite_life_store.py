@@ -20,6 +20,7 @@ from urllib.parse import quote
 
 from .determinism import canonical_causal_bytes, sha256_hex
 from .journal import GENESIS_HASH
+from .sqlite_current_envelope import registered_current_metadata
 
 _HEX = re.compile(r"[0-9a-f]{64}\Z")
 _TERMINAL = frozenset({"dead", "technical_halt", "experiment_stopped"})
@@ -61,6 +62,7 @@ def _canonical_state(state: Mapping[str, object], identity: str) -> bytes:
         or not state["owners"]
     ):
         raise ValueError("state requires identity, world, scheduler and nonempty owners")
+    registered_current_metadata(state)
     return canonical_causal_bytes(state)
 
 
@@ -127,6 +129,11 @@ class SQLiteLifeLedger:
         if type(path) is not str or not os.path.isabs(path):
             raise ValueError("birth requires an absolute SQLite path")
         payload = _canonical_state(initial_state, individual_id)
+        metadata = registered_current_metadata(initial_state)
+        if metadata is not None and metadata[1:] != (
+            "active", 0, GENESIS_HASH, individual_id
+        ):
+            raise ValueError("strict birth custody must anchor the active genesis")
         flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
         if hasattr(os, "O_NOFOLLOW"):
             flags |= os.O_NOFOLLOW
@@ -309,6 +316,14 @@ class SQLiteLifeLedger:
             expected += 1
         if count != expected or head != previous:
             raise RecoveryBlocked("current state and causal journal are not atomic")
+        # A registered-runtime envelope has an additional, independent
+        # anchored head/count/status. Rehashing SQL alone must not silently
+        # turn its prior state image into a different generation.
+        metadata = registered_current_metadata(decoded)
+        if metadata is not None and metadata[1:] != (
+            status, count, head, identity
+        ):
+            raise RecoveryBlocked("registered current-state custody anchor mismatch")
         intent = self._db.execute(
             "SELECT individual_id, generation, intent_ref "
             "FROM pending_intent WHERE slot = 1"
@@ -385,6 +400,19 @@ class SQLiteLifeLedger:
             ):
                 raise RecoveryBlocked("stale or unowned current generation")
             payload = _canonical_state(current_state, receipt.individual_id)
+            old_bytes = self._db.execute(
+                "SELECT state_bytes FROM life_current WHERE slot=1"
+            ).fetchone()[0]
+            old_metadata = registered_current_metadata(json.loads(old_bytes))
+            new_metadata = registered_current_metadata(current_state)
+            if (old_metadata is None) != (new_metadata is None):
+                raise ValueError("current identity cannot switch registered custody contract")
+            if (
+                old_metadata is not None
+                and new_metadata is not None
+                and old_metadata[0] != new_metadata[0]
+            ):
+                raise ValueError("registered causal owner roster changed within one identity")
             head = receipt.journal_head
             index = receipt.journal_count
             seen_death = False
@@ -427,6 +455,10 @@ class SQLiteLifeLedger:
                 index += 1
             if status == "dead" and not (seen_death and closed_death):
                 raise ValueError("physical death requires fatal event and closure")
+            if new_metadata is not None and new_metadata[1:] != (
+                status, index, head, receipt.individual_id
+            ):
+                raise ValueError("registered current-state custody anchor does not match commit")
             self._pulse("before_current_update")
             self._db.execute(
                 "UPDATE life_current SET generation=?, status=?, state_bytes=?, "
