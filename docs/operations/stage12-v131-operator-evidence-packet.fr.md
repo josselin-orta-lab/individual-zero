@@ -46,6 +46,8 @@ Le programme ne charge **aucune vie d'I0** et ne lit ni l'Oracle ni le banc d'é
 
 Si l'opérateur demande exactement 600 pas, un pas seulement fermé mais **sans commande physique exécutée** ne compte pas. Les 600 commandes doivent avoir de vrais reçus de monde ; chaque **pas physique distinct réellement exécuté** doit disposer d'un diagnostic Stage 12 payé et d'au moins une mesure de S_t valide. Plusieurs cycles et plusieurs mesures pendant un même pas ne compensent jamais l'absence de preuve pour un autre pas. Un refus de budget ou un décès précoce n'est pas maquillé en 600 pas accomplis.
 
+Le paquet publie aussi `lived_detector_coverage` : pour stagnation, boucle de raisonnement et faible entropie, l'auditeur dénombre séparément les alertes **positives**, les observations **négatives** et les diagnostics **indisponibles**. La présence d'un seul côté (ou d'aucun) ne constitue pas une calibration positive/négative du détecteur. Le biais d'attribution reste non calibré tant que les paires subjectives et les résultats indépendants ne sont pas admis.
+
 **Codes de retour :** 0 signifie uniquement que l'export respecte les contrats logiciels testés et les attentes explicites ; 1 indique une incohérence, une couverture insuffisante, une ancre fausse ou un export indisponible.
 
 ## 3. Limites et décision humaine
