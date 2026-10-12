@@ -28,14 +28,15 @@ from typing import Any, Iterator
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, StrictInt
+from .frame_validation import validate_frames
 
 WEB = Path(__file__).parent / "web"
 RUN_ID = re.compile(r"r-[0-9a-f]{32}\Z")
 IMPORT_ID = re.compile(r"import-[a-zA-Z0-9_-]{1,64}\Z")
 SAFE_NAME = re.compile(r"[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}\Z")
-ALLOWED_SOURCES = frozenset({"journal", "oracle", "evaluation_trace", "lab_events"})
+ALLOWED_SOURCES = frozenset({"journal", "oracle", "evaluation_trace", "lab_events", "world_frames"})
 LOCAL_FILES = {"lab_events": "events.jsonl", "log": "execution.log", "result": "result.json", "status": "_status.json", "manifest": "_manifest.json"}
-SOURCE_CLASSES = {"journal": "causal_journal", "oracle": "oracle_declared_source", "evaluation_trace": "independent_evaluation", "lab_events": "lab_telemetry"}
+SOURCE_CLASSES = {"journal": "causal_journal", "oracle": "oracle_declared_source", "evaluation_trace": "independent_evaluation", "lab_events": "lab_telemetry", "world_frames": "unverified_historical_geometry"}
 MAX_PAGE = 200
 MAX_RECORD = 2 * 1024 * 1024
 
@@ -514,6 +515,22 @@ class Observer:
                 "physical_truth_verified": False, "scientific_validation": None,
                 "warning": "Historical recorded events only; no world reconstruction or inferred positions."}
 
+    def frame_diagnostic(self, rid: str) -> dict[str, Any]:
+        """Inspect declared imported frame bytes; never trust self-attestation."""
+        directory, name = self.file(rid, "world_frames")
+        # Resolve and open safely, then validate the bytes via an isolated
+        # private temporary file, avoiding a second read of an attacker-swapped
+        # imported path.
+        with open_regular(directory, name) as stream:
+            raw = stream.read(16 * 1024 * 1024 + 2)
+        with tempfile.TemporaryDirectory(prefix="observer-frames-") as tmp:
+            destination = Path(tmp) / "frames.json"
+            destination.write_bytes(raw)
+            result = validate_frames(destination)
+        return {"source": "world_frames", **result,
+                "provenance": "imported_declaration_untrusted",
+                "warning": "Structural validity is not causal or physical verification."}
+
     def replay_geometry(self, rid: str, *, step: int) -> dict[str, Any]:
         """Display only independently supplied exact geometry, never inferred positions."""
         result = {"step": step, "available": False, "geometry": None,
@@ -682,6 +699,10 @@ def create_app(*, core_root: Path | None = None, run_root: Path | None = None, a
     @app.get("/api/runs/{rid}/replay", dependencies=[Depends(authenticated)])
     def replay(rid: str, source: str = "journal", step: int = Query(ge=0), limit: int = Query(default=100, ge=1, le=200)):
         return observer.replay(rid, source=source, step=step, limit=limit)
+
+    @app.get("/api/runs/{rid}/replay/frames/diagnostic", dependencies=[Depends(authenticated)])
+    def frame_diagnostic(rid: str):
+        return observer.frame_diagnostic(rid)
 
     @app.get("/api/runs/{rid}/replay/geometry", dependencies=[Depends(authenticated)])
     def replay_geometry(rid: str, step: int = Query(ge=0)):
