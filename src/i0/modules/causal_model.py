@@ -208,6 +208,9 @@ class LivedFoodExposure:
     body_before: tuple[tuple[str, float], ...] | None = None
     position_before: tuple[int, int] | None = None
     state_before_digest: str | None = None
+    # Obtained from the actual PerceptualCapture at the admitted food step,
+    # never inferred from WorldBody's hidden creature_damage field.
+    visible_creature_at_exposure: bool = False
     observed_step: int | None = None
     integrity_observed: float | None = None
 
@@ -217,6 +220,8 @@ class LivedFoodExposure:
             or not isfinite(self.integrity_before)
             or not 0 <= self.integrity_before <= 100):
             raise ValueError("invalid motivated food exposure")
+        if type(self.visible_creature_at_exposure) is not bool:
+            raise ValueError("food competing-cause observation must be boolean")
         if (self.body_before is None) != (self.position_before is None):
             raise ValueError("partial pre-action physical context")
         if self.body_before is not None:
@@ -1127,6 +1132,7 @@ class CausalModel:
         body_before: Mapping[str, float] | None = None,
         position_before: tuple[int, int] | None = None,
         state_before_digest: str | None = None,
+        visible_creature_at_exposure: bool = False,
     ) -> None:
         """Only already-executed, independently goal-motivated actions enter.
 
@@ -1143,6 +1149,7 @@ class CausalModel:
             ),
             position_before=position_before,
             state_before_digest=state_before_digest,
+            visible_creature_at_exposure=visible_creature_at_exposure,
         )
         item.validate()
         if t_monde in self._lived_food_exposures:
@@ -1345,7 +1352,13 @@ class CausalModel:
                 and baseline.position == exposure.position_before
                 and baseline.integrity_observed == exposure.integrity_before
             )
-            if harm_observed and not matched_control:
+            # A creature perceived adjacent during the *food* decision
+            # remains a plausible concurrent cause even when the previous
+            # no-food wait was clean. This is lived evidence, not an oracle
+            # assertion about whether that creature physically attacked.
+            if harm_observed and (
+                not matched_control or exposure.visible_creature_at_exposure
+            ):
                 continue
             event = transition
             candidate.append(SafetyEvidence(
@@ -2333,7 +2346,16 @@ class CausalModel:
                 for w in self._pending_numeric_witnesses
             ],
             "lived_food_exposures": [
-                {name: getattr(v, name) for name in v.__dataclass_fields__}
+                {
+                    **{
+                        name: getattr(v, name) for name in v.__dataclass_fields__
+                        if name != "visible_creature_at_exposure"
+                    },
+                    # Do not change historic Stage 9–11 digest formats when
+                    # the optional lived competitor flag is absent/false.
+                    **({"visible_creature_at_exposure": True}
+                       if v.visible_creature_at_exposure else {}),
+                }
                 for _, v in sorted(self._lived_food_exposures.items())
             ],
             "lived_hydration_exposures": [
