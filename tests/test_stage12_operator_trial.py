@@ -168,6 +168,113 @@ class RetainedStage12TrialTests(unittest.TestCase):
             self.assertTrue((destination / "canonical-export.jsonl").exists())
             self.assertTrue((destination / "individual-zero-life.wal").exists())
 
+    def test_untracked_normative_reference_is_not_a_versioned_checkout(self):
+        runner = self._runner_module()
+        with TemporaryDirectory() as folder:
+            repo = Path(folder) / "checkout"
+            repo.mkdir()
+            subprocess.run(["git", "-C", str(repo), "init", "-q"],
+                           check=True, capture_output=True)
+            untracked = (
+                "docs/architecture/reference/en/mvp-specification-v1.3.1.md"
+            )
+            for relative in runner._REQUIRED_TRACKED_TRIAL_PATHS:
+                path = repo / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("fixture\n", encoding="utf-8")
+            subprocess.run(
+                ["git", "-C", str(repo), "add", "--",
+                 *(name for name in runner._REQUIRED_TRACKED_TRIAL_PATHS
+                   if name != untracked)],
+                check=True, capture_output=True,
+            )
+            subprocess.run(
+                ["git", "-C", str(repo), "-c", "user.name=Test",
+                 "-c", "user.email=test@example.invalid", "commit", "-qm",
+                 "tracked source without versioned normative specification"],
+                check=True, capture_output=True,
+            )
+            output = Path(folder) / "must-not-be-born"
+            with mock_patch.object(
+                runner, "__file__", str(repo / "scripts" /
+                                        "run_stage12_operator_trial.py"),
+            ), mock_patch.object(
+                runner, "_runtime_imports_match_checkout", return_value=True,
+            ):
+                provenance = runner._execution_provenance()
+                self.assertTrue(provenance["git_root_matches_runner"])
+                self.assertTrue(provenance["tracked_checkout_clean"])
+                self.assertIsNotNone(provenance["normative_spec_sha256"])
+                self.assertFalse(provenance["required_source_paths_tracked"])
+                with self.assertRaisesRegex(ValueError, "clean, identified, complete"):
+                    runner.run_trial(output, 1)
+            self.assertFalse(output.exists())
+
+    def test_git_parent_repository_cannot_impersonate_checkout_root(self):
+        runner = self._runner_module()
+        with TemporaryDirectory() as folder:
+            parent = Path(folder) / "parent"
+            nested = parent / "unversioned-runner-root"
+            nested.mkdir(parents=True)
+            subprocess.run(["git", "-C", str(parent), "init", "-q"],
+                           check=True, capture_output=True)
+            for relative in runner._REQUIRED_TRACKED_TRIAL_PATHS:
+                path = nested / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("fixture\n", encoding="utf-8")
+            subprocess.run(
+                ["git", "-C", str(parent), "add", "unversioned-runner-root"],
+                check=True, capture_output=True,
+            )
+            subprocess.run(
+                ["git", "-C", str(parent), "-c", "user.name=Test",
+                 "-c", "user.email=test@example.invalid", "commit", "-qm",
+                 "tracked nested folder"],
+                check=True, capture_output=True,
+            )
+            output = Path(folder) / "must-not-be-born"
+            with mock_patch.object(
+                runner, "__file__", str(nested / "scripts" /
+                                        "run_stage12_operator_trial.py"),
+            ), mock_patch.object(
+                runner, "_runtime_imports_match_checkout", return_value=True,
+            ):
+                provenance = runner._execution_provenance()
+                self.assertFalse(provenance["git_root_matches_runner"])
+                self.assertIsNone(provenance["code_commit"])
+                with self.assertRaisesRegex(ValueError, "clean, identified, complete"):
+                    runner.run_trial(output, 1)
+            self.assertFalse(output.exists())
+
+    def test_foreign_python_runtime_import_refused_before_birth(self):
+        runner = self._runner_module()
+        trusted = runner._execution_provenance()
+        self.assertTrue(trusted["runtime_modules_from_checkout"])
+        module = sys.modules["lab.stage12_runtime"]
+        with TemporaryDirectory() as folder:
+            output = Path(folder) / "must-not-be-born"
+            with mock_patch.object(
+                module, "__file__", str(Path(folder) / "foreign" / "stage12_runtime.py"),
+            ):
+                provenance = runner._execution_provenance()
+                self.assertFalse(provenance["runtime_modules_from_checkout"])
+                with self.assertRaisesRegex(ValueError, "clean, identified, complete"):
+                    runner.run_trial(output, 1)
+            self.assertFalse(output.exists())
+
+    def test_unreadable_normative_reference_fails_closed_not_crashes(self):
+        runner = self._runner_module()
+        with TemporaryDirectory() as folder:
+            output = Path(folder) / "must-not-be-born"
+            with mock_patch.object(
+                Path, "read_bytes", side_effect=PermissionError("unreadable reference"),
+            ):
+                provenance = runner._execution_provenance()
+                self.assertIsNone(provenance["normative_spec_sha256"])
+                with self.assertRaisesRegex(ValueError, "clean, identified, complete"):
+                    runner.run_trial(output, 1)
+            self.assertFalse(output.exists())
+
     def test_invalid_steps_refuse_before_birth_and_output_creation(self):
         root = Path(__file__).resolve().parents[1]
         script = root / "scripts" / "run_stage12_operator_trial.py"
