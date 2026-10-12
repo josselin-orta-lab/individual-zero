@@ -188,7 +188,7 @@ class Stage12OperatorPacketTests(unittest.TestCase):
                 self.assertEqual(runtime.run_step().execution_status, "applied")
             records = [
                 json.loads(line)
-                for line in runtime.journal.canonical_bytes().split(b"\\n")
+                for line in runtime.journal.canonical_bytes().split(b"\n")
             ]
             diagnostic = next(
                 row["causal_event"]["data"] for row in records
@@ -206,7 +206,7 @@ class Stage12OperatorPacketTests(unittest.TestCase):
                     }),
                 ).hexdigest()
                 row["event_hash"] = previous
-            forged = b"\\n".join(canonical_causal_bytes(row) for row in records)
+            forged = b"\n".join(canonical_causal_bytes(row) for row in records)
             standalone = audit_export_bytes(forged)
             self.assertEqual(standalone.world_steps_closed, 2)
             with self.assertRaisesRegex(
