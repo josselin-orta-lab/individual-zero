@@ -69,6 +69,59 @@ def _validate_identity(identity: str) -> None:
         raise ValueError("a nonempty NFC individual identity is required")
 
 
+class _TerminalSequence:
+    """Validate the journal's irreversible terminal suffix at write and audit."""
+
+    def __init__(self) -> None:
+        self.pending: tuple[int, str] | None = None
+        self.sealed = False
+
+    def accept(self, event: Mapping[str, object]) -> None:
+        if self.sealed:
+            raise ValueError("terminal death: no occurrence after fatal closure")
+        kind = event.get("kind")
+        if self.pending is not None:
+            data = event.get("data")
+            if not (
+                kind == "step_closed"
+                and type(event.get("t_monde")) is int
+                and event["t_monde"] == self.pending[0]
+                and type(event.get("attempt_ref")) is str
+                and event["attempt_ref"] == self.pending[1]
+                and isinstance(data, Mapping)
+                and data.get("outcome") == "dead"
+                and type(data.get("applied_command_count")) is int
+                and data["applied_command_count"] == 1
+                and type(data.get("world_advance_count")) is int
+                and data["world_advance_count"] == 1
+            ):
+                raise ValueError("terminal death requires its matching unique closure")
+            self.pending = None
+            self.sealed = True
+            return
+        if kind == "step_closed":
+            data = event.get("data")
+            if isinstance(data, Mapping) and data.get("outcome") == "dead":
+                raise ValueError("terminal death closure without prior fatal receipt")
+        if kind == "individual_death_confirmed":
+            if (
+                type(event.get("t_monde")) is not int
+                or event["t_monde"] < 1
+                or type(event.get("attempt_ref")) is not str
+                or not event["attempt_ref"]
+            ):
+                raise ValueError("terminal death requires a valid world attempt")
+            self.pending = (event["t_monde"], event["attempt_ref"])
+
+    def finalize(self, status: str) -> None:
+        if self.pending is not None:
+            raise ValueError("terminal death is missing its technical closure")
+        if status == "dead" and not self.sealed:
+            raise ValueError("dead status without terminal death and closure")
+        if self.sealed and status != "dead":
+            raise ValueError("terminal death requires dead lifecycle status")
+
+
 class SQLiteLifeLedger:
     """One SQLite WAL current generation plus append-only canonical occurrences.
 
@@ -275,6 +328,7 @@ class SQLiteLifeLedger:
             raise RecoveryBlocked("current state encoding is invalid") from exc
         previous = GENESIS_HASH
         expected = 0
+        terminal = _TerminalSequence()
         for idx, event_id, prev, event_hash, raw in self._db.execute(
             "SELECT idx, event_id, previous_hash, event_hash, canonical_bytes "
             "FROM causal_occurrence ORDER BY idx"
@@ -302,11 +356,19 @@ class SQLiteLifeLedger:
                 )
             except (UnicodeError, TypeError, ValueError) as exc:
                 raise RecoveryBlocked("invalid canonical causal occurrence") from exc
+            try:
+                terminal.accept(document["causal_event"])
+            except ValueError as exc:
+                raise RecoveryBlocked(str(exc)) from exc
             actual = sha256_hex(bytes.fromhex(previous) + payload)
             if not _HEX.fullmatch(event_hash) or actual != event_hash:
                 raise RecoveryBlocked("causal chain checksum mismatch")
             previous = actual
             expected += 1
+        try:
+            terminal.finalize(status)
+        except ValueError as exc:
+            raise RecoveryBlocked(str(exc)) from exc
         if count != expected or head != previous:
             raise RecoveryBlocked("current state and causal journal are not atomic")
         intent = self._db.execute(
@@ -387,8 +449,9 @@ class SQLiteLifeLedger:
             payload = _canonical_state(current_state, receipt.individual_id)
             head = receipt.journal_head
             index = receipt.journal_count
-            seen_death = False
-            closed_death = False
+            terminal = _TerminalSequence()
+            if receipt.status == "dead":
+                raise RecoveryBlocked("terminal life may not advance")
             for entry in events:
                 if not isinstance(entry, Mapping):
                     raise ValueError("event must be a canonical journal entry mapping")
@@ -410,13 +473,7 @@ class SQLiteLifeLedger:
                 ))
                 if raw["event_hash"] != event_hash:
                     raise ValueError("technical journal hash mismatch")
-                kind = causal.get("kind")
-                if kind == "individual_death_confirmed":
-                    seen_death = True
-                if kind == "step_closed" and causal.get("data", {}).get("outcome") == "dead":
-                    closed_death = True
-                if status != "dead" and (seen_death or closed_death):
-                    raise ValueError("dead transition requires terminal marker")
+                terminal.accept(causal)
                 self._pulse("before_event_insert")
                 self._db.execute(
                     "INSERT INTO causal_occurrence VALUES (?, ?, ?, ?, ?)",
@@ -425,8 +482,7 @@ class SQLiteLifeLedger:
                 self._pulse("after_event_insert")
                 head = event_hash
                 index += 1
-            if status == "dead" and not (seen_death and closed_death):
-                raise ValueError("physical death requires fatal event and closure")
+            terminal.finalize(status)
             self._pulse("before_current_update")
             self._db.execute(
                 "UPDATE life_current SET generation=?, status=?, state_bytes=?, "
