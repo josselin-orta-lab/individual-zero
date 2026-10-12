@@ -214,3 +214,10 @@ a verified physical history, even if it carries self-declared attestation
 fields. Independent canonical-journal verification and a trusted export
 source are required before enabling the map. No Core imports or modifications
 are required for this read-only diagnostic.
+
+The replay page also shows a read-only canonical journal hash-chain preflight.
+Its computed head and event count come from the imported bytes; without
+**separately trusted** head/count they cannot prove an untruncated history.
+The preflight is not the Core's complete independent causal audit and does
+not establish world-step closure, death sealing or physical truth. Therefore
+it never unlocks the map.
