@@ -1,6 +1,8 @@
 """Precommitted Stage12 goal-progress evidence, never attribution calibration."""
 from __future__ import annotations
 
+import json
+from hashlib import sha256
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -10,6 +12,9 @@ from i0.modules.stage12_goal_progress import (
 )
 from lab.stage12_goal_progress_audit import audit_stage12_goal_progress, _number
 from lab.stage12_operator_console import Stage12OperatorConsole
+from lab.determinism import canonical_causal_bytes
+from lab.independent_journal_audit import audit_export_bytes
+from lab.journal import GENESIS_HASH
 from test_stage12_operator_alert_runtime import actual_stage12_runtime
 
 
@@ -100,6 +105,59 @@ class Stage12GoalProgressTests(unittest.TestCase):
         ):
             with self.subTest(forged=forged):
                 self.assertIsNone(_number(forged))
+
+    def test_rehashed_precommit_must_match_actually_sent_command(self):
+        # A matching but forged action-motive witness and preregistration
+        # cannot attest a different command than the physically dispatched
+        # command receipt, even if the attacker rebuilds the entire chain.
+        with TemporaryDirectory() as folder:
+            runtime = actual_stage12_runtime(str(Path(folder) / "forged.wal"))
+            Stage12OperatorConsole(
+                substrate=runtime.stage3.substrate, mode="campaign",
+                policy_version="stage12-goal-command-forgery-v1",
+                maximum_world_steps=4,
+            )
+            for _ in range(4):
+                self.assertEqual(runtime.run_step().execution_status, "applied")
+            records = [
+                json.loads(line) for line in runtime.journal.canonical_bytes().split(b"\n")
+            ]
+            goal = next(
+                row for row in records
+                if row["causal_event"]["kind"] == "stage12_goal_progress_preregistered"
+            )
+            event = goal["causal_event"]
+            motive = next(
+                row for row in records
+                if row["causal_event"]["kind"] == "stage12_action_motive_attested"
+                and row["causal_event"]["t_monde"] == event["t_monde"]
+                and row["causal_event"]["cycle"] == event["cycle"]
+                and row["causal_event"]["data"]["option_ref"]
+                == event["data"]["option_ref"]
+            )
+            fake = "f" * 64
+            self.assertNotEqual(event["data"]["command_hash"], fake)
+            event["data"]["command_hash"] = fake
+            motive["causal_event"]["data"]["command_hash"] = fake
+            previous = GENESIS_HASH
+            for i, row in enumerate(records):
+                row["index"] = i
+                row["previous_hash"] = previous
+                previous = sha256(
+                    bytes.fromhex(previous) + canonical_causal_bytes({
+                        "event_id": row["event_id"],
+                        "causal_event": row["causal_event"],
+                    }),
+                ).hexdigest()
+                row["event_hash"] = previous
+            forged = b"\n".join(canonical_causal_bytes(row) for row in records)
+            verified = audit_export_bytes(forged)
+            self.assertGreater(verified.world_steps_closed, 0)
+            with self.assertRaisesRegex(ValueError, "physically executed command"):
+                audit_stage12_goal_progress(
+                    forged, expected_head=verified.head_hash,
+                    expected_count=verified.occurrences,
+                )
 
     def test_real_mortal_steps_never_fabricate_lived_agency(self):
         with TemporaryDirectory() as folder:
