@@ -151,6 +151,53 @@ def _tracked_source_fingerprint(repo: Path) -> tuple[str | None, int]:
     return (result.hexdigest(), count) if count else (None, 0)
 
 
+_REQUIRED_TRACKED_TRIAL_PATHS = (
+    "scripts/run_stage12_operator_trial.py",
+    "scripts/report_stage12_operator_packet.py",
+    "docs/architecture/reference/en/mvp-specification-v1.3.1.md",
+    "src/lab/determinism.py",
+    "src/lab/stage12_runtime.py",
+    "src/i0/modules/stage12_detectors.py",
+    "pyproject.toml",
+)
+
+_TRIAL_IMPORT_ORIGINS = {
+    "lab.journal": "src/lab/journal.py",
+    "lab.determinism": "src/lab/determinism.py",
+    "lab.stage12_runtime": "src/lab/stage12_runtime.py",
+    "i0.modules.stage12_detectors": "src/i0/modules/stage12_detectors.py",
+    "report_stage12_operator_packet": "scripts/report_stage12_operator_packet.py",
+}
+
+
+def _required_sources_are_git_tracked(repo: Path) -> bool:
+    """Existence alone does not establish that normative/executable files are versioned."""
+    files = subprocess.run(
+        ["git", "-C", str(repo), "ls-files", "--cached", "-z", "--",
+         *_REQUIRED_TRACKED_TRIAL_PATHS],
+        capture_output=True, check=False, timeout=30,
+    )
+    if files.returncode != 0:
+        return False
+    actual = {os.fsdecode(raw) for raw in files.stdout.split(b"\x00") if raw}
+    return set(_REQUIRED_TRACKED_TRIAL_PATHS).issubset(actual)
+
+
+def _runtime_imports_match_checkout(repo: Path) -> bool:
+    """An identified source tree is insufficient if Python imported another tree."""
+    for module_name, relative in _TRIAL_IMPORT_ORIGINS.items():
+        module = sys.modules.get(module_name)
+        origin = getattr(module, "__file__", None)
+        if not isinstance(origin, str):
+            return False
+        try:
+            if Path(origin).resolve(strict=True) != (repo / relative).resolve(strict=True):
+                return False
+        except OSError:
+            return False
+    return True
+
+
 def _execution_provenance() -> dict[str, object]:
     """Detached operator metadata, never passed to I0's causal decisions.
 
@@ -163,20 +210,35 @@ def _execution_provenance() -> dict[str, object]:
         file = repo / relative_path
         if not file.is_file() or file.is_symlink():
             return None
-        return sha256(file.read_bytes()).hexdigest()
+        try:
+            return sha256(file.read_bytes()).hexdigest()
+        except OSError:
+            return None
 
     code_commit: str | None = None
     tracked_clean: bool | None = None
     source_tree_digest: str | None = None
     source_files_count = 0
+    git_root_matches_runner = False
+    required_source_paths_tracked = False
+    runtime_modules_from_checkout = _runtime_imports_match_checkout(repo)
     try:
+        root = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, check=False, timeout=5,
+        )
+        if root.returncode == 0 and root.stdout.strip():
+            git_root_matches_runner = (
+                Path(root.stdout.strip()).resolve() == repo
+            )
         revision = subprocess.run(
             ["git", "-C", str(repo), "rev-parse", "--verify", "HEAD"],
             capture_output=True, text=True, check=False, timeout=5,
         )
         if revision.returncode == 0:
             candidate = revision.stdout.strip()
-            if re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", candidate):
+            if (git_root_matches_runner
+                    and re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", candidate)):
                 code_commit = candidate
                 status = subprocess.run(
                     ["git", "-C", str(repo), "status", "--porcelain",
@@ -185,6 +247,9 @@ def _execution_provenance() -> dict[str, object]:
                 )
                 if status.returncode == 0:
                     tracked_clean = not bool(status.stdout.strip())
+                    required_source_paths_tracked = (
+                        _required_sources_are_git_tracked(repo)
+                    )
                     source_tree_digest, source_files_count = (
                         _tracked_source_fingerprint(repo)
                     )
@@ -194,6 +259,9 @@ def _execution_provenance() -> dict[str, object]:
     return {
         "schema": "stage12-operator-execution-provenance-v1",
         "code_commit": code_commit,
+        "git_root_matches_runner": git_root_matches_runner,
+        "required_source_paths_tracked": required_source_paths_tracked,
+        "runtime_modules_from_checkout": runtime_modules_from_checkout,
         "tracked_checkout_clean": tracked_clean,
         "tracked_source_tree_sha256": source_tree_digest,
         "tracked_files_count": source_files_count,
@@ -220,6 +288,9 @@ def run_trial(output_dir: Path, steps: int) -> tuple[int, dict[str, object]]:
     # operator development fixture, even if its recorded HEAD is valid.
     before_environment = _execution_provenance()
     if (before_environment["code_commit"] is None
+            or before_environment["git_root_matches_runner"] is not True
+            or before_environment["required_source_paths_tracked"] is not True
+            or before_environment["runtime_modules_from_checkout"] is not True
             or before_environment["tracked_checkout_clean"] is not True
             or before_environment["tracked_source_tree_sha256"] is None
             or before_environment["tracked_files_count"] < 1
