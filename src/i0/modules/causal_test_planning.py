@@ -169,13 +169,14 @@ class Stage9OptionEvaluator(Stage8OptionEvaluator):
 
     def evaluate(
         self, *, proposal, evaluation_state, initial_state, cycle, t_monde,
+        remaining_plan_index=0,
     ) -> OptionEvidenceInput:
         original = super().evaluate(
             proposal=proposal,
             evaluation_state=evaluation_state,
             initial_state=initial_state,
             cycle=cycle,
-            t_monde=t_monde,
+            t_monde=t_monde, remaining_plan_index=remaining_plan_index,
         )
         if proposal.option.motive_ref.type != "test_causal":
             return original
