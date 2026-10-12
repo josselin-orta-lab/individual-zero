@@ -189,6 +189,8 @@ _REQUIRED_TRACKED_TRIAL_PATHS = (
     "docs/architecture/reference/en/mvp-specification-v1.3.1.md",
     "src/lab/determinism.py",
     "src/lab/stage12_runtime.py",
+    "src/lab/stage12_goal_progress_audit.py",
+    "src/i0/modules/stage12_goal_progress.py",
     "src/i0/modules/stage12_detectors.py",
     "pyproject.toml",
 )
@@ -197,6 +199,8 @@ _TRIAL_IMPORT_ORIGINS = {
     "lab.journal": "src/lab/journal.py",
     "lab.determinism": "src/lab/determinism.py",
     "lab.stage12_runtime": "src/lab/stage12_runtime.py",
+    "lab.stage12_goal_progress_audit": "src/lab/stage12_goal_progress_audit.py",
+    "i0.modules.stage12_goal_progress": "src/i0/modules/stage12_goal_progress.py",
     "i0.modules.stage12_detectors": "src/i0/modules/stage12_detectors.py",
     "report_stage12_operator_packet": "scripts/report_stage12_operator_packet.py",
 }
