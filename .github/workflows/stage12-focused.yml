@@ -13,6 +13,8 @@ on:
       - 'tests/test_stage12*'
       - 'tests/test_v131_stage12*'
       - 'scripts/run_stage12_exploratory_science.py'
+      - 'scripts/run_stage12_issue133_sleep_deep.py'
+      - 'docs/research/stage12-issue133-sleep-prereg-2026-10-12.fr.md'
       - 'scripts/run_stage12_water_sleep_followup.py'
       - 'docs/research/stage12-water-sleep-followup-prereg-2026-10-12.fr.md'
       - 'docs/research/stage12-exploratory-behavior-preregistration-2026-10-12.fr.md'
@@ -87,6 +89,33 @@ jobs:
         with:
           name: stage12-water-sleep-followup-python-${{ matrix.python-version }}
           path: /tmp/stage12-water-sleep-followup/
+          retention-days: 30
+          if-no-files-found: warn
+
+  issue133-sleep-deep:
+    name: issue133 six-pass and pressure factorial (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Run four independently audited real mortal lives
+        run: python scripts/run_stage12_issue133_sleep_deep.py --output-dir /tmp/stage12-issue133
+      - name: Archive complete traces including negative results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage12-issue133-sleep-deep-python-${{ matrix.python-version }}
+          path: /tmp/stage12-issue133/
           retention-days: 30
           if-no-files-found: warn
 
