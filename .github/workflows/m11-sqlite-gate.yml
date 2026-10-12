@@ -2,7 +2,7 @@ name: M11 SQLite transaction gate
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, i0/m11-sqlite-transactional-custody]
     paths:
       - 'src/lab/sqlite_*.py'
       - 'tests/test_sqlite_*.py'
