@@ -21,6 +21,24 @@ _REFERENCE_PRODUCERS = (
 )
 
 
+def _read_canonical_f64(raw: object) -> float:
+    # The journal encodes all floats as {"$f64": float.hex()}; accepting
+    # ordinary JSON numbers here would contradict the canonical hash contract.
+    if type(raw) is not dict or set(raw) != {"$f64"}:
+        raise ValueError("expected canonical $f64 representation")
+    encoding = raw["$f64"]
+    if type(encoding) is not str:
+        raise ValueError("invalid canonical float payload")
+    try:
+        value = float.fromhex(encoding)
+    except ValueError as exc:
+        raise ValueError("invalid canonical float hex") from exc
+    if (not isfinite(value) or encoding != value.hex().lower()
+            or (value == 0 and encoding.startswith("-"))):
+        raise ValueError("noncanonical Stage12 float")
+    return value
+
+
 def _independent_entropy(counts: dict[str, int], threshold: float) -> dict:
     if (type(threshold) not in (int, float) or not isfinite(threshold)
             or threshold < 0.0 or threshold > 1.0):
@@ -182,9 +200,7 @@ def audit_stage12_occupancy(
             expected_counts = {p: n for p, n in source_counts.items() if n}
             if data.get("module_counts") != expected_counts:
                 raise ValueError("module occupancy diverges from admitted S_t")
-            warning = data.get("warning_fraction")
-            if type(warning) not in (int, float):
-                raise ValueError("invalid occupancy threshold")
+            warning = _read_canonical_f64(data.get("warning_fraction"))
             reference = _independent_entropy(source_counts, warning)
             if (data.get("status") != reference["status"]
                     or data.get("low_entropy") is not reference["low_entropy"]
@@ -193,7 +209,11 @@ def audit_stage12_occupancy(
                     or type(data.get("distinct_modules")) is not int
                     or data["distinct_modules"] != reference["distinct_modules"]):
                 raise ValueError("forged S_t occupancy classification")
-            received = data.get("normalized_entropy")
+            received_raw = data.get("normalized_entropy")
+            received = (
+                None if received_raw is None
+                else _read_canonical_f64(received_raw)
+            )
             expected = reference["normalized_entropy"]
             if ((expected is None and received is not None)
                     or (expected is not None and (
