@@ -37,6 +37,8 @@ def main() -> int:
         "journal_count": receipt.journal_count,
         "journal_head": receipt.journal_head,
         "state_hash": receipt.state_hash,
+        "registered_owner_roster_hash": receipt.registered_roster_hash,
+        "runtime_recovery_certified": False,
         "pending_intent": receipt.pending_intent,
         "may_recover": receipt.may_recover,
         "claim": "internal_consistency_only_not_independent_physical_truth",
