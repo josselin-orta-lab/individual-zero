@@ -113,8 +113,13 @@ class Stage12GoalProgressLedger:
         intent = self._pending
         if intent is None or world_step <= intent.sent_world_step:
             return None
-        self._pending = None
+        # Malformed incoming observations cannot erase a registered intention.
+        # Validate before mutating the one-owner ledger; missing readings
+        # remain explicit unknown evidence rather than invented failures.
+        if body is not None and not isinstance(body, Mapping):
+            raise ValueError("lived goal-progress body must be a mapping or unavailable")
         value = None if body is None else _measurement(body.get(intent.measure))
+        self._pending = None
         if not diagnostic_paid:
             outcome, reason = "unknown", "diagnostic_uc_not_available"
         elif world_step != intent.observe_world_step:
