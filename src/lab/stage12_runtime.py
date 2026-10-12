@@ -16,6 +16,7 @@ from i0.modules.stage12_detectors import (
 
 from .determinism import canonical_causal_bytes, deterministic_id
 from .stage11_sleep_runtime import Stage11SleepRuntime
+from .world import command_digest
 
 
 class _Stage12MetacognitionCustody:
@@ -248,3 +249,32 @@ class Stage12Runtime(Stage11SleepRuntime):
 
         hooks[5]["metacognition_health"] = publish_lived_diagnostic
         return hooks
+
+    def _dispatch_decision(
+        self, *, proposal, prepared, admission, cycle, sent_t_monde,
+    ):
+        """Witness the admitted motive BEFORE physics, for external audit.
+
+        It does not affect Competition, goals, Action Control or rewards.
+        The independent alignment audit counts this witness only if a real
+        command with the same digest later executes and the step is closed.
+        A fatal physical outcome cannot create postmortem observations.
+        """
+        if admission.ok is True:
+            active = self.goal_manager.active_goal
+            self._write(
+                kind="stage12_action_motive_attested", cycle=cycle,
+                data={
+                    "schema": "stage12-action-motive-v1",
+                    "option_ref": proposal.option.id,
+                    "command_hash": command_digest(prepared.command),
+                    "goal_ref": proposal.option.goal_ref,
+                    "active_goal_ref": None if active is None else active.id,
+                    "motive_type": proposal.option.motive_ref.type,
+                    "external_audit_only": True,
+                },
+            )
+        return super()._dispatch_decision(
+            proposal=proposal, prepared=prepared, admission=admission,
+            cycle=cycle, sent_t_monde=sent_t_monde,
+        )
