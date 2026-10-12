@@ -69,11 +69,29 @@ class SQLiteOwnerCustodyTests(unittest.TestCase):
             image = capture(runtime)
             self.assertEqual(image["owner_ids"].count("metacognition_health"), 1)
             metacognition = image["owners"]["metacognition_health"]
+            # Registered custody captures the *actual* Stage12 owner.
+            # Stage12 v3 additionally retains alert and one-step-goal state,
+            # while the older main constructor still exposes the strict v1.
+            # Do not pin the M11 inventory test to a stale Stage12 version.
             self.assertEqual(
-                metacognition["schema"], "stage12-metacognition-sleep-custody-v1",
+                metacognition, runtime._meta_custody.export_causal_state(),
             )
-            self.assertIn("prior_metacognition_and_sleep", metacognition)
-            self.assertIn("lived_detectors", metacognition)
+            self.assertIn(metacognition["schema"], (
+                "stage12-metacognition-sleep-custody-v1",
+                "stage12-metacognition-sleep-alert-goal-custody-v3",
+            ))
+            common = {
+                "schema", "prior_metacognition_and_sleep",
+                "lived_detectors", "last_visible_goal_deficit",
+            }
+            if metacognition["schema"] == "stage12-metacognition-sleep-alert-goal-custody-v3":
+                self.assertEqual(set(metacognition), common | {
+                    "operator_alert_ledger", "lived_goal_progress",
+                })
+                self.assertIsInstance(metacognition["operator_alert_ledger"], dict)
+                self.assertIsInstance(metacognition["lived_goal_progress"], dict)
+            else:
+                self.assertEqual(set(metacognition), common)
             self.assertIn("exploration", image["owners"])
             self.assertIn("individual.slow_history", image["owners"])
             self.assertEqual(runtime.journal.head_hash, GENESIS_HASH)
