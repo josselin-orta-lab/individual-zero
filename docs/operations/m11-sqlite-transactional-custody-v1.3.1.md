@@ -27,6 +27,44 @@ All features intentionally avoid Oracle/Bench imports and never use a historic s
 - A process-lifetime POSIX writer lease prevents two active processes from opening the same individual database. A separate read-only SQLite snapshot verifier can inspect ongoing WAL commits consistently without acquiring that writer lease.
 - A stand-alone operator CLI, `python scripts/audit_i0_sqlite.py --db /absolute/i0.db --identity I0-ID --expect-generation 0`, checks only internal byte/hash/generation coherence and trusted anchors, not independent physical truth.
 - `lab.sqlite_staged_world.prepare_mortal_world_effect` runs unchanged physical dynamics on a private copy under its own copied mortal-dispatch authority, without publishing anything to the public WorldBody. It is not yet an Action Control dispatcher and exposes no `publish` method.
+## Phase 1b: registered runtime-custody inventory (development only)
+
+The storage layer now accepts an **opt-in strict envelope** via
+`lab.sqlite_runtime_custody.capture_registered_current_state`. It observes a
+quiescent autonomous mortal instance, including `WorldBody`, the Scheduler
+and every owner in the runtime's registered `causal_owners` roster. A registered
+RNG stream owner is included without consuming a draw. Captures are detached,
+and no physics, cognition, journal, Oracle or Bench is published or restored.
+
+A `i0-registered-current-state-v1` envelope pins sorted owner IDs, an owner
+roster SHA-256, current journal count/head and lifecycle. The SQLite
+`i0-sqlite-life-custody-v2` schema independently stores the roster hash in
+`life_current.registered_roster_hash`. Birth requires an active genesis anchor;
+later commits may neither add/drop registered owners nor replace the envelope
+with an unregistered phase-one image. A read-only audit refuses a rehashed
+state-only attempt to erase the strict contract. This is internal consistency,
+not protection from an administrator who rewrites **both** the state and the
+independent SQL contract field. Trusted external anchors still matter.
+
+The standalone operator CLI includes `registered_owner_roster_hash` (or
+`null` for phase-one toy records) and explicitly reports
+`runtime_recovery_certified=false`. This is intentional: the registered
+owner graph does **not** account for every unregistered mutable runtime-local
+field, prove each owner's cold-start semantics, or atomically publish the
+current runtime after a SQLite commit. In particular, it does not turn
+Stage12's independent fsynced JSONL WAL into a single SQLite coordinator.
+
+**Schema compatibility:** previous draft `i0-sqlite-life-custody-v1` databases
+are not silently migrated/reopened by v2 code. Treat them as operator-controlled
+historical development artifacts; there is no automatic legacy life restart.
+
+Targeted tests now include Stage4/10/11/12 registered owner inventory,
+explicit RNG state preservation, roster/anchor falsification and real subprocess
+`os._exit` across terminal-death COMMIT boundaries. Passing these tests
+is storage-layer evidence only. M-11 is still **FAIL**, and the separate
+stacked draft PR #96 carries the M-19 terminal-order correction. No claim
+of complete M-19 validation is made by this document.
+
 ## Critical missing integration gates before M-11 can become PASS
 
 1. **Physical candidate preparation:** compute an unchanged, once-applied `WorldBody.apply` result in a private candidate, including failure-program indices, resources and lethal predicates. The public WorldBody must not be mutated before the database commit. The private candidate is discarded on precommit error, never used to "restore" an earlier published world.
