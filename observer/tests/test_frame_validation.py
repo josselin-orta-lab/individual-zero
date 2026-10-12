@@ -61,3 +61,21 @@ def test_oversized_archive_rejected(tmp_path):
     path = tmp_path / "frames.json"
     path.write_bytes(b" " * (16 * 1024 * 1024 + 1))
     assert "archive_too_large" in validate_frames(path)["errors"]
+
+
+def test_duplicate_json_keys_rejected(tmp_path):
+    path = tmp_path / "frames.json"
+    document = json.dumps(fixture())
+    path.write_text(document.replace('"width": 8', '"width": 8, "width": 8'))
+    result = validate_frames(path)
+    assert result["structurally_valid"] is False
+    assert "unreadable_json" in result["errors"]
+
+
+def test_nonfinite_json_values_rejected(tmp_path):
+    path = tmp_path / "frames.json"
+    document = json.dumps(fixture())
+    path.write_text(document.replace('"width": 8', '"width": NaN'))
+    result = validate_frames(path)
+    assert result["structurally_valid"] is False
+    assert "unreadable_json" in result["errors"]
