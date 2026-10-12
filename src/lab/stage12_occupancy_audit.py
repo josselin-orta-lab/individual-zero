@@ -109,16 +109,26 @@ def audit_stage12_occupancy(
                 raise ValueError("untrusted bus admission emitter")
             data = event.get("data")
             msg = data.get("message") if type(data) is dict else None
-            payload = msg.get("payload") if type(msg) is dict else None
-            if type(payload) is dict and "id" in payload:
-                ref, emitter = payload["id"], msg.get("producer")
-                if (type(ref) is not str or not ref
-                        or type(emitter) is not str or emitter not in producers):
-                    raise ValueError("invalid producer witness")
-                prior = emitter_by_ref.get(ref)
-                if prior is not None and prior != emitter:
-                    raise ValueError("contribution changed producer ownership")
-                emitter_by_ref[ref] = emitter
+            # Only schema-verified Contribution messages are legitimate
+            # sources of Gatekeeper S_t slots. Double-check the provenance
+            # inside the contributed payload against the Bus producer: a
+            # rehashed producer-name forgery is not an admissible witness.
+            if type(msg) is not dict or msg.get("schema_name") != "Contribution":
+                continue
+            payload = msg.get("payload")
+            if type(payload) is not dict or "id" not in payload:
+                raise ValueError("invalid contribution bus witness")
+            ref, emitter = payload["id"], msg.get("producer")
+            provenance = payload.get("provenance")
+            if (type(ref) is not str or not ref
+                    or type(emitter) is not str or emitter not in producers
+                    or type(provenance) is not dict
+                    or provenance.get("module") != emitter):
+                raise ValueError("conflicting admitted contribution producer")
+            prior = emitter_by_ref.get(ref)
+            if prior is not None and prior != emitter:
+                raise ValueError("contribution changed producer ownership")
+            emitter_by_ref[ref] = emitter
             continue
 
         if kind not in (
