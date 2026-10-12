@@ -96,6 +96,17 @@ class OperatorFrameArchive:
             if canonical_causal_bytes(receipt) != line:
                 raise ValueError("noncanonical operator receipt")
             receipts.append(receipt)
+        for receipt in receipts:
+            if (type(receipt) is not dict
+                    or type(receipt.get("frame")) is not dict
+                    or receipt["frame"].get("step_boundary") != "committed"
+                    or type(receipt.get("attempt_ref")) is not str
+                    or not receipt["attempt_ref"]
+                    or type(receipt.get("journal_event_count")) is not int
+                    or receipt["journal_event_count"] < 1
+                    or type(receipt.get("journal_head_sha256")) is not str
+                    or len(receipt["journal_head_sha256"]) != 64):
+                raise ValueError("invalid operator receipt")
         steps = [r["frame"]["t_monde"] for r in receipts]
         if any(type(step) is not int or step < 1 for step in steps):
             raise ValueError("invalid recorded world step")
