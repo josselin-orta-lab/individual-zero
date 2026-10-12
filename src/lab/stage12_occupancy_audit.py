@@ -126,9 +126,9 @@ def audit_stage12_occupancy(
                     or provenance.get("module") != emitter):
                 raise ValueError("conflicting admitted contribution producer")
             prior = emitter_by_ref.get(ref)
-                if prior is not None and prior != emitter:
-                    raise ValueError("contribution changed producer ownership")
-                emitter_by_ref[ref] = emitter
+            if prior is not None and prior != emitter:
+                raise ValueError("contribution changed producer ownership")
+            emitter_by_ref[ref] = emitter
             continue
 
         if kind not in (
