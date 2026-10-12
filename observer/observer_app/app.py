@@ -477,6 +477,43 @@ class Observer:
                 items.append(entry)
         return {"items": items, "next_cursor": items[-1]["line"] if more and items else None, "source": source, "record_category": SOURCE_CLASSES[source], "physical_truth_verified": False if source != "oracle" else None, "integrity": "not_verified_by_event_browser"}
 
+    def replay(self, rid: str, *, source: str, step: int, limit: int = 100) -> dict[str, Any]:
+        """Read-only historical event projection, never a simulated world state."""
+        if source not in {"journal", "lab_events"}:
+            raise HTTPException(422, "replay requires an explicit journal or lab telemetry source")
+        if step < 0:
+            raise HTTPException(422, "negative step")
+        directory, name = self.file(rid, source)
+        matched = []
+        total = 0
+        malformed = 0
+        with open_regular(directory, name) as stream:
+            for line_number, record in enumerate(stream, 1):
+                if len(record) > MAX_RECORD:
+                    malformed += 1
+                    continue
+                try:
+                    item = json.loads(record)
+                    if not isinstance(item, dict):
+                        raise ValueError("non-object event")
+                    event = item.get("causal_event", item) if source == "journal" else item
+                    if not isinstance(event, dict):
+                        raise ValueError("non-object causal event")
+                    index = event.get("t_monde") if source == "journal" else event.get("cycle")
+                    if type(index) is int and index == step:
+                        total += 1
+                        if len(matched) < limit:
+                            matched.append({"line": line_number, "kind": event.get("kind"), "raw": item})
+                except (ValueError, UnicodeDecodeError):
+                    malformed += 1
+        return {"source": source, "requested_step": step,
+                "step_semantics": "t_monde" if source == "journal" else "bootstrap_cycle_not_physical_step",
+                "events": matched, "matched_count": total, "truncated": total > limit,
+                "malformed_records": malformed, "reconstruction": "not_available",
+                "world_state": None, "geometry": None, "oracle_ground_truth": None,
+                "physical_truth_verified": False, "scientific_validation": None,
+                "warning": "Historical recorded events only; no world reconstruction or inferred positions."}
+
     def verify_bytes(self, rid: str, alias: str) -> dict[str, Any]:
         directory, name = self.file(rid, alias)
         computed = hash_file(directory, name)
@@ -631,6 +668,10 @@ def create_app(*, core_root: Path | None = None, run_root: Path | None = None, a
     @app.get("/api/runs/{rid}/events", dependencies=[Depends(authenticated)])
     def events(rid: str, source: str = "lab_events", cursor: int = Query(default=0, ge=0), limit: int = Query(default=50, ge=1, le=MAX_PAGE), kind: str = Query(default="", max_length=128), component: str = Query(default="", max_length=128), step: int | None = Query(default=None, ge=0), at: str = Query(default="", max_length=100), q: str = Query(default="", max_length=100)):
         return observer.events(rid, source=source, cursor=cursor, limit=limit, kind=kind, component=component, step=step, at=at, search=q)
+
+    @app.get("/api/runs/{rid}/replay", dependencies=[Depends(authenticated)])
+    def replay(rid: str, source: str = "journal", step: int = Query(ge=0), limit: int = Query(default=100, ge=1, le=200)):
+        return observer.replay(rid, source=source, step=step, limit=limit)
 
     @app.get("/api/runs/{rid}/integrity/{alias}", dependencies=[Depends(authenticated)])
     def integrity(rid: str, alias: str):
