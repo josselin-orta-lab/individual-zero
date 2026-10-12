@@ -78,6 +78,28 @@ def _copy_private_runtime(runtime: Any) -> Any:
     return deepcopy(runtime, proxies)
 
 
+def _decode_canonical(value: Any) -> Any:
+    """Decode only I0's canonical lossless float wrapper.
+
+    SQLite validates the original byte sequence and hash chain first. The
+    decoded value is re-encoded byte-identically before any cold state owner
+    receives it, rejecting ambiguous/noncanonical data.
+    """
+    if isinstance(value, dict):
+        if set(value) == {"$f64"} and isinstance(value["$f64"], str):
+            try:
+                decoded = float.fromhex(value["$f64"])
+            except ValueError as exc:
+                raise RecoveryBlocked("invalid canonical IEEE-754 encoding") from exc
+            if canonical_causal_bytes(decoded) != canonical_causal_bytes(value):
+                raise RecoveryBlocked("noncanonical float encoding")
+            return decoded
+        return {k: _decode_canonical(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_decode_canonical(v) for v in value]
+    return value
+
+
 _PHYSICAL_MUTABLE = frozenset({
     "_position", "_body", "_inventory", "_resources",
     "_obstacles", "_water_sources", "_creatures", "_danger_zones",
@@ -154,7 +176,9 @@ def _install_trusted_current_on_fresh(
     # Restore causal occurrences, NOT physical command effects. The storage
     # auditor has already checked their exact canonical bytes and SHA links.
     for raw in journal_bytes.split(b"\n"):
-        entry = json.loads(raw)
+        entry = _decode_canonical(json.loads(raw))
+        if canonical_causal_bytes(entry) != raw:
+            raise RecoveryBlocked("cold journal has noncanonical encoding")
         if (not isinstance(entry, dict)
                 or not isinstance(entry.get("causal_event"), dict)):
             raise RecoveryBlocked("malformed trusted journal event")
@@ -267,7 +291,9 @@ class M11TransactionalMortal:
         try:
             raw = ledger.recover_current_bytes(
                 expected_individual_id=individual_id)
-            image = json.loads(raw)
+            image = _decode_canonical(json.loads(raw))
+            if canonical_causal_bytes(image) != raw:
+                raise RecoveryBlocked("cold state bytes are not canonical")
             if not isinstance(image, dict) or image.get("lifecycle") != "active":
                 raise RecoveryBlocked("no active current generation to rehydrate")
             journal = ledger.export_canonical_journal()
