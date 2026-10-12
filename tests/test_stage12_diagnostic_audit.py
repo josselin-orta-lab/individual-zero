@@ -76,7 +76,7 @@ class Stage12IndependentDiagnosticAuditTests(unittest.TestCase):
                 self.assertEqual(runtime.run_step().execution_status, "applied")
             rows = [
                 json.loads(raw)
-                for raw in runtime.journal.canonical_bytes().split(b"\\n")
+                for raw in runtime.journal.canonical_bytes().split(b"\n")
             ]
             diagnostic = [
                 row for row in rows
@@ -96,7 +96,7 @@ class Stage12IndependentDiagnosticAuditTests(unittest.TestCase):
                     })
                 ).hexdigest()
                 row["event_hash"] = prior
-            forged = b"\\n".join(canonical_causal_bytes(row) for row in rows)
+            forged = b"\n".join(canonical_causal_bytes(row) for row in rows)
             # A properly rehashed archive is still not valid evidence of
             # diagnostic samples: each actual acceptance increments once.
             self.assertEqual(audit_export_bytes(forged).occurrences, len(rows))
