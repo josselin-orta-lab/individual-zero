@@ -43,7 +43,7 @@ def test_matching_recorded_step_still_not_authoritative(tmp_path):
 
 def test_frame_at_unclosed_step_rejected(tmp_path):
     frames, journal = make_files(tmp_path, frame_step=2)
-    assert compare_frames_to_journal(frames, journal)["error"] == "frame_at_unclosed_step"
+    assert compare_frames_to_journal(frames, journal)["error"] == "missing_or_unclosed_frame"
 
 
 def test_open_only_step_rejected(tmp_path):
@@ -60,3 +60,13 @@ def test_frame_attempt_must_match_recorded_closed_step(tmp_path):
     assert result["frame_step_alignment"] is False
     assert result["error"] == "frame_attempt_mismatch"
     assert result["map_authorized"] is False
+
+
+def test_missing_closed_frame_is_rejected(tmp_path):
+    frames, journal = make_files(tmp_path)
+    document = json.loads(frames.read_text())
+    document["frames"] = []
+    frames.write_text(json.dumps(document))
+    result = compare_frames_to_journal(frames, journal)
+    assert result["frame_step_alignment"] is False
+    assert result["error"] == "empty_frame_sequence"
