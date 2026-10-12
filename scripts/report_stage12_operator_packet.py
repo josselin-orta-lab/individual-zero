@@ -17,6 +17,7 @@ from lab.stage12_alignment import evaluate_goal_action_alignment
 from lab.stage12_diagnostic_audit import audit_stage12_diagnostics
 from lab.stage12_occupancy_audit import audit_stage12_occupancy
 from lab.stage12_operator_alert_audit import audit_stage12_operator_alerts
+from lab.stage12_operator_control_audit import audit_stage12_operator_control
 
 
 def evaluate_packet(
@@ -37,6 +38,7 @@ def evaluate_packet(
     diagnostics = audit_stage12_diagnostics(content, **anchors)
     occupancy = audit_stage12_occupancy(content, **anchors)
     alerts = audit_stage12_operator_alerts(content, **anchors)
+    operator_control = audit_stage12_operator_control(content, **anchors)
     alignment = evaluate_goal_action_alignment(content, **anchors)
     counts = alignment.as_dict()["counts"]
     actual_physical_actions = len(alignment.actions)
@@ -58,6 +60,7 @@ def evaluate_packet(
             or diagnostics.head_hash != journal.head_hash
             or occupancy.head_hash != journal.head_hash
             or alerts.head_hash != journal.head_hash
+            or operator_control.head_hash != journal.head_hash
             or alignment.journal_head != journal.head_hash
             or alerts.examined_samples != diagnostics.diagnostic_samples
             or actual_physical_actions > journal.world_steps_closed):
@@ -71,12 +74,9 @@ def evaluate_packet(
                 or len(covered_occupancy_steps) != expected_world_steps):
             raise ValueError("Stage12 diagnostics/S_t occupancy do not cover each physical action")
 
-    terminal_stop = False
-    if require_terminal_stop:
-        last = json.loads(content.split(b"\n")[-1])["causal_event"]
-        terminal_stop = last.get("kind") == "experiment_stopped"
-        if not terminal_stop or journal.terminal_deaths:
-            raise ValueError("campaign lacks nonlethal terminal operator stop")
+    terminal_stop = operator_control.experiment_stopped
+    if require_terminal_stop and (not terminal_stop or journal.terminal_deaths):
+        raise ValueError("campaign lacks independently verified nonlethal operator stop")
 
     return {
         "schema": "stage12-operator-evidence-packet-v1",
@@ -89,6 +89,7 @@ def evaluate_packet(
         "diagnostics": diagnostics.as_dict(),
         "st_module_occupancy": occupancy.as_dict(),
         "persistent_operator_alerts": alerts.as_dict(),
+        "external_operator_control": operator_control.as_dict(),
         "goal_action_alignment": {
             "schema": "stage12-external-goal-action-alignment-v1",
             "executed_physical_actions": actual_physical_actions,
@@ -119,6 +120,7 @@ def evaluate_packet(
             "terminal_operator_stop_required": require_terminal_stop,
             "terminal_operator_stop_verified": terminal_stop,
             "diagnostic_samples_match_alert_observations": True,
+            "operator_control_lineage_audited": True,
         },
         "open_gates": [
             "M-11 current physical+cognitive atomic crash recovery NOT certified",

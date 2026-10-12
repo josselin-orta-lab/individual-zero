@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
+from hashlib import sha256
 from pathlib import Path
 import subprocess
 import sys
@@ -10,6 +12,10 @@ import unittest
 
 from lab.stage12_operator_console import Stage12OperatorConsole
 from lab.stage12_operator_alert_audit import audit_stage12_operator_alerts
+from lab.determinism import canonical_causal_bytes
+from lab.independent_journal_audit import audit_export_bytes
+from lab.journal import GENESIS_HASH
+from lab.stage12_operator_control_audit import audit_stage12_operator_control
 from test_stage12_operator_alert_runtime import actual_stage12_runtime
 
 
@@ -70,6 +76,14 @@ class Stage12OperatorPacketTests(unittest.TestCase):
                 packet["goal_action_alignment"]["executed_physical_actions"], 4,
             )
             self.assertTrue(packet["checks"]["terminal_operator_stop_verified"])
+            self.assertTrue(packet["checks"]["operator_control_lineage_audited"])
+            self.assertTrue(packet["external_operator_control"]["configured"])
+            self.assertTrue(packet["external_operator_control"]["experiment_stopped"])
+            self.assertEqual(packet["external_operator_control"]["maximum_world_steps"], 4)
+            self.assertEqual(packet["external_operator_control"]["operator_events"], 3)
+            self.assertFalse(
+                packet["external_operator_control"]["operator_intent_independently_verified"]
+            )
             self.assertFalse(packet["operator_stage_accepted"])
             self.assertFalse(packet["physical_truth_independently_verified"])
             self.assertEqual(
@@ -95,6 +109,60 @@ class Stage12OperatorPacketTests(unittest.TestCase):
             )
             self.assertEqual(wrong_head.returncode, 1)
             self.assertIn("refused", wrong_head.stderr)
+
+    def test_rehashed_terminal_policy_cannot_launder_a_forged_stop(self):
+        # A coherent SHA-256 chain with an attacker-supplied replacement head
+        # is NOT evidence that the operator cap and stop reason are coherent.
+        with TemporaryDirectory() as folder:
+            runtime = actual_stage12_runtime(str(Path(folder) / "forgery.wal"))
+            Stage12OperatorConsole(
+                substrate=runtime.stage3.substrate, mode="campaign",
+                policy_version="stage12-packet-forgery-v1",
+                maximum_world_steps=3,
+            )
+            for _ in range(3):
+                self.assertEqual(runtime.run_step().execution_status, "applied")
+            canonical = runtime.journal.canonical_bytes()
+            clean = audit_stage12_operator_control(canonical)
+            self.assertTrue(clean.experiment_stopped)
+            records = [
+                json.loads(line) for line in canonical.split(b"\n")
+            ]
+            cap = next(
+                row["causal_event"]["data"] for row in records
+                if row["causal_event"]["kind"] == "operator_step_cap_set"
+            )
+            stop = next(
+                row["causal_event"]["data"] for row in records
+                if row["causal_event"]["kind"] == "experiment_stopped"
+            )
+            cap["maximum_world_steps"] = 4
+            stop["maximum_world_steps"] = 4
+            previous = GENESIS_HASH
+            for i, row in enumerate(records):
+                row["index"] = i
+                row["previous_hash"] = previous
+                previous = sha256(
+                    bytes.fromhex(previous) + canonical_causal_bytes({
+                        "event_id": row["event_id"],
+                        "causal_event": row["causal_event"],
+                    }),
+                ).hexdigest()
+                row["event_hash"] = previous
+            forged = b"\n".join(canonical_causal_bytes(row) for row in records)
+            # Independently valid cryptographic chain, invalid operator policy.
+            structural = audit_export_bytes(forged)
+            self.assertEqual(structural.occurrences, len(records))
+            with self.assertRaisesRegex(ValueError, "incorrect world step"):
+                audit_stage12_operator_control(forged)
+            # The *full* operator packet cannot claim this fabricated stop.
+            from scripts.report_stage12_operator_packet import evaluate_packet
+            with self.assertRaisesRegex(ValueError, "incorrect world step"):
+                evaluate_packet(
+                    forged, expected_head=structural.head_hash,
+                    expected_count=structural.occurrences,
+                    expected_world_steps=3, require_terminal_stop=True,
+                )
 
     def test_operator_packet_requires_trusted_head_and_count(self):
         root = Path(__file__).resolve().parents[1]
