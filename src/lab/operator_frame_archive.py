@@ -87,6 +87,8 @@ class OperatorFrameArchive:
             raise ValueError("archive paths must be absolute")
         if type(life_generation) is not int or life_generation < 0:
             raise ValueError("invalid life generation")
+        if source.stat().st_size > 16 * 1024 * 1024:
+            raise ValueError("oversized frame receipts")
         raw = source.read_bytes()
         if len(raw) > 16 * 1024 * 1024 or not raw or not raw.endswith(b"\n"):
             raise ValueError("missing, oversized or torn frame receipts")
@@ -105,13 +107,18 @@ class OperatorFrameArchive:
                     or type(receipt.get("journal_event_count")) is not int
                     or receipt["journal_event_count"] < 1
                     or type(receipt.get("journal_head_sha256")) is not str
-                    or len(receipt["journal_head_sha256"]) != 64):
+                    or len(receipt["journal_head_sha256"]) != 64
+                    or any(c not in "0123456789abcdef" for c in receipt["journal_head_sha256"])
+                    or type(receipt.get("journal_closure_hash", "")) is not str):
                 raise ValueError("invalid operator receipt")
         steps = [r["frame"]["t_monde"] for r in receipts]
         if any(type(step) is not int or step < 1 for step in steps):
             raise ValueError("invalid recorded world step")
         if steps != list(range(1, len(steps) + 1)):
             raise ValueError("incomplete or unordered world frames")
+        counts = [r["journal_event_count"] for r in receipts]
+        if any(a >= b for a, b in zip(counts, counts[1:])):
+            raise ValueError("nonmonotonic journal event counts")
         geometry = receipts[0]["geometry"]
         if any(r["geometry"] != geometry for r in receipts):
             raise ValueError("geometry changed within archive")
