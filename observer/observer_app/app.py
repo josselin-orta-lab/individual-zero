@@ -289,6 +289,19 @@ class Observer:
                 raise HTTPException(422, f"invalid {key}")
             resolved[key] = n
         with self._lock:
+            # Fail closed after an Observer crash: a previous child process may
+            # still be running even when its receipt was marked INTERRUPTED.
+            # An operator must investigate and isolate the host before further
+            # launches. Never silently reuse a possibly occupied runner.
+            for prior in self.run_root.iterdir():
+                if not RUN_ID.fullmatch(prior.name) or prior.is_symlink() or not prior.is_dir():
+                    continue
+                try:
+                    previous = self._local_status(prior.name)
+                except HTTPException:
+                    raise HTTPException(409, "runner locked: unreadable historical receipt requires operator investigation") from None
+                if previous.get("status") == "INTERRUPTED":
+                    raise HTTPException(409, "runner locked after interruption: operator must verify no orphan process remains and use a new isolated run root")
             if self._active is not None:
                 raise HTTPException(409, "another test run is active; maximum concurrency is one")
             rid = "r-" + uuid.uuid4().hex
