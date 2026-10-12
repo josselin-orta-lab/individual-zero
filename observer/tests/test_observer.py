@@ -212,7 +212,7 @@ def test_fixed_unittest_and_stage11_fixture_report(client):
     data = wait(client, r.json()["id"])
     assert data["status"] == "SUCCESS", data
     assert data["executed_steps"] == 7
-    assert data["assertions_passed"] is True
+    assert data["assertions_passed"] is None  # Fixture receipt cannot attest the real Stage 11 protocol
     assert data["scientific_validation"] is None
     report = client.get(f"/api/runs/{data['id']}/file/result").json()
     assert report["classification"] == "fixture_only"
