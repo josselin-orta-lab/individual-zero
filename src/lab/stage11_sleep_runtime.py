@@ -89,10 +89,17 @@ class Stage11SleepRuntime(Stage11Runtime, Stage10Runtime):
             # safety block. A second run_step() invocation is not necessary:
             # there must be no gap where the completed campaign can appear
             # active despite an already closed zero-advance world attempt.
-            if result.execution_status == "safety_block":
-                console = getattr(substrate, "_operator_control", None)
-                if console is not None and console.mode == "campaign":
+            console = getattr(substrate, "_operator_control", None)
+            if console is not None and substrate.mortal_status is MortalStatus.ACTIVE:
+                if result.execution_status == "safety_block" and console.mode == "campaign":
                     console.arreter(reason="campaign_safety_block")
+                elif (result.execution_status in ("applied", "safety_block")
+                      and console.maximum_world_steps is not None
+                      and self.scheduler.t_monde >= console.maximum_world_steps):
+                    # The last allowed physical command has just been
+                    # durably closed. Publish the operator stop at this same
+                    # boundary, never by opening a fictitious next step.
+                    console.arreter(reason="world_step_cap_reached")
             return result
         except Exception:
             # Do not mask a confirmed physical death or authorized operator
