@@ -78,7 +78,7 @@ jobs:
                       if result['status'] not in ('RUNNING', 'PENDING'):
                           break
                       time.sleep(0.2)
-                  assert result['status'] == 'SUCCESS', result
+                  assert result['status'] == 'SUCCESS', (result, client.get('/api/runs/'+rid+'/logs').json().get('text', '')[-4000:])
                   assert result['technical_success'] is True
                   assert result['assertions_passed'] is True, result
                   assert result['executed_steps'] == 7, result
