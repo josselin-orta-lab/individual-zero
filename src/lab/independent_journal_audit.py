@@ -172,6 +172,7 @@ def audit_export_bytes(
     previous = GENESIS_HASH
     prior_step = -1
     death_index: int | None = None
+    experiment_stop_index: int | None = None
     death_attempt: tuple[int, str] | None = None
     commits = publications = deaths = 0
     # Only committed, chronologically consecutive SlowHistory versions are
@@ -245,6 +246,20 @@ def audit_export_bytes(
             ):
                 raise ValueError("terminal death lacks executed command digest")
         all_kinds.add(kind)
+        if experiment_stop_index is not None:
+            raise ValueError("technical/cognitive event occurred after experiment stop")
+        if kind == "experiment_stopped":
+            data = event.get("data")
+            if (death_index is not None
+                    or event.get("emitter") != "operator_console"
+                    or type(event.get("t_monde")) is not int
+                    or event["t_monde"] < 0
+                    or not isinstance(data, dict)
+                    or data.get("physical_death") is not False
+                    or data.get("world_rewound") is not False):
+                raise ValueError("invalid external operator terminal stop")
+            experiment_stop_index = number
+            examined.add(kind)
         if death_index is not None and kind != "step_closed":
             raise ValueError("technical/cognitive event occurred after death")
         t = event.get("t_monde")
