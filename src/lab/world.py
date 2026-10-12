@@ -659,7 +659,7 @@ class WorldBody:
 
         This is a read-only capture, NOT an I0 observation, an Oracle result,
         a journal commit, or proof that a step boundary was committed. The
-        caller must invoke it only after the corresponding durable closure.
+        caller must attest the corresponding durable closure separately.
         """
         if type(t_monde) is not int or t_monde < 1:
             raise ValueError("operator frame requires a positive world step")
@@ -691,7 +691,6 @@ class WorldBody:
         entities.sort(key=lambda item: item["id"])
         return {
             "t_monde": t_monde,
-            "step_boundary": "committed",
             "individual_pose": self._position.as_dict(),
             "entities": entities,
         }
