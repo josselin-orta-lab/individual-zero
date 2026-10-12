@@ -25,7 +25,7 @@ from .sqlite_current_envelope import registered_current_metadata
 _HEX = re.compile(r"[0-9a-f]{64}\Z")
 _TERMINAL = frozenset({"dead", "technical_halt", "experiment_stopped"})
 _LIFECYCLES = _TERMINAL | {"active", "safety_block"}
-_SCHEMA = "i0-sqlite-life-custody-v1"
+_SCHEMA = "i0-sqlite-life-custody-v2"
 
 
 class RecoveryBlocked(RuntimeError):
@@ -159,7 +159,8 @@ class SQLiteLifeLedger:
                     state_bytes BLOB NOT NULL,
                     state_hash TEXT NOT NULL,
                     journal_count INTEGER NOT NULL CHECK(journal_count >= 0),
-                    journal_head TEXT NOT NULL
+                    journal_head TEXT NOT NULL,
+                    registered_roster_hash TEXT
                 );
                 CREATE TABLE causal_occurrence (
                     idx INTEGER PRIMARY KEY CHECK(idx >= 0),
@@ -180,8 +181,9 @@ class SQLiteLifeLedger:
             # process exits here, a later open fails closed.
             db.execute("BEGIN IMMEDIATE")
             db.execute(
-                "INSERT INTO life_current VALUES (1, ?, ?, 0, 'active', ?, ?, 0, ?)",
-                (_SCHEMA, individual_id, payload, sha256_hex(payload), GENESIS_HASH),
+                "INSERT INTO life_current VALUES (1, ?, ?, 0, 'active', ?, ?, 0, ?, ?)",
+                (_SCHEMA, individual_id, payload, sha256_hex(payload), GENESIS_HASH,
+                 metadata[0] if metadata is not None else None),
             )
             db.execute("COMMIT")
         except BaseException:
@@ -261,12 +263,12 @@ class SQLiteLifeLedger:
         """Read and validate the latest current state AND every retained event."""
         row = self._db.execute(
             "SELECT schema_version, individual_id, generation, status, "
-            "state_bytes, state_hash, journal_count, journal_head "
-            "FROM life_current WHERE slot = 1"
+            "state_bytes, state_hash, journal_count, journal_head, "
+            "registered_roster_hash FROM life_current WHERE slot = 1"
         ).fetchone()
         if row is None:
             raise RecoveryBlocked("genesis is incomplete or absent")
-        schema, identity, generation, status, data, digest, count, head = row
+        schema, identity, generation, status, data, digest, count, head, stored_roster_hash = row
         if schema != _SCHEMA:
             raise RecoveryBlocked("unrecognized SQLite life schema")
         _validate_identity(identity)
@@ -325,6 +327,11 @@ class SQLiteLifeLedger:
             status, count, head, identity
         ):
             raise RecoveryBlocked("registered current-state custody anchor mismatch")
+        # Pin the presence of a strict owner contract outside state_bytes.
+        # A rehashed rewrite that removes custody_schema cannot downgrade an
+        # already strict life into the permissive phase-one fixture envelope.
+        if stored_roster_hash != (metadata[0] if metadata is not None else None):
+            raise RecoveryBlocked("registered owner contract downgrade or roster mismatch")
         intent = self._db.execute(
             "SELECT individual_id, generation, intent_ref "
             "FROM pending_intent WHERE slot = 1"
