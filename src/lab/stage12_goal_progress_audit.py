@@ -20,9 +20,13 @@ _MEASURES = frozenset({"water", "food", "energy", "integrity"})
 
 
 def _number(value: object) -> float | None:
-    if type(value) not in (int, float) or not isfinite(value) or value < 0:
+    if type(value) not in (int, float):
         return None
-    return float(value)
+    try:
+        number = float(value)
+    except (OverflowError, ValueError):
+        return None
+    return number if isfinite(number) and number >= 0 else None
 
 
 @dataclass(frozen=True, slots=True)
@@ -114,7 +118,8 @@ def audit_stage12_goal_progress(
             if (data.get("sent_world_step") != t
                     or type(data.get("observe_world_step")) is not int
                     or data["observe_world_step"] != t + 1
-                    or data.get("measure") not in _MEASURES
+                    or type(data.get("measure")) is not str
+                    or data["measure"] not in _MEASURES
                     or _number(data.get("value_before")) is None
                     or any(type(data.get(field)) is not str or not data[field]
                            for field in ("goal_ref", "option_ref", "command_hash"))):
