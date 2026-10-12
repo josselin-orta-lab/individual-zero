@@ -234,3 +234,31 @@ def test_cold_start_and_uninterrupted_stage11_agree_across_real_steps():
             ) == b.recover_current_bytes(
                 expected_individual_id=IDENTITY
             )
+
+
+def test_stage10_cognition_and_sleep_owners_share_sqlite_generation():
+    from lab.stage10_reference_fixture import build_stage10_reference_runtime
+    builder = lambda: build_stage10_reference_runtime(
+        autonomous_mortal=True, start_fatigued=True,
+    )
+    with TemporaryDirectory() as temp:
+        path = str(Path(temp) / "sleeping-life.db")
+        with M11TransactionalMortal.birth(
+            db_path=path, runtime=builder(), individual_id=IDENTITY,
+        ) as first:
+            step = first.run_step()
+            assert step.world_step == 1
+            assert step.generation == 1
+        with M11TransactionalMortal.cold_recover(
+            db_path=path, individual_id=IDENTITY,
+            runtime_factory=builder,
+        ) as resumed:
+            second = resumed.run_step()
+            assert second.generation == 2
+            assert second.world_step == 2
+            assert resumed.inspect()["journal_head"] == second.journal_head
+        with SQLiteLifeLedger.open_existing(
+            path=path, expected_individual_id=IDENTITY,
+        ) as ledger:
+            assert ledger.audit().registered_roster_hash is not None
+            assert ledger.audit().generation == 2
