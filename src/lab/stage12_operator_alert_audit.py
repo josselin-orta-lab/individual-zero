@@ -71,7 +71,7 @@ def audit_stage12_operator_alerts(
             # Operator alerts are written immediately after the *paid*
             # diagnostic while its phase is open. Any intervening causal
             # event could hide a delayed/post-terminal forged warning.
-            raise ValueError("missing immediate Stage12 operator alert")
+            raise ValueError("missing operator alert before next causal event")
         if kind not in ("compute_charge", "stage12_lived_diagnostics_published",
                         "stage12_lived_diagnostics_deferred",
                         "stage12_operator_alert"):
