@@ -141,11 +141,11 @@ class OperatorFrameArchive:
             with journal.open("rb") as stream:
                 journal_raw = stream.read(32 * 1024 * 1024 + 1)
             if (len(journal_raw) > 32 * 1024 * 1024 or not journal_raw
-                    or journal_raw.startswith(b"\\n") or journal_raw.endswith(b"\\n")):
+                    or journal_raw.startswith(b"\n") or journal_raw.endswith(b"\n")):
                 raise ValueError("invalid or oversized canonical journal")
             previous = "00" * 32
             closures = {}
-            rows = journal_raw.split(b"\\n")
+            rows = journal_raw.split(b"\n")
             for index, line in enumerate(rows):
                 record = json.loads(line, object_pairs_hook=unique_keys)
                 if canonical_causal_bytes(record) != line or record.get("index") != index:
