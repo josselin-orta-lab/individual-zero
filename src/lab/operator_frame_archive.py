@@ -89,12 +89,22 @@ class OperatorFrameArchive:
             raise ValueError("invalid life generation")
         if source.stat().st_size > 16 * 1024 * 1024:
             raise ValueError("oversized frame receipts")
-        raw = source.read_bytes()
+        with source.open("rb") as stream:
+            raw = stream.read(16 * 1024 * 1024 + 1)
         if len(raw) > 16 * 1024 * 1024 or not raw or not raw.endswith(b"\n"):
             raise ValueError("missing, oversized or torn frame receipts")
+        def unique_keys(pairs):
+            result = {}
+            for key, value in pairs:
+                if key in result:
+                    raise ValueError("duplicate operator receipt key")
+                result[key] = value
+            return result
+
         receipts = []
         for line in raw.splitlines():
-            receipt = json.loads(line)
+            receipt = json.loads(line, object_pairs_hook=unique_keys,
+                                 parse_constant=lambda _: (_ for _ in ()).throw(ValueError("nonfinite receipt")))
             if canonical_causal_bytes(receipt) != line:
                 raise ValueError("noncanonical operator receipt")
             receipts.append(receipt)
