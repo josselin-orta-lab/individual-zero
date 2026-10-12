@@ -69,6 +69,24 @@ class Stage12OperatorPacketTests(unittest.TestCase):
             self.assertFalse(lived["detector_calibration_supported"])
             self.assertEqual(packet["journal"]["world_steps_closed"], 4)
             self.assertEqual(packet["diagnostics"]["diagnostic_samples"], 4)
+            goal_receipts = packet["lived_goal_progress"]
+            self.assertEqual(
+                goal_receipts["schema"], "stage12-independent-goal-progress-audit-v1",
+            )
+            self.assertFalse(goal_receipts["complete_goal_achievement_verified"])
+            self.assertFalse(goal_receipts["subjective_agency_attribution_verified"])
+            self.assertFalse(goal_receipts["independent_physical_truth_attested"])
+            self.assertEqual(
+                goal_receipts["preregistered_one_step_criteria"],
+                goal_receipts["verified_one_step_resource_gains"]
+                + goal_receipts["verified_one_step_no_gains"]
+                + goal_receipts["unavailable_next_step_observations"]
+                + goal_receipts["unresolved_at_terminal"],
+            )
+            self.assertEqual(
+                packet["coverage"]["precommitted_goal_progress_criteria"],
+                goal_receipts["preregistered_one_step_criteria"],
+            )
             self.assertEqual(
                 packet["coverage"]["physical_action_steps_with_paid_diagnostic"], 4,
             )
