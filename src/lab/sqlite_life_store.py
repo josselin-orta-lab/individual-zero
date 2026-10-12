@@ -233,6 +233,8 @@ class SQLiteLifeLedger:
             if receipt.individual_id != expected_individual_id:
                 raise RecoveryBlocked("individual identity mismatch")
             return receipt
+        except sqlite3.DatabaseError as exc:
+            raise RecoveryBlocked("SQLite life audit rejected malformed storage") from exc
         finally:
             if db.in_transaction:
                 db.execute("ROLLBACK")
@@ -312,8 +314,10 @@ class SQLiteLifeLedger:
                 )
             except (UnicodeError, TypeError, ValueError) as exc:
                 raise RecoveryBlocked("invalid canonical causal occurrence") from exc
+            if type(event_hash) is not str or not _HEX.fullmatch(event_hash):
+                raise RecoveryBlocked("invalid causal occurrence hash type/encoding")
             actual = sha256_hex(bytes.fromhex(previous) + payload)
-            if not _HEX.fullmatch(event_hash) or actual != event_hash:
+            if actual != event_hash:
                 raise RecoveryBlocked("causal chain checksum mismatch")
             previous = actual
             expected += 1
@@ -338,7 +342,9 @@ class SQLiteLifeLedger:
         ).fetchone()
         if intent is not None and (
             len(intent) != 3 or intent[0] != identity
-            or intent[1] != generation + 1 or not intent[2]
+            or type(intent[1]) is not int or intent[1] != generation + 1
+            or type(intent[2]) is not str or not intent[2]
+            or normalize("NFC", intent[2]) != intent[2]
         ):
             raise RecoveryBlocked("invalid durable pending intent fence")
         return LifeReceipt(
