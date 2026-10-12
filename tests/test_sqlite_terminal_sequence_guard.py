@@ -128,6 +128,8 @@ class SQLiteTerminalSequenceGuardTests(unittest.TestCase):
         invalid_clock["t_monde"] = True
         no_data = operator_stop()
         no_data.pop("data")
+        no_reason = operator_stop()
+        no_reason["data"] = {"reason": "  "}
         cases = {
             "missing_stop_receipt": ([], "experiment_stopped"),
             "active_with_stop_receipt": ([operator_stop()], "active"),
@@ -140,6 +142,7 @@ class SQLiteTerminalSequenceGuardTests(unittest.TestCase):
             "spoofed_emitter": ([invalid_emitter], "experiment_stopped"),
             "boolean_time": ([invalid_clock], "experiment_stopped"),
             "missing_data": ([no_data], "experiment_stopped"),
+            "empty_reason": ([no_reason], "experiment_stopped"),
         }
         for name, (events, status) in cases.items():
             with self.subTest(name=name), TemporaryDirectory() as temp:
