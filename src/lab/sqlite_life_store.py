@@ -106,6 +106,8 @@ class _TerminalSequence:
                 or type(event.get("t_monde")) is not int
                 or event["t_monde"] < 0
                 or not isinstance(event.get("data"), Mapping)
+                or type(event["data"].get("reason")) is not str
+                or not event["data"]["reason"].strip()
             ):
                 raise ValueError("operator stop requires its own valid terminal receipt")
             self.operator_stopped = True
