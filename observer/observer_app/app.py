@@ -29,6 +29,7 @@ from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request, Respo
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, StrictInt
 from .frame_validation import validate_frames
+from .frame_alignment import compare_frames_to_journal
 from .journal_preflight import check_chain
 from .step_boundaries import check_step_boundaries
 
@@ -517,6 +518,22 @@ class Observer:
                 "physical_truth_verified": False, "scientific_validation": None,
                 "warning": "Historical recorded events only; no world reconstruction or inferred positions."}
 
+    def frame_alignment_diagnostic(self, rid: str) -> dict[str, Any]:
+        frame_dir, frame_name = self.file(rid, "world_frames")
+        journal_dir, journal_name = self.file(rid, "journal")
+        with open_regular(frame_dir, frame_name) as frames:
+            frame_bytes = frames.read(16 * 1024 * 1024 + 2)
+        with open_regular(journal_dir, journal_name) as journal:
+            journal_bytes = journal.read(32 * 1024 * 1024 + 2)
+        with tempfile.TemporaryDirectory(prefix="observer-alignment-") as tmp:
+            frame_path = Path(tmp) / "frames"
+            journal_path = Path(tmp) / "journal"
+            frame_path.write_bytes(frame_bytes)
+            journal_path.write_bytes(journal_bytes)
+            result = compare_frames_to_journal(frame_path, journal_path)
+        return {"sources": ["world_frames", "journal"], **result,
+                "warning": "Recorded timestamp alignment does not prove physical state or causal completeness."}
+
     def step_diagnostic(self, rid: str) -> dict[str, Any]:
         directory, name = self.file(rid, "journal")
         with open_regular(directory, name) as stream:
@@ -725,6 +742,10 @@ def create_app(*, core_root: Path | None = None, run_root: Path | None = None, a
     @app.get("/api/runs/{rid}/replay", dependencies=[Depends(authenticated)])
     def replay(rid: str, source: str = "journal", step: int = Query(ge=0), limit: int = Query(default=100, ge=1, le=200)):
         return observer.replay(rid, source=source, step=step, limit=limit)
+
+    @app.get("/api/runs/{rid}/replay/frames/alignment", dependencies=[Depends(authenticated)])
+    def frame_alignment_diagnostic(rid: str):
+        return observer.frame_alignment_diagnostic(rid)
 
     @app.get("/api/runs/{rid}/replay/steps/diagnostic", dependencies=[Depends(authenticated)])
     def step_diagnostic(rid: str):
