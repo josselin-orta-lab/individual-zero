@@ -50,7 +50,7 @@ def test_export_single_attempt_for_observer():
         assert exported["attestation"]["verifier"] == "engine-receipt-export-unverified"
 
 
-def test_export_rejects_multiple_attempt_refs():
+def test_export_supports_multiple_attempt_refs():
     with tempfile.TemporaryDirectory() as directory:
         path = Path(directory) / "receipts.jsonl"
         output = Path(directory) / "frames.json"
@@ -65,8 +65,8 @@ def test_export_rejects_multiple_attempt_refs():
                     "journal_head_sha256": "a" * 64,
                     "journal_event_count": step,
                 })
-        with pytest.raises(ValueError, match="multiple attempts"):
-            OperatorFrameArchive.export_world_frames(
+        OperatorFrameArchive.export_world_frames(
                 str(path), str(output), individual_id="i0", life_generation=0,
             )
-        assert not output.exists()
+        exported = json.loads(output.read_text())
+        assert [f["attempt_ref"] for f in exported["frames"]] == ["attempt-1", "attempt-2"]
