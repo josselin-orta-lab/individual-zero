@@ -216,3 +216,28 @@ def test_fixed_unittest_and_stage11_fixture_report(client):
     assert data["scientific_validation"] is None
     report = client.get(f"/api/runs/{data['id']}/file/result").json()
     assert report["classification"] == "fixture_only"
+
+
+def test_fail_closed_after_interrupted_run_and_unreadable_receipt(layout):
+    core, root, archive = layout
+    observer = Observer(core_root=core, run_root=root, archive_root=archive)
+    rid = "r-" + "c" * 32
+    directory = root / rid
+    directory.mkdir(mode=0o700)
+    atomic_json(directory / "_status.json", {"schema": "observer-run-v1", "id": rid, "status": "RUNNING", "test_id": "bootstrap"})
+    with TestClient(create_app(core_root=core, run_root=root, archive_root=archive, token=TOKEN)) as c:
+        assert c.post("/api/session", json={"token": TOKEN}).status_code == 200
+        recovered = c.get(f"/api/runs/{rid}").json()
+        assert recovered["status"] == "INTERRUPTED"
+        assert recovered["technical_success"] is None
+        assert recovered["assertions_passed"] is None
+        assert "orphan" in recovered["anomaly"]
+        blocked = c.post("/api/runs", json={"test_id": "bootstrap"}, headers={"Origin": "http://testserver"})
+        assert blocked.status_code == 409
+        assert "runner locked" in blocked.json()["detail"]
+    (directory / "_status.json").write_text("corrupt receipt")
+    with TestClient(create_app(core_root=core, run_root=root, archive_root=archive, token=TOKEN)) as c:
+        c.post("/api/session", json={"token": TOKEN})
+        blocked = c.post("/api/runs", json={"test_id": "bootstrap"}, headers={"Origin": "http://testserver"})
+        assert blocked.status_code == 409
+        assert "unreadable" in blocked.json()["detail"]
