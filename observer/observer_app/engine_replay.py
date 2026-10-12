@@ -91,19 +91,28 @@ def verify_engine_recording(frames_path: Path, journal_path: Path, *,
         # independently read frame. A self-consistent header cannot compensate
         # for a falsified pose.
         transitions = {}
+        committed = set()
         for raw in journal_bytes.split(b"\n"):
             event = json.loads(raw)["causal_event"]
+            if event.get("kind") == "step_closed":
+                detail = event.get("data", {})
+                if (not isinstance(detail, dict)
+                        or detail.get("outcome") != "normal"
+                        or detail.get("applied_command_count") != 1
+                        or detail.get("world_advance_count") != 1):
+                    return fail("uncommitted_or_nonphysical_step")
+                committed.add((event.get("t_monde"), event.get("attempt_ref")))
             if event.get("kind") != "world_transition_experienced":
                 continue
             key = (event.get("t_monde"), event.get("attempt_ref"))
             if key in transitions:
                 return fail("duplicate_physical_transition")
             transitions[key] = event.get("position_after")
-        if len(transitions) != count:
+        if len(transitions) != count or len(committed) != count:
             return fail("missing_physical_transitions")
         for frame in doc["frames"]:
             key = (frame["t_monde"], frame["attempt_ref"])
-            if transitions.get(key) != frame["individual_pose"]:
+            if key not in committed or transitions.get(key) != frame["individual_pose"]:
                 return fail("engine_position_journal_mismatch")
         outcome["engine_pose_journal_match"] = True
         if step > count:
