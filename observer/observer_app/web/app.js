@@ -95,6 +95,10 @@ async function pageReplay(){
     $("#signed-result").textContent="Aucune attestation vérifiée pour cette exécution. Carte désactivée.";
     $("#custody-frame").value="";$("#custody-head").value="";$("#custody-count").value="";
     const sources=detail.artifacts.filter(a=>["journal","lab_events"].includes(a.alias));
+    if(sources.some(a=>a.alias==="journal") && Number($("#replay-step").value)===0){
+      $("#replay-step").value=1;
+      $("#replay-scrubber").value=1;
+    }
     $("#replay-source").innerHTML=sources.map(a=>`<option value="${a.alias}">${a.alias==="journal"?"Journal causal (t_monde)":"Lab telemetry (cycle non physique)"}</option>`).join("");
     const hasJournal=detail.artifacts.some(a=>a.alias==="journal");
     if(!hasJournal){
@@ -143,7 +147,7 @@ async function pageReplay(){
     $("#replay-scrubber").value=Math.max(0,Math.min(Number($("#replay-scrubber").max),step));
     try{
       const data=await api("/api/runs/"+encodeURIComponent(state.selected)+"/replay?"+new URLSearchParams({source:$("#replay-source").value,step:String(step),limit:"100"}));
-      $("#replay-warning").textContent=`Source : ${data.step_semantics}. ${data.matched_count} événements enregistrés, ${data.malformed_records} lignes malformées. ${data.truncated?"Résultat tronqué.":""} Aucun état 2D reconstruit.`;
+      $("#replay-warning").textContent=`Source : ${data.step_semantics}. ${data.matched_count} événements enregistrés, ${data.malformed_records} lignes malformées. ${data.truncated?"Résultat tronqué.":""} Carte visible uniquement si une capture physique locale est vérifiée; aucun état manquant inventé.`;
       try{
         const map=await api("/api/runs/"+encodeURIComponent(state.selected)+"/replay/geometry?step="+encodeURIComponent(step));
         const target=$("#replay-map");
