@@ -5,6 +5,7 @@ No Core imports. Successful parsing is NOT independent causal attestation.
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -24,9 +25,29 @@ def validate_frames(path: Path) -> dict[str, Any]:
             data = stream.read(MAX_FRAME_BYTES + 1)
         if len(data) > MAX_FRAME_BYTES:
             return reject("archive_too_large")
-        document = json.loads(data)
+        def reject_duplicate_keys(pairs):
+            result = {}
+            for key, value in pairs:
+                if key in result:
+                    raise ValueError("duplicate JSON key")
+                result[key] = value
+            return result
+        document = json.loads(data, object_pairs_hook=reject_duplicate_keys,
+                              parse_constant=lambda _: (_ for _ in ()).throw(ValueError("nonfinite JSON value")))
     except (OSError, ValueError, UnicodeError):
         return reject("unreadable_json")
+    def json_values_safe(value: Any) -> bool:
+        if value is None or type(value) in (str, bool, int):
+            return True
+        if type(value) is float:
+            return math.isfinite(value)
+        if isinstance(value, list):
+            return all(json_values_safe(item) for item in value)
+        if isinstance(value, dict):
+            return all(isinstance(key, str) and json_values_safe(item) for key, item in value.items())
+        return False
+    if not json_values_safe(document):
+        return reject("nonfinite_or_unsupported_json")
     if not isinstance(document, dict) or set(document) != {"schema", "identity", "geometry", "frames", "attestation"}:
         return reject("invalid_root")
     if document["schema"] != "observer-world-frames-v1":
