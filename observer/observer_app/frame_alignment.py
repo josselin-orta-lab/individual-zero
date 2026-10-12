@@ -41,7 +41,7 @@ def compare_frames_to_journal(frames_path: Path, journal_path: Path) -> dict:
                 result["error"] = "journal_too_large"
                 return result
             closed_attempts = {}
-            for line in journal_bytes.split(b"\\n"):
+            for line in journal_bytes.split(bytes([10])):
                 event = json.loads(line)["causal_event"]
                 if event.get("kind") == "step_closed":
                     closed_attempts[event["t_monde"]] = event["attempt_ref"]
