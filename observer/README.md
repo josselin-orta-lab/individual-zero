@@ -202,3 +202,15 @@ Record operator name, date, OS, Python version, Core SHA, Observer SHA,
 artifacts/digests, observed failures, and an explicit **ACCEPT / REJECT**
 decision. A green CI is not an operator acceptance decision. Phase 2 replay
 remains out of scope until this Phase 1 gate is approved.
+
+## Phase 2 (work in progress)
+
+The **Replay historique** tab browses recorded events by journal `t_monde`
+or Lab bootstrap cycle. Those timelines are not interchangeable. Imported
+`world_frames` files are validated structurally via
+`/api/runs/{id}/replay/frames/diagnostic`; the UI displays invalidity
+reasons and keeps the 2D map disabled. A structurally valid file is **not**
+a verified physical history, even if it carries self-declared attestation
+fields. Independent canonical-journal verification and a trusted export
+source are required before enabling the map. No Core imports or modifications
+are required for this read-only diagnostic.
