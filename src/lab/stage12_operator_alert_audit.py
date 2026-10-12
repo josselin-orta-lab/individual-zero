@@ -9,13 +9,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
-from typing import Mapping
-
 from .independent_journal_audit import audit_export_bytes
 
 
 _WARNING_KEYS = ("stagnation", "reasoning_loop", "low_context_entropy", "attribution_bias")
-_BIASES = (None, "no_detected_pattern", "self_serving_pattern", "self_blame_pattern")
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +52,7 @@ def audit_stage12_operator_alerts(
     )
     charges: dict[tuple[int, str, int], tuple[int, dict]] = {}
     diagnostics: set[tuple[int, str, int]] = set()
+    deferred: set[tuple[int, str, int]] = set()
     pending: dict[tuple[int, str, int, str], dict[str, object]] = {}
     policy: str | None = None
     detector_version: str | None = None
@@ -69,7 +67,13 @@ def audit_stage12_operator_alerts(
     for index, raw in enumerate(journal.split(b"\n")):
         event = json.loads(raw)["causal_event"]
         kind = event.get("kind")
+        if pending and kind != "stage12_operator_alert":
+            # Operator alerts are written immediately after the *paid*
+            # diagnostic while its phase is open. Any intervening causal
+            # event could hide a delayed/post-terminal forged warning.
+            raise ValueError("missing immediate Stage12 operator alert")
         if kind not in ("compute_charge", "stage12_lived_diagnostics_published",
+                        "stage12_lived_diagnostics_deferred",
                         "stage12_operator_alert"):
             continue
         data = event.get("data")
@@ -94,13 +98,26 @@ def audit_stage12_operator_alerts(
                 raise ValueError("invalid or duplicate charged Stage12 diagnostic")
             charges[key] = (index, data)
             continue
+        if kind == "stage12_lived_diagnostics_deferred":
+            previous_charge = charges.get(key)
+            if (key in deferred or key in diagnostics
+                    or previous_charge is None or previous_charge[0] >= index
+                    or previous_charge[1]["accepted"] is not False
+                    or type(previous_charge[1].get("reason")) is not str
+                    or not previous_charge[1]["reason"]
+                    or data.get("world_step") != key[0]
+                    or data.get("diagnostic_incomplete") is not True
+                    or data.get("reason") != previous_charge[1]["reason"]):
+                raise ValueError("unmatched deferred Stage12 diagnostic charge")
+            deferred.add(key)
+            continue
         if kind == "stage12_lived_diagnostics_published":
             # Every alert is published immediately after the diagnostic
             # from which it was derived, before any later physical sample.
             if pending:
                 raise ValueError("missing operator alert before the next lived sample")
             t, attempt, cycle = key
-            if key in diagnostics or t <= previous_step:
+            if key in diagnostics or key in deferred or t <= previous_step:
                 raise ValueError("duplicated or out-of-order lived warning step")
             diagnostics.add(key)
             charge = charges.get(key)
@@ -135,8 +152,11 @@ def audit_stage12_operator_alerts(
             if data["evidence_samples"] != min(observed_sample_count + 1, current_window):
                 raise ValueError("bounded diagnostic evidence counter is not reproducible")
             bias = data.get("attribution_bias")
-            if bias not in _BIASES:
-                raise ValueError("unversioned attribution alert category")
+            # A success/failure attribution still has no independently
+            # attested lived verification pairs (#110). A forged non-null
+            # pattern must not become an apparently valid operator alarm.
+            if bias is not None:
+                raise ValueError("unverified lived attribution diagnostic")
             states = {
                 "stagnation": data.get("stagnation"),
                 "reasoning_loop": data.get("reasoning_loop"),
@@ -182,13 +202,18 @@ def audit_stage12_operator_alerts(
         signal = data.get("signal")
         if type(signal) is not str or signal not in _WARNING_KEYS:
             raise ValueError("unknown Stage12 alert source signal")
-        expected = pending.pop((t, attempt, cycle, signal), None)
+        source_key = (t, attempt, cycle, signal)
+        if not pending or next(iter(pending)) != source_key:
+            raise ValueError("out-of-order or unexpected Stage12 operator alert")
+        expected = pending.pop(source_key, None)
         if expected is None or data != expected:
             raise ValueError("unearned, duplicate or forged Stage12 operator alert")
         counts[signal] += 1
 
     if pending:
         raise ValueError("missing operator alert for persistent lived warning")
+    if set(charges) != diagnostics | deferred:
+        raise ValueError("unclosed Stage12 diagnostic charge or missing deferral")
     return Stage12OperatorAlertAudit(
         head_hash=base.head_hash, occurrences=base.occurrences,
         examined_samples=len(diagnostics), emitted_alerts=sum(counts.values()),
