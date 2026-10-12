@@ -24,16 +24,23 @@ concurrency:
 jobs:
   focused-stage12:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 28
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v7
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python-version }}
       - name: Install checked source
         run: python -m pip install -e .
+      - name: Complete Stage12 diagnostics and operator audit suite
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_*.py' -q
       - name: One-step outcome and externally audited operator packet
         run: |
           python -m unittest discover -s tests -p 'test_stage12_goal_progress.py' -v
@@ -49,14 +56,18 @@ jobs:
   retained-600-trial:
     name: retained-mortal-600-step-operator-development-trial
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v7
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python-version }}
       - name: Install exact source
         run: python -m pip install -e .
       - name: Execute fresh physical life and retain canonical evidence
@@ -98,11 +109,33 @@ jobs:
           }
           print("stage12_retained_600_software_only=" + json.dumps(report, sort_keys=True))
           PY
+      - name: Independently re-audit the retained canonical export
+        run: |
+          HEAD=$(python -c 'import json; from pathlib import Path; print(json.loads(Path("/tmp/i0-stage12-retained/trial/trial-manifest.json").read_text())["head_hash"])')
+          COUNT=$(python -c 'import json; from pathlib import Path; print(json.loads(Path("/tmp/i0-stage12-retained/trial/trial-manifest.json").read_text())["occurrences"])')
+          python scripts/report_stage12_operator_packet.py \
+            /tmp/i0-stage12-retained/trial/canonical-export.jsonl \
+            --expected-head "$HEAD" --expected-count "$COUNT" \
+            --expected-world-steps 600 --require-terminal-stop \
+            > /tmp/i0-stage12-retained/trial/independent-packet.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("/tmp/i0-stage12-retained/trial/independent-packet.json").read_text())
+          if (
+              data["coverage"]["physically_executed_actions"] != 600
+              or not data["checks"]["terminal_operator_stop_verified"]
+              or data["lived_attribution_evidence"]["detector_calibration_supported"]
+              or data["operator_stage_accepted"]
+          ):
+              raise SystemExit("independent Stage12 operator packet rejected")
+          print("stage12_independent_600_evidence_verified=true")
+          PY
       - name: Upload immutable trial evidence for external operator audit
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: stage12-retained-600-v131
+          name: stage12-retained-600-v131-python-${{ matrix.python-version }}
           path: /tmp/i0-stage12-retained/trial/
           retention-days: 14
           if-no-files-found: warn
