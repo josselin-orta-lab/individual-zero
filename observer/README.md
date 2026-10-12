@@ -159,8 +159,8 @@ status cannot be established. A status describes the local runner only:
   semantic chain/causal/provenance verifier. Independent audit remains separate.
 - No automatic long scientific campaigns are launched by UI tests or CI.
 - Current version has no fine-grained role management, remote TLS, public
-  network exposure, distributed runner, streaming ZIP compression, or full
-  integrated Core test executed by this PR. Operator validation required.
+  network exposure, distributed runner, or streaming ZIP compression. CI now runs a short
+  real-Core bootstrap (3 cycles) and Stage 11 (7 physical steps), but not a\n  full scientific campaign. Operator validation required.
 
 ## Acceptance gates
 
