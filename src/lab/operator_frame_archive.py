@@ -137,7 +137,6 @@ class OperatorFrameArchive:
             journal = Path(journal_path)
             if not journal.is_absolute():
                 raise ValueError("journal path must be absolute")
-            from .determinism import canonical_causal_bytes
             with journal.open("rb") as stream:
                 journal_raw = stream.read(32 * 1024 * 1024 + 1)
             if (len(journal_raw) > 32 * 1024 * 1024 or not journal_raw
