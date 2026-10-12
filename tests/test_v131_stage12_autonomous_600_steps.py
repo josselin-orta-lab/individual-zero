@@ -91,14 +91,20 @@ class V131MortalStage12SixHundredSteps(unittest.TestCase):
                 self.assertEqual(individual.scheduler.t_monde, world_step)
                 self.assertEqual(
                     individual.stage3.substrate.mortal_status,
-                    MortalStatus.ACTIVE,
+                    (MortalStatus.EXPERIMENT_STOPPED if world_step == 600
+                     else MortalStatus.ACTIVE),
                 )
                 actions[actual.command_primitive] += 1
             self.assertEqual(sum(actions.values()), 600)
             self.assertEqual(individual.sleep_session.mode, "awake")
 
-            # No 601st world step is invented to enforce the cap.
-            with self.assertRaisesRegex(RuntimeError, "cap"):
+            # The 600th executed action itself closes the campaign.
+            # No 601st physical step or extra operator call is needed.
+            self.assertEqual(
+                individual.journal.entries[-1].causal_event["kind"],
+                "experiment_stopped",
+            )
+            with self.assertRaises(RuntimeError):
                 individual.run_step()
             self.assertEqual(individual.scheduler.t_monde, 600)
             self.assertEqual(
