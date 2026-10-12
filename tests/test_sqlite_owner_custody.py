@@ -262,9 +262,15 @@ os._exit(72)
                         store.begin_intent(
                             expected_generation=0, intent_ref="illegal-revival",
                         )
-                    self.assertEqual(store.export_canonical_journal(), b"")
-                    if expected_status == "active":
-                        sealed = store.seal_uncertain()
+                    # An invalid begin_intent poisons this writer handle
+                    # by design; quarantine must use a fresh operator lease.
+                    # Read-only verification above remains available.
+                if expected_status == "active":
+                    with SQLiteLifeLedger.open_existing(
+                        path=path, expected_individual_id=IDENTITY,
+                    ) as operator:
+                        self.assertEqual(operator.export_canonical_journal(), b"")
+                        sealed = operator.seal_uncertain()
                         self.assertEqual(sealed.status, "technical_halt")
                         self.assertFalse(sealed.may_recover)
                 final = SQLiteLifeLedger.audit_read_only(
