@@ -348,6 +348,12 @@ class M11TransactionalMortal:
                         if canonical_causal_bytes(detached["owners"].get(name))
                         != canonical_causal_bytes(image["owners"][name])
                     )
+                if "runtime_local" in changed:
+                    changed.extend(
+                        "runtime_local:" + name for name in image["runtime_local"]
+                        if canonical_causal_bytes(detached["runtime_local"].get(name))
+                        != canonical_causal_bytes(image["runtime_local"][name])
+                    )
                 raise RecoveryBlocked(
                     "detached cold runtime differs before sealing external factory: "
                     + ", ".join(changed[:12]))
