@@ -174,8 +174,8 @@ class OperatorFrameArchive:
                          receipt["journal_event_count"]) != expected or
                         receipt["journal_head_sha256"] != expected[1]):
                     raise ValueError("operator receipt does not match journal closure")
-            if receipts[-1]["journal_event_count"] != len(rows):
-                raise ValueError("journal tail extends beyond frame archive")
+            if receipts[-1]["journal_event_count"] > len(rows):
+                raise ValueError("receipt references missing journal events")
         geometry = receipts[0]["geometry"]
         if any(r["geometry"] != geometry for r in receipts):
             raise ValueError("geometry changed within archive")
