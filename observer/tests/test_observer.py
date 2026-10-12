@@ -412,9 +412,56 @@ def test_signed_custody_requires_explicit_key_and_never_unlocks_map(client, layo
     assert result.status_code == 200, result.text
     data = result.json()
     assert data["signature"]["signature_valid"] is True
+    assert data["frame_identity_match"] is True
     assert data["journal_claim_match"] is True
     assert data["recorded_step_alignment"] is True
     assert data["physical_truth_verified"] is False
     assert data["map_authorized"] is False
     assert client.post(endpoint, headers={"Origin": "http://testserver"}, json={"trusted_public_key_b64": key,
                                        "expected_key_id": "wrong"}).json()["signature"]["signature_valid"] is False
+
+
+def test_signed_custody_rejects_mismatched_individual_identity(client, layout):
+    import base64
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives import serialization
+
+    _, _, archive = layout
+    folder = archive / "identity-mismatch"
+    folder.mkdir()
+    frames = {"schema": "observer-world-frames-v1",
+              "identity": {"individual_id": "other", "life_generation": 0, "attempt_ref": "a"},
+              "geometry": {"coordinate_system": "grid-xy-top-left", "width": 2, "height": 2},
+              "frames": [{"t_monde": 1, "step_boundary": "committed",
+                          "individual_pose": {"x": 0, "y": 0}, "entities": []}],
+              "attestation": {"journal_head_sha256": "a" * 64, "journal_event_count": 1,
+                              "verifier": "self", "verified_at": "2026-10-12T00:00:00Z",
+                              "source_sha256": "b" * 64}}
+    raw = json.dumps(frames).encode()
+    (folder / "frames.json").write_bytes(raw)
+    (folder / "journal.txt").write_bytes(b"not-used")
+    private = Ed25519PrivateKey.generate()
+    public = base64.b64encode(private.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw)).decode()
+    payload = {"individual_id": "i0", "life_generation": 0, "attempt_ref": "a",
+               "frames_sha256": hashlib.sha256(raw).hexdigest(),
+               "journal_head_sha256": "a" * 64, "journal_event_count": 1,
+               "issuer": "operator", "purpose": "observer-frame-custody-only"}
+    signed = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
+    (folder / "attestation.json").write_text(json.dumps({
+        "schema": "observer-detached-attestation-v1", "payload": payload,
+        "signature": {"algorithm": "Ed25519", "key_id": "trusted",
+                      "value": base64.b64encode(private.sign(signed)).decode()}}))
+    (folder / "observer-source-v1.json").write_text(json.dumps({
+        "schema": "observer-source-v1",
+        "files": {"world_frames": "frames.json", "journal": "journal.txt",
+                  "detached_attestation": "attestation.json"}}))
+    response = client.post("/api/runs/import-identity-mismatch/replay/frames/signed-custody",
+                           json={"trusted_public_key_b64": public, "expected_key_id": "trusted"},
+                           headers={"Origin": "http://testserver"})
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["signature"]["signature_valid"] is True
+    assert result["frame_identity_match"] is False
+    assert result["journal_claim_match"] is False
+    assert result["map_authorized"] is False
