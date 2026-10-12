@@ -210,6 +210,69 @@ class SQLiteOwnerCustodyTests(unittest.TestCase):
                 with self.assertRaises(RecoveryBlocked):
                     ledger.begin_intent(expected_generation=0, intent_ref="revive")
 
+    def test_real_hard_exit_before_and_after_registered_uncertain_seal_commit(self):
+        # A SQL UPDATE without COMMIT is not a durable terminal identity.
+        # In either abrupt-exit window the pre-existing unresolved intent
+        # forbids returning to the earlier physically active generation.
+        child = r"""
+import os
+import sys
+from lab.sqlite_life_store import SQLiteLifeLedger
+from lab.sqlite_runtime_custody import capture_registered_current_state
+from lab.stage4_reference_fixture import build_stage4_reference_runtime
+
+identity = "i0:m11:registered-custody:fixture"
+runtime = build_stage4_reference_runtime(autonomous_mortal=True)
+image = capture_registered_current_state(runtime, individual_id=identity)
+def fault(point):
+    if point == sys.argv[2]:
+        os._exit(71)
+with SQLiteLifeLedger.birth(
+    path=sys.argv[1], individual_id=identity, initial_state=image, fault=fault,
+) as store:
+    store.begin_intent(expected_generation=0, intent_ref="crashed-step:1")
+    store.seal_uncertain()
+os._exit(72)
+"""
+        for point, expected_status in (
+            ("uncertain_seal_before_commit", "active"),
+            ("uncertain_seal_after_commit", "technical_halt"),
+        ):
+            with self.subTest(point=point), TemporaryDirectory() as directory:
+                path = str(Path(directory) / "crashed-life.db")
+                proc = subprocess.run(
+                    [sys.executable, "-c", child, path, point],
+                    capture_output=True, text=True, timeout=30,
+                )
+                self.assertEqual(proc.returncode, 71, proc.stderr)
+                receipt = SQLiteLifeLedger.audit_read_only(
+                    path=path, expected_individual_id=IDENTITY,
+                )
+                self.assertEqual(receipt.status, expected_status)
+                self.assertEqual(receipt.generation, 0)
+                self.assertEqual(receipt.journal_count, 0)
+                self.assertTrue(receipt.pending_intent)
+                self.assertFalse(receipt.may_recover)
+                with SQLiteLifeLedger.open_existing(
+                    path=path, expected_individual_id=IDENTITY,
+                ) as store:
+                    with self.assertRaises(RecoveryBlocked):
+                        store.recover_current_bytes(expected_individual_id=IDENTITY)
+                    with self.assertRaises(RecoveryBlocked):
+                        store.begin_intent(
+                            expected_generation=0, intent_ref="illegal-revival",
+                        )
+                    self.assertEqual(store.export_canonical_journal(), b"")
+                    if expected_status == "active":
+                        sealed = store.seal_uncertain()
+                        self.assertEqual(sealed.status, "technical_halt")
+                        self.assertFalse(sealed.may_recover)
+                final = SQLiteLifeLedger.audit_read_only(
+                    path=path, expected_individual_id=IDENTITY,
+                )
+                self.assertEqual(final.status, "technical_halt")
+                self.assertTrue(final.pending_intent)
+
     def test_strict_sqlite_current_image_rejects_rehashed_false_anchor(self):
         runtime = build_stage4_reference_runtime(autonomous_mortal=True)
         original = capture(runtime)
