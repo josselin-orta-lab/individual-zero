@@ -518,6 +518,16 @@ class ScriptedStage2Runtime:
             raise RuntimeError("operator frame sink requires fresh WAL-backed life")
         self._operator_frame_sink = sink
 
+    def enable_operator_frame_archive(self, path: str):
+        from .operator_frame_archive import OperatorFrameArchive
+        if self.scheduler.t_monde != 0 or self.scheduler.active_attempt is not None:
+            raise RuntimeError('archive must be enabled before first step')
+        if self._operator_frame_sink is not None or not self.journal.durable_wal_enabled:
+            raise RuntimeError('archive requires a fresh durable WAL')
+        archive = OperatorFrameArchive(path)
+        self.install_operator_frame_sink(archive.append)
+        return archive
+
     def _publish_operator_closed_step(self) -> None:
         if self._operator_frame_sink is not None:
             self._operator_frame_sink(self.capture_operator_closed_step())
