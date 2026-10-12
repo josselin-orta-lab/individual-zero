@@ -206,8 +206,19 @@ class Stage8Runtime(Stage7Runtime):
 
         evidence_inputs = {}
         for proposal in self.competition.candidate_proposals:
+            control_option, control_plan, next_index = self.stage3.control.current_step
+            # Only the SAME currently engaged plan can skip past physically
+            # executed commands. Never give a fresh/unengaged option a prefix.
+            remaining_index = (next_index if (
+                control_option == proposal.option.id
+                and proposal.plan is not None
+                and control_plan == proposal.plan.id
+                and self.competition.is_engaged(proposal.option.id)
+                and next_index < len(proposal.plan.steps)
+            ) else 0)
             supplied = self.stage8_option_evaluator.evaluate(
                 proposal=proposal,
+                remaining_plan_index=remaining_index,
                 evaluation_state=evaluation_state,
                 initial_state=initial_state,
                 cycle=cycle,

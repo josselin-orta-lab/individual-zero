@@ -1,0 +1,11 @@
+# EXP #132 / décision opérateur : profil Stage12 w_C=0 et équipement contrôlé (2026-10-12)
+
+**Préenregistré avant exécution.** Référence `main` : `4663b9d8e71b01cb8d87fd267a41682725883c76`. Le souhait opérateur est de mettre temporairement la **contribution motivationnelle de consolidation** `consolidation_weight=0.0`, non de désactiver le calcul de `p_cons`, les budgets de sommeil, ni la consolidation six passes. Modification d'un profil de développement seulement, sans modifier le MVP normatif.
+
+Hypothèse #132-A : l'équipement exact historique ne permet pas de former un plan de retour vers la source d'eau après la première exploration nord. Sans commande prédite de retour, l'objectif `drink` reste actif mais aucune option dirigée vers ce but n'est enregistrée.
+
+Hypothèse #132-B : si, dans un monde et sur une trajectoire strictement identiques, l'équipement *avant naissance* incorpore des exemples physiquement enregistrés d'une action nord, d'un retour sud et d'une boisson, le simulateur aura des transitions utilisables et le moteur pourra proposer une option de boire. Attention : modèle exact et états accessibles, aucune extrapolation sur une entrée inconnue, aucun Oracle accessible à I0. La décision de Competition peut encore écarter l'option : réussite de planification ≠ action physique.
+
+Conditions appariées : ancien équipement exact vs nouvel équipement contrôlé, même corps (eau=20), source en position (2,2) et aucun ajout de baie, `w_C=0`, fatigue normale. Une vie neuve, WAL propre, arrêt opérateur après 50 pas maximum pour chaque condition. Déclarer `SUPPORTED` uniquement si proposition active `drink` et commande `boire` effectivement admise et appliquée ; si seul un plan est produit, conclure à une amélioration limitée ; si aucune différence `NOT_SUPPORTED`. Journaux et échecs préservés. Python 3.11 et 3.12 pour reproduction, non échantillons biologiquement indépendants.
+
+Le modèle nouveau est une expérience de laboratoire sur transitions accessibles enregistrées par `WorldBody` dans un monde d'entraînement, pas une mémoire acquise en vie par I0. En conséquence un succès ne démontrera pas l'apprentissage autonome ou la généralisation sur des mondes tenus à l'écart. Stage 9 NO-GO et issue #110 inchangés, M11 Stage12 non certifié.

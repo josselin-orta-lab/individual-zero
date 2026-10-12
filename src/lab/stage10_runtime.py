@@ -366,9 +366,18 @@ class Stage10Runtime(Stage9Runtime):
         state = self._evaluation_state(capture)
         evidence = {}
         for proposal in self.competition.candidate_proposals:
+            control_option, control_plan, next_index = self.stage3.control.current_step
+            remaining_index = (next_index if (
+                control_option == proposal.option.id
+                and proposal.plan is not None
+                and control_plan == proposal.plan.id
+                and self.competition.is_engaged(proposal.option.id)
+                and next_index < len(proposal.plan.steps)
+            ) else 0)
             supplied = self.stage8_option_evaluator.evaluate(
                 proposal=proposal,evaluation_state=state,
                 initial_state=initial,cycle=cycle,t_monde=capture.t_monde,
+                remaining_plan_index=remaining_index,
             )
             if proposal.option.motive_ref.type == "sleep_pressure":
                 supplied = assemble_sleep_evidence(

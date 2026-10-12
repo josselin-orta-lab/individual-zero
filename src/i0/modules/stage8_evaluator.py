@@ -58,12 +58,14 @@ class Stage8OptionEvaluator:
         initial_state,
         cycle: int,
         t_monde: int,
+        remaining_plan_index: int = 0,
     ) -> OptionEvidenceInput:
         simulated = self._stage6.evaluate(
             proposal=proposal,
             initial_state=initial_state,
             cycle=cycle,
             t_monde=t_monde,
+            remaining_plan_index=remaining_plan_index,
         )
         learned = self._q.learned_value(
             evaluation_state,

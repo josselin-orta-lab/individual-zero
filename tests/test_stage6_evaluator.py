@@ -161,6 +161,35 @@ class Stage6OptionEvaluatorTests(unittest.TestCase):
         self.assertEqual(result.evaluation.simulated_value_status, "unavailable")
         self.assertIsNone(result.evidence)
 
+    def test_engaged_plan_suffix_uses_remaining_command_and_rejects_invalid_cursor(self):
+        evaluator = evaluator_with_drink_transition(include_wait=True)
+        initial = replace(
+            state(), body={"energy":50.0,"food":60.0,"water":20.0,"integrity":100.0},
+            current_water_source=True,
+        )
+        p = proposal("drink", "boire")
+        first = replace(p.plan.steps[0], index=0, command=PrimitiveCommand("attendre"))
+        second = replace(p.plan.steps[0], index=1)
+        p = replace(p, option=replace(p.option, type="composite"),
+                    plan=replace(p.plan, steps=(first, second)))
+        p.validate()
+        at_origin = evaluator.evaluate(
+            proposal=p, initial_state=initial, cycle=1, t_monde=1,
+        )
+        at_remaining = evaluator.evaluate(
+            proposal=p, initial_state=initial, cycle=1, t_monde=1,
+            remaining_plan_index=1,
+        )
+        self.assertEqual(at_origin.evaluation.simulated_value, 0.0)
+        self.assertEqual(at_remaining.evaluation.simulated_value, 40.0)
+        self.assertGreater(at_remaining.evidence, 0.9)
+        for invalid in (-1, 2, True):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                evaluator.evaluate(
+                    proposal=p, initial_state=initial, cycle=1, t_monde=1,
+                    remaining_plan_index=invalid,
+                )
+
     def test_revised_plan_above_delta_is_improved_under_same_budget(self) -> None:
         evaluator = evaluator_with_drink_transition(include_wait=True)
         initial = replace(
