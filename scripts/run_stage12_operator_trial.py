@@ -112,6 +112,45 @@ def _build_trial(*, wal_path: str, steps: int) -> Stage12Runtime:
 
 
 
+def _tracked_source_fingerprint(repo: Path) -> tuple[str | None, int]:
+    """Digest tracked checkout *bytes*, paths and modes, not just Git HEAD.
+
+    A dirty-but-stable source tree must not masquerade as its original
+    commit. Git reports only file membership; Python hashes every tracked
+    regular file. Missing, symlinked or unreadable tracked paths fail closed.
+    """
+    files = subprocess.run(
+        ["git", "-C", str(repo), "ls-files", "--cached", "-z"],
+        capture_output=True, check=False, timeout=30,
+    )
+    if files.returncode != 0 or not files.stdout:
+        return None, 0
+    result = sha256()
+    count = 0
+    for raw in files.stdout.split(b"\x00"):
+        if not raw:
+            continue
+        path = Path(os.fsdecode(raw))
+        if path.is_absolute() or ".." in path.parts:
+            return None, 0
+        local = repo / path
+        if local.is_symlink() or not local.is_file():
+            return None, 0
+        file_hash = sha256()
+        with local.open("rb") as stream:
+            while True:
+                chunk = stream.read(1024 * 1024)
+                if not chunk:
+                    break
+                file_hash.update(chunk)
+        result.update(len(raw).to_bytes(8, "big"))
+        result.update(raw)
+        result.update((local.stat().st_mode & 0o777).to_bytes(2, "big"))
+        result.update(file_hash.digest())
+        count += 1
+    return (result.hexdigest(), count) if count else (None, 0)
+
+
 def _execution_provenance() -> dict[str, object]:
     """Detached operator metadata, never passed to I0's causal decisions.
 
@@ -128,6 +167,8 @@ def _execution_provenance() -> dict[str, object]:
 
     code_commit: str | None = None
     tracked_clean: bool | None = None
+    source_tree_digest: str | None = None
+    source_files_count = 0
     try:
         revision = subprocess.run(
             ["git", "-C", str(repo), "rev-parse", "--verify", "HEAD"],
@@ -144,6 +185,9 @@ def _execution_provenance() -> dict[str, object]:
                 )
                 if status.returncode == 0:
                     tracked_clean = not bool(status.stdout.strip())
+                    source_tree_digest, source_files_count = (
+                        _tracked_source_fingerprint(repo)
+                    )
     except (FileNotFoundError, OSError, subprocess.TimeoutExpired):
         pass
 
@@ -151,6 +195,8 @@ def _execution_provenance() -> dict[str, object]:
         "schema": "stage12-operator-execution-provenance-v1",
         "code_commit": code_commit,
         "tracked_checkout_clean": tracked_clean,
+        "tracked_source_tree_sha256": source_tree_digest,
+        "tracked_files_count": source_files_count,
         "python_implementation": platform.python_implementation(),
         "python_patch_version": platform.python_version(),
         "normative_spec_sha256": digest(
@@ -169,9 +215,23 @@ def _execution_provenance() -> dict[str, object]:
 def run_trial(output_dir: Path, steps: int) -> tuple[int, dict[str, object]]:
     if type(steps) is not int or not 1 <= steps <= 600:
         raise ValueError("software trial steps must be an integer in [1,600]")
+    # Source verification happens BEFORE birth and before allocating any
+    # output folder. A dirty or unidentified checkout is not a reproducible
+    # operator development fixture, even if its recorded HEAD is valid.
+    before_environment = _execution_provenance()
+    if (before_environment["code_commit"] is None
+            or before_environment["tracked_checkout_clean"] is not True
+            or before_environment["tracked_source_tree_sha256"] is None
+            or before_environment["tracked_files_count"] < 1
+            or any(before_environment[key] is None for key in (
+                "normative_spec_sha256", "deterministic_engine_sha256",
+                "package_manifest_sha256",
+            ))):
+        raise ValueError(
+            "operator trial requires a clean, identified, complete Git checkout"
+        )
     target = output_dir.expanduser().absolute()
     _new_exclusive_dir(target)
-    before_environment = _execution_provenance()
     wal = target / "individual-zero-life.wal"
     individual = _build_trial(wal_path=str(wal), steps=steps)
     actions: Counter[str] = Counter()
@@ -219,7 +279,10 @@ def run_trial(output_dir: Path, steps: int) -> tuple[int, dict[str, object]]:
     except (ValueError, RuntimeError, OSError, TypeError) as exc:
         audit_error = f"{type(exc).__name__}: {exc}"
     after_environment = _execution_provenance()
-    environment_unchanged = before_environment == after_environment
+    environment_unchanged = (
+        before_environment == after_environment
+        and after_environment["tracked_checkout_clean"] is True
+    )
     if not environment_unchanged:
         audit_error = (
             (audit_error + "; " if audit_error else "")
