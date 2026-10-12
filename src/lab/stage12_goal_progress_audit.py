@@ -115,15 +115,19 @@ def audit_stage12_goal_progress(
             ref = identities[index]
             if ref in intents or any(row[1]["sent_world_step"] == t for row in intents.values()):
                 raise ValueError("duplicate goal-progress precommit")
-            if (data.get("sent_world_step") != t
-                    or type(data.get("observe_world_step")) is not int
-                    or data["observe_world_step"] != t + 1
-                    or type(data.get("measure")) is not str
-                    or data["measure"] not in _MEASURES
-                    or _number(data.get("value_before")) is None
-                    or any(type(data.get(field)) is not str or not data[field]
-                           for field in ("goal_ref", "option_ref", "command_hash"))):
-                raise ValueError("invalid frozen goal-progress criterion")
+            if data.get("sent_world_step") != t:
+                raise ValueError("invalid frozen goal-progress sent time")
+            if (type(data.get("observe_world_step")) is not int
+                    or data["observe_world_step"] != t + 1):
+                raise ValueError("invalid frozen goal-progress observation deadline")
+            if (type(data.get("measure")) is not str
+                    or data["measure"] not in _MEASURES):
+                raise ValueError("invalid frozen goal-progress measure")
+            if _number(data.get("value_before")) is None:
+                raise ValueError("invalid frozen goal-progress starting body value")
+            for field in ("goal_ref", "option_ref", "command_hash"):
+                if type(data.get(field)) is not str or not data[field]:
+                    raise ValueError("invalid frozen goal-progress " + field)
             possible = motives.get((t, attempt, cycle), [])
             if not any(
                 mindex < index and isinstance(mdata, dict)
