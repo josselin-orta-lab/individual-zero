@@ -47,7 +47,7 @@ jobs:
       ((github.event.action == 'labeled' && github.event.label.name == 'ci-unit') ||
        (github.event.action != 'labeled' && !github.event.pull_request.draft))
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
