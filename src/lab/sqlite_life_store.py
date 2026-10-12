@@ -503,8 +503,26 @@ class SQLiteLifeLedger:
             raise RecoveryBlocked("no unresolved intent to seal")
         try:
             self._db.execute("BEGIN IMMEDIATE")
+            previous_state = self._db.execute(
+                "SELECT state_bytes FROM life_current WHERE slot=1 AND status='active'"
+            ).fetchone()
+            if previous_state is None:
+                raise RecoveryBlocked("uncertain intent no longer has an active current record")
+            archived_bytes = previous_state[0]
+            archived = json.loads(archived_bytes)
+            if registered_current_metadata(archived) is not None:
+                # The last committed world/owner image is only historical
+                # evidence, NOT a restorable live body after an uncertain
+                # physical intent. Change only the outer lifecycle marker.
+                archived["lifecycle"] = "technical_halt"
+                archived_bytes = _canonical_state(archived, receipt.individual_id)
+            # Status, registered lifecycle and checksum must become visible
+            # atomically. Keep the unresolved intent and every causal event;
+            # no fake physical transition or life rewind is manufactured.
             self._db.execute(
-                "UPDATE life_current SET status='technical_halt' WHERE slot=1 AND status='active'"
+                "UPDATE life_current SET status='technical_halt', "
+                "state_bytes=?, state_hash=? WHERE slot=1 AND status='active'",
+                (archived_bytes, sha256_hex(archived_bytes)),
             )
             self._db.execute("COMMIT")
         except BaseException:
