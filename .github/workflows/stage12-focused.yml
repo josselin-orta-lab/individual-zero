@@ -14,6 +14,8 @@ on:
       - 'tests/test_v131_stage12*'
       - 'scripts/run_stage12_exploratory_science.py'
       - 'scripts/run_stage12_issue133_sleep_deep.py'
+      - 'scripts/run_stage12_issue132_water.py'
+      - 'docs/research/stage12-issue132-water-prereg-2026-10-12.fr.md'
       - 'docs/research/stage12-issue133-sleep-prereg-2026-10-12.fr.md'
       - 'scripts/run_stage12_water_sleep_followup.py'
       - 'docs/research/stage12-water-sleep-followup-prereg-2026-10-12.fr.md'
@@ -89,6 +91,33 @@ jobs:
         with:
           name: stage12-water-sleep-followup-python-${{ matrix.python-version }}
           path: /tmp/stage12-water-sleep-followup/
+          retention-days: 30
+          if-no-files-found: warn
+
+  issue132-water:
+    name: issue132 drinking versus equipment (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Two mortal physical lives and independent journal audits
+        run: python scripts/run_stage12_issue132_water.py --output-dir /tmp/stage12-issue132
+      - name: Preserve failures, WAV and all causal exports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage12-issue132-water-python-${{ matrix.python-version }}
+          path: /tmp/stage12-issue132/
           retention-days: 30
           if-no-files-found: warn
 
