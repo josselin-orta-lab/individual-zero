@@ -36,6 +36,13 @@ class SQLiteWriterPathAliasTests(unittest.TestCase):
             ) as first:
                 alias.symlink_to(actual)
                 self.assertTrue(alias.is_file())
+                # An operator read via the alias must see the SAME SQLite
+                # transaction/WAL snapshot, not an alternate alias-WAL.
+                same = SQLiteLifeLedger.audit_read_only(
+                    path=str(alias), expected_individual_id=IDENTITY,
+                )
+                self.assertEqual(same.generation, first.audit().generation)
+                self.assertEqual(same.journal_head, first.audit().journal_head)
                 with self.assertRaisesRegex(RecoveryBlocked, "active process writer"):
                     SQLiteLifeLedger.open_existing(
                         path=str(alias), expected_individual_id=IDENTITY,
@@ -51,6 +58,12 @@ class SQLiteWriterPathAliasTests(unittest.TestCase):
             ) as first:
                 os.link(actual, alias)
                 self.assertEqual(actual.stat().st_ino, alias.stat().st_ino)
+                # A hardlinked filename gives SQLite a different sidecar,
+                # so do not even open it as a supposedly read-only auditor.
+                with self.assertRaisesRegex(RecoveryBlocked, "hardlink"):
+                    SQLiteLifeLedger.audit_read_only(
+                        path=str(alias), expected_individual_id=IDENTITY,
+                    )
                 with self.assertRaisesRegex(RecoveryBlocked, "hardlink|active process writer"):
                     SQLiteLifeLedger.open_existing(
                         path=str(alias), expected_individual_id=IDENTITY,
