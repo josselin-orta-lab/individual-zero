@@ -52,6 +52,25 @@ class OperatorWorldFrameTests(unittest.TestCase):
             self.assertEqual(receipt["journal_head_sha256"], individual.journal.head_hash)
             self.assertEqual(receipt["journal_closure_hash"], individual.journal.entries()[-1].event_hash)
 
+    def test_operator_archive_persists_mortal_step(self):
+        individual = build_stage4_reference_runtime(autonomous_mortal=True)
+        substrate = individual.stage3.substrate
+        with tempfile.TemporaryDirectory() as directory:
+            individual.journal.enable_durable_wal(
+                path=str(Path(directory) / "journal.wal")
+            )
+            archive_path = Path(directory) / "frames.jsonl"
+            with substrate.enable_operator_frame_archive(str(archive_path)):
+                substrate.open_step()
+                from lab.world import Command
+                result = substrate.execute(Command("attendre"))
+                self.assertEqual(result.status, "applied")
+            import json
+            receipts = [json.loads(line) for line in archive_path.read_text().splitlines()]
+            self.assertEqual(len(receipts), 1)
+            self.assertEqual(receipts[0]["frame"]["t_monde"], 1)
+            self.assertEqual(receipts[0]["journal_head_sha256"], individual.journal.head_hash)
+
     def test_rejects_unusable_step(self):
         world = build_stage4_reference_runtime(autonomous_mortal=True).world
         for value in (0, -1, True, 1.5):
