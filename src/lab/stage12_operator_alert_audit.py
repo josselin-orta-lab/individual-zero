@@ -94,6 +94,10 @@ def audit_stage12_operator_alerts(
             charges[key] = (index, data)
             continue
         if kind == "stage12_lived_diagnostics_published":
+            # Every alert is published immediately after the diagnostic
+            # from which it was derived, before any later physical sample.
+            if pending:
+                raise ValueError("missing operator alert before the next lived sample")
             t, attempt, cycle = key
             if key in diagnostics or t <= previous_step:
                 raise ValueError("duplicated or out-of-order lived warning step")
