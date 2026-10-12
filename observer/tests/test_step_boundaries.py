@@ -57,3 +57,19 @@ def test_terminal_close_accepted_without_reanimation(tmp_path):
     result = check_step_boundaries(path)
     assert result["recorded_boundaries_valid"] is True
     assert result["terminal_death_recorded"] is True
+
+
+def test_overlapping_open_steps_rejected(tmp_path):
+    path = tmp_path / "journal"
+    write_journal(path, [event("step_opened", 1), event("step_opened", 2),
+                         event("step_closed", 1), event("step_closed", 2)])
+    result = check_step_boundaries(path)
+    assert result["recorded_boundaries_valid"] is False
+    assert result["map_authorized"] is False
+
+
+def test_out_of_order_closure_rejected(tmp_path):
+    path = tmp_path / "journal"
+    write_journal(path, [event("step_opened", 1), event("step_opened", 2),
+                         event("step_closed", 2), event("step_closed", 1)])
+    assert check_step_boundaries(path)["recorded_boundaries_valid"] is False
