@@ -58,7 +58,11 @@ python -m pytest observer/tests -q
 
 The Observer-owned root is a **private directory** (mode 0700). Each run gets
 its own newly created ID/directory. A new test is rejected while another is
-active. A restarted service marks any unfinished `PENDING`/`RUNNING` local
+active. A run root containing an INTERRUPTED or unreadable local receipt is
+**locked against further launches**, even if no process remains. After an
+interruption, the operator must inspect/terminate any orphan process on the
+host and configure a **new isolated run root**. Never delete the old root as a
+shortcut: retain its evidence for audit. A restarted service marks any unfinished `PENDING`/`RUNNING` local
 receipt `INTERRUPTED`; its logs remain available. No `SUCCESS` status is
 inferred from an incomplete run. An explicit cancellation signals the process
 group; resource limits and timeouts are enforced on supported POSIX hosts.
