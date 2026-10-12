@@ -66,6 +66,12 @@ class Stage12OccupancyRuntimeTests(unittest.TestCase):
             )
             self.assertEqual(result.evaluated_cycles, len(sample_events))
             self.assertEqual(result.deferred_cycles, 0)
+            self.assertEqual(
+                result.low_entropy_positive_cycles + result.low_entropy_negative_cycles
+                + result.low_entropy_unavailable_cycles,
+                result.evaluated_cycles + result.deferred_cycles,
+            )
+            self.assertEqual(result.as_dict()["low_entropy_positive_cycles"], result.low_entropy_positive_cycles)
             self.assertEqual(result.charged_uc, len(sample_events) * 2)
             self.assertEqual(
                 result.occurrences, audit_export_bytes(raw).occurrences,
@@ -94,6 +100,9 @@ class Stage12OccupancyRuntimeTests(unittest.TestCase):
             self.assertEqual(report.evaluated_cycles, 0)
             self.assertGreaterEqual(report.deferred_cycles, 1)
             self.assertEqual(report.charged_uc, 0)
+            self.assertEqual(report.low_entropy_positive_cycles, 0)
+            self.assertEqual(report.low_entropy_negative_cycles, 0)
+            self.assertEqual(report.low_entropy_unavailable_cycles, report.deferred_cycles)
             self.assertTrue(runtime.journal.verify())
 
     def test_rehashed_forged_occupancy_rejected_beyond_hash_verification(self):
