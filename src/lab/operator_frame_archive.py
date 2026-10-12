@@ -72,6 +72,7 @@ class OperatorFrameArchive:
     def export_world_frames(
         receipts_path: str, destination: str, *,
         individual_id: str, life_generation: int,
+        journal_path: str | None = None,
     ) -> None:
         """Produce a bounded, explicitly unverified Observer import document.
 
@@ -132,6 +133,49 @@ class OperatorFrameArchive:
         counts = [r["journal_event_count"] for r in receipts]
         if any(a >= b for a, b in zip(counts, counts[1:])):
             raise ValueError("nonmonotonic journal event counts")
+        if journal_path is not None:
+            journal = Path(journal_path)
+            if not journal.is_absolute():
+                raise ValueError("journal path must be absolute")
+            from .determinism import canonical_causal_bytes
+            with journal.open("rb") as stream:
+                journal_raw = stream.read(32 * 1024 * 1024 + 1)
+            if (len(journal_raw) > 32 * 1024 * 1024 or not journal_raw
+                    or journal_raw.startswith(b"\\n") or journal_raw.endswith(b"\\n")):
+                raise ValueError("invalid or oversized canonical journal")
+            previous = "00" * 32
+            closures = {}
+            rows = journal_raw.split(b"\\n")
+            for index, line in enumerate(rows):
+                record = json.loads(line, object_pairs_hook=unique_keys)
+                if canonical_causal_bytes(record) != line or record.get("index") != index:
+                    raise ValueError("noncanonical journal entry")
+                if record.get("previous_hash") != previous:
+                    raise ValueError("broken journal chain")
+                payload = canonical_causal_bytes({
+                    "event_id": record["event_id"], "causal_event": record["causal_event"]})
+                digest = hashlib.sha256(bytes.fromhex(previous) + payload).hexdigest()
+                if digest != record.get("event_hash"):
+                    raise ValueError("invalid journal event hash")
+                previous = digest
+                event = record["causal_event"]
+                if event.get("kind") == "step_closed":
+                    step = event["t_monde"]
+                    if step in closures:
+                        raise ValueError("duplicate journal closure")
+                    closures[step] = (event["attempt_ref"], digest, index + 1)
+            if len(closures) != len(receipts):
+                raise ValueError("missing operator frame for journal closure")
+            for receipt in receipts:
+                step = receipt["frame"]["t_monde"]
+                expected = closures.get(step)
+                if (expected is None or
+                        (receipt["attempt_ref"], receipt.get("journal_closure_hash"),
+                         receipt["journal_event_count"]) != expected or
+                        receipt["journal_head_sha256"] != expected[1]):
+                    raise ValueError("operator receipt does not match journal closure")
+            if receipts[-1]["journal_event_count"] != len(rows):
+                raise ValueError("journal tail extends beyond frame archive")
         geometry = receipts[0]["geometry"]
         if any(r["geometry"] != geometry for r in receipts):
             raise ValueError("geometry changed within archive")
