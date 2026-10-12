@@ -12,6 +12,9 @@ from lab.determinism import canonical_causal_bytes
 from lab.independent_journal_audit import audit_export_bytes
 from lab.journal import HashChainedJournal
 from lab.mortal_execution import MortalStatus
+from lab.stage4_runtime import Stage4StepResult
+from lab.stage11_runtime import Stage11Runtime
+from unittest.mock import patch
 from lab.stage12_operator_console import Stage12OperatorConsole
 from lab.world import Command
 from test_stage12_mortal_runtime import stage12_runtime
@@ -124,6 +127,52 @@ class Stage12ExternalConsoleTests(unittest.TestCase):
             self.assertEqual(audit_export_bytes(
                 runtime.journal.canonical_bytes()
             ).terminal_deaths, 0)
+
+    def test_campaign_block_stops_on_same_call_without_world_advance(self):
+        with TemporaryDirectory() as directory:
+            runtime = stage12_runtime(str(Path(directory) / "same-call-block.jsonl"))
+            sub = runtime.stage3.substrate
+            Stage12OperatorConsole(
+                substrate=sub, mode="campaign",
+                policy_version="stage12-same-call-block-v1",
+            )
+
+            def stopped_without_world_action(_runtime):
+                sub.open_step()
+                sub.safety.enter_safety_block(reason="all_actions_vetoed")
+                sub.scheduler.close_step(
+                    outcome="blocked",
+                    applied_command_count=0,
+                    world_advance_count=0,
+                )
+                return Stage4StepResult(
+                    source="fallback", execution_status="safety_block",
+                    command_primitive=None, option_ref=None, st_version=None,
+                    cycles_used=1, reflex_triggered=False, fallback_used=True,
+                )
+
+            # Inject the genuine closed-step outcome at the parent runtime
+            # boundary, then exercise the exact integrated Stage11Sleep
+            # external campaign hook rather than a second operator request.
+            with patch.object(Stage11Runtime, "run_step",
+                              stopped_without_world_action):
+                result = runtime.run_step()
+            self.assertEqual(result.execution_status, "safety_block")
+            self.assertEqual(sub.mortal_status, MortalStatus.EXPERIMENT_STOPPED)
+            self.assertEqual(runtime.scheduler.t_monde, 1)
+            self.assertEqual(sub._mortal_boundary.last_world_step, 0)
+            self.assertIsNone(sub._mortal_boundary.terminal_death)
+            self.assertTrue(runtime.journal.verify())
+            self.assertEqual(
+                runtime.journal.entries[-1].causal_event["kind"],
+                "experiment_stopped",
+            )
+            export = audit_export_bytes(runtime.journal.canonical_bytes())
+            self.assertEqual(export.world_steps_closed, 1)
+            self.assertEqual(export.terminal_deaths, 0)
+            self.assertEqual(export.autobiographical_commits, 0)
+            with self.assertRaises(RuntimeError):
+                runtime.run_step()
 
     def test_offline_audit_rejects_rehashed_poststop_cognition(self):
         with TemporaryDirectory() as directory:
