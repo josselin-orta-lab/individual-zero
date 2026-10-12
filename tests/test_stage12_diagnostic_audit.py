@@ -103,6 +103,69 @@ class Stage12IndependentDiagnosticAuditTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "sample count drift"):
                 audit_stage12_diagnostics(forged)
 
+    def test_long_life_bounded_counter_with_explicit_window_and_attack(self):
+        import json
+        from hashlib import sha256
+        from lab.determinism import canonical_causal_bytes
+        from lab.journal import GENESIS_HASH
+
+        def rechain(rows):
+            previous = GENESIS_HASH
+            for number, row in enumerate(rows):
+                row["index"] = number
+                row["previous_hash"] = previous
+                previous = sha256(
+                    bytes.fromhex(previous) + canonical_causal_bytes({
+                        "event_id": row["event_id"],
+                        "causal_event": row["causal_event"],
+                    })
+                ).hexdigest()
+                row["event_hash"] = previous
+            return b"\n".join(canonical_causal_bytes(row) for row in rows)
+
+        with TemporaryDirectory() as folder:
+            runtime = stage12_runtime(str(Path(folder) / "long-life.jsonl"))
+            for _ in range(15):
+                self.assertEqual(runtime.run_step().execution_status, "applied")
+            raw = runtime.journal.canonical_bytes()
+            # The old runtime wrote the bounded `evidence_samples` but not
+            # the policy window. A legacy archive can only be verified
+            # until the first ambiguous saturation; it must not invent a
+            # window size from an attacker-controlled plateau.
+            with self.assertRaisesRegex(ValueError, "sample count drift"):
+                audit_stage12_diagnostics(raw)
+            rows = [json.loads(line) for line in raw.split(b"\n")]
+            diagnostics = [
+                row["causal_event"]["data"] for row in rows
+                if row["causal_event"]["kind"] ==
+                "stage12_lived_diagnostics_published"
+            ]
+            self.assertEqual(len(diagnostics), 15)
+            self.assertEqual([d["evidence_samples"] for d in diagnostics],
+                             [*range(1, 13), 12, 12, 12])
+            for data in diagnostics:
+                data["diagnostic_window"] = 12
+            bounded = rechain(rows)
+            self.assertEqual(audit_export_bytes(bounded).occurrences, len(rows))
+            evidence = audit_stage12_diagnostics(bounded)
+            self.assertEqual(evidence.diagnostic_samples, 15)
+            self.assertEqual(evidence.deferred_samples, 0)
+            self.assertEqual(evidence.charged_uc, 15)
+
+            # Rehashing a forged earlier plateau cannot launder evidence.
+            diagnostics[5]["evidence_samples"] = 5
+            fake = rechain(rows)
+            self.assertEqual(audit_export_bytes(fake).occurrences, len(rows))
+            with self.assertRaisesRegex(ValueError, "sample count drift"):
+                audit_stage12_diagnostics(fake)
+            diagnostics[5]["evidence_samples"] = 6
+
+            diagnostics[12]["diagnostic_window"] = 2
+            forged_policy = rechain(rows)
+            self.assertEqual(audit_export_bytes(forged_policy).occurrences, len(rows))
+            with self.assertRaisesRegex(ValueError, "diagnostic window changed"):
+                audit_stage12_diagnostics(forged_policy)
+
     def test_untrusted_content_and_head_fail_closed(self):
         with TemporaryDirectory() as folder:
             runtime = stage12_runtime(str(Path(folder) / "tamper.jsonl"))
