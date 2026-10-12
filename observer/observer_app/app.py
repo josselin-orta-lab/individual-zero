@@ -674,10 +674,22 @@ class Observer:
             with open_regular(directory, paths["manifest"]) as stream:
                 manifest = json.load(stream)
             with open_regular(directory, paths["result"]) as stream:
-                report = json.load(stream)
+                report_bytes = stream.read(2 * 1024 * 1024 + 1)
+            report = json.loads(report_bytes)
+            report_record = manifest["files"]["result"]
+            if (report_record["name"] != paths["result"]
+                    or report_record["sha256"] != hashlib.sha256(report_bytes).hexdigest()
+                    or report_record["bytes"] != len(report_bytes)
+                    or manifest.get("source_commit") != status.get("source_commit")
+                    or manifest.get("source_dirty") != status.get("source_dirty")):
+                denied["reason"] = "result or source custody mismatch"
+                return denied
             if (manifest.get("schema") != "observer-artifacts-v1"
                     or manifest.get("run_id") != rid
                     or manifest.get("test_id") != "mortal_stage11"
+                    or report.get("protocol_version") != "stage11-autonomous-600-journal-v1"
+                    or report.get("scientific_verdict") is not None
+                    or status.get("technical_success") is not True
                     or report.get("steps_physically_executed") != status.get("executed_steps")):
                 denied["reason"] = "inconsistent terminal custody receipts"
                 return denied
@@ -691,6 +703,10 @@ class Observer:
                 frames_data = stream.read(16 * 1024 * 1024 + 1)
             with open_regular(directory, paths["journal"]) as stream:
                 journal_data = stream.read(32 * 1024 * 1024 + 1)
+            if (frames_record.get("bytes") != len(frames_data)
+                    or journal_record.get("bytes") != len(journal_data)):
+                denied["reason"] = "artifact length changed after receipt"
+                return denied
             with tempfile.TemporaryDirectory(prefix="observer-verified-map-") as tmp:
                 frames_path = Path(tmp) / "frames"
                 journal_path = Path(tmp) / "journal"
