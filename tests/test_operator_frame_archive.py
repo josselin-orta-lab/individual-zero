@@ -102,3 +102,41 @@ def test_export_rejects_duplicate_json_keys_before_export():
             OperatorFrameArchive.export_world_frames(
                 str(path), str(output), individual_id="i0", life_generation=0)
         assert not output.exists()
+
+
+def test_verified_export_rejects_receipt_with_wrong_closure_hash():
+    import hashlib
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        journal = root / "journal"
+        receipts = root / "receipts.jsonl"
+        output = root / "frames.json"
+        previous = "00" * 32
+        rows = []
+        for index, kind in enumerate(("step_opened", "step_closed")):
+            event = {"kind": kind, "t_monde": 1, "attempt_ref": "a"}
+            eid = f"e{index}"
+            payload = json.dumps({"event_id": eid, "causal_event": event},
+                                 sort_keys=True, separators=(",", ":")).encode()
+            digest = hashlib.sha256(bytes.fromhex(previous) + payload).hexdigest()
+            rows.append({"index": index, "event_id": eid, "previous_hash": previous,
+                         "event_hash": digest, "causal_event": event})
+            previous = digest
+        journal.write_bytes(b"\n".join(json.dumps(row, sort_keys=True, separators=(",", ":")).encode()
+                                       for row in rows))
+        with OperatorFrameArchive(str(receipts)) as archive:
+            archive.append({
+                "frame": {"t_monde": 1, "step_boundary": "committed",
+                          "individual_pose": {"x": 1, "y": 1}, "entities": []},
+                "geometry": {"coordinate_system": "grid-xy-top-left",
+                             "width": 4, "height": 4},
+                "attempt_ref": "a",
+                "journal_closure_hash": "f" * 64,
+                "journal_head_sha256": previous,
+                "journal_event_count": 2,
+            })
+        with pytest.raises(ValueError, match="does not match journal closure"):
+            OperatorFrameArchive.export_world_frames(
+                str(receipts), str(output), individual_id="i0", life_generation=0,
+                journal_path=str(journal))
+        assert not output.exists()
