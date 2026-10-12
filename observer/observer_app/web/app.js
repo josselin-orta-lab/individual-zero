@@ -53,6 +53,7 @@ async function pageReplay(){
   const loadSources=async()=>{
     const detail=await api("/api/runs/"+encodeURIComponent(state.selected));
     $("#custody-result").textContent="Aucune vérification demandée pour cette exécution. Carte désactivée.";
+    $("#custody-frame").value="";$("#custody-head").value="";$("#custody-count").value="";
     const sources=detail.artifacts.filter(a=>["journal","lab_events"].includes(a.alias));
     $("#replay-source").innerHTML=sources.map(a=>`<option value="${a.alias}">${a.alias==="journal"?"Journal causal (t_monde)":"Lab telemetry (cycle non physique)"}</option>`).join("");
     const hasJournal=detail.artifacts.some(a=>a.alias==="journal");
