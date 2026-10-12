@@ -26,6 +26,8 @@ def check_step_boundaries(path: Path) -> dict:
         opened = {}
         closed = {}
         terminal = False
+        active_step = None
+        terminal_step = None
         last_step = 0
         for row in rows:
             event = row["causal_event"]
