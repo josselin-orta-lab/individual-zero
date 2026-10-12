@@ -1,0 +1,86 @@
+name: Observer isolated unit checks
+on:
+  pull_request:
+    paths:
+      - 'observer/**'
+      - '.github/workflows/observer.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  observer-fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e './observer[test]'
+      - name: Run isolated Observer tests (no science campaign)
+        run: python -m pytest observer/tests -q
+
+      - name: Real Core bootstrap API integration (3 cycles, no science)
+        env:
+          PYTHONPATH: observer
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from tempfile import TemporaryDirectory
+          import time
+          from fastapi.testclient import TestClient
+          from observer_app.app import create_app
+          with TemporaryDirectory() as temp:
+              with TestClient(create_app(core_root=Path.cwd(), run_root=Path(temp)/'runs', token='a'*48)) as client:
+                  client.post('/api/session', json={'token': 'a'*48}).raise_for_status()
+                  response = client.post('/api/runs', json={'test_id': 'bootstrap', 'seed': 0, 'cycles': 3}, headers={'Origin': 'http://testserver'})
+                  response.raise_for_status()
+                  rid = response.json()['id']
+                  for _ in range(100):
+                      result = client.get('/api/runs/'+rid).json()
+                      if result['status'] not in ('RUNNING', 'PENDING'):
+                          break
+                      time.sleep(0.1)
+                  assert result['status'] == 'SUCCESS', result
+                  assert result['technical_success'] is True
+                  assert result['assertions_passed'] is None
+                  assert len(client.get('/api/runs/'+rid+'/events?source=lab_events').json()['items']) >= 3
+                  assert client.get('/api/runs/'+rid+'/events?source=oracle').status_code == 404
+          PY
+
+      - name: Real Core Stage 11 diagnostic receipt (7 steps, non-scientific)
+        if: matrix.python-version == '3.12'
+        env:
+          PYTHONPATH: observer
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from tempfile import TemporaryDirectory
+          import time
+          from fastapi.testclient import TestClient
+          from observer_app.app import create_app
+          with TemporaryDirectory() as temp:
+              with TestClient(create_app(core_root=Path.cwd(), run_root=Path(temp)/'runs', token='a'*48)) as client:
+                  client.post('/api/session', json={'token': 'a'*48}).raise_for_status()
+                  response = client.post('/api/runs', json={'test_id': 'mortal_stage11', 'steps': 7}, headers={'Origin': 'http://testserver'})
+                  response.raise_for_status()
+                  rid = response.json()['id']
+                  for _ in range(600):
+                      result = client.get('/api/runs/'+rid).json()
+                      if result['status'] not in ('RUNNING', 'PENDING'):
+                          break
+                      time.sleep(0.2)
+                  assert result['status'] == 'SUCCESS', result
+                  assert result['technical_success'] is True
+                  assert result['assertions_passed'] is True, result
+                  assert result['executed_steps'] == 7, result
+                  assert result['scientific_validation'] is None
+                  report = client.get('/api/runs/'+rid+'/file/result').json()
+                  assert report['steps_physically_executed'] == 7
+                  assert report['offline_audit_completed'] is True
+                  assert report['external_oracle_loaded'] is False
+                  assert report['external_bench_loaded'] is False
+          PY

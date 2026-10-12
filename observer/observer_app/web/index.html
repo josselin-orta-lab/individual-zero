@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark"><title>Individual Zero Observer</title>
+  <link rel="stylesheet" href="/assets/style.css"><script defer src="/assets/app.js"></script>
+</head>
+<body>
+  <div id="auth" class="auth-screen">
+    <form id="login-form" class="login-panel">
+      <p class="eyebrow">RESTRICTED OPERATOR CONSOLE</p>
+      <div class="symbol">IZ<span>0</span></div>
+      <h1>Individual Zero <em>Observer</em></h1>
+      <p>Contrôle des expériences, traces originales et archives en lecture seule.</p>
+      <label for="token">Jeton opérateur local</label>
+      <input id="token" type="password" autocomplete="off" required minlength="24" placeholder="I0_OBSERVER_TOKEN">
+      <button class="primary" type="submit">Accéder à Observer <span>↗</span></button>
+      <div id="login-error" class="error" role="alert"></div>
+    </form>
+  </div>
+  <div id="workspace" class="workspace hidden">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">I<span>0</span></span><div><strong>INDIVIDUAL ZERO</strong><small>OBSERVER / CONSOLE</small></div></div>
+      <p class="nav-label">WORKSPACE</p>
+      <nav id="navigation" aria-label="Navigation principale">
+        <button data-page="dashboard" class="active"><span>◫</span> Dashboard</button>
+        <button data-page="tests"><span>▷</span> Tests</button>
+        <button data-page="runs"><span>▤</span> Runs</button>
+        <button data-page="oracle"><span>◎</span> Oracle Explorer</button>
+        <button data-page="downloads"><span>⇩</span> Downloads</button>
+      </nav>
+      <p class="nav-label">SYSTEM</p>
+      <nav><button data-page="settings"><span>⚙</span> Settings</button></nav>
+      <div class="sidebar-bottom"><div class="status-indicator"><i></i> API LOCALE <span>v0.1</span></div><button id="logout">Déconnexion</button></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><div><span class="breadcrumb">RESEARCH INFRASTRUCTURE</span><span class="slash">/</span><span id="page-name">DASHBOARD</span></div><div class="operator-badge"><i></i> ACCÈS OPÉRATEUR</div></header>
+      <section id="view" class="view" aria-live="polite"></section>
+      <footer class="footer">OBSERVER v0.1 <span>·</span> Les preuves fonctionnelles, la validation humaine et la validation scientifique sont distinctes.</footer>
+    </main>
+  </div>
+</body>
+</html>
