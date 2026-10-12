@@ -103,6 +103,42 @@ class Stage12LivedDetectorsTests(unittest.TestCase):
             owner.observe(lived(1, outcome="success", agency="self"))
         self.assertEqual(owner.export_causal_state()["observations"], [])
 
+    def test_one_lived_sample_per_physical_step_even_across_cycles(self):
+        owner = detector()
+        owner.observe(lived(1, progress=0.1))
+        before = owner.export_causal_state()
+        duplicate = LivedCognitiveObservation(
+            world_step=1, cycle=2, context_signature="st:changed",
+            active_goal_ref="goal:test", option_ref="option:changed",
+            progress_delta=0.1,
+        )
+        with self.assertRaises(ValueError):
+            owner.observe(duplicate)
+        self.assertEqual(owner.export_causal_state(), before)
+        owner.observe(lived(2, progress=0.1))
+        self.assertEqual(owner.detecteurs().evidence_samples, 2)
+
+    def test_live_owner_rejects_same_time_replacement_and_forged_future(self):
+        owner = detector()
+        owner.observe(lived(1, progress=0.1, context="st:first"))
+        committed = owner.export_causal_state()
+        owner.restore_causal_state(deepcopy(committed))
+        replacement = deepcopy(committed)
+        replacement["observations"][0]["context_signature"] = "st:forged"
+        with self.assertRaises(ValueError):
+            owner.restore_causal_state(replacement)
+        future = detector()
+        future.restore_causal_state(committed)
+        future.observe(lived(2, progress=0.2))
+        with self.assertRaises(ValueError):
+            owner.restore_causal_state(future.export_causal_state())
+        self.assertEqual(owner.export_causal_state(), committed)
+        # An empty, newly constructed owner may still load a checked current
+        # generation when the external crash coordinator authorizes it.
+        newborn = detector()
+        newborn.restore_causal_state(future.export_causal_state())
+        self.assertEqual(newborn.detecteurs().evidence_samples, 2)
+
     def test_export_restore_is_atomic_and_cannot_forget_verifications(self):
         owner = detector()
         for i in range(1, 6):
