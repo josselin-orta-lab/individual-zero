@@ -6,12 +6,12 @@ from observer_app.frame_validation import validate_frames
 def fixture():
     return {
         "schema": "observer-world-frames-v1",
-        "identity": {"individual_id": "i0", "life_generation": 0, "attempt_ref": "a"},
+        "identity": {"individual_id": "i0", "life_generation": 0},
         "geometry": {"coordinate_system": "grid-xy-top-left", "width": 8, "height": 5},
         "frames": [
-            {"t_monde": 1, "step_boundary": "committed", "individual_pose": {"x": 1, "y": 2},
+            {"t_monde": 1, "attempt_ref": "a", "step_boundary": "committed", "individual_pose": {"x": 1, "y": 2},
              "entities": [{"id": "water", "kind": "resource", "position": {"x": 3, "y": 4}}]},
-            {"t_monde": 2, "step_boundary": "committed", "individual_pose": {"x": 2, "y": 2}, "entities": []}
+            {"t_monde": 2, "attempt_ref": "b", "step_boundary": "committed", "individual_pose": {"x": 2, "y": 2}, "entities": []}
         ],
         "attestation": {"journal_head_sha256": "a" * 64, "journal_event_count": 2,
                         "verifier": "example-not-trusted", "verified_at": "2026-10-12T00:00:00Z",
