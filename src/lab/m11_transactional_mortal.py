@@ -266,6 +266,13 @@ class M11TransactionalMortal:
               individual_id: str) -> "M11TransactionalMortal":
         if not isinstance(db_path, str) or not os.path.isabs(db_path):
             raise ValueError("M-11 requires a new absolute database path")
+        # Stage12 currently has a separate durable event owner. Until that
+        # owner joins this same transaction, its runtime must not accidentally
+        # be treated as covered by a Stage10/11 SQLite custody receipt.
+        from .stage10_runtime import Stage10Runtime
+        from .stage11_runtime import Stage11Runtime
+        if type(runtime) not in (Stage10Runtime, Stage11Runtime):
+            raise RecoveryBlocked("unsupported runtime: additional mutable/WAL owners not coordinated")
         if (runtime.stage3.substrate._mortal_boundary is None
                 or runtime.stage3.substrate.mortal_status is not MortalStatus.ACTIVE
                 or runtime.scheduler.t_monde != 0
@@ -314,10 +321,18 @@ class M11TransactionalMortal:
                 if ledger.audit().generation != 0:
                     raise RecoveryBlocked("non-genesis current state lacks canonical events")
                 runtime = runtime_factory()
+                from .stage10_runtime import Stage10Runtime
+                from .stage11_runtime import Stage11Runtime
+                if type(runtime) not in (Stage10Runtime, Stage11Runtime):
+                    raise RecoveryBlocked("cold factory exposes uncoordinated runtime")
                 if _runtime_image(runtime, individual_id=individual_id) != image:
                     raise RecoveryBlocked("genesis factory does not match anchored state")
             else:
                 runtime = runtime_factory()
+                from .stage10_runtime import Stage10Runtime
+                from .stage11_runtime import Stage11Runtime
+                if type(runtime) not in (Stage10Runtime, Stage11Runtime):
+                    raise RecoveryBlocked("cold factory exposes uncoordinated runtime")
                 _install_trusted_current_on_fresh(runtime, image, journal)
             private = _copy_private_runtime(runtime)
             # No duplicate active authority can escape through a factory.
