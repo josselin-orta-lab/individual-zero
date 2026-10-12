@@ -29,9 +29,30 @@ async function pageReplay(){
   if(!choices.length){$("#view").innerHTML=intro("HISTORICAL REPLAY","Replay historique","Aucune exécution disponible.");return}
   if(!choices.some(r=>r.id===state.selected))state.selected=choices[0].id;
   $("#view").innerHTML=intro("HISTORICAL REPLAY","Chronologie enregistrée","Navigation dans les événements historiques uniquement. Aucun état du monde, position ou vérité Oracle n'est déduit.")+
-  `<div class="panel"><div class="action-row"><label class="field">Exécution<select id="replay-run" class="search-input">${choices.map(r=>`<option value="${escapeHTML(r.id)}" ${r.id===state.selected?"selected":""}>${escapeHTML(r.id)}</option>`).join("")}</select></label><label class="field">Source<select id="replay-source" class="search-input"></select></label><label class="field">Pas / cycle<input id="replay-step" type="number" min="0" max="2147483647" value="0"></label><button id="replay-prev" class="secondary">← Précédent</button><button id="replay-next" class="secondary">Suivant →</button><button id="replay-load" class="primary">Afficher</button></div><p id="replay-warning" class="provenance">Reconstruction 2D indisponible sans géométrie vérifiée.</p></div><div class="panel"><h2>Frontières temporelles enregistrées</h2><div id="step-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Intégrité du journal causal</h2><div id="journal-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Alignement frames / journal</h2><div id="frame-alignment" class="provenance">Chargement…</div></div><div class="panel"><h2>Diagnostic des archives 2D</h2><div id="frame-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Événements historiques du pas</h2><div id="replay-results" class="stack"></div><pre id="replay-raw">Sélectionnez un événement pour voir son enregistrement brut.</pre></div>`;
+  `<div class="panel"><div class="action-row"><label class="field">Exécution<select id="replay-run" class="search-input">${choices.map(r=>`<option value="${escapeHTML(r.id)}" ${r.id===state.selected?"selected":""}>${escapeHTML(r.id)}</option>`).join("")}</select></label><label class="field">Source<select id="replay-source" class="search-input"></select></label><label class="field">Pas / cycle<input id="replay-step" type="number" min="0" max="2147483647" value="0"></label><button id="replay-prev" class="secondary">← Précédent</button><button id="replay-next" class="secondary">Suivant →</button><button id="replay-load" class="primary">Afficher</button></div><p id="replay-warning" class="provenance">Reconstruction 2D indisponible sans géométrie vérifiée.</p></div><div class="panel"><h2>Frontières temporelles enregistrées</h2><div id="step-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Intégrité du journal causal</h2><div id="journal-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Références externes de conservation</h2><p class="provenance">Saisir uniquement des références obtenues hors de cette archive. Leur concordance ne prouve pas la vérité physique et n'autorise pas la carte.</p><div class="action-row"><label class="field">SHA-256 archive 2D<input id="custody-frame" autocomplete="off" spellcheck="false" maxlength="64" placeholder="64 caractères hexadécimaux"></label><label class="field">Tête du journal<input id="custody-head" autocomplete="off" spellcheck="false" maxlength="64" placeholder="64 caractères hexadécimaux"></label><label class="field">Nombre d'événements<input id="custody-count" type="number" min="1" step="1" placeholder="Nombre indépendant"></label><button id="custody-check" class="secondary">Vérifier la concordance</button></div><p id="custody-result" class="provenance" role="status">Aucune vérification demandée. Carte désactivée.</p></div><div class="panel"><h2>Alignement frames / journal</h2><div id="frame-alignment" class="provenance">Chargement…</div></div><div class="panel"><h2>Diagnostic des archives 2D</h2><div id="frame-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Événements historiques du pas</h2><div id="replay-results" class="stack"></div><pre id="replay-raw">Sélectionnez un événement pour voir son enregistrement brut.</pre></div>`;
+  $("#custody-check").onclick=async()=>{
+    const frame=$("#custody-frame").value.trim();
+    const head=$("#custody-head").value.trim();
+    const countText=$("#custody-count").value.trim();
+    const count=Number(countText);
+    const out=$("#custody-result");
+    out.textContent="Contrôle en cours…";
+    if(!/^[0-9a-f]{64}$/.test(frame)||!/^[0-9a-f]{64}$/.test(head)||!countText||!Number.isSafeInteger(count)||count<1){
+      out.textContent="Références invalides : deux empreintes SHA-256 minuscules et un nombre entier positif sont requis. Carte désactivée.";
+      return;
+    }
+    try{
+      const result=await api("/api/runs/"+encodeURIComponent(state.selected)+"/replay/frames/custody",{
+        method:"POST",
+        headers:{"Origin":location.origin},
+        body:JSON.stringify({trusted_frame_sha256:frame,trusted_journal_head:head,trusted_journal_count:count})
+      });
+      out.textContent=`Références externes : ${result.operator_anchor_match?"concordantes":"NON concordantes"} · Déclarations : ${result.frame_claims_match?"concordantes":"NON concordantes"} · Pas enregistrés : ${result.recorded_step_alignment?"alignés":"NON alignés"} · Vérité physique : NON vérifiée · Carte autorisée : NON${result.error?" · "+result.error:""}.`;
+    }catch(e){out.textContent="Vérification impossible : "+e.message+" · Carte désactivée."}
+  };
   const loadSources=async()=>{
     const detail=await api("/api/runs/"+encodeURIComponent(state.selected));
+    $("#custody-result").textContent="Aucune vérification demandée pour cette exécution. Carte désactivée.";
     const sources=detail.artifacts.filter(a=>["journal","lab_events"].includes(a.alias));
     $("#replay-source").innerHTML=sources.map(a=>`<option value="${a.alias}">${a.alias==="journal"?"Journal causal (t_monde)":"Lab telemetry (cycle non physique)"}</option>`).join("");
     const hasJournal=detail.artifacts.some(a=>a.alias==="journal");
