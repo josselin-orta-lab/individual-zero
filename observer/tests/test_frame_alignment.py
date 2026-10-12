@@ -43,7 +43,7 @@ def test_matching_recorded_step_still_not_authoritative(tmp_path):
 
 def test_frame_at_unclosed_step_rejected(tmp_path):
     frames, journal = make_files(tmp_path, frame_step=2)
-    assert compare_frames_to_journal(frames, journal)["error"] == "missing_or_unclosed_frame"
+    assert compare_frames_to_journal(frames, journal)["error"] == "frame_at_unclosed_step"
 
 
 def test_open_only_step_rejected(tmp_path):
