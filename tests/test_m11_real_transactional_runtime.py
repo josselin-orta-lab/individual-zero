@@ -262,3 +262,16 @@ def test_stage10_cognition_and_sleep_owners_share_sqlite_generation():
         ) as ledger:
             assert ledger.audit().registered_roster_hash is not None
             assert ledger.audit().generation == 2
+
+
+def test_uncoordinated_runtime_type_fails_closed_before_birth():
+    from lab.stage4_reference_fixture import build_stage4_reference_runtime
+    with TemporaryDirectory() as tmp:
+        path = str(Path(tmp) / "uncoordinated.sqlite")
+        with pytest.raises(RecoveryBlocked, match="uncoordinated|unsupported"):
+            M11TransactionalMortal.birth(
+                db_path=path,
+                runtime=build_stage4_reference_runtime(autonomous_mortal=True),
+                individual_id=IDENTITY,
+            )
+        assert not Path(path).exists()
