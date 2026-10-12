@@ -13,6 +13,7 @@ import unittest
 
 from i0.modules.stage12_detectors import Stage12DetectionPolicy
 from lab.independent_journal_audit import audit_export_bytes
+from lab.stage12_occupancy_audit import audit_stage12_occupancy
 from lab.journal import HashChainedJournal
 from lab.mortal_execution import MortalStatus
 from lab.stage11_reference_fixture import build_stage11_reference_runtime
@@ -55,6 +56,7 @@ class V131MortalStage12SixHundredSteps(unittest.TestCase):
                 autonomous_mortal=True,
                 wal_path=wal_path,
                 diagnostic_sample_cost_uc=1,
+                module_occupancy_cost_uc=1,
                 detector_policy=Stage12DetectionPolicy(
                     version="stage12-600-lived-dev-v1",
                     window=12, stagnation_steps=4, stagnation_tolerance=0.05,
@@ -121,6 +123,11 @@ class V131MortalStage12SixHundredSteps(unittest.TestCase):
             self.assertEqual(kinds["world_transition_experienced"], 600)
             self.assertEqual(kinds["auto_segment_commit"], 600)
             self.assertEqual(kinds["stage12_lived_diagnostics_published"], 600)
+            # Occupancy is a distinct, charged current S_t measurement,
+            # not a renamed temporal-context detector or hidden truth.
+            self.assertGreaterEqual(
+                kinds["stage12_st_module_occupancy_published"], 600,
+            )
             self.assertEqual(kinds["experiment_stopped"], 1)
             self.assertFalse(any("rollback" in str(k) for k in kinds))
             self.assertFalse(individual.stage3.substrate.snapshots._snapshots)
@@ -132,6 +139,19 @@ class V131MortalStage12SixHundredSteps(unittest.TestCase):
             self.assertEqual(audited.world_steps_closed, 600)
             self.assertEqual(audited.autobiographical_commits, 600)
             self.assertEqual(audited.terminal_deaths, 0)
+            st_occupancy = audit_stage12_occupancy(
+                journal.canonical_bytes(), expected_head=journal.head_hash,
+                expected_count=len(journal.entries),
+            )
+            self.assertEqual(
+                st_occupancy.evaluated_cycles,
+                kinds["stage12_st_module_occupancy_published"],
+            )
+            self.assertEqual(
+                st_occupancy.deferred_cycles,
+                kinds["stage12_st_occupancy_deferred"],
+            )
+            self.assertGreaterEqual(st_occupancy.charged_uc, 600)
             durability = HashChainedJournal.audit_durable_wal(wal_path)
             self.assertEqual(durability["verified_entries"], len(journal.entries))
             self.assertEqual(durability["head_hash"], journal.head_hash)
