@@ -49,10 +49,23 @@ def evaluate_packet(
     action_steps = {action.world_step for action in alignment.actions}
     diagnostic_steps: set[int] = set()
     occupancy_steps: set[int] = set()
+    tri_state_detectors = ("stagnation", "reasoning_loop", "low_context_entropy")
+    detector_coverage = {
+        name: {"positive": 0, "negative": 0, "unavailable": 0}
+        for name in tri_state_detectors
+    }
     for raw in content.split(b"\n"):
         event = json.loads(raw)["causal_event"]
         if event.get("kind") == "stage12_lived_diagnostics_published":
             diagnostic_steps.add(event["t_monde"])
+            data = event["data"]
+            for name in tri_state_detectors:
+                value = data.get(name)
+                label = (
+                    "positive" if value is True else
+                    "negative" if value is False else "unavailable"
+                )
+                detector_coverage[name][label] += 1
         elif event.get("kind") == "stage12_st_module_occupancy_published":
             occupancy_steps.add(event["t_monde"])
     covered_diagnostic_steps = action_steps.intersection(diagnostic_steps)
@@ -68,6 +81,12 @@ def evaluate_packet(
             or alerts.examined_samples != diagnostics.diagnostic_samples
             or actual_physical_actions > journal.world_steps_closed):
         raise ValueError("cross-auditor Stage12 evidence mismatch")
+
+    if any(
+        sum(counts.values()) != diagnostics.diagnostic_samples
+        for counts in detector_coverage.values()
+    ):
+        raise ValueError("Stage12 tri-state detector evidence counts mismatch")
 
     if expected_world_steps is not None:
         if (journal.world_steps_closed != expected_world_steps
@@ -91,6 +110,17 @@ def evaluate_packet(
         "journal": journal.as_dict(),
         "diagnostics": diagnostics.as_dict(),
         "lived_goal_progress": goal_progress.as_dict(),
+        "lived_detector_coverage": {
+            "schema": "stage12-lived-detector-outcome-coverage-v1",
+            "samples_independently_audited": diagnostics.diagnostic_samples,
+            "detectors": detector_coverage,
+            "three_detectors_positive_and_negative_exercised": all(
+                counts["positive"] > 0 and counts["negative"] > 0
+                for counts in detector_coverage.values()
+            ),
+            "missing_one_class_does_not_imply_success": True,
+            "attribution_bias_calibration_supported": False,
+        },
         "st_module_occupancy": occupancy.as_dict(),
         "persistent_operator_alerts": alerts.as_dict(),
         "external_operator_control": operator_control.as_dict(),
