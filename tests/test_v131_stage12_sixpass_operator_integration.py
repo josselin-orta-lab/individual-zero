@@ -12,6 +12,7 @@ import unittest
 
 from i0.modules.stage12_detectors import Stage12DetectionPolicy
 from lab.independent_journal_audit import audit_export_bytes
+from lab.stage12_goal_progress_audit import audit_stage12_goal_progress
 from lab.journal import HashChainedJournal
 from lab.mortal_execution import MortalStatus
 from lab.stage11_reference_fixture import build_stage11_reference_runtime
@@ -117,6 +118,19 @@ class V131AllModuleSmokes(unittest.TestCase):
                 runtime.journal.canonical_bytes(),
                 expected_head=runtime.journal.head_hash,
                 expected_count=len(runtime.journal.entries),
+            )
+            goal_progress = audit_stage12_goal_progress(
+                runtime.journal.canonical_bytes(),
+                expected_head=runtime.journal.head_hash,
+                expected_count=len(runtime.journal.entries),
+            )
+            self.assertEqual(
+                goal_progress.preregistered,
+                goal_progress.verified_strict_gains + goal_progress.verified_no_gains
+                + goal_progress.unavailable + goal_progress.unresolved_at_terminal,
+            )
+            self.assertFalse(
+                goal_progress.as_dict()["subjective_agency_attribution_verified"]
             )
             self.assertEqual(offline.consolidation_publications, 1)
             self.assertEqual(offline.terminal_deaths, 0)
