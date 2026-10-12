@@ -81,12 +81,16 @@ class Stage6OptionEvaluator:
         initial_state: SimulationState,
         cycle: int,
         t_monde: int,
+        remaining_plan_index: int = 0,
     ) -> OptionEvidenceInput:
         proposal.validate()
+        if (type(remaining_plan_index) is not int or remaining_plan_index < 0
+                or remaining_plan_index >= len(proposal.plan.steps)):
+            raise ValueError("evaluation needs a valid unexecuted plan suffix")
         if proposal.plan is None or not proposal.plan.steps:
             raise ValueError("Stage-6 evaluation requires an executable plan")
 
-        commands = tuple(step.command for step in proposal.plan.steps)
+        commands = tuple(step.command for step in proposal.plan.steps[remaining_plan_index:])
         result = self._simulator.rollout(
             initial_state=initial_state,
             commands=commands,
