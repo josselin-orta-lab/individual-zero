@@ -40,6 +40,19 @@ def evaluate_packet(
     alignment = evaluate_goal_action_alignment(content, **anchors)
     counts = alignment.as_dict()["counts"]
     actual_physical_actions = len(alignment.actions)
+    # One physical step may have several cognitive S_t versions. A mere
+    # occupancy-cycle total can never prove coverage of each executed action.
+    action_steps = {action.world_step for action in alignment.actions}
+    diagnostic_steps: set[int] = set()
+    occupancy_steps: set[int] = set()
+    for raw in content.split(b"\n"):
+        event = json.loads(raw)["causal_event"]
+        if event.get("kind") == "stage12_lived_diagnostics_published":
+            diagnostic_steps.add(event["t_monde"])
+        elif event.get("kind") == "stage12_st_module_occupancy_published":
+            occupancy_steps.add(event["t_monde"])
+    covered_diagnostic_steps = action_steps.intersection(diagnostic_steps)
+    covered_occupancy_steps = action_steps.intersection(occupancy_steps)
 
     if (diagnostics.world_steps_closed != journal.world_steps_closed
             or diagnostics.head_hash != journal.head_hash
@@ -54,9 +67,9 @@ def evaluate_packet(
         if (journal.world_steps_closed != expected_world_steps
                 or actual_physical_actions != expected_world_steps):
             raise ValueError("expected real physical commands are not all executed")
-        if (diagnostics.diagnostic_samples != expected_world_steps
-                or occupancy.evaluated_cycles < expected_world_steps):
-            raise ValueError("Stage12 diagnostic/occupancy coverage is incomplete")
+        if (len(covered_diagnostic_steps) != expected_world_steps
+                or len(covered_occupancy_steps) != expected_world_steps):
+            raise ValueError("Stage12 diagnostics/S_t occupancy do not cover each physical action")
 
     terminal_stop = False
     if require_terminal_stop:
@@ -89,13 +102,15 @@ def evaluate_packet(
             "deferred_lived_diagnostics": diagnostics.deferred_samples,
             "evaluated_s_t_occupancy_cycles": occupancy.evaluated_cycles,
             "deferred_s_t_occupancy_cycles": occupancy.deferred_cycles,
+            "physical_action_steps_with_paid_diagnostic": len(covered_diagnostic_steps),
+            "physical_action_steps_with_s_t_measurement": len(covered_occupancy_steps),
+            "distinct_steps_with_diagnostic": len(diagnostic_steps),
+            "distinct_steps_with_s_t_measurement": len(occupancy_steps),
             "every_physical_action_diagnosed": (
-                diagnostics.diagnostic_samples == actual_physical_actions
-                and actual_physical_actions > 0
+                action_steps <= diagnostic_steps and bool(action_steps)
             ),
             "s_t_occupancy_observed_on_every_action": (
-                occupancy.evaluated_cycles >= actual_physical_actions
-                and actual_physical_actions > 0
+                action_steps <= occupancy_steps and bool(action_steps)
             ),
             "lived_attribution_bias_validated": False,
         },

@@ -55,6 +55,13 @@ class Stage12OperatorPacketTests(unittest.TestCase):
             self.assertFalse(packet["coverage"]["lived_attribution_bias_validated"])
             self.assertEqual(packet["journal"]["world_steps_closed"], 4)
             self.assertEqual(packet["diagnostics"]["diagnostic_samples"], 4)
+            self.assertEqual(
+                packet["coverage"]["physical_action_steps_with_paid_diagnostic"], 4,
+            )
+            self.assertEqual(
+                packet["coverage"]["physical_action_steps_with_s_t_measurement"], 4,
+            )
+            self.assertEqual(packet["coverage"]["distinct_steps_with_s_t_measurement"], 4)
             self.assertEqual(packet["persistent_operator_alerts"]["examined_samples"], 4)
             self.assertGreaterEqual(
                 packet["st_module_occupancy"]["evaluated_cycles"], 4,
