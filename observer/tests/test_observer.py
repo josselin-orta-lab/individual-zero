@@ -266,3 +266,10 @@ def test_replay_only_recorded_history_no_inferred_world(client, layout):
     assert data["scientific_validation"] is None
     assert client.get("/api/runs/import-historical/replay", params={"source": "oracle", "step": 3}).status_code == 422
     assert client.get("/api/runs/import-historical/replay", params={"source": "journal", "step": -1}).status_code == 422
+
+
+def test_geometry_fails_closed_without_authoritative_world_contract(client):
+    response = client.get("/api/runs/not-a-run/replay/geometry", params={"step": 0})
+    assert response.status_code == 404
+    response = client.get("/api/runs/not-a-run/replay/geometry", params={"step": -1})
+    assert response.status_code == 422
