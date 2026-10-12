@@ -22,7 +22,7 @@ def make_files(tmp_path, frame_step=1, close=True):
     frames = tmp_path / "frames"
     frames.write_text(json.dumps({
         "schema": "observer-world-frames-v1",
-        "identity": {"individual_id": "i0", "life_generation": 0, "attempt_ref": "a"},
+        "identity": {"individual_id": "i0", "life_generation": 0},
         "geometry": {"coordinate_system": "grid-xy-top-left", "width": 4, "height": 4},
         "frames": [{"t_monde": frame_step, "step_boundary": "committed",
                     "individual_pose": {"x": 1, "y": 1}, "entities": []}],
@@ -54,7 +54,7 @@ def test_open_only_step_rejected(tmp_path):
 def test_frame_attempt_must_match_recorded_closed_step(tmp_path):
     frames, journal = make_files(tmp_path)
     document = json.loads(frames.read_text())
-    document["identity"]["attempt_ref"] = "different-attempt"
+    document["frames"][0]["attempt_ref"] = "different-attempt"
     frames.write_text(json.dumps(document))
     result = compare_frames_to_journal(frames, journal)
     assert result["frame_step_alignment"] is False
