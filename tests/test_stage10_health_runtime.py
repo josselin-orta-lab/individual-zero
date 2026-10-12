@@ -105,6 +105,29 @@ class SleepHealthUnitTests(unittest.TestCase):
                     other.restore_causal_state(bad)
                 self.assertEqual(other.export_causal_state(), state)
 
+    def test_sleep_recovery_can_precede_later_waking_pressure_freeze(self):
+        model = health()
+        model.begin_waking_step(
+            world_step=22, unconsolidated_episodes=1,
+            memory_occupancy=0.25, is_night=False,
+        )
+        model.recover_sleep_step(world_step=23)
+        model.begin_waking_step(
+            world_step=25, unconsolidated_episodes=1,
+            memory_occupancy=0.25, is_night=False,
+        )
+        image = model.export_causal_state()
+        self.assertEqual(image["last_recovered_step"], 23)
+        self.assertEqual(image["frozen_world_step"], 25)
+        revived = health()
+        revived.restore_causal_state(deepcopy(image))
+        self.assertEqual(revived.export_causal_state(), image)
+        invalid = deepcopy(image)
+        invalid["last_recovered_step"] = 25
+        with self.assertRaisesRegex(ValueError, "sleep-recovery chronology"):
+            revived.restore_causal_state(invalid)
+        self.assertEqual(revived.export_causal_state(), image)
+
     def test_legacy_metacognition_without_opt_in_has_identical_snapshot(self):
         legacy = MinimalMetacognition()
         self.assertIsNone(legacy.sleep_health)

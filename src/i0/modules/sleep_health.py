@@ -136,10 +136,15 @@ class SleepHealth:
         ):
             raise ValueError("invalid restored cognitive fatigue")
         recovered = state.get("last_recovered_step")
+        frozen_step = state.get("frozen_world_step")
+        # The last *waking* pressure freeze is not the latest physical step:
+        # a genuine sleep recovery can be followed by later waking freezes.
+        # Consequently recovered < frozen_step is valid (e.g. recovery at 23,
+        # then waking at 25). A recovery on the SAME frozen waking step is
+        # impossible; recover_sleep_step requires a strictly newer step.
         if (recovered is not None and (
                 type(recovered) is not int or recovered < 1
-                or (state.get("frozen_world_step") is not None
-                    and recovered <= state["frozen_world_step"]))):
+                or frozen_step is None or recovered == frozen_step)):
             raise ValueError("invalid sleep-recovery chronology")
         step, raw, clock = (
             state.get("frozen_world_step"),

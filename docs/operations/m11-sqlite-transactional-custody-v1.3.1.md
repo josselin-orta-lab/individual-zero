@@ -1,6 +1,6 @@
-# M-11 Option A implementation: SQLite transactional I0 custody (phase 1)
+# M-11 Option A implementation: SQLite transactional I0 custody
 
-**Status:** implementation in progress; **M-11 FAIL**, **M-12 not newly certified**. Do not use this component to restart a living Stage10/11 individual yet.
+**Current state (2026-10-12):** Stage 10 and 11 now have an opt-in SQL-owned, private-candidate coordinator with tested latest-current-generation cold recovery, not a production deployment approval. The following sections describe the earlier phase-one architecture and history. **The full MVP M-11 requirement remains INCOMPLETE** because the independently fsynced Stage 12 WAL is not part of this SQLite transaction; acceptance by the operator is also outstanding. See [M-11 software release evidence](m11-sqlite-operator-release-evidence-2026-10-12.fr.md).
 
 **Normative authority:** `docs/architecture/reference/en/mvp-specification-v1.3.1.md` §§4–5 and M-11/M-12. No specification change, Stage 9 scientific NO-GO unchanged. Operator acceptance is separate from CI.
 

@@ -1,0 +1,45 @@
+name: M11 operator release evidence campaign
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_m11_release_campaign.py'
+      - 'src/i0/modules/sleep_health.py'
+      - 'tests/test_stage10_health_runtime.py'
+      - '.github/workflows/m11-release-campaign.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  m11-release-evidence:
+    name: SQLite 600 real physical steps and cold resumes (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install source and test tools
+        run: python -m pip install -e . pytest
+      - name: Run SQLite hard-crash and negative recovery matrix
+        run: |
+          python -m unittest discover -s tests -p 'test_sqlite_*.py' -q
+          python -m pytest -q tests/test_m11_real_transactional_runtime.py tests/test_m11_coordinated_crash_matrix.py tests/test_m11_operator_trial_cli.py tests/test_m11_stage12_compatibility.py
+      - name: Execute and retain 600 real SQL-owned world steps
+        run: |
+          python scripts/run_m11_release_campaign.py --output-dir /tmp/m11-release-evidence --target-steps 600 --max-steps-per-life 50 --batch-steps 25
+      - name: Upload M11 complete release evidence, even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m11-release-evidence-python-${{ matrix.python-version }}
+          path: /tmp/m11-release-evidence/
+          if-no-files-found: warn
