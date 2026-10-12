@@ -48,6 +48,10 @@ class Stage12ExternalConsoleTests(unittest.TestCase):
                 runtime.run_step()
             self.assertEqual(substrate.mortal_status, MortalStatus.EXPERIMENT_STOPPED)
             self.assertIsNone(substrate._mortal_boundary.terminal_death)
+            # A later fail-stop request must not rewrite a completed
+            # nonlethal experiment into technical_halt.
+            substrate._mortal_boundary.halt(failed_step=3)
+            self.assertEqual(substrate.mortal_status, MortalStatus.EXPERIMENT_STOPPED)
             self.assertEqual(runtime.scheduler.t_monde, 2)
             self.assertEqual(runtime.world.export_causal_state(), before)
             self.assertEqual(runtime.detection_report.evidence_samples, count)
