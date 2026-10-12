@@ -48,6 +48,13 @@ def closure():
     }
 
 
+def operator_stop():
+    return {
+        "kind": "experiment_stopped", "emitter": "operator_console",
+        "t_monde": 0, "data": {"reason": "operator_requested"},
+    }
+
+
 def records(events):
     """Construct a completely canonical, hash-consistent arbitrary event list.
 
@@ -92,6 +99,100 @@ class SQLiteTerminalSequenceGuardTests(unittest.TestCase):
             self.assertEqual(SQLiteLifeLedger.audit_read_only(
                 path=path, expected_individual_id=IDENTITY,
             ).status, "dead")
+
+    def test_operator_terminal_receipt_is_auditable_and_irreversible(self):
+        with TemporaryDirectory() as temp:
+            path = str(Path(temp) / "stopped-life.db")
+            with SQLiteLifeLedger.birth(
+                path=path, individual_id=IDENTITY, initial_state=state(),
+            ) as store:
+                store.begin_intent(expected_generation=0, intent_ref="stop:1")
+                receipt = store.commit_generation(
+                    expected_generation=0, expected_head=GENESIS_HASH,
+                    intent_ref="stop:1", current_state=state(),
+                    events=records([operator_stop()]), status="experiment_stopped",
+                )
+                self.assertEqual(receipt.status, "experiment_stopped")
+                self.assertEqual(receipt.journal_count, 1)
+            with SQLiteLifeLedger.open_existing(
+                path=path, expected_individual_id=IDENTITY,
+            ) as store:
+                self.assertFalse(store.audit().may_recover)
+                with self.assertRaises(RecoveryBlocked):
+                    store.begin_intent(expected_generation=1, intent_ref="revival")
+
+    def test_operator_stops_reject_fake_status_and_poststop_occurrences(self):
+        invalid_emitter = operator_stop()
+        invalid_emitter["emitter"] = "oracle"
+        invalid_clock = operator_stop()
+        invalid_clock["t_monde"] = True
+        no_data = operator_stop()
+        no_data.pop("data")
+        cases = {
+            "missing_stop_receipt": ([], "experiment_stopped"),
+            "active_with_stop_receipt": ([operator_stop()], "active"),
+            "poststop_cognition": ([operator_stop(), {"kind": "memory_updated"}],
+                                   "experiment_stopped"),
+            "poststop_technical": ([operator_stop(), {"kind": "step_closed"}],
+                                   "experiment_stopped"),
+            "duplicate_stop": ([operator_stop(), operator_stop()],
+                               "experiment_stopped"),
+            "spoofed_emitter": ([invalid_emitter], "experiment_stopped"),
+            "boolean_time": ([invalid_clock], "experiment_stopped"),
+            "missing_data": ([no_data], "experiment_stopped"),
+        }
+        for name, (events, status) in cases.items():
+            with self.subTest(name=name), TemporaryDirectory() as temp:
+                path = str(Path(temp) / "invalid-stop.db")
+                with SQLiteLifeLedger.birth(
+                    path=path, individual_id=IDENTITY, initial_state=state(),
+                ) as store:
+                    store.begin_intent(expected_generation=0, intent_ref="stop:1")
+                    with self.assertRaises((ValueError, RecoveryBlocked)):
+                        store.commit_generation(
+                            expected_generation=0, expected_head=GENESIS_HASH,
+                            intent_ref="stop:1", current_state=state(),
+                            events=records(deepcopy(events)), status=status,
+                        )
+                attested = SQLiteLifeLedger.audit_read_only(
+                    path=path, expected_individual_id=IDENTITY,
+                )
+                self.assertEqual(attested.generation, 0)
+                self.assertTrue(attested.pending_intent)
+                self.assertFalse(attested.may_recover)
+
+    def test_auditor_rejects_rehashed_poststop_cognition(self):
+        with TemporaryDirectory() as temp:
+            path = str(Path(temp) / "rehashed-poststop.db")
+            with SQLiteLifeLedger.birth(
+                path=path, individual_id=IDENTITY, initial_state=state(),
+            ) as store:
+                store.begin_intent(expected_generation=0, intent_ref="stop:1")
+                store.commit_generation(
+                    expected_generation=0, expected_head=GENESIS_HASH,
+                    intent_ref="stop:1", current_state=state(),
+                    events=records([operator_stop()]), status="experiment_stopped",
+                )
+            forged = records([operator_stop(), {
+                "kind": "memory_updated", "t_monde": 0,
+            }])[-1]
+            with sqlite3.connect(path) as db:
+                db.execute(
+                    "INSERT INTO causal_occurrence "
+                    "(idx, event_id, previous_hash, event_hash, canonical_bytes) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (forged["index"], forged["event_id"],
+                     forged["previous_hash"], forged["event_hash"],
+                     canonical_causal_bytes(forged)),
+                )
+                db.execute(
+                    "UPDATE life_current SET journal_count=?, journal_head=? WHERE slot=1",
+                    (2, forged["event_hash"]),
+                )
+            with self.assertRaisesRegex(RecoveryBlocked, "terminal|stop"):
+                SQLiteLifeLedger.audit_read_only(
+                    path=path, expected_individual_id=IDENTITY,
+                )
 
     def test_invalid_terminal_suffixes_are_rejected_atomically(self):
         mismatched_attempt = closure()
