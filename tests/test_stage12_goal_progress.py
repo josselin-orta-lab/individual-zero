@@ -8,7 +8,7 @@ import unittest
 from i0.modules.stage12_goal_progress import (
     CONTRACT_VERSION, LivedGoalProgressIntent, Stage12GoalProgressLedger,
 )
-from lab.stage12_goal_progress_audit import audit_stage12_goal_progress
+from lab.stage12_goal_progress_audit import audit_stage12_goal_progress, _number
 from lab.stage12_operator_console import Stage12OperatorConsole
 from test_stage12_operator_alert_runtime import actual_stage12_runtime
 
@@ -86,6 +86,20 @@ class Stage12GoalProgressTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     ledger.preregister(LivedGoalProgressIntent(**values))
         self.assertEqual(ledger.export_causal_state()["registered_intent_refs"], [])
+
+    def test_external_auditor_decodes_only_canonical_f64_body_values(self):
+        for value in (0.0, 40.5, 100.0):
+            self.assertEqual(_number({"$f64": value.hex()}), value)
+        for forged in (
+            {"$f64": "NaN"},
+            {"$f64": "0X1.0P+1"},
+            {"$f64": "0x1.0p+1", "ignored": True},
+            {"$f64": 4},
+            True,
+            {"$f64": float("inf").hex()},
+        ):
+            with self.subTest(forged=forged):
+                self.assertIsNone(_number(forged))
 
     def test_real_mortal_steps_never_fabricate_lived_agency(self):
         with TemporaryDirectory() as folder:
