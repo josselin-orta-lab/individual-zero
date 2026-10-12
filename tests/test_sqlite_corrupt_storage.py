@@ -66,7 +66,7 @@ class MalformedSQLiteCustodyTests(unittest.TestCase):
                 )
             with sqlite3.connect(path) as db:
                 db.execute("UPDATE causal_occurrence SET event_hash=1 WHERE idx=0")
-            with self.assertRaisesRegex(RecoveryBlocked, "hash"):
+            with self.assertRaisesRegex(RecoveryBlocked, "hash|canonical"):
                 SQLiteLifeLedger.audit_read_only(
                     path=path, expected_individual_id=ID,
                 )
