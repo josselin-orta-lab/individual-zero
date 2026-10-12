@@ -208,7 +208,15 @@ def test_fixed_unittest_and_stage11_fixture_report(client):
     data = wait(client, r.json()["id"])
     assert data["status"] == "SUCCESS", data
     assert data["assertions_passed"] is True
-    r = client.post("/api/runs", json={"test_id": "mortal_stage11", "steps": 7}, headers={"Origin": "http://testserver"})
+    # Terminal receipt may become visible just before runner cleanup clears
+    # its active slot. Retry only the documented transient 409, not failures.
+    for _ in range(100):
+        r = client.post("/api/runs", json={"test_id": "mortal_stage11", "steps": 7}, headers={"Origin": "http://testserver"})
+        if r.status_code == 202:
+            break
+        assert r.status_code == 409, r.text
+        time.sleep(0.02)
+    assert r.status_code == 202, r.text
     data = wait(client, r.json()["id"])
     assert data["status"] == "SUCCESS", data
     assert data["executed_steps"] == 7
