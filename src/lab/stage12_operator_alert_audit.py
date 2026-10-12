@@ -51,6 +51,7 @@ def audit_stage12_operator_alerts(
         journal, expected_head=expected_head, expected_count=expected_count,
     )
     charges: dict[tuple[int, str, int], tuple[int, dict]] = {}
+    pending_charge_closure: tuple[int, str, int] | None = None
     diagnostics: set[tuple[int, str, int]] = set()
     deferred: set[tuple[int, str, int]] = set()
     pending: dict[tuple[int, str, int, str], dict[str, object]] = {}
@@ -67,6 +68,20 @@ def audit_stage12_operator_alerts(
     for index, raw in enumerate(journal.split(b"\n")):
         event = json.loads(raw)["causal_event"]
         kind = event.get("kind")
+        if pending_charge_closure is not None:
+            # The implementation's charge receipt is adjacent to its own
+            # terminal publication/deferral, with no unrelated causal
+            # occurrence allowed in between. A forged late receipt would
+            # otherwise appear to satisfy charge accounting retrospectively.
+            receipt_key = (
+                event.get("t_monde"), event.get("attempt_ref"), event.get("cycle"),
+            )
+            if (kind not in (
+                    "stage12_lived_diagnostics_published",
+                    "stage12_lived_diagnostics_deferred",
+                ) or receipt_key != pending_charge_closure):
+                raise ValueError("Stage12 diagnostic receipt is not immediately after its debit")
+            pending_charge_closure = None
         if pending and kind != "stage12_operator_alert":
             # Operator alerts are written immediately after the *paid*
             # diagnostic while its phase is open. Any intervening causal
@@ -97,6 +112,7 @@ def audit_stage12_operator_alerts(
                     or key in charges):
                 raise ValueError("invalid or duplicate charged Stage12 diagnostic")
             charges[key] = (index, data)
+            pending_charge_closure = key
             continue
         if kind == "stage12_lived_diagnostics_deferred":
             previous_charge = charges.get(key)
@@ -212,6 +228,8 @@ def audit_stage12_operator_alerts(
 
     if pending:
         raise ValueError("missing operator alert for persistent lived warning")
+    if pending_charge_closure is not None:
+        raise ValueError("unclosed Stage12 diagnostic charge")
     if set(charges) != diagnostics | deferred:
         raise ValueError("unclosed Stage12 diagnostic charge or missing deferral")
     return Stage12OperatorAlertAudit(
