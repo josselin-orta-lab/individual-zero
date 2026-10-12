@@ -1,6 +1,6 @@
 "use strict";
 const $ = s => document.querySelector(s);
-const state = {page:"dashboard",runs:[],tests:[],selected:null,source:"lab_events",cursor:0,next:null,kind:"",step:"",q:"",selectedEvent:null,refresh:null};
+const state = {page:"dashboard",runs:[],tests:[],selected:null,source:"lab_events",cursor:0,next:null,kind:"",step:"",q:"",selectedEvent:null,refresh:null,replayEpoch:0,replayRequestEpoch:0};
 const escapeHTML = value => String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const display = value => value===null||value===undefined?"Indisponible":escapeHTML(value);
 const pretty = x => JSON.stringify(x,null,2);
@@ -13,7 +13,7 @@ function showApp(){$("#auth").classList.add("hidden");$("#workspace").classList.
 function renderError(error){$("#view").insertAdjacentHTML("afterbegin",`<p class="alert" role="alert">${escapeHTML(error.message||error)}</p>`)}
 async function refreshRuns(){const r=await api("/api/runs?limit=200");state.runs=r.runs}
 function setNav(){document.querySelectorAll("[data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===state.page));$("#page-name").textContent=state.page==="oracle"?"ORACLE EXPLORER":state.page.toUpperCase()}
-async function navigate(page){clearInterval(state.refresh);state.refresh=null;state.page=page;setNav();$("#view").innerHTML="<p class='muted'>Chargement des données originales…</p>";try{if(page==="tests")await pageTests();else if(page==="runs")await pageRuns();else if(page==="oracle")await pageOracle();else if(page==="replay")await pageReplay();else if(page==="downloads")await pageDownloads();else if(page==="settings")await pageSettings();else await pageDashboard()}catch(e){$("#view").innerHTML="";renderError(e)}}
+async function navigate(page){state.replayEpoch++;state.replayRequestEpoch++;clearInterval(state.refresh);state.refresh=null;state.page=page;setNav();$("#view").innerHTML="<p class='muted'>Chargement des données originales…</p>";try{if(page==="tests")await pageTests();else if(page==="runs")await pageRuns();else if(page==="oracle")await pageOracle();else if(page==="replay")await pageReplay();else if(page==="downloads")await pageDownloads();else if(page==="settings")await pageSettings();else await pageDashboard()}catch(e){$("#view").innerHTML="";renderError(e)}}
 function runTable(runs){return `<div class="table-wrap"><table><thead><tr><th>EXÉCUTION</th><th>TEST / SOURCE</th><th>HORODATAGE</th><th>STATUT</th><th>PAS PHYSIQUES</th></tr></thead><tbody>${runs.map(r=>`<tr data-run="${escapeHTML(r.id)}"><td class="mono">${escapeHTML(r.id.slice(0,19))}…</td><td>${display(r.test_id||"Archive importée")}</td><td>${display(r.created_at)}</td><td>${pill(r.status)}</td><td>${display(r.executed_steps)}</td></tr>`).join("")||`<tr><td colspan="5" class="empty">Aucune exécution enregistrée</td></tr>`}</tbody></table></div>`}
 function bindRuns(){document.querySelectorAll("[data-run]").forEach(row=>row.addEventListener("click",()=>{state.selected=row.dataset.run;pageRunDetail(state.selected)}))}
 async function pageDashboard(){await refreshRuns();const runs=state.runs;const active=runs.filter(r=>["PENDING","RUNNING"].includes(r.status)).length;const completed=runs.filter(r=>r.status==="SUCCESS").length;const anomalies=runs.filter(r=>["FAILED","INTERRUPTED"].includes(r.status)).length;$("#view").innerHTML=intro("SYSTEM OVERVIEW","Observation center","Un tableau de bord local pour comprendre les exécutions, sans modifier la vie ni les observations d'I0.")+`<div class="grid-stats"><div class="stat"><small>Exécutions</small><strong>${runs.length}</strong><span>locales et importées</span></div><div class="stat"><small>En cours</small><strong>${active}</strong><span>processus supervisés</span></div><div class="stat"><small>Succès techniques</small><strong>${completed}</strong><span>pas une validation scientifique</span></div><div class="stat"><small>Anomalies</small><strong>${anomalies}</strong><span>échecs et interruptions</span></div></div><div class="panel"><h2>Exécutions récentes</h2><p>Les campagnes importées ne sont jamais assimilées à des succès de tests.</p>${runTable(runs.slice(0,10))}</div><div class="provenance">Séparation stricte : la réussite technique et les assertions ne valident ni la conformité comportementale, ni la science, ni l'acceptation opérateur.</div>`;bindRuns()}
@@ -44,50 +44,61 @@ function renderReplayGeometry(target,map,step){
     '<p style="font-size:.8rem;line-height:2">I0 : <span style="color:#fde047">■</span> · '+legend+'</p>';
 }
 async function pageReplay(){
+  const viewEpoch=++state.replayEpoch;
   await refreshRuns();
+  if(state.page!=="replay"||viewEpoch!==state.replayEpoch)return;
+  const isCurrent=runId=>state.page==="replay"&&state.replayEpoch===viewEpoch&&state.selected===runId;
   const choices=state.runs.filter(r=>r.id);
   if(!choices.length){$("#view").innerHTML=intro("HISTORICAL REPLAY","Replay historique","Aucune exécution disponible.");return}
   if(!choices.some(r=>r.id===state.selected))state.selected=choices[0].id;
   $("#view").innerHTML=intro("HISTORICAL REPLAY","Chronologie enregistrée","Navigation dans les événements historiques uniquement. Aucun état du monde, position ou vérité Oracle n'est déduit.")+
-  `<div class="panel"><div class="action-row"><label class="field">Exécution<select id="replay-run" class="search-input">${choices.map(r=>`<option value="${escapeHTML(r.id)}" ${r.id===state.selected?"selected":""}>${escapeHTML(r.id)}</option>`).join("")}</select></label><label class="field">Source<select id="replay-source" class="search-input"></select></label><label class="field">Pas / cycle<input id="replay-step" type="number" min="0" max="2147483647" value="0"></label><button id="replay-prev" class="secondary">← Précédent</button><button id="replay-next" class="secondary">Suivant →</button><button id="replay-load" class="primary">Afficher</button></div><label class="field">Navigation temporelle<input id="replay-scrubber" type="range" min="0" max="600" step="1" value="0" style="width:100%"></label><p id="replay-warning" class="provenance">Reconstruction 2D indisponible sans géométrie vérifiée.</p></div><div class="panel"><h2>Carte 2D historique du moteur / aperçu importé</h2><div id="replay-map" class="provenance">Aucune frame chargée.</div></div><div class="panel"><h2>Frontières temporelles enregistrées</h2><div id="step-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Intégrité du journal causal</h2><div id="journal-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Références externes de conservation</h2><p class="provenance">Saisir uniquement des références obtenues hors de cette archive. Leur concordance ne prouve pas la vérité physique et n'autorise pas la carte.</p><div class="action-row"><label class="field">SHA-256 archive 2D<input id="custody-frame" autocomplete="off" spellcheck="false" maxlength="64" placeholder="64 caractères hexadécimaux"></label><label class="field">Tête du journal<input id="custody-head" autocomplete="off" spellcheck="false" maxlength="64" placeholder="64 caractères hexadécimaux"></label><label class="field">Nombre d'événements<input id="custody-count" type="number" min="1" step="1" placeholder="Nombre indépendant"></label><button id="custody-check" class="secondary">Vérifier la concordance</button></div><p id="custody-result" class="provenance" role="status">Aucune vérification demandée. Carte désactivée.</p></div><div class="panel"><h2>Attestation détachée Ed25519</h2><p class="provenance">Utilisez une clé publique obtenue indépendamment de l'archive. Ne saisissez jamais de clé privée. Une signature valide n'établit pas la vérité physique.</p><div class="action-row"><label class="field">Clé publique Ed25519 (Base64)<input id="signed-key" autocomplete="off" spellcheck="false" maxlength="128" placeholder="Clé publique externe"></label><label class="field">Identifiant de clé attendu<input id="signed-key-id" autocomplete="off" spellcheck="false" maxlength="128" placeholder="Identifiant connu"></label><button id="signed-check" class="secondary">Vérifier la signature</button></div><p id="signed-result" class="provenance" role="status">Aucune attestation vérifiée. Carte désactivée.</p></div><div class="panel"><h2>Alignement frames / journal</h2><div id="frame-alignment" class="provenance">Chargement…</div></div><div class="panel"><h2>Diagnostic des archives 2D</h2><div id="frame-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Événements historiques du pas</h2><div id="replay-results" class="stack"></div><pre id="replay-raw">Sélectionnez un événement pour voir son enregistrement brut.</pre></div>`;
+  `<div class="panel"><div class="action-row"><label class="field">Exécution<select id="replay-run" class="search-input">${choices.map(r=>`<option value="${escapeHTML(r.id)}" ${r.id===state.selected?"selected":""}>${escapeHTML(r.id)}</option>`).join("")}</select></label><label class="field">Source<select id="replay-source" class="search-input"></select></label><label class="field">Pas / cycle<input id="replay-step" type="number" min="0" max="2147483647" value="0"></label><button id="replay-prev" class="secondary">← Précédent</button><button id="replay-next" class="secondary">Suivant →</button><button id="replay-load" class="primary">Afficher</button></div><label class="field">Navigation temporelle<input id="replay-scrubber" type="range" min="0" max="600" step="1" value="0" style="width:100%"></label><p id="replay-warning" class="provenance">Reconstruction 2D indisponible sans géométrie vérifiée.</p></div><div class="panel"><h2>Carte 2D des captures locales vérifiées</h2><div id="replay-map" class="provenance">Aucune frame chargée.</div></div><div class="panel"><h2>Frontières temporelles enregistrées</h2><div id="step-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Intégrité du journal causal</h2><div id="journal-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Références externes de conservation</h2><p class="provenance">Saisir uniquement des références obtenues hors de cette archive. Leur concordance ne prouve pas la vérité physique et n'autorise pas la carte.</p><div class="action-row"><label class="field">SHA-256 archive 2D<input id="custody-frame" autocomplete="off" spellcheck="false" maxlength="64" placeholder="64 caractères hexadécimaux"></label><label class="field">Tête du journal<input id="custody-head" autocomplete="off" spellcheck="false" maxlength="64" placeholder="64 caractères hexadécimaux"></label><label class="field">Nombre d'événements<input id="custody-count" type="number" min="1" step="1" placeholder="Nombre indépendant"></label><button id="custody-check" class="secondary">Vérifier la concordance</button></div><p id="custody-result" class="provenance" role="status">Aucune vérification demandée. Carte désactivée.</p></div><div class="panel"><h2>Attestation détachée Ed25519</h2><p class="provenance">Utilisez une clé publique obtenue indépendamment de l'archive. Ne saisissez jamais de clé privée. Une signature valide n'établit pas la vérité physique.</p><div class="action-row"><label class="field">Clé publique Ed25519 (Base64)<input id="signed-key" autocomplete="off" spellcheck="false" maxlength="128" placeholder="Clé publique externe"></label><label class="field">Identifiant de clé attendu<input id="signed-key-id" autocomplete="off" spellcheck="false" maxlength="128" placeholder="Identifiant connu"></label><button id="signed-check" class="secondary">Vérifier la signature</button></div><p id="signed-result" class="provenance" role="status">Aucune attestation vérifiée. Carte désactivée.</p></div><div class="panel"><h2>Alignement frames / journal</h2><div id="frame-alignment" class="provenance">Chargement…</div></div><div class="panel"><h2>Diagnostic des archives 2D</h2><div id="frame-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Événements historiques du pas</h2><div id="replay-results" class="stack"></div><pre id="replay-raw">Sélectionnez un événement pour voir son enregistrement brut.</pre></div>`;
   $("#custody-check").onclick=async()=>{
     const frame=$("#custody-frame").value.trim();
     const head=$("#custody-head").value.trim();
     const countText=$("#custody-count").value.trim();
     const count=Number(countText);
     const out=$("#custody-result");
+    const runId=state.selected;
+    const isActive=()=>isCurrent(runId)&&out.isConnected;
     out.textContent="Contrôle en cours…";
     if(!/^[0-9a-f]{64}$/.test(frame)||!/^[0-9a-f]{64}$/.test(head)||!countText||!Number.isSafeInteger(count)||count<1){
       out.textContent="Références invalides : deux empreintes SHA-256 minuscules et un nombre entier positif sont requis. Carte désactivée.";
       return;
     }
     try{
-      const result=await api("/api/runs/"+encodeURIComponent(state.selected)+"/replay/frames/custody",{
+      const result=await api("/api/runs/"+encodeURIComponent(runId)+"/replay/frames/custody",{
         method:"POST",
         headers:{"Origin":location.origin},
         body:JSON.stringify({trusted_frame_sha256:frame,trusted_journal_head:head,trusted_journal_count:count})
       });
+      if(!isActive())return;
       out.textContent=`Empreintes saisies : ${result.operator_anchor_match?"concordantes":"NON concordantes"} · Origine des références authentifiée : NON · Déclarations : ${result.frame_claims_match?"concordantes":"NON concordantes"} · Pas enregistrés : ${result.recorded_step_alignment?"alignés":"NON alignés"} · Vérité physique : NON vérifiée · Carte autorisée : NON${result.error?" · "+result.error:""}.`;
-    }catch(e){out.textContent="Vérification impossible : "+e.message+" · Carte désactivée."}
+    }catch(e){if(!isActive())return;out.textContent="Vérification impossible : "+e.message+" · Carte désactivée."}
   };
   $("#signed-check").onclick=async()=>{
     const key=$("#signed-key").value.trim();
     const keyId=$("#signed-key-id").value.trim();
     const out=$("#signed-result");
+    const runId=state.selected;
+    const isActive=()=>isCurrent(runId)&&out.isConnected;
     if(!/^[A-Za-z0-9+/]{43}=$/.test(key)||!keyId||keyId.length>128){
       out.textContent="Clé publique Base64 Ed25519 ou identifiant invalide. Carte désactivée.";
       return;
     }
     out.textContent="Vérification en cours…";
     try{
-      const result=await api("/api/runs/"+encodeURIComponent(state.selected)+"/replay/frames/signed-custody",{
+      const result=await api("/api/runs/"+encodeURIComponent(runId)+"/replay/frames/signed-custody",{
         method:"POST",body:JSON.stringify({trusted_public_key_b64:key,expected_key_id:keyId})
       });
+      if(!isActive())return;
       out.textContent=`Signature : ${result.signature.signature_valid?"valide":"INVALIDE"} · Empreinte frames : ${result.signature.frames_digest_matches?"concordante":"NON"} · Identité I0 : ${result.frame_identity_match?"concordante":"NON"} · Journal : ${result.journal_claim_match?"concordant":"NON"} · Pas fermés : ${result.recorded_step_alignment?"alignés":"NON"} · Vérité physique : NON vérifiée · Carte autorisée : NON${result.signature.error?" · "+result.signature.error:""}.`;
-    }catch(e){out.textContent="Vérification impossible : "+e.message+" · Carte désactivée."}
+    }catch(e){if(!isActive())return;out.textContent="Vérification impossible : "+e.message+" · Carte désactivée."}
   };
   const loadSources=async()=>{
-    const detail=await api("/api/runs/"+encodeURIComponent(state.selected));
+    const runId=state.selected;
+    const detail=await api("/api/runs/"+encodeURIComponent(runId));
+    if(!isCurrent(runId))return;
     $("#custody-result").textContent="Aucune vérification demandée pour cette exécution. Carte désactivée.";
     const maxSteps=Number(detail.executed_steps)||600;
     $("#replay-scrubber").max=maxSteps;
@@ -105,60 +116,75 @@ async function pageReplay(){
       $("#step-diagnostic").textContent="Journal absent : frontières temporelles non vérifiables.";
     }else{
       try{
-        const boundaries=await api("/api/runs/"+encodeURIComponent(state.selected)+"/replay/steps/diagnostic");
+        const boundaries=await api("/api/runs/"+encodeURIComponent(runId)+"/replay/steps/diagnostic");
+        if(!isCurrent(runId))return;
         $("#step-diagnostic").textContent=`Ouverture/fermeture des pas : ${boundaries.recorded_boundaries_valid?"cohérentes":"INCOMPLÈTES OU INVALIDES"} · Pas fermés : ${boundaries.closed_steps.length} · Décès terminal enregistré : ${boundaries.terminal_death_recorded?"oui":"non"} · Audit causal complet : NON · Carte autorisée : NON${boundaries.error?" · "+boundaries.error:""}.`;
-      }catch(e){$("#step-diagnostic").textContent="Diagnostic impossible : "+e.message+" · Carte désactivée."}
+      }catch(e){if(!isCurrent(runId))return;$("#step-diagnostic").textContent="Diagnostic impossible : "+e.message+" · Carte désactivée."}
     }
     if(!hasJournal){
       $("#journal-diagnostic").textContent="Aucun journal causal disponible. Chaîne et intégralité non vérifiées.";
     }else{
       $("#journal-diagnostic").textContent="Vérification cryptographique en cours…";
       try{
-        const audit=await api("/api/runs/"+encodeURIComponent(state.selected)+"/replay/journal/diagnostic");
+        const audit=await api("/api/runs/"+encodeURIComponent(runId)+"/replay/journal/diagnostic");
+        if(!isCurrent(runId))return;
         $("#journal-diagnostic").textContent=`Chaîne SHA-256 : ${audit.chain_valid?"cohérente":"INVALIDE"} · Événements : ${audit.occurrences} · Tête : ${audit.head_hash||"indisponible"} · Intégralité indépendante : ${audit.trusted_tail_verified?"confirmée":"NON"} · Audit causal complet : NON · Carte autorisée : NON${audit.error?" · Erreur : "+audit.error:""}.`;
-      }catch(e){$("#journal-diagnostic").textContent="Vérification impossible : "+e.message+" · Carte désactivée."}
+      }catch(e){if(!isCurrent(runId))return;$("#journal-diagnostic").textContent="Vérification impossible : "+e.message+" · Carte désactivée."}
     }
     const hasFrames=detail.artifacts.some(a=>a.alias==="world_frames");
     if(!hasFrames || !hasJournal){
       $("#frame-alignment").textContent="Alignement indisponible : archive 2D et journal causal requis.";
     }else{
       try{
-        const aligned=await api("/api/runs/"+encodeURIComponent(state.selected)+"/replay/frames/alignment");
+        const aligned=await api("/api/runs/"+encodeURIComponent(runId)+"/replay/frames/alignment");
+        if(!isCurrent(runId))return;
         $("#frame-alignment").textContent=`Frames sur des pas fermés : ${aligned.frame_step_alignment?"oui":"NON"} · Frames examinées : ${aligned.checked_frames} · Vérification indépendante : NON · Carte autorisée : NON${aligned.error?" · "+aligned.error:""}.`;
-      }catch(e){$("#frame-alignment").textContent="Alignement impossible : "+e.message+" · Carte désactivée."}
+      }catch(e){if(!isCurrent(runId))return;$("#frame-alignment").textContent="Alignement impossible : "+e.message+" · Carte désactivée."}
     }
     if(!hasFrames){
       $("#frame-diagnostic").textContent="Aucune archive 2D déclarée. Carte désactivée : géométrie et attestation indépendante absentes.";
     }else{
       $("#frame-diagnostic").textContent="Analyse structurelle en cours…";
       try{
-        const diagnostic=await api("/api/runs/"+encodeURIComponent(state.selected)+"/replay/frames/diagnostic");
+        const diagnostic=await api("/api/runs/"+encodeURIComponent(runId)+"/replay/frames/diagnostic");
+        if(!isCurrent(runId))return;
         const structural=diagnostic.structurally_valid?"Structure valide":"Structure invalide";
         const errors=(diagnostic.errors||[]).join(", ")||"aucune anomalie structurelle détectée";
         $("#frame-diagnostic").textContent=`${structural} · ${diagnostic.frame_count} frames · ${errors}. Vérification indépendante : NON. Carte autorisée : NON.`;
-      }catch(e){$("#frame-diagnostic").textContent="Diagnostic impossible : "+e.message+" · Carte désactivée."}
+      }catch(e){if(!isCurrent(runId))return;$("#frame-diagnostic").textContent="Diagnostic impossible : "+e.message+" · Carte désactivée."}
     }
     if(!sources.length){$("#replay-results").textContent="Aucune source de replay enregistrée.";$("#replay-load").disabled=true;return}
     $("#replay-load").disabled=false;await load();
   };
   const load=async()=>{
+    const requestEpoch=++state.replayRequestEpoch;
+    const runId=state.selected;
+    const source=$("#replay-source").value;
     const step=Number($("#replay-step").value);
-    if(!Number.isSafeInteger(step)||step<0){$("#replay-warning").textContent="Pas invalide.";return}
+    const isActive=()=>isCurrent(runId)&&state.replayRequestEpoch===requestEpoch&&$("#replay-source").value===source&&Number($("#replay-step").value)===step;
+    if(!Number.isSafeInteger(step)||step<0){$("#replay-warning").textContent="Pas invalide.";$("#replay-map").textContent="Carte indisponible : pas invalide.";return}
+    $("#replay-map").textContent="Vérification des données du pas sélectionné…";
+    $("#replay-results").textContent="Chargement des événements…";
     $("#replay-scrubber").value=Math.max(0,Math.min(Number($("#replay-scrubber").max),step));
     try{
-      const data=await api("/api/runs/"+encodeURIComponent(state.selected)+"/replay?"+new URLSearchParams({source:$("#replay-source").value,step:String(step),limit:"100"}));
+      const data=await api("/api/runs/"+encodeURIComponent(runId)+"/replay?"+new URLSearchParams({source:source,step:String(step),limit:"100"}));
+      if(!isActive())return;
       $("#replay-warning").textContent=`Source : ${data.step_semantics}. ${data.matched_count} événements enregistrés, ${data.malformed_records} lignes malformées. ${data.truncated?"Résultat tronqué.":""} Carte visible uniquement si une capture physique locale est vérifiée; aucun état manquant inventé.`;
-      try{
-        const map=await api("/api/runs/"+encodeURIComponent(state.selected)+"/replay/geometry?step="+encodeURIComponent(step));
-        const target=$("#replay-map");
-        renderReplayGeometry(target,map,step);
-      }catch(e){$("#replay-map").textContent="Carte indisponible : "+e.message;}
+      if(source==="journal"){
+        try{
+          const map=await api("/api/runs/"+encodeURIComponent(runId)+"/replay/geometry?step="+encodeURIComponent(step));
+          if(!isActive())return;
+          renderReplayGeometry($("#replay-map"),map,step);
+        }catch(e){if(isActive())$("#replay-map").textContent="Carte indisponible : "+e.message;}
+      }else{
+        $("#replay-map").textContent="Carte indisponible pour les cycles Lab : ils ne correspondent pas aux pas physiques t_monde.";
+      }
       $("#replay-results").innerHTML=data.events.map((e,i)=>`<button class="secondary" data-replay-index="${i}">#${e.line} · ${escapeHTML(e.kind||"Type inconnu")}</button>`).join("")||"<p class='empty'>Aucun événement enregistré à ce pas.</p>";
       $("#replay-raw").textContent="Sélectionnez un événement.";
       document.querySelectorAll("[data-replay-index]").forEach(b=>b.onclick=()=>{$("#replay-raw").textContent=pretty(data.events[Number(b.dataset.replayIndex)].raw)});
-    }catch(e){$("#replay-results").textContent=e.message}
+    }catch(e){if(isActive()){$("#replay-results").textContent=e.message;$("#replay-map").textContent="Carte indisponible : récupération des événements impossible."}}
   };
-  $("#replay-run").onchange=async e=>{state.selected=e.target.value;await loadSources()};
+  $("#replay-run").onchange=async e=>{state.selected=e.target.value;state.replayEpoch++;state.replayRequestEpoch++;$("#view").textContent="Chargement de la nouvelle exécution…";await pageReplay()};
   $("#replay-source").onchange=load;
   $("#replay-load").onclick=load;
   $("#replay-step").onchange=load;

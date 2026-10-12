@@ -488,6 +488,18 @@ class Stage9Runtime(Stage8Runtime):
                     integrity_before=float(captured.body["integrity"]),
                     body_before=dict(captured.body),
                     position_before=(captured.x, captured.y),
+                    # The actual Stage-3 Perception can see creatures on
+                    # I0's cell or adjacent cells, not their hidden damage.
+                    # Visible entities elsewhere in the world do not count.
+                    visible_creature_at_exposure=(
+                        bool(captured.adjacent_creatures)
+                        or any(
+                            entity.entity_type == "creature"
+                            and abs(entity.x - captured.x)
+                                + abs(entity.y - captured.y) <= 1
+                            for entity in captured.visible_entities
+                        )
+                    ),
                     state_before_digest=sha256_hex(canonical_causal_bytes(
                         state_from_capture(
                             capture=captured,
