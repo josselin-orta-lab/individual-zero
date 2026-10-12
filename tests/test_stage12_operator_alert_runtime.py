@@ -184,6 +184,109 @@ class Stage12PersistentOperatorRuntimeTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "forged Stage12 operator alert"):
                 audit_stage12_operator_alerts(forged_early)
 
+    def test_rehashed_missing_diagnostic_is_an_unclosed_real_uc_debit(self):
+        with TemporaryDirectory() as folder:
+            runtime = actual_stage12_runtime(str(Path(folder) / "missing-sample.wal"))
+            for _ in range(3):
+                self.assertEqual(runtime.run_step().execution_status, "applied")
+            entries = [
+                json.loads(row)
+                for row in runtime.journal.canonical_bytes().split(b"\n")
+            ]
+            dropped = False
+            without = []
+            for row in entries:
+                if (not dropped and row["causal_event"]["kind"] ==
+                        "stage12_lived_diagnostics_published"):
+                    dropped = True
+                    continue
+                without.append(row)
+            self.assertTrue(dropped)
+            forged = _rechain(without)
+            self.assertEqual(audit_export_bytes(forged).occurrences, len(without))
+            with self.assertRaisesRegex(ValueError, "unclosed Stage12 diagnostic charge"):
+                audit_stage12_operator_alerts(forged)
+
+    def test_rehashed_missing_refusal_deferral_is_rejected(self):
+        with TemporaryDirectory() as folder:
+            runtime = actual_stage12_runtime(str(Path(folder) / "missing-defer.wal"))
+            original = runtime.compute_budget.charge
+
+            def refuse(*, module, operation, count=1):
+                if operation == "stage12_diagnostic_sample":
+                    return BudgetCharge(
+                        accepted=False, module=module, operation=operation,
+                        requested_uc=1,
+                        consumed_cycle_uc=runtime.compute_budget.consumed_cycle_uc,
+                        consumed_module_uc=runtime.compute_budget.consumed_module_uc(module),
+                        reason="module_envelope",
+                    )
+                return original(module=module, operation=operation, count=count)
+
+            with patch.object(runtime.compute_budget, "charge", side_effect=refuse):
+                self.assertEqual(runtime.run_step().execution_status, "applied")
+            entries = [
+                json.loads(row)
+                for row in runtime.journal.canonical_bytes().split(b"\n")
+            ]
+            removed = False
+            forged_rows = []
+            for row in entries:
+                if (not removed and row["causal_event"]["kind"] ==
+                        "stage12_lived_diagnostics_deferred"):
+                    removed = True
+                    continue
+                forged_rows.append(row)
+            self.assertTrue(removed)
+            forged = _rechain(forged_rows)
+            self.assertEqual(audit_export_bytes(forged).occurrences, len(forged_rows))
+            with self.assertRaisesRegex(ValueError, "unclosed Stage12 diagnostic charge"):
+                audit_stage12_operator_alerts(forged)
+
+    def test_rehashed_undocumented_attribution_cannot_create_operator_alarm(self):
+        with TemporaryDirectory() as folder:
+            runtime = actual_stage12_runtime(str(Path(folder) / "bias.wal"))
+            for _ in range(3):
+                self.assertEqual(runtime.run_step().execution_status, "applied")
+            entries = [
+                json.loads(row)
+                for row in runtime.journal.canonical_bytes().split(b"\n")
+            ]
+            diagnostic = next(
+                row["causal_event"]["data"] for row in entries
+                if row["causal_event"]["kind"] ==
+                "stage12_lived_diagnostics_published"
+            )
+            self.assertIsNone(diagnostic["attribution_bias"])
+            diagnostic["attribution_bias"] = "self_serving_pattern"
+            forged = _rechain(entries)
+            self.assertEqual(audit_export_bytes(forged).occurrences, len(entries))
+            with self.assertRaisesRegex(ValueError, "unverified lived attribution"):
+                audit_stage12_operator_alerts(forged)
+
+    def test_rehashed_delayed_operator_alert_does_not_pass(self):
+        with TemporaryDirectory() as folder:
+            runtime = actual_stage12_runtime(str(Path(folder) / "delayed.wal"))
+            for _ in range(5):
+                self.assertEqual(runtime.run_step().execution_status, "applied")
+            rows = [
+                json.loads(raw)
+                for raw in runtime.journal.canonical_bytes().split(b"\n")
+            ]
+            spot = next(
+                i for i, row in enumerate(rows)
+                if row["causal_event"]["kind"] == "stage12_operator_alert"
+                and row["causal_event"]["data"]["signal"] == "low_context_entropy"
+            )
+            self.assertNotEqual(
+                rows[spot + 1]["causal_event"]["kind"], "stage12_operator_alert",
+            )
+            rows[spot], rows[spot + 1] = rows[spot + 1], rows[spot]
+            forged = _rechain(rows)
+            self.assertEqual(audit_export_bytes(forged).occurrences, len(rows))
+            with self.assertRaisesRegex(ValueError, "missing operator alert"):
+                audit_stage12_operator_alerts(forged)
+
     def test_operator_cli_reports_real_warnings_without_importing_i0(self):
         import subprocess
         import sys
