@@ -31,7 +31,7 @@ jobs:
       - name: Core Stage11 original regression
         env:
           PYTHONPATH: src
-        run: python -m pytest -q tests/test_stage11_autonomous_600_step_probe.py
+        run: python -m pytest -q tests/test_stage11_autonomous_600_step_probe.py tests/test_observer_engine_frame.py tests/test_operator_frame_archive.py tests/test_independent_journal_audit.py tests/test_mortal_forward_only_world.py
 
       - name: Real Core bootstrap API integration (3 cycles, no science)
         env:
