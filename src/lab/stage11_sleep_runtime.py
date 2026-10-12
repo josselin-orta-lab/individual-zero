@@ -84,7 +84,16 @@ class Stage11SleepRuntime(Stage11Runtime, Stage10Runtime):
                 console.before_open_step()
             raise RuntimeError("mortal individual is in an unresolved safety block")
         try:
-            return super().run_step()
+            result = super().run_step()
+            # DC-14 requires immediate campaign termination at a nonlethal
+            # safety block. A second run_step() invocation is not necessary:
+            # there must be no gap where the completed campaign can appear
+            # active despite an already closed zero-advance world attempt.
+            if result.execution_status == "safety_block":
+                console = getattr(substrate, "_operator_control", None)
+                if console is not None and console.mode == "campaign":
+                    console.arreter(reason="campaign_safety_block")
+            return result
         except Exception:
             # Do not mask a confirmed physical death or authorized operator
             # stop with a fake technical halt. Otherwise the state is now
