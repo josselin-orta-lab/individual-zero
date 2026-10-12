@@ -296,7 +296,7 @@ class Stage12PersistentOperatorRuntimeTests(unittest.TestCase):
                 self.assertEqual(runtime.run_step().execution_status, "applied")
             records = [
                 json.loads(line)
-                for line in runtime.journal.canonical_bytes().split(b"\\n")
+                for line in runtime.journal.canonical_bytes().split(b"\n")
             ]
             diagnostic_index = next(
                 i for i, row in enumerate(records)
