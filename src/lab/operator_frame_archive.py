@@ -119,7 +119,10 @@ class OperatorFrameArchive:
                     or type(receipt.get("journal_head_sha256")) is not str
                     or len(receipt["journal_head_sha256"]) != 64
                     or any(c not in "0123456789abcdef" for c in receipt["journal_head_sha256"])
-                    or type(receipt.get("journal_closure_hash", "")) is not str):
+                    or ("journal_closure_hash" in receipt and (
+                        type(receipt["journal_closure_hash"]) is not str
+                        or len(receipt["journal_closure_hash"]) != 64
+                        or any(c not in "0123456789abcdef" for c in receipt["journal_closure_hash"]))):
                 raise ValueError("invalid operator receipt")
         steps = [r["frame"]["t_monde"] for r in receipts]
         if any(type(step) is not int or step < 1 for step in steps):
