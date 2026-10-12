@@ -543,7 +543,7 @@ class ScriptedStage2Runtime:
             raise RuntimeError("operator capture requires a durable journal WAL")
         if self.scheduler.active_attempt is not None:
             raise RuntimeError("cannot capture an open world step")
-        entries = self.journal.entries()
+        entries = self.journal.entries
         if not entries:
             raise RuntimeError("no journaled closure")
         closure = entries[-1]
