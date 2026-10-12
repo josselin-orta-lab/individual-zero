@@ -29,6 +29,7 @@ from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request, Respo
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, StrictInt
 from .frame_validation import validate_frames
+from .journal_preflight import check_chain
 
 WEB = Path(__file__).parent / "web"
 RUN_ID = re.compile(r"r-[0-9a-f]{32}\Z")
@@ -515,6 +516,19 @@ class Observer:
                 "physical_truth_verified": False, "scientific_validation": None,
                 "warning": "Historical recorded events only; no world reconstruction or inferred positions."}
 
+    def journal_diagnostic(self, rid: str) -> dict[str, Any]:
+        """Check canonical chain bytes; never take trust anchors from imports."""
+        directory, name = self.file(rid, "journal")
+        with open_regular(directory, name) as stream:
+            raw = stream.read(32 * 1024 * 1024 + 2)
+        with tempfile.TemporaryDirectory(prefix="observer-journal-") as tmp:
+            destination = Path(tmp) / "journal"
+            destination.write_bytes(raw)
+            result = check_chain(destination)
+        return {"source": "journal", **result,
+                "reference_origin": "none_independently_trusted",
+                "warning": "Self-contained hash chain does not prove complete history, committed steps or physical truth."}
+
     def frame_diagnostic(self, rid: str) -> dict[str, Any]:
         """Inspect declared imported frame bytes; never trust self-attestation."""
         directory, name = self.file(rid, "world_frames")
@@ -699,6 +713,10 @@ def create_app(*, core_root: Path | None = None, run_root: Path | None = None, a
     @app.get("/api/runs/{rid}/replay", dependencies=[Depends(authenticated)])
     def replay(rid: str, source: str = "journal", step: int = Query(ge=0), limit: int = Query(default=100, ge=1, le=200)):
         return observer.replay(rid, source=source, step=step, limit=limit)
+
+    @app.get("/api/runs/{rid}/replay/journal/diagnostic", dependencies=[Depends(authenticated)])
+    def journal_diagnostic(rid: str):
+        return observer.journal_diagnostic(rid)
 
     @app.get("/api/runs/{rid}/replay/frames/diagnostic", dependencies=[Depends(authenticated)])
     def frame_diagnostic(rid: str):
