@@ -36,6 +36,7 @@ def test_matching_external_anchors_still_not_physical_truth(tmp_path):
     result = check_custody(frames, journal, trusted_frame_sha256=hashlib.sha256(frames.read_bytes()).hexdigest(),
                           trusted_journal_head=head, trusted_journal_count=2)
     assert result["operator_anchor_match"] is True
+    assert result["anchor_provenance_verified"] is False
     assert result["frame_claims_match"] is True
     assert result["recorded_step_alignment"] is True
     assert result["physical_truth_verified"] is False
