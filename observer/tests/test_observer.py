@@ -35,7 +35,7 @@ print('bootstrap fixture executed')
 ''')
     (core / "src/lab/stage11_autonomous_600_step_probe.py").write_text('''
 import argparse,json,time
-p=argparse.ArgumentParser();p.add_argument('--steps',type=int);a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--steps',type=int);p.add_argument('--observer-export-dir');a=p.parse_args()
 time.sleep(1.0)
 print('stage11_autonomous_600_step='+json.dumps({'steps_physically_executed':a.steps,'classification':'fixture_only'}))
 ''')
