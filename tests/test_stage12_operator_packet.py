@@ -44,6 +44,15 @@ class Stage12OperatorPacketTests(unittest.TestCase):
             packet = json.loads(run.stdout)
             self.assertEqual(packet["schema"], "stage12-operator-evidence-packet-v1")
             self.assertTrue(packet["trusted_tail_anchors_provided"])
+            self.assertEqual(
+                packet["technical_validation"],
+                "export_consistency_verified_only",
+            )
+            self.assertTrue(packet["coverage"]["every_physical_action_diagnosed"])
+            self.assertTrue(
+                packet["coverage"]["s_t_occupancy_observed_on_every_action"]
+            )
+            self.assertFalse(packet["coverage"]["lived_attribution_bias_validated"])
             self.assertEqual(packet["journal"]["world_steps_closed"], 4)
             self.assertEqual(packet["diagnostics"]["diagnostic_samples"], 4)
             self.assertEqual(packet["persistent_operator_alerts"]["examined_samples"], 4)

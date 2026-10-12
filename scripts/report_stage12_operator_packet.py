@@ -39,6 +39,7 @@ def evaluate_packet(
     alerts = audit_stage12_operator_alerts(content, **anchors)
     alignment = evaluate_goal_action_alignment(content, **anchors)
     counts = alignment.as_dict()["counts"]
+    actual_physical_actions = len(alignment.actions)
 
     if (diagnostics.world_steps_closed != journal.world_steps_closed
             or diagnostics.head_hash != journal.head_hash
@@ -46,13 +47,16 @@ def evaluate_packet(
             or alerts.head_hash != journal.head_hash
             or alignment.journal_head != journal.head_hash
             or alerts.examined_samples != diagnostics.diagnostic_samples
-            or alignment.as_dict()["executed_physical_actions"] >
-                journal.world_steps_closed):
+            or actual_physical_actions > journal.world_steps_closed):
         raise ValueError("cross-auditor Stage12 evidence mismatch")
 
-    if (expected_world_steps is not None
-            and journal.world_steps_closed != expected_world_steps):
-        raise ValueError("real executed physical-step count does not meet expectation")
+    if expected_world_steps is not None:
+        if (journal.world_steps_closed != expected_world_steps
+                or actual_physical_actions != expected_world_steps):
+            raise ValueError("expected real physical commands are not all executed")
+        if (diagnostics.diagnostic_samples != expected_world_steps
+                or occupancy.evaluated_cycles < expected_world_steps):
+            raise ValueError("Stage12 diagnostic/occupancy coverage is incomplete")
 
     terminal_stop = False
     if require_terminal_stop:
@@ -63,7 +67,7 @@ def evaluate_packet(
 
     return {
         "schema": "stage12-operator-evidence-packet-v1",
-        "technical_validation": "passed",
+        "technical_validation": "export_consistency_verified_only",
         "trusted_tail_anchors_provided": True,
         "operator_stage_accepted": False,
         "final_scientific_validation": "not_performed",
@@ -74,9 +78,26 @@ def evaluate_packet(
         "persistent_operator_alerts": alerts.as_dict(),
         "goal_action_alignment": {
             "schema": "stage12-external-goal-action-alignment-v1",
-            "executed_physical_actions": len(alignment.actions),
+            "executed_physical_actions": actual_physical_actions,
             "counts": counts,
             "untraceable_is_not_irrational": True,
+        },
+        "coverage": {
+            "physically_executed_actions": actual_physical_actions,
+            "closed_world_steps": journal.world_steps_closed,
+            "paid_lived_diagnostics": diagnostics.diagnostic_samples,
+            "deferred_lived_diagnostics": diagnostics.deferred_samples,
+            "evaluated_s_t_occupancy_cycles": occupancy.evaluated_cycles,
+            "deferred_s_t_occupancy_cycles": occupancy.deferred_cycles,
+            "every_physical_action_diagnosed": (
+                diagnostics.diagnostic_samples == actual_physical_actions
+                and actual_physical_actions > 0
+            ),
+            "s_t_occupancy_observed_on_every_action": (
+                occupancy.evaluated_cycles >= actual_physical_actions
+                and actual_physical_actions > 0
+            ),
+            "lived_attribution_bias_validated": False,
         },
         "checks": {
             "expected_world_steps": expected_world_steps,
