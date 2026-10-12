@@ -514,6 +514,16 @@ class Observer:
                 "physical_truth_verified": False, "scientific_validation": None,
                 "warning": "Historical recorded events only; no world reconstruction or inferred positions."}
 
+    def replay_geometry(self, rid: str, *, step: int) -> dict[str, Any]:
+        """Display only independently supplied exact geometry, never inferred positions."""
+        result = {"step": step, "available": False, "geometry": None,
+                  "verified": False, "reason": "no independently verified geometry contract"}
+        # Neither journal observations nor Stage 11 summaries are authoritative
+        # world-state anchors. Require a separate future versioned export
+        # contract and chain/step-boundary verification before drawing a map.
+        self.detail(rid)  # Reject unknown run IDs without opening arbitrary paths.
+        return result
+
     def verify_bytes(self, rid: str, alias: str) -> dict[str, Any]:
         directory, name = self.file(rid, alias)
         computed = hash_file(directory, name)
@@ -672,6 +682,10 @@ def create_app(*, core_root: Path | None = None, run_root: Path | None = None, a
     @app.get("/api/runs/{rid}/replay", dependencies=[Depends(authenticated)])
     def replay(rid: str, source: str = "journal", step: int = Query(ge=0), limit: int = Query(default=100, ge=1, le=200)):
         return observer.replay(rid, source=source, step=step, limit=limit)
+
+    @app.get("/api/runs/{rid}/replay/geometry", dependencies=[Depends(authenticated)])
+    def replay_geometry(rid: str, step: int = Query(ge=0)):
+        return observer.replay_geometry(rid, step=step)
 
     @app.get("/api/runs/{rid}/integrity/{alias}", dependencies=[Depends(authenticated)])
     def integrity(rid: str, alias: str):
