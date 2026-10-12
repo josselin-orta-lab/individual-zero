@@ -9,12 +9,37 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
-from math import isclose
-from typing import Mapping
+from math import isclose, isfinite, log
 
-from i0.config import MVP_PHASE1_PRODUCER_ORDER
-from i0.modules.stage12_occupancy import module_occupancy_entropy
 from .independent_journal_audit import audit_export_bytes
+
+# Independent v1 contract, deliberately NOT imported from the I0 package.
+# Any future producer-order revision requires explicit auditor versioning.
+_REFERENCE_PRODUCERS = (
+    "perception", "value_needs", "memory", "goal_manager",
+    "causal_model", "exploration", "planning", "metacognition_health",
+)
+
+
+def _independent_entropy(counts: dict[str, int], threshold: float) -> dict:
+    if (type(threshold) not in (int, float) or not isfinite(threshold)
+            or threshold < 0.0 or threshold > 1.0):
+        raise ValueError("invalid independent occupancy threshold")
+    total = sum(counts.values())
+    if total == 0:
+        return {
+            "status": "unavailable_empty_st", "low_entropy": None,
+            "normalized_entropy": None, "distinct_modules": 0,
+        }
+    entropy = -sum(
+        (n / total) * log(n / total) for n in counts.values() if n
+    ) / log(len(_REFERENCE_PRODUCERS))
+    entropy = min(1.0, max(0.0, entropy))
+    return {
+        "status": "evaluated", "low_entropy": entropy <= threshold,
+        "normalized_entropy": entropy,
+        "distinct_modules": sum(n > 0 for n in counts.values()),
+    }
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,7 +77,7 @@ def audit_stage12_occupancy(
     base = audit_export_bytes(
         content, expected_head=expected_head, expected_count=expected_count,
     )
-    producers = tuple(MVP_PHASE1_PRODUCER_ORDER)
+    producers = _REFERENCE_PRODUCERS
     emitter_by_ref: dict[str, str] = {}
     st: dict[tuple[int, str, int], tuple[int, str, dict[str, int], int]] = {}
     charges: dict[tuple[int, str, int], list[tuple[int, dict]]] = {}
@@ -160,19 +185,16 @@ def audit_stage12_occupancy(
             warning = data.get("warning_fraction")
             if type(warning) not in (int, float):
                 raise ValueError("invalid occupancy threshold")
-            reference = module_occupancy_entropy(
-                source_counts, warning_fraction=warning,
-                module_universe_size=len(producers),
-            )
-            if (data.get("status") != reference.status
-                    or data.get("low_entropy") is not reference.low_entropy
+            reference = _independent_entropy(source_counts, warning)
+            if (data.get("status") != reference["status"]
+                    or data.get("low_entropy") is not reference["low_entropy"]
                     or type(data.get("occupied_slots")) is not int
                     or data["occupied_slots"] != source_count
                     or type(data.get("distinct_modules")) is not int
-                    or data["distinct_modules"] != reference.distinct_modules):
+                    or data["distinct_modules"] != reference["distinct_modules"]):
                 raise ValueError("forged S_t occupancy classification")
             received = data.get("normalized_entropy")
-            expected = reference.normalized_entropy
+            expected = reference["normalized_entropy"]
             if ((expected is None and received is not None)
                     or (expected is not None and (
                         type(received) not in (float, int)
@@ -189,7 +211,7 @@ def audit_stage12_occupancy(
                 raise ValueError("occupancy UC cost changed within a life")
             evaluated += 1
             charged_uc += debit["requested_uc"]
-            if reference.status == "unavailable_empty_st":
+            if reference["status"] == "unavailable_empty_st":
                 empty_st += 1
         else:
             if (kind != "stage12_st_occupancy_deferred"
