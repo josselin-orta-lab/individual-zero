@@ -15,6 +15,7 @@ import sys
 from lab.independent_journal_audit import audit_export_bytes
 from lab.stage12_alignment import evaluate_goal_action_alignment
 from lab.stage12_diagnostic_audit import audit_stage12_diagnostics
+from lab.stage12_goal_progress_audit import audit_stage12_goal_progress
 from lab.stage12_occupancy_audit import audit_stage12_occupancy
 from lab.stage12_operator_alert_audit import audit_stage12_operator_alerts
 from lab.stage12_operator_control_audit import audit_stage12_operator_control
@@ -36,6 +37,7 @@ def evaluate_packet(
     }
     journal = audit_export_bytes(content, **anchors)
     diagnostics = audit_stage12_diagnostics(content, **anchors)
+    goal_progress = audit_stage12_goal_progress(content, **anchors)
     occupancy = audit_stage12_occupancy(content, **anchors)
     alerts = audit_stage12_operator_alerts(content, **anchors)
     operator_control = audit_stage12_operator_control(content, **anchors)
@@ -59,6 +61,7 @@ def evaluate_packet(
     if (diagnostics.world_steps_closed != journal.world_steps_closed
             or diagnostics.head_hash != journal.head_hash
             or occupancy.head_hash != journal.head_hash
+            or goal_progress.head_hash != journal.head_hash
             or alerts.head_hash != journal.head_hash
             or operator_control.head_hash != journal.head_hash
             or alignment.journal_head != journal.head_hash
@@ -87,6 +90,7 @@ def evaluate_packet(
         "physical_truth_independently_verified": False,
         "journal": journal.as_dict(),
         "diagnostics": diagnostics.as_dict(),
+        "lived_goal_progress": goal_progress.as_dict(),
         "st_module_occupancy": occupancy.as_dict(),
         "persistent_operator_alerts": alerts.as_dict(),
         "external_operator_control": operator_control.as_dict(),
@@ -127,6 +131,10 @@ def evaluate_packet(
             "physical_action_steps_with_paid_diagnostic": len(covered_diagnostic_steps),
             "physical_action_steps_with_s_t_measurement": len(covered_occupancy_steps),
             "distinct_steps_with_diagnostic": len(diagnostic_steps),
+            "one_step_goal_progress_successes": goal_progress.verified_strict_gains,
+            "one_step_goal_progress_failures": goal_progress.verified_no_gains,
+            "one_step_goal_progress_unavailable": goal_progress.unavailable,
+            "precommitted_goal_progress_criteria": goal_progress.preregistered,
             "distinct_steps_with_s_t_measurement": len(occupancy_steps),
             "every_physical_action_diagnosed": (
                 action_steps <= diagnostic_steps and bool(action_steps)
@@ -146,6 +154,7 @@ def evaluate_packet(
         "open_gates": [
             "M-11 current physical+cognitive atomic crash recovery NOT certified",
             "Stage12 lived outcome/agency attribution pairing NOT independently verified",
+            "One-step goal progress is not whole-goal satisfaction or proof of action causation",
             "Stage12 operator sign-off NOT given",
             "Final scientific module validation NOT performed",
         ],
