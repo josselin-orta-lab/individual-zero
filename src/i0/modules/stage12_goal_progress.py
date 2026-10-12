@@ -19,9 +19,13 @@ CONTRACT_VERSION = "stage12-lived-goal-progress-one-step-v1"
 
 
 def _measurement(value: object) -> float | None:
-    if type(value) not in (int, float) or not isfinite(value) or value < 0:
+    if type(value) not in (int, float):
         return None
-    return float(value)
+    try:
+        number = float(value)
+    except (OverflowError, ValueError):
+        return None
+    return number if isfinite(number) and number >= 0 else None
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +42,7 @@ class LivedGoalProgressIntent:
 
     def validate(self) -> None:
         if (self.contract_version != CONTRACT_VERSION
+                or type(self.measure) is not str
                 or self.measure not in ALLOWED_MEASURES
                 or type(self.sent_world_step) is not int
                 or self.sent_world_step < 1
