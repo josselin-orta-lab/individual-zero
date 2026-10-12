@@ -272,6 +272,21 @@ os._exit(72)
                 )
                 self.assertEqual(final.status, "technical_halt")
                 self.assertTrue(final.pending_intent)
+                with sqlite3.connect(path) as raw:
+                    stored = raw.execute(
+                        "SELECT status, state_bytes, state_hash "
+                        "FROM life_current WHERE slot=1",
+                    ).fetchone()
+                self.assertEqual(stored[0], "technical_halt")
+                self.assertEqual(sha256_hex(stored[1]), stored[2])
+                archived = json.loads(stored[1])
+                self.assertEqual(archived["lifecycle"], "technical_halt")
+                original = capture(build_stage4_reference_runtime(
+                    autonomous_mortal=True,
+                ))
+                serialized = json.loads(canonical_causal_bytes(original))
+                for key in ("world", "scheduler", "owners", "journal"):
+                    self.assertEqual(archived[key], serialized[key])
 
     def test_strict_sqlite_current_image_rejects_rehashed_false_anchor(self):
         runtime = build_stage4_reference_runtime(autonomous_mortal=True)
