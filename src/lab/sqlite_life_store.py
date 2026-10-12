@@ -41,6 +41,7 @@ class LifeReceipt:
     journal_head: str
     state_hash: str
     pending_intent: bool
+    registered_roster_hash: str | None = None
 
     @property
     def may_recover(self) -> bool:
@@ -333,7 +334,11 @@ class SQLiteLifeLedger:
             or intent[1] != generation + 1 or not intent[2]
         ):
             raise RecoveryBlocked("invalid durable pending intent fence")
-        return LifeReceipt(identity, generation, status, count, head, digest, intent is not None)
+        return LifeReceipt(
+            identity, generation, status, count, head, digest,
+            intent is not None,
+            registered_roster_hash=(metadata[0] if metadata is not None else None),
+        )
 
     def recover_current_bytes(self, *, expected_individual_id: str) -> bytes:
         """Only latest committed nonterminal bytes, never a selectable snapshot.
