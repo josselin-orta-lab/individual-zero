@@ -44,4 +44,5 @@ jobs:
           python -m pytest -q \
             tests/test_m11_real_transactional_runtime.py \
             tests/test_m11_coordinated_crash_matrix.py \
-            tests/test_m11_operator_trial_cli.py
+            tests/test_m11_operator_trial_cli.py \
+            tests/test_m11_stage12_compatibility.py
