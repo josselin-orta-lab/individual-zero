@@ -45,8 +45,8 @@ def compare_frames_to_journal(frames_path: Path, journal_path: Path) -> dict:
                 event = json.loads(line)["causal_event"]
                 if event.get("kind") == "step_closed":
                     closed_attempts[event["t_monde"]] = event["attempt_ref"]
-            expected_attempt = data["identity"]["attempt_ref"]
-            if any(closed_attempts.get(step) != expected_attempt for step in requested):
+            if any(closed_attempts.get(frame["t_monde"]) != frame["attempt_ref"]
+                   for frame in data["frames"]):
                 result["error"] = "frame_attempt_mismatch"
             else:
                 result["frame_step_alignment"] = True
