@@ -771,7 +771,6 @@ def create_app(*, core_root: Path | None = None, run_root: Path | None = None, a
     @app.post("/api/runs/{rid}/replay/frames/custody", dependencies=[Depends(authenticated)])
     def frame_custody_diagnostic(rid: str, request: Request,
                                  anchors: dict[str, Any] = Body(...)):
-        require_same_origin(request)
         if set(anchors) != {"trusted_frame_sha256", "trusted_journal_head", "trusted_journal_count"}:
             raise HTTPException(422, "explicit operator anchor fields required")
         return observer.frame_custody_diagnostic(
