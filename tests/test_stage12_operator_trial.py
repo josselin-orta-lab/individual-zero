@@ -114,11 +114,67 @@ class RetainedStage12TrialTests(unittest.TestCase):
             self.assertRegex(first, r"^[0-9a-f]{64}$")
             source.write_text("VERSION = 2\n", encoding="utf-8")
             second, count = runner._tracked_source_fingerprint(repo)
-            self.assertEqual(count, 1)
-            self.assertNotEqual(second, first)
+            self.assertIsNone(second)
+            self.assertEqual(count, 0)
             source.unlink()
             missing, count = runner._tracked_source_fingerprint(repo)
             self.assertIsNone(missing)
+            self.assertEqual(count, 0)
+
+    def test_git_assume_unchanged_cannot_hide_modified_tracked_bytes(self):
+        runner = self._runner_module()
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            subprocess.run(["git", "-C", str(repo), "init", "-q"],
+                           check=True, capture_output=True)
+            path = repo / "tracked.py"
+            path.write_text("VERSION = 1\n", encoding="utf-8")
+            subprocess.run(["git", "-C", str(repo), "add", "tracked.py"],
+                           check=True, capture_output=True)
+            initial, count = runner._tracked_source_fingerprint(repo)
+            self.assertEqual(count, 1)
+            self.assertIsNotNone(initial)
+            # Git status can conceal a changed file after assume-unchanged.
+            subprocess.run(
+                ["git", "-C", str(repo), "update-index", "--assume-unchanged",
+                 "tracked.py"], check=True, capture_output=True,
+            )
+            path.write_text("VERSION = 2\n", encoding="utf-8")
+            reported = subprocess.run(
+                ["git", "-C", str(repo), "status", "--porcelain",
+                 "--untracked-files=no"],
+                check=True, capture_output=True, text=True,
+            )
+            self.assertEqual(reported.stdout.strip(), "")
+            digest, count = runner._tracked_source_fingerprint(repo)
+            self.assertIsNone(digest)
+            self.assertEqual(count, 0)
+
+    def test_git_ignored_executable_mode_cannot_hide_checkout_drift(self):
+        runner = self._runner_module()
+        with TemporaryDirectory() as folder:
+            repo = Path(folder)
+            subprocess.run(["git", "-C", str(repo), "init", "-q"],
+                           check=True, capture_output=True)
+            source = repo / "tracked.py"
+            source.write_text("VERSION = 1\n", encoding="utf-8")
+            source.chmod(0o644)
+            subprocess.run(["git", "-C", str(repo), "add", "tracked.py"],
+                           check=True, capture_output=True)
+            original, count = runner._tracked_source_fingerprint(repo)
+            self.assertEqual(count, 1)
+            self.assertIsNotNone(original)
+            subprocess.run(["git", "-C", str(repo), "config", "core.filemode",
+                            "false"], check=True, capture_output=True)
+            source.chmod(0o755)
+            reported = subprocess.run(
+                ["git", "-C", str(repo), "status", "--porcelain",
+                 "--untracked-files=no"],
+                check=True, capture_output=True, text=True,
+            )
+            self.assertEqual(reported.stdout.strip(), "")
+            digest, count = runner._tracked_source_fingerprint(repo)
+            self.assertIsNone(digest)
             self.assertEqual(count, 0)
 
     def test_dirty_or_unknown_provenance_is_refused_before_birth(self):

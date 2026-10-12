@@ -11,7 +11,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 from dataclasses import replace
-from hashlib import sha256
+from hashlib import sha1, sha256
 import json
 import os
 import platform
@@ -113,39 +113,71 @@ def _build_trial(*, wal_path: str, steps: int) -> Stage12Runtime:
 
 
 def _tracked_source_fingerprint(repo: Path) -> tuple[str | None, int]:
-    """Digest tracked checkout *bytes*, paths and modes, not just Git HEAD.
+    """Verify each Git-index blob/mode against the *actual* checkout bytes.
 
-    A dirty-but-stable source tree must not masquerade as its original
-    commit. Git reports only file membership; Python hashes every tracked
-    regular file. Missing, symlinked or unreadable tracked paths fail closed.
+    Status --porcelain can hide dirty bytes behind assume-unchanged or
+    skip-worktree flags, or ignore executable-bit drift if core.filemode=false.
+    An independent SHA-256 tree digest is useful only after every Git-index
+    tracked blob and executable mode has also been verified. Reject symlinks,
+    submodule gitlinks, unmerged stages and unreadable/incomplete checkouts.
     """
     files = subprocess.run(
-        ["git", "-C", str(repo), "ls-files", "--cached", "-z"],
+        ["git", "-C", str(repo), "ls-files", "--cached", "--stage", "-z"],
         capture_output=True, check=False, timeout=30,
     )
-    if files.returncode != 0 or not files.stdout:
+    fmt = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "--show-object-format"],
+        capture_output=True, check=False, timeout=5,
+    )
+    if files.returncode != 0 or not files.stdout or fmt.returncode != 0:
+        return None, 0
+    object_format = fmt.stdout.strip()
+    if object_format not in (b"sha1", b"sha256"):
         return None, 0
     result = sha256()
     count = 0
-    for raw in files.stdout.split(b"\x00"):
-        if not raw:
+    for record in files.stdout.split(b"\x00"):
+        if not record:
             continue
-        path = Path(os.fsdecode(raw))
-        if path.is_absolute() or ".." in path.parts:
+        metadata, tab, raw = record.partition(b"\t")
+        fields = metadata.split(b" ")
+        if not tab or len(fields) != 3 or fields[2] != b"0":
             return None, 0
-        local = repo / path
-        if local.is_symlink() or not local.is_file():
+        index_mode, expected_hash = fields[:2]
+        if index_mode not in (b"100644", b"100755"):
             return None, 0
-        file_hash = sha256()
-        with local.open("rb") as stream:
-            while True:
-                chunk = stream.read(1024 * 1024)
-                if not chunk:
-                    break
-                file_hash.update(chunk)
+        if len(expected_hash) != (40 if object_format == b"sha1" else 64):
+            return None, 0
+        try:
+            path = Path(os.fsdecode(raw))
+            if path.is_absolute() or ".." in path.parts:
+                return None, 0
+            local = repo / path
+            if local.is_symlink() or not local.is_file():
+                return None, 0
+            stat = local.stat()
+            actual_mode = b"100755" if stat.st_mode & 0o111 else b"100644"
+            if actual_mode != index_mode:
+                return None, 0
+            git_blob = sha1() if object_format == b"sha1" else sha256()
+            git_blob.update(b"blob " + str(stat.st_size).encode("ascii") + b"\x00")
+            file_hash = sha256()
+            bytes_read = 0
+            with local.open("rb") as stream:
+                while True:
+                    chunk = stream.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    bytes_read += len(chunk)
+                    git_blob.update(chunk)
+                    file_hash.update(chunk)
+            if bytes_read != stat.st_size or git_blob.hexdigest().encode("ascii") != expected_hash:
+                return None, 0
+        except (OSError, UnicodeError, ValueError):
+            return None, 0
         result.update(len(raw).to_bytes(8, "big"))
         result.update(raw)
-        result.update((local.stat().st_mode & 0o777).to_bytes(2, "big"))
+        result.update(index_mode)
         result.update(file_hash.digest())
         count += 1
     return (result.hexdigest(), count) if count else (None, 0)
