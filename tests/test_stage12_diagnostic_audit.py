@@ -50,7 +50,19 @@ class Stage12IndependentDiagnosticAuditTests(unittest.TestCase):
                 self.assertEqual(runtime.run_step().execution_status, "applied")
             report = audit_stage12_diagnostics(runtime.journal.canonical_bytes())
             self.assertEqual(report.diagnostic_samples, 0)
-            self.assertEqual(report.deferred_samples, 1)
+            # A rejected optional Stage12 sample may be retried in distinct
+            # charged cognitive cycles of the *same* physical world step.
+            # Each refused attempt must have one independently attested
+            # deferral; no fabricated physical observation is counted.
+            refused = [
+                e for e in runtime.journal.entries
+                if e.causal_event.get("kind") == "stage12_lived_diagnostics_deferred"
+            ]
+            self.assertGreaterEqual(len(refused), 1)
+            self.assertEqual(report.deferred_samples, len(refused))
+            self.assertTrue(all(
+                e.causal_event["t_monde"] == 1 for e in refused
+            ))
             self.assertEqual(report.charged_uc, 0)
 
     def test_untrusted_content_and_head_fail_closed(self):
