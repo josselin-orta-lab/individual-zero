@@ -83,6 +83,7 @@ class HashChainedJournal:
         # independent auditor's checks on potentially forged export bytes.
         self._pending_death_closure: tuple[int, str] | None = None
         self._death_sealed = False
+        self._operator_sealed = False
 
     def enable_durable_wal(self, *, path: str) -> None:
         """Birth-only append-before-ack fsync journal, never life restoration.
@@ -191,6 +192,8 @@ class HashChainedJournal:
             raise ValueError("duplicate technical journal event_id")
         if self._death_sealed:
             raise RuntimeError("terminal journal is sealed after death")
+        if self._operator_sealed:
+            raise RuntimeError("journal is sealed after experiment stop")
         # A malformed physical closure is not an opportunity to inject a new
         # cognitive event between death and final technical step closure.
         kind = causal_event.get("kind")
@@ -207,6 +210,15 @@ class HashChainedJournal:
                 and closure.get("world_advance_count") == 1
             ):
                 raise RuntimeError("terminal death requires its unique technical closure")
+        elif kind == "experiment_stopped":
+            data = causal_event.get("data")
+            if (causal_event.get("emitter") != "operator_console"
+                    or type(causal_event.get("t_monde")) is not int
+                    or causal_event["t_monde"] < 0
+                    or not isinstance(data, Mapping)
+                    or data.get("physical_death") is not False
+                    or data.get("world_rewound") is not False):
+                raise ValueError("invalid operator terminal stop")
         elif kind == "individual_death_confirmed":
             if (
                 type(causal_event.get("t_monde")) is not int
@@ -260,6 +272,8 @@ class HashChainedJournal:
         elif pending is not None:
             self._pending_death_closure = None
             self._death_sealed = True
+        elif kind == "experiment_stopped":
+            self._operator_sealed = True
         return entry
 
     def canonical_bytes(self) -> bytes:
