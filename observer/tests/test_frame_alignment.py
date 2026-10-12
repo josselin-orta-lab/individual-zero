@@ -70,3 +70,26 @@ def test_missing_closed_frame_is_rejected(tmp_path):
     result = compare_frames_to_journal(frames, journal)
     assert result["frame_step_alignment"] is False
     assert result["error"] == "empty_frame_sequence"
+
+
+def test_archive_omitting_second_closed_step_is_rejected(tmp_path):
+    frames, journal = make_files(tmp_path)
+    lines = journal.read_bytes().split(b"\n")
+    previous = json.loads(lines[-1])["event_hash"]
+    events = [
+        {"kind": "step_opened", "t_monde": 2, "attempt_ref": "b"},
+        {"kind": "step_closed", "t_monde": 2, "attempt_ref": "b"},
+    ]
+    for index, event in enumerate(events, start=len(lines)):
+        eid = f"e{index}"
+        payload = json.dumps({"event_id": eid, "causal_event": event},
+                             sort_keys=True, separators=(",", ":")).encode()
+        digest = hashlib.sha256(bytes.fromhex(previous) + payload).hexdigest()
+        row = {"index": index, "event_id": eid, "previous_hash": previous,
+               "event_hash": digest, "causal_event": event}
+        lines.append(json.dumps(row, sort_keys=True, separators=(",", ":")).encode())
+        previous = digest
+    journal.write_bytes(b"\n".join(lines))
+    result = compare_frames_to_journal(frames, journal)
+    assert result["frame_step_alignment"] is False
+    assert result["error"] == "missing_closed_frame"
