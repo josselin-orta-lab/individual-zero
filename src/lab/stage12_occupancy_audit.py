@@ -68,6 +68,9 @@ class Stage12OccupancyAudit:
     deferred_cycles: int
     charged_uc: int
     empty_st_cycles: int
+    low_entropy_positive_cycles: int
+    low_entropy_negative_cycles: int
+    low_entropy_unavailable_cycles: int
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -78,6 +81,9 @@ class Stage12OccupancyAudit:
             "deferred_cycles": self.deferred_cycles,
             "charged_uc": self.charged_uc,
             "empty_st_cycles": self.empty_st_cycles,
+            "low_entropy_positive_cycles": self.low_entropy_positive_cycles,
+            "low_entropy_negative_cycles": self.low_entropy_negative_cycles,
+            "low_entropy_unavailable_cycles": self.low_entropy_unavailable_cycles,
             "provenance": "admitted_bus_to_retained_st_to_charged_receipt",
             "oracle_truth_verified": False,
         }
@@ -183,6 +189,7 @@ def audit_stage12_occupancy(
     if set(charges) != set(receipts):
         raise ValueError("missing Stage12 occupancy debit or result")
     evaluated = deferred = charged_uc = empty_st = 0
+    low_positive = low_negative = low_unavailable = 0
     fixed_cost: int | None = None
     fixed_threshold: float | None = None
     for key, rows in charges.items():
@@ -243,6 +250,11 @@ def audit_stage12_occupancy(
             charged_uc += debit["requested_uc"]
             if reference["status"] == "unavailable_empty_st":
                 empty_st += 1
+                low_unavailable += 1
+            elif reference["low_entropy"] is True:
+                low_positive += 1
+            elif reference["low_entropy"] is False:
+                low_negative += 1
         else:
             if (kind != "stage12_st_occupancy_deferred"
                     or data.get("policy_version") != "stage12-st-module-occupancy-v1"
@@ -252,8 +264,14 @@ def audit_stage12_occupancy(
                     or debit["reason"] != data.get("reason")):
                 raise ValueError("refused occupancy charge lacks exact deferral")
             deferred += 1
+            low_unavailable += 1
+    if low_positive + low_negative + low_unavailable != evaluated + deferred:
+        raise ValueError("module occupancy evidence accounting mismatch")
     return Stage12OccupancyAudit(
         head_hash=base.head_hash, occurrences=base.occurrences,
         evaluated_cycles=evaluated, deferred_cycles=deferred,
         charged_uc=charged_uc, empty_st_cycles=empty_st,
+        low_entropy_positive_cycles=low_positive,
+        low_entropy_negative_cycles=low_negative,
+        low_entropy_unavailable_cycles=low_unavailable,
     )
