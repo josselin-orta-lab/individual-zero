@@ -20,11 +20,27 @@ _MEASURES = frozenset({"water", "food", "energy", "integrity"})
 
 
 def _number(value: object) -> float | None:
-    if type(value) not in (int, float):
-        return None
-    try:
-        number = float(value)
-    except (OverflowError, ValueError):
+    """Read a number from exact canonical causal JSON, including $f64 hex.
+
+    The runtime stores floats as {"$f64":"0x...p+..."}; json.loads
+    deliberately does NOT decode that into Python floats. Reject malformed
+    tags, noncanonical hex spellings, booleans and nonfinite values.
+    """
+    if type(value) is dict:
+        if set(value) != {"$f64"} or type(value["$f64"]) is not str:
+            return None
+        try:
+            number = float.fromhex(value["$f64"])
+        except (OverflowError, ValueError):
+            return None
+        if number.hex().lower() != value["$f64"]:
+            return None
+    elif type(value) in (int, float):
+        try:
+            number = float(value)
+        except (OverflowError, ValueError):
+            return None
+    else:
         return None
     return number if isfinite(number) and number >= 0 else None
 
@@ -152,10 +168,12 @@ def audit_stage12_goal_progress(
                     or data.get("observed_world_step") != t
                     or data.get("measure") != intent["measure"]
                     or _number(data.get("value_before")) is None
-                    or float(data["value_before"]) != float(intent["value_before"])
+                    or _number(data["value_before"]) != _number(intent["value_before"])
                     or t <= intent["sent_world_step"]):
                 raise ValueError("goal followup does not match frozen pre-action criterion")
-            before = float(intent["value_before"])
+            before = _number(intent["value_before"])
+            if before is None:
+                raise ValueError("invalid frozen goal-progress baseline")
             after = _number(data.get("value_after"))
             outcome = data.get("criterion_outcome")
             reason = data.get("reason")
