@@ -59,35 +59,41 @@ async function pageReplay(){
     const countText=$("#custody-count").value.trim();
     const count=Number(countText);
     const out=$("#custody-result");
+    const runId=state.selected;
+    const isActive=()=>isCurrent(runId)&&out.isConnected;
     out.textContent="Contrôle en cours…";
     if(!/^[0-9a-f]{64}$/.test(frame)||!/^[0-9a-f]{64}$/.test(head)||!countText||!Number.isSafeInteger(count)||count<1){
       out.textContent="Références invalides : deux empreintes SHA-256 minuscules et un nombre entier positif sont requis. Carte désactivée.";
       return;
     }
     try{
-      const result=await api("/api/runs/"+encodeURIComponent(state.selected)+"/replay/frames/custody",{
+      const result=await api("/api/runs/"+encodeURIComponent(runId)+"/replay/frames/custody",{
         method:"POST",
         headers:{"Origin":location.origin},
         body:JSON.stringify({trusted_frame_sha256:frame,trusted_journal_head:head,trusted_journal_count:count})
       });
+      if(!isActive())return;
       out.textContent=`Empreintes saisies : ${result.operator_anchor_match?"concordantes":"NON concordantes"} · Origine des références authentifiée : NON · Déclarations : ${result.frame_claims_match?"concordantes":"NON concordantes"} · Pas enregistrés : ${result.recorded_step_alignment?"alignés":"NON alignés"} · Vérité physique : NON vérifiée · Carte autorisée : NON${result.error?" · "+result.error:""}.`;
-    }catch(e){out.textContent="Vérification impossible : "+e.message+" · Carte désactivée."}
+    }catch(e){if(!isActive())return;out.textContent="Vérification impossible : "+e.message+" · Carte désactivée."}
   };
   $("#signed-check").onclick=async()=>{
     const key=$("#signed-key").value.trim();
     const keyId=$("#signed-key-id").value.trim();
     const out=$("#signed-result");
+    const runId=state.selected;
+    const isActive=()=>isCurrent(runId)&&out.isConnected;
     if(!/^[A-Za-z0-9+/]{43}=$/.test(key)||!keyId||keyId.length>128){
       out.textContent="Clé publique Base64 Ed25519 ou identifiant invalide. Carte désactivée.";
       return;
     }
     out.textContent="Vérification en cours…";
     try{
-      const result=await api("/api/runs/"+encodeURIComponent(state.selected)+"/replay/frames/signed-custody",{
+      const result=await api("/api/runs/"+encodeURIComponent(runId)+"/replay/frames/signed-custody",{
         method:"POST",body:JSON.stringify({trusted_public_key_b64:key,expected_key_id:keyId})
       });
+      if(!isActive())return;
       out.textContent=`Signature : ${result.signature.signature_valid?"valide":"INVALIDE"} · Empreinte frames : ${result.signature.frames_digest_matches?"concordante":"NON"} · Identité I0 : ${result.frame_identity_match?"concordante":"NON"} · Journal : ${result.journal_claim_match?"concordant":"NON"} · Pas fermés : ${result.recorded_step_alignment?"alignés":"NON"} · Vérité physique : NON vérifiée · Carte autorisée : NON${result.signature.error?" · "+result.signature.error:""}.`;
-    }catch(e){out.textContent="Vérification impossible : "+e.message+" · Carte désactivée."}
+    }catch(e){if(!isActive())return;out.textContent="Vérification impossible : "+e.message+" · Carte désactivée."}
   };
   const loadSources=async()=>{
     const runId=state.selected;
