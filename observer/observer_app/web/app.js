@@ -29,11 +29,23 @@ async function pageReplay(){
   if(!choices.length){$("#view").innerHTML=intro("HISTORICAL REPLAY","Replay historique","Aucune exécution disponible.");return}
   if(!choices.some(r=>r.id===state.selected))state.selected=choices[0].id;
   $("#view").innerHTML=intro("HISTORICAL REPLAY","Chronologie enregistrée","Navigation dans les événements historiques uniquement. Aucun état du monde, position ou vérité Oracle n'est déduit.")+
-  `<div class="panel"><div class="action-row"><label class="field">Exécution<select id="replay-run" class="search-input">${choices.map(r=>`<option value="${escapeHTML(r.id)}" ${r.id===state.selected?"selected":""}>${escapeHTML(r.id)}</option>`).join("")}</select></label><label class="field">Source<select id="replay-source" class="search-input"></select></label><label class="field">Pas / cycle<input id="replay-step" type="number" min="0" max="2147483647" value="0"></label><button id="replay-prev" class="secondary">← Précédent</button><button id="replay-next" class="secondary">Suivant →</button><button id="replay-load" class="primary">Afficher</button></div><p id="replay-warning" class="provenance">Reconstruction 2D indisponible sans géométrie vérifiée.</p></div><div class="panel"><h2>Événements historiques du pas</h2><div id="replay-results" class="stack"></div><pre id="replay-raw">Sélectionnez un événement pour voir son enregistrement brut.</pre></div>`;
+  `<div class="panel"><div class="action-row"><label class="field">Exécution<select id="replay-run" class="search-input">${choices.map(r=>`<option value="${escapeHTML(r.id)}" ${r.id===state.selected?"selected":""}>${escapeHTML(r.id)}</option>`).join("")}</select></label><label class="field">Source<select id="replay-source" class="search-input"></select></label><label class="field">Pas / cycle<input id="replay-step" type="number" min="0" max="2147483647" value="0"></label><button id="replay-prev" class="secondary">← Précédent</button><button id="replay-next" class="secondary">Suivant →</button><button id="replay-load" class="primary">Afficher</button></div><p id="replay-warning" class="provenance">Reconstruction 2D indisponible sans géométrie vérifiée.</p></div><div class="panel"><h2>Diagnostic des archives 2D</h2><div id="frame-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Événements historiques du pas</h2><div id="replay-results" class="stack"></div><pre id="replay-raw">Sélectionnez un événement pour voir son enregistrement brut.</pre></div>`;
   const loadSources=async()=>{
     const detail=await api("/api/runs/"+encodeURIComponent(state.selected));
     const sources=detail.artifacts.filter(a=>["journal","lab_events"].includes(a.alias));
     $("#replay-source").innerHTML=sources.map(a=>`<option value="${a.alias}">${a.alias==="journal"?"Journal causal (t_monde)":"Lab telemetry (cycle non physique)"}</option>`).join("");
+    const hasFrames=detail.artifacts.some(a=>a.alias==="world_frames");
+    if(!hasFrames){
+      $("#frame-diagnostic").textContent="Aucune archive 2D déclarée. Carte désactivée : géométrie et attestation indépendante absentes.";
+    }else{
+      $("#frame-diagnostic").textContent="Analyse structurelle en cours…";
+      try{
+        const diagnostic=await api("/api/runs/"+encodeURIComponent(state.selected)+"/replay/frames/diagnostic");
+        const structural=diagnostic.structurally_valid?"Structure valide":"Structure invalide";
+        const errors=(diagnostic.errors||[]).join(", ")||"aucune anomalie structurelle détectée";
+        $("#frame-diagnostic").textContent=`${structural} · ${diagnostic.frame_count} frames · ${errors}. Vérification indépendante : NON. Carte autorisée : NON.`;
+      }catch(e){$("#frame-diagnostic").textContent="Diagnostic impossible : "+e.message+" · Carte désactivée."}
+    }
     if(!sources.length){$("#replay-results").textContent="Aucune source de replay enregistrée.";$("#replay-load").disabled=true;return}
     $("#replay-load").disabled=false;await load();
   };
