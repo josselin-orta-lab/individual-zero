@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import replace
 from math import isfinite
 
+from i0.config import MVP_PHASE1_PRODUCER_ORDER
+from i0.modules.stage12_occupancy import module_occupancy_entropy
 from i0.modules.stage12_detectors import (
     LivedCognitiveObservation, Stage12DetectionPolicy,
     Stage12DetectionReport, Stage12LivedDetectors,
@@ -93,11 +95,15 @@ class Stage12Runtime(Stage11SleepRuntime):
 
     def __init__(
         self, *, detector_policy: Stage12DetectionPolicy,
-        diagnostic_sample_cost_uc: int, **kwargs,
+        diagnostic_sample_cost_uc: int,
+        module_occupancy_cost_uc: int = 1, **kwargs,
     ):
         detector_policy.validate()
         if type(diagnostic_sample_cost_uc) is not int or diagnostic_sample_cost_uc < 1:
             raise ValueError("Stage12 diagnostics need a positive injected P-43 UC cost")
+        if type(module_occupancy_cost_uc) is not int or module_occupancy_cost_uc < 1:
+            raise ValueError("Stage12 occupancy work requires a positive versioned UC cost")
+        self._stage12_occupancy_cost_uc = module_occupancy_cost_uc
         self._stage12_detector_policy = detector_policy
         self._stage12_diagnostic_cost_uc = diagnostic_sample_cost_uc
         super().__init__(**kwargs)
@@ -119,10 +125,12 @@ class Stage12Runtime(Stage11SleepRuntime):
         stage4 = stage6.stage4
         old = stage4.compute_budget
         cost = self._stage12_diagnostic_cost_uc
+        occupancy_cost = self._stage12_occupancy_cost_uc
         budget = replace(
             old, version=(old.version + "+" + self._stage12_detector_policy.version
-                          + "+stage12-diagnostics-charged-v1"),
-            cycle_ceiling=old.cycle_ceiling + cost,
+                          + "+stage12-diagnostics-charged-v1"
+                          + "+stage12-st-module-occupancy-v1"),
+            cycle_ceiling=old.cycle_ceiling + cost + occupancy_cost,
             module_envelopes={
                 **old.module_envelopes,
                 # Stage11 has no Stage10 metacognition envelope yet.
@@ -132,11 +140,12 @@ class Stage12Runtime(Stage11SleepRuntime):
                 "metacognition_health": max(
                     old.module_envelopes.get("metacognition_health", 0),
                     base.sleep_option_uc,
-                ) + cost,
+                ) + cost + occupancy_cost,
             },
             operation_costs={
                 **old.operation_costs,
                 "stage12_diagnostic_sample": cost,
+                "stage12_occupancy_entropy": occupancy_cost,
             },
         )
         upgraded = replace(stage9, stage8=replace(stage8, stage7=replace(
@@ -151,6 +160,85 @@ class Stage12Runtime(Stage11SleepRuntime):
         """Detached, warning-only report; never an implicit Action Control veto."""
         return self._stage12_detectors.detecteurs()
 
+
+    def _publish_module_occupancy(self, *, cycle: int, world_step: int) -> None:
+        """Price and publish current S_t producer occupancy, operator-only.
+
+        Stage4 Gatekeeper owns retained contributions; this projection
+        merely reads its detached export after phase2 has published S_t.
+        No Oracle, technical journal read, reward or motor veto is involved.
+        """
+        st = self.s_t.current
+        if st is None or st.t_monde != world_step or st.cycle != cycle:
+            raise RuntimeError("Stage12 cannot sample an unpublished current S_t")
+        charge = self.compute_budget.charge(
+            module="metacognition_health", operation="stage12_occupancy_entropy",
+        )
+        self._write(kind="compute_charge", cycle=cycle, data={
+            "module": "metacognition_health",
+            "operation": "stage12_occupancy_entropy",
+            "count": 1,
+            "requested_uc": charge.requested_uc,
+            "accepted": charge.accepted,
+            "reason": charge.reason,
+        })
+        if not charge.accepted:
+            self._cycle_degraded = True
+            self._write(
+                kind="stage12_st_occupancy_deferred", cycle=cycle,
+                data={
+                    "st_version": st.version, "world_step": world_step,
+                    "reason": charge.reason, "diagnostic_incomplete": True,
+                    "policy_version": "stage12-st-module-occupancy-v1",
+                },
+            )
+            return
+
+        # Retained provenance is a bounded owned-state projection. Never
+        # use world truth or previously rejected/queued bus messages.
+        retained = self.gatekeeper.export_causal_state()["retained"]
+        emitters = {entry["id"]: entry["emitter_module"] for entry in retained}
+        if len(emitters) != len(retained):
+            raise RuntimeError("duplicate retained Gatekeeper contribution")
+        refs = tuple(element.contribution_ref for element in st.competitive)
+        if len(refs) != len(set(refs)):
+            raise RuntimeError("duplicate retained S_t contribution")
+        counts = {producer: 0 for producer in MVP_PHASE1_PRODUCER_ORDER}
+        for ref in refs:
+            emitter = emitters.get(ref)
+            if emitter not in counts:
+                raise RuntimeError("S_t contribution lacks a known retained emitter")
+            counts[emitter] += 1
+
+        ratio = self._stage12_detector_policy.entropy_warning_fraction
+        result = module_occupancy_entropy(
+            counts, warning_fraction=ratio,
+            module_universe_size=len(MVP_PHASE1_PRODUCER_ORDER),
+        )
+        if result.occupied_slots != len(refs):
+            raise RuntimeError("S_t occupancy projection lost a retained slot")
+        self._write(
+            kind="stage12_st_module_occupancy_published", cycle=cycle,
+            data={
+                "schema": "stage12-st-module-occupancy-v1",
+                "st_version": st.version, "world_step": world_step,
+                "module_universe": list(MVP_PHASE1_PRODUCER_ORDER),
+                "module_counts": {
+                    producer: counts[producer]
+                    for producer in MVP_PHASE1_PRODUCER_ORDER if counts[producer]
+                },
+                "module_universe_size": len(MVP_PHASE1_PRODUCER_ORDER),
+                "warning_fraction": ratio,
+                "normalized_entropy": result.normalized_entropy,
+                "low_entropy": result.low_entropy,
+                "status": result.status,
+                "occupied_slots": result.occupied_slots,
+                "distinct_modules": result.distinct_modules,
+                "charged_uc": charge.requested_uc,
+                "operator_only_diagnostic": True,
+            },
+        )
+
     def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
         hooks = super()._phase_hooks(
             cycle=cycle, capture=capture,
@@ -160,6 +248,9 @@ class Stage12Runtime(Stage11SleepRuntime):
         previous = hooks[5]["metacognition_health"]
 
         def publish_lived_diagnostic(ctx):
+            # Occupancy is a separate *per cognitive cycle* S_t measurement.
+            # Its UC charge is reflected in the same fatigue closure below.
+            self._publish_module_occupancy(cycle=cycle, world_step=capture.t_monde)
             # One actual metacognitive service charge per lived world step.
             # The sample is optional under DC-07, and must be absent, never
             # silently inferred, if its scheduler-owned UC debit is refused.
