@@ -307,7 +307,13 @@ def test_imported_world_frames_structural_diagnostic_is_not_authorization(client
     assert data["structurally_valid"] is True
     assert data["independently_verified"] is False
     assert data["map_authorized"] is False
-    assert client.get(f"/api/runs/{rid}/replay/geometry", params={"step": 1}).json()["available"] is False
+    preview = client.get(f"/api/runs/{rid}/replay/geometry", params={"step": 1}).json()
+    assert preview["available"] is True
+    assert preview["verified"] is False
+    assert preview["map_authorized"] is False
+    assert preview["frame"]["individual_pose"] == {"x": 2, "y": 1}
+    missing = client.get(f"/api/runs/{rid}/replay/geometry", params={"step": 2}).json()
+    assert missing["available"] is False
     frames["frames"][0]["individual_pose"]["x"] = 4
     (folder / "frames.json").write_text(json.dumps(frames))
     assert client.get(f"/api/runs/{rid}/replay/frames/diagnostic").json()["structurally_valid"] is False
