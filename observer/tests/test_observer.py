@@ -369,10 +369,10 @@ def test_signed_custody_requires_explicit_key_and_never_unlocks_map(client, layo
     folder = archive / "signed-case"
     folder.mkdir()
     frames = {"schema": "observer-world-frames-v1",
-              "identity": {"individual_id": "i0", "life_generation": 0, "attempt_ref": "a"},
+              "identity": {"individual_id": "i0", "life_generation": 0},
               "geometry": {"coordinate_system": "grid-xy-top-left", "width": 4, "height": 4},
               "frames": [{"t_monde": 1, "step_boundary": "committed",
-                          "individual_pose": {"x": 1, "y": 1}, "entities": []}],
+                          "individual_pose": {"x": 1, "y": 1}, "entities": [], "attempt_ref": "a"}],
               "attestation": {"journal_head_sha256": "a" * 64, "journal_event_count": 2,
                               "verifier": "untrusted", "verified_at": "2026-10-12T00:00:00Z",
                               "source_sha256": "b" * 64}}
@@ -430,10 +430,10 @@ def test_signed_custody_rejects_mismatched_individual_identity(client, layout):
     folder = archive / "identity-mismatch"
     folder.mkdir()
     frames = {"schema": "observer-world-frames-v1",
-              "identity": {"individual_id": "other", "life_generation": 0, "attempt_ref": "a"},
+              "identity": {"individual_id": "other", "life_generation": 0},
               "geometry": {"coordinate_system": "grid-xy-top-left", "width": 2, "height": 2},
               "frames": [{"t_monde": 1, "step_boundary": "committed",
-                          "individual_pose": {"x": 0, "y": 0}, "entities": []}],
+                          "individual_pose": {"x": 0, "y": 0}, "entities": [], "attempt_ref": "a"}],
               "attestation": {"journal_head_sha256": "a" * 64, "journal_event_count": 1,
                               "verifier": "self", "verified_at": "2026-10-12T00:00:00Z",
                               "source_sha256": "b" * 64}}
