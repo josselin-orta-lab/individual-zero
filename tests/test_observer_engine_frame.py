@@ -23,6 +23,11 @@ class OperatorWorldFrameTests(unittest.TestCase):
         self.assertEqual(world.export_causal_state(), before)
         self.assertEqual(individual.journal.canonical_bytes(), journal_before)
 
+    def test_closed_step_capture_requires_durable_wal(self):
+        individual = build_stage4_reference_runtime(autonomous_mortal=True)
+        with self.assertRaisesRegex(RuntimeError, "durable journal WAL"):
+            individual.stage3.substrate.capture_operator_closed_step()
+
     def test_rejects_unusable_step(self):
         world = build_stage4_reference_runtime(autonomous_mortal=True).world
         for value in (0, -1, True, 1.5):
