@@ -174,3 +174,40 @@ def test_cold_recovery_uses_current_generation_after_prepublication_crash():
             next_step = life.run_step()
             assert next_step.world_step == 2
             assert next_step.generation == 2
+
+
+def test_cold_start_and_uninterrupted_stage11_agree_across_real_steps():
+    """No physical command replay: compare distinct deterministic lives only."""
+    with TemporaryDirectory() as tmp:
+        steady_path = str(Path(tmp) / "steady.db")
+        restored_path = str(Path(tmp) / "restored.db")
+        with M11TransactionalMortal.birth(
+            db_path=steady_path, runtime=fresh(), individual_id=IDENTITY,
+        ) as uninterrupted:
+            stable = [uninterrupted.run_step() for _ in range(5)]
+        with M11TransactionalMortal.birth(
+            db_path=restored_path, runtime=fresh(), individual_id=IDENTITY,
+        ) as initial:
+            one = initial.run_step()
+        partial = [one]
+        for _ in range(4):
+            with M11TransactionalMortal.cold_recover(
+                db_path=restored_path, individual_id=IDENTITY,
+                runtime_factory=fresh,
+            ) as recovered:
+                partial.append(recovered.run_step())
+        assert [(r.world_step, r.journal_head, r.journal_count)
+                for r in stable] == [
+                    (r.world_step, r.journal_head, r.journal_count)
+                    for r in partial]
+        with SQLiteLifeLedger.open_existing(
+            path=steady_path, expected_individual_id=IDENTITY,
+        ) as a, SQLiteLifeLedger.open_existing(
+            path=restored_path, expected_individual_id=IDENTITY,
+        ) as b:
+            assert a.export_canonical_journal() == b.export_canonical_journal()
+            assert a.recover_current_bytes(
+                expected_individual_id=IDENTITY
+            ) == b.recover_current_bytes(
+                expected_individual_id=IDENTITY
+            )
