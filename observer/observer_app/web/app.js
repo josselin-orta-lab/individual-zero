@@ -47,7 +47,7 @@ async function pageReplay(){
         headers:{"Origin":location.origin},
         body:JSON.stringify({trusted_frame_sha256:frame,trusted_journal_head:head,trusted_journal_count:count})
       });
-      out.textContent=`Références externes : ${result.operator_anchor_match?"concordantes":"NON concordantes"} · Déclarations : ${result.frame_claims_match?"concordantes":"NON concordantes"} · Pas enregistrés : ${result.recorded_step_alignment?"alignés":"NON alignés"} · Vérité physique : NON vérifiée · Carte autorisée : NON${result.error?" · "+result.error:""}.`;
+      out.textContent=`Empreintes saisies : ${result.operator_anchor_match?"concordantes":"NON concordantes"} · Origine des références authentifiée : NON · Déclarations : ${result.frame_claims_match?"concordantes":"NON concordantes"} · Pas enregistrés : ${result.recorded_step_alignment?"alignés":"NON alignés"} · Vérité physique : NON vérifiée · Carte autorisée : NON${result.error?" · "+result.error:""}.`;
     }catch(e){out.textContent="Vérification impossible : "+e.message+" · Carte désactivée."}
   };
   const loadSources=async()=>{
