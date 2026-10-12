@@ -5,8 +5,8 @@ birth-time exclusive path and the matching causal journal WAL.
 """
 from __future__ import annotations
 
-import json
 import os
+import json
 from pathlib import Path
 
 from .determinism import canonical_causal_bytes
@@ -67,3 +67,79 @@ class OperatorFrameArchive:
 
     def __exit__(self, *_exc: object) -> None:
         self.close()
+
+    @staticmethod
+    def export_world_frames(
+        receipts_path: str, destination: str, *,
+        individual_id: str, life_generation: int,
+    ) -> None:
+        """Produce a bounded, explicitly unverified Observer import document.
+
+        This export is not an independent scientific attestation. Receipt
+        continuity and journal custody require separate offline checks.
+        """
+        import hashlib
+        from datetime import datetime, timezone
+
+        source = Path(receipts_path)
+        target = Path(destination)
+        if not source.is_absolute() or not target.is_absolute():
+            raise ValueError("archive paths must be absolute")
+        if type(life_generation) is not int or life_generation < 0:
+            raise ValueError("invalid life generation")
+        raw = source.read_bytes()
+        if len(raw) > 16 * 1024 * 1024 or not raw or not raw.endswith(b"\n"):
+            raise ValueError("missing, oversized or torn frame receipts")
+        receipts = []
+        for line in raw.splitlines():
+            receipt = json.loads(line)
+            if canonical_causal_bytes(receipt) != line:
+                raise ValueError("noncanonical operator receipt")
+            receipts.append(receipt)
+        steps = [r["frame"]["t_monde"] for r in receipts]
+        if any(type(step) is not int or step < 1 for step in steps):
+            raise ValueError("invalid recorded world step")
+        if steps != list(range(1, len(steps) + 1)):
+            raise ValueError("incomplete or unordered world frames")
+        geometry = receipts[0]["geometry"]
+        if any(r["geometry"] != geometry for r in receipts):
+            raise ValueError("geometry changed within archive")
+        # This v1 contract has a single attempt_ref; a multi-step run needs a
+        # new contract rather than falsely claiming all frames share one.
+        attempts = {r["attempt_ref"] for r in receipts}
+        if len(attempts) != 1:
+            raise ValueError("v1 frame contract cannot encode multiple attempts")
+        last = receipts[-1]
+        document = {
+            "schema": "observer-world-frames-v1",
+            "identity": {"individual_id": individual_id,
+                         "life_generation": life_generation,
+                         "attempt_ref": last["attempt_ref"]},
+            "geometry": geometry,
+            "frames": [r["frame"] for r in receipts],
+            "attestation": {
+                "journal_head_sha256": last["journal_head_sha256"],
+                "journal_event_count": last["journal_event_count"],
+                "verifier": "engine-receipt-export-unverified",
+                "verified_at": datetime.now(timezone.utc).isoformat(),
+                "source_sha256": hashlib.sha256(raw).hexdigest(),
+            },
+        }
+        output = json.dumps(document, sort_keys=True, separators=(",", ":")).encode()
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        fd = os.open(target, flags, 0o600)
+        try:
+            with os.fdopen(fd, "wb") as stream:
+                stream.write(output)
+                stream.flush()
+                os.fsync(stream.fileno())
+            parent = os.open(str(target.parent), os.O_RDONLY)
+            try:
+                os.fsync(parent)
+            finally:
+                os.close(parent)
+        except BaseException:
+            target.unlink(missing_ok=True)
+            raise
