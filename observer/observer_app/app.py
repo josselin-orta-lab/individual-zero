@@ -546,10 +546,23 @@ class Observer:
                 trusted_public_key_b64=trusted_public_key_b64,
                 expected_key_id=expected_key_id)
             result = {"signature": signed, "journal_claim_match": False,
-                      "recorded_step_alignment": False, "full_causal_audit": False,
+                      "recorded_step_alignment": False, "frame_identity_match": False, "full_causal_audit": False,
                       "physical_truth_verified": False, "map_authorized": False}
             if signed["signature_valid"] and signed["frames_digest_matches"] and signed["payload"]:
                 payload = signed["payload"]
+                try:
+                    frame_doc = json.loads(frame_bytes)
+                    identity = frame_doc["identity"]
+                    identity_matches = (
+                        identity["individual_id"] == payload["individual_id"]
+                        and identity["life_generation"] == payload["life_generation"]
+                        and identity["attempt_ref"] == payload["attempt_ref"]
+                    )
+                except (ValueError, TypeError, KeyError):
+                    identity_matches = False
+                result["frame_identity_match"] = identity_matches
+                if not identity_matches:
+                    return result
                 chain = check_chain(
                     journal_path, expected_head=payload["journal_head_sha256"],
                     expected_count=payload["journal_event_count"])
