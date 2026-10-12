@@ -63,10 +63,31 @@ def test_export_supports_multiple_attempt_refs():
                                  "width": 4, "height": 4},
                     "attempt_ref": f"attempt-{step}",
                     "journal_head_sha256": "a" * 64,
-                    "journal_event_count": step,
+                    "journal_event_count": step + 2,
                 })
         OperatorFrameArchive.export_world_frames(
                 str(path), str(output), individual_id="i0", life_generation=0,
             )
         exported = json.loads(output.read_text())
         assert [f["attempt_ref"] for f in exported["frames"]] == ["attempt-1", "attempt-2"]
+
+
+def test_export_rejects_regressing_journal_counts():
+    with tempfile.TemporaryDirectory() as directory:
+        path = Path(directory) / "receipts.jsonl"
+        output = Path(directory) / "frames.json"
+        with OperatorFrameArchive(str(path)) as archive:
+            for step, count in ((1, 4), (2, 3)):
+                archive.append({
+                    "frame": {"t_monde": step, "step_boundary": "committed",
+                              "individual_pose": {"x": 1, "y": 1}, "entities": []},
+                    "geometry": {"coordinate_system": "grid-xy-top-left",
+                                 "width": 4, "height": 4},
+                    "attempt_ref": f"attempt-{step}",
+                    "journal_head_sha256": "a" * 64,
+                    "journal_event_count": count,
+                })
+        with pytest.raises(ValueError, match="nonmonotonic"):
+            OperatorFrameArchive.export_world_frames(
+                str(path), str(output), individual_id="i0", life_generation=0)
+        assert not output.exists()
