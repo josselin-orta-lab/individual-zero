@@ -39,9 +39,12 @@ class Stage12ExternalConsoleTests(unittest.TestCase):
                 console.plafonner(3)
             for _ in range(2):
                 self.assertEqual(runtime.run_step().execution_status, "applied")
+            # Cap is terminalized on the same call as the second physical
+            # closure, not on an attempted third step.
+            self.assertEqual(substrate.mortal_status, MortalStatus.EXPERIMENT_STOPPED)
             before = deepcopy(runtime.world.export_causal_state())
             count = runtime.detection_report.evidence_samples
-            with self.assertRaisesRegex(RuntimeError, "cap"):
+            with self.assertRaises(RuntimeError):
                 runtime.run_step()
             self.assertEqual(substrate.mortal_status, MortalStatus.EXPERIMENT_STOPPED)
             self.assertIsNone(substrate._mortal_boundary.terminal_death)
