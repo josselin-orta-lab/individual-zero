@@ -29,7 +29,7 @@ async function pageReplay(){
   if(!choices.length){$("#view").innerHTML=intro("HISTORICAL REPLAY","Replay historique","Aucune exécution disponible.");return}
   if(!choices.some(r=>r.id===state.selected))state.selected=choices[0].id;
   $("#view").innerHTML=intro("HISTORICAL REPLAY","Chronologie enregistrée","Navigation dans les événements historiques uniquement. Aucun état du monde, position ou vérité Oracle n'est déduit.")+
-  `<div class="panel"><div class="action-row"><label class="field">Exécution<select id="replay-run" class="search-input">${choices.map(r=>`<option value="${escapeHTML(r.id)}" ${r.id===state.selected?"selected":""}>${escapeHTML(r.id)}</option>`).join("")}</select></label><label class="field">Source<select id="replay-source" class="search-input"></select></label><label class="field">Pas / cycle<input id="replay-step" type="number" min="0" max="2147483647" value="0"></label><button id="replay-prev" class="secondary">← Précédent</button><button id="replay-next" class="secondary">Suivant →</button><button id="replay-load" class="primary">Afficher</button></div><p id="replay-warning" class="provenance">Reconstruction 2D indisponible sans géométrie vérifiée.</p></div><div class="panel"><h2>Frontières temporelles enregistrées</h2><div id="step-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Intégrité du journal causal</h2><div id="journal-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Diagnostic des archives 2D</h2><div id="frame-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Événements historiques du pas</h2><div id="replay-results" class="stack"></div><pre id="replay-raw">Sélectionnez un événement pour voir son enregistrement brut.</pre></div>`;
+  `<div class="panel"><div class="action-row"><label class="field">Exécution<select id="replay-run" class="search-input">${choices.map(r=>`<option value="${escapeHTML(r.id)}" ${r.id===state.selected?"selected":""}>${escapeHTML(r.id)}</option>`).join("")}</select></label><label class="field">Source<select id="replay-source" class="search-input"></select></label><label class="field">Pas / cycle<input id="replay-step" type="number" min="0" max="2147483647" value="0"></label><button id="replay-prev" class="secondary">← Précédent</button><button id="replay-next" class="secondary">Suivant →</button><button id="replay-load" class="primary">Afficher</button></div><p id="replay-warning" class="provenance">Reconstruction 2D indisponible sans géométrie vérifiée.</p></div><div class="panel"><h2>Frontières temporelles enregistrées</h2><div id="step-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Intégrité du journal causal</h2><div id="journal-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Alignement frames / journal</h2><div id="frame-alignment" class="provenance">Chargement…</div></div><div class="panel"><h2>Diagnostic des archives 2D</h2><div id="frame-diagnostic" class="provenance">Chargement…</div></div><div class="panel"><h2>Événements historiques du pas</h2><div id="replay-results" class="stack"></div><pre id="replay-raw">Sélectionnez un événement pour voir son enregistrement brut.</pre></div>`;
   const loadSources=async()=>{
     const detail=await api("/api/runs/"+encodeURIComponent(state.selected));
     const sources=detail.artifacts.filter(a=>["journal","lab_events"].includes(a.alias));
@@ -53,6 +53,14 @@ async function pageReplay(){
       }catch(e){$("#journal-diagnostic").textContent="Vérification impossible : "+e.message+" · Carte désactivée."}
     }
     const hasFrames=detail.artifacts.some(a=>a.alias==="world_frames");
+    if(!hasFrames || !hasJournal){
+      $("#frame-alignment").textContent="Alignement indisponible : archive 2D et journal causal requis.";
+    }else{
+      try{
+        const aligned=await api("/api/runs/"+encodeURIComponent(state.selected)+"/replay/frames/alignment");
+        $("#frame-alignment").textContent=`Frames sur des pas fermés : ${aligned.frame_step_alignment?"oui":"NON"} · Frames examinées : ${aligned.checked_frames} · Vérification indépendante : NON · Carte autorisée : NON${aligned.error?" · "+aligned.error:""}.`;
+      }catch(e){$("#frame-alignment").textContent="Alignement impossible : "+e.message+" · Carte désactivée."}
+    }
     if(!hasFrames){
       $("#frame-diagnostic").textContent="Aucune archive 2D déclarée. Carte désactivée : géométrie et attestation indépendante absentes.";
     }else{
