@@ -180,3 +180,48 @@ def test_verified_export_accepts_matching_wal_closure():
         assert exported["frames"][0]["attempt_ref"] == "a"
         assert exported["attestation"]["journal_head_sha256"] == previous
         assert exported["attestation"]["verifier"] == "engine-receipt-export-unverified"
+
+
+def test_wal_closure_without_durable_receipt_is_not_reconstructed():
+    """Simulate crash after WAL step_closed but before frame receipt append."""
+    import hashlib
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        journal = root / "journal"
+        receipts = root / "receipts.jsonl"
+        output = root / "frames.json"
+        previous = "00" * 32
+        rows = []
+        for index, (step, kind) in enumerate(
+            ((1, "step_opened"), (1, "step_closed"),
+             (2, "step_opened"), (2, "step_closed"))
+        ):
+            event = {"kind": kind, "t_monde": step, "attempt_ref": f"a{step}"}
+            eid = f"e{index}"
+            payload = json.dumps({"event_id": eid, "causal_event": event},
+                                 sort_keys=True, separators=(",", ":")).encode()
+            digest = hashlib.sha256(bytes.fromhex(previous) + payload).hexdigest()
+            rows.append({"index": index, "event_id": eid, "previous_hash": previous,
+                         "event_hash": digest, "causal_event": event})
+            previous = digest
+        journal.write_bytes(b"\n".join(
+            json.dumps(row, sort_keys=True, separators=(",", ":")).encode()
+            for row in rows))
+        with OperatorFrameArchive(str(receipts)) as archive:
+            archive.append({
+                "frame": {"t_monde": 1, "step_boundary": "committed",
+                          "individual_pose": {"x": 1, "y": 1}, "entities": []},
+                "geometry": {"coordinate_system": "grid-xy-top-left",
+                             "width": 4, "height": 4},
+                "attempt_ref": "a1",
+                "journal_closure_hash": rows[1]["event_hash"],
+                "journal_head_sha256": rows[1]["event_hash"],
+                "journal_event_count": 2,
+            })
+        with pytest.raises(ValueError, match="missing operator frame"):
+            OperatorFrameArchive.export_world_frames(
+                str(receipts), str(output), individual_id="i0",
+                life_generation=0, journal_path=str(journal))
+        assert not output.exists()
+        assert len(receipts.read_bytes().splitlines()) == 1
+        assert len(journal.read_bytes().splitlines()) == 4
