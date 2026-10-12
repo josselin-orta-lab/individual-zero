@@ -17,7 +17,7 @@ class OperatorWorldFrameTests(unittest.TestCase):
             "coordinate_system": "grid-xy-top-left", "width": 32, "height": 32,
         })
         self.assertEqual(frame["individual_pose"], before["position"])
-        self.assertEqual(frame["step_boundary"], "committed")
+        self.assertNotIn("step_boundary", frame)
         self.assertEqual(frame["t_monde"], 1)
         self.assertEqual(frame["entities"], sorted(frame["entities"], key=lambda x: x["id"]))
         self.assertEqual(len({x["id"] for x in frame["entities"]}), len(frame["entities"]))
