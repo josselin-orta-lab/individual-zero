@@ -37,6 +37,10 @@ def test_live_stage11_is_prepared_then_atomically_published():
             db_path=path, runtime=initial, individual_id=IDENTITY,
         ) as life:
             assert life.inspect()["generation"] == 0
+            # The supplied object is quarantined at birth: only the private
+            # committed coordinator can dispatch another physical command.
+            with pytest.raises(RuntimeError):
+                initial.run_step()
             first = life.run_step()
             assert first.generation == 1
             assert first.status == "active"
@@ -49,11 +53,11 @@ def test_live_stage11_is_prepared_then_atomically_published():
             assert second.journal_count > first.journal_count
             assert life._runtime.stage3.substrate.bench is None
             assert life._runtime.stage3.substrate.evaluation_trace is None
-        # The input runtime object is NEVER mutated during private execution:
-        # only a pointer switch to the committed candidate is published.
-        assert capture_registered_current_state(
-            initial, individual_id=IDENTITY,
-        ) == original
+        # The externally retained runtime is halted, without any physical
+        # transition or cognition after transfer to the sole SQLite owner.
+        assert initial.stage3.substrate.mortal_status.value == "technical_halt"
+        assert initial.world.export_causal_state() == original["world"]
+        assert initial.journal.head_hash == original["journal"]["head"]
         with SQLiteLifeLedger.open_existing(
             path=path, expected_individual_id=IDENTITY,
         ) as stored:
