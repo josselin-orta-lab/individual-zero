@@ -30,3 +30,16 @@ python -m unittest discover -s tests -p 'test_stage12_mortal_runtime.py' -v
 Each invocation must be run against the actual PR head commit; tests are not certified until CI reports success. For operator acceptance, verify real sessions with nonempty and empty S_t, quota exhaustion, absence of postdeath receipts and the independent trusted head/count. A successful diagnostic is not a scientific demonstration of the expected whole-life behavior.
 
 **Still open:** genuine lived agency-attribution outcome pairing (#110), M-11 crash-consistent current-state custody, exhaustive module-by-module DC-07/Stage12 acceptance and an operator signoff. The old phrase “remaining integration contract” above describes the **initial audit plan**, now implemented in this PR where described.
+
+
+### Operator-facing standalone audit (implemented)
+
+With Python 3.11/3.12 and a *complete immutable canonical export* (not a raw WAL including trailing delimiters), verify the reported module census and its real UC debits using the operator tool. Use an independently retained trusted head and occurrence count to guard against suffix truncation:
+
+```bash
+python scripts/report_stage12_occupancy.py /path/to/canonical-export.jsonl \
+  --expected-head <trusted-sha256> \
+  --expected-count <trusted-entry-count>
+```
+
+The command exits 1 when the chain, source references, decoded canonical $f64 values, module census, cost receipts or trusted tail disagree. Its code never imports the i0 package. A positive report describes provenance consistency, not truth about the simulated world's hidden state, motive or cognitive adequacy.
