@@ -59,8 +59,9 @@ def audit_stage12_operator_alerts(
     policy: str | None = None
     detector_version: str | None = None
     threshold: int | None = None
+    diagnostic_window: int | None = None
     previous_step = 0
-    previous_samples = 0
+    observed_sample_count = 0
     streaks = {name: 0 for name in _WARNING_KEYS}
     firsts: dict[str, int | None] = {name: None for name in _WARNING_KEYS}
     counts = {name: 0 for name in _WARNING_KEYS}
@@ -110,24 +111,29 @@ def audit_stage12_operator_alerts(
                     or data["charged_diagnostic_uc"] != charge[1]["requested_uc"]
                     or data.get("world_step") != t
                     or data.get("operator_only_diagnostic") is not True
-                    or type(data.get("evidence_samples")) is not int
-                    or data["evidence_samples"] != previous_samples + 1):
+                    or type(data.get("evidence_samples")) is not int):
                 raise ValueError("operator warning lacks one paid lived diagnostic")
             current_version = data.get("operator_alert_policy_version")
             current_detector = data.get("diagnostic_policy_version")
             current_threshold = data.get("operator_alert_persistence_steps")
+            current_window = data.get("diagnostic_window")
             if (type(current_version) is not str or not current_version
                     or type(current_detector) is not str or not current_detector
-                    or type(current_threshold) is not int or current_threshold < 2):
+                    or type(current_threshold) is not int or current_threshold < 2
+                    or type(current_window) is not int or current_window < 1):
                 raise ValueError("invalid operator warning persistence policy")
             if policy is None:
-                policy, detector_version, threshold = (
+                policy, detector_version, threshold, diagnostic_window = (
                     current_version, current_detector, current_threshold,
+                    current_window,
                 )
-            elif (policy, detector_version, threshold) != (
+            elif (policy, detector_version, threshold, diagnostic_window) != (
                 current_version, current_detector, current_threshold,
+                current_window,
             ):
                 raise ValueError("operator alert policy changed during one life")
+            if data["evidence_samples"] != min(observed_sample_count + 1, current_window):
+                raise ValueError("bounded diagnostic evidence counter is not reproducible")
             bias = data.get("attribution_bias")
             if bias not in _BIASES:
                 raise ValueError("unversioned attribution alert category")
@@ -167,7 +173,8 @@ def audit_stage12_operator_alerts(
                         "diagnostic_policy_version": current_detector,
                     }
                     pending[(t, attempt, cycle, signal)] = expected
-            previous_step, previous_samples = t, data["evidence_samples"]
+            previous_step = t
+            observed_sample_count += 1
             continue
         # An alert must match the most recent paid diagnostic's exact
         # physical step and be present once, never after later evidence.
