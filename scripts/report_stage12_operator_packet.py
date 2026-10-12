@@ -96,6 +96,27 @@ def evaluate_packet(
             "counts": counts,
             "untraceable_is_not_irrational": True,
         },
+        # The current independent Stage12 auditor refuses any non-null
+        # attribution diagnosis: no versioned outcome/agency pair source
+        # exists yet. These are counts *admitted by the auditor*, not claims
+        # that I0 could never form subjective beliefs.
+        "lived_attribution_evidence": {
+            "schema": "stage12-independent-attribution-coverage-v1",
+            "admitted_verified_successes": 0,
+            "admitted_verified_failures": 0,
+            "admitted_unique_attribution_refs": 0,
+            "diagnostic_samples_without_admitted_attribution": (
+                diagnostics.diagnostic_samples
+            ),
+            "independent_pair_contract_available": False,
+            "detector_calibration_supported": False,
+            "status": "unavailable_no_audited_lived_pairs",
+            "limitation": (
+                "Zero means no verifications admitted under the current "
+                "auditor contract, not that all actual outcomes were failures "
+                "or that I0 had no unrecorded subjective judgements."
+            ),
+        },
         "coverage": {
             "physically_executed_actions": actual_physical_actions,
             "closed_world_steps": journal.world_steps_closed,

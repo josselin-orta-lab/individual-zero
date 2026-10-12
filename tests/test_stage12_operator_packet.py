@@ -59,6 +59,14 @@ class Stage12OperatorPacketTests(unittest.TestCase):
                 packet["coverage"]["s_t_occupancy_observed_on_every_action"]
             )
             self.assertFalse(packet["coverage"]["lived_attribution_bias_validated"])
+            lived = packet["lived_attribution_evidence"]
+            self.assertEqual(lived["status"], "unavailable_no_audited_lived_pairs")
+            self.assertEqual(lived["admitted_verified_successes"], 0)
+            self.assertEqual(lived["admitted_verified_failures"], 0)
+            self.assertEqual(lived["admitted_unique_attribution_refs"], 0)
+            self.assertEqual(lived["diagnostic_samples_without_admitted_attribution"], 4)
+            self.assertFalse(lived["independent_pair_contract_available"])
+            self.assertFalse(lived["detector_calibration_supported"])
             self.assertEqual(packet["journal"]["world_steps_closed"], 4)
             self.assertEqual(packet["diagnostics"]["diagnostic_samples"], 4)
             self.assertEqual(
@@ -162,6 +170,52 @@ class Stage12OperatorPacketTests(unittest.TestCase):
                     forged, expected_head=structural.head_hash,
                     expected_count=structural.occurrences,
                     expected_world_steps=3, require_terminal_stop=True,
+                )
+
+    def test_rehashed_unverified_lived_bias_cannot_launder_calibration(self):
+        # A valid hash chain and real physical steps do not authenticate a
+        # subjective outcome/agency pair. The external auditor must refuse.
+        from scripts.report_stage12_operator_packet import evaluate_packet
+
+        with TemporaryDirectory() as folder:
+            runtime = actual_stage12_runtime(str(Path(folder) / "forged-bias.wal"))
+            Stage12OperatorConsole(
+                substrate=runtime.stage3.substrate,
+                mode="campaign", policy_version="stage12-bias-negative-v1",
+                maximum_world_steps=2,
+            )
+            for _ in range(2):
+                self.assertEqual(runtime.run_step().execution_status, "applied")
+            records = [
+                json.loads(line)
+                for line in runtime.journal.canonical_bytes().split(b"\\n")
+            ]
+            diagnostic = next(
+                row["causal_event"]["data"] for row in records
+                if row["causal_event"]["kind"] == "stage12_lived_diagnostics_published"
+            )
+            diagnostic["attribution_bias"] = "self_serving_pattern"
+            previous = GENESIS_HASH
+            for index, row in enumerate(records):
+                row["index"] = index
+                row["previous_hash"] = previous
+                previous = sha256(
+                    bytes.fromhex(previous) + canonical_causal_bytes({
+                        "event_id": row["event_id"],
+                        "causal_event": row["causal_event"],
+                    }),
+                ).hexdigest()
+                row["event_hash"] = previous
+            forged = b"\\n".join(canonical_causal_bytes(row) for row in records)
+            standalone = audit_export_bytes(forged)
+            self.assertEqual(standalone.world_steps_closed, 2)
+            with self.assertRaisesRegex(
+                ValueError, "unverified lived attribution bias claim",
+            ):
+                evaluate_packet(
+                    forged, expected_head=standalone.head_hash,
+                    expected_count=standalone.occurrences,
+                    expected_world_steps=2, require_terminal_stop=True,
                 )
 
     def test_operator_packet_requires_trusted_head_and_count(self):
