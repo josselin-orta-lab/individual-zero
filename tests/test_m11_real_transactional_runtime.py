@@ -6,6 +6,7 @@ fake SQLite state, a guessed journal suffix, or an Oracle/Bench mock.
 from __future__ import annotations
 
 import os
+import json
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
@@ -196,6 +197,24 @@ def test_cold_start_and_uninterrupted_stage11_agree_across_real_steps():
                 runtime_factory=fresh,
             ) as recovered:
                 partial.append(recovered.run_step())
+        if [(r.world_step, r.journal_head, r.journal_count)
+                for r in stable] != [(r.world_step, r.journal_head, r.journal_count)
+                for r in partial]:
+            with SQLiteLifeLedger.open_existing(
+                path=steady_path, expected_individual_id=IDENTITY,
+            ) as a, SQLiteLifeLedger.open_existing(
+                path=restored_path, expected_individual_id=IDENTITY,
+            ) as b:
+                aa = a.export_canonical_journal().split(b"\\n")
+                bb = b.export_canonical_journal().split(b"\\n")
+                divergence = next(
+                    (i for i, (x, y) in enumerate(zip(aa, bb)) if x != y),
+                    min(len(aa), len(bb)),
+                )
+                left = json.loads(aa[divergence]) if divergence < len(aa) else None
+                right = json.loads(bb[divergence]) if divergence < len(bb) else None
+                raise AssertionError(("first cold divergence", divergence,
+                                      left, right))
         assert [(r.world_step, r.journal_head, r.journal_count)
                 for r in stable] == [
                     (r.world_step, r.journal_head, r.journal_count)
