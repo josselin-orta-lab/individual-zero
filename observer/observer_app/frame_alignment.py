@@ -30,8 +30,10 @@ def compare_frames_to_journal(frames_path: Path, journal_path: Path) -> dict:
         result["checked_frames"] = len(requested)
         if not requested:
             result["error"] = "empty_frame_sequence"
+        elif any(step not in closed for step in requested):
+            result["error"] = "frame_at_unclosed_step"
         elif requested != sorted(closed):
-            result["error"] = "missing_or_unclosed_frame"
+            result["error"] = "missing_closed_frame"
             result["error"] = "frame_at_unclosed_step"
         else:
             # A closed step number alone is insufficient: reject frames
