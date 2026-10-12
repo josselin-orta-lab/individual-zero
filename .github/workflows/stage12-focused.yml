@@ -41,6 +41,12 @@ jobs:
       - name: Complete Stage12 diagnostics and operator audit suite
         run: |
           python -m unittest discover -s tests -p 'test_stage12_*.py' -q
+      - name: Contrasted Stage12 and P-47 evidence contracts
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_alignment.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_occupancy_runtime.py' -v
+          python -m unittest discover -s tests -p 'test_stage9_agency_comparator.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_progress.py' -v
       - name: One-step outcome and externally audited operator packet
         run: |
           python -m unittest discover -s tests -p 'test_stage12_goal_progress.py' -v
