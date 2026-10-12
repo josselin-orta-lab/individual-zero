@@ -22,6 +22,52 @@ CATEGORIES = (
 )
 
 
+def _positive_canonical_intrinsic(raw: object) -> bool:
+    """Read Stage11's *canonical* float; never reward missing or forged value.
+
+    Journal floats are tagged as {"$f64": float.hex()}, not JSON numbers.
+    Treat unsupported values as unproven, never as positive motivation.
+    """
+    if type(raw) is not dict or set(raw) != {"$f64"}:
+        return False
+    encoded = raw["$f64"]
+    if type(encoded) is not str:
+        return False
+    try:
+        value = float.fromhex(encoded)
+    except (ValueError, OverflowError):
+        return False
+    return isfinite(value) and value > 0 and encoded == value.hex().lower()
+
+
+def _independently_witnessed_intrinsic(items, *, before_index: int,
+                                       option_ref: str, motive: str) -> bool:
+    """Exactly one pre-admission, evaluated and source-backed motivation."""
+    candidates = [
+        event["data"] for index, event, _ in items
+        if index < before_index and event.get("kind") == "stage11_intrinsic_evaluation"
+        and type(event.get("data")) is dict
+        and event["data"].get("option_ref") == option_ref
+    ]
+    if len(candidates) != 1:
+        return False
+    source = candidates[0]
+    producers = source.get("intrinsic_producers")
+    if (source.get("status") != "evaluated"
+            or type(producers) is not list or not producers
+            or any(type(p) is not str or not p for p in producers)
+            or not _positive_canonical_intrinsic(source.get("intrinsic_value"))):
+        return False
+    # A generic positive option evaluation does not attest exploration.
+    # Only the named intrinsic exploration producer is eligible here.
+    if motive == "cible_exploration":
+        return any(p.startswith("exploration:") for p in producers)
+    # Causal tests retain their separate typed motive; the intrinsic source
+    # may be from the causal evaluator and is not mislabeled as curiosity.
+    return motive == "test_causal"
+
+
+
 @dataclass(frozen=True, slots=True)
 class AlignmentAction:
     world_step: int
@@ -157,16 +203,11 @@ def evaluate_goal_action_alignment(
                     ):
                         category = LEGITIMATE_AUTONOMOUS
                         basis = "accepted_lived_sleep_pressure"
-                    elif motive in ("cible_exploration", "test_causal") and any(
-                        x[0] < admit[0]
-                        and x[1].get("kind") == "stage11_intrinsic_evaluation"
-                        and x[1].get("data", {}).get("option_ref") == option_ref
-                        and type(x[1].get("data", {}).get("intrinsic_value")) in (int, float)
-                        and isfinite(x[1]["data"]["intrinsic_value"])
-                        and x[1]["data"]["intrinsic_value"] > 0
-                        and bool(x[1]["data"].get("intrinsic_producers"))
-                        for x in items
-                    ):
+                    elif (motive in ("cible_exploration", "test_causal")
+                          and _independently_witnessed_intrinsic(
+                              items, before_index=admit[0],
+                              option_ref=option_ref, motive=motive,
+                          )):
                         category = LEGITIMATE_AUTONOMOUS
                         basis = "funded_lived_intrinsic_exploration"
                     else:
