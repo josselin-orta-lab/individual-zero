@@ -13,6 +13,8 @@ on:
       - 'tests/test_stage12*'
       - 'tests/test_v131_stage12*'
       - 'scripts/run_stage12_exploratory_science.py'
+      - 'scripts/run_stage12_water_sleep_followup.py'
+      - 'docs/research/stage12-water-sleep-followup-prereg-2026-10-12.fr.md'
       - 'docs/research/stage12-exploratory-behavior-preregistration-2026-10-12.fr.md'
   workflow_dispatch:
 
@@ -60,6 +62,33 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_stage12_operator_alert_runtime.py' -v
           python -m unittest discover -s tests -p 'test_v131_stage12_sixpass_operator_integration.py' -v
+
+  water-sleep-followup:
+    name: model-support and sleep duration follow-up (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Four separately born physical lives and offline audits
+        run: python scripts/run_stage12_water_sleep_followup.py --output-dir /tmp/stage12-water-sleep-followup
+      - name: Preserve all four lives and negative results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage12-water-sleep-followup-python-${{ matrix.python-version }}
+          path: /tmp/stage12-water-sleep-followup/
+          retention-days: 30
+          if-no-files-found: warn
 
   exploratory-behavior-science:
     name: preregistered 12-life exploratory Stage12 (Python ${{ matrix.python-version }})
