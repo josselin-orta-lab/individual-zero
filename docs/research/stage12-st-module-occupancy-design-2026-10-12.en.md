@@ -13,3 +13,20 @@ Normative v1.3.1 retains v1.2.1 §16.1: monitor entropy of **S_t occupancy by mo
 5. Preserve single owner, irreversible death, no postmortem reporting. This is not a scientific claim or stage completion.
 
 A source-only detector and focused unit tests are supplied here, **not** a claim that the full Stage12 runtime obligation is already discharged. M-11 remains FAIL; issue #110 remains open.
+## Implementation update: charged runtime and independent reconstruction
+
+The Stage12Runtime now runs the pure metric at phase 5 of each *waking cognitive cycle* using the current published S_t version and Gatekeeper's detached retained-contribution provenance. It uses the fixed and versioned eight-producer `MVP_PHASE1_PRODUCER_ORDER`. It charges `metacognition_health/stage12_occupancy_entropy` with configurable positive `module_occupancy_cost_uc` (default 1), declared before birth in P-43 ceiling/envelope/operation costs. A rejected charge creates `stage12_st_occupancy_deferred` and **does not** generate a metric. The metric is a technical operator diagnostic, not a new motor veto, reward or extra cognitive owner.
+
+The external `lab.stage12_occupancy_audit.audit_stage12_occupancy` first verifies the full chain, then reconstructs the current S_t contents from *earlier* admitted Bus producer witnesses and the `s_t_published` reference list. The verifier enforces one earlier charge per accepted result or deferral, recomputes the module counts and Shannon ratio, and rejects forged counts in a **properly rehashed** journal. The proof concerns trace consistency and UC receipts, not privileged physical truth.
+
+### Exact quick validation (on PR head)
+
+```bash
+python -m unittest discover -s tests -p 'test_stage12_module_occupancy.py' -v
+python -m unittest discover -s tests -p 'test_stage12_occupancy_runtime.py' -v
+python -m unittest discover -s tests -p 'test_stage12_mortal_runtime.py' -v
+```
+
+Each invocation must be run against the actual PR head commit; tests are not certified until CI reports success. For operator acceptance, verify real sessions with nonempty and empty S_t, quota exhaustion, absence of postdeath receipts and the independent trusted head/count. A successful diagnostic is not a scientific demonstration of the expected whole-life behavior.
+
+**Still open:** genuine lived agency-attribution outcome pairing (#110), M-11 crash-consistent current-state custody, exhaustive module-by-module DC-07/Stage12 acceptance and an operator signoff. The old phrase “remaining integration contract” above describes the **initial audit plan**, now implemented in this PR where described.
