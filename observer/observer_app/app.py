@@ -192,7 +192,7 @@ class Observer:
                 with open_regular(path, "_status.json") as f:
                     row = json.load(f)
                 if row.get("id") == path.name and row.get("status") in ("PENDING", "RUNNING"):
-                    row.update(status="INTERRUPTED", ended_at=utcnow(), anomaly="observer_process_restarted_before_terminal_receipt", technical_success=None, assertions_passed=None)
+                    row.update(status="INTERRUPTED", ended_at=utcnow(), anomaly="observer_process_restarted_before_terminal_receipt; prior child process may still exist; operator must inspect host process group", technical_success=None, assertions_passed=None, behavior_conformance=None, scientific_validation=None, operator_validation=None)
                     atomic_json(path / "_status.json", row)
             except (OSError, ValueError, json.JSONDecodeError):
                 # Missing or corrupted receipts are never interpreted as success.
