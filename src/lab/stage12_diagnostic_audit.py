@@ -65,6 +65,7 @@ def audit_stage12_diagnostics(
     policy_version: str | None = None
     charged_cost: int | None = None
     most_recent_samples = 0
+    previous_sample_step = 0
 
     for index, raw in enumerate(content.split(b"\n")):
         event = json.loads(raw)["causal_event"]
@@ -120,12 +121,12 @@ def audit_stage12_diagnostics(
                     # non-null label can be verified, so fail closed.
                     raise ValueError("unverified lived attribution bias claim")
                 count = data.get("evidence_samples")
-                if (type(count) is not int or count < 1
-                        or count not in (most_recent_samples, most_recent_samples + 1)):
+                if type(count) is not int or count != most_recent_samples + 1:
                     raise ValueError("metacognitive diagnostic sample count drift")
-                if most_recent_samples == 0 and count != 1:
-                    raise ValueError("first Stage12 diagnostic skipped its first sample")
+                if t <= previous_sample_step:
+                    raise ValueError("Stage12 diagnostic world step did not advance")
                 most_recent_samples = count
+                previous_sample_step = t
                 version = data.get("diagnostic_policy_version")
                 if type(version) is not str or not version.strip():
                     raise ValueError("unversioned Stage12 diagnosis")
