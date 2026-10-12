@@ -21,6 +21,7 @@ def check_custody(frames_path: Path, journal_path: Path, *,
                   trusted_frame_sha256: str, trusted_journal_head: str,
                   trusted_journal_count: int) -> dict:
     result = {"operator_anchor_match": False, "frame_claims_match": False,
+              "anchor_provenance_verified": False,
               "recorded_step_alignment": False, "physical_truth_verified": False,
               "full_causal_audit": False, "map_authorized": False,
               "error": None}
@@ -43,6 +44,7 @@ def check_custody(frames_path: Path, journal_path: Path, *,
             result["error"] = "frame_anchor_mismatch"
             return result
         result["operator_anchor_match"] = True
+        # Input equality does not authenticate who originally produced anchors.
         declaration = json.loads(raw)["attestation"]
         result["frame_claims_match"] = (
             declaration["journal_head_sha256"] == trusted_journal_head
