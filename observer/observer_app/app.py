@@ -29,6 +29,7 @@ from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request, Respo
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, StrictInt
 from .frame_validation import validate_frames
+from .engine_replay import verify_engine_recording
 from .frame_alignment import compare_frames_to_journal
 from .frame_custody import check_custody
 from .detached_attestation import verify_detached_attestation
@@ -40,14 +41,14 @@ RUN_ID = re.compile(r"r-[0-9a-f]{32}\Z")
 IMPORT_ID = re.compile(r"import-[a-zA-Z0-9_-]{1,64}\Z")
 SAFE_NAME = re.compile(r"[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}\Z")
 ALLOWED_SOURCES = frozenset({"journal", "oracle", "evaluation_trace", "lab_events", "world_frames", "detached_attestation"})
-LOCAL_FILES = {"lab_events": "events.jsonl", "log": "execution.log", "result": "result.json", "status": "_status.json", "manifest": "_manifest.json"}
+LOCAL_FILES = {"lab_events": "events.jsonl", "journal": "journal.jsonl", "world_frames": "world_frames.json", "log": "execution.log", "result": "result.json", "status": "_status.json", "manifest": "_manifest.json"}
 SOURCE_CLASSES = {"journal": "causal_journal", "oracle": "oracle_declared_source", "evaluation_trace": "independent_evaluation", "lab_events": "lab_telemetry", "world_frames": "unverified_historical_geometry", "detached_attestation": "untrusted_external_attestation"}
 MAX_PAGE = 200
 MAX_RECORD = 2 * 1024 * 1024
 
 CATALOG = (
     {"id": "bootstrap", "title": "Bootstrap deterministic smoke", "description": "LabEvent JSONL; execution infrastructure only, not an Oracle or a cognitive experiment.", "parameters": {"seed": {"min": 0, "max": 2147483647, "default": 0}, "cycles": {"min": 1, "max": 600, "default": 3}}, "timeout_seconds": 120},
-    {"id": "mortal_stage11", "title": "Stage 11 autonomous mortal diagnostic", "description": "Runs real physical steps without Oracle/Bench. Produces a report, not an exported journal or scientific verdict. Seed fixed by upstream reference fixture.", "parameters": {"steps": {"min": 1, "max": 600, "default": 20}}, "timeout_seconds": 1200},
+    {"id": "mortal_stage11", "title": "Stage 11 autonomous mortal diagnostic", "description": "Runs real physical steps without Oracle/Bench. After a complete offline audit, emits read-only operator world frames and canonical journal, never scientific truth. Seed fixed by upstream reference fixture.", "parameters": {"steps": {"min": 1, "max": 600, "default": 20}}, "timeout_seconds": 1200},
     {"id": "journal_unit", "title": "Journal unit checks", "description": "Fixed journal unit-test discovery. No operator-selectable test paths.", "parameters": {}, "timeout_seconds": 180},
 )
 CATALOG_BY_ID = {item["id"]: item for item in CATALOG}
@@ -325,7 +326,7 @@ class Observer:
         if test == "bootstrap":
             return [sys.executable, "-m", "lab.cli", "--seed", str(p["seed"]), "--cycles", str(p["cycles"]), "--run-id", rid, "--output", str(self.run_root / rid / "events.jsonl")]
         if test == "mortal_stage11":
-            return [sys.executable, "-m", "lab.stage11_autonomous_600_step_probe", "--steps", str(p["steps"])]
+            return [sys.executable, "-m", "lab.stage11_autonomous_600_step_probe", "--steps", str(p["steps"]), "--observer-export-dir", str(self.run_root / rid)]
         if test == "journal_unit":
             return [sys.executable, "-m", "unittest", "discover", "-s", str(self.core_root / "tests"), "-p", "test_causal_journal.py", "-v"]
         raise ValueError("not an explicitly authorized test")
@@ -652,6 +653,63 @@ class Observer:
                 "provenance": "imported_declaration_untrusted",
                 "warning": "Structural validity is not causal or physical verification."}
 
+    def _local_engine_geometry(self, rid: str, *, step: int) -> dict[str, Any]:
+        denied = {"step": step, "available": False, "geometry": None,
+                  "frame": None, "verified": False, "map_authorized": False,
+                  "physical_truth_verified": False,
+                  "provenance": "operator_local_engine_capture",
+                  "reason": "no verified operator recording"}
+        status = self._local_status(rid)
+        if (status.get("status") != "SUCCESS"
+                or status.get("test_id") != "mortal_stage11"
+                or status.get("assertions_passed") is not True):
+            denied["reason"] = "run not accepted as successful autonomous diagnostic"
+            return denied
+        try:
+            paths = {a["alias"]: a["name"] for a in self.files(rid)}
+            if not {"journal", "world_frames", "manifest", "result"} <= set(paths):
+                denied["reason"] = "missing immutable recording files"
+                return denied
+            directory = self._dir(rid)
+            with open_regular(directory, paths["manifest"]) as stream:
+                manifest = json.load(stream)
+            with open_regular(directory, paths["result"]) as stream:
+                report = json.load(stream)
+            if (manifest.get("schema") != "observer-artifacts-v1"
+                    or manifest.get("run_id") != rid
+                    or manifest.get("test_id") != "mortal_stage11"
+                    or report.get("steps_physically_executed") != status.get("executed_steps")):
+                denied["reason"] = "inconsistent terminal custody receipts"
+                return denied
+            frames_record = manifest["files"]["world_frames"]
+            journal_record = manifest["files"]["journal"]
+            if (frames_record["name"] != paths["world_frames"]
+                    or journal_record["name"] != paths["journal"]):
+                denied["reason"] = "unexpected artifact manifest bindings"
+                return denied
+            with open_regular(directory, paths["world_frames"]) as stream:
+                frames_data = stream.read(16 * 1024 * 1024 + 1)
+            with open_regular(directory, paths["journal"]) as stream:
+                journal_data = stream.read(32 * 1024 * 1024 + 1)
+            with tempfile.TemporaryDirectory(prefix="observer-verified-map-") as tmp:
+                frames_path = Path(tmp) / "frames"
+                journal_path = Path(tmp) / "journal"
+                frames_path.write_bytes(frames_data)
+                journal_path.write_bytes(journal_data)
+                result = verify_engine_recording(
+                    frames_path, journal_path,
+                    report=report,
+                    frame_hash=frames_record["sha256"],
+                    journal_hash=journal_record["sha256"],
+                    step=step,
+                )
+            return {**result, "verified": result["capture_integrity_verified"],
+                    "map_authorized": result["available"],
+                    "provenance": "operator_local_engine_recorded_not_scientific_truth"}
+        except (OSError, ValueError, TypeError, KeyError, UnicodeError, json.JSONDecodeError):
+            denied["reason"] = "unreadable or corrupt local custody evidence"
+            return denied
+
     def replay_geometry(self, rid: str, *, step: int) -> dict[str, Any]:
         """Read an exact imported frame for an operator preview, never infer it.
 
@@ -659,6 +717,8 @@ class Observer:
         authenticated physical replay, even when the frame matches a journal
         step. Its provenance label must remain visible to the operator.
         """
+        if RUN_ID.fullmatch(rid):
+            return self._local_engine_geometry(rid, step=step)
         result = {"step": step, "available": False, "geometry": None,
                   "frame": None, "verified": False, "map_authorized": False,
                   "provenance": "imported_engine_state_claim_unverified",
