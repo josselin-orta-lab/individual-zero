@@ -59,7 +59,8 @@ def enabled_sixpass_config(base, *, maximum_episodes=1):
         },
     )
     return replace(base, selection_policy=selector, semantic_policy=policy,
-                   sleep_work=budget, p_cons_min=0.0)
+                   sleep_work=budget, p_cons_min=0.0,
+                   incremental_selection=True)
 
 from i0.interfaces import PrimitiveCommand
 from i0.equipment import train_exact_transition_table
