@@ -328,3 +328,19 @@ def test_imported_journal_diagnostic_never_self_trusts_chain(client, layout):
     assert result["map_authorized"] is False
     (folder / "journal.txt").write_bytes(b"corrupt")
     assert client.get("/api/runs/import-chain-case/replay/journal/diagnostic").json()["chain_valid"] is False
+
+
+def test_custody_requires_explicit_anchors_and_authentication(client):
+    rid = "import-missing"
+    endpoint = f"/api/runs/{rid}/replay/frames/custody"
+    assert client.post(endpoint, json={}, headers={"Origin": "http://testserver"}).status_code == 422
+    assert client.post(endpoint, json={
+        "trusted_frame_sha256": "a" * 64,
+        "trusted_journal_head": "b" * 64,
+        "trusted_journal_count": 1,
+    }, headers={"Origin": "http://evil.invalid"}).status_code == 403
+    assert client.post(endpoint, json={
+        "trusted_frame_sha256": "a" * 64,
+        "trusted_journal_head": "b" * 64,
+        "trusted_journal_count": 1,
+    }, headers={"Origin": "http://testserver"}).status_code == 404
