@@ -61,3 +61,18 @@ Proposed Phase 2 UI: time scrubber, separate world/observation/belief/Oracle
 panels, geospatial canvas only when exact coordinates exist, terminal banner,
 integrity alert rail and historical-provenance inspector. No Phase 2 code is
 present in Phase 1.
+
+## Proposed frame export contract (Phase 2)
+
+See `observer-world-frames-v1.schema.json`. It requires explicit identity,
+committed `t_monde` boundaries, bounded integer grid coordinates, unique
+entity identities (to be checked by the consumer), and an independent
+attestation naming the canonical journal head/count and source digest.
+
+**A manifest attestation is a claim, not verification.** A file satisfying
+this schema alone MUST NOT enable an authoritative map. Before map rendering,
+the consumer must independently verify the complete canonical journal, trusted
+head/count, source hash, frame ordering/uniqueness, bounds, and consistency of
+identity and committed step boundaries. The existing geometry endpoint
+intentionally returns `available: false` until that independent verifier is
+implemented. Oracle and cognition must remain separately labeled.
