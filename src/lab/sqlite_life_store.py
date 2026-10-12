@@ -200,6 +200,8 @@ class SQLiteLifeLedger:
         _validate_identity(individual_id)
         if type(path) is not str or not os.path.isabs(path):
             raise ValueError("birth requires an absolute SQLite path")
+        # Aliases of a life must share the same writer, WAL, and lock path.
+        path = os.path.realpath(path)
         payload = _canonical_state(initial_state, individual_id)
         metadata = registered_current_metadata(initial_state)
         if metadata is not None and metadata[1:] != (
@@ -271,6 +273,9 @@ class SQLiteLifeLedger:
         _validate_identity(expected_individual_id)
         if type(path) is not str or not os.path.isabs(path) or not Path(path).is_file():
             raise ValueError("existing SQLite life path required; never create a past identity")
+        path = os.path.realpath(path)
+        if os.stat(path).st_nlink != 1:
+            raise RecoveryBlocked("hardlinked SQLite life cannot have a unique writer/WAL path")
         db = cls._connect(path)
         store = cls(db, path=path, fault=fault)
         try:
@@ -292,6 +297,9 @@ class SQLiteLifeLedger:
         _validate_identity(expected_individual_id)
         if type(path) is not str or not os.path.isabs(path) or not Path(path).is_file():
             raise ValueError("existing absolute SQLite audit path required")
+        path = os.path.realpath(path)
+        if os.stat(path).st_nlink != 1:
+            raise RecoveryBlocked("hardlinked SQLite life cannot have a unique audit/WAL path")
         uri = "file:" + quote(path, safe="/") + "?mode=ro"
         db = sqlite3.connect(uri, uri=True, isolation_level=None, timeout=5.0)
         try:
