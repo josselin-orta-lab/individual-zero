@@ -289,9 +289,9 @@ def test_imported_world_frames_structural_diagnostic_is_not_authorization(client
     folder.mkdir()
     frames = {
         "schema": "observer-world-frames-v1",
-        "identity": {"individual_id": "i0", "life_generation": 0, "attempt_ref": "attempt"},
+        "identity": {"individual_id": "i0", "life_generation": 0},
         "geometry": {"coordinate_system": "grid-xy-top-left", "width": 4, "height": 3},
-        "frames": [{"t_monde": 1, "step_boundary": "committed",
+        "frames": [{"t_monde": 1, "attempt_ref": "attempt", "step_boundary": "committed",
                     "individual_pose": {"x": 2, "y": 1}, "entities": []}],
         "attestation": {"journal_head_sha256": "a" * 64, "journal_event_count": 1,
                         "verifier": "self-declared", "verified_at": "2026-10-12T00:00:00Z",
