@@ -72,9 +72,19 @@ def run_probe(*, steps: int = STEPS, observer_export_dir: str | None = None) -> 
                 raise AssertionError("applied world step has no real command")
             actions[primitive] += 1
             if observer_export_dir is not None:
+                # Stage8 may publish a precision update after the Scheduler's
+                # step closure, so do not assume the LAST journal entry closes
+                # the physical step. Select its unique matching closure.
+                closures = [
+                    dict(entry.causal_event)
+                    for entry in individual.journal.entries
+                    if entry.causal_event.get("kind") == "step_closed"
+                    and entry.causal_event.get("t_monde") == world_step
+                ]
+                if len(closures) != 1:
+                    raise AssertionError("world step lacks one unique closure")
                 physical_frames.append(capture_closed_world(
-                    individual.world, t_monde=world_step,
-                    closed_event=dict(individual.journal.entries[-1].causal_event),
+                    individual.world, t_monde=world_step, closed_event=closures[0],
                 ))
             if world_step in anchor_steps:
                 # Observation-only hash/count receipt. NO snapshot or restore.
