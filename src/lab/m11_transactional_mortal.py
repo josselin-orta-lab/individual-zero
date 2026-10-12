@@ -335,9 +335,35 @@ class M11TransactionalMortal:
                     raise RecoveryBlocked("cold factory exposes uncoordinated runtime")
                 _install_trusted_current_on_fresh(runtime, image, journal)
             private = _copy_private_runtime(runtime)
+            expected = canonical_causal_bytes(image)
+            detached = _runtime_image(private, individual_id=individual_id)
+            if canonical_causal_bytes(detached) != expected:
+                changed = [
+                    name for name in image
+                    if canonical_causal_bytes(detached.get(name)) != canonical_causal_bytes(image[name])
+                ]
+                if "owners" in changed:
+                    changed.extend(
+                        "owner:" + name for name in image["owners"]
+                        if canonical_causal_bytes(detached["owners"].get(name))
+                        != canonical_causal_bytes(image["owners"][name])
+                    )
+                raise RecoveryBlocked(
+                    "detached cold runtime differs before sealing external factory: "
+                    + ", ".join(changed[:12]))
             # No duplicate active authority can escape through a factory.
             runtime.stage3.substrate._mortal_boundary.halt(
                 failed_step=max(1, runtime.scheduler.t_monde))
+            detached_after_halt = _runtime_image(private, individual_id=individual_id)
+            if canonical_causal_bytes(detached_after_halt) != expected:
+                changed = [
+                    name for name in image
+                    if canonical_causal_bytes(detached_after_halt.get(name))
+                    != canonical_causal_bytes(image[name])
+                ]
+                raise RecoveryBlocked(
+                    "external factory quarantine changed owned cold runtime: "
+                    + ", ".join(changed))
             return cls(runtime=private, ledger=ledger, individual_id=individual_id)
         except BaseException:
             ledger.close()
