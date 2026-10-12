@@ -504,6 +504,37 @@ class ScriptedStage2Runtime:
             }
         )
 
+    def capture_operator_closed_step(self) -> dict[str, object]:
+        """Bind an engine frame to the latest durably journaled closure.
+
+        Must be invoked synchronously after close_step, before any later
+        external world mutation. This is a capture receipt, not a persisted
+        frame archive or an independent scientific attestation.
+        """
+        if not self.journal.durable_wal_enabled:
+            raise RuntimeError("operator capture requires a durable journal WAL")
+        if self.scheduler.active_attempt is not None:
+            raise RuntimeError("cannot capture an open world step")
+        entries = self.journal.entries()
+        if not entries:
+            raise RuntimeError("no journaled closure")
+        closure = entries[-1]
+        event = closure.causal_event
+        if event["kind"] != "step_closed" or event["data"]["world_advance_count"] != 1:
+            raise RuntimeError("latest journal event is not a physical step closure")
+        if event["t_monde"] != self.scheduler.t_monde:
+            raise RuntimeError("closure and world clock disagree")
+        frame = self.world.capture_operator_world_frame(t_monde=event["t_monde"])
+        frame["step_boundary"] = "committed"
+        return {
+            "frame": frame,
+            "attempt_ref": event["attempt_ref"],
+            "journal_closure_hash": closure.event_hash,
+            "journal_head_sha256": self.journal.head_hash,
+            "journal_event_count": len(entries),
+            "geometry": self.world.operator_world_geometry(),
+        }
+
     def causal_fingerprint(self) -> dict[str, object]:
         state = {
             owner.owner_id: owner.export_causal_state()
