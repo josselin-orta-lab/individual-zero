@@ -1,0 +1,73 @@
+name: Stage12 contrasted software evidence (not scientific GO)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage12-contrasted-evidence.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contrast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Contrasted detectors, goal, agency and provenance
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_lived_detectors.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_module_occupancy.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_occupancy_runtime.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_progress.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_alignment.py' -v
+          python -m unittest discover -s tests -p 'test_stage9_agency_comparator.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_diagnostic_audit.py' -v
+          python -m unittest discover -s tests -p 'test_v131_stage12_sixpass_operator_integration.py' -v
+      - name: Run real mortal steps and preserve full evidence
+        run: |
+          mkdir -p /tmp/stage12-evidence
+          python scripts/run_stage12_operator_trial.py --output-dir /tmp/stage12-evidence/trial --steps 600
+      - name: Independently audit and report missing behavioral coverage
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          folder=Path('/tmp/stage12-evidence/trial')
+          manifest=json.loads((folder/'trial-manifest.json').read_text())
+          packet=manifest['cross_auditor_packet']
+          if manifest['physically_applied_steps'] != 600 or packet['coverage']['physically_executed_actions'] != 600:
+              raise SystemExit('missing physical world steps')
+          if manifest['operator_accepted'] or manifest['scientific_validated'] or manifest['m11_atomic_recovery_certified']:
+              raise SystemExit('forged acceptance or Stage12 recovery')
+          report={
+              'source_sha':manifest['execution_provenance']['code_commit'],
+              'head_hash':manifest['head_hash'],
+              'physical_steps':manifest['physically_applied_steps'],
+              'module_occupancy':packet['st_module_occupancy'],
+              'context_detectors':packet['lived_detector_coverage'],
+              'agency_attribution':packet['lived_attribution_evidence'],
+              'goal_progress':packet['lived_goal_progress'],
+              'alignment':packet['goal_action_alignment'] if 'goal_action_alignment' in packet else packet.get('alignment'),
+              'stage12_operator_accepted':False,
+              'm11_stage12_atomic_recovery_certified':False,
+              'scientific_validation':'not_performed',
+          }
+          (folder/'coverage-gaps.json').write_text(json.dumps(report,sort_keys=True,indent=2)+'\n')
+          print(json.dumps({'steps':600,'operator_accepted':False,'scientific_validation':'not_performed'}))
+          PY
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage12-contrasted-evidence-python-${{ matrix.python-version }}
+          path: /tmp/stage12-evidence/
+          if-no-files-found: warn
