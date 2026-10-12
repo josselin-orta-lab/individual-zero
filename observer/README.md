@@ -171,3 +171,34 @@ ZIP, SHA-256 byte checks, tests and UI.
 **Not claimed**: complete Core WAL recovery, independent scientific validity,
 Oracle ground-truth attestation, 2D replay or operator approval. Phase 1 stays
 **IN_PROGRESS** until reviewed and explicitly accepted. Phase 2 is design only.
+
+## Phase 1 operator acceptance checklist (manual, no scientific verdict)
+
+Use a dedicated unprivileged account, local browser and a **new** mode-0700
+run root. Keep the Core checkout read-only and do not grant the Observer OS
+account write access to independent Oracle/Bench archives.
+
+1. Confirm the login rejects a wrong token, accepts the configured token,
+   and logout removes access to protected API routes.
+2. Run bootstrap (seed 0, 3 cycles). Confirm a terminal SUCCESS, exactly
+   three lab telemetry events, a downloadable original JSONL and a matching
+   integrity digest. This does not prove physical cognitive steps.
+3. Run the real Stage 11 diagnostic (7 steps). Confirm the report identifies
+   seven physically executed steps, the offline audit completed, and neither
+   external Oracle nor Bench was loaded. Scientific validation must remain null.
+4. Open the journal and Oracle explorers with separately provided read-only
+   canonical sources. Confirm each source is labeled independently, unavailable
+   data is not fabricated, and corrupt records are explicitly reported.
+5. Download a ZIP and original file; compare their bytes and independently
+   retained SHA-256 hashes. Observer does not establish journal chain validity.
+6. Cancel a longer test, verify it is not marked SUCCESS, and confirm no
+   unexpected child processes remain. Simulate an incomplete receipt in a
+   disposable test root, restart, and verify new runs are blocked (HTTP 409).
+   Inspect host processes and use a fresh isolated root to resume operations.
+7. Confirm Core runs without Observer, no Observer import appears in Core,
+   and no Oracle or Bench secrets are passed to an I0 child environment.
+
+Record operator name, date, OS, Python version, Core SHA, Observer SHA,
+artifacts/digests, observed failures, and an explicit **ACCEPT / REJECT**
+decision. A green CI is not an operator acceptance decision. Phase 2 replay
+remains out of scope until this Phase 1 gate is approved.
