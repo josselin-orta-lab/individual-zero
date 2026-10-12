@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/josselin-orta-lab/individual-zero/blob/main/observer/contracts/observer-source-v1.schema.json",
+  "title": "Individual Zero Observer read-only source manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "files"],
+  "properties": {
+    "schema": {"const": "observer-source-v1"},
+    "created_at": {"type": ["string", "null"]},
+    "metadata": {"type": "object"},
+    "files": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "journal": {"$ref": "#/$defs/basename"},
+        "oracle": {"$ref": "#/$defs/basename"},
+        "evaluation_trace": {"$ref": "#/$defs/basename"},
+        "lab_events": {"$ref": "#/$defs/basename"}
+      }
+    },
+    "sha256": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "journal": {"$ref": "#/$defs/hash"},
+        "oracle": {"$ref": "#/$defs/hash"},
+        "evaluation_trace": {"$ref": "#/$defs/hash"},
+        "lab_events": {"$ref": "#/$defs/hash"}
+      }
+    }
+  },
+  "$defs": {
+    "basename": {"type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$"},
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
