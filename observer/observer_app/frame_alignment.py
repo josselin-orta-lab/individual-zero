@@ -33,7 +33,23 @@ def compare_frames_to_journal(frames_path: Path, journal_path: Path) -> dict:
         elif any(step not in closed for step in requested):
             result["error"] = "frame_at_unclosed_step"
         else:
-            result["frame_step_alignment"] = True
+            # A closed step number alone is insufficient: reject frames
+            # attributed to another execution attempt.
+            with journal_path.open("rb") as stream:
+                journal_bytes = stream.read(32 * 1024 * 1024 + 1)
+            if len(journal_bytes) > 32 * 1024 * 1024:
+                result["error"] = "journal_too_large"
+                return result
+            closed_attempts = {}
+            for line in journal_bytes.split(b"\\n"):
+                event = json.loads(line)["causal_event"]
+                if event.get("kind") == "step_closed":
+                    closed_attempts[event["t_monde"]] = event["attempt_ref"]
+            expected_attempt = data["identity"]["attempt_ref"]
+            if any(closed_attempts.get(step) != expected_attempt for step in requested):
+                result["error"] = "frame_attempt_mismatch"
+            else:
+                result["frame_step_alignment"] = True
         return result
     except (OSError, ValueError, KeyError, TypeError, UnicodeError):
         result["error"] = "unreadable_frame_data"
