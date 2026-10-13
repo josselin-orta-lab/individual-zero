@@ -18,6 +18,9 @@ from .independent_journal_audit import audit_export_bytes
 
 _VERSION = "stage12-lived-goal-progress-one-step-v1"
 _MEASURES = frozenset({"water", "food", "energy", "integrity"})
+_SPATIAL_VERSION = "stage12-lived-goal-spatial-progress-v1"
+_SPATIAL_MEASURE = "spatial_distance"
+_DIRS = {"north": (0,-1), "south": (0,1), "east": (1,0), "west": (-1,0)}
 
 
 def _number(value: object) -> float | None:
@@ -143,8 +146,16 @@ def audit_stage12_goal_progress(
                 or type(cycle) is not int or cycle < 1
                 or type(attempt) is not str or not attempt
                 or type(data) is not dict
-                or data.get("contract_version") != _VERSION):
+                or data.get("contract_version") not in (_VERSION, _SPATIAL_VERSION)):
             raise ValueError("invalid Stage12 goal-progress event provenance")
+        if kind == "stage12_goal_progress_followup" and (
+            data["contract_version"] != (
+                intents.get(data.get("intent_ref"), (None, {}, None))[1].get(
+                    "contract_version")
+            )
+        ):
+            raise ValueError("goal followup contract version does not match its source")
+        # Version-specific semantic validation continues below.
         if kind == "stage12_goal_progress_preregistered":
             ref = identities[index]
             if ref in intents or any(row[1]["sent_world_step"] == t for row in intents.values()):
@@ -154,9 +165,58 @@ def audit_stage12_goal_progress(
             if (type(data.get("observe_world_step")) is not int
                     or data["observe_world_step"] != t + 1):
                 raise ValueError("invalid frozen goal-progress observation deadline")
+            spatial = data["contract_version"] == _SPATIAL_VERSION
             if (type(data.get("measure")) is not str
-                    or data["measure"] not in _MEASURES):
+                    or data["measure"] not in (
+                        {_SPATIAL_MEASURE} if spatial else _MEASURES
+                    )):
                 raise ValueError("invalid frozen goal-progress measure")
+            if spatial:
+                if (set(data) != {
+                    "contract_version", "intent_ref", "goal_ref", "option_ref",
+                    "command_hash", "measure", "value_before",
+                    "sent_world_step", "observe_world_step", "life_id",
+                    "start_x", "start_y", "target_x", "target_y",
+                    "target_kind", "direction",
+                } or type(data["life_id"]) is not str or not data["life_id"]
+                        or type(data["direction"]) is not str
+                        or data["direction"] not in _DIRS
+                        or data["target_kind"] not in ("water", "berry_a", "berry_b")
+                        or any(type(data[key]) is not int for key in (
+                            "start_x", "start_y", "target_x", "target_y"
+                        ))
+                        or _number(data.get("value_before")) != 1.0):
+                    raise ValueError("malformed spatial pre-action target or identity")
+                dx, dy = _DIRS[data["direction"]]
+                if (data["target_x"], data["target_y"]) != (
+                        data["start_x"]+dx, data["start_y"]+dy):
+                    raise ValueError("spatial criterion target not along intended movement")
+                pre = captures.get((t, attempt), [])
+                if len(pre) != 1 or pre[0] >= index:
+                    raise ValueError("spatial criterion lacks unique pre-action perception")
+                source = records[pre[0]]
+                pos = source.get("data", {}).get("position")
+                candidates = source.get("data", {}).get("agency_visible_adjacent")
+                if (not isinstance(pos, dict)
+                        or (pos.get("x"), pos.get("y"))
+                           != (data["start_x"], data["start_y"])
+                        or not isinstance(candidates, list)):
+                    raise ValueError("spatial criterion lacks a witnessed initial position")
+                matches = [cell for cell in candidates if (
+                    isinstance(cell, dict)
+                    and cell.get("direction") == data["direction"]
+                    and (cell.get("x"), cell.get("y")) == (
+                        data["target_x"], data["target_y"]
+                    )
+                )]
+                if len(matches) != 1:
+                    raise ValueError("spatial criterion lacks unique visible target direction")
+                witness = matches[0]
+                relevant = (witness.get("water_source") is True
+                            if data["target_kind"] == "water"
+                            else data["target_kind"] in witness.get("resources", ()))
+                if not relevant:
+                    raise ValueError("spatial target does not occur in I0's earlier perception")
             if _number(data.get("value_before")) is None:
                 raise ValueError("invalid frozen goal-progress starting body value")
             for field in ("goal_ref", "option_ref", "command_hash"):
@@ -193,6 +253,9 @@ def audit_stage12_goal_progress(
             # otherwise substitute an invented command hash. Verify that
             # the digest agrees with the *publicly recorded* command bytes.
             # This does not establish independent physical-world truth.
+            if spatial and (primitive != "se_deplacer"
+                            or parameters.get("direction") != data["direction"]):
+                raise ValueError("spatial criterion is not the executed movement")
             expected_command_hash = sha256_hex(canonical_causal_bytes({
                 "primitive": primitive, "parameters": parameters,
             }))
@@ -238,18 +301,45 @@ def audit_stage12_goal_progress(
                     raise ValueError("false missed-window claim")
                 unknown += 1
             else:
+                if intent["contract_version"] == _SPATIAL_VERSION:
+                    expected_success = after < before
+                    expected_reason = (
+                        "measured_spatial_progress" if expected_success
+                        else "no_measured_spatial_progress"
+                    )
+                else:
+                    expected_success = after > before
+                    expected_reason = (
+                        "measured_strict_gain" if expected_success
+                        else "no_measured_strict_gain"
+                    )
                 if (t != intent["observe_world_step"] or after is None
-                        or reason != ("measured_strict_gain" if after > before
-                                      else "no_measured_strict_gain")
-                        or outcome != ("success" if after > before else "failure")):
+                        or reason != expected_reason
+                        or outcome != ("success" if expected_success else "failure")):
                     raise ValueError("goal outcome contradicts preregistered criterion")
                 transition_index, transition = transitions[intent["sent_world_step"]]
-                physical = transition.get("body_after", {})
-                observed_physical = _number(
-                    physical.get(intent["measure"]) if isinstance(physical, dict) else None
-                )
+                if intent["contract_version"] == _SPATIAL_VERSION:
+                    perceptual_data = records[observed_captures[0]].get("data", {})
+                    observed_pos = perceptual_data.get("position")
+                    physical_pos = transition.get("position_after")
+                    if (not isinstance(observed_pos, dict)
+                            or not isinstance(physical_pos, dict)
+                            or any(type(pos.get(key)) is not int for pos in (
+                                observed_pos, physical_pos
+                            ) for key in ("x", "y"))
+                            or observed_pos != physical_pos):
+                        raise ValueError("spatial followup lacks independently witnessed new position")
+                    observed_physical = float(
+                        abs(observed_pos["x"] - intent["target_x"])
+                        + abs(observed_pos["y"] - intent["target_y"])
+                    )
+                else:
+                    physical = transition.get("body_after", {})
+                    observed_physical = _number(
+                        physical.get(intent["measure"]) if isinstance(physical, dict) else None
+                    )
                 if observed_physical is None or observed_physical != after:
-                    raise ValueError("goal followup diverges from committed body state")
+                    raise ValueError("goal followup diverges from committed lived state")
                 if transition_index <= source_index or transition_index >= index:
                     raise ValueError("goal outcome/physical transition ordering violation")
                 if outcome == "success":
