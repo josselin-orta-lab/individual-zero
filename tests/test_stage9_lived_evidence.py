@@ -323,7 +323,7 @@ class LivedEvidenceTests(unittest.TestCase):
                 ), ())
                 self.assertEqual(m.pending_causal_observations(), ())
 
-    def test_distinct_closed_contexts_required_for_harmful_food_credit(self):
+    def test_distinct_positions_do_not_manufacture_harmful_food_credit(self):
         m=model()
         statuses=[]
         publications=[]
@@ -339,11 +339,11 @@ class LivedEvidenceTests(unittest.TestCase):
             publications.append(len(m.publish()))
         self.assertEqual(statuses,[
             "ambiguous_food_association",
-            "dc05_admissible",
-            "dc05_admissible",
+            "ambiguous_food_association",
+            "ambiguous_food_association",
         ])
-        self.assertEqual(publications,[0,0,1])
-        self.assertEqual(m.get("toxic:berry_b").safety_status,"etabli_pour_securite")
+        self.assertEqual(publications,[0,0,0])
+        self.assertIsNone(m.get("toxic:berry_b"))
 
     def test_ambiguous_lived_harm_generates_no_causal_observation_or_intervention(self):
         m=model()
@@ -410,7 +410,7 @@ class LivedEvidenceTests(unittest.TestCase):
                 food_control_pairs=(("berry_b","berry_b"),)).validate()
         self.assertEqual(model().config.food_control_pairs,())
 
-    def test_snapshot_restores_ambiguous_food_context_without_promoting_it(self):
+    def test_ambiguous_food_association_adds_no_snapshot_credit_state(self):
         m=model()
         events=pair(m,position=(2,2))
         row=m.ingest_closed_autobiographical_episode(
@@ -420,7 +420,9 @@ class LivedEvidenceTests(unittest.TestCase):
         )[0]
         self.assertEqual(row.epistemic_status,"ambiguous_food_association")
         raw=m.export_causal_state()
-        self.assertIn("ambiguous_food_harm_contexts",raw)
+        self.assertNotIn("ambiguous_food_harm_contexts",raw)
+        self.assertEqual(raw["pending"],[])
+        self.assertEqual(raw["admitted_safety_evidence"],[])
         clone=model()
         clone.restore_causal_state(raw)
         self.assertEqual(clone.export_causal_state(),raw)
