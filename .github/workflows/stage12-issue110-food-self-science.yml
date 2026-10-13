@@ -6,6 +6,9 @@ on:
     paths:
       - '.github/workflows/stage12-issue110-food-self-science.yml'
       - 'scripts/run_stage12_issue110_food_self_agency.py'
+      - 'src/lab/stage12_attribution_pair_audit.py'
+      - 'src/lab/stage12_runtime.py'
+      - 'tests/test_stage12_attribution_sleep_expiry.py'
   workflow_dispatch:
 permissions:
   contents: read
