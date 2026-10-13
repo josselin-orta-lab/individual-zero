@@ -36,9 +36,17 @@ For DC-05 only:
 5. Technical-journal integrity, Oracle labels, Bench labels, missing hidden
    fields, or an external auditor's conclusions MUST NOT increase DC-05
    cognitive credit.
-6. A harmful food association may be retained as lived experience while its
-   DC-05 admission is withheld until the configured lived-contrast policy is
-   satisfied.
+6. Under unchanged v1.3.1 semantics, harmful food associations remain
+   withheld when physical etiology is not distinguishable from authorized
+   experience.
+7. If this v1.3.2 clarification is adopted, DC-05 may promote the **empirical
+   ingestion-risk** safety use after `n_sec` independent lived harmful
+   consumption episodes with comparable contexts and no *perceptible*
+   sufficient competing cause. Hidden causes are not declared absent; they are
+   simply irrelevant to the narrower empirical-risk proposition.
+8. The promoted safety-use proposition MUST remain barred from simulator
+   correction and from causal-status advancement unless the separate causal
+   lifecycle independently earns those claims.
 
 ## Consequences
 
@@ -50,11 +58,13 @@ Gained:
 
 Trade-off:
 
-- safety learning is delayed because the first ambiguous harmful association
-  is not credited;
-- some truly toxic exposures are intentionally withheld until additional
-  lived contrast exists;
-- no finite first-person protocol can exclude every adversarial hidden cause.
+- while v1.3.1 remains normative, harmful food safety learning is fail-closed
+  and may be absent even for genuinely toxic food;
+- if the proposed empirical-risk semantics is adopted, safety learning can
+  resume from repeated lived harm without claiming food-specific physical
+  etiology;
+- no finite first-person protocol can exclude every adversarial hidden cause,
+  so the causal `toxic_item` claim remains a separate and stronger burden.
 
 No guarantee is lost that v1.3.1 can information-theoretically provide:
 physical etiology remains unidentifiable in observationally equivalent
