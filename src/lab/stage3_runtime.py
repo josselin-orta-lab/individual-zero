@@ -116,6 +116,14 @@ class Stage3Runtime:
                 **({"agency_visible_inventory": dict(sorted(self._capture.inventory.items())),
                     "agency_capture_schema": "stage12-first-person-cue-v1"}
                    if self.control.goal_agency is not None else {}),
+                **({"agency_visible_adjacent": [
+                    {"direction": c.direction, "x": c.x, "y": c.y,
+                     "passable": c.passable, "water_source": c.water_source,
+                     "resources": list(c.resources)}
+                    for c in self._capture.adjacent
+                ], "spatial_capture_version": "stage12-ga08-local-adjacent-v1"}
+                   if self.control.goal_agency is not None
+                   and self.control.goal_agency.spatial_enabled else {}),
             },
         )
         return self._capture
