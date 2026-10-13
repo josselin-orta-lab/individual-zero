@@ -65,12 +65,15 @@ class Stage10Config:
     selection_policy: BatchSelectionPolicy | None = None
     semantic_policy: SemanticPassPolicy | None = None
     incremental_selection: bool = False
+    maximum_passes_per_sleep_step: int = 1
 
     def validate(self) -> None:
         if not self.version:
             raise ValueError("Stage-10 runtime requires version")
         if type(self.incremental_selection) is not bool or (self.incremental_selection and self.selection_policy is None):
             raise ValueError("incremental selection requires live sixpass policy")
+        if type(self.maximum_passes_per_sleep_step) is not int or not 1 <= self.maximum_passes_per_sleep_step <= len(PASSES):
+            raise ValueError("invalid bounded number of consolidation passes per sleep step")
         self.stage9.validate()
         self.sleep.validate()
         self.sleep_work.validate()
@@ -849,9 +852,27 @@ class Stage10Runtime(Stage9Runtime):
         # This step was admitted as sleep by the reduced wake rule. All
         # semantic work remains private until its scheduler-owned commit.
         try:
-            self._run_live_consolidation(
-                world_step=t, attempt_ref=attempt.attempt_ref,
-            )
+            for _ in range(self._stage10_config.maximum_passes_per_sleep_step):
+                before = self.consolidation.current
+                before_cursor = None if before is None else before.cursor
+                before_scan = (None if self.consolidation_scan is None
+                               else (self.consolidation_scan.active,
+                                     self.consolidation_scan.cursor))
+                before_version = self.slow_history.current_version
+                self._run_live_consolidation(
+                    world_step=t, attempt_ref=attempt.attempt_ref,
+                )
+                after = self.consolidation.current
+                after_scan = (None if self.consolidation_scan is None
+                              else (self.consolidation_scan.active,
+                                    self.consolidation_scan.cursor))
+                if self.slow_history.current_version != before_version:
+                    break  # one atomic publication per physical sleep step
+                if before is not None and after is before and after.cursor > before_cursor:
+                    continue
+                if after_scan != before_scan or (before is None and after is not None):
+                    continue
+                break  # no free retry after budget denial or no useful work
         except Exception:
             # The work could have reached the irreversible h + journal
             # publication boundary before failing. Never continue a mortal
