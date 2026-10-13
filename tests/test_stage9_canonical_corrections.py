@@ -184,6 +184,21 @@ def intervention(m, name, *, step, context, linked=True):
 
 
 class CanonicalCorrectionTests(unittest.TestCase):
+    def test_snapshot_cannot_inject_or_retarget_numeric_food_witness(self):
+        from copy import deepcopy
+        m = model()
+        physical_meal(m)
+        m.publish_causal_inference()
+        snapshot = m.export_causal_state()
+        self.assertEqual(len(snapshot["numeric_witnesses"]), 1)
+        forged = deepcopy(snapshot)
+        forged["numeric_witnesses"][0]["transition_event_ref"] = "world:forged"
+        clone = model()
+        with self.assertRaisesRegex(
+            ValueError, "numeric snapshot witness lacks matching lived causal observation",
+        ):
+            clone.restore_causal_state(forged)
+
     def test_all_three_provenance_layers_are_mandatory(self):
         m = model()
         physical_meal(m)
