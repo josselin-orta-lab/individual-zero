@@ -137,7 +137,11 @@ class Stage9Runtime(Stage8Runtime):
                 )
                 for item in candidates:
                     self._write(
-                        kind="causal_lived_evidence_admitted",
+                        kind=(
+                            "causal_lived_evidence_admitted"
+                            if item.epistemic_status == "dc05_admissible"
+                            else "causal_lived_evidence_withheld"
+                        ),
                         cycle=cycle,
                         data={
                             "contingency_ref": item.contingency_ref,
@@ -145,6 +149,7 @@ class Stage9Runtime(Stage8Runtime):
                             "observation_ref": item.observation_ref,
                             "evidence_ref": item.identifier,
                             "harm_observed": item.harm_observed,
+                            "epistemic_status": item.epistemic_status,
                         },
                     )
                 # Stage 9 §9.6: only Memory-closed DC-09 comparator reports
