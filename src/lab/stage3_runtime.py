@@ -114,6 +114,13 @@ class Stage3Runtime:
                 "position": {"x": self._capture.x, "y": self._capture.y},
                 "adjacent_creature_count": len(self._capture.adjacent_creatures),
                 **({"agency_visible_inventory": dict(sorted(self._capture.inventory.items())),
+                    "agency_visible_adjacent": [
+                        {"direction": cell.direction, "x": cell.x, "y": cell.y,
+                         "passable": cell.passable,
+                         "water_source": cell.water_source,
+                         "resources": list(cell.resources)}
+                        for cell in self._capture.adjacent
+                    ],
                     "agency_capture_schema": "stage12-first-person-cue-v1"}
                    if self.control.goal_agency is not None else {}),
             },
