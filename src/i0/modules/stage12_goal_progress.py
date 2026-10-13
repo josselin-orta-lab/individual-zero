@@ -13,6 +13,12 @@ from dataclasses import dataclass
 from math import isfinite
 from typing import Mapping
 
+from .perception import PerceptualCapture
+from .stage12_spatial_goal_evidence import (
+    SPATIAL_CONTRACT_VERSION, SpatialGoalPrecommit,
+    evaluate_spatial_goal_outcome,
+)
+
 
 ALLOWED_MEASURES = frozenset({"water", "food", "energy", "integrity"})
 CONTRACT_VERSION = "stage12-lived-goal-progress-one-step-v1"
@@ -75,6 +81,23 @@ class LivedGoalProgressFollowup:
         return {name: getattr(self, name) for name in self.__dataclass_fields__}
 
 
+@dataclass(frozen=True, slots=True)
+class LivedSpatialGoalProgressFollowup:
+    """Spatial goal result, independent of the subjective agency judgement."""
+    intent_ref: str
+    sent_world_step: int
+    observed_world_step: int
+    measure: str
+    value_before: float
+    value_after: int | None
+    criterion_outcome: str
+    reason: str
+    contract_version: str = SPATIAL_CONTRACT_VERSION
+
+    def as_dict(self) -> dict[str, object]:
+        return {name: getattr(self, name) for name in self.__dataclass_fields__}
+
+
 class Stage12GoalProgressLedger:
     """One pending pre-action criterion in the canonical Metacognition owner.
 
@@ -84,17 +107,28 @@ class Stage12GoalProgressLedger:
     """
 
     def __init__(self) -> None:
-        self._pending: LivedGoalProgressIntent | None = None
+        self._pending: LivedGoalProgressIntent | SpatialGoalPrecommit | None = None
+        self._spatial_enabled = False
         self._last_registered_world_step = 0
         self._registered_refs: set[str] = set()
 
+    def enable_spatial(self) -> None:
+        """Birth-only opt-in; state remains owned by this existing ledger."""
+        if (self._spatial_enabled or self._pending is not None
+                or self._registered_refs or self._last_registered_world_step):
+            raise ValueError("GA-08 cannot be enabled after cognitive history")
+        self._spatial_enabled = True
+
     @property
-    def pending(self) -> LivedGoalProgressIntent | None:
+    def pending(self) -> LivedGoalProgressIntent | SpatialGoalPrecommit | None:
         return self._pending
 
-    def preregister(self, intent: LivedGoalProgressIntent) -> None:
-        if type(intent) is not LivedGoalProgressIntent:
-            raise TypeError("lived goal-progress intent required")
+    def preregister(
+        self, intent: LivedGoalProgressIntent | SpatialGoalPrecommit,
+    ) -> None:
+        if (type(intent) is not LivedGoalProgressIntent
+                and not (self._spatial_enabled and type(intent) is SpatialGoalPrecommit)):
+            raise TypeError("authorized lived body/spatial goal-progress intent required")
         intent.validate()
         if (self._pending is not None
                 or intent.sent_world_step <= self._last_registered_world_step
@@ -107,7 +141,8 @@ class Stage12GoalProgressLedger:
     def followup(
         self, *, world_step: int, body: Mapping[str, object] | None,
         diagnostic_paid: bool = True,
-    ) -> LivedGoalProgressFollowup | None:
+        capture: PerceptualCapture | None = None,
+    ) -> LivedGoalProgressFollowup | LivedSpatialGoalProgressFollowup | None:
         if type(world_step) is not int or world_step < 1:
             raise ValueError("invalid observed physical time")
         intent = self._pending
@@ -118,6 +153,27 @@ class Stage12GoalProgressLedger:
         # remain explicit unknown evidence rather than invented failures.
         if body is not None and not isinstance(body, Mapping):
             raise ValueError("lived goal-progress body must be a mapping or unavailable")
+        if capture is not None and not isinstance(capture, PerceptualCapture):
+            raise ValueError("invalid spatial lived perception")
+        if type(intent) is SpatialGoalPrecommit:
+            # Both producers observe the same lived capture, but neither
+            # receives the other producer's result. A missed/UC-refused
+            # observation is UNKNOWN, never a goal failure.
+            value = evaluate_spatial_goal_outcome(
+                intent, capture=capture, world_step=world_step,
+                diagnostic_paid=diagnostic_paid,
+            )
+            self._pending = None
+            return LivedSpatialGoalProgressFollowup(
+                intent_ref=intent.intent_ref,
+                sent_world_step=intent.sent_world_step,
+                observed_world_step=world_step,
+                measure="spatial_distance",
+                value_before=float(intent.distance_before),
+                value_after=value.observed_distance,
+                criterion_outcome=value.outcome,
+                reason=value.reason,
+            )
         value = None if body is None else _measurement(body.get(intent.measure))
         self._pending = None
         if not diagnostic_paid:
@@ -145,7 +201,10 @@ class Stage12GoalProgressLedger:
 
     def export_causal_state(self) -> dict[str, object]:
         return {
-            "schema": CONTRACT_VERSION,
+            "schema": (
+                CONTRACT_VERSION + "+ga08" if self._spatial_enabled
+                else CONTRACT_VERSION
+            ),
             "pending_intent": None if self._pending is None else self._pending.as_dict(),
             "last_registered_world_step": self._last_registered_world_step,
             "registered_intent_refs": sorted(self._registered_refs),
@@ -161,7 +220,10 @@ class Stage12GoalProgressLedger:
         if (type(state) is not dict
                 or set(state) != {"schema", "pending_intent",
                                   "last_registered_world_step", "registered_intent_refs"}
-                or state["schema"] != CONTRACT_VERSION
+                or state["schema"] != (
+                    CONTRACT_VERSION + "+ga08" if self._spatial_enabled
+                    else CONTRACT_VERSION
+                )
                 or type(state["last_registered_world_step"]) is not int
                 or state["last_registered_world_step"] < 0
                 or type(state["registered_intent_refs"]) is not list):
@@ -173,10 +235,15 @@ class Stage12GoalProgressLedger:
         raw = state["pending_intent"]
         pending = None
         if raw is not None:
-            if type(raw) is not dict or set(raw) != set(LivedGoalProgressIntent.__dataclass_fields__):
-                raise ValueError("invalid current goal-progress intent")
-            pending = LivedGoalProgressIntent(**raw)
-            pending.validate()
+            if (self._spatial_enabled and type(raw) is dict
+                    and raw.get("policy_version") == SPATIAL_CONTRACT_VERSION):
+                pending = SpatialGoalPrecommit.from_dict(raw)
+            else:
+                if (type(raw) is not dict
+                        or set(raw) != set(LivedGoalProgressIntent.__dataclass_fields__)):
+                    raise ValueError("invalid current goal-progress intent")
+                pending = LivedGoalProgressIntent(**raw)
+                pending.validate()
             if (pending.intent_ref not in refs
                     or pending.sent_world_step != state["last_registered_world_step"]):
                 raise ValueError("pending goal-progress intent ledger differs")
