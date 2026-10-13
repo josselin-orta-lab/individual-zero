@@ -16,6 +16,13 @@ from typing import Mapping
 
 ALLOWED_MEASURES = frozenset({"water", "food", "energy", "integrity"})
 CONTRACT_VERSION = "stage12-lived-goal-progress-one-step-v1"
+SPATIAL_CONTRACT_VERSION = "stage12-lived-goal-spatial-progress-v1"
+SPATIAL_MEASURE = "spatial_distance"
+SPATIAL_DIRECTIONS = {
+    "north": (0, -1), "south": (0, 1),
+    "east": (1, 0), "west": (-1, 0),
+}
+
 
 
 def _measurement(value: object) -> float | None:
@@ -60,6 +67,60 @@ class LivedGoalProgressIntent:
 
 
 @dataclass(frozen=True, slots=True)
+class LivedSpatialGoalIntent:
+    """A preregistered *local* sub-goal, not an achievement of the whole goal.
+
+    Target must be a visible adjacent resource. Its original source remains
+    the Stage3 perception, not an oracle-provided world location.
+    """
+
+    intent_ref: str
+    goal_ref: str
+    option_ref: str
+    command_hash: str
+    measure: str
+    value_before: float
+    sent_world_step: int
+    observe_world_step: int
+    life_id: str
+    start_x: int
+    start_y: int
+    target_x: int
+    target_y: int
+    target_kind: str
+    direction: str
+    contract_version: str = SPATIAL_CONTRACT_VERSION
+
+    def validate(self) -> None:
+        if (self.contract_version != SPATIAL_CONTRACT_VERSION
+                or self.measure != SPATIAL_MEASURE
+                or type(self.sent_world_step) is not int
+                or self.sent_world_step < 1
+                or type(self.observe_world_step) is not int
+                or self.observe_world_step != self.sent_world_step + 1
+                or any(type(v) is not str or not v for v in (
+                    self.intent_ref, self.goal_ref, self.option_ref,
+                    self.command_hash, self.life_id,
+                ))
+                or any(type(v) is not int for v in (
+                    self.start_x, self.start_y, self.target_x, self.target_y,
+                ))
+                or self.direction not in SPATIAL_DIRECTIONS
+                or self.target_kind not in ("water", "berry_a", "berry_b")
+                or type(self.value_before) not in (int, float)
+                or float(self.value_before) != 1.0):
+            raise ValueError("invalid preregistered local spatial goal")
+        dx, dy = SPATIAL_DIRECTIONS[self.direction]
+        if (self.target_x, self.target_y) != (
+            self.start_x + dx, self.start_y + dy
+        ):
+            raise ValueError("spatial target is not attempted neighboring cell")
+
+    def as_dict(self) -> dict[str, object]:
+        return {name: getattr(self, name) for name in self.__dataclass_fields__}
+
+
+@dataclass(frozen=True, slots=True)
 class LivedGoalProgressFollowup:
     intent_ref: str
     sent_world_step: int
@@ -84,16 +145,16 @@ class Stage12GoalProgressLedger:
     """
 
     def __init__(self) -> None:
-        self._pending: LivedGoalProgressIntent | None = None
+        self._pending: LivedGoalProgressIntent | LivedSpatialGoalIntent | None = None
         self._last_registered_world_step = 0
         self._registered_refs: set[str] = set()
 
     @property
-    def pending(self) -> LivedGoalProgressIntent | None:
+    def pending(self) -> LivedGoalProgressIntent | LivedSpatialGoalIntent | None:
         return self._pending
 
-    def preregister(self, intent: LivedGoalProgressIntent) -> None:
-        if type(intent) is not LivedGoalProgressIntent:
+    def preregister(self, intent: LivedGoalProgressIntent | LivedSpatialGoalIntent) -> None:
+        if type(intent) not in (LivedGoalProgressIntent, LivedSpatialGoalIntent):
             raise TypeError("lived goal-progress intent required")
         intent.validate()
         if (self._pending is not None
@@ -107,6 +168,7 @@ class Stage12GoalProgressLedger:
     def followup(
         self, *, world_step: int, body: Mapping[str, object] | None,
         diagnostic_paid: bool = True,
+        position: tuple[int, int] | None = None,
     ) -> LivedGoalProgressFollowup | None:
         if type(world_step) is not int or world_step < 1:
             raise ValueError("invalid observed physical time")
@@ -118,7 +180,19 @@ class Stage12GoalProgressLedger:
         # remain explicit unknown evidence rather than invented failures.
         if body is not None and not isinstance(body, Mapping):
             raise ValueError("lived goal-progress body must be a mapping or unavailable")
-        value = None if body is None else _measurement(body.get(intent.measure))
+        if position is not None and (
+            type(position) is not tuple or len(position) != 2
+            or any(type(c) is not int for c in position)
+        ):
+            raise ValueError("goal-progress position must be legal lived coordinates")
+        if type(intent) is LivedSpatialGoalIntent:
+            value = (
+                None if position is None
+                else float(abs(position[0] - intent.target_x)
+                           + abs(position[1] - intent.target_y))
+            )
+        else:
+            value = None if body is None else _measurement(body.get(intent.measure))
         self._pending = None
         if not diagnostic_paid:
             outcome, reason = "unknown", "diagnostic_uc_not_available"
@@ -128,9 +202,13 @@ class Stage12GoalProgressLedger:
             outcome, reason = "unknown", "lived_measure_unavailable"
         else:
             outcome, reason = (
-                ("success", "measured_strict_gain")
-                if value > intent.value_before
-                else ("failure", "no_measured_strict_gain")
+                (("success", "measured_spatial_progress")
+                 if value < intent.value_before
+                 else ("failure", "no_measured_spatial_progress"))
+                if type(intent) is LivedSpatialGoalIntent
+                else (("success", "measured_strict_gain")
+                      if value > intent.value_before
+                      else ("failure", "no_measured_strict_gain"))
             )
         return LivedGoalProgressFollowup(
             intent_ref=intent.intent_ref,
@@ -141,6 +219,7 @@ class Stage12GoalProgressLedger:
             value_after=value if diagnostic_paid and world_step == intent.observe_world_step else None,
             criterion_outcome=outcome,
             reason=reason,
+            contract_version=intent.contract_version,
         )
 
     def export_causal_state(self) -> dict[str, object]:
@@ -173,9 +252,14 @@ class Stage12GoalProgressLedger:
         raw = state["pending_intent"]
         pending = None
         if raw is not None:
-            if type(raw) is not dict or set(raw) != set(LivedGoalProgressIntent.__dataclass_fields__):
+            if type(raw) is not dict:
                 raise ValueError("invalid current goal-progress intent")
-            pending = LivedGoalProgressIntent(**raw)
+            model = (LivedSpatialGoalIntent
+                     if raw.get("contract_version") == SPATIAL_CONTRACT_VERSION
+                     else LivedGoalProgressIntent)
+            if set(raw) != set(model.__dataclass_fields__):
+                raise ValueError("invalid current goal-progress intent")
+            pending = model(**raw)
             pending.validate()
             if (pending.intent_ref not in refs
                     or pending.sent_world_step != state["last_registered_world_step"]):
