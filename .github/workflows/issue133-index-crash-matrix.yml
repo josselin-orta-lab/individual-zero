@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/run_stage10_issue133_index_crash_matrix.py'
+      - 'scripts/audit_stage10_index_wal.py'
       - '.github/workflows/issue133-index-crash-matrix.yml'
   workflow_dispatch:
 

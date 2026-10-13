@@ -159,6 +159,21 @@ def main():
                 f"{point}: child exit {completed.returncode}: "
                 f"{completed.stderr[-2000:]}")
         item = inspect_wal(directory / "life.wal", point)
+        # Independent read-only operator gate: all interrupted physical lives
+        # must be rejected for recovery even when the WAL hash chain is valid.
+        guard = subprocess.run(
+            [sys.executable, str(Path(__file__).with_name("audit_stage10_index_wal.py")),
+             "--wal", str(directory / "life.wal")],
+            capture_output=True, text=True, timeout=30,
+        )
+        if guard.returncode != 3:
+            raise AssertionError(
+                f"{point}: unclosed life accepted or WAL corrupt by safety gate: "
+                f"{guard.returncode} {guard.stdout} {guard.stderr}")
+        guard_info = json.loads(guard.stdout)
+        if guard_info.get("recovery_certified") is not False or guard_info.get("may_resume_stage12") is not False:
+            raise AssertionError(f"{point}: unsafe recovery claim")
+        (directory / "operator-readonly-audit.json").write_text(guard.stdout)
         summaries.append(item)
         (directory / "audit.json").write_text(
             json.dumps(item, indent=2, sort_keys=True) + "\n")
