@@ -37,7 +37,53 @@ def model():
     ))
 
 
+def _prime_ambiguous_food_context(m) -> None:
+    if m.export_causal_state().get("ambiguous_food_harm_contexts"):
+        return
+    m.record_applied_ambient_integrity_control(
+        t_monde=20, option_ref="option:wait:prime",
+        position=(1, 2), integrity_before=100.0,
+    )
+    m.observe_followup_capture(t_monde=21, integrity=100.0)
+    wait = (
+        {"event_id":"cmd:wait:prime", "kind":"command_experienced",
+         "t_monde":20, "primitive":"attendre", "parameters":{}},
+        {"event_id":"world:wait:prime", "kind":"world_transition_experienced",
+         "t_monde":20, "position_after":{"x":1,"y":2},
+         "body_after":{"integrity":100.0}, "effects":{"rest":"attendre"}},
+    )
+    assert m.ingest_closed_autobiographical_episode(
+        episode_ref="episode:wait:prime",
+        event_refs=("cmd:wait:prime","world:wait:prime"),
+        autobiographical_events=wait,
+    ) == ()
+    m.record_applied_food_exposure(
+        t_monde=21, resource_kind="berry_b", option_ref="option:prime",
+        motive_ref="goal:food", integrity_before=100.0,
+        position_before=(1, 2),
+        body_before={"energy":50.0, "food":60.0,
+                     "water":50.0, "integrity":100.0},
+    )
+    m.observe_followup_capture(t_monde=22, integrity=90.0)
+    food = (
+        {"event_id":"cmd:meal:prime", "kind":"command_experienced",
+         "t_monde":21, "primitive":"manger",
+         "parameters":{"target":"berry_b"}},
+        {"event_id":"world:meal:prime", "kind":"world_transition_experienced",
+         "t_monde":21, "effects":{"ate":"berry_b"},
+         "position_after":{"x":1,"y":2},
+         "body_after":{"integrity":90.0}},
+    )
+    (row,) = m.ingest_closed_autobiographical_episode(
+        episode_ref="episode:meal:prime",
+        event_refs=("cmd:meal:prime","world:meal:prime"),
+        autobiographical_events=food,
+    )
+    assert row.epistemic_status == "ambiguous_food_association"
+
+
 def physical_meal(m, *, step=2, option="option:meal"):
+    _prime_ambiguous_food_context(m)
     before = state(x=2)
     suffix = "" if step == 2 else f":{step}"
     # Only an independently applied, closed, uneventful wait immediately
