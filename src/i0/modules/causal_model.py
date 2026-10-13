@@ -3092,6 +3092,42 @@ class CausalModel:
             w.transition_event_ref for w in (*witnesses, *pending_witnesses)
         }) != len(witnesses) + len(pending_witnesses):
             raise ValueError("same physical transition across published/pending witnesses")
+
+        # Numeric correction witnesses cannot have autonomous snapshot
+        # authority. They must remain joined to the exact food causal
+        # observation that the live admission path created from the same
+        # Memory-closed physical transition. This prevents restore from
+        # manufacturing a correction witness that runtime cognition never
+        # earned.
+        published_numeric_sources = {
+            row.identifier: row for row in obs.values()
+        }
+        pending_numeric_sources = {
+            row.identifier: row for row in pending_obs
+        }
+        for witness, sources in (
+            *((row, published_numeric_sources) for row in witnesses),
+            *((row, pending_numeric_sources) for row in pending_witnesses),
+        ):
+            expected_ref = (
+                f"causal-observation:{witness.episode_ref}:"
+                f"{witness.transition_event_ref}"
+            )
+            observation = sources.get(expected_ref)
+            if (
+                observation is None
+                or observation.contingency_ref != witness.contingency_ref
+                or observation.predicate != "toxic_item"
+                or observation.subject_ref != witness.command_target
+                or observation.episode_ref != witness.episode_ref
+                or observation.observation_ref != witness.transition_event_ref
+                or observation.observed_step != witness.observed_t_monde
+                or not observation.cause_present
+                or not observation.effect_present
+            ):
+                raise ValueError(
+                    "numeric snapshot witness lacks matching lived causal observation"
+                )
         self._numeric_witnesses = {v.identifier: v for v in witnesses}
         self._pending_numeric_witnesses = pending_witnesses
         self._version = version
