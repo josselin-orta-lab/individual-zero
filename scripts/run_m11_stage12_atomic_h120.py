@@ -83,7 +83,9 @@ def main():
     committed = set()
     checkpoints = [e for e in events
                    if e["kind"] == "stage10_consolidation_pass_checkpointed"]
-    assert len(checkpoints) == 6 * activated
+    # An active unpublished transaction may already have 1..5 durable
+    # semantic checkpoints. Count only completed six-pass h publications.
+    assert 6 * activated <= len(checkpoints) < 6 * (activated + 1)
     for i, e in enumerate(events):
         if e["kind"] != H:
             continue
