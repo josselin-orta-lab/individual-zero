@@ -21,13 +21,16 @@ def model() -> CausalModel:
     ))
 
 
-def lived_meal(m: CausalModel, *, t: int, food: str, after: float) -> None:
+def lived_meal(
+    m: CausalModel, *, t: int, food: str, after: float,
+    position: tuple[int, int] = (2, 2),
+) -> None:
     actual_step = t + 1
     # A genuine no-food same-site control, rather than a hidden WorldBody
     # damage label, is now prerequisite for harmful food causal observations.
     m.record_applied_ambient_integrity_control(
         t_monde=t, option_ref=f"option:wait:{t}",
-        position=(2, 2), integrity_before=100.0,
+        position=position, integrity_before=100.0,
     )
     m.observe_followup_capture(t_monde=actual_step, integrity=100.0)
     control = (
@@ -35,7 +38,7 @@ def lived_meal(m: CausalModel, *, t: int, food: str, after: float) -> None:
          "t_monde": t, "primitive": "attendre", "parameters": {}},
         {"event_id": f"wait-transition:{t}",
          "kind": "world_transition_experienced", "t_monde": t,
-         "position_after": {"x": 2, "y": 2},
+         "position_after": {"x": position[0], "y": position[1]},
          "body_after": {"integrity": 100.0},
          "effects": {"rest": "attendre"}},
     )
@@ -47,7 +50,7 @@ def lived_meal(m: CausalModel, *, t: int, food: str, after: float) -> None:
     m.record_applied_food_exposure(
         t_monde=actual_step, resource_kind=food, option_ref=f"option:{t}",
         motive_ref="goal:food", integrity_before=100.0,
-        position_before=(2, 2),
+        position_before=position,
         body_before={"energy":50.0, "food":60.0,
                      "water":50.0, "integrity":100.0},
     )
@@ -62,7 +65,7 @@ def lived_meal(m: CausalModel, *, t: int, food: str, after: float) -> None:
             "event_id": f"transition:{t}",
             "kind": "world_transition_experienced",
             "t_monde": actual_step,
-            "position_after": {"x": 2, "y": 2},
+            "position_after": {"x": position[0], "y": position[1]},
             "body_after": {"integrity": after},
             "effects": {"ate": food},
         },
@@ -75,9 +78,13 @@ def lived_meal(m: CausalModel, *, t: int, food: str, after: float) -> None:
 
 
 def publish_physical_correlation(m: CausalModel) -> None:
-    lived_meal(m, t=1, food="berry_b", after=90.0)
-    lived_meal(m, t=3, food="berry_b", after=80.0)
-    lived_meal(m, t=5, food="berry_a", after=100.0)
+    # First harmful context is intentionally ambiguous under issue #89.
+    # Two later, distinct lived positions provide the two admissible treated
+    # observations required by n1=2. The benign berry remains the lived control.
+    lived_meal(m, t=1, food="berry_b", after=90.0, position=(2, 2))
+    lived_meal(m, t=3, food="berry_b", after=80.0, position=(3, 2))
+    lived_meal(m, t=5, food="berry_b", after=70.0, position=(4, 2))
+    lived_meal(m, t=7, food="berry_a", after=100.0, position=(5, 2))
     changes = m.publish_causal_inference()
     assert [(x.contingency_ref, x.after) for x in changes] == [
         ("toxic:berry_b", "correlation_observee")
@@ -98,7 +105,7 @@ class AutonomousHypothesisTests(unittest.TestCase):
         self.assertEqual(change.protocol, "matched_alternatives")
         reviews = m.export_causal_state()["causal_reviews"]
         self.assertEqual(len(reviews), 1)
-        self.assertIn("episode:5", reviews[0])
+        self.assertIn("episode:7", reviews[0])
         self.assertEqual(m.export_causal_state()["causal_interventions"], [])
         self.assertEqual(m.publish_causal_inference(), ())
         self.assertEqual(m.get("toxic:berry_b").causal_status, "hypothese_causale")
@@ -117,8 +124,9 @@ class AutonomousHypothesisTests(unittest.TestCase):
 
     def test_unlived_control_claim_cannot_produce_autonomous_review(self):
         m = model()
-        lived_meal(m, t=1, food="berry_b", after=90.0)
-        lived_meal(m, t=3, food="berry_b", after=80.0)
+        lived_meal(m, t=1, food="berry_b", after=90.0, position=(2, 2))
+        lived_meal(m, t=3, food="berry_b", after=80.0, position=(3, 2))
+        lived_meal(m, t=5, food="berry_b", after=70.0, position=(4, 2))
         m.integrate_causal_observation(CausalObservation(
             identifier=(
                 "causal-control:berry_b:"
