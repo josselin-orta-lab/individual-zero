@@ -10,7 +10,7 @@ from dataclasses import dataclass
 import json
 
 from .independent_journal_audit import audit_export_bytes
-from .stage12_goal_progress_audit import audit_stage12_goal_progress
+from .stage12_goal_progress_audit import audit_stage12_goal_progress, _number
 from .stage12_first_person_agency_audit import audit_stage12_first_person_agency
 
 _PAIR = "stage12-goal-outcome-agency-pair-v1"
@@ -191,10 +191,10 @@ def audit_stage12_attribution_pairs(
         if "attribution_pair_ref" in data:
             size = data.get("diagnostic_window")
             minimum = data.get("bias_min_outcomes_each")
-            threshold = data.get("attribution_bias_threshold")
+            threshold = _number(data.get("attribution_bias_threshold"))
             if (type(size) is not int or size < 1
                     or type(minimum) is not int or minimum < 1
-                    or type(threshold) not in (int, float)
+                    or threshold is None
                     or not 0 <= threshold <= 1):
                 raise ValueError("invalid versioned attribution detector thresholds")
             if min_threshold is None:
