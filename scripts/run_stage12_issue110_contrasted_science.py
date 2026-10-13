@@ -172,6 +172,92 @@ def run_life(directory: Path, *, world: str, water: float, sleep_profile: str) -
     return result
 
 
+def summarize_lives(lives: list[dict], *, source_sha: str) -> dict:
+    """Summarize exact *public audit report schema*, not Python dataclass names.
+
+    Reject missing/invalid audit keys: a malformed report must not be counted
+    as zero scientific evidence. The on-disk index keeps every failed life.
+    """
+    audited = [
+        life for life in lives
+        if life.get("audit_error") is None and "error" not in life
+        and bool(life.get("audits"))
+    ]
+    expected_schemas = {
+        "goal": "stage12-independent-goal-progress-audit-v1",
+        "first_person": "stage12-first-person-independent-technical-audit-v1",
+        "pairs": "stage12-independent-outcome-agency-pair-audit-v1",
+    }
+    for life in audited:
+        for section, schema in expected_schemas.items():
+            data = life["audits"].get(section)
+            if not isinstance(data, dict) or data.get("schema") != schema:
+                raise ValueError("unexpected issue110 " + section + " audit schema")
+    def count(section: str, key: str) -> int:
+        values = []
+        for life in audited:
+            value = life["audits"][section].get(key)
+            if type(value) is not int or value < 0:
+                raise ValueError(f"missing or invalid {section}.{key} audit counter")
+            values.append(value)
+        return sum(values)
+
+    labels: Counter[str] = Counter()
+    for life in audited:
+        for row in life["audits"]["pairs"].get("diagnostic_labels", []):
+            if not isinstance(row, dict) or row.get("attribution_bias") not in (
+                None, "self_serving_pattern", "self_blame_pattern",
+                "no_detected_pattern",
+            ):
+                raise ValueError("unexpected first-person diagnostic label")
+            name = "unavailable" if row["attribution_bias"] is None else row["attribution_bias"]
+            labels[name] += 1
+
+    total_steps = sum(life.get("applied_steps", 0) for life in lives)
+    pairs = count("pairs", "applied_pairs")
+    return {
+        "schema": "issue110-contrasted-ga-summary-v2",
+        "source_sha": source_sha, "planned_lives": len(WORLDS) * len(WATERS) * len(SLEEP),
+        "completed_lives": len(lives),
+        "independently_audited_lives": len(audited),
+        "failed_or_unaudited_lives": len(lives) - len(audited),
+        "total_actual_applied_steps": total_steps,
+        "audited_actual_applied_steps": sum(life["applied_steps"] for life in audited),
+        "lives_with_fewer_than_50_steps": sum(
+            life.get("applied_steps", 0) < STEPS for life in lives
+        ),
+        "goal_preregistered": count("goal", "preregistered_one_step_criteria"),
+        "verified_successes": count("goal", "verified_one_step_resource_gains"),
+        "verified_failures": count("goal", "verified_one_step_no_gains"),
+        "unknown_goal_outcomes": count("goal", "unavailable_next_step_observations"),
+        "unresolved_goal_outcomes_at_terminal": count("goal", "unresolved_at_terminal"),
+        "agency_precommits": count("first_person", "precommits"),
+        "agency_self": count("first_person", "judgements_self"),
+        "agency_world": count("first_person", "judgements_world"),
+        "agency_unknown": count("first_person", "judgements_unknown"),
+        "agency_unavailable": count("first_person", "unavailable"),
+        "agency_pending_at_terminal": count("first_person", "pending_terminal"),
+        "agency_uc_charged": count("first_person", "charged_uc"),
+        "agency_uc_refused": count("first_person", "refused_uc"),
+        "admitted_pairs": count("pairs", "admitted_pairs"),
+        "applied_pairs": pairs,
+        "applied_successes": count("pairs", "applied_successes"),
+        "applied_failures": count("pairs", "applied_failures"),
+        "applied_self": count("pairs", "applied_self"),
+        "applied_world": count("pairs", "applied_world"),
+        "missed_pairs": count("pairs", "missed_pairs"),
+        "join_uc_charged": count("pairs", "join_uc"),
+        "join_uc_refused": count("pairs", "rejected_join_uc"),
+        "diagnostic_labels": dict(sorted(labels.items())),
+        "operator_accepted": False,
+        "scientific_validation": "not_performed",
+        "scientific_status": (
+            "inconclusive_no_admissible_pairs" if pairs == 0
+            else "exploratory_pairs_observed_final_validation_pending"
+        ),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -211,51 +297,12 @@ def main() -> int:
                     "planned_lives": 12,
                     "lives": lives,
                 }, sort_keys=True, indent=2, ensure_ascii=False) + "\n")
-    verified = [
-        life for life in lives
-        if not life.get("audit_error") and "error" not in life
-        and life.get("audits")
-    ]
-    summary = {
-        "schema": "issue110-contrasted-ga-summary-v1",
-        "source_sha": source_sha, "planned_lives": 12,
-        "independently_audited_lives": len(verified),
-        "total_actual_applied_steps": sum(
-            life.get("applied_steps", 0) for life in lives
-        ),
-        "audited_actual_applied_steps": sum(
-            life["applied_steps"] for life in verified
-        ),
-        "verified_successes": sum(
-            life["audits"]["goal"]["verified_strict_gains"] for life in verified
-        ),
-        "verified_failures": sum(
-            life["audits"]["goal"]["verified_no_gains"] for life in verified
-        ),
-        "agency_self": sum(
-            life["audits"]["first_person"]["judgements_self"] for life in verified
-        ),
-        "agency_world": sum(
-            life["audits"]["first_person"]["judgements_world"] for life in verified
-        ),
-        "agency_unknown": sum(
-            life["audits"]["first_person"]["judgements_unknown"] for life in verified
-        ),
-        "admitted_pairs": sum(
-            life["audits"]["pairs"]["admitted_pairs"] for life in verified
-        ),
-        "applied_pairs": sum(
-            life["audits"]["pairs"]["applied_pairs"] for life in verified
-        ),
-        "operator_accepted": False,
-        "scientific_validation": "not_performed",
-        "scientific_status": "exploratory_only_no_general_claim",
-    }
+    summary = summarize_lives(lives, source_sha=source_sha)
     (root / "summary.json").write_text(
         json.dumps(summary, sort_keys=True, indent=2) + "\n",
     )
     print(json.dumps(summary, sort_keys=True))
-    return 0 if len(verified) == 12 else 2
+    return 0 if summary["independently_audited_lives"] == 12 else 2
 
 
 if __name__ == "__main__":
