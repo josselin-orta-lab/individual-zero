@@ -108,7 +108,19 @@ class GA08M11AtomicRecoveryTests(unittest.TestCase):
                 self.assertEqual(actual.world_step, 3)
                 self.assertEqual(actual.generation, 3)
                 self.assertEqual(actual.status, "active")
-                self.assertIsNone(resumed._runtime._meta_custody.goal_progress.pending)
+                # The recovered spatial intention closed exactly once.
+                # At step 3, autonomous I0 may legitimately preregister
+                # a distinct bodily water criterion for its next command.
+                following = resumed._runtime._meta_custody.goal_progress.pending
+                if following is not None:
+                    self.assertNotEqual(
+                        following.intent_ref, spatial_pending.intent_ref,
+                    )
+                    self.assertNotEqual(
+                        getattr(following, "policy_version", None),
+                        "stage12-spatial-subcriterion-ga08-v1",
+                    )
+                    self.assertEqual(following.sent_world_step, 3)
             with SQLiteLifeLedger.open_existing(
                 path=path, expected_individual_id=identity,
             ) as ledger:
