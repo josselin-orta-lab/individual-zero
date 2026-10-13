@@ -173,7 +173,7 @@ def audit_stage12_goal_progress(
                 raise ValueError("invalid frozen goal-progress measure")
             if spatial:
                 if (set(data) != {
-                    "contract_version", "intent_ref", "goal_ref", "option_ref",
+                    "contract_version", "goal_ref", "option_ref",
                     "command_hash", "measure", "value_before",
                     "sent_world_step", "observe_world_step", "life_id",
                     "start_x", "start_y", "target_x", "target_y",
@@ -301,6 +301,8 @@ def audit_stage12_goal_progress(
                     raise ValueError("false missed-window claim")
                 unknown += 1
             else:
+                if after is None or before is None:
+                    raise ValueError("goal outcome lacks admitted observable measurement")
                 if intent["contract_version"] == _SPATIAL_VERSION:
                     expected_success = after < before
                     expected_reason = (
