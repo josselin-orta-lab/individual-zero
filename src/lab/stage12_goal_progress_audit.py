@@ -14,6 +14,9 @@ import json
 
 from .determinism import canonical_causal_bytes, sha256_hex
 from .independent_journal_audit import audit_export_bytes
+from .stage12_spatial_provenance_audit import (
+    SPATIAL, audit_stage12_spatial_provenance,
+)
 
 
 _VERSION = "stage12-lived-goal-progress-one-step-v1"
@@ -55,6 +58,10 @@ class Stage12GoalProgressAudit:
     verified_no_gains: int
     unavailable: int
     unresolved_at_terminal: int
+    spatial_preregistered: int = 0
+    spatial_verified_successes: int = 0
+    spatial_verified_failures: int = 0
+    spatial_unknown_outcomes: int = 0
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -66,6 +73,10 @@ class Stage12GoalProgressAudit:
             "verified_one_step_no_gains": self.verified_no_gains,
             "unavailable_next_step_observations": self.unavailable,
             "unresolved_at_terminal": self.unresolved_at_terminal,
+            "spatial_progress_preregistered": self.spatial_preregistered,
+            "spatial_progress_successes": self.spatial_verified_successes,
+            "spatial_progress_failures": self.spatial_verified_failures,
+            "spatial_progress_unknown": self.spatial_unknown_outcomes,
             "complete_goal_achievement_verified": False,
             "subjective_agency_attribution_verified": False,
             "independent_physical_truth_attested": False,
@@ -80,6 +91,9 @@ def audit_stage12_goal_progress(
 ) -> Stage12GoalProgressAudit:
     base = audit_export_bytes(
         content, expected_head=expected_head, expected_count=expected_count,
+    )
+    spatial = audit_stage12_spatial_provenance(
+        content, expected_head=base.head_hash, expected_count=base.occurrences,
     )
     intents: dict[str, tuple[int, dict, dict]] = {}
     observed: set[str] = set()
@@ -133,6 +147,12 @@ def audit_stage12_goal_progress(
             "stage12_goal_progress_preregistered",
             "stage12_goal_progress_followup",
         ):
+            continue
+        # GA-08 has a different frozen observable and is checked by the
+        # independent spatial provenance auditor above, not reinterpreted as
+        # a body strict-gain or a Stage9/P47 prediction result.
+        if (type(event.get("data")) is dict
+                and event["data"].get("contract_version") == SPATIAL):
             continue
         t = event.get("t_monde")
         cycle = event.get("cycle")
@@ -272,9 +292,13 @@ def audit_stage12_goal_progress(
     return Stage12GoalProgressAudit(
         head_hash=base.head_hash,
         occurrences=base.occurrences,
-        preregistered=len(intents),
+        preregistered=len(intents) + spatial.preregistered,
         verified_strict_gains=success,
         verified_no_gains=failure,
         unavailable=unknown,
-        unresolved_at_terminal=unresolved,
+        unresolved_at_terminal=unresolved + spatial.pending_at_terminal,
+        spatial_preregistered=spatial.preregistered,
+        spatial_verified_successes=spatial.verified_successes,
+        spatial_verified_failures=spatial.verified_failures,
+        spatial_unknown_outcomes=spatial.unknown_outcomes,
     )
