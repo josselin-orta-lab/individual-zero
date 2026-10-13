@@ -111,7 +111,7 @@ class Stage12FirstPersonIntegratedSmokeTests(unittest.TestCase):
             rt = opt_in_runtime(str(Path(root) / "forged.wal"), join=True)
             for _ in range(3):
                 self.assertEqual(rt.run_step().execution_status, "applied")
-            rows = [json.loads(r) for r in rt.journal.canonical_bytes().split(b"\\n")]
+            rows = [json.loads(r) for r in rt.journal.canonical_bytes().split(b"\n")]
             idx = next(i for i, r in enumerate(rows)
                        if r["causal_event"]["kind"] == "perceptual_capture"
                        and r["causal_event"]["t_monde"] == 2)
@@ -146,7 +146,7 @@ class Stage12FirstPersonIntegratedSmokeTests(unittest.TestCase):
                     })
                 ).hexdigest()
                 row["event_hash"] = previous
-            forged = b"\\n".join(canonical_causal_bytes(r) for r in rows)
+            forged = b"\n".join(canonical_causal_bytes(r) for r in rows)
             self.assertEqual(audit_export_bytes(forged).world_steps_closed, 3)
             with self.assertRaisesRegex(ValueError, "attribution join"):
                 audit_stage12_attribution_pairs(forged)
