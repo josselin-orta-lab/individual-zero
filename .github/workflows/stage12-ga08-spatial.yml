@@ -5,6 +5,14 @@ on:
       - research/stage12-issue110-attribution-provenance-20261013
     paths:
       - 'src/i0/modules/stage12_spatial_goal_evidence.py'
+      - 'src/i0/modules/stage12_goal_progress.py'
+      - 'src/i0/modules/stage12_goal_agency.py'
+      - 'src/lab/stage3_runtime.py'
+      - 'src/lab/stage12_runtime.py'
+      - 'src/lab/stage12_spatial_provenance_audit.py'
+      - 'src/lab/stage12_goal_progress_audit.py'
+      - 'src/lab/stage12_first_person_agency_audit.py'
+      - 'tests/test_stage12_ga08_owner_runtime.py'
       - 'tests/test_stage12_ga08_spatial_evidence.py'
       - 'tests/test_stage12_ga08_physical_fixture.py'
       - '.github/workflows/stage12-ga08-spatial.yml'
@@ -37,5 +45,8 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_stage12_ga08_spatial_evidence.py' -v
           python -m unittest discover -s tests -p 'test_stage12_ga08_physical_fixture.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_ga08_owner_runtime.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_progress.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency_runtime.py' -q
           python -m unittest discover -s tests -p 'test_stage12_goal_agency.py' -q
           python -m unittest discover -s tests -p 'test_stage12_attribution_pairs.py' -q
