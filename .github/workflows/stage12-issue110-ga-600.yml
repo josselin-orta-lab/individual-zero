@@ -1,0 +1,108 @@
+name: Issue 110 paid first-person agency physical 600
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage12-issue110-ga-600.yml'
+      - 'scripts/run_stage12_operator_trial.py'
+      - 'src/i0/modules/stage12_goal_agency.py'
+      - 'src/i0/modules/stage12_attribution_pairs.py'
+      - 'src/lab/stage12_runtime.py'
+      - 'src/lab/stage12_attribution_pair_audit.py'
+      - 'src/lab/stage12_first_person_agency_audit.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: issue110-ga-600-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  focused-prerequisite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - run: |
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_attribution_pairs.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency_runtime.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_attribution_provenance.py' -q
+  preregistered-600:
+    needs: focused-prerequisite
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Execute new mortal life and retain exact full-source evidence
+        run: |
+          mkdir -p /tmp/i0-issue110-ga
+          python scripts/run_stage12_operator_trial.py \
+            --output-dir /tmp/i0-issue110-ga/trial \
+            --steps 600 --issue110-agency-join
+      - name: Independent goal outcome, first-person and joined pair audit
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from lab.stage12_attribution_pair_audit import audit_stage12_attribution_pairs
+          from lab.stage12_first_person_agency_audit import audit_stage12_first_person_agency
+          folder = Path('/tmp/i0-issue110-ga/trial')
+          if not (folder/'trial-manifest.json').exists():
+              raise SystemExit('trial did not retain manifest')
+          manifest = json.loads((folder/'trial-manifest.json').read_text())
+          print('issue110_physical_trial=' + json.dumps({
+              'status': manifest['status'],
+              'physically_applied_steps': manifest['physically_applied_steps'],
+              'head_hash': manifest['head_hash'],
+              'occurrences': manifest['occurrences'],
+              'execution_provenance': manifest['execution_provenance'],
+              'failure': manifest['failure'],
+              'audit_failure': manifest['audit_failure'],
+          }, sort_keys=True))
+          raw = (folder/'canonical-export.jsonl').read_bytes()
+          kwargs = {'expected_head': manifest['head_hash'],
+                    'expected_count': manifest['occurrences']}
+          first = audit_stage12_first_person_agency(raw, **kwargs)
+          pair = audit_stage12_attribution_pairs(raw, **kwargs)
+          report = {
+              'first_person': first.as_dict(),
+              'joined': pair.as_dict(),
+              'operator_accepted': False,
+              'final_scientific_validation': False,
+          }
+          (folder/'issue110-independent-counts.json').write_text(
+              json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True)+'\n'
+          )
+          print('issue110_independent_counts=' + json.dumps(report, sort_keys=True))
+          if manifest['physically_applied_steps'] != 600 or manifest['status'] != 'complete_technically_audited':
+              raise SystemExit('incomplete 600-step physical life: evidence retained')
+          PY
+      - name: Archive raw immutable evidence including failed and dead lives
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue110-first-person-physical600-py${{ matrix.python-version }}
+          path: /tmp/i0-issue110-ga/
+          retention-days: 30
+          if-no-files-found: warn
