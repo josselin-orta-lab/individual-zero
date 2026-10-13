@@ -481,7 +481,8 @@ class M11TransactionalMortal:
         intent = f"m11:world:{base.generation + 1}:{base.journal_head[:16]}"
         try:
             self._ledger.begin_intent(
-                expected_generation=base.generation, intent_ref=intent)
+                expected_generation=base.generation, intent_ref=intent,
+                trusted_current=base)
             if test_fault:
                 test_fault("after_intent")
             candidate = _copy_private_runtime(self._runtime)
@@ -533,7 +534,7 @@ class M11TransactionalMortal:
                 intent_ref=intent,
                 current_state=proposed,
                 events=events,
-                status=lifecycle,
+                status=lifecycle, verified_intent=base,
             )
             if test_fault:
                 test_fault("after_sql_commit")
