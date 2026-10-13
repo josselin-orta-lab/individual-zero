@@ -12,6 +12,9 @@ from typing import Mapping
 from .determinism import canonical_causal_bytes, deterministic_id, sha256_hex
 from .independent_journal_audit import audit_export_bytes
 from .stage12_goal_progress_audit import audit_stage12_goal_progress
+from .stage12_spatial_provenance_audit import (
+    SPATIAL, audit_stage12_spatial_provenance,
+)
 
 _SCHEMA = "stage12-first-person-goal-agency-v1"
 _CAPTURE = "stage12-first-person-cue-v1"
@@ -68,6 +71,7 @@ def audit_stage12_first_person_agency(
     # Guarantees frozen goal criterion, admitted voluntary goal motive and
     # executed command are not merely matching rehashed but unbound strings.
     goal = audit_stage12_goal_progress(content, **anchor)
+    spatial = audit_stage12_spatial_provenance(content, **anchor)
     if base.head_hash != goal.head_hash:
         raise ValueError("goal-agency auditor mismatched custody")
     rows = [json.loads(r) for r in content.split(b"\n")]
@@ -103,6 +107,8 @@ def audit_stage12_first_person_agency(
                         "stage12_goal_agency_judgement"):
             continue
         data = event.get("data")
+        if type(data) is dict and data.get("policy_version") == SPATIAL:
+            continue
         t, attempt, cycle = (
             event.get("t_monde"), event.get("attempt_ref"), event.get("cycle"),
         )
@@ -246,12 +252,20 @@ def audit_stage12_first_person_agency(
         if closed_steps > commitment["sent_world_step"]:
             raise ValueError("missing GA judgement after new physical step")
         unresolved += 1
-    if sum(len(items) for items in charges.values()) != len(used):
+    spatial_judged = (
+        spatial.judgements_self + spatial.judgements_world
+        + spatial.judgements_unknown + spatial.agency_unavailable
+    )
+    if sum(len(items) for items in charges.values()) != len(used) + spatial_judged:
         raise ValueError("orphaned or duplicate GA UC debit")
     return Stage12FirstPersonAgencyAudit(
         head_hash=base.head_hash, occurrences=base.occurrences,
-        precommits=len(commitments), judgements_self=counts["self"],
-        judgements_world=counts["world"], judgements_unknown=counts["unknown"],
-        unavailable=counts["unavailable"], pending_terminal=unresolved,
-        charged_uc=consumed_uc, refused_uc=refused_uc,
+        precommits=len(commitments) + spatial.preregistered,
+        judgements_self=counts["self"] + spatial.judgements_self,
+        judgements_world=counts["world"] + spatial.judgements_world,
+        judgements_unknown=counts["unknown"] + spatial.judgements_unknown,
+        unavailable=counts["unavailable"] + spatial.agency_unavailable,
+        pending_terminal=unresolved + spatial.pending_at_terminal,
+        charged_uc=consumed_uc + spatial.charged_agency_uc,
+        refused_uc=refused_uc + spatial.refused_agency_uc,
     )
