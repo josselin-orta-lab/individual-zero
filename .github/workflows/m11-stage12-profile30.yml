@@ -1,11 +1,8 @@
 name: M11 Stage12 profile30 current generation
 
+# Observational CPU profile is a pre-registered one-off campaign.
+# Do not rerun automatically for every subsequent PR commit.
 on:
-  pull_request:
-    branches: [exp/stage10-priced-multipass-sleep-20261013]
-    paths:
-      - 'scripts/profile_m11_stage12_30.py'
-      - '.github/workflows/m11-stage12-profile30.yml'
   workflow_dispatch:
 
 permissions:
