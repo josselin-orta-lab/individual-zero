@@ -31,6 +31,10 @@ class SpatialGoalPrecommit:
     destination_passable_before: bool
     policy_version: str = SPATIAL_CONTRACT_VERSION
 
+    @property
+    def observe_world_step(self) -> int:
+        return self.sent_world_step + 1
+
     def validate(self) -> None:
         if (self.policy_version != SPATIAL_CONTRACT_VERSION
                 or any(type(x) is not str or not x for x in (
