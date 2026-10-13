@@ -12,6 +12,7 @@ from math import isfinite
 
 from i0.config import MVP_PHASE1_PRODUCER_ORDER
 from i0.modules.stage12_occupancy import module_occupancy_entropy
+from i0.modules.stage12_goal_agency import GOAL_AGENCY_VERSION
 from i0.modules.stage12_goal_progress import (
     ALLOWED_MEASURES, CONTRACT_VERSION, LivedGoalProgressIntent,
     Stage12GoalProgressLedger,
@@ -158,13 +159,21 @@ class Stage12Runtime(Stage11SleepRuntime):
         self, *, detector_policy: Stage12DetectionPolicy,
         diagnostic_sample_cost_uc: int,
         module_occupancy_cost_uc: int = 1,
-        operator_alert_persistence_steps: int = 3, **kwargs,
+        operator_alert_persistence_steps: int = 3,
+        subjective_goal_agency: bool = False,
+        goal_agency_cost_uc: int = 1, **kwargs,
     ):
         detector_policy.validate()
         if type(diagnostic_sample_cost_uc) is not int or diagnostic_sample_cost_uc < 1:
             raise ValueError("Stage12 diagnostics need a positive injected P-43 UC cost")
         if type(module_occupancy_cost_uc) is not int or module_occupancy_cost_uc < 1:
             raise ValueError("Stage12 occupancy work requires a positive versioned UC cost")
+        if type(subjective_goal_agency) is not bool:
+            raise ValueError("goal agency opt-in must be explicit boolean")
+        if type(goal_agency_cost_uc) is not int or goal_agency_cost_uc < 1:
+            raise ValueError("goal agency cognitive service requires positive UC")
+        self._goal_agency_enabled = subjective_goal_agency
+        self._goal_agency_cost_uc = goal_agency_cost_uc
         self._stage12_occupancy_cost_uc = module_occupancy_cost_uc
         alert_policy = Stage12AlertPolicy(
             version="stage12-alerts-v1+" + detector_policy.version,
@@ -175,6 +184,8 @@ class Stage12Runtime(Stage11SleepRuntime):
         self._stage12_detector_policy = detector_policy
         self._stage12_diagnostic_cost_uc = diagnostic_sample_cost_uc
         super().__init__(**kwargs)
+        if self._goal_agency_enabled:
+            self.stage3.control.enable_goal_agency()
         self._stage12_detectors = Stage12LivedDetectors(detector_policy)
         self._stage12_alerts = Stage12AlertLedger(alert_policy)
         self._meta_custody = _Stage12MetacognitionCustody(
@@ -196,20 +207,25 @@ class Stage12Runtime(Stage11SleepRuntime):
         old = stage4.compute_budget
         cost = self._stage12_diagnostic_cost_uc
         occupancy_cost = self._stage12_occupancy_cost_uc
+        agency_cost = self._goal_agency_cost_uc if self._goal_agency_enabled else 0
         budget = replace(
             old, version=(old.version + "+" + self._stage12_detector_policy.version
                           + "+stage12-diagnostics-charged-v1"
                           + "+stage12-st-module-occupancy-v1"
                           + "+" + CONTRACT_VERSION
+                          + ("+" + GOAL_AGENCY_VERSION if agency_cost else "")
                           + "+stage12-alerts-v1-p"
                           + str(self._stage12_alert_policy.persistence_world_steps)),
-            cycle_ceiling=old.cycle_ceiling + cost + occupancy_cost,
+            cycle_ceiling=old.cycle_ceiling + cost + occupancy_cost + agency_cost,
             module_envelopes={
                 **old.module_envelopes,
                 # Stage11 has no Stage10 metacognition envelope yet.
                 # Reserve the upcoming sleep proposal AND Stage12 sample,
                 # instead of overwriting the diagnostic capacity during the
                 # later Stage10 with_budget() configuration step.
+                **({"action_control": (
+                    old.module_envelopes.get("action_control", 0) + agency_cost
+                )} if agency_cost else {}),
                 "metacognition_health": max(
                     old.module_envelopes.get("metacognition_health", 0),
                     base.sleep_option_uc,
@@ -219,6 +235,7 @@ class Stage12Runtime(Stage11SleepRuntime):
                 **old.operation_costs,
                 "stage12_diagnostic_sample": cost,
                 "stage12_occupancy_entropy": occupancy_cost,
+                **({"goal_agency_assessment": agency_cost} if agency_cost else {}),
             },
         )
         upgraded = replace(stage9, stage8=replace(stage8, stage7=replace(
@@ -432,6 +449,37 @@ class Stage12Runtime(Stage11SleepRuntime):
                         "diagnostic_policy_version": self._stage12_detector_policy.version,
                     },
                 )
+            # Action Control owns this optional first-person judgement.
+            # The detector still receives no pairs until GA-06 is audited.
+            service = self.stage3.control.goal_agency
+            if service is not None and service.pending is not None:
+                pending_assessment = service.pending
+                if capture.t_monde > pending_assessment.sent_world_step:
+                    agency_charge = self.compute_budget.charge(
+                        module="action_control",
+                        operation="goal_agency_assessment",
+                    )
+                    self._write(kind="compute_charge", cycle=cycle, data={
+                        "module": "action_control",
+                        "operation": "goal_agency_assessment",
+                        "requested_uc": agency_charge.requested_uc,
+                        "accepted": agency_charge.accepted,
+                        "reason": agency_charge.reason,
+                    })
+                    judgement = service.evaluate(
+                        capture=capture, world_step=capture.t_monde,
+                        cue_ref=deterministic_id(
+                            "stage12-authorized-capture-cue-v1",
+                            capture.t_monde, capture.x, capture.y,
+                            tuple(sorted(capture.inventory.items())),
+                        ) if agency_charge.accepted else None,
+                        paid=agency_charge.accepted,
+                    )
+                    if judgement is not None:
+                        self._write(
+                            kind="stage12_goal_agency_judgement",
+                            cycle=cycle, data=judgement.as_dict(),
+                        )
             # Preserve debit -> diagnosis -> contiguous operator-alert
             # receipts. Only afterwards publish the separate goal-progress
             # followup, derived from *lived* body telemetry without Oracle.
@@ -514,6 +562,24 @@ class Stage12Runtime(Stage11SleepRuntime):
                         **registered,
                     )
                 )
+                service = self.stage3.control.goal_agency
+                if service is not None:
+                    assessment = service.preregister(
+                        assessment_ref=deterministic_id(
+                            "stage12-action-control-agency-commit-v1",
+                            self.individual_id, intent_ref,
+                            sent_t_monde, registered["command_hash"],
+                        ),
+                        intent_ref=intent_ref, life_id=self.individual_id,
+                        goal_ref=active.id, option_ref=proposal.option.id,
+                        command_hash=registered["command_hash"],
+                        world_step=sent_t_monde, measure=measure,
+                        command=prepared.command, capture=capture,
+                    )
+                    self._write(
+                        kind="stage12_goal_agency_precommitted",
+                        cycle=cycle, data=assessment.as_dict(),
+                    )
         return super()._dispatch_decision(
             proposal=proposal, prepared=prepared, admission=admission,
             cycle=cycle, sent_t_monde=sent_t_monde,
