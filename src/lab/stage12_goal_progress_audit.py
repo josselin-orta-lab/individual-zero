@@ -92,6 +92,7 @@ def audit_stage12_goal_progress(
     commands: dict[tuple[int, str], list[tuple[int, dict]]] = {}
     captures: dict[tuple[int, str], list[int]] = {}
     diagnostic_receipts: dict[tuple[int, str, int], list[tuple[int, str]]] = {}
+    spatial_charges: dict[tuple[int, str, int], list[tuple[int, dict]]] = {}
     diagnostic_steps: set[int] = set()
     records = [json.loads(line)["causal_event"] for line in content.split(b"\n")]
     identities = [json.loads(line)["event_id"] for line in content.split(b"\n")]
@@ -111,6 +112,13 @@ def audit_stage12_goal_progress(
             if (type(t) is not int or type(event.get("attempt_ref")) is not str):
                 raise ValueError("invalid lived capture provenance")
             captures.setdefault((t, event["attempt_ref"]), []).append(index)
+        elif (kind == "compute_charge"
+              and isinstance(event.get("data"), dict)
+              and event["data"].get("operation") ==
+                  "stage12_spatial_goal_preregistration"):
+            spatial_charges.setdefault(
+                (t, event.get("attempt_ref"), event.get("cycle")), [],
+            ).append((index, event["data"]))
         elif kind == "stage12_action_motive_attested":
             if (type(t) is not int or type(event.get("cycle")) is not int
                     or type(event.get("attempt_ref")) is not str):
@@ -172,6 +180,15 @@ def audit_stage12_goal_progress(
                     )):
                 raise ValueError("invalid frozen goal-progress measure")
             if spatial:
+                spatial_debits = spatial_charges.get((t, attempt, cycle), [])
+                if (len(spatial_debits) != 1
+                        or spatial_debits[0][0] >= index
+                        or spatial_debits[0][1].get("module")
+                           != "metacognition_health"
+                        or spatial_debits[0][1].get("accepted") is not True
+                        or type(spatial_debits[0][1].get("requested_uc")) is not int
+                        or spatial_debits[0][1]["requested_uc"] < 1):
+                    raise ValueError("spatial criterion lacks independently paid UC")
                 if (set(data) != {
                     "contract_version", "goal_ref", "option_ref",
                     "command_hash", "measure", "value_before",
