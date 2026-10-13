@@ -6,13 +6,6 @@ on:
     paths:
       - '.github/workflows/stage12-issue110-contrasted-science.yml'
       - 'scripts/run_stage12_issue110_contrasted_science.py'
-  push:
-    branches:
-      - science/stage12-issue110-contrasted-20261013
-    paths:
-      - '.github/workflows/stage12-issue110-contrasted-science.yml'
-      - 'scripts/run_stage12_issue110_contrasted_science.py'
-      - 'docs/research/stage12-issue110-ga-contrasted-prereg-2026-10-13.fr.md'
   workflow_dispatch:
 permissions:
   contents: read
@@ -30,7 +23,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Assert exact immutable PR source SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
