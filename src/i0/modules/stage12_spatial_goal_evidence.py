@@ -123,11 +123,16 @@ def preregister_spatial_subgoal(
     if len(cells) != 1:
         return None
     cell = cells[0]
-    kind = ("water" if cell.water_source else
-            "food" if any(k in ("berry_a", "berry_b")
-                          for k in cell.resources) else None)
-    if kind != goal_measure:
-        return None
+    # A cell may legally contain both water and food. Its relevance is
+    # determined by the *preexisting* active goal, never by an arbitrary
+    # resource priority or the later criterion outcome.
+    if goal_measure == "water":
+        if not cell.water_source:
+            return None
+    else:
+        if not any(k in ("berry_a", "berry_b") for k in cell.resources):
+            return None
+    kind = goal_measure
     origin = (capture.x, capture.y)
     target = (cell.x, cell.y)
     if target != tuple(origin[i] + DIRECTIONS[direction][i] for i in range(2)):
