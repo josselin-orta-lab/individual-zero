@@ -16,6 +16,7 @@ on:
       - 'src/i0/modules/stage12_goal_agency.py'
       - 'src/lab/stage12_first_person_agency_audit.py'
       - 'tests/test_stage12_spatial_cognitive_agency.py'
+      - 'tests/test_stage12_spatial_integrated_rehash.py'
       - 'tests/test_stage12_spatial_goal_progress.py'
       - 'tests/test_stage12_spatial_physical_progress.py'
       - '.github/workflows/stage12-issue110-option-a-contract.yml'
@@ -56,4 +57,5 @@ jobs:
           python -m unittest discover -s tests -p 'test_stage12_goal_agency_runtime.py' -v
           python -m unittest discover -s tests -p 'test_stage12_goal_agency.py' -v
           python -m unittest discover -s tests -p 'test_stage12_spatial_cognitive_agency.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_spatial_integrated_rehash.py' -v
           python -m unittest discover -s tests -p 'test_stage12_attribution_pairs.py' -v
