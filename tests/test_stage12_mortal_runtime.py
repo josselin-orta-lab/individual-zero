@@ -20,7 +20,7 @@ from lab.world import Command
 
 
 def stage12_runtime(path, *, detector_cost=1, occupancy_cost=1,
-                    m11_sqlite_custody=False):
+                    m11_sqlite_custody=False, paid_index=False):
     stage11 = build_stage11_reference_runtime(autonomous_mortal=True)
     stage10 = build_stage10_reference_runtime(autonomous_mortal=True)
     sleep = replace(
@@ -33,6 +33,11 @@ def stage12_runtime(path, *, detector_cost=1, occupancy_cost=1,
         stage9=stage11._stage11_config.stage9,
         sleep=sleep,
     )
+    if paid_index:
+        from scripts.run_stage10_issue133_paid_index import enabled_sixpass_config
+        config = enabled_sixpass_config(config, maximum_episodes=6)
+        config = replace(config, maximum_passes_per_sleep_step=6,
+                         incremental_selection=True, paid_pending_index=True)
     return Stage12Runtime(
         world_config=stage11.world.config,
         layout=stage11.world._layout,
