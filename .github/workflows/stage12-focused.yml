@@ -17,6 +17,8 @@ on:
       - 'scripts/run_stage12_issue133_calibration.py'
       - 'scripts/run_stage12_issue133_batch.py'
       - 'scripts/run_stage12_issue133_longscan.py'
+      - 'scripts/run_stage10_multipass_sleep.py'
+      - 'docs/research/stage10-multipass-sleep-prereg-2026-10-13.fr.md'
       - 'docs/research/stage12-issue133-longscan-prereg-2026-10-13.fr.md'
       - 'docs/research/stage12-issue133-batch-prereg-2026-10-13.fr.md'
       - 'docs/research/stage12-issue133-calibration-prereg-2026-10-12.fr.md'
@@ -153,6 +155,33 @@ jobs:
         with:
           name: stage12-issue132-water-python-${{ matrix.python-version }}
           path: /tmp/stage12-issue132/
+          retention-days: 30
+          if-no-files-found: warn
+
+  issue133-multipass:
+    name: issue133 paid 1 vs 3 passes per sleep step (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Two independently born 240-step mortal lives and external proof audits
+        run: python scripts/run_stage10_multipass_sleep.py --output-dir /tmp/issue133-multipass
+      - name: Preserve WAL and all results even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue133-multipass-python-${{ matrix.python-version }}
+          path: /tmp/issue133-multipass/
           retention-days: 30
           if-no-files-found: warn
 
