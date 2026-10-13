@@ -335,18 +335,12 @@ class Stage12Runtime(Stage11SleepRuntime):
             goal_for_planning=goal_for_planning,
             st_before_cycle=st_before_cycle,
         )
-        previous = hooks[5]["metacognition_health"]
-
-        def publish_lived_diagnostic(ctx):
-            # Occupancy is a separate *per cognitive cycle* S_t measurement.
-            # Its UC charge is reflected in the same fatigue closure below.
-            self._publish_module_occupancy(cycle=cycle, world_step=capture.t_monde)
-            # One actual metacognitive service charge per lived world step.
-            # The sample is optional under DC-07, and must be absent, never
-            # silently inferred, if its scheduler-owned UC debit is refused.
-            if self.detection_report.world_step == capture.t_monde:
-                previous(ctx)
-                return
+        previous_control = hooks[4]["action_control"]
+        
+        def close_first_person_assessment(ctx):
+            # Phase 4 belongs to Action Control, not to Metacognition.
+            # A prior action's sensory evidence is judged before the
+            # current action's decision, with explicit independent UC.
             # Action Control owns this optional first-person judgement.
             # The detector still receives no pairs until GA-06 is audited.
             service = self.stage3.control.goal_agency
@@ -378,6 +372,21 @@ class Stage12Runtime(Stage11SleepRuntime):
                             kind="stage12_goal_agency_judgement",
                             cycle=cycle, data=judgement.as_dict(),
                         )
+            previous_control(ctx)
+
+        hooks[4]["action_control"] = close_first_person_assessment
+        previous = hooks[5]["metacognition_health"]
+
+        def publish_lived_diagnostic(ctx):
+            # Occupancy is a separate *per cognitive cycle* S_t measurement.
+            # Its UC charge is reflected in the same fatigue closure below.
+            self._publish_module_occupancy(cycle=cycle, world_step=capture.t_monde)
+            # One actual metacognitive service charge per lived world step.
+            # The sample is optional under DC-07, and must be absent, never
+            # silently inferred, if its scheduler-owned UC debit is refused.
+            if self.detection_report.world_step == capture.t_monde:
+                previous(ctx)
+                return
             charge = self.compute_budget.charge(
                 module="metacognition_health",
                 operation="stage12_diagnostic_sample",
