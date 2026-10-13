@@ -215,10 +215,16 @@ def _exercise_repeated_dynamic_hidden_zone():
         "stage9-dynamic-hidden-repeat-v1", 2, 2, 2, 2,
     ))
     world = substrate.world
-    here = world.position.as_dict()
     admitted = []
 
-    for collect_step, wait_step, food_step in ((1, 2, 3), (4, 5, 6)):
+    for (collect_step, wait_step, food_step), position in zip(
+        ((1, 2, 3), (4, 5, 6)),
+        (Position(2, 2), Position(4, 2)),
+    ):
+        here = position.as_dict()
+        world.apply_scenario_event(
+            "set_position", {"position": here},
+        )
         world.apply_scenario_event(
             "set_danger_zone", {"position": here, "active": False},
         )
