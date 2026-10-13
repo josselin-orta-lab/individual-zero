@@ -1,9 +1,6 @@
 name: Issue133 M11 verified-anchor OPT1 H30
+# The preregistered comparison is triggered once; future runs only by operator.
 on:
-  pull_request:
-    branches: [exp/stage10-priced-multipass-sleep-20261013]
-    paths:
-      - '.github/workflows/m11-stage12-opt1-profile30.yml'
   workflow_dispatch:
 
 permissions:
