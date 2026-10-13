@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/i0/modules/stage12_spatial_goal_evidence.py'
       - 'tests/test_stage12_ga08_spatial_evidence.py'
+      - 'tests/test_stage12_ga08_physical_fixture.py'
       - '.github/workflows/stage12-ga08-spatial.yml'
   workflow_dispatch:
 permissions:
@@ -35,5 +36,6 @@ jobs:
       - name: Run GA08 source kernel and existing first-person guardrails
         run: |
           python -m unittest discover -s tests -p 'test_stage12_ga08_spatial_evidence.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_ga08_physical_fixture.py' -v
           python -m unittest discover -s tests -p 'test_stage12_goal_agency.py' -q
           python -m unittest discover -s tests -p 'test_stage12_attribution_pairs.py' -q
