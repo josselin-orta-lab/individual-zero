@@ -1,5 +1,6 @@
 """M11/Stage12 preregistered exclusive SQLite ownership smoke and cold roundtrip."""
 from __future__ import annotations
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -33,6 +34,16 @@ class M11Stage12AtomicPreflightTests(unittest.TestCase):
                     self.assertEqual(receipt.world_step, step + 1)
                     self.assertEqual(receipt.status, "active")
                 committed = life.inspect()
+            with SQLiteLifeLedger.open_existing(
+                path=path, expected_individual_id=name,
+            ) as ledger:
+                stored = ledger.export_canonical_journal()
+            kinds = [json.loads(line)["causal_event"]["kind"]
+                     for line in stored.splitlines()]
+            publications = kinds.count("stage10_consolidation_version_activated")
+            self.assertGreater(publications, 0, "P6-B6 indexed sleep never published h")
+            self.assertEqual(kinds.count("stage10_consolidation_index_maintenance_charged"), publications)
+            self.assertEqual(kinds.count("stage10_consolidation_index_retired"), publications)
             with M11TransactionalMortal.cold_recover(
                 db_path=path, individual_id=name, runtime_factory=factory,
             ) as current:

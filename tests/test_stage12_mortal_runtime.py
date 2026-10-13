@@ -34,6 +34,10 @@ def stage12_runtime(path, *, detector_cost=1, occupancy_cost=1,
         sleep=sleep,
     )
     if paid_index:
+        # Preserve the preregistered naturally evolving sleep schedule,
+        # never force wake/sleep or alter w_C to make h publish.
+        config = replace(config, sleep=replace(
+            stage10._stage10_config.sleep, consolidation_weight=0.0))
         from scripts.run_stage10_issue133_paid_index import enabled_sixpass_config
         config = enabled_sixpass_config(config, maximum_episodes=6)
         config = replace(config, maximum_passes_per_sleep_step=6,
