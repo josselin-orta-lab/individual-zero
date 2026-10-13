@@ -16,6 +16,7 @@ from lab.independent_journal_audit import audit_export_bytes
 from lab.stage12_alignment import evaluate_goal_action_alignment
 from lab.stage12_diagnostic_audit import audit_stage12_diagnostics
 from lab.stage12_goal_progress_audit import audit_stage12_goal_progress
+from lab.stage12_first_person_agency_audit import audit_stage12_first_person_agency
 from lab.stage12_occupancy_audit import audit_stage12_occupancy
 from lab.stage12_operator_alert_audit import audit_stage12_operator_alerts
 from lab.stage12_operator_control_audit import audit_stage12_operator_control
@@ -38,6 +39,7 @@ def evaluate_packet(
     journal = audit_export_bytes(content, **anchors)
     diagnostics = audit_stage12_diagnostics(content, **anchors)
     goal_progress = audit_stage12_goal_progress(content, **anchors)
+    first_person_agency = audit_stage12_first_person_agency(content, **anchors)
     occupancy = audit_stage12_occupancy(content, **anchors)
     alerts = audit_stage12_operator_alerts(content, **anchors)
     operator_control = audit_stage12_operator_control(content, **anchors)
@@ -110,6 +112,7 @@ def evaluate_packet(
         "journal": journal.as_dict(),
         "diagnostics": diagnostics.as_dict(),
         "lived_goal_progress": goal_progress.as_dict(),
+        "first_person_goal_agency": first_person_agency.as_dict(),
         "lived_detector_coverage": {
             "schema": "stage12-lived-detector-outcome-coverage-v1",
             "samples_independently_audited": diagnostics.diagnostic_samples,
@@ -184,6 +187,7 @@ def evaluate_packet(
         "open_gates": [
             "M-11 current physical+cognitive atomic crash recovery NOT certified",
             "Stage12 lived outcome/agency attribution pairing NOT independently verified",
+            "Subjective goal-agency judgements are not yet independently joined to outcomes",
             "One-step goal progress is not whole-goal satisfaction or proof of action causation",
             "Stage12 operator sign-off NOT given",
             "Final scientific module validation NOT performed",
