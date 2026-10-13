@@ -224,7 +224,7 @@ def audit_stage12_attribution_pairs(
                 raise ValueError("attribution detector output disagrees with verified pairs")
         else:
             if pair_ref is not None or data.get("attribution_bias") is not None:
-                raise ValueError("legacy diagnostic cannot claim unverified attribution")
+                raise ValueError("unverified lived attribution bias claim: legacy receipt has no independently joined sources")
             label = None
         sample_labels.append((t, label))
     unavailable_refs = set()
