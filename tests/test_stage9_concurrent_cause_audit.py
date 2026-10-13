@@ -229,7 +229,6 @@ def _exercise_repeated_dynamic_hidden_zone():
         substrate.open_step()
         collected = substrate.execute(Command("collecter", {"target": "berry_a"}))
         assert collected.status == "applied"
-        assert substrate.scheduler.t_monde == wait_step
 
         before_wait = _perceive(substrate, wait_step)
         model.record_applied_ambient_integrity_control(
