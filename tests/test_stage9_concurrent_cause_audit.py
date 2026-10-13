@@ -387,20 +387,24 @@ def _exercise_toxic_berry_across_lived_contexts():
 
 
 class Stage9ConcurrentCauseRegressionTests(unittest.TestCase):
-    def test_real_toxic_food_remains_learnable_after_distinct_lived_contexts(self):
+    def test_real_toxic_food_stays_associational_without_discriminating_lived_signal(self):
         model, rows, lived = _exercise_toxic_berry_across_lived_contexts()
         self.assertEqual(
             [row.epistemic_status for row in rows],
             [
                 "ambiguous_food_association",
-                "dc05_admissible",
-                "dc05_admissible",
+                "ambiguous_food_association",
+                "ambiguous_food_association",
             ],
         )
-        fact = model.get("toxic:berry_a")
-        self.assertIsNotNone(fact)
-        self.assertEqual(fact.safety_status, "etabli_pour_securite")
-        self.assertEqual(len(fact.harmful_episodes), 2)
+        # Different positions do not reveal physical etiology. A synchronized
+        # hidden hazard can follow the meals and generate the same first-person
+        # history, so DC-05 must not promote a toxic-item fact from repetition.
+        self.assertIsNone(model.get("toxic:berry_a"))
+        self.assertEqual(model.pending_causal_observations(), ())
+        self.assertEqual(
+            model.export_causal_state()["pending_numeric_witnesses"], [],
+        )
         self.assertNotIn("danger_zone_damage", repr(lived))
         self.assertNotIn("creature_damage", repr(lived))
 
