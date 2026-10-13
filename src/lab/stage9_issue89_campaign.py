@@ -16,6 +16,7 @@ from i0.config import MVP_CYCLE_PHASE_COMPONENT_ORDER
 from i0.modules import SymbolicPerception
 from i0.modules.causal_model import CausalModel, CausalModelConfig
 from lab.independent_journal_audit import audit_export_bytes
+from lab.mortal_execution import MortalStatus
 from lab.safety_protocol import SafetyProtocolConfig
 from lab.stage2_runtime import ScriptedStage2Runtime
 from lab.stage4_reference_fixture import build_stage4_reference_runtime
@@ -133,7 +134,7 @@ def _run_life(seed: int, scenario: str, *, target_steps: int = 75) -> LifeResult
     # exactly the same first-person injury history.
     cycles = 3 if scenario in {"hidden_dynamic", "toxic_multicontext"} else 1
     for index in range(cycles):
-        if runtime.world.dead:
+        if runtime.mortal_status is MortalStatus.DEAD:
             break
         if scenario == "toxic_multicontext":
             position = Position(2 + index, 2 + (seed % 2))
@@ -264,7 +265,7 @@ def _run_life(seed: int, scenario: str, *, target_steps: int = 75) -> LifeResult
 
     # Count only real applied transitions. If mortality occurs, this loop is
     # skipped and the life stays short rather than receiving fictitious steps.
-    while executed < target_steps and not runtime.world.dead:
+    while executed < target_steps and runtime.mortal_status is not MortalStatus.DEAD:
         apply(Command("attendre"))
 
     if not runtime.journal.verify():
@@ -297,7 +298,7 @@ def _run_life(seed: int, scenario: str, *, target_steps: int = 75) -> LifeResult
         ambiguous=ambiguous,
         dc05_admissions=admissions,
         promotions=promotions,
-        deaths=int(runtime.world.dead),
+        deaths=int(runtime.mortal_status is MortalStatus.DEAD),
         false_positive_promotions=false_positive,
         withheld_true_toxic=withheld_true,
         contexts=tuple(contexts),
