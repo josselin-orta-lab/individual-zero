@@ -1,0 +1,39 @@
+name: Issue110 Option A spatial cue contract gate
+on:
+  pull_request:
+    branches:
+      - science/stage12-issue110-sleep-window-20261014
+    paths:
+      - 'src/i0/modules/stage12_spatial_cue_policy.py'
+      - 'tests/test_stage12_spatial_cue_policy.py'
+      - '.github/workflows/stage12-issue110-option-a-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  spatial-cue-contract:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Pin exact source SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          git diff --exit-code HEAD --
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Spatial policy and non-circular cognitive baseline
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_spatial_cue_policy.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_attribution_pairs.py' -v
