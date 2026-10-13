@@ -34,9 +34,12 @@ SLEEP = ("awake_ablation", "sleep_reference")
 STEPS = 50
 
 
-def run_life(directory: Path, *, world: str, water: float, sleep_profile: str) -> dict:
+def run_life(directory: Path, *, world: str, water: float, sleep_profile: str,
+             enable_geography: bool = True) -> dict:
+    if type(enable_geography) is not bool:
+        raise ValueError("geographic exploration ablation requires explicit flag")
     baseline11 = build_stage11_reference_runtime(
-        enable_geography=True, autonomous_mortal=True,
+        enable_geography=enable_geography, autonomous_mortal=True,
     )
     baseline10 = build_stage10_reference_runtime(autonomous_mortal=True)
     config = replace(
@@ -152,6 +155,7 @@ def run_life(directory: Path, *, world: str, water: float, sleep_profile: str) -
         "schema": "issue110-contrasted-ga-physical-v1",
         "world": world, "initial_water": water,
         "sleep_profile": sleep_profile,
+        "geographic_exploration_enabled": enable_geography,
         "world_sha256": sha256_hex(canonical_causal_bytes(config.as_dict())),
         "layout_sha256": sha256_hex(canonical_causal_bytes(layout.as_dict())),
         "requested_steps": STEPS, "applied_steps": sum(actions.values()),
