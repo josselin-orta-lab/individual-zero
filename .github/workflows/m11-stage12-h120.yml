@@ -1,12 +1,8 @@
 name: M11 Stage12 paid-index 120-step intermediate horizon
 
+# Costly, pre-registered H120 must not re-run for unrelated PR commits.
+# PR 'paths' evaluates cumulative changes and would trigger repeatedly.
 on:
-  pull_request:
-    branches:
-      - exp/stage10-priced-multipass-sleep-20261013
-    paths:
-      - 'scripts/run_m11_stage12_atomic_h120.py'
-      - '.github/workflows/m11-stage12-h120.yml'
   workflow_dispatch:
 
 permissions:
