@@ -347,6 +347,37 @@ class Stage12Runtime(Stage11SleepRuntime):
             if self.detection_report.world_step == capture.t_monde:
                 previous(ctx)
                 return
+            # Action Control owns this optional first-person judgement.
+            # The detector still receives no pairs until GA-06 is audited.
+            service = self.stage3.control.goal_agency
+            if service is not None and service.pending is not None:
+                pending_assessment = service.pending
+                if capture.t_monde > pending_assessment.sent_world_step:
+                    agency_charge = self.compute_budget.charge(
+                        module="action_control",
+                        operation="goal_agency_assessment",
+                    )
+                    self._write(kind="compute_charge", cycle=cycle, data={
+                        "module": "action_control",
+                        "operation": "goal_agency_assessment",
+                        "requested_uc": agency_charge.requested_uc,
+                        "accepted": agency_charge.accepted,
+                        "reason": agency_charge.reason,
+                    })
+                    judgement = service.evaluate(
+                        capture=capture, world_step=capture.t_monde,
+                        cue_ref=deterministic_id(
+                            "stage12-authorized-capture-cue-v1",
+                            capture.t_monde, capture.x, capture.y,
+                            tuple(sorted(capture.inventory.items())),
+                        ) if agency_charge.accepted else None,
+                        paid=agency_charge.accepted,
+                    )
+                    if judgement is not None:
+                        self._write(
+                            kind="stage12_goal_agency_judgement",
+                            cycle=cycle, data=judgement.as_dict(),
+                        )
             charge = self.compute_budget.charge(
                 module="metacognition_health",
                 operation="stage12_diagnostic_sample",
@@ -449,37 +480,6 @@ class Stage12Runtime(Stage11SleepRuntime):
                         "diagnostic_policy_version": self._stage12_detector_policy.version,
                     },
                 )
-            # Action Control owns this optional first-person judgement.
-            # The detector still receives no pairs until GA-06 is audited.
-            service = self.stage3.control.goal_agency
-            if service is not None and service.pending is not None:
-                pending_assessment = service.pending
-                if capture.t_monde > pending_assessment.sent_world_step:
-                    agency_charge = self.compute_budget.charge(
-                        module="action_control",
-                        operation="goal_agency_assessment",
-                    )
-                    self._write(kind="compute_charge", cycle=cycle, data={
-                        "module": "action_control",
-                        "operation": "goal_agency_assessment",
-                        "requested_uc": agency_charge.requested_uc,
-                        "accepted": agency_charge.accepted,
-                        "reason": agency_charge.reason,
-                    })
-                    judgement = service.evaluate(
-                        capture=capture, world_step=capture.t_monde,
-                        cue_ref=deterministic_id(
-                            "stage12-authorized-capture-cue-v1",
-                            capture.t_monde, capture.x, capture.y,
-                            tuple(sorted(capture.inventory.items())),
-                        ) if agency_charge.accepted else None,
-                        paid=agency_charge.accepted,
-                    )
-                    if judgement is not None:
-                        self._write(
-                            kind="stage12_goal_agency_judgement",
-                            cycle=cycle, data=judgement.as_dict(),
-                        )
             # Preserve debit -> diagnosis -> contiguous operator-alert
             # receipts. Only afterwards publish the separate goal-progress
             # followup, derived from *lived* body telemetry without Oracle.
