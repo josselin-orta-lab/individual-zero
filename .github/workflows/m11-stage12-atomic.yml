@@ -38,6 +38,10 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_m11_stage12_atomic_preflight.py' -v
       - name: Preserve no unregistered secondary WAL
         run: python -m unittest discover -s tests -p 'test_m11_stage12_compatibility.py' -v
+      - name: Regression ordinary Stage12 standalone WAL path
+        run: python -m unittest discover -s tests -p 'test_stage12_mortal_runtime.py' -v
+      - name: Regression priced index selection
+        run: python -m unittest discover -s tests -p 'test_stage10_pending_paid_index.py' -v
 
   m11-stage12-crash-matrix:
     name: Six real SQLite transaction crashes (Python ${{ matrix.python-version }})
