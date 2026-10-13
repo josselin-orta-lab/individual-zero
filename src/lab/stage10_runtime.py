@@ -472,6 +472,10 @@ class Stage10Runtime(Stage9Runtime):
                 if scanner is not None:
                     if self.memory.episode_count == 0:
                         return
+                    if (self._stage10_config.paid_pending_index
+                            and scanner.seen_count == self.memory.episode_count
+                            and scanner.pending_count == 0):
+                        return  # no candidate, no unpaid read or empty re-scan
                 else:
                     episodes = self.memory.episodes  # legacy full-scan mode
                     if not episodes:
