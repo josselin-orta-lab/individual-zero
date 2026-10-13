@@ -63,6 +63,28 @@ class SpatialGoalEvidenceTests(unittest.TestCase):
         self.assertEqual(belief.agency, "world")
         self.assertEqual(belief.reason, "witnessed_goal_relevant_blocked_destination")
 
+    def test_colocated_water_and_food_use_active_goal_not_resource_priority(self):
+        first = perceive()
+        both = replace(
+            first,
+            adjacent=(replace(first.adjacent[0], resources=("berry_a",)),),
+        )
+        command = PrimitiveCommand("se_deplacer", {"direction": "east"})
+        def preregister(measure):
+            return preregister_spatial_subgoal(
+                life_id="life:a", intent_ref="intent:a",
+                assessment_ref="assessment:a", goal_ref="goal:" + measure,
+                option_ref="option:a", command_hash="digest",
+                goal_measure=measure, command=command, capture=both,
+            )
+        food = preregister("food")
+        water = preregister("water")
+        self.assertIsNotNone(food)
+        self.assertIsNotNone(water)
+        self.assertEqual(food.target_kind, "food")
+        self.assertEqual(water.target_kind, "water")
+        self.assertEqual(food.target, water.target)
+
     def test_nonprogress_from_passable_cell_is_unknown_not_world(self):
         p = plan(blocked=False)
         belief = judge_spatial_agency(
