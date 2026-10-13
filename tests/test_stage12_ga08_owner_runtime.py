@@ -137,7 +137,7 @@ class GA08CanonicalOwnerTests(unittest.TestCase):
         self.assertEqual(result.subjective_agency, "unavailable")
 
 
-def spawn_real_spatial_runtime(wal_path: str):
+def spawn_real_spatial_runtime(wal_path: str | None, *, m11_sqlite_custody=False):
     s11 = build_stage11_reference_runtime(autonomous_mortal=True)
     s10 = build_stage10_reference_runtime(autonomous_mortal=True)
     sleep = replace(s10._stage10_config.sleep, fatigue_gain=0.0,
@@ -151,6 +151,7 @@ def spawn_real_spatial_runtime(wal_path: str):
         protected_integrity_threshold=s11.stage3.control._config.protected_integrity_threshold,
         stage11_config=s11._stage11_config, stage10_config=cfg,
         equipment=s11.equipment, autonomous_mortal=True, wal_path=wal_path,
+        m11_sqlite_custody=m11_sqlite_custody,
         subjective_goal_agency=True, goal_agency_cost_uc=1,
         attribution_join=True, attribution_join_cost_uc=1,
         spatial_goal_agency=True, spatial_progress_cost_uc=1,
