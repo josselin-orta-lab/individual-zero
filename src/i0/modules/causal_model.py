@@ -1331,6 +1331,7 @@ class CausalModel:
                 or not isinstance(parameters, Mapping)
                 or parameters.get("target") != exposure.resource_kind
                 or not isinstance(effects, Mapping)
+                or set(effects) != {"ate"}
                 or effects.get("ate") != exposure.resource_kind
                 or not isinstance(body_after, Mapping)
             ):
