@@ -174,6 +174,9 @@ class SQLiteLifeLedger:
         self.path = path
         self._fault = fault
         self._poisoned = False
+        # In-memory evidence only; neither persisted nor returned to I0.
+        self._last_full_audit: LifeReceipt | None = None
+        self._verified_intent: tuple[LifeReceipt, str] | None = None
 
     @staticmethod
     def _connect(path: str) -> sqlite3.Connection:
@@ -436,11 +439,13 @@ class SQLiteLifeLedger:
             or normalize("NFC", intent[2]) != intent[2]
         ):
             raise RecoveryBlocked("invalid durable pending intent fence")
-        return LifeReceipt(
+        receipt = LifeReceipt(
             identity, generation, status, count, head, digest,
             intent is not None,
             registered_roster_hash=(metadata[0] if metadata is not None else None),
         )
+        self._last_full_audit = receipt
+        return receipt
 
     def recover_current_bytes(self, *, expected_individual_id: str) -> bytes:
         """Only latest committed nonterminal bytes, never a selectable snapshot.
@@ -457,14 +462,53 @@ class SQLiteLifeLedger:
             "SELECT state_bytes FROM life_current WHERE slot = 1"
         ).fetchone()[0]
 
-    def begin_intent(self, *, expected_generation: int, intent_ref: str) -> None:
+    def _checked_current_anchor(self, trusted: LifeReceipt) -> LifeReceipt:
+        """Check exact current SQLite contents under BEGIN IMMEDIATE.
+
+        This is NOT a replacement for full journal verification. It is used
+        only within one audited, exclusively leased M11 physical generation.
+        A complete history audit is mandatory before and after that generation.
+        """
+        row = self._db.execute(
+            "SELECT schema_version, individual_id, generation, status, "
+            "state_bytes, state_hash, journal_count, journal_head, "
+            "registered_roster_hash FROM life_current WHERE slot=1"
+        ).fetchone()
+        if row is None:
+            raise RecoveryBlocked("verified current life record disappeared")
+        (schema, identity, generation, status, data, digest, count, head,
+         roster) = row
+        if (schema != _SCHEMA
+                or type(identity) is not str
+                or type(generation) is not int
+                or type(count) is not int
+                or type(data) is not bytes
+                or identity != trusted.individual_id
+                or generation != trusted.generation
+                or status != trusted.status
+                or digest != trusted.state_hash
+                or sha256_hex(data) != trusted.state_hash
+                or count != trusted.journal_count
+                or head != trusted.journal_head
+                or roster != trusted.registered_roster_hash):
+            raise RecoveryBlocked("current SQLite generation differs from audited anchor")
+        return trusted
+
+    def begin_intent(self, *, expected_generation: int, intent_ref: str,
+                     trusted_current: LifeReceipt | None = None) -> None:
         """Durably fence the identity BEFORE any potentially published effect."""
         self._ready()
         if type(intent_ref) is not str or not intent_ref or normalize("NFC", intent_ref) != intent_ref:
             raise ValueError("nonempty NFC intent_ref required")
         try:
             self._db.execute("BEGIN IMMEDIATE")
-            receipt = self.audit()
+            if trusted_current is None:
+                receipt = self.audit()
+            else:
+                if (trusted_current is not self._last_full_audit
+                        or trusted_current.pending_intent):
+                    raise RecoveryBlocked("stale or unverified M11 audit certificate")
+                receipt = self._checked_current_anchor(trusted_current)
             if (not receipt.may_recover or receipt.generation != expected_generation):
                 raise RecoveryBlocked("stale generation or unresolved/terminal identity")
             self._db.execute(
@@ -474,7 +518,11 @@ class SQLiteLifeLedger:
             self._pulse("intent_before_commit")
             self._db.execute("COMMIT")
             self._pulse("intent_after_commit")
+            self._verified_intent = (
+                (receipt, intent_ref) if trusted_current is not None else None
+            )
         except BaseException:
+            self._verified_intent = None
             if self._db.in_transaction:
                 self._db.execute("ROLLBACK")
             self._poisoned = True
@@ -484,6 +532,7 @@ class SQLiteLifeLedger:
         self, *, expected_generation: int, expected_head: str,
         intent_ref: str, current_state: Mapping[str, object],
         events: Sequence[Mapping[str, object]], status: str = "active",
+        verified_intent: LifeReceipt | None = None,
     ) -> LifeReceipt:
         """One atomic commit of current state, causal suffix and terminal bit.
 
@@ -495,7 +544,15 @@ class SQLiteLifeLedger:
             raise ValueError("invalid lifecycle status")
         try:
             self._db.execute("BEGIN IMMEDIATE")
-            receipt = self.audit()
+            if verified_intent is None:
+                receipt = self.audit()
+            else:
+                if (self._verified_intent is None
+                        or self._verified_intent[0] is not verified_intent
+                        or self._verified_intent[1] != intent_ref
+                        or self._last_full_audit is not verified_intent):
+                    raise RecoveryBlocked("missing verified M11 intent attestation")
+                receipt = self._checked_current_anchor(verified_intent)
             pending = self._db.execute(
                 "SELECT generation, intent_ref FROM pending_intent WHERE slot = 1"
             ).fetchone()
@@ -569,8 +626,13 @@ class SQLiteLifeLedger:
             self._pulse("before_commit")
             self._db.execute("COMMIT")
             self._pulse("after_commit")
-            return self.audit()
+            # Keep the whole-history audit even after SQL COMMIT, before the
+            # candidate is published. Any history corruption blocks M11.
+            verified = self.audit()
+            self._verified_intent = None
+            return verified
         except BaseException:
+            self._verified_intent = None
             if self._db.in_transaction:
                 self._db.execute("ROLLBACK")
             self._poisoned = True

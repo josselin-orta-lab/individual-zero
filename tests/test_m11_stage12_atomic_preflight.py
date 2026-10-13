@@ -1,0 +1,171 @@
+"""M11/Stage12 preregistered exclusive SQLite ownership smoke and cold roundtrip."""
+from __future__ import annotations
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import unittest
+
+from lab.m11_transactional_mortal import M11TransactionalMortal
+from lab.sqlite_life_store import SQLiteLifeLedger, RecoveryBlocked
+from test_stage12_mortal_runtime import stage12_runtime
+
+
+def fresh():
+    return stage12_runtime(None, m11_sqlite_custody=True)
+
+
+class M11Stage12AtomicPreflightTests(unittest.TestCase):
+    def test_cold_current_generation_keeps_paid_index_h_and_stage12_owners(self):
+        with TemporaryDirectory() as folder:
+            path = str(Path(folder) / "indexed.sqlite")
+            name = "m11:stage12:indexed-current"
+            factory = lambda: stage12_runtime(
+                None, m11_sqlite_custody=True, paid_index=True)
+            original = factory()
+            self.assertIsNotNone(original.consolidation_scan)
+            self.assertIs(original._stage10_config.paid_pending_index, True)
+            self.assertEqual(original._stage10_config.sleep.consolidation_weight, 0.0)
+            with M11TransactionalMortal.birth(
+                db_path=path, runtime=original, individual_id=name,
+            ) as life:
+                for step in range(30):
+                    receipt = life.run_step()
+                    self.assertEqual(receipt.generation, step + 1)
+                    self.assertEqual(receipt.world_step, step + 1)
+                    self.assertEqual(receipt.status, "active")
+                committed = life.inspect()
+            with SQLiteLifeLedger.open_existing(
+                path=path, expected_individual_id=name,
+            ) as ledger:
+                stored = ledger.export_canonical_journal()
+            kinds = [json.loads(line)["causal_event"]["kind"]
+                     for line in stored.splitlines()]
+            publications = kinds.count("stage10_consolidation_version_activated")
+            self.assertGreater(publications, 0, "P6-B6 indexed sleep never published h")
+            self.assertEqual(kinds.count("stage10_consolidation_index_maintenance_charged"), publications)
+            self.assertEqual(kinds.count("stage10_consolidation_index_retired"), publications)
+            with M11TransactionalMortal.cold_recover(
+                db_path=path, individual_id=name, runtime_factory=factory,
+            ) as current:
+                self.assertEqual(current.inspect(), committed)
+                next_step = current.run_step()
+                self.assertEqual(next_step.world_step, 31)
+                self.assertEqual(next_step.generation, 31)
+                audit = SQLiteLifeLedger.audit_read_only(
+                    path=path, expected_individual_id=name)
+                self.assertEqual(audit.journal_head, next_step.journal_head)
+
+    def test_physical_and_causal_parity_legacy_wal_vs_sqlite_m11(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            legacy = stage12_runtime(str(root / "legacy.wal"))
+            birth = fresh()
+            with M11TransactionalMortal.birth(
+                db_path=str(root / "sqlite.db"), runtime=birth,
+                individual_id="m11:stage12:parity",
+            ) as life:
+                for step in range(3):
+                    ordinary = legacy.run_step()
+                    stored = life.run_step()
+                    self.assertEqual(ordinary.execution_status, stored.outcome)
+                    self.assertEqual(legacy.scheduler.t_monde, stored.world_step)
+                    self.assertEqual(
+                        legacy.journal.head_hash,
+                        stored.journal_head,
+                    )
+
+    def test_legacy_wal_and_sqlite_authorities_cannot_be_combined(self):
+        with TemporaryDirectory() as folder:
+            with self.assertRaisesRegex(ValueError, "no secondary WAL"):
+                stage12_runtime(str(Path(folder) / "double.wal"),
+                                m11_sqlite_custody=True)
+            classic = stage12_runtime(str(Path(folder) / "classic.wal"))
+            with self.assertRaisesRegex(RecoveryBlocked, "unsupported runtime"):
+                M11TransactionalMortal.birth(
+                    db_path=str(Path(folder) / "rejected.sqlite"),
+                    runtime=classic, individual_id="m11:stage12:uncoordinated",
+                )
+            self.assertTrue(classic.journal.durable_wal_enabled)
+
+    def test_real_lethal_stage12_transition_is_terminal_in_sqlite(self):
+        with TemporaryDirectory() as folder:
+            path = str(Path(folder) / "fatal.db")
+            identity = "m11:stage12:terminal-unchanged-world"
+            runtime = fresh()
+            center = runtime.world.position
+            for dx, dy in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)):
+                runtime.world.apply_scenario_event(
+                    "set_lethal_zone",
+                    {"position": {"x": center.x + dx, "y": center.y + dy},
+                     "active": True},
+                )
+            with M11TransactionalMortal.birth(
+                db_path=path, runtime=runtime, individual_id=identity,
+            ) as life:
+                terminal = life.run_step()
+                self.assertEqual(terminal.status, "dead")
+                self.assertEqual(terminal.world_step, 1)
+                with self.assertRaises(RecoveryBlocked):
+                    life.run_step()
+            audit = SQLiteLifeLedger.audit_read_only(
+                path=path, expected_individual_id=identity,
+            )
+            self.assertEqual(audit.generation, 1)
+            self.assertEqual(audit.status, "dead")
+            self.assertFalse(audit.may_recover)
+            with self.assertRaises(RecoveryBlocked):
+                M11TransactionalMortal.cold_recover(
+                    db_path=path, individual_id=identity,
+                    runtime_factory=fresh,
+                )
+
+    def test_exclusive_private_step_and_exact_first_current_generation(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            original = fresh()
+            with self.assertRaisesRegex(RuntimeError, "not directly dispatchable"):
+                original.run_step()
+            self.assertFalse(original.journal.durable_wal_enabled)
+            from lab.stage10_runtime import Stage10Runtime
+            # Explicitly invoking the inherited base entry point is an
+            # adversarial probe: it technically halts THAT fresh object.
+            # Never attempt to birth the same compromised candidate.
+            adversarial = fresh()
+            with self.assertRaisesRegex(RuntimeError, "not directly dispatchable"):
+                Stage10Runtime.run_step(adversarial)
+            from lab.mortal_execution import MortalStatus
+            self.assertEqual(
+                adversarial.stage3.substrate.mortal_status,
+                MortalStatus.TECHNICAL_HALT,
+            )
+            path = root / "life.sqlite"
+            individual_id = "m11:stage12:single-owner-life"
+            with M11TransactionalMortal.birth(
+                db_path=str(path), runtime=original,
+                individual_id=individual_id,
+            ) as life:
+                with self.assertRaises(RuntimeError):
+                    original.run_step()
+                receipt = life.run_step()
+                self.assertEqual(receipt.generation, 1)
+                self.assertEqual(receipt.world_step, 1)
+                self.assertEqual(receipt.outcome, "applied")
+                self.assertGreater(receipt.journal_count, 0)
+                audit = SQLiteLifeLedger.audit_read_only(
+                    path=str(path), expected_individual_id=individual_id,
+                )
+                self.assertEqual(audit.generation, 1)
+                self.assertEqual(audit.journal_head, receipt.journal_head)
+                self.assertTrue(audit.may_recover)
+            resumed = M11TransactionalMortal.cold_recover(
+                db_path=str(path), individual_id=individual_id,
+                runtime_factory=fresh,
+            )
+            with resumed:
+                second = resumed.run_step()
+                self.assertEqual(second.generation, 2)
+                self.assertEqual(second.world_step, 2)
+
+
+if __name__ == "__main__":
+    unittest.main()

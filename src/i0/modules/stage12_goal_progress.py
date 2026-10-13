@@ -150,3 +150,41 @@ class Stage12GoalProgressLedger:
             "last_registered_world_step": self._last_registered_world_step,
             "registered_intent_refs": sorted(self._registered_refs),
         }
+
+    def restore_causal_state(self, state: object) -> None:
+        """Install a fully validated current ledger only into its empty owner.
+
+        This is not a historical rewind of an already published intention.
+        M11 prepares it on a fresh never-executed runtime after SQLite
+        authenticates the single current generation.
+        """
+        if (type(state) is not dict
+                or set(state) != {"schema", "pending_intent",
+                                  "last_registered_world_step", "registered_intent_refs"}
+                or state["schema"] != CONTRACT_VERSION
+                or type(state["last_registered_world_step"]) is not int
+                or state["last_registered_world_step"] < 0
+                or type(state["registered_intent_refs"]) is not list):
+            raise ValueError("invalid current goal-progress custody")
+        refs = state["registered_intent_refs"]
+        if (any(type(ref) is not str or not ref for ref in refs)
+                or sorted(set(refs)) != refs):
+            raise ValueError("invalid distinct goal-progress intention references")
+        raw = state["pending_intent"]
+        pending = None
+        if raw is not None:
+            if type(raw) is not dict or set(raw) != set(LivedGoalProgressIntent.__dataclass_fields__):
+                raise ValueError("invalid current goal-progress intent")
+            pending = LivedGoalProgressIntent(**raw)
+            pending.validate()
+            if (pending.intent_ref not in refs
+                    or pending.sent_world_step != state["last_registered_world_step"]):
+                raise ValueError("pending goal-progress intent ledger differs")
+        if ((refs and state["last_registered_world_step"] < 1)
+                or (not refs and state["last_registered_world_step"] != 0)
+                or self._pending is not None or self._registered_refs
+                or self._last_registered_world_step != 0):
+            raise ValueError("goal-progress historic rewind forbidden")
+        self._pending = pending
+        self._last_registered_world_step = state["last_registered_world_step"]
+        self._registered_refs = set(refs)

@@ -27,6 +27,10 @@ from .mortal_execution import MortalStatus
 from .sqlite_life_store import SQLiteLifeLedger, RecoveryBlocked
 from .sqlite_runtime_custody import capture_registered_current_state
 
+# Identity token: only M11, after checking current SQLite generation and a
+# never-run detached Stage12 factory, may initialize its cold private owner.
+_M11_COLD_OWNER_TOKEN = object()
+
 
 def _copy_private_runtime(runtime: Any) -> Any:
     """Clone registered runtime with frozen mapping proxies shared read-only.
@@ -155,6 +159,11 @@ def _runtime_contract(runtime: Any) -> str:
         runtime._config, runtime.world.config,
         getattr(runtime, "_stage11_config", None),
         getattr(runtime, "_stage10_config", None),
+        getattr(runtime, "_m11_sqlite_custody", False),
+        getattr(runtime, "_stage12_detector_policy", None),
+        getattr(runtime, "_stage12_alert_policy", None),
+        getattr(runtime, "_stage12_diagnostic_cost_uc", None),
+        getattr(runtime, "_stage12_occupancy_cost_uc", None),
         getattr(runtime.world, "_layout", None),
     )
     return sha256_hex(canonical_causal_bytes(_contract_value(configuration)))
@@ -249,7 +258,12 @@ def _install_trusted_current_on_fresh(
     current_owner_ids = {o.owner_id: o for o in runtime.causal_owners}
     for key, value in image["owners"].items():
         owner = current_owner_ids[key]
-        owner.restore_causal_state(deepcopy(value))
+        if (key == "metacognition_health"
+                and getattr(runtime, "_m11_sqlite_custody", False)):
+            owner.install_m11_cold_state(
+                deepcopy(value), capability=_M11_COLD_OWNER_TOKEN)
+        else:
+            owner.restore_causal_state(deepcopy(value))
     # Complete ledger bytes correspond to the current *generation*, not any
     # selected historical snapshot. The new world has never executed a step.
     boundary = runtime.stage3.substrate._mortal_boundary
@@ -311,7 +325,10 @@ class M11TransactionalMortal:
         # be treated as covered by a Stage10/11 SQLite custody receipt.
         from .stage10_runtime import Stage10Runtime
         from .stage11_runtime import Stage11Runtime
-        if type(runtime) not in (Stage10Runtime, Stage11Runtime):
+        from .stage12_runtime import Stage12Runtime
+        if (type(runtime) not in (Stage10Runtime, Stage11Runtime)
+                and not (type(runtime) is Stage12Runtime
+                         and getattr(runtime, "_m11_sqlite_custody", False) is True)):
             raise RecoveryBlocked("unsupported runtime: additional mutable/WAL owners not coordinated")
         if (runtime.stage3.substrate._mortal_boundary is None
                 or runtime.stage3.substrate.mortal_status is not MortalStatus.ACTIVE
@@ -363,7 +380,10 @@ class M11TransactionalMortal:
                 runtime = runtime_factory()
                 from .stage10_runtime import Stage10Runtime
                 from .stage11_runtime import Stage11Runtime
-                if type(runtime) not in (Stage10Runtime, Stage11Runtime):
+                from .stage12_runtime import Stage12Runtime
+                if (type(runtime) not in (Stage10Runtime, Stage11Runtime)
+                        and not (type(runtime) is Stage12Runtime
+                                 and getattr(runtime, "_m11_sqlite_custody", False) is True)):
                     raise RecoveryBlocked("cold factory exposes uncoordinated runtime")
                 if _runtime_image(runtime, individual_id=individual_id) != image:
                     raise RecoveryBlocked("genesis factory does not match anchored state")
@@ -371,7 +391,10 @@ class M11TransactionalMortal:
                 runtime = runtime_factory()
                 from .stage10_runtime import Stage10Runtime
                 from .stage11_runtime import Stage11Runtime
-                if type(runtime) not in (Stage10Runtime, Stage11Runtime):
+                from .stage12_runtime import Stage12Runtime
+                if (type(runtime) not in (Stage10Runtime, Stage11Runtime)
+                        and not (type(runtime) is Stage12Runtime
+                                 and getattr(runtime, "_m11_sqlite_custody", False) is True)):
                     raise RecoveryBlocked("cold factory exposes uncoordinated runtime")
                 _install_trusted_current_on_fresh(runtime, image, journal)
             private = _copy_private_runtime(runtime)
@@ -458,7 +481,8 @@ class M11TransactionalMortal:
         intent = f"m11:world:{base.generation + 1}:{base.journal_head[:16]}"
         try:
             self._ledger.begin_intent(
-                expected_generation=base.generation, intent_ref=intent)
+                expected_generation=base.generation, intent_ref=intent,
+                trusted_current=base)
             if test_fault:
                 test_fault("after_intent")
             candidate = _copy_private_runtime(self._runtime)
@@ -470,7 +494,14 @@ class M11TransactionalMortal:
                 raise RecoveryBlocked("unsafe external side effect in private candidate")
             if test_fault:
                 test_fault("before_private_execution")
-            outcome = candidate.run_step()
+            if getattr(candidate, "_m11_sqlite_custody", False):
+                candidate._m11_step_capability = True
+                try:
+                    outcome = candidate.run_step()
+                finally:
+                    candidate._m11_step_capability = False
+            else:
+                outcome = candidate.run_step()
             if test_fault:
                 test_fault("after_private_execution")
             # A live owner MUST NOT have observed the candidate's private effects.
@@ -503,7 +534,7 @@ class M11TransactionalMortal:
                 intent_ref=intent,
                 current_state=proposed,
                 events=events,
-                status=lifecycle,
+                status=lifecycle, verified_intent=base,
             )
             if test_fault:
                 test_fault("after_sql_commit")
