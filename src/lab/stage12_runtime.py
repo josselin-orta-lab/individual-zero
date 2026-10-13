@@ -338,6 +338,43 @@ class Stage12Runtime(Stage11SleepRuntime):
         )
         ledger.admit(LivedAttributionPair(pair_ref=pair_ref, **data))
 
+    def _consume_attribution_diagnostic_pair(
+        self, *, cycle: int, world_step: int, uc_refused: bool,
+    ):
+        """GA-06: explicitly retire pairs if an intervening step was asleep.
+
+        No sleep-cycle cognition is fabricated. The next waking metacognitive
+        phase pays its already declared diagnostic UC and records the expired
+        provenance rather than silently dropping the pending pair. The
+        detector must never apply a pair outside its next physical step.
+        """
+        ledger = self._meta_custody.attribution_pairs
+        if ledger is None:
+            return None
+        previously_pending = ledger.pending
+        pair = ledger.consume(diagnostic_world_step=world_step)
+        if (previously_pending is not None
+                and world_step > previously_pending.observed_world_step + 1):
+            self._write(
+                kind="stage12_attribution_sample_unavailable", cycle=cycle,
+                data={
+                    "pair_ref": previously_pending.pair_ref,
+                    "reason": "no_waking_diagnostic_at_due_step",
+                    "due_world_step": previously_pending.observed_world_step + 1,
+                },
+            )
+            return None
+        if pair is not None and uc_refused:
+            self._write(
+                kind="stage12_attribution_sample_unavailable", cycle=cycle,
+                data={
+                    "pair_ref": pair.pair_ref,
+                    "reason": "diagnostic_uc_refused",
+                },
+            )
+            return None
+        return pair
+
     def _publish_module_occupancy(self, *, cycle: int, world_step: int) -> None:
         """Price and publish current S_t producer occupancy, operator-only.
 
@@ -501,16 +538,10 @@ class Stage12Runtime(Stage11SleepRuntime):
                           "diagnostic_incomplete": True},
                 )
                 if self._meta_custody.attribution_pairs is not None:
-                    missed = self._meta_custody.attribution_pairs.consume(
-                        diagnostic_world_step=capture.t_monde,
+                    self._consume_attribution_diagnostic_pair(
+                        cycle=cycle, world_step=capture.t_monde,
+                        uc_refused=True,
                     )
-                    if missed is not None:
-                        self._write(
-                            kind="stage12_attribution_sample_unavailable",
-                            cycle=cycle,
-                            data={"pair_ref": missed.pair_ref,
-                                  "reason": "diagnostic_uc_refused"},
-                        )
                 # Keep the strict debit -> deferral receipt adjacency:
                 # unknown goal followups may be published only afterwards.
                 pending = self._meta_custody.goal_progress.followup(
@@ -552,8 +583,9 @@ class Stage12Runtime(Stage11SleepRuntime):
             )
             pair = (
                 None if self._meta_custody.attribution_pairs is None
-                else self._meta_custody.attribution_pairs.consume(
-                    diagnostic_world_step=capture.t_monde,
+                else self._consume_attribution_diagnostic_pair(
+                    cycle=cycle, world_step=capture.t_monde,
+                    uc_refused=False,
                 )
             )
             report = self._stage12_detectors.observe(
