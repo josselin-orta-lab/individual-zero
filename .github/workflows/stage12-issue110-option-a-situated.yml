@@ -1,0 +1,63 @@
+name: Issue110 Option A situated real spatial agency campaign
+on:
+  pull_request:
+    branches:
+      - science/stage12-issue110-sleep-window-20261014
+    paths:
+      - '.github/workflows/stage12-issue110-option-a-situated.yml'
+      - 'scripts/run_stage12_issue110_spatial_situated.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: issue110-spatial-situated-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  physical-spatial-life:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Pin immutable code identity
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          git diff --exit-code HEAD --
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Check goal agency and spatial independent regressions
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_spatial_cognitive_agency.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_spatial_goal_progress.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency_runtime.py' -v
+      - name: Newborn autonomous spatial goal life campaign
+        run: |
+          mkdir -p /tmp/issue110-spatial-situated
+          python scripts/run_stage12_issue110_spatial_situated.py \
+            --output-dir /tmp/issue110-spatial-situated/experiment
+      - name: Publish measured negative or positive output
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/issue110-spatial-situated/experiment/summary.json')
+          print('issue110_spatial_situated=' + (
+              p.read_text() if p.is_file() else 'unavailable'))
+          PY
+      - name: Preserve every WAL canonical journal and rejected life
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue110-spatial-situated-py${{ matrix.python-version }}
+          path: /tmp/issue110-spatial-situated/
+          retention-days: 30
+          if-no-files-found: warn
