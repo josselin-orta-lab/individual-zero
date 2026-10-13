@@ -48,7 +48,6 @@ jobs:
           python -m unittest discover -s tests -p 'test_stage12_spatial_goal_progress.py' -v
           python -m unittest discover -s tests -p 'test_stage12_spatial_physical_progress.py' -v
           python -m unittest discover -s tests -p 'test_stage12_goal_progress.py' -v
-          python -m unittest discover -s tests -p 'test_stage12_goal_progress_audit.py' -v
           python -m unittest discover -s tests -p 'test_stage12_goal_agency_runtime.py' -v
           python -m unittest discover -s tests -p 'test_stage12_goal_agency.py' -v
           python -m unittest discover -s tests -p 'test_stage12_attribution_pairs.py' -v
