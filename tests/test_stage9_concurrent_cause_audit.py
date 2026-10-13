@@ -291,7 +291,119 @@ def _exercise_repeated_dynamic_hidden_zone():
     }
 
 
+def _exercise_toxic_berry_across_lived_contexts():
+    """Real toxic berry across three distinct perceived positions.
+
+    The first injury is retained as ambiguous. The second distinct position
+    opens contrastive admission; the third supplies the second DC-05 credit
+    required by n_sec=2. No hidden physical label is given to CausalModel.
+    """
+    baseline = build_stage4_reference_runtime(autonomous_mortal=True)
+    effects = dict(baseline.world.config.berry_effects)
+    effects["berry_a"] = BerryEffect(10.0, -10.0)
+    physics = replace(
+        baseline.world.config,
+        version="stage9-toxic-multicontext-v1",
+        berry_effects=effects,
+        night_start_step=200,
+        creature_damage=0.0,
+        danger_zone_damage=10.0,
+    )
+    substrate = ScriptedStage2Runtime(
+        config=physics,
+        layout=WorldLayout(water_sources=frozenset({Position(4, 2)})),
+        phase_component_order=MVP_CYCLE_PHASE_COMPONENT_ORDER,
+        safety_config=SafetyProtocolConfig(
+            version="stage4-reference-safety-v1",
+            lethal_max=2, mode="campaign",
+        ),
+        autonomous_mortal=True,
+    )
+    model = CausalModel(CausalModelConfig(
+        "stage9-toxic-multicontext-v1", 2, 2, 2, 2,
+    ))
+    admitted = []
+    for index, position in enumerate((Position(2, 2), Position(3, 2), Position(4, 2))):
+        collect_step = 1 + index * 3
+        wait_step = collect_step + 1
+        food_step = collect_step + 2
+        substrate.world.apply_scenario_event(
+            "set_position", {"position": position.as_dict()},
+        )
+        substrate.world.apply_scenario_event(
+            "set_danger_zone", {"position": position.as_dict(), "active": False},
+        )
+        substrate.world.apply_scenario_event(
+            "place_resource",
+            {"position": position.as_dict(), "kind": "berry_a", "quantity": 1},
+        )
+
+        substrate.open_step()
+        assert substrate.execute(Command("collecter", {"target": "berry_a"})).status == "applied"
+
+        before_wait = _perceive(substrate, wait_step)
+        model.record_applied_ambient_integrity_control(
+            t_monde=wait_step, option_ref=f"wait:{wait_step}",
+            position=(before_wait.x, before_wait.y),
+            integrity_before=float(before_wait.body["integrity"]),
+        )
+        substrate.open_step()
+        assert substrate.execute(Command("attendre")).status == "applied"
+        after_wait = _perceive(substrate, food_step)
+        model.observe_followup_capture(
+            t_monde=food_step, integrity=float(after_wait.body["integrity"]),
+        )
+        wait_events = _lived_pair(substrate, wait_step)
+        assert model.ingest_closed_autobiographical_episode(
+            episode_ref=f"episode:wait:{wait_step}",
+            event_refs=tuple(e["event_id"] for e in wait_events),
+            autobiographical_events=wait_events,
+        ) == ()
+
+        before_food = _perceive(substrate, food_step)
+        model.record_applied_food_exposure(
+            t_monde=food_step, resource_kind="berry_a",
+            option_ref=f"food:{food_step}", motive_ref="goal:food",
+            integrity_before=float(before_food.body["integrity"]),
+            position_before=(before_food.x, before_food.y),
+            body_before=dict(before_food.body),
+        )
+        substrate.open_step()
+        assert substrate.execute(Command("manger", {"target": "berry_a"})).status == "applied"
+        after_food = _perceive(substrate, food_step + 1)
+        model.observe_followup_capture(
+            t_monde=food_step + 1, integrity=float(after_food.body["integrity"]),
+        )
+        food_events = _lived_pair(substrate, food_step)
+        admitted.extend(model.ingest_closed_autobiographical_episode(
+            episode_ref=f"episode:food:{food_step}",
+            event_refs=tuple(e["event_id"] for e in food_events),
+            autobiographical_events=food_events,
+        ))
+        model.publish()
+
+    assert substrate.journal.verify()
+    return model, tuple(admitted), substrate.autobiographical_view()
+
+
 class Stage9ConcurrentCauseRegressionTests(unittest.TestCase):
+    def test_real_toxic_food_remains_learnable_after_distinct_lived_contexts(self):
+        model, rows, lived = _exercise_toxic_berry_across_lived_contexts()
+        self.assertEqual(
+            [row.epistemic_status for row in rows],
+            [
+                "ambiguous_food_association",
+                "dc05_admissible",
+                "dc05_admissible",
+            ],
+        )
+        fact = model.get("toxic:berry_a")
+        self.assertIsNotNone(fact)
+        self.assertEqual(fact.safety_status, "etabli_pour_securite")
+        self.assertEqual(len(fact.harmful_episodes), 2)
+        self.assertNotIn("danger_zone_damage", repr(lived))
+        self.assertNotIn("creature_damage", repr(lived))
+
     def test_repeated_dynamic_hidden_hazard_never_establishes_food_toxicity(self):
         trial = _exercise_repeated_dynamic_hidden_zone()
         self.assertEqual(len(trial["admitted"]), 2)
@@ -308,9 +420,15 @@ class Stage9ConcurrentCauseRegressionTests(unittest.TestCase):
         # This assertion is intentionally red on the pre-fix implementation:
         # two observationally ambiguous injuries must not manufacture a
         # definitive toxic-item safety fact.
-        fact = trial["model"].get("toxic:berry_a")
-        self.assertIsNotNone(fact)
-        self.assertEqual(fact.safety_status, "aucun")
+        self.assertTrue(all(
+            row.epistemic_status == "ambiguous_food_association"
+            for row in trial["admitted"]
+        ))
+        self.assertIsNone(trial["model"].get("toxic:berry_a"))
+        self.assertEqual(trial["model"].pending_causal_observations(), ())
+        self.assertEqual(
+            trial["model"].export_causal_state()["pending_numeric_witnesses"], [],
+        )
 
     def test_visible_creature_is_perceived_competing_cause_not_food_safety_evidence(self):
         for birth in (1, 2):
@@ -365,7 +483,12 @@ class Stage9ConcurrentCauseRegressionTests(unittest.TestCase):
         self.assertEqual(len(trial["admitted"]), 1)
         self.assertTrue(trial["admitted"][0].harm_observed)
         self.assertEqual(trial["admitted"][0].contingency_ref, "toxic:berry_a")
-        self.assertEqual(trial["model"].get("toxic:berry_a").safety_status, "aucun")
+        self.assertEqual(
+            trial["admitted"][0].epistemic_status,
+            "ambiguous_food_association",
+        )
+        self.assertIsNone(trial["model"].get("toxic:berry_a"))
+        self.assertEqual(trial["model"].pending_causal_observations(), ())
     def test_hidden_dynamic_zone_and_toxic_berry_are_lived_indistinguishably(self):
         zone = _exercise_physics("dynamic_hidden_zone")
         poison = _exercise_physics("toxic_berry")
@@ -385,8 +508,13 @@ class Stage9ConcurrentCauseRegressionTests(unittest.TestCase):
         # hazard that appears only at the food step. This is an explicit
         # science limitation, not a claim of absence of confounders.
         self.assertEqual(len(zone["admitted"]), len(poison["admitted"]))
+        self.assertTrue(all(
+            row.epistemic_status == "ambiguous_food_association"
+            for row in (*zone["admitted"], *poison["admitted"])
+        ))
         self.assertNotEqual(zone["audit"].head_hash, poison["audit"].head_hash)
-        self.assertEqual(zone["model"].get("toxic:berry_a").safety_status, "aucun")
+        self.assertIsNone(zone["model"].get("toxic:berry_a"))
+        self.assertIsNone(poison["model"].get("toxic:berry_a"))
 
     def test_standalone_operator_verifier_checks_both_contrast_histories(self):
         for kind in ("visible_creature", "dynamic_hidden_zone", "toxic_berry"):
