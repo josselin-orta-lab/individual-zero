@@ -278,6 +278,66 @@ class Stage12Runtime(Stage11SleepRuntime):
         return self._stage12_detectors.detecteurs()
 
 
+    def _admit_lived_attribution_pair(
+        self, *, cycle: int, world_step: int, followup, followup_ref: str,
+    ) -> None:
+        """GA-06: join independent source receipts after BOTH were published.
+
+        No P-47 verdict, Oracle, Bench or hidden cause can enter this path.
+        Results remain invisible to diagnostics until the NEXT physical step.
+        """
+        ledger = self._meta_custody.attribution_pairs
+        if ledger is None or followup.criterion_outcome not in ("success", "failure"):
+            return
+        source = self._recent_agency_judgement
+        if source is None or source[0] != world_step:
+            return
+        _, judgement_ref, judgement = source
+        if (
+            judgement.intent_ref != followup.intent_ref
+            or judgement.life_id != self.individual_id
+            or judgement.observed_world_step != world_step
+            or judgement.subjective_agency not in ("self", "world")
+            or judgement.cue_ref is None
+        ):
+            return
+        charge = self.compute_budget.charge(
+            module="metacognition_health",
+            operation="stage12_attribution_join",
+        )
+        self._write(kind="compute_charge", cycle=cycle, data={
+            "module": "metacognition_health",
+            "operation": "stage12_attribution_join",
+            "requested_uc": charge.requested_uc,
+            "accepted": charge.accepted,
+            "reason": charge.reason,
+        })
+        if not charge.accepted:
+            self._write(
+                kind="stage12_attribution_join_deferred", cycle=cycle,
+                data={"intent_ref": followup.intent_ref,
+                      "goal_followup_ref": followup_ref,
+                      "agency_judgement_ref": judgement_ref,
+                      "reason": charge.reason},
+            )
+            self._cycle_degraded = True
+            return
+        data = {
+            "version": PAIR_VERSION, "life_id": self.individual_id,
+            "intent_ref": followup.intent_ref,
+            "goal_followup_ref": followup_ref,
+            "agency_assessment_ref": judgement.assessment_ref,
+            "agency_judgement_ref": judgement_ref,
+            "observed_world_step": world_step,
+            "outcome": followup.criterion_outcome,
+            "agency": judgement.subjective_agency,
+        }
+        pair_ref = self._write(
+            kind="stage12_attribution_pair_admitted", cycle=cycle,
+            data=data,
+        )
+        ledger.admit(LivedAttributionPair(pair_ref=pair_ref, **data))
+
     def _publish_module_occupancy(self, *, cycle: int, world_step: int) -> None:
         """Price and publish current S_t producer occupancy, operator-only.
 
@@ -440,6 +500,17 @@ class Stage12Runtime(Stage11SleepRuntime):
                           "reason": charge.reason,
                           "diagnostic_incomplete": True},
                 )
+                if self._meta_custody.attribution_pairs is not None:
+                    missed = self._meta_custody.attribution_pairs.consume(
+                        diagnostic_world_step=capture.t_monde,
+                    )
+                    if missed is not None:
+                        self._write(
+                            kind="stage12_attribution_sample_unavailable",
+                            cycle=cycle,
+                            data={"pair_ref": missed.pair_ref,
+                                  "reason": "diagnostic_uc_refused"},
+                        )
                 # Keep the strict debit -> deferral receipt adjacency:
                 # unknown goal followups may be published only afterwards.
                 pending = self._meta_custody.goal_progress.followup(
@@ -479,12 +550,24 @@ class Stage12Runtime(Stage11SleepRuntime):
                     "active_goal_ref": goal_ref,
                 },
             )
+            pair = (
+                None if self._meta_custody.attribution_pairs is None
+                else self._meta_custody.attribution_pairs.consume(
+                    diagnostic_world_step=capture.t_monde,
+                )
+            )
             report = self._stage12_detectors.observe(
                 LivedCognitiveObservation(
                     world_step=capture.t_monde, cycle=cycle,
                     context_signature=context,
                     active_goal_ref=goal_ref, option_ref=option_ref,
                     progress_delta=progress,
+                    outcome="unknown" if pair is None else pair.outcome,
+                    agency="unknown" if pair is None else pair.agency,
+                    attribution_ref=None if pair is None else pair.pair_ref,
+                    verification_origin=(
+                        "none" if pair is None else "lived_physical"
+                    ),
                 ),
             )
             self._write(
@@ -503,6 +586,16 @@ class Stage12Runtime(Stage11SleepRuntime):
                     "charged_diagnostic_uc": charge.requested_uc,
                     "diagnostic_policy_version": self._stage12_detector_policy.version,
                     "diagnostic_window": self._stage12_detector_policy.window,
+                    **({"attribution_pair_ref": None if pair is None else pair.pair_ref,
+                        "verified_successes": report.verified_successes,
+                        "verified_failures": report.verified_failures,
+                        "bias_min_outcomes_each": (
+                            self._stage12_detector_policy.bias_min_outcomes_each
+                        ),
+                        "attribution_bias_threshold": (
+                            self._stage12_detector_policy.attribution_bias_threshold
+                        )}
+                       if self._attribution_join_enabled else {}),
                     "operator_alert_policy_version": self._stage12_alert_policy.version,
                     "operator_alert_persistence_steps": (
                         self._stage12_alert_policy.persistence_world_steps
@@ -528,9 +621,13 @@ class Stage12Runtime(Stage11SleepRuntime):
                 diagnostic_paid=True,
             )
             if goal_followup is not None:
-                self._write(
+                followup_ref = self._write(
                     kind="stage12_goal_progress_followup",
                     cycle=cycle, data=goal_followup.as_dict(),
+                )
+                self._admit_lived_attribution_pair(
+                    cycle=cycle, world_step=capture.t_monde,
+                    followup=goal_followup, followup_ref=followup_ref,
                 )
             # Close fatigue AFTER the accepted cost, so real diagnostic work
             # contributes to the exact same waking cycle's F_cog accounting.
