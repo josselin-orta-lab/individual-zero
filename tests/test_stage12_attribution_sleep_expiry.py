@@ -71,6 +71,24 @@ class Stage12SleepingAttributionExpiryTests(unittest.TestCase):
                     ValueError, "admitted pair missing next-step",
                 ):
                     audit_stage12_attribution_pairs(forged)
+
+                # Even a perfectly rehashed ledger cannot claim that the
+                # intervening physical step was asleep if its original
+                # reduced-perception sleep source is missing.
+                without_sleep_receipt = rechained([
+                    row for row in receipts
+                    if not (
+                        row["causal_event"]["kind"] == "stage10_reduced_capture"
+                        and row["causal_event"]["t_monde"] == 6
+                    )
+                ])
+                self.assertEqual(
+                    audit_export_bytes(without_sleep_receipt).world_steps_closed, 8,
+                )
+                with self.assertRaisesRegex(
+                    ValueError, "false sleeping attribution-expiry evidence",
+                ):
+                    audit_stage12_attribution_pairs(without_sleep_receipt)
         finally:
             experiment.MAX_STEPS = original_limit
 
