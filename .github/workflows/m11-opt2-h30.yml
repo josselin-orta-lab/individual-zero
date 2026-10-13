@@ -1,9 +1,7 @@
 name: M11 OPT2 H30 unchanged causal benchmark
+# OPT2 H30 was queued as run #38421708559 at code SHA
+# 445c71896d4d1840bb13cdae4b7882d945256f56. Future reruns manual.
 on:
-  pull_request:
-    branches: [exp/m11-stage12-atomic-paid-index-20261013]
-    paths:
-      - '.github/workflows/m11-opt2-h30.yml'
   workflow_dispatch:
 
 permissions:
