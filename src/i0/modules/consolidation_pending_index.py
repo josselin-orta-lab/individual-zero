@@ -178,7 +178,14 @@ class ChargedPendingEpisodeIndex:
             raise ValueError("only completed unique batches can be retired")
         # No index read or mutation is performed until an accepted debit.
         debit = budget.charge(operation="index_maintenance", count=len(refs))
-        return debit if debit.accepted else None
+        if not debit.accepted:
+            return None
+        # Check ledger membership only AFTER payment, but still BEFORE the
+        # irreversible h commit. A corrupt index must never be acknowledged
+        # after an activation whose source refs cannot be retired.
+        if any(type(ref) is not str or ref not in self._pending for ref in refs):
+            raise ValueError("paid index maintenance references unknown episodes")
+        return debit
 
     def acknowledge_published(self, *, refs: tuple[str, ...],
                               charged, source_version: str,

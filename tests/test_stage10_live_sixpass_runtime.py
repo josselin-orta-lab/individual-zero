@@ -13,7 +13,7 @@ from lab.stage10_reference_fixture import build_stage10_reference_runtime
 from lab.stage10_runtime import Stage10Runtime
 
 
-def configured_runtime(*, maximum_passes_per_sleep_step=1):
+def configured_runtime(*, maximum_passes_per_sleep_step=1, paid_pending_index=False):
     base = build_stage10_reference_runtime(autonomous_mortal=True)
     original = base._stage10_config
     selection = BatchSelectionPolicy(
@@ -62,6 +62,8 @@ def configured_runtime(*, maximum_passes_per_sleep_step=1):
         sleep_work=budget, selection_policy=selection,
         semantic_policy=semantic, p_cons_min=0.0,
         maximum_passes_per_sleep_step=maximum_passes_per_sleep_step,
+        incremental_selection=paid_pending_index,
+        paid_pending_index=paid_pending_index,
     )
     runtime = Stage10Runtime(
         world_config=base.world.config,
@@ -179,6 +181,52 @@ class LiveConsolidationRuntimeTests(unittest.TestCase):
         )
         self.assertTrue(runtime.journal.verify())
         self.assertIsNone(runtime.stage3.substrate.bench)
+
+    def test_paid_index_maintenance_is_journaled_before_h_and_retired_after(self):
+        runtime = configured_runtime(
+            maximum_passes_per_sleep_step=6, paid_pending_index=True,
+        )
+        for _ in range(12):
+            if runtime.memory.episodes:
+                break
+            self.assertEqual(runtime.run_step().execution_status, "applied")
+        self.assertTrue(runtime.memory.episodes)
+        state = runtime.sleep_health.export_causal_state()
+        state["fatigue"] = 1.0
+        runtime.sleep_health.restore_causal_state(state)
+        for _ in range(45):
+            self.assertEqual(runtime.run_step().execution_status, "applied")
+            events = [e.causal_event for e in runtime.journal.entries]
+            if any(e["kind"] == "stage10_consolidation_version_activated"
+                   for e in events):
+                break
+        else:
+            self.fail("paid index did not publish a complete six-pass h")
+        kinds = [e["kind"] for e in events]
+        before = kinds.index("stage10_consolidation_index_maintenance_charged")
+        commit = kinds.index("stage10_consolidation_version_activated")
+        after = kinds.index("stage10_consolidation_index_retired")
+        self.assertEqual(commit, before + 1)
+        self.assertEqual(after, commit + 1)
+        payment = events[before]["data"]
+        retired = events[after]["data"]
+        published = events[commit]["data"]
+        self.assertEqual(payment["episode_refs"], published["batch"])
+        self.assertEqual(retired["episode_refs"], published["batch"])
+        self.assertEqual(payment["count"], len(published["batch"]))
+        self.assertEqual(payment["requested_uc"], len(published["batch"]))
+        self.assertEqual(retired["maintenance_charge_uc"], payment["requested_uc"])
+        self.assertEqual(
+            retired["pending_after"],
+            payment["pending_before"] - len(published["batch"]),
+        )
+        self.assertEqual(
+            runtime.consolidation_scan.pending_count,
+            retired["pending_after"],
+        )
+        self.assertTrue(runtime.journal.verify())
+        self.assertLessEqual(payment["consumed_step_uc"], 100)
+        self.assertLessEqual(payment["consumed_period_uc"], 600)
 
     def test_multipass_configuration_requires_integral_bounded_count(self):
         config = configured_runtime()._stage10_config

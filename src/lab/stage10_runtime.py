@@ -708,6 +708,38 @@ class Stage10Runtime(Stage9Runtime):
             # changing active forms must provide its own checked rebaser.
             return baseline
 
+        # The final private rebase freezes the journal's exact current head.
+        # A maintenance receipt must be written BEFORE prepare(): writing it
+        # between prepare and publish would invalidate the post-cut slice.
+        index = self.consolidation_scan if self._stage10_config.paid_pending_index else None
+        retirement = None
+        if index is not None:
+            retirement = index.charge_committed_removal(
+                budget=self.consolidation_work, refs=tx.batch,
+            )
+            if retirement is None:
+                self._write(
+                    kind="stage10_consolidation_work_deferred",
+                    data={"world_step": world_step,
+                          "stage": "index_maintenance",
+                          "reason": "insufficient_charged_index_maintenance_budget",
+                          "consolidation_id": tx.id},
+                )
+                return
+            self._write(
+                kind="stage10_consolidation_index_maintenance_charged",
+                data={
+                    "world_step": world_step, "consolidation_id": tx.id,
+                    "episode_refs": list(tx.batch),
+                    "operation": retirement.operation,
+                    "count": retirement.count,
+                    "requested_uc": retirement.requested_uc,
+                    "consumed_step_uc": retirement.consumed_step_uc,
+                    "consumed_period_uc": retirement.consumed_period_uc,
+                    "pending_before": index.pending_count,
+                    "source_history_version": self.slow_history.current_version,
+                },
+            )
         try:
             prepared = coordinator.prepare(
                 transaction=tx,
@@ -727,20 +759,6 @@ class Stage10Runtime(Stage9Runtime):
                       "consolidation_id": tx.id},
             )
             return
-        index = self.consolidation_scan if self._stage10_config.paid_pending_index else None
-        retirement = None
-        if index is not None:
-            retirement = index.charge_committed_removal(
-                budget=self.consolidation_work, refs=tx.batch,
-            )
-            if retirement is None:
-                self._write(
-                    kind="stage10_consolidation_work_deferred",
-                    data={"world_step":world_step,
-                          "stage":"index_maintenance",
-                          "reason":"insufficient_charged_index_maintenance_budget"},
-                )
-                return
         receipt = coordinator.publish(
             prepared=prepared, transaction=tx,
             world_step=world_step, scheduler_sync_authorized=True,
@@ -750,6 +768,16 @@ class Stage10Runtime(Stage9Runtime):
                 refs=tx.batch, charged=retirement,
                 source_version=receipt.source_history_version,
                 new_version=receipt.new_history_version,
+            )
+            self._write(
+                kind="stage10_consolidation_index_retired",
+                data={
+                    "world_step": world_step, "consolidation_id": tx.id,
+                    "episode_refs": list(tx.batch),
+                    "new_history_version": receipt.new_history_version,
+                    "pending_after": index.pending_count,
+                    "maintenance_charge_uc": retirement.requested_uc,
+                },
             )
         self._write(
             kind="stage10_consolidation_committed",
