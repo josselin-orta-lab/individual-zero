@@ -124,6 +124,23 @@ class SpatialGoalEvidenceTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     fake.validate()
 
+    def test_current_generation_image_roundtrip_and_forgery_rejection(self):
+        p = plan(blocked=True)
+        image = p.as_dict()
+        restored = SpatialGoalPrecommit.from_dict(image)
+        self.assertEqual(restored, p)
+        self.assertEqual(restored.as_dict(), image)
+        for changed in (
+            {**image, "target": [4, 2]},
+            {**image, "distance_before": 9},
+            {**image, "sent_world_step": True},
+            {**image, "origin": (2, 2)},
+            {**image, "uncontracted_truth": "oracle"},
+        ):
+            with self.subTest(changed=changed):
+                with self.assertRaises(ValueError):
+                    SpatialGoalPrecommit.from_dict(changed)
+
     def test_prediction_not_input_to_either_computation(self):
         p = plan(blocked=True)
         self.assertNotIn("prediction_status", p.__dataclass_fields__)
