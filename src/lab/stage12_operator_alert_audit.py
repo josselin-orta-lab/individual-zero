@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from .independent_journal_audit import audit_export_bytes
+from .stage12_attribution_pair_audit import audit_stage12_attribution_pairs
 
 
 _WARNING_KEYS = ("stagnation", "reasoning_loop", "low_context_entropy", "attribution_bias")
@@ -47,6 +48,10 @@ def audit_stage12_operator_alerts(
     journal: bytes, *, expected_head: str | None = None,
     expected_count: int | None = None,
 ) -> Stage12OperatorAlertAudit:
+    joined = audit_stage12_attribution_pairs(
+        content, expected_head=expected_head, expected_count=expected_count,
+    )
+    verified_bias = dict(joined.diagnostic_labels)
     base = audit_export_bytes(
         journal, expected_head=expected_head, expected_count=expected_count,
     )
@@ -168,10 +173,9 @@ def audit_stage12_operator_alerts(
             if data["evidence_samples"] != min(observed_sample_count + 1, current_window):
                 raise ValueError("bounded diagnostic evidence counter is not reproducible")
             bias = data.get("attribution_bias")
-            # A success/failure attribution still has no independently
-            # attested lived verification pairs (#110). A forged non-null
-            # pattern must not become an apparently valid operator alarm.
-            if bias is not None:
+            # A label becomes legitimate only when BOTH independently
+            # audited sources support the same bounded recomputed pattern.
+            if bias != verified_bias.get(t):
                 raise ValueError("unverified lived attribution diagnostic")
             states = {
                 "stagnation": data.get("stagnation"),
