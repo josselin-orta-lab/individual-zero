@@ -23,6 +23,7 @@ from i0.modules.consolidation_budget import (
 from i0.modules.consolidation_batch import (
     BatchSelectionPolicy, ConsolidationBatchSelector, BatchSelectionBudgetError,
 )
+from i0.modules.consolidation_incremental_scan import IncrementalChargedSelection
 from i0.modules.consolidation_transaction import (
     ConsolidationCut, ConsolidationTransaction, ConsolidationSlot, PASSES,
 )
@@ -63,10 +64,13 @@ class Stage10Config:
     p_cons_min: float
     selection_policy: BatchSelectionPolicy | None = None
     semantic_policy: SemanticPassPolicy | None = None
+    incremental_selection: bool = False
 
     def validate(self) -> None:
         if not self.version:
             raise ValueError("Stage-10 runtime requires version")
+        if type(self.incremental_selection) is not bool or (self.incremental_selection and self.selection_policy is None):
+            raise ValueError("incremental selection requires live sixpass policy")
         self.stage9.validate()
         self.sleep.validate()
         self.sleep_work.validate()
@@ -243,6 +247,10 @@ class Stage10Runtime(Stage9Runtime):
             None if config.selection_policy is None
             else ConsolidationBatchSelector(config.selection_policy)
         )
+        self.consolidation_scan = (
+            IncrementalChargedSelection(policy_version=config.selection_policy.version)
+            if config.incremental_selection else None
+        )
         self._preopened_waking_capture = None
         self._last_applied_decision = None
         self._last_sleep_proposal = None
@@ -258,6 +266,8 @@ class Stage10Runtime(Stage9Runtime):
             self.sleep_session, self.slow_history,
             self.consolidation, self.consolidation_work,
         ))
+        if self.consolidation_scan is not None:
+            owners.append(self.consolidation_scan)
         ids = [owner.owner_id for owner in owners]
         if len(ids) != len(set(ids)):
             raise ValueError("Stage-10 owner duplication")
@@ -441,40 +451,79 @@ class Stage10Runtime(Stage9Runtime):
             if (frozen is None
                     or frozen.consolidation_pressure < self._stage10_config.p_cons_min):
                 return
-            old_refs = set(
-                self.slow_history.read_committed()["consolidated_episode_refs"]
-            )
-            episodes = self.memory.episodes
-            pending = tuple(
-                ep.id for ep in episodes
-                if ep.id not in old_refs and ep.end_t_monde < world_step
-            )
-            if not pending:
-                return
-            anchor = next((
-                entry for entry in reversed(self.journal.entries)
-                if (entry.causal_event.get("kind") == "step_opened"
-                    and entry.causal_event.get("attempt_ref") == attempt_ref)
-            ), None)
-            if anchor is None:
-                raise RuntimeError("sleep cut has no real Scheduler anchor")
-            cut = ConsolidationCut(
-                world_step=world_step, journal_index=anchor.index,
-                journal_event_id=anchor.event_id, journal_hash=anchor.event_hash,
-                history_version=self.slow_history.current_version,
-            )
-            try:
-                selected = select_batch_with_charged_work(
-                    budget=self.consolidation_work, selector=selector, cut=cut,
-                    episodes=episodes, pending_episode_refs=pending,
+            scanner = self.consolidation_scan
+            if scanner is not None and scanner.active:
+                if scanner.cut.history_version != self.slow_history.current_version:
+                    raise RuntimeError("history changed during frozen scan")
+                cut = scanner.cut
+            else:
+                episodes = self.memory.episodes
+                if not episodes:
+                    return
+                anchor = next((
+                    e for e in reversed(self.journal.entries)
+                    if e.causal_event.get("kind") == "step_opened"
+                    and e.causal_event.get("attempt_ref") == attempt_ref
+                ), None)
+                if anchor is None:
+                    raise RuntimeError("sleep cut lacks a Scheduler anchor")
+                cut = ConsolidationCut(
+                    world_step=world_step, journal_index=anchor.index,
+                    journal_event_id=anchor.event_id, journal_hash=anchor.event_hash,
+                    history_version=self.slow_history.current_version,
                 )
-            except BatchSelectionBudgetError:
-                self._write(
-                    kind="stage10_consolidation_work_deferred",
-                    data={"world_step": world_step, "stage": "batch_selection",
-                          "reason": "insufficient_charged_scan_budget"},
+                if scanner is not None:
+                    scanner.begin(
+                        cut=cut, total=len(episodes),
+                        already_consolidated=tuple(
+                            self.slow_history.read_committed()["consolidated_episode_refs"]
+                        ),
+                    )
+                    self._write(kind="stage10_consolidation_scan_started",
+                                data={"world_step":world_step,"scan_total":scanner.total,
+                                      "cut":cut.as_dict()})
+            if scanner is not None:
+                count = scanner.advance(
+                    budget=self.consolidation_work,
+                    episodes=self.memory.episodes, selector=selector,
                 )
-                return
+                if count:
+                    self._write(kind="stage10_consolidation_scan_checkpointed",
+                                data={"world_step":world_step,
+                                      "scan_cursor":scanner.cursor,
+                                      "scan_total":scanner.total,
+                                      "charged_records":count,
+                                      "consumed_step_uc":self.consolidation_work.consumed_step_uc,
+                                      "consumed_period_uc":self.consolidation_work.consumed_period_uc})
+                if not scanner.complete:
+                    if not count:
+                        self._write(kind="stage10_consolidation_work_deferred",
+                                    data={"world_step":world_step,
+                                          "stage":"batch_selection",
+                                          "reason":"incremental_scan_out_of_uc"})
+                    return
+                selected = scanner.finalize(selector=selector)
+            else:
+                old_refs = set(
+                    self.slow_history.read_committed()["consolidated_episode_refs"]
+                )
+                pending = tuple(
+                    ep.id for ep in episodes
+                    if ep.id not in old_refs and ep.end_t_monde < world_step
+                )
+                if not pending:
+                    return
+                try:
+                    selected = select_batch_with_charged_work(
+                        budget=self.consolidation_work, selector=selector, cut=cut,
+                        episodes=episodes, pending_episode_refs=pending,
+                    )
+                except BatchSelectionBudgetError:
+                    self._write(kind="stage10_consolidation_work_deferred",
+                                data={"world_step":world_step,
+                                      "stage":"batch_selection",
+                                      "reason":"insufficient_charged_scan_budget"})
+                    return
             if not selected.episode_refs:
                 return
             tx = ConsolidationTransaction(
