@@ -9,6 +9,9 @@ on:
       - 'src/lab/stage9_issue89_campaign.py'
       - 'tests/test_stage9_concurrent_cause_audit.py'
       - 'tests/test_stage9_lived_evidence.py'
+      - 'docs/operations/stage9-lived-ambient-confound-guard-v1.3.1.md'
+      - 'docs/architecture/proposals/mvp-v1.3.2-dc05-food-safety-semantics-delta.md'
+      - 'docs/research/stage9-issue89-dc05-validation-2026-10-13.fr.md'
       - '.github/workflows/stage9-concurrent-cause.yml'
   workflow_dispatch:
 
