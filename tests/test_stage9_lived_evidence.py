@@ -98,7 +98,7 @@ class LivedEvidenceTests(unittest.TestCase):
             {"event_id":"wait-c:1","kind":"command_experienced",
              "t_monde":1,"primitive":"attendre","parameters":{}},
             {"event_id":"wait-w:1","kind":"world_transition_experienced",
-             "t_monde":1,"position_after":{"x":position[0],"y":position[1]},
+             "t_monde":1,"position_after":{"x":2,"y":2},
              "body_after":{"integrity":90.0},"effects":{"rest":"attendre"}},
         )
         self.assertEqual(m.ingest_closed_autobiographical_episode(
