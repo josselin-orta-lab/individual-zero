@@ -127,8 +127,17 @@ class M11Stage12AtomicPreflightTests(unittest.TestCase):
                 original.run_step()
             self.assertFalse(original.journal.durable_wal_enabled)
             from lab.stage10_runtime import Stage10Runtime
+            # Explicitly invoking the inherited base entry point is an
+            # adversarial probe: it technically halts THAT fresh object.
+            # Never attempt to birth the same compromised candidate.
+            adversarial = fresh()
             with self.assertRaisesRegex(RuntimeError, "not directly dispatchable"):
-                Stage10Runtime.run_step(original)
+                Stage10Runtime.run_step(adversarial)
+            from lab.mortal_execution import MortalStatus
+            self.assertEqual(
+                adversarial.stage3.substrate.mortal_status,
+                MortalStatus.TECHNICAL_HALT,
+            )
             path = root / "life.sqlite"
             individual_id = "m11:stage12:single-owner-life"
             with M11TransactionalMortal.birth(
