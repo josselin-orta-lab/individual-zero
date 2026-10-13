@@ -69,6 +69,16 @@ class Stage11SleepRuntime(Stage11Runtime, Stage10Runtime):
             stage9=config.with_budget(),
         )
 
+    def _run_step_with_mortal_guard(self):
+        """Fence even a direct inherited Stage10.run_step call.
+
+        Ordinary users must never invoke a hidden superclass entrypoint to
+        dispatch a SQLite-owned WorldBody outside M11 private candidate.
+        """
+        if self._m11_sqlite_custody and self._m11_step_capability is not True:
+            raise RuntimeError("M11-owned runtime is not directly dispatchable")
+        return super()._run_step_with_mortal_guard()
+
     def run_step(self):
         """Fail closed on every uncertain unified mortal cognitive step.
 

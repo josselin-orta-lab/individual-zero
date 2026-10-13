@@ -94,6 +94,9 @@ class M11Stage12AtomicPreflightTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "not directly dispatchable"):
                 original.run_step()
             self.assertFalse(original.journal.durable_wal_enabled)
+            from lab.stage10_runtime import Stage10Runtime
+            with self.assertRaisesRegex(RuntimeError, "not directly dispatchable"):
+                Stage10Runtime.run_step(original)
             path = root / "life.sqlite"
             individual_id = "m11:stage12:single-owner-life"
             with M11TransactionalMortal.birth(
