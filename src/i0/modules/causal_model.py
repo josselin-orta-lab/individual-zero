@@ -2339,12 +2339,12 @@ class CausalModel:
                 for _, c in sorted(self._published.items())
             ],
             "pending": [
-                {name: getattr(e, name) for name in e.__dataclass_fields__}
+                self._serialize_safety_evidence(e)
                 for e in self._pending
             ],
             "seen": sorted(self._seen_ids),
             "admitted_safety_evidence": [
-                {name: getattr(e, name) for name in e.__dataclass_fields__}
+                self._serialize_safety_evidence(e)
                 for e in self._admitted_safety_evidence
             ],
             # Detect accidental or partial damage even where a changed lived
@@ -2445,9 +2445,23 @@ class CausalModel:
         return state
 
     @staticmethod
+    def _serialize_safety_evidence(row: SafetyEvidence) -> dict[str, object]:
+        payload = {
+            name: getattr(row, name)
+            for name in row.__dataclass_fields__
+            if name != "epistemic_status"
+        }
+        # Preserve historical snapshot bytes/digests for ordinary admissible
+        # DC-05 evidence. Only non-default epistemic classifications need the
+        # new field, and ambiguous rows are never admitted to the credit ledger.
+        if row.epistemic_status != "dc05_admissible":
+            payload["epistemic_status"] = row.epistemic_status
+        return payload
+
+    @staticmethod
     def _safety_ledger_sha256(rows: Sequence[SafetyEvidence]) -> str:
         payload = [
-            {name: getattr(row, name) for name in row.__dataclass_fields__}
+            CausalModel._serialize_safety_evidence(row)
             for row in rows
         ]
         return sha256(dumps(
