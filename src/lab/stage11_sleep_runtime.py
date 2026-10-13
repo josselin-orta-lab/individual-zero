@@ -22,7 +22,8 @@ class Stage11SleepRuntime(Stage11Runtime, Stage10Runtime):
 
     def __init__(
         self, *, stage11_config: Stage11Config,
-        stage10_config: Stage10Config, wal_path: str, **kwargs,
+        stage10_config: Stage10Config, wal_path: str | None,
+        m11_sqlite_custody: bool = False, **kwargs,
     ):
         stage11_config.validate()
         stage10_config.validate()
@@ -30,15 +31,25 @@ class Stage11SleepRuntime(Stage11Runtime, Stage10Runtime):
             raise ValueError("Stages 10 and 11 must share the same Stage-9 baseline")
         if kwargs.get("autonomous_mortal") is not True:
             raise ValueError("integrated v1.3.1 I0 must be autonomous and mortal")
-        if not wal_path:
+        if type(m11_sqlite_custody) is not bool:
+            raise ValueError("SQLite custody must be explicitly opted into")
+        if m11_sqlite_custody:
+            if wal_path is not None:
+                raise ValueError("M11 owns the ONLY durable journal; no secondary WAL")
+        elif not wal_path:
             raise ValueError("integrated mortal I0 requires an exclusive durable WAL path")
+        self._m11_sqlite_custody = m11_sqlite_custody
+        self._m11_step_capability = False
         self._combined_sleep_config = stage10_config
         super().__init__(config=stage11_config, **kwargs)
         if self.journal.entries:
             raise RuntimeError("integrated I0 was already born without WAL custody")
-        self.journal.enable_durable_wal(path=wal_path)
-        if not self.journal.durable_wal_enabled:
-            raise RuntimeError("integrated I0 requires fsynced causal journal custody")
+        if not m11_sqlite_custody:
+            self.journal.enable_durable_wal(path=wal_path)
+            if not self.journal.durable_wal_enabled:
+                raise RuntimeError("integrated I0 requires fsynced causal journal custody")
+        elif self.journal.durable_wal_enabled:
+            raise RuntimeError("M11 candidate must not own a parallel WAL")
         if self.stage3.substrate.mortal_status is None:
             raise RuntimeError("integrated runtime was not born mortal")
         if self.stage3.substrate.bench is not None:
@@ -70,6 +81,8 @@ class Stage11SleepRuntime(Stage11Runtime, Stage10Runtime):
         the independent diagnostic console may later resolve it from a
         verified zero-advance closure. It is not a technical corruption.
         """
+        if self._m11_sqlite_custody and self._m11_step_capability is not True:
+            raise RuntimeError("M11-owned runtime is not directly dispatchable")
         substrate = self.stage3.substrate
         boundary = substrate._mortal_boundary
         if boundary is None or substrate.mortal_status is not MortalStatus.ACTIVE:

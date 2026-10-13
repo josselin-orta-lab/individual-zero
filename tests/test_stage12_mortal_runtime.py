@@ -19,7 +19,8 @@ from lab.stage12_runtime import Stage12Runtime
 from lab.world import Command
 
 
-def stage12_runtime(path, *, detector_cost=1, occupancy_cost=1):
+def stage12_runtime(path, *, detector_cost=1, occupancy_cost=1,
+                    m11_sqlite_custody=False):
     stage11 = build_stage11_reference_runtime(autonomous_mortal=True)
     stage10 = build_stage10_reference_runtime(autonomous_mortal=True)
     sleep = replace(
@@ -44,6 +45,7 @@ def stage12_runtime(path, *, detector_cost=1, occupancy_cost=1):
         stage10_config=config,
         equipment=stage11.equipment,
         wal_path=path,
+        m11_sqlite_custody=m11_sqlite_custody,
         autonomous_mortal=True,
         diagnostic_sample_cost_uc=detector_cost,
         module_occupancy_cost_uc=occupancy_cost,
