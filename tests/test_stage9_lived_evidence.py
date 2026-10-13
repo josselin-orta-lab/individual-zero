@@ -133,9 +133,10 @@ class LivedEvidenceTests(unittest.TestCase):
         from i0.modules.causal_model import SafetyEvidence
         m = model()
 
-        # A valid no-harm meal is DC-05-admissible. Forge a colliding pending
-        # identifier so the episode fails late, after its real wait control was
-        # examined. The verified control must not leak through a rejected batch.
+        # Use a no-harm meal because harmful food outcomes are deliberately
+        # ambiguous under issue #89 and never enter the DC-05 credit ledger.
+        # A colliding admissible no-harm row still exercises the same late
+        # atomic preflight without weakening the epistemic boundary.
         m.record_applied_ambient_integrity_control(
             t_monde=3, option_ref="option:wait", position=(2,2),
             integrity_before=100.0,
