@@ -24,35 +24,37 @@ identifiable from that single experience.
 
 ## Conservative software rule
 
-A harmful food exposure is eligible for DC-05 evidence and downstream
-numeric causal-correction or hypothesis observations only when the Causal
-Model has an **actually applied, non-ingestion `attendre`** control:
+A harmful food exposure is **not** sufficient for food-specific DC-05 credit
+under the current v1.3.1 perceptual contract, even when the Causal Model has
+an actually applied, clean non-ingestion `attendre` control immediately
+before the meal. That control proves only that integrity did not fall during
+the preceding wait. It cannot exclude a hidden hazard that begins exactly on
+the meal step.
 
-- at the same perceived (x, y) position during the immediately preceding
-  world step;
-- with independently captured integrity **unchanged** during that control;
-- with a matching applied command and physical transition, both present in a
-  closed, authorized DC-09 autobiographical episode;
-- with the next-step Perception integrity matching the body state and the
-  pre-food integrity;
-- with provenance validated and retained within the Causal Model's
-  snapshotted state.
+The control is still validated rigorously:
 
-If any component is missing, or waiting was itself harmful, the meal is
-still physically executed and its full technical causal journal and
-first-person memory remain intact, but it receives **no unwarranted DC-05
-harm credit or numeric/correlation evidence**.
+- same perceived (x, y) position during the immediately preceding world step;
+- independently captured integrity unchanged during that control;
+- matching applied command and physical transition in a closed authorized
+  DC-09 autobiographical episode;
+- next-step Perception integrity matching the body state and pre-food value;
+- provenance retained within the Causal Model's snapshotted state.
 
-Previously admissible no-harm exposure observations remain possible. The
-existing safety threshold, single-owner Causal Model publication, previous
-life mortality rules, epistemic projection, and Oracle/Bench separation
-are unchanged.
+When harm follows eating, the episode remains lived evidence but is labeled
+`ambiguous_food_association`. It receives **no food DC-05 harm credit, no
+food causal observation, and no numeric food correction**. A perceptible
+concurrent creature or a missing/harmful control blocks even that stronger
+candidate path and likewise yields no food-specific credit.
 
-Controls are observed passively from genuinely applied decisions. This
-does **not** schedule extra waits, force feeding, relabel an unexecuted
-command as a physical trial, or use oracle knowledge. Expired controls
-are retired unless their immediately following food exposure remains
-awaiting a closed Memory episode.
+A clean no-harm meal remains admissible as a lived no-harm observation for
+the existing demotion logic. The single-owner Causal Model publication,
+mortality rules, epistemic projection, and Oracle/Bench separation remain
+unchanged.
+
+Controls are observed passively from genuinely applied decisions. This does
+not schedule extra waits, force feeding, relabel an unexecuted command as a
+physical trial, or use Oracle, Bench, hidden WorldBody attribution, or the
+technical journal as cognition.
 
 ## Limits and review
 
@@ -121,3 +123,40 @@ zone that activates on the meal step. Further contrasts, held-out
 interventions, independent scientific review and explicit operator
 acceptance are required before scientific causal validity can be claimed.
 **Stage 9 stays SCIENTIFIC NO-GO.**
+
+
+## Issue #89 final epistemic admission contract
+
+For the current v1.3.1 implementation, a post-ingestion integrity loss is classified as follows:
+
+- **perceptible sufficient competitor present**: retain the lived episode, but create no food safety credit, no food causal observation and no numeric correction;
+- **control absent or itself harmful**: retain the lived episode, but create no food safety credit, no food causal observation and no numeric correction;
+- **clean immediately preceding lived control, no perceptible competitor, then harm after eating**: retain an `ambiguous_food_association`; do not credit DC-05, do not create a food causal observation, and do not create a numeric correction;
+- **clean control and no harm after eating**: this remains an admissible lived no-harm observation under the existing demotion logic;
+- **technical journal shows hidden physical cause**: operator/auditor information only; it never changes the cognitive classification above.
+
+Changing position, repeating the meal, or accumulating more autobiographical episodes does **not** convert an ambiguous harmful association into a food-specific etiology. A hidden dynamic hazard can follow the same meal schedule and positions. Cryptographic journal integrity likewise cannot supply the missing causal information.
+
+This contract deliberately prefers withheld attribution over fabricated causal certainty.
+
+## Minimal normative delta proposed for operator review
+
+The current v1.2.1/v1.3.1 vocabulary conflates two propositions that issue #89 shows are not generally equivalent:
+
+1. repeated consumption of an item is empirically associated with harm strongly enough to justify a safety veto;
+2. the item itself is toxic.
+
+The present `CanonicalSafetyFacts.item_status()` maps learned `toxic_item + etabli_pour_securite` directly to `known_toxic`. Under observational equivalence, that label is stronger than the accessible evidence can justify.
+
+A future, separately versioned specification should therefore consider the smallest semantic split:
+
+- retain `toxic_item` and the causal lifecycle for etiological claims;
+- add a distinct safety-use proposition such as `consumption_harm_risk` whose meaning is explicitly **empirical risk association, not physical toxicity**;
+- permit its promotion from `n_sec` independent lived harmful consumption episodes under DC-05-style provenance and perceptible-competing-cause gates, without claiming hidden causes were excluded;
+- let Action Control veto consumption from this safety-use proposition while reporting the reason as learned empirical risk rather than `known_toxic`;
+- never use that safety association as a simulator correction, causal intervention result, or proof that the food caused the injury;
+- keep Oracle, Bench and the complete technical journal outside cognition.
+
+This delta would regain conservative safety learning without inventing causal identifiability. It is **not implemented or normative in v1.3.1**. Until explicit operator approval and a new versioned specification, the software must fail closed on harmful food etiology, and the cost is delayed or absent learned toxic-food vetoes in otherwise indistinguishable worlds.
+
+Historical Stage 9 remains **SCIENTIFIC NO-GO** regardless of the operator's decision on this delta.

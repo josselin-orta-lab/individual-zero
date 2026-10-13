@@ -1,3 +1,4 @@
+# issue89 final validation trigger
 name: Stage9 lived confound regression
 on:
   pull_request:
@@ -5,7 +6,12 @@ on:
     paths:
       - 'src/i0/modules/causal_model.py'
       - 'src/lab/stage9_runtime.py'
+      - 'src/lab/stage9_issue89_campaign.py'
       - 'tests/test_stage9_concurrent_cause_audit.py'
+      - 'tests/test_stage9_lived_evidence.py'
+      - 'docs/operations/stage9-lived-ambient-confound-guard-v1.3.1.md'
+      - 'docs/architecture/proposals/mvp-v1.3.2-dc05-food-safety-semantics-delta.md'
+      - 'docs/research/stage9-issue89-dc05-validation-2026-10-13.fr.md'
       - '.github/workflows/stage9-concurrent-cause.yml'
   workflow_dispatch:
 
@@ -20,7 +26,7 @@ jobs:
   epistemic-physics:
     name: Real-physics confounds (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -36,3 +42,18 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_stage9_concurrent_cause_audit.py' -v
           python -m unittest discover -s tests -p 'test_stage9_lived_*py' -v
+      - name: Execute complete Stage9 and epistemic-boundary regressions
+        run: |
+          python -m unittest discover -s tests -p 'test_stage9*.py' -v
+          python -m unittest tests.test_epistemic_journal_isolation -v
+          python -m unittest tests.test_independent_journal_audit -v
+          python -m unittest tests.test_bench_no_cognitive_imports -v
+      - name: Execute 600-step contrastive development campaign
+        run: |
+          python -m lab.stage9_issue89_campaign > issue89-campaign-${{ matrix.python-version }}.json
+          python -c "import json; p=json.load(open('issue89-campaign-${{ matrix.python-version }}.json')); assert p['physical_steps'] == 600; assert p['false_positive_promotions'] == 0; assert p['promotions'] == 0; assert p['withheld_true_toxic'] > 0; assert p['ambiguous'] > 0; assert p['dc05_admissions'] >= 1; assert p['deaths'] == 0; assert all(r['independently_audited'] for r in p['rows']); print(json.dumps(p, sort_keys=True))"
+      - name: Preserve campaign evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue89-campaign-python-${{ matrix.python-version }}
+          path: issue89-campaign-${{ matrix.python-version }}.json

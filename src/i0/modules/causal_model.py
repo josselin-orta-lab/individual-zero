@@ -159,6 +159,10 @@ class SafetyEvidence:
     comparable_context: bool
     alternative_cause_sufficient: bool
     exposure_motivated_independently: bool
+    # A lived food injury may be a real association while its physical cause
+    # remains underdetermined. Only dc05_admissible rows may enter the safety
+    # credit ledger; ambiguous rows stay first-person observations only.
+    epistemic_status: str = "dc05_admissible"
     oracle_derived: bool = False
     rollback_cancelled: bool = False
     counterfactual: bool = False
@@ -179,6 +183,10 @@ class SafetyEvidence:
                 tuple(int(part) for part in parts)
             except ValueError as exc:
                 raise ValueError("invalid lethal-zone position") from exc
+        if self.epistemic_status not in {
+            "dc05_admissible", "ambiguous_food_association",
+        }:
+            raise ValueError("unknown DC-05 epistemic admission status")
         if self.oracle_derived or self.rollback_cancelled or self.counterfactual:
             raise ValueError("forbidden-or-cancelled provenance cannot enter Causal Model")
         if not (
@@ -1314,6 +1322,7 @@ class CausalModel:
                 or not isinstance(parameters, Mapping)
                 or parameters.get("target") != exposure.resource_kind
                 or not isinstance(effects, Mapping)
+                or set(effects) != {"ate"}
                 or effects.get("ate") != exposure.resource_kind
                 or not isinstance(body_after, Mapping)
             ):
@@ -1327,21 +1336,10 @@ class CausalModel:
                 # Scenario changed telemetry, or the following capture is
                 # missing; neither should masquerade as an observed consequence.
                 continue
-            # Historic technical effects once exposed WorldBody's hidden
-            # damage source. Under MVP 1.3.1 those causes are correctly
-            # absent from autobiography, and ABSENCE is not proof of safety.
-            # A potentially harmful food outcome needs a verified clean
-            # non-ingestion wait at this same site on the preceding step.
-            # With no matched lived control it remains a personal experience
-            # in Memory, but supplies no DC-05 credit, numeric correction or
-            # causal hypothesis witness.
-            if any(
-                isinstance(effects.get(key), (int, float))
-                and effects[key] > 0
-                for key in ("creature_damage", "danger_zone_damage")
-            ):
-                # Legacy unredacted records are never promoted either.
-                continue
+            # Hidden physical attribution is outside I0's epistemic boundary.
+            # This code intentionally never inspects creature_damage or
+            # danger_zone_damage, even to reject a row: cognition may only use
+            # lived controls and perceptible competing causes.
             harm_observed = after < exposure.integrity_before
             baseline = staged_controls.get(t - 1)
             matched_control = bool(
@@ -1360,6 +1358,19 @@ class CausalModel:
                 not matched_control or exposure.visible_creature_at_exposure
             ):
                 continue
+
+            # A clean preceding wait excludes only harm observed during that
+            # wait. It cannot exclude a hidden hazard that appears exactly at
+            # the food step. Under the current perceptual contract there is no
+            # food-specific lived signal that distinguishes that world from a
+            # genuinely toxic berry world. Therefore every harmful food
+            # association remains epistemically ambiguous for DC-05. Repeated
+            # positions or episodes cannot manufacture unobserved etiology.
+            epistemic_status = (
+                "ambiguous_food_association"
+                if harm_observed else "dc05_admissible"
+            )
+
             event = transition
             candidate.append(SafetyEvidence(
                 identifier=f"dc05:{episode_ref}:{event['event_id']}",
@@ -1377,9 +1388,11 @@ class CausalModel:
                 comparable_context=True,
                 alternative_cause_sufficient=False,
                 exposure_motivated_independently=True,
+                epistemic_status=epistemic_status,
             ))
             if (
-                exposure.body_before is not None
+                epistemic_status == "dc05_admissible"
+                and exposure.body_before is not None
                 and exposure.position_before is not None
                 and exposure.state_before_digest is not None
                 and after < exposure.integrity_before
@@ -1402,10 +1415,11 @@ class CausalModel:
                     observed_after=float(after),
                 )
                 numeric_witnesses.append(witness)
-            # Observation of exposure is not causal proof or an intervention.
-            # Absence-of-exposure baselines require other *lived* comparable
-            # episodes and are never generated from this successful meal.
-            causal_observations.append(CausalObservation(
+            # An explicitly ambiguous harmful association must not silently
+            # become a causal observation. Under the current v1.3.1 food
+            # contract only lived no-harm observations remain eligible here.
+            if epistemic_status == "dc05_admissible":
+                causal_observations.append(CausalObservation(
                 identifier=f"causal-observation:{episode_ref}:{event['event_id']}",
                 contingency_ref=f"toxic:{exposure.resource_kind}",
                 predicate="toxic_item",
@@ -1417,8 +1431,8 @@ class CausalModel:
                 observed_step=exposure.observed_step,
                 cause_present=True,
                 effect_present=after < exposure.integrity_before,
-                controlled_variables=(("primitive", "manger"),),
-            ))
+                    controlled_variables=(("primitive", "manger"),),
+                ))
         # A *different actually eaten food* may be an independently lived
         # no-exposure comparison for a preregistered treatment. Same episode
         # and physical reference are preserved: this is NOT a new experience.
@@ -1444,8 +1458,10 @@ class CausalModel:
         # partially mutate safety state without matching causal observation.
         for item in candidate:
             item.validate()
-            if item.identifier in self._seen_ids or any(
-                old.identifier == item.identifier for old in self._pending
+            if item.epistemic_status == "dc05_admissible" and (
+                item.identifier in self._seen_ids or any(
+                    old.identifier == item.identifier for old in self._pending
+                )
             ):
                 raise ValueError("duplicate closed Memory safety evidence")
         for item in causal_observations:
@@ -1472,7 +1488,8 @@ class CausalModel:
         # episode has passed its existing atomic evidence preflight.
         self._lived_ambient_integrity_controls = staged_controls
         for item in candidate:
-            self.integrate(item)
+            if item.epistemic_status == "dc05_admissible":
+                self.integrate(item)
         for item in causal_observations:
             self.integrate_causal_observation(item)
         for witness in numeric_witnesses:
@@ -2190,7 +2207,9 @@ class CausalModel:
         return tuple(changes)
 
     def integrate(self, evidence: SafetyEvidence) -> None:
-        evidence.validate()  # INV-03/27: reject before any causal write.
+        evidence.validate()
+        if evidence.epistemic_status != "dc05_admissible":
+            raise ValueError("ambiguous association cannot receive DC-05 credit")  # INV-03/27: reject before any causal write.
         if (
             evidence.identifier in self._seen_ids
             or any(v.identifier == evidence.identifier for v in self._pending)
@@ -2300,12 +2319,12 @@ class CausalModel:
                 for _, c in sorted(self._published.items())
             ],
             "pending": [
-                {name: getattr(e, name) for name in e.__dataclass_fields__}
+                self._serialize_safety_evidence(e)
                 for e in self._pending
             ],
             "seen": sorted(self._seen_ids),
             "admitted_safety_evidence": [
-                {name: getattr(e, name) for name in e.__dataclass_fields__}
+                self._serialize_safety_evidence(e)
                 for e in self._admitted_safety_evidence
             ],
             # Detect accidental or partial damage even where a changed lived
@@ -2400,9 +2419,23 @@ class CausalModel:
         return state
 
     @staticmethod
+    def _serialize_safety_evidence(row: SafetyEvidence) -> dict[str, object]:
+        payload = {
+            name: getattr(row, name)
+            for name in row.__dataclass_fields__
+            if name != "epistemic_status"
+        }
+        # Preserve historical snapshot bytes/digests for ordinary admissible
+        # DC-05 evidence. Only non-default epistemic classifications need the
+        # new field, and ambiguous rows are never admitted to the credit ledger.
+        if row.epistemic_status != "dc05_admissible":
+            payload["epistemic_status"] = row.epistemic_status
+        return payload
+
+    @staticmethod
     def _safety_ledger_sha256(rows: Sequence[SafetyEvidence]) -> str:
         payload = [
-            {name: getattr(row, name) for name in row.__dataclass_fields__}
+            CausalModel._serialize_safety_evidence(row)
             for row in rows
         ]
         return sha256(dumps(
@@ -3059,6 +3092,42 @@ class CausalModel:
             w.transition_event_ref for w in (*witnesses, *pending_witnesses)
         }) != len(witnesses) + len(pending_witnesses):
             raise ValueError("same physical transition across published/pending witnesses")
+
+        # Numeric correction witnesses cannot have autonomous snapshot
+        # authority. They must remain joined to the exact food causal
+        # observation that the live admission path created from the same
+        # Memory-closed physical transition. This prevents restore from
+        # manufacturing a correction witness that runtime cognition never
+        # earned.
+        published_numeric_sources = {
+            row.identifier: row for row in obs.values()
+        }
+        pending_numeric_sources = {
+            row.identifier: row for row in pending_obs
+        }
+        for witness, sources in (
+            *((row, published_numeric_sources) for row in witnesses),
+            *((row, pending_numeric_sources) for row in pending_witnesses),
+        ):
+            expected_ref = (
+                f"causal-observation:{witness.episode_ref}:"
+                f"{witness.transition_event_ref}"
+            )
+            observation = sources.get(expected_ref)
+            if (
+                observation is None
+                or observation.contingency_ref != witness.contingency_ref
+                or observation.predicate != "toxic_item"
+                or observation.subject_ref != witness.command_target
+                or observation.episode_ref != witness.episode_ref
+                or observation.observation_ref != witness.transition_event_ref
+                or observation.observed_step != witness.observed_t_monde
+                or not observation.cause_present
+                or not observation.effect_present
+            ):
+                raise ValueError(
+                    "numeric snapshot witness lacks matching lived causal observation"
+                )
         self._numeric_witnesses = {v.identifier: v for v in witnesses}
         self._pending_numeric_witnesses = pending_witnesses
         self._version = version

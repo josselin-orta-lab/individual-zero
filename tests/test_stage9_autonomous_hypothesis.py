@@ -21,13 +21,16 @@ def model() -> CausalModel:
     ))
 
 
-def lived_meal(m: CausalModel, *, t: int, food: str, after: float) -> None:
+def lived_meal(
+    m: CausalModel, *, t: int, food: str, after: float,
+    position: tuple[int, int] = (2, 2),
+) -> None:
     actual_step = t + 1
     # A genuine no-food same-site control, rather than a hidden WorldBody
     # damage label, is now prerequisite for harmful food causal observations.
     m.record_applied_ambient_integrity_control(
         t_monde=t, option_ref=f"option:wait:{t}",
-        position=(2, 2), integrity_before=100.0,
+        position=position, integrity_before=100.0,
     )
     m.observe_followup_capture(t_monde=actual_step, integrity=100.0)
     control = (
@@ -35,7 +38,7 @@ def lived_meal(m: CausalModel, *, t: int, food: str, after: float) -> None:
          "t_monde": t, "primitive": "attendre", "parameters": {}},
         {"event_id": f"wait-transition:{t}",
          "kind": "world_transition_experienced", "t_monde": t,
-         "position_after": {"x": 2, "y": 2},
+         "position_after": {"x": position[0], "y": position[1]},
          "body_after": {"integrity": 100.0},
          "effects": {"rest": "attendre"}},
     )
@@ -47,7 +50,7 @@ def lived_meal(m: CausalModel, *, t: int, food: str, after: float) -> None:
     m.record_applied_food_exposure(
         t_monde=actual_step, resource_kind=food, option_ref=f"option:{t}",
         motive_ref="goal:food", integrity_before=100.0,
-        position_before=(2, 2),
+        position_before=position,
         body_before={"energy":50.0, "food":60.0,
                      "water":50.0, "integrity":100.0},
     )
@@ -62,7 +65,7 @@ def lived_meal(m: CausalModel, *, t: int, food: str, after: float) -> None:
             "event_id": f"transition:{t}",
             "kind": "world_transition_experienced",
             "t_monde": actual_step,
-            "position_after": {"x": 2, "y": 2},
+            "position_after": {"x": position[0], "y": position[1]},
             "body_after": {"integrity": after},
             "effects": {"ate": food},
         },
@@ -74,51 +77,48 @@ def lived_meal(m: CausalModel, *, t: int, food: str, after: float) -> None:
     )
 
 
-def publish_physical_correlation(m: CausalModel) -> None:
-    lived_meal(m, t=1, food="berry_b", after=90.0)
-    lived_meal(m, t=3, food="berry_b", after=80.0)
-    lived_meal(m, t=5, food="berry_a", after=100.0)
-    changes = m.publish_causal_inference()
-    assert [(x.contingency_ref, x.after) for x in changes] == [
-        ("toxic:berry_b", "correlation_observee")
-    ]
-    m.publish()
+def publish_ambiguous_food_history(m: CausalModel) -> None:
+    """Exercise repeated harmful food plus a genuine benign control meal.
+
+    Under issue #89 the harmful treatment arms remain associational because
+    hidden synchronized causes are observationally equivalent. The actually
+    consumed benign control is retained, but cannot manufacture treated
+    observations that I0 never earned.
+    """
+    lived_meal(m, t=1, food="berry_b", after=90.0, position=(2, 2))
+    lived_meal(m, t=3, food="berry_b", after=80.0, position=(3, 2))
+    lived_meal(m, t=5, food="berry_b", after=70.0, position=(4, 2))
+    lived_meal(m, t=7, food="berry_a", after=100.0, position=(5, 2))
+    assert m.publish_causal_inference() == ()
+    assert m.publish() == ()
 
 
 class AutonomousHypothesisTests(unittest.TestCase):
-    def test_explicit_preregistered_lived_control_promotes_next_publication(self):
+    def test_repeated_harm_and_lived_control_do_not_create_food_causal_hypothesis(self):
         m = model()
-        publish_physical_correlation(m)
-        self.assertEqual(m.get("toxic:berry_b").causal_status, "correlation_observee")
+        publish_ambiguous_food_history(m)
+        fact = m.get("toxic:berry_b")
+        self.assertIsNotNone(fact)
+        self.assertEqual(fact.causal_status, "aucun")
+        self.assertEqual(fact.safety_status, "aucun")
         self.assertEqual(m.export_causal_state()["causal_reviews"], [])
         self.assertEqual(m.export_causal_state()["causal_interventions"], [])
-        (change,) = m.publish_causal_inference()
-        self.assertEqual(change.before, "correlation_observee")
-        self.assertEqual(change.after, "hypothese_causale")
-        self.assertEqual(change.protocol, "matched_alternatives")
-        reviews = m.export_causal_state()["causal_reviews"]
-        self.assertEqual(len(reviews), 1)
-        self.assertIn("episode:5", reviews[0])
-        self.assertEqual(m.export_causal_state()["causal_interventions"], [])
         self.assertEqual(m.publish_causal_inference(), ())
-        self.assertEqual(m.get("toxic:berry_b").causal_status, "hypothese_causale")
 
-    def test_observational_review_replays_exactly_from_snapshot(self):
+    def test_ambiguous_food_history_replays_exactly_from_snapshot(self):
         original = model()
-        publish_physical_correlation(original)
+        publish_ambiguous_food_history(original)
         checkpoint = original.export_causal_state()
         twin = model()
         twin.restore_causal_state(checkpoint)
         self.assertEqual(checkpoint, twin.export_causal_state())
-        self.assertEqual(
-            original.publish_causal_inference(), twin.publish_causal_inference()
-        )
+        self.assertEqual(original.publish_causal_inference(), ())
+        self.assertEqual(twin.publish_causal_inference(), ())
         self.assertEqual(original.export_causal_state(), twin.export_causal_state())
 
-    def test_unlived_control_claim_cannot_produce_autonomous_review(self):
+    def test_unlived_control_claim_cannot_resurrect_withheld_treatment(self):
         m = model()
-        lived_meal(m, t=1, food="berry_b", after=90.0)
-        lived_meal(m, t=3, food="berry_b", after=80.0)
+        publish_ambiguous_food_history(m)
         m.integrate_causal_observation(CausalObservation(
             identifier=(
                 "causal-control:berry_b:"
@@ -132,26 +132,18 @@ class AutonomousHypothesisTests(unittest.TestCase):
             cause_present=False, effect_present=False,
             controlled_variables=(("primitive", "manger"),),
         ))
-        self.assertEqual(
-            [change.after for change in m.publish_causal_inference()],
-            ["correlation_observee"],
-        )
-        m.publish()
         self.assertEqual(m.publish_causal_inference(), ())
-        self.assertEqual(m.get("toxic:berry_b").causal_status, "correlation_observee")
+        self.assertEqual(m.get("toxic:berry_b").causal_status, "aucun")
         self.assertEqual(m.export_causal_state()["causal_reviews"], [])
 
-    def test_incidental_food_comparison_does_not_create_unsafe_test_option(self):
+    def test_ambiguous_food_history_creates_no_unsafe_test_or_safety_veto(self):
         m = model()
-        publish_physical_correlation(m)
-        m.publish_causal_inference()
+        publish_ambiguous_food_history(m)
         state = m.export_causal_state()
         self.assertEqual(state["pending_causal_interventions"], [])
         self.assertEqual(state["causal_interventions"], [])
         self.assertEqual(state["pending_causal_reviews"], [])
-        # Separate safety use may already prohibit further consumption.
-        self.assertEqual(m.get("toxic:berry_b").safety_status,
-                         "etabli_pour_securite")
+        self.assertEqual(m.get("toxic:berry_b").safety_status, "aucun")
 
 
 if __name__ == "__main__":

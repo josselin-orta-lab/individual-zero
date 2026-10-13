@@ -22,7 +22,9 @@ from i0.modules.causal_model import (
 from i0.modules.causal_lifecycle import (
     CausalObservation, CausalHypothesisReview, CausalIntervention,
 )
-from i0.modules.causal_corrections import correct_equipment_prediction
+from i0.modules.causal_corrections import (
+    LivedNumericOutcome, correct_equipment_prediction,
+)
 from lab.stage9_reference_fixture import build_stage9_reference_runtime
 from test_stage6_equipment import state
 from lab.determinism import canonical_causal_bytes, sha256_hex
@@ -38,50 +40,56 @@ def model():
 
 
 def physical_meal(m, *, step=2, option="option:meal"):
+    """Unit-seed an already-authorized lived food witness.
+
+    Issue #89 deliberately prevents the runtime ingestion path from creating
+    this witness from an observationally ambiguous post-meal injury. These
+    canonical-correction tests isolate the downstream INV-25 machinery, so the
+    test seeds the typed witness and matching causal observation explicitly.
+    Integration regressions separately prove that ambiguous meals cannot do so.
+    """
     before = state(x=2)
     suffix = "" if step == 2 else f":{step}"
-    # Only an independently applied, closed, uneventful wait immediately
-    # before the meal permits the harmful food observation to become evidence.
-    m.record_applied_ambient_integrity_control(
-        t_monde=step-1, option_ref=f"option:wait:{step}",
-        position=(2, 2), integrity_before=100.0,
-    )
-    m.observe_followup_capture(t_monde=step, integrity=100.0)
-    wait_events = (
-        {"event_id":f"cmd:wait:{step}", "kind":"command_experienced",
-         "t_monde":step-1, "primitive":"attendre", "parameters":{}},
-        {"event_id":f"world:wait:{step}", "kind":"world_transition_experienced",
-         "t_monde":step-1, "position_after":{"x":2,"y":2},
-         "body_after":{"integrity":100.0}, "effects":{"rest":"attendre"}},
-    )
-    assert m.ingest_closed_autobiographical_episode(
-        episode_ref=f"episode:wait:{step}",
-        event_refs=(f"cmd:wait:{step}",f"world:wait:{step}"),
-        autobiographical_events=wait_events,
-    ) == ()
+    episode_ref = "episode:meal" + suffix
     command_ref = "cmd:meal" + suffix
     transition_ref = "world:meal" + suffix
-    m.record_applied_food_exposure(
-        t_monde=step, resource_kind="berry_b", option_ref=option,
-        motive_ref="goal:food", integrity_before=100.0,
-        body_before=dict(before.body), position_before=(2, 2),
-        state_before_digest=sha256_hex(canonical_causal_bytes(before.as_dict())),
+    witness = LivedNumericOutcome(
+        identifier=f"numeric-witness:unit-authorized:{step}:{option}",
+        contingency_ref=REF,
+        episode_ref=episode_ref,
+        command_event_ref=command_ref,
+        transition_event_ref=transition_ref,
+        option_ref=option,
+        sent_t_monde=step,
+        observed_t_monde=step + 1,
+        command_primitive="manger",
+        command_target="berry_b",
+        variable="integrity",
+        observed_before_body=tuple(
+            (name, float(before.body[name])) for name in sorted(before.body)
+        ),
+        observed_before_position=(before.x, before.y),
+        observed_before_state_digest=sha256_hex(
+            canonical_causal_bytes(before.as_dict())
+        ),
+        observed_after=90.0,
     )
-    m.observe_followup_capture(t_monde=step + 1, integrity=90.0)
-    events = (
-        {"event_id": command_ref, "kind": "command_experienced",
-         "t_monde": step, "primitive": "manger",
-         "parameters": {"target": "berry_b"}},
-        {"event_id": transition_ref, "kind": "world_transition_experienced",
-         "t_monde": step, "effects": {"ate": "berry_b"},
-         "body_after": {"integrity": 90.0}},
-    )
-    admitted = m.ingest_closed_autobiographical_episode(
-        episode_ref="episode:meal" + suffix,
-        event_refs=(command_ref, transition_ref),
-        autobiographical_events=events,
-    )
-    assert len(admitted) == 1
+    witness.validate()
+    m._pending_numeric_witnesses.append(witness)
+    m.integrate_causal_observation(CausalObservation(
+        identifier=f"causal-observation:{episode_ref}:{transition_ref}",
+        contingency_ref=REF,
+        predicate="toxic_item",
+        subject_ref="berry_b",
+        application_context="global",
+        observation_context="food_consumption",
+        episode_ref=episode_ref,
+        observation_ref=transition_ref,
+        observed_step=step + 1,
+        cause_present=True,
+        effect_present=True,
+        controlled_variables=(("primitive", "manger"),),
+    ))
     return before
 
 
@@ -176,6 +184,21 @@ def intervention(m, name, *, step, context, linked=True):
 
 
 class CanonicalCorrectionTests(unittest.TestCase):
+    def test_snapshot_cannot_inject_or_retarget_numeric_food_witness(self):
+        from copy import deepcopy
+        m = model()
+        physical_meal(m)
+        m.publish_causal_inference()
+        snapshot = m.export_causal_state()
+        self.assertEqual(len(snapshot["numeric_witnesses"]), 1)
+        forged = deepcopy(snapshot)
+        forged["numeric_witnesses"][0]["transition_event_ref"] = "world:forged"
+        clone = model()
+        with self.assertRaisesRegex(
+            ValueError, "numeric snapshot witness lacks matching lived causal observation",
+        ):
+            clone.restore_causal_state(forged)
+
     def test_all_three_provenance_layers_are_mandatory(self):
         m = model()
         physical_meal(m)
@@ -445,21 +468,22 @@ class CanonicalCorrectionTests(unittest.TestCase):
 
     def test_safety_status_alone_never_produces_simulator_rule(self):
         m = model()
-        physical_meal(m)
-        m.publish_causal_inference()
-        m.publish()
-        m.integrate(SafetyEvidence(
-            identifier="dc05:another", contingency_ref=REF,
-            predicate="toxic_item", subject_ref="berry_b",
-            context_signature="global", episode_ref="episode:another",
-            observation_ref="world:another",
-            emission_step=3, observation_step=4,
-            harm_observed=True, source="monde",
-            independent_episode=True, comparable_context=True,
-            alternative_cause_sufficient=False,
-            exposure_motivated_independently=True,
-        ))
-        m.publish()
+        # Unit-only typed evidence isolates INV-25. The production food
+        # ingestion path is fail-closed by the issue #89 regressions.
+        for index in (1, 2):
+            m.integrate(SafetyEvidence(
+                identifier=f"dc05:unit-safety:{index}", contingency_ref=REF,
+                predicate="toxic_item", subject_ref="berry_b",
+                context_signature="global",
+                episode_ref=f"episode:unit-safety:{index}",
+                observation_ref=f"world:unit-safety:{index}",
+                emission_step=index * 2 - 1, observation_step=index * 2,
+                harm_observed=True, source="monde",
+                independent_episode=True, comparable_context=True,
+                alternative_cause_sufficient=False,
+                exposure_motivated_independently=True,
+            ))
+            m.publish()
         self.assertEqual(m.get(REF).safety_status, "etabli_pour_securite")
         self.assertEqual(m.get(REF).causal_status, "aucun")
         self.assertEqual(m.established_prediction_corrections(), ())
