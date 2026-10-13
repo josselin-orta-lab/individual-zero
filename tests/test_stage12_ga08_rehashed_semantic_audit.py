@@ -106,7 +106,17 @@ class RehashedSpatialAuditorTests(unittest.TestCase):
             for name, distorted in cases:
                 with self.subTest(name=name):
                     rebuilt = rechain(distorted)
-                    self.assertTrue(audit_export_bytes(rebuilt).occurrences > 0)
+                    # The pure hash chain is valid for every mutation.
+                    # Deleting an executed-command source also violates
+                    # the older autobiographical audit, which is an even
+                    # earlier legitimate rejection than GA-08 semantics.
+                    if name == "omitted_action_control_receipt":
+                        with self.assertRaisesRegex(
+                            ValueError, "missing/future autobiographical source",
+                        ):
+                            audit_export_bytes(rebuilt)
+                    else:
+                        self.assertGreater(audit_export_bytes(rebuilt).occurrences, 0)
                     with self.assertRaises(ValueError):
                         audit_stage12_spatial_provenance(rebuilt)
 
