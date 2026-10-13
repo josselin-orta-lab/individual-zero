@@ -42,6 +42,7 @@ jobs:
           python -m unittest discover -s tests -p 'test_stage12_attribution_pairs.py' -q
           python -m unittest discover -s tests -p 'test_stage12_goal_agency_runtime.py' -q
           python -m unittest discover -s tests -p 'test_stage12_attribution_provenance.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_issue110_contrasted_summary.py' -v
       - name: Run 12 independently born autonomously acting mortal lives
         run: |
           mkdir -p /tmp/i0-issue110-contrasted
