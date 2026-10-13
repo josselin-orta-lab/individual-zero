@@ -8,7 +8,7 @@ def model():
 
 
 def pair(m, *, t=1, integrity=90.0, ate="berry_b", alternative=False,
-         verified_control=True):
+         verified_control=True, position=(2, 2)):
     # One independently performed, closed and physically matched wait precedes
     # the food event. Keep historical event IDs keyed by fixture case 't'.
     # For control-negative tests, omit the actual waiting evidence entirely.
@@ -16,7 +16,7 @@ def pair(m, *, t=1, integrity=90.0, ate="berry_b", alternative=False,
     if verified_control:
         m.record_applied_ambient_integrity_control(
             t_monde=food_step-1, option_ref=f"wait-option:{t}",
-            position=(2, 2), integrity_before=100.0,
+            position=position, integrity_before=100.0,
         )
         m.observe_followup_capture(t_monde=food_step, integrity=100.0)
         wait = (
@@ -24,7 +24,7 @@ def pair(m, *, t=1, integrity=90.0, ate="berry_b", alternative=False,
              "t_monde":food_step-1, "primitive":"attendre", "parameters":{}},
             {"event_id":f"wait-w:{t}", "kind":"world_transition_experienced",
              "t_monde":food_step-1,
-             "position_after":{"x":2,"y":2},
+             "position_after":{"x":position[0],"y":position[1]},
              "body_after":{"integrity":100.0},
              "effects":{"rest":"attendre"}},
         )
@@ -36,7 +36,7 @@ def pair(m, *, t=1, integrity=90.0, ate="berry_b", alternative=False,
     m.record_applied_food_exposure(
         t_monde=food_step, resource_kind="berry_b", option_ref=f"option:{t}",
         motive_ref="goal:food", integrity_before=100.0,
-        position_before=(2,2), body_before={
+        position_before=position, body_before={
             "energy":50.0,"food":60.0,"water":50.0,"integrity":100.0,
         },
     )
@@ -47,13 +47,13 @@ def pair(m, *, t=1, integrity=90.0, ate="berry_b", alternative=False,
          "parameters":{"target":"berry_b"}},
         {"event_id":f"w:{t}","kind":"world_transition_experienced",
          "t_monde":food_step,"body_after":{"integrity":integrity},
-         "position_after":{"x":2,"y":2},
+         "position_after":{"x":position[0],"y":position[1]},
          "effects":{"ate":ate,**({"creature_damage":10} if alternative else {})}},
     )
 
 
 class LivedEvidenceTests(unittest.TestCase):
-    def test_only_closed_episode_with_next_capture_is_credited(self):
+    def test_only_closed_episode_with_next_capture_is_withheld_as_ambiguous(self):
         m=model()
         events=pair(m)
         self.assertEqual(m.export_causal_state()["pending"],[])
@@ -64,8 +64,13 @@ class LivedEvidenceTests(unittest.TestCase):
         self.assertEqual(len(evidence),1)
         self.assertTrue(evidence[0].harm_observed)
         self.assertEqual(evidence[0].source,"monde")
+        self.assertEqual(
+            evidence[0].epistemic_status, "ambiguous_food_association",
+        )
+        self.assertEqual(m.pending_causal_observations(), ())
+        self.assertEqual(m.export_causal_state()["pending_numeric_witnesses"], [])
         self.assertEqual(m.publish(),())
-        self.assertEqual(m.get("toxic:berry_b").safety_status,"aucun")
+        self.assertIsNone(m.get("toxic:berry_b"))
 
     def test_harm_without_lived_clean_control_never_credits_safety(self):
         m = model()
@@ -93,7 +98,7 @@ class LivedEvidenceTests(unittest.TestCase):
             {"event_id":"wait-c:1","kind":"command_experienced",
              "t_monde":1,"primitive":"attendre","parameters":{}},
             {"event_id":"wait-w:1","kind":"world_transition_experienced",
-             "t_monde":1,"position_after":{"x":2,"y":2},
+             "t_monde":1,"position_after":{"x":position[0],"y":position[1]},
              "body_after":{"integrity":90.0},"effects":{"rest":"attendre"}},
         )
         self.assertEqual(m.ingest_closed_autobiographical_episode(
@@ -113,7 +118,7 @@ class LivedEvidenceTests(unittest.TestCase):
              "t_monde":2,"primitive":"manger","parameters":{"target":"berry_a"}},
             {"event_id":"food-w:2","kind":"world_transition_experienced",
              "t_monde":2,"body_after":{"integrity":80.0},
-             "position_after":{"x":2,"y":2},
+             "position_after":{"x":position[0],"y":position[1]},
              "effects":{"ate":"berry_a"}},
         )
         self.assertEqual(m.ingest_closed_autobiographical_episode(
@@ -127,42 +132,54 @@ class LivedEvidenceTests(unittest.TestCase):
     def test_invalid_combined_episode_does_not_partially_verify_control(self):
         from i0.modules.causal_model import SafetyEvidence
         m = model()
+
+        # First harmful context is retained as ambiguous only.
+        seed = pair(m, t=1, position=(1,2))
+        self.assertEqual(
+            m.ingest_closed_autobiographical_episode(
+                episode_ref="episode:seed",
+                event_refs=("c:1","w:1"),
+                autobiographical_events=seed,
+            )[0].epistemic_status,
+            "ambiguous_food_association",
+        )
+
+        # A second observable position is contrastively admissible. Forge a
+        # colliding pending ID to exercise the late atomic preflight.
         m.record_applied_ambient_integrity_control(
-            t_monde=1, option_ref="option:wait", position=(2,2),
+            t_monde=3, option_ref="option:wait", position=(2,2),
             integrity_before=100.0,
         )
-        m.observe_followup_capture(t_monde=2, integrity=100.0)
+        m.observe_followup_capture(t_monde=4, integrity=100.0)
         m.record_applied_food_exposure(
-            t_monde=2, resource_kind="berry_b", option_ref="option:food",
+            t_monde=4, resource_kind="berry_b", option_ref="option:food",
             motive_ref="goal:food", integrity_before=100.0,
             position_before=(2,2),
             body_before={"energy":50.0,"food":60.0,
                          "water":50.0,"integrity":100.0},
         )
-        m.observe_followup_capture(t_monde=3, integrity=90.0)
-        # The forged preexisting pending identifier forces a *late*
-        # preflight rejection, after the real waiting pair was examined.
+        m.observe_followup_capture(t_monde=5, integrity=90.0)
         m.integrate(SafetyEvidence(
             identifier="dc05:episode:combined:food-w",
             contingency_ref="toxic:berry_b", predicate="toxic_item",
             subject_ref="berry_b", context_signature="global",
             episode_ref="episode:combined", observation_ref="food-w",
-            emission_step=2, observation_step=3, harm_observed=True,
+            emission_step=4, observation_step=5, harm_observed=True,
             source="monde", independent_episode=True,
             comparable_context=True, alternative_cause_sufficient=False,
             exposure_motivated_independently=True,
         ))
         events = (
             {"event_id":"wait-c","kind":"command_experienced",
-             "t_monde":1,"primitive":"attendre","parameters":{}},
+             "t_monde":3,"primitive":"attendre","parameters":{}},
             {"event_id":"wait-w","kind":"world_transition_experienced",
-             "t_monde":1,"position_after":{"x":2,"y":2},
+             "t_monde":3,"position_after":{"x":2,"y":2},
              "body_after":{"integrity":100.0},"effects":{"rest":"attendre"}},
             {"event_id":"food-c","kind":"command_experienced",
-             "t_monde":2,"primitive":"manger",
+             "t_monde":4,"primitive":"manger",
              "parameters":{"target":"berry_b"}},
             {"event_id":"food-w","kind":"world_transition_experienced",
-             "t_monde":2,"position_after":{"x":2,"y":2},
+             "t_monde":4,"position_after":{"x":2,"y":2},
              "body_after":{"integrity":90.0},"effects":{"ate":"berry_b"}},
         )
         snapshot = m.export_causal_state()
@@ -173,9 +190,9 @@ class LivedEvidenceTests(unittest.TestCase):
                 autobiographical_events=events,
             )
         self.assertEqual(m.export_causal_state(), snapshot)
-        self.assertIsNone(
-            m.export_causal_state()["lived_ambient_integrity_controls"][0]["episode_ref"]
-        )
+        controls = m.export_causal_state()["lived_ambient_integrity_controls"]
+        target = next(row for row in controls if row["t_monde"] == 3)
+        self.assertIsNone(target["episode_ref"])
 
     def test_control_snapshot_roundtrip_and_forged_control_rejected(self):
         m = model()
@@ -306,19 +323,29 @@ class LivedEvidenceTests(unittest.TestCase):
                 ), ())
                 self.assertEqual(m.pending_causal_observations(), ())
 
-    def test_distinct_closed_episodes_required(self):
+    def test_distinct_closed_contexts_required_for_harmful_food_credit(self):
         m=model()
-        for t in (1,3):
-            ev=pair(m,t=t)
-            self.assertEqual(len(m.ingest_closed_autobiographical_episode(
+        statuses=[]
+        publications=[]
+        for t, position in ((1,(2,2)),(3,(3,2)),(5,(4,2))):
+            ev=pair(m,t=t,position=position)
+            rows=m.ingest_closed_autobiographical_episode(
                 episode_ref=f"episode:{t}",
                 event_refs=(f"c:{t}",f"w:{t}"),
                 autobiographical_events=ev,
-            )),1)
-            self.assertEqual(m.publish().__len__(),int(t==3))
+            )
+            self.assertEqual(len(rows),1)
+            statuses.append(rows[0].epistemic_status)
+            publications.append(len(m.publish()))
+        self.assertEqual(statuses,[
+            "ambiguous_food_association",
+            "dc05_admissible",
+            "dc05_admissible",
+        ])
+        self.assertEqual(publications,[0,0,1])
         self.assertEqual(m.get("toxic:berry_b").safety_status,"etabli_pour_securite")
 
-    def test_lived_episode_generates_observation_not_intervention(self):
+    def test_ambiguous_lived_harm_generates_no_causal_observation_or_intervention(self):
         m=model()
         events=pair(m)
         admitted=m.ingest_closed_autobiographical_episode(
@@ -326,13 +353,12 @@ class LivedEvidenceTests(unittest.TestCase):
             autobiographical_events=events,
         )
         self.assertEqual(len(admitted),1)
-        observed=m.pending_causal_observations()
-        self.assertEqual(len(observed),1)
-        self.assertTrue(observed[0].cause_present)
-        self.assertTrue(observed[0].effect_present)
-        self.assertEqual(observed[0].episode_ref,"episode:1")
+        self.assertEqual(
+            admitted[0].epistemic_status, "ambiguous_food_association",
+        )
+        self.assertEqual(m.pending_causal_observations(), ())
         self.assertEqual(m.publish_causal_inference(),())
-        self.assertEqual(m.get("toxic:berry_b").causal_status,"aucun")
+        self.assertIsNone(m.get("toxic:berry_b"))
         self.assertEqual(m.export_causal_state()["causal_interventions"],[])
 
     def test_confounder_rejects_safety_and_causal_observation_together(self):
@@ -383,6 +409,22 @@ class LivedEvidenceTests(unittest.TestCase):
             CausalModelConfig("bad-v1",2,2,2,2,
                 food_control_pairs=(("berry_b","berry_b"),)).validate()
         self.assertEqual(model().config.food_control_pairs,())
+
+    def test_snapshot_restores_ambiguous_food_context_without_promoting_it(self):
+        m=model()
+        events=pair(m,position=(2,2))
+        row=m.ingest_closed_autobiographical_episode(
+            episode_ref="episode:ambiguous",
+            event_refs=("c:1","w:1"),
+            autobiographical_events=events,
+        )[0]
+        self.assertEqual(row.epistemic_status,"ambiguous_food_association")
+        raw=m.export_causal_state()
+        self.assertIn("ambiguous_food_harm_contexts",raw)
+        clone=model()
+        clone.restore_causal_state(raw)
+        self.assertEqual(clone.export_causal_state(),raw)
+        self.assertIsNone(clone.get("toxic:berry_b"))
 
     def test_snapshot_restores_unfinished_exposure(self):
         m=model()
