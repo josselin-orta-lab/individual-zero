@@ -121,3 +121,40 @@ zone that activates on the meal step. Further contrasts, held-out
 interventions, independent scientific review and explicit operator
 acceptance are required before scientific causal validity can be claimed.
 **Stage 9 stays SCIENTIFIC NO-GO.**
+
+
+## Issue #89 final epistemic admission contract
+
+For the current v1.3.1 implementation, a post-ingestion integrity loss is classified as follows:
+
+- **perceptible sufficient competitor present**: retain the lived episode, but create no food safety credit, no food causal observation and no numeric correction;
+- **control absent or itself harmful**: retain the lived episode, but create no food safety credit, no food causal observation and no numeric correction;
+- **clean immediately preceding lived control, no perceptible competitor, then harm after eating**: retain an `ambiguous_food_association`; do not credit DC-05, do not create a food causal observation, and do not create a numeric correction;
+- **clean control and no harm after eating**: this remains an admissible lived no-harm observation under the existing demotion logic;
+- **technical journal shows hidden physical cause**: operator/auditor information only; it never changes the cognitive classification above.
+
+Changing position, repeating the meal, or accumulating more autobiographical episodes does **not** convert an ambiguous harmful association into a food-specific etiology. A hidden dynamic hazard can follow the same meal schedule and positions. Cryptographic journal integrity likewise cannot supply the missing causal information.
+
+This contract deliberately prefers withheld attribution over fabricated causal certainty.
+
+## Minimal normative delta proposed for operator review
+
+The current v1.2.1/v1.3.1 vocabulary conflates two propositions that issue #89 shows are not generally equivalent:
+
+1. repeated consumption of an item is empirically associated with harm strongly enough to justify a safety veto;
+2. the item itself is toxic.
+
+The present `CanonicalSafetyFacts.item_status()` maps learned `toxic_item + etabli_pour_securite` directly to `known_toxic`. Under observational equivalence, that label is stronger than the accessible evidence can justify.
+
+A future, separately versioned specification should therefore consider the smallest semantic split:
+
+- retain `toxic_item` and the causal lifecycle for etiological claims;
+- add a distinct safety-use proposition such as `consumption_harm_risk` whose meaning is explicitly **empirical risk association, not physical toxicity**;
+- permit its promotion from `n_sec` independent lived harmful consumption episodes under DC-05-style provenance and perceptible-competing-cause gates, without claiming hidden causes were excluded;
+- let Action Control veto consumption from this safety-use proposition while reporting the reason as learned empirical risk rather than `known_toxic`;
+- never use that safety association as a simulator correction, causal intervention result, or proof that the food caused the injury;
+- keep Oracle, Bench and the complete technical journal outside cognition.
+
+This delta would regain conservative safety learning without inventing causal identifiability. It is **not implemented or normative in v1.3.1**. Until explicit operator approval and a new versioned specification, the software must fail closed on harmful food etiology, and the cost is delayed or absent learned toxic-food vetoes in otherwise indistinguishable worlds.
+
+Historical Stage 9 remains **SCIENTIFIC NO-GO** regardless of the operator's decision on this delta.
