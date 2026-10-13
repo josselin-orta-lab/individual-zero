@@ -87,6 +87,38 @@ class M11Stage12AtomicPreflightTests(unittest.TestCase):
                 )
             self.assertTrue(classic.journal.durable_wal_enabled)
 
+    def test_real_lethal_stage12_transition_is_terminal_in_sqlite(self):
+        with TemporaryDirectory() as folder:
+            path = str(Path(folder) / "fatal.db")
+            identity = "m11:stage12:terminal-unchanged-world"
+            runtime = fresh()
+            center = runtime.world.position
+            for dx, dy in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)):
+                runtime.world.apply_scenario_event(
+                    "set_lethal_zone",
+                    {"position": {"x": center.x + dx, "y": center.y + dy},
+                     "active": True},
+                )
+            with M11TransactionalMortal.birth(
+                db_path=path, runtime=runtime, individual_id=identity,
+            ) as life:
+                terminal = life.run_step()
+                self.assertEqual(terminal.status, "dead")
+                self.assertEqual(terminal.world_step, 1)
+                with self.assertRaises(RecoveryBlocked):
+                    life.run_step()
+            audit = SQLiteLifeLedger.audit_read_only(
+                path=path, expected_individual_id=identity,
+            )
+            self.assertEqual(audit.generation, 1)
+            self.assertEqual(audit.status, "dead")
+            self.assertFalse(audit.may_recover)
+            with self.assertRaises(RecoveryBlocked):
+                M11TransactionalMortal.cold_recover(
+                    db_path=path, individual_id=identity,
+                    runtime_factory=fresh,
+                )
+
     def test_exclusive_private_step_and_exact_first_current_generation(self):
         with TemporaryDirectory() as folder:
             root = Path(folder)
