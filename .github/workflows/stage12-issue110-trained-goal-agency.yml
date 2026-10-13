@@ -1,0 +1,64 @@
+name: Issue110 preregistered real drink goal first-person GA
+on:
+  pull_request:
+    branches:
+      - research/stage12-issue110-attribution-provenance-20261013
+    paths:
+      - '.github/workflows/stage12-issue110-trained-goal-agency.yml'
+      - 'scripts/run_stage12_issue110_trained_goal_agency.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: issue110-trained-goal-ga-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  preregistered-trained-goal:
+    timeout-minutes: 25
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Assert exact immutable source checkout
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          git diff --exit-code HEAD --
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Ensure cognitive and audit software contracts still hold
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_attribution_pairs.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency_runtime.py' -q
+      - name: Execute real autonomous goals with preregistered physical Equipment
+        run: |
+          mkdir -p /tmp/issue110-goal-agency
+          python scripts/run_stage12_issue110_trained_goal_agency.py \
+            --output-dir /tmp/issue110-goal-agency/trial
+      - name: Publish measured GA and outcome counts with negative results
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/issue110-goal-agency/trial/summary.json')
+          print('issue110_trained_goal_agency_summary=' + (
+              p.read_text() if p.is_file() else 'unavailable'
+          ))
+          PY
+      - name: Retain WAL and canonical source including negative and stopped lives
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue110-trained-goal-agency-py${{ matrix.python-version }}
+          path: /tmp/issue110-goal-agency/
+          retention-days: 30
+          if-no-files-found: warn
