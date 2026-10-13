@@ -12,6 +12,10 @@ from typing import Mapping
 
 from i0.interfaces import PrimitiveCommand
 from .perception import PerceptualCapture
+from .stage12_spatial_goal_evidence import (
+    SPATIAL_CONTRACT_VERSION, SpatialGoalPrecommit,
+    preregister_spatial_subgoal, judge_spatial_agency,
+)
 
 GOAL_AGENCY_VERSION = "stage12-first-person-goal-agency-v1"
 
@@ -97,7 +101,7 @@ class GoalAgencyJudgement:
     policy_version: str = GOAL_AGENCY_VERSION
 
     def validate(self) -> None:
-        if (self.policy_version != GOAL_AGENCY_VERSION
+        if (self.policy_version not in (GOAL_AGENCY_VERSION, SPATIAL_CONTRACT_VERSION)
                 or not all(_ref(x) for x in (
                     self.assessment_ref, self.intent_ref, self.life_id,
                     self.reason,
@@ -141,13 +145,25 @@ class GoalAgencyService:
     schema = GOAL_AGENCY_VERSION
 
     def __init__(self) -> None:
-        self._pending: GoalAgencyCommitment | None = None
+        self._pending: GoalAgencyCommitment | SpatialGoalPrecommit | None = None
+        self._spatial_enabled = False
         self._seen: set[str] = set()
         self._last_sent = 0
         self._last_judgement: GoalAgencyJudgement | None = None
 
+    def enable_spatial(self) -> None:
+        """Birth-only variant, attached to the same Action Control owner."""
+        if (self._spatial_enabled or self._pending is not None
+                or self._seen or self._last_sent or self._last_judgement is not None):
+            raise ValueError("cannot change agency policy during a life")
+        self._spatial_enabled = True
+
     @property
-    def pending(self) -> GoalAgencyCommitment | None:
+    def spatial_enabled(self) -> bool:
+        return self._spatial_enabled
+
+    @property
+    def pending(self) -> GoalAgencyCommitment | SpatialGoalPrecommit | None:
         return self._pending
 
     @property
@@ -192,6 +208,40 @@ class GoalAgencyService:
         self._last_sent = world_step
         return value
 
+    def preregister_spatial(
+        self, *, commitment: SpatialGoalPrecommit,
+        capture: PerceptualCapture, command: PrimitiveCommand,
+    ) -> SpatialGoalPrecommit:
+        """Action Control validates its OWN efferent copy and perceived target.
+
+        An external Lab-supplied arbitrary claim cannot become a judgement.
+        Only a pre-action authorized sensory candidate can be installed.
+        """
+        if not self._spatial_enabled:
+            raise ValueError("GA-08 was not enabled before birth")
+        if (type(commitment) is not SpatialGoalPrecommit
+                or capture.t_monde != commitment.sent_world_step):
+            raise ValueError("invalid agency spatial pre-action origin")
+        expected = preregister_spatial_subgoal(
+            life_id=commitment.life_id, intent_ref=commitment.intent_ref,
+            assessment_ref=commitment.assessment_ref,
+            goal_ref=commitment.goal_ref, option_ref=commitment.option_ref,
+            command_hash=commitment.command_hash,
+            goal_measure=commitment.target_kind, command=command,
+            capture=capture,
+        )
+        if expected is None or expected != commitment:
+            raise ValueError("spatial agency cannot use forged or stale target")
+        if (self._pending is not None
+                or commitment.sent_world_step <= self._last_sent
+                or commitment.assessment_ref in self._seen):
+            raise ValueError("duplicate or unclosed GA-08 subjective assessment")
+        commitment.validate()
+        self._pending = commitment
+        self._seen.add(commitment.assessment_ref)
+        self._last_sent = commitment.sent_world_step
+        return commitment
+
     def evaluate(
         self, *, capture: PerceptualCapture | None,
         world_step: int, cue_ref: str | None, paid: bool,
@@ -213,6 +263,15 @@ class GoalAgencyService:
             agency, reason = "unavailable", (
                 "agency_uc_refused" if not paid else "agency_observation_missed"
             )
+        elif type(commitment) is SpatialGoalPrecommit:
+            # The approved efference belongs to Action Control. External
+            # semantic audit separately authenticates command application;
+            # this first-person belief never sees a physical causal label.
+            believed = judge_spatial_agency(
+                commitment, capture=capture, world_step=world_step,
+                agency_paid=paid, physically_applied=True,
+            )
+            agency, reason = believed.agency, believed.reason
         elif commitment.mechanism == "ingested_from_inventory":
             after = capture.inventory.get(commitment.action_target)
             if (type(after) is int
@@ -228,6 +287,10 @@ class GoalAgencyService:
             sent_world_step=commitment.sent_world_step,
             observed_world_step=world_step, subjective_agency=agency,
             reason=reason, cue_ref=cue_ref if agency != "unavailable" else None,
+            policy_version=(
+                SPATIAL_CONTRACT_VERSION if type(commitment) is SpatialGoalPrecommit
+                else GOAL_AGENCY_VERSION
+            ),
         )
         value.validate()
         self._pending = None
@@ -236,7 +299,9 @@ class GoalAgencyService:
 
     def export_causal_state(self) -> dict[str, object]:
         return {
-            "schema": self.schema,
+            "schema": (
+                self.schema + "+ga08" if self._spatial_enabled else self.schema
+            ),
             "last_judgement": (None if self._last_judgement is None
                                else self._last_judgement.as_dict()),
             "pending_commitment": (
@@ -251,7 +316,9 @@ class GoalAgencyService:
             "schema", "pending_commitment", "seen_assessment_refs",
             "last_judgement",
             "last_registered_world_step",
-        } or state["schema"] != self.schema
+        } or state["schema"] != (
+            self.schema + "+ga08" if self._spatial_enabled else self.schema
+        )
                 or type(state["seen_assessment_refs"]) is not list
                 or type(state["last_registered_world_step"]) is not int
                 or state["last_registered_world_step"] < 0):
@@ -261,8 +328,13 @@ class GoalAgencyService:
                 or seen != sorted(set(seen))):
             raise ValueError("invalid unique agency references")
         pending = state["pending_commitment"]
-        candidate = (None if pending is None
-                     else GoalAgencyCommitment.from_dict(pending))
+        candidate = None
+        if pending is not None:
+            if (self._spatial_enabled and type(pending) is dict
+                    and pending.get("policy_version") == SPATIAL_CONTRACT_VERSION):
+                candidate = SpatialGoalPrecommit.from_dict(pending)
+            else:
+                candidate = GoalAgencyCommitment.from_dict(pending)
         last = (None if state["last_judgement"] is None
                 else GoalAgencyJudgement.from_dict(state["last_judgement"]))
         if last is not None and (last.assessment_ref not in seen
