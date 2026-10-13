@@ -14,6 +14,55 @@ def fresh():
 
 
 class M11Stage12AtomicPreflightTests(unittest.TestCase):
+    def test_cold_current_generation_keeps_paid_index_h_and_stage12_owners(self):
+        with TemporaryDirectory() as folder:
+            path = str(Path(folder) / "indexed.sqlite")
+            name = "m11:stage12:indexed-current"
+            factory = lambda: stage12_runtime(
+                None, m11_sqlite_custody=True, paid_index=True)
+            original = factory()
+            self.assertIsNotNone(original.consolidation_scan)
+            self.assertIs(original._stage10_config.paid_pending_index, True)
+            self.assertEqual(original._stage10_config.sleep.consolidation_weight, 0.0)
+            with M11TransactionalMortal.birth(
+                db_path=path, runtime=original, individual_id=name,
+            ) as life:
+                for step in range(30):
+                    receipt = life.run_step()
+                    self.assertEqual(receipt.generation, step + 1)
+                    self.assertEqual(receipt.world_step, step + 1)
+                    self.assertEqual(receipt.status, "active")
+                committed = life.inspect()
+            with M11TransactionalMortal.cold_recover(
+                db_path=path, individual_id=name, runtime_factory=factory,
+            ) as current:
+                self.assertEqual(current.inspect(), committed)
+                next_step = current.run_step()
+                self.assertEqual(next_step.world_step, 31)
+                self.assertEqual(next_step.generation, 31)
+                audit = SQLiteLifeLedger.audit_read_only(
+                    path=path, expected_individual_id=name)
+                self.assertEqual(audit.journal_head, next_step.journal_head)
+
+    def test_physical_and_causal_parity_legacy_wal_vs_sqlite_m11(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            legacy = stage12_runtime(str(root / "legacy.wal"))
+            birth = fresh()
+            with M11TransactionalMortal.birth(
+                db_path=str(root / "sqlite.db"), runtime=birth,
+                individual_id="m11:stage12:parity",
+            ) as life:
+                for step in range(3):
+                    ordinary = legacy.run_step()
+                    stored = life.run_step()
+                    self.assertEqual(ordinary.execution_status, stored.outcome)
+                    self.assertEqual(legacy.scheduler.t_monde, stored.world_step)
+                    self.assertEqual(
+                        legacy.journal.head_hash,
+                        stored.journal_head,
+                    )
+
     def test_legacy_wal_and_sqlite_authorities_cannot_be_combined(self):
         with TemporaryDirectory() as folder:
             with self.assertRaisesRegex(ValueError, "no secondary WAL"):
