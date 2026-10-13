@@ -28,7 +28,7 @@ class Stage12SpatialCueReceiptAudit:
     def as_dict(self):
         return {
             "schema": "stage12-spatial-visible-cue-receipt-audit-v1",
-            **vars(self),
+            **{name: getattr(self, name) for name in self.__dataclass_fields__},
             "objective_physical_causation_proven": False,
             "first_person_world_judgement_proven": False,
         }
