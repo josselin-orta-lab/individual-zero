@@ -11,6 +11,7 @@ from lab.stage10_reference_fixture import build_stage10_reference_runtime
 from lab.stage11_reference_fixture import build_stage11_reference_runtime
 from lab.stage12_runtime import Stage12Runtime
 from lab.independent_journal_audit import audit_export_bytes
+from lab.stage12_first_person_agency_audit import audit_stage12_first_person_agency
 
 
 def opt_in_runtime(wal_path: str):
@@ -56,6 +57,18 @@ class Stage12FirstPersonIntegratedSmokeTests(unittest.TestCase):
                 expected_count=len(rt.journal.entries),
             ).world_steps_closed, 5)
             self.assertTrue(rt.journal.verify())
+            verdict = audit_stage12_first_person_agency(
+                raw, expected_head=rt.journal.head_hash,
+                expected_count=len(rt.journal.entries),
+            )
+            self.assertEqual(verdict.judgements_world, 0)
+            self.assertEqual(verdict.as_dict()["attribution_pairs_admitted"], 0)
+            self.assertEqual(
+                verdict.precommits,
+                verdict.judgements_self + verdict.judgements_world
+                + verdict.judgements_unknown + verdict.unavailable
+                + verdict.pending_terminal,
+            )
 
 
 if __name__ == "__main__":
