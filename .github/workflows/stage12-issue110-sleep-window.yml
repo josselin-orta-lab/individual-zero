@@ -1,0 +1,62 @@
+name: Issue110 preregistered sleep-window GA experiment
+on:
+  pull_request:
+    branches:
+      - science/stage12-issue110-food-self-agency-20261014
+    paths:
+      - '.github/workflows/stage12-issue110-sleep-window.yml'
+      - 'scripts/run_stage12_issue110_sleep_window.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: issue110-sleep-window-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  real-sleep-attribution:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Assert exact immutable source
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          git diff --exit-code HEAD --
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Core GA and sleep provenance regressions
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_attribution_pairs.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_attribution_sleep_expiry.py' -q
+      - name: Apply four independently born physical lives with prospective sleep weights
+        run: |
+          mkdir -p /tmp/issue110-sleep-window
+          python scripts/run_stage12_issue110_sleep_window.py \
+            --output-dir /tmp/issue110-sleep-window/experiment
+      - name: Report actual counts or explicitly unavailable
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/issue110-sleep-window/experiment/summary.json')
+          print('issue110_sleep_window_summary=' + (p.read_text() if p.exists() else 'unavailable'))
+          PY
+      - name: Retain all canonical source evidence including rejected lives
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue110-sleep-window-py${{ matrix.python-version }}
+          path: /tmp/issue110-sleep-window/
+          retention-days: 30
+          if-no-files-found: warn
