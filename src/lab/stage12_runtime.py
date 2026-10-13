@@ -177,6 +177,7 @@ class Stage12Runtime(Stage11SleepRuntime):
         goal_agency_cost_uc: int = 1,
         spatial_goal_progress: bool = False,
         spatial_goal_cost_uc: int = 1,
+        spatial_agency_cost_uc: int = 1,
         attribution_join: bool = False,
         attribution_join_cost_uc: int = 1, **kwargs,
     ):
@@ -199,6 +200,9 @@ class Stage12Runtime(Stage11SleepRuntime):
             raise ValueError("spatial goal criterion requires explicit birth opt-in")
         if type(spatial_goal_cost_uc) is not int or spatial_goal_cost_uc < 1:
             raise ValueError("spatial goal criterion requires positive versioned UC")
+        if type(spatial_agency_cost_uc) is not int or spatial_agency_cost_uc < 1:
+            raise ValueError("spatial agency requires positive declared UC")
+        self._spatial_agency_cost_uc = spatial_agency_cost_uc
         self._spatial_goal_enabled = spatial_goal_progress
         self._spatial_goal_cost_uc = spatial_goal_cost_uc
         self._attribution_join_enabled = attribution_join
@@ -243,6 +247,10 @@ class Stage12Runtime(Stage11SleepRuntime):
         agency_cost = self._goal_agency_cost_uc if self._goal_agency_enabled else 0
         join_cost = self._attribution_join_cost_uc if self._attribution_join_enabled else 0
         spatial_cost = self._spatial_goal_cost_uc if self._spatial_goal_enabled else 0
+        spatial_agency_cost = (
+            self._spatial_agency_cost_uc
+            if self._spatial_goal_enabled and self._goal_agency_enabled else 0
+        )
         budget = replace(
             old, version=(old.version + "+" + self._stage12_detector_policy.version
                           + "+stage12-diagnostics-charged-v1"
@@ -254,7 +262,8 @@ class Stage12Runtime(Stage11SleepRuntime):
                           + "+stage12-alerts-v1-p"
                           + str(self._stage12_alert_policy.persistence_world_steps)),
             cycle_ceiling=(old.cycle_ceiling + cost + occupancy_cost
-                           + agency_cost + join_cost + spatial_cost),
+                           + agency_cost + join_cost + spatial_cost
+                           + spatial_agency_cost),
             module_envelopes={
                 **old.module_envelopes,
                 # Stage11 has no Stage10 metacognition envelope yet.
@@ -262,7 +271,8 @@ class Stage12Runtime(Stage11SleepRuntime):
                 # instead of overwriting the diagnostic capacity during the
                 # later Stage10 with_budget() configuration step.
                 **({"action_control": (
-                    old.module_envelopes.get("action_control", 0) + agency_cost
+                    old.module_envelopes.get("action_control", 0)
+                    + agency_cost + spatial_agency_cost
                 )} if agency_cost else {}),
                 "metacognition_health": max(
                     old.module_envelopes.get("metacognition_health", 0),
@@ -277,6 +287,8 @@ class Stage12Runtime(Stage11SleepRuntime):
                 **({"stage12_attribution_join": join_cost} if join_cost else {}),
                 **({"stage12_spatial_goal_preregistration": spatial_cost}
                    if spatial_cost else {}),
+                **({"goal_agency_spatial_assessment": spatial_agency_cost}
+                   if spatial_agency_cost else {}),
             },
         )
         upgraded = replace(stage9, stage8=replace(stage8, stage7=replace(
@@ -496,14 +508,29 @@ class Stage12Runtime(Stage11SleepRuntime):
                         "accepted": agency_charge.accepted,
                         "reason": agency_charge.reason,
                     })
+                    spatial_paid = True
+                    if (pending_assessment.mechanism ==
+                            "witnessed_goal_spatial_target_v1"):
+                        spatial_charge = self.compute_budget.charge(
+                            module="action_control",
+                            operation="goal_agency_spatial_assessment",
+                        )
+                        self._write(kind="compute_charge", cycle=cycle, data={
+                            "module": "action_control",
+                            "operation": "goal_agency_spatial_assessment",
+                            "requested_uc": spatial_charge.requested_uc,
+                            "accepted": spatial_charge.accepted,
+                            "reason": spatial_charge.reason,
+                        })
+                        spatial_paid = spatial_charge.accepted
                     judgement = service.evaluate(
                         capture=capture, world_step=capture.t_monde,
                         cue_ref=deterministic_id(
                             "stage12-authorized-capture-cue-v1",
                             capture.t_monde, capture.x, capture.y,
                             tuple(sorted(capture.inventory.items())),
-                        ) if agency_charge.accepted else None,
-                        paid=agency_charge.accepted,
+                        ) if (agency_charge.accepted and spatial_paid) else None,
+                        paid=(agency_charge.accepted and spatial_paid),
                     )
                     if judgement is not None:
                         judgement_ref = self._write(
@@ -822,6 +849,12 @@ class Stage12Runtime(Stage11SleepRuntime):
                         command_hash=registered["command_hash"],
                         world_step=sent_t_monde, measure=registered["measure"],
                         command=prepared.command, capture=capture,
+                        spatial_target=(
+                            None if spatial is None else (
+                                registered["target_x"], registered["target_y"],
+                                registered["target_kind"],
+                            )
+                        ),
                     )
                     self._write(
                         kind="stage12_goal_agency_precommitted",
