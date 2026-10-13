@@ -240,6 +240,23 @@ def audit_stage12_attribution_pairs(
         if e.get("kind") == "step_closed"
         and e.get("data", {}).get("outcome") in ("normal", "dead")
     }
+    # Absence of a diagnostic does not prove sleep. Each skipped physical
+    # step must have exactly one authorized reduced sleep capture, no full
+    # perception and a closed transition. This independently rejects a
+    # hash-valid fake explanation for a missing cognitive sample.
+    reduced_sleep_steps = {}
+    full_capture_steps = set()
+    for row in rows:
+        event = row["causal_event"]
+        t = event.get("t_monde")
+        if event.get("kind") == "stage10_reduced_capture":
+            data = event.get("data")
+            if (event.get("emitter") == "stage4-runtime"
+                    and isinstance(data, dict)
+                    and data.get("full_cognitive_perception") is False):
+                reduced_sleep_steps[t] = reduced_sleep_steps.get(t, 0) + 1
+        elif event.get("kind") == "perceptual_capture":
+            full_capture_steps.add(t)
     for key, (i, data) in missed.items():
         if (type(data) is not dict
                 or data.get("pair_ref") not in pairs
@@ -268,7 +285,12 @@ def audit_stage12_attribution_pairs(
                     or any(due_step < t < key[0] for t in
                            diagnostic_steps | deferred_steps)
                     or any(pair_world_step < t < key[0] for t in
-                           diagnostic_steps | deferred_steps)):
+                           diagnostic_steps | deferred_steps)
+                    or any(
+                        reduced_sleep_steps.get(step) != 1
+                        or step in full_capture_steps or step not in closed_steps
+                        for step in range(due_step, key[0])
+                    )):
                 raise ValueError("false sleeping attribution-expiry evidence")
         else:
             raise ValueError("unknown missing attribution sample reason")
