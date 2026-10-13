@@ -1,0 +1,47 @@
+name: M11 OPT2 lossless canonical representation safety
+
+on:
+  pull_request:
+    branches: [exp/m11-stage12-atomic-paid-index-20261013]
+    paths:
+      - 'src/lab/determinism.py'
+      - 'src/lab/journal.py'
+      - 'tests/test_m11_opt2_canonical_equivalence.py'
+      - '.github/workflows/m11-opt2-canonical.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  opt2-parity-and-crash:
+    name: Canonical parity, M11 WAL and real crash regressions (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install current exact I0 package
+        run: python -m pip install -e .
+      - name: Byte-for-byte legacy canonical parity and mutation safety
+        run: python -m unittest discover -s tests -p 'test_m11_opt2_canonical_equivalence.py' -v
+      - name: Immutable journal and normative primitive regressions
+        run: |
+          python -m unittest discover -s tests -p 'test_causal_journal.py' -v
+          python -m unittest discover -s tests -p 'test_immutable_journal_export.py' -v
+          python -m unittest discover -s tests -p 'test_sqlite_corrupt_storage.py' -v
+          python -m unittest discover -s tests -p 'test_m11_verified_anchor_optimization.py' -v
+      - name: Actual M11 Stage12 transaction crash injections
+        run: python -m unittest discover -s tests -p 'test_m11_stage12_hard_crash.py' -v
+      - name: Stage12 current-generation and legacy WAL regression
+        run: |
+          python -m unittest discover -s tests -p 'test_m11_stage12_atomic_preflight.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_mortal_runtime.py' -v
