@@ -40,14 +40,14 @@ class GenuineAutonomousSpatialEvidenceTests(unittest.TestCase):
     def test_lived_spatial_success_and_adversarial_rehash(self):
         old_limit = trial.MAX_STEPS
         try:
-            trial.MAX_STEPS = 6
+            trial.MAX_STEPS = 8
             with TemporaryDirectory() as directory:
                 folder = Path(directory)
                 life = trial.run_life(
                     folder, "near_food_free", 70.0, "horizon_three",
                 )
                 self.assertIsNone(life["audit_error"], life["audit_error"])
-                self.assertEqual(life["executed_steps"], 6)
+                self.assertEqual(life["executed_steps"], 8)
                 raw = (folder / "canonical.jsonl").read_bytes()
                 receipts = [json.loads(line) for line in raw.splitlines()]
                 goal = audit_stage12_goal_progress(raw)
@@ -71,7 +71,7 @@ class GenuineAutonomousSpatialEvidenceTests(unittest.TestCase):
                 frozen["target_x"] += 1
                 altered = rechain(forged)
                 self.assertEqual(
-                    audit_export_bytes(altered).world_steps_closed, 6,
+                    audit_export_bytes(altered).world_steps_closed, 8,
                 )
                 with self.assertRaises(ValueError):
                     audit_stage12_goal_progress(altered)
