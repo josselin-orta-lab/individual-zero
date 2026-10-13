@@ -13,6 +13,8 @@ on:
       - 'src/i0/modules/stage12_goal_progress.py'
       - 'src/lab/stage12_goal_progress_audit.py'
       - 'src/lab/stage12_runtime.py'
+      - 'src/i0/modules/stage12_goal_agency.py'
+      - 'src/lab/stage12_first_person_agency_audit.py'
       - 'tests/test_stage12_spatial_goal_progress.py'
       - 'tests/test_stage12_spatial_physical_progress.py'
       - '.github/workflows/stage12-issue110-option-a-contract.yml'
