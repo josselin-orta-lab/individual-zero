@@ -53,6 +53,34 @@ class SpatialGoalPrecommit:
                 ) != self.target):
             raise ValueError("invalid or ungrounded GA-08 spatial precommit")
 
+    def as_dict(self) -> dict[str, object]:
+        """Canonical owner-image payload, without introducing a second owner."""
+        self.validate()
+        return {
+            name: (list(value) if name in ("origin", "target") else value)
+            for name, value in (
+                (name, getattr(self, name)) for name in self.__dataclass_fields__
+            )
+        }
+
+    @classmethod
+    def from_dict(cls, state: object) -> "SpatialGoalPrecommit":
+        """Reject altered current-generation images before any installation."""
+        if (type(state) is not dict
+                or set(state) != set(cls.__dataclass_fields__)
+                or any(type(state[name]) is not list
+                       for name in ("origin", "target"))):
+            raise ValueError("invalid GA-08 persisted precommit image")
+        value = cls(**{
+            **state,
+            "origin": tuple(state["origin"]),
+            "target": tuple(state["target"]),
+        })
+        value.validate()
+        if value.as_dict() != state:
+            raise ValueError("noncanonical GA-08 persisted precommit")
+        return value
+
 
 @dataclass(frozen=True, slots=True)
 class SpatialGoalOutcome:
