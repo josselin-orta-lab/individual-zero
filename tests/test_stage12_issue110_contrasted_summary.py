@@ -3,6 +3,9 @@
 No autonomous transitions are fabricated or counted as experimental evidence.
 """
 import unittest
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 
 from run_stage12_issue110_contrasted_science import summarize_lives
 
