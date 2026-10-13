@@ -1,9 +1,7 @@
 name: M11 OPT2 H120 comparison once
+# The H120 run was queued once at #38422296819 on SHA
+# 8b68107cd5b7ea01420593c2f2db937a4c0f3321. Manual reruns only.
 on:
-  pull_request:
-    branches: [exp/m11-stage12-atomic-paid-index-20261013]
-    paths:
-      - '.github/workflows/m11-opt2-h120.yml'
   workflow_dispatch:
 permissions:
   contents: read
