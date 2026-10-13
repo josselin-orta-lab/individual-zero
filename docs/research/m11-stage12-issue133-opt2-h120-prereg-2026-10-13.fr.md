@@ -1,0 +1,11 @@
+# M11 OPT2-H120 : comparaison prolongée, protocole gelé avant exécution
+
+**13 octobre 2026.** Sur la PR #141 empilée sur #140 et #139, les améliorations de normalisation `af7deda` ont réussi les tests de sécurité et H30 sur Python 3.11/3.12, avec journaux identiques mais des gains temporels variables. La présente étude H120 reste une preuve technique expérimentale, séparée de la validation opérateur et de la qualité scientifique de consolidation.
+
+**Comparaison préenregistrée.** Référence OPT1 H120 : code `082e7008`, run [#38401921250](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38401921250), Python 3.11/3.12, 120 pas, 57 références h, 12 publications, 14 397 événements, empreinte `8b73d539a39fa6b7bf7583652a5f51e4a0427f9c0d203f015190d4641a648f82`, DB 17 956 864 octets, temps 141,98s et 135,05s. Le code OPT2 utilise **sans modification** `scripts/run_m11_stage12_atomic_h120.py`, même fixture P6-B6 avec SQLite M11, même seed, `w_C=0`, mêmes UC P-42 100/pas et 600/période, mêmes coûts P-43 et même physique.
+
+**Périmètre** : Python 3.11 et Python 3.12, deux nouvelles vies. Enregistrer SHA exact, `summary.json`, export journal causal, DB SQLite (génération 121 après unique cold recovery). Vérifier tous les hash SHA256, index de 14 397 événements et état propriétaire, aucun second WAL, 59 épisodes clos / 57 publiés / backlog 2, 72 passes, 12 triplets maintenance/h/retrait, aucune référence dupliquée, état non terminal cohérent. Refuser les divergences, même si les temps sont meilleurs. Les timings de GitHub Actions sont un seul échantillon sur des machines différentes, pas une affirmation de supériorité garantie.
+
+**Critères** : GO OPT2-H120 local si deux Python SUCCESS, octets canoniques identiques à la référence, état SQL/UC/reprise correct, pas de code physique/UC modifié et gain hôte descriptif non négatif sur les deux runs. Un échec ou divergence conserve le résultat et déclenche un NO-GO. La campagne H600 ne sera lancée que si ce jalon reste concluant, les bornes de coût hôte ont été estimées et un protocole explicite H600 est préenregistré. Les workflows longs seront aussitôt remis en `workflow_dispatch` pour éviter les répétitions.
+
+Ne fusionner aucune PR. La stabilité du backlog H600 doit rester distinguée de l'intégrité de M11. Norme MVP v1.3.1, `w_C=0` et mortalité inchangées.
