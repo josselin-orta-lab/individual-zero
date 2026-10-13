@@ -2,13 +2,9 @@ name: M11 Stage12 paid-index 120-step intermediate horizon
 
 # Costly, pre-registered H120 must not re-run for unrelated PR commits.
 # PR 'paths' evaluates cumulative changes and would trigger repeatedly.
+# H120 OPT1 already launched once on frozen commit 082e7008;
+# use manual dispatch for any explicitly justified rerun.
 on:
-  pull_request:
-    branches:
-      - exp/stage10-priced-multipass-sleep-20261013
-    paths:
-      - 'docs/research/m11-stage12-issue133-opt1-h120-prereg-2026-10-13.fr.md'
-      - '.github/workflows/m11-stage12-h120.yml'
   workflow_dispatch:
 
 permissions:
