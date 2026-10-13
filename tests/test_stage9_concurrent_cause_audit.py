@@ -187,7 +187,132 @@ def _exercise_physics(kind):
     }
 
 
+def _exercise_repeated_dynamic_hidden_zone():
+    """Two independent ambiguous meal injuries in one genuine physical life.
+
+    The preceding wait is clean both times. The hidden danger is enabled only
+    for each meal, so first-person histories contain no observation that can
+    identify the berry as the physical cause of either injury.
+    """
+    baseline = build_stage4_reference_runtime(autonomous_mortal=True)
+    physics = replace(
+        baseline.world.config,
+        version="stage9-dynamic-hidden-repeat-v1",
+        night_start_step=200,
+        danger_zone_damage=10.0,
+    )
+    substrate = ScriptedStage2Runtime(
+        config=physics,
+        layout=WorldLayout(water_sources=frozenset({Position(4, 2)})),
+        phase_component_order=MVP_CYCLE_PHASE_COMPONENT_ORDER,
+        safety_config=SafetyProtocolConfig(
+            version="stage4-reference-safety-v1",
+            lethal_max=2, mode="campaign",
+        ),
+        autonomous_mortal=True,
+    )
+    model = CausalModel(CausalModelConfig(
+        "stage9-dynamic-hidden-repeat-v1", 2, 2, 2, 2,
+    ))
+    world = substrate.world
+    here = world.position.as_dict()
+    admitted = []
+
+    for collect_step, wait_step, food_step in ((1, 2, 3), (4, 5, 6)):
+        world.apply_scenario_event(
+            "set_danger_zone", {"position": here, "active": False},
+        )
+        world.apply_scenario_event(
+            "place_resource",
+            {"position": here, "kind": "berry_a", "quantity": 1},
+        )
+        substrate.open_step()
+        collected = substrate.execute(Command("collecter", {"target": "berry_a"}))
+        assert collected.status == "applied"
+        assert substrate.scheduler.t_monde == wait_step
+
+        before_wait = _perceive(substrate, wait_step)
+        model.record_applied_ambient_integrity_control(
+            t_monde=wait_step, option_ref=f"wait:{wait_step}",
+            position=(before_wait.x, before_wait.y),
+            integrity_before=float(before_wait.body["integrity"]),
+        )
+        substrate.open_step()
+        waited = substrate.execute(Command("attendre"))
+        assert waited.status == "applied"
+        after_wait = _perceive(substrate, food_step)
+        assert (
+            after_wait.body["integrity"] == before_wait.body["integrity"]
+        )
+        model.observe_followup_capture(
+            t_monde=food_step,
+            integrity=float(after_wait.body["integrity"]),
+        )
+        wait_events = _lived_pair(substrate, wait_step)
+        assert model.ingest_closed_autobiographical_episode(
+            episode_ref=f"episode:wait:{wait_step}",
+            event_refs=tuple(e["event_id"] for e in wait_events),
+            autobiographical_events=wait_events,
+        ) == ()
+
+        world.apply_scenario_event(
+            "set_danger_zone", {"position": here, "active": True},
+        )
+        before_food = _perceive(substrate, food_step)
+        model.record_applied_food_exposure(
+            t_monde=food_step, resource_kind="berry_a",
+            option_ref=f"food:{food_step}", motive_ref="goal:food",
+            integrity_before=float(before_food.body["integrity"]),
+            position_before=(before_food.x, before_food.y),
+            body_before=dict(before_food.body),
+        )
+        substrate.open_step()
+        eaten = substrate.execute(Command("manger", {"target": "berry_a"}))
+        assert eaten.status == "applied"
+        after_food = _perceive(substrate, food_step + 1)
+        assert after_food.body["integrity"] < before_food.body["integrity"]
+        model.observe_followup_capture(
+            t_monde=food_step + 1,
+            integrity=float(after_food.body["integrity"]),
+        )
+        food_events = _lived_pair(substrate, food_step)
+        admitted.extend(model.ingest_closed_autobiographical_episode(
+            episode_ref=f"episode:food:{food_step}",
+            event_refs=tuple(e["event_id"] for e in food_events),
+            autobiographical_events=food_events,
+        ))
+        model.publish()
+
+    assert substrate.journal.verify()
+    return {
+        "model": model,
+        "admitted": tuple(admitted),
+        "lived": substrate.autobiographical_view(),
+        "journal": substrate.journal,
+    }
+
+
 class Stage9ConcurrentCauseRegressionTests(unittest.TestCase):
+    def test_repeated_dynamic_hidden_hazard_never_establishes_food_toxicity(self):
+        trial = _exercise_repeated_dynamic_hidden_zone()
+        self.assertEqual(len(trial["admitted"]), 2)
+        self.assertNotIn("danger_zone_damage", repr(trial["lived"]))
+        self.assertTrue(all(
+            any(
+                e.causal_event.get("kind") == "world_transition_experienced"
+                and e.causal_event.get("t_monde") == step
+                and e.causal_event.get("effects", {}).get("danger_zone_damage", 0) > 0
+                for e in trial["journal"].entries
+            )
+            for step in (3, 6)
+        ))
+        # This assertion is intentionally red on the pre-fix implementation:
+        # two observationally ambiguous injuries must not manufacture a
+        # definitive toxic-item safety fact.
+        fact = trial["model"].get("toxic:berry_a")
+        self.assertIsNotNone(fact)
+        self.assertEqual(fact.safety_status, "aucun")
+
     def test_visible_creature_is_perceived_competing_cause_not_food_safety_evidence(self):
         for birth in (1, 2):
             with self.subTest(birth=birth):
