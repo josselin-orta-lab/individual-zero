@@ -71,3 +71,23 @@ Une campagne préenregistrée de **600 pas physiques réellement exécutés**, �
 - Aucune requalification du NO-GO Stage 9.
 
 **Le Stage 12 reste EN COURS** tant que les tests intégrés, les preuves vécues indépendantes et la réception explicite de l'opérateur ne sont pas acquis. La norme décrit un objectif de développement, non une réussite déjà démontrée.
+
+## 8. Option A autorisée : sous-objectif spatial directement perçu (GA-08)
+
+**Autorisation opérateur du 14 octobre 2026.** Cette extension complète uniquement la nouvelle cible normative v1.3.2. Les spécifications historiques v1.3.1/v1.2.1, DC-05, DC-06, Stage 9 NO-GO et M-11 ne sont pas modifiées. L'autorisation ne vaut pas validation logicielle ou scientifique.
+
+`spatial_progress_v1` désigne uniquement **la diminution stricte, en un pas physique, de la distance de Manhattan entre la position perceptible d'I0 et une cible de ressource ou d'eau déjà perçue avant la commande**. L'objectif actif doit légitimement concerner cette ressource ; la commande volontaire `se_deplacer` doit être admise, motivée par `active_goal`, orientée vers une cible effectivement observable et reliée à une direction engagée. Un déplacement exploratoire non lié à l'objectif ne peut être compté. Toute cible issue du banc, d'une vérité WorldBody cachée ou de l'Oracle est interdite.
+
+Metacognition étend son **registre existant** `Stage12GoalProgressLedger` : `life_id, intent_ref, goal_ref, option_ref, command_digest, sent_world_step, observable_target_ref, target_x_y, initial_x_y, authorized_direction, initial_manhattan_distance, strict_distance_decrease, observe_world_step=sent+1, version`. Le critère précède l'action. L'observation autorisée suivante vérifie indépendamment la distance. `success` signifie uniquement que la distance a diminué, `failure` qu'elle n'a pas diminué, `unknown` que la mesure est inaccessible, tardive ou refusée. Aucun de ces états n'est une explication physique. Les gains corporels restent définis comme auparavant, sans conversion implicite.
+
+Action Control peut former un jugement d'agence propre `spatial_obstacle_cue_v1`, à partir de la copie efférente et des cellules adjacentes **réellement perçues** :
+- `self` seulement lorsqu'un déplacement spécifique au but est perçu dans la direction volontairement commandée, sans prétention de causalité physique prouvée.
+- `world` seulement si la cellule **précise** de destination est perçue comme non passable, que la position demeure inchangée et que la commande était pertinente pour le sous-objectif préengagé. Une position inchangée sans cellule bloquée ne suffit jamais. Les règles de sécurité restent maîtresses de l'admission, même si cela empêche toute observation positive.
+- `unknown` si cellule/cible non observable, indices périmés ou contradictoires, cause concurrente, lien au but absent ou ambigu.
+- `unavailable` si le calcul ou le prélèvement UC légitime est refusé. Une discordance P-47 et un échec corporel ne valent pas `world`.
+
+L'agence ne consulte jamais le résultat `success/failure`, la vérité cachée ni le détecteur. Le calcul du résultat ne consulte pas le jugement. Les propriétaires uniques, phases, débits UC positifs versionnés, transaction atomique M-11, mortalité irréversible et vérification indépendante demeurent obligatoires. Aucune fenêtre diagnostique ni aucun seuil de biais n'est réduit ou allongé ; le sommeil n'est pas contourné.
+
+L'auditeur externe doit reconstruire les sources réellement préaction, commande et transition physique, perception de la position et de la passabilité, débits UC, références uniques, jugement indépendant et diagnostic. Il rejette les journaux rechaînés qui inventent un obstacle, substituent une direction/cible, réutilisent une observation, changent de vie ou produisent une cognition postmortem. Une fixture positive `world` n'est **pas** la preuve qu'une vie autonome émet `world`.
+
+**Réception :** préserver les résultats nuls. Si I0 n'exécute jamais librement de commande dirigée vers un obstacle, `world` peut légitimement rester absent et le détecteur rester `None`. Ne pas forcer une action, assimiler une conformité P-47 à une attribution, fusionner prématurément ni recevoir le Stage 12 sans campagne et validation opérateur.
