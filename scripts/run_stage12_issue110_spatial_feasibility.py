@@ -174,6 +174,7 @@ def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> di
             if ev.get("kind") == "stage12_action_motive_attested":
                 motives[key] = ev["data"]
         east = east_blocked = east_target_visible = east_target_goal = 0
+        east_missing_first_person_cue = 0
         for item in life.journal.entries:
             ev = item.causal_event
             if (ev.get("kind") != "command_experienced"
@@ -184,8 +185,14 @@ def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> di
             key = (ev["t_monde"], ev["attempt_ref"])
             candidates = [c for c in pre_captures.get(key, {}).get("agency_visible_adjacent", [])
                           if c.get("direction") == "east"]
+            if not candidates:
+                # Some admitted actions have only the baseline Stage3
+                # position receipt. They are physically experienced but
+                # NOT first-person agency evidence; abstain explicitly.
+                east_missing_first_person_cue += 1
+                continue
             if len(candidates) != 1:
-                raise ValueError("movement missing authorized preceding east cell")
+                raise ValueError("ambiguous duplicated perceptual east cue")
             cue = candidates[0]
             east_blocked += int(not cue["passable"])
             relevant = ("berry_a" in cue["resources"]) if target_food else cue["water_source"]
@@ -224,6 +231,7 @@ def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> di
             "attribution_pairs": pairs.as_dict(),
             "spatial_cue_receipts": spatial.as_dict(),
             "east_movements": east,
+            "east_without_first_person_cue": east_missing_first_person_cue,
             "east_toward_perceived_blocked_cell": east_blocked,
             "east_toward_perceived_goal_target": east_target_visible,
             "east_toward_goal_target_with_active_goal_motive": east_target_goal,
@@ -289,6 +297,7 @@ def main() -> int:
         "failed_or_unverified_lives":len(rows)-len(valid),
         "non_null_goal_plans":sum(x["audits"]["non_null_plans"] for x in valid),
         "observed_east_movements":sum(x["audits"]["east_movements"] for x in valid),
+        "east_without_first_person_cue":sum(x["audits"]["east_without_first_person_cue"] for x in valid),
         "observed_moves_into_blocked_east":sum(x["audits"]["east_toward_perceived_blocked_cell"] for x in valid),
         "observed_east_toward_perceived_target":sum(x["audits"]["east_toward_perceived_goal_target"] for x in valid),
         "observed_goal_motivated_east_toward_target":sum(x["audits"]["east_toward_goal_target_with_active_goal_motive"] for x in valid),
