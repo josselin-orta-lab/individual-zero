@@ -131,6 +131,12 @@ def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> di
     Stage12OperatorConsole(substrate=life.stage3.substrate, mode="campaign",
         policy_version="stage12-issue133-fixed-50-v1", maximum_world_steps=MAX_STEPS)
     actions: Counter[str] = Counter()
+    # External observation only: do not change any I0 cognitive state or price.
+    work_steps = []
+    work_uc_since_h = 0
+    work_uc_per_publication = []
+    last_h = life.slow_history.current_version
+    prior_refs = set(life.slow_history.read_committed()["consolidated_episode_refs"])
     failure = None
     for index in range(MAX_STEPS):
         try:
@@ -139,6 +145,46 @@ def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> di
                 failure = "nonapplied:" + result.execution_status
                 break
             actions[result.command_primitive] += 1
+            step = index + 1
+            work = life.consolidation_work
+            paid_step_uc = (work.consumed_step_uc
+                            if result.command_primitive == "dormir" else 0)
+            paid_period_uc = (work.consumed_period_uc
+                              if result.command_primitive == "dormir" else 0)
+            if (paid_step_uc < 0 or paid_step_uc > combined.sleep_work.step_slot_uc
+                    or paid_period_uc < 0
+                    or paid_period_uc > combined.sleep_work.period_capacity_uc):
+                raise ValueError("consolidation UC envelope exceeded")
+            work_uc_since_h += paid_step_uc
+            published_h = life.slow_history.current_version
+            committed_refs = set(
+                life.slow_history.read_committed()["consolidated_episode_refs"]
+            )
+            if published_h != last_h:
+                new_refs = sorted(committed_refs - prior_refs)
+                if not new_refs:
+                    raise ValueError("h published without new episode refs")
+                work_uc_per_publication.append({
+                    "world_step": step,
+                    "published_h": published_h,
+                    "new_episode_refs": new_refs,
+                    "work_uc_since_previous_publication": work_uc_since_h,
+                })
+                work_uc_since_h = 0
+                last_h = published_h
+            prior_refs = committed_refs
+            eligible = sum(ep.end_t_monde < step for ep in life.memory.episodes)
+            work_steps.append({
+                "world_step": step,
+                "primitive": result.command_primitive,
+                "created_episodes": len(life.memory.episodes),
+                "eligible_episodes_at_step_end": eligible,
+                "committed_episode_refs": len(committed_refs),
+                "unconsolidated_eligible_at_step_end": eligible - len(committed_refs),
+                "work_step_uc": paid_step_uc,
+                "work_period_uc_at_step_end": paid_period_uc,
+            })
+
         except Exception as exc:
             failure = f"{type(exc).__name__}: {exc}"
             break
@@ -192,7 +238,18 @@ def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> di
             "episodes":len(life.memory.episodes),
             "consolidated_episode_refs":list(life.slow_history.read_committed()["consolidated_episode_refs"]),
             "unconsolidated_episodes_end":sum(e.id not in set(life.slow_history.read_committed()["consolidated_episode_refs"]) for e in life.memory.episodes),
+            # The historic final-period counter is often zero after waking;
+            # preserve exact per-step paid UC instead of interpreting it as
+            # zero lifetime work.
             "consolidation_work_uc_period":life.consolidation_work.consumed_period_uc,
+            "consolidation_paid_work_uc_total":sum(e["work_step_uc"] for e in work_steps),
+            "consolidation_work_uc_per_step":work_steps,
+            "consolidation_work_uc_per_published_h":work_uc_per_publication,
+            "consolidation_work_uc_unfinished":work_uc_since_h,
+            "consolidation_work_uc_max_step":max(
+                (e["work_step_uc"] for e in work_steps), default=0),
+            "consolidation_work_uc_max_period_observed":max(
+                (e["work_period_uc_at_step_end"] for e in work_steps), default=0),
             "drinks_applied":actions["boire"],
             "goal_progress_followups":event_counts["stage12_goal_progress_followup"],
             "slow_history_version":life.slow_history.current_version,

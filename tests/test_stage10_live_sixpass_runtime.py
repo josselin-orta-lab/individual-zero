@@ -1,6 +1,7 @@
 """Actual mortal Stage-10 sleeping steps drive six semantic passes and h."""
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import replace
 import unittest
 
@@ -12,7 +13,7 @@ from lab.stage10_reference_fixture import build_stage10_reference_runtime
 from lab.stage10_runtime import Stage10Runtime
 
 
-def configured_runtime():
+def configured_runtime(*, maximum_passes_per_sleep_step=1):
     base = build_stage10_reference_runtime(autonomous_mortal=True)
     original = base._stage10_config
     selection = BatchSelectionPolicy(
@@ -60,6 +61,7 @@ def configured_runtime():
         ),
         sleep_work=budget, selection_policy=selection,
         semantic_policy=semantic, p_cons_min=0.0,
+        maximum_passes_per_sleep_step=maximum_passes_per_sleep_step,
     )
     runtime = Stage10Runtime(
         world_config=base.world.config,
@@ -133,6 +135,57 @@ class LiveConsolidationRuntimeTests(unittest.TestCase):
         )
         self.assertTrue(runtime.journal.verify())
         self.assertEqual(runtime.bench, None)
+
+    def test_bounded_paid_multipass_preserves_order_and_budget(self):
+        runtime = configured_runtime(maximum_passes_per_sleep_step=3)
+        for _ in range(12):
+            if runtime.memory.episodes:
+                break
+            self.assertEqual(runtime.run_step().execution_status, "applied")
+        self.assertTrue(runtime.memory.episodes)
+        state = runtime.sleep_health.export_causal_state()
+        state["fatigue"] = 1.0
+        runtime.sleep_health.restore_causal_state(state)
+        for _ in range(35):
+            self.assertEqual(runtime.run_step().execution_status, "applied")
+            kinds = [e.causal_event["kind"] for e in runtime.journal.entries]
+            if "stage10_consolidation_version_activated" in kinds:
+                break
+        else:
+            self.fail("three-pass bounded sleep never published h")
+        checkpoints = [
+            e.causal_event for e in runtime.journal.entries
+            if e.causal_event["kind"] == "stage10_consolidation_pass_checkpointed"
+        ]
+        counts = Counter(e["data"]["world_step"] for e in checkpoints)
+        self.assertTrue(counts)
+        self.assertGreater(max(counts.values()), 1)
+        self.assertLessEqual(max(counts.values()), 3)
+        self.assertTrue(all(
+            0 <= e["data"]["consumed_step_uc"] <= 100
+            and 0 <= e["data"]["consumed_period_uc"] <= 600
+            for e in checkpoints
+        ))
+        publications = [
+            e.causal_event for e in runtime.journal.entries
+            if e.causal_event["kind"] == "stage10_consolidation_version_activated"
+        ]
+        self.assertEqual(len(publications), 1)
+        self.assertEqual(
+            [e["data"]["pass"] for e in checkpoints[:6]],
+            ["episode_selection", "interleaved_replay",
+             "hypothesis_extraction", "procedural_compilation",
+             "kappa_recalibration", "index_maintenance"],
+        )
+        self.assertTrue(runtime.journal.verify())
+        self.assertIsNone(runtime.stage3.substrate.bench)
+
+    def test_multipass_configuration_requires_integral_bounded_count(self):
+        config = configured_runtime()._stage10_config
+        for invalid in (0, 7, True, 1.5, -1):
+            with self.subTest(invalid=invalid):
+                with self.assertRaises(ValueError):
+                    replace(config, maximum_passes_per_sleep_step=invalid).validate()
 
     def test_live_custody_cannot_activate_in_legacy_or_without_prices(self):
         base = build_stage10_reference_runtime()
