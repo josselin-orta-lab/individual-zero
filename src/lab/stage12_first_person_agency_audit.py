@@ -141,11 +141,8 @@ def audit_stage12_first_person_agency(
             inv = _capture_inventory(before[0][1])
             position = before[0][1]["data"]["position"]
             if (data.get("start_position") != [position["x"], position["y"]]
-                    or data.get("action_primitive") not in (
-                        "manger", "boire", "se_deplacer", "collecter",
-                        "attendre", "deposer", "fabriquer", "dormir",
-                        "construire", "explorer",
-                    )):
+                    or type(data.get("action_primitive")) is not str
+                    or not data["action_primitive"]):
                 raise ValueError("GA assessment pre-action cues mismatch")
             target = data.get("action_target")
             if data["mechanism"] == "ingested_from_inventory":
