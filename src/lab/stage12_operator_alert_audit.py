@@ -49,7 +49,7 @@ def audit_stage12_operator_alerts(
     expected_count: int | None = None,
 ) -> Stage12OperatorAlertAudit:
     joined = audit_stage12_attribution_pairs(
-        content, expected_head=expected_head, expected_count=expected_count,
+        journal, expected_head=expected_head, expected_count=expected_count,
     )
     verified_bias = dict(joined.diagnostic_labels)
     base = audit_export_bytes(
