@@ -6,6 +6,7 @@ on:
     paths:
       - 'scripts/run_stage10_issue133_index_crash_matrix.py'
       - 'scripts/audit_stage10_index_wal.py'
+      - 'tests/test_stage10_index_wal_operator_gate.py'
       - '.github/workflows/issue133-index-crash-matrix.yml'
   workflow_dispatch:
 
@@ -40,3 +41,21 @@ jobs:
           path: /tmp/issue133-index-crash/
           retention-days: 30
           if-no-files-found: warn
+
+  standalone-wal-negative-matrix:
+    name: Read-only WAL provenance and terminal rejection (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run negative provenance and terminal matrix without I0 imports
+        run: python -m unittest discover -s tests -p 'test_stage10_index_wal_operator_gate.py' -v
