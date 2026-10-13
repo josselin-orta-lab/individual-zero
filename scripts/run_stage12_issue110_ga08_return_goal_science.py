@@ -69,7 +69,15 @@ def prebirth_equipment(config, layout, *, kind: str, label: str):
     )
 
 
-def run_life(folder: Path, *, label: str) -> dict:
+def build_autonomous_life(
+    *, label: str, wal_path: str | None,
+    m11_sqlite_custody: bool = False,
+):
+    """Construct same preregistered newborn world and frozen GA-08 owners.
+
+    Pure construction: no physical action, no oracle, no lab intervention.
+    SQLite M11 replaces legacy WAL only under exclusive transactional custody.
+    """
     if label not in CASES:
         raise ValueError("unregistered GA08 spatial context")
     kind, condition = label.split("_")
@@ -142,7 +150,7 @@ def run_life(folder: Path, *, label: str) -> dict:
         ),
         stage11_config=stage11, stage10_config=combined,
         equipment=equipment, autonomous_mortal=True,
-        wal_path=str(folder / "life.wal"),
+        wal_path=wal_path, m11_sqlite_custody=m11_sqlite_custody,
         diagnostic_sample_cost_uc=1, module_occupancy_cost_uc=1,
         subjective_goal_agency=True, goal_agency_cost_uc=1,
         attribution_join=True, attribution_join_cost_uc=1,
@@ -154,6 +162,13 @@ def run_life(folder: Path, *, label: str) -> dict:
             entropy_min_samples=4, entropy_warning_fraction=0.25,
             bias_min_outcomes_each=2, attribution_bias_threshold=0.75,
         ),
+    )
+    return life, config, layout, equipment
+
+
+def run_life(folder: Path, *, label: str) -> dict:
+    life, config, layout, equipment = build_autonomous_life(
+        label=label, wal_path=str(folder / "life.wal"),
     )
     Stage12OperatorConsole(
         substrate=life.stage3.substrate, mode="campaign",
