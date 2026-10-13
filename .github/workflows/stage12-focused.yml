@@ -19,6 +19,7 @@ on:
       - 'scripts/run_stage12_issue133_longscan.py'
       - 'scripts/run_stage10_multipass_sleep.py'
       - 'scripts/run_stage10_issue133_capacity.py'
+      - 'scripts/run_stage10_issue133_horizon600.py'
       - 'docs/research/stage10-multipass-sleep-prereg-2026-10-13.fr.md'
       - 'docs/research/stage12-issue133-longscan-prereg-2026-10-13.fr.md'
       - 'docs/research/stage12-issue133-batch-prereg-2026-10-13.fr.md'
@@ -156,6 +157,33 @@ jobs:
         with:
           name: stage12-issue132-water-python-${{ matrix.python-version }}
           path: /tmp/stage12-issue132/
+          retention-days: 30
+          if-no-files-found: warn
+
+  issue133-horizon600:
+    name: issue133 P6B6 aging 600 steps in two worlds (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Preregistered two distinct 600-step mortal lives
+        run: python scripts/run_stage10_issue133_horizon600.py --output-dir /tmp/issue133-horizon600
+      - name: Retain complete evidence and failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue133-horizon600-python-${{ matrix.python-version }}
+          path: /tmp/issue133-horizon600/
           retention-days: 30
           if-no-files-found: warn
 
