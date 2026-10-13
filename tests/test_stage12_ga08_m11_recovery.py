@@ -13,6 +13,8 @@ import unittest
 from lab.m11_transactional_mortal import M11TransactionalMortal
 from lab.sqlite_life_store import RecoveryBlocked, SQLiteLifeLedger
 from test_stage12_ga08_owner_runtime import spawn_real_spatial_runtime
+from pathlib import Path as _Path
+sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / "scripts"))
 
 IDENTITY = "m11:stage12:ga08:physical-cold"
 
@@ -65,6 +67,58 @@ class GA08M11AtomicRecoveryTests(unittest.TestCase):
                 self.assertEqual(fourth.generation, 4)
                 self.assertEqual(fourth.status, "active")
                 self.assertEqual(fourth.world_step, 4)
+
+    def test_cold_recovery_with_actual_pending_spatial_intention(self):
+        """A true I0 goal commitment survives atomic recovery, exactly once."""
+        from run_stage12_issue110_ga08_return_goal_science import (
+            build_autonomous_life,
+        )
+        from lab.stage12_spatial_provenance_audit import (
+            audit_stage12_spatial_provenance,
+        )
+        from lab.stage12_attribution_pair_audit import (
+            audit_stage12_attribution_pairs,
+        )
+        identity = "m11:stage12:ga08:pending-spatial"
+        def born():
+            return build_autonomous_life(
+                label="water_spatial", wal_path=None, m11_sqlite_custody=True,
+            )[0]
+        with TemporaryDirectory() as folder:
+            path = str(Path(folder) / "pending.db")
+            with M11TransactionalMortal.birth(
+                db_path=path, runtime=born(), individual_id=identity,
+            ) as owner:
+                self.assertEqual(owner.run_step().world_step, 1)
+                self.assertEqual(owner.run_step().world_step, 2)
+                spatial_pending = owner._runtime._meta_custody.goal_progress.pending
+                # Owner-internal read is for software testing only.
+                self.assertIsNotNone(spatial_pending)
+                self.assertEqual(spatial_pending.policy_version,
+                                 "stage12-spatial-subcriterion-ga08-v1")
+                before = owner.inspect()
+            with M11TransactionalMortal.cold_recover(
+                db_path=path, individual_id=identity, runtime_factory=born,
+            ) as resumed:
+                self.assertEqual(resumed.inspect(), before)
+                self.assertIsNotNone(
+                    resumed._runtime._meta_custody.goal_progress.pending,
+                )
+                actual = resumed.run_step()
+                self.assertEqual(actual.world_step, 3)
+                self.assertEqual(actual.generation, 3)
+                self.assertEqual(actual.status, "active")
+                self.assertIsNone(resumed._runtime._meta_custody.goal_progress.pending)
+            with SQLiteLifeLedger.open_existing(
+                path=path, expected_individual_id=identity,
+            ) as ledger:
+                journal = ledger.export_canonical_journal()
+            spatial = audit_stage12_spatial_provenance(journal)
+            pairs = audit_stage12_attribution_pairs(journal)
+            self.assertEqual(spatial.preregistered, 1)
+            self.assertEqual(spatial.verified_successes, 1)
+            self.assertEqual(spatial.judgements_self, 1)
+            self.assertEqual(pairs.admitted_pairs, 1)
 
     def test_real_os_exit_pre_and_post_sqlite_commit(self):
         for point in ("before_sql_commit", "after_sql_commit"):
