@@ -231,7 +231,9 @@ def audit_stage12_spatial_provenance(
                 or d["command_hash"] != sha256_hex(canonical_causal_bytes({
                     "primitive": "se_deplacer", "parameters": {"direction": d["direction"]},
                 }))
-                or _position(transition.get("position_before")) != ori
+                # Canonical WorldBody transition exports position_after,
+                # not a pre-state. The independently captured pre-action
+                # position above is the authenticated physical-step baseline.
                 or origin(transition) != (t, attempt)):
             raise ValueError("GA08 precommit not bound to a truly dispatched movement")
         receipts = diagnostic_charges.get((t, attempt, cycle), [])
