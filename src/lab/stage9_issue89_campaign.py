@@ -118,10 +118,11 @@ def _run_life(seed: int, scenario: str, *, target_steps: int = 75) -> LifeResult
         executed += 1
         return outcome
 
-    # Toxic learning gets three perceived positions. Dynamic hidden danger is
-    # deliberately repeated at one position so it remains within the explicit
-    # indistinguishable-within-context guard. Equivalent pair scenarios use a
-    # single meal, yielding exactly the same first-person injury history.
+    # Toxic and dynamic-hidden scenarios both use repeated lived meals. The
+    # campaign intentionally varies perceived positions for toxic food to test
+    # that spatial diversity alone does not become a surrogate oracle for
+    # physical etiology. Equivalent pair scenarios use a single meal, yielding
+    # exactly the same first-person injury history.
     cycles = 3 if scenario in {"hidden_dynamic", "toxic_multicontext"} else 1
     for index in range(cycles):
         if runtime.world.dead:
@@ -259,6 +260,11 @@ def _run_life(seed: int, scenario: str, *, target_steps: int = 75) -> LifeResult
         }
         and last_status == "etabli_pour_securite"
     )
+    if scenario in {"toxic_multicontext", "equivalent_toxic"} and last_status == "etabli_pour_securite":
+        raise AssertionError(
+            "current DC-05 boundary must not promote toxic-item etiology "
+            "without a lived discriminating signal"
+        )
     return LifeResult(
         seed=seed,
         scenario=scenario,
