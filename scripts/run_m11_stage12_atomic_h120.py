@@ -15,6 +15,8 @@ import sys
 from time import perf_counter
 
 ROOT = Path(__file__).resolve().parents[1]
+# Direct script invocation otherwise sets sys.path[0] to scripts/, not root.
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
 from lab.m11_transactional_mortal import M11TransactionalMortal
