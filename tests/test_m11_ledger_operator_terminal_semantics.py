@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from lab.journal import HashChainedJournal
+from lab.determinism import canonical_causal_bytes, sha256_hex
 from lab.sqlite_life_store import SQLiteLifeLedger, RecoveryBlocked
 
 
@@ -26,10 +26,11 @@ class LedgerOperatorForgeryTests(unittest.TestCase):
     def _attempt(self, *, physical_death, world_rewound, outcome_expected):
         with TemporaryDirectory() as temp:
             path = str(Path(temp) / "life.sqlite")
-            events = HashChainedJournal()
-            # Deliberately derive valid cryptographic proof from the spoofed
-            # event. A journal hash proves integrity, not semantics.
-            forged = events.append(event_id="operator:1", causal_event={
+            # Directly construct a fully hash-consistent SQLite proposal.
+            # The live Journal.append correctly rejects forged terminal
+            # semantics already. Test the *lower-level* SQL trust boundary
+            # without going through that independent safety gate.
+            causal = {
                 "kind": "experiment_stopped",
                 "t_monde": 0,
                 "emitter": "operator_console",
@@ -38,7 +39,16 @@ class LedgerOperatorForgeryTests(unittest.TestCase):
                     "physical_death": physical_death,
                     "world_rewound": world_rewound,
                 },
-            }).as_dict()
+            }
+            prior = "00" * 32
+            digest = sha256_hex(bytes.fromhex(prior) + canonical_causal_bytes({
+                "event_id": "operator:1", "causal_event": causal,
+            }))
+            forged = {
+                "index": 0, "event_id": "operator:1",
+                "previous_hash": prior, "event_hash": digest,
+                "causal_event": causal,
+            }
             with SQLiteLifeLedger.birth(
                 path=path, individual_id=IDENTITY, initial_state=state(),
             ) as ledger:
