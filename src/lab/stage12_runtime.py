@@ -13,6 +13,9 @@ from math import isfinite
 from i0.config import MVP_PHASE1_PRODUCER_ORDER
 from i0.modules.stage12_occupancy import module_occupancy_entropy
 from i0.modules.stage12_goal_agency import GOAL_AGENCY_VERSION
+from i0.modules.stage12_attribution_pairs import (
+    PAIR_VERSION, LivedAttributionPair, Stage12AttributionPairs,
+)
 from i0.modules.stage12_goal_progress import (
     ALLOWED_MEASURES, CONTRACT_VERSION, LivedGoalProgressIntent,
     Stage12GoalProgressLedger,
@@ -34,7 +37,7 @@ class _Stage12MetacognitionCustody:
 
     def __init__(
         self, *, previous, detectors: Stage12LivedDetectors,
-        alerts: Stage12AlertLedger,
+        alerts: Stage12AlertLedger, attribution_enabled: bool = False,
     ):
         if getattr(previous, "owner_id", None) != self.owner_id:
             raise ValueError("detectors require the single canonical metacognition owner")
@@ -42,6 +45,9 @@ class _Stage12MetacognitionCustody:
         self.detectors = detectors
         self.alerts = alerts
         self.goal_progress = Stage12GoalProgressLedger()
+        self.attribution_pairs = (Stage12AttributionPairs() if attribution_enabled else None)
+        if attribution_enabled:
+            self.schema = "stage12-metacognition-sleep-alert-goal-attribution-custody-v4"
         self.last_goal_deficit: dict[str, object] | None = None
 
     def observe_goal_progress(
@@ -85,6 +91,8 @@ class _Stage12MetacognitionCustody:
             "lived_detectors": self.detectors.export_causal_state(),
             "operator_alert_ledger": self.alerts.export_causal_state(),
             "lived_goal_progress": self.goal_progress.export_causal_state(),
+            **({"lived_attribution_pairs": self.attribution_pairs.export_causal_state()}
+               if self.attribution_pairs is not None else {}),
             "last_visible_goal_deficit": (
                 None if self.last_goal_deficit is None
                 else dict(self.last_goal_deficit)
@@ -127,6 +135,8 @@ class _Stage12MetacognitionCustody:
         staged.detectors.restore_causal_state(deepcopy(state["lived_detectors"]))
         staged.alerts.restore_causal_state(deepcopy(state["operator_alert_ledger"]))
         staged.goal_progress.restore_causal_state(deepcopy(state["lived_goal_progress"]))
+        if staged.attribution_pairs is not None:
+            staged.attribution_pairs.restore_causal_state(deepcopy(state["lived_attribution_pairs"]))
         staged.last_goal_deficit = deepcopy(deficit)
         if canonical_causal_bytes(staged.export_causal_state()) != canonical_causal_bytes(state):
             raise ValueError("Stage12 cold owner image did not validate exactly")
@@ -135,6 +145,8 @@ class _Stage12MetacognitionCustody:
         self.detectors.restore_causal_state(deepcopy(state["lived_detectors"]))
         self.alerts.restore_causal_state(deepcopy(state["operator_alert_ledger"]))
         self.goal_progress.restore_causal_state(deepcopy(state["lived_goal_progress"]))
+        if self.attribution_pairs is not None:
+            self.attribution_pairs.restore_causal_state(deepcopy(state["lived_attribution_pairs"]))
         self.last_goal_deficit = deepcopy(deficit)
         self._m11_cold_installed = True
 
@@ -161,7 +173,9 @@ class Stage12Runtime(Stage11SleepRuntime):
         module_occupancy_cost_uc: int = 1,
         operator_alert_persistence_steps: int = 3,
         subjective_goal_agency: bool = False,
-        goal_agency_cost_uc: int = 1, **kwargs,
+        goal_agency_cost_uc: int = 1,
+        attribution_join: bool = False,
+        attribution_join_cost_uc: int = 1, **kwargs,
     ):
         detector_policy.validate()
         if type(diagnostic_sample_cost_uc) is not int or diagnostic_sample_cost_uc < 1:
@@ -172,6 +186,14 @@ class Stage12Runtime(Stage11SleepRuntime):
             raise ValueError("goal agency opt-in must be explicit boolean")
         if type(goal_agency_cost_uc) is not int or goal_agency_cost_uc < 1:
             raise ValueError("goal agency cognitive service requires positive UC")
+        if type(attribution_join) is not bool or (
+            attribution_join and not subjective_goal_agency
+        ):
+            raise ValueError("attribution join requires an enabled cognitive producer")
+        if type(attribution_join_cost_uc) is not int or attribution_join_cost_uc < 1:
+            raise ValueError("attribution join needs a positive deterministic UC cost")
+        self._attribution_join_enabled = attribution_join
+        self._attribution_join_cost_uc = attribution_join_cost_uc
         self._goal_agency_enabled = subjective_goal_agency
         self._goal_agency_cost_uc = goal_agency_cost_uc
         self._stage12_occupancy_cost_uc = module_occupancy_cost_uc
@@ -191,7 +213,9 @@ class Stage12Runtime(Stage11SleepRuntime):
         self._meta_custody = _Stage12MetacognitionCustody(
             previous=self._meta_custody, detectors=self._stage12_detectors,
             alerts=self._stage12_alerts,
+            attribution_enabled=self._attribution_join_enabled,
         )
+        self._recent_agency_judgement = None
         ids = [owner.owner_id for owner in self.causal_owners]
         if ids.count("metacognition_health") != 1 or len(ids) != len(set(ids)):
             raise RuntimeError("Stage12 must not multiply Metacognition ownership")
@@ -208,15 +232,17 @@ class Stage12Runtime(Stage11SleepRuntime):
         cost = self._stage12_diagnostic_cost_uc
         occupancy_cost = self._stage12_occupancy_cost_uc
         agency_cost = self._goal_agency_cost_uc if self._goal_agency_enabled else 0
+        join_cost = self._attribution_join_cost_uc if self._attribution_join_enabled else 0
         budget = replace(
             old, version=(old.version + "+" + self._stage12_detector_policy.version
                           + "+stage12-diagnostics-charged-v1"
                           + "+stage12-st-module-occupancy-v1"
                           + "+" + CONTRACT_VERSION
                           + ("+" + GOAL_AGENCY_VERSION if agency_cost else "")
+                          + ("+" + PAIR_VERSION if join_cost else "")
                           + "+stage12-alerts-v1-p"
                           + str(self._stage12_alert_policy.persistence_world_steps)),
-            cycle_ceiling=old.cycle_ceiling + cost + occupancy_cost + agency_cost,
+            cycle_ceiling=old.cycle_ceiling + cost + occupancy_cost + agency_cost + join_cost,
             module_envelopes={
                 **old.module_envelopes,
                 # Stage11 has no Stage10 metacognition envelope yet.
@@ -229,13 +255,14 @@ class Stage12Runtime(Stage11SleepRuntime):
                 "metacognition_health": max(
                     old.module_envelopes.get("metacognition_health", 0),
                     base.sleep_option_uc,
-                ) + cost + occupancy_cost,
+                ) + cost + occupancy_cost + join_cost,
             },
             operation_costs={
                 **old.operation_costs,
                 "stage12_diagnostic_sample": cost,
                 "stage12_occupancy_entropy": occupancy_cost,
                 **({"goal_agency_assessment": agency_cost} if agency_cost else {}),
+                **({"stage12_attribution_join": join_cost} if join_cost else {}),
             },
         )
         upgraded = replace(stage9, stage8=replace(stage8, stage7=replace(
@@ -368,9 +395,12 @@ class Stage12Runtime(Stage11SleepRuntime):
                         paid=agency_charge.accepted,
                     )
                     if judgement is not None:
-                        self._write(
+                        judgement_ref = self._write(
                             kind="stage12_goal_agency_judgement",
                             cycle=cycle, data=judgement.as_dict(),
+                        )
+                        self._recent_agency_judgement = (
+                            capture.t_monde, judgement_ref, judgement,
                         )
             previous_control(ctx)
 
