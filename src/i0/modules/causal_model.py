@@ -1416,8 +1416,8 @@ class CausalModel:
                 )
                 numeric_witnesses.append(witness)
             # An explicitly ambiguous harmful association must not silently
-            # become a causal observation. No-harm observations and sufficiently
-            # contrastive harmful observations remain eligible.
+            # become a causal observation. Under the current v1.3.1 food
+            # contract only lived no-harm observations remain eligible here.
             if epistemic_status == "dc05_admissible":
                 causal_observations.append(CausalObservation(
                 identifier=f"causal-observation:{episode_ref}:{event['event_id']}",
