@@ -47,7 +47,7 @@ jobs:
       - name: Execute 600-step contrastive development campaign
         run: |
           python -m lab.stage9_issue89_campaign > issue89-campaign-${{ matrix.python-version }}.json
-          python -c "import json; p=json.load(open('issue89-campaign-${{ matrix.python-version }}.json')); assert p['physical_steps'] == 600; assert p['false_positive_promotions'] == 0; assert p['promotions'] == 2; assert p['deaths'] == 0; print(json.dumps(p, sort_keys=True))"
+          python -c "import json; p=json.load(open('issue89-campaign-${{ matrix.python-version }}.json')); assert p['physical_steps'] == 600; assert p['false_positive_promotions'] == 0; assert p['promotions'] == 0; assert p['withheld_true_toxic'] > 0; assert p['deaths'] == 0; print(json.dumps(p, sort_keys=True))"
       - name: Preserve campaign evidence
         uses: actions/upload-artifact@v4
         with:
