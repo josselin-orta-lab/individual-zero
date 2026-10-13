@@ -1,9 +1,7 @@
 name: Issue133 M11 OPT1 long-horizon H600 single campaign
+# Pre-registered H600 is queued at run #38405486588 on frozen SHA
+# fff436ab175c1bf1e3229d9f0e779570a47bda14. Future runs manual only.
 on:
-  pull_request:
-    branches: [exp/stage10-priced-multipass-sleep-20261013]
-    paths:
-      - '.github/workflows/m11-stage12-opt1-h600.yml'
   workflow_dispatch:
 
 permissions:
