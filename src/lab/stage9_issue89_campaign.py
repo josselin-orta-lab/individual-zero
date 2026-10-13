@@ -15,6 +15,7 @@ from typing import Iterable
 from i0.config import MVP_CYCLE_PHASE_COMPONENT_ORDER
 from i0.modules import SymbolicPerception
 from i0.modules.causal_model import CausalModel, CausalModelConfig
+from lab.independent_journal_audit import audit_export_bytes
 from lab.safety_protocol import SafetyProtocolConfig
 from lab.stage2_runtime import ScriptedStage2Runtime
 from lab.stage4_reference_fixture import build_stage4_reference_runtime
@@ -35,6 +36,11 @@ class LifeResult:
     false_positive_promotions: int
     withheld_true_toxic: int
     contexts: tuple[tuple[int, int], ...]
+    admitted_evidence_refs: tuple[str, ...]
+    ambiguous_evidence_refs: tuple[str, ...]
+    journal_head: str
+    journal_count: int
+    independently_audited: bool
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -107,6 +113,8 @@ def _run_life(seed: int, scenario: str, *, target_steps: int = 75) -> LifeResult
     executed = ingestions = injuries = ambiguous = admissions = promotions = 0
     withheld_true = 0
     contexts: list[tuple[int, int]] = []
+    admitted_refs: list[str] = []
+    ambiguous_refs: list[str] = []
     last_status = "aucun"
 
     def apply(command: Command):
@@ -223,6 +231,14 @@ def _run_life(seed: int, scenario: str, *, target_steps: int = 75) -> LifeResult
         admissions += sum(
             row.epistemic_status == "dc05_admissible" for row in rows
         )
+        ambiguous_refs.extend(
+            row.identifier for row in rows
+            if row.epistemic_status == "ambiguous_food_association"
+        )
+        admitted_refs.extend(
+            row.identifier for row in rows
+            if row.epistemic_status == "dc05_admissible"
+        )
         if scenario in {"toxic_multicontext", "equivalent_toxic"}:
             withheld_true += sum(
                 row.harm_observed
@@ -253,6 +269,13 @@ def _run_life(seed: int, scenario: str, *, target_steps: int = 75) -> LifeResult
 
     if not runtime.journal.verify():
         raise AssertionError("campaign technical journal failed hash verification")
+    audit = audit_export_bytes(
+        runtime.journal.canonical_bytes(),
+        expected_head=runtime.journal.head_hash,
+        expected_count=len(runtime.journal.entries),
+    )
+    if audit.as_dict()["physical_truth_verified"] is not False:
+        raise AssertionError("journal integrity must not become physical truth")
     false_positive = int(
         scenario in {
             "benign_clean", "hidden_static", "hidden_dynamic",
@@ -278,6 +301,11 @@ def _run_life(seed: int, scenario: str, *, target_steps: int = 75) -> LifeResult
         false_positive_promotions=false_positive,
         withheld_true_toxic=withheld_true,
         contexts=tuple(contexts),
+        admitted_evidence_refs=tuple(admitted_refs),
+        ambiguous_evidence_refs=tuple(ambiguous_refs),
+        journal_head=runtime.journal.head_hash,
+        journal_count=len(runtime.journal.entries),
+        independently_audited=True,
     )
 
 
