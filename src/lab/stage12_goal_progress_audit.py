@@ -58,16 +58,39 @@ class Stage12GoalProgressAudit:
     verified_no_gains: int
     unavailable: int
     unresolved_at_terminal: int
+    spatial_preregistered: int = 0
+    spatial_verified_progress: int = 0
+    spatial_verified_no_progress: int = 0
+    spatial_unavailable: int = 0
 
     def as_dict(self) -> dict[str, object]:
+        # The old resource-gain keys retain their meaning and historical
+        # values; local spatial progress MUST NOT be silently relabelled as
+        # a body gain or a global achievement.
         return {
-            "schema": "stage12-independent-goal-progress-audit-v1",
+            "schema": ("stage12-independent-goal-progress-audit-v2"
+                       if self.spatial_preregistered else
+                       "stage12-independent-goal-progress-audit-v1"),
             "contract_version": _VERSION,
             "technical_comparison_verified": True,
             "preregistered_one_step_criteria": self.preregistered,
-            "verified_one_step_resource_gains": self.verified_strict_gains,
-            "verified_one_step_no_gains": self.verified_no_gains,
-            "unavailable_next_step_observations": self.unavailable,
+            "verified_one_step_resource_gains": (
+                self.verified_strict_gains - self.spatial_verified_progress
+            ),
+            "verified_one_step_no_gains": (
+                self.verified_no_gains - self.spatial_verified_no_progress
+            ),
+            "unavailable_next_step_observations": (
+                self.unavailable - self.spatial_unavailable
+            ),
+            **({
+                "spatial_preregistered_one_step_criteria":
+                    self.spatial_preregistered,
+                "verified_spatial_progress": self.spatial_verified_progress,
+                "verified_spatial_no_progress":
+                    self.spatial_verified_no_progress,
+                "unavailable_spatial_observations": self.spatial_unavailable,
+            } if self.spatial_preregistered else {}),
             "unresolved_at_terminal": self.unresolved_at_terminal,
             "complete_goal_achievement_verified": False,
             "subjective_agency_attribution_verified": False,
@@ -87,6 +110,7 @@ def audit_stage12_goal_progress(
     intents: dict[str, tuple[int, dict, dict]] = {}
     observed: set[str] = set()
     success = failure = unknown = 0
+    spatial_intents = spatial_success = spatial_failure = spatial_unknown = 0
     transitions: dict[int, tuple[int, dict]] = {}
     motives: dict[tuple[int, str, int], list[tuple[int, dict]]] = {}
     commands: dict[tuple[int, str], list[tuple[int, dict]]] = {}
@@ -174,6 +198,7 @@ def audit_stage12_goal_progress(
                     or data["observe_world_step"] != t + 1):
                 raise ValueError("invalid frozen goal-progress observation deadline")
             spatial = data["contract_version"] == _SPATIAL_VERSION
+            spatial_intents += int(spatial)
             if (type(data.get("measure")) is not str
                     or data["measure"] not in (
                         {_SPATIAL_MEASURE} if spatial else _MEASURES
@@ -317,6 +342,7 @@ def audit_stage12_goal_progress(
                         and reason == "one_step_observation_window_missed"):
                     raise ValueError("false missed-window claim")
                 unknown += 1
+                spatial_unknown += int(intent["contract_version"] == _SPATIAL_VERSION)
             else:
                 if after is None or before is None:
                     raise ValueError("goal outcome lacks admitted observable measurement")
@@ -363,8 +389,10 @@ def audit_stage12_goal_progress(
                     raise ValueError("goal outcome/physical transition ordering violation")
                 if outcome == "success":
                     success += 1
+                    spatial_success += int(intent["contract_version"] == _SPATIAL_VERSION)
                 else:
                     failure += 1
+                    spatial_failure += int(intent["contract_version"] == _SPATIAL_VERSION)
             observed.add(ref)
 
     # A future charged diagnostic must close an earlier precommit (even if
@@ -386,4 +414,8 @@ def audit_stage12_goal_progress(
         verified_no_gains=failure,
         unavailable=unknown,
         unresolved_at_terminal=unresolved,
+        spatial_preregistered=spatial_intents,
+        spatial_verified_progress=spatial_success,
+        spatial_verified_no_progress=spatial_failure,
+        spatial_unavailable=spatial_unknown,
     )
