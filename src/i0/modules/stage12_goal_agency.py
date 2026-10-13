@@ -119,6 +119,14 @@ class GoalAgencyJudgement:
     def as_dict(self) -> dict[str, object]:
         return {k: getattr(self, k) for k in self.__dataclass_fields__}
 
+    @classmethod
+    def from_dict(cls, raw: object) -> "GoalAgencyJudgement":
+        if type(raw) is not dict or set(raw) != set(cls.__dataclass_fields__):
+            raise ValueError("invalid immutable goal agency judgement image")
+        judgement = cls(**raw)
+        judgement.validate()
+        return judgement
+
 
 class GoalAgencyService:
     """Action Control's opt-in, versioned *owner-local* first-person service.
@@ -136,10 +144,15 @@ class GoalAgencyService:
         self._pending: GoalAgencyCommitment | None = None
         self._seen: set[str] = set()
         self._last_sent = 0
+        self._last_judgement: GoalAgencyJudgement | None = None
 
     @property
     def pending(self) -> GoalAgencyCommitment | None:
         return self._pending
+
+    @property
+    def last_judgement(self) -> GoalAgencyJudgement | None:
+        return self._last_judgement
 
     def preregister(
         self, *, assessment_ref: str, intent_ref: str, life_id: str,
@@ -218,11 +231,14 @@ class GoalAgencyService:
         )
         value.validate()
         self._pending = None
+        self._last_judgement = value
         return value
 
     def export_causal_state(self) -> dict[str, object]:
         return {
             "schema": self.schema,
+            "last_judgement": (None if self._last_judgement is None
+                               else self._last_judgement.as_dict()),
             "pending_commitment": (
                 None if self._pending is None else self._pending.as_dict()
             ),
@@ -233,6 +249,7 @@ class GoalAgencyService:
     def restore_causal_state(self, state: object) -> None:
         if (type(state) is not dict or set(state) != {
             "schema", "pending_commitment", "seen_assessment_refs",
+            "last_judgement",
             "last_registered_world_step",
         } or state["schema"] != self.schema
                 or type(state["seen_assessment_refs"]) is not list
@@ -246,14 +263,21 @@ class GoalAgencyService:
         pending = state["pending_commitment"]
         candidate = (None if pending is None
                      else GoalAgencyCommitment.from_dict(pending))
+        last = (None if state["last_judgement"] is None
+                else GoalAgencyJudgement.from_dict(state["last_judgement"]))
+        if last is not None and (last.assessment_ref not in seen
+                                or last.sent_world_step > state["last_registered_world_step"]):
+            raise ValueError("subjective agency last judgement contradicts ledger")
         if candidate is not None and (
             candidate.assessment_ref not in seen
             or candidate.sent_world_step != state["last_registered_world_step"]
         ):
             raise ValueError("pending agency does not match persisted owner")
         if (bool(seen) != (state["last_registered_world_step"] > 0)
-                or self._pending is not None or self._seen or self._last_sent):
+                or self._pending is not None or self._seen or self._last_sent
+                or self._last_judgement is not None):
             raise ValueError("historic Action Control agency restore prohibited")
         self._pending, self._seen, self._last_sent = (
             candidate, set(seen), state["last_registered_world_step"],
         )
+        self._last_judgement = last
