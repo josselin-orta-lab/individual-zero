@@ -23,6 +23,10 @@ class Stage12AttributionPairAudit:
     admitted_pairs: int
     deferred_joins: int
     applied_pairs: int
+    applied_successes: int
+    applied_failures: int
+    applied_self: int
+    applied_world: int
     missed_pairs: int
     join_uc: int
     rejected_join_uc: int
@@ -238,10 +242,15 @@ def audit_stage12_attribution_pairs(
         if (ref not in seen_pair_refs and ref not in unavailable_refs
                 and base.world_steps_closed > event["t_monde"]):
             raise ValueError("admitted pair missing next-step diagnostic admission")
+    applied = [pairs[ref][1] for ref in seen_pair_refs]
     return Stage12AttributionPairAudit(
         head_hash=base.head_hash, occurrences=base.occurrences,
         admitted_pairs=len(pairs), deferred_joins=len(deferred_joins),
         applied_pairs=len(seen_pair_refs),
+        applied_successes=sum(v["outcome"] == "success" for v in applied),
+        applied_failures=sum(v["outcome"] == "failure" for v in applied),
+        applied_self=sum(v["agency"] == "self" for v in applied),
+        applied_world=sum(v["agency"] == "world" for v in applied),
         missed_pairs=len(unavailable_refs),
         join_uc=join_uc, rejected_join_uc=rejected_uc,
         diagnostic_labels=tuple(sample_labels),
