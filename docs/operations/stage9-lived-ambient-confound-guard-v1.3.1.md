@@ -24,35 +24,37 @@ identifiable from that single experience.
 
 ## Conservative software rule
 
-A harmful food exposure is eligible for DC-05 evidence and downstream
-numeric causal-correction or hypothesis observations only when the Causal
-Model has an **actually applied, non-ingestion `attendre`** control:
+A harmful food exposure is **not** sufficient for food-specific DC-05 credit
+under the current v1.3.1 perceptual contract, even when the Causal Model has
+an actually applied, clean non-ingestion `attendre` control immediately
+before the meal. That control proves only that integrity did not fall during
+the preceding wait. It cannot exclude a hidden hazard that begins exactly on
+the meal step.
 
-- at the same perceived (x, y) position during the immediately preceding
-  world step;
-- with independently captured integrity **unchanged** during that control;
-- with a matching applied command and physical transition, both present in a
-  closed, authorized DC-09 autobiographical episode;
-- with the next-step Perception integrity matching the body state and the
-  pre-food integrity;
-- with provenance validated and retained within the Causal Model's
-  snapshotted state.
+The control is still validated rigorously:
 
-If any component is missing, or waiting was itself harmful, the meal is
-still physically executed and its full technical causal journal and
-first-person memory remain intact, but it receives **no unwarranted DC-05
-harm credit or numeric/correlation evidence**.
+- same perceived (x, y) position during the immediately preceding world step;
+- independently captured integrity unchanged during that control;
+- matching applied command and physical transition in a closed authorized
+  DC-09 autobiographical episode;
+- next-step Perception integrity matching the body state and pre-food value;
+- provenance retained within the Causal Model's snapshotted state.
 
-Previously admissible no-harm exposure observations remain possible. The
-existing safety threshold, single-owner Causal Model publication, previous
-life mortality rules, epistemic projection, and Oracle/Bench separation
-are unchanged.
+When harm follows eating, the episode remains lived evidence but is labeled
+`ambiguous_food_association`. It receives **no food DC-05 harm credit, no
+food causal observation, and no numeric food correction**. A perceptible
+concurrent creature or a missing/harmful control blocks even that stronger
+candidate path and likewise yields no food-specific credit.
 
-Controls are observed passively from genuinely applied decisions. This
-does **not** schedule extra waits, force feeding, relabel an unexecuted
-command as a physical trial, or use oracle knowledge. Expired controls
-are retired unless their immediately following food exposure remains
-awaiting a closed Memory episode.
+A clean no-harm meal remains admissible as a lived no-harm observation for
+the existing demotion logic. The single-owner Causal Model publication,
+mortality rules, epistemic projection, and Oracle/Bench separation remain
+unchanged.
+
+Controls are observed passively from genuinely applied decisions. This does
+not schedule extra waits, force feeding, relabel an unexecuted command as a
+physical trial, or use Oracle, Bench, hidden WorldBody attribution, or the
+technical journal as cognition.
 
 ## Limits and review
 
