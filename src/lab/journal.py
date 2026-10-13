@@ -36,8 +36,8 @@ class _DetachedCausalEvent(Mapping[str, object]):
         return len(self.__contents)
 
     def copy(self) -> dict[str, object]:
-        """Compatibility helper: like dict.copy(), without leaking aliases."""
-        return dict(self)
+        """Return one detached snapshot without per-key Mapping re-copies."""
+        return deepcopy(self.__contents)
 
     def __repr__(self) -> str:
         return repr(dict(self))
@@ -63,7 +63,7 @@ class JournalEntry:
             "previous_hash": self.previous_hash,
             "event_hash": self.event_hash,
             # An exported document must not alias the hash-chained record.
-            "causal_event": dict(self.causal_event),
+            "causal_event": self.causal_event.copy(),
         }
 
 

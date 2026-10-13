@@ -27,9 +27,37 @@ _REQUIRED_CONTRACT_NAMES = (
 
 
 def _normalize(value: object) -> object:
-    """Return the normative JSON-compatible causal representation."""
+    """Return the normative JSON-compatible causal representation.
 
-    if value is None or isinstance(value, (bool, int)):
+    Exact built-in container fast paths preserve the normative encoding.
+    Arbitrary Mapping implementations and container subclasses continue
+    through the original generic type-checking and validation fallback.
+    """
+    kind = type(value)
+    if kind is dict:
+        # Common generated causal payload: bypass the Mapping ABC dispatch.
+        normalized: dict[str, object] = {}
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise TypeError("causal mapping keys must be strings")
+            normalized_key = unicodedata.normalize("NFC", key)
+            if normalized_key in normalized:
+                raise ValueError("causal mapping keys collide after NFC normalization")
+            normalized[normalized_key] = _normalize(item)
+        return normalized
+    if kind is list or kind is tuple:
+        return [_normalize(item) for item in value]
+    if kind is str:
+        return unicodedata.normalize("NFC", value)
+    if kind is int or kind is bool or value is None:
+        return value
+    if kind is float:
+        if not math.isfinite(value):
+            raise ValueError("non-finite floats are forbidden in causal data")
+        normalized = 0.0 if value == 0.0 else value
+        return {"$f64": normalized.hex().lower()}
+
+    if isinstance(value, (bool, int)):
         return value
 
     if isinstance(value, str):
