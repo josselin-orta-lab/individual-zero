@@ -133,19 +133,9 @@ class LivedEvidenceTests(unittest.TestCase):
         from i0.modules.causal_model import SafetyEvidence
         m = model()
 
-        # First harmful context is retained as ambiguous only.
-        seed = pair(m, t=1, position=(1,2))
-        self.assertEqual(
-            m.ingest_closed_autobiographical_episode(
-                episode_ref="episode:seed",
-                event_refs=("c:1","w:1"),
-                autobiographical_events=seed,
-            )[0].epistemic_status,
-            "ambiguous_food_association",
-        )
-
-        # A second observable position is contrastively admissible. Forge a
-        # colliding pending ID to exercise the late atomic preflight.
+        # A valid no-harm meal is DC-05-admissible. Forge a colliding pending
+        # identifier so the episode fails late, after its real wait control was
+        # examined. The verified control must not leak through a rejected batch.
         m.record_applied_ambient_integrity_control(
             t_monde=3, option_ref="option:wait", position=(2,2),
             integrity_before=100.0,
@@ -158,13 +148,13 @@ class LivedEvidenceTests(unittest.TestCase):
             body_before={"energy":50.0,"food":60.0,
                          "water":50.0,"integrity":100.0},
         )
-        m.observe_followup_capture(t_monde=5, integrity=90.0)
+        m.observe_followup_capture(t_monde=5, integrity=100.0)
         m.integrate(SafetyEvidence(
             identifier="dc05:episode:combined:food-w",
             contingency_ref="toxic:berry_b", predicate="toxic_item",
             subject_ref="berry_b", context_signature="global",
             episode_ref="episode:combined", observation_ref="food-w",
-            emission_step=4, observation_step=5, harm_observed=True,
+            emission_step=4, observation_step=5, harm_observed=False,
             source="monde", independent_episode=True,
             comparable_context=True, alternative_cause_sufficient=False,
             exposure_motivated_independently=True,
@@ -180,7 +170,7 @@ class LivedEvidenceTests(unittest.TestCase):
              "parameters":{"target":"berry_b"}},
             {"event_id":"food-w","kind":"world_transition_experienced",
              "t_monde":4,"position_after":{"x":2,"y":2},
-             "body_after":{"integrity":90.0},"effects":{"ate":"berry_b"}},
+             "body_after":{"integrity":100.0},"effects":{"ate":"berry_b"}},
         )
         snapshot = m.export_causal_state()
         with self.assertRaisesRegex(ValueError, "duplicate closed Memory safety evidence"):
