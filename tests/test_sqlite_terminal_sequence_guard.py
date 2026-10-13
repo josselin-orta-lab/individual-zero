@@ -51,7 +51,10 @@ def closure():
 def operator_stop():
     return {
         "kind": "experiment_stopped", "emitter": "operator_console",
-        "t_monde": 0, "data": {"reason": "operator_requested"},
+        "t_monde": 0, "data": {
+            "reason": "operator_requested",
+            "physical_death": False, "world_rewound": False,
+        },
     }
 
 
