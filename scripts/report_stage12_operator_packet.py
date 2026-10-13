@@ -17,6 +17,7 @@ from lab.stage12_alignment import evaluate_goal_action_alignment
 from lab.stage12_diagnostic_audit import audit_stage12_diagnostics
 from lab.stage12_goal_progress_audit import audit_stage12_goal_progress
 from lab.stage12_first_person_agency_audit import audit_stage12_first_person_agency
+from lab.stage12_attribution_pair_audit import audit_stage12_attribution_pairs
 from lab.stage12_occupancy_audit import audit_stage12_occupancy
 from lab.stage12_operator_alert_audit import audit_stage12_operator_alerts
 from lab.stage12_operator_control_audit import audit_stage12_operator_control
@@ -40,6 +41,7 @@ def evaluate_packet(
     diagnostics = audit_stage12_diagnostics(content, **anchors)
     goal_progress = audit_stage12_goal_progress(content, **anchors)
     first_person_agency = audit_stage12_first_person_agency(content, **anchors)
+    pair_audit = audit_stage12_attribution_pairs(content, **anchors)
     occupancy = audit_stage12_occupancy(content, **anchors)
     alerts = audit_stage12_operator_alerts(content, **anchors)
     operator_control = audit_stage12_operator_control(content, **anchors)
@@ -113,6 +115,7 @@ def evaluate_packet(
         "diagnostics": diagnostics.as_dict(),
         "lived_goal_progress": goal_progress.as_dict(),
         "first_person_goal_agency": first_person_agency.as_dict(),
+        "independently_joined_attribution_pairs": pair_audit.as_dict(),
         "lived_detector_coverage": {
             "schema": "stage12-lived-detector-outcome-coverage-v1",
             "samples_independently_audited": diagnostics.diagnostic_samples,
@@ -122,7 +125,9 @@ def evaluate_packet(
                 for counts in detector_coverage.values()
             ),
             "missing_one_class_does_not_imply_success": True,
-            "attribution_bias_calibration_supported": False,
+            "attribution_bias_calibration_supported": any(
+                label is not None for _step, label in pair_audit.diagnostic_labels
+            ),
         },
         "st_module_occupancy": occupancy.as_dict(),
         "persistent_operator_alerts": alerts.as_dict(),
@@ -139,15 +144,22 @@ def evaluate_packet(
         # that I0 could never form subjective beliefs.
         "lived_attribution_evidence": {
             "schema": "stage12-independent-attribution-coverage-v1",
-            "admitted_verified_successes": 0,
-            "admitted_verified_failures": 0,
-            "admitted_unique_attribution_refs": 0,
+            "admitted_verified_successes": pair_audit.applied_successes,
+            "admitted_verified_failures": pair_audit.applied_failures,
+            "admitted_unique_attribution_refs": pair_audit.applied_pairs,
+            "admitted_self": pair_audit.applied_self,
+            "admitted_world": pair_audit.applied_world,
             "diagnostic_samples_without_admitted_attribution": (
-                diagnostics.diagnostic_samples
+                diagnostics.diagnostic_samples - pair_audit.applied_pairs
             ),
-            "independent_pair_contract_available": False,
-            "detector_calibration_supported": False,
-            "status": "unavailable_no_audited_lived_pairs",
+            "independent_pair_contract_available": True,
+            "detector_calibration_supported": any(
+                label is not None for _step, label in pair_audit.diagnostic_labels
+            ),
+            "status": (
+                "available_with_audited_lived_pairs" if pair_audit.applied_pairs
+                else "unavailable_no_audited_lived_pairs"
+            ),
             "limitation": (
                 "Zero means no verifications admitted under the current "
                 "auditor contract, not that all actual outcomes were failures "
@@ -175,7 +187,9 @@ def evaluate_packet(
             "s_t_occupancy_observed_on_every_action": (
                 action_steps <= occupancy_steps and bool(action_steps)
             ),
-            "lived_attribution_bias_validated": False,
+            "lived_attribution_bias_validated": any(
+                label is not None for _step, label in pair_audit.diagnostic_labels
+            ),
         },
         "checks": {
             "expected_world_steps": expected_world_steps,
