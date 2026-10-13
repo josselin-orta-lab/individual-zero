@@ -118,7 +118,7 @@ class LivedEvidenceTests(unittest.TestCase):
              "t_monde":2,"primitive":"manger","parameters":{"target":"berry_a"}},
             {"event_id":"food-w:2","kind":"world_transition_experienced",
              "t_monde":2,"body_after":{"integrity":80.0},
-             "position_after":{"x":position[0],"y":position[1]},
+             "position_after":{"x":2,"y":2},
              "effects":{"ate":"berry_a"}},
         )
         self.assertEqual(m.ingest_closed_autobiographical_episode(
