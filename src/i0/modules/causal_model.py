@@ -159,6 +159,10 @@ class SafetyEvidence:
     comparable_context: bool
     alternative_cause_sufficient: bool
     exposure_motivated_independently: bool
+    # A lived food injury may be a real association while its physical cause
+    # remains underdetermined. Only dc05_admissible rows may enter the safety
+    # credit ledger; ambiguous rows stay first-person observations only.
+    epistemic_status: str = "dc05_admissible"
     oracle_derived: bool = False
     rollback_cancelled: bool = False
     counterfactual: bool = False
@@ -179,6 +183,10 @@ class SafetyEvidence:
                 tuple(int(part) for part in parts)
             except ValueError as exc:
                 raise ValueError("invalid lethal-zone position") from exc
+        if self.epistemic_status not in {
+            "dc05_admissible", "ambiguous_food_association",
+        }:
+            raise ValueError("unknown DC-05 epistemic admission status")
         if self.oracle_derived or self.rollback_cancelled or self.counterfactual:
             raise ValueError("forbidden-or-cancelled provenance cannot enter Causal Model")
         if not (
@@ -465,6 +473,11 @@ class CausalModel:
         self._credited_observations: set[tuple[str, str]] = set()
         self._version = 0
         self._lived_food_exposures: dict[int, LivedFoodExposure] = {}
+        # Observed contexts of harmful food associations that were deliberately
+        # withheld from DC-05 because one local episode cannot distinguish food
+        # toxicity from a synchronized hidden cause. This is uncertainty
+        # bookkeeping only, never a hidden-world label.
+        self._ambiguous_food_harm_contexts: dict[str, set[tuple[int, int]]] = {}
         self._lived_ambient_integrity_controls: dict[int, LivedAmbientIntegrityControl] = {}
         self._lived_hydration_exposures: dict[int, LivedHydrationExposure] = {}
         # Exact DC-09 physical command/transition references, not oracle facts.
@@ -1300,6 +1313,10 @@ class CausalModel:
         candidate: list[SafetyEvidence] = []
         causal_observations: list[CausalObservation] = []
         numeric_witnesses: list[LivedNumericOutcome] = []
+        staged_harm_contexts = {
+            key: set(value)
+            for key, value in self._ambiguous_food_harm_contexts.items()
+        }
         for t in sorted(commands.keys() & transitions.keys()):
             exposure = self._lived_food_exposures.get(t)
             if exposure is None or exposure.observed_step is None:
@@ -1327,21 +1344,10 @@ class CausalModel:
                 # Scenario changed telemetry, or the following capture is
                 # missing; neither should masquerade as an observed consequence.
                 continue
-            # Historic technical effects once exposed WorldBody's hidden
-            # damage source. Under MVP 1.3.1 those causes are correctly
-            # absent from autobiography, and ABSENCE is not proof of safety.
-            # A potentially harmful food outcome needs a verified clean
-            # non-ingestion wait at this same site on the preceding step.
-            # With no matched lived control it remains a personal experience
-            # in Memory, but supplies no DC-05 credit, numeric correction or
-            # causal hypothesis witness.
-            if any(
-                isinstance(effects.get(key), (int, float))
-                and effects[key] > 0
-                for key in ("creature_damage", "danger_zone_damage")
-            ):
-                # Legacy unredacted records are never promoted either.
-                continue
+            # Hidden physical attribution is outside I0's epistemic boundary.
+            # This code intentionally never inspects creature_damage or
+            # danger_zone_damage, even to reject a row: cognition may only use
+            # lived controls and perceptible competing causes.
             harm_observed = after < exposure.integrity_before
             baseline = staged_controls.get(t - 1)
             matched_control = bool(
@@ -1360,6 +1366,29 @@ class CausalModel:
                 not matched_control or exposure.visible_creature_at_exposure
             ):
                 continue
+
+            # A clean preceding wait still cannot exclude a hidden hazard that
+            # appears exactly when food is eaten. The first harmful association
+            # in one observable position is therefore retained only as
+            # uncertainty. A later harmful association in a *different lived
+            # position* supplies a minimal contrastive context and may begin
+            # contributing to DC-05. This is deliberately conservative and is
+            # not a claim that the physical etiology has become identifiable.
+            epistemic_status = "dc05_admissible"
+            if harm_observed:
+                if exposure.position_before is None:
+                    epistemic_status = "ambiguous_food_association"
+                else:
+                    prior_contexts = staged_harm_contexts.setdefault(
+                        exposure.resource_kind, set(),
+                    )
+                    if not any(
+                        context != exposure.position_before
+                        for context in prior_contexts
+                    ):
+                        epistemic_status = "ambiguous_food_association"
+                    prior_contexts.add(exposure.position_before)
+
             event = transition
             candidate.append(SafetyEvidence(
                 identifier=f"dc05:{episode_ref}:{event['event_id']}",
@@ -1377,9 +1406,11 @@ class CausalModel:
                 comparable_context=True,
                 alternative_cause_sufficient=False,
                 exposure_motivated_independently=True,
+                epistemic_status=epistemic_status,
             ))
             if (
-                exposure.body_before is not None
+                epistemic_status == "dc05_admissible"
+                and exposure.body_before is not None
                 and exposure.position_before is not None
                 and exposure.state_before_digest is not None
                 and after < exposure.integrity_before
@@ -1402,10 +1433,11 @@ class CausalModel:
                     observed_after=float(after),
                 )
                 numeric_witnesses.append(witness)
-            # Observation of exposure is not causal proof or an intervention.
-            # Absence-of-exposure baselines require other *lived* comparable
-            # episodes and are never generated from this successful meal.
-            causal_observations.append(CausalObservation(
+            # An explicitly ambiguous harmful association must not silently
+            # become a causal observation. No-harm observations and sufficiently
+            # contrastive harmful observations remain eligible.
+            if epistemic_status == "dc05_admissible":
+                causal_observations.append(CausalObservation(
                 identifier=f"causal-observation:{episode_ref}:{event['event_id']}",
                 contingency_ref=f"toxic:{exposure.resource_kind}",
                 predicate="toxic_item",
@@ -1417,8 +1449,8 @@ class CausalModel:
                 observed_step=exposure.observed_step,
                 cause_present=True,
                 effect_present=after < exposure.integrity_before,
-                controlled_variables=(("primitive", "manger"),),
-            ))
+                    controlled_variables=(("primitive", "manger"),),
+                ))
         # A *different actually eaten food* may be an independently lived
         # no-exposure comparison for a preregistered treatment. Same episode
         # and physical reference are preserved: this is NOT a new experience.
@@ -1444,8 +1476,10 @@ class CausalModel:
         # partially mutate safety state without matching causal observation.
         for item in candidate:
             item.validate()
-            if item.identifier in self._seen_ids or any(
-                old.identifier == item.identifier for old in self._pending
+            if item.epistemic_status == "dc05_admissible" and (
+                item.identifier in self._seen_ids or any(
+                    old.identifier == item.identifier for old in self._pending
+                )
             ):
                 raise ValueError("duplicate closed Memory safety evidence")
         for item in causal_observations:
@@ -1471,8 +1505,10 @@ class CausalModel:
         # Publish verified control state only AFTER the entire incoming
         # episode has passed its existing atomic evidence preflight.
         self._lived_ambient_integrity_controls = staged_controls
+        self._ambiguous_food_harm_contexts = staged_harm_contexts
         for item in candidate:
-            self.integrate(item)
+            if item.epistemic_status == "dc05_admissible":
+                self.integrate(item)
         for item in causal_observations:
             self.integrate_causal_observation(item)
         for witness in numeric_witnesses:
@@ -2190,7 +2226,9 @@ class CausalModel:
         return tuple(changes)
 
     def integrate(self, evidence: SafetyEvidence) -> None:
-        evidence.validate()  # INV-03/27: reject before any causal write.
+        evidence.validate()
+        if evidence.epistemic_status != "dc05_admissible":
+            raise ValueError("ambiguous association cannot receive DC-05 credit")  # INV-03/27: reject before any causal write.
         if (
             evidence.identifier in self._seen_ids
             or any(v.identifier == evidence.identifier for v in self._pending)
@@ -2389,6 +2427,12 @@ class CausalModel:
         # Exact backward compatibility: historic no-control snapshots and
         # their hash-chained Stage-11 journal digests must not gain an empty
         # field purely because this optional safeguard now exists.
+        if self._ambiguous_food_harm_contexts:
+            state["ambiguous_food_harm_contexts"] = [
+                [resource, [[x, y] for x, y in sorted(contexts)]]
+                for resource, contexts
+                in sorted(self._ambiguous_food_harm_contexts.items())
+            ]
         if self._lived_ambient_integrity_controls:
             state["lived_ambient_integrity_controls"] = [
                 {
@@ -2611,6 +2655,27 @@ class CausalModel:
                 raise ValueError("duplicate pending lived exposure")
             exposures[exposure.t_monde] = exposure
         self._lived_food_exposures = exposures
+        harm_contexts: dict[str, set[tuple[int, int]]] = {}
+        for raw in state.get("ambiguous_food_harm_contexts", []):
+            if (
+                not isinstance(raw, (list, tuple)) or len(raw) != 2
+                or raw[0] not in {"berry_a", "berry_b"}
+                or not isinstance(raw[1], (list, tuple)) or not raw[1]
+            ):
+                raise ValueError("invalid ambiguous food-harm context ledger")
+            resource, rows = raw
+            contexts: set[tuple[int, int]] = set()
+            for row in rows:
+                if (
+                    not isinstance(row, (list, tuple)) or len(row) != 2
+                    or any(type(value) is not int for value in row)
+                ):
+                    raise ValueError("invalid ambiguous food-harm context")
+                contexts.add((row[0], row[1]))
+            if resource in harm_contexts or len(contexts) != len(rows):
+                raise ValueError("duplicate ambiguous food-harm context")
+            harm_contexts[resource] = contexts
+        self._ambiguous_food_harm_contexts = harm_contexts
         controls: dict[int, LivedAmbientIntegrityControl] = {}
         used_control_sources: set[str] = set()
         for raw in state.get("lived_ambient_integrity_controls", []):
