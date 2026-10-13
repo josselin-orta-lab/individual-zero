@@ -169,6 +169,23 @@ class EpisodicMemory:
         return tuple(self._episodes)
 
     @property
+    def episode_count(self) -> int:
+        """O(1) metadata for freezing a charged consolidation scan."""
+        return len(self._episodes)
+
+    def read_episodes_range(self, start: int, stop: int) -> tuple[Episode, ...]:
+        """Read only the requested immutable closed-episode range.
+
+        The caller is responsible for paying P-42 before calling this method.
+        Unlike the historical .episodes property, this does not first copy the
+        entire life history to inspect a bounded slice.
+        """
+        if (type(start) is not int or type(stop) is not int
+                or not 0 <= start <= stop <= len(self._episodes)):
+            raise ValueError("invalid closed episode range")
+        return tuple(self._episodes[start:stop])
+
+    @property
     def last_recalled_ref(self) -> str | None:
         return self._last_recalled_ref
 

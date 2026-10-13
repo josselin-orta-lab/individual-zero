@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Mapping, Sequence
+from typing import Callable, Mapping, Sequence
 
 from lab.determinism import canonical_causal_bytes, sha256_hex
 from .consolidation_batch import ConsolidationBatchSelector
@@ -78,14 +78,17 @@ class IncrementalChargedSelection:
         self._committed = tuple(sorted(already_consolidated))
         self._payloads = []
 
-    def advance(self, *, budget, episodes: Sequence, selector: ConsolidationBatchSelector):
+    def advance(self, *, budget, episode_count: int,
+                read_paid_slice: Callable[[int, int], Sequence],
+                selector: ConsolidationBatchSelector):
         """Charge a bounded *entire* slice before inspecting its contents."""
         if not self.active or self.complete:
             raise ValueError("no incomplete scan")
         if selector.policy.version != self.policy_version:
             raise ValueError("changed selection policy")
-        if len(episodes) < self._total:
-            raise ValueError("Memory lost episodes after the causal cut")
+        if (type(episode_count) is not int or episode_count < self._total
+                or not callable(read_paid_slice)):
+            raise ValueError("Memory lost episodes or invalid paid scan reader")
         cost = selector.policy.scan_uc_per_episode
         if budget.config.operation_costs.get("episode_scan") != cost:
             raise ValueError("selection scan price mismatch")
@@ -98,9 +101,10 @@ class IncrementalChargedSelection:
         if not receipt.accepted or receipt.requested_uc != count * cost:
             raise RuntimeError("quoted incremental scan was not paid")
         # Read payloads only after a successful debit.
-        staged = []
-        for episode in episodes[self._offset:self._offset + count]:
-            staged.append(selector._projection(episode))
+        paid = read_paid_slice(self._offset, self._offset + count)
+        if len(paid) != count:
+            raise ValueError("paid episode reader returned an incomplete slice")
+        staged = [selector._projection(episode) for episode in paid]
         known = {p["id"] for p in self._payloads}
         if len({p["id"] for p in staged}) != len(staged) or any(
                 p["id"] in known or p["end_t_monde"] >= self._cut.world_step

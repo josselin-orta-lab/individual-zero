@@ -40,6 +40,7 @@ from i0.modules.sleep_session import SleepSession
 from i0.modules.simulator import state_from_capture
 
 from .consolidation_publication import SlowHistory, Stage10PublicationCoordinator
+from i0.modules.consolidation_pending_index import ChargedPendingEpisodeIndex
 from .consolidation_lived_evidence import FrozenLivedReplayEvidence
 from .determinism import deterministic_id
 from .stage4_runtime import Stage4StepResult
@@ -65,12 +66,18 @@ class Stage10Config:
     selection_policy: BatchSelectionPolicy | None = None
     semantic_policy: SemanticPassPolicy | None = None
     incremental_selection: bool = False
+    paid_pending_index: bool = False
+    maximum_passes_per_sleep_step: int = 1
 
     def validate(self) -> None:
         if not self.version:
             raise ValueError("Stage-10 runtime requires version")
+        if type(self.paid_pending_index) is not bool or (self.paid_pending_index and not self.incremental_selection):
+            raise ValueError("pending index requires explicit incremental selection")
         if type(self.incremental_selection) is not bool or (self.incremental_selection and self.selection_policy is None):
             raise ValueError("incremental selection requires live sixpass policy")
+        if type(self.maximum_passes_per_sleep_step) is not int or not 1 <= self.maximum_passes_per_sleep_step <= len(PASSES):
+            raise ValueError("invalid bounded number of consolidation passes per sleep step")
         self.stage9.validate()
         self.sleep.validate()
         self.sleep_work.validate()
@@ -248,7 +255,9 @@ class Stage10Runtime(Stage9Runtime):
             else ConsolidationBatchSelector(config.selection_policy)
         )
         self.consolidation_scan = (
-            IncrementalChargedSelection(policy_version=config.selection_policy.version)
+            (ChargedPendingEpisodeIndex(policy_version=config.selection_policy.version)
+             if config.paid_pending_index else
+             IncrementalChargedSelection(policy_version=config.selection_policy.version))
             if config.incremental_selection else None
         )
         self._preopened_waking_capture = None
@@ -457,9 +466,20 @@ class Stage10Runtime(Stage9Runtime):
                     raise RuntimeError("history changed during frozen scan")
                 cut = scanner.cut
             else:
-                episodes = self.memory.episodes
-                if not episodes:
-                    return
+                # Incremental selection may read O(1) episode-count metadata
+                # before billing; materialize autobiographical payloads only
+                # after the corresponding bounded P-42 debit.
+                if scanner is not None:
+                    if self.memory.episode_count == 0:
+                        return
+                    if (self._stage10_config.paid_pending_index
+                            and scanner.seen_count == self.memory.episode_count
+                            and scanner.pending_count == 0):
+                        return  # no candidate, no unpaid read or empty re-scan
+                else:
+                    episodes = self.memory.episodes  # legacy full-scan mode
+                    if not episodes:
+                        return
                 anchor = next((
                     e for e in reversed(self.journal.entries)
                     if e.causal_event.get("kind") == "step_opened"
@@ -474,9 +494,10 @@ class Stage10Runtime(Stage9Runtime):
                 )
                 if scanner is not None:
                     scanner.begin(
-                        cut=cut, total=len(episodes),
-                        already_consolidated=tuple(
-                            self.slow_history.read_committed()["consolidated_episode_refs"]
+                        cut=cut, total=self.memory.episode_count,
+                        already_consolidated=(
+                            () if self._stage10_config.paid_pending_index else
+                            tuple(self.slow_history.read_committed()["consolidated_episode_refs"])
                         ),
                     )
                     self._write(kind="stage10_consolidation_scan_started",
@@ -485,7 +506,9 @@ class Stage10Runtime(Stage9Runtime):
             if scanner is not None:
                 count = scanner.advance(
                     budget=self.consolidation_work,
-                    episodes=self.memory.episodes, selector=selector,
+                    episode_count=self.memory.episode_count,
+                    read_paid_slice=self.memory.read_episodes_range,
+                    selector=selector,
                 )
                 if count:
                     self._write(kind="stage10_consolidation_scan_checkpointed",
@@ -685,6 +708,38 @@ class Stage10Runtime(Stage9Runtime):
             # changing active forms must provide its own checked rebaser.
             return baseline
 
+        # The final private rebase freezes the journal's exact current head.
+        # A maintenance receipt must be written BEFORE prepare(): writing it
+        # between prepare and publish would invalidate the post-cut slice.
+        index = self.consolidation_scan if self._stage10_config.paid_pending_index else None
+        retirement = None
+        if index is not None:
+            retirement = index.charge_committed_removal(
+                budget=self.consolidation_work, refs=tx.batch,
+            )
+            if retirement is None:
+                self._write(
+                    kind="stage10_consolidation_work_deferred",
+                    data={"world_step": world_step,
+                          "stage": "index_maintenance",
+                          "reason": "insufficient_charged_index_maintenance_budget",
+                          "consolidation_id": tx.id},
+                )
+                return
+            self._write(
+                kind="stage10_consolidation_index_maintenance_charged",
+                data={
+                    "world_step": world_step, "consolidation_id": tx.id,
+                    "episode_refs": list(tx.batch),
+                    "operation": retirement.operation,
+                    "count": retirement.count,
+                    "requested_uc": retirement.requested_uc,
+                    "consumed_step_uc": retirement.consumed_step_uc,
+                    "consumed_period_uc": retirement.consumed_period_uc,
+                    "pending_before": index.pending_count,
+                    "source_history_version": self.slow_history.current_version,
+                },
+            )
         try:
             prepared = coordinator.prepare(
                 transaction=tx,
@@ -708,6 +763,22 @@ class Stage10Runtime(Stage9Runtime):
             prepared=prepared, transaction=tx,
             world_step=world_step, scheduler_sync_authorized=True,
         )
+        if index is not None:
+            index.acknowledge_published(
+                refs=tx.batch, charged=retirement,
+                source_version=receipt.source_history_version,
+                new_version=receipt.new_history_version,
+            )
+            self._write(
+                kind="stage10_consolidation_index_retired",
+                data={
+                    "world_step": world_step, "consolidation_id": tx.id,
+                    "episode_refs": list(tx.batch),
+                    "new_history_version": receipt.new_history_version,
+                    "pending_after": index.pending_count,
+                    "maintenance_charge_uc": retirement.requested_uc,
+                },
+            )
         self._write(
             kind="stage10_consolidation_committed",
             data={"world_step": world_step,
@@ -849,9 +920,27 @@ class Stage10Runtime(Stage9Runtime):
         # This step was admitted as sleep by the reduced wake rule. All
         # semantic work remains private until its scheduler-owned commit.
         try:
-            self._run_live_consolidation(
-                world_step=t, attempt_ref=attempt.attempt_ref,
-            )
+            for _ in range(self._stage10_config.maximum_passes_per_sleep_step):
+                before = self.consolidation.current
+                before_cursor = None if before is None else before.cursor
+                before_scan = (None if self.consolidation_scan is None
+                               else (self.consolidation_scan.active,
+                                     self.consolidation_scan.cursor))
+                before_version = self.slow_history.current_version
+                self._run_live_consolidation(
+                    world_step=t, attempt_ref=attempt.attempt_ref,
+                )
+                after = self.consolidation.current
+                after_scan = (None if self.consolidation_scan is None
+                              else (self.consolidation_scan.active,
+                                    self.consolidation_scan.cursor))
+                if self.slow_history.current_version != before_version:
+                    break  # one atomic publication per physical sleep step
+                if before is not None and after is before and after.cursor > before_cursor:
+                    continue
+                if after_scan != before_scan or (before is None and after is not None):
+                    continue
+                break  # no free retry after budget denial or no useful work
         except Exception:
             # The work could have reached the irreversible h + journal
             # publication boundary before failing. Never continue a mortal

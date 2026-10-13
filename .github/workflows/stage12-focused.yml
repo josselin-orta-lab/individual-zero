@@ -17,6 +17,11 @@ on:
       - 'scripts/run_stage12_issue133_calibration.py'
       - 'scripts/run_stage12_issue133_batch.py'
       - 'scripts/run_stage12_issue133_longscan.py'
+      - 'scripts/run_stage10_multipass_sleep.py'
+      - 'scripts/run_stage10_issue133_capacity.py'
+      - 'scripts/run_stage10_issue133_horizon600.py'
+      - 'scripts/run_stage10_issue133_paid_index.py'
+      - 'docs/research/stage10-multipass-sleep-prereg-2026-10-13.fr.md'
       - 'docs/research/stage12-issue133-longscan-prereg-2026-10-13.fr.md'
       - 'docs/research/stage12-issue133-batch-prereg-2026-10-13.fr.md'
       - 'docs/research/stage12-issue133-calibration-prereg-2026-10-12.fr.md'
@@ -153,6 +158,114 @@ jobs:
         with:
           name: stage12-issue132-water-python-${{ matrix.python-version }}
           path: /tmp/stage12-issue132/
+          retention-days: 30
+          if-no-files-found: warn
+
+  issue133-paid-index:
+    name: issue133 preregistered paid index vs full scan 600 steps (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Run four prospectively paired independently born mortal lives
+        run: python scripts/run_stage10_issue133_paid_index.py --output-dir /tmp/issue133-paid-index
+      - name: Preserve all source journals WAL and negative results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue133-paid-index-python-${{ matrix.python-version }}
+          path: /tmp/issue133-paid-index/
+          retention-days: 30
+          if-no-files-found: warn
+
+  issue133-horizon600:
+    name: issue133 P6B6 aging 600 steps in two worlds (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Preregistered two distinct 600-step mortal lives
+        run: python scripts/run_stage10_issue133_horizon600.py --output-dir /tmp/issue133-horizon600
+      - name: Retain complete evidence and failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue133-horizon600-python-${{ matrix.python-version }}
+          path: /tmp/issue133-horizon600/
+          retention-days: 30
+          if-no-files-found: warn
+
+  issue133-capacity-factorial:
+    name: issue133 preregistered 3/6 passes x 3/6 batches (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Four distinct pre-registered 240-step mortal lives
+        run: python scripts/run_stage10_issue133_capacity.py --output-dir /tmp/issue133-capacity
+      - name: Preserve all evidence including negative outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue133-capacity-python-${{ matrix.python-version }}
+          path: /tmp/issue133-capacity/
+          retention-days: 30
+          if-no-files-found: warn
+
+  issue133-multipass:
+    name: issue133 paid 1 vs 3 passes per sleep step (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Two independently born 240-step mortal lives and external proof audits
+        run: python scripts/run_stage10_multipass_sleep.py --output-dir /tmp/issue133-multipass
+      - name: Preserve WAL and all results even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue133-multipass-python-${{ matrix.python-version }}
+          path: /tmp/issue133-multipass/
           retention-days: 30
           if-no-files-found: warn
 

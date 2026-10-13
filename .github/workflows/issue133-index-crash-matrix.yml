@@ -1,0 +1,82 @@
+name: Issue133 paid-index crash matrix
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage10_issue133_index_crash_matrix.py'
+      - 'scripts/audit_stage10_index_wal.py'
+      - 'tests/test_stage10_index_wal_operator_gate.py'
+      - 'tests/test_stage10_index_soft_faults.py'
+      - '.github/workflows/issue133-index-crash-matrix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  crash-wal-stage12:
+    name: Actual os._exit WAL audit (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Crash actual mortal life on three publication boundaries
+        run: python scripts/run_stage10_issue133_index_crash_matrix.py --output-dir /tmp/issue133-index-crash
+      - name: Preserve crash WALs, parent audits, and failed stderr
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue133-index-crash-python-${{ matrix.python-version }}
+          path: /tmp/issue133-index-crash/
+          retention-days: 30
+          if-no-files-found: warn
+
+  standalone-wal-negative-matrix:
+    name: Read-only WAL provenance and terminal rejection (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run negative provenance and terminal matrix without I0 imports
+        run: python -m unittest discover -s tests -p 'test_stage10_index_wal_operator_gate.py' -v
+
+  indexed-inprocess-faults:
+    name: Indexed h in-process fail-closed matrix (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install I0
+        run: python -m pip install -e .
+      - name: Inject three in-process faults at the real paid-index h boundary
+        run: python -m unittest discover -s tests -p 'test_stage10_index_soft_faults.py' -v
