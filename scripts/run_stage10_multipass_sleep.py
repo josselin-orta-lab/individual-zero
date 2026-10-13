@@ -141,7 +141,7 @@ def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> di
     for index in range(MAX_STEPS):
         try:
             result = life.run_step()
-            if result.execution_status != "applied":
+            if result.execution_status not in ("applied", "dead"):
                 failure = "nonapplied:" + result.execution_status
                 break
             actions[result.command_primitive] += 1
@@ -184,6 +184,10 @@ def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> di
                 "work_step_uc": paid_step_uc,
                 "work_period_uc_at_step_end": paid_period_uc,
             })
+            if result.execution_status == "dead":
+                if life.stage3.substrate.mortal_status.value != "dead":
+                    raise ValueError("dead receipt without terminal mortal state")
+                break
 
         except Exception as exc:
             failure = f"{type(exc).__name__}: {exc}"
@@ -309,7 +313,25 @@ def main() -> int:
                      "n_planned":2,"n_completed":len(rows),"lives":rows,
                      "scientific_validation":"not_performed",
                      "operator_accepted":False},indent=2,sort_keys=True)+"\n")
-    valid=[r for r in rows if "error" not in r and not r["audit_error"]]
+    # A complete causal archive is not automatically a complete life.
+    # Genuine terminal deaths may end a preregistered maximum-length life;
+    # unexplained exceptions, non-applied steps and truncated lives may not.
+    def verified_life(row):
+        if ("error" in row or row.get("failure") is not None
+                or row.get("audit_error") is not None):
+            return False
+        steps = row.get("executed_steps")
+        status = row.get("mortal_status")
+        audited = row.get("audits") or {}
+        if (type(steps) is not int or steps < 1 or steps > MAX_STEPS
+                or audited.get("world_steps_closed") != steps
+                or len(audited.get("consolidation_work_uc_per_step", [])) != steps):
+            return False
+        if steps == MAX_STEPS:
+            return status in ("experiment_stopped", "dead")
+        return status == "dead"
+
+    valid=[row for row in rows if verified_life(row)]
     summary={"source_sha":proc.stdout.strip(),"planned_lives":2,"audited_lives":len(valid),
              "real_physical_steps":sum(r["executed_steps"] for r in valid),
              "failed_or_unverified_lives":len(rows)-len(valid),

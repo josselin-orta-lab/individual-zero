@@ -60,3 +60,31 @@ Débit moyen : arrivée `119/240 = 0,496` épisode/pas, publication `17/240 = 0,
 4. **Piste ultérieure**, sous décision opérateur si la contrainte normative s'y oppose : index de références éligibles encore non consolidées, mis à jour et facturé explicitement, sans accéder gratuitement à l'inventaire complet ni modifier la politique de priorité, les points de coupure ou les plafonds. Ne pas implémenter une file « gratuite » ou une expiration destructive des épisodes.
 
 **Verdict provisoire : VALIDÉ TECHNIQUEMENT SUR LES SCÉNARIOS OBSERVÉS, HYPOTHÈSE SCIENTIFIQUE DE SOUTENABILITÉ NON SUPPORTED.** L'issue #133 reste ouverte ; une validation opérateur et des tests ciblés supplémentaires restent nécessaires. Stage12 et M11 ne sont pas reçus par ce rapport.
+
+
+## Complément rétrospectif après instrumentation P-42 (commit `ed6332f`)
+
+Campagnes d'instrumentation **terminées** sur le commit `ed6332f82fbb552c9f01c3e3f41eb54e06ca536e`, runs [38352994973](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38352994973) (Stage12) et [38352994931](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38352994931) (CI rapide), tous deux SUCCESS. Archives : `11791218918` pour Python 3.11, `11791493001` pour Python 3.12 ; SHA des fichiers `canonical.jsonl` et `life.wal` identiques entre versions par profil, et leurs empreintes correspondent à la première campagne. Ce sont de nouvelles **mesures d'observation**, pas une nouvelle hypothèse préenregistrée ni un nouveau paramétrage cognitif.
+
+| Mesure exacte issue de `consolidation_work_uc_per_step`, par vie | 1 passe | 3 passes |
+| --- | ---: | ---: |
+| UC P-42 réellement débitées (240 pas) | 801 | 1 967 |
+| UC de scan facturées (somme des `charged_records` journaux) | 436 | 1 032 |
+| Fraction UC absorbée par scan | 54,4 % | 52,5 % |
+| UC hors scan (passes, plans, validations, replay) | 365 | 935 |
+| UC totales / épisode consolidé | 47,1 | 41,9 |
+| Pas ayant une consommation P-42 positive | 41 | 41 |
+| Maximum UC réellement débitées pendant un pas | 100 | 100 |
+| Maximum UC pendant une période de sommeil observée | 100 | 100 |
+| UC payées sur les pas 1–80 | 121 | 426 |
+| UC payées sur les pas 81–160 | 215 | 544 |
+| UC payées sur les pas 161–240 | 465 | 997 |
+| UC déjà payées sur travail non publié à 240 | 153 | 156 |
+
+**Point important :** le plafond périodique théorique est **600 UC**, mais le maximum *effectivement atteint* lors de cette fixture est 100 UC. Les périodes ne sont pas assez longues pour approcher 600 UC, car le réveil arrive rapidement. Aucun plafonnement périodique n'a été diagnostiqué. Les passages sont contrôlés par le slot de 100 UC et le calendrier réel du sommeil.
+
+Le scan résout le dépassement ponctuel du créneau en répartissant sa facturation sur plusieurs pas, mais ne supprime pas le coût d'inspecter **tous** les épisodes, y compris déjà consolidés. Après 160 pas, les coûts croissent rapidement : sur le dernier tiers, le multipasse a consommé 997 UC pour ne consolider que 18 épisodes face à 40 créations. Ce résultat est incompatible avec un régime stable sur ces fenêtres.
+
+La lecture par tranches et le compteur O(1) en cours d'intégration suppriment une **copie Python non facturée de l'inventaire complet avant chaque tranche** dans le chemin incrémental. Ils ne réduisent **pas** les UC normatives de scan, qui demeurent dues pour chaque épisode réellement examiné. On ne doit donc **pas** attendre d'eux une stabilisation du backlog. Une évolution payante de l'index des candidats éligibles, exactement équivalente à la politique de rang actuelle, nécessiterait une étude distincte et des tests de causalité/snapshot et de budget.
+
+Les validations sur le code de la correction de lecture et de la classification des vies restent à vérifier séparément ; ne pas reporter les résultats `ed6332f` comme preuve de leur passage CI.

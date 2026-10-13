@@ -46,7 +46,12 @@ class IncrementalPaidSelectionTests(unittest.TestCase):
             budget=ConsolidationWorkBudget(cfg)
             budget.begin_period(period_ref=f"period:{i}",entry_step=20+i)
             budget.begin_step(world_step=20+i)
-            paid=scan.advance(budget=budget, episodes=episodes,selector=selector)
+            def paid_slice(lo, hi):
+                self.assertEqual(budget.consumed_step_uc, (hi - lo))
+                return episodes[lo:hi]
+            paid=scan.advance(
+                budget=budget, episode_count=len(episodes),
+                read_paid_slice=paid_slice, selector=selector)
             self.assertEqual(paid, (3,3,2)[i])
             self.assertEqual(budget.consumed_step_uc,paid)
             if i<2:
@@ -64,6 +69,38 @@ class IncrementalPaidSelectionTests(unittest.TestCase):
         actual=scan.finalize(selector=selector)
         self.assertEqual(actual.episode_refs,full.episode_refs)
         self.assertFalse(scan.active)
+
+    def test_insufficient_budget_never_reads_episodic_payload(self):
+        policy = BatchSelectionPolicy(
+            version="issue133-no-unpaid-scan-v1", maximum_episodes=1,
+            consequence_reference=1.0, surprise_reference=1.0,
+            recency_window_steps=8, repetition_reference=1,
+            weight_consequence=1.0, weight_surprise=1.0,
+            weight_recency=1.0, weight_repetition=1.0,
+            ageing_gain_per_step=0.1, scan_uc_per_episode=1,
+        )
+        cfg = ConsolidationBudgetConfig(
+            version="issue133-zero-work-v1", step_slot_uc=0,
+            period_capacity_uc=0, operation_costs={"episode_scan": 1})
+        work = ConsolidationWorkBudget(cfg)
+        work.begin_period(period_ref="period:zero", entry_step=20)
+        work.begin_step(world_step=20)
+        cut = ConsolidationCut(world_step=20, journal_index=0,
+            journal_event_id="start", journal_hash="00"*32,
+            history_version="h:birth")
+        scanner = IncrementalChargedSelection(policy_version=policy.version)
+        scanner.begin(cut=cut, total=2, already_consolidated=())
+        reads = []
+        def forbidden_read(lo, hi):
+            reads.append((lo, hi))
+            raise AssertionError("unpaid episodic data was accessed")
+        self.assertEqual(scanner.advance(
+            budget=work, episode_count=2,
+            read_paid_slice=forbidden_read,
+            selector=ConsolidationBatchSelector(policy)), 0)
+        self.assertEqual(reads, [])
+        self.assertEqual(scanner.cursor, 0)
+        self.assertEqual(work.consumed_step_uc, 0)
 
     def test_snapshot_and_price_fail_closed(self):
         scan=IncrementalChargedSelection(policy_version="v1")

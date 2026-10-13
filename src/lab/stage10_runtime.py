@@ -460,9 +460,16 @@ class Stage10Runtime(Stage9Runtime):
                     raise RuntimeError("history changed during frozen scan")
                 cut = scanner.cut
             else:
-                episodes = self.memory.episodes
-                if not episodes:
-                    return
+                # Incremental selection may read O(1) episode-count metadata
+                # before billing; materialize autobiographical payloads only
+                # after the corresponding bounded P-42 debit.
+                if scanner is not None:
+                    if self.memory.episode_count == 0:
+                        return
+                else:
+                    episodes = self.memory.episodes  # legacy full-scan mode
+                    if not episodes:
+                        return
                 anchor = next((
                     e for e in reversed(self.journal.entries)
                     if e.causal_event.get("kind") == "step_opened"
@@ -477,7 +484,7 @@ class Stage10Runtime(Stage9Runtime):
                 )
                 if scanner is not None:
                     scanner.begin(
-                        cut=cut, total=len(episodes),
+                        cut=cut, total=self.memory.episode_count,
                         already_consolidated=tuple(
                             self.slow_history.read_committed()["consolidated_episode_refs"]
                         ),
@@ -488,7 +495,9 @@ class Stage10Runtime(Stage9Runtime):
             if scanner is not None:
                 count = scanner.advance(
                     budget=self.consolidation_work,
-                    episodes=self.memory.episodes, selector=selector,
+                    episode_count=self.memory.episode_count,
+                    read_paid_slice=self.memory.read_episodes_range,
+                    selector=selector,
                 )
                 if count:
                     self._write(kind="stage10_consolidation_scan_checkpointed",
