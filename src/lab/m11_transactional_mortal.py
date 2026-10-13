@@ -27,6 +27,10 @@ from .mortal_execution import MortalStatus
 from .sqlite_life_store import SQLiteLifeLedger, RecoveryBlocked
 from .sqlite_runtime_custody import capture_registered_current_state
 
+# Identity token: only M11, after checking current SQLite generation and a
+# never-run detached Stage12 factory, may initialize its cold private owner.
+_M11_COLD_OWNER_TOKEN = object()
+
 
 def _copy_private_runtime(runtime: Any) -> Any:
     """Clone registered runtime with frozen mapping proxies shared read-only.
@@ -254,7 +258,12 @@ def _install_trusted_current_on_fresh(
     current_owner_ids = {o.owner_id: o for o in runtime.causal_owners}
     for key, value in image["owners"].items():
         owner = current_owner_ids[key]
-        owner.restore_causal_state(deepcopy(value))
+        if (key == "metacognition_health"
+                and getattr(runtime, "_m11_sqlite_custody", False)):
+            owner.install_m11_cold_state(
+                deepcopy(value), capability=_M11_COLD_OWNER_TOKEN)
+        else:
+            owner.restore_causal_state(deepcopy(value))
     # Complete ledger bytes correspond to the current *generation*, not any
     # selected historical snapshot. The new world has never executed a step.
     boundary = runtime.stage3.substrate._mortal_boundary

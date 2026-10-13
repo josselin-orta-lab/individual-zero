@@ -6,6 +6,7 @@ new source of motor authority. Owner provenance stays in I0's causal journal.
 """
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import replace
 from math import isfinite
 
@@ -88,6 +89,53 @@ class _Stage12MetacognitionCustody:
                 else dict(self.last_goal_deficit)
             ),
         }
+
+    def install_m11_cold_state(self, state: object, *, capability: object) -> None:
+        """Verify SQLite-owned current generation on a never-run private owner.
+
+        Public restore_causal_state remains equality-only, including on every
+        active Stage12 runtime. M11 must authenticate the entire current
+        SQLite image BEFORE granting the narrow cold-import capability.
+        """
+        from .m11_transactional_mortal import _M11_COLD_OWNER_TOKEN
+        if capability is not _M11_COLD_OWNER_TOKEN:
+            raise ValueError("untrusted Stage12 cold state installer")
+        if getattr(self, "_m11_cold_installed", False):
+            raise ValueError("Stage12 current generation already installed")
+        initial = self.export_causal_state()
+        if (type(state) is not dict or set(state) != set(initial)
+                or state.get("schema") != self.schema
+                or state["last_visible_goal_deficit"] is not None
+                and (type(state["last_visible_goal_deficit"]) is not dict
+                     or set(state["last_visible_goal_deficit"]) !=
+                     {"goal_ref", "deficit", "world_step"})):
+            raise ValueError("invalid Stage12 cold owner image")
+        deficit = state["last_visible_goal_deficit"]
+        if deficit is not None:
+            if (type(deficit["goal_ref"]) is not str or not deficit["goal_ref"]
+                    or type(deficit["world_step"]) is not int
+                    or deficit["world_step"] < 1
+                    or type(deficit["deficit"]) not in (int, float)
+                    or not isfinite(deficit["deficit"]) or deficit["deficit"] < 0):
+                raise ValueError("invalid last observed current goal deficit")
+        # Validate everything on a detached owner first, then import into the
+        # same actual subowner instances held by other Stage12 runtime facets.
+        staged = deepcopy(self)
+        staged.previous.restore_causal_state(deepcopy(
+            state["prior_metacognition_and_sleep"]))
+        staged.detectors.restore_causal_state(deepcopy(state["lived_detectors"]))
+        staged.alerts.restore_causal_state(deepcopy(state["operator_alert_ledger"]))
+        staged.goal_progress.restore_causal_state(deepcopy(state["lived_goal_progress"]))
+        staged.last_goal_deficit = deepcopy(deficit)
+        if canonical_causal_bytes(staged.export_causal_state()) != canonical_causal_bytes(state):
+            raise ValueError("Stage12 cold owner image did not validate exactly")
+        self.previous.restore_causal_state(deepcopy(
+            state["prior_metacognition_and_sleep"]))
+        self.detectors.restore_causal_state(deepcopy(state["lived_detectors"]))
+        self.alerts.restore_causal_state(deepcopy(state["operator_alert_ledger"]))
+        self.goal_progress.restore_causal_state(deepcopy(state["lived_goal_progress"]))
+        self.last_goal_deficit = deepcopy(deficit)
+        self._m11_cold_installed = True
 
     def restore_causal_state(self, state: object) -> None:
         # An active autonomous mortal cannot turn an old diagnostic snapshot
