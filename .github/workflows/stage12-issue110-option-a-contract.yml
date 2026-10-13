@@ -7,6 +7,9 @@ on:
       - 'src/i0/modules/stage12_spatial_cue_policy.py'
       - 'tests/test_stage12_spatial_cue_policy.py'
       - 'tests/test_stage12_spatial_cue_worldbody.py'
+      - 'src/lab/stage12_spatial_cue_audit.py'
+      - 'src/lab/stage3_runtime.py'
+      - 'tests/test_stage12_spatial_cue_audit.py'
       - '.github/workflows/stage12-issue110-option-a-contract.yml'
   workflow_dispatch:
 permissions:
@@ -37,5 +40,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_stage12_spatial_cue_policy.py' -v
           python -m unittest discover -s tests -p 'test_stage12_spatial_cue_worldbody.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_spatial_cue_audit.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency_runtime.py' -v
           python -m unittest discover -s tests -p 'test_stage12_goal_agency.py' -v
           python -m unittest discover -s tests -p 'test_stage12_attribution_pairs.py' -v
