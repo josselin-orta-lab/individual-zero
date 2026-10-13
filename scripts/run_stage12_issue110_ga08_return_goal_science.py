@@ -167,6 +167,9 @@ def build_autonomous_life(
 
 
 def run_life(folder: Path, *, label: str) -> dict:
+    kind, condition = label.split("_")
+    spatial_enabled = condition == "spatial"
+    home = Position(2, 2)
     life, config, layout, equipment = build_autonomous_life(
         label=label, wal_path=str(folder / "life.wal"),
     )
