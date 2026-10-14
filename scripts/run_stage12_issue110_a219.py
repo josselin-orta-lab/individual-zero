@@ -52,6 +52,32 @@ def proposed_reconsideration(*, original, before, after, command, cue_ref):
     }
 
 
+class LabRevisionLedger:
+    """Separate append-only lab record; it cannot mutate the agency owner."""
+
+    def __init__(self):
+        self._events = []
+        self._keys = set()
+        self._cue_refs = set()
+
+    def append(self, event):
+        if event["revision"] == "no_revision":
+            return None
+        key = (event["original_assessment_ref"], event["followup_cue_ref"])
+        if (key in self._keys or event["followup_cue_ref"] in self._cue_refs
+                or any(item["original_assessment_ref"] == event["original_assessment_ref"]
+                       for item in self._events)):
+            raise ValueError("duplicate or inconsistent revision source")
+        self._keys.add(key)
+        self._cue_refs.add(event["followup_cue_ref"])
+        self._events.append(dict(event))
+        return dict(event)
+
+    @property
+    def events(self):
+        return tuple(dict(item) for item in self._events)
+
+
 def trial(config, seed, cause, followup):
     rng = random.Random(seed * 991)
     origin = Position(rng.randint(5, 18), rng.randint(5, 18))
@@ -109,6 +135,16 @@ def trial(config, seed, cause, followup):
     )
     expected = "reconsider_to_unknown" if followup == "passive_displacement" else "no_revision"
     assert new["revision"] == expected
+    ledger = LabRevisionLedger()
+    ledger.append(new)
+    assert len(ledger.events) == int(expected == "reconsider_to_unknown")
+    if expected == "reconsider_to_unknown":
+        try:
+            ledger.append(new)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("duplicate revision admitted")
     assert owner.last_judgement == judgment
     assert owner.export_causal_state()["last_judgement"] == judgment.as_dict()
     return {
@@ -118,7 +154,7 @@ def trial(config, seed, cause, followup):
             sha256_hex(canonical_causal_bytes(asdict(x))) for x in (before, middle, after)
         ],
         "commitment": assessment.as_dict(), "original_judgement": judgment.as_dict(),
-        "revision_probe": new,
+        "revision_probe": new, "lab_revision_events": ledger.events,
         "transitions": [
             {"step": 1, "sha256": sha256_hex(canonical_causal_bytes(transition1.as_dict())),
              "effects": dict(transition1.effects), "post_command_position": actual_after_command},
