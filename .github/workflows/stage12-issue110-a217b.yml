@@ -1,0 +1,38 @@
+name: Stage12 A2.17b proximal and distal agency physical contrasts
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_a217b.py'
+      - 'docs/research/stage12-issue110-a217b-proximal-distal-prereg-2026-10-14.fr.md'
+      - 'docs/research/stage12-issue110-a217b-proximal-distal-results-2026-10-14.fr.md'
+      - '.github/workflows/stage12-issue110-a217b.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  physically-observed-collection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Compare proximal inventory cue with distal food confounders
+        run: |
+          python scripts/run_stage12_issue110_a217b.py --output-dir /tmp/a217b
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-a217b-py${{ matrix.python-version }}
+          path: /tmp/a217b
+          retention-days: 30
+          if-no-files-found: warn
