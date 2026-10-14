@@ -17,6 +17,8 @@ POINTS = ("after_intent","before_private_execution","after_private_execution",
 IDENTITY = "m11:stage12:a223:life"
 
 def fresh():
+    tests_dir=str(Path(__file__).resolve().parents[1]/"tests")
+    if tests_dir not in sys.path:sys.path.insert(0,tests_dir)
     from test_stage12_mortal_runtime import stage12_runtime
     return stage12_runtime(None,m11_sqlite_custody=True)
 
