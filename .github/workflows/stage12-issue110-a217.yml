@@ -1,0 +1,43 @@
+name: Stage12 Issue110 A2.17 physical first-person cues
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_a217_cue_contrasts.py'
+      - 'docs/research/stage12-issue110-a217-perceptual-causal-contrasts-prereg-2026-10-14.fr.md'
+      - 'docs/research/stage12-issue110-a217-perceptual-causal-contrasts-results-2026-10-14.fr.md'
+      - '.github/workflows/stage12-issue110-a217.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  physical-first-person-contrasts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Physical contrast and first-person judgement matrix
+        run: |
+          python scripts/run_stage12_issue110_a217_cue_contrasts.py \
+            --output-dir /tmp/a217-physical > /tmp/a217.log 2>&1 \
+            || { tail -n 100 /tmp/a217.log; exit 2; }
+          grep 'A217_SUMMARY' /tmp/a217.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-a217-py${{ matrix.python-version }}
+          path: |
+            /tmp/a217-physical
+            /tmp/a217.log
+          retention-days: 30
+          if-no-files-found: warn
