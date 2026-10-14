@@ -23,14 +23,19 @@ class ScenarioEvent:
     sequence: int
     operation: str
     payload: Mapping[str, object]
+    phase: str = "before_step"
 
     def as_dict(self) -> dict[str, object]:
-        return {
+        data = {
             "t_monde": self.t_monde,
             "sequence": self.sequence,
             "operation": self.operation,
             "payload": deepcopy(dict(self.payload)),
         }
+        # Do not rewrite canonical historical schedules or journal payloads.
+        if self.phase != "before_step":
+            data["phase"] = self.phase
+        return data
 
 
 class ScenarioInputRejected(ValueError):
@@ -67,6 +72,7 @@ class InjectedScenario:
                 or event.sequence < 0
                 or not isinstance(event.operation, str)
                 or not event.operation.strip()
+                or event.phase not in ("before_step", "after_admission")
                 or not isinstance(event.payload, Mapping)
             ):
                 raise ValueError("malformed external scenario event schema")
@@ -86,9 +92,15 @@ class InjectedScenario:
                 sequence=event.sequence,
                 operation=event.operation,
                 payload=deepcopy(dict(event.payload)),
+                phase=event.phase,
             )
             for event in sorted(
-                checked, key=lambda row: (row.t_monde, row.sequence),
+                checked,
+                key=lambda row: (
+                    row.t_monde,
+                    0 if row.phase == "before_step" else 1,
+                    row.sequence,
+                ),
             )
         )
         if len({(e.t_monde, e.sequence) for e in self._events}) != len(self._events):
@@ -120,6 +132,8 @@ class InjectedScenario:
         applied: list[ScenarioEvent] = []
         while self._next_index < len(self._events):
             event = self._events[self._next_index]
+            if event.t_monde == t_monde and event.phase == "after_admission":
+                raise RuntimeError("after-admission scenario requires mortal dispatch")
             if event.t_monde != t_monde:
                 if event.t_monde > t_monde:
                     break
@@ -245,6 +259,7 @@ class InjectedScenario:
 
     def apply_for_step_irreversible(
         self, *, t_monde: int, world: WorldBody,
+        phase: str = "before_step",
     ) -> tuple[ScenarioEvent, ...]:
         """Prepare a whole external batch privately, then commit without rewind.
 
@@ -260,6 +275,8 @@ class InjectedScenario:
             raise RuntimeError("halted external scenario cannot continue")
         if type(t_monde) is not int or t_monde < 1:
             raise ValueError("invalid scenario world step")
+        if phase not in ("before_step", "after_admission"):
+            raise ValueError("unknown external-input application phase")
         start = self._next_index
         due: list[ScenarioEvent] = []
         for event in self._events[start:]:
@@ -267,6 +284,10 @@ class InjectedScenario:
                 break
             if event.t_monde < t_monde:
                 raise RuntimeError("scenario event was skipped before application")
+            if event.phase != phase:
+                if phase == "before_step" and event.phase == "after_admission":
+                    break
+                raise RuntimeError("earlier external input phase was skipped")
             due.append(event)
         if not due:
             return ()
@@ -299,6 +320,8 @@ class InjectedScenario:
                         "sequence": event.sequence,
                         "operation": event.operation,
                         "payload": deepcopy(dict(event.payload)),
+                        **({"phase": event.phase}
+                           if event.phase != "before_step" else {}),
                     },
                 )
 
@@ -323,6 +346,8 @@ class InjectedScenario:
                         "scenario_version": self._version,
                         "t_monde": event.t_monde,
                         "sequence": event.sequence,
+                        **({"phase": event.phase}
+                           if event.phase != "before_step" else {}),
                     },
                 )
             return tuple(deepcopy(event) for event in due)
