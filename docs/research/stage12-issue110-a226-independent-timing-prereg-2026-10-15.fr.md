@@ -1,0 +1,19 @@
+# A2.26 : réplication temporelle indépendante de la confusion d'objectif alimentaire
+
+**Préenregistrement 15 octobre 2026, avant code A2.26**. Base main `17afd70cc4077cedd2813f01c7df6eefcbc856ba`, Stage12 PARTIAL, #110 OPEN. Les échecs A2.25 étant connus, cette expérience est une **réplication confirmatoire informée**, et non une découverte aveugle.
+
+## Plan figé
+
+**24 vies autonomes mortelles**, trois profils préexistants `restored`, `sustained`, `episodic`, deux conditions d'obstacle `free` / `A2`, quatre calendriers extérieurs : `none`, `pulse_t4`, `pulse_t6`, `pulse_t8`. Chaque vie exécute jusqu'à **32 commandes choisies par I0**. Les pulses imposent `set_body(food=75)` avant le pas indiqué. La valeur 75 diffère de l'essai A2.25 (80). Les pulses sont préengagés avant naissance et indépendants de toute action. Le retrait d'obstacle a lieu avant pas 4, identique pour tous les bras A2. Toutes les autres options cognitives sont celles d'A2.25. Aucun Oracle, aucun changement au runtime, au WAL, à l'UC, à l'architecture ni à la norme v1.3.1.
+
+**Contrôles prospectifs :** 24 naissances/au maximum 768 vrais pas ; 18 pulses prévus (3 profils × 2 obstacles × 3 calendriers), seulement si les vies atteignent le pas concerné ; zéro événement exogène dans les 6 témoins `none`. Chaque pulse doit avoir une paire `external_input_received/applied` valide et être appliqué avant capture locale du pas. Il n'est jamais un succès auto-causé.
+
+## Audit temporel externe sans dilution des refus
+
+Le journal canonique, WAL durable, événements physiques, captures, critères préengagés, suivis de progression, jugements d'agence et paires GA-06 sont conservés par vie. Les auditeurs indépendants existants sont exécutés **sans modification**. La nouvelle classification externe relie un suivi alimentaire (intention pas `t`, observation `t+1`) aux transitions et aux entrées exogènes dans l'intervalle ouvert/fermé. Le verdict explicite : `verified_original_audit`, `fail_closed_exogenous_intervened` (seulement en présence d'une intervention reçue/appliquée à `t+1` entre transition et perception, avec divergence et rejet exact de l'auditeur), ou `unexpected_failure` (CI rouge).
+
+Les succès du suivi refusé ne sont **jamais** comptés comme vérifiés. Les statistiques GA-06 proviennent uniquement des vies qui passent l'intégralité de leurs audits et restent séparées par vie : aucune agrégation ne crée une fenêtre de 12, seuil `2+2/12` inchangé. Les ingestions effectives et les changements corporels exogènes restent des catégories distinctes, leurs éventuelles coexistences sont rapportées comme confondues.
+
+**T1** 24 naissances réelles, commandes autonomes, WAL et journal concordants, zéro reprise des morts. **T2** 18 pulses au maximum avec vrais reçus et état physique observé ; toute absence non expliquée est FAIL. **T3** tout refus par l'auditeur original doit correspondre à une intervention de la bonne fenêtre de suivi, et jamais à une observation antérieure ou une falsification sans cause admissible. **T4** n'attribuer aucune modification corporelle exogène à une commande ni à un objectif. **T5** publier les taux de suivi non vérifiables par calendrier et par profil sans changer les critères après coup, y compris si **zéro** refus est reproduit. **T6** CI Python 3.11/3.12 sur la même cohorte ; les versions ne doublent pas les vies. **T7** aucune modification de production, ni crédit scientifique GA-06 artificiel ; Stage12 PARTIAL et #110 OPEN.
+
+Les effets sur la trajectoire autonome ne sont pas des effets isolés de l'intervention : celle-ci peut infléchir les besoins et les commandes ultérieures. Un résultat technique positif ne permet ni de prouver la responsabilité distale de l'individu, ni de modifier le contrat normatif. La séparation *agence proximale / résultat distal* reste une décision explicite de l'opérateur.
