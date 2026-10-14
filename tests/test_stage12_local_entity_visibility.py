@@ -13,7 +13,6 @@ class LocalEntitiesOnly(unittest.TestCase):
                        (Position(3,2),"berry_b",2),
                        (Position(2,2),"wood",1)),
             water_sources=frozenset({Position(9,9),Position(2,3)}),
-            shelters=frozenset({Position(8,8),Position(2,2)}),
             creatures=frozenset({Position(7,7),Position(1,2)}),
         ))
         local=body.capture_local(t_monde=1)
