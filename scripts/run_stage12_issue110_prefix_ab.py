@@ -146,6 +146,25 @@ def one(root, profile, obstacle, cohort, progressive):
             if trace.get("option_ref")==opt]
         planned["registrations"]=registration
         planned["competition_traces"]=competition
+    for entry in plan_trace:
+        if not entry["segment_proposed"]:
+            continue
+        opt=entry["proposal_ref"]
+        t=entry["t_monde"]
+        entry["admission_receipts"]=[
+            {"kind":e.get("kind"),"data":e.get("data",{})}
+            for e in events if e.get("t_monde")==t
+            and e.get("kind") in ("command_admitted","command_vetoed")
+            and e.get("data",{}).get("option_ref")==opt
+        ]
+        entry["stage8_evaluation"]=[
+            {"status":e.get("data",{}).get("status"),
+             "simulated_value":e.get("data",{}).get("simulated_value"),
+             "evidence":e.get("data",{}).get("evidence")}
+            for e in events if e.get("t_monde")==t
+            and e.get("kind")=="stage8_option_evaluation"
+            and e.get("data",{}).get("option_ref")==opt
+        ]
     (folder/"progressive-search-trace.json").write_text(
         json.dumps(plan_trace,indent=2,sort_keys=True)+"\n")
     anchors=dict(expected_head=life.journal.head_hash,expected_count=len(life.journal.entries))
