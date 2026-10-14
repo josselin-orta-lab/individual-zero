@@ -187,7 +187,8 @@ def attacks(rows):
         # A5: remove source capture and rehash.
         forged = deepcopy(base)
         forged["captures"].pop()
-        probe("truncate", candidate_rebuild(forged))
+        # A missing capture is structurally invalid; it cannot be rebuilt as a valid episode.
+        probe("truncate", forged)
         # A6: permute observations and rehash.
         forged = deepcopy(base)
         forged["captures"][1], forged["captures"][2] = (
