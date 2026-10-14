@@ -1,0 +1,43 @@
+name: Stage12 Issue110 A2.17b confounded physical agency
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_a217b_confounded_relocation.py'
+      - 'docs/research/stage12-issue110-a217b-confounded-relocation-prereg-2026-10-14.fr.md'
+      - 'docs/research/stage12-issue110-a217b-confounded-relocation-results-2026-10-14.fr.md'
+      - '.github/workflows/stage12-issue110-a217b.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  confounded-physical-agency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Twenty-four genuine physical command attempts with external relocation
+        run: |
+          python scripts/run_stage12_issue110_a217b_confounded_relocation.py \
+            --output-dir /tmp/a217b-physical > /tmp/a217b.log 2>&1 \
+            || { tail -n 100 /tmp/a217b.log; exit 2; }
+          grep 'A217B_SUMMARY' /tmp/a217b.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-a217b-py${{ matrix.python-version }}
+          path: |
+            /tmp/a217b-physical
+            /tmp/a217b.log
+          retention-days: 30
+          if-no-files-found: warn
