@@ -19,6 +19,7 @@ def audit_folder(root: Path):
                 "world_steps":stepped["step_closed"],
                 "first_local_berry":None,"local_berry_steps":[],
                 "berry_st_steps":[],
+                "current_cell_observations_unverified_by_capture_receipt":[],
                 "incomplete_model_steps":[],
                 "verified_eats":sum(e["kind"]=="world_transition_experienced"
                     and bool(e.get("effects",{}).get("ate")) for e in events)}
@@ -45,9 +46,20 @@ def audit_folder(root: Path):
                         raise ValueError("malformed berry observation reference")
                     berry, x, y, t, cycle=parts[1:]
                     authored=int(t)
-                    if (authored > e["t_monde"] or
-                        (berry,int(x),int(y),authored) not in witnessed):
-                        raise ValueError("S_t berry without prior local perceptual witness")
+                    source=captured.get(authored)
+                    if authored > e["t_monde"] or source is None:
+                        raise ValueError("future or missing source perceptual capture")
+                    if (berry,int(x),int(y),authored) not in witnessed:
+                        # The public GA capture receipt carries neighbor
+                        # resources but no current_resources array. An entity
+                        # on the body's CURRENT cell can be truly perceived,
+                        # but not verified as present with this receipt alone.
+                        at=source["position"]
+                        if (int(x),int(y)) != (at["x"],at["y"]):
+                            raise ValueError("S_t berry without local position proof")
+                        marker=[authored,berry,int(x),int(y)]
+                        if marker not in result["current_cell_observations_unverified_by_capture_receipt"]:
+                            result["current_cell_observations_unverified_by_capture_receipt"].append(marker)
                     # TTL can retain a genuine earlier observation, but it
                     # does not certify continued resource availability.
                     if e["t_monde"] not in result["berry_st_steps"]:
