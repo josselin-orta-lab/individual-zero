@@ -295,10 +295,26 @@ def audit_stage12_attribution_pairs(
         else:
             raise ValueError("unknown missing attribution sample reason")
         unavailable_refs.add(data["pair_ref"])
-    # Pending from last physical step is legal: no postmortem update.
+    # An unconsumed pair may remain pending after its deadline ONLY when
+    # every intervening physical step was genuinely asleep. The expiry receipt
+    # is legally published at the next waking diagnostic, never fabricated at
+    # the end of an experiment, on death, or during reduced sleep. A later
+    # awake capture, refused diagnostic or missing sleep receipt still fails.
     for ref, (_i, _data, event) in pairs.items():
-        if (ref not in seen_pair_refs and ref not in unavailable_refs
-                and base.world_steps_closed > event["t_monde"]):
+        if ref in seen_pair_refs or ref in unavailable_refs:
+            continue
+        sent = event["t_monde"]
+        if base.world_steps_closed <= sent:
+            continue  # no next physical step yet
+        sleeping_suffix = all(
+            step in closed_steps
+            and reduced_sleep_steps.get(step) == 1
+            and step not in full_capture_steps
+            and step not in diagnostic_steps
+            and step not in deferred_steps
+            for step in range(sent + 1, base.world_steps_closed + 1)
+        )
+        if not sleeping_suffix:
             raise ValueError("admitted pair missing next-step diagnostic admission")
     applied = [pairs[ref][1] for ref in seen_pair_refs]
     return Stage12AttributionPairAudit(
