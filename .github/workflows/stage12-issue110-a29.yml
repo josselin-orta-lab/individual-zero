@@ -1,0 +1,48 @@
+name: Stage12 Issue110 A2.9 obstacle recovery
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_a29.py'
+      - 'docs/research/stage12-issue110-a29-perturbation-recovery-prereg-2026-10-14.fr.md'
+      - '.github/workflows/stage12-issue110-a29.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  a29-physical-obstacle-timing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Verify physical and A2 causal audit contracts
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_a2_causal_audit.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_a28_extrinsic_gain.py' -v
+      - name: Preregistered 16 physical lives contrasting obstacle removal
+        env:
+          COHORT: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/run_stage12_issue110_a29.py \
+            --output-dir /tmp/i0-a29-results --cohort-id "$COHORT" \
+            > /tmp/i0-a29.log 2>&1 || { tail -n 120 /tmp/i0-a29.log; exit 2; }
+          grep 'A29_SUMMARY' /tmp/i0-a29.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-a29-py${{ matrix.python-version }}
+          path: |
+            /tmp/i0-a29-results
+            /tmp/i0-a29.log
+          retention-days: 30
+          if-no-files-found: warn
