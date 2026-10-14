@@ -46,10 +46,14 @@ def short_life(revalidate):
 
 class FreshCaptureTests(unittest.TestCase):
     def test_config_guard(self):
-        life, _, _, _ = build_life(
-            "near_food_free", 70.0, "horizon_three",
-            progressive_planning=True, progressive_evaluation_prefix=True)
-        cfg = life.planning._config
+        with TemporaryDirectory() as root:
+            life, _, _, _ = build_life(
+                "near_food_free", 70.0, "horizon_three",
+                wal_path=str(Path(root) / "config-life.wal"),
+                birth_life_id="i0:110:a27:config-guard",
+                progressive_planning=True,
+                progressive_evaluation_prefix=True)
+            cfg = life.planning._config
         with self.assertRaises(ValueError):
             replace(cfg, progressive_revalidate_on_new_capture=1).validate()
         with self.assertRaises(ValueError):
