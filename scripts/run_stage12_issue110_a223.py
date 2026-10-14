@@ -53,8 +53,10 @@ def inspect(db,point):
     assert causal["emitter"]=="stage3-runtime" and causal["t_monde"]==1
     assert isinstance(causal["attempt_ref"],str) and causal["attempt_ref"]
     assert data["capture_t_monde"]==1
-    assert data["agency_capture_schema"]=="stage12-first-person-cue-v1"
-    assert set(("position","agency_visible_inventory","agency_visible_adjacent"))<=set(data)
+    assert set(("capture_t_monde","position","adjacent_creature_count"))<=set(data)
+    assert data.get("agency_capture_schema") is None
+    # The baseline M11 Stage12 factory does not opt in to subjective agency.
+    # This is a durable legacy capture witness, NOT evidence of an enabled agency cue.
     closing=[j for j,r in enumerate(rows) if r["causal_event"].get("kind")=="step_closed"]
     assert len(closing)==1 and i<closing[0]
     assert rows[-1]["event_hash"]==audit.journal_head and len(rows)==audit.journal_count
