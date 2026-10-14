@@ -83,7 +83,7 @@ def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> di
         version="stage12-issue110-food-world-v1",
         initial_body=replace(
             s11.world.config.initial_body,
-            water=(70.0 if world_name.startswith("near_food") else 20.0),
+            water=water,
             food=(35.0 if world_name.startswith("near_food") else 70.0),
         ),
         berry_effects={**s11.world.config.berry_effects,
@@ -299,7 +299,10 @@ def main() -> int:
     proc=subprocess.run(["git","rev-parse","HEAD"],cwd=ROOT,capture_output=True,text=True,check=True)
     rows=[]
     for name in WORLDS:
-        for water in INITIAL_WATERS:
+        for baseline_water in INITIAL_WATERS:
+            # Never label water-goal lives as water70 when their actual
+            # preregistered initial physical water was 20.
+            water = baseline_water if name.startswith("near_food") else 20.0
             for sleep in SLEEP_PROFILES:
                 label=f"{name}-water{int(water)}-{sleep}"
                 sub=root/label
