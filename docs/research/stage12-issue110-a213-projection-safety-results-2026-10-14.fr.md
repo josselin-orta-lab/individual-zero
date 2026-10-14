@@ -6,7 +6,7 @@
 
 Exécution première : [CI #38619899657](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38619899657), **SUCCESS Python 3.11 et 3.12** ; 6 familles de contre-exemples ×8 seeds (41 à 48) = **48 paires / 96 mondes physiques distincts**. Les expériences ne sont pas 96 vies cognitives, ni 600 pas autonomes. Entrées `SimulationState` construites uniquement depuis `WorldBody.capture_local` et `telemetry` ; conséquences via `WorldBody.apply`, avec états avant/après, commande, inventaire et effets physiques conservés. Le banc externe seul connaît la modification de toxicité et les dangers cachés. Aucun appel Oracle, aucune vérité externe dans l'agent.
 
-**Correction méthodologique après première exécution :** les seize contrastes de cause cachée ont le **même input observable complet**, mais des effets physiques différents. Cette ambiguïté irréductible ne doit **pas** compter comme une contradiction *créée* par une projection supprimant un champ. Le rapporteur et le test distinguent désormais `contradictory_outcome_collision` (input complet initialement différent, projection devenue identique, effet différent) de `irreducible_hidden_ambiguity` (même input complet, effets incompatibles). Cette correction n'a changé aucune physique, aucune entrée, aucune commande et aucun résultat ; une nouvelle CI avec le classifieur corrigé est requise avant de clore ce rapport.
+**Correction méthodologique après première exécution :** les seize contrastes de cause cachée ont le **même input observable complet**, mais des effets physiques différents. Cette ambiguïté irréductible ne doit **pas** compter comme une contradiction *créée* par une projection supprimant un champ. Le rapporteur et le test distinguent désormais `contradictory_outcome_collision` (input complet initialement différent, projection devenue identique, effet différent) de `irreducible_hidden_ambiguity` (même input complet, effets incompatibles). Cette correction n'a changé aucune physique, aucune entrée, aucune commande et aucun résultat. **Le rejeu corrigé [#38620303210](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38620303210) confirme les mêmes résultats sous Python 3.11 et 3.12.**
 
 ## Observations confirmées par la première CI
 
@@ -19,6 +19,18 @@ Dans les 48 paires réelles, les six familles fournissent les différences physi
 - **HIDDEN_TOXICITY** et **HIDDEN_EXTERNAL_HAZARD** : **16/16 paires d'entrées observables complètes identiques avec conséquences physiques différentes**, reflétant respectivement une toxicité du fruit ou un danger ambiant invisible. Le banc peut les distinguer, I0 ne le peut pas sur ce seul état. Interdiction de transférer les étiquettes du banc dans Equipment/Safety/attribution.
 
 **Les taux ne sont pas des fréquences de danger naturel.** La matrice est volontairement adversariale et appariée. Un échec sous une famille suffit à réfuter une équivalence de représentation dans cette classe de contextes. L'absence d'échec ne suffirait pas à démontrer une sûreté universelle.
+
+## Mesures discriminantes après correction
+
+| Projection supprimée | Contradictions **nouvellement induites** par la projection, sur 48 paires | Verdict |
+| --- | ---: | --- |
+| `body` | **8** | UNSAFE |
+| `inventory` | **8** | UNSAFE |
+| `adjacent` | **8** | UNSAFE |
+| `is_night` | **8** | UNSAFE |
+| `x,y` | **0** | INCONCLUSIVE |
+
+Les **16** paires de toxicité cachée ou de danger ambiant invisible ont été maintenues séparément, sous `irreducible_hidden_ambiguity`. Chaque champ mentionné ci-dessus est comparé à entrée et commande initialement différentes et à effets physiques contradictoires : aucune de ces 16 ambiguïtés cachées n'est comptée dans la colonne « nouvellement induites ». Les seeds 41–48 varient reproductiblement le corps et la localisation des mondes d'essai, mais la projection translationnelle ne dispose pas d'une paire physique déplacée en conservant les mêmes relations spatiales et le même corps : **0 collision n'est pas une preuve de sûreté**.
 
 ## Décision scientifique
 
