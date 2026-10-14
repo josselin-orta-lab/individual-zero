@@ -1,0 +1,49 @@
+name: Stage12 Issue110 A2.10b independently observed opportunities
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/audit_stage12_issue110_a210b_opportunities.py'
+      - 'docs/research/stage12-issue110-a210b-opportunity-vs-equipment-prereg-2026-10-14.fr.md'
+      - '.github/workflows/stage12-issue110-a210b.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independent-lived-opportunities:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Generate untouched 16 real mortal lives with local perception
+        env:
+          COHORT: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/run_stage12_issue110_a29.py \
+            --output-dir /tmp/a210b-lives --cohort-id "$COHORT" \
+            > /tmp/a210b-physical.log 2>&1 || { tail -n 120 /tmp/a210b-physical.log; exit 2; }
+          grep A29_SUMMARY /tmp/a210b-physical.log
+      - name: Independent posthoc local perception and equipment opportunity audit
+        run: |
+          python scripts/audit_stage12_issue110_a210b_opportunities.py \
+            --input-dir /tmp/a210b-lives --output /tmp/a210b-audit.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-a210b-py${{ matrix.python-version }}
+          path: |
+            /tmp/a210b-lives
+            /tmp/a210b-physical.log
+            /tmp/a210b-audit.json
+          retention-days: 30
+          if-no-files-found: warn
