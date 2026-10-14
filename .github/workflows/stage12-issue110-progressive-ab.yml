@@ -1,0 +1,45 @@
+name: Issue110 bounded progressive planning A/B
+on:
+  pull_request:
+    branches: [science/stage12-issue110-sleep-window-20261014]
+    paths:
+      - 'src/i0/modules/stage6_planning.py'
+      - 'src/lab/stage6_runtime.py'
+      - 'scripts/run_stage12_issue110_first_planning_state.py'
+      - 'scripts/run_stage12_issue110_progressive_ab.py'
+      - 'tests/test_stage12_progressive_planning.py'
+      - '.github/workflows/stage12-issue110-progressive-ab.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prospective-lives:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Run progressive software contracts
+        run: python -m unittest discover -s tests -p 'test_stage12_progressive_planning.py' -v
+      - name: Run eight independent prospective lives
+        env:
+          COHORT: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/run_stage12_issue110_progressive_ab.py \
+            --output-dir /tmp/progressive-ab --cohort-id "$COHORT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue110-progressive-py${{ matrix.python-version }}
+          path: /tmp/progressive-ab
+          retention-days: 30
+          if-no-files-found: warn

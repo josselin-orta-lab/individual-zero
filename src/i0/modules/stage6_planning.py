@@ -48,12 +48,20 @@ class Stage6PlanningConfig:
     max_depth: int
     revision_delta: float
     setpoints: Mapping[str, float]
+    progressive_subgoals: bool = False
+    progressive_evaluation_prefix: bool = False
 
     def validate(self) -> None:
         if not self.version:
             raise ValueError("Stage-6 planning config version must not be empty")
         if self.option_ttl_steps < 1:
             raise ValueError("option TTL must be >= 1")
+        if type(self.progressive_subgoals) is not bool:
+            raise ValueError('progressive_subgoals must be bool')
+        if type(self.progressive_evaluation_prefix) is not bool:
+            raise ValueError('progressive_evaluation_prefix must be bool')
+        if self.progressive_evaluation_prefix and not self.progressive_subgoals:
+            raise ValueError('prospective prefix requires progressive_subgoals')
         if self.max_depth < 1:
             raise ValueError("planning max depth must be >= 1")
         if self.revision_delta < 0.0:
@@ -64,11 +72,12 @@ class Stage6PlanningConfig:
 
 @dataclass(frozen=True, slots=True)
 class PlanningSearchResult:
-    status: str  # plan_found | incomplete_model | not_found_within_horizon
+    status: str  # plan_found | partial_progress | incomplete_model | not_found_within_horizon
     commands: tuple[PrimitiveCommand, ...]
     predictions: tuple[EquipmentPrediction, ...]
     expanded_states: int
     unavailable_edges: int
+    partial_progress: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,6 +102,24 @@ class SimulatorPlanner:
         self._current_plan: Plan | None = None
         self._current_proposal: OptionProposal | None = None
         self._revision_required_option_ref: str | None = None
+        # Read-only diagnostic of the *last actual* search, not persisted
+        # cognitive state and not a second simulation.
+        self._last_search_diagnostic: dict[str, object] | None = None
+
+    @property
+    def last_search_diagnostic(self) -> dict[str, object] | None:
+        return (None if self._last_search_diagnostic is None
+                else dict(self._last_search_diagnostic))
+
+    def _record_search(self, result: PlanningSearchResult) -> PlanningSearchResult:
+        if self._config.progressive_subgoals:
+            self._last_search_diagnostic = {
+                "status": result.status,
+                "expanded_states": result.expanded_states,
+                "unavailable_edges": result.unavailable_edges,
+                "partial_progress": result.partial_progress,
+            }
+        return result
 
     @property
     def current_plan(self) -> Plan | None:
@@ -186,16 +213,25 @@ class SimulatorPlanner:
         *,
         initial_state: SimulationState,
         target: Callable[[SimulationState], bool],
+        progress_measure: str | None = None,
     ) -> PlanningSearchResult:
+        # Only a known goal measure can license an intermediate action.
+        # A generic search (including shelter prediction) never fabricates
+        # a partial goal from an unrelated bodily change.
+        if progress_measure is not None and progress_measure not in (
+            "energy", "food", "water", "integrity"
+        ):
+            raise ValueError("unsupported intermediate progress measure")
+        self._last_search_diagnostic = None
         initial_state.validate()
         if target(initial_state):
-            return PlanningSearchResult(
+            return self._record_search(PlanningSearchResult(
                 status="plan_found",
                 commands=(),
                 predictions=(),
                 expanded_states=0,
                 unavailable_edges=0,
-            )
+            ))
 
         queue: list[_Node] = [
             _Node(
@@ -207,6 +243,20 @@ class SimulatorPlanner:
         visited = {self._state_key(initial_state)}
         expanded = 0
         unavailable = 0
+        # The same bounded search may record a strictly goal-relevant
+        # intermediate; goal-independent side effects are never progress.
+        # Prefer measurable bodily gain over food inventory acquisition.
+        candidate: tuple[tuple[PrimitiveCommand, ...],
+                         tuple[EquipmentPrediction, ...]] | None = None
+        candidate_rank = (0, 0.0)
+        start_value = (
+            float(initial_state.body[progress_measure])
+            if progress_measure is not None else 0.0
+        )
+        start_berries = sum(
+            int(initial_state.inventory.get(berry, 0))
+            for berry in ("berry_a", "berry_b")
+        )
 
         while queue:
             node = queue.pop(0)
@@ -235,13 +285,40 @@ class SimulatorPlanner:
                 predictions = node.predictions + (prediction,)
 
                 if target(next_state):
-                    return PlanningSearchResult(
+                    return self._record_search(PlanningSearchResult(
                         status="plan_found",
                         commands=commands,
                         predictions=predictions,
                         expanded_states=expanded,
                         unavailable_edges=unavailable,
+                    ))
+
+                if (
+                    self._config.progressive_subgoals
+                    and progress_measure is not None
+                    and not prediction.terminal
+                ):
+                    bodily_gain = (
+                        float(next_state.body[progress_measure]) - start_value
                     )
+                    # Acquisition of edible resources is an intermediate
+                    # capacity only for a *food* goal. Stock changes must
+                    # never count as progress for water, energy or integrity.
+                    new_berries = (
+                        sum(int(next_state.inventory.get(berry, 0))
+                            for berry in ("berry_a", "berry_b"))
+                        - start_berries
+                    ) if progress_measure == "food" else 0
+                    rank = (
+                        (2, bodily_gain) if bodily_gain > 0.0
+                        else (1, 1.0) if new_berries > 0
+                        else (0, 0.0)
+                    )
+                    # Stable first-in-BFS tie breaking; accumulating excess
+                    # stock alone cannot win over a shorter acquisition.
+                    if rank > candidate_rank:
+                        candidate_rank = rank
+                        candidate = (commands, predictions)
 
                 key = self._state_key(next_state)
                 if key in visited:
@@ -255,17 +332,25 @@ class SimulatorPlanner:
                     )
                 )
 
-        return PlanningSearchResult(
-            status=(
-                "incomplete_model"
-                if unavailable > 0
-                else "not_found_within_horizon"
-            ),
-            commands=(),
-            predictions=(),
-            expanded_states=expanded,
-            unavailable_edges=unavailable,
-        )
+        if self._config.progressive_subgoals and candidate is not None:
+            # Model incompleteness never authorizes a fabricated edge. Only
+            # the first predicted action is offered; replan after new sensing.
+            return self._record_search(PlanningSearchResult(
+                status="partial_progress",
+                commands=(candidate[0] if self._config.progressive_evaluation_prefix
+                          else candidate[0][:1]),
+                predictions=(candidate[1] if self._config.progressive_evaluation_prefix
+                             else candidate[1][:1]),
+                expanded_states=expanded,
+                unavailable_edges=unavailable,
+                partial_progress=True,
+            ))
+        return self._record_search(PlanningSearchResult(
+            status=("incomplete_model" if unavailable > 0
+                    else "not_found_within_horizon"),
+            commands=(), predictions=(),
+            expanded_states=expanded, unavailable_edges=unavailable,
+        ))
 
     def plan_target(
         self,
@@ -346,6 +431,10 @@ class SimulatorPlanner:
     ) -> OptionProposal | None:
         if goal is None:
             self.invalidate_current()
+            if self._config.progressive_subgoals:
+                self._last_search_diagnostic = {"status": "no_goal",
+                    "expanded_states": 0, "unavailable_edges": 0,
+                    "partial_progress": False}
             return None
 
         if (
@@ -353,6 +442,12 @@ class SimulatorPlanner:
             and self._current_proposal.option.goal_ref == goal.id
             and self._current_proposal.option.expires_at_step > t_monde
         ):
+            if self._config.progressive_subgoals:
+                self._last_search_diagnostic = {"status": "reused_cached",
+                    "expanded_states": 0, "unavailable_edges": 0,
+                    "partial_progress": (
+                        self._current_proposal.option.success_condition
+                        == "step_completed")}
             return self._current_proposal
 
         predicate = self._goal_predicate(goal)
@@ -362,8 +457,12 @@ class SimulatorPlanner:
         result = self.search(
             initial_state=initial_state,
             target=predicate,
+            progress_measure=(
+                goal.principal_measure
+                if self._config.progressive_subgoals else None
+            ),
         )
-        if result.status != "plan_found" or not result.commands:
+        if result.status not in ("plan_found", "partial_progress") or not result.commands:
             return None
 
         grounding = {
@@ -378,7 +477,10 @@ class SimulatorPlanner:
             grounding.add(goal.justification_ref)
 
         signature_tail = result.commands[-1].primitive
-        option_id = f"option:{goal.id}:sim:{signature_tail}"
+        suffix = (":progress:prefix" if result.partial_progress
+                  and self._config.progressive_evaluation_prefix else
+                  ":progress" if result.partial_progress else "")
+        option_id = f"option:{goal.id}:sim:{signature_tail}{suffix}"
         plan_id = f"plan:{option_id}:v1"
         steps = tuple(
             PlanStep(
@@ -410,7 +512,8 @@ class SimulatorPlanner:
                 f"{goal.goal_type}:sim:{signature_tail}"
             ),
             preconditions=(),
-            success_condition=goal.satisfaction_condition,
+            success_condition=("step_completed" if result.partial_progress
+                               else goal.satisfaction_condition),
             failure_condition="plan_step_failed",
             invalidation_condition="goal_or_context_invalid",
             goal_ref=goal.id,

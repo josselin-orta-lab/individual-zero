@@ -1,0 +1,63 @@
+name: Issue110 Option A spatial cue contract gate
+on:
+  pull_request:
+    branches:
+      - science/stage12-issue110-sleep-window-20261014
+    paths:
+      - 'src/i0/modules/stage12_spatial_cue_policy.py'
+      - 'tests/test_stage12_spatial_cue_policy.py'
+      - 'tests/test_stage12_spatial_cue_worldbody.py'
+      - 'src/lab/stage12_spatial_cue_audit.py'
+      - 'src/lab/stage3_runtime.py'
+      - 'tests/test_stage12_spatial_cue_audit.py'
+      - 'src/i0/modules/stage12_goal_progress.py'
+      - 'src/lab/stage12_goal_progress_audit.py'
+      - 'src/lab/stage12_runtime.py'
+      - 'src/i0/modules/stage12_goal_agency.py'
+      - 'src/lab/stage12_first_person_agency_audit.py'
+      - 'tests/test_stage12_spatial_cognitive_agency.py'
+      - 'tests/test_stage12_spatial_integrated_rehash.py'
+      - 'tests/test_stage12_spatial_world_reachability.py'
+      - 'tests/test_stage12_spatial_goal_progress.py'
+      - 'tests/test_stage12_spatial_physical_progress.py'
+      - '.github/workflows/stage12-issue110-option-a-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  spatial-cue-contract:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Pin exact source SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          git diff --exit-code HEAD --
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Spatial policy and non-circular cognitive baseline
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_spatial_cue_policy.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_spatial_cue_worldbody.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_spatial_cue_audit.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_spatial_goal_progress.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_spatial_physical_progress.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_progress.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency_runtime.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency_runtime.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_spatial_cognitive_agency.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_spatial_integrated_rehash.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_spatial_world_reachability.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_attribution_pairs.py' -v

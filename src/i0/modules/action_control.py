@@ -680,12 +680,6 @@ class ActionControl:
         if self._goal_agency is not None:
             # Validate on a disposable facet before touching existing owners.
             probe = GoalAgencyService()
-            # Validate the exact *birth-frozen* policy variant on a
-            # disposable owner. Otherwise a GA-08 SQLite current image
-            # would be falsely rejected as a legacy GA-01 image.
-            # Never infer the variant from an untrusted restored payload.
-            if self._goal_agency.spatial_enabled:
-                probe.enable_spatial()
             probe.restore_causal_state(state["goal_agency"])
             if self._goal_agency.pending is not None:
                 if state["goal_agency"] != self._goal_agency.export_causal_state():

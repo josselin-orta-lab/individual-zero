@@ -166,6 +166,22 @@ def _runtime_contract(runtime: Any) -> str:
         getattr(runtime, "_stage12_occupancy_cost_uc", None),
         getattr(runtime.world, "_layout", None),
     )
+    # The historical M11 contract is byte-for-byte unchanged for legacy
+    # births. New GA-SPATIAL-01 / explicitly scoped life identities require
+    # a distinct, fully pinned constructor contract on every cold start.
+    if (getattr(runtime, "_spatial_goal_enabled", False)
+            or getattr(runtime, "_stage12_explicit_birth_identity", False)):
+        configuration = (*configuration, (
+            "stage12-ga-spatial-constructor-v1",
+            str(runtime.individual_id),
+            runtime._spatial_goal_enabled,
+            runtime._spatial_goal_cost_uc,
+            runtime._spatial_agency_cost_uc,
+            runtime._goal_agency_enabled,
+            runtime._goal_agency_cost_uc,
+            runtime._attribution_join_enabled,
+            runtime._attribution_join_cost_uc,
+        ))
     return sha256_hex(canonical_causal_bytes(_contract_value(configuration)))
 
 
@@ -342,6 +358,11 @@ class M11TransactionalMortal:
         # Acquire exclusive ownership of a DETACHED candidate. Keeping the
         # caller's original runtime dispatchable would give one life two
         # physical authorities, bypassing the SQLite transaction boundary.
+        if (getattr(runtime, "_stage12_explicit_birth_identity", False)
+                and runtime.individual_id != individual_id):
+            raise RecoveryBlocked(
+                "M11 individual identity differs from frozen Stage12 birth"
+            )
         private = _copy_private_runtime(runtime)
         state = _runtime_image(private, individual_id=individual_id)
         ledger = SQLiteLifeLedger.birth(
@@ -385,6 +406,11 @@ class M11TransactionalMortal:
                         and not (type(runtime) is Stage12Runtime
                                  and getattr(runtime, "_m11_sqlite_custody", False) is True)):
                     raise RecoveryBlocked("cold factory exposes uncoordinated runtime")
+                if (getattr(runtime, "_stage12_explicit_birth_identity", False)
+                        and runtime.individual_id != individual_id):
+                    raise RecoveryBlocked(
+                        "M11 cold genesis identity differs from Stage12 birth"
+                    )
                 if _runtime_image(runtime, individual_id=individual_id) != image:
                     raise RecoveryBlocked("genesis factory does not match anchored state")
             else:
@@ -396,6 +422,11 @@ class M11TransactionalMortal:
                         and not (type(runtime) is Stage12Runtime
                                  and getattr(runtime, "_m11_sqlite_custody", False) is True)):
                     raise RecoveryBlocked("cold factory exposes uncoordinated runtime")
+                if (getattr(runtime, "_stage12_explicit_birth_identity", False)
+                        and runtime.individual_id != individual_id):
+                    raise RecoveryBlocked(
+                        "M11 cold factory identity differs from Stage12 birth"
+                    )
                 _install_trusted_current_on_fresh(runtime, image, journal)
             private = _copy_private_runtime(runtime)
             expected = canonical_causal_bytes(image)

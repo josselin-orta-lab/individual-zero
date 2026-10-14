@@ -1,0 +1,68 @@
+name: Issue110 preregistered real food-goal first-person self science
+on:
+  pull_request:
+    branches:
+      - research/stage12-issue110-attribution-provenance-20261013
+    paths:
+      - '.github/workflows/stage12-issue110-food-self-science.yml'
+      - 'scripts/run_stage12_issue110_food_self_agency.py'
+      - 'src/lab/stage12_attribution_pair_audit.py'
+      - 'src/lab/stage12_runtime.py'
+      - 'tests/test_stage12_attribution_sleep_expiry.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: issue110-food-self-science-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  food-self:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify exact prospective source SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          git diff --exit-code HEAD --
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: First-person and causal pair software regressions
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_attribution_pairs.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency_runtime.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_attribution_sleep_expiry.py' -v
+      - name: Run precommitted four autonomously selected food-goal lives
+        run: |
+          mkdir -p /tmp/i0-issue110-food-self
+          python scripts/run_stage12_issue110_food_self_agency.py \
+            --output-dir /tmp/i0-issue110-food-self/experiment
+      - name: Display actual counts or missing outcome
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/i0-issue110-food-self/experiment/summary.json')
+          print('issue110_food_self_summary=' + (
+              p.read_text() if p.is_file() else 'unavailable'
+          ))
+          PY
+      - name: Archive every WAL and canonical life including technical failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue110-food-self-science-py${{ matrix.python-version }}
+          path: /tmp/i0-issue110-food-self/
+          retention-days: 30
+          if-no-files-found: warn
