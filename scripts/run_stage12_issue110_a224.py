@@ -35,15 +35,17 @@ def fresh(seed,case,life_id):
     folder=str(Path(__file__).resolve().parent)
     if folder not in sys.path:sys.path.insert(0,folder)
     from run_stage12_issue110_a223b import fresh as born
-    # Twin world really is born in a distinct physical location. The choice
-    # is made before birth, never via a post-birth state rewrite.
-    if case=="honest_twin":
-        from run_stage12_issue110_a223b import SEEDS as POSITIONS
-        old=POSITIONS[seed]
-        POSITIONS[seed]=(old[0]+1,old[1])
-        try:return born(seed,life_id)
-        finally:POSITIONS[seed]=old
-    return born(seed,life_id)
+    # Each variant fixes its physical location before birth. The imported
+    # fixture has a different finite seed domain, so inject and withdraw
+    # only this new deterministic case (never alter a living WorldBody).
+    from run_stage12_issue110_a223b import SEEDS as POSITIONS
+    original=POSITIONS.get(seed)
+    x,y=SEEDS[seed]
+    POSITIONS[seed]=(x+int(case=="honest_twin"),y)
+    try:return born(seed,life_id)
+    finally:
+        if original is None:del POSITIONS[seed]
+        else:POSITIONS[seed]=original
 
 def verify_one(folder,seed,case):
     life_id=f"a224:m11:{seed}:{case}"
