@@ -82,6 +82,7 @@ def build_life(
     wal_path: str | None = None, m11_sqlite_custody: bool = False,
     birth_life_id: str | None = None,
     a2_external_obstacle: bool = False,
+    a2_obstacle_clear_step: int | None = None,
 ):
     """Build the exact preregistered life for standalone WAL or M11 SQLite.
 
@@ -146,11 +147,19 @@ def build_life(
         config, training_layout, food_target=target_food,
     )
     from lab.injected_scenario import ScenarioEvent
+    if a2_obstacle_clear_step is not None and (
+            not a2_external_obstacle or type(a2_obstacle_clear_step) is not int
+            or a2_obstacle_clear_step < 3):
+        raise ValueError("A2 removal requires an obstacle and step >= 3")
     a2_events = (
         (ScenarioEvent(t_monde=2, sequence=0,
             operation="set_obstacle",
             payload={"position": {"x": 3, "y": 1}, "active": True},
             phase="after_admission"),)
+        + ((ScenarioEvent(t_monde=a2_obstacle_clear_step, sequence=0,
+            operation="set_obstacle",
+            payload={"position": {"x": 3, "y": 1}, "active": False},
+            phase="before_step"),) if a2_obstacle_clear_step is not None else ())
         if a2_external_obstacle else ()
     )
     life = Stage12Runtime(
