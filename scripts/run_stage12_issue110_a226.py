@@ -112,12 +112,15 @@ def run_one(path,profile,blocked,pulse_step,cohort):
         # A received pulse must have an applied receipt with identical causal
         # scenario coordinates and must precede this step's sensory capture.
         applied=[(i,e) for i,e in enumerate(events) if e.get("kind")=="external_input_applied"]
+        pulse_capture_modes=[]
         for received in arrivals:
             coords=tuple(received.get(k) for k in ("scenario_id","scenario_version","t_monde","sequence"))
             match=[i for i,e in applied if tuple(e.get(k) for k in ("scenario_id","scenario_version","t_monde","sequence"))==coords]
             assert len(match)==1,("pulse has no unique applied receipt",coords)
             perception=[i for i,e in enumerate(events) if e.get("kind")=="perceptual_capture" and e.get("t_monde")==received["t_monde"]]
-            assert perception and match[0]<min(perception),("pulse not before perception",coords)
+            reduced=[i for i,e in enumerate(events) if e.get("kind")=="stage10_reduced_capture" and e.get("t_monde")==received["t_monde"]]
+            assert (bool(perception) != bool(reduced)) and match[0]<min(perception or reduced),("pulse not before authorized sensory boundary",coords)
+            pulse_capture_modes.append("waking" if perception else "reduced_sleep")
         if audit_rejection:
             assert pulse_step is not None and len(arrivals)==1, "unauthorized goal audit rejection"
             t=arrivals[0]["t_monde"]
@@ -180,6 +183,7 @@ def run_one(path,profile,blocked,pulse_step,cohort):
             "actual_eats":sum(x["ate"] in ("berry_a","berry_b") for x in confirmed),
             "real_collections":sum(x["proximal_collect"] for x in confirmed),
             "food_gains":successful,"pulse_events":len(arrivals),
+            "pulse_capture_modes":pulse_capture_modes,
             "food_gains_by_category":dict(categorized),
             "journal_head":anchor["expected_head"],
             "journal_count":anchor["expected_count"],
@@ -216,6 +220,7 @@ def main():
         "physical_steps":sum(r["physical_steps"] for r in rows),
         "errors":sum(bool(r["failure"]) for r in rows),
         "pulse_events":sum(r.get("pulse_events",0) for r in rows),
+        "pulses_during_reduced_sleep":sum(r.get("pulse_capture_modes",[]).count("reduced_sleep") for r in rows),
         "goal_successes":sum(r.get("goal_success") or 0 for r in rows),
         "goal_failures":sum(r.get("goal_failure") or 0 for r in rows),
         "agency_unknown":sum(r.get("agency_unknown") or 0 for r in rows),
