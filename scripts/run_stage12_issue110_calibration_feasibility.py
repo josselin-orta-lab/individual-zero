@@ -24,6 +24,72 @@ CONDITIONS = (
 MAX_STEPS = 16
 
 
+def source_step_trace(raw: bytes) -> list[dict]:
+    """Read-only event census, never a replacement for the independent audits.
+
+    Missing receipts are counted as missing; no synthetic attribution or
+    causal labels are constructed from the physical evaluator's knowledge.
+    """
+    keys = {
+        "perceptual_capture": "perception",
+        "stage10_reduced_capture": "sleep_reduced_capture",
+        "stage10_sleep_entered": "sleep_entered",
+        "stage10_sleep_woke": "sleep_woke",
+        "stage12_goal_progress_preregistered": "intent",
+        "stage12_goal_agency_precommitted": "agency_precommit",
+        "stage12_goal_agency_judgement": "agency_judgement",
+        "stage12_goal_progress_followup": "outcome",
+        "stage12_attribution_pair_admitted": "pair_admitted",
+        "stage12_attribution_join_deferred": "join_deferred",
+        "stage12_attribution_sample_unavailable": "pair_unavailable",
+        "stage12_lived_diagnostics_published": "diagnostic",
+        "stage12_lived_diagnostics_deferred": "diagnostic_deferred",
+        "command_experienced": "command",
+        "world_transition_experienced": "physics",
+        "external_input_applied": "external",
+    }
+    by_step: dict[int, dict] = {}
+    for line in raw.splitlines():
+        event = json.loads(line)["causal_event"]
+        t = event.get("t_monde")
+        kind = keys.get(event.get("kind"))
+        if type(t) is not int or kind is None:
+            continue
+        row = by_step.setdefault(t, {"step": t})
+        data = event.get("data", {})
+        record = {"event": kind}
+        if kind == "command":
+            record.update(primitive=event.get("primitive"),
+                          direction=event.get("parameters", {}).get("direction"))
+        elif kind == "intent" and isinstance(data, dict):
+            record.update(measure=data.get("measure"),
+                          target_kind=data.get("target_kind"),
+                          observe_world_step=data.get("observe_world_step"))
+        elif kind == "agency_judgement" and isinstance(data, dict):
+            record.update(agency=data.get("subjective_agency"),
+                          reason=data.get("reason"))
+        elif kind == "outcome" and isinstance(data, dict):
+            record.update(outcome=data.get("criterion_outcome"),
+                          reason=data.get("reason"))
+        elif kind == "pair_admitted" and isinstance(data, dict):
+            record.update(outcome=data.get("outcome"), agency=data.get("agency"))
+        elif kind == "pair_unavailable" and isinstance(data, dict):
+            record.update(reason=data.get("reason"),
+                          due_world_step=data.get("due_world_step"))
+        elif kind == "diagnostic" and isinstance(data, dict):
+            record.update(pair_applied=(data.get("attribution_pair_ref") is not None),
+                          verified_successes=data.get("verified_successes"),
+                          verified_failures=data.get("verified_failures"),
+                          attribution_bias=data.get("attribution_bias"))
+        elif kind == "physics":
+            record.update(position_after=event.get("position_after"),
+                          movement=event.get("effects", {}).get("movement"))
+        elif kind == "external":
+            record.update(phase=event.get("phase", "before_step"))
+        row.setdefault("receipts", []).append(record)
+    return [by_step[t] for t in sorted(by_step)]
+
+
 def run_one(folder: Path, name: str, obstacle: bool, clear_step: int | None,
             cohort: str) -> dict:
     folder.mkdir()
@@ -53,6 +119,10 @@ def run_one(folder: Path, name: str, obstacle: bool, clear_step: int | None,
             break
     raw = life.journal.canonical_bytes()
     (folder / "canonical.jsonl").write_bytes(raw)
+    trace = source_step_trace(raw)
+    (folder / "source-step-trace.json").write_text(
+        json.dumps(trace, indent=2, sort_keys=True) + "\n"
+    )
     anchor = dict(expected_head=life.journal.head_hash,
                   expected_count=len(life.journal.entries))
     audit_error, summary = None, {}
@@ -101,6 +171,7 @@ def run_one(folder: Path, name: str, obstacle: bool, clear_step: int | None,
                   executed_physical_steps=sum(counts.values()),
                   actual_commands=dict(counts),
                   failure=failure, audit_error=audit_error,
+                  source_trace=trace,
                   **summary)
     (folder / "result.json").write_text(json.dumps(result, indent=2, sort_keys=True)+"\n")
     return result
@@ -140,7 +211,7 @@ def main() -> int:
                      sort_keys=True))
     for r in results:
         print(json.dumps({k:v for k,v in r.items()
-                          if k not in ("external_operations","actual_commands")},
+                          if k not in ("external_operations","actual_commands","source_trace")},
                          sort_keys=True))
     return 0 if all(not r["failure"] and not r["audit_error"] for r in results) else 2
 
