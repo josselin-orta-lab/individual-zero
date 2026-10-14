@@ -64,6 +64,7 @@ def _scenario_key(event: dict) -> tuple[str, str, int, int]:
 def audit_stage12_a2_causal_link(
     content: bytes, *, expected_head: str | None = None,
     expected_count: int | None = None,
+    expected_interventions: tuple[tuple[int, int, int], ...] | None = None,
 ) -> Stage12A2CausalAudit:
     anchors = dict(expected_head=expected_head, expected_count=expected_count)
     base = audit_export_bytes(content, **anchors)
@@ -106,6 +107,13 @@ def audit_stage12_a2_causal_link(
             ):
                 raise ValueError("A2 applied receipt duplicated or unbound")
             applied[key] = i
+
+    if expected_interventions is not None:
+        witnessed = sorted((key[2], payload["position"]["x"],
+                            payload["position"]["y"])
+                           for key, (_, payload) in received.items())
+        if witnessed != sorted(expected_interventions):
+            raise ValueError("actual A2 interventions differ from preregistered schedule")
 
     # A forged omitted phase cannot silently turn an A2 receipt into a legacy
     # before-step receipt. Both halves of an after-admission pair must match.
