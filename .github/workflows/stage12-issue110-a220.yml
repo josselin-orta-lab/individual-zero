@@ -1,0 +1,42 @@
+name: Stage12 Issue110 A2.20 epistemic evidence ledger
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_a220.py'
+      - 'docs/research/stage12-issue110-a220-*.md'
+      - '.github/workflows/stage12-issue110-a220.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evidence-ledger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Audit A2.20 chained evidence under independent real WorldBody worlds
+        run: |
+          python scripts/run_stage12_issue110_a220.py \
+            --output-dir /tmp/a220-physical > /tmp/a220.log 2>&1 \
+            || { tail -n 100 /tmp/a220.log; exit 2; }
+          grep 'A220_SUMMARY' /tmp/a220.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-a220-py${{ matrix.python-version }}
+          path: |
+            /tmp/a220-physical
+            /tmp/a220.log
+          retention-days: 30
+          if-no-files-found: warn
