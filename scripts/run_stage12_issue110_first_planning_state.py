@@ -87,6 +87,7 @@ def build_life(
     planning_depth: int = 3,
     progressive_planning: bool = False,
     progressive_evaluation_prefix: bool = False,
+    intrinsic_weight_override: float | None = None,
 ):
     """Build the exact preregistered life for standalone WAL or M11 SQLite.
 
@@ -181,6 +182,14 @@ def build_life(
             cfg8, stage7=replace(cfg7, stage6=revised6),
         )),
     )
+    if intrinsic_weight_override is not None:
+        if type(intrinsic_weight_override) not in (int, float) or intrinsic_weight_override not in (0.0, 0.35, 0.75):
+            raise ValueError("only preregistered P15 profiles are allowed")
+        stage11_config = replace(
+            stage11_config,
+            version=stage11_config.version + "-p15-" + str(intrinsic_weight_override),
+            intrinsic_weight=float(intrinsic_weight_override),
+        )
     combined = replace(s10._stage10_config, stage9=stage11_config.stage9,
                        sleep=sleep)
     training_layout = replace(layout, obstacles=frozenset())
