@@ -1,0 +1,22 @@
+# Issue #110 : première expérience de valeur prospective Stage6/8 (14 octobre 2026)
+
+Préenregistrement antérieur au code : `97e776f`. Implémentation : `3cd36a0` (préfixe évalué), `bd22eb2` (clôture après une seule commande), `23aceed` (versionnement pré-naissance), runner `d9a5097`. Source initiale vérifiée `648f038b78717b2d0999ed2844a4215aac7617fe`. GitHub Actions [#38556953575](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38556953575) : PASS sous Python 3.11 et 3.12, huit vies uniques × 36 pas, 288 transitions physiques uniques. Audits propres à chaque vie PASS.
+
+## Résultat préliminaire A/B
+
+| Bras | Monde | Engagements Stage12 | Jugements self/world/unknown | Couples appliqués |
+|---|---|---:|---|---:|
+| Segment 1 commande | restored libre | 3 | 2/0/1 | 1 |
+| Segment 1 commande | restored A2 | 3 | 1/1/1 | 2 |
+| Segment 1 commande | sustained libre | 0 | 0/0/0 | 0 |
+| Segment 1 commande | sustained A2 | 0 | 0/0/0 | 0 |
+| Préfixe prospectif complet, exécution bornée à 1 commande | restored libre | 3 | 2/0/1 | 1 |
+| Préfixe prospectif complet, exécution bornée à 1 commande | restored A2 | 3 | 1/1/1 | 2 |
+| Préfixe prospectif complet, exécution bornée à 1 commande | sustained libre | 0 | 0/0/0 | 0 |
+| Préfixe prospectif complet, exécution bornée à 1 commande | sustained A2 | 0 | 0/0/0 | 0 |
+
+Le préfixe modifie **réellement l'évidence compétitive** : dans les deux mondes sustained, au pas 2, `competition_cycle.traces` pour l'option `...:sim:manger:progress:prefix` rapporte une evidence positive d'environ +0,210, un accumulateur > 0,5 au second cycle et `crossed=true`. Le bras témoin avait une evidence d'environ −0,070 et `crossed=false`. **Cependant aucun geste `active_goal` supplémentaire n'est observé.** La capacité de franchissement du seuil de Competition a augmenté, mais ni le résultat moteur ni l'agence vécue.
+
+Il est donc prématuré d'expliquer l'absence d'action par Competition : la prochaine frontière est `crossed_ranked` → admissibilité Action Control → commande réellement appliquée, avec concurrence d'autres options. L'instrumentation `243da7e` relie les reçus `stage8_option_evaluation` et `command_admitted/command_vetoed` de l'option prospective, sans agir sur I0 ; [run #38557311371](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38557311371) était encore en cours au moment de la première rédaction.
+
+**Aucune calibration de `attribution_bias`**, 0/8 vies atteignent deux résultats vérifiés de chaque classe dans une fenêtre de 12. Le nouvel algorithme est opt-in désactivé par défaut, n'introduit pas de bonus artificiel ni d'injection Oracle. La règle de valeur prospective continue d'être une hypothèse expérimentale, pas une réussite du Stage 12. Ne pas adopter la modification normative, ne pas fusionner PR #155 ni fermer issue #110 sur cette base.
