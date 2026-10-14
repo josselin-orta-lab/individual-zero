@@ -64,7 +64,7 @@ def _new_exclusive_dir(path: Path) -> None:
         os.close(parent)
 
 
-def _build_trial(*, wal_path: str, steps: int) -> Stage12Runtime:
+def _build_trial(*, wal_path: str, steps: int, issue110_agency_join: bool = False) -> Stage12Runtime:
     # This fixture is intentionally aligned with the *actual* 600-step
     # integration test, not a simulated journal or manually applied action.
     stage11 = build_stage11_reference_runtime(
@@ -94,6 +94,10 @@ def _build_trial(*, wal_path: str, steps: int) -> Stage12Runtime:
         wal_path=wal_path,
         diagnostic_sample_cost_uc=1,
         module_occupancy_cost_uc=1,
+        subjective_goal_agency=issue110_agency_join,
+        goal_agency_cost_uc=1,
+        attribution_join=issue110_agency_join,
+        attribution_join_cost_uc=1,
         operator_alert_persistence_steps=3,
         detector_policy=Stage12DetectionPolicy(
             version="stage12-operator-lived-dev-v1",
@@ -316,7 +320,9 @@ def _execution_provenance() -> dict[str, object]:
     }
 
 
-def run_trial(output_dir: Path, steps: int) -> tuple[int, dict[str, object]]:
+def run_trial(output_dir: Path, steps: int, *, issue110_agency_join: bool = False) -> tuple[int, dict[str, object]]:
+    if type(issue110_agency_join) is not bool:
+        raise ValueError("issue110 agency join must be an explicit boolean")
     if type(steps) is not int or not 1 <= steps <= 600:
         raise ValueError("software trial steps must be an integer in [1,600]")
     # Source verification happens BEFORE birth and before allocating any
@@ -340,7 +346,10 @@ def run_trial(output_dir: Path, steps: int) -> tuple[int, dict[str, object]]:
     target = output_dir.expanduser().absolute()
     _new_exclusive_dir(target)
     wal = target / "individual-zero-life.wal"
-    individual = _build_trial(wal_path=str(wal), steps=steps)
+    individual = _build_trial(
+        wal_path=str(wal), steps=steps,
+        issue110_agency_join=issue110_agency_join,
+    )
     actions: Counter[str] = Counter()
     failure: str | None = None
     for expected in range(1, steps + 1):
@@ -400,6 +409,7 @@ def run_trial(output_dir: Path, steps: int) -> tuple[int, dict[str, object]]:
         "schema": "stage12-retained-operator-development-trial-v1",
         "status": "complete_technically_audited" if successful else "incomplete_do_not_resume",
         "fixed_development_fixture": "stage11-geographic-and-stage10-awake-stage12-v1",
+        "issue110_first_person_agency_and_pair_join_enabled": issue110_agency_join,
         "execution_provenance": before_environment,
         "execution_provenance_unchanged": environment_unchanged,
         "sleep_calibration_covered": False,
@@ -435,9 +445,14 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--steps", type=int, default=600)
+    parser.add_argument("--issue110-agency-join", action="store_true",
+                        help="enable paid first-person agency and independent outcome join")
     args = parser.parse_args(argv)
     try:
-        exit_code, manifest = run_trial(args.output_dir, args.steps)
+        exit_code, manifest = run_trial(
+            args.output_dir, args.steps,
+            issue110_agency_join=args.issue110_agency_join,
+        )
     except (OSError, TypeError, ValueError) as exc:
         print(f"Stage12 operator trial refused: {exc}", file=sys.stderr)
         return 1
