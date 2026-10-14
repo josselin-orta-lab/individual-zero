@@ -138,13 +138,13 @@ def run_one(root: Path, cohort: str, profile: str, obstacle: bool,
                 flush=True,
             )
     if len(actions) and sum(actions.values()) == MAX_STEPS:
-        ending = "experiment_stop_at_600"
         if life.stage3.substrate.mortal_status.value == "active":
             # The operator ends this experiment externally; this is not death
             # and does not advance the world by even one additional step.
             console.arreter(reason="world_step_cap_reached")
-        else:
-            ending = life.stage3.substrate.mortal_status.value
+        status = life.stage3.substrate.mortal_status.value
+        ending = ("experiment_stopped_at_cap"
+                  if status == "experiment_stopped" else status)
     elif ending == "uncertain":
         ending = life.stage3.substrate.mortal_status.value
     raw = life.journal.canonical_bytes()
