@@ -1,0 +1,56 @@
+name: Stage12 Issue110 A2.11 independent Equipment UC audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/audit_stage12_issue110_a211_coverage.py'
+      - 'docs/research/stage12-issue110-a211-equipment-coverage-prereg-2026-10-14.fr.md'
+      - 'docs/research/stage12-issue110-a211-equipment-coverage-results-2026-10-14.fr.md'
+      - '.github/workflows/stage12-issue110-a211.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  a211-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Fetch already audited A2.10b real-life evidence
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 38607070724
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: stage12-a210b-py${{ matrix.python-version }}
+          path: /tmp/a211-verified-evidence
+      - name: Verify provenance and count from physically executed journals
+        run: |
+          find /tmp/a211-verified-evidence -name canonical.jsonl | wc -l
+          python scripts/audit_stage12_issue110_a211_coverage.py \
+            --input-dir /tmp/a211-verified-evidence/a210b-lives \
+            --output /tmp/a211-coverage.json
+          python - <<'PY'
+          import json
+          d=json.load(open("/tmp/a211-coverage.json"))
+          assert d["count"]==16
+          assert d["exact_key_coverage"]=="not_evaluable_from_public_receipts"
+          assert d["total_incomplete_model"]>0
+          print("Verified A2.11 independent diagnostic",d["total_incomplete_model"],d["total_planning_uc_rejections"])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-a211-coverage-py${{ matrix.python-version }}
+          path: /tmp/a211-coverage.json
+          retention-days: 30
+          if-no-files-found: warn
