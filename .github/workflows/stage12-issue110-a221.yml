@@ -1,0 +1,42 @@
+name: Stage12 Issue110 A2.21 detached source custody
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_a221.py'
+      - 'docs/research/stage12-issue110-a221-*.md'
+      - '.github/workflows/stage12-issue110-a221.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  detached-custody:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Apply 64 real transitions and 192 custody attacks
+        run: |
+          python scripts/run_stage12_issue110_a221.py \
+            --output-dir /tmp/a221-physical > /tmp/a221.log 2>&1 \
+            || { tail -n 120 /tmp/a221.log; exit 2; }
+          grep 'A221_SUMMARY' /tmp/a221.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-a221-py${{ matrix.python-version }}
+          path: |
+            /tmp/a221-physical
+            /tmp/a221.log
+          retention-days: 30
+          if-no-files-found: warn
