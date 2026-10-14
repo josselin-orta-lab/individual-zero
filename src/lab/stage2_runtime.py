@@ -314,6 +314,14 @@ class ScriptedStage2Runtime:
             command_ref = self._write_command_event(
                 command=command, emitter=event_emitter or source,
             )
+            # A2 inputs were scheduled BEFORE this life began. They are applied
+            # only after a genuine Action Control admission and command receipt,
+            # with no access to the command's direction, goal, or hidden truth.
+            if self.scenario is not None:
+                self.scenario.apply_for_step_irreversible(
+                    t_monde=attempt.t_monde, world=self.world,
+                    phase="after_admission",
+                )
             physical = boundary.execute(command, t_monde=attempt.t_monde)
             physical_ref = self._write_transition_event(physical.transition)
             if physical.status == "dead":
