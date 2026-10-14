@@ -85,6 +85,7 @@ def build_life(
     a2_obstacle_clear_step: int | None = None,
     calibration_food_profile: str | None = None,
     planning_depth: int = 3,
+    progressive_planning: bool = False,
 ):
     """Build the exact preregistered life for standalone WAL or M11 SQLite.
 
@@ -163,8 +164,10 @@ def build_life(
                           h_max=planning_depth),
         planning=replace(cfg6.planning,
                          version=("stage12-issue110-food-planner-v1" if planning_depth == 3
-                                  else f"stage12-issue110-food-planner-depth{planning_depth}-v1"),
-                         max_depth=planning_depth),
+                                  else f"stage12-issue110-food-planner-depth{planning_depth}-v1")
+                         + ("-progressive-v1" if progressive_planning else ""),
+                         max_depth=planning_depth,
+                         progressive_subgoals=progressive_planning),
         evaluation=replace(cfg6.evaluation,
                            version="stage12-issue110-food-horizon-"+str(horizon)+"-v1",
                            h_eff=horizon),
