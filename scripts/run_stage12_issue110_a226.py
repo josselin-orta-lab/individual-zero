@@ -25,7 +25,7 @@ TIMINGS=(None,4,6,8)
 STEPS=32
 
 def make_life(path,profile,blocked,pulse_step,cohort):
-    name=f"{profile}-{'a2' if blocked else 'free'}-{'pulse' if pulse_step is not None else 'control'}"
+    name=f"{profile}-{'a2' if blocked else 'free'}-{'pulse'+str(pulse_step) if pulse_step is not None else 'control'}"
     ident=f"i0:a226:{cohort}:{name}"
     original=factory.Stage12Runtime
     def born(**kwargs):
@@ -157,7 +157,7 @@ def run_one(path,profile,blocked,pulse_step,cohort):
                 "food_after":food_after,"food_net_gain":food_up,
                 "pulse_received":exogenous,"episode_category":category,
                 "proximal_collect":collected_proven})
-        assert len(arrivals)==(int(pulse_step is not None and len(witness)>=pulse_step) else 0),len(arrivals)
+        assert len(arrivals)==int(pulse_step is not None and len(witness)>=pulse_step),len(arrivals)
         assert not pulses or len(pulses)==len(arrivals)
         successful=sum(x["food_net_gain"] for x in confirmed)
         categorized=Counter(x["episode_category"] for x in confirmed if x["food_net_gain"])
@@ -208,7 +208,7 @@ def main():
     for profile in PROFILES:
         for blocked in (False,True):
             for pulse_step in TIMINGS:
-                label=f"{profile}-{'a2' if blocked else 'free'}-{'pulse' if pulse_step is not None else 'control'}"
+                label=f"{profile}-{'a2' if blocked else 'free'}-{'pulse'+str(pulse_step) if pulse_step is not None else 'control'}"
                 rows.append(run_one(args.output_dir/label,profile,blocked,pulse_step,args.cohort_id))
     summary={"schema":"stage12-a226-autonomous-timing-v1",
         "head_sha":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),
