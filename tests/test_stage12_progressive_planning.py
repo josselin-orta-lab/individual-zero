@@ -25,6 +25,20 @@ class ProgressivePlanningContracts(unittest.TestCase):
         self.assertFalse(result.partial_progress)
         self.assertEqual(len(result.commands), 4)
 
+    def test_progress_probe_respects_goal_measure_and_model_unavailability(self):
+        planner, state = shelter_planner()
+        planner._config = replace(planner._config, max_depth=1,
+                                  progressive_subgoals=True)
+        result = planner.search(
+            initial_state=state, target=lambda _: False,
+            progress_measure="food",
+        )
+        self.assertEqual(result.status, "incomplete_model")
+        self.assertEqual(result.commands, ())
+        self.assertIsNotNone(planner.last_search_diagnostic)
+        self.assertEqual(planner.last_search_diagnostic["status"], "incomplete_model")
+        self.assertGreater(result.unavailable_edges, 0)
+
     def test_config_validates_flag_type(self):
         planner, _ = shelter_planner()
         with self.assertRaises(ValueError):
