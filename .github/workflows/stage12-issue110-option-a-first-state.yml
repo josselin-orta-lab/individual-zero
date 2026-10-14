@@ -47,7 +47,7 @@ jobs:
             --output-dir /tmp/issue110-first-state/experiment
       - name: Reject cross-life cognitive collisions and verify each original journal
         run: |
-          python scripts/audit_stage12_issue110_birth_cohort.py \\
+          python scripts/audit_stage12_issue110_birth_cohort.py \
             --cohort-dir /tmp/issue110-first-state/experiment
       - name: Publish measured negative or positive output
         if: always()
