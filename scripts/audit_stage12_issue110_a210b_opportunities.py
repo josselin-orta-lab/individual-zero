@@ -13,6 +13,7 @@ def audit_folder(root: Path):
     for path in sorted(root.glob("*/canonical.jsonl")):
         events=[json.loads(line)["causal_event"] for line in path.read_bytes().splitlines()]
         captured={e["t_monde"]:e["data"] for e in events if e["kind"]=="perceptual_capture"}
+        witnessed=set()
         stepped=Counter(e["kind"] for e in events)
         result={"life":path.parent.name,"sha256":sha256(path.read_bytes()).hexdigest(),
                 "world_steps":stepped["step_closed"],
@@ -27,22 +28,34 @@ def audit_folder(root: Path):
                 if any(r in ("berry_a","berry_b") for r in neighbor["resources"]):
                     if abs(neighbor["x"]-origin["x"])+abs(neighbor["y"]-origin["y"])!=1:
                         raise ValueError("remote berry falsely in local adjacency")
+                    for berry in neighbor["resources"]:
+                        if berry in ("berry_a","berry_b"):
+                            witnessed.add((berry,neighbor["x"],neighbor["y"],t))
                     if t not in result["local_berry_steps"]:
                         result["local_berry_steps"].append(t)
             if result["first_local_berry"] is None and t in result["local_berry_steps"]:
                 result["first_local_berry"]=t
         for e in events:
-            if e["kind"]=="s_t_published" and any(
-                "observation:berry_" in ref
-                for ref in e["data"].get("competitive_refs",[])):
-                if e["t_monde"] not in result["berry_st_steps"]:
-                    result["berry_st_steps"].append(e["t_monde"])
+            if e["kind"]=="s_t_published":
+                for ref in e["data"].get("competitive_refs",[]):
+                    if not ref.startswith("observation:berry_"):
+                        continue
+                    parts=ref.split(":")
+                    if len(parts)!=6:
+                        raise ValueError("malformed berry observation reference")
+                    berry, x, y, t, cycle=parts[1:]
+                    authored=int(t)
+                    if (authored > e["t_monde"] or
+                        (berry,int(x),int(y),authored) not in witnessed):
+                        raise ValueError("S_t berry without prior local perceptual witness")
+                    # TTL can retain a genuine earlier observation, but it
+                    # does not certify continued resource availability.
+                    if e["t_monde"] not in result["berry_st_steps"]:
+                        result["berry_st_steps"].append(e["t_monde"])
             if (e["kind"]=="stage6_planning_result" and
                 e["data"].get("progressive_search_diagnostic",{}).get("status")=="incomplete_model"):
                 if e["t_monde"] not in result["incomplete_model_steps"]:
                     result["incomplete_model_steps"].append(e["t_monde"])
-        if any(t not in result["local_berry_steps"] for t in result["berry_st_steps"]):
-            raise ValueError("S_t admitted berry never in a local cardinal perception")
         rows.append(result)
     if not rows: raise ValueError("no real-life journals")
     return {"schema":"a210b-observer-only-v1","total_lives":len(rows),
