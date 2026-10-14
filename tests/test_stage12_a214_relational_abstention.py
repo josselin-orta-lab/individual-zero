@@ -21,6 +21,14 @@ class TranslationAndAbstentionTests(unittest.TestCase):
             with self.subTest(family=family):
                 row=run_pair(self.base,family,61)
                 self.assertFalse(row["full_key_covered"])
+                expected=4 if family in ("translated_eat","hidden_toxic",
+                                        "hidden_hazard","body_saturation",
+                                        "inventory_mismatch") else 2
+                if family in HIDDEN:
+                    expected+=2
+                self.assertEqual(row["physical_transitions_applied"],expected)
+                self.assertFalse(any(r["role"]=="unregistered" for r in
+                                     row["physical_transition_receipts"]))
                 if family in TRANSLATED:
                     self.assertTrue(row["naive_correct"])
                     self.assertTrue(row["conflict_model_correct"])
