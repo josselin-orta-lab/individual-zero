@@ -113,6 +113,28 @@ def one(root, profile, obstacle, cohort, progressive):
                     "segment_proposed":data.get("progressive_segment_proposed"),
                     "search":diag,
                 })
+    # Join separately authored plan proposals, competition valuations, and
+    # actual motor selections by world step and original option reference.
+    # Never equate "proposed" with "executed".
+    events=[json.loads(line)["causal_event"] for line in raw.splitlines()]
+    for planned in plan_trace:
+        opt=planned["proposal_ref"]
+        t=planned["t_monde"]
+        evaluation=[e.get("data",{}) for e in events
+            if e.get("t_monde")==t
+            and e.get("kind")=="stage6_option_evaluation"
+            and e.get("data",{}).get("option_ref")==opt]
+        selection=[e.get("data",{}) for e in events
+            if e.get("t_monde")==t
+            and e.get("kind")=="stage12_action_motive_attested"
+            and e.get("data",{}).get("option_ref")==opt]
+        planned["evaluations"]=[{
+            "status": e.get("status"),
+            "simulated_value_status":e.get("simulated_value_status"),
+            "simulated_value":e.get("simulated_value"),
+            "evidence":e.get("evidence"),
+        } for e in evaluation]
+        planned["selection_count"]=len(selection)
     (folder/"progressive-search-trace.json").write_text(
         json.dumps(plan_trace,indent=2,sort_keys=True)+"\n")
     anchors=dict(expected_head=life.journal.head_hash,expected_count=len(life.journal.entries))
@@ -161,6 +183,22 @@ def one(root, profile, obstacle, cohort, progressive):
                         for entry in plan_trace if isinstance(entry["search"],dict)),
                     "segments_proposed":sum(bool(entry["segment_proposed"])
                                             for entry in plan_trace),
+                    "segments_selected":sum(
+                        entry["selection_count"] for entry in plan_trace
+                        if entry["segment_proposed"]),
+                    "segment_evaluations":sum(
+                        len(entry["evaluations"]) for entry in plan_trace
+                        if entry["segment_proposed"]),
+                    "segment_evaluations_unavailable":sum(
+                        e["status"] == "not_evaluated"
+                        for entry in plan_trace if entry["segment_proposed"]
+                        for e in entry["evaluations"]),
+                    "segment_evaluations_nonpositive":sum(
+                        e["status"] == "evaluated"
+                        and isinstance(e["evidence"], (int, float))
+                        and e["evidence"] <= 0
+                        for entry in plan_trace if entry["segment_proposed"]
+                        for e in entry["evaluations"]),
                 },
                 motive_census={
                     "goal_changes":sum(len(r["goals"]) for r in motivations),
@@ -172,6 +210,12 @@ def one(root, profile, obstacle, cohort, progressive):
                 },**results)
     (folder/"result.json").write_text(json.dumps(report,indent=2,sort_keys=True)+"\n")
     print(json.dumps(report,sort_keys=True))
+    if progressive:
+        for entry in plan_trace:
+            if entry["segment_proposed"]:
+                print("PROGRESSIVE_FUNNEL " + json.dumps({
+                    "condition":name, **entry,
+                },sort_keys=True))
     for row in motivations:
         if row["goals"] or row["selected"] or row["refused_uc"]:
             print("MOTIVE_STEP "+json.dumps({
