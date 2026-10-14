@@ -262,6 +262,14 @@ class Stage6Runtime(Stage4Runtime):
                 ),
                 "equipment_version": self.equipment.version,
                 "planning_version": self._stage6_config.planning.version,
+                **({"progressive_search_diagnostic": (
+                    self.planning.last_search_diagnostic
+                    if proposal is not None or self.planning.last_search_diagnostic is not None
+                    else {"status": "no_new_search"}
+                ), "progressive_segment_proposed": bool(
+                    proposal is not None and
+                    proposal.option.success_condition == "step_completed"
+                )} if self._stage6_config.planning.progressive_subgoals else {}),
             },
         )
         return proposal
