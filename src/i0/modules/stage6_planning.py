@@ -97,6 +97,24 @@ class SimulatorPlanner:
         self._current_plan: Plan | None = None
         self._current_proposal: OptionProposal | None = None
         self._revision_required_option_ref: str | None = None
+        # Read-only diagnostic of the *last actual* search, not persisted
+        # cognitive state and not a second simulation.
+        self._last_search_diagnostic: dict[str, object] | None = None
+
+    @property
+    def last_search_diagnostic(self) -> dict[str, object] | None:
+        return (None if self._last_search_diagnostic is None
+                else dict(self._last_search_diagnostic))
+
+    def _record_search(self, result: PlanningSearchResult) -> PlanningSearchResult:
+        if self._config.progressive_subgoals:
+            self._last_search_diagnostic = {
+                "status": result.status,
+                "expanded_states": result.expanded_states,
+                "unavailable_edges": result.unavailable_edges,
+                "partial_progress": result.partial_progress,
+            }
+        return result
 
     @property
     def current_plan(self) -> Plan | None:
@@ -199,15 +217,16 @@ class SimulatorPlanner:
             "energy", "food", "water", "integrity"
         ):
             raise ValueError("unsupported intermediate progress measure")
+        self._last_search_diagnostic = None
         initial_state.validate()
         if target(initial_state):
-            return PlanningSearchResult(
+            return self._record_search(PlanningSearchResult(
                 status="plan_found",
                 commands=(),
                 predictions=(),
                 expanded_states=0,
                 unavailable_edges=0,
-            )
+            ))
 
         queue: list[_Node] = [
             _Node(
@@ -261,13 +280,13 @@ class SimulatorPlanner:
                 predictions = node.predictions + (prediction,)
 
                 if target(next_state):
-                    return PlanningSearchResult(
+                    return self._record_search(PlanningSearchResult(
                         status="plan_found",
                         commands=commands,
                         predictions=predictions,
                         expanded_states=expanded,
                         unavailable_edges=unavailable,
-                    )
+                    ))
 
                 if (
                     self._config.progressive_subgoals
@@ -311,20 +330,20 @@ class SimulatorPlanner:
         if self._config.progressive_subgoals and candidate is not None:
             # Model incompleteness never authorizes a fabricated edge. Only
             # the first predicted action is offered; replan after new sensing.
-            return PlanningSearchResult(
+            return self._record_search(PlanningSearchResult(
                 status="partial_progress",
                 commands=candidate[0][:1],
                 predictions=candidate[1][:1],
                 expanded_states=expanded,
                 unavailable_edges=unavailable,
                 partial_progress=True,
-            )
-        return PlanningSearchResult(
+            ))
+        return self._record_search(PlanningSearchResult(
             status=("incomplete_model" if unavailable > 0
                     else "not_found_within_horizon"),
             commands=(), predictions=(),
             expanded_states=expanded, unavailable_edges=unavailable,
-        )
+        ))
 
     def plan_target(
         self,
