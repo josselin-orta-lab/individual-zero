@@ -1,0 +1,48 @@
+name: Stage12 Issue110 A2.11b physical corpus contrast
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_first_planning_state.py'
+      - 'scripts/run_stage12_issue110_a211b.py'
+      - 'tests/test_stage12_a211b_equipment_corpus.py'
+      - 'docs/research/stage12-issue110-a211b-physical-corpus-ablation-prereg-2026-10-14.fr.md'
+      - '.github/workflows/stage12-issue110-a211b.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  a211b:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Exact Equipment corpus and unknown input contract
+        run: python -m unittest discover -s tests -p 'test_stage12_a211b_equipment_corpus.py' -v
+      - name: Eight independently born physical lives with WAL and A2 audit
+        env:
+          COHORT: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/run_stage12_issue110_a211b.py \
+            --output-dir /tmp/i0-a211b-lives --cohort-id "$COHORT" \
+            > /tmp/i0-a211b.log 2>&1 || { tail -n 100 /tmp/i0-a211b.log; exit 2; }
+          grep A211B_SUMMARY /tmp/i0-a211b.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-a211b-py${{ matrix.python-version }}
+          path: |
+            /tmp/i0-a211b-lives
+            /tmp/i0-a211b.log
+          retention-days: 30
+          if-no-files-found: warn

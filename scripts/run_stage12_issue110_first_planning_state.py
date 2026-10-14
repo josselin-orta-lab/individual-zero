@@ -36,7 +36,9 @@ from i0.equipment import train_exact_transition_table
 from lab.world import WorldBody
 from lab.equipment_corpus import EquipmentCorpusRecorder
 
-def build_prebirth_equipment(config, layout, *, food_target: bool):
+def build_prebirth_equipment(config, layout, *, food_target: bool, extended: bool = False):
+    if type(extended) is not bool:
+        raise ValueError("extended physical corpus flag must be boolean")
     """Physically applied exterior examples before I0's birth, no causal labels."""
     world = WorldBody(config=config, layout=layout)
     family = "food" if food_target else "water"
@@ -65,9 +67,45 @@ def build_prebirth_equipment(config, layout, *, food_target: bool):
             world=world, t_monde=3, family="drinking",
             command=PrimitiveCommand("boire"),
         )
+    if extended:
+        # Independently born physical training worlds, never I0 trajectories.
+        # Retain the original exact table and its strict unseen-input refusal.
+        extra_free = WorldBody(config=config, layout=layout)
+        for t, primitive, params, family_extra in (
+            (1, "attendre", {}, "wait"),
+            (2, "se_deplacer", {"direction":"north"}, "movement_free"),
+            (3, "se_deplacer", {"direction":"east"}, "movement_free"),
+            (4, "collecter", {"target":"berry_a"}, "collection_without_tool"),
+            (5, "manger", {"target":"berry_a"}, "resource_consumption"),
+        ):
+            recorder.record_transition(
+                world=extra_free, t_monde=t, family=family_extra,
+                command=PrimitiveCommand(primitive, params))
+        extra_blocked = WorldBody(config=config, layout=layout)
+        recorder.record_transition(world=extra_blocked,t_monde=1,
+            family="movement_free",
+            command=PrimitiveCommand("se_deplacer", {"direction":"north"}))
+        extra_blocked.apply_scenario_event("set_obstacle",
+            {"position":{"x":3,"y":1},"active":True})
+        recorder.record_transition(world=extra_blocked,t_monde=2,
+            family="movement_blocked",
+            command=PrimitiveCommand("se_deplacer", {"direction":"east"}))
+        extra_blocked.apply_scenario_event("set_obstacle",
+            {"position":{"x":3,"y":1},"active":False})
+        for t, primitive, params, family_extra in (
+            (3,"attendre",{},"wait"),
+            (4,"se_deplacer",{"direction":"east"},"movement_free"),
+            (5,"collecter",{"target":"berry_a"},"collection_without_tool"),
+            (6,"manger",{"target":"berry_a"},"resource_consumption"),
+        ):
+            recorder.record_transition(
+                world=extra_blocked,t_monde=t,family=family_extra,
+                command=PrimitiveCommand(primitive,params))
     return train_exact_transition_table(
         corpus=recorder.build(),
-        equipment_version="E-stage12-issue110-lived-state-" + family + "-physical-v1",
+        equipment_version=("E-stage12-issue110-lived-state-" + family
+                           + ("-physical-extended-a211b-v1" if extended
+                              else "-physical-v1")),
     )
 
 
@@ -91,6 +129,7 @@ def build_life(
     instrumental_geographic_value: bool = False,
     progressive_revalidate_on_new_capture: bool = False,
     extrinsic_gain_override: float | None = None,
+    extended_prebirth_equipment: bool = False,
 ):
     """Build the exact preregistered life for standalone WAL or M11 SQLite.
 
@@ -228,6 +267,7 @@ def build_life(
     training_layout = replace(layout, obstacles=frozenset())
     equipment = build_prebirth_equipment(
         config, training_layout, food_target=target_food,
+        extended=extended_prebirth_equipment,
     )
     from lab.injected_scenario import ScenarioEvent
     if a2_obstacle_clear_step is not None and (
