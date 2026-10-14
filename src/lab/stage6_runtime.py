@@ -219,6 +219,31 @@ class Stage6Runtime(Stage4Runtime):
             is_night=self.world.is_night(capture.t_monde),
         )
         self._revision_initial_state = initial_state
+        # A2.7: a merely proposed partial segment from an earlier physical
+        # capture is not valid evidence at the newly sensed position. Unlike
+        # completion, this is *not* credit for executing a goal action.
+        stale = self.planning.stale_partial_for_capture(t_monde=capture.t_monde)
+        if stale is not None:
+            old_ref = stale.option.id
+            authored_step = (
+                stale.option.expires_at_step
+                - self._stage6_config.planning.option_ttl_steps
+            )
+            self.competition.invalidate_candidate(old_ref)
+            self.stage3.control.clear_option_step(old_ref)
+            self.planning.invalidate_current()
+            self._write(
+                kind="stage6_progress_segment_revalidated", cycle=cycle,
+                data={
+                    "option_ref": old_ref,
+                    "goal_ref": stale.option.goal_ref,
+                    "authored_world_step": authored_step,
+                    "capture_world_step": capture.t_monde,
+                    "reason": "fresh_physical_capture_requires_new_partial_search",
+                    "physical_progress_claimed": False,
+                    "agency_claimed": False,
+                },
+            )
         # A progressive option is a one-step segment, not a terminal goal.
         # Once consumed, remove the stale candidate and force a fresh search
         # from the next authorized perception (never replay the last step).
