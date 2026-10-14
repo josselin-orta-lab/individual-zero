@@ -50,6 +50,7 @@ class Stage6PlanningConfig:
     setpoints: Mapping[str, float]
     progressive_subgoals: bool = False
     progressive_evaluation_prefix: bool = False
+    progressive_revalidate_on_new_capture: bool = False
 
     def validate(self) -> None:
         if not self.version:
@@ -60,6 +61,10 @@ class Stage6PlanningConfig:
             raise ValueError('progressive_subgoals must be bool')
         if type(self.progressive_evaluation_prefix) is not bool:
             raise ValueError('progressive_evaluation_prefix must be bool')
+        if type(self.progressive_revalidate_on_new_capture) is not bool:
+            raise ValueError("progressive revalidation must be boolean")
+        if self.progressive_revalidate_on_new_capture and not self.progressive_subgoals:
+            raise ValueError("progressive revalidation requires progressive_subgoals")
         if self.progressive_evaluation_prefix and not self.progressive_subgoals:
             raise ValueError('prospective prefix requires progressive_subgoals')
         if self.max_depth < 1:
@@ -120,6 +125,20 @@ class SimulatorPlanner:
                 "partial_progress": result.partial_progress,
             }
         return result
+
+    def stale_partial_for_capture(self, *, t_monde: int) -> OptionProposal | None:
+        """Only opt-in, physically old partial options require fresh search.
+
+        The original time is encoded in the option's immutable expiry/TTL;
+        this check never reads or guesses a physical outcome or secret state.
+        """
+        if not self._config.progressive_revalidate_on_new_capture:
+            return None
+        proposal = self._current_proposal
+        if (proposal is None or proposal.option.success_condition != "step_completed"):
+            return None
+        authored_step = proposal.option.expires_at_step - self._config.option_ttl_steps
+        return proposal if authored_step < t_monde else None
 
     @property
     def current_plan(self) -> Plan | None:
