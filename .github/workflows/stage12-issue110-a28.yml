@@ -1,0 +1,48 @@
+name: Stage12 Issue110 A2.8 prospective value and lived food
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_first_planning_state.py'
+      - 'scripts/run_stage12_issue110_a28.py'
+      - 'tests/test_stage12_a28_extrinsic_gain.py'
+      - 'docs/research/stage12-issue110-a28-prospective-value-sensitivity-prereg-2026-10-14.fr.md'
+      - '.github/workflows/stage12-issue110-a28.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  a28-preregistered:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: A2.8 preregistered gain interface checks
+        run: python -m unittest discover -s tests -p 'test_stage12_a28_extrinsic_gain.py' -v
+      - name: 24 independently born 42-step mortal physical lives
+        env:
+          COHORT: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/run_stage12_issue110_a28.py \
+            --output-dir /tmp/i0-a28-results --cohort-id "$COHORT" \
+            > /tmp/i0-a28.log 2>&1 || { tail -n 160 /tmp/i0-a28.log; exit 2; }
+          grep 'A28_SUMMARY' /tmp/i0-a28.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-a28-py${{ matrix.python-version }}
+          path: |
+            /tmp/i0-a28-results
+            /tmp/i0-a28.log
+          retention-days: 30
+          if-no-files-found: warn
