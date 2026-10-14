@@ -1088,6 +1088,25 @@ class WorldBody:
             self._config._validate_interior(position)
             return position
 
+        if operation == "set_obstacle":
+            # A2: real environmental geometry change. Physical ownership
+            # remains with WorldBody, never the cognition or evaluator.
+            if set(payload) != {"position", "active"}:
+                raise ValueError("obstacle intervention requires position and active")
+            position = position_from_payload()
+            active = payload["active"]
+            if type(active) is not bool:
+                raise ValueError("obstacle active must be a boolean")
+            # An external obstacle may block the individual's *destination*,
+            # but it cannot materialize under the current physical body.
+            if active and position == self._position:
+                raise ValueError("obstacle cannot occupy the current body cell")
+            if active:
+                self._obstacles.add(position)
+            else:
+                self._obstacles.discard(position)
+            return
+
         if operation in {"set_danger_zone", "set_lethal_zone"}:
             position = position_from_payload()
             active = payload.get("active", True)
