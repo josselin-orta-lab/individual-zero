@@ -73,7 +73,9 @@ class Stage12SpatialM11Tests(unittest.TestCase):
                     birth_life_id=birth,
                 )[0]
                 self.assertEqual(life.individual_id, birth)
-                for _ in range(6):
+                # Step 6 is an actual sleeping step; only the waking
+                # diagnostic in step 7 can emit the pair expiry receipt.
+                for _ in range(8):
                     self.assertEqual(life.run_step().execution_status, "applied")
                 raw = life.journal.canonical_bytes()
                 audit_stage12_goal_progress(raw)
