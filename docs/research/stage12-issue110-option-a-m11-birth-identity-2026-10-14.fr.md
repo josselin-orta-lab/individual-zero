@@ -27,6 +27,12 @@ Test d'intégration `tests/test_stage12_spatial_m11_identity.py` :
 
 [Run #38494047774](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38494047774) : **SUCCESS sur Python 3.11 et 3.12** au SHA `9035a588b5efb349834f38033fd698baa9e22e5a`. Nouvelle campagne de vérification M11 au SHA intégrant également le contrôleur de cohorte : exécution spécifique à examiner avant toute certification supplémentaire.
 
+### Vérification finale croisée sur SHA exact
+
+- [Run M11 #38494268696](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38494268696) : **SUCCESS Python 3.11/3.12**, commit `5ac7c8a8504ad0cd692c683cf9144d5640cf041c` ; même test de naissances distinctes, froid, `os._exit` avant/après COMMIT et non-régressions M11.
+- [Run de vies #38494268718](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38494268718) : **SUCCESS Python 3.11/3.12**, même SHA, 4/4 vies et 200 pas par interpréteur, 5 propositions d'objectif, 2 intentions spatiales, 3 jugements `self`, 0 `world`, 3 couples admis et 2 appliqués. Le nouvel audit indépendant de cohorte retourne exactement **4 identités de naissance distinctes et 23 références cognitives distinctes** dans chacun des deux interpréteurs, sans collision. La source individuelle est hashée avant toute agrégation ; les deux Pythons partagent le même `cohort_id=gha38494268718a1`.
+- Les archives de cette campagne, les deux variantes Python et les rapports de chaque vie sont disponibles depuis GitHub Actions. La comparaison entre interpréteurs est un contrôle de reproductibilité **et non huit individus indépendants**. Les anciens corpus et journaux ne sont pas réécrits. Pas de `world` positif.
+
 ## 3. Procédure opérateur minimale
 
 ```bash
