@@ -1,0 +1,42 @@
+name: Stage12 Issue110 A2.22 hard-crash source custody
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_a222.py'
+      - 'docs/research/stage12-issue110-a222-*.md'
+      - '.github/workflows/stage12-issue110-a222.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  hard-crash-custody:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: 96 independent WorldBody lives, os._exit and cold SQLite audit
+        run: |
+          python scripts/run_stage12_issue110_a222.py \
+            --output-dir /tmp/a222-physical > /tmp/a222.log 2>&1 \
+            || { tail -n 120 /tmp/a222.log; exit 2; }
+          grep 'A222_SUMMARY' /tmp/a222.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-a222-py${{ matrix.python-version }}
+          path: |
+            /tmp/a222-physical
+            /tmp/a222.log
+          retention-days: 30
+          if-no-files-found: warn
