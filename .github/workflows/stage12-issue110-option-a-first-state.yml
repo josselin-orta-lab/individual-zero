@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/stage12-issue110-option-a-first-state.yml'
       - 'scripts/run_stage12_issue110_first_planning_state.py'
+      - 'scripts/audit_stage12_issue110_birth_cohort.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -44,6 +45,10 @@ jobs:
           mkdir -p /tmp/issue110-first-state
           python scripts/run_stage12_issue110_first_planning_state.py \
             --output-dir /tmp/issue110-first-state/experiment
+      - name: Reject cross-life cognitive collisions and verify each original journal
+        run: |
+          python scripts/audit_stage12_issue110_birth_cohort.py \\
+            --cohort-dir /tmp/issue110-first-state/experiment
       - name: Publish measured negative or positive output
         if: always()
         run: |
