@@ -13,6 +13,7 @@ from math import isfinite
 from i0.config import MVP_PHASE1_PRODUCER_ORDER
 from i0.modules.stage12_occupancy import module_occupancy_entropy
 from i0.modules.stage12_goal_agency import GOAL_AGENCY_VERSION
+from i0.modules.stage12_dual_scope import DUAL_SCOPE_VERSION
 from i0.modules.stage12_attribution_pairs import (
     PAIR_VERSION, LivedAttributionPair, Stage12AttributionPairs,
 )
@@ -174,6 +175,8 @@ class Stage12Runtime(Stage11SleepRuntime):
         module_occupancy_cost_uc: int = 1,
         operator_alert_persistence_steps: int = 3,
         subjective_goal_agency: bool = False,
+        dual_scope_agency: bool = False,
+        dual_scope_cost_uc: int = 1,
         goal_agency_cost_uc: int = 1,
         spatial_goal_progress: bool = False,
         spatial_goal_cost_uc: int = 1,
@@ -202,6 +205,12 @@ class Stage12Runtime(Stage11SleepRuntime):
             raise ValueError("Stage12 occupancy work requires a positive versioned UC cost")
         if type(subjective_goal_agency) is not bool:
             raise ValueError("goal agency opt-in must be explicit boolean")
+        if type(dual_scope_agency) is not bool or (dual_scope_agency and not subjective_goal_agency):
+            raise ValueError("dual-scope requires first-person agency at birth")
+        if dual_scope_agency and attribution_join:
+            raise ValueError("legacy GA-06 cannot treat proximal action agency as distal responsibility")
+        if type(dual_scope_cost_uc) is not int or dual_scope_cost_uc < 1:
+            raise ValueError("dual-scope requires positive UC cost")
         if type(goal_agency_cost_uc) is not int or goal_agency_cost_uc < 1:
             raise ValueError("goal agency cognitive service requires positive UC")
         if type(attribution_join) is not bool or (
@@ -221,6 +230,8 @@ class Stage12Runtime(Stage11SleepRuntime):
         self._spatial_goal_cost_uc = spatial_goal_cost_uc
         self._attribution_join_enabled = attribution_join
         self._attribution_join_cost_uc = attribution_join_cost_uc
+        self._dual_scope_enabled = dual_scope_agency
+        self._dual_scope_cost_uc = dual_scope_cost_uc
         self._goal_agency_enabled = subjective_goal_agency
         self._goal_agency_cost_uc = goal_agency_cost_uc
         self._stage12_occupancy_cost_uc = module_occupancy_cost_uc
@@ -235,6 +246,8 @@ class Stage12Runtime(Stage11SleepRuntime):
         super().__init__(**kwargs)
         if self._goal_agency_enabled:
             self.stage3.control.enable_goal_agency()
+            if self._dual_scope_enabled:
+                self.stage3.control.enable_dual_scope()
         self._stage12_detectors = Stage12LivedDetectors(detector_policy)
         self._stage12_alerts = Stage12AlertLedger(alert_policy)
         self._meta_custody = _Stage12MetacognitionCustody(
@@ -260,6 +273,7 @@ class Stage12Runtime(Stage11SleepRuntime):
         occupancy_cost = self._stage12_occupancy_cost_uc
         agency_cost = self._goal_agency_cost_uc if self._goal_agency_enabled else 0
         join_cost = self._attribution_join_cost_uc if self._attribution_join_enabled else 0
+        dual_cost = self._dual_scope_cost_uc if self._dual_scope_enabled else 0
         spatial_cost = self._spatial_goal_cost_uc if self._spatial_goal_enabled else 0
         spatial_agency_cost = (
             self._spatial_agency_cost_uc
@@ -272,12 +286,13 @@ class Stage12Runtime(Stage11SleepRuntime):
                           + "+" + CONTRACT_VERSION
                           + ("+" + SPATIAL_CONTRACT_VERSION if spatial_cost else "")
                           + ("+" + GOAL_AGENCY_VERSION if agency_cost else "")
+                          + ("+" + DUAL_SCOPE_VERSION if dual_cost else "")
                           + ("+" + PAIR_VERSION if join_cost else "")
                           + "+stage12-alerts-v1-p"
                           + str(self._stage12_alert_policy.persistence_world_steps)),
             cycle_ceiling=(old.cycle_ceiling + cost + occupancy_cost
                            + agency_cost + join_cost + spatial_cost
-                           + spatial_agency_cost),
+                           + spatial_agency_cost + dual_cost),
             module_envelopes={
                 **old.module_envelopes,
                 # Stage11 has no Stage10 metacognition envelope yet.
@@ -286,7 +301,7 @@ class Stage12Runtime(Stage11SleepRuntime):
                 # later Stage10 with_budget() configuration step.
                 **({"action_control": (
                     old.module_envelopes.get("action_control", 0)
-                    + agency_cost + spatial_agency_cost
+                    + agency_cost + spatial_agency_cost + dual_cost
                 )} if agency_cost else {}),
                 "metacognition_health": max(
                     old.module_envelopes.get("metacognition_health", 0),
@@ -298,6 +313,7 @@ class Stage12Runtime(Stage11SleepRuntime):
                 "stage12_diagnostic_sample": cost,
                 "stage12_occupancy_entropy": occupancy_cost,
                 **({"goal_agency_assessment": agency_cost} if agency_cost else {}),
+                **({"goal_outcome_responsibility_assessment": dual_cost} if dual_cost else {}),
                 **({"stage12_attribution_join": join_cost} if join_cost else {}),
                 **({"stage12_spatial_goal_preregistration": spatial_cost}
                    if spatial_cost else {}),
