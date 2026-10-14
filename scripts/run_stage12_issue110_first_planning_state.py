@@ -84,6 +84,7 @@ def build_life(
     a2_external_obstacle: bool = False,
     a2_obstacle_clear_step: int | None = None,
     calibration_food_profile: str | None = None,
+    planning_depth: int = 3,
 ):
     """Build the exact preregistered life for standalone WAL or M11 SQLite.
 
@@ -152,12 +153,18 @@ def build_life(
     cfg7 = cfg8.stage7
     cfg6 = cfg7.stage6
     horizon = 2 if sleep_name == "horizon_two" else 3
+    if type(planning_depth) is not int or planning_depth not in (3, 4, 5, 6):
+        raise ValueError("experimental Stage6 depth must be 3, 4, 5, or 6")
     revised6 = replace(
         cfg6,
         simulator=replace(cfg6.simulator,
-                          version="stage12-issue110-food-simulator-v1", h_max=3),
+                          version=("stage12-issue110-food-simulator-v1" if planning_depth == 3
+                                   else f"stage12-issue110-food-simulator-depth{planning_depth}-v1"),
+                          h_max=planning_depth),
         planning=replace(cfg6.planning,
-                         version="stage12-issue110-food-planner-v1", max_depth=3),
+                         version=("stage12-issue110-food-planner-v1" if planning_depth == 3
+                                  else f"stage12-issue110-food-planner-depth{planning_depth}-v1"),
+                         max_depth=planning_depth),
         evaluation=replace(cfg6.evaluation,
                            version="stage12-issue110-food-horizon-"+str(horizon)+"-v1",
                            h_eff=horizon),
