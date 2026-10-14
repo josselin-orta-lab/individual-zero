@@ -99,6 +99,22 @@ def one(root, profile, obstacle, cohort, progressive):
     (folder/"motive-trace.json").write_text(json.dumps(motivations,indent=2,sort_keys=True)+"\n")
     (folder/"step-trace.json").write_text(json.dumps(trace,indent=2,sort_keys=True)+"\n")
     counts=coverage_census(trace)
+    plan_trace=[]
+    for rawline in raw.splitlines():
+        ev=json.loads(rawline)["causal_event"]
+        if ev.get("kind")=="stage6_planning_result":
+            data=ev.get("data", {})
+            diag=data.get("progressive_search_diagnostic")
+            if diag is not None:
+                plan_trace.append({
+                    "t_monde":ev.get("t_monde"),
+                    "goal_ref":data.get("goal_ref"),
+                    "proposal_ref":data.get("proposal_ref"),
+                    "segment_proposed":data.get("progressive_segment_proposed"),
+                    "search":diag,
+                })
+    (folder/"progressive-search-trace.json").write_text(
+        json.dumps(plan_trace,indent=2,sort_keys=True)+"\n")
     anchors=dict(expected_head=life.journal.head_hash,expected_count=len(life.journal.entries))
     audit_error=None
     results={}
@@ -132,6 +148,20 @@ def one(root, profile, obstacle, cohort, progressive):
                 journal_sha256=sha256(raw).hexdigest(),steps=sum(actions.values()),
                 commands=dict(actions),coverage=counts,execution_error=execution_error,
                 audit_error=audit_error,
+                progressive_search_census={
+                    "events":len(plan_trace),
+                    "statuses":dict(Counter(
+                        entry["search"].get("status") for entry in plan_trace
+                        if isinstance(entry["search"],dict))),
+                    "unavailable_edges":sum(
+                        int(entry["search"].get("unavailable_edges",0))
+                        for entry in plan_trace if isinstance(entry["search"],dict)),
+                    "expanded_states":sum(
+                        int(entry["search"].get("expanded_states",0))
+                        for entry in plan_trace if isinstance(entry["search"],dict)),
+                    "segments_proposed":sum(bool(entry["segment_proposed"])
+                                            for entry in plan_trace),
+                },
                 motive_census={
                     "goal_changes":sum(len(r["goals"]) for r in motivations),
                     "goal_motives":sum(m["motive"]=="active_goal" for r in motivations for m in r["selected"]),
