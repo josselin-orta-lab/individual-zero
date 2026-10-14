@@ -121,6 +121,9 @@ def build_life(
             "sustained": (24.0, 6.0, 0.7, 12),
             "episodic": (33.0, 12.0, 1.6, 8),
             "marginal": (22.0, 3.0, 1.3, 12),
+            "restored": (35.0, 30.0, 0.0, 12),
+            "replenished": (35.0, 40.0, 2.0, 12),
+            "urgent": (35.0, 50.0, 4.0, 12),
         }
         if (type(calibration_food_profile) is not str
                 or calibration_food_profile not in profiles
