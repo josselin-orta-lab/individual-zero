@@ -165,6 +165,37 @@ def one(root, profile, obstacle, cohort, progressive):
             and e.get("kind")=="stage8_option_evaluation"
             and e.get("data",{}).get("option_ref")==opt
         ]
+    # Independently reconstruct crossed candidates per exact cycle from
+    # persisted Competition traces; never choose or rank options inside I0.
+    decisions=[]
+    for e in events:
+        if e.get("kind")!="competition_cycle":
+            continue
+        crossed=[]
+        for item in e.get("data",{}).get("traces",[]):
+            if item.get("crossed"):
+                before=item.get("accumulator_after")
+                threshold=item.get("threshold")
+                def numeric(x):
+                    return float.fromhex(x["$f64"]) if isinstance(x,dict) and "$f64" in x else float(x)
+                score=(numeric(before)-numeric(threshold))/numeric(threshold)
+                crossed.append({"option_ref":item["option_ref"],"margin":score})
+        crossed.sort(key=lambda r:-r["margin"])
+        if crossed:
+            t=e.get("t_monde")
+            cy=e.get("cycle")
+            admissions=[{"kind":v.get("kind"),"option_ref":v.get("data",{}).get("option_ref"),"reason":v.get("data",{}).get("reason")}
+                for v in events if v.get("t_monde")==t and v.get("cycle")==cy
+                and v.get("kind") in ("command_admitted","command_vetoed")]
+            decisions.append({"t_monde":t,"cycle":cy,"crossed":crossed,
+                              "admissions":admissions})
+    (folder/"crossed-ranked-audit.json").write_text(
+        json.dumps(decisions,indent=2,sort_keys=True)+"\\n")
+    if progressive:
+        for decision in decisions:
+            if any(":progress:prefix" in row["option_ref"] for row in decision["crossed"]):
+                print("CROSSED_RANKED " + json.dumps(
+                    {"condition":name,**decision},sort_keys=True))
     (folder/"progressive-search-trace.json").write_text(
         json.dumps(plan_trace,indent=2,sort_keys=True)+"\n")
     anchors=dict(expected_head=life.journal.head_hash,expected_count=len(life.journal.entries))
