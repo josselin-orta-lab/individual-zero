@@ -119,8 +119,13 @@ def run_one(path,profile,blocked,pulse_step,cohort):
             assert len(match)==1,("pulse has no unique applied receipt",coords)
             perception=[i for i,e in enumerate(events) if e.get("kind")=="perceptual_capture" and e.get("t_monde")==received["t_monde"]]
             reduced=[i for i,e in enumerate(events) if e.get("kind")=="stage10_reduced_capture" and e.get("t_monde")==received["t_monde"]]
-            assert (bool(perception) != bool(reduced)) and match[0]<min(perception or reduced),("pulse not before authorized sensory boundary",coords,[(i,e.get("kind")) for i,e in enumerate(events) if e.get("t_monde")==received["t_monde"]])
-            pulse_capture_modes.append("waking" if perception else "reduced_sleep")
+            assert (perception or reduced) and match[0]<min(perception+reduced),("pulse not before authorized sensory boundary",coords)
+            if perception and reduced:
+                wake=[i for i,e in enumerate(events) if e.get("kind")=="stage10_sleep_woke" and e.get("t_monde")==received["t_monde"]]
+                assert len(wake)==1 and min(reduced)<wake[0]<min(perception),("missing sleep-wake transition",coords)
+                pulse_capture_modes.append("woke_from_sleep")
+            else:
+                pulse_capture_modes.append("waking" if perception else "reduced_sleep")
         if audit_rejection:
             assert pulse_step is not None and len(arrivals)==1, "unauthorized goal audit rejection"
             t=arrivals[0]["t_monde"]
@@ -221,6 +226,7 @@ def main():
         "errors":sum(bool(r["failure"]) for r in rows),
         "pulse_events":sum(r.get("pulse_events",0) for r in rows),
         "pulses_during_reduced_sleep":sum(r.get("pulse_capture_modes",[]).count("reduced_sleep") for r in rows),
+        "pulses_during_wake_transition":sum(r.get("pulse_capture_modes",[]).count("woke_from_sleep") for r in rows),
         "goal_successes":sum(r.get("goal_success") or 0 for r in rows),
         "goal_failures":sum(r.get("goal_failure") or 0 for r in rows),
         "agency_unknown":sum(r.get("agency_unknown") or 0 for r in rows),
