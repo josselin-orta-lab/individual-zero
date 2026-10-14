@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/stage12-issue110-option-a-m11-identity.yml'
       - 'tests/test_stage12_spatial_m11_identity.py'
+      - 'tests/test_stage12_a2_m11_crash.py'
       - 'src/lab/stage12_runtime.py'
       - 'src/lab/stage4_runtime.py'
       - 'src/lab/m11_transactional_mortal.py'
@@ -38,6 +39,7 @@ jobs:
       - name: Run real M11 hard crash and birth namespace checks
         run: |
           python -m unittest discover -s tests -p 'test_stage12_spatial_m11_identity.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_a2_m11_crash.py' -v
       - name: Stage12 older and full SQLite transaction protections
         run: |
           python -m unittest discover -s tests -p 'test_m11_stage12_atomic_preflight.py' -v
