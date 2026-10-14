@@ -67,7 +67,7 @@ class Stage6PlanningConfig:
 
 @dataclass(frozen=True, slots=True)
 class PlanningSearchResult:
-    status: str  # plan_found | incomplete_model | not_found_within_horizon
+    status: str  # plan_found | partial_progress | incomplete_model | not_found_within_horizon
     commands: tuple[PrimitiveCommand, ...]
     predictions: tuple[EquipmentPrediction, ...]
     expanded_states: int
@@ -190,7 +190,15 @@ class SimulatorPlanner:
         *,
         initial_state: SimulationState,
         target: Callable[[SimulationState], bool],
+        progress_measure: str | None = None,
     ) -> PlanningSearchResult:
+        # Only a known goal measure can license an intermediate action.
+        # A generic search (including shelter prediction) never fabricates
+        # a partial goal from an unrelated bodily change.
+        if progress_measure is not None and progress_measure not in (
+            "energy", "food", "water", "integrity"
+        ):
+            raise ValueError("unsupported intermediate progress measure")
         initial_state.validate()
         if target(initial_state):
             return PlanningSearchResult(
@@ -211,12 +219,20 @@ class SimulatorPlanner:
         visited = {self._state_key(initial_state)}
         expanded = 0
         unavailable = 0
-        # The best *observed-model* intermediate result is selected only from
-        # nodes the normal bounded search would already explore.
-        candidate = None
-        candidate_gain = 0.0
-        start_food = float(initial_state.body['food'])
-        start_inventory = int(initial_state.inventory.get('berry_a', 0)) + int(initial_state.inventory.get('berry_b', 0))
+        # The same bounded search may record a strictly goal-relevant
+        # intermediate; goal-independent side effects are never progress.
+        # Prefer measurable bodily gain over food inventory acquisition.
+        candidate: tuple[tuple[PrimitiveCommand, ...],
+                         tuple[EquipmentPrediction, ...]] | None = None
+        candidate_rank = (0, 0.0)
+        start_value = (
+            float(initial_state.body[progress_measure])
+            if progress_measure is not None else 0.0
+        )
+        start_berries = sum(
+            int(initial_state.inventory.get(berry, 0))
+            for berry in ("berry_a", "berry_b")
+        )
 
         while queue:
             node = queue.pop(0)
@@ -253,17 +269,31 @@ class SimulatorPlanner:
                         unavailable_edges=unavailable,
                     )
 
-                if self._config.progressive_subgoals:
-                    # Only a predicted *completed* physical transition may
-                    # count. Prefer genuine bodily progress, then a verified
-                    # increase in available edible inventory.
-                    food_gain = float(next_state.body["food"]) - start_food
-                    stock_gain = (int(next_state.inventory.get("berry_a", 0))
-                                  + int(next_state.inventory.get("berry_b", 0))
-                                  - start_inventory)
-                    gain = max(food_gain, 0.0) + max(stock_gain, 0) * 0.001
-                    if gain > candidate_gain and not prediction.terminal:
-                        candidate_gain = gain
+                if (
+                    self._config.progressive_subgoals
+                    and progress_measure is not None
+                    and not prediction.terminal
+                ):
+                    bodily_gain = (
+                        float(next_state.body[progress_measure]) - start_value
+                    )
+                    # Acquisition of edible resources is an intermediate
+                    # capacity only for a *food* goal. Stock changes must
+                    # never count as progress for water, energy or integrity.
+                    new_berries = (
+                        sum(int(next_state.inventory.get(berry, 0))
+                            for berry in ("berry_a", "berry_b"))
+                        - start_berries
+                    ) if progress_measure == "food" else 0
+                    rank = (
+                        (2, bodily_gain) if bodily_gain > 0.0
+                        else (1, 1.0) if new_berries > 0
+                        else (0, 0.0)
+                    )
+                    # Stable first-in-BFS tie breaking; accumulating excess
+                    # stock alone cannot win over a shorter acquisition.
+                    if rank > candidate_rank:
+                        candidate_rank = rank
                         candidate = (commands, predictions)
 
                 key = self._state_key(next_state)
@@ -391,6 +421,10 @@ class SimulatorPlanner:
         result = self.search(
             initial_state=initial_state,
             target=predicate,
+            progress_measure=(
+                goal.principal_measure
+                if self._config.progressive_subgoals else None
+            ),
         )
         if result.status not in ("plan_found", "partial_progress") or not result.commands:
             return None
