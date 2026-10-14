@@ -424,6 +424,10 @@ class SimulatorPlanner:
     ) -> OptionProposal | None:
         if goal is None:
             self.invalidate_current()
+            if self._config.progressive_subgoals:
+                self._last_search_diagnostic = {"status": "no_goal",
+                    "expanded_states": 0, "unavailable_edges": 0,
+                    "partial_progress": False}
             return None
 
         if (
@@ -431,6 +435,12 @@ class SimulatorPlanner:
             and self._current_proposal.option.goal_ref == goal.id
             and self._current_proposal.option.expires_at_step > t_monde
         ):
+            if self._config.progressive_subgoals:
+                self._last_search_diagnostic = {"status": "reused_cached",
+                    "expanded_states": 0, "unavailable_edges": 0,
+                    "partial_progress": (
+                        self._current_proposal.option.success_condition
+                        == "step_completed")}
             return self._current_proposal
 
         predicate = self._goal_predicate(goal)
