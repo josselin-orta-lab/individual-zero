@@ -88,6 +88,7 @@ def build_life(
     progressive_planning: bool = False,
     progressive_evaluation_prefix: bool = False,
     intrinsic_weight_override: float | None = None,
+    instrumental_geographic_value: bool = False,
 ):
     """Build the exact preregistered life for standalone WAL or M11 SQLite.
 
@@ -189,6 +190,14 @@ def build_life(
             stage11_config,
             version=stage11_config.version + "-p15-" + str(intrinsic_weight_override),
             intrinsic_weight=float(intrinsic_weight_override),
+        )
+    if type(instrumental_geographic_value) is not bool:
+        raise ValueError("instrumental_geographic_value must be bool")
+    if instrumental_geographic_value:
+        stage11_config = replace(
+            stage11_config,
+            version=stage11_config.version + "-instrumental-geographic-v1",
+            instrumental_geographic_value=True,
         )
     combined = replace(s10._stage10_config, stage9=stage11_config.stage9,
                        sleep=sleep)
