@@ -136,12 +136,13 @@ def trial(config, seed, cause, pattern):
     world = WorldBody(config=replace(config, initial_position=p),
                       layout=WorldLayout(water_sources=frozenset({first})))
     owner = GoalAgencyService()
+    opaque_ref = digest(["a220-private-id", seed, cause, pattern])
     c1 = capture(world, 1)
     move = PrimitiveCommand("se_deplacer", {"direction": "east"})
     owner.preregister(
-        assessment_ref=f"assessment:{seed}:{cause}:{pattern}",
-        intent_ref=f"intent:{seed}:{cause}:{pattern}",
-        life_id=f"lab:{seed}:{cause}:{pattern}",
+        assessment_ref=f"assessment:{opaque_ref}",
+        intent_ref=f"intent:{opaque_ref}",
+        life_id=f"lab:{opaque_ref}",
         goal_ref="goal:water", option_ref="option:move",
         command_hash=digest(move.as_dict()), world_step=1,
         measure="spatial_distance", command=move, capture=c1,
@@ -165,7 +166,7 @@ def trial(config, seed, cause, pattern):
         assert world.position == first
     c2 = capture(world, 2)
     original = owner.evaluate(capture=c2, world_step=2,
-                              cue_ref=f"original:{seed}:{cause}:{pattern}",
+                              cue_ref=f"original:{opaque_ref}",
                               paid=True)
     assert original and original.subjective_agency == "self"
     ledger = EvidenceLedger(original)
@@ -186,7 +187,7 @@ def trial(config, seed, cause, pattern):
         after = capture(world, idx + 1)
         before_original = deepcopy(owner.export_causal_state())
         marker = ledger.append(before=before, after=after, command=wait,
-                               cue_ref=f"cue:{seed}:{cause}:{pattern}:{idx+1}")
+                               cue_ref=f"cue:{opaque_ref}:{idx+1}")
         assert owner.export_causal_state() == before_original
         sequence.append(marker)
         perceptions.append(asdict(after))
