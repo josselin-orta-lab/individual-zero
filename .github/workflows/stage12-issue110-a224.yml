@@ -1,0 +1,42 @@
+name: Stage12 Issue110 A2.24 first-person sensory custody
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_a224.py'
+      - 'docs/research/stage12-issue110-a224-*.md'
+      - '.github/workflows/stage12-issue110-a224.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-sensory-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Test A2.24 physical origins versus attested sensory captures
+        run: |
+          python scripts/run_stage12_issue110_a224.py \
+            --output-dir /tmp/a224 > /tmp/a224.log 2>&1 \
+            || { tail -n 120 /tmp/a224.log; exit 2; }
+          grep 'A224_SUMMARY' /tmp/a224.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a224-py${{ matrix.python-version }}
+          path: |
+            /tmp/a224
+            /tmp/a224.log
+          retention-days: 30
+          if-no-files-found: warn
