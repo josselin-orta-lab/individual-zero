@@ -39,3 +39,59 @@ jobs:
           path: /tmp/issue110-multi
           retention-days: 30
           if-no-files-found: warn
+
+  compare-python-journals:
+    needs: [autonomous-worlds]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: issue110-multi-py*
+          path: /tmp/issue110-python-journals
+          merge-multiple: false
+      - name: Identify first exact causal JSON divergence
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, sys
+          root=Path("/tmp/issue110-python-journals")
+          one=root/"issue110-multi-py3.11"
+          two=root/"issue110-multi-py3.12"
+          if not one.exists() or not two.exists():
+              raise SystemExit("missing one interpreter archive")
+          different=0
+          for name in ["sustained_free","sustained_a2","episodic_free",
+                       "episodic_a2","marginal_free","marginal_a2"]:
+              p1=one/name/"canonical.jsonl"
+              p2=two/name/"canonical.jsonl"
+              left=p1.read_bytes().splitlines()
+              right=p2.read_bytes().splitlines()
+              if left==right:
+                  print(name, "byte-identical")
+                  continue
+              different+=1
+              index=next((i for i,(a,b) in enumerate(zip(left,right)) if a!=b),
+                         min(len(left),len(right)))
+              print(name, "first_divergence_line",index+1,
+                    "lengths",len(left),len(right))
+              if index<min(len(left),len(right)):
+                  for side,blob in (("py311",left[index]),("py312",right[index])):
+                      record=json.loads(blob)
+                      event=record.get("causal_event",{})
+                      print(side,json.dumps({
+                          "id":record.get("event_id"),
+                          "kind":event.get("kind"),"emitter":event.get("emitter"),
+                          "t_monde":event.get("t_monde"),
+                          "attempt_ref":event.get("attempt_ref"),
+                          "payload_sha":record.get("event_hash"),
+                          "event":event,
+                      },sort_keys=True)[:2800])
+              left_events=[json.loads(x).get("causal_event") for x in left]
+              right_events=[json.loads(x).get("causal_event") for x in right]
+              print(name, "semantic_event_equal",left_events==right_events)
+          print("divergent_lives",different)
+          # Exploratory diagnostic: log discrepancy but never relabel it PASS
+          # without an explicit upstream reproducibility requirement.
+          PY
