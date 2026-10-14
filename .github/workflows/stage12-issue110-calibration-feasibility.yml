@@ -7,6 +7,7 @@ on:
       - 'scripts/run_stage12_issue110_calibration_feasibility.py'
       - 'src/lab/stage3_runtime.py'
       - 'src/lab/stage10_runtime.py'
+      - 'tests/test_stage12_waking_capture_provenance.py'
       - 'scripts/run_stage12_issue110_first_planning_state.py'
       - '.github/workflows/stage12-issue110-calibration-feasibility.yml'
   workflow_dispatch:
@@ -34,6 +35,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -e .
+      - name: Verify canonical waking perception receipt contract
+        run: python -m unittest discover -s tests -p 'test_stage12_waking_capture_provenance.py' -v
       - name: Preregistered independent autonomous feasibility
         env:
           COHORT_ID: ${{ github.run_id }}-${{ github.run_attempt }}
