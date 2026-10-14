@@ -78,11 +78,14 @@ def verify_one(folder,seed,case):
         if result.t_monde==1 and witness["output"] is None:
             witness["output"]=asdict(result)
         return result
+    # Assemble fixture and all reference runtimes BEFORE beginning the
+    # observation window; those reference births have unrelated sensors.
+    newborn=fresh(seed,case,life_id)
     with patch.object(WorldBody,"capture_local",capture_local),patch.object(SymbolicPerception,"capture",capture):
         # Temporary class-patching in this one laboratory process never leaks
         # into other processes or alters persistent runtime source code.
         with M11TransactionalMortal.birth(db_path=db,
-             runtime=fresh(seed,case,life_id),individual_id=life_id) as life:
+             runtime=newborn,individual_id=life_id) as life:
             step=life.run_step()
             assert step.generation==1
     assert all(witness[k] is not None for k in ("raw","source","input","output","telemetry"))
