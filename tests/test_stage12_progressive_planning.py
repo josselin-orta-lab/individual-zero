@@ -3,7 +3,10 @@ from dataclasses import replace
 import unittest
 from i0.modules.stage6_planning import Stage6PlanningConfig, SimulatorPlanner
 from i0.modules.simulator import Simulator, SimulatorConfig
-from tests.test_stage6_planning import shelter_planner
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from test_stage6_planning import shelter_planner
 
 
 class ProgressivePlanningContracts(unittest.TestCase):
