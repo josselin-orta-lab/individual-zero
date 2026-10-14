@@ -1,0 +1,40 @@
+name: Issue110 Stage6 reachable goals calibration
+on:
+  pull_request:
+    branches: [science/stage12-issue110-sleep-window-20261014]
+    paths:
+      - 'scripts/run_stage12_issue110_reachability.py'
+      - 'scripts/run_stage12_issue110_first_planning_state.py'
+      - '.github/workflows/stage12-issue110-reachability.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  autonomous-lives:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Six predeclared reachable-regime autonomous lives
+        env:
+          COHORT: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/run_stage12_issue110_reachability.py \
+            --output-dir /tmp/issue110-reachability --cohort-id "$COHORT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue110-reachability-py${{ matrix.python-version }}
+          path: /tmp/issue110-reachability
+          retention-days: 30
+          if-no-files-found: warn
