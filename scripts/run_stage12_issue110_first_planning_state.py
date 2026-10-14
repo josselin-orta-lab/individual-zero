@@ -83,6 +83,7 @@ def build_life(
     birth_life_id: str | None = None,
     a2_external_obstacle: bool = False,
     a2_obstacle_clear_step: int | None = None,
+    calibration_food_profile: str | None = None,
 ):
     """Build the exact preregistered life for standalone WAL or M11 SQLite.
 
@@ -112,6 +113,30 @@ def build_life(
         resources=((adjacent if target_food else Position(2, 2), "berry_a", 2),),
         obstacles=frozenset({adjacent}) if blocked else frozenset(),
     )
+    # Physical sensitivity conditions are fixed BEFORE the newborn's world
+    # and the detached prebirth Equipment corpus are constructed. Existing
+    # environments preserve byte-for-byte historical configurations.
+    if calibration_food_profile is not None:
+        profiles = {
+            "sustained": (24.0, 6.0, 0.7, 12),
+            "episodic": (33.0, 12.0, 1.6, 8),
+            "marginal": (22.0, 3.0, 1.3, 12),
+        }
+        if (type(calibration_food_profile) is not str
+                or calibration_food_profile not in profiles
+                or world_name != "near_food_free"):
+            raise ValueError("unknown prebirth calibration food profile")
+        initial_food, gain, decay, quantity = profiles[calibration_food_profile]
+        config = replace(
+            config,
+            version=config.version + "-calibration-" + calibration_food_profile + "-v1",
+            initial_body=replace(config.initial_body, food=initial_food),
+            food_decay_per_step=decay,
+            berry_effects={**config.berry_effects,
+                           "berry_a": replace(config.berry_effects["berry_a"],
+                                               food_gain=gain)},
+        )
+        layout = replace(layout, resources=((adjacent, "berry_a", quantity),))
     layout.validate(config)
     sleep = s10._stage10_config.sleep
     if sleep_name not in SLEEP_PROFILES:
