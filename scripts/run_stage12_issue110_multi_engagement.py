@@ -20,6 +20,51 @@ PROFILES = ("sustained", "episodic", "marginal")
 MAX_STEPS = 36
 
 
+def motive_trace(raw: bytes) -> list[dict]:
+    """Read-only summary of actual goal choices, not feedback to cognition."""
+    steps: dict[int, dict] = {}
+    for line in raw.splitlines():
+        event = json.loads(line)["causal_event"]
+        t = event.get("t_monde")
+        if type(t) is not int:
+            continue
+        kind = event.get("kind")
+        data = event.get("data", {})
+        row = steps.setdefault(t, {
+            "step": t, "goals": [], "selected": [], "candidates": [],
+            "registrations": [], "refused_uc": [],
+        })
+        if kind == "active_goal_changed" and isinstance(data, dict):
+            def project(goal):
+                return ({k: goal.get(k) for k in
+                         ("goal_type", "target", "current_pressure")}
+                        if isinstance(goal, dict) else None)
+            row["goals"].append({
+                "before": project(data.get("before")),
+                "after": project(data.get("after"))})
+        elif kind == "stage12_action_motive_attested" and isinstance(data, dict):
+            row["selected"].append({
+                "motive": data.get("motive_type"),
+                "goal_ref": data.get("goal_ref"),
+                "active_goal_ref": data.get("active_goal_ref"),
+                "option": data.get("option_ref")})
+        elif kind == "stage8_option_evaluation" and isinstance(data, dict):
+            row["candidates"].append({
+                "signature": data.get("learning_signature"),
+                "status": data.get("status")})
+        elif kind in ("option_registration",
+                      "stage11_geographic_option_registration") and isinstance(data, dict):
+            row["registrations"].append({
+                "kind": kind, "registered": data.get("registered"),
+                "option": data.get("option_ref")})
+        elif kind == "compute_charge" and isinstance(data, dict) and data.get("accepted") is False:
+            row["refused_uc"].append({
+                "module": data.get("module"),
+                "operation": data.get("operation"),
+                "reason": data.get("reason")})
+    return [steps[t] for t in sorted(steps)]
+
+
 def one(root, profile, obstacle, cohort):
     name = profile + ("_a2" if obstacle else "_free")
     folder = root / name
@@ -50,6 +95,8 @@ def one(root, profile, obstacle, cohort):
     raw=life.journal.canonical_bytes()
     (folder/"canonical.jsonl").write_bytes(raw)
     trace=source_step_trace(raw)
+    motivations=motive_trace(raw)
+    (folder/"motive-trace.json").write_text(json.dumps(motivations,indent=2,sort_keys=True)+"\n")
     (folder/"step-trace.json").write_text(json.dumps(trace,indent=2,sort_keys=True)+"\n")
     counts=coverage_census(trace)
     anchors=dict(expected_head=life.journal.head_hash,expected_count=len(life.journal.entries))
@@ -84,9 +131,26 @@ def one(root, profile, obstacle, cohort):
                 config_sha256=config.digest(),equipment_sha256=equipment.artifact_digest,
                 journal_sha256=sha256(raw).hexdigest(),steps=sum(actions.values()),
                 commands=dict(actions),coverage=counts,execution_error=execution_error,
-                audit_error=audit_error,**results)
+                audit_error=audit_error,
+                motive_census={
+                    "goal_changes":sum(len(r["goals"]) for r in motivations),
+                    "goal_motives":sum(m["motive"]=="active_goal" for r in motivations for m in r["selected"]),
+                    "other_motives":sum(m["motive"]!="active_goal" for r in motivations for m in r["selected"]),
+                    "option_evaluations":sum(len(r["candidates"]) for r in motivations),
+                    "registrations":sum(len(r["registrations"]) for r in motivations),
+                    "refused_uc":sum(len(r["refused_uc"]) for r in motivations),
+                },**results)
     (folder/"result.json").write_text(json.dumps(report,indent=2,sort_keys=True)+"\n")
     print(json.dumps(report,sort_keys=True))
+    for row in motivations:
+        if row["goals"] or row["selected"] or row["refused_uc"]:
+            print("MOTIVE_STEP "+json.dumps({
+                "condition":name, "step":row["step"],
+                "goals":row["goals"], "selected":row["selected"],
+                "candidates":row["candidates"][:8],
+                "registrations":row["registrations"][:8],
+                "refused_uc":row["refused_uc"][:6],
+            },sort_keys=True))
     return report
 
 
