@@ -1,0 +1,67 @@
+name: GA08 issue110 preregistered autonomous spatial lives
+on:
+  pull_request:
+    branches:
+      - research/stage12-issue110-attribution-provenance-20261013
+    paths:
+      - 'scripts/run_stage12_issue110_ga08_spatial_science.py'
+      - 'src/i0/modules/stage12_spatial_goal_evidence.py'
+      - 'src/i0/modules/stage12_goal_progress.py'
+      - 'src/i0/modules/stage12_goal_agency.py'
+      - 'src/lab/stage12_runtime.py'
+      - 'src/lab/stage12_spatial_provenance_audit.py'
+      - '.github/workflows/stage12-ga08-physical-science.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: stage12-ga08-autonomy-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  physical-autonomy:
+    timeout-minutes: 40
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Assert exact prospective source
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          git diff --exit-code HEAD --
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Verify GA08 unit, owner and independent audits before lives
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_ga08_spatial_evidence.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_ga08_physical_fixture.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_ga08_owner_runtime.py' -q
+      - name: Six newborn autonomously controlled physically applied lives
+        run: |
+          mkdir -p /tmp/ga08-science
+          python scripts/run_stage12_issue110_ga08_spatial_science.py \
+            --output-dir /tmp/ga08-science/experiment
+      - name: Publish actual measured GA08 result or explicit absence
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/ga08-science/experiment/summary.json')
+          print('issue110_ga08_summary=' + (p.read_text() if p.exists() else 'unavailable'))
+          PY
+      - name: Preserve WAL and all positive negative or interrupted lives
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage12-ga08-spatial-py${{ matrix.python-version }}
+          path: /tmp/ga08-science/
+          retention-days: 30
+          if-no-files-found: warn

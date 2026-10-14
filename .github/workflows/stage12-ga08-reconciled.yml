@@ -1,0 +1,38 @@
+name: GA08 reconciled against A2 integration
+on:
+  pull_request:
+    branches: [feature/stage12-issue110-spatial-agency-option-a-20261014, main]
+    paths:
+      - 'docs/research/archive/issue110-ga08-legacy/**'
+      - 'tests/test_stage12_spatial_*.py'
+      - 'tests/test_stage12_a2_*.py'
+      - 'docs/research/stage12-issue110-ga08-historical-migration-2026-10-14.fr.md'
+      - 'src/i0/modules/stage12_spatial_cue_policy.py'
+      - '.github/workflows/stage12-ga08-reconciled.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ga08-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Current A2 spatial, attribution and M11 contracts
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_spatial_*.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_a2_*.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency*.py' -v
+      - name: Verify archived legacy source is not active module
+        run: |
+          test -f docs/research/archive/issue110-ga08-legacy/tests/test_stage12_ga08_owner_runtime.py
+          test ! -f tests/test_stage12_ga08_owner_runtime.py
+          test ! -f src/i0/modules/stage12_spatial_goal_evidence.py
