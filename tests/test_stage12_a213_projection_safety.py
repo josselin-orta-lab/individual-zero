@@ -25,6 +25,12 @@ class PhysicalCounterexamples(unittest.TestCase):
                 r=analyze_pair(a,b,family,41)
                 self.assertTrue(r["different_physical_outcome"])
                 self.assertEqual(len(r["projections"]),len(PROJECTIONS))
+                if family.startswith("HIDDEN_"):
+                    self.assertTrue(r["same_complete_observable_input"])
+                    self.assertFalse(any(v["contradictory_outcome_collision"]
+                                         for v in r["projections"].values()))
+                    self.assertTrue(all(v["irreducible_hidden_ambiguity"]
+                                        for v in r["projections"].values()))
 
     def test_unknown_exact_table_prediction_still_unavailable(self):
         reference=build_stage11_reference_runtime()
