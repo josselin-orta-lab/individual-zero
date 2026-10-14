@@ -309,7 +309,23 @@ class GoalAgencyService:
                 commitment.start_position[1] + dy,
             )
             actual = (capture.x, capture.y)
-            if commitment.spatial_prepassable is False and (
+            # A2: the direction was passable at commitment, but the same
+            # directly perceived goal cell has since become nonpassable.
+            # No failure outcome, WorldBody state or scenario event is read.
+            matches = [c for c in capture.adjacent if (
+                c.direction == direction
+                and (c.x, c.y) == expected
+            )]
+            newly_blocked = (
+                commitment.spatial_prepassable is True
+                and len(matches) == 1 and matches[0].passable is False
+                and actual == commitment.start_position
+            )
+            if newly_blocked:
+                agency, reason = (
+                    "world", "witnessed_new_goal_relevant_obstruction_after_commitment",
+                )
+            elif commitment.spatial_prepassable is False and (
                 actual == commitment.start_position
             ):
                 agency, reason = (
