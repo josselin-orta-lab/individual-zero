@@ -1,0 +1,42 @@
+name: Stage12 Issue110 A2.23 native M11 perception custody
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_a223.py'
+      - 'docs/research/stage12-issue110-a223-*.md'
+      - '.github/workflows/stage12-issue110-a223.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-perceptual-receipts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Native M11 crash points and canonical perceptual receipts
+        run: |
+          python scripts/run_stage12_issue110_a223.py \
+            --out /tmp/a223 > /tmp/a223.log 2>&1 \
+            || { tail -n 120 /tmp/a223.log; exit 2; }
+          grep 'A223_SUMMARY' /tmp/a223.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a223-py${{ matrix.python-version }}
+          path: |
+            /tmp/a223
+            /tmp/a223.log
+          retention-days: 30
+          if-no-files-found: warn
