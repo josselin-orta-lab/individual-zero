@@ -1,0 +1,13 @@
+# A2.23 : premier résultat, conservation native des captures M-11
+
+**15 octobre 2026.** Préenregistrement `c5205a1e` antérieur au script. Correctif de chemin de fixture `fbf1ef33`. [CI #38645332565](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38645332565) : **SUCCESS Python 3.11/3.12** sur le même code.
+
+## Résultats bornés
+
+Le script exécute 24 processus Stage12 mortal `M11TransactionalMortal` distincts et provoque exactement un `os._exit(76)` par essai selon six frontières : **16 intentions pendantes**, aucun reçu perceptif committé ni reprise autorisée ; **8 générations committées**, chacune avec un reçu `perceptual_capture` présent et contrôlé à froid, son `attempt_ref`, son `emitter`, le pas et sa position, avant la clôture du pas ; **4 substitutions externes** (position, tentative, pas de capture ou pas causal) ne correspondent pas aux occurrences canoniques enregistrées.
+
+**Déviation de protocole importante :** les quatre identifiants 141–144 sont des répétitions du même monde de fixture, non quatre mondes physiques distincts. La fixture `tests/test_stage12_mortal_runtime.py::stage12_runtime` utilisée par M11 a `subjective_goal_agency=False` ; elle produit donc le **reçu Perception historique minimal**, sans champs `agency_capture_schema` et `agency_visible_adjacent`. L'hypothèse préenregistrée d'un reçu subjectif enrichi n'est **PAS TESTÉE** et doit être déclarée **INCONCLUSIVE**, sans prétendre à sa réussite. Le résultat positif concerne la conservation atomique du reçu natif existant, non une preuve de provenance du service d'agence activé. Les quatre falsifications du script sont des rejets d'égalité à l'occurrence source et ne constituent pas quatre attaques cryptographiques nouvelles sur une archive remplacée de bout en bout.
+
+M11 et Stage12 ont été exécutés en vie autonome mortelle pour **un pas candidat par essai**, sans revendication de 600 pas ni d'acquisition causale. Les résultats ne renseignent pas la qualité des jugements d'agence, la causalité cachée, l'origine physique véritable d'une sensation falsifiée **avant** sa capture ni l'authenticité face à un adversaire qui réécrit toute la base et son ancrage.
+
+**Décision :** preuve technique partielle uniquement. Avant la clôture A2.23, développer une matrice supplémentaire avec `subjective_goal_agency=True` réellement configuré **à la naissance** et conservé au cold recovery, puis vérifier les mêmes limites de crash et d'accès. Aucun code de production, contrat normatif, propriétaire, UC ou WAL supplémentaire dans cette PR. Stage12 PARTIAL, #110 OPEN et réception opérateur non réalisée.

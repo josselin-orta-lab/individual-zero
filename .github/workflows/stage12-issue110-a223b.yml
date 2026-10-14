@@ -1,0 +1,42 @@
+name: Stage12 Issue110 A2.23b born-enabled M11 subjective custody
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_a223b.py'
+      - 'docs/research/stage12-issue110-a223b-*.md'
+      - '.github/workflows/stage12-issue110-a223b.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  born-enabled-hard-crash:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Execute A2.23b M11 born-enabled hard-crash and cold-recovery matrix
+        run: |
+          python scripts/run_stage12_issue110_a223b.py \
+            --output-dir /tmp/a223b > /tmp/a223b.log 2>&1 \
+            || { tail -n 120 /tmp/a223b.log; exit 2; }
+          grep 'A223B_SUMMARY' /tmp/a223b.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a223b-py${{ matrix.python-version }}
+          path: |
+            /tmp/a223b
+            /tmp/a223b.log
+          retention-days: 30
+          if-no-files-found: warn
