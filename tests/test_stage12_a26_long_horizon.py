@@ -66,27 +66,33 @@ class LongHorizonReadOnlyContracts(unittest.TestCase):
                 audit_stage12_attribution_pairs(original).admitted_pairs, 1,
             )
             rows = [json.loads(line) for line in original.splitlines()]
-            pair_t = min(
-                r["causal_event"]["t_monde"] for r in rows
-                if r["causal_event"].get("kind")
-                == "stage12_attribution_pair_admitted"
+            # A six-step autonomous life is not required to sleep after its
+            # first pair. Select a *genuine* consumed-pair diagnostic instead
+            # of fabricating an expected stage10_reduced_capture. The separate
+            # test_stage12_attribution_sleep_expiry.py verifies a real
+            # eight-step sleep gap and its hash-preserving forgery.
+            used = next((
+                row for row in rows
+                if row["causal_event"].get("kind")
+                == "stage12_lived_diagnostics_published"
+                and row["causal_event"].get("data", {}).get(
+                    "attribution_pair_ref") is not None
+            ), None)
+            self.assertIsNotNone(
+                used, "short physical smoke must include a real consumed pair"
             )
-            # Mutation preserves the cryptographic chain and world steps,
-            # but removes evidence that the final unpaired step was asleep.
-            missing = next(
-                (r for r in rows
-                 if r["causal_event"].get("kind") == "stage10_reduced_capture"
-                 and r["causal_event"].get("t_monde") > pair_t),
-                None,
-            )
-            self.assertIsNotNone(missing)
-            missing["causal_event"]["kind"] = "forged_non_sleep_receipt"
-            altered = rechain(rows)
-            self.assertEqual(audit_export_bytes(altered).world_steps_closed, 6)
+            forged = rechain([
+                row for row in rows if row["event_id"] != used["event_id"]
+            ])
+            self.assertEqual(audit_export_bytes(forged).world_steps_closed, 6)
+            # The independent auditor rejects even earlier than the
+            # pending-pair check: a followup itself lacks the original
+            # diagnostic source. Preserve this strict provenance guard.
             with self.assertRaisesRegex(
-                ValueError, "missing next-step diagnostic"
+                ValueError,
+                "goal followup lacks one prior lived capture and diagnostic receipt",
             ):
-                audit_stage12_attribution_pairs(altered)
+                audit_stage12_attribution_pairs(forged)
 
 
 if __name__ == "__main__":
