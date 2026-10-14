@@ -219,6 +219,25 @@ class Stage6Runtime(Stage4Runtime):
             is_night=self.world.is_night(capture.t_monde),
         )
         self._revision_initial_state = initial_state
+        # A progressive option is a one-step segment, not a terminal goal.
+        # Once consumed, remove the stale candidate and force a fresh search
+        # from the next authorized perception (never replay the last step).
+        if self._stage6_config.planning.progressive_subgoals:
+            previous = self.planning.current_proposal
+            if previous is not None and previous.option.success_condition == "step_completed":
+                option_ref, plan_ref, step_index = self.stage3.control.current_step
+                if (option_ref == previous.option.id
+                        and plan_ref == previous.plan.id
+                        and step_index >= (1 if self._stage6_config.planning.progressive_evaluation_prefix else len(previous.plan.steps))):
+                    self.competition.invalidate_candidate(option_ref)
+                    self.stage3.control.clear_option_step(option_ref)
+                    self.planning.invalidate_current()
+                    self._write(
+                        kind="stage6_progress_segment_closed", cycle=cycle,
+                        data={"option_ref": option_ref,
+                              "goal_ref": previous.option.goal_ref,
+                              "reason": "single_step_executed_replan_from_capture"},
+                    )
         proposal = self.planning.propose(
             goal=goal_for_planning,
             initial_state=initial_state,
@@ -243,6 +262,14 @@ class Stage6Runtime(Stage4Runtime):
                 ),
                 "equipment_version": self.equipment.version,
                 "planning_version": self._stage6_config.planning.version,
+                **({"progressive_search_diagnostic": (
+                    self.planning.last_search_diagnostic
+                    if proposal is not None or self.planning.last_search_diagnostic is not None
+                    else {"status": "no_new_search"}
+                ), "progressive_segment_proposed": bool(
+                    proposal is not None and
+                    proposal.option.success_condition == "step_completed"
+                )} if self._stage6_config.planning.progressive_subgoals else {}),
             },
         )
         return proposal

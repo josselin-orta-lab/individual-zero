@@ -77,6 +77,25 @@ class Exploration:
         self._geographic.freeze_targets(tuple(frozen_targets))
         return changed
 
+    def geographic_interest_for_target(self, target) -> IntrinsicAssessment:
+        """Same P-48 frontier signal for a separately grounded goal plan."""
+        geo = self._geographic
+        if geo is None or target not in geo.offered:
+            return IntrinsicAssessment(
+                "unavailable", None, "frontier_not_currently_offered",
+            )
+        value = min(1.0, max(0.0,
+            (1 + self.coefficient) * geo.config.novelty_weight
+        ))
+        if value <= 0:
+            return IntrinsicAssessment(
+                "unavailable", None, "zero_geographic_information_interest",
+            )
+        return IntrinsicAssessment(
+            "available", value, "perceived_unvisited_frontier_for_active_goal",
+            (f"exploration:frontier:{target.ref}:t{target.source_t_monde}",),
+        )
+
     def geographic_motivation(self, option) -> IntrinsicAssessment:
         geo = self._geographic
         if geo is None or geo.target_for(option) is None:

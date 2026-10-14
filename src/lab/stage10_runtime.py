@@ -899,11 +899,10 @@ class Stage10Runtime(Stage9Runtime):
             self.stage3._capture = new_capture
             self.stage3._capture_attempt_ref = attempt.attempt_ref
             self.stage3._captures_this_step = 1
-            self.stage3._write(kind="perceptual_capture",data={
-                "capture_t_monde":t,
-                "position":{"x":new_capture.x,"y":new_capture.y},
-                "adjacent_creature_count":len(new_capture.adjacent_creatures),
-            })
+            self.stage3._write(
+                kind="perceptual_capture",
+                data=self.stage3._perceptual_capture_receipt(new_capture),
+            )
             self._preopened_waking_capture = new_capture
             self._last_applied_decision = None
             result = super().run_step()

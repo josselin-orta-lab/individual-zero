@@ -55,6 +55,7 @@ class Stage11Config:
     # Public software custody ablation: world-step/attempt/cycle identity
     # is tracked in the causal UC owner; all historical runs default OFF.
     cycle_occurrence_guard_enabled: bool = False
+    instrumental_geographic_value: bool = False
 
     def validate(self):
         if not self.version:
@@ -67,6 +68,10 @@ class Stage11Config:
             self.prospective_water.validate()
         if self.geographic is not None:
             self.geographic.validate()
+        if type(self.instrumental_geographic_value) is not bool:
+            raise ValueError("instrumental geographic flag must be boolean")
+        if self.instrumental_geographic_value and self.geographic is None:
+            raise ValueError("instrumental geographic value requires geographic exploration")
         if type(self.geographic_preflight) is not bool:
             raise ValueError("geographic safety preflight flag must be bool")
         if type(self.geographic_preflight_requires_frontier) is not bool:
@@ -231,6 +236,7 @@ class Stage11Runtime(Stage9Runtime):
             config=config.stage9.stage8.evaluation,
             stage6=self.option_evaluator, q_values=self.q_active,
             exploration=self.exploration, intrinsic_weight=config.intrinsic_weight,
+            instrumental_planning=(self.planning if config.instrumental_geographic_value else None),
         )
 
     @property

@@ -219,6 +219,12 @@ class Stage4Runtime:
             attempt.attempt_ref,
             self._event_sequence,
             kind,
+            # Legacy deterministic IDs remain byte-identical. A research
+            # newborn with an explicit identity gets a distinct global
+            # cognitive evidence namespace without changing source events.
+            *([self.individual_id] if getattr(
+                self, "_stage12_explicit_birth_identity", False
+            ) else []),
         )
         self._event_sequence += 1
         event = {

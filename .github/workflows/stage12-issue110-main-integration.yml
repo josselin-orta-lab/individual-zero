@@ -1,0 +1,48 @@
+name: Issue110 main integration regression
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/i0/modules/**'
+      - 'src/lab/**'
+      - 'tests/test_stage12_*.py'
+      - 'scripts/run_stage12_issue110_instrumental_ab.py'
+      - '.github/workflows/stage12-issue110-main-integration.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integrated-stage12:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Exact combined GA and A2 adversarial unit contracts
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_spatial_*.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_a2_*.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_progressive_planning.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_instrumental_geographic.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency*.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_attribution*.py' -v
+      - name: Replicate 16 real independent instrumental lives with WAL audits
+        env:
+          COHORT: integration-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/run_stage12_issue110_instrumental_ab.py \
+            --output-dir /tmp/stage12-integrated --cohort-id "$COHORT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-integrated-py${{ matrix.python-version }}
+          path: /tmp/stage12-integrated
+          retention-days: 30
+          if-no-files-found: warn

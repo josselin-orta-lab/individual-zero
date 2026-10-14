@@ -14,6 +14,9 @@ from .independent_journal_audit import audit_export_bytes
 from .stage12_goal_progress_audit import audit_stage12_goal_progress
 
 _SCHEMA = "stage12-first-person-goal-agency-v1"
+_SPATIAL_SCHEMA = "stage12-first-person-goal-spatial-agency-v1"
+_SPATIAL_GOAL = "stage12-lived-goal-spatial-progress-v1"
+_DIRECTIONS = {"north": (0,-1), "south": (0,1), "east": (1,0), "west": (-1,0)}
 _CAPTURE = "stage12-first-person-cue-v1"
 
 
@@ -76,6 +79,7 @@ def audit_stage12_first_person_agency(
     commands: dict[tuple[int, str], list[tuple[int, dict]]] = {}
     transitions: dict[tuple[int, str], list[tuple[int, dict]]] = {}
     charges: dict[tuple[int, str, int], list[tuple[int, dict]]] = {}
+    spatial_charges: dict[tuple[int, str, int], list[tuple[int, dict]]] = {}
     for i, row in enumerate(rows):
         e = row["causal_event"]
         kind = e.get("kind")
@@ -91,6 +95,11 @@ def audit_stage12_first_person_agency(
         elif (kind == "compute_charge" and isinstance(e.get("data"), dict)
               and e["data"].get("operation") == "goal_agency_assessment"):
             charges.setdefault((t, attempt, cycle), []).append((i, e["data"]))
+        elif (kind == "compute_charge" and isinstance(e.get("data"), dict)
+              and e["data"].get("operation") == "goal_agency_spatial_assessment"):
+            spatial_charges.setdefault((t, attempt, cycle), []).append(
+                (i, e["data"])
+            )
     commitments: dict[str, tuple[int, dict, dict]] = {}
     used: set[str] = set()
     seen_steps: set[int] = set()
@@ -110,7 +119,7 @@ def audit_stage12_first_person_agency(
                 or type(data) is not dict or type(t) is not int or t < 1
                 or type(attempt) is not str or not attempt
                 or type(cycle) is not int or cycle < 1
-                or data.get("policy_version") != _SCHEMA):
+                or data.get("policy_version") not in (_SCHEMA, _SPATIAL_SCHEMA)):
             raise ValueError("uncontracted GA cognitive receipt")
         ref = data.get("assessment_ref")
         if type(ref) is not str or not ref:
@@ -121,7 +130,10 @@ def audit_stage12_first_person_agency(
             if (data.get("sent_world_step") != t
                     or data.get("observe_world_step") != t + 1
                     or data.get("intent_ref") not in goals
-                    or data.get("mechanism") not in ("ingested_from_inventory", "unresolved")
+                    or data.get("mechanism") not in (
+                        "ingested_from_inventory", "unresolved",
+                        "witnessed_goal_spatial_target_v1",
+                    )
                     or type(data.get("life_id")) is not str
                     or not data["life_id"]
                     or type(data.get("command_hash")) is not str):
@@ -145,7 +157,53 @@ def audit_stage12_first_person_agency(
                     or not data["action_primitive"]):
                 raise ValueError("GA assessment pre-action cues mismatch")
             target = data.get("action_target")
-            if data["mechanism"] == "ingested_from_inventory":
+            if data["mechanism"] == "witnessed_goal_spatial_target_v1":
+                if (data["policy_version"] != _SPATIAL_SCHEMA
+                        or goal_data.get("contract_version") != _SPATIAL_GOAL
+                        or data.get("goal_measure") != "spatial_distance"
+                        or data.get("action_primitive") != "se_deplacer"
+                        or data.get("action_target") is not None
+                        or data.get("inventory_before") is not None
+                        or data.get("spatial_direction") not in _DIRECTIONS
+                        or data.get("spatial_target_kind") not in (
+                            "water", "berry_a", "berry_b"
+                        )
+                        or any(type(data.get(k)) is not int for k in (
+                            "spatial_target_x", "spatial_target_y",
+                        ))
+                        or type(data.get("spatial_prepassable")) is not bool):
+                    raise ValueError("spatial first-person cue lacks matching goal")
+                direction = data["spatial_direction"]
+                dx, dy = _DIRECTIONS[direction]
+                target_xy = (data["spatial_target_x"], data["spatial_target_y"])
+                if (target_xy != (position["x"]+dx, position["y"]+dy)
+                        or target_xy != (
+                            goal_data.get("target_x"), goal_data.get("target_y")
+                        )
+                        or direction != goal_data.get("direction")):
+                    raise ValueError("spatial agency disagrees with frozen target")
+                cells = before[0][1].get("data", {}).get("agency_visible_adjacent")
+                if not isinstance(cells, list):
+                    raise ValueError("spatial agency lacks real visible adjacency")
+                matches = [c for c in cells if (
+                    isinstance(c, dict)
+                    and c.get("direction") == direction
+                    and (c.get("x"), c.get("y")) == target_xy
+                )]
+                if len(matches) != 1 or (
+                    matches[0].get("passable")
+                    is not data["spatial_prepassable"]
+                ):
+                    raise ValueError("spatial agency original passability is forged")
+                observed = matches[0]
+                relevant = (
+                    observed.get("water_source") is True
+                    if data["spatial_target_kind"] == "water"
+                    else data["spatial_target_kind"] in observed.get("resources", ())
+                )
+                if not relevant:
+                    raise ValueError("spatial agency cue not relevant to goal target")
+            elif data["mechanism"] == "ingested_from_inventory":
                 if (data["goal_measure"] != "food"
                         or data["action_primitive"] != "manger"
                         or target not in ("berry_a", "berry_b")
@@ -158,6 +216,10 @@ def audit_stage12_first_person_agency(
                     raise ValueError("unresolved GA cannot claim inventory evidence")
             cmd = commands.get((t, attempt), [])
             trans = transitions.get((t, attempt), [])
+            if (data["mechanism"] == "witnessed_goal_spatial_target_v1"
+                    and cmd and cmd[0][1].get("parameters", {}).get("direction")
+                    != data["spatial_direction"]):
+                raise ValueError("spatial subjective efference differs from real command")
             if (len(cmd) != 1 or len(trans) != 1
                     or not i < cmd[0][0] < trans[0][0]
                     or cmd[0][1].get("emitter") != "action_control"
@@ -194,8 +256,23 @@ def audit_stage12_first_person_agency(
                     or type(charge.get("accepted")) is not bool):
                 raise ValueError("incorrectly charged first-person cognition")
             agency = data["subjective_agency"]
+            spatial = committed["mechanism"] == "witnessed_goal_spatial_target_v1"
+            spatial_paid = True
+            if spatial:
+                extra = spatial_charges.get((t, attempt, cycle), [])
+                if (len(extra) != 1 or extra[0][0] >= i
+                        or extra[0][1].get("module") != "action_control"
+                        or type(extra[0][1].get("requested_uc")) is not int
+                        or extra[0][1]["requested_uc"] < 1
+                        or type(extra[0][1].get("accepted")) is not bool):
+                    raise ValueError("spatial first-person calculation lacks own UC")
+                spatial_paid = extra[0][1]["accepted"]
+                if spatial_paid:
+                    consumed_uc += extra[0][1]["requested_uc"]
+                else:
+                    refused_uc += extra[0][1]["requested_uc"]
             if agency == "unavailable":
-                if (charge["accepted"]
+                if (charge["accepted"] and spatial_paid
                         and t == committed["observe_world_step"]):
                     raise ValueError("paid on-time judgement falsely unavailable")
                 if data.get("cue_ref") is not None:
@@ -203,7 +280,7 @@ def audit_stage12_first_person_agency(
                 if not charge["accepted"]:
                     refused_uc += charge["requested_uc"]
             else:
-                if not charge["accepted"] or t != committed["observe_world_step"]:
+                if not charge["accepted"] or not spatial_paid or t != committed["observe_world_step"]:
                     raise ValueError("unpaid or late subjective agency label")
                 post = captures.get((t, attempt), [])
                 if len(post) != 1 or post[0][0] >= i:
@@ -223,7 +300,39 @@ def audit_stage12_first_person_agency(
                     and inv[target] == committed["inventory_before"] - 1
                     and [p["x"], p["y"]] == committed["start_position"]
                 )
-                if self_supported:
+                if spatial:
+                    direct = committed["spatial_direction"]
+                    dx, dy = _DIRECTIONS[direct]
+                    before_position = committed["start_position"]
+                    expected = [before_position[0]+dx, before_position[1]+dy]
+                    post_cells = post[0][1].get("data", {}).get("agency_visible_adjacent")
+                    matching_post = ([c for c in post_cells if (
+                        isinstance(c, dict) and c.get("direction") == direct
+                        and (c.get("x"), c.get("y")) == tuple(expected)
+                    )] if isinstance(post_cells, list) else [])
+                    newly_blocked = (
+                        committed["spatial_prepassable"] is True
+                        and len(matching_post) == 1
+                        and matching_post[0].get("passable") is False
+                        and [p["x"], p["y"]] == before_position
+                    )
+                    blocked = (committed["spatial_prepassable"] is False
+                               and [p["x"], p["y"]] == before_position)
+                    moved = (committed["spatial_prepassable"] is True
+                             and [p["x"], p["y"]] == expected)
+                    correct_agency, correct_reason = (
+                        ("world", "witnessed_new_goal_relevant_obstruction_after_commitment")
+                        if newly_blocked else
+                        ("world", "witnessed_goal_relevant_blocked_direction")
+                        if blocked else
+                        ("self", "witnessed_goal_relevant_efferent_displacement")
+                        if moved else
+                        ("unknown", "ambiguous_spatial_displacement_cue")
+                    )
+                    if (agency != correct_agency
+                            or data.get("reason") != correct_reason):
+                        raise ValueError("spatial self/world judgement contradicts original cues")
+                elif self_supported:
                     if (agency != "self"
                             or data.get("reason") !=
                                "witnessed_goal_relevant_inventory_decrement"):
@@ -246,6 +355,12 @@ def audit_stage12_first_person_agency(
         if closed_steps > commitment["sent_world_step"]:
             raise ValueError("missing GA judgement after new physical step")
         unresolved += 1
+    if (sum(len(items) for items in spatial_charges.values())
+            != sum(1 for ref in used if (
+                commitments[ref][1]["mechanism"] ==
+                "witnessed_goal_spatial_target_v1"
+            ))):
+        raise ValueError("orphaned or repeated spatial cognition charge")
     if sum(len(items) for items in charges.values()) != len(used):
         raise ValueError("orphaned or duplicate GA UC debit")
     return Stage12FirstPersonAgencyAudit(

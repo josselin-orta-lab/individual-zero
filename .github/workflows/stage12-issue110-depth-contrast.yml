@@ -1,0 +1,42 @@
+name: Issue110 Stage6 depth 3-6 comparison
+on:
+  pull_request:
+    branches: [science/stage12-issue110-sleep-window-20261014]
+    paths:
+      - 'scripts/run_stage12_issue110_depth_contrast.py'
+      - 'scripts/run_stage12_issue110_first_planning_state.py'
+      - '.github/workflows/stage12-issue110-depth-contrast.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  depth-contrast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+        depth: [3,4,5,6]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Execute preregistered 4-life independent depth slice
+        env:
+          COHORT: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/run_stage12_issue110_depth_contrast.py \
+            --output-dir /tmp/issue110-depth \
+            --cohort-id "$COHORT" --depth ${{ matrix.depth }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue110-depth-${{ matrix.depth }}-py${{ matrix.python-version }}
+          path: /tmp/issue110-depth
+          retention-days: 30
+          if-no-files-found: warn

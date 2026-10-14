@@ -18,6 +18,7 @@ from i0.modules.stage12_attribution_pairs import (
 )
 from i0.modules.stage12_goal_progress import (
     ALLOWED_MEASURES, CONTRACT_VERSION, LivedGoalProgressIntent,
+    LivedSpatialGoalIntent, SPATIAL_CONTRACT_VERSION, SPATIAL_MEASURE,
     Stage12GoalProgressLedger,
 )
 from i0.modules.stage12_alerts import Stage12AlertLedger, Stage12AlertPolicy
@@ -174,10 +175,27 @@ class Stage12Runtime(Stage11SleepRuntime):
         operator_alert_persistence_steps: int = 3,
         subjective_goal_agency: bool = False,
         goal_agency_cost_uc: int = 1,
+        spatial_goal_progress: bool = False,
+        spatial_goal_cost_uc: int = 1,
+        spatial_agency_cost_uc: int = 1,
+        birth_life_id: str | None = None,
         attribution_join: bool = False,
         attribution_join_cost_uc: int = 1, **kwargs,
     ):
         detector_policy.validate()
+        # A scientifically independent life needs its own immutable identity.
+        # Preserve the legacy reference runtime ID for existing fixtures;
+        # research/operator births must supply a distinct value explicitly.
+        if birth_life_id is not None:
+            allowed = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                          "0123456789:._-")
+            if (type(birth_life_id) is not str
+                    or not 1 <= len(birth_life_id) <= 128
+                    or birth_life_id[0] not in allowed
+                    or any(c not in allowed for c in birth_life_id)):
+                raise ValueError("Stage12 birth life identity must be a bounded identifier")
+            self.individual_id = birth_life_id
+        self._stage12_explicit_birth_identity = birth_life_id is not None
         if type(diagnostic_sample_cost_uc) is not int or diagnostic_sample_cost_uc < 1:
             raise ValueError("Stage12 diagnostics need a positive injected P-43 UC cost")
         if type(module_occupancy_cost_uc) is not int or module_occupancy_cost_uc < 1:
@@ -192,6 +210,15 @@ class Stage12Runtime(Stage11SleepRuntime):
             raise ValueError("attribution join requires an enabled cognitive producer")
         if type(attribution_join_cost_uc) is not int or attribution_join_cost_uc < 1:
             raise ValueError("attribution join needs a positive deterministic UC cost")
+        if type(spatial_goal_progress) is not bool:
+            raise ValueError("spatial goal criterion requires explicit birth opt-in")
+        if type(spatial_goal_cost_uc) is not int or spatial_goal_cost_uc < 1:
+            raise ValueError("spatial goal criterion requires positive versioned UC")
+        if type(spatial_agency_cost_uc) is not int or spatial_agency_cost_uc < 1:
+            raise ValueError("spatial agency requires positive declared UC")
+        self._spatial_agency_cost_uc = spatial_agency_cost_uc
+        self._spatial_goal_enabled = spatial_goal_progress
+        self._spatial_goal_cost_uc = spatial_goal_cost_uc
         self._attribution_join_enabled = attribution_join
         self._attribution_join_cost_uc = attribution_join_cost_uc
         self._goal_agency_enabled = subjective_goal_agency
@@ -233,16 +260,24 @@ class Stage12Runtime(Stage11SleepRuntime):
         occupancy_cost = self._stage12_occupancy_cost_uc
         agency_cost = self._goal_agency_cost_uc if self._goal_agency_enabled else 0
         join_cost = self._attribution_join_cost_uc if self._attribution_join_enabled else 0
+        spatial_cost = self._spatial_goal_cost_uc if self._spatial_goal_enabled else 0
+        spatial_agency_cost = (
+            self._spatial_agency_cost_uc
+            if self._spatial_goal_enabled and self._goal_agency_enabled else 0
+        )
         budget = replace(
             old, version=(old.version + "+" + self._stage12_detector_policy.version
                           + "+stage12-diagnostics-charged-v1"
                           + "+stage12-st-module-occupancy-v1"
                           + "+" + CONTRACT_VERSION
+                          + ("+" + SPATIAL_CONTRACT_VERSION if spatial_cost else "")
                           + ("+" + GOAL_AGENCY_VERSION if agency_cost else "")
                           + ("+" + PAIR_VERSION if join_cost else "")
                           + "+stage12-alerts-v1-p"
                           + str(self._stage12_alert_policy.persistence_world_steps)),
-            cycle_ceiling=old.cycle_ceiling + cost + occupancy_cost + agency_cost + join_cost,
+            cycle_ceiling=(old.cycle_ceiling + cost + occupancy_cost
+                           + agency_cost + join_cost + spatial_cost
+                           + spatial_agency_cost),
             module_envelopes={
                 **old.module_envelopes,
                 # Stage11 has no Stage10 metacognition envelope yet.
@@ -250,12 +285,13 @@ class Stage12Runtime(Stage11SleepRuntime):
                 # instead of overwriting the diagnostic capacity during the
                 # later Stage10 with_budget() configuration step.
                 **({"action_control": (
-                    old.module_envelopes.get("action_control", 0) + agency_cost
+                    old.module_envelopes.get("action_control", 0)
+                    + agency_cost + spatial_agency_cost
                 )} if agency_cost else {}),
                 "metacognition_health": max(
                     old.module_envelopes.get("metacognition_health", 0),
                     base.sleep_option_uc,
-                ) + cost + occupancy_cost + join_cost,
+                ) + cost + occupancy_cost + join_cost + spatial_cost,
             },
             operation_costs={
                 **old.operation_costs,
@@ -263,6 +299,10 @@ class Stage12Runtime(Stage11SleepRuntime):
                 "stage12_occupancy_entropy": occupancy_cost,
                 **({"goal_agency_assessment": agency_cost} if agency_cost else {}),
                 **({"stage12_attribution_join": join_cost} if join_cost else {}),
+                **({"stage12_spatial_goal_preregistration": spatial_cost}
+                   if spatial_cost else {}),
+                **({"goal_agency_spatial_assessment": spatial_agency_cost}
+                   if spatial_agency_cost else {}),
             },
         )
         upgraded = replace(stage9, stage8=replace(stage8, stage7=replace(
@@ -482,14 +522,29 @@ class Stage12Runtime(Stage11SleepRuntime):
                         "accepted": agency_charge.accepted,
                         "reason": agency_charge.reason,
                     })
+                    spatial_paid = True
+                    if (pending_assessment.mechanism ==
+                            "witnessed_goal_spatial_target_v1"):
+                        spatial_charge = self.compute_budget.charge(
+                            module="action_control",
+                            operation="goal_agency_spatial_assessment",
+                        )
+                        self._write(kind="compute_charge", cycle=cycle, data={
+                            "module": "action_control",
+                            "operation": "goal_agency_spatial_assessment",
+                            "requested_uc": spatial_charge.requested_uc,
+                            "accepted": spatial_charge.accepted,
+                            "reason": spatial_charge.reason,
+                        })
+                        spatial_paid = spatial_charge.accepted
                     judgement = service.evaluate(
                         capture=capture, world_step=capture.t_monde,
                         cue_ref=deterministic_id(
                             "stage12-authorized-capture-cue-v1",
                             capture.t_monde, capture.x, capture.y,
                             tuple(sorted(capture.inventory.items())),
-                        ) if agency_charge.accepted else None,
-                        paid=agency_charge.accepted,
+                        ) if (agency_charge.accepted and spatial_paid) else None,
+                        paid=(agency_charge.accepted and spatial_paid),
                     )
                     if judgement is not None:
                         judgement_ref = self._write(
@@ -546,7 +601,7 @@ class Stage12Runtime(Stage11SleepRuntime):
                 # unknown goal followups may be published only afterwards.
                 pending = self._meta_custody.goal_progress.followup(
                     world_step=capture.t_monde, body=None,
-                    diagnostic_paid=False,
+                    diagnostic_paid=False, position=None,
                 )
                 if pending is not None:
                     self._write(
@@ -650,7 +705,7 @@ class Stage12Runtime(Stage11SleepRuntime):
             # The bounded work is included in the accepted diagnostic UC.
             goal_followup = self._meta_custody.goal_progress.followup(
                 world_step=capture.t_monde, body=capture.body,
-                diagnostic_paid=True,
+                diagnostic_paid=True, position=(capture.x, capture.y),
             )
             if goal_followup is not None:
                 followup_ref = self._write(
@@ -710,22 +765,87 @@ class Stage12Runtime(Stage11SleepRuntime):
                     and isfinite(before) and before >= 0):
                 if self._meta_custody.goal_progress.pending is not None:
                     raise RuntimeError("prior lived goal-progress criterion unclosed")
-                registered = {
-                    "contract_version": CONTRACT_VERSION,
-                    "goal_ref": active.id,
-                    "option_ref": proposal.option.id,
-                    "command_hash": command_digest(prepared.command),
-                    "measure": measure,
-                    "value_before": float(before),
-                    "sent_world_step": sent_t_monde,
-                    "observe_world_step": sent_t_monde + 1,
-                }
+                # Option A: select a *perceived* adjacent target matching
+                # the active need. Never infer target coordinates from the
+                # world, Oracle, prediction conformity or benchmark scenario.
+                spatial = None
+                direction = prepared.command.parameters.get("direction")
+                if (self._spatial_goal_enabled
+                        and prepared.command.primitive == "se_deplacer"
+                        and type(direction) is str):
+                    choices = []
+                    for cell in capture.adjacent:
+                        if cell.direction != direction:
+                            continue
+                        kind = (
+                            "water" if measure == "water" and cell.water_source
+                            else next((
+                                berry for berry in ("berry_a", "berry_b")
+                                if measure == "food" and berry in cell.resources
+                            ), None)
+                        )
+                        if kind is not None:
+                            choices.append((cell, kind))
+                    if len(choices) == 1:
+                        spatial = choices[0]
+                if spatial is not None:
+                    charge = self.compute_budget.charge(
+                        module="metacognition_health",
+                        operation="stage12_spatial_goal_preregistration",
+                    )
+                    self._write(kind="compute_charge", cycle=cycle, data={
+                        "module": "metacognition_health",
+                        "operation": "stage12_spatial_goal_preregistration",
+                        "requested_uc": charge.requested_uc,
+                        "accepted": charge.accepted,
+                        "reason": charge.reason,
+                    })
+                    if not charge.accepted:
+                        self._cycle_degraded = True
+                        self._write(
+                            kind="stage12_spatial_goal_preregistration_deferred",
+                            cycle=cycle,
+                            data={"reason": charge.reason,
+                                  "option_ref": proposal.option.id},
+                        )
+                        return super()._dispatch_decision(
+                            proposal=proposal, prepared=prepared,
+                            admission=admission, cycle=cycle,
+                            sent_t_monde=sent_t_monde,
+                        )
+                    cell, target_kind = spatial
+                    registered = {
+                        "contract_version": SPATIAL_CONTRACT_VERSION,
+                        "goal_ref": active.id,
+                        "option_ref": proposal.option.id,
+                        "command_hash": command_digest(prepared.command),
+                        "measure": SPATIAL_MEASURE,
+                        "value_before": 1.0,
+                        "sent_world_step": sent_t_monde,
+                        "observe_world_step": sent_t_monde + 1,
+                        "life_id": self.individual_id,
+                        "start_x": capture.x, "start_y": capture.y,
+                        "target_x": cell.x, "target_y": cell.y,
+                        "target_kind": target_kind, "direction": direction,
+                    }
+                else:
+                    registered = {
+                        "contract_version": CONTRACT_VERSION,
+                        "goal_ref": active.id,
+                        "option_ref": proposal.option.id,
+                        "command_hash": command_digest(prepared.command),
+                        "measure": measure,
+                        "value_before": float(before),
+                        "sent_world_step": sent_t_monde,
+                        "observe_world_step": sent_t_monde + 1,
+                    }
                 intent_ref = self._write(
                     kind="stage12_goal_progress_preregistered",
                     cycle=cycle, data=registered,
                 )
                 self._meta_custody.goal_progress.preregister(
-                    LivedGoalProgressIntent(
+                    (LivedSpatialGoalIntent if spatial is not None
+                     else LivedGoalProgressIntent)(
                         intent_ref=intent_ref,
                         **registered,
                     )
@@ -741,8 +861,14 @@ class Stage12Runtime(Stage11SleepRuntime):
                         intent_ref=intent_ref, life_id=self.individual_id,
                         goal_ref=active.id, option_ref=proposal.option.id,
                         command_hash=registered["command_hash"],
-                        world_step=sent_t_monde, measure=measure,
+                        world_step=sent_t_monde, measure=registered["measure"],
                         command=prepared.command, capture=capture,
+                        spatial_target=(
+                            None if spatial is None else (
+                                registered["target_x"], registered["target_y"],
+                                registered["target_kind"],
+                            )
+                        ),
                     )
                     self._write(
                         kind="stage12_goal_agency_precommitted",
