@@ -33,10 +33,8 @@ def fresh(seed, individual):
     pos=Position(*SEEDS[seed])
     world_cfg=replace(s11.world.config,initial_position=pos)
     layout=WorldLayout(water_sources=frozenset({pos.moved("east").moved("east")}))
-    # Maintain equipment born for this same physical setup, never transplant from
-    # a different world after birth.
-    from lab.equipment import build_prebirth_equipment
-    equipment=build_prebirth_equipment(world_cfg,layout)
+    # Immutable reference Equipment is fixed before each independent birth.
+    equipment=s11.equipment
     return Stage12Runtime(world_config=world_cfg,layout=layout,
         safety_config=s11.stage3.substrate.safety._config,
         safety_facts=s11._canonical_safety._innate,
@@ -87,7 +85,8 @@ def verify(rows,audit,seed,expected):
         assert event["attempt_ref"]==closed["causal_event"]["attempt_ref"]
         assert data["agency_capture_schema"]=="stage12-first-person-cue-v1"
         assert len(data["agency_visible_adjacent"])==4
-        assert data["position"]=={"x":SEEDS[seed][0],"y":SEEDS[seed][1]} if step==1 else True
+        if step==1:
+            assert data["position"]=={"x":SEEDS[seed][0],"y":SEEDS[seed][1]}
         assert "oracle_canary" not in str(data)
         assert rec["index"] < closed["index"]
     return captures
