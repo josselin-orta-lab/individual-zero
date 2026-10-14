@@ -135,6 +135,16 @@ def one(root, profile, obstacle, cohort, progressive):
             "evidence":e.get("evidence"),
         } for e in evaluation]
         planned["selection_count"]=len(selection)
+        registration=[e.get("data",{}) for e in events
+            if e.get("t_monde")==t
+            and e.get("kind")=="option_registration"
+            and e.get("data",{}).get("option_ref")==opt]
+        competition=[trace for e in events
+            if e.get("t_monde")==t and e.get("kind")=="competition_cycle"
+            for trace in e.get("data",{}).get("traces",[])
+            if trace.get("option_ref")==opt]
+        planned["registrations"]=registration
+        planned["competition_traces"]=competition
     (folder/"progressive-search-trace.json").write_text(
         json.dumps(plan_trace,indent=2,sort_keys=True)+"\n")
     anchors=dict(expected_head=life.journal.head_hash,expected_count=len(life.journal.entries))
@@ -188,6 +198,16 @@ def one(root, profile, obstacle, cohort, progressive):
                         if entry["segment_proposed"]),
                     "segment_evaluations":sum(
                         len(entry["evaluations"]) for entry in plan_trace
+                        if entry["segment_proposed"]),
+                    "segment_registration_attempts":sum(
+                        len(entry["registrations"]) for entry in plan_trace
+                        if entry["segment_proposed"]),
+                    "segment_registered_true":sum(
+                        e.get("registered") is True
+                        for entry in plan_trace if entry["segment_proposed"]
+                        for e in entry["registrations"]),
+                    "segment_competition_traces":sum(
+                        len(entry["competition_traces"]) for entry in plan_trace
                         if entry["segment_proposed"]),
                     "segment_evaluations_unavailable":sum(
                         e["status"] == "not_evaluated"
