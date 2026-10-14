@@ -8,6 +8,7 @@ from collections import Counter
 from dataclasses import replace
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -166,8 +167,16 @@ def build_life(
     return life, config, layout, equipment
 
 
-def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> dict:
-    birth_id = "i0:issue110:optiona:born:" + world_name + ":" + sleep_name
+def run_life(
+    folder: Path, world_name: str, water: float, sleep_name: str, *,
+    cohort_id: str = "software-fixture",
+) -> dict:
+    if (type(cohort_id) is not str or not cohort_id
+            or len(cohort_id) > 45
+            or any(c not in "abcdefghijklmnopqrstuvwxyz"
+                            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-" for c in cohort_id)):
+        raise ValueError("invalid or missing independent scientific cohort ID")
+    birth_id = "i0:issue110:" + cohort_id + ":" + world_name + ":" + sleep_name
     life, config, layout, equipment = build_life(
         world_name, water, sleep_name,
         wal_path=str(folder / "life.wal"), birth_life_id=birth_id,
@@ -314,7 +323,17 @@ def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> di
 def main() -> int:
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--cohort-id", default=(
+            "gha" + os.environ.get("GITHUB_RUN_ID", "") + "a"
+            + os.environ.get("GITHUB_RUN_ATTEMPT", "")
+            if os.environ.get("GITHUB_RUN_ID") else None
+        ),
+        help="Unique identifier of independent scientific cohort; required locally",
+    )
     args=parser.parse_args()
+    if not args.cohort_id:
+        parser.error("unique --cohort-id is required for independent cohort")
     root=args.output_dir.resolve()
     root.mkdir(parents=True, exist_ok=False)
     proc=subprocess.run(["git","rev-parse","HEAD"],cwd=ROOT,capture_output=True,text=True,check=True)
@@ -329,7 +348,9 @@ def main() -> int:
                 sub=root/label
                 sub.mkdir()
                 try:
-                    rows.append(run_life(sub,name,water,sleep))
+                    rows.append(run_life(
+                        sub, name, water, sleep, cohort_id=args.cohort_id,
+                    ))
                 except BaseException as exc:
                     # Preserve all previous evidence and record the exception.
                     row={"world":name,"initial_water":water,"sleep_profile":sleep,
@@ -338,7 +359,8 @@ def main() -> int:
                     rows.append(row)
                     (sub/"runner-error.json").write_text(json.dumps(row))
                 (root/"index.json").write_text(json.dumps(
-                    {"source_sha":proc.stdout.strip(),"preregistration":
+                    {"source_sha":proc.stdout.strip(),
+                      "cohort_id":args.cohort_id,"preregistration":
                      "docs/research/stage12-issue110-option-a-first-planning-state-prereg-2026-10-14.fr.md",
                      "n_planned":4,"n_completed":len(rows),"lives":rows,
                      "scientific_validation":"not_performed",
@@ -348,7 +370,7 @@ def main() -> int:
         return sum(x["audits"][section][key] for x in valid)
     summary={
         "schema":"stage12-issue110-spatial-lived-state-summary-v1",
-        "source_sha":proc.stdout.strip(),"planned_lives":4,
+        "source_sha":proc.stdout.strip(),"cohort_id":args.cohort_id,"planned_lives":4,
         "audited_lives":len(valid),
         "real_physical_steps":sum(x["executed_steps"] for x in valid),
         "failed_or_unverified_lives":len(rows)-len(valid),
