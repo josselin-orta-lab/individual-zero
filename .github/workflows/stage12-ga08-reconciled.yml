@@ -1,0 +1,32 @@
+name: GA08 reconciled against A2 integration
+on:
+  pull_request:
+    branches: [feature/stage12-issue110-spatial-agency-option-a-20261014, main]
+    paths:
+      - 'tests/test_stage12_ga08_*.py'
+      - 'src/i0/modules/stage12_spatial_goal_evidence.py'
+      - 'src/lab/stage12_spatial_provenance_audit.py'
+      - '.github/workflows/stage12-ga08-reconciled.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ga08-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Old GA08 semantic and M11 contracts on new A2 runtime
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_ga08_*.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_spatial_*.py' -v
+      - name: Physical spatial return-goal campaign
+        run: python scripts/run_stage12_issue110_ga08_return_goal_science.py --help
