@@ -139,13 +139,43 @@ def audit_run(db,point,seed):
     assert captures[0]==original
     return {"pending":0,"committed":1,"continued":1,"forgeries":forged,"identity_refused":bad_identity}
 
+def preseal_worker(db,seed):
+    """Deliberate test-only compromised sensory source, never deploy to I0."""
+    from unittest.mock import patch
+    from dataclasses import replace as dc_replace
+    from i0.modules.perception import SymbolicPerception
+    original=SymbolicPerception.capture
+    def compromised(self,*args,**kwargs):
+        lived=original(self,*args,**kwargs)
+        return dc_replace(lived,x=lived.x+1)
+    with patch.object(SymbolicPerception,"capture",compromised):
+        with M11TransactionalMortal.birth(
+            db_path=db,runtime=fresh(seed,identity(seed)),
+            individual_id=identity(seed)) as life:
+            receipt=life.run_step()
+            assert receipt.generation==1
+    audit,rows=read(db,seed)
+    assert audit.generation==1 and audit.may_recover
+    raw=receipts(rows)
+    assert len(raw)==1
+    seen=raw[0]["causal_event"]["data"]["position"]
+    assert seen["x"]==SEEDS[seed][0]+1 and seen["y"]==SEEDS[seed][1]
+    # An external observer knows that physical initial position was not
+    # modified; no Oracle facts or intervention labels enter the cognition.
+    print("A223B_PRESEAL_ACCEPTED "+json.dumps({"seed":seed,"physical_initial":SEEDS[seed],"stored_capture":seen}))
+    return
+
 def main():
     p=argparse.ArgumentParser();p.add_argument("--output-dir",type=Path)
-    p.add_argument("--worker",nargs=3);args=p.parse_args()
+    p.add_argument("--worker",nargs=3)
+    p.add_argument("--preseal",nargs=2)
+    args=p.parse_args()
     if args.worker:
         worker(args.worker[0],args.worker[1],int(args.worker[2]));return
+    if args.preseal:
+        preseal_worker(args.preseal[0],int(args.preseal[1]));return
     args.output_dir.mkdir(parents=True,exist_ok=False)
-    counts={"hard_exits":0,"pending":0,"committed":0,"continued":0,"forgeries":0,"identity_refused":0}
+    counts={"hard_exits":0,"pending":0,"committed":0,"continued":0,"forgeries":0,"identity_refused":0,"preseal_false_captures_committed":0}
     for seed in SEEDS:
         for point in POINTS:
             d=args.output_dir/f"{seed}-{point}";d.mkdir()
@@ -157,8 +187,18 @@ def main():
             result=audit_run(db,point,seed)
             for key,value in result.items():counts[key]+=value
             (d/"audit.json").write_text(json.dumps(result,sort_keys=True)+"\n")
+    for seed in SEEDS:
+        folder=args.output_dir/f"{seed}-compromised-preseal"
+        folder.mkdir()
+        db=str((folder/"life.db").resolve())
+        child=subprocess.run([sys.executable,__file__,"--preseal",db,str(seed)],capture_output=True,text=True,timeout=100)
+        assert child.returncode==0,(seed,child.stderr[-2500:])
+        assert "A223B_PRESEAL_ACCEPTED" in child.stdout
+        counts["preseal_false_captures_committed"]+=1
+        (folder/"verdict.json").write_text(child.stdout)
     assert counts=={"hard_exits":24,"pending":16,"committed":8,
-                    "continued":8,"forgeries":32,"identity_refused":8},counts
+                    "continued":8,"forgeries":32,"identity_refused":8,
+                    "preseal_false_captures_committed":4},counts
     summary={"schema":"a223b-born-enabled-m11-v1","spatial_variants":SEEDS,
              "worlds":24,"production_policy_changed":False,"ga06_pairs":0,
              "operator_reception":False,"stage12":"PARTIAL",**counts}
