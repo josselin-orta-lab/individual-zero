@@ -305,11 +305,24 @@ def audit_stage12_first_person_agency(
                     dx, dy = _DIRECTIONS[direct]
                     before_position = committed["start_position"]
                     expected = [before_position[0]+dx, before_position[1]+dy]
+                    post_cells = post[0][1].get("data", {}).get("agency_visible_adjacent")
+                    matching_post = ([c for c in post_cells if (
+                        isinstance(c, dict) and c.get("direction") == direct
+                        and (c.get("x"), c.get("y")) == tuple(expected)
+                    )] if isinstance(post_cells, list) else [])
+                    newly_blocked = (
+                        committed["spatial_prepassable"] is True
+                        and len(matching_post) == 1
+                        and matching_post[0].get("passable") is False
+                        and [p["x"], p["y"]] == before_position
+                    )
                     blocked = (committed["spatial_prepassable"] is False
                                and [p["x"], p["y"]] == before_position)
                     moved = (committed["spatial_prepassable"] is True
                              and [p["x"], p["y"]] == expected)
                     correct_agency, correct_reason = (
+                        ("world", "witnessed_new_goal_relevant_obstruction_after_commitment")
+                        if newly_blocked else
                         ("world", "witnessed_goal_relevant_blocked_direction")
                         if blocked else
                         ("self", "witnessed_goal_relevant_efferent_displacement")
