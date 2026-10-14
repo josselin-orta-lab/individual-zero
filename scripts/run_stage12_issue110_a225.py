@@ -84,9 +84,18 @@ def run_one(path,profile,blocked,pulse,cohort):
         assert wal["head_hash"]==anchor["expected_head"]
         assert wal["verified_entries"]==anchor["expected_count"]
         base=audit_export_bytes(raw,**anchor)
-        goal=audit_stage12_goal_progress(raw,**anchor)
-        agency=audit_stage12_first_person_agency(raw,**anchor)
-        pairs=audit_stage12_attribution_pairs(raw,**anchor)
+        # A2.25b: preserve the original independent fail-closed auditors.
+        # Their rejection is NOT counted as a verified positive goal result.
+        goal=agency=pairs=None
+        audit_rejection=None
+        try:
+            goal=audit_stage12_goal_progress(raw,**anchor)
+            agency=audit_stage12_first_person_agency(raw,**anchor)
+            pairs=audit_stage12_attribution_pairs(raw,**anchor)
+        except ValueError as exc:
+            if str(exc)!="goal followup diverges from committed lived state":
+                raise
+            audit_rejection=str(exc)
         assert base.world_steps_closed==len(witness)
         events=[json.loads(x)["causal_event"] for x in raw.splitlines()]
         physics={e["t_monde"]:e for e in events if e.get("kind")=="world_transition_experienced"}
@@ -97,7 +106,29 @@ def run_one(path,profile,blocked,pulse,cohort):
         # preceding external_input_received by step and sequence instead.
         arrivals=[e for e in events if e.get("kind")=="external_input_received"
                   and e.get("operation")=="set_body"
-                  and e.get("payload",{}).get("food")==80.0]
+                  and isinstance(e.get("payload",{}).get("food"),dict)
+                  and e["payload"]["food"].get("$f64")==float(80).hex()]
+        # A received pulse must have an applied receipt with identical causal
+        # scenario coordinates and must precede this step's sensory capture.
+        applied=[(i,e) for i,e in enumerate(events) if e.get("kind")=="external_input_applied"]
+        for received in arrivals:
+            coords=tuple(received.get(k) for k in ("scenario_id","scenario_version","t_monde","sequence"))
+            match=[i for i,e in applied if tuple(e.get(k) for k in ("scenario_id","scenario_version","t_monde","sequence"))==coords]
+            assert len(match)==1,("pulse has no unique applied receipt",coords)
+            perception=[i for i,e in enumerate(events) if e.get("kind")=="perceptual_capture" and e.get("t_monde")==received["t_monde"]]
+            assert perception and match[0]<min(perception),("pulse not before perception",coords)
+        if audit_rejection:
+            assert pulse and len(arrivals)==1, "unauthorized goal audit rejection"
+            t=arrivals[0]["t_monde"]
+            intents=[(i,e) for i,e in enumerate(events) if e.get("kind")=="stage12_goal_progress_preregistered" and e.get("data",{}).get("measure")=="food" and e.get("data",{}).get("observe_world_step")==t]
+            follow=[e for e in events if e.get("kind")=="stage12_goal_progress_followup" and e.get("t_monde")==t and e.get("data",{}).get("measure")=="food" and e.get("data",{}).get("criterion_outcome")=="success"]
+            assert len(intents)==len(follow)==1 and intents[0][1]["t_monde"]==t-1, "unexpected rejected goal topology"
+            from lab.stage12_goal_progress_audit import _number
+            assert _number(follow[0]["data"]["value_after"])==80.0
+            assert _number(physics[t-1]["body_after"]["food"])!=80.0
+            assert physics[t-1].get("effects",{}).get("ate") not in ("berry_a","berry_b")
+            assert physics[t].get("effects",{}).get("ate") not in ("berry_a","berry_b")
+            assert not any(e.get("kind")=="stage12_attribution_pair_admitted" and e.get("t_monde")==t for e in events)
         admitted=[e for e in events if e.get("kind")=="stage12_attribution_pair_admitted"]
         self_world=[e for e in events if e.get("kind")=="stage12_goal_agency_judgement"]
         confirmed=[]
@@ -131,18 +162,20 @@ def run_one(path,profile,blocked,pulse,cohort):
         categorized=Counter(x["episode_category"] for x in confirmed if x["food_net_gain"])
         audited={
             "world_steps":base.world_steps_closed,
-            "goal_preregistered":goal.preregistered,
-            "goal_success":goal.verified_strict_gains,
-            "goal_failure":goal.verified_no_gains,
-            "goal_unavailable":goal.unavailable,
-            "agency_self":agency.judgements_self,
-            "agency_world":agency.judgements_world,
-            "agency_unknown":agency.judgements_unknown,
-            "pairs_admitted":pairs.admitted_pairs,
-            "pairs_applied":pairs.applied_pairs,
-            "pairs_success":pairs.applied_successes,
-            "pairs_failure":pairs.applied_failures,
-            "bias_evaluable":any(label is not None for _,label in pairs.diagnostic_labels),
+            "goal_progress_audit_status":("fail_closed_exogenous_confounded" if audit_rejection else "verified"),
+            "goal_audit_rejection":audit_rejection,
+            "goal_preregistered":goal.preregistered if goal else None,
+            "goal_success":goal.verified_strict_gains if goal else None,
+            "goal_failure":goal.verified_no_gains if goal else None,
+            "goal_unavailable":goal.unavailable if goal else None,
+            "agency_self":agency.judgements_self if agency else None,
+            "agency_world":agency.judgements_world if agency else None,
+            "agency_unknown":agency.judgements_unknown if agency else None,
+            "pairs_admitted":pairs.admitted_pairs if pairs else None,
+            "pairs_applied":pairs.applied_pairs if pairs else None,
+            "pairs_success":pairs.applied_successes if pairs else None,
+            "pairs_failure":pairs.applied_failures if pairs else None,
+            "bias_evaluable":(any(label is not None for _,label in pairs.diagnostic_labels) if pairs else False),
             "actual_eats":sum(x["ate"] in ("berry_a","berry_b") for x in confirmed),
             "real_collections":sum(x["proximal_collect"] for x in confirmed),
             "food_gains":successful,"pulse_events":len(arrivals),
@@ -182,12 +215,14 @@ def main():
         "physical_steps":sum(r["physical_steps"] for r in rows),
         "errors":sum(bool(r["failure"]) for r in rows),
         "pulse_events":sum(r.get("pulse_events",0) for r in rows),
-        "goal_successes":sum(r.get("goal_success",0) for r in rows),
-        "goal_failures":sum(r.get("goal_failure",0) for r in rows),
-        "agency_unknown":sum(r.get("agency_unknown",0) for r in rows),
+        "goal_successes":sum(r.get("goal_success") or 0 for r in rows),
+        "goal_failures":sum(r.get("goal_failure") or 0 for r in rows),
+        "agency_unknown":sum(r.get("agency_unknown") or 0 for r in rows),
         "actual_eats":sum(r.get("actual_eats",0) for r in rows),
-        "pairs_applied":sum(r.get("pairs_applied",0) for r in rows),
+        "pairs_applied":sum(r.get("pairs_applied") or 0 for r in rows),
         "evaluable_lives":sum(bool(r.get("bias_evaluable")) for r in rows),
+        "exogenous_confounded_audits":sum(r.get("goal_progress_audit_status")=="fail_closed_exogenous_confounded" for r in rows),
+        "original_goal_verification_criterion_passed":False,
         "stage12":"PARTIAL","operator_reception":False,"norm_changed":False}
     (args.output_dir/"a225-summary.json").write_text(json.dumps(summary,sort_keys=True,indent=2)+"\n")
     print("A225_SUMMARY "+json.dumps({k:v for k,v in summary.items() if k!="lives"},sort_keys=True),flush=True)
