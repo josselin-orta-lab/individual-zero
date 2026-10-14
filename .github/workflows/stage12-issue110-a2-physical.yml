@@ -5,6 +5,11 @@ on:
       - science/stage12-issue110-sleep-window-20261014
     paths:
       - 'src/lab/world.py'
+      - 'src/lab/injected_scenario.py'
+      - 'src/lab/stage2_runtime.py'
+      - 'src/i0/modules/stage12_goal_agency.py'
+      - 'src/lab/stage12_first_person_agency_audit.py'
+      - 'tests/test_stage12_a2_after_admission.py'
       - 'tests/test_stage12_a2_external_obstacle.py'
       - '.github/workflows/stage12-issue110-a2-physical.yml'
   workflow_dispatch:
@@ -35,5 +40,8 @@ jobs:
       - name: Execute A2 external geometry and atomicity tests
         run: |
           python -m unittest discover -s tests -p 'test_stage12_a2_external_obstacle.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_a2_after_admission.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_spatial_cognitive_agency.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_spatial_integrated_rehash.py' -v
           python -m unittest discover -s tests -p 'test_stage12_spatial_cue_worldbody.py' -v
           python -m unittest discover -s tests -p 'test_stage12_spatial_world_reachability.py' -v
