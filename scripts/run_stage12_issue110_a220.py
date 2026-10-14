@@ -201,9 +201,63 @@ def trial(config, seed, cause, pattern):
             "sequence": sequence}
 
 
+
+def audit_lived_capture_semantics(row):
+    """Independent audit of the authorized perception series, not lab causes.
+
+    A valid SHA chain can be deliberately rebuilt around false statements.
+    Recompute each event type against the original first-person observations.
+    """
+    image = row["ledger"]
+    EvidenceLedger.audit(image)
+    captures = row["perceptions"]
+    original = image["original"]
+    events = image["events"]
+    if (len(captures) != 4 or len(events) != 2
+            or original["observed_world_step"] != captures[1]["t_monde"]
+            or original["subjective_agency"] != "self"
+            or captures[0]["t_monde"] != 1
+            or captures[1]["t_monde"] != 2):
+        raise ValueError("source owner or capture provenance mismatch")
+    revised = False
+    for index, event in enumerate(events):
+        before, after = captures[index + 1], captures[index + 2]
+        passive = ((before["x"], before["y"]) !=
+                   (after["x"], after["y"]))
+        expected_event = (
+            "revision_to_unknown" if passive and not revised
+            else "additional_passive_evidence" if passive
+            else "no_new_agency_evidence"
+        )
+        revised |= passive
+        if (event["event"] != expected_event
+                or after["t_monde"] != before["t_monde"] + 1
+                or event["before_percept_sha"] != digest(before)
+                or event["after_percept_sha"] != digest(after)
+                or event["before_step"] != before["t_monde"]
+                or event["observed_step"] != after["t_monde"]
+                or event["epistemic_label"] != ("unknown" if revised else "self")):
+            raise ValueError("claimed revision lacks exact authorized lived evidence")
+    if image["label"] != ("unknown" if revised else "self"):
+        raise ValueError("summary incompatible with lived evidence")
+    return True
+
+
+def forge_and_rechain(image):
+    """Adversarial proof that internal rehashing is not source validation."""
+    prior = digest({"schema": "a220-ledger-v1", "original": image["original"]})
+    for event in image["events"]:
+        event["prior_hash"] = prior
+        event["hash"] = digest({k: v for k, v in event.items() if k != "hash"})
+        prior = event["hash"]
+    image["head_hash"] = prior
+
+
+
 def adversarial(row):
     image = row["ledger"]
     assert EvidenceLedger.audit(image)
+    assert audit_lived_capture_semantics(row)
     def reject(modifier):
         mutated = deepcopy(image)
         modifier(mutated)
@@ -220,6 +274,23 @@ def adversarial(row):
     reject(lambda x: x.__setitem__("head_hash", "0" * 64))
     reject(lambda x: x["events"].append(deepcopy(x["events"][0])))
     reject(lambda x: x["events"][0].__setitem__("epistemic_label", "world"))
+    # Fully rehashed forgery passes mere hash consistency but fails semantic
+    # audit against independent original captures. Test only on still episodes.
+    if row["pattern"] == "stay_stay":
+        forged_row = deepcopy(row)
+        forgery = forged_row["ledger"]
+        forgery["events"][0]["event"] = "revision_to_unknown"
+        for event in forgery["events"]:
+            event["epistemic_label"] = "unknown"
+        forgery["label"] = "unknown"
+        forge_and_rechain(forgery)
+        assert EvidenceLedger.audit(forgery)
+        try:
+            audit_lived_capture_semantics(forged_row)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("fully rehashed semantic lie passed source auditor")
 
 
 def main():
