@@ -147,7 +147,13 @@ def analyze_pair(left,right,family,seed):
             ==projected_digest(right["state"],right["command"],dropped))
         projections[name]={
             "same_projected_key":same_projection,
-            "contradictory_outcome_collision":(same_projection and different_result\n                                                and not same_input),\n            "irreducible_hidden_ambiguity":(same_projection and different_result\n                                             and same_input)}
+            "contradictory_outcome_collision": (
+                same_projection and different_result and not same_input
+            ),
+            "irreducible_hidden_ambiguity": (
+                same_projection and different_result and same_input
+            ),
+        }
     expected={"BODY_CAP":"drop_body",
               "INVENTORY":"drop_inventory",
               "ADJACENT_PASSABILITY":"drop_adjacent",
