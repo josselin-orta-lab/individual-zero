@@ -81,6 +81,7 @@ def build_life(
     world_name: str, water: float, sleep_name: str, *,
     wal_path: str | None = None, m11_sqlite_custody: bool = False,
     birth_life_id: str | None = None,
+    a2_external_obstacle: bool = False,
 ):
     """Build the exact preregistered life for standalone WAL or M11 SQLite.
 
@@ -144,7 +145,18 @@ def build_life(
     equipment = build_prebirth_equipment(
         config, training_layout, food_target=target_food,
     )
+    from lab.injected_scenario import ScenarioEvent
+    a2_events = (
+        (ScenarioEvent(t_monde=2, sequence=0,
+            operation="set_obstacle",
+            payload={"position": {"x": 3, "y": 1}, "active": True},
+            phase="after_admission"),)
+        if a2_external_obstacle else ()
+    )
     life = Stage12Runtime(
+        scenario_id=("issue110-a2-fixed-external" if a2_events else None),
+        scenario_version=("a2-after-admission-v1" if a2_events else None),
+        scenario_events=a2_events,
         world_config=config, layout=layout,
         safety_config=s11.stage3.substrate.safety._config,
         safety_facts=s11._canonical_safety._innate,
