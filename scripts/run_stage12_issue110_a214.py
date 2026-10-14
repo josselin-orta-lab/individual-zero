@@ -29,6 +29,8 @@ FAMILIES=("translated_move_free","translated_move_blocked",
 TRANSLATED=frozenset(FAMILIES[:4])
 HIDDEN=frozenset(("hidden_toxic","hidden_hazard"))
 VISIBLE=frozenset(FAMILIES[6:])
+_PHYSICAL_RECEIPTS=[]
+_WORLD_ROLES={}
 
 def hash_object(obj):
     return sha256_hex(canonical_causal_bytes(obj))
@@ -56,6 +58,12 @@ def physical_example(world,t,command):
     before=view(world,t)
     pos=(before.x,before.y)
     result=world.apply(command,t_monde=t)
+    _PHYSICAL_RECEIPTS.append({
+        "role":_WORLD_ROLES.get(id(world),"unregistered"),
+        "t_monde":t,
+        "command":command.as_dict(),
+        "transition_sha256":hash_object(result.as_dict()),
+    })
     after=view(world,t+1)
     outcome={
         "position_delta":{"x":after.x-pos[0],"y":after.y-pos[1]},
@@ -137,9 +145,12 @@ class ConflictAbstainingLookup:
         return next(iter(choices))
 
 def run_pair(base,family,seed):
+    _PHYSICAL_RECEIPTS.clear()
+    _WORLD_ROLES.clear()
     source_p,target_p,food,water=positions_for(seed,family)
     source=world_for(base,source_p,food,water,family,"source")
     heldout=world_for(base,target_p,food,water,family,"heldout")
+    _WORLD_ROLES.update({id(source):"source",id(heldout):"heldout"})
     src=world_step(source,family,"source")
     target=world_step(heldout,family,"heldout")
     extra=None
@@ -148,6 +159,7 @@ def run_pair(base,family,seed):
         # heldout test world and never a hidden oracle label in cognition.
         conflict_p=Position(source_p.x+1,source_p.y+1)
         third=world_for(base,conflict_p,food,water,family,"conflict")
+        _WORLD_ROLES[id(third)]="contradictory_prebirth"
         extra=world_step(third,family,"conflict")
     naive=ConflictAbstainingLookup()
     naive.observe(src)
@@ -188,6 +200,8 @@ def run_pair(base,family,seed):
         "conflict_model_predicted":safe_prediction is not None,
         "conflict_model_correct":safe_prediction==target["outcome_hash"] if safe_prediction else None,
         "physically_observed_consequence":target["outcome"],
+        "physical_transitions_applied":len(_PHYSICAL_RECEIPTS),
+        "physical_transition_receipts":list(_PHYSICAL_RECEIPTS),
     }
 
 def main():
@@ -221,13 +235,17 @@ def main():
         "heldout_pairs":len(rows),"source_and_test_worlds":len(rows)*2,
         "additional_contradictory_training_worlds":len(HIDDEN)*len(SEEDS),
         "total_physical_worlds":len(rows)*2+len(HIDDEN)*len(SEEDS),
+        "total_physical_transitions":sum(x["physical_transitions_applied"] for x in rows),
+        "unregistered_world_receipts":sum(r["role"]=="unregistered" for x in rows
+                                          for r in x["physical_transition_receipts"]),
         "family_results":by_family,
         "stage12_science_verdict":"PARTIAL","operator_accepted":False,
         "normative_modified":False,"cognitive_code_modified":False}
     (args.output_dir/"a214-summary.json").write_text(
         json.dumps(summary,indent=2,sort_keys=True)+"\n")
     print("A214_SUMMARY "+json.dumps(summary,sort_keys=True),flush=True)
-    return 0 if (len(rows)==80
+    return 0 if (len(rows)==80 and summary["total_physical_transitions"]==272
+                 and summary["unregistered_world_receipts"]==0
                  and sum(by_family[x]["conservative_covered"] for x in TRANSLATED)==32
                  and sum(by_family[x]["naive_wrong"] for x in HIDDEN)==16
                  and sum(by_family[x]["conservative_covered"] for x in HIDDEN)==0
