@@ -21,8 +21,8 @@ class LocalEntitiesOnly(unittest.TestCase):
         self.assertNotIn("berry_a:3:1",refs)
         self.assertIn("berry_b:3:2",refs)
         self.assertIn("wood:2:2",refs)
-        self.assertIn("water_source:1",refs)  # local source, remote source sorted first
-        self.assertNotIn("water_source:0",refs)
+        self.assertIn("water_source:0",refs)  # local source sorted first
+        self.assertNotIn("water_source:1",refs)
         for e in local.visible_entities:
             self.assertLessEqual(abs(e.position.x-2)+abs(e.position.y-2),1)
         perception=SymbolicPerception()
