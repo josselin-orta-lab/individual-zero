@@ -48,12 +48,15 @@ class Stage6PlanningConfig:
     max_depth: int
     revision_delta: float
     setpoints: Mapping[str, float]
+    progressive_subgoals: bool = False
 
     def validate(self) -> None:
         if not self.version:
             raise ValueError("Stage-6 planning config version must not be empty")
         if self.option_ttl_steps < 1:
             raise ValueError("option TTL must be >= 1")
+        if type(self.progressive_subgoals) is not bool:
+            raise ValueError('progressive_subgoals must be bool')
         if self.max_depth < 1:
             raise ValueError("planning max depth must be >= 1")
         if self.revision_delta < 0.0:
@@ -69,6 +72,7 @@ class PlanningSearchResult:
     predictions: tuple[EquipmentPrediction, ...]
     expanded_states: int
     unavailable_edges: int
+    partial_progress: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -207,6 +211,12 @@ class SimulatorPlanner:
         visited = {self._state_key(initial_state)}
         expanded = 0
         unavailable = 0
+        # The best *observed-model* intermediate result is selected only from
+        # nodes the normal bounded search would already explore.
+        candidate = None
+        candidate_gain = 0.0
+        start_food = float(initial_state.body['food'])
+        start_inventory = int(initial_state.inventory.get('berry_a', 0)) + int(initial_state.inventory.get('berry_b', 0))
 
         while queue:
             node = queue.pop(0)
@@ -243,6 +253,19 @@ class SimulatorPlanner:
                         unavailable_edges=unavailable,
                     )
 
+                if self._config.progressive_subgoals:
+                    # Only a predicted *completed* physical transition may
+                    # count. Prefer genuine bodily progress, then a verified
+                    # increase in available edible inventory.
+                    food_gain = float(next_state.body["food"]) - start_food
+                    stock_gain = (int(next_state.inventory.get("berry_a", 0))
+                                  + int(next_state.inventory.get("berry_b", 0))
+                                  - start_inventory)
+                    gain = max(food_gain, 0.0) + max(stock_gain, 0) * 0.001
+                    if gain > candidate_gain and not prediction.terminal:
+                        candidate_gain = gain
+                        candidate = (commands, predictions)
+
                 key = self._state_key(next_state)
                 if key in visited:
                     continue
@@ -255,16 +278,22 @@ class SimulatorPlanner:
                     )
                 )
 
+        if self._config.progressive_subgoals and candidate is not None:
+            # Model incompleteness never authorizes a fabricated edge. Only
+            # the first predicted action is offered; replan after new sensing.
+            return PlanningSearchResult(
+                status="partial_progress",
+                commands=candidate[0][:1],
+                predictions=candidate[1][:1],
+                expanded_states=expanded,
+                unavailable_edges=unavailable,
+                partial_progress=True,
+            )
         return PlanningSearchResult(
-            status=(
-                "incomplete_model"
-                if unavailable > 0
-                else "not_found_within_horizon"
-            ),
-            commands=(),
-            predictions=(),
-            expanded_states=expanded,
-            unavailable_edges=unavailable,
+            status=("incomplete_model" if unavailable > 0
+                    else "not_found_within_horizon"),
+            commands=(), predictions=(),
+            expanded_states=expanded, unavailable_edges=unavailable,
         )
 
     def plan_target(
@@ -363,7 +392,7 @@ class SimulatorPlanner:
             initial_state=initial_state,
             target=predicate,
         )
-        if result.status != "plan_found" or not result.commands:
+        if result.status not in ("plan_found", "partial_progress") or not result.commands:
             return None
 
         grounding = {
@@ -378,7 +407,8 @@ class SimulatorPlanner:
             grounding.add(goal.justification_ref)
 
         signature_tail = result.commands[-1].primitive
-        option_id = f"option:{goal.id}:sim:{signature_tail}"
+        suffix = ":progress" if result.partial_progress else ""
+        option_id = f"option:{goal.id}:sim:{signature_tail}{suffix}"
         plan_id = f"plan:{option_id}:v1"
         steps = tuple(
             PlanStep(
@@ -410,7 +440,8 @@ class SimulatorPlanner:
                 f"{goal.goal_type}:sim:{signature_tail}"
             ),
             preconditions=(),
-            success_condition=goal.satisfaction_condition,
+            success_condition=("step_completed" if result.partial_progress
+                               else goal.satisfaction_condition),
             failure_condition="plan_step_failed",
             invalidation_condition="goal_or_context_invalid",
             goal_ref=goal.id,
