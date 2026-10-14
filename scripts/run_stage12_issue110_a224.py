@@ -99,7 +99,7 @@ def verify_one(folder,seed,case):
     assert i<j and event["attempt_ref"]==closure["causal_event"]["attempt_ref"]
     assert data["agency_capture_schema"]=="stage12-first-person-cue-v1"
     assert len(data["agency_visible_adjacent"])==4
-    assert data["position"]=={"x":witness["output"]["x"],"y":witness["output"]["y"]}
+    assert data["position"]=={"x":witness["output"]["x"],"y":witness["output"]["y"]}, (seed,case,data["position"],witness["output"]["x"],witness["output"]["y"],witness["input"])
     assert data["capture_t_monde"]==witness["output"]["t_monde"]==1
     assert data["agency_visible_inventory"]==witness["output"]["inventory"]
     assert all(a["x"]==b["x"] and a["y"]==b["y"] for a,b in zip(
