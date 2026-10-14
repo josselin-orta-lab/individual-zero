@@ -40,7 +40,9 @@ class A2CausalAuditTests(unittest.TestCase):
                     and r["causal_event"].get("phase") == "after_admission")
                 mutate(receipt)
                 rehashed = rechain(altered)
-                audit_export_bytes(rehashed)
+                # A changed time can already be rejected by the base
+                # monotonic-clock auditor; in every case the full audit
+                # must reject even a correctly recomputed hash chain.
                 with self.assertRaises(ValueError):
                     audit_stage12_a2_causal_link(
                         rehashed, expected_interventions=expected)
