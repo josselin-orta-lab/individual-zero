@@ -109,23 +109,35 @@ class Stage3Runtime:
         self._captures_this_step = 1
         self._write(
             kind="perceptual_capture",
-            data={
-                "capture_t_monde": self._capture.t_monde,
-                "position": {"x": self._capture.x, "y": self._capture.y},
-                "adjacent_creature_count": len(self._capture.adjacent_creatures),
-                **({"agency_visible_inventory": dict(sorted(self._capture.inventory.items())),
-                    "agency_visible_adjacent": [
-                        {"direction": cell.direction, "x": cell.x, "y": cell.y,
-                         "passable": cell.passable,
-                         "water_source": cell.water_source,
-                         "resources": list(cell.resources)}
-                        for cell in self._capture.adjacent
-                    ],
-                    "agency_capture_schema": "stage12-first-person-cue-v1"}
-                   if self.control.goal_agency is not None else {}),
-            },
+            data=self._perceptual_capture_receipt(self._capture),
         )
         return self._capture
+
+    def _perceptual_capture_receipt(
+        self, capture: PerceptualCapture,
+    ) -> dict[str, object]:
+        """Serialize the one authorized sensory capture on every waking path.
+
+        Stage10's preopened wake must use exactly the same projection as the
+        normal Stage3 opening. No extra sensing, Lab truth, or cognition.
+        Historical Stage3/Stage10 bytes remain unchanged if agency is off.
+        """
+        return {
+            "capture_t_monde": capture.t_monde,
+            "position": {"x": capture.x, "y": capture.y},
+            "adjacent_creature_count": len(capture.adjacent_creatures),
+            **({
+                "agency_visible_inventory": dict(sorted(capture.inventory.items())),
+                "agency_visible_adjacent": [
+                    {"direction": cell.direction, "x": cell.x, "y": cell.y,
+                     "passable": cell.passable,
+                     "water_source": cell.water_source,
+                     "resources": list(cell.resources)}
+                    for cell in capture.adjacent
+                ],
+                "agency_capture_schema": "stage12-first-person-cue-v1",
+            } if self.control.goal_agency is not None else {}),
+        }
 
     def _write(self, *, kind: str, data: dict[str, object]) -> None:
         attempt = self.scheduler.active_attempt
