@@ -178,10 +178,24 @@ class Stage12Runtime(Stage11SleepRuntime):
         spatial_goal_progress: bool = False,
         spatial_goal_cost_uc: int = 1,
         spatial_agency_cost_uc: int = 1,
+        birth_life_id: str | None = None,
         attribution_join: bool = False,
         attribution_join_cost_uc: int = 1, **kwargs,
     ):
         detector_policy.validate()
+        # A scientifically independent life needs its own immutable identity.
+        # Preserve the legacy reference runtime ID for existing fixtures;
+        # research/operator births must supply a distinct value explicitly.
+        if birth_life_id is not None:
+            allowed = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                          "0123456789:._-")
+            if (type(birth_life_id) is not str
+                    or not 1 <= len(birth_life_id) <= 128
+                    or birth_life_id[0] not in allowed
+                    or any(c not in allowed for c in birth_life_id)):
+                raise ValueError("Stage12 birth life identity must be a bounded identifier")
+            self.individual_id = birth_life_id
+        self._stage12_explicit_birth_identity = birth_life_id is not None
         if type(diagnostic_sample_cost_uc) is not int or diagnostic_sample_cost_uc < 1:
             raise ValueError("Stage12 diagnostics need a positive injected P-43 UC cost")
         if type(module_occupancy_cost_uc) is not int or module_occupancy_cost_uc < 1:
