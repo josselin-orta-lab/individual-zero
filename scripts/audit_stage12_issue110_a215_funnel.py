@@ -24,7 +24,8 @@ def census_one(path: Path) -> dict:
                                              expected_count=base.occurrences)
     pairs=audit_stage12_attribution_pairs(raw,expected_head=base.head_hash,
                                           expected_count=base.occurrences)
-    ev=[{**row["causal_event"],"event_id":row["event_id"]}\n        for row in (json.loads(line) for line in raw.splitlines())]
+    ev=[{**row["causal_event"],"event_id":row["event_id"]}
+        for row in (json.loads(line) for line in raw.splitlines())]
     by_kind={}
     for e in ev:
         by_kind.setdefault(e["kind"],[]).append(e)
