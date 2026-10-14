@@ -2,7 +2,7 @@
 
 This is an external physical laboratory, not an autonomous 600-step agent life.
 """
-from dataclasses import replace
+from dataclasses import asdict, replace
 from hashlib import sha256
 from pathlib import Path
 import argparse
@@ -67,10 +67,10 @@ def trial(config,seed,condition):
     expected_position=(origin if condition=="forced_failure" else target)
     assert (after.x,after.y)==(expected_position.x,expected_position.y)
     return {
-        "seed":seed,"condition":condition,"pre_percept":before.as_dict(),
-        "post_percept":after.as_dict(),
-        "pre_percept_sha256":sha256_hex(canonical_causal_bytes(before.as_dict())),
-        "post_percept_sha256":sha256_hex(canonical_causal_bytes(after.as_dict())),
+        "seed":seed,"condition":condition,"pre_percept":asdict(before),
+        "post_percept":asdict(after),
+        "pre_percept_sha256":sha256_hex(canonical_causal_bytes(asdict(before))),
+        "post_percept_sha256":sha256_hex(canonical_causal_bytes(asdict(after))),
         "owner_commitment_hash":sha256_hex(canonical_causal_bytes(commitment.as_dict())),
         "physical_command_transition_sha256":sha256_hex(canonical_causal_bytes(actual.as_dict())),
         "physical_action_effects":dict(actual.effects),
