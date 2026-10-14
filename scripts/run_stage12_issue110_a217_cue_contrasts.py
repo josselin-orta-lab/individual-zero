@@ -70,6 +70,27 @@ def run_one(config,seed,condition):
     after=perception.capture(
         local_state=world.capture_local(t_monde=2).as_dict(),
         telemetry=world.telemetry())
+    # Physical falsification guards: no judgement counts as a useful
+    # contrast if the relevant WorldBody action did not really occur.
+    if condition=="collect_available":
+        assert after.inventory.get("berry_a",0)==before.inventory.get("berry_a",0)+1
+        assert effect.effects.get("collected",{}).get("quantity")==1
+    elif condition in ("collect_absent","collect_forced_failure"):
+        assert after.inventory.get("berry_a",0)==before.inventory.get("berry_a",0)
+        if condition=="collect_forced_failure":
+            assert effect.effects.get("scenario_forced_failure")=="collecter"
+    elif condition=="move_success":
+        assert (after.x,after.y)==(target.x,target.y)
+        assert effect.effects.get("movement")=="moved"
+    else:
+        assert (after.x,after.y)==(origin.x,origin.y)
+        if condition=="move_external_obstacle":
+            assert next(c for c in before.adjacent if c.direction=="east").passable
+            assert not next(c for c in after.adjacent if c.direction=="east").passable
+            assert effect.effects.get("movement")=="blocked"
+        if condition=="move_forced_failure":
+            assert effect.effects.get("scenario_forced_failure")=="se_deplacer"
+            assert next(c for c in after.adjacent if c.direction=="east").passable
     judgement=owner.evaluate(
         capture=after,world_step=2,
         cue_ref=f"physical-witness:{seed}:{condition}:2",paid=True)
