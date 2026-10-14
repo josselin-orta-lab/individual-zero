@@ -1,0 +1,48 @@
+name: Stage12 Issue110 A2.5 physical P48 food census
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/lab/stage12_p48_diversity_audit.py'
+      - 'scripts/run_stage12_issue110_a25.py'
+      - 'tests/test_stage12_p48_diversity_audit.py'
+      - 'docs/research/stage12-issue110-a2-epistemic-diversity-p48-food-prereg-2026-10-14.fr.md'
+      - '.github/workflows/stage12-issue110-a25-epistemic.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  a25-physical-census:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: A2.5 sidecar negative-contract tests
+        run: python -m unittest discover -s tests -p 'test_stage12_p48_diversity_audit.py' -v
+      - name: Preregistered 16 autonomous independent lives
+        env:
+          COHORT: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/run_stage12_issue110_a25.py \
+            --output-dir /tmp/a25-results --cohort-id "$COHORT" \
+            > /tmp/a25-log.txt 2>&1 || { tail -n 160 /tmp/a25-log.txt; exit 2; }
+          grep 'A25_SUMMARY' /tmp/a25-log.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue110-a25-py${{ matrix.python-version }}
+          path: |
+            /tmp/a25-results
+            /tmp/a25-log.txt
+          retention-days: 30
+          if-no-files-found: warn
