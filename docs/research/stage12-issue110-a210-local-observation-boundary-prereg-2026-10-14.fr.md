@@ -1,0 +1,25 @@
+# Stage12 #110 A2.10a : préenregistrement du contrôle de portée perceptive locale
+
+**14 octobre 2026. Ce protocole est committé AVANT la modification du code et AVANT toute nouvelle expérience.** Base exacte : `main 01495d4fa56a65f85f65e1121817927df3010e62`. Stage12 global **PARTIAL**, issue #110 **OUVERTE**, MVP normative v1.3.1 **inchangée**.
+
+## Incident épistémique découvert dans les journaux bruts
+
+La vie A2.9 `sustained_early_gain1p6` (artefact [CI #38599941769](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38599941769), `stage12-a29-py3.11`) commence à **(2,2)**. Sa capture locale explicite présente uniquement les quatre voisins cardinalement adjacents, dont aucun ne contient de ressource. Pourtant l'événement `s_t_published` de t1/c1 et c2 inclut `observation:berry_a:3:1:1:1`. Cette baie est à distance de Manhattan **2** : elle ne figure ni sur la cellule courante ni dans ses quatre voisins perceptibles.
+
+Cause logicielle par inspection : `WorldBody.capture_local` construit `visible_entities` en balayant toutes les positions de ressources, eau, créatures et abris, sans filtrage spatial. `SymbolicPerception.capture` et `publish_capture` exposent ensuite toutes ces entités à l'individu sous provenance `world-capture`. Cela ne donne pas directement accès à `WorldBody.ground_truth` ni au journal Oracle, mais confond **localement observé** et **présent ailleurs dans l'environnement**. Cette entrée potentiellement privilégiée contamine la traçabilité épistémique des campagnes précédentes.
+
+## Correction minimale et frontière normative
+
+Sans modifier de spécification, limiter, **avant tout passage à SymbolicPerception**, chaque `visible_entities` du captureur physique à la cellule courante ou aux quatre **voisins cardinalement adjacents** : `|dx|+|dy| <= 1`, cohérent avec `current_resources` et `adjacent` déjà publiés. Appliquer ce filtrage à **tous les types** d'entités (ressources, eau, créatures et abris) et non uniquement aux baies. Ne pas supprimer les véritables observations locales, ne pas altérer `ground_truth`, la physique, la taille de la grille, `current_resources`, `adjacent`, la télémétrie corporelle, le journal causal complet ni les possibilités d'audit hors I0.
+
+Aucune lecture cachée de la carte n'est introduite. Le correctif est de **conformité à la frontière locale**, pas une réforme des règles scientifiques de la spécification v1.3.1. Si une exigence normative explicite de perception globale venait contredire ce modèle, suspendre l'intégration et demander une décision opérateur.
+
+## Validation préspécifiée
+
+1. **Frontière T1** : un monde avec baie à distance 2 de l'individu ne peut la produire comme `visible_entities` dans son captureur local ni publier `observation:berry` dans les contributions de Perception. Au pas suivant après **véritable** déplacement adjacent, cette même baie redevient visible et publiable. Des entités distantes eau/créature/abri doivent être filtrées ; des entités de la cellule courante et des voisins immédiats doivent rester visibles.
+2. **Traçabilité T2** : rejeter par test un captureur local qui présente une entité dont la position n'est pas la cellule courante ou un voisin cardinal. L'observateur externe maintient un accès à l'état physique complet, jamais la Perception de l'individu.
+3. **Comparaison A2.9** : rejouer **sans modifier les décisions ni les commandes manuellement** les mêmes 16 conditions de [A2.9](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38600503734) sous Python 3.11 et 3.12 : 2 profils `restored/sustained` × 2 gains `1.0/1.6` ×4 calendriers d'obstacle `none/early/original/persistent`, jusqu'à **42 pas physiquement appliqués chacun** (672 pas maximum). Chaque vie est une naissance neuve, pas une reprise. Seul `WorldBody.capture_local` évolue, aucune règle Stage6/8/9/11/12 n'est modifiée. Comparer le nombre d'ingestions réellement attestées, les sites distincts, les jugements subjectifs, les nouveaux `S_t`, les WAL/GA/P48 et les causes d'échec éventuelles. **Les chiffres historiques ne sont pas des résultats garantis**.
+4. **Non-régression T3** : CI Stage3/4 Perception, Safety, Stage9 toxic-food, A2 et Stage12, dont scénarios de sommeil et mortalité irréversible; filtrage avant la naissance ou lecture Oracle interdit. Toutes les régressions de validité devront être expliquées.
+5. **Critères scientifiques C1–C8** : ne pas considérer une disparition de signaux épistémiquement invalides comme une régression des capacités légitimes; en revanche, toute perte alimentaire ou changement de jugement observé reste un résultat négatif / conséquence réelle du correctif. La campagne initiale A2.9 demeure **historique sous l'ancien contrat d'observation**; elle ne doit pas être utilisée pour certifier une mémoire de ressource locale.
+
+**Décision :** ne pas fusionner avant les tests de frontière et une campagne physique autonome cohérente. Ne pas déclarer Stage12 PASS ni fermer #110. Le développement éventuel d'une mémoire d'opportunités vécues avec sécurité, coût UC et routage aura un **protocole A2.10b distinct**, après stabilisation de cette frontière.

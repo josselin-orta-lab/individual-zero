@@ -1,0 +1,50 @@
+name: Stage12 Issue110 A2.10a local perceptual boundary replay
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/lab/world.py'
+      - 'tests/test_stage12_local_entity_visibility.py'
+      - 'docs/research/stage12-issue110-a210-local-observation-boundary-prereg-2026-10-14.fr.md'
+      - '.github/workflows/stage12-issue110-a210-local-boundary.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  local-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Verify perception, world and local entity limits
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_local_entity_visibility.py' -v
+          python -m unittest discover -s tests -p 'test_symbolic_perception.py' -v
+          python -m unittest discover -s tests -p 'test_world_physics.py' -v
+      - name: Re-run A2.9 physical lives after closing perceptual leak
+        env:
+          COHORT: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/run_stage12_issue110_a29.py \
+            --output-dir /tmp/i0-a210-replay --cohort-id "$COHORT" \
+            > /tmp/i0-a210-replay.log 2>&1 || { tail -n 160 /tmp/i0-a210-replay.log; exit 2; }
+          grep 'A29_SUMMARY' /tmp/i0-a210-replay.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-a210-visibility-py${{ matrix.python-version }}
+          path: |
+            /tmp/i0-a210-replay
+            /tmp/i0-a210-replay.log
+          retention-days: 30
+          if-no-files-found: warn
