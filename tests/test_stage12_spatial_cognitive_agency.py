@@ -48,8 +48,11 @@ class SpatialCognitiveAgencyTests(unittest.TestCase):
 
     def test_confounded_or_missing_movement_is_unknown(self):
         svc, _ = preregister(False)
+        # The old static fixture's default is a *new blocked cue*, which
+        # now legitimately represents A2. Keep this an unchanged-free-world
+        # negative control: no movement by itself never proves world agency.
         judgement = svc.evaluate(
-            capture=capture(t=2), world_step=2,
+            capture=capture(t=2, passable=True), world_step=2,
             cue_ref="sensory:two", paid=True,
         )
         self.assertEqual(judgement.subjective_agency, "unknown")
