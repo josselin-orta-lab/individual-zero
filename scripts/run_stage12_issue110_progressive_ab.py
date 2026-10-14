@@ -166,7 +166,7 @@ def main():
     summary=dict(schema="issue110-progressive-planning-ab-v1",
                  source_sha=subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),
                  preregistration="docs/research/stage12-issue110-progressive-planning-prereg-2026-10-14.fr.md",
-                 lives=lives,planned_lives=6,actual_lives=len(lives),
+                 lives=lives,planned_lives=8,actual_lives=len(lives),
                  physical_steps=sum(l["steps"] for l in lives),
                  evaluable_lives=sum(l.get("evaluable",False) for l in lives),
                  failures=sum(bool(l["execution_error"] or l["audit_error"]) for l in lives),
