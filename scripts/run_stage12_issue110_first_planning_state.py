@@ -172,6 +172,7 @@ def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> di
         world_name, water, sleep_name,
         wal_path=str(folder / "life.wal"), birth_life_id=birth_id,
     )
+    target_food = world_name.startswith("near_food")
     Stage12OperatorConsole(substrate=life.stage3.substrate, mode="campaign",
         policy_version="stage12-issue110-food-50-v1", maximum_world_steps=MAX_STEPS)
     actions: Counter[str] = Counter()
