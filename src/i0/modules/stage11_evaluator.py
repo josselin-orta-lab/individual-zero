@@ -9,12 +9,13 @@ from .stage8_evaluator import Stage8OptionEvaluator
 
 
 class Stage11OptionEvaluator(Stage9OptionEvaluator):
-    def __init__(self, *, exploration, intrinsic_weight, **kwargs):
+    def __init__(self, *, exploration, intrinsic_weight, instrumental_planning=None, **kwargs):
         super().__init__(**kwargs)
         if not isfinite(intrinsic_weight) or intrinsic_weight < 0:
             raise ValueError("P-15 intrinsic weight must be finite and nonnegative")
         self._exploration = exploration
         self._intrinsic_weight = intrinsic_weight
+        self._instrumental_planning = instrumental_planning
 
     @staticmethod
     def _safe_causal_test_shape(proposal):
@@ -262,6 +263,64 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             result.validate()
             return result
 
+        # Optional goal-linked interest: only a genuine current Stage6
+        # progressive prefix can share a currently offered frontier signal.
+        # Never rewrite the option's own original motive or goal reference.
+        owner = self._instrumental_planning
+        if (
+            owner is not None
+            and proposal.option.motive_ref.type == "active_goal"
+            and proposal.option.goal_ref == proposal.option.motive_ref.id
+            and proposal.option.success_condition == "step_completed"
+            and proposal.plan is not None
+            and len(proposal.plan.steps) > 1
+            and owner.current_proposal == proposal
+            and proposal.plan.steps[0].command.primitive == "se_deplacer"
+        ):
+            geo = self._exploration.geographic
+            direction = proposal.plan.steps[0].command.parameters.get("direction")
+            candidates = () if geo is None else tuple(
+                target for target in geo.offered
+                if target.source_t_monde == t_monde
+                and target.direction == direction
+                and target.origin == (initial_state.x, initial_state.y)
+            )
+            if len(candidates) == 1:
+                original = Stage8OptionEvaluator.evaluate(
+                    self, proposal=proposal,
+                    evaluation_state=evaluation_state,
+                    initial_state=initial_state,
+                    cycle=cycle, t_monde=t_monde,
+                    remaining_plan_index=remaining_plan_index,
+                )
+                evaluation = original.evaluation
+                if (
+                    evaluation.status == "evaluated"
+                    and evaluation.simulated_value_status == "computed"
+                    and evaluation.simulated_value is not None
+                    and evaluation.simulated_value > 0
+                ):
+                    interest = self._exploration.geographic_interest_for_target(
+                        candidates[0]
+                    )
+                    if (
+                        interest.status == "available"
+                        and not set(evaluation.signal_ids) & set(interest.signal_ids)
+                    ):
+                        evidence = max(-1.0, min(1.0,
+                            original.evidence + self._intrinsic_weight * interest.value
+                        ))
+                        augmented = replace(
+                            evaluation, intrinsic_status="applicable",
+                            intrinsic_value=interest.value,
+                            signal_ids=tuple(evaluation.signal_ids) + interest.signal_ids,
+                            producers=tuple(dict.fromkeys(
+                                evaluation.producers + ("exploration:p48_instrumental",)
+                            )),
+                        )
+                        result = OptionEvidenceInput(augmented, evidence)
+                        result.validate()
+                        return result
         if proposal.option.motive_ref.type != "test_causal":
             return super().evaluate(
                 proposal=proposal, evaluation_state=evaluation_state,
