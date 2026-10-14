@@ -54,7 +54,7 @@ class DualScopeRuntimeTests(unittest.TestCase):
             self.assertEqual(len(set(x.owner_id for x in runtime.causal_owners)),
                              len(runtime.causal_owners))
             self.assertIn("dual_scope",runtime.stage3.control.export_causal_state())
-            self.assertEqual(runtime.compute_budget.config.operation_costs[
+            self.assertEqual(runtime._config.compute_budget.operation_costs[
                 "goal_outcome_responsibility_assessment"],1)
             for _ in range(14):
                 if runtime.stage3.substrate.mortal_status.value!="active":
@@ -84,7 +84,7 @@ class DualScopeRuntimeTests(unittest.TestCase):
             self.assertIsNone(rt.stage3.control.dual_scope)
             self.assertNotIn("dual_scope",rt.stage3.control.export_causal_state())
             self.assertNotIn("goal_outcome_responsibility_assessment",
-                             rt.compute_budget.config.operation_costs)
+                             rt._config.compute_budget.operation_costs)
 
 
 if __name__=="__main__":
