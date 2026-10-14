@@ -76,7 +76,16 @@ SLEEP_PROFILES = ("horizon_three",)
 MAX_STEPS = 50
 
 
-def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> dict:
+def build_life(
+    world_name: str, water: float, sleep_name: str, *,
+    wal_path: str | None = None, m11_sqlite_custody: bool = False,
+    birth_life_id: str | None = None,
+):
+    """Build the exact preregistered life for standalone WAL or M11 SQLite.
+
+    M11 owns all state when opted-in. The training WorldBody is still
+    physically distinct and exists only before I0's birth.
+    """
     s11 = build_stage11_reference_runtime(enable_geography=True, autonomous_mortal=True)
     s10 = build_stage10_reference_runtime(autonomous_mortal=True)
     config = replace(s11.world.config,
@@ -141,7 +150,8 @@ def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> di
         protected_integrity_threshold=s11.stage3.control._config.protected_integrity_threshold,
         stage11_config=stage11_config, stage10_config=combined,
         equipment=equipment, autonomous_mortal=True,
-        wal_path=str(folder / "life.wal"),
+        wal_path=wal_path, m11_sqlite_custody=m11_sqlite_custody,
+        birth_life_id=birth_life_id,
         diagnostic_sample_cost_uc=1, module_occupancy_cost_uc=1,
         subjective_goal_agency=True, goal_agency_cost_uc=1,
         spatial_goal_progress=True, spatial_goal_cost_uc=1,
@@ -153,6 +163,15 @@ def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> di
             loop_repetitions=3, loop_max_period=2,
             entropy_min_samples=4, entropy_warning_fraction=0.25,
             bias_min_outcomes_each=2, attribution_bias_threshold=0.75))
+    return life, config, layout, equipment
+
+
+def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> dict:
+    birth_id = "i0:issue110:optiona:born:" + world_name + ":" + sleep_name
+    life, config, layout, equipment = build_life(
+        world_name, water, sleep_name,
+        wal_path=str(folder / "life.wal"), birth_life_id=birth_id,
+    )
     Stage12OperatorConsole(substrate=life.stage3.substrate, mode="campaign",
         policy_version="stage12-issue110-food-50-v1", maximum_world_steps=MAX_STEPS)
     actions: Counter[str] = Counter()
@@ -275,6 +294,7 @@ def run_life(folder: Path, world_name: str, water: float, sleep_name: str) -> di
     record = {
         "schema": "stage12-issue110-spatial-lived-state-life-v1",
         "world": world_name, "initial_water": water, "sleep_profile": sleep_name,
+        "life_id": birth_id,
         "world_config_sha256": sha256_hex(canonical_causal_bytes(config.as_dict())),
         "layout_sha256": sha256_hex(canonical_causal_bytes(layout.as_dict())),
         "journal_sha256": sha256(raw).hexdigest(),
