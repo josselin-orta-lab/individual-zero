@@ -49,6 +49,7 @@ class Stage6PlanningConfig:
     revision_delta: float
     setpoints: Mapping[str, float]
     progressive_subgoals: bool = False
+    progressive_evaluation_prefix: bool = False
 
     def validate(self) -> None:
         if not self.version:
@@ -57,6 +58,10 @@ class Stage6PlanningConfig:
             raise ValueError("option TTL must be >= 1")
         if type(self.progressive_subgoals) is not bool:
             raise ValueError('progressive_subgoals must be bool')
+        if type(self.progressive_evaluation_prefix) is not bool:
+            raise ValueError('progressive_evaluation_prefix must be bool')
+        if self.progressive_evaluation_prefix and not self.progressive_subgoals:
+            raise ValueError('prospective prefix requires progressive_subgoals')
         if self.max_depth < 1:
             raise ValueError("planning max depth must be >= 1")
         if self.revision_delta < 0.0:
@@ -332,8 +337,10 @@ class SimulatorPlanner:
             # the first predicted action is offered; replan after new sensing.
             return self._record_search(PlanningSearchResult(
                 status="partial_progress",
-                commands=candidate[0][:1],
-                predictions=candidate[1][:1],
+                commands=(candidate[0] if self._config.progressive_evaluation_prefix
+                          else candidate[0][:1]),
+                predictions=(candidate[1] if self._config.progressive_evaluation_prefix
+                             else candidate[1][:1]),
                 expanded_states=expanded,
                 unavailable_edges=unavailable,
                 partial_progress=True,
@@ -470,7 +477,9 @@ class SimulatorPlanner:
             grounding.add(goal.justification_ref)
 
         signature_tail = result.commands[-1].primitive
-        suffix = ":progress" if result.partial_progress else ""
+        suffix = (":progress:prefix" if result.partial_progress
+                  and self._config.progressive_evaluation_prefix else
+                  ":progress" if result.partial_progress else "")
         option_id = f"option:{goal.id}:sim:{signature_tail}{suffix}"
         plan_id = f"plan:{option_id}:v1"
         steps = tuple(
