@@ -1,0 +1,47 @@
+name: Stage12 Issue110 A2.6 mortal 600-step longitudinal contrast
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_a26_long.py'
+      - 'tests/test_stage12_a26_long_horizon.py'
+      - 'docs/research/stage12-issue110-a26-long-horizon-prereg-2026-10-14.fr.md'
+      - '.github/workflows/stage12-issue110-a26-long.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  six-mortal-lives:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Verify longitudinal contracts and genuine short-lived physical smoke
+        run: python -m unittest discover -s tests -p 'test_stage12_a26_long_horizon.py' -v
+      - name: Six preregistered mortal lives to 600 physical steps at most
+        env:
+          COHORT: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/run_stage12_issue110_a26_long.py \
+            --output-dir /tmp/issue110-a26 --cohort-id "$COHORT" \
+            > /tmp/issue110-a26.log 2>&1 || { tail -n 120 /tmp/issue110-a26.log; exit 2; }
+          grep 'A26_SUMMARY' /tmp/issue110-a26.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue110-a26-py${{ matrix.python-version }}
+          path: |
+            /tmp/issue110-a26
+            /tmp/issue110-a26.log
+          retention-days: 30
+          if-no-files-found: warn
