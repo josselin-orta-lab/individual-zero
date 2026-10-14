@@ -65,7 +65,7 @@ class Stage12OperatorPacketTests(unittest.TestCase):
             self.assertEqual(lived["admitted_verified_failures"], 0)
             self.assertEqual(lived["admitted_unique_attribution_refs"], 0)
             self.assertEqual(lived["diagnostic_samples_without_admitted_attribution"], 4)
-            self.assertFalse(lived["independent_pair_contract_available"])
+            self.assertTrue(lived["independent_pair_contract_available"])
             self.assertFalse(lived["detector_calibration_supported"])
             self.assertEqual(packet["journal"]["world_steps_closed"], 4)
             self.assertEqual(packet["diagnostics"]["diagnostic_samples"], 4)
