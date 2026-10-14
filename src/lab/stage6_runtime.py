@@ -228,7 +228,7 @@ class Stage6Runtime(Stage4Runtime):
                 option_ref, plan_ref, step_index = self.stage3.control.current_step
                 if (option_ref == previous.option.id
                         and plan_ref == previous.plan.id
-                        and step_index >= len(previous.plan.steps)):
+                        and step_index >= (1 if self._stage6_config.planning.progressive_evaluation_prefix else len(previous.plan.steps))):
                     self.competition.invalidate_candidate(option_ref)
                     self.stage3.control.clear_option_step(option_ref)
                     self.planning.invalidate_current()
