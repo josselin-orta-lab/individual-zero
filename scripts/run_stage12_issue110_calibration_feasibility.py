@@ -213,6 +213,21 @@ def main() -> int:
         print(json.dumps({k:v for k,v in r.items()
                           if k not in ("external_operations","actual_commands","source_trace")},
                          sort_keys=True))
+        for step in r["source_trace"]:
+            # The journal is the sole source; these log projections are
+            # research-only, never fed back into I0 or interpreted as truth.
+            receipts = [entry for entry in step["receipts"]
+                        if entry["event"] in (
+                            "sleep_entered", "sleep_woke", "sleep_reduced_capture",
+                            "intent", "agency_precommit", "agency_judgement",
+                            "outcome", "pair_admitted", "pair_unavailable",
+                            "diagnostic", "diagnostic_deferred", "command",
+                        )]
+            if receipts:
+                print("CALIBRATION_STEP " + json.dumps({
+                    "condition": r["condition"], "step": step["step"],
+                    "receipts": receipts,
+                }, sort_keys=True))
     return 0 if all(not r["failure"] and not r["audit_error"] for r in results) else 2
 
 
