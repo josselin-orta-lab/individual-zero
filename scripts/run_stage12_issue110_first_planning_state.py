@@ -90,6 +90,7 @@ def build_life(
     intrinsic_weight_override: float | None = None,
     instrumental_geographic_value: bool = False,
     progressive_revalidate_on_new_capture: bool = False,
+    extrinsic_gain_override: float | None = None,
 ):
     """Build the exact preregistered life for standalone WAL or M11 SQLite.
 
@@ -186,6 +187,26 @@ def build_life(
             cfg8, stage7=replace(cfg7, stage6=revised6),
         )),
     )
+    # A2.8 prospective reward-sensitivity ablation, frozen before birth.
+    # The default (including an explicit 1.0 control) is historically exact.
+    if extrinsic_gain_override is not None:
+        if (type(extrinsic_gain_override) not in (int, float)
+                or float(extrinsic_gain_override) not in (1.0, 1.6, 2.0)):
+            raise ValueError("only A2.8 preregistered extrinsic gains allowed")
+        if float(extrinsic_gain_override) != 1.0:
+            gain = float(extrinsic_gain_override)
+            stage11_config = replace(
+                stage11_config,
+                stage9=replace(stage11_config.stage9, stage8=replace(
+                    stage11_config.stage9.stage8,
+                    evaluation=replace(
+                        stage11_config.stage9.stage8.evaluation,
+                        version=(stage11_config.stage9.stage8.evaluation.version
+                                 + "-a28-extrinsic-gain-" + str(gain)),
+                        extrinsic_gain=gain,
+                    ),
+                )),
+            )
     if intrinsic_weight_override is not None:
         if type(intrinsic_weight_override) not in (int, float) or intrinsic_weight_override not in (0.0, 0.35, 0.75):
             raise ValueError("only preregistered P15 profiles are allowed")
