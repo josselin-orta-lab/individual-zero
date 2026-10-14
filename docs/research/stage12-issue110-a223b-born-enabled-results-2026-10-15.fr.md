@@ -21,3 +21,11 @@ Le **contrôle négatif de compromission de `SymbolicPerception.capture` avant i
 Aucune modification du code cognitif, Stage3/Stage10/M11, des UC, du WAL, de la mortalité, d'Action Control, de l'Oracle, de Stage9/DC-05, de la spécification v1.3.1 ni des seuils `2+2/12`. **0 nouvelle paire de calibration GA-06**, pas de validation à 600 pas et pas de réception opérateur.
 
 **Verdict : T1-T4/T6 PASS dans les limites du banc ; T5 non encore exécuté ; Stage12 PARTIAL ; issue #110 OPEN ; PR #179 maintenue sans fusion tant que les contrôles négatifs et les CI finales ne sont pas clos.**
+
+## Complément expérimental pré-journal A2.23b
+
+Le contrôle négatif initialement non exécuté a été ajouté **après** le rapport intermédiaire, au commit `0aedc925`. [CI #38646571489](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38646571489) : **SUCCESS Python 3.11 ET 3.12**, sur cette version du code. Quatre processus supplémentaires (un par variante de position) interceptent uniquement en laboratoire `SymbolicPerception.capture`, changent la coordonnée x de +1 avant que Stage3 écrive son reçu, et laissent l'unique M11 committer la génération 1. **4/4 fausses captures pré-journal sont acceptées durablement.** La position de départ véritable est préenregistrée séparément par le banc ; aucune vérité de ce banc n'est communiquée à I0.
+
+La conservation après commit est donc validée pour le service subjectif né activé, mais **l'authenticité de la sensation contre un capteur compromis est réfutée** pour cette menace, comme attendu. Le nombre d'arrêts brutaux demeure **24**, car les quatre contrôles négatifs terminent normalement. Les exécutions sont réparties sur quatre configurations déterministes et dupliquées entre deux versions Python ; aucune conclusion statistique sur des vies ouvertes ni sur les 600 pas n'en découle.
+
+**T5 : contrôle négatif exécuté et conforme (4/4 fausses captures acceptées).** La CI du dernier commit documentaire reste à vérifier séparément. Stage12 PARTIAL, #110 OPEN, contrat normatif inchangé.
