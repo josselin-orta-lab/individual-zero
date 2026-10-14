@@ -601,6 +601,15 @@ class WorldBody:
                 )
             )
 
+        # Only the physical cell and its four cardinal neighbors are in the
+        # local symbolic field. Full remote entity lists belong to WorldBody
+        # and the external observer, never the individual's Perception.
+        visible_entities = [
+            entity for entity in visible_entities
+            if (abs(entity.position.x - self._position.x)
+                + abs(entity.position.y - self._position.y)) <= 1
+        ]
+
         return LocalWorldState(
             t_monde=t_monde,
             position=self._position,
