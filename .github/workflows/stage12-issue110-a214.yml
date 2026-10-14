@@ -1,0 +1,46 @@
+name: Stage12 Issue110 A2.14 relational abstention physics
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_a214.py'
+      - 'tests/test_stage12_a214_relational_abstention.py'
+      - 'docs/research/stage12-issue110-a214-relational-uncertainty-prereg-2026-10-14.fr.md'
+      - 'docs/research/stage12-issue110-a214-relational-uncertainty-results-2026-10-14.fr.md'
+      - '.github/workflows/stage12-issue110-a214.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preregistered-physics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Verify conservative physical-only lookup and controls
+        run: python -m unittest discover -s tests -p 'test_stage12_a214_relational_abstention.py' -v
+      - name: Eight predeclared seeds times ten physically executed contrasts
+        run: |
+          python scripts/run_stage12_issue110_a214.py \
+            --output-dir /tmp/i0-a214-physical > /tmp/i0-a214.log 2>&1 \
+            || { tail -n 180 /tmp/i0-a214.log; exit 2; }
+          grep 'A214_SUMMARY' /tmp/i0-a214.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-a214-py${{ matrix.python-version }}
+          path: |
+            /tmp/i0-a214-physical
+            /tmp/i0-a214.log
+          retention-days: 30
+          if-no-files-found: warn
