@@ -1,0 +1,47 @@
+name: Stage12 Issue110 A2.12 exact-key prospective diagnostic
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_a212.py'
+      - 'tests/test_stage12_a212_key_audit.py'
+      - 'docs/research/stage12-issue110-a212-exact-input-key-prereg-2026-10-14.fr.md'
+      - 'docs/research/stage12-issue110-a212-exact-input-key-results-2026-10-14.fr.md'
+      - '.github/workflows/stage12-issue110-a212.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  physical-key-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - run: python -m unittest discover -s tests -p 'test_stage12_a212_key_audit.py' -v
+      - name: Verify exact keys used in eight real mortal 42-step lives
+        env:
+          COHORT: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/run_stage12_issue110_a212.py \
+            --output-dir /tmp/i0-a212 --cohort-id "$COHORT" \
+            > /tmp/i0-a212.log 2>&1 || { tail -n 130 /tmp/i0-a212.log; exit 2; }
+          grep 'A212_SUMMARY' /tmp/i0-a212.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-a212-py${{ matrix.python-version }}
+          path: |
+            /tmp/i0-a212
+            /tmp/i0-a212.log
+          retention-days: 30
+          if-no-files-found: warn
