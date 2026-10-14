@@ -89,6 +89,7 @@ def build_life(
     progressive_evaluation_prefix: bool = False,
     intrinsic_weight_override: float | None = None,
     instrumental_geographic_value: bool = False,
+    progressive_revalidate_on_new_capture: bool = False,
 ):
     """Build the exact preregistered life for standalone WAL or M11 SQLite.
 
@@ -168,11 +169,13 @@ def build_life(
         planning=replace(cfg6.planning,
                          version=("stage12-issue110-food-planner-v1" if planning_depth == 3
                                   else f"stage12-issue110-food-planner-depth{planning_depth}-v1")
+                         + ("-progressive-revalidate-capture-v1" if progressive_revalidate_on_new_capture else "")
                          + ("-progressive-prefix-v1" if progressive_evaluation_prefix else
                             "-progressive-v1" if progressive_planning else ""),
                          max_depth=planning_depth,
                          progressive_subgoals=progressive_planning,
-                         progressive_evaluation_prefix=progressive_evaluation_prefix),
+                         progressive_evaluation_prefix=progressive_evaluation_prefix,
+                         progressive_revalidate_on_new_capture=progressive_revalidate_on_new_capture),
         evaluation=replace(cfg6.evaluation,
                            version="stage12-issue110-food-horizon-"+str(horizon)+"-v1",
                            h_eff=horizon),
