@@ -1,0 +1,30 @@
+name: Stage12 dual-scope B candidate safety
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/i0/modules/stage12_dual_scope.py'
+      - 'tests/test_stage12_dual_scope.py'
+      - 'docs/research/stage12-issue110-b-*.md'
+      - '.github/workflows/stage12-dual-scope-b.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pure-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - run: python -m unittest discover -s tests -p 'test_stage12_dual_scope.py' -v
+      - run: python -m unittest discover -s tests -p 'test_stage12_goal_agency_independence.py' -v
