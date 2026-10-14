@@ -97,6 +97,7 @@ def census_one(path: Path) -> dict:
       "goal_followups":dict(sorted(followups.items())),
       "agency_precommits":len(events("stage12_goal_agency_precommitted")),
       "agency_judgements":dict(sorted(judgements.items())),
+      "goal_progress_audit":progress.as_dict(),
       "join_uc_accepted":sum(bool(c.get("accepted")) for c in join_charges),
       "join_uc_refused":sum(c.get("accepted") is False for c in join_charges),
       "join_deferred":len(events("stage12_attribution_join_deferred")),
@@ -106,6 +107,8 @@ def census_one(path: Path) -> dict:
       "pairs_admitted":len(admitted),
       "pairs_applied":len(accepted),
       "pairs_unavailable":len(missed),
+      "pair_unavailable_reasons":dict(sorted(Counter(
+          e["data"].get("reason","undocumented") for e in missed).items())),
       "pairs_terminal_pending":remaining,
       "pairs_consumed_success":pairs.applied_successes,
       "pairs_consumed_failure":pairs.applied_failures,
@@ -139,6 +142,17 @@ def run(root: Path) -> dict:
         "pairs_admitted":sum(x["pairs_admitted"] for x in rows),
         "pairs_applied":sum(x["pairs_applied"] for x in rows),
         "pairs_unavailable":sum(x["pairs_unavailable"] for x in rows),
+        "pair_unavailable_reasons":dict(sorted(sum((Counter(x["pair_unavailable_reasons"])
+                for x in rows),Counter()).items())),
+        "agency_unknown":sum(x["agency_judgements"].get("unknown",0) for x in rows),
+        "agency_unavailable":sum(x["agency_judgements"].get("unavailable",0)
+                                  for x in rows),
+        "goal_followup_unknown":sum(x["goal_followups"].get("unknown",0)
+                                     for x in rows),
+        "join_deferred":sum(x["join_deferred"] for x in rows),
+        "diagnostic_deferred":sum(x["diagnostic_deferred"] for x in rows),
+        "max_window_success_seen":max(x["window_max_success"] for x in rows),
+        "max_window_failure_seen":max(x["window_max_failure"] for x in rows),
         "pairs_terminal_pending":sum(x["pairs_terminal_pending"] for x in rows),
         "applied_successes":sum(x["pairs_consumed_success"] for x in rows),
         "applied_failures":sum(x["pairs_consumed_failure"] for x in rows),
