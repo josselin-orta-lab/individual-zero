@@ -1,0 +1,39 @@
+name: Issue110 intrinsic goal competition sensitivity
+on:
+  pull_request:
+    branches: [science/stage12-issue110-sleep-window-20261014]
+    paths:
+      - 'scripts/run_stage12_issue110_intrinsic_sensitivity.py'
+      - 'scripts/run_stage12_issue110_first_planning_state.py'
+      - '.github/workflows/stage12-issue110-intrinsic-sensitivity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sensitivity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Run preregistered P15 sensitivity lives
+        env:
+          COHORT: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/run_stage12_issue110_intrinsic_sensitivity.py --output-dir /tmp/p15-sensitivity --cohort-id "$COHORT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue110-p15-py${{ matrix.python-version }}
+          path: /tmp/p15-sensitivity
+          retention-days: 30
+          if-no-files-found: warn
