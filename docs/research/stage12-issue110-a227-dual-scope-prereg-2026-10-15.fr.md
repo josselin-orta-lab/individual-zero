@@ -1,0 +1,31 @@
+# A2.27, protocole préenregistré : séparation analytique de l'effet proximal et du résultat distal
+
+**15 octobre 2026, avant tout code A2.27.** Départ vérifié sur `main 37c66100eb9bd1d5bd883af6ad8cd8bbe0445ddb`, Stage12 PARTIAL, issue #110 OPEN. Ce protocole utilise les découvertes antérieures A2.17b à A2.26 ; c'est une **nouvelle cohorte confirmatoire informée**, pas une expérience aveugle. Spécification normative `docs/architecture/reference/en/mvp-specification-v1.3.1.md` **inchangée**.
+
+## Question, catégories à ne jamais confondre
+
+- **Proximal :** l'observateur extérieur peut-il constater qu'une commande `manger` a réellement produit `effects.ate`, que `collecter` a effectivement créé un `effects.collected.quantity>0`, ou que `se_deplacer` a changé la position du corps ? Il s'agit d'une **trace physique observable par le laboratoire**, **pas** d'un jugement `self` qu'I0 aurait produit.
+- **Distal :** `body.food` a-t-il augmenté entre les deux mesures du pas, et une intervention extérieure s'est-elle produite avant la perception à ce pas ? Une amélioration avec `set_body(food=75)` est `external_influenced`, même sans `manger`; si `manger` est simultané, l'effet est `mixed`, jamais imputé exclusivement.
+- **Subjectif :** seuls les `stage12_goal_agency_judgement` réellement émis par I0 et vérifiés par les auditeurs actuels peuvent être décrits comme `self/world/unknown`. Les événements des vies dont le suivi d'objectif n'est pas vérifiable restent **descriptifs et non crédités** dans GA-06.
+- **Responsabilité distale :** aucune valeur `self` ne peut être déduite de la seule hausse `food`, d'un gain d'inventaire ou d'une commande exécutée. L'auditeur A2.27 rend **`not_established` pour tous ces cas** ; cela ne signifie pas que l'individu est forcément irresponsable, mais que le contrat scientifique n'autorise pas de conclusion.
+
+## Matrice expérimentale fixée avant instrumentation
+
+**16 vies nouvelles**, quatre profils corporels préexistants `restored/sustained/episodic/marginal` × obstacle extérieur `free/A2` × intervention corporelle `none` ou `set_body(food=75)` préengagée **avant le pas 6**. Jusqu'à **32 pas par vie**, soit **512 transitions physiques visées**. Les commandes, objectifs et jugements sont générés autonomement par I0 ; le laboratoire ne déclenche jamais un `collecter` ou `manger`. Les vies réutilisent la factory Stage12 normative de la campagne A2.26, avec **de nouvelles identités de naissance**, un journal/WAL canonique par vie, un observateur externe de l'inventaire et du corps, et **8 interventions exogènes** si les 8 vies atteignent le pas 6. Ce calendrier traverse volontairement la frontière de veille/sommeil de certains profils ; ne jamais exiger une cognition éveillée dans un pas réduit.
+
+Le script expérimental peut appeler la **fonction de naissance existante** `run_stage12_issue110_a226.run_one`, sans en modifier les audits ni les paramètres. La reproductibilité Python 3.11 et 3.12 rejoue les mêmes 16 vies, **pas 32 vies indépendantes**. Contrairement à A2.26, les indicateurs A2.27 sont construits en une **seconde lecture de l'archive canonique et du témoin physique indépendant**, et non en réétiquetant les nombres de son résumé.
+
+## Critères falsifiables T1–T8
+
+1. **T1, origine physique :** 16 vrais nouveaux individus autonomes, 512 pas si permis, journal et WAL durables et audités ; une seule `command_experienced`, `world_transition_experienced` et `step_closed` par pas. Aucune nouvelle commande n'est choisie par le banc.
+2. **T2, concordance :** `attempt_ref`, primitive, `position_after`, `body_after.food` et les inventaires des effets physiques/du témoin sont cohérents. Une contradiction produit **FAIL** sans changement du résultat attendu.
+3. **T3, indices proximaux :** `effects.ate` doit appartenir à `manger` ; `effects.collected.quantity>0` à `collecter`, avec delta d'inventaire cohérent ; mouvement corporel à `se_deplacer` sauf intervention `set_position` (interdite par ce calendrier). Les absences d'effet physique ne prouvent pas une responsabilité nulle, elles sont `no_direct_effect_witness`.
+4. **T4, corps et intervention :** toute hausse `food` au pas du `set_body` est classée `external_influenced` (ou `mixed` si ingestion simultanée), jamais `distal_self_proven`. Ingestion sans pulse est `ingestion_observed`, pas une preuve universelle du résultat d'objectif.
+5. **T5, fenêtre des objectifs :** les objectifs alimentaires engagés au pas `t`, observés au `t+1`, sont reliés au `set_body` du pas d'observation sans lui attribuer de responsabilité volontaire. Le refus de l'auditeur original `goal followup diverges from committed lived state` reste inchangé et les métriques de la vie confondue exclues.
+6. **T6, cognition :** aucune étiquette subjective n'est créée ni changée. Les événements `self/world/unknown` ne sont comptés comme vérifiés qu'après `audit_stage12_first_person_agency` et `audit_stage12_attribution_pairs` existants ; 2+2/12 demeure **intravie**. Si aucune vie ne franchit le seuil, publier explicitement 0.
+7. **T7, contrôles négatifs du classifieur externe :** une collecte sans gain corporel ne prouve pas le succès alimentaire ; une hausse extérieure sans ingestion ne prouve pas `self` ; un `manger` simultané au pulse reste `mixed` ; aucune classification physique n'est promue en judgement d'I0. Ces cas synthétiques n'entrent **jamais** dans la cohorte physique ou GA-06.
+8. **T8, frontières et décision :** CI reproductible sous Python 3.11/3.12 ; **zéro modification** du runtime I0, WorldBody, UC, M11/WAL, mortalité, Oracle, Stage9/DC-05 et MVP v1.3.1. Aucune clôture #110, aucune validation Stage12 opérateur. Le dossier d'arbitrage compare `A` jugement d'objectif unique, `B` deux jugements distincts (nouveau contrat versionné à valider ultérieurement), `C` séparation uniquement dans l'auditeur externe avec cognition inchangée.
+
+## Interprétation autorisée
+
+La décision d'adopter `B` **n'est PAS prise par ce protocole**. Un résultat positif borne la séparation **analytique** des indices et la qualité de la chaîne de preuve, sans valider un jugement de responsabilité causale distale ni une correction passée du sujet. Le laboratoire ne fournit ni Oracle ni étiquette `distal_self` à I0. La spécification v1.3.1 et GA-06 restent inchangés, Stage12 PARTIAL, issue #110 OPEN.
