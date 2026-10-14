@@ -1,0 +1,45 @@
+name: Issue110 opt-in progressive goal planning
+on:
+  pull_request:
+    branches: [science/stage12-issue110-sleep-window-20261014]
+    paths:
+      - 'src/i0/modules/stage6_planning.py'
+      - 'src/lab/stage6_runtime.py'
+      - 'scripts/run_stage12_issue110_progressive.py'
+      - '.github/workflows/stage12-issue110-progressive.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  progressive-life-comparison:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+        mode: ['baseline','progressive']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Test progressive planner contract
+        run: python -m unittest discover -s tests -p 'test_stage6_progressive_subgoals.py' -v
+      - name: Execute preregistered independent physical lives
+        env:
+          COHORT: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/run_stage12_issue110_progressive.py \
+            --output-dir /tmp/issue110-progressive \
+            --cohort-id "$COHORT" --mode ${{ matrix.mode }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue110-progressive-${{ matrix.mode }}-py${{ matrix.python-version }}
+          path: /tmp/issue110-progressive
+          retention-days: 30
+          if-no-files-found: warn
