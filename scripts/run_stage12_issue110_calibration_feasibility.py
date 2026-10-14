@@ -90,6 +90,43 @@ def source_step_trace(raw: bytes) -> list[dict]:
     return [by_step[t] for t in sorted(by_step)]
 
 
+def coverage_census(trace: list[dict]) -> dict[str, object]:
+    """Classify losses strictly by already recorded causal receipts."""
+    events = [(row["step"], e) for row in trace
+              for e in row.get("receipts", ())]
+    count = lambda label: sum(e["event"] == label for _,e in events)
+    unknown = sum(e["event"] == "agency_judgement" and
+                  e.get("agency") == "unknown" for _,e in events)
+    applied = sum(e["event"] == "diagnostic" and
+                  e.get("pair_applied") is True for _,e in events)
+    admitted = count("pair_admitted")
+    explicit = [(t,e.get("reason")) for t,e in events
+                if e["event"] == "pair_unavailable"]
+    if any(reason not in ("no_waking_diagnostic_at_due_step",
+                         "diagnostic_uc_refused") for _,reason in explicit):
+        raise ValueError("unrecognized causal loss receipt")
+    # An admitted candidate with neither applied nor unavailable receipt may
+    # only be outstanding at the end. This is a census, not invented evidence.
+    pending = admitted - applied - len(explicit)
+    if pending < 0 or pending > 1:
+        raise ValueError("attribution queue census disagrees with events")
+    return {
+        "intent_count": count("intent"),
+        "precommit_count": count("agency_precommit"),
+        "judgement_count": count("agency_judgement"),
+        "unknown_judgements": unknown,
+        "admitted_pairs": admitted,
+        "applied_pairs": applied,
+        "sleep_expired_pairs": sum(reason == "no_waking_diagnostic_at_due_step"
+                                   for _,reason in explicit),
+        "uc_refused_pairs": sum(reason == "diagnostic_uc_refused"
+                                for _,reason in explicit),
+        "unresolved_at_horizon": pending,
+        "sleep_expiry_steps": [t for t,reason in explicit
+                               if reason == "no_waking_diagnostic_at_due_step"],
+    }
+
+
 def run_one(folder: Path, name: str, obstacle: bool, clear_step: int | None,
             cohort: str) -> dict:
     folder.mkdir()
@@ -120,6 +157,7 @@ def run_one(folder: Path, name: str, obstacle: bool, clear_step: int | None,
     raw = life.journal.canonical_bytes()
     (folder / "canonical.jsonl").write_bytes(raw)
     trace = source_step_trace(raw)
+    census = coverage_census(trace)
     (folder / "source-step-trace.json").write_text(
         json.dumps(trace, indent=2, sort_keys=True) + "\n"
     )
@@ -171,7 +209,7 @@ def run_one(folder: Path, name: str, obstacle: bool, clear_step: int | None,
                   executed_physical_steps=sum(counts.values()),
                   actual_commands=dict(counts),
                   failure=failure, audit_error=audit_error,
-                  source_trace=trace,
+                  source_trace=trace, coverage=census,
                   **summary)
     (folder / "result.json").write_text(json.dumps(result, indent=2, sort_keys=True)+"\n")
     return result
