@@ -85,8 +85,12 @@ class LongHorizonReadOnlyContracts(unittest.TestCase):
                 row for row in rows if row["event_id"] != used["event_id"]
             ])
             self.assertEqual(audit_export_bytes(forged).world_steps_closed, 6)
+            # The independent auditor rejects even earlier than the
+            # pending-pair check: a followup itself lacks the original
+            # diagnostic source. Preserve this strict provenance guard.
             with self.assertRaisesRegex(
-                ValueError, "admitted pair missing next-step diagnostic"
+                ValueError,
+                "goal followup lacks one prior lived capture and diagnostic receipt",
             ):
                 audit_stage12_attribution_pairs(forged)
 
