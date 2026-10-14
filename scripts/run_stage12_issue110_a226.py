@@ -119,7 +119,7 @@ def run_one(path,profile,blocked,pulse_step,cohort):
             assert len(match)==1,("pulse has no unique applied receipt",coords)
             perception=[i for i,e in enumerate(events) if e.get("kind")=="perceptual_capture" and e.get("t_monde")==received["t_monde"]]
             reduced=[i for i,e in enumerate(events) if e.get("kind")=="stage10_reduced_capture" and e.get("t_monde")==received["t_monde"]]
-            assert (bool(perception) != bool(reduced)) and match[0]<min(perception or reduced),("pulse not before authorized sensory boundary",coords)
+            assert (bool(perception) != bool(reduced)) and match[0]<min(perception or reduced),("pulse not before authorized sensory boundary",coords,[(i,e.get("kind")) for i,e in enumerate(events) if e.get("t_monde")==received["t_monde"]])
             pulse_capture_modes.append("waking" if perception else "reduced_sleep")
         if audit_rejection:
             assert pulse_step is not None and len(arrivals)==1, "unauthorized goal audit rejection"
