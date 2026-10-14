@@ -1,0 +1,48 @@
+name: Stage12 Issue110 A2.15 lived attribution evidence funnel
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/audit_stage12_issue110_a215_funnel.py'
+      - 'docs/research/stage12-issue110-a215-lived-agency-funnel-prereg-2026-10-14.fr.md'
+      - 'docs/research/stage12-issue110-a215-lived-agency-funnel-results-2026-10-14.fr.md'
+      - '.github/workflows/stage12-issue110-a215.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  independent-attribution-funnel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Fetch exact original A2.10b sealed lives
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 38607070724
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: stage12-a210b-py${{ matrix.python-version }}
+          path: /tmp/a215-verified-evidence
+      - name: Independently verify and count lived pairs under full 12-slot windows
+        run: |
+          python scripts/audit_stage12_issue110_a215_funnel.py \
+            --input-dir /tmp/a215-verified-evidence/a210b-lives \
+            --output /tmp/a215-funnel.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage12-a215-py${{ matrix.python-version }}
+          path: /tmp/a215-funnel.json
+          retention-days: 30
+          if-no-files-found: warn
