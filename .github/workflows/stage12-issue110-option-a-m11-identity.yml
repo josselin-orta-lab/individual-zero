@@ -1,0 +1,44 @@
+name: Issue110 Option A M11 spatial and life identity gate
+on:
+  pull_request:
+    branches:
+      - science/stage12-issue110-sleep-window-20261014
+    paths:
+      - '.github/workflows/stage12-issue110-option-a-m11-identity.yml'
+      - 'tests/test_stage12_spatial_m11_identity.py'
+      - 'src/lab/stage12_runtime.py'
+      - 'src/lab/stage4_runtime.py'
+      - 'src/lab/m11_transactional_mortal.py'
+      - 'scripts/run_stage12_issue110_first_planning_state.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  spatial-m11:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Check exact source commit
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          git diff --exit-code HEAD --
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Run real M11 hard crash and birth namespace checks
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_spatial_m11_identity.py' -v
+      - name: Stage12 older and full SQLite transaction protections
+        run: |
+          python -m unittest discover -s tests -p 'test_m11_stage12_atomic_preflight.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency_runtime.py' -v
