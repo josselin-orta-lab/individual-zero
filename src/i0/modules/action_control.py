@@ -16,6 +16,7 @@ from i0.contracts import OptionProposal, PredictedConsequence
 from i0.interfaces import PrimitiveCommand
 
 from .perception import PerceptualCapture
+from .stage12_goal_agency import GoalAgencyService
 
 
 CANONICAL_DIRECTION_ORDER = ("north", "south", "east", "west")
@@ -134,11 +135,22 @@ class ActionControl:
         self._pending_prediction: dict[str, object] | None = None
         self._last_comparison: AgencyComparison | None = None
         self._agency_comparator = None
+        self._goal_agency: GoalAgencyService | None = None
 
     def attach_agency_comparator(self, comparator) -> None:
         if self._agency_comparator is not None:
             raise ValueError("agency comparator already installed")
         self._agency_comparator = comparator
+
+    def enable_goal_agency(self) -> None:
+        """Opt in exactly once, before first assessment; owned by Action Control."""
+        if self._goal_agency is not None:
+            raise ValueError("first-person agency already enabled")
+        self._goal_agency = GoalAgencyService()
+
+    @property
+    def goal_agency(self) -> GoalAgencyService | None:
+        return self._goal_agency
 
     @property
     def current_step(self) -> tuple[str | None, str | None, int]:
@@ -622,6 +634,8 @@ class ActionControl:
     def export_causal_state(self) -> object:
         return {
             "safety_policy_version": self._config.safety_policy_version,
+            **({"goal_agency": self._goal_agency.export_causal_state()}
+               if self._goal_agency is not None else {}),
             "current_option_ref": self._current_option_ref,
             "current_plan_ref": self._current_plan_ref,
             "current_step_index": self._current_step_index,
@@ -661,6 +675,19 @@ class ActionControl:
             raise ValueError("Action Control state must be a mapping")
         if state.get("safety_policy_version") != self._config.safety_policy_version:
             raise ValueError("Action Control safety-policy version mismatch")
+        if (self._goal_agency is None) != ("goal_agency" not in state):
+            raise ValueError("Action Control subjective agency schema mismatch")
+        if self._goal_agency is not None:
+            # Validate on a disposable facet before touching existing owners.
+            probe = GoalAgencyService()
+            probe.restore_causal_state(state["goal_agency"])
+            if self._goal_agency.pending is not None:
+                if state["goal_agency"] != self._goal_agency.export_causal_state():
+                    raise ValueError("cannot overwrite live Action Control agency")
+            elif self._goal_agency.export_causal_state()["seen_assessment_refs"]:
+                if state["goal_agency"] != self._goal_agency.export_causal_state():
+                    raise ValueError("cannot rewind already published agency")
+
         option_ref = state.get("current_option_ref")
         plan_ref = state.get("current_plan_ref")
         step_index = state.get("current_step_index")
@@ -718,3 +745,5 @@ class ActionControl:
             )
         else:
             raise ValueError("invalid agency comparison state")
+        if self._goal_agency is not None and not self._goal_agency.export_causal_state()["seen_assessment_refs"]:
+            self._goal_agency.restore_causal_state(state["goal_agency"])

@@ -16,6 +16,7 @@ import json
 from typing import Mapping
 
 from .independent_journal_audit import audit_export_bytes
+from .stage12_attribution_pair_audit import audit_stage12_attribution_pairs
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,6 +60,10 @@ def audit_stage12_diagnostics(
     base = audit_export_bytes(
         content, expected_head=expected_head, expected_count=expected_count,
     )
+    joined = audit_stage12_attribution_pairs(
+        content, expected_head=expected_head, expected_count=expected_count,
+    )
+    verified_bias = dict(joined.diagnostic_labels)
     charges: dict[tuple[int, str, int], list[tuple[int, dict]]] = {}
     receipts: dict[tuple[int, str, int], list[tuple[int, dict]]] = {}
     seen_steps: set[int] = set()
@@ -118,10 +123,9 @@ def audit_stage12_diagnostics(
                 for field in ("stagnation", "reasoning_loop", "low_context_entropy"):
                     if data.get(field) is not None and type(data[field]) is not bool:
                         raise ValueError("invalid tri-state metacognitive diagnosis")
-                if data.get("attribution_bias") is not None:
-                    # At present the live runtime does not publish auditable
-                    # unique outcome/agency pair provenance. No source-backed
-                    # non-null label can be verified, so fail closed.
+                if data.get("attribution_bias") != verified_bias.get(t):
+                    # Recompute bounded diagnoses from the two independent
+                    # source lineages. Hash-consistent forged labels fail.
                     raise ValueError("unverified lived attribution bias claim")
                 # The live detector exposes the number in its *bounded*
                 # evidence window, not a lifetime counter. Old v1.3.1

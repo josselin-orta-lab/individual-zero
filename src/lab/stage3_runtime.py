@@ -113,6 +113,9 @@ class Stage3Runtime:
                 "capture_t_monde": self._capture.t_monde,
                 "position": {"x": self._capture.x, "y": self._capture.y},
                 "adjacent_creature_count": len(self._capture.adjacent_creatures),
+                **({"agency_visible_inventory": dict(sorted(self._capture.inventory.items())),
+                    "agency_capture_schema": "stage12-first-person-cue-v1"}
+                   if self.control.goal_agency is not None else {}),
             },
         )
         return self._capture
