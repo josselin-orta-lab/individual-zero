@@ -3,9 +3,11 @@ on:
   pull_request:
     branches: [feature/stage12-issue110-spatial-agency-option-a-20261014, main]
     paths:
-      - 'tests/test_stage12_ga08_*.py'
-      - 'src/i0/modules/stage12_spatial_goal_evidence.py'
-      - 'src/lab/stage12_spatial_provenance_audit.py'
+      - 'docs/research/archive/issue110-ga08-legacy/**'
+      - 'tests/test_stage12_spatial_*.py'
+      - 'tests/test_stage12_a2_*.py'
+      - 'docs/research/stage12-issue110-ga08-historical-migration-2026-10-14.fr.md'
+      - 'src/i0/modules/stage12_spatial_cue_policy.py'
       - '.github/workflows/stage12-ga08-reconciled.yml'
   workflow_dispatch:
 permissions:
@@ -24,9 +26,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -e .
-      - name: Old GA08 semantic and M11 contracts on new A2 runtime
+      - name: Current A2 spatial, attribution and M11 contracts
         run: |
-          python -m unittest discover -s tests -p 'test_stage12_ga08_*.py' -v
           python -m unittest discover -s tests -p 'test_stage12_spatial_*.py' -v
-      - name: Physical spatial return-goal campaign
-        run: python scripts/run_stage12_issue110_ga08_return_goal_science.py --help
+          python -m unittest discover -s tests -p 'test_stage12_a2_*.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency*.py' -v
+      - name: Verify archived legacy source is not active module
+        run: |
+          test -f docs/research/archive/issue110-ga08-legacy/tests/test_stage12_ga08_owner_runtime.py
+          test ! -f tests/test_stage12_ga08_owner_runtime.py
+          test ! -f src/i0/modules/stage12_spatial_goal_evidence.py
