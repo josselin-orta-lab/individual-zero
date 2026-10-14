@@ -570,6 +570,36 @@ class Stage12Runtime(Stage11SleepRuntime):
                         self._recent_agency_judgement = (
                             capture.t_monde, judgement_ref, judgement,
                         )
+                        dual = self.stage3.control.dual_scope
+                        if dual is not None:
+                            dual_charge = self.compute_budget.charge(
+                                module="action_control",
+                                operation="goal_outcome_responsibility_assessment",
+                            )
+                            self._write(kind="compute_charge", cycle=cycle, data={
+                                "module": "action_control",
+                                "operation": "goal_outcome_responsibility_assessment",
+                                "requested_uc": dual_charge.requested_uc,
+                                "accepted": dual_charge.accepted,
+                                "reason": dual_charge.reason,
+                            })
+                            scoped = dual.evaluate(
+                                judgement, capture=capture,
+                                cue_ref=deterministic_id(
+                                    "stage12-dual-scope-perception-v1",
+                                    self.individual_id, capture.t_monde,
+                                    capture.x, capture.y,
+                                    tuple(sorted(capture.inventory.items())),
+                                ) if dual_charge.accepted else None,
+                                paid=dual_charge.accepted,
+                            )
+                            self._write(
+                                kind="stage12_outcome_responsibility_judgement",
+                                cycle=cycle, data={
+                                    **scoped.as_dict(),
+                                    "proximal_judgement_ref": judgement_ref,
+                                },
+                            )
             previous_control(ctx)
 
         hooks[4]["action_control"] = close_first_person_assessment
@@ -890,6 +920,16 @@ class Stage12Runtime(Stage11SleepRuntime):
                         kind="stage12_goal_agency_precommitted",
                         cycle=cycle, data=assessment.as_dict(),
                     )
+                    dual = self.stage3.control.dual_scope
+                    if dual is not None:
+                        scope_precommit = dual.preregister(assessment, capture)
+                        self._write(
+                            kind="stage12_outcome_responsibility_precommitted",
+                            cycle=cycle, data={
+                                "policy_version": DUAL_SCOPE_VERSION,
+                                **scope_precommit,
+                            },
+                        )
         return super()._dispatch_decision(
             proposal=proposal, prepared=prepared, admission=admission,
             cycle=cycle, sent_t_monde=sent_t_monde,
