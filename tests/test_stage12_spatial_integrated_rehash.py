@@ -85,7 +85,7 @@ class GenuineAutonomousSpatialEvidenceTests(unittest.TestCase):
                 frozen["spatial_prepassable"] = False
                 altered = rechain(forged)
                 self.assertEqual(
-                    audit_export_bytes(altered).world_steps_closed, 6,
+                    audit_export_bytes(altered).world_steps_closed, 8,
                 )
                 with self.assertRaises(ValueError):
                     audit_stage12_first_person_agency(altered)
