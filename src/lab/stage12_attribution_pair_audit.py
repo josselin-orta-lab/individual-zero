@@ -228,14 +228,72 @@ def audit_stage12_attribution_pairs(
             label = None
         sample_labels.append((t, label))
     unavailable_refs = set()
+    paid_diagnostic_indexes = {
+        (e["t_monde"], e["attempt_ref"], e["cycle"]): index
+        for index, _data, e in diagnostics
+    }
+    diagnostic_steps = {event["t_monde"] for _, _data, event in diagnostics}
+    deferred_steps = {key[0] for key in deferred_samples}
+    closed_steps = {
+        e["t_monde"] for row in rows
+        for e in (row["causal_event"],)
+        if e.get("kind") == "step_closed"
+        and e.get("data", {}).get("outcome") in ("normal", "dead")
+    }
+    # Absence of a diagnostic does not prove sleep. Each skipped physical
+    # step must have exactly one authorized reduced sleep capture, no full
+    # perception and a closed transition. This independently rejects a
+    # hash-valid fake explanation for a missing cognitive sample.
+    reduced_sleep_steps = {}
+    full_capture_steps = set()
+    for row in rows:
+        event = row["causal_event"]
+        t = event.get("t_monde")
+        if event.get("kind") == "stage10_reduced_capture":
+            data = event.get("data")
+            if (event.get("emitter") == "stage4-runtime"
+                    and isinstance(data, dict)
+                    and data.get("full_cognitive_perception") is False):
+                reduced_sleep_steps[t] = reduced_sleep_steps.get(t, 0) + 1
+        elif event.get("kind") == "perceptual_capture":
+            full_capture_steps.add(t)
     for key, (i, data) in missed.items():
-        if (key not in deferred_samples or i <= deferred_samples[key]
-                or type(data) is not dict
-                or data.get("reason") != "diagnostic_uc_refused"
+        if (type(data) is not dict
                 or data.get("pair_ref") not in pairs
-                or data["pair_ref"] in unavailable_refs or data["pair_ref"] in seen_pair_refs
-                or pairs[data["pair_ref"]][2]["t_monde"] != key[0] - 1):
+                or data["pair_ref"] in unavailable_refs
+                or data["pair_ref"] in seen_pair_refs):
             raise ValueError("false or repeated missing attribution sample")
+        pair_world_step = pairs[data["pair_ref"]][2]["t_monde"]
+        due_step = pair_world_step + 1
+        if data.get("reason") == "diagnostic_uc_refused":
+            if (set(data) != {"pair_ref", "reason"}
+                    or key not in deferred_samples
+                    or i <= deferred_samples[key]
+                    or due_step != key[0]):
+                raise ValueError("false attribution diagnostic UC refusal")
+        elif data.get("reason") == "no_waking_diagnostic_at_due_step":
+            # No retroactive diagnostic, including an uncharged one. A
+            # skipped sleeping step is recorded only in the NEXT actual
+            # waking diagnostic cycle (already charged by the scheduler).
+            if (set(data) != {"pair_ref", "reason", "due_world_step"}
+                    or data["due_world_step"] != due_step
+                    or key[0] <= due_step or due_step not in closed_steps
+                    or due_step in diagnostic_steps
+                    or due_step in deferred_steps
+                    or key not in paid_diagnostic_indexes
+                    or i >= paid_diagnostic_indexes[key]
+                    or any(due_step < t < key[0] for t in
+                           diagnostic_steps | deferred_steps)
+                    or any(pair_world_step < t < key[0] for t in
+                           diagnostic_steps | deferred_steps)
+                    or any(
+                        reduced_sleep_steps.get(step) != 1
+                        or step in full_capture_steps or step not in closed_steps
+                        for step in range(due_step, key[0])
+                    )):
+                raise ValueError("false sleeping attribution-expiry evidence")
+        else:
+            raise ValueError("unknown missing attribution sample reason")
         unavailable_refs.add(data["pair_ref"])
     # Pending from last physical step is legal: no postmortem update.
     for ref, (_i, _data, event) in pairs.items():
