@@ -5,6 +5,8 @@ on:
       - science/stage12-issue110-sleep-window-20261014
     paths:
       - 'scripts/run_stage12_issue110_calibration_feasibility.py'
+      - 'src/lab/stage3_runtime.py'
+      - 'src/lab/stage10_runtime.py'
       - 'scripts/run_stage12_issue110_first_planning_state.py'
       - '.github/workflows/stage12-issue110-calibration-feasibility.yml'
   workflow_dispatch:
