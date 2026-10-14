@@ -1,5 +1,6 @@
 """Longitudinal Stage12 audit controls and short integrated smoke."""
 from pathlib import Path
+import json
 import sys
 from tempfile import TemporaryDirectory
 import unittest
@@ -7,6 +8,9 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import run_stage12_issue110_a26_long as a26
+from test_stage12_spatial_integrated_rehash import rechain
+from lab.independent_journal_audit import audit_export_bytes
+from lab.stage12_attribution_pair_audit import audit_stage12_attribution_pairs
 
 
 class LongHorizonReadOnlyContracts(unittest.TestCase):
@@ -52,9 +56,37 @@ class LongHorizonReadOnlyContracts(unittest.TestCase):
             self.assertIsNone(report["runtime_exception"])
             self.assertIsNone(report["audit_error"], report["audit_error"])
             self.assertEqual(report["world_steps"], 6)
-            self.assertEqual(report["terminal_status"], "experiment_stop_at_600")
+            self.assertEqual(report["terminal_status"], "experiment_stopped_at_cap")
+            journal = Path(root) / "control_restored_free" / "canonical.jsonl"
+            self.assertTrue(journal.is_file())
             self.assertTrue(
                 (Path(root) / "control_restored_free" / "life.wal").is_file())
+            original = journal.read_bytes()
+            self.assertGreaterEqual(
+                audit_stage12_attribution_pairs(original).admitted_pairs, 1,
+            )
+            rows = [json.loads(line) for line in original.splitlines()]
+            pair_t = min(
+                r["causal_event"]["t_monde"] for r in rows
+                if r["causal_event"].get("kind")
+                == "stage12_attribution_pair_admitted"
+            )
+            # Mutation preserves the cryptographic chain and world steps,
+            # but removes evidence that the final unpaired step was asleep.
+            missing = next(
+                (r for r in rows
+                 if r["causal_event"].get("kind") == "stage10_reduced_capture"
+                 and r["causal_event"].get("t_monde") > pair_t),
+                None,
+            )
+            self.assertIsNotNone(missing)
+            missing["causal_event"]["kind"] = "forged_non_sleep_receipt"
+            altered = rechain(rows)
+            self.assertEqual(audit_export_bytes(altered).world_steps_closed, 6)
+            with self.assertRaisesRegex(
+                ValueError, "missing next-step diagnostic"
+            ):
+                audit_stage12_attribution_pairs(altered)
 
 
 if __name__ == "__main__":
