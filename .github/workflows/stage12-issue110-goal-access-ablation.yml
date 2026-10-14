@@ -1,0 +1,67 @@
+name: Issue110 preregistered goal-access 2x2 ablation
+on:
+  pull_request:
+    branches:
+      - research/stage12-issue110-attribution-provenance-20261013
+    paths:
+      - '.github/workflows/stage12-issue110-goal-access-ablation.yml'
+      - 'scripts/run_stage12_issue110_goal_access_ablation.py'
+      - 'scripts/run_stage12_issue110_contrasted_science.py'
+      - 'tests/test_stage12_issue110_goal_access_counts.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: issue110-goal-access-ablation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  preregistered-goal-access:
+    timeout-minutes: 25
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Assert exact tracked source commit
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          git diff --exit-code HEAD --
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Check passive reporter and owner cognitive contracts
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_issue110_goal_access_counts.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_attribution_pairs.py' -q
+      - name: Apply four newborn autonomous physical lives under preregistered context
+        run: |
+          mkdir -p /tmp/issue110-goal-access
+          python scripts/run_stage12_issue110_goal_access_ablation.py \
+            --output-dir /tmp/issue110-goal-access/experiment
+      - name: Publish result or explicit missing outcome
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          file=Path('/tmp/issue110-goal-access/experiment/summary.json')
+          if file.is_file():
+              print('issue110_goal_access_summary='+file.read_text())
+          else:
+              print('issue110_goal_access_summary=unavailable')
+          PY
+      - name: Archive all original goal-access lives including failed attempts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue110-goal-access-ablation-py${{ matrix.python-version }}
+          path: /tmp/issue110-goal-access/
+          retention-days: 30
+          if-no-files-found: warn

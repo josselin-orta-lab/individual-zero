@@ -1,0 +1,71 @@
+name: Issue110 preregistered contrasted first-person science
+on:
+  pull_request:
+    branches:
+      - research/stage12-issue110-attribution-provenance-20261013
+    paths:
+      - '.github/workflows/stage12-issue110-contrasted-science.yml'
+      - 'scripts/run_stage12_issue110_contrasted_science.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: stage12-issue110-contrasted-science-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  preregistered-12-lives:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Assert exact immutable PR source SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Check precommitted source and first-person software tests
+        run: |
+          git diff --exit-code HEAD --
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_attribution_pairs.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency_runtime.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_attribution_provenance.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_issue110_contrasted_summary.py' -v
+      - name: Run 12 independently born autonomously acting mortal lives
+        run: |
+          mkdir -p /tmp/i0-issue110-contrasted
+          python scripts/run_stage12_issue110_contrasted_science.py \
+            --output-dir /tmp/i0-issue110-contrasted/campaign
+      - name: Surface all precommitted measures, never promote scientific GO
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          folder=Path("/tmp/i0-issue110-contrasted/campaign")
+          for name in ("summary.json", "index.json"):
+              p=folder/name
+              if p.is_file():
+                  if name == "summary.json":
+                      print("issue110_contrasted_summary="+p.read_text())
+                  else:
+                      print("issue110_contrasted_index_retained="+str(p))
+              else:
+                  print("issue110_missing_"+name)
+          PY
+      - name: Retain full source proof including failed and terminal lives
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue110-contrasted-science-py${{ matrix.python-version }}
+          path: /tmp/i0-issue110-contrasted/
+          retention-days: 30
+          if-no-files-found: warn
