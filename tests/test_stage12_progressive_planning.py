@@ -35,7 +35,7 @@ class ProgressivePlanningContracts(unittest.TestCase):
         planner._config = replace(planner._config, max_depth=1,
                                   progressive_subgoals=True)
         result = planner.search(initial_state=state, target=lambda _: False)
-        self.assertEqual(result.status, "not_found_within_horizon")
+        self.assertEqual(result.status, "incomplete_model")
         self.assertEqual(result.commands, ())
 
 
