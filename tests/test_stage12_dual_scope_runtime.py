@@ -71,6 +71,10 @@ class DualScopeRuntimeTests(unittest.TestCase):
             independent=audit_stage12_dual_scope(raw,expected_head=runtime.journal.head_hash,
                  expected_count=len(runtime.journal.entries))
             self.assertGreater(independent.judgements,0)
+            self.assertEqual(independent.unavailable, sum(
+                e["data"]["subjective_responsibility"]=="unavailable"
+                for e in (json.loads(line)["causal_event"] for line in raw.splitlines())
+                if e["kind"]=="stage12_outcome_responsibility_judgement"))
             events=[json.loads(line)["causal_event"] for line in raw.splitlines()]
             commitments=[e for e in events if e["kind"]=="stage12_outcome_responsibility_precommitted"]
             decisions=[e for e in events if e["kind"]=="stage12_outcome_responsibility_judgement"]
