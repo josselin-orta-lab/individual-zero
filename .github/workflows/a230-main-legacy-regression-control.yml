@@ -56,7 +56,7 @@ jobs:
           print('LEGACY_STAGE4_KINDS',repr(Counter(e.get('kind') for e in events)))
           audit=[e for e in events if any(k in e.get('kind','') for k in ('goal','contribution','option','planning','competition','compute_charge','fallback','evaluation','scheduler'))]
           for e in audit[:90]:
-              print('LEGACY_STAGE4_EVENT',json.dumps(e,sort_keys=True)[:900])
+              print('LEGACY_STAGE4_EVENT',repr(e)[:1200])
           try:
               t=_exercise_physics('toxic_berry_far_creature')
               print('LEGACY_STAGE9_ADMITTED',repr(t['admitted']))
