@@ -171,7 +171,7 @@ class SealedIndependentFirstPersonReentryTests(unittest.TestCase):
                 status="plan_found",root_available_edges=1,
                 commands=[EAST]
             ),
-        },"root diagnostics|body/night drift|exact-root")
+        },"Stage6 root diagnostics|body/night drift|exact-root")
 
     def test_forged_goal_food_propagation_refused(self):
         self.check_one({
@@ -214,7 +214,7 @@ class SealedIndependentFirstPersonReentryTests(unittest.TestCase):
             "predicate":lambda w:w["full_firstperson_state_reentered"],
             "change":lambda w:w["precommitted_fifth_positive_physical_control"][
                 "predicted_next_state"]["body"].update(energy=12.0),
-        },"fifth physical move")
+        },"physical fifth move|fifth physical move")
 
     def test_no_physics_planner_or_model_import_in_separate_review(self):
         source=(Path(__file__).resolve().parents[1]/
