@@ -1,0 +1,40 @@
+name: Stage4 Stage5 latest-main cumulative isolated differential
+on:
+  push:
+    branches: [audit/stage4-stage5-cumulative-main-20261015]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  all-stages-short-unit-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Stage4 and Stage5 true local sensory opportunity and scored effort
+        run: |
+          python -m unittest discover -s tests -p 'test_stage4_runtime.py' -v
+          python -m unittest discover -s tests -p 'test_stage5*.py' -v
+          python -m unittest discover -s tests -p 'test_stage9_concurrent_cause_audit.py' -v
+      - name: Recover original A2.30-N evidence on current main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230o-py311 /tmp/a230o-py312
+          gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.11 --dir /tmp/a230o-py311
+          gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.12 --dir /tmp/a230o-py312
+      - name: Entire quick unit suite against exact newest main plus BOTH patches
+        env:
+          A230O_SOURCE_A: /tmp/a230o-py311
+          A230O_SOURCE_B: /tmp/a230o-py312
+        run: python -m unittest discover -s tests -q
