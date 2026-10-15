@@ -145,10 +145,8 @@ def expected_perception(s,position,b_here,t,energy,food,water,night):
         raise ValueError("observable day/night timing misrepresented")
     if s["inventory"]!={k:0 for k in INV_KEYS}:
         raise ValueError("unwitnessed collection or ingestion in motor-only protocol")
-    if s["current_resources"]!=(
-        ["berry_b"] if b_here and initial==tuple(position) else []
-    ):
-        raise ValueError("visible local berry affordance absent or fabricated")
+    # Relative local berries are checked against the immutable origin in
+    # audit_world; this helper only knows the current absolute coordinates.
     # The actual berry is stationary at origin. Verify all neighbor cues as
     # perceived for EVERY step, including the west/south returning route.
     x,y=initial
