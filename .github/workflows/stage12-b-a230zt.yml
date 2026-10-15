@@ -1,0 +1,56 @@
+name: Stage12 A2.30-ZT independent original preaction sealed receipt audit
+on:
+  pull_request:
+    branches: [science/stage12-b-a230zs-preaction-durable-heldout-20261015]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230zt_independent_preaction.py'
+      - 'tests/test_stage12_a230zt_independent_preaction.py'
+      - 'docs/research/stage12-a230zt-*.md'
+      - '.github/workflows/stage12-b-a230zt.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-sealed-preaction-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Retrieve only ORIGINAL Python 3.11 and 3.12 seven-file ZS archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230zt-original-311 /tmp/a230zt-original-312
+          gh run download 38801013480 --repo "$GITHUB_REPOSITORY" --name a230zs-py3.11 --dir /tmp/a230zt-original-311
+          gh run download 38801013480 --repo "$GITHUB_REPOSITORY" --name a230zs-py3.12 --dir /tmp/a230zt-original-312
+      - name: Independently reject original-hash, re-signed chain, hidden model and UC fabrications
+        env:
+          A230ZT_ORIGINAL_311: /tmp/a230zt-original-311
+          A230ZT_ORIGINAL_312: /tmp/a230zt-original-312
+        run: python -m unittest discover -s tests -p test_stage12_a230zt_independent_preaction.py -v
+      - name: Reconstruct original 120 physical source receipts and 104 sealed forecasts, NO new WorldBody
+        run: |
+          python -u scripts/audit_stage12_issue110_b_a230zt_independent_preaction.py \
+            --original-311 /tmp/a230zt-original-311 \
+            --original-312 /tmp/a230zt-original-312 \
+            --output-dir /tmp/a230zt-independent > /tmp/a230zt.log 2>&1 \
+            || { tail -n 180 /tmp/a230zt.log; exit 2; }
+          grep A230ZT_SUMMARY /tmp/a230zt.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zt-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zt-independent
+            /tmp/a230zt.log
+          retention-days: 30
