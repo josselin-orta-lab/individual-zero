@@ -26,7 +26,9 @@ from pathlib import Path
 import subprocess
 from typing import Any
 
-from i0.equipment import EquipmentCorpus, train_exact_transition_table
+from i0.equipment import (
+    EquipmentCorpus, EquipmentCorpusExample, train_exact_transition_table,
+)
 from lab.world import WorldBody
 from lab.equipment_corpus import EquipmentCorpusRecorder
 
@@ -175,28 +177,25 @@ def seal_before_heldout(output_dir:Path):
     train,_,_,_=original_recipes()
     # Physically apply the ONLY source transitions in this job.
     physical_train=[zo.apply_one(recipe)[0] for recipe in train]
-    training_examples=[]
     for row in physical_train:
         if (row["preregistered_cohort"]!="TRAIN"
             or row["source_or_heldout"]!="external_train"
             or row["physical_example"]["terminal"] is not False):
             raise AssertionError("heldout or terminal example entered training")
-        training_examples.append(row["physical_example"])
     model=zo.fit_partial_empirical(physical_train)
     train_corpus=EquipmentCorpus(
         version="a230zs-external-training-16-v1",
         examples=tuple(
-            zo.EquipmentCorpusExample(
-                family=x["family"],
-                state=decode_state(x["state"]),
-                command=zo.COMMAND[
-                    next(r["command_label"] for r in physical_train
-                         if r["physical_example"] is x)
-                ],
-                observed_next_state=decode_state(x["observed_next_state"]),
-                terminal=x["terminal"],
+            EquipmentCorpusExample(
+                family=row["physical_example"]["family"],
+                state=decode_state(row["physical_example"]["state"]),
+                command=zo.COMMAND[row["command_label"]],
+                observed_next_state=decode_state(
+                    row["physical_example"]["observed_next_state"]
+                ),
+                terminal=row["physical_example"]["terminal"],
             )
-            for x in training_examples
+            for row in physical_train
         ),
     )
     exact=train_exact_transition_table(
@@ -348,7 +347,7 @@ def physically_realize_after_seal(source_dir:Path,output_dir:Path):
     source_exact_corps=EquipmentCorpus(
         version="a230zs-external-training-16-v1",
         examples=tuple(
-            zo.EquipmentCorpusExample(
+            EquipmentCorpusExample(
                 family=x["physical_example"]["family"],
                 state=decode_state(x["physical_example"]["state"]),
                 command=zo.COMMAND[x["command_label"]],
