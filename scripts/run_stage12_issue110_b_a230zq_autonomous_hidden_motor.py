@@ -252,16 +252,19 @@ def verify_life_and_extract(out,life,identity,model_hash,intervention,initial,
             raise ValueError("experienced physical command cannot join result")
         key=(t,act["attempt_ref"])
         capture=captures.get(key)
-        if capture is None:
-            raise ValueError("physical command without same-attempt firstperson capture")
-        visible=_visible_capture_from_event(capture)
-        if visible["position"]!=prior_position:
-            raise ValueError("lived position and previously physical result differ")
-        if len(visible["visible_adjacent"])!=4 or any(
-            "lethal" in str(x) or "hidden" in str(x) or "oracle" in str(x)
-            for x in visible["visible_adjacent"]
-        ):
-            raise ValueError("hidden physical cause leaked into sensation")
+        # Some authentic physical decisions (e.g. consecutive sleep actions)
+        # have NO first-person perception event. This is epistemic absence:
+        # NEVER fabricate a capture from WorldBody or future consequences.
+        visible=(_visible_capture_from_event(capture)
+                 if capture is not None else None)
+        if visible is not None:
+            if visible["position"]!=prior_position:
+                raise ValueError("lived position and previous physical result differ")
+            if len(visible["visible_adjacent"])!=4 or any(
+                "lethal" in str(x) or "hidden" in str(x) or "oracle" in str(x)
+                for x in visible["visible_adjacent"]
+            ):
+                raise ValueError("hidden physical cause leaked into sensation")
         c=PrimitiveCommand(act["primitive"],act.get("parameters",{}))
         if command_digest(c)!=act["command_hash"]:
             raise ValueError("physical command digest falsified")
@@ -287,7 +290,15 @@ def verify_life_and_extract(out,life,identity,model_hash,intervention,initial,
             "parameters":act.get("parameters",{}),
             "command_sha256":act["command_hash"],
             "preaction_firstperson_capture":visible,
-            "preaction_firstperson_sha256":digest(visible),
+            "preaction_firstperson_sha256":(
+                digest(visible) if visible is not None else None
+            ),
+            "preaction_firstperson_receipt_status":(
+                "available" if visible is not None else
+                "unavailable_in_canonical_journal"
+            ),
+            "preaction_position_from_physical_chain_external_only":
+                prior_position,
             "motive_external_journal_receipt":(
                 motive["data"] if motive is not None else None
             ),
@@ -357,6 +368,10 @@ def verify_life_and_extract(out,life,identity,model_hash,intervention,initial,
         "initial_accessible_projection":initial,
         "motor_commands_from_original_I0_only":True,
         "physically_east_movements":east_moves,
+        "physical_steps_without_same_attempt_firstperson_capture":sum(
+            x["preaction_firstperson_capture"] is None
+            for x in command_story
+        ),
         "physically_collected_B":collections_B,
         "physically_eaten_B_commands":eats_B,
         "first_hidden_test_cell_entry_step":hidden_zone_entry_step,
@@ -463,8 +478,10 @@ def verify_pairs(lives):
             for a,b in zip(control_actions[:common],fatal_actions[:common])
         )
         parity_perceptions=all(
-            a["preaction_firstperson_capture"]==
-            b["preaction_firstperson_capture"]
+            a["preaction_firstperson_capture"] is not None
+            and b["preaction_firstperson_capture"] is not None
+            and a["preaction_firstperson_capture"]==
+                b["preaction_firstperson_capture"]
             for a,b in zip(control_actions[:common],fatal_actions[:common])
         )
         matched=bool(
