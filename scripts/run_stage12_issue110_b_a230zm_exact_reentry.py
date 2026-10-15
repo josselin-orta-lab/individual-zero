@@ -396,8 +396,8 @@ def audit_read_only_output(worlds):
             or row["returned_is_night"]!=returned["is_night"]
             or row["returned_is_night"]!=(fact[5]==3)
             or row["full_firstperson_state_reentered"]!=(start==returned)
-            or row["old_first_step_input_sha256"]==row["new_first_step_input_sha256"]
-               !=(start==returned)):
+            or ((row["old_first_step_input_sha256"]==
+                  row["new_first_step_input_sha256"]) != (start==returned))):
             raise ValueError("false perceptual/physical reentry or provenance")
         expected={
             "energy":-4*fact[2],
