@@ -1,0 +1,47 @@
+name: Stage12 A2.30-ZS prospective durable preaction forecasts
+on:
+  pull_request:
+    branches: [science/stage12-b-a230zp-independent-heldout-audit-20261015]
+    paths:
+      - 'scripts/run_stage12_issue110_b_a230zs_preaction_sealed.py'
+      - 'tests/test_stage12_a230zs_preaction_sealed.py'
+      - 'docs/research/stage12-a230zs-*.md'
+      - '.github/workflows/stage12-b-a230zs.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preaction-sealed-hazard-heldout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Execute 120 new independent physical worlds with 104 truly preaction fsync forecasts
+        run: |
+          python -u scripts/run_stage12_issue110_b_a230zs_preaction_sealed.py \
+            --output-dir /tmp/a230zs-original > /tmp/a230zs.log 2>&1 \
+            || { tail -n 150 /tmp/a230zs.log; exit 2; }
+          grep A230ZS_SUMMARY /tmp/a230zs.log
+      - name: Reject reordered SHA receipts, forged prediction, hidden safety and postmortem first-person claims
+        env:
+          A230ZS_ORIGINAL_SOURCE: /tmp/a230zs-original
+        run: |
+          python -m unittest discover -s tests -p test_stage12_a230zs_preaction_sealed.py -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zs-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zs-original
+            /tmp/a230zs.log
+          retention-days: 30
