@@ -109,7 +109,7 @@ class DualScopeRuntimeTests(unittest.TestCase):
                     "event_id":row["event_id"],
                     "causal_event":row["causal_event"]})).hexdigest()
                 row["event_hash"]=previous
-            forged=b"\\n".join(canonical_causal_bytes(r) for r in rows)
+            forged=b"\n".join(canonical_causal_bytes(r) for r in rows)
             self.assertGreater(audit_export_bytes(forged).world_steps_closed,0)
             with self.assertRaisesRegex(ValueError,"dual-scope causal claims unsupported"):
                 audit_stage12_dual_scope(forged)
