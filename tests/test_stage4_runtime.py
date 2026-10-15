@@ -283,19 +283,23 @@ class Stage4IntegratedLoopTests(unittest.TestCase):
             for entry in instance.journal.entries
             if entry.causal_event.get("kind") == "agency_comparison"
         ]
-        self.assertGreaterEqual(len(comparisons), 2)
-        self.assertTrue(
-            all(
-                event["data"]["status"] == "conforming"
-                for event in comparisons[:2]
-            )
+        # With a legitimately *adjacent* visible water source, E-0 plans
+        # one movement and then one drink. A historical two-movement target
+        # was out of perception and MUST NOT be restored to satisfy this test.
+        self.assertEqual(len(comparisons), 1)
+        self.assertEqual(comparisons[0]["data"]["status"], "conforming")
+        self.assertEqual(
+            comparisons[0]["data"]["attribution"], "self_compatible",
         )
-        self.assertTrue(
-            all(
-                event["data"]["attribution"] == "self_compatible"
-                for event in comparisons[:2]
-            )
+        transitions = [
+            entry.causal_event for entry in instance.journal.entries
+            if entry.causal_event.get("kind") == "world_transition_experienced"
+        ]
+        self.assertEqual(
+            [event["primitive"] for event in transitions[:2]],
+            ["se_deplacer", "boire"],
         )
+        self.assertEqual(instance.world.body.water, 60.0)
 
     def test_blocked_movement_is_nonconforming_and_invalidates_plan(self) -> None:
         instance = runtime(
