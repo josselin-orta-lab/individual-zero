@@ -130,9 +130,11 @@ class SAndTBlindArchiveControls(unittest.TestCase):
 
     def test_T_tampered_optimistic_branch_rejected(self):
         worlds=deepcopy(self.t_worlds)
-        worlds[0]["shadow_forecast_precommitted"]["branch_scores"][0][
-            "surviving_food_goal_possible_in_branch"
-        ]=False
+        branch=next(
+            x for x in worlds[0]["shadow_forecast_precommitted"]["branch_scores"]
+            if x["surviving_food_goal_possible_in_branch"]
+        )
+        branch["surviving_food_goal_possible_in_branch"]=False
         with self.assertRaisesRegex(ValueError,"sealed shadow receipt|P outcomes"):
             self.t(worlds=worlds)
 
