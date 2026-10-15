@@ -31,12 +31,26 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p /tmp/a230zl-zk311 /tmp/a230zl-zk312
-          mkdir -p /tmp/a230zl-zb311 /tmp/a230zl-zb312
-          gh run download 38783733130 --repo "$GITHUB_REPOSITORY" --name a230zk-py3.11 --dir /tmp/a230zl-zk311
-          gh run download 38783733130 --repo "$GITHUB_REPOSITORY" --name a230zk-py3.12 --dir /tmp/a230zl-zk312
-          gh run download 38767643472 --repo "$GITHUB_REPOSITORY" --name a230zb-py3.11 --dir /tmp/a230zl-zb311
-          gh run download 38767643472 --repo "$GITHUB_REPOSITORY" --name a230zb-py3.12 --dir /tmp/a230zl-zb312
+          set -e
+          fetch_original() {
+            local run_id="$1" artifact="$2" output="$3" attempt
+            mkdir -p "$output"
+            for attempt in 1 2 3 4 5; do
+              if gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name "$artifact" --dir "$output"; then
+                echo "Verified source archive fetched: $artifact (attempt $attempt)"
+                return 0
+              fi
+              echo "Archive transfer failed, retrying: $artifact (attempt $attempt)" >&2
+              find "$output" -type f -delete
+              sleep "$((attempt * 7))"
+            done
+            echo "Original sealed $artifact could not be fetched; analysis is BLOCKED not FAIL" >&2
+            return 1
+          }
+          fetch_original 38783733130 a230zk-py3.11 /tmp/a230zl-zk311
+          fetch_original 38783733130 a230zk-py3.12 /tmp/a230zl-zk312
+          fetch_original 38767643472 a230zb-py3.11 /tmp/a230zl-zb311
+          fetch_original 38767643472 a230zb-py3.12 /tmp/a230zl-zb312
       - name: Reject forged future knowledge and terminal outcomes with independent adversarial checks
         env:
           A230ZL_ZK311: /tmp/a230zl-zk311
