@@ -123,6 +123,51 @@ def physical_fixture_config() -> WorldPhysicsConfig:
     )
 
 
+def _one_sided_shadow(known, physically_held_out, label):
+    """Shadow-only exact table trained on just the benign observation.
+
+    The other *already recorded* physical case is never given to Equipment.
+    No additional I0 world, intervention or physical step is executed.
+    """
+    model = train_exact_transition_table(
+        corpus=EquipmentCorpus(
+            version="stage12-a230m-single-example-" + label + "-v1",
+            examples=(known,),
+        ),
+        equipment_version="E-a230m-one-sided-" + label + "-v1",
+    )
+    if FrozenTableEquipment.input_digest(
+        known.state, known.command
+    ) != FrozenTableEquipment.input_digest(
+        physically_held_out.state, physically_held_out.command
+    ):
+        raise AssertionError("unmatched shadow training/counterfactual key")
+    predicted = model.predict(
+        state=physically_held_out.state,
+        command=physically_held_out.command,
+    )
+    if (predicted.next_state != known.observed_next_state
+            or predicted.terminal != known.terminal
+            or predicted.confidence != 1.0):
+        raise AssertionError("single-example exact-table contract changed")
+    if (predicted.next_state == physically_held_out.observed_next_state
+            and predicted.terminal == physically_held_out.terminal):
+        raise AssertionError("one-sided shadow outcome unexpectedly correct")
+    return {
+        "trained_on_one_benign_physical_example": True,
+        "same_accessible_input_exact_hash": True,
+        "nominal_model_confidence": predicted.confidence,
+        "predicted_terminal": predicted.terminal,
+        "physically_observed_terminal": physically_held_out.terminal,
+        "predicted_integrity": predicted.next_state.body["integrity"],
+        "physically_observed_integrity":
+            physically_held_out.observed_next_state.body["integrity"],
+        "actual_hidden_world_outcome_mismatch": True,
+        "not_executed_as_i0_model": True,
+        "does_not_estimate_error_frequency": True,
+    }
+
+
 def run_physical_counterexamples():
     reference = physical_fixture_config()
     reference.validate()
@@ -140,6 +185,9 @@ def run_physical_counterexamples():
     )[0]
     move_pair = _check_exact_collision(
         free_transition, fatal_transition, "hidden-lethal-zone"
+    )
+    one_sided_move = _one_sided_shadow(
+        free_transition, fatal_transition, "hidden-lethal-movement"
     )
     if (free_transition.terminal or not fatal_transition.terminal):
         raise AssertionError("lethal-zone physical contrast not demonstrated")
@@ -179,6 +227,9 @@ def run_physical_counterexamples():
         raise AssertionError(
             "food/integrity contrast did not isolate hidden toxicity"
         )
+    one_sided_berry = _one_sided_shadow(
+        safe_path[1], toxic_path[1], "hidden-berry-toxicity"
+    )
     eat_pair.update(
         food_after_pair=[sa.body["food"], sb.body["food"]],
         integrity_after_pair=[
@@ -241,6 +292,8 @@ def run_physical_counterexamples():
         "new_i0_autonomous_steps": 0,
         "hidden_lethal_movement": move_pair,
         "hidden_toxic_ingestion": eat_pair,
+        "one_sided_hidden_movement": one_sided_move,
+        "one_sided_hidden_berry": one_sided_berry,
         "observable_food_difference": wait_pair,
         "deterministic_exact_predictor_must_abstain_on_conflict": True,
         "generalization_of_safety_proven": False,

@@ -33,6 +33,19 @@ class ControlledPhysicalAliasingTests(unittest.TestCase):
         )
         self.assertTrue(row["trainer_rejected_conflicting_outcomes"])
 
+    def test_one_benign_example_can_falsely_predict_hidden_world_safety(self):
+        moved = self.result["one_sided_hidden_movement"]
+        berry = self.result["one_sided_hidden_berry"]
+        self.assertEqual(moved["nominal_model_confidence"], 1.0)
+        self.assertFalse(moved["predicted_terminal"])
+        self.assertTrue(moved["physically_observed_terminal"])
+        self.assertTrue(moved["actual_hidden_world_outcome_mismatch"])
+        self.assertEqual(berry["nominal_model_confidence"], 1.0)
+        self.assertEqual(berry["predicted_integrity"], 100.0)
+        self.assertEqual(berry["physically_observed_integrity"], 93.0)
+        self.assertTrue(berry["actual_hidden_world_outcome_mismatch"])
+        self.assertTrue(berry["not_executed_as_i0_model"])
+
     def test_visible_food_is_not_safe_to_drop_for_absolute_predictions(self):
         row = self.result["observable_food_difference"]
         self.assertEqual(row["difference_in_accessible_input"], "body.food")
