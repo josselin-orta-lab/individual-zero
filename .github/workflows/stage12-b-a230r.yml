@@ -1,0 +1,54 @@
+name: Stage12 A2.30-R independent physical replay
+on:
+  pull_request:
+    branches: [science/stage12-b-a230n-uncertain-transition-evaluation-20261015]
+    paths:
+      - 'scripts/replay_stage12_issue110_b_a230r_physical.py'
+      - 'tests/test_stage12_a230r_physical_replay.py'
+      - 'docs/research/stage12-issue110-b-a230r-*.md'
+      - '.github/workflows/stage12-b-a230r.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  pure-physics-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Retrieve original sealed P physical-world receipts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230r-original
+          gh run download 38730415503 --repo "$GITHUB_REPOSITORY" --name a230p-py3.11 --dir /tmp/a230r-original
+      - name: Adversarial physics and mortality counterchecks
+        env:
+          A230R_SOURCE: /tmp/a230r-original
+        run: python -m unittest discover -s tests -p test_stage12_a230r_physical_replay.py -v
+      - name: Reproduce P worlds without invoking original experiment runner
+        run: |
+          python -u scripts/replay_stage12_issue110_b_a230r_physical.py \
+            --source-dir /tmp/a230r-original \
+            --output-dir /tmp/a230r-output > /tmp/a230r.log 2>&1 \
+            || { tail -n 150 /tmp/a230r.log; exit 2; }
+          grep A230R_SUMMARY /tmp/a230r.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230r-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230r-output
+            /tmp/a230r.log
+          retention-days: 30
