@@ -197,6 +197,7 @@ def sample_world(probe,variant,food,position):
         "physical_food_goal_and_survival_external_only":successful,
         "lived_post_ingestion_if_survivor":lived_post_ingestion,
         "postterminal_lived_capture_count":0,
+        "certifies_safe_from_probe":False,
         "no_i0_instance_or_autonomous_command":True,
         "no_oracle_feedback_to_i0":True,
     }
@@ -272,6 +273,7 @@ def validate_and_score(acted,controls):
             or digest(row["decision_state"])!=row["decision_state_sha256"]
             or history_key!=row["predecision_history_sha256"]
             or row["postterminal_lived_capture_count"]!=0
+            or row["certifies_safe_from_probe"] is not False
             or row["no_i0_instance_or_autonomous_command"] is not True
             or row["no_oracle_feedback_to_i0"] is not True):
             raise ValueError("first-person/future/hidden history leak")
@@ -313,6 +315,17 @@ def validate_and_score(acted,controls):
                 prev if row["physically_alive_after_ingestion"] else None
             )):
             raise ValueError("postmortem receipt masquerades as lived observation")
+        # Preserve the factual hazard as a laboratory outcome, not an
+        # input to the predecision observation equivalence classifier.
+        before_ingest=receipts[-1]["before"]["body"]["integrity"]
+        after_ingest=receipts[-1]["after_for_external_bench"]["body"]["integrity"]
+        physical_harm=round(float(after_ingest-before_ingest),8)
+        required_harm={
+            "benign":0.0, "toxin_7":-7.0, "toxin_30":-30.0,
+            "toxin_100":-100.0, "gain_zero":0.0,
+        }[latent]
+        if physical_harm!=required_harm:
+            raise ValueError("physical berry hazard does not match blinded variant")
         actual_gain=round(
             float(prev["body"]["food"]-
                   row["decision_state"]["body"]["food"]),8
