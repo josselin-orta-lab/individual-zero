@@ -1,0 +1,43 @@
+name: Stage12 A2.30-J physical prebirth coverage ablation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_b_a230j_coverage_ablation.py'
+      - 'scripts/run_stage12_issue110_b_a228_funnel.py'
+      - 'tests/test_stage12_a230j_prebirth_coverage.py'
+      - 'docs/research/stage12-issue110-b-a230j-*.md'
+      - '.github/workflows/stage12-b-a230j.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preregistered-comparison:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Verify independent prebirth physics and unknown-input abstention
+        run: python -m unittest discover -s tests -p test_stage12_a230j_prebirth_coverage.py -v
+      - name: Run new paired autonomous B births with OFF and ON prebirth Equipment
+        run: |
+          python -u scripts/run_stage12_issue110_b_a230j_coverage_ablation.py --output-dir /tmp/a230j > /tmp/a230j.log 2>&1 || { tail -n 140 /tmp/a230j.log; exit 2; }
+          grep A230J_SUMMARY /tmp/a230j.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230j-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230j
+            /tmp/a230j.log
+          retention-days: 30

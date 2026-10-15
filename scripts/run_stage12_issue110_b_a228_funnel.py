@@ -33,7 +33,7 @@ def _num(v):
 
 
 def new_life(folder, profile, blocked, *, birth_cohort="a228"):
-    if birth_cohort not in ("a228", "a229"):
+    if birth_cohort not in ("a228", "a229", "a230", "a230e", "a230j0", "a230j1"):
         raise ValueError("unregistered scientific birth cohort")
     identity = f"i0:stage12:b:{birth_cohort}:{profile}:{'A2' if blocked else 'free'}"
     original = factory.Stage12Runtime
