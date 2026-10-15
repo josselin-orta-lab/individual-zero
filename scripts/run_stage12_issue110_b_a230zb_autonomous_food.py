@@ -223,14 +223,24 @@ def audit_finished(folder,life,identity,model_hash,intervention,first,steps,
         for e in events
     ):
         raise AssertionError("post-death lived capture fabricated")
-    stage6=[
+    diagnostics=[
         e["data"]["progressive_search_diagnostic"]
         for e in events if e["kind"]=="stage6_planning_result"
         and e.get("data",{}).get("progressive_search_diagnostic") is not None
     ]
+    # Like original J audit, only an ACTUAL planner search returns an
+    # arithmetically meaningful root diagnostic. Some journal rows carry
+    # an explicit non-search reason; never count those as incomplete_model.
+    statuses={"plan_found","partial_progress","incomplete_model",
+              "not_found_within_horizon"}
+    stage6=[d for d in diagnostics if d.get("status") in statuses]
     for d in stage6:
-        if d["root_available_edges"]+d["root_unavailable_edges"]>d["root_candidate_edges"]:
-            raise ValueError("malformed root-edge counters")
+        if (not all(k in d for k in (
+                "root_available_edges","root_unavailable_edges",
+                "root_candidate_edges","root_model_diagnostic"
+            )) or d["root_available_edges"]+d["root_unavailable_edges"] >
+                d["root_candidate_edges"]):
+            raise ValueError("malformed actual root-edge counters")
     capture_food=[
         _f64(e.get("data",{}).get("dual_scope_visible_body",{}).get("food"))
         for e in events if e["kind"]=="perceptual_capture"
@@ -262,6 +272,7 @@ def audit_finished(folder,life,identity,model_hash,intervention,first,steps,
         "all_confirmed_ingestions_P48":p48["physically_confirmed_eats"],
         "physical_food_gain_steps_P48":p48["net_food_increase_steps_after_first"],
         "stage6_searches":len(stage6),
+        "stage6_skipped_nonsearch_diagnostics":len(diagnostics)-len(stage6),
         "stage6_status_counts":dict(Counter(x["status"] for x in stage6)),
         "stage6_no_known_root_searches":sum(
             x["root_model_diagnostic"]=="no_predictable_first_step"
