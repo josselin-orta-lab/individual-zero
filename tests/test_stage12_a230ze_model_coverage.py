@@ -128,7 +128,7 @@ class Stage6PhysicallyWitnessedFirstEdgeTests(unittest.TestCase):
             )
 
     def test_model_never_certifies_safety_nor_executes_candidate(self):
-        self.assertFalse(self.summary["model_contains_no_B_ingestion"] is False)
+        self.assertTrue(self.summary["model_contains_no_B_ingestion"])
         self.assertTrue(self.summary["model_contains_no_safety_certificate"])
         for case in self.tests:
             self.assertEqual(case["physical_steps_executed_in_heldout_world"],0)
@@ -162,7 +162,8 @@ class Stage6PhysicallyWitnessedFirstEdgeTests(unittest.TestCase):
         self.assertEqual(ood["position"],[7,7])
         self.assertEqual(ood["enriched_demonstrated_prefix"][
             "root_available_edges"],0)
-        self.assertIsNone(ood["paired_physical_demonstrator"] is None or None)
+        self.assertIsInstance(ood["paired_physical_demonstrator"],str)
+        self.assertTrue(ood["paired_physical_demonstrator"].startswith("ze-train-"))
 
     def test_prospective_learner_does_not_import_born_I0_or_oracle(self):
         path=(Path(__file__).resolve().parents[1]/
