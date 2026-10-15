@@ -21,8 +21,10 @@ from i0.equipment import (
 from i0.interfaces import PrimitiveCommand
 from lab.determinism import canonical_causal_bytes, sha256_hex
 from lab.equipment_corpus import EquipmentCorpusRecorder
-from lab.stage4_reference_fixture import build_stage4_reference_runtime
-from lab.world import WorldBody, WorldLayout
+from lab.world import (
+    WorldBody, WorldLayout, WorldPhysicsConfig, BodyState, Position,
+    BerryEffect, ToolRecipe, PRIMITIVE_ACTIONS,
+)
 
 
 def _physical_record(config, layout, commands, label):
@@ -94,9 +96,36 @@ def _check_exact_collision(left, right, label):
     }
 
 
+def physical_fixture_config() -> WorldPhysicsConfig:
+    """Pure physics config, not a Stage4Runtime or living I0 instance."""
+    return WorldPhysicsConfig(
+        version="stage12-a230l-standalone-physics-v1",
+        width=32, height=32, day_steps=300, night_steps=100,
+        night_start_step=200,
+        initial_body=BodyState(
+            energy=50.0, food=60.0, water=20.0, integrity=100.0
+        ),
+        initial_position=Position(2, 2),
+        food_decay_per_step=0.0,
+        water_decay_per_step=0.0,
+        action_energy_costs={
+            k: 0.0 for k in sorted(PRIMITIVE_ACTIONS)
+        },
+        sleep_energy_gain=0.0,
+        rest_integrity_gain=0.0,
+        drink_water_gain=40.0,
+        berry_effects={
+            "berry_a": BerryEffect(10.0, 0.0),
+            "berry_b": BerryEffect(5.0, -100.0),
+        },
+        creature_damage=0.0, danger_zone_damage=10.0,
+        tool_recipe=ToolRecipe(1, 1, 2),
+    )
+
+
 def run_physical_counterexamples():
-    fixture = build_stage4_reference_runtime()
-    reference = fixture.world.config
+    reference = physical_fixture_config()
+    reference.validate()
     start = reference.initial_position
     move = PrimitiveCommand("se_deplacer", {"direction": "east"})
     current = WorldLayout()

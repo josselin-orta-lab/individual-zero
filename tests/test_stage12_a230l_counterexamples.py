@@ -39,6 +39,13 @@ class ControlledPhysicalAliasingTests(unittest.TestCase):
         self.assertTrue(row["all_other_accessible_input_fields_equal"])
         self.assertNotEqual(*row["food_after"])
 
+    def test_fixture_never_construction_of_stage4_i0_runtime(self):
+        script = (Path(__file__).resolve().parents[1]
+                  / "scripts" / "run_stage12_issue110_b_a230l_counterexamples.py")
+        content = script.read_text()
+        self.assertNotIn("build_stage4_reference_runtime", content)
+        self.assertNotIn("Stage4Runtime(", content)
+
     def test_no_training_uses_i0_life_or_oracle_and_steps_not_double_counted(self):
         row = self.result
         self.assertEqual(row["physical_lab_worlds"], 6)
