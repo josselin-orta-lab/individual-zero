@@ -35,7 +35,7 @@ class PrebirthCoverageSafetyTests(unittest.TestCase):
         self.assertEqual(len(all_recipes), 14)
         self.assertTrue(all(1 <= len(path) <= 8 for _, path in all_recipes))
         self.assertEqual(len({name for name, _ in all_recipes}), 14)
-        self.assertEqual(sum(len(path) for _, path in all_recipes), 43)
+        self.assertEqual(sum(len(path) for _, path in all_recipes), 46)
         self.assertTrue(all(
             command.primitive in ("attendre", "dormir", "boire",
                                   "se_deplacer", "collecter", "manger")
@@ -52,7 +52,7 @@ class PrebirthCoverageSafetyTests(unittest.TestCase):
             food_target=True,
         )
         self.assertEqual(audit["historical_examples"], 4)
-        self.assertEqual(audit["physically_applied_extra_examples"], 43)
+        self.assertEqual(audit["physically_applied_extra_examples"], 46)
         self.assertGreater(audit["new_unique_exact_keys"], 0)
         self.assertTrue(audit["preserved_all_historical_predictions"])
         self.assertTrue(audit["unseen_body_input_unavailable"])
