@@ -295,9 +295,21 @@ class Stage4IntegratedLoopTests(unittest.TestCase):
             entry.causal_event for entry in instance.journal.entries
             if entry.causal_event.get("kind") == "world_transition_experienced"
         ]
+        # The physical transition event intentionally does NOT expose a
+        # primitive: join it to its independently logged selected command
+        # by the attempt identifier, not by an invented event field.
+        commands = [
+            entry.causal_event for entry in instance.journal.entries
+            if entry.causal_event.get("kind") == "command_experienced"
+        ]
+        self.assertGreaterEqual(len(transitions), 2)
         self.assertEqual(
-            [event["primitive"] for event in transitions[:2]],
+            [event["primitive"] for event in commands[:2]],
             ["se_deplacer", "boire"],
+        )
+        self.assertEqual(
+            [(e["t_monde"], e["attempt_ref"]) for e in commands[:2]],
+            [(e["t_monde"], e["attempt_ref"]) for e in transitions[:2]],
         )
         self.assertEqual(instance.world.body.water, 60.0)
 
