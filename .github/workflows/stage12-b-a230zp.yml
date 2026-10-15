@@ -1,0 +1,67 @@
+name: Stage12 A2.30-ZP independent original heldout archive audit
+on:
+  pull_request:
+    branches: [science/stage12-b-a230zo-factorized-observable-heldout-20261015]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230zp_sealed_factorized.py'
+      - 'tests/test_stage12_a230zp_sealed_factorized.py'
+      - 'docs/research/stage12-a230zp-*.md'
+      - '.github/workflows/stage12-b-a230zp.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  sealed-zp-reconstruction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Fetch five SHA-pinned source files from both original ZO CI archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          mkdir -p /tmp/zo311 /tmp/zo312
+          for version in 3.11 3.12; do
+            if [ "$version" = "3.11" ]; then folder=/tmp/zo311; else folder=/tmp/zo312; fi
+            okay=0
+            for attempt in 1 2 3; do
+              if gh run download 38792466785 --repo "$GITHUB_REPOSITORY" --name "a230zo-py$version" --dir "$folder"; then okay=1; break; fi
+              sleep 3
+            done
+            if [ "$okay" -ne 1 ]; then
+              echo "Original ZO $version artifact unavailable: BLOCKED, not a failed physical experiment" >&2
+              exit 2
+            fi
+          done
+      - name: Falsify archived physical and epistemic claims without importing ZO code
+        env:
+          A230ZP_ZO311: /tmp/zo311
+          A230ZP_ZO312: /tmp/zo312
+        run: python -m unittest discover -s tests -p test_stage12_a230zp_sealed_factorized.py -v
+      - name: Recompute 120 causal receipts, trained deltas and 104 original heldout forecasts
+        run: |
+          python -u scripts/audit_stage12_issue110_b_a230zp_sealed_factorized.py \
+            --original-zo-311 /tmp/zo311 \
+            --original-zo-312 /tmp/zo312 \
+            --output-dir /tmp/a230zp > /tmp/a230zp.log 2>&1 \
+            || { tail -n 150 /tmp/a230zp.log; exit 2; }
+          grep A230ZP_SUMMARY /tmp/a230zp.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zp-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zp
+            /tmp/a230zp.log
+          retention-days: 30
