@@ -10,6 +10,7 @@ from lab.stage10_reference_fixture import build_stage10_reference_runtime
 from lab.stage11_reference_fixture import build_stage11_reference_runtime
 from lab.stage12_runtime import Stage12Runtime
 from lab.independent_journal_audit import audit_export_bytes
+from lab.stage12_dual_scope_audit import audit_stage12_dual_scope
 
 
 def born(path, *, dual=True, join=False, life_id="dual:life:1", m11=False):
@@ -64,6 +65,9 @@ class DualScopeRuntimeTests(unittest.TestCase):
             report=audit_export_bytes(raw,expected_head=runtime.journal.head_hash,
                 expected_count=len(runtime.journal.entries))
             self.assertGreaterEqual(report.world_steps_closed,1)
+            independent=audit_stage12_dual_scope(raw,expected_head=runtime.journal.head_hash,
+                 expected_count=len(runtime.journal.entries))
+            self.assertGreater(independent.judgements,0)
             events=[json.loads(line)["causal_event"] for line in raw.splitlines()]
             commitments=[e for e in events if e["kind"]=="stage12_outcome_responsibility_precommitted"]
             decisions=[e for e in events if e["kind"]=="stage12_outcome_responsibility_judgement"]
