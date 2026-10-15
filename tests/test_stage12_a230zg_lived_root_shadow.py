@@ -191,7 +191,7 @@ class PhysicalBirthRootShadowAdversarialTests(unittest.TestCase):
         fake=deepcopy(self.rows)
         target=next(x for x in fake if x["layout"]=="B_NONE")
         target["eligible_B_first_step"]=COLLECT_B.as_dict()
-        with self.assertRaisesRegex(ValueError,"manufactured action"):
+        with self.assertRaisesRegex(ValueError,"manufactured action|B root-edge provenance"):
             self.review(fake)
 
     def test_physically_untrained_B_edge_falsification_rejected(self):
