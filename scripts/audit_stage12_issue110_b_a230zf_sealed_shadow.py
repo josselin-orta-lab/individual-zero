@@ -188,6 +188,22 @@ def recheck_trial(row,physical):
         raise ValueError("test world was secretly trained/acted upon or made cognizant")
     root=row["first_person_state"]
     valid_perception(root)
+    east=next((n for n in root["adjacent"] if n["direction"]=="east"),None)
+    if east is None:
+        raise ValueError("preregistered east neighbor inaccessible to first person")
+    visible_local="berry_b" in root["current_resources"]
+    visible_east="berry_b" in east["resources"]
+    layout=row["layout_external_only"]
+    if (
+        (layout=="B_LOCAL" and (not visible_local or visible_east))
+        or (layout=="B_EAST" and (visible_local or not visible_east or not east["passable"]))
+        or (layout=="B_EAST_BLOCKED" and (visible_local or not visible_east or east["passable"]))
+        or (layout=="B_NONE" and (visible_local or visible_east))
+        or layout not in KNOWN_LAYOUTS | NEGATIVE_LAYOUTS
+    ):
+        raise ValueError("alternative visible resource/obstacle control falsified")
+    if row["hidden_effect_external_only"] not in ("benign","toxic_lethal"):
+        raise ValueError("outside preregistered hidden B variants")
     if ([root["x"],root["y"]]!=row["position"]
         or root["body"]["food"]!=row["food_initial"]):
         raise ValueError("test data cannot be reconstructed from first-person state")
@@ -314,6 +330,21 @@ def independent_reaudit(training,heldout,summary):
             raise ValueError("duplicate heldout world")
         ids.add(row["world_id"])
         recomputed.append(recheck_trial(row,physical))
+    strata_sets=defaultdict(set)
+    for row in heldout:
+        condition=(row["layout_external_only"],row["food_initial"],
+                   row["hidden_effect_external_only"])
+        if condition in strata_sets[row["cohort"]]:
+            raise ValueError("duplicated factorial test condition")
+        strata_sets[row["cohort"]].add(condition)
+    expected_known={(layout,food,hidden) for layout in KNOWN_LAYOUTS
+                    for food in (35.0,45.0) for hidden in ("benign","toxic_lethal")}
+    expected_negative={(layout,food,hidden) for layout in NEGATIVE_LAYOUTS
+                    for food in (35.0,45.0) for hidden in ("benign","toxic_lethal")}
+    if (strata_sets["same_observable_input"]!=expected_known
+        or strata_sets["unseen_coordinates"]!=expected_known
+        or strata_sets["unavailable_or_blocked"]!=expected_negative):
+        raise ValueError("factorial hidden effects or visible contexts incomplete")
     metrics={}
     for cohort,expected in (
         ("same_observable_input",(8,8,0)),
