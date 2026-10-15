@@ -324,10 +324,18 @@ def audit_chain(raw,training,freeze,heldout,model_sha,freeze_file_sha):
     if (len(heldout)!=HELDOUT_COUNT
         or len(training)!=TRAIN_COUNT
         or freeze["model_sha256"]!=model_sha
+        or freeze["model_sha256"]!=digest(freeze["model"])
+        or freeze["model"]!=fit_partial_empirical(training)
         or freeze["training_physical_source_sha256"]!=digest(training)
         or freeze["training_worlds"]!=TRAIN_COUNT
+        or freeze["training_examples_per_command"]!={
+            "MOVE_E":8,"COLLECT_B":8
+        }
         or freeze["contains_no_heldout_worlds"] is not True
-        or freeze["no_production_i0_model_contract"] is not True):
+        or freeze["no_production_i0_model_contract"] is not True
+        or freeze["unknown_dimensions"]!=[
+            "integrity","terminal","next_adjacency","safe"
+        ]):
         raise ValueError("frozen training-only source was replaced")
     nominal_pair={}
     counts=Counter()
@@ -376,6 +384,29 @@ def audit_chain(raw,training,freeze,heldout,model_sha,freeze_file_sha):
                 "integrity","terminal","next_adjacency","safe"
             ))):
             raise ValueError("forecast never frozen on the correct accessible input")
+        # Independent recalculation is a DETECTOR of a forged preaction
+        # event, never a substitute for the already-fsynced original event.
+        if p!=partial_forecast(
+            freeze["model"],pre["preaction_accessible_state"],
+            pre["command_label"],
+        ):
+            raise ValueError("preaction forecast differs from frozen training model")
+        if (
+            not row["preaction_sha256"]==digest(row["preaction_first_person"])
+            or row["physical_example_sha256"]!=digest(row["physical_example"])
+            or row["physical_example"]["state"]!=row["preaction_first_person"]
+            or row["physical_example"]["observed_next_state"]!=
+                row["postaction_external_only"]
+            or row["physical_example"]["terminal"]!=
+                row["physically_terminal_external_only"]
+            or row["physical_example"]["command"]!=row["action_physically_applied"]
+            or row["no_i0_birth_or_autonomous_step"] is not True
+            or row["no_berry_ingestion"] is not True
+            or row["actual_i0_uc_measured"] is not None
+            or row["postdeath_lived_capture"] is not None
+            or row["safety_certificate"] is not None
+        ):
+            raise ValueError("postaction physical example or UC was forged")
         if (after["world_id_external_only"]!=row["world_id"]
             or after["cohort_external_only"]!=row["preregistered_cohort"]
             or after["latent_B_external_only"]!=row["latent_berry_effect_external_only"]
