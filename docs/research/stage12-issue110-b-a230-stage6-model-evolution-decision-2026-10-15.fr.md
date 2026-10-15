@@ -24,3 +24,7 @@
 ## Situation du projet
 
 Le verrou **diagnostique** est localisé : sans première transition connue, le planificateur ne peut pas construire une trajectoire non vide ; `incomplete_model` est justifié comme incertitude. Le verrou **comportemental** n'est pas levé : la politique reste limitée par la connaissance exacte. **A2.30 PARTIELLE ; Stage12 PARTIAL ; issue #110 ouverte ; aucune modification à la norme.**
+
+## Addendum : résultat A2.30-L (sans révision normative)
+
+La [CI A2.30-L #38722518797](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38722518797) démontre deux collisions physiques exactes : un même couple `SimulationState × se_deplacer(east)` peut donner une transition non létale ou létale à cause d'une zone cachée; le même couple `SimulationState × manger(berry_a)` peut donner une intégrité 100 ou 93 à cause d'un effet nocif non observé. `train_exact_transition_table` rejette correctement les observations contradictoires. Le futur prédicteur ne peut donc pas être un simple généralisateur déterministe sûr; il doit disposer d'une abstention/ambiguïté explicite pour les causes non identifiables. Aucune expérience ne prouve actuellement la sûreté ni l'utilité d'une version probabiliste. La décision opérateur reste requise avant une modification du MVP.
