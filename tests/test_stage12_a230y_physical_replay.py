@@ -139,8 +139,8 @@ class ProspectiveFoodProbePhysicalReplayTests(unittest.TestCase):
             self.verify(control=controls)
 
     def test_source_uses_independent_fixture_builder_and_no_w_runner_import(self):
-        path=Path(__file__).resolve().parents[1]/
-            "scripts/replay_stage12_issue110_b_a230y_physical_probes.py"
+        path=(Path(__file__).resolve().parents[1] /
+              "scripts/replay_stage12_issue110_b_a230y_physical_probes.py")
         script=path.read_text()
         self.assertNotIn(
             "from run_stage12_issue110_b_a230w_prospective_probes import",script)
