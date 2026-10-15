@@ -17,6 +17,7 @@ from i0.interfaces import PrimitiveCommand
 
 from .perception import PerceptualCapture
 from .stage12_goal_agency import GoalAgencyService
+from .stage12_dual_scope import DualScopeService
 
 
 CANONICAL_DIRECTION_ORDER = ("north", "south", "east", "west")
@@ -136,6 +137,7 @@ class ActionControl:
         self._last_comparison: AgencyComparison | None = None
         self._agency_comparator = None
         self._goal_agency: GoalAgencyService | None = None
+        self._dual_scope: DualScopeService | None = None
 
     def attach_agency_comparator(self, comparator) -> None:
         if self._agency_comparator is not None:
@@ -147,6 +149,15 @@ class ActionControl:
         if self._goal_agency is not None:
             raise ValueError("first-person agency already enabled")
         self._goal_agency = GoalAgencyService()
+
+    def enable_dual_scope(self) -> None:
+        if self._dual_scope is not None or self._goal_agency is None:
+            raise ValueError("dual-scope requires single enabled first-person Action Control owner")
+        self._dual_scope = DualScopeService()
+
+    @property
+    def dual_scope(self) -> DualScopeService | None:
+        return self._dual_scope
 
     @property
     def goal_agency(self) -> GoalAgencyService | None:
@@ -636,6 +647,8 @@ class ActionControl:
             "safety_policy_version": self._config.safety_policy_version,
             **({"goal_agency": self._goal_agency.export_causal_state()}
                if self._goal_agency is not None else {}),
+            **({"dual_scope": self._dual_scope.export_causal_state()}
+               if self._dual_scope is not None else {}),
             "current_option_ref": self._current_option_ref,
             "current_plan_ref": self._current_plan_ref,
             "current_step_index": self._current_step_index,
@@ -675,6 +688,14 @@ class ActionControl:
             raise ValueError("Action Control state must be a mapping")
         if state.get("safety_policy_version") != self._config.safety_policy_version:
             raise ValueError("Action Control safety-policy version mismatch")
+        if (self._dual_scope is None) != ("dual_scope" not in state):
+            raise ValueError("Action Control dual-scope birth contract mismatch")
+        if self._dual_scope is not None:
+            probe_scope = DualScopeService()
+            probe_scope.restore_causal_state(state["dual_scope"])
+            if self._dual_scope.export_causal_state()["seen"]:
+                if state["dual_scope"] != self._dual_scope.export_causal_state():
+                    raise ValueError("cannot overwrite published dual-scope owner")
         if (self._goal_agency is None) != ("goal_agency" not in state):
             raise ValueError("Action Control subjective agency schema mismatch")
         if self._goal_agency is not None:
@@ -747,3 +768,5 @@ class ActionControl:
             raise ValueError("invalid agency comparison state")
         if self._goal_agency is not None and not self._goal_agency.export_causal_state()["seen_assessment_refs"]:
             self._goal_agency.restore_causal_state(state["goal_agency"])
+        if self._dual_scope is not None and not self._dual_scope.export_causal_state()["seen"]:
+            self._dual_scope.restore_causal_state(state["dual_scope"])
