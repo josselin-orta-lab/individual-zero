@@ -32,8 +32,10 @@ def _num(v):
     return None
 
 
-def new_life(folder, profile, blocked):
-    identity = f"i0:stage12:b:a228:{profile}:{'A2' if blocked else 'free'}"
+def new_life(folder, profile, blocked, *, birth_cohort="a228"):
+    if birth_cohort not in ("a228", "a229"):
+        raise ValueError("unregistered scientific birth cohort")
+    identity = f"i0:stage12:b:{birth_cohort}:{profile}:{'A2' if blocked else 'free'}"
     original = factory.Stage12Runtime
 
     def born(**kwargs):
@@ -179,9 +181,9 @@ def audit_counts(events, physical_steps):
     }
 
 
-def run_one(folder, profile, blocked):
+def run_one(folder, profile, blocked, *, birth_cohort="a228"):
     folder.mkdir(parents=True, exist_ok=False)
-    life, identity = new_life(folder, profile, blocked)
+    life, identity = new_life(folder, profile, blocked, birth_cohort=birth_cohort)
     steps = 0
     for _ in range(STEPS):
         if life.stage3.substrate.mortal_status.value != "active":
