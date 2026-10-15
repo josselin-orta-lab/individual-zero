@@ -1,0 +1,57 @@
+name: Stage12 A2.30-X independent prospective archive audit
+on:
+  pull_request:
+    branches: [science/stage12-b-a230v-food-decision-identifiability-20261015]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230x_sealed_probes.py'
+      - 'tests/test_stage12_a230x_independent_archives.py'
+      - 'docs/research/stage12-issue110-b-a230x-*.md'
+      - '.github/workflows/stage12-b-a230x.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  independent-record-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Retrieve immutable original W physical records under both Pythons
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230x-original-311 /tmp/a230x-original-312
+          gh run download 38753518412 --repo "$GITHUB_REPOSITORY" --name a230w-py3.11 --dir /tmp/a230x-original-311
+          gh run download 38753518412 --repo "$GITHUB_REPOSITORY" --name a230w-py3.12 --dir /tmp/a230x-original-312
+      - name: Adversarial audit of no leakage, no postterminal memory and no false safe
+        env:
+          A230X_SOURCE_311: /tmp/a230x-original-311
+          A230X_SOURCE_312: /tmp/a230x-original-312
+        run: python -m unittest discover -s tests -p test_stage12_a230x_independent_archives.py -v
+      - name: Independently recompute 92 world receipts and 16 equivalence classes
+        run: |
+          python -u scripts/audit_stage12_issue110_b_a230x_sealed_probes.py \
+            --original-py311 /tmp/a230x-original-311 \
+            --original-py312 /tmp/a230x-original-312 \
+            --output-dir /tmp/a230x-audit > /tmp/a230x.log 2>&1 \
+            || { tail -n 140 /tmp/a230x.log; exit 2; }
+          grep A230X_SUMMARY /tmp/a230x.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230x-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230x-audit
+            /tmp/a230x.log
+          retention-days: 30
