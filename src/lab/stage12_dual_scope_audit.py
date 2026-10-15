@@ -23,6 +23,17 @@ class DualScopeAudit:
     unresolved: int
 
 
+def _decoded_number(value):
+    if type(value) is dict and set(value) == {"$f64"}:
+        n = _number(value)
+        if n is None:
+            raise ValueError("invalid canonical dual-scope number")
+        return n
+    if type(value) in (int, float):
+        return value
+    raise ValueError("invalid dual-scope numeric cue")
+
+
 def audit_stage12_dual_scope(content: bytes, *, expected_head=None, expected_count=None):
     base = audit_export_bytes(content, expected_head=expected_head,
                               expected_count=expected_count)
@@ -119,7 +130,7 @@ def audit_stage12_dual_scope(content: bytes, *, expected_head=None, expected_cou
                     "stage12-dual-scope-perception-v1", d["life_id"],
                     e["t_monde"],pos["x"],pos["y"],
                     tuple(sorted(inv.items())),
-                    tuple(sorted((k,_number(v)) for k,v in body.items())))
+                    tuple(sorted((k,_decoded_number(v)) for k,v in body.items())))
                 # Canonical JSON $f64 decoding must retain the exact runtime
                 # float meaning when reconstructing the cue id.
                 if d.get("cue_ref") != expected:
