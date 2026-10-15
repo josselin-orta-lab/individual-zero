@@ -1,0 +1,48 @@
+name: PR187 exact-head full regression differential
+on:
+  push:
+    branches: ['audit/pr187-full-differential-20261015']
+permissions:
+  contents: read
+jobs:
+  full-suite-delta:
+    name: A2.30-original-suite (Python ${{ matrix.py }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        py: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: 'c065b93d58b604d00be4f5474546dd36653a2975'
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.py }}
+      - run: python -m pip install -e .
+      - name: Run complete unchanged test suite and reject any new failure
+        run: |
+          python - <<'PY'
+          import re, subprocess, sys
+          expected={
+            'test_blocked_movement_is_nonconforming_and_invalidates_plan',
+            'test_every_cognitive_command_traces_to_option_and_st_version',
+            'test_guarded_uc_occurrence_survives_actual_cognitive_lethal_rollback',
+            'test_lethal_cognitive_decision_rolls_back_full_cognition_then_masks_it',
+            'test_multi_step_drink_plan_advances_across_world_steps',
+            'test_position_comparator_confirms_predicted_movements',
+            'test_thirst_goal_appears_before_plan_and_first_move',
+            'test_perseverance_uses_explicit_forced_failure_mechanism',
+          }
+          cmd=[sys.executable,'-m','unittest','discover','-s','tests','-v']
+          run=subprocess.run(cmd,capture_output=True,text=True)
+          out=run.stdout+'\n'+run.stderr
+          faults=re.findall(r'(?m)^(?:FAIL|ERROR): (test_[^ ]+)',out)
+          counts=re.findall(r'(?m)^Ran (\d+) tests',out)
+          print('A230_FULL_SUITE', 'version',sys.version,'count',counts,'failures',faults,'exit',run.returncode,flush=True)
+          print('\n'.join(out.splitlines()[-115:]),flush=True)
+          if len(counts)!=1 or int(counts[0])<1565 or len(faults)!=8 or set(faults)!=expected or run.returncode==0:
+            raise SystemExit('NEW REGRESSION, DROPPED TEST OR UNEXPECTED BASELINE CHANGE')
+          print('A230_DIFF_PASS: only eight verified preexisting Stage4/5 failures',flush=True)
+          PY
