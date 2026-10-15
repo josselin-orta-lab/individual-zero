@@ -1,0 +1,52 @@
+name: Stage12 A2.30-H root exact-key audit
+on:
+  pull_request:
+    branches: [science/stage12-b-a229-choice-arbitration-20261015]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230h_root_features.py'
+      - 'tests/test_stage12_a230h_root_features.py'
+      - 'docs/research/stage12-issue110-b-a230h-*.md'
+      - '.github/workflows/stage12-b-a230h.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  root-keys:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Verify exact key and nested-state negative controls
+        run: python -m unittest discover -s tests -p test_stage12_a230h_root_features.py -v
+      - name: Download original sealed A2.30-E archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230h-original
+          gh run download 38715999434 --repo "$GITHUB_REPOSITORY" --name a230e-py3.11 --dir /tmp/a230h-original
+      - name: Audit known-command mismatches at first perceived state
+        run: |
+          python -u scripts/audit_stage12_issue110_b_a230h_root_features.py \
+            --source-dir /tmp/a230h-original \
+            --output-dir /tmp/a230h-output > /tmp/a230h.log 2>&1 \
+            || { tail -n 160 /tmp/a230h.log; exit 2; }
+          grep A230H_SUMMARY /tmp/a230h.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230h-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230h-output
+            /tmp/a230h.log
+          retention-days: 30
