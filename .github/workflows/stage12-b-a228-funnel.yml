@@ -1,0 +1,42 @@
+name: Stage12 #110 A2.28 B opportunity funnel
+on:
+  pull_request:
+    branches: [feature/stage12-b-dual-scope-judgement-20261015]
+    paths:
+      - 'scripts/run_stage12_issue110_b_a228_funnel.py'
+      - 'docs/research/stage12-issue110-b-a228-*.md'
+      - '.github/workflows/stage12-b-a228-funnel.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  autonomous-b-opportunities:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Audit eight new B-born lives, real goals, UC, WAL and judgments
+        run: |
+          python -u scripts/run_stage12_issue110_b_a228_funnel.py \
+            --output-dir /tmp/stage12-a228 > /tmp/a228.log 2>&1 \
+            || { tail -n 100 /tmp/a228.log; exit 2; }
+          grep 'A228_SUMMARY' /tmp/a228.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a228-b-opportunity-py${{ matrix.python-version }}
+          path: |
+            /tmp/stage12-a228
+            /tmp/a228.log
+          retention-days: 30
+          if-no-files-found: warn
