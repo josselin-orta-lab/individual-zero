@@ -1,4 +1,4 @@
-"""A2.30-ZI: adversarial verification on ONE preregistered lab cohort.
+"""A2.30-ZK: adversarial verification on ONE preregistered lab cohort.
 
 Unit tests consume the already-generated sixty-four physical trial worlds
 and two physically applied A prebirth references. They never re-run physics.
@@ -14,7 +14,7 @@ import sys
 import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from run_stage12_issue110_b_a230zi_ownworld_probe import (
+from run_stage12_issue110_b_a230zk_ownworld_probe import (
     B_COLLECT, MOVE_E, EAT_B, HIDDEN_B, HIDDEN_EAST,LAYOUTS,PROFILES,PROTOCOLS,
     assert_visible, fixed_perceptual_probe, score_worlds,
     one_sided_lethal_control, digest,
@@ -27,13 +27,13 @@ from run_stage12_issue110_b_a230zg_lived_root_shadow import (
 class FirstPersonOwnWorldMotorProbeSafetyTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        p=Path(os.environ["A230ZI_OUTPUT"])
-        cls.summary=json.loads((p/"a230zi-summary.json").read_text())
-        cls.worlds=json.loads((p/"a230zi-ownworld-tests.json").read_text())
-        cls.manifest=json.loads((p/"a230zi-A-physical-source.json").read_text())
+        p=Path(os.environ["A230ZK_OUTPUT"])
+        cls.summary=json.loads((p/"a230zk-summary.json").read_text())
+        cls.worlds=json.loads((p/"a230zk-ownworld-tests.json").read_text())
+        cls.manifest=json.loads((p/"a230zk-A-physical-source.json").read_text())
         roots=verify_original_birth_sources(
-            Path(os.environ["A230ZI_ORIGINAL_311"]),
-            Path(os.environ["A230ZI_ORIGINAL_312"]),
+            Path(os.environ["A230ZK_ORIGINAL_311"]),
+            Path(os.environ["A230ZK_ORIGINAL_312"]),
         )
         cls.roots={
             (x["profile"],x["layout"],x["hidden_B_external_only"]):
@@ -317,7 +317,7 @@ class FirstPersonOwnWorldMotorProbeSafetyTests(unittest.TestCase):
     def test_no_new_I0_oracle_runtime_or_prediction_installation(self):
         source=(
             Path(__file__).resolve().parents[1]/
-            "scripts/run_stage12_issue110_b_a230zi_ownworld_probe.py"
+            "scripts/run_stage12_issue110_b_a230zk_ownworld_probe.py"
         ).read_text()
         self.assertNotIn("life.run_step(",source)
         self.assertNotIn("Stage12Runtime(",source)

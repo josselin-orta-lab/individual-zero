@@ -1,4 +1,4 @@
-"""A2.30-ZI: preregistered 66-world noningestive own-world motor probes.
+"""A2.30-ZK: preregistered 66-world noningestive own-world motor probes.
 
 The LAB preselects commands from visible SimulationState only. No Stage12 I0
 is born, acted upon, taught or resumed. 64 independent test WorldBody worlds
@@ -182,27 +182,6 @@ def verified_archive_roots(lives,models):
     return roots
 
 
-def trained_after_own_history(profile,world_id,own,prebirth):
-    """NO training on other experiment worlds or any terminal outcome."""
-    if not own:
-        return prebirth
-    if any(
-        row["origin_world"]!=world_id
-        or row["example"].terminal
-        for row in own
-    ):
-        raise AssertionError("foreign-world or postmortem example in living memory")
-    prior=tuple(row["example"] for row in own)
-    corpus=EquipmentCorpus(
-        version=f"a230zi-ownworld-{world_id}-n{len(prior)}",
-        examples=tuple(prebirth["_A"]) + prior,
-    )
-    return train_exact_transition_table(
-        corpus=corpus,
-        equipment_version=f"E-a230zi-ownworld-{world_id}-n{len(prior)}",
-    )
-
-
 def try_exact(model,state,command):
     """Measured exact prediction presence, NOT physical safety."""
     try:
@@ -214,7 +193,7 @@ def try_exact(model,state,command):
 def run_case(*,profile,layout_name,hidden_B,hidden_east,protocol,
              baseline,evidence_A,roots):
     world_id=(
-        f"a230zi:{profile}:{layout_name}:{hidden_B}:{hidden_east}:{protocol}"
+        f"a230zk:{profile}:{layout_name}:{hidden_B}:{hidden_east}:{protocol}"
     )
     config,layout=make_trial_world(
         profile,layout_name,hidden_B,hidden_east,
@@ -246,7 +225,7 @@ def run_case(*,profile,layout_name,hidden_B,hidden_east,protocol,
             eq=baseline
         else:
             corpus=EquipmentCorpus(
-                version=f"a230zi-ownworld-{world_id}-t{t}",
+                version=f"a230zk-ownworld-{world_id}-t{t}",
                 examples=tuple(evidence_A) + tuple(x["example"] for x in history),
             )
             if any(x["origin_world"]!=world_id or x["example"].terminal
@@ -254,7 +233,7 @@ def run_case(*,profile,layout_name,hidden_B,hidden_east,protocol,
                 raise AssertionError("foreign or terminal event used for shadow model")
             eq=train_exact_transition_table(
                 corpus=corpus,
-                equipment_version=f"E-a230zi-ownworld-{world_id}-t{t}",
+                equipment_version=f"E-a230zk-ownworld-{world_id}-t{t}",
             )
         actor_commands=tuple(x["example"].command for x in history)
         command,reason=fixed_perceptual_probe(
@@ -322,7 +301,7 @@ def run_case(*,profile,layout_name,hidden_B,hidden_east,protocol,
         snapshots_before.append(state)
         example=recorder.record_transition(
             world=world,t_monde=t,
-            family="a230zi-externally-preregistered-noningestive-probe",
+            family="a230zk-externally-preregistered-noningestive-probe",
             command=command,
         )
         if example.state!=state:
@@ -427,12 +406,12 @@ def trained_from_examples(profile,world_id,history,evidence_A):
                for x in history)):
         raise ValueError("non-firstperson or terminal shadow memory")
     corpus=EquipmentCorpus(
-        version=f"a230zi-ownworld-{world_id}-n{len(history)}",
+        version=f"a230zk-ownworld-{world_id}-n{len(history)}",
         examples=tuple(evidence_A)+tuple(x["example"] for x in history),
     )
     return train_exact_transition_table(
         corpus=corpus,
-        equipment_version=f"E-a230zi-ownworld-{world_id}-n{len(history)}",
+        equipment_version=f"E-a230zk-ownworld-{world_id}-n{len(history)}",
     )
 
 
@@ -653,7 +632,7 @@ def score_worlds(worlds,manifest,original_roots):
             "preregistered physical or shadow numbers failed: "+str(totals_dict)
         )
     return {
-        "schema":"a230zi-ownworld-motor-bootstrap-physical-v1",
+        "schema":"a230zk-ownworld-motor-bootstrap-physical-v1",
         "independent_test_worlds":64,
         "independent_A_prebirth_reference_worlds":2,
         "independent_total_worlds":66,
@@ -671,7 +650,7 @@ def score_worlds(worlds,manifest,original_roots):
         "postfirst_living_stage6_searches":totals["postfirst_shadows"],
         "postsecond_living_stage6_searches":totals["postsecond_shadows"],
         "paired_observationally_identical_hidden_motor_deaths":fatal_twin_pairs,
-        "A_B_berry_ingestions":0,
+        "berry_B_ingestions":0,
         "new_I0_births":0,"new_I0_autonomous_steps":0,
         "I0_UC_measured":False,
         "all_lab_commands_preregistered_from_perception_only":True,
@@ -702,7 +681,7 @@ def one_sided_lethal_control(worlds):
         from run_stage12_issue110_b_a230ze_model_coverage import decode_state
         from i0.equipment import EquipmentCorpusExample
         ex=EquipmentCorpusExample(
-            family="a230zi-one-sided-unrepresentative-safe-move",
+            family="a230zk-one-sided-unrepresentative-safe-move",
             state=decode_state(left["state"]),
             command=MOVE_E,
             observed_next_state=decode_state(left["observed_next_state"]),
@@ -710,10 +689,10 @@ def one_sided_lethal_control(worlds):
         )
         model=train_exact_transition_table(
             corpus=EquipmentCorpus(
-                version=f"a230zi-single-safe-{profile}-{hidden}",
+                version=f"a230zk-single-safe-{profile}-{hidden}",
                 examples=(ex,),
             ),
-            equipment_version=f"E-a230zi-unrepresentative-{profile}-{hidden}",
+            equipment_version=f"E-a230zk-unrepresentative-{profile}-{hidden}",
         )
         hazardous=decode_state(right["state"])
         observed=model.predict(state=hazardous,command=MOVE_E)
@@ -774,7 +753,7 @@ def experiment(folder,original311,original312):
         "cross_python_same_deterministic_recipes_not_statistical_replication":True,
     })
     source={
-        "schema":"a230zi-physical-reference-models-v1",
+        "schema":"a230zk-physical-reference-models-v1",
         "A_reference_worlds":manifests,
         "A_model_digest_by_profile":{
             p:models[p].artifact_digest for p in PROFILES
@@ -784,16 +763,16 @@ def experiment(folder,original311,original312):
         "all_own_history_examples_are_from_the_same_test_world":True,
         "never_trained_on_B_ingestion":True,
     }
-    (folder/"a230zi-A-physical-source.json").write_text(
+    (folder/"a230zk-A-physical-source.json").write_text(
         json.dumps(source,sort_keys=True,indent=2)+"\n",
     )
-    (folder/"a230zi-ownworld-tests.json").write_text(
+    (folder/"a230zk-ownworld-tests.json").write_text(
         json.dumps(worlds,sort_keys=True,indent=2)+"\n",
     )
-    (folder/"a230zi-summary.json").write_text(
+    (folder/"a230zk-summary.json").write_text(
         json.dumps(summary,sort_keys=True,indent=2)+"\n",
     )
-    print("A230ZI_SUMMARY "+json.dumps({
+    print("A230ZK_SUMMARY "+json.dumps({
         k:v for k,v in summary.items()
         if k not in ("by_layout_policy","physical_A_reference_model_digest")
     },sort_keys=True),flush=True)
