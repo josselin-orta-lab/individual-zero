@@ -59,8 +59,9 @@ def controls():
 def run(folder,profile,blocked):
     old=a228.STEPS
     a228.STEPS=48
-    try:row=a228.run_one(folder,profile,blocked)
+    try:row=a228.run_one(folder,profile,blocked,birth_cohort='a229')
     finally:a228.STEPS=old
+    assert row["birth_id"].startswith("i0:stage12:b:a229:"), "cohort birth identity collision"
     events=[json.loads(x)["causal_event"] for x in (folder/"canonical.jsonl").read_bytes().splitlines()]
     bystep=defaultdict(list)
     for e in events:
