@@ -1,0 +1,241 @@
+"""A2.30-L: physical counterexamples to unsafe Stage6 generalization.
+
+All examples are independently applied in detached WorldBody training worlds.
+The script NEVER constructs I0, Oracle or evaluation Bench; hidden physics
+is used only by the external test and never added to cognitive observations.
+
+Preregistered before code:
+docs/research/stage12-issue110-b-a230l-adversarial-generalization-prereg-2026-10-15.fr.md
+"""
+from __future__ import annotations
+
+import argparse
+from dataclasses import replace
+import json
+from pathlib import Path
+import subprocess
+
+from i0.equipment import (
+    EquipmentCorpus, FrozenTableEquipment, train_exact_transition_table,
+)
+from i0.interfaces import PrimitiveCommand
+from lab.determinism import canonical_causal_bytes, sha256_hex
+from lab.equipment_corpus import EquipmentCorpusRecorder
+from lab.stage4_reference_fixture import build_stage4_reference_runtime
+from lab.world import WorldBody, WorldLayout
+
+
+def _physical_record(config, layout, commands, label):
+    """One NEW lab WorldBody, with only physically applied examples."""
+    world = WorldBody(config=config, layout=layout)
+    recorder = EquipmentCorpusRecorder(
+        corpus_version="stage12-a230l-" + label + "-v1"
+    )
+    result = []
+    for step, (family, command) in enumerate(commands, start=1):
+        if result and result[-1].terminal:
+            raise ValueError("no continuation after a terminal physical event")
+        result.append(recorder.record_transition(
+            world=world, t_monde=step, family=family, command=command
+        ))
+    return tuple(result)
+
+
+def _state_hash(state):
+    return sha256_hex(canonical_causal_bytes(state.as_dict()))
+
+
+def _physical_output_hash(example):
+    return sha256_hex(canonical_causal_bytes({
+        "next_state": example.observed_next_state.as_dict(),
+        "terminal": example.terminal,
+    }))
+
+
+def _check_exact_collision(left, right, label):
+    if (_state_hash(left.state) != _state_hash(right.state)
+        or left.command != right.command
+        or FrozenTableEquipment.input_digest(
+            left.state, left.command
+        ) != FrozenTableEquipment.input_digest(
+            right.state, right.command
+        )):
+        raise AssertionError("hidden-input counterexample not matched: " + label)
+    if (left.observed_next_state == right.observed_next_state
+            and left.terminal == right.terminal):
+        raise AssertionError("hidden-input outcomes did not contrast: " + label)
+    corpus = EquipmentCorpus(
+        version="a230l-hidden-conflict-" + label + "-v1",
+        examples=(left, right),
+    )
+    try:
+        train_exact_transition_table(
+            corpus=corpus, equipment_version="E-a230l-negative-control-v1"
+        )
+    except ValueError as err:
+        if "conflicting outcomes" not in str(err):
+            raise
+    else:
+        raise AssertionError(
+            "exact trainer accepted contradictory accessible input: " + label
+        )
+    return {
+        "identical_accessible_input": True,
+        "identical_primitive": True,
+        "input_digest_sha256": FrozenTableEquipment.input_digest(
+            left.state, left.command
+        ),
+        "distinct_physical_consequences": True,
+        "output_sha256": [_physical_output_hash(left),
+                          _physical_output_hash(right)],
+        "trainer_rejected_conflicting_outcomes": True,
+        "left_terminal": left.terminal,
+        "right_terminal": right.terminal,
+    }
+
+
+def run_physical_counterexamples():
+    fixture = build_stage4_reference_runtime()
+    reference = fixture.world.config
+    start = reference.initial_position
+    move = PrimitiveCommand("se_deplacer", {"direction": "east"})
+    current = WorldLayout()
+    lethal = WorldLayout(
+        lethal_zones=frozenset({start.moved("east")})
+    )
+    free_transition = _physical_record(
+        reference, current, (("movement", move),), "move-safe"
+    )[0]
+    fatal_transition = _physical_record(
+        reference, lethal, (("movement", move),), "move-lethal"
+    )[0]
+    move_pair = _check_exact_collision(
+        free_transition, fatal_transition, "hidden-lethal-zone"
+    )
+    if (free_transition.terminal or not fatal_transition.terminal):
+        raise AssertionError("lethal-zone physical contrast not demonstrated")
+    if (free_transition.state.adjacent != fatal_transition.state.adjacent):
+        raise AssertionError("hidden lethal zone leaked into local adjacency")
+
+    # Contextual toxic effect differs only in *hidden world physics*.
+    berry_a = reference.berry_effects["berry_a"]
+    no_toxin = replace(
+        reference, version="a230l-berry-safe-v1",
+        berry_effects={**reference.berry_effects,
+                       "berry_a": replace(berry_a, integrity_delta=0.0)},
+    )
+    toxin = replace(
+        reference, version="a230l-berry-toxic-v1",
+        berry_effects={**reference.berry_effects,
+                       "berry_a": replace(berry_a, integrity_delta=-7.0)},
+    )
+    fruit = WorldLayout(resources=((start, "berry_a", 2),))
+    collect = PrimitiveCommand("collecter", {"target": "berry_a"})
+    eat = PrimitiveCommand("manger", {"target": "berry_a"})
+    path = (("collection", collect), ("ingestion", eat))
+    safe_path = _physical_record(no_toxin, fruit, path, "berry-safe")
+    toxic_path = _physical_record(toxin, fruit, path, "berry-toxic")
+    if safe_path[0].observed_next_state != toxic_path[0].observed_next_state:
+        raise AssertionError("pre-ingestion collection unexpectedly differs")
+    eat_pair = _check_exact_collision(
+        safe_path[1], toxic_path[1], "hidden-berry-integrity"
+    )
+    sa = safe_path[1].observed_next_state
+    sb = toxic_path[1].observed_next_state
+    if (
+        sa.body["food"] != sb.body["food"]
+        or sa.body["integrity"] <= sb.body["integrity"]
+        or safe_path[1].terminal or toxic_path[1].terminal
+    ):
+        raise AssertionError(
+            "food/integrity contrast did not isolate hidden toxicity"
+        )
+    eat_pair.update(
+        food_after_pair=[sa.body["food"], sb.body["food"]],
+        integrity_after_pair=[
+            sa.body["integrity"], sb.body["integrity"]
+        ],
+        same_visible_berry_species="berry_a",
+    )
+
+    # A field *visible* to I0 still may be physically necessary for
+    # absolute-valued predictions, even without any hidden hazard.
+    low = replace(
+        reference, version="a230l-low-food-v1",
+        initial_body=replace(reference.initial_body, food=35.0),
+    )
+    high = replace(
+        reference, version="a230l-high-food-v1",
+        initial_body=replace(reference.initial_body, food=40.0),
+    )
+    wait = PrimitiveCommand("attendre")
+    low_wait = _physical_record(
+        low, WorldLayout(), (("wait", wait),), "wait-low-food"
+    )[0]
+    high_wait = _physical_record(
+        high, WorldLayout(), (("wait", wait),), "wait-high-food"
+    )[0]
+    a = low_wait.state.as_dict()
+    b = high_wait.state.as_dict()
+    if (a["body"]["food"], b["body"]["food"]) != (35.0, 40.0):
+        raise AssertionError("controlled initial food levels not preserved")
+    # Every other accessible feature must be the same.
+    a_without_food = {
+        **a, "body": {k: v for k, v in a["body"].items() if k != "food"}
+    }
+    b_without_food = {
+        **b, "body": {k: v for k, v in b["body"].items() if k != "food"}
+    }
+    if a_without_food != b_without_food:
+        raise AssertionError("food value was not the sole changed input field")
+    if (low_wait.observed_next_state.body["food"] ==
+            high_wait.observed_next_state.body["food"]):
+        raise AssertionError("absolute next-food values unexpectedly identical")
+    wait_pair = {
+        "same_primitive": True,
+        "difference_in_accessible_input": "body.food",
+        "all_other_accessible_input_fields_equal": True,
+        "food_before": [35.0, 40.0],
+        "food_after": [
+            low_wait.observed_next_state.body["food"],
+            high_wait.observed_next_state.body["food"],
+        ],
+        "distinct_absolute_next_food": True,
+        "predicting_absolute_food_after_without_food_input_is_unsound": True,
+    }
+
+    return {
+        "schema": "stage12-a230l-physical-nonidentifiability-v1",
+        "physical_lab_worlds": 6,
+        "physically_applied_lab_steps": 8,
+        "new_individual_zero_births": 0,
+        "new_i0_autonomous_steps": 0,
+        "hidden_lethal_movement": move_pair,
+        "hidden_toxic_ingestion": eat_pair,
+        "observable_food_difference": wait_pair,
+        "deterministic_exact_predictor_must_abstain_on_conflict": True,
+        "generalization_of_safety_proven": False,
+        "target_life_data_used_for_training": False,
+        "oracle_to_i0_feedback": False,
+        "mvp_norm_changed": False,
+        "stage12": "PARTIAL",
+    }
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--output-dir", type=Path, required=True)
+    args = ap.parse_args()
+    args.output_dir.mkdir(parents=True, exist_ok=False)
+    result = run_physical_counterexamples()
+    result["code_sha"] = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], text=True
+    ).strip()
+    (args.output_dir / "a230l-summary.json").write_text(
+        json.dumps(result, sort_keys=True, indent=2) + "\n"
+    )
+    print("A230L_SUMMARY " + json.dumps(result, sort_keys=True), flush=True)
+
+
+if __name__ == "__main__":
+    main()
