@@ -248,6 +248,8 @@ def review_T(worlds,pairs,summary,P_food_scores):
             raise ValueError("unknown T shadow protocol arm/latent")
         per_arm[arm].append(row)
         fc=row["shadow_forecast_precommitted"]
+        if fc.get("certifies_safe") is not False:
+            raise ValueError("T fabricated certainty about hidden world safety")
         if (fc["input_stage3_state"]!=row["decision_stage3_state"]
             or fc["input_digest_sha256"]!=digest(row["decision_stage3_state"])
             or row["shadow_sha256_before_all_food_actions"]!=digest(fc)):
