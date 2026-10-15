@@ -14,7 +14,7 @@ jobs:
   firstperson-observable-stage5:
     name: observable Stage5 (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -35,3 +35,15 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_stage9_concurrent_cause_audit.py' -v
       - name: Stage3 physical/perceptual boundary
         run: python -m unittest discover -s tests -p 'test_stage3*.py' -v
+      - name: Retrieve immutable A2.30-O source evidence required by the common unit suite
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230o-py311 /tmp/a230o-py312
+          gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.11 --dir /tmp/a230o-py311
+          gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.12 --dir /tmp/a230o-py312
+      - name: Full software unit-suite compatibility on this exact stacked head
+        env:
+          A230O_SOURCE_A: /tmp/a230o-py311
+          A230O_SOURCE_B: /tmp/a230o-py312
+        run: python -m unittest discover -s tests -q
