@@ -73,14 +73,16 @@ class SealedIndependentFirstPersonReentryTests(unittest.TestCase):
             "commands"]==[EAST] for w in positive))
 
     def test_original_archive_mutated_byte_rejected(self):
-        path=self.one.rglob("a230zm-summary.json")
-        original=next(path).read_bytes()
         with tempfile.TemporaryDirectory(prefix="a230zn-falsify-") as tmp:
-            fake=Path(tmp)/"a230zm-summary.json"
-            fake.write_bytes(original+b"\n")
-            # Source 3.12 remains locked. Mixing sources is forbidden.
+            folder=Path(tmp)
+            for name in ("a230zm-summary.json","a230zm-physical-loop-worlds.json"):
+                source=next(self.one.rglob(name)).read_bytes()
+                (folder/name).write_bytes(
+                    source+b"\n" if name=="a230zm-summary.json" else source
+                )
+            # All files exist. The single altered raw byte must fail parity.
             with self.assertRaisesRegex(ValueError,"not byte-identical"):
-                sealed_source(Path(tmp),self.two)
+                sealed_source(folder,self.two)
 
     def test_altered_full_cohort_hash_rejected_before_scoring(self):
         worlds=deepcopy(self.worlds)
