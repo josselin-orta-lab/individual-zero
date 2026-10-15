@@ -1,0 +1,52 @@
+name: Post-204 main legacy regression baseline
+on:
+  push:
+    branches: ['audit/main-after-204-regression-baseline-20261015']
+permissions:
+  contents: read
+jobs:
+  baseline:
+    name: known-baseline (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Detect exactly known preexisting failures and reject new regressions
+        run: |
+          python - <<'PY'
+          import re
+          import subprocess
+          import sys
+          cases={
+            'test_stage4_runtime.py': {
+              'test_blocked_movement_is_nonconforming_and_invalidates_plan',
+              'test_every_cognitive_command_traces_to_option_and_st_version',
+              'test_guarded_uc_occurrence_survives_actual_cognitive_lethal_rollback',
+              'test_lethal_cognitive_decision_rolls_back_full_cognition_then_masks_it',
+              'test_multi_step_drink_plan_advances_across_world_steps',
+              'test_position_comparator_confirms_predicted_movements',
+              'test_thirst_goal_appears_before_plan_and_first_move',
+            },
+            'test_stage5_trait_battery.py': {
+              'test_perseverance_uses_explicit_forced_failure_mechanism',
+            },
+            'test_stage9_concurrent_cause_audit.py': set(),
+          }
+          for pattern,expected in cases.items():
+            p=subprocess.run([sys.executable,'-m','unittest','discover','-s','tests','-p',pattern,'-v'],text=True,capture_output=True)
+            log=p.stdout+'\n'+p.stderr
+            found=set(re.findall(r'(?m)^(?:FAIL|ERROR): (test_[^ ]+)',log))
+            print('BASELINE',pattern,'return',p.returncode,'expected',sorted(expected),'actual',sorted(found),flush=True)
+            print('\n'.join(log.splitlines()[-35:]),flush=True)
+            if found!=expected or (p.returncode!=0)!=(bool(expected)):
+              raise SystemExit('UNEXPECTED TEST CHANGE: '+pattern)
+          print('BASELINE_204_MATCH: expected historical eight failures; Stage9 zero')
+          PY
