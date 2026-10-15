@@ -112,7 +112,19 @@ class Stage5TraitBatteryTests(unittest.TestCase):
             self.assertIn(result.score.value, (0.0, 1.0))
 
     def test_perseverance_uses_explicit_forced_failure_mechanism(self) -> None:
-        parent = build_stage5_reference_runtime()
+        # The historical Stage5 reference has a water source two cells east:
+        # legitimately invisible at birth. A moving response cannot be
+        # demanded without a FIRST-PERSON observable opportunity. Keep the
+        # base fixture intact and supply a visible source before this birth.
+        parent = build_stage5_reference_runtime(
+            observed_water_source_position=Position(3, 2),
+        )
+        east = next(
+            n for n in parent.world.capture_local(t_monde=1).adjacent
+            if n.direction == "east"
+        )
+        self.assertTrue(east.water_source)
+        self.assertTrue(east.passable)
         plan = build_battery_scenario(
             situation=BatterySituation.PERSEVERANCE,
             config=battery_config(),
@@ -142,6 +154,40 @@ class Stage5TraitBatteryTests(unittest.TestCase):
             self.assertGreaterEqual(result.score.value, 1.0)
         else:
             self.assertIsNone(result.score.value)
+
+    def test_perseverance_with_unseen_distant_water_is_not_falsely_scored(self) -> None:
+        # Baseline counterexample: water (4,2) is two cells away from (2,2),
+        # hence the agent must not invent the first motor option. The
+        # external failure schedule alone never creates an action attempt.
+        parent = build_stage5_reference_runtime()
+        east = next(
+            n for n in parent.world.capture_local(t_monde=1).adjacent
+            if n.direction == "east"
+        )
+        self.assertFalse(east.water_source)
+        plan = build_battery_scenario(
+            situation=BatterySituation.PERSEVERANCE,
+            config=battery_config(),
+        )
+        result = administer_battery_situation(
+            parent,
+            plan=plan,
+            administration_ref="perseverance:unseen-water",
+        )
+        self.assertEqual(result.score.status, "no_tested_action_observed")
+        self.assertIsNone(result.score.value)
+        self.assertEqual(
+            result.score.detail["tested_primitive"], "se_deplacer",
+        )
+        self.assertNotIn("forced_failures_observed", result.score.detail)
+
+    def test_perseverance_fixture_refuses_omniscient_water_placement(self) -> None:
+        # A request for a supposedly observed source beyond Manhattan-1
+        # must fail rather than weakening perception or Stage-4 planning.
+        with self.assertRaisesRegex(ValueError, "local perception"):
+            build_stage5_reference_runtime(
+                observed_water_source_position=Position(4, 2),
+            )
 
     def test_same_battery_administration_is_deterministic(self) -> None:
         def execute():
