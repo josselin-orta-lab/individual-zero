@@ -1,0 +1,64 @@
+name: Stage12 A2.30-ZL independent sealed own-world exact-key audit
+on:
+  pull_request:
+    branches: [science/stage12-b-a230zg-lived-root-matched-shadow-20261015]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230zl_ownworld_sealed.py'
+      - 'tests/test_stage12_a230zl_ownworld_sealed.py'
+      - 'docs/research/stage12-issue110-b-a230zl-*.md'
+      - '.github/workflows/stage12-b-a230zl.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-immutable-archive-analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Download both original ZK physical and original ZB autonomous birth archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230zl-zk311 /tmp/a230zl-zk312
+          mkdir -p /tmp/a230zl-zb311 /tmp/a230zl-zb312
+          gh run download 38783733130 --repo "$GITHUB_REPOSITORY" --name a230zk-py3.11 --dir /tmp/a230zl-zk311
+          gh run download 38783733130 --repo "$GITHUB_REPOSITORY" --name a230zk-py3.12 --dir /tmp/a230zl-zk312
+          gh run download 38767643472 --repo "$GITHUB_REPOSITORY" --name a230zb-py3.11 --dir /tmp/a230zl-zb311
+          gh run download 38767643472 --repo "$GITHUB_REPOSITORY" --name a230zb-py3.12 --dir /tmp/a230zl-zb312
+      - name: Reject forged future knowledge and terminal outcomes with independent adversarial checks
+        env:
+          A230ZL_ZK311: /tmp/a230zl-zk311
+          A230ZL_ZK312: /tmp/a230zl-zk312
+          A230ZL_ZB311: /tmp/a230zl-zb311
+          A230ZL_ZB312: /tmp/a230zl-zb312
+        run: python -m unittest discover -s tests -p test_stage12_a230zl_ownworld_sealed.py -v
+      - name: Independently reconstruct all 80 exact current-state Stage6 root diagnostics from sealed ZK
+        run: |
+          python -u scripts/audit_stage12_issue110_b_a230zl_ownworld_sealed.py \
+            --zk311 /tmp/a230zl-zk311 \
+            --zk312 /tmp/a230zl-zk312 \
+            --zb311 /tmp/a230zl-zb311 \
+            --zb312 /tmp/a230zl-zb312 \
+            --output-dir /tmp/a230zl-audit > /tmp/a230zl.log 2>&1 \
+            || { tail -n 160 /tmp/a230zl.log; exit 2; }
+          grep A230ZL_SUMMARY /tmp/a230zl.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zl-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zl-audit
+            /tmp/a230zl.log
+          retention-days: 30
