@@ -60,7 +60,17 @@ jobs:
       - name: Install project
         run: python -m pip install -e . pytest
 
+      - name: Provision sealed A2.30-O evidence for full tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230o-py311 /tmp/a230o-py312
+          gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.11 --dir /tmp/a230o-py311
+          gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.12 --dir /tmp/a230o-py312
       - name: Run unit tests (without long-running reference diagnostics)
+        env:
+          A230O_SOURCE_A: /tmp/a230o-py311
+          A230O_SOURCE_B: /tmp/a230o-py312
         run: python -m unittest discover -s tests -q
 
       - name: Run bootstrap smoke execution
@@ -94,7 +104,17 @@ jobs:
       - name: Install project
         run: python -m pip install -e . pytest
 
+      - name: Provision sealed A2.30-O evidence for full tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230o-py311 /tmp/a230o-py312
+          gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.11 --dir /tmp/a230o-py311
+          gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.12 --dir /tmp/a230o-py312
       - name: Run unit tests
+        env:
+          A230O_SOURCE_A: /tmp/a230o-py311
+          A230O_SOURCE_B: /tmp/a230o-py312
         run: python -m unittest discover -s tests -v
 
       # Independent v1.3.1 mortal cognition: 600 actually executed world
