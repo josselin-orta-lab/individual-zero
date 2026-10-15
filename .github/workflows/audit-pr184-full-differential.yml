@@ -1,0 +1,46 @@
+name: PR184 exact-head full-suite differential
+on:
+  push:
+    branches: ['audit/pr184-full-differential-20261015']
+permissions:
+  contents: read
+jobs:
+  true-full-suite:
+    name: exact-pr184-8-known-debt (Python 3.12)
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: '59ca0d36fee879b4836f43b83838b2e3c865b50c'
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e . pytest
+      - name: Run the unchanged entire unittest suite against frozen PR184 HEAD
+        run: |
+          python - <<'PY'
+          import re
+          import subprocess
+          import sys
+          expected={
+            'test_blocked_movement_is_nonconforming_and_invalidates_plan',
+            'test_every_cognitive_command_traces_to_option_and_st_version',
+            'test_guarded_uc_occurrence_survives_actual_cognitive_lethal_rollback',
+            'test_lethal_cognitive_decision_rolls_back_full_cognition_then_masks_it',
+            'test_multi_step_drink_plan_advances_across_world_steps',
+            'test_position_comparator_confirms_predicted_movements',
+            'test_thirst_goal_appears_before_plan_and_first_move',
+            'test_perseverance_uses_explicit_forced_failure_mechanism',
+          }
+          run=subprocess.run([sys.executable,'-m','unittest','discover','-s','tests','-v'],capture_output=True,text=True)
+          output=run.stdout+'\n'+run.stderr
+          failures=re.findall(r'(?m)^(?:FAIL|ERROR): (test_[^ ]+)',output)
+          ran=re.findall(r'(?m)^Ran (\d+) tests',output)
+          print('PR184_EXACT_SHA','59ca0d36fee879b4836f43b83838b2e3c865b50c',flush=True)
+          print('FULL_SUITE', 'count',ran,'exit',run.returncode,'failures',failures,flush=True)
+          print('\n'.join(output.splitlines()[-115:]),flush=True)
+          if len(ran)!=1 or int(ran[0])<1565 or set(failures)!=expected or len(failures)!=8 or run.returncode==0:
+            raise SystemExit('PR184 INTRODUCED DIFFERENT FAILURES OR TEST LOSS')
+          print('PR184_FULL_DIFFERENTIAL_312_PASS: exactly same eight known baseline failures',flush=True)
+          PY
