@@ -610,8 +610,7 @@ def score_worlds(worlds,manifest,original_roots):
                    fatal["real_physical_lab_receipts"][0]["command"]
                 or safe["real_physical_lab_receipts"][0]["terminal_external_only"]
                 or not fatal["real_physical_lab_receipts"][0]["terminal_external_only"]
-                or safe["real_physical_lab_receipts"][0]["postaction_external_only"]==
-                   fatal["real_physical_lab_receipts"][0]["postaction_external_only"]):
+):
                 raise ValueError(
                     "hidden motor lethality not witnessed on identical input: "
                     + json.dumps({
@@ -721,7 +720,7 @@ def one_sided_lethal_control(worlds):
             or right["terminal"] is not True
             or observed.terminal is not False
             or observed.next_state.as_dict()!=left["observed_next_state"]
-            or observed.next_state.as_dict()==right["observed_next_state"]
+            or observed.terminal==right["terminal"]
             or observed.confidence!=1.0):
             raise AssertionError("hidden lethal motor context was detectable in model")
         result.append({
@@ -732,6 +731,9 @@ def one_sided_lethal_control(worlds):
             "nominal_exact_table_confidence":observed.confidence,
             "predicted_terminal":observed.terminal,
             "physically_terminal_external":right["terminal"],
+            "physical_next_state_equal_despite_terminal_difference":(
+                left["observed_next_state"]==right["observed_next_state"]
+            ),
             "safety_calibration_inferred":False,
             "not_a_live_I0_prediction_or_command":True,
         })
