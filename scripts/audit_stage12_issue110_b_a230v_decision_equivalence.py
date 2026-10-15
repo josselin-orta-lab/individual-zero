@@ -122,7 +122,7 @@ def audit_food(worlds, pairs, summary):
             or forecast["risk_label"] != "observed_terminal_possible"
             or forecast["shadow_risk_veto"] is not True
             or row["no_command_emitted_to_i0"] is not True
-            or row["physical_operations_not_chosen_by_shadow"] is not True
+            or not isinstance(row["physical_operations_not_chosen_by_shadow"], list)
             or row["no_subj_agency_claim"] is not True):
             raise ValueError("future leakage, false safety or uncommitted shadow")
         if arm == "no_wait" and snapshot != initial:
@@ -140,6 +140,23 @@ def audit_food(worlds, pairs, summary):
                 raise ValueError("terminal result converted to subjective living memory")
         elif row["terminal_step_external_only"] is not None:
             raise ValueError("nonterminal world has a fabricated death")
+        operations = row["physical_operations_not_chosen_by_shadow"]
+        if (len(operations) != row["real_physical_steps"]
+            or len(operations) not in (2, 3, 4)
+            or [op["t_monde"] for op in operations] != list(
+                range(1, len(operations) + 1)
+            )
+            or operations[0]["command"]["primitive"] != (
+                "collecter" if arm == "no_wait" else "attendre"
+            )
+            or (arm == "wait_first" and
+                operations[1]["command"]["primitive"] != "collecter")
+            or operations[-1]["terminal_external_only"] is not (
+                not row["physically_alive_after_ingestion"]
+            )
+            or any(op["terminal_external_only"] for op in operations[:-1])
+            or operations[-1]["physical_after"] is None):
+            raise ValueError("laboratory physical commands or terminal chain altered")
         if not isinstance(row["physical_config_sha256"], str) or len(
             row["physical_config_sha256"]) != 64:
             raise ValueError("physical configuration provenance missing")
@@ -331,7 +348,7 @@ def audit_causal(worlds,passive,summary):
         or summary.get("acted_detached_worlds")!=64
         or summary.get("passive_observation_only_worlds")!=8
         or summary.get("actual_lab_physical_steps")!=196
-        or summary.get("physically_terminal_worlds")!=24
+        or summary.get("physically_terminal_worlds")!={"food":8,"movement":16}
         or summary.get("shadow_stage6_queries")!=56
         or summary.get("shadow_first_step_known")!=0
         or summary.get("shadow_no_predictable_first_step")!=56
