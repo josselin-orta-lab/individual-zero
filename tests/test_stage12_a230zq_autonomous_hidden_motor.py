@@ -116,14 +116,24 @@ class AutonomousMortalityRealLifeAdversarialTests(unittest.TestCase):
             )
             for c in life["preaction_commands_with_firstperson_receipts"]:
                 perception=c["preaction_firstperson_capture"]
-                self.assertEqual(digest(perception),
-                                 c["preaction_firstperson_sha256"])
+                if perception is None:
+                    self.assertEqual(
+                        c["preaction_firstperson_receipt_status"],
+                        "unavailable_in_canonical_journal"
+                    )
+                    self.assertIsNone(c["preaction_firstperson_sha256"])
+                else:
+                    self.assertEqual(
+                        c["preaction_firstperson_receipt_status"],"available"
+                    )
+                    self.assertEqual(digest(perception),
+                                     c["preaction_firstperson_sha256"])
+                    self.assertTrue(all(
+                        "hidden" not in repr(v) and "lethal" not in repr(v)
+                        for v in perception["visible_adjacent"]
+                    ))
                 self.assertFalse(c["lab_chose_or_dispatched_this_primitive"])
                 self.assertFalse(c["postdeath_subjective_comparison_generated"])
-                self.assertTrue(all(
-                    "hidden" not in repr(v) and "lethal" not in repr(v)
-                    for v in perception["visible_adjacent"]
-                ))
 
     def test_hidden_motor_death_is_never_lived_postmortem(self):
         for life in self.lives:
@@ -149,6 +159,10 @@ class AutonomousMortalityRealLifeAdversarialTests(unittest.TestCase):
             target=life["preaction_commands_with_firstperson_receipts"][entry-1]
             self.assertEqual(target["primitive"],"se_deplacer")
             self.assertEqual(target["parameters"],{"direction":"east"})
+            self.assertEqual(
+                target["preaction_position_from_physical_chain_external_only"],
+                {"x":2,"y":1})
+            self.assertIsNotNone(target["preaction_firstperson_capture"])
             self.assertEqual(target["preaction_firstperson_capture"][
                 "position"],{"x":2,"y":1})
             self.assertEqual(target["verified_physical_position_after"],
