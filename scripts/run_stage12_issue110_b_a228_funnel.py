@@ -9,6 +9,7 @@ from hashlib import sha256
 import json
 from pathlib import Path
 import subprocess
+import traceback
 from unittest.mock import patch
 
 import run_stage12_issue110_first_planning_state as factory
@@ -87,9 +88,29 @@ def audit_counts(events, physical_steps):
     assert counts["step_closed"] == physical_steps
     assert counts["command_experienced"] == physical_steps
     assert counts["world_transition_experienced"] == physical_steps
-    assert counts["stage12_action_motive_attested"] == physical_steps
+    # Reduced sleep captures produce legitimate physical dormir commands
+    # without any waking Action Control motive. Never fabricate one.
+    command_by_step = {
+        (e["t_monde"], e["attempt_ref"]): e for e in events
+        if e["kind"] == "command_experienced"
+    }
+    motive_by_step = {
+        (e["t_monde"], e["attempt_ref"]): e for e in events
+        if e["kind"] == "stage12_action_motive_attested"
+    }
+    assert len(command_by_step) == physical_steps, "duplicate commanded step"
+    assert len(motive_by_step) == counts["stage12_action_motive_attested"], "duplicate motive"
+    assert set(motive_by_step).issubset(command_by_step), "motive without executed action"
+    reduced_captures = {
+        (e["t_monde"], e["attempt_ref"]) for e in events
+        if e["kind"] == "stage10_reduced_capture"
+    }
+    no_waking_motive = set(command_by_step) - set(motive_by_step)
+    assert all(command_by_step[key].get("primitive") == "dormir"
+               and key in reduced_captures for key in no_waking_motive), (
+               "non-sleeping command lacks an attested motive", sorted(no_waking_motive))
     assert sum(commands.values()) == physical_steps
-    assert sum(motives.values()) == physical_steps
+    assert sum(motives.values()) + len(no_waking_motive) == physical_steps
     assert counts["stage12_outcome_responsibility_judgement"] == sum(
         n for (operation, accepted), n in uc.items()
         if operation == "goal_outcome_responsibility_assessment")
@@ -104,13 +125,30 @@ def audit_counts(events, physical_steps):
         for e in events)
     assert not any(e["kind"] == "external_input_received"
                    and e.get("operation") == "set_body" for e in events)
+    def goal_id(value):
+        return value.get("id") if isinstance(value, dict) else None
+    new_activations = sum(goal_id(e["data"].get("before")) is None
+                          and goal_id(e["data"].get("after")) is not None
+                          for e in goal_changes)
+    deactivations = sum(goal_id(e["data"].get("before")) is not None
+                        and goal_id(e["data"].get("after")) is None
+                        for e in goal_changes)
+    switches = sum(goal_id(e["data"].get("before")) is not None
+                   and goal_id(e["data"].get("after")) is not None
+                   and goal_id(e["data"]["before"]) != goal_id(e["data"]["after"])
+                   for e in goal_changes)
+    updates = len(goal_changes) - new_activations - deactivations - switches
+    assert updates >= 0, "invalid goal-change classification"
     return {
+        "unattested_reduced_sleep_steps": len(no_waking_motive),
+        "waking_motive_receipts": len(motive_by_step),
         "command_counts": dict(sorted(commands.items())),
         "motive_counts": dict(sorted(motives.items())),
-        "goal_activations": sum(e.get("data", {}).get("after") is not None
-                                for e in goal_changes),
-        "goal_deactivations": sum(e.get("data", {}).get("after") is None
-                                  for e in goal_changes),
+        "goal_activations": new_activations,
+        "goal_deactivations": deactivations,
+        "goal_switches": switches,
+        "goal_updates_without_switch": updates,
+        "goal_change_receipts": len(goal_changes),
         "goal_progress_prereg": counts["stage12_goal_progress_preregistered"],
         "goal_progress_followup": counts["stage12_goal_progress_followup"],
         "proximal_precommits": counts["stage12_goal_agency_precommitted"],
@@ -202,7 +240,8 @@ def main():
                 rows.append(report)
             except Exception as exc:
                 error = {"profile": profile, "obstacle": "A2" if blocked else "free",
-                         "error": f"{type(exc).__name__}: {exc}"}
+                         "error": f"{type(exc).__name__}: {exc}",
+                         "traceback": traceback.format_exc()}
                 (a.output_dir / f"{label}-error.json").write_text(
                     json.dumps(error, sort_keys=True, indent=2) + "\n")
                 print("A228_ERROR " + json.dumps(error, sort_keys=True), flush=True)
