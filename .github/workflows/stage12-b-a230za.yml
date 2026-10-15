@@ -1,0 +1,57 @@
+name: Stage12 A2.30-ZA independent accessible food archive audit
+on:
+  pull_request:
+    branches: [science/stage12-b-a230z-alternative-food-20261015]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230za_independent_archives.py'
+      - 'tests/test_stage12_a230za_independent_archive.py'
+      - 'docs/research/stage12-issue110-b-a230za-*.md'
+      - '.github/workflows/stage12-b-a230za.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  sealed-external-evidence-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Retrieve BOTH original Z source science archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230za-original-311 /tmp/a230za-original-312
+          gh run download 38760713470 --repo "$GITHUB_REPOSITORY" --name a230z-py3.11 --dir /tmp/a230za-original-311
+          gh run download 38760713470 --repo "$GITHUB_REPOSITORY" --name a230z-py3.12 --dir /tmp/a230za-original-312
+      - name: Falsify first-person policy, postmortem, physical receipts and Stage6 root memories
+        env:
+          A230ZA_SOURCE_311: /tmp/a230za-original-311
+          A230ZA_SOURCE_312: /tmp/a230za-original-312
+        run: python -m unittest discover -s tests -p test_stage12_a230za_independent_archive.py -v
+      - name: Recalculate original Z results from sealed history only, WITHOUT physics replay
+        run: |
+          python -u scripts/audit_stage12_issue110_b_a230za_independent_archives.py \
+            --source-py311 /tmp/a230za-original-311 \
+            --source-py312 /tmp/a230za-original-312 \
+            --output-dir /tmp/a230za-result > /tmp/a230za.log 2>&1 \
+            || { tail -n 180 /tmp/a230za.log; exit 2; }
+          grep A230ZA_SUMMARY /tmp/a230za.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230za-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230za-result
+            /tmp/a230za.log
+          retention-days: 30
