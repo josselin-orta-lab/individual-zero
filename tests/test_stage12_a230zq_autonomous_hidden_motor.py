@@ -144,6 +144,15 @@ class AutonomousMortalityRealLifeAdversarialTests(unittest.TestCase):
                 self.assertEqual(final,life["world_steps"])
                 self.assertEqual(life["journal_causal_event_kinds"].get(
                     "individual_death_confirmed",0),1)
+                self.assertTrue(
+                    life["death_receipt_joined_to_final_autonomous_primitive"])
+                if life["motor_zone_death_observed"]:
+                    self.assertIn("lethal_zone",
+                                  life["terminal_causes_external_only"])
+                    self.assertEqual(
+                        life["operator_hidden_physics_external_only"][
+                            "death_external_receipt"]["reasons"],
+                        life["terminal_causes_external_only"])
                 self.assertNotIn("technical_halt",
                                  life["actual_execution_statuses"])
             else:
