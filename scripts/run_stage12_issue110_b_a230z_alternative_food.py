@@ -596,14 +596,23 @@ def score_original_worlds(worlds):
         initial = cases[0]["initial_first_person"]
         if any(case["initial_first_person"] != initial for case in cases):
             raise ValueError("latent effect visible before any berry ingestion")
-        signatures = [(
-            [choice["command"] for choice in case["perceptual_policy_choices"]],
-            case["pre_ingestion_lived_state"],
-            [
-                receipt["state_before"] for receipt in
-                case["physical_steps_external"]
-            ],
-        ) for case in cases]
+        # Outcomes after ingestion (including death) are allowed to differ.
+        # Compare only decisions and sense data through the moment BEFORE
+        # a proposed ingestion, never post-ingestion abstention/history.
+        def preexposure_signature(case):
+            decisions=case["perceptual_policy_choices"]
+            first_eat=next((
+                i for i,c in enumerate(decisions)
+                if c["command"]==EAT_B.as_dict()
+            ),None)
+            before=(decisions if first_eat is None
+                    else decisions[:first_eat+1])
+            return (
+                [c["command"] for c in before],
+                [c["input_accessible_state"] for c in before],
+                case["pre_ingestion_lived_state"],
+            )
+        signatures=[preexposure_signature(case) for case in cases]
         if any(sig != signatures[0] for sig in signatures[1:]):
             raise ValueError("hidden berry effects contaminated preingestion decisions")
         equivalent_before += 1
