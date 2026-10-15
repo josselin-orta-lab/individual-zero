@@ -1,0 +1,41 @@
+name: Stage6 A2.30-I isolated model-coverage gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/i0/modules/stage6_planning.py'
+      - 'tests/test_stage6_a230e_discriminants.py'
+      - 'tests/test_stage6_a230i_first_step_diagnostic.py'
+      - '.github/workflows/stage6-a230i-integration.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/i0/modules/stage6_planning.py'
+      - 'tests/test_stage6_a230e_discriminants.py'
+      - 'tests/test_stage6_a230i_first_step_diagnostic.py'
+      - '.github/workflows/stage6-a230i-integration.yml'
+permissions:
+  contents: read
+jobs:
+  exact-root-diagnostics:
+    name: exact-root-diagnostics (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: python -m pip install -e .
+      - name: A2.30 first-edge and goal-path discriminants
+        run: python -m unittest discover -s tests -p 'test_stage6_a230*.py' -v
+      - name: Other Stage 6 regressions
+        run: python -m unittest discover -s tests -p 'test_stage6*.py' -v
+      - name: First-person goal agency regression
+        run: python -m unittest discover -s tests -p 'test_stage12_goal_agency*.py' -v
