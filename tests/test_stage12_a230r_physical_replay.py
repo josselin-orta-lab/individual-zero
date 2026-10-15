@@ -88,8 +88,8 @@ class IndependentPhysicsReplayControls(unittest.TestCase):
             self.audit(tests=data)
 
     def test_reviewer_is_independent_of_original_learner_and_recorder(self):
-        path=Path(__file__).resolve().parents[1]/
-            "scripts/replay_stage12_issue110_b_a230r_physical.py"
+        path=(Path(__file__).resolve().parents[1] /
+            "scripts/replay_stage12_issue110_b_a230r_physical.py")
         code=path.read_text()
         self.assertNotIn(
             "from run_stage12_issue110_b_a230p_joint_prefix_experiment import",
