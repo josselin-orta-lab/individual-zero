@@ -1,0 +1,46 @@
+name: Stage12 A2.30-ZO prospective factorized partial heldout
+on:
+  pull_request:
+    branches: [science/stage12-b-a230zm-reentry-identifiability-20261015]
+    paths:
+      - 'scripts/run_stage12_issue110_b_a230zo_factorized_heldout.py'
+      - 'tests/test_stage12_a230zo_factorized_heldout.py'
+      - 'docs/research/stage12-a230zo-*.md'
+      - '.github/workflows/stage12-b-a230zo.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-physical-partial-delta-study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Execute exactly one preregistered 120-world detached physical experiment
+        run: |
+          python -u scripts/run_stage12_issue110_b_a230zo_factorized_heldout.py \
+            --output-dir /tmp/a230zo-one-original-run > /tmp/a230zo.log 2>&1 \
+            || { tail -n 180 /tmp/a230zo.log; exit 2; }
+          grep A230ZO_SUMMARY /tmp/a230zo.log
+      - name: Reject forged hidden perception, false safety, terminal, UC, model leak and denominator
+        env:
+          A230ZO_ORIGINAL_SOURCE: /tmp/a230zo-one-original-run
+        run: python -m unittest discover -s tests -p test_stage12_a230zo_factorized_heldout.py -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zo-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zo-one-original-run
+            /tmp/a230zo.log
+          retention-days: 30
