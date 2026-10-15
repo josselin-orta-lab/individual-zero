@@ -1,0 +1,58 @@
+name: Main 184 exact-commit postmerge cognitive audit
+on:
+  push:
+    branches: ['audit/main-after-184-20261015']
+permissions:
+  contents: read
+jobs:
+  postmerge:
+    name: exact-main-184 (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: '4e18e4dbd11d3e076286af6cd69e87e5bf88c796'
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Exact merged code and dual-scope first-person tests
+        run: |
+          test "$(git rev-parse HEAD)" = "4e18e4dbd11d3e076286af6cd69e87e5bf88c796"
+          python -m unittest discover -s tests -p 'test_stage12_dual_scope*.py' -v
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency_independence.py' -v
+          python -m unittest discover -s tests -p 'test_stage9_concurrent_cause_audit.py' -v
+      - name: Explicit pre-existing Stage 4/5 failure census (not suppressed)
+        run: |
+          python - <<'PY'
+          import subprocess,sys,re
+          expected={
+            'test_stage4_runtime.py':{
+              'test_blocked_movement_is_nonconforming_and_invalidates_plan',
+              'test_every_cognitive_command_traces_to_option_and_st_version',
+              'test_guarded_uc_occurrence_survives_actual_cognitive_lethal_rollback',
+              'test_lethal_cognitive_decision_rolls_back_full_cognition_then_masks_it',
+              'test_multi_step_drink_plan_advances_across_world_steps',
+              'test_position_comparator_confirms_predicted_movements',
+              'test_thirst_goal_appears_before_plan_and_first_move',
+            },
+            'test_stage5_trait_battery.py': {'test_perseverance_uses_explicit_forced_failure_mechanism'},
+          }
+          for pattern,exp in expected.items():
+            p=subprocess.run([sys.executable,'-m','unittest','discover','-s','tests','-p',pattern,'-v'],capture_output=True,text=True)
+            raw=p.stdout+'\n'+p.stderr
+            actual=re.findall(r'(?m)^(?:FAIL|ERROR): (test_[^ ]+)',raw)
+            print('AFTER_MAIN_184',pattern,'actual',sorted(actual),'expected',sorted(exp),flush=True)
+            if set(actual)!=exp or len(actual)!=len(exp) or p.returncode==0:
+              print('\n'.join(raw.splitlines()[-80:]))
+              raise SystemExit('NEW_BASELINE_REGRESSION_AFTER_MAIN_184')
+          PY
+      - name: Reexecute genuine 48-step cold M11 life on merged main code
+        run: |
+          python -u scripts/run_stage12_issue110_b_long.py --output-dir /tmp/main-after-184-b48 --mode m11 | tee /tmp/main-after-184-b48.log
+          grep 'B_LONG_SUMMARY' /tmp/main-after-184-b48.log
