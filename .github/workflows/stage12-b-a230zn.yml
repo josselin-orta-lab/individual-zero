@@ -1,0 +1,67 @@
+name: Stage12 A2.30-ZN sealed independent reentry audit
+on:
+  pull_request:
+    branches: [science/stage12-b-a230zi-firstperson-probe-bootstrap-20261015]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230zn_independent_reentry.py'
+      - 'tests/test_stage12_a230zn_independent_reentry.py'
+      - 'docs/research/stage12-issue110-b-a230zn-*.md'
+      - '.github/workflows/stage12-b-a230zn.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify-original-firstperson-reentry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Retrieve immutable original 64-world ZM run in both interpreters
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230zn-zm311 /tmp/a230zn-zm312
+          for py in 3.11 3.12; do
+            if [ "$py" = "3.11" ]; then target=/tmp/a230zn-zm311; else target=/tmp/a230zn-zm312; fi
+            downloaded=0
+            for trial in 1 2 3; do
+              if gh run download 38788052317 --repo "$GITHUB_REPOSITORY" --name "a230zm-py$py" --dir "$target"; then
+                downloaded=1
+                break
+              fi
+              sleep 4
+            done
+            if [ "$downloaded" -ne 1 ]; then exit 3; fi
+          done
+      - name: Reject forged body/nocturnal evidence, incorrect exact keys and fabricated safe plans
+        env:
+          A230ZN_ORIGINAL_ZM_311: /tmp/a230zn-zm311
+          A230ZN_ORIGINAL_ZM_312: /tmp/a230zn-zm312
+        run: python -m unittest discover -s tests -p test_stage12_a230zn_independent_reentry.py -v
+      - name: Recount original 260 motor receipts and 64 original Stage6 root diagnostics without physics
+        run: |
+          python -u scripts/audit_stage12_issue110_b_a230zn_independent_reentry.py \
+            --original-zm-311 /tmp/a230zn-zm311 \
+            --original-zm-312 /tmp/a230zn-zm312 \
+            --output-dir /tmp/a230zn-output > /tmp/a230zn.log 2>&1 \
+            || { tail -n 150 /tmp/a230zn.log; exit 2; }
+          grep A230ZN_SUMMARY /tmp/a230zn.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zn-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zn-output
+            /tmp/a230zn.log
+          retention-days: 30
