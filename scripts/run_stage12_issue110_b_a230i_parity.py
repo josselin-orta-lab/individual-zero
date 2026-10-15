@@ -110,7 +110,11 @@ def verify_additive_only(old: list[dict], new: list[dict]) -> dict:
     for old_e, new_e in zip(prev, curr):
         old_diag = old_e["data"]["progressive_search_diagnostic"]
         new_diag = new_e["data"]["progressive_search_diagnostic"]
-        if all(k in old_diag for k in ORIGINAL_DIAGNOSTIC_FIELDS):
+        if (all(k in old_diag for k in ORIGINAL_DIAGNOSTIC_FIELDS)
+            and old_diag.get("status") in (
+                "plan_found", "partial_progress", "incomplete_model",
+                "not_found_within_horizon",
+            )):
             for f in ("root_candidate_edges", "root_available_edges",
                       "root_unavailable_edges", "root_model_diagnostic"):
                 if f not in new_diag:
