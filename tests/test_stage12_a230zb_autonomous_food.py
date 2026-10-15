@@ -168,7 +168,7 @@ class AutonomousAlternativeFoodBTests(unittest.TestCase):
     def test_hidden_safety_forged_in_lived_input_breaks_pair(self):
         fake=deepcopy(self.lives)
         fake[0]["initial_accessible_projection"]["berry_b_safe"]=True
-        with self.assertRaisesRegex(ValueError,"first-person"):
+        with self.assertRaisesRegex(ValueError,"root perception"):
             paired_comparison(fake)
 
     def test_remove_one_birth_from_factorial_matrix_breaks_pair(self):
