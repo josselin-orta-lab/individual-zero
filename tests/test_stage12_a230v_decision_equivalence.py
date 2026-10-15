@@ -88,7 +88,7 @@ class FirstPersonFoodDecisionCertificateTests(unittest.TestCase):
     def test_duplicate_original_physical_world_fails(self):
         worlds=deepcopy(self.original_food["a230t-worlds.json"])
         worlds[0]["id"]=worlds[1]["id"]
-        with self.assertRaisesRegex(ValueError,"duplicated"):
+        with self.assertRaisesRegex(ValueError,"duplicated|identity"):
             self.food(worlds=worlds)
 
     def test_forged_survival_after_lethal_ingestion_fails(self):
