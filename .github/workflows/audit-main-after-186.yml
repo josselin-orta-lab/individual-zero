@@ -1,0 +1,31 @@
+name: Post-186 exact-main scientific regression
+on:
+  push:
+    branches: ['audit/main-after-186-20261015']
+permissions:
+  contents: read
+jobs:
+  a229:
+    name: exact-main-A2.29 (Python ${{ matrix.py }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        py: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: 'c82676f26df3fc5b9884968c4479df6d5ac12e1c'
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.py }}
+      - run: python -m pip install -e .
+      - name: Lived cohort and independent physical archive audit
+        run: |
+          python -u scripts/run_stage12_issue110_b_a229_arbitration.py --output-dir /tmp/a229-main > /tmp/a229-main.log 2>&1 || { tail -n 100 /tmp/a229-main.log; exit 1; }
+          grep A229_SUMMARY /tmp/a229-main.log
+      - name: Stage12 B and epistemic Stage9 regressions
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_dual_scope*.py' -v
+          python -m unittest discover -s tests -p 'test_stage9_concurrent_cause_audit.py' -v
