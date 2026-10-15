@@ -60,17 +60,23 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install checked source
         run: python -m pip install -e .
-      - name: Provision immutable A2.30-O physical source archives
+      - name: Provision immutable A2.30-O/P physical source archives
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p /tmp/a230o-py311 /tmp/a230o-py312
           gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.11 --dir /tmp/a230o-py311
           gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.12 --dir /tmp/a230o-py312
+          mkdir -p /tmp/a230p-py311 /tmp/a230p-py312
+          gh run download 38730415503 --repo "$GITHUB_REPOSITORY" --name a230p-py3.11 --dir /tmp/a230p-py311
+          gh run download 38730415503 --repo "$GITHUB_REPOSITORY" --name a230p-py3.12 --dir /tmp/a230p-py312
       - name: Complete Stage12 diagnostics and operator audit suite
         env:
           A230O_SOURCE_A: /tmp/a230o-py311
           A230O_SOURCE_B: /tmp/a230o-py312
+          A230Q_SOURCE_311: /tmp/a230p-py311
+          A230Q_SOURCE_312: /tmp/a230p-py312
+          A230R_SOURCE: /tmp/a230p-py311
         run: |
           python -m unittest discover -s tests -p 'test_stage12_*.py' -q
       - name: Contrasted Stage12 and P-47 evidence contracts
