@@ -4,11 +4,11 @@ Cannot certify WorldBody physical truth, only committed sensory provenance.
 """
 from dataclasses import dataclass
 import json
-from math import isfinite
 
 from .determinism import deterministic_id
 from .independent_journal_audit import audit_export_bytes
 from .stage12_goal_progress_audit import _number
+from .stage12_first_person_agency_audit import audit_stage12_first_person_agency
 
 VERSION = "stage12-dual-scope-agency-v1"
 SENSOR = "stage12-dual-scope-body-cue-v1"
@@ -37,19 +37,27 @@ def _decoded_number(value):
 def audit_stage12_dual_scope(content: bytes, *, expected_head=None, expected_count=None):
     base = audit_export_bytes(content, expected_head=expected_head,
                               expected_count=expected_count)
+    # First validate the original subjective owner and its precommit/cue/UC
+    # lineage. A dual result cannot rehabilitate a rejected proximal receipt.
+    proximal_audit = audit_stage12_first_person_agency(
+        content, expected_head=expected_head, expected_count=expected_count)
+    if proximal_audit.head_hash != base.head_hash:
+        raise ValueError("independent proximal and dual custody differ")
     rows = [json.loads(raw) for raw in content.splitlines()]
     commitments = {}
     proximal_pre = {}
     proximal_judgements = {}
     captures = {}
     charges = {}
-    dual = {}
     observed_refs = set()
+    unavailable_refs = set()
     for i, row in enumerate(rows):
         e = row["causal_event"]
         k = e.get("kind")
         if k == "perceptual_capture":
             key = (e.get("t_monde"), e.get("attempt_ref"))
+            if "dual_scope_capture_schema" in e.get("data", {}) and e["data"]["dual_scope_capture_schema"] != SENSOR:
+                raise ValueError("unrecognized dual-scope sensory source")
             if e.get("data", {}).get("dual_scope_capture_schema") == SENSOR:
                 if key in captures:
                     raise ValueError("duplicate dual-scope sensory receipt")
@@ -142,11 +150,20 @@ def audit_stage12_dual_scope(content: bytes, *, expected_head=None, expected_cou
                 ) else "unknown"
             else:
                 observed="unavailable"
+            correct_reason=("scope_uc_or_observation_unavailable" if not available else
+                "spatial_goal_result_not_identifiable_from_one_position"
+                if pd["goal_measure"]=="spatial_distance" else
+                "goal_change_not_causal_responsibility")
             if (d.get("observed_outcome")!=observed
                 or d.get("subjective_responsibility")!=("unknown" if available else "unavailable")
+                or d.get("reason")!=correct_reason
                 or (not available and d.get("cue_ref") is not None)):
                 raise ValueError("dual-scope causal claims unsupported")
+            if not available:
+                unavailable_refs.add(ref)
             observed_refs.add(ref)
+    if commitments and set(proximal_pre) != set(commitments):
+        raise ValueError("missing dual-scope precommit for proximal assessment")
     if sum(len(x) for x in charges.values())!=len(observed_refs):
         raise ValueError("orphaned dual-scope UC debit")
     pending=set(commitments)-observed_refs
@@ -154,4 +171,4 @@ def audit_stage12_dual_scope(content: bytes, *, expected_head=None, expected_cou
         if base.world_steps_closed>commitments[ref][2]["sent_world_step"]:
             raise ValueError("missing due dual-scope judgement")
     return DualScopeAudit(base.head_hash,len(commitments),len(observed_refs),
-                          sum(1 for ref in observed_refs if False),len(pending))
+                          len(unavailable_refs),len(pending))
