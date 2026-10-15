@@ -1,0 +1,56 @@
+name: Stage12 A2.30-ZQ real autonomous invisible motor lethality
+on:
+  pull_request:
+    branches: [science/stage12-b-a230zi-firstperson-probe-bootstrap-20261015]
+    paths:
+      - 'scripts/run_stage12_issue110_b_a230zq_autonomous_hidden_motor.py'
+      - 'tests/test_stage12_a230zq_autonomous_hidden_motor.py'
+      - 'docs/research/stage12-issue110-b-a230zq-*.md'
+      - '.github/workflows/stage12-b-a230zq.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  autonomous-mortal-firstperson-motor-risk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Recover and verify original immutable 12 historical I0 births
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230zq-original-311 /tmp/a230zq-original-312
+          gh run download 38767643472 --repo "$GITHUB_REPOSITORY" --name a230zb-py3.11 --dir /tmp/a230zq-original-311
+          gh run download 38767643472 --repo "$GITHUB_REPOSITORY" --name a230zb-py3.12 --dir /tmp/a230zq-original-312
+      - name: Execute 24 new independent mortal Stage12 I0, voluntary actions only
+        run: |
+          python -u scripts/run_stage12_issue110_b_a230zq_autonomous_hidden_motor.py \
+            --original-zb-311 /tmp/a230zq-original-311 \
+            --original-zb-312 /tmp/a230zq-original-312 \
+            --output-dir /tmp/a230zq-original > /tmp/a230zq.log 2>&1 \
+            || { tail -n 180 /tmp/a230zq.log; exit 2; }
+          grep A230ZQ_SUMMARY /tmp/a230zq.log
+      - name: Independently audit original durable WAL, P48 and first-person mortal boundaries
+        env:
+          A230ZQ_OUTPUT: /tmp/a230zq-original
+        run: python -m unittest discover -s tests -p test_stage12_a230zq_autonomous_hidden_motor.py -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zq-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zq-original
+            /tmp/a230zq.log
+          retention-days: 30
