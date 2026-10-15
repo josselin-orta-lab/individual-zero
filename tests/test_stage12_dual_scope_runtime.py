@@ -1,5 +1,8 @@
 """Opt-in B uses one Action Control owner, real UC, and lived receipts."""
 from dataclasses import replace
+from hashlib import sha256
+from lab.determinism import canonical_causal_bytes
+from lab.journal import GENESIS_HASH
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -81,6 +84,35 @@ class DualScopeRuntimeTests(unittest.TestCase):
                 self.assertIn(event["data"]["proximal_agency"],
                               ("self","world","unknown","unavailable"))
             self.assertIsNone(runtime._meta_custody.attribution_pairs)
+
+    def test_rehashed_forged_result_rejected_by_independent_auditor(self):
+        with TemporaryDirectory() as d:
+            rt=born(Path(d)/"tamper.wal")
+            for _ in range(14):
+                if rt.stage3.substrate.mortal_status.value!="active":
+                    break
+                rt.run_step()
+            original=rt.journal.canonical_bytes()
+            audit=audit_stage12_dual_scope(original)
+            self.assertGreater(audit.judgements,0)
+            rows=[json.loads(x) for x in original.splitlines()]
+            target=next(x for x in rows if x["causal_event"]["kind"]==
+                        "stage12_outcome_responsibility_judgement")
+            original_value=target["causal_event"]["data"]["observed_outcome"]
+            target["causal_event"]["data"]["observed_outcome"]=(
+                "not_improved" if original_value=="improved" else "improved")
+            previous=GENESIS_HASH
+            for i,row in enumerate(rows):
+                row["index"]=i
+                row["previous_hash"]=previous
+                previous=sha256(bytes.fromhex(previous)+canonical_causal_bytes({
+                    "event_id":row["event_id"],
+                    "causal_event":row["causal_event"]})).hexdigest()
+                row["event_hash"]=previous
+            forged=b"\\n".join(canonical_causal_bytes(r) for r in rows)
+            self.assertGreater(audit_export_bytes(forged).world_steps_closed,0)
+            with self.assertRaisesRegex(ValueError,"dual-scope causal claims unsupported"):
+                audit_stage12_dual_scope(forged)
 
     def test_legacy_birth_does_not_add_schema_or_credits(self):
         with TemporaryDirectory() as d:
