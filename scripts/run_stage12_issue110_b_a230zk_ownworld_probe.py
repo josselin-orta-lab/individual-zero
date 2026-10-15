@@ -612,7 +612,26 @@ def score_worlds(worlds,manifest,original_roots):
                 or not fatal["real_physical_lab_receipts"][0]["terminal_external_only"]
                 or safe["real_physical_lab_receipts"][0]["postaction_external_only"]==
                    fatal["real_physical_lab_receipts"][0]["postaction_external_only"]):
-                raise ValueError("hidden motor lethality not witnessed on identical input")
+                raise ValueError(
+                    "hidden motor lethality not witnessed on identical input: "
+                    + json.dumps({
+                        "case":list(key),
+                        "preactions_equal":(
+                            safe["real_physical_lab_receipts"][0]["preaction_observable"]
+                            ==fatal["real_physical_lab_receipts"][0]["preaction_observable"]
+                        ),
+                        "commands_equal":(
+                            safe["real_physical_lab_receipts"][0]["command"]
+                            ==fatal["real_physical_lab_receipts"][0]["command"]
+                        ),
+                        "safe_terminal":safe["real_physical_lab_receipts"][0]["terminal_external_only"],
+                        "hazard_terminal":fatal["real_physical_lab_receipts"][0]["terminal_external_only"],
+                        "postactions_equal":(
+                            safe["real_physical_lab_receipts"][0]["postaction_external_only"]
+                            ==fatal["real_physical_lab_receipts"][0]["postaction_external_only"]
+                        ),
+                    },sort_keys=True)
+                )
             fatal_twin_pairs+=1
     if fatal_twin_pairs!=4:
         raise ValueError("four exact-observation hidden movement controls missing")
