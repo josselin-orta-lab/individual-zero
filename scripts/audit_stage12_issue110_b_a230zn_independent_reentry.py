@@ -141,7 +141,7 @@ def expected_perception(s,position,b_here,t,energy,food,water,night):
     }
     if any(abs(float(s["body"][k])-v)>1e-9 for k,v in expected.items()):
         raise ValueError("physical cost/metabolism differs from fixed laboratory fixture")
-    if s["is_night"] != (night==3 and t>=3):
+    if s["is_night"] != (night==3 and t>=4):
         raise ValueError("observable day/night timing misrepresented")
     if s["inventory"]!={k:0 for k in INV_KEYS}:
         raise ValueError("unwitnessed collection or ingestion in motor-only protocol")
