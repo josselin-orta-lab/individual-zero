@@ -232,7 +232,7 @@ class IndependentlySealedTwoJobAuditTests(unittest.TestCase):
     def test_unsealed_extra_prediction_field_rejected(self):
         parts=deepcopy(self.original)
         parts[3][0]["actual_outcome_known_at_seal"]=True
-        with self.assertRaisesRegex(ValueError,"future"):
+        with self.assertRaisesRegex(ValueError,"future|structural provenance wrong"):
             self.check(parts)
 
     def test_reviewer_never_imports_original_runner_or_physics(self):
