@@ -14,7 +14,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from audit_stage12_issue110_b_a230zr_autonomous_mortality import (
+from audit_stage12_issue110_b_a230zqa_autonomous_mortality import (
     ZQ_SUMMARY_SHA,PAIR_SHA,load_one,load_sources,
     verify_12_original_birth_roots,verify_original_life,
     review_source,validate_visible_state,
@@ -26,10 +26,10 @@ class IndependentZQAutonomousMortalityReviewTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.roots={
-            "zq311":Path(os.environ["A230ZR_ZQ311"]),
-            "zq312":Path(os.environ["A230ZR_ZQ312"]),
-            "zb311":Path(os.environ["A230ZR_ZB311"]),
-            "zb312":Path(os.environ["A230ZR_ZB312"]),
+            "zq311":Path(os.environ["A230ZQA_ZQ311"]),
+            "zq312":Path(os.environ["A230ZQA_ZQ312"]),
+            "zb311":Path(os.environ["A230ZQA_ZB311"]),
+            "zb312":Path(os.environ["A230ZQA_ZB312"]),
         }
         cls.source,cls.zb=load_sources(
             cls.roots["zq311"],cls.roots["zq312"],
@@ -202,7 +202,7 @@ class IndependentZQAutonomousMortalityReviewTests(unittest.TestCase):
     def test_source_does_not_execute_new_physics_or_import_zq(self):
         text_source=(
             Path(__file__).resolve().parents[1]/
-            "scripts/audit_stage12_issue110_b_a230zr_autonomous_mortality.py"
+            "scripts/audit_stage12_issue110_b_a230zqa_autonomous_mortality.py"
         ).read_text()
         self.assertNotIn("run_stage12_issue110_b_a230zq_autonomous_hidden_motor",text_source)
         self.assertNotIn("from lab.world import",text_source)

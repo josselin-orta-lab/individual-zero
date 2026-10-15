@@ -1,4 +1,4 @@
-"""A2.30-ZR: independent sealed-archive audit of 24 genuine autonomous I0 lives.
+"""A2.30-ZQA: independent sealed-archive audit of 24 genuine autonomous I0 lives.
 
 OFFLINE ONLY: no import of ZQ runner, Stage12Runtime, WorldBody, simulator,
 Equipment or subjective-judgement implementations. Reads historical immutable
@@ -6,7 +6,7 @@ ZB+ZQ CI JSON, durable WAL and canonical journals, re-computes all physical,
 motor, first-person, death, UC and dual-scope lineage without issuing commands.
 
 ZR is a POST-HOC audit; its prereg predates this reviewer implementation
-but not original known ZQ results, see docs/research/...-a230zr-...-prereg.
+but not original known ZQ results, see docs/research/...-a230zqa-...-prereg.
 """
 from __future__ import annotations
 
@@ -542,7 +542,7 @@ def execute(zq311,zq312,zb311,zb312,output):
         or parts["3.11"]["pair_ids"]!=parts["3.12"]["pair_ids"]):
         raise ValueError("cross-Python physically verified autonomous controls differ")
     result={
-        "schema":"a230zr-independent-sealed-autonomous-motor-cause-audit-v1",
+        "schema":"a230zqa-independent-sealed-autonomous-motor-cause-audit-v1",
         "original_ZQ_run":SOURCE_RUN,
         "original_ZQ_code_sha":SOURCE_SHA,
         "source_sha256_by_python":ZQ_SUMMARY_SHA,
@@ -579,10 +579,10 @@ def execute(zq311,zq312,zb311,zb312,output):
         ).strip(),
     }
     output.mkdir(parents=True,exist_ok=False)
-    (output/"a230zr-summary.json").write_text(
+    (output/"a230zqa-summary.json").write_text(
         json.dumps(result,sort_keys=True,indent=2)+"\n"
     )
-    print("A230ZR_SUMMARY "+json.dumps({
+    print("A230ZQA_SUMMARY "+json.dumps({
         k:v for k,v in result.items() if k not in (
             "source_sha256_by_python","historical_ZB_source_summary_sha256_by_python"
         )
