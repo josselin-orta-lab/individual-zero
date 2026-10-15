@@ -27,7 +27,7 @@ from lab.equipment_corpus import EquipmentCorpusRecorder
 from lab.world import Position, WorldBody
 
 from run_stage12_issue110_b_a230zg_lived_root_shadow import (
-    PROFILES, B_COLLECT, EAT_B, MOVE_E, MOVE_N, COLLECT_A, EAT_A,
+    PROFILES, COLLECT_B as B_COLLECT, EAT_B, MOVE_E, MOVE_N, COLLECT_A, EAT_A,
     first_person, digest, reference_birth_world, benign_B_fixture,
     physically_demonstrate, stage6_shadow, verify_original_birth_sources,
 )
