@@ -5,13 +5,13 @@ from collections import Counter
 from copy import deepcopy
 import json
 from pathlib import Path
+import os
 import sys
-import tempfile
 import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 from run_stage12_issue110_b_a230zb_autonomous_food import (
-    experiment,paired_comparison,recipes,birth_effect,
+    paired_comparison,recipes,birth_effect,
     PROFILES,LAYOUTS,VARIANTS,
 )
 from lab.stage11_reference_fixture import build_stage11_reference_runtime
@@ -21,14 +21,14 @@ from lab.independent_journal_audit import audit_export_bytes
 class AutonomousAlternativeFoodBTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.tmp=tempfile.TemporaryDirectory(prefix="a230zb-autonomous-")
-        cls.path=Path(cls.tmp.name)/"cohort"
-        cls.result=experiment(cls.path)
+        # Parse the ONE original preregistered birth cohort created by CI.
+        # Running experiment() here would create a SECOND cohort with the
+        # SAME birth IDs and would misrepresent mortal identities and N.
+        cls.path=Path(os.environ["A230ZB_ORIGINAL_SOURCE"])
+        cls.result=json.loads(
+            (cls.path/"a230zb-summary.json").read_text()
+        )
         cls.lives=cls.result["lives"]
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.tmp.cleanup()
 
     def test_all_twelve_independently_born_with_real_bounded_world_steps(self):
         s=self.result
