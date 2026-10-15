@@ -312,13 +312,25 @@ def verify_life_and_extract(out,life,identity,model_hash,intervention,initial,
         prior_position=after
     if death:
         d=death[0]
-        if d["t_monde"]!=steps:
-            raise ValueError("terminal death was not at the final physical step")
+        final_command=physical_commands[steps]
+        final_transition=transition_by_step[steps]
+        if (d["t_monde"]!=steps
+            or d["attempt_ref"]!=final_command["attempt_ref"]
+            or d["command_hash"]!=final_command["command_hash"]
+            or d["position_after"]!=final_transition["position_after"]
+            or d["body_after"]!=final_transition["body_after"]
+            or not isinstance(d.get("reasons"),list)
+            or not d["reasons"]):
+            raise ValueError("terminal cause not durably joined to final chosen move")
         if any(e.get("t_monde",0)>steps for e in events):
             raise ValueError("postmortem cognitive or physics journal event")
         if any(e["kind"]=="perceptual_capture"
                and e["t_monde"]>steps for e in events):
             raise ValueError("postmortem first-person capture fabricated")
+        if (motor=="motor_hidden_lethal"
+            and hidden_zone_entry_step==steps
+            and "lethal_zone" not in d["reasons"]):
+            raise ValueError("hidden-zone motor death falsely attributed externally")
     if (motor=="motor_hidden_lethal"
         and hidden_zone_entry_step is not None
         and status!="dead"):
@@ -389,6 +401,9 @@ def verify_life_and_extract(out,life,identity,model_hash,intervention,initial,
             "/".join(k):v for k,v in sorted(uc.items())
         },
         "terminal_only_in_external_causal_journal":True,
+        "terminal_causes_external_only":death[0].get("reasons") if death else None,
+        "death_receipt_joined_to_final_autonomous_primitive":bool(death)
+            if status=="dead" else None,
         "not_promoting_proximal_self_to_distal_death_cause":True,
         "berry_B_safety_certified":False,
         "no_world_truth_or_oracle_data_to_I0":True,
@@ -494,14 +509,7 @@ def verify_pairs(lives):
                 for c,d in zip(control_actions[:common],fatal_actions[:common])
             )
         )
-        true_death_contrast=bool(
-            matched and intervention["motor_zone_death_observed"]
-            and control["mortal_status"]!="dead"
-            if len(control_actions)==exposure else
-            matched and intervention["motor_zone_death_observed"] and
-            (control["mortal_status"]!="dead" or
-             control["world_steps"]>exposure)
-        )
+        true_death_contrast=False
         # Prefer explicit checkpoint at the same physical step, not final status.
         if exposure is not None and matched:
             # The control transition at that same t has a survivor's next step
