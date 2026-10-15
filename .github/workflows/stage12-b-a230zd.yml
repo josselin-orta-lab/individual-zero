@@ -1,0 +1,57 @@
+name: Stage12 A2.30-ZD independent B autonomous attribution funnel
+on:
+  pull_request:
+    branches: [science/stage12-b-a230zb-autonomous-alternative-20261015]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230zd_autonomous_funnel.py'
+      - 'tests/test_stage12_a230zd_autonomous_funnel.py'
+      - 'docs/research/stage12-issue110-b-a230zd-*.md'
+      - '.github/workflows/stage12-b-a230zd.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  independent-archived-wal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Download the two immutable original twelve-life ZB WAL archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230zd-py311 /tmp/a230zd-py312
+          gh run download 38767643472 --repo "$GITHUB_REPOSITORY" --name a230zb-py3.11 --dir /tmp/a230zd-py311
+          gh run download 38767643472 --repo "$GITHUB_REPOSITORY" --name a230zb-py3.12 --dir /tmp/a230zd-py312
+      - name: Independently falsify B perception, goal competition, WAL and floating-point drift
+        env:
+          A230ZD_ORIGINAL_311: /tmp/a230zd-py311
+          A230ZD_ORIGINAL_312: /tmp/a230zd-py312
+        run: python -m unittest discover -s tests -p test_stage12_a230zd_autonomous_funnel.py -v
+      - name: Reaudit all 24 source WALs without any new I0 step
+        run: |
+          python -u scripts/audit_stage12_issue110_b_a230zd_autonomous_funnel.py \
+            --source-py311 /tmp/a230zd-py311 \
+            --source-py312 /tmp/a230zd-py312 \
+            --output-dir /tmp/a230zd-verified > /tmp/a230zd.log 2>&1 \
+            || { tail -n 170 /tmp/a230zd.log; exit 2; }
+          grep A230ZD_SUMMARY /tmp/a230zd.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zd-audit-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zd-verified
+            /tmp/a230zd.log
+          retention-days: 30
