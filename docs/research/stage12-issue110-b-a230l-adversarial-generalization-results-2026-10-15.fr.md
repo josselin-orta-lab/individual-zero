@@ -36,3 +36,8 @@ Sur une action `attendre` au même endroit et dans le même voisinage, deux mond
 Pour un modèle déterministe `E(S_accessible, command) -> conséquence unique`, les expériences L1 et L2 produisent deux sorties différentes pour le **même couple d'entrée**. Un modèle exact unique ne peut donc pas représenter les deux expériences sans état latent, incertitude ou abstention. Cela ne prouve **ni** qu'un modèle probabiliste est fiable, **ni** qu'un nouveau prédicteur améliore l'alimentation; cela prouve qu'une généralisation certaine à partir des seules observations accessibles serait scientifiquement non défendable sur ce domaine.
 
 **A2.30 PARTIELLE ; Stage12 PARTIAL ; issue #110 OPEN ; PR #187 DRAFT.** Aucun changement du simulateur de production, de Stage9/DC-05, de la politique alimentaire, de l'Oracle ni de la norme MVP v1.3.1.
+
+
+## Addendum A2.30-M : insuffisance d'une seule observation bénigne
+
+L'expérience logicielle dérivée [CI #38723084941](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38723084941), préenregistrée avant code `e0c3d6f`, vérifie que `FrozenTableEquipment` **entraîné uniquement sur l'exemple sûr** de L1 ou L2 renvoie `confidence=1.0` pour le **même input accessible** dans le monde caché divergent, et prédit à tort respectivement `terminal=False` (alors que `True`) et `integrity=100` (alors que 93). Les vérifications physiques sont les mêmes six mondes et huit pas de L, **sans nouveaux échantillons autonomes I0**. Le refus du trainer en présence de deux exemples contradictoires ne permet pas de garantir la sûreté avec un seul exemple. La valeur 1,0 est une **confiance de correspondance exacte au corpus observé**, non une probabilité scientifique calibrée de sûreté du monde.
