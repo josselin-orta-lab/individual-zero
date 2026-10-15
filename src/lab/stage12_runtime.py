@@ -590,6 +590,7 @@ class Stage12Runtime(Stage11SleepRuntime):
                                     self.individual_id, capture.t_monde,
                                     capture.x, capture.y,
                                     tuple(sorted(capture.inventory.items())),
+                                    tuple(sorted(capture.body.items())),
                                 ) if dual_charge.accepted else None,
                                 paid=dual_charge.accepted,
                             )
