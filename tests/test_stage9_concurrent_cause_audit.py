@@ -481,13 +481,15 @@ class Stage9ConcurrentCauseRegressionTests(unittest.TestCase):
         self.assertIsNone(trial["model"].get("toxic:berry_a"))
         self.assertLess(trial["after_food"].body["integrity"], 100)
 
-    def test_distant_visible_creature_does_not_suppress_real_food_observation(self):
+    def test_distant_unobserved_creature_does_not_suppress_real_food_observation(self):
+        # The external WorldBody places a creature five tiles away. Under the
+        # local first-person sensory contract it must NOT be visible. This is
+        # a negative epistemic control, not a reason to discard the genuine
+        # first-person bodily harm from an ingested toxic fruit.
         trial = _exercise_physics("toxic_berry_far_creature")
         self.assertFalse(trial["before_food"].adjacent_creatures)
-        self.assertTrue(any(
+        self.assertFalse(any(
             entity.entity_type == "creature"
-            and abs(entity.x - trial["before_food"].x)
-                + abs(entity.y - trial["before_food"].y) > 1
             for entity in trial["before_food"].visible_entities
         ))
         self.assertEqual(len(trial["admitted"]), 1)
