@@ -652,6 +652,14 @@ def verify_dataset(training,freeze,events,heldout,scores,summary,log,
         summary.get("hazard_forced_primitive_failures")!=8 or
         summary.get("boundary_abstentions")!=16 or
         summary.get("nominal_hidden_berry_twins_with_identical_observations")!=32 or
+        summary.get("exact_fullstate_heldout_keys_known")!=0 or
+        summary.get("safety_certificates_emitted")!=0 or
+        summary.get("terminality_predictions_emitted")!=0 or
+        summary.get("integrity_predictions_emitted")!=0 or
+        summary.get("next_full_adjacent_state_predictions_emitted")!=0 or
+        summary.get("all_predictions_are_lab_empirical_not_safe") is not True or
+        summary.get("I0_external_memory_transferred") is not False or
+        summary.get("by_cohort")!={k:dict(v) for k,v in sorted(by_cohort.items())} or
         summary.get("I0_UC_measured") is not False or
         summary.get("new_I0_births")!=0 or
         summary.get("new_I0_autonomous_steps")!=0 or
