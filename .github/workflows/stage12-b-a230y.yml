@@ -1,0 +1,54 @@
+name: Stage12 A2.30-Y independently replay prospective physical probes
+on:
+  pull_request:
+    branches: [science/stage12-b-a230v-food-decision-identifiability-20261015]
+    paths:
+      - 'scripts/replay_stage12_issue110_b_a230y_physical_probes.py'
+      - 'tests/test_stage12_a230y_physical_replay.py'
+      - 'docs/research/stage12-issue110-b-a230y-*.md'
+      - '.github/workflows/stage12-b-a230y.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  physical-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Download sealed original physical W records for exact technical replay
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230y-original
+          gh run download 38753518412 --repo "$GITHUB_REPOSITORY" --name a230w-py3.11 --dir /tmp/a230y-original
+      - name: Falsify hidden configurations, death, physical receipts and visible controls
+        env:
+          A230Y_SOURCE: /tmp/a230y-original
+        run: python -m unittest discover -s tests -p test_stage12_a230y_physical_replay.py -v
+      - name: Reexecute 240 WorldBody actions and independently compare to source
+        run: |
+          python -u scripts/replay_stage12_issue110_b_a230y_physical_probes.py \
+            --original-W /tmp/a230y-original \
+            --output-dir /tmp/a230y-replay > /tmp/a230y.log 2>&1 \
+            || { tail -n 160 /tmp/a230y.log; exit 2; }
+          grep A230Y_SUMMARY /tmp/a230y.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230y-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230y-replay
+            /tmp/a230y.log
+          retention-days: 30
