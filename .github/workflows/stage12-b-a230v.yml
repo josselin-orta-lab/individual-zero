@@ -1,0 +1,71 @@
+name: Stage12 A2.30-V first-person food decision identifiability
+on:
+  pull_request:
+    branches: [science/stage12-b-a230p-multiconsequence-delayed-20261015]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230v_decision_equivalence.py'
+      - 'tests/test_stage12_a230v_decision_equivalence.py'
+      - 'docs/research/stage12-issue110-b-a230v-*.md'
+      - '.github/workflows/stage12-b-a230v.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  read-only-physical-record-certificate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Download six immutable historical Python archives from three distinct original studies
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230v-observable-311 /tmp/a230v-observable-312
+          mkdir -p /tmp/a230v-food-311 /tmp/a230v-food-312
+          mkdir -p /tmp/a230v-causal-311 /tmp/a230v-causal-312
+          gh run download 38740205272 --repo "$GITHUB_REPOSITORY" --name a230s-py3.11 --dir /tmp/a230v-observable-311
+          gh run download 38740205272 --repo "$GITHUB_REPOSITORY" --name a230s-py3.12 --dir /tmp/a230v-observable-312
+          gh run download 38741620906 --repo "$GITHUB_REPOSITORY" --name a230t-py3.11 --dir /tmp/a230v-food-311
+          gh run download 38741620906 --repo "$GITHUB_REPOSITORY" --name a230t-py3.12 --dir /tmp/a230v-food-312
+          gh run download 38740664255 --repo "$GITHUB_REPOSITORY" --name a230s-py3.11 --dir /tmp/a230v-causal-311
+          gh run download 38740664255 --repo "$GITHUB_REPOSITORY" --name a230s-py3.12 --dir /tmp/a230v-causal-312
+      - name: Adversarial falsifications including postmortem, future and latent features
+        env:
+          A230V_OBSERVABLE_311: /tmp/a230v-observable-311
+          A230V_OBSERVABLE_312: /tmp/a230v-observable-312
+          A230V_FOOD_311: /tmp/a230v-food-311
+          A230V_FOOD_312: /tmp/a230v-food-312
+          A230V_CAUSAL_311: /tmp/a230v-causal-311
+          A230V_CAUSAL_312: /tmp/a230v-causal-312
+        run: python -m unittest discover -s tests -p test_stage12_a230v_decision_equivalence.py -v
+      - name: Recompute all observable equivalence classes and enumerate 256 bounded policies
+        run: |
+          python -u scripts/audit_stage12_issue110_b_a230v_decision_equivalence.py \
+            --observable-311 /tmp/a230v-observable-311 \
+            --observable-312 /tmp/a230v-observable-312 \
+            --food-311 /tmp/a230v-food-311 \
+            --food-312 /tmp/a230v-food-312 \
+            --causal-311 /tmp/a230v-causal-311 \
+            --causal-312 /tmp/a230v-causal-312 \
+            --output-dir /tmp/a230v-certificate > /tmp/a230v.log 2>&1 \
+            || { tail -n 160 /tmp/a230v.log; exit 2; }
+          grep A230V_CERTIFICATE /tmp/a230v.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230v-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230v-certificate
+            /tmp/a230v.log
+          retention-days: 30
