@@ -488,6 +488,56 @@ def verify_result(rows):
         row["original_birth_id"] for row in rows
     })!=HISTORICAL_BIRTHS:
         raise AssertionError("not 12 independent archived subjects")
+    for row in rows:
+        profile=row["profile"]
+        layout=row["layout"]
+        if profile not in PROFILES or layout not in LAYOUTS:
+            raise ValueError("unknown original profile or B accessibility")
+        root=decode_state(row["first_person_root_state"])
+        if (digest(root.as_dict())!=row["first_person_sha256"]
+            or row["training_transition_from_other_world_not_lived_by_i0"] is not True
+            or row["stage6_prediction_not_actually_dispatched"] is not True
+            or row["no_lived_uc_or_agency_implied"] is not True
+            or row["B_ingestion_safety_proven"] is not False):
+            raise ValueError("first-person model source claimed cognitive/oracular safety")
+        if row["eligible_B_first_step"] is None:
+            if (layout!="B_NONE"
+                or row["eligible_B_first_step_in_candidate_commands"] is not False
+                or row["B_first_step_known_in_augmented_shadow"] is not None
+                or row["B_first_step_known_in_historical_A"] is not None
+                or row["external_physical_source_world_id"] is not None
+                or row["physically_witnessed_B_first_step_next_state"] is not None):
+                raise ValueError("no-B environment was given a manufactured action")
+        else:
+            expected=COLLECT_B.as_dict() if layout=="B_LOCAL" else MOVE_E.as_dict()
+            if (row["eligible_B_first_step"]!=expected
+                or row["eligible_B_first_step_in_candidate_commands"] is not True
+                or row["B_first_step_known_in_historical_A"] is not False
+                or row["B_first_step_known_in_augmented_shadow"] is not True
+                or row["external_physical_source_world_id"]!=
+                    f"B_DEMONSTRATOR-{profile}-{layout}"
+                or row["physically_witnessed_B_first_step_next_state"] is None):
+                raise ValueError("invalid physical B root-edge provenance")
+        for arm in ("baseline_stage6","enriched_stage6"):
+            result=row[arm]
+            if (result["no_shadow_action_dispatched"] is not True
+                or result["berry_b_safety_certified"] is not False
+                or result["actual_i0_uc_measured"] is not False
+                or result["target_food"]!=float(root.body["food"])+5.0
+                or result["root_available_edges"]+
+                    result["root_unavailable_edges"] != result["root_candidate_edges"]
+                or result["root_available_edges"]<0
+                or result["status"] not in (
+                    "plan_found","partial_progress","incomplete_model",
+                    "not_found_within_horizon"
+                )
+                or any(c["primitive"]=="manger" and
+                       c.get("parameters",{}).get("target")=="berry_b"
+                       for c in result["predicted_commands"])):
+                raise ValueError("fake known-root, safety, ingest or lived UC report")
+        if (row["baseline_stage6"]["arm"]!="A_ONLY" or
+            row["enriched_stage6"]["arm"]!="A_PLUS_B_NON_INGESTIVE"):
+            raise ValueError("model-arm label substituted after physical training")
     indexed={(x["profile"],x["layout"],x[
         "hidden_effect_for_external_stratification_only"]):x
         for x in rows}
