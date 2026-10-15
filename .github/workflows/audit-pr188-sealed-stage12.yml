@@ -1,0 +1,38 @@
+name: Exact PR188 corrected sealed-archive Stage12 integration
+on:
+  push:
+    branches: ['audit/pr188-a230o-focused-20261015']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  focused:
+    name: sealed-pr188-Stage12 (Python ${{ matrix.py }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        py: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: '4559e49b60bc33e89c8a77b310a9f20d4d1232c2'
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.py }}
+      - run: python -m pip install -e . pytest
+      - name: Acquire original sealed independent N archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230o-py311 /tmp/a230o-py312
+          gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.11 --dir /tmp/a230o-py311
+          gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.12 --dir /tmp/a230o-py312
+      - name: Execute full Stage12 independent audit and no false safety claims
+        env:
+          A230O_SOURCE_A: /tmp/a230o-py311
+          A230O_SOURCE_B: /tmp/a230o-py312
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_*.py' -q
+          python -m unittest discover -s tests -p 'test_stage9_concurrent_cause_audit.py' -v
