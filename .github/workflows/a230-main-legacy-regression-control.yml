@@ -48,6 +48,10 @@ jobs:
           from lab.world import WorldLayout, Position
           obj=runtime(layout=WorldLayout(water_sources=frozenset({Position(4,2)})))
           out=obj.run_step()
+          near=runtime(layout=WorldLayout(water_sources=frozenset({Position(3,2)})))
+          near_first=near.run_step()
+          near_second=near.run_step()
+          print('LEGACY_STAGE4_VISIBLE_ABLATION',repr((near_first,near_second,near.world.position,near.world.body.water)))
           print('LEGACY_STAGE4_RESULT',repr(out))
           print('LEGACY_STAGE4_GOAL',repr(obj.goal_manager.active_goal))
           print('LEGACY_STAGE4_PLAN',repr(obj.planning.current_plan))
