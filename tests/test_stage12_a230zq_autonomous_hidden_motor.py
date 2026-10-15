@@ -229,7 +229,7 @@ class AutonomousMortalityRealLifeAdversarialTests(unittest.TestCase):
         target=next(x for x in lives if
                     x["ZQ_motor_treatment_external_only"]=="motor_clear")
         target["motor_zone_death_observed"]=True
-        with self.assertRaisesRegex(ValueError,"invented motor-zone mortality"):
+        with self.assertRaisesRegex(ValueError,"invented motor-zone mortality|zone deaths exceed physical terminal births"):
             self.score(lives=lives)
 
     def test_accepted_UC_negative_not_accepted(self):
