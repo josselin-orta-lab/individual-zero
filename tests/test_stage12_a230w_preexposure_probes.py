@@ -158,6 +158,9 @@ class ProspectivePreexposureProbeTests(unittest.TestCase):
         terminal["after_for_external_bench"]["body"]["integrity"]+=7.0
         terminal["sha256"]=digest({k:v for k,v in terminal.items()
                                    if k!="sha256"})
+        toxic["lived_post_ingestion_if_survivor"]=deepcopy(
+            terminal["after_for_external_bench"]
+        )
         with self.assertRaisesRegex(ValueError,"physical berry hazard"):
             self.score(acted=examples)
 
