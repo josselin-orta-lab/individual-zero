@@ -35,3 +35,33 @@ jobs:
           cat /tmp/stage9.log
           echo "CONTROL_STATES Stage4=$s4 Stage5=$s5 Stage9=$s9"
           if [ "$s4" -ne 0 ] || [ "$s5" -ne 0 ] || [ "$s9" -ne 0 ]; then exit 1; fi
+
+      - name: Read-only deterministic diagnostic of legacy behavior
+        if: always()
+        shell: bash
+        run: |
+          PYTHONPATH=tests python - <<'PY'
+          from collections import Counter
+          import json
+          from test_stage4_runtime import runtime
+          from test_stage9_concurrent_cause_audit import _exercise_physics
+          from lab.world import WorldLayout, Position
+          obj=runtime(layout=WorldLayout(water_sources=frozenset({Position(4,2)})))
+          out=obj.run_step()
+          print('LEGACY_STAGE4_RESULT',repr(out))
+          print('LEGACY_STAGE4_GOAL',repr(obj.goal_manager.active_goal))
+          print('LEGACY_STAGE4_PLAN',repr(obj.planning.current_plan))
+          print('LEGACY_STAGE4_ST',repr(obj.s_t.current)[:1200])
+          events=[e.causal_event for e in obj.journal.entries]
+          print('LEGACY_STAGE4_KINDS',repr(Counter(e.get('kind') for e in events)))
+          audit=[e for e in events if any(k in e.get('kind','') for k in ('goal','contribution','option','planning','competition','compute_charge','fallback','evaluation','scheduler'))]
+          for e in audit[:90]:
+              print('LEGACY_STAGE4_EVENT',json.dumps(e,sort_keys=True)[:900])
+          try:
+              t=_exercise_physics('toxic_berry_far_creature')
+              print('LEGACY_STAGE9_ADMITTED',repr(t['admitted']))
+              print('LEGACY_STAGE9_SENSORY',repr(t['before_food'])[:1200], repr(t['after_food'])[:1200])
+              print('LEGACY_STAGE9_CAUSAL_STATE',repr(t['model'].export_causal_state())[:2400])
+          except Exception as e:
+              print('LEGACY_STAGE9_DIAGNOSTIC_ERROR',type(e).__name__,str(e))
+          PY
