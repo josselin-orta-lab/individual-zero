@@ -1,7 +1,7 @@
 name: Stage12 A2.30-O independent archived scorer
 on:
   pull_request:
-    branches: [science/stage12-b-a230-model-completeness-20261015]
+    branches: [main]
     paths:
       - 'scripts/audit_stage12_issue110_b_a230o_independent_scoring.py'
       - 'tests/test_stage12_a230o_independent_archive_scoring.py'
