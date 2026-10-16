@@ -1,0 +1,36 @@
+name: I1 A2.39 prospective lock software gate
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/i1_a239_lock.py'
+      - 'scripts/audit_i1_a239_historical_baseline.py'
+      - 'docs/research/i1-a239-nutrition-geography-food-first-prereg-2026-10-16.en.md'
+      - '.github/workflows/i1-a239-preregistered-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: a239-lock-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+jobs:
+  prereg:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify frozen prospective preregistration and allocation
+        run: |
+          python -m compileall -q scripts/i1_a239_lock.py scripts/audit_i1_a239_historical_baseline.py
+          python scripts/i1_a239_lock.py
+          python -c "import sys; sys.path.insert(0, 'scripts'); from i1_a239_lock import assigned; a=assigned(); assert len(a)==160 and len({(s,i) for s,i,x in a})==32 and all(sum((q,j)==(s,i) for q,j,z in a)==5 for s,i,x in a)"
