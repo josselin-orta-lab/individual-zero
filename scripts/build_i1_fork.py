@@ -46,50 +46,50 @@ def i1_physiology_source(source: str) -> str:
     """
     patches = (
         (
-            "    shelter_stones_required: int = 4\\n",
-            "    shelter_stones_required: int = 4\\n"
-            "    starvation_integrity_damage_per_step: float = 0.5\\n"
-            "    dehydration_integrity_damage_per_step: float = 1.0\\n"
+            "    shelter_stones_required: int = 4\n",
+            "    shelter_stones_required: int = 4\n"
+            "    starvation_integrity_damage_per_step: float = 0.5\n"
+            "    dehydration_integrity_damage_per_step: float = 1.0\n"
         ),
         (
-            "        self.tool_recipe.validate()\\n",
-            "        for damage in (self.starvation_integrity_damage_per_step,\\n"
-            "                       self.dehydration_integrity_damage_per_step):\\n"
-            "            if not 0.0 <= damage <= 100.0 or damage != damage:\\n"
-            "                raise ValueError('I1 deprivation rates must be finite in [0,100]')\\n"
-            "        self.tool_recipe.validate()\\n"
+            "        self.tool_recipe.validate()\n",
+            "        for damage in (self.starvation_integrity_damage_per_step,\n"
+            "                       self.dehydration_integrity_damage_per_step):\n"
+            "            if not 0.0 <= damage <= 100.0 or damage != damage:\n"
+            "                raise ValueError('I1 deprivation rates must be finite in [0,100]')\n"
+            "        self.tool_recipe.validate()\n"
         ),
         (
-            '            "shelter_stones_required": self.shelter_stones_required,\\n',
-            '            "shelter_stones_required": self.shelter_stones_required,\\n'
-            '            "starvation_integrity_damage_per_step": self.starvation_integrity_damage_per_step,\\n'
-            '            "dehydration_integrity_damage_per_step": self.dehydration_integrity_damage_per_step,\\n'
+            '            "shelter_stones_required": self.shelter_stones_required,\n',
+            '            "shelter_stones_required": self.shelter_stones_required,\n'
+            '            "starvation_integrity_damage_per_step": self.starvation_integrity_damage_per_step,\n'
+            '            "dehydration_integrity_damage_per_step": self.dehydration_integrity_damage_per_step,\n'
         ),
         (
-            "        lethal_reasons: list[str] = []\\n",
-            "        # #231: apply *after* the actual action. Successful eating or\\n"
-            "        # drinking prevents same-step deprivation. Rest, a failed\\n"
-            "        # action, and physical hazards do not suspend metabolism.\\n"
-            "        starvation = (self._config.starvation_integrity_damage_per_step\\n"
-            "                      if body.food <= 0.0 else 0.0)\\n"
-            "        dehydration = (self._config.dehydration_integrity_damage_per_step\\n"
-            "                       if body.water <= 0.0 else 0.0)\\n"
-            "        if starvation or dehydration:\\n"
-            "            integrity_before = body.integrity\\n"
-            "            body = BodyState(\\n"
-            "                energy=body.energy, food=body.food, water=body.water,\\n"
-            "                integrity=self._clamp(integrity_before - starvation - dehydration),\\n"
-            "            )\\n"
-            "            effects['deprivation_integrity_damage'] = {\\n"
-            "                'starvation': starvation, 'dehydration': dehydration,\\n"
-            "                'actual_integrity_loss': integrity_before - body.integrity,\\n"
-            "            }\\n"
-            "        lethal_reasons: list[str] = []\\n"
+            "        lethal_reasons: list[str] = []\n",
+            "        # #231: apply *after* the actual action. Successful eating or\n"
+            "        # drinking prevents same-step deprivation. Rest, a failed\n"
+            "        # action, and physical hazards do not suspend metabolism.\n"
+            "        starvation = (self._config.starvation_integrity_damage_per_step\n"
+            "                      if body.food <= 0.0 else 0.0)\n"
+            "        dehydration = (self._config.dehydration_integrity_damage_per_step\n"
+            "                       if body.water <= 0.0 else 0.0)\n"
+            "        if starvation or dehydration:\n"
+            "            integrity_before = body.integrity\n"
+            "            body = BodyState(\n"
+            "                energy=body.energy, food=body.food, water=body.water,\n"
+            "                integrity=self._clamp(integrity_before - starvation - dehydration),\n"
+            "            )\n"
+            "            effects['deprivation_integrity_damage'] = {\n"
+            "                'starvation': starvation, 'dehydration': dehydration,\n"
+            "                'actual_integrity_loss': integrity_before - body.integrity,\n"
+            "            }\n"
+            "        lethal_reasons: list[str] = []\n"
         ),
     )
     for original, replacement in patches:
-        original = original.replace('\\\\n', '\\n')
-        replacement = replacement.replace('\\\\n', '\\n')
+        original = original.replace('\\\n', '\n')
+        replacement = replacement.replace('\\\n', '\n')
         if source.count(original) != 1:
             raise ValueError("I1 deprivation source anchor changed")
         source = source.replace(original, replacement)
