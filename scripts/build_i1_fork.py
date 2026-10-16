@@ -75,6 +75,19 @@ def generate(output: Path) -> dict[str, object]:
                 "source_sha256": sha256(contents.encode()).hexdigest(),
                 "built_sha256": sha256(transformed.encode()).hexdigest(),
             }
+    # I1-only model/runtime overlays are namespaced source, not part of I0.
+    overlays = SOURCE_ROOT / "i1_overlays"
+    if overlays.exists():
+        for file in sorted(overlays.glob("*.py")):
+            transformed = rewrite(file.read_text(encoding="utf-8"))
+            target = output / "i1lab" / file.name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(transformed, encoding="utf-8")
+            manifest["files"][str(target.relative_to(output))] = {
+                "source_path": str(file.relative_to(SOURCE_ROOT)),
+                "source_sha256": sha256(file.read_bytes()).hexdigest(),
+                "built_sha256": sha256(transformed.encode()).hexdigest(),
+            }
     # The build manifest contains source identity, but no hidden knowledge,
     # no actual birth and no scientific validation assertion.
     (output / "i1_build_manifest.json").write_text(
