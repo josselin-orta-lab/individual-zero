@@ -68,8 +68,15 @@ def enable_living_physiology_birth(world_config):
     costs = dict(world_config.action_energy_costs)
     if set(costs) != set(DEFAULT_ACTION_ENERGY_COSTS):
         raise ValueError("unknown physical action-cost schema")
-    if all(float(v) == 0.0 for v in costs.values()):
-        costs = dict(DEFAULT_ACTION_ENERGY_COSTS)
+    # An experimental configuration can contain a mixture of explicitly
+    # priced acts and untouched inert software-reference zeroes. Preserve
+    # every nonzero cost while restoring living costs to the zero entries.
+    # This happens once before birth and is pinned in the M11 world digest.
+    costs = {
+        name: (DEFAULT_ACTION_ENERGY_COSTS[name]
+               if float(value) == 0.0 else value)
+        for name, value in costs.items()
+    }
     upgraded = replace(
         world_config,
         version=world_config.version + "+" + LIVING_PHYSIOLOGY_POLICY,
