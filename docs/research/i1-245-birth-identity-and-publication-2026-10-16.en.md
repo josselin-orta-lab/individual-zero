@@ -73,3 +73,9 @@ Commit `cf86f97aade3e99fffba6f5d6f3a888b666ae3f3` enables Stage6 progressive sub
 The same commit excludes degraded cognitive cycles from GoalManager non-plannable failure accounting: insufficient UC is not proof that a need cannot be met. Native GoalManager remains in charge of refractory releases, not H1.
 
 These modifications are committed source, not verified behavior. No additional tests, builds, independent cohorts or execution were run. Original I0/shared Lab and A2.38/A2.39 histories are unchanged. M11 active-form rebase remains fail-closed and this PR remains draft.
+
+## Continued correction: eliminate extra phantom mortal birth
+
+Commit `0b7b52054eb4db8a64661a386a5beb5563805316` replaces the call to `build_stage5_reference_runtime(autonomous_mortal=True)` inside canonical I1 temperament construction with the same published Stage5 reference mapping parameters expressed as a pure immutable `TemperamentMappingConfig`. Values continue to use the **actual current I1 Stage4** neutral base weights and inertia. Temperament is projected once from the declared life identity; no auxiliary WorldBody, second mortality authority, Scheduler or journal is created simply to determine coefficients.
+
+This is a source-only correction. No new test, build, physical birth, M11 cold recovery or scientific trial was run. The original I0, source Lab and frozen historical experiments were not edited. Stage10 active-form publication remains deliberately fail-closed without verified owner-specific rebase. PR #245 therefore remains draft / NO-GO.
