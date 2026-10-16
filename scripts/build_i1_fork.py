@@ -119,6 +119,25 @@ def i1_default_sleep_source(source: str) -> str:
     return source.replace(anchor, replacement)
 
 
+def i1_private_consolidation_source(source: str) -> str:
+    """Let proven private procedures reach SlowHistory, not active cognition.
+
+    The generated Stage10 I1 runtime still rejects active-form changes:
+    retaining candidate['procedural'] in *private h* requires no post-cut
+    owner rebase because no owner receives these as executable skills.
+    """
+    old = (
+        '        if (candidate.get("forms") != self.slow_history.read_committed()["forms"]\\n'
+        '                or candidate.get("procedural")):\\n'
+    )
+    new = (
+        '        if candidate.get("forms") != self.slow_history.read_committed()["forms"]:\\n'
+    )
+    if source.count(old) != 1:
+        raise ValueError("unreviewed I1 Stage10 private-publication boundary")
+    return source.replace(old, new)
+
+
 def generate(output: Path) -> dict[str, object]:
     output = output.resolve()
     # A mis-specified output must never clobber the checked-in cognition.
@@ -149,6 +168,9 @@ def generate(output: Path) -> dict[str, object]:
             if (output_package == "i1lab"
                     and relative.as_posix() == "stage11_sleep_runtime.py"):
                 transformed = i1_default_sleep_source(transformed)
+            if (output_package == "i1lab"
+                    and relative.as_posix() == "stage10_runtime.py"):
+                transformed = i1_private_consolidation_source(transformed)
             # I1-only M11 custody: accept an explicit Stage12 descendant,
             # but pin the frozen I1 model parameters in the cold-birth digest.
             # Never alter the canonical src/lab or src/i0 M11 implementation.
