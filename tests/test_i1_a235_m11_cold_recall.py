@@ -71,10 +71,10 @@ with TemporaryDirectory() as folder:
    receipt=owner.run_step()
    assert receipt.generation==index+1 and receipt.world_step==index+1
    assert receipt.status=="active"
-  assert owner.runtime.memory.episodes,"no first-person closed episode"
+  assert owner._runtime.memory.episodes,"no first-person closed episode"
   assert any(e.causal_event.get("kind")=="i1_lived_recall_review" and
    e.causal_event.get("data",{}).get("source_event_refs")
-   for e in owner.runtime.journal.entries),"no recalled positive source"
+   for e in owner._runtime.journal.entries),"no recalled positive source"
   head=receipt.journal_head
  audit=SQLiteLifeLedger.audit_read_only(path=path,expected_individual_id=identity)
  assert audit.generation==5 and audit.journal_head==head
@@ -90,7 +90,7 @@ with TemporaryDirectory() as folder:
  else: raise AssertionError("wrong recall cost recovered")
  with M11TransactionalMortal.cold_recover(
   db_path=path,individual_id=identity,runtime_factory=factory) as restored:
-  assert restored.runtime.memory.episodes,"cold recovery lost the episode"
+  assert restored._runtime.memory.episodes,"cold recovery lost the episode"
   receipt=restored.run_step()
   assert receipt.generation==6 and receipt.world_step==6
  assert SQLiteLifeLedger.audit_read_only(
