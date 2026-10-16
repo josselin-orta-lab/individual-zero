@@ -117,6 +117,65 @@ def i1_canonical_active_value_source(source: str) -> str:
     return source.replace(anchor, replacement)
 
 
+def i1_m11_active_publication_custody_source(source: str) -> str:
+    """Generated M11 must preserve h <-> active Value/Needs identity.
+
+    A torn or inconsistent publication cannot become the canonical current
+    mortal state merely because both owner snapshots deserialize separately.
+    Only the exact canonical natural I1 actor participates in this contract.
+    """
+    verification = '''def _verify_i1_active_publication_custody(runtime: Any) -> None:
+    from .i1_natural_runtime import I1Runtime
+    if type(runtime) is not I1Runtime:
+        return
+    from .i1_active_value_needs import validate_advisory_rows
+    history = runtime.slow_history.read_committed()
+    if type(history) is not dict or type(history.get("forms")) is not dict:
+        raise RecoveryBlocked("missing canonical I1 consolidated active forms")
+    forms = history["forms"]
+    if set(forms) not in (set(), {"value_needs"}):
+        raise RecoveryBlocked("unapproved I1 active owner publication")
+    expected = forms.get("value_needs", [])
+    witnessed = history.get("procedural")
+    if type(witnessed) is not list or any(type(row) is not dict for row in witnessed):
+        raise RecoveryBlocked("invalid committed procedural source")
+    if type(expected) is not list:
+        raise RecoveryBlocked("invalid committed active Value/Needs form")
+    validate_advisory_rows(expected)
+    authorized = sorted(
+        (row for row in witnessed if row.get("state") == "compiled_private"),
+        key=lambda row: row["id"],
+    )
+    if (canonical_causal_bytes(expected) != canonical_causal_bytes(authorized)
+            or canonical_causal_bytes(expected) != canonical_causal_bytes(
+                runtime.value_needs.active_observed_procedures()
+            )):
+        raise RecoveryBlocked("I1 active owner and consolidated history diverged")
+
+
+'''
+    anchor = "def _runtime_image(runtime: Any, *, individual_id: str) -> dict[str, Any]:\n"
+    if source.count(anchor) != 1:
+        raise ValueError("unreviewed M11 registered owner capture")
+    source = source.replace(anchor, verification + anchor)
+    original_capture = "    image = capture_registered_current_state(\n"
+    if source.count(original_capture) != 1:
+        raise ValueError("unreviewed M11 owner image source")
+    source = source.replace(
+        original_capture,
+        "    _verify_i1_active_publication_custody(runtime)\n" + original_capture,
+    )
+    cold_anchor = (
+        "    # Complete ledger bytes correspond to the current *generation*, not any\n"
+    )
+    if source.count(cold_anchor) != 1:
+        raise ValueError("unreviewed M11 restored owner sync boundary")
+    return source.replace(
+        cold_anchor,
+        "    _verify_i1_active_publication_custody(runtime)\n" + cold_anchor,
+    )
+
+
 def i1_private_consolidation_source(source: str) -> str:
     """Generated Stage10: active Value/Needs advisory, all other forms inert.
 
@@ -314,6 +373,7 @@ def generate(output: Path) -> dict[str, object]:
                     '            ("i1-water-firstperson-birth-v1", runtime._i1_water_contract))\n'
                     + hash_anchor,
                 )
+                transformed = i1_m11_active_publication_custody_source(transformed)
             # No stale absolute Python imports may silently reach I0.
             for line in transformed.splitlines():
                 stripped = line.lstrip()
