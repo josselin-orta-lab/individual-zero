@@ -53,7 +53,11 @@ def factory(cost=2):
   i1_forecast_cost_uc=cost)
 with TemporaryDirectory() as folder:
  path=str(Path(folder)/"i1.sqlite")
- with M11TransactionalMortal.birth(db_path=path,runtime=factory(),
+ candidate=factory()
+ from i1lab.stage12_runtime import Stage12Runtime
+ assert isinstance(candidate,Stage12Runtime),str(type(candidate).__mro__)
+ assert candidate._m11_sqlite_custody is True
+ with M11TransactionalMortal.birth(db_path=path,runtime=candidate,
                                     individual_id=identity) as owner:
   receipt=owner.run_step()
   assert receipt.generation==1 and receipt.world_step==1
