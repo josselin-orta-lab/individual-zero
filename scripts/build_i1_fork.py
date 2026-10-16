@@ -64,7 +64,7 @@ def generate(output: Path) -> dict[str, object]:
             # I1-only M11 custody: accept an explicit Stage12 descendant,
             # but pin the frozen I1 model parameters in the cold-birth digest.
             # Never alter the canonical src/lab or src/i0 M11 implementation.
-            if output_package == "lab" and relative.as_posix() == "m11_transactional_mortal.py":
+            if output_package == "i1lab" and relative.as_posix() == "m11_transactional_mortal.py":
                 required = "type(runtime) is Stage12Runtime"
                 if transformed.count(required) != 3:
                     raise ValueError("unreviewed I1 M11 runtime type gate")
