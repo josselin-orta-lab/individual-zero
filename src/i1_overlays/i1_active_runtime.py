@@ -28,6 +28,9 @@ from i1.modules.simulator import state_from_capture
 
 from .determinism import canonical_causal_bytes, sha256_hex
 from .stage12_runtime import Stage12Runtime
+from .i1_lived_recall import POLICY as RECALL_POLICY, matched_collection_recall
+from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY
+from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY
 
 
 I1_POLICY = "i1-stage6-live-partial-prebirth-v1"
@@ -63,6 +66,8 @@ class I1PartialEvidenceAdapter:
                 or proposal.option.provenance != "i1_partial_experiment"
                 or kwargs.get("t_monde") != self._pending.get("world_step")):
             return self._underlying.evaluate(proposal=proposal, **kwargs)
+        sources = tuple(self._pending.get("lived_sources", ()))
+        evidence = 0.45 if sources else I1_SCORE
         e = EvaluationOption(
             option_ref=proposal.option.id,
             option_version=proposal.option.version,
@@ -79,10 +84,11 @@ class I1PartialEvidenceAdapter:
             risk=None,
             safety_uncertainty=1.0,
             protection=False,
-            signal_ids=(),
-            producers=("i1:partial-experimental-instrumental-v1",),
+            signal_ids=tuple("memory:source:"+s for s in sources),
+            producers=("i1:partial-experimental-instrumental-v1",)
+                      + ((RECALL_POLICY,) if sources else ()),
         )
-        result = OptionEvidenceInput(evaluation=e, evidence=I1_SCORE)
+        result = OptionEvidenceInput(evaluation=e, evidence=evidence)
         result.validate()
         return result
 
@@ -95,12 +101,17 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
     def __init__(
         self, *, i1_model: ShadowVisibleDeltaModel | None = None,
         i1_model_enabled: bool = False, i1_forecast_cost_uc: int = 2,
+        i1_lived_recall_enabled: bool = False, i1_recall_cost_uc: int = 1,
         **kwargs,
     ) -> None:
         if type(i1_model_enabled) is not bool:
             raise ValueError("I1 active model opt-in must be a boolean")
         if type(i1_forecast_cost_uc) is not int or i1_forecast_cost_uc < 1:
             raise ValueError("I1 partial model requires positive UC cost")
+        if type(i1_lived_recall_enabled) is not bool or type(i1_recall_cost_uc) is not int or i1_recall_cost_uc < 1:
+            raise ValueError("invalid I1 lived recall opt-in or cost")
+        if i1_lived_recall_enabled and not i1_model_enabled:
+            raise ValueError("I1 recall requires active I1 predictor")
         if i1_model_enabled:
             who = kwargs.get("birth_life_id")
             if (not isinstance(who, str) or not who.startswith("i1:")
@@ -119,6 +130,8 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
                 raise ValueError("invalid I1 factorized research artifact")
         elif i1_model is not None:
             raise ValueError("a model at birth requires explicit enabled=True")
+        self._i1_lived_recall_enabled = i1_lived_recall_enabled
+        self._i1_recall_cost_uc = i1_recall_cost_uc
         self._i1_model = i1_model
         self._i1_enabled = i1_model_enabled
         self._i1_forecast_cost_uc = i1_forecast_cost_uc
@@ -127,7 +140,8 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
              None if i1_model is None else i1_model.version,
              None if i1_model is None else i1_model.corpus_sha256,
              None if i1_model is None else i1_model.deltas,
-             None if i1_model is None else i1_model.counts)
+             None if i1_model is None else i1_model.counts,
+             RECALL_POLICY, i1_lived_recall_enabled, i1_recall_cost_uc)
         )
         self._i1_pending = {}
         super().__init__(**kwargs)
@@ -145,17 +159,20 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         stage4 = stage6.stage4
         original = stage4.compute_budget
         cost = self._i1_forecast_cost_uc
+        extra = self._i1_recall_cost_uc if self._i1_lived_recall_enabled else 0
         budget = replace(
             original,
             version=original.version + "+" + I1_POLICY,
-            cycle_ceiling=original.cycle_ceiling + cost,
+            cycle_ceiling=original.cycle_ceiling + cost + extra,
             module_envelopes={
                 **original.module_envelopes,
                 "planning": original.module_envelopes["planning"] + cost,
+                "competition": original.module_envelopes["competition"] + extra,
             },
             operation_costs={
                 **original.operation_costs,
                 I1_EXPERIMENTAL_OPERATION: cost,
+                **({"i1_lived_recall_review": extra} if extra else {}),
             },
         )
         updated = replace(stage9, stage8=replace(stage8, stage7=replace(
@@ -168,6 +185,39 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
     def _evaluate_competition_cycle(self, *, capture, cycle):
         # No retained wrapper in causal snapshots or M11 private cloning.
         # Competition remains the one and only decision accumulator.
+        if (self._i1_lived_recall_enabled
+                and self._i1_pending.get("option_ref")
+                and self._i1_pending.get("world_step") == capture.t_monde
+                and not self._i1_pending.get("reviewed")):
+            self._i1_pending["reviewed"] = True
+            if self._charge(module="competition", operation="i1_lived_recall_review"):
+                current = self.s_t.current
+                visible_refs = set() if current is None else {
+                    element.contribution_ref for element in current.competitive
+                }
+                recalled = (e.causal_event.get("data", {}) for e in self.journal.entries
+                    if e.causal_event.get("kind") == "memory_recall_proposed"
+                    and e.causal_event.get("t_monde") == capture.t_monde)
+                episodes = tuple(data["episode_ref"] for data in recalled
+                    if data.get("contribution_ref") in visible_refs
+                    and type(data.get("episode_ref")) is str)
+                command = self._i1_pending.get("command_primitive")
+                if command == "collecter":
+                    autobiography = self.stage3.substrate.views.autobiographical(policies={
+                        STAGE2_AUTOBIOGRAPHICAL_POLICY.version: STAGE2_AUTOBIOGRAPHICAL_POLICY,
+                        STAGE7_AUTOBIOGRAPHICAL_POLICY.version: STAGE7_AUTOBIOGRAPHICAL_POLICY,
+                    })
+                    sources = matched_collection_recall(
+                        episodes=self.memory.episodes, autobiography=autobiography,
+                        admitted_recall_refs=episodes, t_monde=capture.t_monde)
+                    self._i1_pending["lived_sources"] = sources
+                    self._write(kind="i1_lived_recall_review", cycle=cycle, data={
+                        "policy": RECALL_POLICY, "source_event_refs": list(sources),
+                        "safety_certified": False,
+                    })
+            else:
+                self._write(kind="i1_lived_recall_abstained", cycle=cycle,
+                            data={"reason":"insufficient_uc"})
         original = self.stage8_option_evaluator
         self.stage8_option_evaluator = I1PartialEvidenceAdapter(
             original, self._i1_pending
@@ -299,7 +349,8 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         )
         proposed.validate()
         self._i1_pending.update(
-            option_ref=option_id, world_step=capture.t_monde, receipt=receipt
+            option_ref=option_id, world_step=capture.t_monde, receipt=receipt,
+            command_primitive=command.primitive
         )
         self._write(kind="i1_partial_instrumental_option_proposed",
                     cycle=cycle, data={
