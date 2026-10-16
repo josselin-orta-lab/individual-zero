@@ -1,7 +1,7 @@
 name: Stage12 A2.30-W prospective preexposure probes
 on:
   pull_request:
-    branches: [science/stage12-b-a230v-food-decision-identifiability-20261015]
+    branches: [main]
     paths:
       - 'scripts/run_stage12_issue110_b_a230w_prospective_probes.py'
       - 'tests/test_stage12_a230w_preexposure_probes.py'
