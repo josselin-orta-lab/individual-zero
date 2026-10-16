@@ -1,7 +1,7 @@
 name: Stage12 #110 A2.28 B opportunity funnel
 on:
   pull_request:
-    branches: [feature/stage12-b-dual-scope-judgement-20261015]
+    branches: [main]
     paths:
       - 'scripts/run_stage12_issue110_b_a228_funnel.py'
       - 'docs/research/stage12-issue110-b-a228-*.md'

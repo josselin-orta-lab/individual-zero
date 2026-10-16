@@ -1,0 +1,75 @@
+name: Stage12 A2.30-ZQA independent original mortal archive audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230zqa_autonomous_mortality.py'
+      - 'tests/test_stage12_a230zqa_independent_autonomous_mortality.py'
+      - 'docs/research/stage12-issue110-b-a230zqa-*.md'
+      - '.github/workflows/stage12-b-a230zqa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  independently-sealed-WAL-and-physical-motor-death:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Retrieve immutable original ZQ and ZB CI source archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          fetch_exact_artifact() {
+            local run="$1" name="$2" folder="$3" attempt
+            mkdir -p "$folder"
+            for attempt in 1 2 3; do
+              if gh run download "$run" --repo "$GITHUB_REPOSITORY" --name "$name" --dir "$folder"; then
+                return 0
+              fi
+              echo "Original source retrieval attempt $attempt failed" >&2
+              sleep 3
+            done
+            echo "FAILED: original $name unavailable; archive audit BLOCKED" >&2
+            return 1
+          }
+          fetch_exact_artifact 38796937894 a230zq-py3.11 /tmp/a230zqa-zq311
+          fetch_exact_artifact 38796937894 a230zq-py3.12 /tmp/a230zqa-zq312
+          fetch_exact_artifact 38767643472 a230zb-py3.11 /tmp/a230zqa-zb311
+          fetch_exact_artifact 38767643472 a230zb-py3.12 /tmp/a230zqa-zb312
+      - name: Falsify future/Oracle, fake B, death causes, UC and unavailable sensory receipts
+        env:
+          A230ZQA_ZQ311: /tmp/a230zqa-zq311
+          A230ZQA_ZQ312: /tmp/a230zqa-zq312
+          A230ZQA_ZB311: /tmp/a230zqa-zb311
+          A230ZQA_ZB312: /tmp/a230zqa-zb312
+        run: python -m unittest discover -s tests -p test_stage12_a230zqa_independent_autonomous_mortality.py -v
+      - name: Independently reconstruct 24 original I0 mortal journals and 12 causal contrasts
+        run: |
+          python -u scripts/audit_stage12_issue110_b_a230zqa_autonomous_mortality.py \
+            --zq311 /tmp/a230zqa-zq311 \
+            --zq312 /tmp/a230zqa-zq312 \
+            --zb311 /tmp/a230zqa-zb311 \
+            --zb312 /tmp/a230zqa-zb312 \
+            --output-dir /tmp/a230zqa-output > /tmp/a230zqa.log 2>&1 \
+            || { tail -n 160 /tmp/a230zqa.log; exit 2; }
+          grep A230ZQA_SUMMARY /tmp/a230zqa.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zqa-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zqa-output
+            /tmp/a230zqa.log
+          retention-days: 30

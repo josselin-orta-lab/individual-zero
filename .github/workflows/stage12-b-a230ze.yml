@@ -1,7 +1,7 @@
 name: Stage12 A2.30-ZE physically witnessed exact coverage shadow
 on:
   pull_request:
-    branches: [science/stage12-b-a230zd-autonomous-attribution-funnel-20261015]
+    branches: [main]
     paths:
       - 'scripts/run_stage12_issue110_b_a230ze_model_coverage.py'
       - 'tests/test_stage12_a230ze_model_coverage.py'
