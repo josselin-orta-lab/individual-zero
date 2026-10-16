@@ -48,8 +48,8 @@ def i1_physiology_source(source: str) -> str:
         (
             "    shelter_stones_required: int = 4\n",
             "    shelter_stones_required: int = 4\n"
-            "    starvation_integrity_damage_per_step: float = 0.5\n"
-            "    dehydration_integrity_damage_per_step: float = 1.0\n"
+            "    starvation_integrity_damage_per_step: float = 0.0\n"
+            "    dehydration_integrity_damage_per_step: float = 0.0\n"
         ),
         (
             "        self.tool_recipe.validate()\n",
