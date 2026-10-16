@@ -65,3 +65,11 @@ No source build, Python 3.11/3.12 execution, M11 real birth/recovery, WAL audit,
 On this revision, code review detected that the I1-only generator had still emitted a literal backslash-n sequence between local M11 imports. The earlier indentation correction did not eliminate this defect. Commit `aa541207a75e1f1b093c0546e71e7f07549bb235` replaces it with an actual source newline. Commit `4808dd1aae722295994dec4d6648b11ee24fa3dc` adds a deterministic generation-time assertion requiring all three exact canonical actor import scopes. Both are I1-only generator changes; no original I0 or Lab module is edited.
 
 **Remaining gates:** actual source-generation/build and a new mortal I1 birth have still not been executed. There is no executed M11 cold recovery or confirmed active-form reconciliation. All previously documented source-level claims remain provisional. Do not merge #245 or claim scientific GO on static inspection alone.
+
+## Continued restoration: general Stage6 planning and honest unplannability
+
+Commit `cf86f97aade3e99fffba6f5d6f3a888b666ae3f3` enables Stage6 progressive subgoals in the canonical I1 constructor by default, using single-step prefix and fresh-physical-capture revalidation. This changes the **actual frozen Stage6 config nested inside Stage11 and Stage10**, never the historic fixture. Progress can be credited only to a physically predicted change in the active homeostatic measure or food-inventory acquisition as a partial capacity, never as full satiation. The I1 uncertain-affordance option continues to represent unknown consequences explicitly and must still compete under Stage9 and Action Control.
+
+The same commit excludes degraded cognitive cycles from GoalManager non-plannable failure accounting: insufficient UC is not proof that a need cannot be met. Native GoalManager remains in charge of refractory releases, not H1.
+
+These modifications are committed source, not verified behavior. No additional tests, builds, independent cohorts or execution were run. Original I0/shared Lab and A2.38/A2.39 histories are unchanged. M11 active-form rebase remains fail-closed and this PR remains draft.
