@@ -3,8 +3,8 @@
 The checked-in src/i1 tree is the exact source snapshot from the approved
 I0 main SHA. This build mechanically namespaces that copy and the complete
 laboratory runtime in a separate output directory. No src/i0 or src/lab file
-is written. The *physics implementation* is kept byte-equivalent after
-namespace substitutions, and its parity is checked independently.
+is written. The I1-generated WorldBody alone receives a versioned physiological
+extension; the normative I0 and Lab WorldBody remain unchanged.
 
 Output is disposable build code, not an archived living individual.
 """
@@ -36,6 +36,65 @@ def rewrite(text: str) -> str:
     return BIRTH_ID.sub(r"\1i1", text)
 
 
+
+def i1_physiology_source(source: str) -> str:
+    """Versioned I1-only physical deprivation, never applied to I0 or Lab.
+
+    The generated copy owns the consequences; cognitive code sees only the
+    same body telemetry on the next authorized capture. Rates are frozen
+    constructor inputs, carried by the normal WorldPhysicsConfig / M11 digest.
+    """
+    patches = (
+        (
+            "    shelter_stones_required: int = 4\\n",
+            "    shelter_stones_required: int = 4\\n"
+            "    starvation_integrity_damage_per_step: float = 0.5\\n"
+            "    dehydration_integrity_damage_per_step: float = 1.0\\n"
+        ),
+        (
+            "        self.tool_recipe.validate()\\n",
+            "        for damage in (self.starvation_integrity_damage_per_step,\\n"
+            "                       self.dehydration_integrity_damage_per_step):\\n"
+            "            if not 0.0 <= damage <= 100.0 or damage != damage:\\n"
+            "                raise ValueError('I1 deprivation rates must be finite in [0,100]')\\n"
+            "        self.tool_recipe.validate()\\n"
+        ),
+        (
+            '            "shelter_stones_required": self.shelter_stones_required,\\n',
+            '            "shelter_stones_required": self.shelter_stones_required,\\n'
+            '            "starvation_integrity_damage_per_step": self.starvation_integrity_damage_per_step,\\n'
+            '            "dehydration_integrity_damage_per_step": self.dehydration_integrity_damage_per_step,\\n'
+        ),
+        (
+            "        lethal_reasons: list[str] = []\\n",
+            "        # #231: apply *after* the actual action. Successful eating or\\n"
+            "        # drinking prevents same-step deprivation. Rest, a failed\\n"
+            "        # action, and physical hazards do not suspend metabolism.\\n"
+            "        starvation = (self._config.starvation_integrity_damage_per_step\\n"
+            "                      if body.food <= 0.0 else 0.0)\\n"
+            "        dehydration = (self._config.dehydration_integrity_damage_per_step\\n"
+            "                       if body.water <= 0.0 else 0.0)\\n"
+            "        if starvation or dehydration:\\n"
+            "            integrity_before = body.integrity\\n"
+            "            body = BodyState(\\n"
+            "                energy=body.energy, food=body.food, water=body.water,\\n"
+            "                integrity=self._clamp(integrity_before - starvation - dehydration),\\n"
+            "            )\\n"
+            "            effects['deprivation_integrity_damage'] = {\\n"
+            "                'starvation': starvation, 'dehydration': dehydration,\\n"
+            "                'actual_integrity_loss': integrity_before - body.integrity,\\n"
+            "            }\\n"
+            "        lethal_reasons: list[str] = []\\n"
+        ),
+    )
+    for original, replacement in patches:
+        original = original.replace('\\\\n', '\\n')
+        replacement = replacement.replace('\\\\n', '\\n')
+        if source.count(original) != 1:
+            raise ValueError("I1 deprivation source anchor changed")
+        source = source.replace(original, replacement)
+    return source
+
 def generate(output: Path) -> dict[str, object]:
     output = output.resolve()
     # A mis-specified output must never clobber the checked-in cognition.
@@ -61,6 +120,8 @@ def generate(output: Path) -> dict[str, object]:
             relative = file.relative_to(source)
             contents = file.read_text(encoding="utf-8")
             transformed = rewrite(contents)
+            if output_package == "i1lab" and relative.as_posix() == "world.py":
+                transformed = i1_physiology_source(transformed)
             # I1-only M11 custody: accept an explicit Stage12 descendant,
             # but pin the frozen I1 model parameters in the cold-birth digest.
             # Never alter the canonical src/lab or src/i0 M11 implementation.
