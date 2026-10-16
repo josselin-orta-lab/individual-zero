@@ -85,7 +85,7 @@ def preflight(output: Path, *, source_sha: str):
                 or physics.day_steps != 300 or physics.night_steps != 100
                 or physics.night_start_step != 200
                 or bool(configured.geographic) != (stratum in GROUPS[3:])
-                or (len(events) != 1) != (stratum == GROUPS[4])):
+                or (len(events) == 1) != (stratum == GROUPS[4])):
             raise RuntimeError(f"physical input mismatch {stratum}/{i}")
         if stratum == GROUPS[4] and (events[0].t_monde != 9 or
                                     events[0].operation != "set_lethal_zone"):
