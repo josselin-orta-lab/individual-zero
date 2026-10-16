@@ -1,0 +1,143 @@
+name: Postmerge v1.3.1 cross-stage verification
+
+# Immutable main ancestry. No changes to the product, tests, or specifications.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/postmerge-v131-transversal.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: postmerge-v131-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  static-and-foundations:
+    name: Foundations / first-person boundary (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e . pytest
+      - name: Stages 1-8 and perceptual boundaries
+        run: |
+          set -e
+          for pattern in test_stage1_*.py test_stage2_*.py test_stage3_*.py test_stage4_*.py test_stage5_*.py test_stage6_*.py test_stage7_*.py test_stage8_*.py; do
+            python -m unittest discover -s tests -p "$pattern" -q
+          done
+      - name: Structural, Oracle isolation and irreversible mortality contracts
+        run: |
+          set -e
+          for pattern in test_structural_contracts.py test_oracle_bench.py test_mortal_*.py test_independent_journal_*.py; do
+            python -m unittest discover -s tests -p "$pattern" -q
+          done
+      - name: Three real bootstrap cycles
+        run: individual-zero --cycles 3 --seed 0 --run-id postmerge-v131 --output /tmp/postmerge-bootstrap.jsonl
+
+  cognition-and-causality:
+    name: Cognition / attribution / consolidation (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e . pytest
+      - name: Stage9 physical/causal confounding and abstention
+        run: |
+          set -e
+          for pattern in test_stage9_concurrent_cause_audit.py test_stage9_causal_*.py test_stage9_agency_*.py test_stage9_lived_*.py; do
+            python -m unittest discover -s tests -p "$pattern" -q
+          done
+      - name: Stage10 sleep, paid index, consolidation and custody
+        run: |
+          set -e
+          for pattern in test_stage10_consolidation_*.py test_stage10_pending_paid_index.py test_stage10_index_*.py test_stage10_sleep_*.py; do
+            python -m unittest discover -s tests -p "$pattern" -q
+          done
+      - name: Stage11 lived planning and Stage12 agency/alerts (non-scientific)
+        run: |
+          set -e
+          for pattern in test_stage11_lived_prediction*.py test_stage11_modulation*.py test_stage11_sleep_integration.py test_stage12_mortal_runtime.py test_stage12_dual_scope*.py test_stage12_goal_agency*.py test_stage12_attribution*.py test_stage12_operator_*.py; do
+            python -m unittest discover -s tests -p "$pattern" -q
+          done
+
+  durability-and-recovery:
+    name: SQLite WAL / mortality / crash recovery (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e . pytest
+      - name: Real SQLite ownership and crash-window contract
+        run: |
+          set -e
+          python -m pytest -q tests/test_sqlite_*.py \
+            tests/test_m11_real_transactional_runtime.py \
+            tests/test_m11_coordinated_crash_matrix.py \
+            tests/test_m11_stage12_atomic_preflight.py \
+            tests/test_m11_stage12_hard_crash.py \
+            tests/test_m11_stage12_compatibility.py \
+            tests/test_m11_verified_anchor_optimization.py
+      - name: Fatal interruptions, no resurrected lives
+        run: |
+          set -e
+          for pattern in test_integrated_mortal_uncertain_step_halt.py test_mortal_abrupt_crash_window.py test_mortal_forward_only_world.py test_mortal_world_terminal_freeze.py; do
+            python -m unittest discover -s tests -p "$pattern" -q
+          done
+
+  observer-contract:
+    name: Observer security and replay integration (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      # Fixture Core must run before installing the real Core package;
+      # otherwise the installed lab package shadows the isolated fake fixture.
+      - run: python -m pip install -e './observer[test]'
+      - name: Observer isolated tests
+        run: python -m pytest observer/tests -q
+      - name: Install real Core only for cross-component contract tests
+        run: python -m pip install -e .
+      - name: Observer JS syntax and journal/geometry boundaries
+        run: |
+          node --check observer/observer_app/web/app.js
+          python -m pytest -q tests/test_observer_engine_frame.py tests/test_autonomous_external_observer_parity.py tests/test_independent_journal_audit.py
