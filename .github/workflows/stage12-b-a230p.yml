@@ -1,0 +1,45 @@
+name: Stage12 A2.30-P joint delayed physical witness
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230p_joint_trajectories.py'
+      - 'scripts/run_stage12_issue110_b_a230p_joint_prefix_experiment.py'
+      - 'tests/test_stage12_a230p_joint_trajectory.py'
+      - 'docs/research/stage12-issue110-b-a230p-*.md'
+      - '.github/workflows/stage12-b-a230p.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independent-lab-worlds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Test terminal irreversibility, hidden variants and unseen-prefix abstention
+        run: python -m unittest discover -s tests -p test_stage12_a230p_joint_trajectory.py -v
+      - name: Execute preregistered physical train/test and retain every observed branch
+        run: |
+          python -u scripts/run_stage12_issue110_b_a230p_joint_prefix_experiment.py \
+            --output-dir /tmp/a230p > /tmp/a230p.log 2>&1 \
+            || { tail -n 150 /tmp/a230p.log; exit 2; }
+          grep A230P_SUMMARY /tmp/a230p.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230p-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230p
+            /tmp/a230p.log
+          retention-days: 30

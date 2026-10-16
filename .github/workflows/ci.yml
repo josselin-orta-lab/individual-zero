@@ -47,7 +47,7 @@ jobs:
       ((github.event.action == 'labeled' && github.event.label.name == 'ci-unit') ||
        (github.event.action != 'labeled' && !github.event.pull_request.draft))
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -60,18 +60,35 @@ jobs:
       - name: Install project
         run: python -m pip install -e . pytest
 
-      - name: Provision sealed A2.30-O evidence for full tests
+      - name: Provision sealed A2.30-O/P evidence for full tests
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p /tmp/a230o-py311 /tmp/a230o-py312
           gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.11 --dir /tmp/a230o-py311
           gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.12 --dir /tmp/a230o-py312
-      - name: Run unit tests (without long-running reference diagnostics)
+          mkdir -p /tmp/a230p-py311 /tmp/a230p-py312
+          gh run download 38730415503 --repo "$GITHUB_REPOSITORY" --name a230p-py3.11 --dir /tmp/a230p-py311
+          gh run download 38730415503 --repo "$GITHUB_REPOSITORY" --name a230p-py3.12 --dir /tmp/a230p-py312
+      # Short PR gate. The 1600+ legacy tests and 600-step diagnostics stay
+      # available without modification in the explicit ci-full matrix below.
+      - name: Run targeted PR regression and adversarial science tests
         env:
           A230O_SOURCE_A: /tmp/a230o-py311
           A230O_SOURCE_B: /tmp/a230o-py312
-        run: python -m unittest discover -s tests -q
+          A230Q_SOURCE_311: /tmp/a230p-py311
+          A230Q_SOURCE_312: /tmp/a230p-py312
+          A230R_SOURCE: /tmp/a230p-py311
+        run: |
+          set -e
+          for test in \
+            test_stage4_runtime.py \
+            test_stage5_trait_battery.py \
+            test_stage12_a230p_joint_trajectory.py \
+            test_stage12_a230q_archive_witness.py \
+            test_stage12_a230r_physical_replay.py; do
+            python -m unittest discover -s tests -p "$test" -q
+          done
 
       - name: Run bootstrap smoke execution
         run: individual-zero --cycles 3 --seed 0 --run-id ci-smoke --output /tmp/individual-zero-ci.jsonl
@@ -104,17 +121,23 @@ jobs:
       - name: Install project
         run: python -m pip install -e . pytest
 
-      - name: Provision sealed A2.30-O evidence for full tests
+      - name: Provision sealed A2.30-O/P evidence for full tests
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p /tmp/a230o-py311 /tmp/a230o-py312
           gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.11 --dir /tmp/a230o-py311
           gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.12 --dir /tmp/a230o-py312
+          mkdir -p /tmp/a230p-py311 /tmp/a230p-py312
+          gh run download 38730415503 --repo "$GITHUB_REPOSITORY" --name a230p-py3.11 --dir /tmp/a230p-py311
+          gh run download 38730415503 --repo "$GITHUB_REPOSITORY" --name a230p-py3.12 --dir /tmp/a230p-py312
       - name: Run unit tests
         env:
           A230O_SOURCE_A: /tmp/a230o-py311
           A230O_SOURCE_B: /tmp/a230o-py312
+          A230Q_SOURCE_311: /tmp/a230p-py311
+          A230Q_SOURCE_312: /tmp/a230p-py312
+          A230R_SOURCE: /tmp/a230p-py311
         run: python -m unittest discover -s tests -v
 
       # Independent v1.3.1 mortal cognition: 600 actually executed world
