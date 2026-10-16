@@ -1,7 +1,7 @@
 name: Stage12 A2.30-ZT independent original split-job sealed forecast audit
 on:
   pull_request:
-    branches: [science/stage12-b-a230zp-independent-heldout-audit-20261015]
+    branches: [main]
     paths:
       - 'scripts/audit_stage12_issue110_b_a230zt_splitjob_archives.py'
       - 'tests/test_stage12_a230zt_independent_splitjob.py'

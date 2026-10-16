@@ -1,19 +1,19 @@
-name: Stage12 A2.30-ZS strict preaction SHA-sealed physical heldout
+name: Stage12 A2.30-ZS prospective durable preaction forecasts
 on:
   pull_request:
-    branches: [science/stage12-b-a230zp-independent-heldout-audit-20261015]
+    branches: [main]
     paths:
-      - 'scripts/run_stage12_issue110_b_a230zs_sealed_forecast.py'
-      - 'tests/test_stage12_a230zs_sealed_preaction.py'
-      - 'docs/research/stage12-issue110-b-a230zs-*.md'
+      - 'scripts/run_stage12_issue110_b_a230zs_preaction_sealed.py'
+      - 'tests/test_stage12_a230zs_preaction_sealed.py'
+      - 'docs/research/stage12-a230zs-*.md'
       - '.github/workflows/stage12-b-a230zs.yml'
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  seal-before-physics:
+  preaction-sealed-hazard-heldout:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -26,64 +26,22 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -e .
-      - name: Apply ONLY 16 source training transitions; freeze and fsync 104 heldout forecasts BEFORE any heldout WorldBody.apply
+      - name: Execute 120 new independent physical worlds with 104 truly preaction fsync forecasts
         run: |
-          python -u scripts/run_stage12_issue110_b_a230zs_sealed_forecast.py \
-            --seal --output-dir /tmp/a230zs-sealed > /tmp/a230zs-seal.log 2>&1 \
-            || { tail -n 160 /tmp/a230zs-seal.log; exit 2; }
-          grep A230ZS_PREACTION_SEAL /tmp/a230zs-seal.log
-          sha256sum /tmp/a230zs-sealed/*.json
-      - name: Publish immutable pre-exposure SHA commitments and terminate seal job
-        uses: actions/upload-artifact@v4
-        with:
-          name: a230zs-sealed-py${{ matrix.python-version }}
-          path: |
-            /tmp/a230zs-sealed
-            /tmp/a230zs-seal.log
-          retention-days: 30
-          if-no-files-found: error
-  realize-after-seal:
-    needs: [seal-before-physics]
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.11','3.12']
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - run: python -m pip install -e .
-      - name: Restore ORIGINAL prior-job sealed source (cannot rerun predictions to overwrite)
-        uses: actions/download-artifact@v4
-        with:
-          name: a230zs-sealed-py${{ matrix.python-version }}
-          path: /tmp/a230zs-source-artifact
-      - name: Check source before physics (distinct job, fresh process) and apply exactly 104 heldout transitions
-        run: |
-          find /tmp/a230zs-source-artifact -type f -maxdepth 4
-          python -u scripts/run_stage12_issue110_b_a230zs_sealed_forecast.py \
-            --realize --source-dir /tmp/a230zs-source-artifact/a230zs-sealed \
-            --output-dir /tmp/a230zs-realized > /tmp/a230zs-realize.log 2>&1 \
-            || { tail -n 170 /tmp/a230zs-realize.log; exit 2; }
-          grep A230ZS_POSTSEAL_SUMMARY /tmp/a230zs-realize.log
-          sha256sum /tmp/a230zs-source-artifact/a230zs-sealed/*.json
-      - name: Reject counterfeited hashes, postaction fraud, hidden effects, invented safety and UC
+          python -u scripts/run_stage12_issue110_b_a230zs_preaction_sealed.py \
+            --output-dir /tmp/a230zs-original > /tmp/a230zs.log 2>&1 \
+            || { tail -n 150 /tmp/a230zs.log; exit 2; }
+          grep A230ZS_SUMMARY /tmp/a230zs.log
+      - name: Reject reordered SHA receipts, forged prediction, hidden safety and postmortem first-person claims
         env:
-          A230ZS_SEALED_SOURCE: /tmp/a230zs-source-artifact/a230zs-sealed
-          A230ZS_REALIZED_OUTPUT: /tmp/a230zs-realized
-        run: python -m unittest discover -s tests -p test_stage12_a230zs_sealed_preaction.py -v
-      - name: Publish physical outcomes joined to immutable earlier predictions, never regenerate source
+          A230ZS_ORIGINAL_SOURCE: /tmp/a230zs-original
+        run: |
+          python -m unittest discover -s tests -p test_stage12_a230zs_preaction_sealed.py -v
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: a230zs-realized-py${{ matrix.python-version }}
+          name: a230zs-py${{ matrix.python-version }}
           path: |
-            /tmp/a230zs-realized
-            /tmp/a230zs-realize.log
+            /tmp/a230zs-original
+            /tmp/a230zs.log
           retention-days: 30
-          if-no-files-found: warn

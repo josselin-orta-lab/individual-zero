@@ -1,7 +1,7 @@
 name: Stage12 A2.30-X independent prospective archive audit
 on:
   pull_request:
-    branches: [science/stage12-b-a230v-food-decision-identifiability-20261015]
+    branches: [main]
     paths:
       - 'scripts/audit_stage12_issue110_b_a230x_sealed_probes.py'
       - 'tests/test_stage12_a230x_independent_archives.py'

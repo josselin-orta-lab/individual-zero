@@ -1,7 +1,7 @@
 name: Stage12 A2.30-ZH independent sealed root audit
 on:
   pull_request:
-    branches: [science/stage12-b-a230ze-physical-coverage-shadow-20261015]
+    branches: [main]
     paths:
       - 'scripts/audit_stage12_issue110_b_a230zh_sealed_roots.py'
       - 'tests/test_stage12_a230zh_sealed_roots.py'

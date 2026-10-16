@@ -1,7 +1,7 @@
 name: Stage12 A2.30-ZK prospective own-world noningestive motor bootstrapping
 on:
   pull_request:
-    branches: [science/stage12-b-a230zg-lived-root-matched-shadow-20261015]
+    branches: [main]
     paths:
       - 'scripts/run_stage12_issue110_b_a230zk_ownworld_probe.py'
       - 'tests/test_stage12_a230zk_ownworld_probe.py'

@@ -1,7 +1,7 @@
 name: Stage12 A2.30-ZO prospective factorized partial heldout
 on:
   pull_request:
-    branches: [science/stage12-b-a230zm-reentry-identifiability-20261015]
+    branches: [main]
     paths:
       - 'scripts/run_stage12_issue110_b_a230zo_factorized_heldout.py'
       - 'tests/test_stage12_a230zo_factorized_heldout.py'
