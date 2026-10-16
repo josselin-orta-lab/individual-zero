@@ -98,6 +98,25 @@ def i1_physiology_source(source: str) -> str:
         source = source.replace(original, replacement)
     return source
 
+def i1_canonical_active_value_source(source: str) -> str:
+    """Switch the generated Stage4 value owner only for natural I1.
+
+    All experimental arms still use the unchanged value owner; the
+    canonical actor changes the exact owner at birth before any life step.
+    """
+    anchor = "        self.value_needs = ValueAndNeeds(config.value_needs)\n"
+    replacement = (
+        "        if type(self).__name__ == 'I1Runtime':\n"
+        "            from .i1_active_value_needs import I1ActiveValueNeeds\n"
+        "            self.value_needs = I1ActiveValueNeeds(config.value_needs)\n"
+        "        else:\n"
+        "            self.value_needs = ValueAndNeeds(config.value_needs)\n"
+    )
+    if source.count(anchor) != 1:
+        raise ValueError("unreviewed generated Stage4 value owner initialization")
+    return source.replace(anchor, replacement)
+
+
 def i1_private_consolidation_source(source: str) -> str:
     """Let proven private procedures reach SlowHistory, not active cognition.
 
@@ -156,6 +175,9 @@ def generate(output: Path) -> dict[str, object]:
                 if material.count("class LivedSixPassAlgorithm:") != 1:
                     raise ValueError("invalid isolated semantic compiler template")
                 transformed = rewrite(material)
+            if (output_package == "i1lab"
+                    and relative.as_posix() == "stage4_runtime.py"):
+                transformed = i1_canonical_active_value_source(transformed)
             if output_package == "i1lab" and relative.as_posix() == "world.py":
                 transformed = i1_physiology_source(transformed)
             # Only i1_natural_runtime.I1Runtime installs the natural sleep
