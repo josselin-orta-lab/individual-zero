@@ -153,7 +153,7 @@ def generate(output: Path) -> dict[str, object]:
                     raise ValueError("I1 six-pass snapshot diverged from I0")
                 template = SOURCE_ROOT / "i1_overlays" / "i1_semantics_template.txt"
                 material = template.read_text(encoding="utf-8")
-                if material.count("class SemanticPassRunner") != 1:
+                if material.count("class LivedSixPassAlgorithm:") != 1:
                     raise ValueError("invalid isolated semantic compiler template")
                 transformed = rewrite(material)
             if output_package == "i1lab" and relative.as_posix() == "world.py":
