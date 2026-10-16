@@ -10,7 +10,10 @@ from __future__ import annotations
 from dataclasses import replace
 from hashlib import sha256
 
-from i1.temperament import Temperament, TemperamentProjection
+from i1.temperament import (
+    LinearTemperamentCurve,
+    Temperament, TemperamentMappingConfig, TemperamentProjection,
+)
 
 VERSION = "i1-life-id-temperament-v1"
 CHANNELS = (
@@ -39,31 +42,40 @@ def configure_birth_temperament(stage11_config, *, life_id: str):
         raise TypeError("generated isolated I1 Stage11 config required")
     if VERSION in stage11_config.version:
         raise ValueError("birth temperament already installed")
-    # Project against this individual's *actual* Stage4 neutral contract,
-    # not silently against an unrelated software-reference set of weights.
-    # Retain the bounded published Stage5 curves while aligning their neutral
-    # centres with the birth configuration. This is entirely pre-birth.
-    from .stage5_reference_fixture import build_stage5_reference_runtime
-    reference = build_stage5_reference_runtime(autonomous_mortal=True)
-    base_mapping = reference.stage5_config.mapping
+    # Stage5's neutral reference was formerly retrieved by *birthing a
+    # second autonomous mortal* merely to read a configuration table.
+    # Reproduce its published pure projection constants here instead.
+    # No other individual, WorldBody, Scheduler, WAL or journal is created.
     s9 = stage11_config.stage9
     s8 = s9.stage8
     s7 = s8.stage7
     s6 = s7.stage6
     s4 = s6.stage4
-    mapping = replace(
-        base_mapping, version=base_mapping.version + "+" + VERSION,
+    mapping = TemperamentMappingConfig(
+        version="stage5-reference-mapping-v1+" + VERSION,
         gatekeeper_base_weights=dict(s4.gatekeeper.weights),
-        base_body_weights=dict(s4.value_needs.weights),
+        gatekeeper_alpha={
+            "b": 0.4, "n": 0.5, "urg": 0.3,
+            "risk": 0.6, "value": 0.7,
+        },
+        reward_extrinsic_alpha=0.5,
+        risk_k_pi=0.7,
+        risk_alpha_pi=0.8,
+        uncertainty_k_chi=0.4,
+        protective_threshold_delta=0.2,
         base_inertia=s4.competition.inertia,
-        goal_protection_inertia_curve=replace(
-            base_mapping.goal_protection_inertia_curve,
+        goal_protection_inertia_curve=LinearTemperamentCurve(
+            at_minus_one=0.05,
             at_zero=s4.competition.inertia,
+            at_plus_one=0.2,
         ),
-        integrity_weight_curve=replace(
-            base_mapping.integrity_weight_curve,
+        base_body_weights=dict(s4.value_needs.weights),
+        integrity_weight_curve=LinearTemperamentCurve(
+            at_minus_one=0.5,
             at_zero=s4.value_needs.weights["integrity"],
+            at_plus_one=1.8,
         ),
+        discount_beta=None,
     )
     mapping.validate()
     tau = temperament_for_life(life_id)
