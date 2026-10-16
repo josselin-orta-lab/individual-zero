@@ -141,18 +141,18 @@ def i1_private_consolidation_source(source: str) -> str:
     # The exact candidate consumed by coordinator.prepare must be the SAME
     # versioned candidate that passed the paid sixth semantic checkpoint.
     # Never mutate an already validated transaction during publication.
-    old_handler = "            advance = runner.advance_unit(algorithm.handle)\\n"
+    old_handler = "            advance = runner.advance_unit(algorithm.handle)\n"
     new_handler = (
-        "            def canonical_paid_semantic_handler(candidate, unit, scoped, cut):\\n"
-        "                updated = algorithm.handle(candidate, unit, scoped, cut)\\n"
-        "                if (type(self).__name__ == 'I1Runtime'\\n"
-        "                        and unit.operation == 'index_maintenance'):\\n"
-        "                    updated['forms'] = {'value_needs': [\\n"
-        "                        deepcopy(row) for row in updated.get('procedural', [])\\n"
-        "                        if row.get('state') == 'compiled_private'\\n"
-        "                    ]}\\n"
-        "                return updated\\n"
-        "            advance = runner.advance_unit(canonical_paid_semantic_handler)\\n"
+        "            def canonical_paid_semantic_handler(candidate, unit, scoped, cut):\n"
+        "                updated = algorithm.handle(candidate, unit, scoped, cut)\n"
+        "                if (type(self).__name__ == 'I1Runtime'\n"
+        "                        and unit.operation == 'index_maintenance'):\n"
+        "                    updated['forms'] = {'value_needs': [\n"
+        "                        deepcopy(row) for row in updated.get('procedural', [])\n"
+        "                        if row.get('state') == 'compiled_private'\n"
+        "                    ]}\n"
+        "                return updated\n"
+        "            advance = runner.advance_unit(canonical_paid_semantic_handler)\n"
     )
     if source.count(old_handler) != 1:
         raise ValueError("unreviewed I1 paid semantic handler")
