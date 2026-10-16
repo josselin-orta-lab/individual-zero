@@ -1,7 +1,7 @@
 name: Stage12 A2.30-U independent first-person and shadow archive audit
 on:
   pull_request:
-    branches: [science/stage12-b-a230s-observable-probes-20261015]
+    branches: [main]
     paths:
       - 'scripts/audit_stage12_issue110_b_a230u_independent.py'
       - 'tests/test_stage12_a230u_blind_audit.py'
