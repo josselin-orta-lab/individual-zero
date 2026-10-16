@@ -61,6 +61,24 @@ def generate(output: Path) -> dict[str, object]:
             relative = file.relative_to(source)
             contents = file.read_text(encoding="utf-8")
             transformed = rewrite(contents)
+            # I1-only M11 custody: accept an explicit Stage12 descendant,
+            # but pin the frozen I1 model parameters in the cold-birth digest.
+            # Never alter the canonical src/lab or src/i0 M11 implementation.
+            if output_package == "lab" and relative.as_posix() == "m11_transactional_mortal.py":
+                required = "type(runtime) is Stage12Runtime"
+                if transformed.count(required) != 3:
+                    raise ValueError("unreviewed I1 M11 runtime type gate")
+                transformed = transformed.replace(
+                    required, "isinstance(runtime, Stage12Runtime)"
+                )
+                required_line = '        getattr(runtime, "_stage12_detector_policy", None),'
+                if transformed.count(required_line) != 1:
+                    raise ValueError("unreviewed I1 M11 constructor fingerprint")
+                transformed = transformed.replace(
+                    required_line,
+                    required_line + '\n'
+                    + '        getattr(runtime, "_i1_model_contract", None),',
+                )
             # No stale absolute Python imports may silently reach I0.
             for line in transformed.splitlines():
                 stripped = line.lstrip()
