@@ -97,7 +97,19 @@ def configure_birth_temperament(stage11_config, *, life_id: str):
     )
     stage9 = replace(
         s9, stage8=replace(
-            s8, stage7=replace(
+            s8,
+            # Stage11's live option evaluator consumes this exact Stage8
+            # config. An unconnected gain would make the born individual's
+            # reward sensitivity descriptive rather than motivational.
+            evaluation=replace(
+                s8.evaluation,
+                version=s8.evaluation.version + "+" + VERSION,
+                extrinsic_gain=(
+                    s8.evaluation.extrinsic_gain
+                    * params.extrinsic_value_gain
+                ),
+            ),
+            stage7=replace(
                 s7, stage6=replace(s6, stage4=stage4),
             ),
         ),
