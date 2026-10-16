@@ -117,6 +117,18 @@ with TemporaryDirectory() as d:
                              if event["kind"] == "competition_cycle"]
             assert any(t["option_ref"] in proposed
                        for traces in deliberations for t in traces), str(results)
+            wins = {t["option_ref"] for traces in deliberations
+                    for t in traces if t["crossed"] and t["option_ref"] in proposed}
+            assert wins, str(results)
+            admissions = [e["data"] for e in entries if e["kind"]=="command_admitted"
+                          and e["data"]["option_ref"] in wins]
+            assert admissions, str(results)
+            selected = [p for p in physical if p["option_ref"] in wins
+                        and p["status"]=="applied"]
+            assert selected and any(p["command"]=="collecter" for p in selected), str(results)
+            assert any(a["primitive"]=="collecter" for a in admissions), str(results)
+            assert not any(e["data"]["option_ref"] in wins
+                           for e in entries if e["kind"]=="command_vetoed"), str(results)
             for event in i1events:
                 if event["kind"]=="i1_partial_preaction_forecast":
                     p=event["data"]["result"]
