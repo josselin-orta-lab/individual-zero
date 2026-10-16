@@ -133,7 +133,11 @@ def i1_m11_active_publication_custody_source(source: str) -> str:
     if type(history) is not dict or type(history.get("forms")) is not dict:
         raise RecoveryBlocked("missing canonical I1 consolidated active forms")
     forms = history["forms"]
-    if set(forms) not in (set(), {"value_needs"}):
+    from .i1_cognitive_publication import (
+        build_consolidated_owner_forms, validate_owner_rows,
+    )
+    required = {"value_needs", "causal_model", "perception", "metacognition_health"}
+    if set(forms) not in (set(), required):
         raise RecoveryBlocked("unapproved I1 active owner publication")
     expected = forms.get("value_needs", [])
     witnessed = history.get("procedural")
@@ -151,6 +155,17 @@ def i1_m11_active_publication_custody_source(source: str) -> str:
                 runtime.value_needs.active_observed_procedures()
             )):
         raise RecoveryBlocked("I1 active owner and consolidated history diverged")
+    if forms:
+        recomputed = build_consolidated_owner_forms(history)
+        for name in ("causal_model", "perception", "metacognition_health"):
+            validate_owner_rows(name, forms[name])
+            if (canonical_causal_bytes(forms[name])
+                    != canonical_causal_bytes(recomputed[name])
+                    or canonical_causal_bytes(forms[name])
+                    != canonical_causal_bytes(
+                        runtime._i1_active_owner_views[name].observed_consolidated()
+                    )):
+                raise RecoveryBlocked("I1 active owner differs from published lived evidence")
 
 
 '''
