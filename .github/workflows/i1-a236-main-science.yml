@@ -8,6 +8,7 @@ on:
       - 'docs/research/i1-a236-main-integrated-active-prereg-2026-10-16.en.md'
       - '.github/workflows/i1-a236-main-science.yml'
       - 'tests/test_i1_a236_combined_m11_cold.py'
+      - 'tests/test_i1_a236_combined_m11_water.py'
   workflow_dispatch:
 
 permissions:
@@ -39,6 +40,7 @@ jobs:
           python -m unittest discover -s tests -p 'test_i1_a235_lived_recall.py' -v
           python -m unittest discover -s tests -p 'test_i1_a235_m11_cold_recall.py' -v
           python -m unittest discover -s tests -p 'test_i1_a236_combined_m11_cold.py' -v
+          python -m unittest discover -s tests -p 'test_i1_a236_combined_m11_water.py' -v
           python -m unittest discover -s tests -p 'test_i1_issue136_d1_learning.py' -v
           python -m unittest discover -s tests -p 'test_i1_generated_isolation.py' -v
       - name: Execute A2.36 144 true independent mortal births (models active)
