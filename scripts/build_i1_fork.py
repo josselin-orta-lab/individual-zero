@@ -142,6 +142,20 @@ def generate(output: Path) -> dict[str, object]:
             relative = file.relative_to(source)
             contents = file.read_text(encoding="utf-8")
             transformed = rewrite(contents)
+            if (output_package == "i1"
+                    and relative.as_posix() == "modules/consolidation_semantics.py"):
+                # The source snapshot is immutable. I1-only cognitive changes
+                # belong in disposable generated output, NEVER in src/i1.
+                baseline = (SOURCE_ROOT / "i0" / relative).read_text(
+                    encoding="utf-8"
+                )
+                if contents != baseline:
+                    raise ValueError("I1 six-pass snapshot diverged from I0")
+                template = SOURCE_ROOT / "i1_overlays" / "i1_semantics_template.txt"
+                material = template.read_text(encoding="utf-8")
+                if material.count("class SemanticPassRunner") != 1:
+                    raise ValueError("invalid isolated semantic compiler template")
+                transformed = rewrite(material)
             if output_package == "i1lab" and relative.as_posix() == "world.py":
                 transformed = i1_physiology_source(transformed)
             # Only i1_natural_runtime.I1Runtime installs the natural sleep
