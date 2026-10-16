@@ -1,7 +1,7 @@
 name: Stage12 A2.30-U independent physical exogenous-confound replay
 on:
   pull_request:
-    branches: [science/stage12-b-a230p-multiconsequence-delayed-20261015]
+    branches: [main]
     paths:
       - 'scripts/replay_stage12_issue110_b_a230u_shadow_physics.py'
       - 'tests/test_stage12_a230u_shadow_physical_replay.py'
