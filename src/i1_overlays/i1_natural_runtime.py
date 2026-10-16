@@ -59,6 +59,35 @@ class I1Runtime(I1WaterPrudentRuntime):
                 local_threat_alerts=True,
                 geographic_capacity_guard_enabled=True,
             )
+        # Stage6 reference planning was intentionally one-shot. In a
+        # living I1 a proven intermediate physical step must lead to fresh
+        # perception and another independent decision, not repeat a cached
+        # prediction or mistake berry inventory for physiological satiety.
+        # This operates ONLY on the model's genuinely predicted edges;
+        # first-person uncertain affordances remain separate.
+        s9 = cfg.stage9
+        s8 = s9.stage8
+        s7 = s8.stage7
+        s6 = s7.stage6
+        planned = replace(
+            s6.planning,
+            version=s6.planning.version + "+i1-living-progressive-v1",
+            progressive_subgoals=True,
+            progressive_evaluation_prefix=False,
+            progressive_revalidate_on_new_capture=True,
+        )
+        s6 = replace(
+            s6, version=s6.version + "+i1-living-progressive-v1",
+            planning=planned,
+        )
+        cfg = replace(
+            cfg, version=cfg.version + "+i1-living-progressive-v1",
+            stage9=replace(
+                s9, stage8=replace(
+                    s8, stage7=replace(s7, stage6=s6),
+                ),
+            ),
+        )
         life_id = kwargs.get("birth_life_id")
         cfg = configure_birth_temperament(cfg, life_id=life_id)
         kwargs["stage11_config"] = cfg
@@ -116,7 +145,10 @@ class I1Runtime(I1WaterPrudentRuntime):
             capture=capture, goal_for_planning=goal_for_planning,
             st_before_cycle=st_before_cycle, cycle=cycle,
         )
-        if proposal is not None or goal_for_planning is None:
+        if (proposal is not None or goal_for_planning is None
+                or self._cycle_degraded):
+            # A rejected UC charge is not proof that a need cannot be met.
+            # Do not install a refractory goal after a budget refusal.
             return proposal
         if (self.goal_manager.active_goal is None
                 or self.goal_manager.active_goal.id != goal_for_planning.id):
