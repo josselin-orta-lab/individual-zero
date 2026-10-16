@@ -16,6 +16,7 @@ from .i1_d2_runtime import I1WaterPrudentRuntime
 from dataclasses import replace
 from .determinism import canonical_causal_bytes, sha256_hex
 from i1.modules.geographic_exploration import GeographicExplorationConfig
+from .i1_birth_temperament import configure_birth_temperament
 
 # Historical arms remain available explicitly from the independent
 # I1A238ExperimentalRuntime / I1A239ExperimentalRuntime classes. They are
@@ -58,6 +59,8 @@ class I1Runtime(I1WaterPrudentRuntime):
                 local_threat_alerts=True,
                 geographic_capacity_guard_enabled=True,
             )
+        life_id = kwargs.get("birth_life_id")
+        cfg = configure_birth_temperament(cfg, life_id=life_id)
         kwargs["stage11_config"] = cfg
         # First-person proximal action agency, never a claim that a distal
         # outcome was necessarily caused by the individual's intention.
