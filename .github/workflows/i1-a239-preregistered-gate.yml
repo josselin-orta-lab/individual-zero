@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'scripts/i1_a239_lock.py'
+      - 'scripts/i1_a239_fixtures.py'
+      - 'scripts/run_i1_a239_preflight.py'
       - 'scripts/audit_i1_a239_historical_baseline.py'
       - 'docs/research/i1-a239-nutrition-geography-food-first-prereg-2026-10-16.en.md'
       - '.github/workflows/i1-a239-preregistered-gate.yml'
@@ -31,6 +33,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Verify frozen prospective preregistration and allocation
         run: |
-          python -m compileall -q scripts/i1_a239_lock.py scripts/audit_i1_a239_historical_baseline.py
+          python -m compileall -q scripts/i1_a239_lock.py scripts/i1_a239_fixtures.py scripts/run_i1_a239_preflight.py scripts/audit_i1_a239_historical_baseline.py
           python scripts/i1_a239_lock.py
+          python -m pip install -e .
+          python scripts/run_i1_a239_preflight.py --output a239-preflight --source-sha "$(git rev-parse HEAD)"
           python -c "import sys; sys.path.insert(0, 'scripts'); from i1_a239_lock import assigned; a=assigned(); assert len(a)==160 and len({(s,i) for s,i,x in a})==32 and all(sum((q,j)==(s,i) for q,j,z in a)==5 for s,i,x in a)"
