@@ -127,11 +127,11 @@ def i1_private_consolidation_source(source: str) -> str:
     owner rebase because no owner receives these as executable skills.
     """
     old = (
-        '        if (candidate.get("forms") != self.slow_history.read_committed()["forms"]\\n'
-        '                or candidate.get("procedural")):\\n'
+        '        if (candidate.get("forms") != self.slow_history.read_committed()["forms"]\n'
+        '                or candidate.get("procedural")):\n'
     )
     new = (
-        '        if candidate.get("forms") != self.slow_history.read_committed()["forms"]:\\n'
+        '        if candidate.get("forms") != self.slow_history.read_committed()["forms"]:\n'
     )
     if source.count(old) != 1:
         raise ValueError("unreviewed I1 Stage10 private-publication boundary")
