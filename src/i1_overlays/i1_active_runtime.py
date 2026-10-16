@@ -38,7 +38,7 @@ from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY
 I1_POLICY = "i1-stage6-live-partial-prebirth-v1"
 I1_SCORE = 0.35  # fixed *instrumental preference*, NOT predicted E_sim
 I1_EXPERIMENTAL_OPERATION = "i1_partial_model_forecast"
-I1_AFFORDANCE_POLICY = "i1-unknown-action-affordance-v1"
+I1_AFFORDANCE_POLICY = "i1-unknown-action-affordance-v2-general-local"
 I1_AFFORDANCE_OPERATION = "i1_unknown_action_consider"
 
 
@@ -309,15 +309,18 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
     def _consider_uncertain_affordance(
         self, *, capture, goal, st_version, cycle, exact,
     ):
-        """Offer a sensed possible act; never assert its causal consequences.
+        """One need-linked opportunity from perceived, physically legal actions.
 
-        Today the minimal #229 policy associates only the *eat* motive with
-        the already enumerated ingestive primitive. The association is an
-        action possibility, not knowledge of nutrition, safety, or a forced
-        food sequence. Other motives retain their existing Stage6 contracts.
+        Unknown effects stay unknown. This is a possibility generator, never
+        a fixed collect/eat/move sequence, a food/poison oracle, or dispatch.
+        D1 owns water learning when it is active, while Stage10 separately
+        proposes intrinsically motivated sleep and Stage11 handles curiosity.
         """
-        if (not self._i1_unknown_action_enabled
-                or goal is None or goal.goal_type != "eat"):
+        if not self._i1_unknown_action_enabled or goal is None:
+            return None
+        if (goal.goal_type == "drink"
+                and getattr(self, "_i1_water_probe_enabled", False)):
+            # Preserve the original first-person D1 water causal follow-up.
             return None
         if (exact is not None and
                 exact.option.success_condition != "step_completed"):
@@ -329,10 +332,38 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
             capture=capture,
             is_night=self.world.is_night(capture.t_monde),
         )
-        choices = tuple(
-            candidate for candidate in self.planning.candidate_commands(state)
-            if candidate.primitive == "manger"
-        )
+        available = self.planning.candidate_commands(state)
+        direct = {
+            "eat": {"manger", "collecter"},
+            "drink": {"boire"},
+            "recover_energy": {"dormir"},
+            "restore_integrity": {"attendre"},
+        }.get(goal.goal_type, set())
+
+        def relevant(candidate):
+            primitive = candidate.primitive
+            if primitive in direct:
+                if primitive == "collecter":
+                    # Local food can be tried without a nutritional prior.
+                    return candidate.parameters.get("target") in ("berry_a", "berry_b")
+                return True
+            if primitive != "se_deplacer":
+                return False
+            direction = candidate.parameters.get("direction")
+            if goal.goal_type == "eat":
+                return any(
+                    a.direction == direction and a.passable
+                    and set(a.resources).intersection(("berry_a", "berry_b"))
+                    for a in state.adjacent
+                )
+            if goal.goal_type == "drink":
+                return any(
+                    a.direction == direction and a.passable and a.water_source
+                    for a in state.adjacent
+                )
+            return False
+
+        choices = tuple(cmd for cmd in available if relevant(cmd))
         if not choices:
             return None
         if not self._charge(
@@ -351,17 +382,28 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         # decisions. Unlearned values are neutral, not an edible/safe prior.
         candidates = []
         for command in choices:
-            signature = ("i1:affordance:" + command.primitive + ":"
-                         + str(command.parameters["target"]))
+            suffix = ":".join(
+                f"{key}={command.parameters[key]}"
+                for key in sorted(command.parameters)
+            ) or "here"
+            signature = ("i1:affordance:" + command.primitive + ":" + suffix)
             learned = self.q_active.learned_value(evaluation_state, signature)
-            candidates.append((
+            # Empirical values rank proposals; a missing value is neutral,
+            # not proof of any consequence. Ties rotate with world time so
+            # unknown alternatives remain possible, not hard-coded habits.
+            row = (
                 -float(learned.evidence or 0.0),
-                str(command.parameters["target"]), command,
-                signature, learned,
-            ))
-        _, target, command, signature, learned = min(
+                (capture.t_monde + len(candidates)) % len(choices),
+                command, signature, learned,
+            )
+            candidates.append(row)
+        _, _, command, signature, learned = min(
             candidates, key=lambda row: (row[0], row[1])
         )
+        suffix = ":".join(
+            f"{key}={command.parameters[key]}"
+            for key in sorted(command.parameters)
+        ) or "here"
         pressure = max(0.0, min(1.0, float(goal.current_pressure)))
         exploration = float(self.temperament_parameters.exploration_coefficient)
         uncertainty_penalty = float(
@@ -377,7 +419,7 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         ))
         option_id = (
             f"option:i1:affordance:{goal.id}:t{capture.t_monde}:"
-            f"{command.primitive}:{target}"
+            f"{command.primitive}:{suffix}"
         )
         plan_id = "plan:" + option_id + ":v1"
         plan = Plan(
@@ -428,6 +470,8 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
                         "goal_ref": goal.id,
                         "command": command.as_dict(),
                         "accessible_inventory": dict(state.inventory),
+                        "candidate_count": len(choices),
+                        "candidate_primitives": [c.primitive for c in choices],
                         "visible_input_sha256": sha256_hex(
                             canonical_causal_bytes(state.as_dict())
                         ),
