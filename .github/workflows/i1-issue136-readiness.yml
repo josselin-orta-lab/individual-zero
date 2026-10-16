@@ -1,10 +1,11 @@
-name: I1 issue136 water readiness audit
+name: I1 issue136 water D0 scientific diagnostic
 
 on:
   pull_request:
     branches: [main, experiment/i1-isolated-model-fork-20261016]
     paths:
       - 'tests/test_i1_issue136_water_readiness.py'
+      - 'scripts/run_i1_issue136_water_d0.py'
       - 'docs/research/i1-issue136-water-d0-prereg-2026-10-16.en.md'
       - '.github/workflows/i1-issue136-readiness.yml'
   workflow_dispatch:
@@ -13,19 +14,32 @@ permissions:
   contents: read
 
 jobs:
-  contract:
-    name: Water acquisition readiness (Python ${{ matrix.python-version }})
+  water-d0:
+    name: Water D0 - 32 independent I1 lives (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         python-version: ['3.11','3.12']
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -e .
-      - name: Run water-acquisition readiness controls
+      - name: Check generated I1 readiness contract
         run: python -m unittest discover -s tests -p 'test_i1_issue136_water_readiness.py' -v
+      - name: Execute preregistered D0 mortal paired lives
+        run: |
+          python scripts/run_i1_issue136_water_d0.py --output "i136-d0-py${{ matrix.python-version }}" --source-sha "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Preserve independent WALs, canonical journals and all outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i136-d0-py${{ matrix.python-version }}
+          path: i136-d0-py${{ matrix.python-version }}/
+          retention-days: 90
+          if-no-files-found: warn
