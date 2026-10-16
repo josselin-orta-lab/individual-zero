@@ -165,9 +165,9 @@ def generate(output: Path) -> dict[str, object]:
             transformed = rewrite(contents)
             if output_package == "i1lab" and relative.as_posix() == "world.py":
                 transformed = i1_physiology_source(transformed)
-            if (output_package == "i1lab"
-                    and relative.as_posix() == "stage11_sleep_runtime.py"):
-                transformed = i1_default_sleep_source(transformed)
+            # Only i1_natural_runtime.I1Runtime installs the natural sleep
+            # policy. Do not rewrite the common Stage11Sleep ancestor, which
+            # would silently change historical A2.38/A2.39 ablation births.
             if (output_package == "i1lab"
                     and relative.as_posix() == "stage10_runtime.py"):
                 transformed = i1_private_consolidation_source(transformed)
