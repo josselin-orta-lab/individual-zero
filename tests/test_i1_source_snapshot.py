@@ -10,7 +10,9 @@ class I1SnapshotTests(unittest.TestCase):
         i1 = root / "i1"
         source = sorted(p.relative_to(i0) for p in i0.rglob("*") if p.is_file())
         copy = sorted(p.relative_to(i1) for p in i1.rglob("*") if p.is_file())
-        self.assertEqual(source, copy)
+        extensions = set(copy) - set(source)
+        self.assertEqual(extensions, {Path("experimental/lived_water.py")})
+        self.assertEqual(source, [relative for relative in copy if relative in set(source)])
         self.assertEqual(len(source), 71)
         for relative in source:
             with self.subTest(path=str(relative)):
