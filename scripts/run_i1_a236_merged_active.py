@@ -190,7 +190,9 @@ def experiment(output: Path, *, head: str) -> dict[str, object]:
                         failure=None
                         for _ in range(MAX_ACTUAL_STEPS):
                             start=len(life.journal.entries)
-                            water_before=float(life.world.telemetry()["water"])
+                            before_body=dict(life.world.telemetry())
+                            before_inventory=dict(life.world.inventory())
+                            water_before=float(before_body["water"])
                             position_before=life.world.position.as_dict()
                             try:
                                 outcome=life.run_step()
@@ -198,7 +200,9 @@ def experiment(output: Path, *, head: str) -> dict[str, object]:
                                 failure={"class":type(exc).__name__,
                                     "detail":str(exc)[:350]}
                                 break
-                            water_after=float(life.world.telemetry()["water"])
+                            after_body=dict(life.world.telemetry())
+                            after_inventory=dict(life.world.inventory())
+                            water_after=float(after_body["water"])
                             position_after=life.world.position.as_dict()
                             new_events=[entry.causal_event for entry in life.journal.entries[start:]]
                             actual_capture=next((
@@ -217,6 +221,14 @@ def experiment(output: Path, *, head: str) -> dict[str, object]:
                                 "position_after_action":position_after,
                                 "water_before_world_step":water_before,
                                 "water_after_world_step":water_after,
+                                "integrity_after":after_body["integrity"],
+                                "food_after":after_body["food"],
+                                "berries_before":before_inventory.get("berry_b",0),
+                                "berries_after":after_inventory.get("berry_b",0),
+                                "positive_collection":bool(
+                                    outcome.execution_status=="applied"
+                                    and outcome.command_primitive=="collecter"
+                                    and after_inventory.get("berry_b",0)>before_inventory.get("berry_b",0)),
                                 "positive_drinking":bool(
                                     outcome.execution_status=="applied"
                                     and outcome.command_primitive=="boire"
