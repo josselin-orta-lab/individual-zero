@@ -152,3 +152,9 @@ Commit `aa3575571d7681ff64811c86f015b8e1b0efcba4` connects an already projected,
 
 The PR remains a **source-only candidate**, not proof of successful execution. Compiler/build and M11 cold restore could not be demonstrated. No new tests or physical cohorts were run, honoring the current operator restriction. The source-only audit cannot establish scientific or operational GO, so the dependent draft PRs are not merged.
 
+
+## Finalization continuation: preserve unsuccessful-trial provenance
+
+Commit `27c2a36018c55d42cda28890b23fb67d894cdcf3` repairs the private procedural evidence denominator. Previously only successful episode/event refs were persisted, while `distinct_trial_count` included failures. Subsequent merges could silently re-count an earlier failed trial as a fresh trial and change the claimed empirical rate. Private records now carry independent `trial_episode_refs` and `trial_event_refs` including failures; the merge requires both successful and all-trial provenance to be distinct across batches. Mixed success/failure evidence within one episode is conservatively counted as a failed trial, never as an unqualified success. Private forms still make no success-of-goal or safety claim and do not become executable.
+
+The source is committed but not executed: no build, test, mortal birth, M11 cold recovery or active owner publication has been demonstrated. Earlier user direction prohibited additional tests. PR #245 and its prerequisite drafts remain unmerged; the scientific status is still NO-GO and finalization cannot be claimed.
