@@ -36,6 +36,10 @@ on:
       - 'scripts/run_stage12_water_sleep_followup.py'
       - 'docs/research/stage12-water-sleep-followup-prereg-2026-10-12.fr.md'
       - 'docs/research/stage12-exploratory-behavior-preregistration-2026-10-12.fr.md'
+      # Dedicated A2.30 workflows audit research-only changes; do not replay
+      # the entire historical Stage12 matrix for their isolated new tests.
+      - '!scripts/run_stage12_issue110_b_a230*.py'
+      - '!tests/test_stage12_a230*.py'
   workflow_dispatch:
 
 permissions:
@@ -74,15 +78,25 @@ jobs:
           mkdir -p /tmp/a230p-py311 /tmp/a230p-py312
           gh run download 38730415503 --repo "$GITHUB_REPOSITORY" --name a230p-py3.11 --dir /tmp/a230p-py311
           gh run download 38730415503 --repo "$GITHUB_REPOSITORY" --name a230p-py3.12 --dir /tmp/a230p-py312
-      - name: Complete Stage12 diagnostics and operator audit suite
+      - name: Fast cross-module Stage12 mortality, agency and WAL guards
+        run: |
+          python -m unittest discover -s tests -p 'test_stage12_mortal_runtime.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_dual_scope*.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_goal_agency_runtime.py' -q
+          python -m unittest discover -s tests -p 'test_stage12_spatial_m11_identity.py' -q
+      - name: Full Stage12 historical unit diagnostics (explicit opt-in)
+        if: >-
+          github.event_name == 'workflow_dispatch' ||
+          (github.event_name == 'pull_request' &&
+           github.event.action == 'labeled' &&
+           github.event.label.name == 'stage12-full')
         env:
           A230O_SOURCE_A: /tmp/a230o-py311
           A230O_SOURCE_B: /tmp/a230o-py312
           A230Q_SOURCE_311: /tmp/a230p-py311
           A230Q_SOURCE_312: /tmp/a230p-py312
           A230R_SOURCE: /tmp/a230p-py311
-        run: |
-          python -m unittest discover -s tests -p 'test_stage12_*.py' -q
+        run: python -m unittest discover -s tests -p 'test_stage12_*.py' -q
       - name: Contrasted Stage12 and P-47 evidence contracts
         run: |
           python -m unittest discover -s tests -p 'test_stage12_alignment.py' -v
