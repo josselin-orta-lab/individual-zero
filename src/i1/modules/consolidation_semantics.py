@@ -157,23 +157,29 @@ class LivedSixPassAlgorithm:
     def _observed_pairs(events):
         """At most one physical command and result per simulated step."""
         sent, arrived = {}, {}
-        for event in events:
-            t=event.get("t_monde")
+        for ordinal, event in enumerate(events):
+            t = event.get("t_monde")
             if type(t) is not int:
                 continue
             if event["kind"] == "command_experienced":
-                sent.setdefault(t,[]).append(event)
+                sent.setdefault(t, []).append((ordinal, event))
             elif event["kind"] == "world_transition_experienced":
-                arrived.setdefault(t,[]).append(event)
-        for t in sorted(set(sent)&set(arrived)):
+                arrived.setdefault(t, []).append((ordinal, event))
+        for t in sorted(set(sent) & set(arrived)):
             if len(sent[t]) != 1 or len(arrived[t]) != 1:
                 continue
-            a,b=sent[t][0],arrived[t][0]
-            if a.get("primitive") in {
-                "se_deplacer","collecter","manger","boire","fabriquer_outil",
-                "poser_une_pierre",
-            } and isinstance(b.get("effects"),Mapping):
-                yield a,b
+            command_index, command = sent[t][0]
+            result_index, physical = arrived[t][0]
+            # The autobiographical projection preserves chronological event
+            # refs. A future or unrelated transition cannot corroborate an
+            # earlier command, even when its world-step number matches.
+            if command_index >= result_index:
+                continue
+            if (command.get("primitive") in {
+                    "se_deplacer", "collecter", "manger", "boire",
+                    "fabriquer_outil", "poser_une_pierre",
+                } and isinstance(physical.get("effects"), Mapping)):
+                yield command, physical
 
     @staticmethod
     def _physical_result(command, transition):
@@ -246,6 +252,12 @@ class LivedSixPassAlgorithm:
                 if observed is None:
                     continue
                 effect, value = observed
+                # No witnessed pre-action position is present in this
+                # autobiographical schema. A successful movement's *arrival*
+                # cannot establish a reusable departure-site precondition.
+                # Keep movement learning in online TD/geographical owners.
+                if command["primitive"] == "se_deplacer":
+                    continue
                 succeeded = (
                     (effect == "drank" and value == "true")
                     or (effect == "ate" and value in ("berry_a", "berry_b"))
@@ -270,6 +282,9 @@ class LivedSixPassAlgorithm:
                     "events": (command["event_id"], physical["event_id"]),
                     "context": (pos["x"], pos["y"]),
                     "success": succeeded,
+                    "primitive": command["primitive"],
+                    "parameters": deepcopy(params),
+                    "observed_field": effect,
                 })
         result = []
         for signature in sorted(records):
@@ -289,11 +304,19 @@ class LivedSixPassAlgorithm:
                 total = len(successes | failures)
                 evidence = [r for r in candidates if r["episode"] in successes
                             and r["success"]]
+                example = evidence[0]
                 item = {
                     "id": "skill:" + sha256_hex(canonical_causal_bytes({
                         "signature": signature, "anchor": list(anchor),
                     }))[:28],
-                    "plan_signature": "observed_one_step:" + signature,
+                    # Physical command effects, not verified plan success.
+                    "plan_signature": "observed_primitive:" + signature,
+                    "primitive": example["primitive"],
+                    "parameters": deepcopy(example["parameters"]),
+                    "observed_field": example["observed_field"],
+                    "evidence_scope": "experienced_local_physical_result",
+                    "goal_success_inferred": False,
+                    "safety_certified": False,
                     "near_context": {"x": anchor[0], "y": anchor[1],
                                      "radius": self.policy.nearby_context_radius},
                     "preconditions": [],
@@ -336,7 +359,11 @@ class LivedSixPassAlgorithm:
             if old is None:
                 combined[row["id"]] = deepcopy(row)
                 continue
-            immutable = ("plan_signature", "near_context", "preconditions", "state")
+            immutable = (
+                "plan_signature", "primitive", "parameters", "observed_field",
+                "evidence_scope", "goal_success_inferred", "safety_certified",
+                "near_context", "preconditions", "state",
+            )
             if any(old.get(key) != row.get(key) for key in immutable):
                 raise ValueError("conflicting private procedural identity")
             old_episodes = old.get("source_episode_refs")
