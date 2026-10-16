@@ -119,6 +119,7 @@ def experiment(output: Path, *, head: str) -> dict[str, object]:
                     remote=(orig if (revisited or berry) else Position(12+idx,12))
                     target=remote.moved(direction)
                     for arm in (ARMS if idx%2==0 else tuple(reversed(ARMS))):
+                        enabled=True
                         life_id=f"i1:a236:{stratum}:{idx:02d}:{arm}"
                         life_dir=output/life_id.replace(":","-")
                         life_dir.mkdir()
@@ -178,6 +179,13 @@ def experiment(output: Path, *, head: str) -> dict[str, object]:
                                 "scenario_events":events} if events else {}),
                         )
                         birth_e_digest=life.equipment.artifact_digest
+                        if not (life._i1_enabled and life._i1_water_probe_enabled
+                                and life._i1_water_learning_enabled):
+                            raise RuntimeError("I1 A2.36 active birth flags missing")
+                        if life._i1_lived_recall_enabled!=(arm!="NO_RECALL"):
+                            raise RuntimeError("A2.36 recall arm mismatch")
+                        if life._d2_prudence!=(arm!="NO_D2"):
+                            raise RuntimeError("A2.36 D2 arm mismatch")
                         steps=[]
                         failure=None
                         for _ in range(MAX_ACTUAL_STEPS):
