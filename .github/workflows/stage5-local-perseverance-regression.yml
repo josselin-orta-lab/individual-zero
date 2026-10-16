@@ -1,6 +1,7 @@
 name: Stage5 real first-person perseverance regression
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
     branches: [main]
     paths:
       - 'src/lab/stage5_reference_fixture.py'
@@ -35,14 +36,26 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_stage9_concurrent_cause_audit.py' -v
       - name: Stage3 physical/perceptual boundary
         run: python -m unittest discover -s tests -p 'test_stage3*.py' -v
+      # Keep the full 1600+ test historical replay available by explicit opt-in.
+      # Normal PR checks already execute focused Stage3/4/5/9 regressions plus CI.
       - name: Retrieve immutable A2.30-O source evidence required by the common unit suite
+        if: >-
+          github.event_name == 'workflow_dispatch' ||
+          (github.event_name == 'pull_request' &&
+           github.event.action == 'labeled' &&
+           github.event.label.name == 'stage5-full')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p /tmp/a230o-py311 /tmp/a230o-py312
           gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.11 --dir /tmp/a230o-py311
           gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.12 --dir /tmp/a230o-py312
-      - name: Full software unit-suite compatibility on this exact stacked head
+      - name: Full software unit-suite compatibility (explicit stage5-full opt-in)
+        if: >-
+          github.event_name == 'workflow_dispatch' ||
+          (github.event_name == 'pull_request' &&
+           github.event.action == 'labeled' &&
+           github.event.label.name == 'stage5-full')
         env:
           A230O_SOURCE_A: /tmp/a230o-py311
           A230O_SOURCE_B: /tmp/a230o-py312
