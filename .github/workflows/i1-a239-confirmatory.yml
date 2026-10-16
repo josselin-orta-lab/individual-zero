@@ -1,0 +1,58 @@
+name: I1 A2.39 full physical confirmatory cohort
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/i1_overlays/i1_a239_runtime.py'
+      - 'scripts/run_i1_a239_factorial.py'
+      - 'scripts/audit_i1_a239_factorial.py'
+      - 'scripts/run_i1_a239_preflight.py'
+      - '.github/workflows/i1-a239-confirmatory.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: a239-confirmatory-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
+jobs:
+  full-cohort:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Pin source identity
+        id: freeze
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test -z "$(git status --porcelain)"
+          echo "source=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e .
+      - name: Check syntax and preregistration before mortal births
+        run: |
+          python -m compileall -q scripts/i1_a239_lock.py scripts/i1_a239_fixtures.py scripts/run_i1_a239_preflight.py scripts/run_i1_a239_factorial.py scripts/audit_i1_a239_factorial.py src/i1_overlays/i1_a239_runtime.py
+          python -m unittest discover -s tests -p 'test_i1_a238_factorial_smoke.py' -v
+      - name: Run physically independent 160 A2.39 mortal lives
+        run: python scripts/run_i1_a239_factorial.py --output artifacts/a239-confirmatory --source-sha "${{ steps.freeze.outputs.source }}"
+      - name: Independent canonical and WAL audit
+        if: always()
+        run: |
+          if test -f artifacts/a239-confirmatory/lives.jsonl; then
+            python scripts/audit_i1_a239_factorial.py --input artifacts/a239-confirmatory
+          else
+            echo 'Cohort not produced; scientific execution invalid'
+            exit 1
+          fi
+      - name: Preserve all results, negative lives and errors
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-a239-confirmatory-${{ steps.freeze.outputs.source }}
+          path: artifacts/a239-confirmatory/
+          if-no-files-found: warn
+          retention-days: 90
