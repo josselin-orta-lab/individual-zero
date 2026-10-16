@@ -6,8 +6,8 @@ perception/needs/planning/Competition/Stage9/Action Control substrate, the
 first-person D1 capabilities and the default #229 food affordance, without
 inheriting either scripted A2.38 H1/H2 review or A2.39 food-first H2.
 
-Sleep and starvation physics are installed by the isolated I1 generator's
-common mortal Stage11SleepRuntime birth path. No motor bypass or artificial
+Sleep and starvation physics are installed only by this canonical natural
+I1 constructor, never by the shared generated Stage11Sleep ancestor. No motor bypass or artificial
 prebirth experience is introduced here.
 """
 from __future__ import annotations
