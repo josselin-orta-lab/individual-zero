@@ -198,6 +198,8 @@ def generate(output: Path) -> dict[str, object]:
                     ) if import_anchor in line else line
                     for line in lines
                 )
+                if transformed.count("from .i1_natural_runtime import I1Runtime") != 3:
+                    raise ValueError("canonical I1 M11 import scopes not generated")
                 # This private-copy walker must discover immutable proxies
                 # in the I1/i1lab owner graph, not accidentally scan only I0.
                 original_modules = 'mod.startswith("i0.") or mod.startswith("lab.")'
