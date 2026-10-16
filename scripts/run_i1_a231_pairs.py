@@ -19,6 +19,7 @@ STRATA=("local_nominal","adjacent_nominal","adjacent_hidden_lethal",
 
 
 def experiment(output: Path, *, head: str) -> dict:
+    output=output.resolve()
     with TemporaryDirectory(prefix="i1-a231-code-") as temp:
         generated=Path(temp)/"generated"
         generate(generated)
