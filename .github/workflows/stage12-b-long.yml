@@ -1,0 +1,48 @@
+name: Stage12 B born-enabled long physical verification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_b_long.py'
+      - 'docs/research/stage12-issue110-b-l600-m48-*.md'
+      - '.github/workflows/stage12-b-long.yml'
+      - 'src/lab/stage12_dual_scope_audit.py'
+      - 'src/i0/modules/stage12_dual_scope.py'
+      - 'src/lab/stage12_runtime.py'
+      - 'src/i0/modules/action_control.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  born-enabled:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+        mode: ['wal','m11']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Genuine B-born autonomous world and independent evidence audit
+        run: |
+          python -u scripts/run_stage12_issue110_b_long.py \
+            --output-dir /tmp/stage12-b-long --mode ${{ matrix.mode }} \
+            > /tmp/b-long.log 2>&1 \
+            || { tail -n 100 /tmp/b-long.log; exit 2; }
+          grep 'B_LONG_SUMMARY' /tmp/b-long.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: b-long-${{ matrix.mode }}-py${{ matrix.python-version }}
+          path: |
+            /tmp/stage12-b-long
+            /tmp/b-long.log
+          retention-days: 30
+          if-no-files-found: warn

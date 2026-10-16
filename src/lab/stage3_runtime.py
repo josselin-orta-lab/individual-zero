@@ -137,6 +137,12 @@ class Stage3Runtime:
                 ],
                 "agency_capture_schema": "stage12-first-person-cue-v1",
             } if self.control.goal_agency is not None else {}),
+            **({
+                # Publish only values already made available by Perception;
+                # never reconstruct a body state from WorldBody / Oracle.
+                "dual_scope_visible_body": dict(sorted(capture.body.items())),
+                "dual_scope_capture_schema": "stage12-dual-scope-body-cue-v1",
+            } if self.control.dual_scope is not None else {}),
         }
 
     def _write(self, *, kind: str, data: dict[str, object]) -> None:

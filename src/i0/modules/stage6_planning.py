@@ -83,6 +83,10 @@ class PlanningSearchResult:
     expanded_states: int
     unavailable_edges: int
     partial_progress: bool = False
+    # Observed counts, never inferred missing-food necessity.
+    root_candidate_edges: int = 0
+    root_available_edges: int = 0
+    root_unavailable_edges: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,6 +127,19 @@ class SimulatorPlanner:
                 "expanded_states": result.expanded_states,
                 "unavailable_edges": result.unavailable_edges,
                 "partial_progress": result.partial_progress,
+                "root_candidate_edges": result.root_candidate_edges,
+                "root_available_edges": result.root_available_edges,
+                "root_unavailable_edges": result.root_unavailable_edges,
+                "root_model_diagnostic": (
+                    "no_predictable_first_step"
+                    if result.status == "incomplete_model"
+                    and result.root_candidate_edges > 0
+                    and result.root_available_edges == 0
+                    and result.root_unavailable_edges == result.root_candidate_edges
+                    else "at_least_one_predictable_first_step"
+                    if result.root_available_edges > 0
+                    else "not_classified"
+                ),
             }
         return result
 
@@ -262,6 +279,9 @@ class SimulatorPlanner:
         visited = {self._state_key(initial_state)}
         expanded = 0
         unavailable = 0
+        root_candidates = 0
+        root_available = 0
+        root_unavailable = 0
         # The same bounded search may record a strictly goal-relevant
         # intermediate; goal-independent side effects are never progress.
         # Prefer measurable bodily gain over food inventory acquisition.
@@ -282,8 +302,12 @@ class SimulatorPlanner:
             if len(node.commands) >= self._config.max_depth:
                 continue
             expanded += 1
+            is_root = not node.commands
+            candidates = self.candidate_commands(node.state)
+            if is_root:
+                root_candidates = len(candidates)
 
-            for command in self.candidate_commands(node.state):
+            for command in candidates:
                 result = self._simulator.rollout(
                     initial_state=node.state,
                     commands=(command,),
@@ -292,12 +316,18 @@ class SimulatorPlanner:
                 )
                 if not result.complete or not result.completed_rollouts:
                     unavailable += 1
+                    if is_root:
+                        root_unavailable += 1
                     continue
 
                 rollout = result.completed_rollouts[0]
                 if len(rollout.predictions) != 1:
                     unavailable += 1
+                    if is_root:
+                        root_unavailable += 1
                     continue
+                if is_root:
+                    root_available += 1
                 prediction = rollout.predictions[0]
                 next_state = prediction.next_state
                 commands = node.commands + (command,)
@@ -310,6 +340,9 @@ class SimulatorPlanner:
                         predictions=predictions,
                         expanded_states=expanded,
                         unavailable_edges=unavailable,
+                        root_candidate_edges=root_candidates,
+                        root_available_edges=root_available,
+                        root_unavailable_edges=root_unavailable,
                     ))
 
                 if (
@@ -363,12 +396,18 @@ class SimulatorPlanner:
                 expanded_states=expanded,
                 unavailable_edges=unavailable,
                 partial_progress=True,
+                root_candidate_edges=root_candidates,
+                root_available_edges=root_available,
+                root_unavailable_edges=root_unavailable,
             ))
         return self._record_search(PlanningSearchResult(
             status=("incomplete_model" if unavailable > 0
                     else "not_found_within_horizon"),
             commands=(), predictions=(),
             expanded_states=expanded, unavailable_edges=unavailable,
+            root_candidate_edges=root_candidates,
+            root_available_edges=root_available,
+            root_unavailable_edges=root_unavailable,
         ))
 
     def plan_target(

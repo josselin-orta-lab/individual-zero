@@ -1,0 +1,64 @@
+name: Stage12 A2.30-ZH independent sealed root audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230zh_sealed_roots.py'
+      - 'tests/test_stage12_a230zh_sealed_roots.py'
+      - 'docs/research/stage12-issue110-b-a230zh-*.md'
+      - '.github/workflows/stage12-b-a230zh.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-archive-only-physical-root-reconstruction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Recover both immutable original ZG studies and ZB autonomous mortal birth archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230zh-zg311 /tmp/a230zh-zg312
+          mkdir -p /tmp/a230zh-zb311 /tmp/a230zh-zb312
+          gh run download 38777542232 --repo "$GITHUB_REPOSITORY" --name a230zg-py3.11 --dir /tmp/a230zh-zg311
+          gh run download 38777542232 --repo "$GITHUB_REPOSITORY" --name a230zg-py3.12 --dir /tmp/a230zh-zg312
+          gh run download 38767643472 --repo "$GITHUB_REPOSITORY" --name a230zb-py3.11 --dir /tmp/a230zh-zb311
+          gh run download 38767643472 --repo "$GITHUB_REPOSITORY" --name a230zb-py3.12 --dir /tmp/a230zh-zb312
+      - name: Falsify sensory roots, historical model, physical B outcomes and planner safety claims
+        env:
+          A230ZH_ZG311: /tmp/a230zh-zg311
+          A230ZH_ZG312: /tmp/a230zh-zg312
+          A230ZH_ZB311: /tmp/a230zh-zb311
+          A230ZH_ZB312: /tmp/a230zh-zb312
+        run: python -m unittest discover -s tests -p test_stage12_a230zh_sealed_roots.py -v
+      - name: Independently reconstruct exact-key coverage of original 12 born first-person roots
+        run: |
+          python -u scripts/audit_stage12_issue110_b_a230zh_sealed_roots.py \
+            --zg311 /tmp/a230zh-zg311 \
+            --zg312 /tmp/a230zh-zg312 \
+            --zb311 /tmp/a230zh-zb311 \
+            --zb312 /tmp/a230zh-zb312 \
+            --output-dir /tmp/a230zh-output > /tmp/a230zh.log 2>&1 \
+            || { tail -n 170 /tmp/a230zh.log; exit 2; }
+          grep A230ZH_SUMMARY /tmp/a230zh.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zh-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zh-output
+            /tmp/a230zh.log
+          retention-days: 30

@@ -1,0 +1,57 @@
+name: Stage12 A2.30-ZF independent frozen Stage6 shadow archive audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230zf_sealed_shadow.py'
+      - 'tests/test_stage12_a230zf_sealed_shadow.py'
+      - 'docs/research/stage12-issue110-b-a230zf-*.md'
+      - '.github/workflows/stage12-b-a230zf.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  independent-frozen-input-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Download immutable physical ZE training and shadow outputs from both versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230zf-311 /tmp/a230zf-312
+          gh run download 38773219305 --repo "$GITHUB_REPOSITORY" --name a230ze-py3.11 --dir /tmp/a230zf-311
+          gh run download 38773219305 --repo "$GITHUB_REPOSITORY" --name a230ze-py3.12 --dir /tmp/a230zf-312
+      - name: Tamper-source and fake-plan negative controls
+        env:
+          A230ZF_SOURCE_311: /tmp/a230zf-311
+          A230ZF_SOURCE_312: /tmp/a230zf-312
+        run: python -m unittest discover -s tests -p test_stage12_a230zf_sealed_shadow.py -v
+      - name: Independently reconstruct 13 original demonstrated transitions and 24 heldout shadow roots
+        run: |
+          python -u scripts/audit_stage12_issue110_b_a230zf_sealed_shadow.py \
+            --source-311 /tmp/a230zf-311 \
+            --source-312 /tmp/a230zf-312 \
+            --output-dir /tmp/a230zf-independent > /tmp/a230zf.log 2>&1 \
+            || { tail -n 160 /tmp/a230zf.log; exit 2; }
+          grep A230ZF_SUMMARY /tmp/a230zf.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zf-audit-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zf-independent
+            /tmp/a230zf.log
+          retention-days: 30

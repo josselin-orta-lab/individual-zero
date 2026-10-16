@@ -1,0 +1,54 @@
+name: Stage12 A2.30-U independent physical exogenous-confound replay
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/replay_stage12_issue110_b_a230u_shadow_physics.py'
+      - 'tests/test_stage12_a230u_shadow_physical_replay.py'
+      - 'docs/research/stage12-issue110-b-a230u-*.md'
+      - '.github/workflows/stage12-b-a230u-shadow.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  independent-exogenous-physical-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Download locked physical S archive without executing any I0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230u-original
+          gh run download 38740664255 --repo "$GITHUB_REPOSITORY" --name a230s-py3.11 --dir /tmp/a230u-original
+      - name: Adversarial replays of tampered mortality, hidden intervention and food effects
+        env:
+          A230U_SOURCE: /tmp/a230u-original
+        run: python -m unittest discover -s tests -p test_stage12_a230u_shadow_physical_replay.py -v
+      - name: Independently apply original 196 physical transitions in detached worlds
+        run: |
+          python -u scripts/replay_stage12_issue110_b_a230u_shadow_physics.py \
+            --source-dir /tmp/a230u-original \
+            --output-dir /tmp/a230u-results > /tmp/a230u.log 2>&1 \
+            || { tail -n 180 /tmp/a230u.log; exit 2; }
+          grep A230U_SUMMARY /tmp/a230u.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230u-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230u-results
+            /tmp/a230u.log
+          retention-days: 30

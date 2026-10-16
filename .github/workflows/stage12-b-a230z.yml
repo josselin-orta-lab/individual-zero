@@ -1,0 +1,44 @@
+name: Stage12 A2.30-Z prospective accessible alternative food
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_b_a230z_alternative_food.py'
+      - 'tests/test_stage12_a230z_alternative_food.py'
+      - 'docs/research/stage12-issue110-b-a230z-*.md'
+      - '.github/workflows/stage12-b-a230z.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independent-food-alternatives:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Verify perceptual eligibility, hidden harms, no postmortem and real Stage6 shadow
+        run: python -m unittest discover -s tests -p test_stage12_a230z_alternative_food.py -v
+      - name: Execute preregistered detached physical worlds and preserve all receipts
+        run: |
+          python -u scripts/run_stage12_issue110_b_a230z_alternative_food.py \
+            --output-dir /tmp/a230z-physical > /tmp/a230z.log 2>&1 \
+            || { tail -n 160 /tmp/a230z.log; exit 2; }
+          grep A230Z_SUMMARY /tmp/a230z.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230z-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230z-physical
+            /tmp/a230z.log
+          retention-days: 30
