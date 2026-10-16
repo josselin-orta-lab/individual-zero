@@ -11,10 +11,18 @@ from copy import deepcopy
 from math import isfinite
 
 from i1.modules.value_needs import ValueAndNeeds
-from .determinism import canonical_causal_bytes
+from .determinism import canonical_causal_bytes, sha256_hex
 
 ACTIVE_FORM_KEY = "i1_active_observed_procedures"
+ACTIVE_FORM_SCHEMA_KEY = "i1_active_observed_procedures_schema"
 SCHEMA = "i1-observed-procedural-advisory-v1"
+_SOURCE_FIELDS = frozenset({
+    "id", "plan_signature", "primitive", "parameters", "observed_field",
+    "evidence_scope", "goal_success_inferred", "safety_certified",
+    "near_context", "preconditions", "source_episode_refs",
+    "source_event_refs", "trial_episode_refs", "trial_event_refs",
+    "distinct_success_count", "distinct_trial_count", "success_rate", "state",
+})
 _ALLOWED_FIELDS = {
     "boire": "drank",
     "collecter": "collected",
@@ -29,8 +37,10 @@ def validate_advisory_rows(rows):
         raise ValueError("I1 active observations must be a list")
     seen = set()
     for row in rows:
-        if type(row) is not dict:
-            raise ValueError("I1 active observation must be a mapping")
+        if type(row) is not dict or set(row) != _SOURCE_FIELDS:
+            # Unknown fields can carry unreviewed authority/effect claims.
+            # Active cognition accepts exactly the witnessed private schema.
+            raise ValueError("unrecognized active cognitive evidence fields")
         primitive = row.get("primitive")
         if (type(row.get("id")) is not str or not row["id"].startswith("skill:")
                 or row["id"] in seen or primitive not in _ALLOWED_FIELDS
@@ -68,6 +78,18 @@ def validate_advisory_rows(rows):
                 or not isfinite(confidence)
                 or confidence != len(successful) / len(attempts)):
             raise ValueError("unreconciled active empirical rate")
+        signature = sha256_hex(canonical_causal_bytes({
+            "primitive": primitive, "parameters": row["parameters"],
+            "observed_field": row["observed_field"],
+        }))
+        context_signature = row.get("plan_signature")
+        if context_signature != "observed_primitive:" + signature:
+            raise ValueError("active procedure is not bound to its physical primitive")
+        expected_ref = "skill:" + sha256_hex(canonical_causal_bytes({
+            "signature": signature, "anchor": [context["x"], context["y"]],
+        }))[:28]
+        if row["id"] != expected_ref:
+            raise ValueError("active procedure identifier is not provenance-derived")
         canonical_causal_bytes(row)
         seen.add(row["id"])
     if [row["id"] for row in rows] != sorted(seen):
@@ -87,18 +109,23 @@ class I1ActiveValueNeeds(ValueAndNeeds):
 
     def export_causal_state(self):
         state = super().export_causal_state()
-        # Do not change historic experimental empty-owner snapshot digests.
+        # This versioned marker is part of the natural owner's M11 state,
+        # including before the first successful cognitive publication. It
+        # prevents cold-recovering under an incompatible active form schema.
+        state[ACTIVE_FORM_SCHEMA_KEY] = SCHEMA
         if self._i1_active_observed_procedures:
             state[ACTIVE_FORM_KEY] = deepcopy(self._i1_active_observed_procedures)
         return state
 
     def restore_causal_state(self, state):
-        if type(state) is not dict:
-            raise ValueError("I1 Value/Needs snapshot must be a mapping")
+        if (type(state) is not dict
+                or state.get(ACTIVE_FORM_SCHEMA_KEY) != SCHEMA):
+            raise ValueError("incompatible I1 active cognitive owner schema")
         proposed = deepcopy(state.get(ACTIVE_FORM_KEY, []))
         validate_advisory_rows(proposed)
         bare = dict(state)
         bare.pop(ACTIVE_FORM_KEY, None)
+        bare.pop(ACTIVE_FORM_SCHEMA_KEY)
         before = super().export_causal_state()
         try:
             super().restore_causal_state(bare)
@@ -120,8 +147,9 @@ class I1ActiveValueNeeds(ValueAndNeeds):
         if (type(candidate) is not dict or type(baseline) is not dict
                 or type(candidate.get("forms")) is not dict
                 or set(candidate["forms"]) != {"value_needs"}
-                or type(candidate.get("procedural")) is not list):
-            raise ValueError("I1 active form requires one explicit canonical owner")
+                or type(candidate.get("procedural")) is not list
+                or baseline.get(ACTIVE_FORM_SCHEMA_KEY) != SCHEMA):
+            raise ValueError("I1 active form requires one versioned canonical owner")
         proposed = candidate["forms"]["value_needs"]
         expected = sorted(
             [deepcopy(row) for row in candidate["procedural"]
