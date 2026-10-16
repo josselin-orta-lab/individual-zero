@@ -162,3 +162,9 @@ The source is committed but not executed: no build, test, mortal birth, M11 cold
 ## Scheduler UC occurrence custody correction
 
 Commit `793c21cfe61301530fd0a5003523bf454711a2f3` enables the existing Scheduler cycle-occurrence guard by default for canonical new I1 births. A second opening of the same physical world step, attempt and cognitive cycle cannot reset the UC budget. This is birth-frozen and remains isolated from I0 and historic experimental runtimes. No execution, CI, M11 cold recovery or scientific cohort was run; active-form owner rebase remains an unresolved integration gate. PR is draft/NO-GO.
+
+## Cross-sleep accumulation of incomplete lived procedural evidence
+
+Commits `9e2bfe998501a302660c9a25df3737f889a0c3ad` and `8a876425f8369ec7040034dffc69a980bdeb1a19` address the failure to learn a local physical affordance from independent successful experiences occurring in different sleep cuts. First positive evidence is now retained as `witnessed_private`, which is **not considered a compiled or executable skill** and is ignored by the existing recall reader. Repeated success in a later disjoint, provenance-verified cut can promote it to `compiled_private` only after meeting the versioned `skill_success_threshold`. Event and episode anti-double-count protections remain, and Stage9/ActionControl and all active-form owner rebase guards remain unchanged.
+
+This is a source-level patch, not a validated successful sleep or actual M11 recovery. No new tests were added or run at the user's prior direction, and no scientific lives were executed. The stacked PRs remain draft and are not fused into `main`; scientific GO cannot be claimed.
