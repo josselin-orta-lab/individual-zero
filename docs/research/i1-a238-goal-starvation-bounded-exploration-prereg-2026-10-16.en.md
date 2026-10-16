@@ -1,0 +1,34 @@
+# A2.38 research preregistration: goal starvation and bounded non-omniscient exploration
+
+**Date: 2026-10-16. Registered BEFORE any A2.38 code implementation or heldout physical lives.**
+**Source:** the A2.37-R1 truthful technical and scientific results `docs/research/i1-a237-r1-mixed-needs-results-2026-10-16.en.md`, after integration main `bf59eceaf97805f04a18b0b28f1396f2e98bfa89`. This is an **I1-only future candidate** distinct from current D2, Stage9 and normative I0. R1's tested worlds have been seen and **must NOT** be reused as blind A2.38 heldout worlds. The external Stage6 prior must be physically regenerated and sealed *before* testing. Current I1 general release remains NO-GO.
+
+## Two independent causal hypotheses, no guaranteed safety
+
+**H1: blocked dominant need.** If Stage6/D1 cannot propose a permitted hydration action from the current first-person view, a different *actually unmet* need (e.g. local food) can be *considered*, with UC-priced evidence and documented selection, **without inventing success, bypassing Goal Control, changing innate priorities or claiming the unmet thirst resolved**. Any alternate option must still pass original Competition, Stage9 and Action Control. The mere existence of visible local berries does not imply edible/safe food, or permission to force `collecter`.
+
+**H2: bounded unknown movement.** D2's unvisited-cell veto prevents certain hidden deaths but rejects useful food and water exploration. Test a separately birth-opted, positively UC-charged *risk commitment policy* for some physically unknown movement, which explicitly records uncertainty and **accepts mortal risk**, rather than attempting to classify indistinguishable safe/lethal world labels. The code must never read `lethal_zones`, Oracle, Bench, future outcomes or scenario identifiers. No fabricated visit-history permission and no exemption for food merely because berry B is visible. The ordinary Stage9 and Action Control safety vetoes remain binding.
+
+**Factorial intervention:** 4 arms per physical world (`BASE` = original A2.37-R1 all-on D2; `ALTERNATE_NEED` = H1 only; `BOUNDED_MOVE` = H2 only; `BOTH` = H1+H2), on **new mortal I1 births only**, with I1 Stage6, water learner, berry autobiographical recall, D2 activated in every arm, plus experimental feature toggles. Both H1/H2 positive UC costs must be declared and pinned at birth; no free evaluation/review and no legacy history mutation. Any option has a first-person evidence source and an explicit uncertain-outcome declaration.
+
+## Independently specified prospective groups
+
+**Five strata × eight case indices × four arms = 160 distinct, irreversible mortal I1 lives**, max **20 physically executed actions per life**, independent WorldBody, Memory, WAL and journal. Alternate arm order by case index. Hold out every A2.37 case ID and physical configuration, and seal new model training before births. Each stratum starts with different, preregistered body food/water needs (physically valid), goal setpoints and berry stock independent of intervention arm; no operator-chosen goals, planted memory or post-hoc retries:
+1. `BLOCKED_THIRST_LOCAL_BERRY`: low water, local berry, **unknown but nonlocal** water east; measure real local food use and continued unfulfilled thirst without making east safe.
+2. `WATER_LOCAL_BERRY_E_SAFE`: first-person water acquisition at current cell; safe but physically unvisited berry destination east.
+3. `WATER_LOCAL_BERRY_E_INVISIBLE_LETHAL`: perceptually matched to (2), except unseen WorldBody lethal zone east; a fatal exploratory commitment is reported without being interpreted as a prediction error for an indiscernible hazard.
+4. `MIXED_NEEDS_KNOWN_SAFE`: previously visited physically safe adjacent water/berry access after real self-initiated visits in the same life; no external relocation credited as initiative. Report unavailable opportunity if no visit occurs.
+5. `MIXED_NEEDS_CHANGED_INVISIBLE_LETHAL`: previously visited cell becomes lethally changed by a logged, undisclosed physical event; a past visit is evidence of *history*, **not** an immutable safety guarantee. Include every death and no resurrection.
+
+Do not use A2.37's fixed locations, initial state, corpus hash or scheduling exactly; choose and freeze the new physical fixture and checksum in a dedicated A2.38 input-lock before a runner or model patch is written. This protocol defines allocation, not yet executable parameter values: **no A2.38 physical trial may start until the missing numeric fixture lock is versioned and reviewed**.
+
+## Preregistered dual-benefit/risk decision standards
+
+- **Hard integrity:** 160/160 unique birth identities, valid WAL/journal chronology, no future/event-label leak, zero postmortem acts, exactly one effective WorldBody transition per admitted action, birth-pinned UC and safety path; any violation is **HARD NO-GO**, preserve raw failed life.
+- **H1 opportunity:** among 8 matched `BLOCKED_THIRST_LOCAL_BERRY` worlds, >=6/8 `ALTERNATE_NEED` lives must physically collect local berries under an honest still-unfulfilled hydration condition, with authentic Option/Competition/Action Control lineage. Compare BASE and costs; no success claim based on mere option proposal.
+- **H2 benefit/harm:** in safe/hidden-lethal paired worlds, >=6/8 `BOUNDED_MOVE` lives must physically reach and exploit the new safe target to declare the opportunity supported, **AND** separately count fatalities in all eight matched hidden-lethal worlds. **Mortality tradeoff cannot be suppressed**: no deployment GO even if safe-world opportunity criterion passes while hidden-world deaths increase.
+- **Interaction H1×H2:** >=6/8 `BOTH` lives that physically satisfy both needs **in the same mortal life** would support only narrow mixed-need goal capability in that stratum. Compare every arm and count abstention, repeated option rejection, goal switches and per-step UC.
+- **Unknown/changed zones:** no policy can infer unobservable unseen lethal truth from a visibly identical preaction state. If BASE abstains and BOTH dies, classify as risk-taking tradeoff, not 'newborn failed to learn death'. The changed-danger condition evaluates stale-recall epistemic limitations, not omniscient forecasting.
+- **Survival/cost accounting:** jointly achieved food/water gains, integrity, energy, starvation/thirst pressure, accepted/refused UC, deaths, total steps and M11 exact cold recoverability. Use all randomized/matched **eight denominators**, no survivor-only efficacy. Python 3.11/3.12 software repeats are *not independent replication*.
+
+**Disposition:** preregistered research design only. Development, separate software audits, and future physical evidence needed. Do not modify I0, normative WorldBody, Oracle boundary, Stage9/DC-05, Action Control or A2.36/A2.37 historical outcomes; do not merge PR #227 into main or call I1 scientifically safe.
