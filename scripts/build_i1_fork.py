@@ -89,6 +89,31 @@ def generate(output: Path) -> dict[str, object]:
                     required_line + '\n'
                     + '        getattr(runtime, "_i1_model_contract", None),',
                 )
+                # D1 water is a separate I1-only canonical cognitive owner.
+                # Legacy I1 M11 birth hashes are unchanged when D1 is absent.
+                cold_anchor = '        if (key == "metacognition_health"'
+                if transformed.count(cold_anchor) != 1:
+                    raise ValueError("unreviewed I1 water M11 cold owner hook")
+                transformed = transformed.replace(
+                    cold_anchor,
+                    '        if key == "i1_lived_water_model":\n'
+                    '            owner.install_m11_cold_state(\n'
+                    '                deepcopy(value), capability=_M11_COLD_OWNER_TOKEN)\n'
+                    '        elif (key == "metacognition_health"',
+                )
+                hash_anchor = (
+                    '    return sha256_hex(canonical_causal_bytes('
+                    '_contract_value(configuration)))'
+                )
+                if transformed.count(hash_anchor) != 1:
+                    raise ValueError("unreviewed I1 M11 birth contract signature")
+                transformed = transformed.replace(
+                    hash_anchor,
+                    '    if getattr(runtime, "_i1_water_contract", None) is not None:\n'
+                    '        configuration = (*configuration,\n'
+                    '            ("i1-water-firstperson-birth-v1", runtime._i1_water_contract))\n'
+                    + hash_anchor,
+                )
             # No stale absolute Python imports may silently reach I0.
             for line in transformed.splitlines():
                 stripped = line.lstrip()
