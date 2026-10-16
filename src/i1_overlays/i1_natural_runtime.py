@@ -82,6 +82,17 @@ class I1Runtime(I1WaterPrudentRuntime):
                 local_threat_alerts=True,
                 geographic_capacity_guard_enabled=True,
             )
+        # Ordinary I1 identifies each charged cognitive cycle by the
+        # actual Scheduler world-step/attempt/cycle tuple. This prevents a
+        # repeated cycle number within one physical occurrence from being
+        # mistaken for fresh budget custody after an interrupted phase.
+        # A different world step may legitimately begin at cycle 1 again.
+        if not cfg.cycle_occurrence_guard_enabled:
+            cfg = replace(
+                cfg,
+                version=cfg.version + "+i1-scheduler-cycle-custody-v1",
+                cycle_occurrence_guard_enabled=True,
+            )
         # Stage6 reference planning was intentionally one-shot. In a
         # living I1 a proven intermediate physical step must lead to fresh
         # perception and another independent decision, not repeat a cached
