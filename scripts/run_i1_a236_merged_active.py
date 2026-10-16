@@ -471,7 +471,7 @@ def experiment(output: Path, *, head: str) -> dict[str, object]:
             "replication":"same deterministic cohort on two Python versions, not independent science",
             "limits":"External relocation is not self movement; identical hidden lethal preaction views cannot distinguish safety.",
         }
-        (output/"summary.json").write_text(json.dumps(summary,indent=2,sort_keys=True)+"\\n")
+        (output/"summary.json").write_text(json.dumps(summary,indent=2,sort_keys=True)+"\n")
         return summary
 
 def main() -> None:
