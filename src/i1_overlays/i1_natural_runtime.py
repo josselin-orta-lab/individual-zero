@@ -17,6 +17,7 @@ from dataclasses import replace
 from .determinism import canonical_causal_bytes, sha256_hex
 from i1.modules.geographic_exploration import GeographicExplorationConfig
 from .i1_birth_temperament import configure_birth_temperament
+from .i1_natural_sleep import enable_natural_sleep_birth
 
 # Historical arms remain available explicitly from the independent
 # I1A238ExperimentalRuntime / I1A239ExperimentalRuntime classes. They are
@@ -46,6 +47,18 @@ class I1Runtime(I1WaterPrudentRuntime):
         cfg = kwargs.get("stage11_config")
         if cfg is None:
             raise ValueError("natural I1 birth requires an explicit Stage11 config")
+        raw_sleep = kwargs.get("stage10_config")
+        raw_world = kwargs.get("world_config")
+        if raw_sleep is None or raw_world is None:
+            raise ValueError("natural I1 birth requires world and sleep configs")
+        # Birth-specific, versioned physical fatigue/metabolism only for the
+        # canonical actor. Historical experimental Stage12 descendants must
+        # retain their explicitly registered physical ablation parameters.
+        kwargs["world_config"], kwargs["stage10_config"] = (
+            enable_natural_sleep_birth(
+                world_config=raw_world, stage10_config=raw_sleep,
+            )
+        )
         if cfg.geographic is None:
             geographic = GeographicExplorationConfig(
                 version="i1-firstperson-frontier-v1",
