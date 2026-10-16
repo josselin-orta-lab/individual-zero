@@ -322,6 +322,22 @@ def experiment(output: Path, *, head: str) -> dict[str, object]:
                         hard_violations=[]
                         if learner["enabled"]!=enabled:
                             hard_violations.append("owner_wrong_arm")
+                        if model.corpus_sha256!=corpus.digest():
+                            hard_violations.append("training_artifact_modified")
+                        if arm=="NO_RECALL" and (recall_charges or reviews or boosts):
+                            hard_violations.append("recall_disabled_bypassed")
+                        if arm=="NO_D2" and (d2_charges or d2_reviews):
+                            hard_violations.append("d2_disabled_bypassed")
+                        if false_certainty:
+                            hard_violations.append("unearned_model_certainty")
+                        if boosts and not any(
+                            r.get("data",{}).get("source_event_refs") for r in reviews):
+                            hard_violations.append("unattributed_recall_boost")
+                        if any(
+                            r.get("data",{}).get("decision")=="permit_historically_visited"
+                            and r.get("data",{}).get("review_uc_paid") is not True
+                            for r in d2_reviews):
+                            hard_violations.append("d2_permit_without_uc")
                         if not enabled and learner["examples"]:
                             hard_violations.append("disabled_learner_updated")
                         if life.equipment.artifact_digest!=birth_e_digest:
