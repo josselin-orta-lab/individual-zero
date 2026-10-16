@@ -43,7 +43,12 @@ class I1PartialEvidenceAdapter:
         self._pending = pending
 
     def __getattr__(self, key):
-        return getattr(self._underlying, key)
+        # deepcopy constructs an empty shell before restoring its __dict__.
+        # Never recursively call __getattr__ while _underlying is absent.
+        underlying = vars(self).get("_underlying")
+        if underlying is None:
+            raise AttributeError(key)
+        return getattr(underlying, key)
 
     def evaluate(self, *, proposal, **kwargs):
         receipt = self._pending.get("receipt")
