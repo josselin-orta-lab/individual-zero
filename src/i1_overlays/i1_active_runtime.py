@@ -131,9 +131,6 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         )
         self._i1_pending = {}
         super().__init__(**kwargs)
-        self.stage8_option_evaluator = I1PartialEvidenceAdapter(
-            self.stage8_option_evaluator, self._i1_pending
-        )
         if self.stage3.substrate.bench is not None:
             raise RuntimeError("autonomous I1 cannot receive Bench access")
 
@@ -167,6 +164,20 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
             )),
         )))
         return replace(base, stage9=updated)
+
+    def _evaluate_competition_cycle(self, *, capture, cycle):
+        # No retained wrapper in causal snapshots or M11 private cloning.
+        # Competition remains the one and only decision accumulator.
+        original = self.stage8_option_evaluator
+        self.stage8_option_evaluator = I1PartialEvidenceAdapter(
+            original, self._i1_pending
+        )
+        try:
+            return super()._evaluate_competition_cycle(
+                capture=capture, cycle=cycle
+            )
+        finally:
+            self.stage8_option_evaluator = original
 
     def _on_open_step_capture(self, capture):
         self._i1_pending.clear()
