@@ -310,6 +310,64 @@ class LivedSixPassAlgorithm:
         result.sort(key=lambda row: row["id"])
         return result
 
+    @staticmethod
+    def _merge_private_procedures(previous, newly_compiled):
+        """Retain trusted private evidence across separately paid sleep cuts.
+
+        Counts only unique autobiographical episodes. An existing skill can
+        receive more evidence from a disjoint new batch, but cannot silently
+        change its action, contextual scope, or private/non-executable state.
+        All saved records remain private SlowHistory, not active policies.
+        """
+        if type(previous) is not list or type(newly_compiled) is not list:
+            raise ValueError("private procedures must be typed lists")
+        combined = {}
+        for row in previous:
+            if (type(row) is not dict or type(row.get("id")) is not str
+                    or row.get("state") != "compiled_private"
+                    or row["id"] in combined):
+                raise ValueError("invalid or duplicated committed private procedure")
+            combined[row["id"]] = deepcopy(row)
+        for row in newly_compiled:
+            if (type(row) is not dict or type(row.get("id")) is not str
+                    or row.get("state") != "compiled_private"):
+                raise ValueError("invalid newly compiled private procedure")
+            old = combined.get(row["id"])
+            if old is None:
+                combined[row["id"]] = deepcopy(row)
+                continue
+            immutable = ("plan_signature", "near_context", "preconditions", "state")
+            if any(old.get(key) != row.get(key) for key in immutable):
+                raise ValueError("conflicting private procedural identity")
+            old_episodes = old.get("source_episode_refs")
+            new_episodes = row.get("source_episode_refs")
+            old_events = old.get("source_event_refs")
+            new_events = row.get("source_event_refs")
+            if (not all(type(v) is list for v in (
+                    old_episodes, new_episodes, old_events, new_events))
+                    or not old_episodes or not new_episodes
+                    or len(set(old_episodes)) != len(old_episodes)
+                    or len(set(new_episodes)) != len(new_episodes)
+                    or len(set(old_events)) != len(old_events)
+                    or len(set(new_events)) != len(new_events)
+                    or set(old_episodes).intersection(new_episodes)
+                    or set(old_events).intersection(new_events)):
+                raise ValueError("previously consolidated evidence cannot be recounted")
+            success = old["distinct_success_count"] + row["distinct_success_count"]
+            trials = old["distinct_trial_count"] + row["distinct_trial_count"]
+            if (type(success) is not int or type(trials) is not int
+                    or success < 2 or trials < success
+                    or success != len(old_episodes) + len(new_episodes)):
+                raise ValueError("invalid cumulative independent trial counts")
+            merged = deepcopy(old)
+            merged["source_episode_refs"] = sorted(old_episodes + new_episodes)
+            merged["source_event_refs"] = sorted(old_events + new_events)
+            merged["distinct_success_count"] = success
+            merged["distinct_trial_count"] = trials
+            merged["success_rate"] = success / trials
+            combined[row["id"]] = merged
+        return [combined[k] for k in sorted(combined)]
+
     def handle(self, candidate, unit, scoped, cut:ConsolidationCut):
         """Pure work-unit handler; only detached immutable provenance arrives."""
         state=self._candidate(deepcopy(candidate))
@@ -363,7 +421,10 @@ class LivedSixPassAlgorithm:
                 raise ValueError("procedural evidence counted twice")
             visited.append(ref)
             if len(visited)==len(self.transaction.batch):
-                state["procedural"]=self._compile_from_proven_plans(cut)
+                state["procedural"] = self._merge_private_procedures(
+                    state.get("procedural", []),
+                    self._compile_from_proven_plans(cut),
+                )
                 state.pop("_private_procedural_scanned")
         elif name=="kappa_recalibration":
             # Stage8/9 autobiographical comparison lacks the independent
