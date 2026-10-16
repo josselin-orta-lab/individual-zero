@@ -230,73 +230,84 @@ class LivedSixPassAlgorithm:
         return output
 
     def _compile_from_proven_plans(self, cut):
-        records={}
+        """Compile *private* one-step affordances from lived physical receipts.
+
+        Earlier code required a nonexistent 'stage10_plan_applied' producer.
+        Only an actual paired command/transition with an explicit positive
+        effect can contribute a success. This establishes observed execution,
+        NOT general safety, nutrition, a distal goal, or causal certainty.
+        Distinct episodes are required. Nothing is installed in active owners.
+        """
+        records = {}
         for episode_ref in self.transaction.batch:
-            events=self._events[episode_ref]
-            physics={e["event_id"] for e in events
-                     if e["kind"]=="world_transition_experienced"}
-            for ev in events:
-                if ev["kind"]!="stage10_plan_applied":
+            events = self._events[episode_ref]
+            for command, physical in self._observed_pairs(events):
+                observed = self._physical_result(command, physical)
+                if observed is None:
                     continue
-                data=ev.get("data")
-                if (not isinstance(data,Mapping)
-                        or type(data.get("plan_signature")) is not str
-                        or not data["plan_signature"]
-                        or data.get("transition_ref") not in physics
-                        or type(data.get("success")) is not bool):
+                effect, value = observed
+                succeeded = (
+                    (effect == "drank" and value == "true")
+                    or (effect == "ate" and value in ("berry_a", "berry_b"))
+                    or (effect == "collected" and value.endswith(":True"))
+                    or (effect == "tool_crafted" and value == "true")
+                    or (effect == "movement" and value == "moved")
+                    or (effect == "stone_placed" and value == "true")
+                )
+                params = command.get("parameters")
+                pos = physical.get("position_after")
+                if (type(params) is not dict or not isinstance(pos, Mapping)
+                        or type(pos.get("x")) is not int
+                        or type(pos.get("y")) is not int):
                     continue
-                context=data.get("context")
-                if (not isinstance(context,Mapping)
-                        or type(context.get("x")) is not int
-                        or type(context.get("y")) is not int):
-                    continue
-                key=data["plan_signature"]
-                records.setdefault(key,[]).append({
-                    "episode":episode_ref,"event":ev["event_id"],
-                    "context":(context["x"],context["y"]),
-                    "success":data["success"],
-                    "preconditions":deepcopy(data.get("preconditions",[])),
+                signature = sha256_hex(canonical_causal_bytes({
+                    "primitive": command["primitive"],
+                    "parameters": params,
+                    "observed_field": effect,
+                }))
+                records.setdefault(signature, []).append({
+                    "episode": episode_ref,
+                    "events": (command["event_id"], physical["event_id"]),
+                    "context": (pos["x"], pos["y"]),
+                    "success": succeeded,
                 })
-        result=[]
+        result = []
         for signature in sorted(records):
-            trials=records[signature]
-            for anchor in sorted(
-                {r["context"] for r in trials if r["success"]},
-            ):
-                candidates=[
+            trials = records[signature]
+            for anchor in sorted({r["context"] for r in trials if r["success"]}):
+                candidates = [
                     row for row in trials if (
-                        abs(row["context"][0]-anchor[0])
-                        + abs(row["context"][1]-anchor[1])
+                        abs(row["context"][0] - anchor[0])
+                        + abs(row["context"][1] - anchor[1])
                         <= self.policy.nearby_context_radius
                     )
                 ]
-                # One *episode* one independent success. Duplicated replay
-                # cannot inflate n_comp or the measured success rate.
-                successes={r["episode"] for r in candidates if r["success"]}
-                failures={r["episode"] for r in candidates if not r["success"]}
-                if len(successes)<self.policy.skill_success_threshold:
+                successes = {r["episode"] for r in candidates if r["success"]}
+                failures = {r["episode"] for r in candidates if not r["success"]}
+                if len(successes) < self.policy.skill_success_threshold:
                     continue
-                evidence=[r for r in candidates if r["episode"] in successes]
-                prec=evidence[0]["preconditions"]
-                if any(r["preconditions"]!=prec for r in evidence):
-                    continue
-                total=len(successes|failures)
-                item={
-                    "id":"skill:"+sha256_hex(canonical_causal_bytes(
-                        {"signature":signature,"anchor":list(anchor)}))[:28],
-                    "plan_signature":signature,
-                    "near_context":{"x":anchor[0],"y":anchor[1],
-                                    "radius":self.policy.nearby_context_radius},
-                    "preconditions":prec,
-                    "source_episode_refs":sorted(successes),
-                    "source_event_refs":sorted({r["event"] for r in evidence}),
-                    "distinct_success_count":len(successes),
-                    "distinct_trial_count":total,
-                    "success_rate":len(successes)/total,
-                    "state":"compiled_private",
+                total = len(successes | failures)
+                evidence = [r for r in candidates if r["episode"] in successes
+                            and r["success"]]
+                item = {
+                    "id": "skill:" + sha256_hex(canonical_causal_bytes({
+                        "signature": signature, "anchor": list(anchor),
+                    }))[:28],
+                    "plan_signature": "observed_one_step:" + signature,
+                    "near_context": {"x": anchor[0], "y": anchor[1],
+                                     "radius": self.policy.nearby_context_radius},
+                    "preconditions": [],
+                    "source_episode_refs": sorted(successes),
+                    "source_event_refs": sorted({
+                        event for row in evidence for event in row["events"]
+                    }),
+                    "distinct_success_count": len(successes),
+                    "distinct_trial_count": total,
+                    "success_rate": len(successes) / total,
+                    "state": "compiled_private",
                 }
                 result.append(item)
-        result.sort(key=lambda row:row["id"])
+        result.sort(key=lambda row: row["id"])
         return result
 
     def handle(self, candidate, unit, scoped, cut:ConsolidationCut):
