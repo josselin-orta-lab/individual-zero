@@ -28,3 +28,9 @@
 5. Perform a review of the full PR, then run exact-head CI before considering merge. **Do not interpret a green PR gate as scientific GO.**
 
 **Disposition:** PR #219 remains Draft; no automatic merge and no Stage validation change.
+
+## Addendum: complete causal option-to-physical chain
+
+A subsequent diagnostic on the same synthetic software fixture (run [38856712486](https://github.com/josselin-orta-lab/individual-zero/actions/runs/38856712486), commit `c9256d830c90542c38583810c7e40407ddec0221`) exposed previously unasserted journal and return-value fields. The enabled I1 life produced a partial-model `collecter berry_b` option, whose Competition trace reports `crossed=true`, whose `command_admitted` carries the exact matching option reference and the cryptographic command hash `62946b34e269d6cfb640c90f7aad185bafa2417ee59a93164d8735d792668c96`, and whose physical step result reports `status=applied` for `collecter`. The disabled I1 control executed `attendre` for three steps and emitted no `i1_partial_*` events. These are physical WorldBody commands executed by *separate mortal runtimes*, not model-only simulations. The existing test gate is now strengthened to REQUIRE the full win/admission/applied chain rather than merely printing it; validation on this new assertion SHA is tracked separately.
+
+The scientific interpretation remains strictly local: one synthetic, nonindependent development scenario with a placeholder model digest, not a new generalization or safety finding, and not an A2.30 independent cohort. There is no inference of food safety or distal causal responsibility. Repeating the same deterministic case under two Python versions tests compatibility rather than replication. No operator approval for deployment is implied.
