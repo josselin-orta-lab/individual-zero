@@ -1,7 +1,7 @@
 name: Stage5 real first-person perseverance regression
 on:
   pull_request:
-    branches: [fix/stage4-local-e0-legacy-regression-20261015]
+    branches: [main]
     paths:
       - 'src/lab/stage5_reference_fixture.py'
       - 'tests/test_stage5_trait_battery.py'

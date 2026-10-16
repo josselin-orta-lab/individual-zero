@@ -1,0 +1,47 @@
+name: Stage12 A2.30-ZM exact first-person state reentry
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_b_a230zm_exact_reentry.py'
+      - 'tests/test_stage12_a230zm_exact_reentry.py'
+      - 'docs/research/stage12-issue110-b-a230zm-*.md'
+      - '.github/workflows/stage12-b-a230zm.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  physical-return-and-stage6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install tested repo
+        run: python -m pip install -e .
+      - name: Execute original preregistered 64 worlds and 260 physical acts
+        run: |
+          python -u scripts/run_stage12_issue110_b_a230zm_exact_reentry.py \
+            --output-dir /tmp/a230zm-physical > /tmp/a230zm.log 2>&1 \
+            || { tail -n 200 /tmp/a230zm.log; exit 2; }
+          grep A230ZM_SUMMARY /tmp/a230zm.log
+      - name: Falsify perceptual/body/night equivalence, deaths, UC and future model leaks
+        env:
+          A230ZM_OUTPUT_DIR: /tmp/a230zm-physical
+        run: python -m unittest discover -s tests -p test_stage12_a230zm_exact_reentry.py -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zm-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zm-physical
+            /tmp/a230zm.log
+          retention-days: 30

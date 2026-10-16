@@ -1,0 +1,40 @@
+name: Stage12 A2.30-E real search edge audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_b_a230e_edge_probe.py'
+      - 'scripts/run_stage12_issue110_b_a228_funnel.py'
+      - 'docs/research/stage12-issue110-b-a230-edge-necessity-*.md'
+      - '.github/workflows/stage12-b-a230e.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  edge-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Run newborn prospective A2.30-E edge probe
+        run: |
+          python -u scripts/run_stage12_issue110_b_a230e_edge_probe.py --output-dir /tmp/a230e > /tmp/a230e.log 2>&1 || { tail -n 120 /tmp/a230e.log; exit 2; }
+          grep A230E_SUMMARY /tmp/a230e.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230e-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230e
+            /tmp/a230e.log
+          retention-days: 30

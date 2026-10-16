@@ -1,0 +1,58 @@
+name: Stage12 A2.30-ZG physical-root-matched shadow
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_b_a230zg_lived_root_shadow.py'
+      - 'tests/test_stage12_a230zg_lived_root_shadow.py'
+      - 'docs/research/stage12-issue110-b-a230zg-*.md'
+      - '.github/workflows/stage12-b-a230zg.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  exact-firstperson-root-shadow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Recover original ZB autonomous born I0 lives, both source Pythons
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230zg-original-311 /tmp/a230zg-original-312
+          gh run download 38767643472 --repo "$GITHUB_REPOSITORY" --name a230zb-py3.11 --dir /tmp/a230zg-original-311
+          gh run download 38767643472 --repo "$GITHUB_REPOSITORY" --name a230zb-py3.12 --dir /tmp/a230zg-original-312
+      - name: Physically apply exactly 14 standalone benign A/B demonstrations and query 12 historical first-person roots
+        run: |
+          python -u scripts/run_stage12_issue110_b_a230zg_lived_root_shadow.py \
+            --original-zb-311 /tmp/a230zg-original-311 \
+            --original-zb-312 /tmp/a230zg-original-312 \
+            --output-dir /tmp/a230zg > /tmp/a230zg.log 2>&1 \
+            || { tail -n 180 /tmp/a230zg.log; exit 2; }
+          grep A230ZG_SUMMARY /tmp/a230zg.log
+      - name: Validate all physical receipts and reject fake root, future, ingestion and safety claims
+        env:
+          A230ZG_ORIGINAL_311: /tmp/a230zg-original-311
+          A230ZG_ORIGINAL_312: /tmp/a230zg-original-312
+          A230ZG_OUTPUT: /tmp/a230zg
+        run: python -m unittest discover -s tests -p test_stage12_a230zg_lived_root_shadow.py -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zg-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zg
+            /tmp/a230zg.log
+          retention-days: 30

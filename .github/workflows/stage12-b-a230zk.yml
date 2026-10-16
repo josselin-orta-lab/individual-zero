@@ -1,0 +1,58 @@
+name: Stage12 A2.30-ZK prospective own-world noningestive motor bootstrapping
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_b_a230zk_ownworld_probe.py'
+      - 'tests/test_stage12_a230zk_ownworld_probe.py'
+      - 'docs/research/stage12-issue110-b-a230zk-*.md'
+      - '.github/workflows/stage12-b-a230zk.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  detached-motor-safety-and-stage6-shadow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Download original immutable autonomous I0 births from both original Pythons
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230zk-zb311 /tmp/a230zk-zb312
+          gh run download 38767643472 --repo "$GITHUB_REPOSITORY" --name a230zb-py3.11 --dir /tmp/a230zk-zb311
+          gh run download 38767643472 --repo "$GITHUB_REPOSITORY" --name a230zb-py3.12 --dir /tmp/a230zk-zb312
+      - name: Apply preregistered 66 detached physical worlds / 28 steps and 80 passive Stage6 searches ONCE
+        run: |
+          python -u scripts/run_stage12_issue110_b_a230zk_ownworld_probe.py \
+            --original-zb-311 /tmp/a230zk-zb311 \
+            --original-zb-312 /tmp/a230zk-zb312 \
+            --output-dir /tmp/a230zk > /tmp/a230zk.log 2>&1 \
+            || { tail -n 200 /tmp/a230zk.log; exit 2; }
+          grep A230ZK_SUMMARY /tmp/a230zk.log
+      - name: Reject fake terminal, hidden perception, Oracle, UC and unobserved physical actions
+        env:
+          A230ZK_ORIGINAL_311: /tmp/a230zk-zb311
+          A230ZK_ORIGINAL_312: /tmp/a230zk-zb312
+          A230ZK_OUTPUT: /tmp/a230zk
+        run: python -m unittest discover -s tests -p test_stage12_a230zk_ownworld_probe.py -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zk-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zk
+            /tmp/a230zk.log
+          retention-days: 30

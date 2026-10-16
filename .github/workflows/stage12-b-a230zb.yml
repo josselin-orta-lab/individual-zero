@@ -1,0 +1,46 @@
+name: Stage12 A2.30-ZB autonomous B-born alternative food
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_b_a230zb_autonomous_food.py'
+      - 'tests/test_stage12_a230zb_autonomous_food.py'
+      - 'docs/research/stage12-issue110-b-a230zb-*.md'
+      - '.github/workflows/stage12-b-a230zb.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  autonomous-lived-food:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Run the ONE preregistered twelve-life cohort without forced commands
+        run: |
+          python -u scripts/run_stage12_issue110_b_a230zb_autonomous_food.py \
+            --output-dir /tmp/a230zb-actual-lives > /tmp/a230zb.log 2>&1 \
+            || { tail -n 140 /tmp/a230zb.log; exit 2; }
+          grep A230ZB_SUMMARY /tmp/a230zb.log
+      - name: Verify ORIGINAL cohort journals, mortal WAL and adversarial negative controls
+        env:
+          A230ZB_ORIGINAL_SOURCE: /tmp/a230zb-actual-lives
+        run: python -m unittest discover -s tests -p test_stage12_a230zb_autonomous_food.py -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zb-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zb-actual-lives
+            /tmp/a230zb.log
+          retention-days: 30

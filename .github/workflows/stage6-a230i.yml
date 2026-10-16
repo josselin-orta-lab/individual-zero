@@ -1,0 +1,40 @@
+name: Stage6 A2.30-I first-step diagnostics
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/i0/modules/stage6_planning.py'
+      - 'tests/test_stage6_a230i_first_step_diagnostic.py'
+      - 'docs/research/stage12-issue110-b-a230i-*.md'
+      - '.github/workflows/stage6-a230i.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  root-model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Assert root-unavailable diagnostic semantics
+        run: python -m unittest discover -s tests -p test_stage6_a230i_first_step_diagnostic.py -v
+      - name: Regress Stage6 reference search and model boundaries
+        run: |
+          python -m unittest discover -s tests -p test_stage6_planning.py -v
+          python -m unittest discover -s tests -p test_stage12_progressive_planning.py -v
+          python -m unittest discover -s tests -p test_stage6_equipment.py -v
+          python -m unittest discover -s tests -p test_stage6_runtime.py -v
+      - name: Regress food progression and Stage12 attribution separation
+        run: |
+          python -m unittest discover -s tests -p test_stage12_a27_revalidation.py -v
+          python -m unittest discover -s tests -p test_stage12_goal_agency.py -v

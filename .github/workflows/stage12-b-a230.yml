@@ -1,0 +1,42 @@
+name: Stage12 A2.30 B planner completeness audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_b_a230_model_audit.py'
+      - 'scripts/run_stage12_issue110_b_a228_funnel.py'
+      - 'docs/research/stage12-issue110-b-a230-*.md'
+      - '.github/workflows/stage12-b-a230.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  census:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Independently audit new B-born search completeness
+        run: |
+          python -u scripts/run_stage12_issue110_b_a230_model_audit.py \
+            --output-dir /tmp/a230 > /tmp/a230.log 2>&1 \
+            || { tail -n 120 /tmp/a230.log; exit 2; }
+          grep 'A230_SUMMARY' /tmp/a230.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230
+            /tmp/a230.log
+          retention-days: 30

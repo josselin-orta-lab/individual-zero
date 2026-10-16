@@ -1,0 +1,44 @@
+name: Stage12 A2.30-W prospective preexposure probes
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_b_a230w_prospective_probes.py'
+      - 'tests/test_stage12_a230w_preexposure_probes.py'
+      - 'docs/research/stage12-issue110-b-a230w-*.md'
+      - '.github/workflows/stage12-b-a230w.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  physical-detached-worlds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Test mortality and observable-input separation with adversarial controls
+        run: python -m unittest discover -s tests -p test_stage12_a230w_preexposure_probes.py -v
+      - name: Execute frozen preregistered standalone prospective physical cohort
+        run: |
+          python -u scripts/run_stage12_issue110_b_a230w_prospective_probes.py \
+            --output-dir /tmp/a230w-study > /tmp/a230w.log 2>&1 \
+            || { tail -n 160 /tmp/a230w.log; exit 2; }
+          grep A230W_SUMMARY /tmp/a230w.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230w-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230w-study
+            /tmp/a230w.log
+          retention-days: 30

@@ -1,0 +1,74 @@
+name: Stage12 A2.30-ZT independent original split-job sealed forecast audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230zt_splitjob_archives.py'
+      - 'tests/test_stage12_a230zt_independent_splitjob.py'
+      - 'docs/research/stage12-issue110-b-a230zt-*.md'
+      - '.github/workflows/stage12-b-a230zt.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  recheck-original-preaction-physical-archives:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Fetch ORIGINAL prior-job and post-job artifacts from run 38801117723 (no new physics)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          fetch_original() {
+            local name="$1" dest="$2" attempt
+            mkdir -p "$dest"
+            for attempt in 1 2 3; do
+              if gh run download 38801117723 --repo "$GITHUB_REPOSITORY" --name "$name" --dir "$dest"; then
+                return 0
+              fi
+              echo "Original artifact $name retrieval retry $attempt" >&2
+              sleep 3
+            done
+            echo "BLOCKED: original immutable ZS $name unavailable" >&2
+            return 1
+          }
+          fetch_original a230zs-sealed-py3.11 /tmp/a230zt-seal311
+          fetch_original a230zs-realized-py3.11 /tmp/a230zt-real311
+          fetch_original a230zs-sealed-py3.12 /tmp/a230zt-seal312
+          fetch_original a230zs-realized-py3.12 /tmp/a230zt-real312
+      - name: Recompute independent six visible deltas and falsify sealed SHA, results and hidden claims
+        env:
+          A230ZT_SEAL311: /tmp/a230zt-seal311
+          A230ZT_REAL311: /tmp/a230zt-real311
+          A230ZT_SEAL312: /tmp/a230zt-seal312
+          A230ZT_REAL312: /tmp/a230zt-real312
+        run: python -m unittest discover -s tests -p test_stage12_a230zt_independent_splitjob.py -v
+      - name: Independently audit original 120 receipts without importing runner or executing WorldBody
+        run: |
+          python -u scripts/audit_stage12_issue110_b_a230zt_splitjob_archives.py \
+            --seal311 /tmp/a230zt-seal311 \
+            --real311 /tmp/a230zt-real311 \
+            --seal312 /tmp/a230zt-seal312 \
+            --real312 /tmp/a230zt-real312 \
+            --output-dir /tmp/a230zt-summary > /tmp/a230zt.log 2>&1 \
+            || { tail -n 160 /tmp/a230zt.log; exit 2; }
+          grep A230ZT_SUMMARY /tmp/a230zt.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zt-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zt-summary
+            /tmp/a230zt.log
+          retention-days: 30
