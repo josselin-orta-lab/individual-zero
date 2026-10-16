@@ -14,7 +14,7 @@ from i1.modules.consolidation_budget import ConsolidationBudgetConfig
 from i1.modules.consolidation_replay_agenda import ReplayAgendaPolicy
 from i1.modules.consolidation_semantics import SemanticPassPolicy
 
-POLICY = "i1-natural-sleep-fatigue-memory-night-energy-v1"
+POLICY = "i1-natural-sleep-fatigue-memory-night-energy-v2-procedural-batch"
 
 # Explicit experimental values, not a discovered or learned food/water prior.
 # Energy is deliberately ABSENT from the intrinsic sleep-pressure formula:
@@ -140,7 +140,10 @@ def enable_natural_sleep_birth(*, world_config, stage10_config):
 
     selector = BatchSelectionPolicy(
         version=POLICY + ":selection",
-        maximum_episodes=1,
+        # Two independent successful episodes are required for even a
+        # private procedure. A one-episode batch made compilation impossible.
+        # Four is a bounded candidate set; every scan/replay/pass still pays UC.
+        maximum_episodes=4,
         consequence_reference=1.0,
         surprise_reference=1.0,
         recency_window_steps=8,
