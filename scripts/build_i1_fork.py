@@ -118,22 +118,64 @@ def i1_canonical_active_value_source(source: str) -> str:
 
 
 def i1_private_consolidation_source(source: str) -> str:
-    """Let proven private procedures reach SlowHistory, not active cognition.
+    """Generated Stage10: active Value/Needs advisory, all other forms inert.
 
-    The generated Stage10 I1 runtime still rejects active-form changes:
-    retaining candidate['procedural'] in *private h* requires no post-cut
-    owner rebase because no owner receives these as executable skills.
+    Original Lab code and historic I1 arms keep the ordinary private-only
+    identity rebase. Canonical I1 may publish a validated *non-executable*
+    consultative index to the one Value/Needs owner without changing TD.
     """
     old = (
         '        if (candidate.get("forms") != self.slow_history.read_committed()["forms"]\n'
         '                or candidate.get("procedural")):\n'
     )
     new = (
-        '        if candidate.get("forms") != self.slow_history.read_committed()["forms"]:\n'
+        '        canonical = type(self).__name__ == "I1Runtime"\n'
+        '        if canonical and not candidate.get("forms"):\n'
+        '            candidate["forms"] = {"value_needs": [\n'
+        '                deepcopy(row) for row in candidate.get("procedural", [])\n'
+        '                if row.get("state") == "compiled_private"\n'
+        '            ]}\n'
+        '        if ((candidate.get("forms") != self.slow_history.read_committed()["forms"]\n'
+        '             and not canonical)\n'
+        '                or (canonical and set(candidate.get("forms", {}))\n'
+        '                    != {"value_needs"})):\n'
     )
     if source.count(old) != 1:
-        raise ValueError("unreviewed I1 Stage10 private-publication boundary")
-    return source.replace(old, new)
+        raise ValueError("unreviewed I1 active-form publication guard")
+    source = source.replace(old, new)
+    old_rebaser = (
+        '        # The final private rebase freezes the journal\'s exact current head.\n'
+    )
+    new_rebaser = (
+        '        if canonical:\n'
+        '            def publish_validated_advisory(candidate, baseline, updates):\n'
+        '                return self.value_needs.prepare_stage10_advisory_rebase(\n'
+        '                    candidate, baseline, updates,\n'
+        '                )\n'
+        '            rebasers = {\n'
+        '                name: (publish_validated_advisory if name == "value_needs"\n'
+        '                       else preserve_unmodified_active_form)\n'
+        '                for name in Stage10PublicationCoordinator.REQUIRED\n'
+        '            }\n'
+        '        else:\n'
+        '            rebasers = {\n'
+        '                name: preserve_unmodified_active_form\n'
+        '                for name in Stage10PublicationCoordinator.REQUIRED\n'
+        '            }\n\n'
+    )
+    if source.count(old_rebaser) != 1:
+        raise ValueError("unreviewed I1 Stage10 private rebase anchor")
+    source = source.replace(old_rebaser, new_rebaser + old_rebaser)
+    old_owner = (
+        '                owner_rebasers={\n'
+        '                    name: preserve_unmodified_active_form\n'
+        '                    for name in Stage10PublicationCoordinator.REQUIRED\n'
+        '                },\n'
+    )
+    if source.count(old_owner) != 1:
+        raise ValueError("unreviewed I1 Stage10 coordinator owner rebasers")
+    return source.replace(old_owner, '                owner_rebasers=rebasers,\n')
+
 
 
 def generate(output: Path) -> dict[str, object]:
