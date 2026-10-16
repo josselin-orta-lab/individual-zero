@@ -128,3 +128,7 @@ The existing world transition still applies real post-action deprivation before 
 Commit `6e5c08776de487c845b1829db15a849da4170b1c` prevents a physically unchanged I1 capture from being counted repeatedly as multiple unplannability failures merely because Competition runs several cognitive cycles in the same world step. The natural actor now records at most one UC-paid `note_non_plannable` event per actual captured world step and active goal. The durable goal/refractory state stays owned by GoalManager; the new per-step runtime marker is a non-causal optimization, with no impact on past physical state or M11 cold replay. Refractory transitions still require genuinely distinct lived observations, not simulated extra episodes.
 
 Further technical evidence is still necessary before any GO, including generator execution, new births, M11 cold restore and active-forms owner rebasing. No tests or physical lives were run.
+
+## Natural planning ownership corrected
+
+Commit `dc76685e8e7eb68ba762f9516823f69f48f9bdbc` prevents the inherited experimental unknown-affordance proposer from silently overriding an already produced Stage6 plan in the canonical living I1. The natural runtime now considers an uncertain command only when the existing causal Stage6 proposal is absent. The experiment-specific behavior remains unchanged on historical subclasses. Unknown consequences remain unknown, and every candidate still requires ordinary Competition, Stage9 and Action Control admission. No tests, model lives, or M11 recovery executed; PR remains draft/NO-GO.
