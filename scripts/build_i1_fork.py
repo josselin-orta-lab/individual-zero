@@ -192,7 +192,7 @@ def generate(output: Path) -> dict[str, object]:
                 transformed = "".join(
                     line.replace(
                         import_anchor,
-                        import_anchor + "\\n"
+                        import_anchor + "\n"
                         + line[:len(line) - len(line.lstrip())]
                         + "from .i1_natural_runtime import I1Runtime",
                     ) if import_anchor in line else line
