@@ -88,10 +88,12 @@ with TemporaryDirectory() as d:
     for name, resources, water_sources, creatures in (
         ("hidden_food", ((far,"berry_b",3),), frozenset(), frozenset()),
         ("visible_food", ((east,"berry_b",3),), frozenset(), frozenset()),
+        ("visible_food_off", ((east,"berry_b",3),), frozenset(), frozenset()),
         ("hidden_water", (), frozenset({far}), frozenset()),
         ("visible_water", (), frozenset({east}), frozenset()),
         ("distant_creature", (), frozenset(), frozenset({Position(origin.x+5,origin.y)})),
     ):
+        enabled = name != "visible_food_off"
         layout = replace(s11.world._layout, resources=resources,
                          water_sources=water_sources, creatures=creatures,
                          obstacles=frozenset(), lethal_zones=frozenset(),
@@ -106,14 +108,15 @@ with TemporaryDirectory() as d:
             wal_path=str(Path(d)/(name+".wal")),
             birth_life_id="i1:issue203:"+name,
             diagnostic_sample_cost_uc=1,module_occupancy_cost_uc=1,
-            detector_policy=policy,i1_model_enabled=True,i1_model=model)
+            detector_policy=policy,i1_model_enabled=enabled,
+            i1_model=model if enabled else None)
         capture=life.world.capture_local(t_monde=1)
         visible={(e.entity_type,e.position.x,e.position.y)
                  for e in capture.visible_entities}
         assert all(abs(x-origin.x)+abs(y-origin.y)<=1 for _,x,y in visible)
         if name=="hidden_food":
             assert not any(e.entity_type=="berry_b" for e in capture.visible_entities)
-        if name=="visible_food":
+        if name in ("visible_food", "visible_food_off"):
             assert ("berry_b",east.x,east.y) in visible
         if name=="hidden_water":
             assert not any(e.entity_type=="water_source" for e in capture.visible_entities)
@@ -131,11 +134,33 @@ with TemporaryDirectory() as d:
         proposals=[e for e in events if e["kind"]=="i1_partial_instrumental_option_proposed"]
         if name in ("hidden_food","hidden_water","visible_water","distant_creature"):
             assert not proposals, (name, proposals)
+        if name == "visible_food_off":
+            assert not any(e["kind"].startswith("i1_partial_") for e in events), (
+                "disabled control emitted experimental-model events"
+            )
         if name=="visible_food":
             assert proposals, "visible food must be actionable by enabled I1"
-            assert any(e["kind"]=="command_admitted" and
-                e["data"]["option_ref"] in {p["data"]["option_ref"] for p in proposals}
-                for e in events), "model option must be admitted"
+            refs = {p["data"]["option_ref"] for p in proposals}
+            registrations = [e["data"] for e in events
+                             if e["kind"]=="option_registration"]
+            assert any(r["registered"] and r["option_ref"] in refs
+                       for r in registrations), "option must be registered"
+            cycles = [e["data"]["traces"] for e in events
+                      if e["kind"]=="competition_cycle"]
+            assert any(t["option_ref"] in refs and t["crossed"]
+                       for traces in cycles for t in traces), (
+                "model option must cross Competition"
+            )
+            admissions = [e["data"] for e in events
+                          if e["kind"]=="command_admitted"]
+            assert any(a["option_ref"] in refs and a["primitive"]=="se_deplacer"
+                       for a in admissions), "model option must be admitted"
+            assert (result.option_ref in refs and
+                    result.command_primitive=="se_deplacer" and
+                    result.execution_status=="applied"), (
+                        "admitted model-origin movement must physically execute",
+                        result
+                    )
         for e in events:
             if e["kind"]=="i1_partial_preaction_forecast":
                 f=e["data"]["result"]
