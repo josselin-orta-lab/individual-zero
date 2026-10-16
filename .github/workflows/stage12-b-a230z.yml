@@ -1,7 +1,7 @@
 name: Stage12 A2.30-Z prospective accessible alternative food
 on:
   pull_request:
-    branches: [science/stage12-b-a230w-prospective-preexposure-20261015]
+    branches: [main]
     paths:
       - 'scripts/run_stage12_issue110_b_a230z_alternative_food.py'
       - 'tests/test_stage12_a230z_alternative_food.py'

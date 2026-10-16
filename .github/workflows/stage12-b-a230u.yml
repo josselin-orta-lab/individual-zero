@@ -1,0 +1,64 @@
+name: Stage12 A2.30-U independent first-person and shadow archive audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230u_independent.py'
+      - 'tests/test_stage12_a230u_blind_audit.py'
+      - 'docs/research/stage12-issue110-b-a230u-*.md'
+      - '.github/workflows/stage12-b-a230u.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  strict-offline-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Download sealed original S and T JSON and independently prior P training
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230u-s311 /tmp/a230u-s312 /tmp/a230u-t311 /tmp/a230u-t312 /tmp/a230u-p
+          gh run download 38740205272 --repo "$GITHUB_REPOSITORY" --name a230s-py3.11 --dir /tmp/a230u-s311
+          gh run download 38740205272 --repo "$GITHUB_REPOSITORY" --name a230s-py3.12 --dir /tmp/a230u-s312
+          gh run download 38741620906 --repo "$GITHUB_REPOSITORY" --name a230t-py3.11 --dir /tmp/a230u-t311
+          gh run download 38741620906 --repo "$GITHUB_REPOSITORY" --name a230t-py3.12 --dir /tmp/a230u-t312
+          gh run download 38730415503 --repo "$GITHUB_REPOSITORY" --name a230p-py3.11 --dir /tmp/a230u-p
+      - name: Reject forged postmortem observations, optimistic goals and oracle leakage
+        env:
+          A230U_S311: /tmp/a230u-s311
+          A230U_S312: /tmp/a230u-s312
+          A230U_T311: /tmp/a230u-t311
+          A230U_T312: /tmp/a230u-t312
+          A230U_P: /tmp/a230u-p
+        run: python -m unittest discover -s tests -p test_stage12_a230u_blind_audit.py -v
+      - name: Independently reconstruct empirical P branches and S/T original physical outcomes
+        run: |
+          python -u scripts/audit_stage12_issue110_b_a230u_independent.py \
+            --s-a /tmp/a230u-s311 --s-b /tmp/a230u-s312 \
+            --t-a /tmp/a230u-t311 --t-b /tmp/a230u-t312 \
+            --p-source /tmp/a230u-p \
+            --output-dir /tmp/a230u-results > /tmp/a230u.log 2>&1 \
+            || { tail -n 180 /tmp/a230u.log; exit 2; }
+          grep A230U_SUMMARY /tmp/a230u.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230u-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230u-results
+            /tmp/a230u.log
+          retention-days: 30
