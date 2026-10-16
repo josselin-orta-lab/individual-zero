@@ -49,8 +49,12 @@ def i1_physiology_source(source: str) -> str:
         (
             "    shelter_stones_required: int = 4\n",
             "    shelter_stones_required: int = 4\n"
-            "    starvation_integrity_damage_per_step: float = 0.5\n"
-            "    dehydration_integrity_damage_per_step: float = 1.0\n"
+            # The generated world type is shared by archived I1 ablations.
+            # Merely extending its physical schema must not silently turn
+            # deprivation ON for their explicitly chosen experimental worlds.
+            # The canonical natural birth profile supplies positive defaults.
+            "    starvation_integrity_damage_per_step: float = 0.0\n"
+            "    dehydration_integrity_damage_per_step: float = 0.0\n"
         ),
         (
             "        self.tool_recipe.validate()\n",
