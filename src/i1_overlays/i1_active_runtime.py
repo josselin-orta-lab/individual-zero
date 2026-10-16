@@ -141,7 +141,7 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         self, *, i1_model: ShadowVisibleDeltaModel | None = None,
         i1_model_enabled: bool = False, i1_forecast_cost_uc: int = 2,
         i1_lived_recall_enabled: bool = False, i1_recall_cost_uc: int = 1,
-        i1_unknown_action_enabled: bool = False,
+        i1_unknown_action_enabled: bool = True,
         i1_unknown_action_cost_uc: int = 2,
         **kwargs,
     ) -> None:
