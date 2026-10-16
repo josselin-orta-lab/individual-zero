@@ -13,7 +13,10 @@ prebirth experience is introduced here.
 from __future__ import annotations
 
 from .i1_d2_runtime import I1WaterPrudentRuntime
+from dataclasses import replace
+from hashlib import sha256
 from .determinism import canonical_causal_bytes, sha256_hex
+from i1.modules.geographic_exploration import GeographicExplorationConfig
 
 # Historical arms remain available explicitly from the independent
 # I1A238ExperimentalRuntime / I1A239ExperimentalRuntime classes. They are
@@ -38,6 +41,30 @@ class I1Runtime(I1WaterPrudentRuntime):
     individual_id = "i1-natural-default-v1"
 
     def __init__(self, **kwargs):
+        # Version the prospective I1 configuration instead of modifying the
+        # canonical reference fixture or copying A2.38 researcher switches.
+        cfg = kwargs.get("stage11_config")
+        if cfg is None:
+            raise ValueError("natural I1 birth requires an explicit Stage11 config")
+        if cfg.geographic is None:
+            geographic = GeographicExplorationConfig(
+                version="i1-firstperson-frontier-v1",
+                novelty_weight=0.15, max_distinct_sites=1024,
+                max_targets_per_cycle=1,
+                observe_routes=False, refresh_surveys=False,
+            )
+            cfg = replace(
+                cfg, version=cfg.version + "+i1-firstperson-frontier-v1",
+                geographic=geographic, intrinsic_weight=min(cfg.intrinsic_weight, 0.35),
+                local_threat_alerts=True,
+                geographic_capacity_guard_enabled=True,
+            )
+        kwargs["stage11_config"] = cfg
+        # First-person proximal action agency, never a claim that a distal
+        # outcome was necessarily caused by the individual's intention.
+        kwargs["subjective_goal_agency"] = True
+        kwargs["dual_scope_agency"] = True
+        kwargs["spatial_goal_progress"] = True
         unexpected = sorted(_ABLATION_SETTINGS.intersection(kwargs))
         if unexpected:
             raise ValueError(
