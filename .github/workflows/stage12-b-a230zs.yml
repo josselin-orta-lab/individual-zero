@@ -1,7 +1,7 @@
 name: Stage12 A2.30-ZS prospective durable preaction forecasts
 on:
   pull_request:
-    branches: [science/stage12-b-a230zp-independent-heldout-audit-20261015]
+    branches: [main]
     paths:
       - 'scripts/run_stage12_issue110_b_a230zs_preaction_sealed.py'
       - 'tests/test_stage12_a230zs_preaction_sealed.py'
