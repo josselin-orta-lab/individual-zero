@@ -1,0 +1,52 @@
+name: I1 D1-B experimental water acquisition (postnegative)
+
+on:
+  pull_request:
+    branches: [experiment/i1-issue136-d1-firstperson-water-20261016]
+    paths:
+      - 'src/i1_overlays/i1_water_runtime.py'
+      - 'tests/test_i1_issue136_d1_learning.py'
+      - 'scripts/run_i1_issue136_water_d1b.py'
+      - 'docs/research/i1-issue136-d1b-prereg-2026-10-16.en.md'
+      - '.github/workflows/i1-issue136-d1b.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i136-d1b-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  water-transfer:
+    name: D1-B 80 mortal I1 lives (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Check I1 pure learner and M11 cold contract
+        run: python -m unittest discover -s tests -p 'test_i1_issue136_d1_learning.py' -v
+      - name: Audit I0 planning unchanged
+        run: python -m unittest discover -s tests -p 'test_stage6_planning.py' -q
+      - name: Execute strictly preregistered D1-B prospective lives
+        run: |
+          python scripts/run_i1_issue136_water_d1b.py --output "i136-d1b-py${{ matrix.python-version }}" --source-sha "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Preserve every birth, death, canonical WAL and scientific result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i136-d1b-py${{ matrix.python-version }}
+          path: i136-d1b-py${{ matrix.python-version }}/
+          retention-days: 90
+          if-no-files-found: warn

@@ -1,0 +1,58 @@
+name: I1 D1 first-person water acquisition
+
+on:
+  pull_request:
+    branches: [main, experiment/i1-isolated-model-fork-20261016, audit/i1-issue136-onlife-water-20261016]
+    paths:
+      - 'src/i1/experimental/lived_water.py'
+      - 'src/i1_overlays/i1_water_runtime.py'
+      - 'scripts/build_i1_fork.py'
+      - 'tests/test_i1_issue136_d1_learning.py'
+      - 'scripts/run_i1_issue136_water_d1.py'
+      - 'docs/research/i1-issue136-d1-prereg-2026-10-16.en.md'
+      - '.github/workflows/i1-issue136-d1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i1-136-d1-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  water-d1:
+    name: First-person water D1 (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: I1 learned-water owner and M11 isolation tests
+        run: python -m unittest discover -s tests -p 'test_i1_issue136_d1_learning.py' -v
+      - name: Existing I1 fork/first-person and original I0 planning regressions
+        run: |
+          python -m unittest discover -s tests -p 'test_i1_generated_isolation.py' -q
+          python -m unittest discover -s tests -p 'test_i1_model_m11_contract.py' -q
+          python -m unittest discover -s tests -p 'test_stage6_planning.py' -q
+      - name: Execute pre-registered D1 mortal cohort if available
+        if: hashFiles('scripts/run_i1_issue136_water_d1.py') != ''
+        run: |
+          python scripts/run_i1_issue136_water_d1.py --output "i136-d1-py${{ matrix.python-version }}" --source-sha "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Preserve unfiltered physical experiments and WAL audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i136-d1-py${{ matrix.python-version }}
+          path: i136-d1-py${{ matrix.python-version }}/
+          retention-days: 90
+          if-no-files-found: ignore
