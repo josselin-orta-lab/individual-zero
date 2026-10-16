@@ -71,6 +71,16 @@ def generate(output: Path) -> dict[str, object]:
                 transformed = transformed.replace(
                     required, "isinstance(runtime, Stage12Runtime)"
                 )
+                # This private-copy walker must discover immutable proxies
+                # in the I1/i1lab owner graph, not accidentally scan only I0.
+                original_modules = 'mod.startswith("i0.") or mod.startswith("lab.")'
+                if transformed.count(original_modules) != 1:
+                    raise ValueError("unreviewed M11 frozen-proxy owner traversal")
+                transformed = transformed.replace(
+                    original_modules,
+                    'mod.startswith("i1.") or mod.startswith("i1lab.")',
+                )
+
                 required_line = '        getattr(runtime, "_stage12_detector_policy", None),'
                 if transformed.count(required_line) != 1:
                     raise ValueError("unreviewed I1 M11 constructor fingerprint")
