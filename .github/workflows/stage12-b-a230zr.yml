@@ -1,7 +1,7 @@
 name: Stage12 A2.30-ZR independently replay alternative-food physics
 on:
   pull_request:
-    branches: [science/stage12-b-a230w-prospective-preexposure-20261015]
+    branches: [main]
     paths:
       - 'scripts/replay_stage12_issue110_b_a230zr_pure_physics.py'
       - 'tests/test_stage12_a230zr_physical_replay.py'
