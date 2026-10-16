@@ -1,7 +1,7 @@
 name: Stage12 A2.30-P joint delayed physical witness
 on:
   pull_request:
-    branches: [science/stage12-b-a230n-uncertain-transition-evaluation-20261015]
+    branches: [main]
     paths:
       - 'scripts/audit_stage12_issue110_b_a230p_joint_trajectories.py'
       - 'scripts/run_stage12_issue110_b_a230p_joint_prefix_experiment.py'

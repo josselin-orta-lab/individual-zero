@@ -8,6 +8,8 @@ on:
       - 'tests/test_stage12_*.py'
       - 'scripts/run_stage12_issue110_instrumental_ab.py'
       - '.github/workflows/stage12-issue110-main-integration.yml'
+      # Research-only A2.30 suites run through their independent lab workflows.
+      - '!tests/test_stage12_a230*.py'
   workflow_dispatch:
 permissions:
   contents: read
