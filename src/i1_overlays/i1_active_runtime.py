@@ -207,6 +207,16 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         if self.stage3.substrate.bench is not None:
             raise RuntimeError("autonomous I1 cannot receive Bench access")
 
+    @property
+    def temperament_parameters(self):
+        """Read Stage11's frozen projection without requiring Stage5 mixin.
+
+        Both historical research arms and the natural I1 inherit this
+        substrate. The frozen experimental neutral projection stays neutral;
+        only canonical natural birth may configure individual differences.
+        """
+        return self._stage11_config.temperament_parameters
+
     def _parent_runtime_config(self, config):
         base = super()._parent_runtime_config(config)
         if not (self._i1_enabled or self._i1_unknown_action_enabled):
