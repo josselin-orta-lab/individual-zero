@@ -47,6 +47,47 @@ def experiment(output: Path, *, head: str) -> dict[str, object]:
             enable_geography=True,autonomous_mortal=True)
         s10=build_stage10_reference_runtime(autonomous_mortal=True)
         orig=s11.world.config.initial_position
+        # Pure external prebirth research prior. It never enters I1 Memory.
+        def visible_lab(world,step):
+            cap=world.capture_local(t_monde=step)
+            return SimulationState(
+                schema_version="simulation-state-v1",
+                x=cap.position.x,y=cap.position.y,
+                body=world.telemetry(),inventory=world.inventory(),
+                current_water_source=cap.current_water_source,
+                current_resources=cap.current_resources,
+                adjacent=tuple(SimulationNeighbor(
+                    direction=n.direction,x=n.position.x,y=n.position.y,
+                    passable=n.passable,water_source=n.water_source,
+                    resources=n.resources,creature=n.creature) for n in cap.adjacent),
+                known_shelter_here=False,is_night=world.is_night(step))
+        training=[]
+        for action in ("MOVE_E","COLLECT_B"):
+            for i in range(8):
+                phy=replace(s11.world.config,
+                    version=s11.world.config.version+"-a236-train",
+                    initial_body=replace(s11.world.config.initial_body,
+                        energy=60.0+i,food=28.0+i,water=70.0+i))
+                local_resources=((orig,"berry_b",3+i),) if action=="COLLECT_B" else ()
+                training_layout=replace(s11.world._layout,
+                    obstacles=frozenset(),water_sources=frozenset(),
+                    resources=local_resources,danger_zones=frozenset(),
+                    lethal_zones=frozenset(),creatures=frozenset())
+                w=WorldBody(config=phy,layout=training_layout)
+                before=visible_lab(w,1)
+                cmd=(PrimitiveCommand("se_deplacer",{"direction":"east"})
+                    if action=="MOVE_E" else
+                    PrimitiveCommand("collecter",{"target":"berry_b"}))
+                delta=w.apply(cmd,t_monde=1)
+                after=visible_lab(w,2)
+                assert not delta.lethal
+                training.append(EquipmentCorpusExample(
+                    f"a236:{action}:{i}",before,cmd,after,False))
+        corpus=EquipmentCorpus("a236-main-prebirth-external-physical-v1",tuple(training))
+        model=fit_external_lab_shadow(corpus=corpus)
+        if model.corpus_sha256!=corpus.digest() or dict(model.counts)!={"MOVE_E":8,"COLLECT_B":8}:
+            raise RuntimeError("unsealed or incomplete external training prior")
+
         c11=s11._stage11_config
         c9=c11.stage9;c8=c9.stage8;c7=c8.stage7;c6=c7.stage6;c4=c6.stage4
         water_needs=replace(
