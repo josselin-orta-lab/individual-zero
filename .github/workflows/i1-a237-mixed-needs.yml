@@ -7,6 +7,8 @@ on:
       - 'scripts/run_i1_a237_mixed_needs.py'
       - 'docs/research/i1-a237-mixed-needs-prereg-2026-10-16.en.md'
       - '.github/workflows/i1-a237-mixed-needs.yml'
+      - 'src/i1_overlays/i1_d2_runtime.py'
+      - 'tests/test_i1_a237_d2_no_geography.py'
   workflow_dispatch:
 
 permissions:
@@ -37,6 +39,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_i1_a236_combined_m11_cold.py' -v
           python -m unittest discover -s tests -p 'test_i1_a236_combined_m11_water.py' -v
+          python -m unittest discover -s tests -p 'test_i1_a237_d2_no_geography.py' -v
       - name: Execute 96 preregistered mixed-physiology mortal I1 births
         run: |
           python scripts/run_i1_a237_mixed_needs.py --output "a237-py${{ matrix.python-version }}" --source-sha "${{ github.event.pull_request.head.sha || github.sha }}"
