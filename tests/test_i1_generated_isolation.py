@@ -1,0 +1,75 @@
+"""Build-time namespace isolation and backward-compatibility checks."""
+from __future__ import annotations
+
+from hashlib import sha256
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import importlib
+import json
+import subprocess
+import sys
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from build_i1_fork import generate, rewrite
+
+
+class I1GeneratedIsolationTests(unittest.TestCase):
+    def test_namespaces_and_reproducible_manifest(self):
+        src = ROOT / "src"
+        with TemporaryDirectory() as a, TemporaryDirectory() as b:
+            first, second = generate(Path(a)), generate(Path(b))
+            self.assertEqual(first, second)
+            self.assertGreater(len(first["files"]), 170)
+            self.assertIn("i1/modules/stage6_planning.py", first["files"])
+            self.assertIn("i1lab/stage12_runtime.py", first["files"])
+            self.assertIn("i1lab/world.py", first["files"])
+            for rel, data in first["files"].items():
+                content = (Path(a) / rel).read_bytes()
+                self.assertEqual(sha256(content).hexdigest(), data["built_sha256"])
+                self.assertTrue((src / data["source_path"]).exists())
+            self.assertEqual(
+                (Path(a) / "i1lab" / "world.py").read_text().replace(
+                    "from i1.interfaces import", "from i0.interfaces import"
+                ),
+                (src / "lab" / "world.py").read_text(),
+            )
+
+    def test_ordinary_i0_and_lab_sources_unchanged(self):
+        with TemporaryDirectory() as folder:
+            generate(Path(folder))
+            self.assertIn("from i0.interfaces import PrimitiveCommand",
+                          (ROOT / "src/lab/world.py").read_text())
+            self.assertIn("from i1.interfaces import PrimitiveCommand",
+                          (Path(folder) / "i1lab/world.py").read_text())
+            self.assertIn("from i1.modules", (
+                Path(folder) / "i1lab/stage12_runtime.py"
+            ).read_text() or (
+                Path(folder) / "i1lab/stage11_runtime.py"
+            ).read_text())
+
+    def test_no_output_into_source_tree(self):
+        with self.assertRaises(ValueError):
+            generate(ROOT / "src" / "i1-generated")
+
+    def test_imports_of_generated_packages(self):
+        with TemporaryDirectory() as folder:
+            generate(Path(folder))
+            script = ("import i1.modules.stage6_planning; "
+                      "import i1lab.stage12_runtime; "
+                      "import i1lab.world; "
+                      "from i1.experimental.stage6_visible_delta_shadow "
+                      "import ShadowVisibleDeltaModel; "
+                      "print('I1_IMPORTS_OK')")
+            run = subprocess.run(
+                [sys.executable, "-c", script],
+                env={"PYTHONPATH": str(Path(folder))},
+                capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertIn("I1_IMPORTS_OK", run.stdout)
+
+
+if __name__ == "__main__":
+    unittest.main()
