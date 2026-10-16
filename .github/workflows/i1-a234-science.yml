@@ -1,0 +1,46 @@
+name: I1 A2.34 first-person continuity scientific audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_i1_a234_memory_choice.py'
+      - 'docs/research/i1-a234-memory-to-choice-prereg-2026-10-16.en.md'
+      - '.github/workflows/i1-a234-science.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a234-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  paired-lived-learning:
+    name: A2.34 48 mortal lives (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Execute lives and report unfiltered negative outcomes
+        run: |
+          python scripts/run_i1_a234_continuity.py --output "a234-py${{ matrix.python-version }}" --source-sha "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Preserve raw per-life external records and independent WALs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a234-lived-cohort-py${{ matrix.python-version }}
+          path: a234-py${{ matrix.python-version }}/
+          retention-days: 90
+          if-no-files-found: warn
