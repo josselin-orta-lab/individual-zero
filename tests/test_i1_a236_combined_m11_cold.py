@@ -104,6 +104,17 @@ with TemporaryDirectory() as folder:
    db_path=path,individual_id=identity,runtime_factory=lambda:factory(recall_cost=2)): pass
  except RecoveryBlocked: pass
  else: raise AssertionError("wrong recall cost recovered")
+ for wrong in (
+   lambda:factory(water=False,prudence=False),
+   lambda:factory(water_uc=3),
+   lambda:factory(prudence=False),
+   lambda:factory(d2_uc=2),
+   lambda:factory(cost=3)):
+  try:
+   with M11TransactionalMortal.cold_recover(
+    db_path=path,individual_id=identity,runtime_factory=wrong): pass
+  except RecoveryBlocked: pass
+  else: raise AssertionError("mismatched I1 water/D2/forecast contract recovered")
  with M11TransactionalMortal.cold_recover(
   db_path=path,individual_id=identity,runtime_factory=factory) as restored:
   assert restored._runtime.memory.episodes,"cold recovery lost the episode"
