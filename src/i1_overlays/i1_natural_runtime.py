@@ -144,6 +144,24 @@ class I1Runtime(I1WaterPrudentRuntime):
         self._i1_last_nonplannable_observation = None
         super().__init__(**kwargs)
 
+    def _consider_uncertain_affordance(
+        self, *, capture, goal, st_version, cycle, exact,
+    ):
+        """Never silently replace an existing verified Stage6 plan.
+
+        The inherited experimental overlay may substitute an unknown
+        primitive even when Stage6 has already proposed a causal model-backed
+        action. The ordinary living I1 instead treats uncertainty as a
+        fall-back when an existing plan is unavailable. This does not inject a
+        command or mislabel an uncertain physical consequence.
+        """
+        if exact is not None:
+            return None
+        return super()._consider_uncertain_affordance(
+            capture=capture, goal=goal, st_version=st_version,
+            cycle=cycle, exact=exact,
+        )
+
     @property
     def temperament_parameters(self):
         """Read the canonical Stage11 birth-frozen Stage5 projection.
