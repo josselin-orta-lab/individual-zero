@@ -192,3 +192,9 @@ The earlier model allowed privately consolidated `compiled_private` evidence to 
 5. I1's paid recall now reads **only this committed active owner view**, never unpublished SlowHistory. Unknown commands are not authorized, predicted or marked safe. H1/H2 ablation and historical I0 remain outside the code path.
 
 **Scientific and operational status:** This is a source-level implementation and requires real generator/build, Python import, full coordinated six-pass life, counterfactual/poisoned-provenance checks and M11 cold recovery before any scientific GO. No new tests or physical lives were run in this correction pass under the standing constraint. The PR #246 remains draft, not merged. Notably this does **not** claim fully generalized active causal-model, perception or kappa rebasing; they intentionally retain current-online state.
+
+## Additional PR #246 active publication hardening
+
+Commit `246d915e9e35945c9cb078ca81945ef7ce52fbc8` version-pins the canonical active Value/Needs advisory schema in its exported causal state (including empty births) and rejects incompatible cold M11 restoration. Active rows must use an exact approved set of fields; the primitive, parameters, physical effect, context anchor and stable skill identifier must agree with the deterministic firsthand evidence hashes. This prevents unreviewed, authority-like metadata from being smuggled into a published cognitive form and rejects unverifiable identity substitutions. The owner still preserves original TD fields untouched during preparation and only consultatively exposes approved observations.
+
+This is static source hardening. New generator/import executions, sleep consolidation, coordinated commit and M11 cold recovery have not been run or claimed. CI at prior PR head included failures unrelated to this latest commit; PR #246 remains draft and NO-GO.
