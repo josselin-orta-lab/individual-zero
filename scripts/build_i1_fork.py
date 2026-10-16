@@ -206,10 +206,8 @@ def i1_private_consolidation_source(source: str) -> str:
         "                updated = algorithm.handle(candidate, unit, scoped, cut)\n"
         "                if (type(self).__name__ == 'I1Runtime'\n"
         "                        and unit.operation == 'index_maintenance'):\n"
-        "                    updated['forms'] = {'value_needs': [\n"
-        "                        deepcopy(row) for row in updated.get('procedural', [])\n"
-        "                        if row.get('state') == 'compiled_private'\n"
-        "                    ]}\n"
+        "                    from .i1_cognitive_publication import build_consolidated_owner_forms\n"
+        "                    updated['forms'] = build_consolidated_owner_forms(updated)\n"
         "                return updated\n"
         "            advance = runner.advance_unit(canonical_paid_semantic_handler)\n"
     )
@@ -227,7 +225,7 @@ def i1_private_consolidation_source(source: str) -> str:
         '                )\n'
         '            rebasers = {\n'
         '                name: (publish_validated_advisory if name == "value_needs"\n'
-        '                       else preserve_unmodified_active_form)\n'
+        '                       else self._i1_active_owner_views[name].prepare_stage10_owner_rebase)\n'
         '                for name in Stage10PublicationCoordinator.REQUIRED\n'
         '            }\n'
         '        else:\n'
@@ -247,7 +245,21 @@ def i1_private_consolidation_source(source: str) -> str:
     )
     if source.count(old_owner) != 1:
         raise ValueError("unreviewed I1 Stage10 coordinator owner rebasers")
-    return source.replace(old_owner, '                owner_rebasers=rebasers,\n')
+    source = source.replace(old_owner, '                owner_rebasers=rebasers,\n')
+    for name, reference in (
+        ("causal_model", "self.causal_model"),
+        ("perception", "self.stage3.perception"),
+        ("metacognition_health", "self._meta_custody"),
+    ):
+        original = '                "' + name + '": ' + reference + ','
+        replacement = (
+            '                "' + name + '": (self._i1_active_owner_views["'
+            + name + '"] if canonical else ' + reference + '),'
+        )
+        if source.count(original) != 1:
+            raise ValueError("unreviewed Stage10 active owner map " + name)
+        source = source.replace(original, replacement)
+    return source
 
 
 
