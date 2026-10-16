@@ -61,6 +61,14 @@ def factory(cost=2,recall=True,recall_cost=1):
   i1_recall_cost_uc=recall_cost)
 with TemporaryDirectory() as folder:
  path=str(Path(folder)/"i1.sqlite")
+ baseline_path=str(Path(folder)/"i1-uninterrupted.sqlite")
+ with M11TransactionalMortal.birth(
+  db_path=baseline_path,runtime=factory(),individual_id=identity) as baseline:
+  for i in range(6):
+   stable=baseline.run_step()
+   assert stable.status=="active" and stable.generation==i+1
+   if i==4: baseline_head_at_five=stable.journal_head
+  baseline_head_at_six=stable.journal_head
  candidate=factory()
  from i1lab.stage12_runtime import Stage12Runtime
  assert isinstance(candidate,Stage12Runtime),str(type(candidate).__mro__)
@@ -76,6 +84,7 @@ with TemporaryDirectory() as folder:
    e.causal_event.get("data",{}).get("source_event_refs")
    for e in owner._runtime.journal.entries),"no recalled positive source"
   head=receipt.journal_head
+  assert head==baseline_head_at_five,"divergence before cold restart"
  audit=SQLiteLifeLedger.audit_read_only(path=path,expected_individual_id=identity)
  assert audit.generation==5 and audit.journal_head==head
  try:
@@ -93,6 +102,7 @@ with TemporaryDirectory() as folder:
   assert restored._runtime.memory.episodes,"cold recovery lost the episode"
   receipt=restored.run_step()
   assert receipt.generation==6 and receipt.world_step==6
+  assert receipt.journal_head==baseline_head_at_six,"cold restart is not byte-identical"
  assert SQLiteLifeLedger.audit_read_only(
   path=path,expected_individual_id=identity).generation==6
 print("I1_A235_M11_COLD_RECALL_OK")
