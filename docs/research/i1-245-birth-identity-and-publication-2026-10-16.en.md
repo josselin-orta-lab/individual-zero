@@ -79,3 +79,18 @@ These modifications are committed source, not verified behavior. No additional t
 Commit `0b7b52054eb4db8a64661a386a5beb5563805316` replaces the call to `build_stage5_reference_runtime(autonomous_mortal=True)` inside canonical I1 temperament construction with the same published Stage5 reference mapping parameters expressed as a pure immutable `TemperamentMappingConfig`. Values continue to use the **actual current I1 Stage4** neutral base weights and inertia. Temperament is projected once from the declared life identity; no auxiliary WorldBody, second mortality authority, Scheduler or journal is created simply to determine coefficients.
 
 This is a source-only correction. No new test, build, physical birth, M11 cold recovery or scientific trial was run. The original I0, source Lab and frozen historical experiments were not edited. Stage10 active-form publication remains deliberately fail-closed without verified owner-specific rebase. PR #245 therefore remains draft / NO-GO.
+
+## Consolidation correction: evidence-source contract and batch size
+
+Code review identified two coupled blockers in the I1-specific consolidation path:
+
+1. The private compiler required a `stage10_plan_applied` autobiographical event, but no ordinary integrated I1 stage produces that event and it is not a Stage7 allowed autobiographical kind. The compiler would therefore produce zero procedures indefinitely.
+2. The default sleep selection admitted exactly one episode per cut despite requiring `skill_success_threshold=2` distinct successful episodes. A newly born life could never compile one private procedure from a single cut.
+
+Commits `2e096f5d5696c156841590112c521af8bb8ca6bf` and `9f696bf9496f35ac632e47e59132d5a2e56dd7fd` change only the I1 living policy and I1 cognitive semantic module:
+
+- Batch selection now caps at four independently lived episodes. Each episode scan, replay and semantic pass remains priced under P-42 and can defer if work is unavailable.
+- A *private* one-step procedural record is derived solely from an already authorized autobiographical pair of `command_experienced` and `world_transition_experienced` at the same actual world step. Only explicitly recorded positive physical effects qualify as success. Negative effects remain failures. Distinct successful episodes are required. Neither the hidden world, an unverifiable `stage10_plan_applied` event nor replayed duplicates contribute evidence.
+- Such a record is limited to `state=compiled_private`. It documents that a primitive action previously succeeded in a local context. It does **not** prove that a distal goal succeeded, that berries are safe, or that the actor caused an ambiguous external change. It is never made executable by this patch and does not alter Stage9 or Action Control.
+
+**Outstanding:** compiler source has not been executed; successful private consolidation, SQLite M11 cold recovery and active-form owner rebase remain unverified. The original I0, Lab, A2.38/A2.39 historical source and data are unchanged. No tests or new physical lives were run under operator instruction. PR remains draft and scientific NO-GO.
