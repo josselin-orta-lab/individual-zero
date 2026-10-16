@@ -57,6 +57,10 @@ with TemporaryDirectory() as folder:
  from i1lab.stage12_runtime import Stage12Runtime
  assert isinstance(candidate,Stage12Runtime),str(type(candidate).__mro__)
  assert candidate._m11_sqlite_custody is True
+ from copy import deepcopy
+ for name in ('_i1_model','_i1_model_contract','_i1_pending','stage8_option_evaluator'):
+  try: deepcopy(getattr(candidate,name))
+  except Exception as err: raise AssertionError((name,type(err).__name__,str(err))) from err
  import inspect
  gate=inspect.getsource(M11TransactionalMortal.birth)
  assert 'isinstance(runtime, Stage12Runtime)' in gate,gate[:1500]
