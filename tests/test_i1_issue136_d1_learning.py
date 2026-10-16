@@ -169,5 +169,49 @@ with TemporaryDirectory() as folder:
             self.assertIn("D1_M11_COLD_OK",output)
 
 
+    def test_m11_learned_evidence_persists_and_changes_cold_decision(self):
+        # Post-result software gate: an authentic D1-B north water
+        # experience must survive M11 cold restart before a remote action.
+        with TemporaryDirectory() as tmp:
+            generated=Path(tmp)/"generated"
+            generate(generated)
+            output=_check_script(generated, SETUP+'''
+from i1lab.m11_transactional_mortal import M11TransactionalMortal
+layout=replace(layout,water_sources=frozenset({
+    origin.moved("north"), remote.moved("east")}))
+events=(ScenarioEvent(t_monde=4,sequence=0,operation="set_position",
+    payload={"position":remote.as_dict()}),)
+with TemporaryDirectory() as folder:
+    def fresh():
+        return make(folder,True,m11=True)
+    path=str(Path(folder)/"learned.sqlite")
+    with M11TransactionalMortal.birth(
+            db_path=path,runtime=fresh(),
+            individual_id="i1:d1:test:one") as live:
+        for _ in range(3):
+            receipt=live.run_step()
+            assert receipt.status=="active",receipt
+        learned=live._runtime.lived_water_model
+        assert learned["enabled"]
+        assert learned["examples"],learned
+        assert learned["examples"][0]["sent_world_step"]==2
+        assert learned["examples"][0]["observed_world_step"]==3
+        before=learned["examples"]
+    with M11TransactionalMortal.cold_recover(
+            db_path=path,individual_id="i1:d1:test:one",
+            runtime_factory=fresh) as recovered:
+        assert recovered._runtime.lived_water_model["examples"]==before
+        action=recovered.run_step()
+        assert action.status=="active",action
+        assert action.outcome=="applied",action
+        assert recovered._runtime.world.position==remote.moved("east")
+        drink=recovered.run_step()
+        assert drink.outcome=="applied",drink
+        assert recovered._runtime.world.telemetry()["water"]>80
+        assert recovered._runtime.lived_water_model["examples"][:1]==before[:1]
+    print("D1_M11_LEARNED_COLD_TRANSFER_OK")
+''')
+            self.assertIn("D1_M11_LEARNED_COLD_TRANSFER_OK",output)
+
 if __name__=="__main__":
     unittest.main()
