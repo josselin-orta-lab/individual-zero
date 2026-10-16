@@ -1,7 +1,7 @@
 name: Stage12 A2.30-J physical prebirth coverage ablation
 on:
   pull_request:
-    branches: [science/stage12-b-a229-choice-arbitration-20261015]
+    branches: [main]
     paths:
       - 'scripts/run_stage12_issue110_b_a230j_coverage_ablation.py'
       - 'scripts/run_stage12_issue110_b_a228_funnel.py'
