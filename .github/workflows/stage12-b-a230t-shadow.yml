@@ -1,0 +1,57 @@
+name: Stage12 A2.30-T independent causal-shadow archive verification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/audit_stage12_issue110_b_a230t_shadow_archives.py'
+      - 'tests/test_stage12_a230t_shadow_independent_audit.py'
+      - 'docs/research/stage12-issue110-b-a230t-*.md'
+      - '.github/workflows/stage12-b-a230t-shadow.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  independent-archive-recomputation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Download original unchanged S scientific archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230t-original311 /tmp/a230t-original312
+          gh run download 38740664255 --repo "$GITHUB_REPOSITORY" --name a230s-py3.11 --dir /tmp/a230t-original311
+          gh run download 38740664255 --repo "$GITHUB_REPOSITORY" --name a230s-py3.12 --dir /tmp/a230t-original312
+      - name: Independent falsification of causal matching, future leakage, mortality and Stage6 root
+        env:
+          A230T_SOURCE_311: /tmp/a230t-original311
+          A230T_SOURCE_312: /tmp/a230t-original312
+        run: python -m unittest discover -s tests -p test_stage12_a230t_shadow_independent_audit.py -v
+      - name: Audit original physical receipts and Stage6 shadow WITHOUT original implementation
+        run: |
+          python -u scripts/audit_stage12_issue110_b_a230t_shadow_archives.py \
+            --source-311 /tmp/a230t-original311 \
+            --source-312 /tmp/a230t-original312 \
+            --output-dir /tmp/a230t-results > /tmp/a230t.log 2>&1 \
+            || { tail -n 175 /tmp/a230t.log; exit 2; }
+          grep A230T_SUMMARY /tmp/a230t.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230t-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230t-results
+            /tmp/a230t.log
+          retention-days: 30
