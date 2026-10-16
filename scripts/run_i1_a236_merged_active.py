@@ -413,55 +413,66 @@ def experiment(output: Path, *, head: str) -> dict[str, object]:
                         (life_dir/"life-result.json").write_text(
                             json.dumps(record,indent=2,sort_keys=True)+"\n")
                         export.write(json.dumps(record,sort_keys=True)+"\n")
-        groups={}
+        grouped={}
         for stratum in STRATA:
-            groups[stratum]={}
-            for arm in ("aggressive","prudence","probe_only"):
-                rows=[x for x in records if x["stratum"]==stratum and x["arm"]==arm]
-                groups[stratum][arm]={
+            grouped[stratum]={}
+            for arm in ARMS:
+                rows=[r for r in records if r["stratum"]==stratum and r["arm"]==arm]
+                grouped[stratum][arm]={
                     "births":len(rows),
-                    "physical_steps":sum(x["physical_steps"] for x in rows),
-                    "first_drinking_lives":sum(x["initial_drinking"] for x in rows),
-                    "firstperson_learning_lives":sum(bool(x["firstperson_water_evidence"])
-                                                     for x in rows),
-                    "transfer_moved_lives":sum(x["learned_origin_transfers_applied"]>0
-                                               for x in rows),
-                    "successful_transfer_lives":sum(x["successful_transfer"] for x in rows),
-                    "deaths":sum(x["mortal_status"]=="dead" for x in rows),
-                    "accepted_uc":sum(x["uc_total_accepted"] for x in rows),
-                    "refused_uc_operations":sum(x["uc_refused_ops"] for x in rows),
-                    "water_model_uc":sum(
-                        x["uc_water_consider"]+x["uc_water_acquire"] for x in rows),
-                    "technical_violations":sum(bool(x["hard_violations"]) for x in rows),
+                    "physical_steps":sum(r["physical_steps"] for r in rows),
+                    "deaths":sum(r["mortal_status"]=="dead" for r in rows),
+                    "initial_drinking_lives":sum(r["initial_drinking"] for r in rows),
+                    "water_learning_lives":sum(bool(r["firstperson_water_evidence"]) for r in rows),
+                    "water_transfer_lives":sum(r["successful_transfer"] for r in rows),
+                    "positive_berry_collection_lives":sum(r["positive_collections"]>0 for r in rows),
+                    "source_backed_recall_lives":sum(r["source_backed_reviews"]>0 for r in rows),
+                    "berry_boost_lives":sum(r["boost_evaluations"]>0 for r in rows),
+                    "d2_review_lives":sum(r["d2_reviews"]>0 for r in rows),
+                    "d2_deferred_count":sum(r["d2_deferred"] for r in rows),
+                    "model_forecast_lives":sum(r["model_forecasts"]>0 for r in rows),
+                    "model_proposal_lives":sum(r["model_proposals"]>0 for r in rows),
+                    "closed_memory_episode_lives":sum(r["closed_episodes"]>0 for r in rows),
+                    "uc_accepted":sum(r["uc_total_accepted"] for r in rows),
+                    "uc_refused_ops":sum(r["uc_refused_ops"] for r in rows),
+                    "uc_water":sum(r["uc_water_consider"]+r["uc_water_acquire"] for r in rows),
+                    "uc_model":sum(r["uc_model_forecast"] for r in rows),
+                    "uc_recall":sum(r["uc_recall_review"] for r in rows),
+                    "uc_d2":sum(r["uc_d2_review"] for r in rows),
+                    "technical_violations":sum(bool(r["hard_violations"]) for r in rows),
                 }
-        any_hard=sum(bool(r["hard_violations"]) for r in records)
-        mechanism=(groups["novel_east_lethal"]["prudence"]["deaths"]==0
-            and groups["novel_east_lethal"]["aggressive"]["deaths"]==8
-            and groups["revisit_north_safe"]["prudence"]["successful_transfer_lives"]>=6)
-        safety_alarm=(groups["revisit_north_changed_lethal"]["prudence"]["deaths"]>0
-            or groups["novel_east_lethal"]["prudence"]["deaths"]>0)
-        verdict=("HARD_NO_GO" if any_hard else
-            "SAFETY_NO_GO" if safety_alarm else
-            "MECHANISM_SUPPORTED_LIMITED" if mechanism else "NOT_DEMONSTRATED")
+        nbad=sum(bool(r["hard_violations"]) for r in records)
+        expected=6*8*len(ARMS)
+        berry_supported=(
+            grouped["BERRY_LOCAL"]["FULL"]["berry_boost_lives"]>=6
+            and grouped["BERRY_LOCAL"]["NO_D2"]["berry_boost_lives"]>=6
+            and grouped["BERRY_LOCAL"]["NO_RECALL"]["berry_boost_lives"]==0)
+        water_supported=(
+            grouped["WATER_NEW_E_SAFE"]["NO_D2"]["water_transfer_lives"]>=6
+            and grouped["WATER_VISIT_N_SAFE"]["FULL"]["water_transfer_lives"]>=6)
+        changed_lethal=grouped["WATER_VISIT_N_CHANGED_LETHAL"]["FULL"]["deaths"]>0
         summary={
-            "schema":"i1-a236-summary-v1",
-            "source_sha":head,"prereg_sha":PREREG,"input_lock_sha":INPUT_LOCK,
-            "true_independent_births":len(records),"matched_triplets":40,
+            "schema":"i1-a236-all-active-merged-main-summary-v1",
+            "protocol":"a236-v1","source_sha":head,
+            "original_main_sha":"bf59eceaf97805f04a18b0b28f1396f2e98bfa89",
+            "prereg_sha":PREREG,"external_training_sha256":corpus.digest(),
+            "training_examples":len(training),
+            "mortal_lives":len(records),"matched_triplets":6*8,
             "physical_steps":sum(r["physical_steps"] for r in records),
-            "hard_violations":any_hard,
-            "additional_hidden_lethal_on_deaths":safety_alarm,
-            "by_stratum":groups,
-            "development_600_physical_steps_reached":sum(
-                r["physical_steps"] for r in records)>=600,
-            "scientific_transfer_verdict":verdict,
-            "stage12_scientific_acceptance":"PENDING",
+            "hard_violations":nbad,
+            "integration_technical_status":"PASS" if len(records)==expected and not nbad else "FAIL",
+            "berry_recall_status":"SUPPORTED_LIMITED" if berry_supported else "NOT_DEMONSTRATED",
+            "water_transfer_status":"SUPPORTED_LIMITED" if water_supported else "NOT_DEMONSTRATED",
+            "epistemic_risk_status":"SAFETY_NO_GO" if changed_lethal else "UNRESOLVED",
+            "m11_all_active_cold_recovery":"PENDING",
+            "model_combined_cognitive_deployment":"NO-GO",
+            "by_stratum":grouped,
             "i0_modified":False,
-            "reproduction":"same frozen deterministic cohort under Python 3.11 and 3.12",
-            "limits":"External relocation is NOT self movement or distant autonomous search.",
+            "replication":"same deterministic cohort on two Python versions, not independent science",
+            "limits":"External relocation is not self movement; identical hidden lethal preaction views cannot distinguish safety.",
         }
-        (output/"summary.json").write_text(json.dumps(summary,indent=2,sort_keys=True)+"\n")
+        (output/"summary.json").write_text(json.dumps(summary,indent=2,sort_keys=True)+"\\n")
         return summary
-
 
 def main() -> None:
     parser=argparse.ArgumentParser()
@@ -470,7 +481,7 @@ def main() -> None:
     args=parser.parse_args()
     summary=experiment(args.output,head=args.source_sha)
     print(json.dumps(summary,sort_keys=True))
-    if summary["true_independent_births"]!=120 or summary["hard_violations"]:
+    if summary["mortal_lives"]!=144 or summary["hard_violations"]:
         raise SystemExit(1)
 
 if __name__=="__main__":
