@@ -3,8 +3,9 @@
 The checked-in src/i1 tree is the exact source snapshot from the approved
 I0 main SHA. This build mechanically namespaces that copy and the complete
 laboratory runtime in a separate output directory. No src/i0 or src/lab file
-is written. The I1-generated WorldBody alone receives a versioned physiological
-extension; the normative I0 and Lab WorldBody remain unchanged.
+is written. The I1-generated WorldBody alone receives versioned physical deprivation
+by default, and the generated mortal Stage11Sleep entrypoint activates the
+natural sleep policy for every new I1 birth. Reference I0 and Lab are unchanged.
 
 Output is disposable build code, not an archived living individual.
 """
@@ -48,8 +49,8 @@ def i1_physiology_source(source: str) -> str:
         (
             "    shelter_stones_required: int = 4\n",
             "    shelter_stones_required: int = 4\n"
-            "    starvation_integrity_damage_per_step: float = 0.0\n"
-            "    dehydration_integrity_damage_per_step: float = 0.0\n"
+            "    starvation_integrity_damage_per_step: float = 0.5\n"
+            "    dehydration_integrity_damage_per_step: float = 1.0\n"
         ),
         (
             "        self.tool_recipe.validate()\n",
@@ -93,6 +94,31 @@ def i1_physiology_source(source: str) -> str:
         source = source.replace(original, replacement)
     return source
 
+def i1_default_sleep_source(source: str) -> str:
+    """Bind the existing Stage10 physical/sleep policy at every mortal I1 birth.
+
+    Stage11SleepRuntime is the common parent of the living Stage12 I1
+    descendants. This generator edits only the separately built i1lab copy,
+    never the reference Lab implementation. All descendant constructors
+    receive the same immutable versioned physical/sleep configuration.
+    """
+    anchor = (
+        "        stage11_config.validate()\n"
+        "        stage10_config.validate()\n"
+    )
+    replacement = (
+        "        from .i1_natural_sleep import enable_natural_sleep_birth\n"
+        "        kwargs['world_config'], stage10_config = enable_natural_sleep_birth(\n"
+        "            world_config=kwargs['world_config'],\n"
+        "            stage10_config=stage10_config,\n"
+        "        )\n"
+        + anchor
+    )
+    if source.count(anchor) != 1:
+        raise ValueError("unreviewed I1 Stage11Sleep birth entrypoint")
+    return source.replace(anchor, replacement)
+
+
 def generate(output: Path) -> dict[str, object]:
     output = output.resolve()
     # A mis-specified output must never clobber the checked-in cognition.
@@ -120,6 +146,9 @@ def generate(output: Path) -> dict[str, object]:
             transformed = rewrite(contents)
             if output_package == "i1lab" and relative.as_posix() == "world.py":
                 transformed = i1_physiology_source(transformed)
+            if (output_package == "i1lab"
+                    and relative.as_posix() == "stage11_sleep_runtime.py"):
+                transformed = i1_default_sleep_source(transformed)
             # I1-only M11 custody: accept an explicit Stage12 descendant,
             # but pin the frozen I1 model parameters in the cold-birth digest.
             # Never alter the canonical src/lab or src/i0 M11 implementation.
