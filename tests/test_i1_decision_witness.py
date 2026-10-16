@@ -79,7 +79,7 @@ with TemporaryDirectory() as d:
         physical=[]
         for step in range(3):
             x=life.run_step()
-            physical.append(x.execution_status)
+            physical.append({"status":x.execution_status,"option_ref":x.option_ref,"command":x.command_primitive,"source":x.source})
             if x.execution_status == "dead":
                 break
         assert life.journal.verify()
@@ -93,7 +93,13 @@ with TemporaryDirectory() as d:
                         "planning": [e["data"] for e in entries
                             if e["kind"]=="stage6_planning_result"][-6:],
                         "registered":[e["data"] for e in entries
-                            if e["kind"]=="option_registration"][-6:]}
+                            if e["kind"]=="option_registration"][-6:],
+                        "admitted":[e["data"] for e in entries
+                            if e["kind"]=="command_admitted"][-6:],
+                        "vetoed":[e["data"] for e in entries
+                            if e["kind"]=="command_vetoed"][-6:],
+                        "candidate_traces":[e["data"]["traces"] for e in entries
+                            if e["kind"]=="competition_cycle"][-6:]}
         if label=="on":
             assert "i1_partial_preaction_forecast" in kinds, str(results)
             assert "i1_partial_instrumental_option_proposed" in kinds, str(results)
@@ -127,6 +133,7 @@ with TemporaryDirectory() as d:
                 text=True,capture_output=True,check=False)
             self.assertEqual(result.returncode,0,result.stderr + "\n" + result.stdout)
             self.assertIn("I1_DECISION_WITNESS_SOFTWARE:",result.stdout)
+            print(result.stdout.strip())
 
 
 if __name__=="__main__":
