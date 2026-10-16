@@ -1,0 +1,16 @@
+# I1 / issue 203 : preregistered first-person active-model regression
+
+Date: 2026-10-16. Parent I1 research branch at `5e1522bb18435aa0c65b1c32c617b7323c9829f5` (PR #219, Draft). Scope: technical regression and operator diagnostic **only**. No new scientific cohort, no deployment authorization, and no reclassification of A2.31 NO-GO.
+
+## Hypothesis and independent bounds
+
+Issue #203 historically reflected invalid legacy Stage4/Stage5/Stage9 fixtures expecting vision beyond Manhattan radius one, not a Stage6 runtime defect. Those tests were repaired in main by PRs #204, #205 and #216. I1's checked-in baseline is a bytewise I0 copy, but a generated `i1`/`i1lab` fork and *activated* `ExperimentalI1Stage12Runtime` must be tested separately. Passing generic I0 tests does not establish active-I1 equivalence.
+
+Freeze these two independent gates before running the branch CI:
+
+1. **I1 namespaced inherited suite:** execute the Stage4 tests, Stage5 battery tests, and Stage9 tests under the independently generated `i1` and `i1lab` Python packages. Preserve all executable Stage4/5 first-person and forced-failure assertions. Run the seven intrinsic Stage9 physical/cognitive checks, including the distant-creature association and the near-creature controls. The eighth Stage9 test launches a stand-alone *I0-only independent auditor* in a subprocess, and is verified unchanged against the original I0 source in a separate unmodified I0 suite, rather than falsely claiming that I1's copied auditor is independent. No production file or canonical test is edited.
+2. **Actual I1 model-ON mortal lives:** instantiate independent `ExperimentalI1Stage12Runtime` actors with `i1_model_enabled=True`, correct i1-prefixed life IDs, physical `WorldBody`, sealed external-lab model built from 16 real training transitions (8 each MOVE_E/COLLECT_B), valid WAL, and journal-chain audit. At birth compare water at Manhattan distance 2 versus adjacent water; model-origin food proposal must not invent inaccessible water. Compare an invisible berry B at distance 2 versus a visible berry B east at distance 1. An invisible berry must not produce a model-origin option. A visible berry must produce a real `proposed -> crossed -> command_admitted -> physical applied` chain for at least one software witness; the model-OFF control must emit no model-origin events. With a creature at distance 5, compare the capture with the no-creature control: the distant creature must remain absent from authorised first-person capture. Forecast `safe`, `terminal`, and `causal_responsibility` must stay null.
+
+Run in Python 3.11 and Python 3.12. Archive test traces in CI. Abort and diagnose any boundary discrepancy rather than editing original expectations; any implementation fix requires a separate proposal and review. This replay uses chosen controlled worlds and may repeat A2.31 mechanisms; it is **not statistically independent evidence of safety** and cannot turn the already observed hidden-lethal 8/8 model-ON mortality into a GO.
+
+**Non-goals:** no modification to `src/i0`, `src/lab`, `src/i1`, I1 model policy, the normative MVP, existing test fixtures, or PR #199. Do not merge either this audit or PR #219 merely because CI is green. Do not close issue #203 without a post-integration verification and an explicit issue-scope resolution decision.
