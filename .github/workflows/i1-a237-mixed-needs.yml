@@ -1,0 +1,50 @@
+name: I1 A2.37 mixed-needs simultaneous model activation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_i1_a237_mixed_needs.py'
+      - 'docs/research/i1-a237-mixed-needs-prereg-2026-10-16.en.md'
+      - '.github/workflows/i1-a237-mixed-needs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a237-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mixed-needs:
+    name: A2.37 96 independent mortal I1 lives Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Independently checked I1 model provenance and integrated M11 controls
+        run: |
+          python -m unittest discover -s tests -p 'test_i1_a236_combined_m11_cold.py' -v
+          python -m unittest discover -s tests -p 'test_i1_a236_combined_m11_water.py' -v
+      - name: Execute 96 preregistered mixed-physiology mortal I1 births
+        run: |
+          python scripts/run_i1_a237_mixed_needs.py --output "a237-py${{ matrix.python-version }}" --source-sha "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Archive all lives, including negative and dead individuals
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-a237-mixed-py${{ matrix.python-version }}
+          path: a237-py${{ matrix.python-version }}/
+          if-no-files-found: warn
+          retention-days: 90
