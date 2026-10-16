@@ -217,8 +217,16 @@ class I1Runtime(I1WaterPrudentRuntime):
         field = _PRIVATE_OBSERVED_FIELDS.get(command.primitive)
         if field is None:
             return proposed
-        # Debit BEFORE touching committed private history. A refused charge
-        # does not prevent the original UC-paid uncertainty proposal.
+        # Optional recall must not degrade a viable current decision when
+        # its planning envelope is exhausted. The Scheduler's pure capacity
+        # quote is not a cognitive lookup and consumes no UC; whenever
+        # affordable, the real memory inspection is still explicitly priced
+        # through _charge BEFORE reading its committed history.
+        availability = self.compute_budget.quote_operations(
+            module="planning", operations=(_PRIVATE_RECALL_OPERATION,),
+        )
+        if not availability.affordable:
+            return proposed
         if not self._charge(
             module="planning", operation=_PRIVATE_RECALL_OPERATION,
         ):
