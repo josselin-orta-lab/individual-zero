@@ -62,6 +62,15 @@ class I1Runtime(I1WaterPrudentRuntime):
         life_id = kwargs.get("birth_life_id")
         cfg = configure_birth_temperament(cfg, life_id=life_id)
         kwargs["stage11_config"] = cfg
+        # Both integrated stages must agree on the identical frozen Stage9
+        # substrate after temperament projection, before creating the body.
+        sleep_cfg = kwargs.get("stage10_config")
+        if sleep_cfg is None:
+            raise ValueError("natural I1 birth requires Stage10 configuration")
+        kwargs["stage10_config"] = replace(
+            sleep_cfg, version=sleep_cfg.version + "+i1-birth-temperament-v1",
+            stage9=cfg.stage9,
+        )
         # First-person proximal action agency, never a claim that a distal
         # outcome was necessarily caused by the individual's intention.
         kwargs["subjective_goal_agency"] = True
