@@ -7,6 +7,7 @@ on:
       - 'src/i1_overlays/i1_lived_recall.py'
       - 'src/i1_overlays/i1_active_runtime.py'
       - 'tests/test_i1_a235_lived_recall.py'
+      - 'tests/test_i1_a235_runtime_birth.py'
       - '.github/workflows/i1-a235-development.yml'
   workflow_dispatch:
 
@@ -32,6 +33,7 @@ jobs:
       - name: I1 source and corpus provenance
         run: |
           python -m unittest discover -s tests -p 'test_i1_a235_lived_recall.py' -v
+          python -m unittest discover -s tests -p 'test_i1_a235_runtime_birth.py' -v
           python -m unittest discover -s tests -p 'test_i1_generated_isolation.py' -v
           python -m unittest discover -s tests -p 'test_i1_active_birth.py' -v
           python -m unittest discover -s tests -p 'test_i1_m11_cold_recovery.py' -v
