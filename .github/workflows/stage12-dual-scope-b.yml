@@ -13,6 +13,8 @@ on:
       - 'src/i0/modules/action_control.py'
       - 'docs/research/stage12-issue110-b-*.md'
       - '.github/workflows/stage12-dual-scope-b.yml'
+      # Scientific A2.30 result reports do not change dual-scope runtime policy.
+      - '!docs/research/stage12-issue110-b-a230*.md'
   workflow_dispatch:
 permissions:
   contents: read

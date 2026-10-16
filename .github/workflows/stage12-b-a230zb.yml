@@ -1,7 +1,7 @@
 name: Stage12 A2.30-ZB autonomous B-born alternative food
 on:
   pull_request:
-    branches: [science/stage12-b-a230z-alternative-food-20261015]
+    branches: [main]
     paths:
       - 'scripts/run_stage12_issue110_b_a230zb_autonomous_food.py'
       - 'tests/test_stage12_a230zb_autonomous_food.py'

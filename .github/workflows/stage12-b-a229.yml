@@ -1,7 +1,7 @@
 name: Stage12 A2.29 B choice arbitration
 on:
   pull_request:
-    branches: [science/stage12-b-a228-opportunity-funnel-20261015]
+    branches: [main]
     paths:
       - 'scripts/run_stage12_issue110_b_a229_arbitration.py'
       - 'docs/research/stage12-issue110-b-a229-*.md'
