@@ -1,7 +1,7 @@
 name: Stage12 A2.30-ZQ real autonomous invisible motor lethality
 on:
   pull_request:
-    branches: [science/stage12-b-a230zi-firstperson-probe-bootstrap-20261015]
+    branches: [main]
     paths:
       - 'scripts/run_stage12_issue110_b_a230zq_autonomous_hidden_motor.py'
       - 'tests/test_stage12_a230zq_autonomous_hidden_motor.py'
