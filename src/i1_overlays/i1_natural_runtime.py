@@ -106,7 +106,9 @@ class I1Runtime(I1WaterPrudentRuntime):
             "goal": goal_for_planning.goal_type,
             "target": goal_for_planning.target,
             "position": [capture.x, capture.y],
-            "body": dict(capture.body),
+            # Do not include continuously decaying numeric body values.
+            # Otherwise the context SHA changes every step and refractory
+            # failures can never accumulate even in identical local geometry.
             "inventory": dict(capture.inventory),
             "current_resources": list(capture.current_resources),
             "current_water_source": capture.current_water_source,
