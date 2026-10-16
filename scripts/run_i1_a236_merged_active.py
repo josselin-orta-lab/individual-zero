@@ -110,56 +110,72 @@ def experiment(output: Path, *, head: str) -> dict[str, object]:
             attribution_bias_threshold=.75)
         records=[]
         with (output/"lives.jsonl").open("w",encoding="utf-8") as export:
+
             for stratum in STRATA:
-                direction=("north" if stratum in ("novel_north_safe","revisit_north_safe","revisit_north_changed_lethal") else "east")
+                berry=stratum.startswith("BERRY")
+                revisited=stratum.startswith("WATER_VISIT")
+                direction="north" if revisited else "east"
                 for idx in range(LIVES_PER_ARM):
-                    remote=(orig if stratum.startswith("revisit_") else Position(12+idx,12))
+                    remote=(orig if (revisited or berry) else Position(12+idx,12))
                     target=remote.moved(direction)
-                    for arm in (("aggressive","prudence","probe_only") if idx%2==0 else ("probe_only","prudence","aggressive")):
-                        enabled=arm!="probe_only"
+                    for arm in (ARMS if idx%2==0 else tuple(reversed(ARMS))):
                         life_id=f"i1:a236:{stratum}:{idx:02d}:{arm}"
                         life_dir=output/life_id.replace(":","-")
                         life_dir.mkdir()
                         config=replace(s11.world.config,
-                            version="a236-world-fixed-v1",
+                            version="a236-main-active-world-v1",
                             initial_body=replace(s11.world.config.initial_body,
-                                energy=float(65+idx%2),food=80.0,
-                                water=float(1+idx%3),integrity=100.0))
-                        layout=replace(s11.world._layout,obstacles=frozenset(),
-                            resources=(),creatures=frozenset(),danger_zones=frozenset(),
-                            water_sources=frozenset({orig.moved("north"),target}),
-                            lethal_zones=(
-                                frozenset({target}) if stratum=="novel_east_lethal"
-                                else frozenset()))
+                                energy=float(65+idx%2),
+                                food=(float(10+idx) if berry else 80.0),
+                                water=(95.0 if berry else float(1+idx%3)),
+                                integrity=100.0))
+                        hazardous=stratum in (
+                            "WATER_NEW_E_LETHAL","BERRY_EAST_HIDDEN_LETHAL")
+                        layout=replace(s11.world._layout,
+                            obstacles=frozenset(),creatures=frozenset(),
+                            danger_zones=frozenset(),
+                            water_sources=(frozenset() if berry else
+                                frozenset({orig.moved("north"),target})),
+                            resources=(
+                                ((orig,"berry_b",16+idx%3),) if stratum=="BERRY_LOCAL"
+                                else ((orig.moved("east"),"berry_b",16+idx%3),)
+                                if stratum=="BERRY_EAST_HIDDEN_LETHAL" else ()),
+                            lethal_zones=frozenset({target}) if hazardous
+                                else frozenset())
                         layout.validate(config)
-                        events=(ScenarioEvent(
-                            t_monde=4,sequence=0,operation="set_position",
-                            payload={"position":remote.as_dict()},
-                        ),) + ((ScenarioEvent(
-                            t_monde=4,sequence=1,operation="set_lethal_zone",
-                            payload={"position":target.as_dict(),"active":True},
-                        ),) if stratum=="revisit_north_changed_lethal" else ())
+                        events=()
+                        if not berry:
+                            events=(ScenarioEvent(
+                                t_monde=4,sequence=0,operation="set_position",
+                                payload={"position":remote.as_dict()}),)
+                            if stratum=="WATER_VISIT_N_CHANGED_LETHAL":
+                                events+=(ScenarioEvent(
+                                    t_monde=4,sequence=1,operation="set_lethal_zone",
+                                    payload={"position":target.as_dict(),"active":True}),)
                         life=I1WaterPrudentRuntime(
                             world_config=config,layout=layout,
                             safety_config=s11.stage3.substrate.safety._config,
                             safety_facts=s11._canonical_safety._innate,
                             protected_integrity_threshold=(
                                 s11.stage3.control._config.protected_integrity_threshold),
-                            stage11_config=revised11,stage10_config=revised10,
-                            equipment=s11.equipment,autonomous_mortal=True,
+                            stage11_config=replace(
+                                revised11,geographic=(None if berry else
+                                    revised11.geographic)),
+                            stage10_config=revised10,equipment=s11.equipment,
+                            autonomous_mortal=True,
                             wal_path=str((life_dir/"life.wal").resolve()),
-                            birth_life_id=life_id,
-                            detector_policy=policy,
-                            diagnostic_sample_cost_uc=1,
-                            module_occupancy_cost_uc=1,
-                            i1_model_enabled=False,
+                            birth_life_id=life_id,detector_policy=policy,
+                            diagnostic_sample_cost_uc=1,module_occupancy_cost_uc=1,
+                            i1_model_enabled=True,i1_model=model,i1_forecast_cost_uc=2,
+                            i1_lived_recall_enabled=(arm!="NO_RECALL"),
+                            i1_recall_cost_uc=1,
                             i1_water_probe_enabled=True,
-                            i1_water_learning_enabled=enabled,
+                            i1_water_learning_enabled=True,
                             i1_water_consider_uc=2,i1_water_acquire_uc=2,
-                            i1_d2_prudence=(arm=="prudence"),i1_d2_review_uc=1,
-                            scenario_id=f"d2:{stratum}:{idx}:{arm}",
-                            scenario_version="a236-scenario-v1",
-                            scenario_events=events,
+                            i1_d2_prudence=(arm!="NO_D2"),i1_d2_review_uc=1,
+                            **({"scenario_id":f"a236:{stratum}:{idx}:{arm}",
+                                "scenario_version":"a236-main-integrated-scenario-v1",
+                                "scenario_events":events} if events else {}),
                         )
                         birth_e_digest=life.equipment.artifact_digest
                         steps=[]
