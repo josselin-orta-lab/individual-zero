@@ -1,0 +1,44 @@
+name: Stage6 v1.3.3 isolated shadow model contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/i0/experimental/**'
+      - 'tests/test_stage6_v133_shadow_contract.py'
+      - 'docs/architecture/reference/en/mvp-specification-v1.3.3.md'
+      - '.github/workflows/stage6-v133-shadow.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage6-v133-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  experimental-model-safety:
+    name: Stage6 v1.3.3 shadow only (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install source
+        run: python -m pip install -e .
+      - name: Run isolated shadow and exact-model regressions
+        run: |
+          python -m unittest discover -s tests -p 'test_stage6_v133_shadow_contract.py' -v
+          python -m unittest discover -s tests -p 'test_stage6_equipment.py' -q
+          python -m unittest discover -s tests -p 'test_stage6_planning.py' -q
