@@ -5,10 +5,12 @@ on:
     branches: [main]
     paths:
       - 'src/i1/**'
+      - 'src/i1_overlays/**'
       - 'scripts/build_i1_fork.py'
       - 'tests/test_i1_source_snapshot.py'
       - 'tests/test_i1_generated_isolation.py'
       - 'tests/test_i1_first_physical_step.py'
+      - 'tests/test_i1_active_birth.py'
       - '.github/workflows/i1-isolation.yml'
   workflow_dispatch:
 
@@ -42,5 +44,6 @@ jobs:
           python -m unittest discover -s tests -p 'test_i1_source_snapshot.py' -v
           python -m unittest discover -s tests -p 'test_i1_generated_isolation.py' -v
           python -m unittest discover -s tests -p 'test_i1_first_physical_step.py' -v
+          python -m unittest discover -s tests -p 'test_i1_active_birth.py' -v
       - name: Verify historical I0 planning
         run: python -m unittest discover -s tests -p 'test_stage6_planning.py' -q
