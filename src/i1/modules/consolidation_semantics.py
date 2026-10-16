@@ -300,13 +300,23 @@ class LivedSixPassAlgorithm:
                         <= self.policy.nearby_context_radius
                     )
                 ]
-                successes = {r["episode"] for r in candidates if r["success"]}
-                failures = {r["episode"] for r in candidates if not r["success"]}
+                successes_observed = {
+                    r["episode"] for r in candidates if r["success"]
+                }
+                failures = {
+                    r["episode"] for r in candidates if not r["success"]
+                }
+                # A mixed success/failure episode is NOT an independent
+                # successful trial. It counts conservatively as unsuccessful.
+                successes = successes_observed - failures
+                trials = successes_observed | failures
                 if len(successes) < self.policy.skill_success_threshold:
                     continue
-                total = len(successes | failures)
-                evidence = [r for r in candidates if r["episode"] in successes
-                            and r["success"]]
+                total = len(trials)
+                evidence = [
+                    r for r in candidates if r["episode"] in successes
+                    and r["success"]
+                ]
                 example = evidence[0]
                 item = {
                     "id": "skill:" + sha256_hex(canonical_causal_bytes({
@@ -326,6 +336,13 @@ class LivedSixPassAlgorithm:
                     "source_episode_refs": sorted(successes),
                     "source_event_refs": sorted({
                         event for row in evidence for event in row["events"]
+                    }),
+                    # Both positive and negative trials need a durable
+                    # provenance identity: prior versions persisted only
+                    # successes, leaving the denominator unauditable.
+                    "trial_episode_refs": sorted(trials),
+                    "trial_event_refs": sorted({
+                        event for row in candidates for event in row["events"]
                     }),
                     "distinct_success_count": len(successes),
                     "distinct_trial_count": total,
@@ -373,25 +390,40 @@ class LivedSixPassAlgorithm:
             new_episodes = row.get("source_episode_refs")
             old_events = old.get("source_event_refs")
             new_events = row.get("source_event_refs")
-            if (not all(type(v) is list for v in (
-                    old_episodes, new_episodes, old_events, new_events))
-                    or not old_episodes or not new_episodes
-                    or len(set(old_episodes)) != len(old_episodes)
-                    or len(set(new_episodes)) != len(new_episodes)
-                    or len(set(old_events)) != len(old_events)
-                    or len(set(new_events)) != len(new_events)
-                    or set(old_episodes).intersection(new_episodes)
-                    or set(old_events).intersection(new_events)):
-                raise ValueError("previously consolidated evidence cannot be recounted")
+            old_trials = old.get("trial_episode_refs")
+            new_trials = row.get("trial_episode_refs")
+            old_trial_events = old.get("trial_event_refs")
+            new_trial_events = row.get("trial_event_refs")
+            lists = (
+                old_episodes, new_episodes, old_events, new_events,
+                old_trials, new_trials, old_trial_events, new_trial_events,
+            )
+            if (not all(type(v) is list and v for v in lists)
+                    or any(len(set(v)) != len(v) for v in lists)
+                    or not set(old_episodes).issubset(old_trials)
+                    or not set(new_episodes).issubset(new_trials)
+                    or not set(old_events).issubset(old_trial_events)
+                    or not set(new_events).issubset(new_trial_events)
+                    or set(old_trials).intersection(new_trials)
+                    or set(old_trial_events).intersection(new_trial_events)):
+                raise ValueError(
+                    "private successes and failures require disjoint "
+                    "verified episode and event provenance"
+                )
             success = old["distinct_success_count"] + row["distinct_success_count"]
             trials = old["distinct_trial_count"] + row["distinct_trial_count"]
             if (type(success) is not int or type(trials) is not int
                     or success < 2 or trials < success
-                    or success != len(old_episodes) + len(new_episodes)):
+                    or old["distinct_success_count"] != len(old_episodes)
+                    or row["distinct_success_count"] != len(new_episodes)
+                    or old["distinct_trial_count"] != len(old_trials)
+                    or row["distinct_trial_count"] != len(new_trials)):
                 raise ValueError("invalid cumulative independent trial counts")
             merged = deepcopy(old)
             merged["source_episode_refs"] = sorted(old_episodes + new_episodes)
             merged["source_event_refs"] = sorted(old_events + new_events)
+            merged["trial_episode_refs"] = sorted(old_trials + new_trials)
+            merged["trial_event_refs"] = sorted(old_trial_events + new_trial_events)
             merged["distinct_success_count"] = success
             merged["distinct_trial_count"] = trials
             merged["success_rate"] = success / trials
