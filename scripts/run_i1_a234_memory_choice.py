@@ -268,6 +268,28 @@ def experiment(output: Path, *, head: str) -> dict:
                     "closed_memory_episodes":sum(len(r["closed_memory_episodes"]) for r in rows),
                     "memory_access_events":sum(r["memory_access_events"] for r in rows),
                 }
+        memory_funnel={}
+        for stratum in STRATA:
+            memory_funnel[stratum]={}
+            for arm in ("exposed","control"):
+                cohort=[r for r in results if r["stratum"]==stratum and r["arm"]==arm]
+                memory_funnel[stratum][arm]={
+                    "lives":len(cohort),
+                    "closed_episode_lives":sum(bool(r["closed_memory_episodes"]) for r in cohort),
+                    "recall_event_lives":sum(bool(r["recalls"]) for r in cohort),
+                    "recall_events":sum(len(r["recalls"]) for r in cohort),
+                    "recall_visible_in_st_lives":sum(any(
+                        receipt.get("contribution_ref") in state.get("competitive_refs",())
+                        for receipt in r["recalls"] for state in r["st_publications"]
+                    ) for r in cohort),
+                    "model_evaluations":sum(sum(
+                        str(e.get("learning_signature","")).startswith("i1_partial:")
+                        for e in r["evaluations"]) for r in cohort),
+                    "model_evaluations_with_learned_value":sum(sum(
+                        str(e.get("learning_signature","")).startswith("i1_partial:")
+                        and e.get("learned_value_status")=="learned"
+                        for e in r["evaluations"]) for r in cohort),
+                }
         failures=[r for r in results if r["exception"] or not r["journal_valid"]]
         leaks=sum(r["false_epistemic_claims"] for r in results)
         # Explicit physical and epistemic comparisons; do not reinterpret
@@ -278,6 +300,7 @@ def experiment(output: Path, *, head: str) -> dict:
             "world_pairs":24,"mortal_lives":len(results),
             "total_physical_steps":sum(r["physical_steps"] for r in results),
             "strata":grouped,
+            "memory_funnel":memory_funnel,
             "exceptions_or_invalid_journals":len(failures),
             "false_epistemic_claims":leaks,
             "cognitive_deployment":"NO-GO",
