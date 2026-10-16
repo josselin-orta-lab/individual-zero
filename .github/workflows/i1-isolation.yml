@@ -12,6 +12,7 @@ on:
       - 'tests/test_i1_first_physical_step.py'
       - 'tests/test_i1_active_birth.py'
       - 'tests/test_i1_model_m11_contract.py'
+      - 'tests/test_i1_m11_cold_recovery.py'
       - '.github/workflows/i1-isolation.yml'
   workflow_dispatch:
 
@@ -47,5 +48,6 @@ jobs:
           python -m unittest discover -s tests -p 'test_i1_first_physical_step.py' -v
           python -m unittest discover -s tests -p 'test_i1_active_birth.py' -v
           python -m unittest discover -s tests -p 'test_i1_model_m11_contract.py' -v
+          python -m unittest discover -s tests -p 'test_i1_m11_cold_recovery.py' -v
       - name: Verify historical I0 planning
         run: python -m unittest discover -s tests -p 'test_stage6_planning.py' -q
