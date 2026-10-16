@@ -308,6 +308,17 @@ def experiment(output: Path, *, head: str) -> dict[str, object]:
                                 op_uc[str(c.get("operation"))] += int(
                                     c.get("requested_uc") or 0)
                         learner=life.lived_water_model
+                        model_receipts=[e for e in all_events if e.get("kind")=="i1_partial_preaction_forecast"]
+                        model_proposals=[e for e in all_events if e.get("kind")=="i1_partial_instrumental_option_proposed"]
+                        reviews=[e for e in all_events if e.get("kind")=="i1_lived_recall_review"]
+                        boosts=[e for e in all_events if e.get("kind")=="stage8_option_evaluation"
+                            and e.get("data",{}).get("evidence")==0.45]
+                        d2_reviews=[e for e in all_events if e.get("kind")=="i1_d2_movement_commitment_review"]
+                        recall_charges=[e for e in charges if e.get("operation")=="i1_lived_recall_review"]
+                        d2_charges=[e for e in charges if e.get("operation")==REVIEW]
+                        false_certainty=[e for e in model_receipts
+                            if any(e.get("data",{}).get("result",{}).get(k) is not None
+                            for k in ("safe","terminal","next_adjacency","causal_responsibility"))]
                         hard_violations=[]
                         if learner["enabled"]!=enabled:
                             hard_violations.append("owner_wrong_arm")
