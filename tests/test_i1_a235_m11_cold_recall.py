@@ -39,9 +39,16 @@ delta=tuple((a,tuple((k,1 if k=="x" and a=="MOVE_E" else 0)
 model=ShadowVisibleDeltaModel("stage6-visible-deltas-shadow-v1","a"*64,
  delta,(("MOVE_E",8),("COLLECT_B",8)))
 identity="i1:a235:cold:recall"
+physics=replace(source.world.config,version="a235-cold-episode-v1",
+ initial_body=replace(source.world.config.initial_body,energy=66.0,
+ food=10.0,water=90.0,integrity=100.0))
+layout=replace(source.world._layout,
+ resources=((physics.initial_position,"berry_b",18),),
+ water_sources=frozenset(),danger_zones=frozenset(),
+ lethal_zones=frozenset(),creatures=frozenset(),obstacles=frozenset())
 def factory(cost=2,recall=True,recall_cost=1):
  return ExperimentalI1Stage12Runtime(
-  world_config=source.world.config,layout=source.world._layout,
+  world_config=physics,layout=layout,
   safety_config=source.stage3.substrate.safety._config,
   safety_facts=source._canonical_safety._innate,
   protected_integrity_threshold=source.stage3.control._config.protected_integrity_threshold,
@@ -60,12 +67,17 @@ with TemporaryDirectory() as folder:
  assert candidate._m11_sqlite_custody is True
  with M11TransactionalMortal.birth(db_path=path,runtime=candidate,
                                     individual_id=identity) as owner:
-  receipt=owner.run_step()
-  assert receipt.generation==1 and receipt.world_step==1
-  assert receipt.status=="active"
+  for index in range(5):
+   receipt=owner.run_step()
+   assert receipt.generation==index+1 and receipt.world_step==index+1
+   assert receipt.status=="active"
+  assert owner.runtime.memory.episodes,"no first-person closed episode"
+  assert any(e.causal_event.get("kind")=="i1_lived_recall_review" and
+   e.causal_event.get("data",{}).get("source_event_refs")
+   for e in owner.runtime.journal.entries),"no recalled positive source"
   head=receipt.journal_head
  audit=SQLiteLifeLedger.audit_read_only(path=path,expected_individual_id=identity)
- assert audit.generation==1 and audit.journal_head==head
+ assert audit.generation==5 and audit.journal_head==head
  try:
   with M11TransactionalMortal.cold_recover(
    db_path=path,individual_id=identity,runtime_factory=lambda:factory(recall=False)): pass
@@ -78,10 +90,11 @@ with TemporaryDirectory() as folder:
  else: raise AssertionError("wrong recall cost recovered")
  with M11TransactionalMortal.cold_recover(
   db_path=path,individual_id=identity,runtime_factory=factory) as restored:
+  assert restored.runtime.memory.episodes,"cold recovery lost the episode"
   receipt=restored.run_step()
-  assert receipt.generation==2 and receipt.world_step==2
+  assert receipt.generation==6 and receipt.world_step==6
  assert SQLiteLifeLedger.audit_read_only(
-  path=path,expected_individual_id=identity).generation==2
+  path=path,expected_individual_id=identity).generation==6
 print("I1_A235_M11_COLD_RECALL_OK")
 """
             proc=subprocess.run(
