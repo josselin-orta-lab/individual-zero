@@ -35,7 +35,7 @@ jobs:
       - name: Stages 1-8 and perceptual boundaries
         run: |
           set -e
-          for pattern in test_stage1*.py test_stage2*.py test_stage3*.py test_stage4*.py test_stage5*.py test_stage6*.py test_stage7*.py test_stage8*.py; do
+          for pattern in test_stage1_*.py test_stage2_*.py test_stage3_*.py test_stage4_*.py test_stage5_*.py test_stage6_*.py test_stage7_*.py test_stage8_*.py; do
             python -m unittest discover -s tests -p "$pattern" -q
           done
       - name: Structural, Oracle isolation and irreversible mortality contracts
@@ -130,9 +130,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - run: python -m pip install -e . './observer[test]'
+      # Fixture Core must run before installing the real Core package;
+      # otherwise the installed lab package shadows the isolated fake fixture.
+      - run: python -m pip install -e './observer[test]'
       - name: Observer isolated tests
         run: python -m pytest observer/tests -q
+      - name: Install real Core only for cross-component contract tests
+        run: python -m pip install -e .
       - name: Observer JS syntax and journal/geometry boundaries
         run: |
           node --check observer/observer_app/web/app.js
