@@ -35,7 +35,9 @@ CONSOLIDATION_PERIOD_UC = 2560
 
 # Ordinary birth metabolism, explicitly versioned and physically observable.
 # These are provisional simulation units rather than biological constants.
-LIVING_PHYSIOLOGY_POLICY = "i1-living-physical-defaults-v1"
+LIVING_PHYSIOLOGY_POLICY = "i1-living-physical-defaults-v2-deprivation-canonical-only"
+DEFAULT_STARVATION_DAMAGE = 0.5
+DEFAULT_DEHYDRATION_DAMAGE = 1.0
 DEFAULT_FOOD_DECAY = 0.20
 DEFAULT_WATER_DECAY = 0.40
 DEFAULT_REST_INTEGRITY_GAIN = 0.20
@@ -71,6 +73,16 @@ def enable_living_physiology_birth(world_config):
     upgraded = replace(
         world_config,
         version=world_config.version + "+" + LIVING_PHYSIOLOGY_POLICY,
+        starvation_integrity_damage_per_step=(
+            DEFAULT_STARVATION_DAMAGE
+            if world_config.starvation_integrity_damage_per_step == 0.0
+            else world_config.starvation_integrity_damage_per_step
+        ),
+        dehydration_integrity_damage_per_step=(
+            DEFAULT_DEHYDRATION_DAMAGE
+            if world_config.dehydration_integrity_damage_per_step == 0.0
+            else world_config.dehydration_integrity_damage_per_step
+        ),
         food_decay_per_step=(
             DEFAULT_FOOD_DECAY if world_config.food_decay_per_step == 0.0
             else world_config.food_decay_per_step
