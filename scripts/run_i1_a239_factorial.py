@@ -149,7 +149,8 @@ def run(output, source_sha):
                 hard=[]
                 if failure or journal_audit_error or life is None: hard.append("technical_failure_or_invalid_journal")
                 if arm=="BASE" and (need_reviews or uc[H1_REVIEW]): hard.append("H1_off_violation")
-                if arm!="FOOD_FIRST_RISK" and (reviews or uc[RISK_REVIEW]): hard.append("H2_off_violation")
+                if arm not in ("STRICT_UNKNOWN","FOOD_FIRST_RISK") and reviews: hard.append("strict_D2_off_violation")
+                if arm!="FOOD_FIRST_RISK" and uc[RISK_REVIEW]: hard.append("H2_off_violation")
                 if len([r for r in reviews if r.get("decision")=="commit_unknown"])>2: hard.append("H2_lifetime_cap")
                 if any(r.get("safety_known") is not False or r.get("hidden_world_queried") is not False for r in reviews): hard.append("hidden_label_assertion")
                 if any(r.get("extra_uc_paid") is True for r in reviews) and uc[RISK_REVIEW]==0: hard.append("free_H2")
@@ -182,7 +183,7 @@ def run(output, source_sha):
                     "h2_commits":sum(x.get("decision")=="commit_unknown" for x in reviews),
                     "h2_abstentions":sum(x.get("decision")=="abstain" for x in reviews),
                     "uc_accepted":sum(uc.values()),"uc_refused":sum(c.get("accepted") is False for c in charges),
-                    "uc_by_operation":dict(uc),"uc_h1":uc[H1_REVIEW],"uc_h2":uc[H2_REVIEW],
+                    "uc_by_operation":dict(uc),"uc_h1":uc[H1_REVIEW],"uc_h2":uc[RISK_REVIEW],
                     "uc_d2":uc[REVIEW],"uc_water":uc[CONSIDER]+uc[ACQUIRE],
                     "journal_entries":len(events_all),"journal_head":head,
                     "journal_sha256":sha256(canonical).hexdigest(),
