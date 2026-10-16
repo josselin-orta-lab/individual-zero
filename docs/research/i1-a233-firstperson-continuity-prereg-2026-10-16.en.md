@@ -1,0 +1,38 @@
+# A2.33 — Preregistration: first-person outcome, memory and decision continuity in mortal I1
+
+**Registered on:** 2026-10-16. **Status:** design frozen before ANY A2.33 heldout life.  
+**Cognitive baseline:** I1 PR #219 HEAD `ebe91baf0f8493f3f4d17fa6357bce3b4a736036` and its experimental Stage6 factorized model. I0 `main` remains `8ce8711b2d5f86b184d66fcee1d95a3e39f30836`.  
+**Scientific distinction:** this is an independent *new set of WorldBody lives and case identifiers* in the same deterministic physics distribution, NOT an independent verification of a general causal theory. The training prior stays an externally produced research artefact, never an individual memory. No model, safety, memory, perception, inference or WorldBody code change is authorized for these lives.
+
+## Defects in A2.32: preregistered controls, not retroactive scoring changes
+
+A2.32 differed from its registered starting body values. Its `FAILURE` scenario was checked using the old `local_forced_failure` name, so a forced first collection cannot be assumed. Its `CUE` arm showed model actions absent and zero Stage11 alerts; Stage3's pre-cognition reflex can execute before Stage11's alert producer. A2.32's raw-summarizer did not establish the exact first-person body-capture/episode/behavior links. These are **observability and experimental-methodology questions**, not evidence that newborn I1 should already know a hidden lethal zone. We retain all A2.32 raw results unchanged.
+
+## Freeze the A2.33 cohort
+
+- **64 NEW mortal lives**, **32 NEW paired cases**, four strata (`CUE`, `INJURY`, `FAILURE`, `INDISTINGUISHABLE`) × 8 pairs indexed `00..07`. Two lives per case (`exposed`, `control`), with separate I1 identities, physics objects, memory, journals, WALs. Execution order alternates with pair index. Maximum **four physically executed commands** per life, stop at first death, safety block or exception; never resume a dead actor.
+- Identifiers `i1:a233:<STRATUM>:<INDEX>:<ARM>`. Initial values `energy = 65 + index % 3`, `food = 13 + index`, `water = 72 + index % 4`, `integrity = 100`. `berry_b` quantity is `5 + index % 3`. Same position and preaction body in both arms of a pair.
+- `CUE`: berry B one cell east; creature east only in exposed arm; Stage11 `local_threat_alerts` enabled in BOTH arms; verify the actual preaction adjacent-creature perception, Stage3 reflex source and whether the Stage11 producer had an ordinary cognitive cycle. A missing Stage11 alert **after a reflex physical step** is not automatically failure of Stage11. No hidden death zones.
+- `INJURY`: berry B east; nonlethal hidden danger_zone east only in exposed arm; assess physical integrity loss **and the subsequent independently authorized lived body capture**. Difference is the external exposure label, not a cognitive "known danger" fact. No guess of causal specificity.
+- `FAILURE`: berry B under the actor; exposed arm receives a logged before-step `set_action_failure_schedule` for primitive `collecter` with first attempt forced; control arm has no schedule. Verify actual physical first-command and effect, then that next first-person inventory/resource differs if a next perception occurs. The failure program never enters cognitive data.
+- `INDISTINGUISHABLE`: berry B east, same visible adjacent state; only exposed arm has a hidden lethal_zone east. Compare exact preaction **authorized perception data** and first matching partial-model forecast fields and command. Report deaths and terminal omissions. No punishment for ignorance of an unobservable hidden hazard.
+- Additional WorldBody settings, Stage9, Stage10 consolidation, Stage11 memory, Stage12, Action Control and UC remain unchanged. Fixed 2-UC model call charge as in A2.31; audit accepted/refused costs. Separate **external, physical** 16-transition (8 MOVE_E and 8 COLLECT_B) training corpus is constructed and frozen before heldout worlds; no heldout reuse. New `a233` version/identity and scenario case IDs. We do not train on previous A2.31/A2.32 heldout truth.
+
+## Measurement, test oracle and success definitions (before run)
+
+A non-cognitive evaluator hooks **the already authorized** `_on_open_step_capture(capture)` to snapshot only fields of the existing PerceptualCapture; it does NOT ask WorldBody for an extra observation, mutate a canonical owner, or transmit operator truth to I1. The external scoring also reads the physical transition/journal and private memory state **after the life**, retaining separate source references and provenance. Required outcomes, with denominator 8 per stratum:
+
+1. `CUE`: 8/8 arms must have a first-person adjacent-creature cue in exposed and no such cue in control, or **perception-custody FAIL**. Count first-action reflexes and Stage11 alerts separately; a reflex can preempt that Stage11 work. No claim that a reflex is acquired learning.
+2. `INJURY`: at least 6/8 exposed worlds must show a real east movement, an externally scored nonterminal integrity decrement **and** a later first-person capture reflecting reduced integrity, while control has no comparable damage; fewer gives `INCONCLUSIVE` or `NOT OBSERVED`. Record post-capture memory episodes, admitted versus withheld safety evidence, and second/third action changes. A numerical injury alone is **not** evidence that I1 knows the location is dangerous.
+3. `FAILURE`: at least 6/8 exposed worlds must have a physically executed first `collecter` with externally verified suppressed collection **and** a subsequent first-person unchanged inventory, versus real collection in the matched control. Fewer means the failure-opportunity criterion is not met; missing first-person memory source invalidates a claim of *learned avoidance*. Changes in later decisions without matched accessible evidence cannot be credited as learning.
+4. `INDISTINGUISHABLE`: 8/8 pairs must agree on the complete preaction perceptual capture (excluding life identifier), model-output status/estimated values if forecast occurs, and first decision primitive/parameters; no hidden labels in I1 inputs. Divergence is an audit alert; hidden-lethal deaths are **not** classified as poor sensory inference.
+
+**Learning is demonstrated** only if ≥6/8 trials in INJURY or FAILURE (respectively) show *first-person accessible before/after evidence*, an attributable memory receipt actually published/read from the authorized autobiographical path, AND an appropriate **changed subsequent autonomous action** versus matched controls. If one link is missing: `LEARNING_NOT_DEMONSTRATED`, while reporting the earlier links honestly. No reinterpretation of a late technical receipt as an earlier lived cognition.
+
+**Hard safety/integrity stop:** any leaked Oracle or hidden zone labels, postmortem cognition, resurrection or rollback, bypass of Stage9 or Action Control, multiple physics transitions for one admitted command, invalid journal, or unsupported `safe`, `terminal`, full-state or distal-responsibility confidence. All deaths remain in denominators.
+
+**Disposition:** success on some subtests permits **further scientific study only**, not deployment. A2.31's scientific NO-GO and Stage9 NO-GO / Stage12 PARTIAL persist. No retuning thresholds on observed failures.
+
+## Artifacts and reproducibility
+
+Run identical fixed A2.33 cohorts once under Python 3.11 and once under 3.12. Archive `lives.jsonl`, `summary.json`, separate WALs, exact HEAD, training digest, per-life hash-chain checksum, peraction pre/post perception summaries and operator-only independent outcome fields. The two deterministic Python runs are technical reproducibility, **not two independent replications**. Retain negative and inconclusive results. The public main I0 and original A2.32 archives must not be modified.
