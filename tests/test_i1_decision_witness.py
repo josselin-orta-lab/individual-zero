@@ -97,6 +97,20 @@ with TemporaryDirectory() as d:
         if label=="on":
             assert "i1_partial_preaction_forecast" in kinds, str(results)
             assert "i1_partial_instrumental_option_proposed" in kinds, str(results)
+            proposed = [event["data"]["option_ref"] for event in i1events
+                        if event["kind"] == "i1_partial_instrumental_option_proposed"]
+            registered = [event["data"] for event in entries
+                          if event["kind"] == "option_registration"]
+            assert any(rec["registered"] and rec["option_ref"] in proposed
+                       for rec in registered), str(results)
+            evaluated = [event["data"] for event in entries
+                         if event["kind"] == "stage8_option_evaluation"]
+            assert any(rec["option_ref"] in proposed and rec["evidence"] is not None
+                       for rec in evaluated), str(results)
+            deliberations = [event["data"]["traces"] for event in entries
+                             if event["kind"] == "competition_cycle"]
+            assert any(t["option_ref"] in proposed
+                       for traces in deliberations for t in traces), str(results)
             for event in i1events:
                 if event["kind"]=="i1_partial_preaction_forecast":
                     p=event["data"]["result"]
