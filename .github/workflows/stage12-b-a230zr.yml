@@ -1,0 +1,54 @@
+name: Stage12 A2.30-ZR independently replay alternative-food physics
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/replay_stage12_issue110_b_a230zr_pure_physics.py'
+      - 'tests/test_stage12_a230zr_physical_replay.py'
+      - 'docs/research/stage12-issue110-b-a230zr-*.md'
+      - '.github/workflows/stage12-b-a230zr.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  independent-pure-physics-reproduction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Download original Z physical source with fixed full-file SHA
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230zr-original
+          gh run download 38760713470 --repo "$GITHUB_REPOSITORY" --name a230z-py3.11 --dir /tmp/a230zr-original
+      - name: Replay adverse falsifications of terminal, hidden physics, future and bodily effects
+        env:
+          A230ZR_SOURCE: /tmp/a230zr-original
+        run: python -m unittest discover -s tests -p test_stage12_a230zr_physical_replay.py -v
+      - name: Independently reconstruct all 168 worlds and physically replay 244 original steps
+        run: |
+          python -u scripts/replay_stage12_issue110_b_a230zr_pure_physics.py \
+            --source-dir /tmp/a230zr-original \
+            --output-dir /tmp/a230zr-results > /tmp/a230zr.log 2>&1 \
+            || { tail -n 160 /tmp/a230zr.log; exit 2; }
+          grep A230ZR_SUMMARY /tmp/a230zr.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230zr-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230zr-results
+            /tmp/a230zr.log
+          retention-days: 30
