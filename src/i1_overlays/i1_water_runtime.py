@@ -20,11 +20,11 @@ from .scheduler import CyclePhase
 from .world import command_digest
 from .i1_active_runtime import ExperimentalI1Stage12Runtime
 
-POLICY = "i1-firstperson-water-d1-v1"
+POLICY = "i1-firstperson-water-d1b-tuned-v1"
 CONSIDER = "i1_water_consider_option"
 ACQUIRE = "i1_water_consume_lived_followup"
-PROBE_SCORE = 0.40
-LEARNED_SCORE = 0.48
+PROBE_SCORE = 0.70
+LEARNED_SCORE = 0.72
 
 
 class _I1WaterM11Owner(I1LivedWaterOwner):
