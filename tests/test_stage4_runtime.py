@@ -224,7 +224,7 @@ class Stage4IntegratedLoopTests(unittest.TestCase):
     def test_thirst_goal_appears_before_plan_and_first_move(self) -> None:
         instance = runtime(
             layout=WorldLayout(
-                water_sources=frozenset({Position(4, 2)}),
+                water_sources=frozenset({Position(3, 2)}),
             )
         )
 
@@ -251,7 +251,7 @@ class Stage4IntegratedLoopTests(unittest.TestCase):
     def test_multi_step_drink_plan_advances_across_world_steps(self) -> None:
         instance = runtime(
             layout=WorldLayout(
-                water_sources=frozenset({Position(4, 2)}),
+                water_sources=frozenset({Position(3, 2)}),
             )
         )
 
@@ -259,16 +259,18 @@ class Stage4IntegratedLoopTests(unittest.TestCase):
         second = instance.run_step()
         third = instance.run_step()
 
+        # A genuine visible source one tile away supports a complete
+        # two-command E-0 plan, then a subsequent non-goal fallback.
         self.assertEqual(first.command_primitive, "se_deplacer")
-        self.assertEqual(second.command_primitive, "se_deplacer")
-        self.assertEqual(third.command_primitive, "boire")
-        self.assertEqual(instance.world.position, Position(4, 2))
+        self.assertEqual(second.command_primitive, "boire")
+        self.assertEqual(third.command_primitive, "attendre")
+        self.assertEqual(instance.world.position, Position(3, 2))
         self.assertEqual(instance.world.body.water, 60.0)
 
     def test_position_comparator_confirms_predicted_movements(self) -> None:
         instance = runtime(
             layout=WorldLayout(
-                water_sources=frozenset({Position(4, 2)}),
+                water_sources=frozenset({Position(3, 2)}),
             )
         )
 
@@ -281,28 +283,51 @@ class Stage4IntegratedLoopTests(unittest.TestCase):
             for entry in instance.journal.entries
             if entry.causal_event.get("kind") == "agency_comparison"
         ]
-        self.assertGreaterEqual(len(comparisons), 2)
-        self.assertTrue(
-            all(
-                event["data"]["status"] == "conforming"
-                for event in comparisons[:2]
-            )
+        # With a legitimately *adjacent* visible water source, E-0 plans
+        # one movement and then one drink. A historical two-movement target
+        # was out of perception and MUST NOT be restored to satisfy this test.
+        self.assertEqual(len(comparisons), 1)
+        self.assertEqual(comparisons[0]["data"]["status"], "conforming")
+        self.assertEqual(
+            comparisons[0]["data"]["attribution"], "self_compatible",
         )
-        self.assertTrue(
-            all(
-                event["data"]["attribution"] == "self_compatible"
-                for event in comparisons[:2]
-            )
+        transitions = [
+            entry.causal_event for entry in instance.journal.entries
+            if entry.causal_event.get("kind") == "world_transition_experienced"
+        ]
+        # The physical transition event intentionally does NOT expose a
+        # primitive: join it to its independently logged selected command
+        # by the attempt identifier, not by an invented event field.
+        commands = [
+            entry.causal_event for entry in instance.journal.entries
+            if entry.causal_event.get("kind") == "command_experienced"
+        ]
+        self.assertGreaterEqual(len(transitions), 2)
+        self.assertEqual(
+            [event["primitive"] for event in commands[:2]],
+            ["se_deplacer", "boire"],
         )
+        self.assertEqual(
+            [(e["t_monde"], e["attempt_ref"]) for e in commands[:2]],
+            [(e["t_monde"], e["attempt_ref"]) for e in transitions[:2]],
+        )
+        self.assertEqual(instance.world.body.water, 60.0)
 
     def test_blocked_movement_is_nonconforming_and_invalidates_plan(self) -> None:
         instance = runtime(
             layout=WorldLayout(
-                water_sources=frozenset({Position(4, 2)}),
-                obstacles=frozenset({Position(3, 2)}),
+                water_sources=frozenset({Position(3, 2)}),
             )
         )
 
+        # A visible blocked neighbor must not be deliberately chosen. Here
+        # the neighbor is visibly passable but the external physical scenario
+        # makes the first attempted motor command fail. I0 sees only the
+        # resulting nonconformance, not the hidden failure schedule.
+        instance.world.apply_scenario_event(
+            "set_action_failure_schedule",
+            {"primitive": "se_deplacer", "schedule": [True]},
+        )
         first = instance.run_step()
         self.assertEqual(first.command_primitive, "se_deplacer")
         self.assertEqual(instance.world.position, Position(2, 2))
@@ -317,6 +342,25 @@ class Stage4IntegratedLoopTests(unittest.TestCase):
         self.assertGreaterEqual(len(comparisons), 1)
         self.assertEqual(comparisons[0]["data"]["status"], "nonconforming")
         self.assertEqual(comparisons[0]["data"]["attribution"], "uncertain")
+
+    def test_unseen_two_cell_water_does_not_create_oracle_plan(self) -> None:
+        # An unobserved resource may exist physically without becoming
+        # first-person knowledge or a fabricated action proposal. This
+        # negative witness preserves the original two-cell world scenario.
+        instance = runtime(
+            layout=WorldLayout(
+                water_sources=frozenset({Position(4, 2)}),
+            )
+        )
+        first = instance.run_step()
+        self.assertEqual(first.execution_status, "applied")
+        self.assertEqual(first.source, "fallback")
+        self.assertEqual(first.command_primitive, "attendre")
+        self.assertEqual(instance.world.position, Position(2, 2))
+        self.assertIsNone(instance.planning.current_plan)
+        kinds = [e.causal_event.get("kind") for e in instance.journal.entries]
+        self.assertIn("active_goal_changed", kinds)
+        self.assertNotIn("option_registration", kinds)
 
     def test_no_active_need_reaches_cmax_fallback_wait(self) -> None:
         instance = runtime(water=60.0)
@@ -395,7 +439,7 @@ class Stage4IntegratedLoopTests(unittest.TestCase):
     def test_every_cognitive_command_traces_to_option_and_st_version(self) -> None:
         instance = runtime(
             layout=WorldLayout(
-                water_sources=frozenset({Position(4, 2)}),
+                water_sources=frozenset({Position(3, 2)}),
             )
         )
         result = instance.run_step()
@@ -427,7 +471,7 @@ class Stage4IntegratedLoopTests(unittest.TestCase):
     def test_lethal_cognitive_decision_rolls_back_full_cognition_then_masks_it(self) -> None:
         instance = runtime(
             layout=WorldLayout(
-                water_sources=frozenset({Position(4, 2)}),
+                water_sources=frozenset({Position(3, 2)}),
                 lethal_zones=frozenset({Position(3, 2)}),
             )
         )
@@ -476,7 +520,7 @@ class Stage4IntegratedLoopTests(unittest.TestCase):
             )
             instance = runtime(
                 layout=WorldLayout(
-                    water_sources=frozenset({Position(4, 2)}),
+                    water_sources=frozenset({Position(3, 2)}),
                     lethal_zones=frozenset({Position(3, 2)}),
                 ),
                 config=guarded,

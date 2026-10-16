@@ -1,7 +1,7 @@
 name: Stage6 A2.30-I behavioral parity
 on:
   pull_request:
-    branches: [science/stage12-b-a229-choice-arbitration-20261015]
+    branches: [main]
     paths:
       - 'src/i0/modules/stage6_planning.py'
       - 'scripts/run_stage12_issue110_b_a230i_parity.py'
