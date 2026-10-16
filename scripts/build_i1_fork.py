@@ -188,10 +188,13 @@ def generate(output: Path) -> dict[str, object]:
                 import_anchor = "from .stage12_runtime import Stage12Runtime"
                 if transformed.count(import_anchor) != 3:
                     raise ValueError("unreviewed I1 M11 local import scope")
-                transformed = transformed.replace(
-                    import_anchor,
-                    import_anchor
-                    + "\n                from .i1_natural_runtime import I1Runtime",
+                transformed = re.sub(
+                    r"(?m)^(?P<indent>[ \\t]*)from \\.stage12_runtime import Stage12Runtime$",
+                    lambda match: (
+                        match.group(0) + "\n" + match.group("indent")
+                        + "from .i1_natural_runtime import I1Runtime"
+                    ),
+                    transformed,
                 )
                 # This private-copy walker must discover immutable proxies
                 # in the I1/i1lab owner graph, not accidentally scan only I0.
