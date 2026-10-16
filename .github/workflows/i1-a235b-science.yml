@@ -1,0 +1,47 @@
+name: I1 A2.35-B prospective natural competition
+
+on:
+  pull_request:
+    branches:
+      - experiment/i1-isolated-model-fork-20261016
+    paths:
+      - 'scripts/run_i1_a235b_natural_competition.py'
+      - 'docs/research/i1-a235b-natural-competition-prereg-2026-10-16.en.md'
+      - '.github/workflows/i1-a235b-science.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i1-a235b-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prospective:
+    name: A2.35-B 64 mortal lives (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Run registered autonomous cohort, retaining all negative outcomes
+        run: |
+          python scripts/run_i1_a235b_natural_competition.py --output "a235b-py${{ matrix.python-version }}" --source-sha "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Preserve paired metadata, per-life source and hash-chained WALs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-a235b-py${{ matrix.python-version }}
+          path: a235b-py${{ matrix.python-version }}/
+          retention-days: 90
+          if-no-files-found: warn
