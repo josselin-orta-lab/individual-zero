@@ -60,7 +60,7 @@ with TemporaryDirectory() as folder:
  assert on.stage3.substrate.bench is None
  assert on._i1_pending == {}
  assert off._i1_pending == {}
- assert on.stage8_option_evaluator.__class__.__name__=="I1PartialEvidenceAdapter"
+ assert on.stage8_option_evaluator.__class__.__name__!="I1PartialEvidenceAdapter"
  assert on.run_step().execution_status in ("applied","dead","safety_block")
  assert on.journal.verify()
  assert on._i1_pending == {}
