@@ -102,6 +102,7 @@ def enable_natural_sleep_birth(*, world_config, stage10_config):
         raise TypeError("natural sleep requires isolated generated I1 Lab configs")
     if (POLICY in world_config.version or POLICY in stage10_config.version):
         raise ValueError("I1 natural sleep policy already applied to birth config")
+    world_config = enable_living_physiology_birth(world_config)
     world = replace(
         world_config,
         version=world_config.version + "+" + POLICY,
