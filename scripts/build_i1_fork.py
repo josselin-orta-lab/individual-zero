@@ -130,11 +130,6 @@ def i1_private_consolidation_source(source: str) -> str:
     )
     new = (
         '        canonical = type(self).__name__ == "I1Runtime"\n'
-        '        if canonical and not candidate.get("forms"):\n'
-        '            candidate["forms"] = {"value_needs": [\n'
-        '                deepcopy(row) for row in candidate.get("procedural", [])\n'
-        '                if row.get("state") == "compiled_private"\n'
-        '            ]}\n'
         '        if ((candidate.get("forms") != self.slow_history.read_committed()["forms"]\n'
         '             and not canonical)\n'
         '                or (canonical and set(candidate.get("forms", {}))\n'
@@ -143,6 +138,25 @@ def i1_private_consolidation_source(source: str) -> str:
     if source.count(old) != 1:
         raise ValueError("unreviewed I1 active-form publication guard")
     source = source.replace(old, new)
+    # The exact candidate consumed by coordinator.prepare must be the SAME
+    # versioned candidate that passed the paid sixth semantic checkpoint.
+    # Never mutate an already validated transaction during publication.
+    old_handler = "            advance = runner.advance_unit(algorithm.handle)\\n"
+    new_handler = (
+        "            def canonical_paid_semantic_handler(candidate, unit, scoped, cut):\\n"
+        "                updated = algorithm.handle(candidate, unit, scoped, cut)\\n"
+        "                if (type(self).__name__ == 'I1Runtime'\\n"
+        "                        and unit.operation == 'index_maintenance'):\\n"
+        "                    updated['forms'] = {'value_needs': [\\n"
+        "                        deepcopy(row) for row in updated.get('procedural', [])\\n"
+        "                        if row.get('state') == 'compiled_private'\\n"
+        "                    ]}\\n"
+        "                return updated\\n"
+        "            advance = runner.advance_unit(canonical_paid_semantic_handler)\\n"
+    )
+    if source.count(old_handler) != 1:
+        raise ValueError("unreviewed I1 paid semantic handler")
+    source = source.replace(old_handler, new_handler)
     old_rebaser = (
         '        # The final private rebase freezes the journal\'s exact current head.\n'
     )
