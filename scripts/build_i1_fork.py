@@ -171,15 +171,27 @@ def generate(output: Path) -> dict[str, object]:
             if (output_package == "i1lab"
                     and relative.as_posix() == "stage10_runtime.py"):
                 transformed = i1_private_consolidation_source(transformed)
-            # I1-only M11 custody: accept an explicit Stage12 descendant,
-            # but pin the frozen I1 model parameters in the cold-birth digest.
+            # I1-only M11 custody: admit ONLY the exact canonical I1
+            # runtime, not any experimental Stage12 subclass with unknown
+            # mutable owners or unregistered cold-state behavior. Retain the
+            # existing exact Stage12 type and all M11 admission criteria.
             # Never alter the canonical src/lab or src/i0 M11 implementation.
             if output_package == "i1lab" and relative.as_posix() == "m11_transactional_mortal.py":
                 required = "type(runtime) is Stage12Runtime"
+                canonical = (
+                    "(type(runtime) is Stage12Runtime "
+                    "or type(runtime) is I1Runtime)"
+                )
                 if transformed.count(required) != 3:
                     raise ValueError("unreviewed I1 M11 runtime type gate")
+                transformed = transformed.replace(required, canonical)
+                import_anchor = "from .stage12_runtime import Stage12Runtime"
+                if transformed.count(import_anchor) != 3:
+                    raise ValueError("unreviewed I1 M11 local import scope")
                 transformed = transformed.replace(
-                    required, "isinstance(runtime, Stage12Runtime)"
+                    import_anchor,
+                    import_anchor
+                    + "\n                from .i1_natural_runtime import I1Runtime",
                 )
                 # This private-copy walker must discover immutable proxies
                 # in the I1/i1lab owner graph, not accidentally scan only I0.
