@@ -87,6 +87,16 @@ class I1Runtime(I1WaterPrudentRuntime):
         kwargs["i1_d2_prudence"] = False
         super().__init__(**kwargs)
 
+    @property
+    def temperament_parameters(self):
+        """Read the canonical Stage11 birth-frozen Stage5 projection.
+
+        Stage11 does not inherit Stage5Runtime; it carries the projected
+        parameters explicitly in its own immutable versioned config. The
+        natural actor must not read an absent Stage5 property or raw tau.
+        """
+        return self._stage11_config.temperament_parameters
+
     def _propose_for_cycle(
         self, *, capture, goal_for_planning, st_before_cycle, cycle,
     ):
