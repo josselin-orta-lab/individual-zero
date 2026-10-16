@@ -145,3 +145,10 @@ Commit `81a412242ae443597a9f493f98b86522d9f3ec3b` introduces a bounded P-43-paid
 - Commit `d7a69ca4996c761f6c620c9de0c53dbcb5059433` fills inert zero-valued per-primitive energy costs in the canonical I1 birth profile even when some other actions were already explicitly priced. Existing nonzero prices remain intact. Every value is frozen prebirth in the WorldPhysicsConfig/M11 digest. Original I0 and separate experiment runtime constructor behavior remain unchanged.
 
 No tests, compiled source build, physical births, private replay, active rebase or M11 cold recovery were executed. PR #245 remains draft/scientific NO-GO.
+
+## Finalization audit continuation: immutable reward sensitivity in Stage8
+
+Commit `aa3575571d7681ff64811c86f015b8e1b0efcba4` connects an already projected, birth-frozen temperament's `extrinsic_value_gain` to the real Stage8 `Stage8EvaluationConfig.extrinsic_gain` in the nested Stage9 constructor config, prior to any real mortal birth. This was previously descriptive-only for this evaluation owner even though Gatekeeper, ValueNeeds and Competition had received the other projected components. The value is preserved through the common Stage10/Stage11 Stage9 substrate and M11 birth fingerprint. No live owner mutation, implicit external reward prior, I0 edit or historical research-arm constructor modification.
+
+The PR remains a **source-only candidate**, not proof of successful execution. Compiler/build and M11 cold restore could not be demonstrated. No new tests or physical cohorts were run, honoring the current operator restriction. The source-only audit cannot establish scientific or operational GO, so the dependent draft PRs are not merged.
+
