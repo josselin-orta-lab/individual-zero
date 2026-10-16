@@ -55,7 +55,7 @@ class I1WaterPrudentRuntime(I1WaterLearningRuntime):
         current=self.stage3._capture
         if current is None or current.t_monde!=t_monde:
             raise RuntimeError("D2 requires unique authorized step capture")
-        direction=proposal.plan.steps[0].command.arguments.get("direction")
+        direction=proposal.plan.steps[0].command.parameters.get("direction")
         if direction not in DIRECTIONS:
             raise ValueError("D2 refuses malformed movement direction")
         dx,dy=DIRECTIONS[direction]
