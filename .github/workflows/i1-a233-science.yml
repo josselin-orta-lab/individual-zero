@@ -35,7 +35,7 @@ jobs:
       - run: python -m pip install -e .
       - name: Execute lives and report unfiltered negative outcomes
         run: |
-          python scripts/run_i1_a233_learning.py --output "a233-py${{ matrix.python-version }}" --source-sha "${{ github.event.pull_request.head.sha || github.sha }}"
+          python scripts/run_i1_a233_continuity.py --output "a233-py${{ matrix.python-version }}" --source-sha "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Preserve raw per-life external records and independent WALs
         if: always()
         uses: actions/upload-artifact@v4
