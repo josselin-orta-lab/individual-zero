@@ -5,6 +5,8 @@ These values are software-compatibility values only, not campaign calibration.
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from i0.temperament import (
     LinearTemperamentCurve,
     Temperament,
@@ -12,6 +14,7 @@ from i0.temperament import (
 )
 from lab.stage4_reference_fixture import build_stage4_reference_runtime
 from lab.stage5_runtime import Stage5Config, Stage5Runtime
+from lab.world import Position
 
 
 def build_stage5_reference_runtime(
@@ -19,8 +22,20 @@ def build_stage5_reference_runtime(
     temperament: Temperament | None = None,
     individual_id: str = "i0-stage5-reference",
     autonomous_mortal: bool = False,
+    observed_water_source_position: Position | None = None,
 ) -> Stage5Runtime:
     stage4 = build_stage4_reference_runtime(autonomous_mortal=autonomous_mortal)
+    layout = stage4.world._layout
+    if observed_water_source_position is not None:
+        # Test-only, birth-time geometry. A plan may use a source only when
+        # it really falls within Stage-3 local sensing range (one tile).
+        # Do not turn remote water into an omniscient first-person fact.
+        if stage4.world.position.manhattan(observed_water_source_position) > 1:
+            raise ValueError("Stage5 observed water must be within local perception")
+        layout = replace(
+            layout,
+            water_sources=frozenset({observed_water_source_position}),
+        )
     tau = temperament or Temperament(0.0, 0.0, 0.0, 0.0, 0.0)
 
     mapping = TemperamentMappingConfig(
@@ -55,7 +70,7 @@ def build_stage5_reference_runtime(
 
     return Stage5Runtime(
         world_config=stage4.world.config,
-        layout=stage4.world._layout,
+        layout=layout,
         safety_config=stage4.stage3.substrate.safety._config,
         safety_facts=stage4.stage3.control._facts,
         protected_integrity_threshold=(

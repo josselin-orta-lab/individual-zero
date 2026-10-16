@@ -1,0 +1,45 @@
+name: Stage12 A2.30-S accessible causal probes
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_b_a230s_observable_probes.py'
+      - 'tests/test_stage12_a230s_observable_probes.py'
+      - 'docs/research/stage12-issue110-b-a230s-*.md'
+      - '.github/workflows/stage12-b-a230s.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  detached-physical-probes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Check first-person frontier and mortality provenance
+        run: |
+          python -m unittest discover -s tests -p test_stage12_a230s_observable_probes.py -v
+      - name: Apply independently precommitted physical S-world probes
+        run: |
+          python -u scripts/run_stage12_issue110_b_a230s_observable_probes.py \
+            --output-dir /tmp/a230s > /tmp/a230s.log 2>&1 \
+            || { tail -n 160 /tmp/a230s.log; exit 2; }
+          grep A230S_SUMMARY /tmp/a230s.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230s-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230s
+            /tmp/a230s.log
+          retention-days: 30
