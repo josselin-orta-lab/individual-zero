@@ -43,6 +43,10 @@ class I1PartialEvidenceAdapter:
         self._pending = pending
 
     def __getattr__(self, key):
+        # Never forward copy/pickle protocol methods from the wrapped owner.
+        # They must operate on this adapter, not a foreign instance.
+        if key.startswith("__"):
+            raise AttributeError(key)
         # deepcopy constructs an empty shell before restoring its __dict__.
         # Never recursively call __getattr__ while _underlying is absent.
         underlying = vars(self).get("_underlying")
