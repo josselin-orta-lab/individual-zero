@@ -88,8 +88,6 @@ def i1_physiology_source(source: str) -> str:
         ),
     )
     for original, replacement in patches:
-        original = original.replace('\\\n', '\n')
-        replacement = replacement.replace('\\\n', '\n')
         if source.count(original) != 1:
             raise ValueError("I1 deprivation source anchor changed")
         source = source.replace(original, replacement)
