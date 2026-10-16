@@ -3,6 +3,9 @@ name: Stage12 focused physical and operator checks
 # Verify the exact source SHA, independent from an unrelated moving main.
 on:
   pull_request:
+    # Reviewable PRs run the focused Stage12 audit; the historical multi-life
+    # battery is opt-in (label stage12-full or workflow_dispatch).
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
     branches: [main]
     paths:
       - '.github/workflows/stage12-focused.yml'
@@ -37,9 +40,11 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
-  group: stage12-focused-${{ github.event.pull_request.number || github.ref }}
+  # A new PR commit must not silently cancel an explicitly requested science run.
+  group: stage12-focused-${{ github.event.pull_request.number || github.ref }}-${{ github.event.action == 'labeled' && github.event.label.name == 'stage12-full' && 'deep' || 'focused' }}
   cancel-in-progress: true
 
 jobs:
@@ -59,7 +64,23 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install checked source
         run: python -m pip install -e .
+      - name: Provision immutable A2.30-O/P physical source archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230o-py311 /tmp/a230o-py312
+          gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.11 --dir /tmp/a230o-py311
+          gh run download 38726664498 --repo "$GITHUB_REPOSITORY" --name a230n-py3.12 --dir /tmp/a230o-py312
+          mkdir -p /tmp/a230p-py311 /tmp/a230p-py312
+          gh run download 38730415503 --repo "$GITHUB_REPOSITORY" --name a230p-py3.11 --dir /tmp/a230p-py311
+          gh run download 38730415503 --repo "$GITHUB_REPOSITORY" --name a230p-py3.12 --dir /tmp/a230p-py312
       - name: Complete Stage12 diagnostics and operator audit suite
+        env:
+          A230O_SOURCE_A: /tmp/a230o-py311
+          A230O_SOURCE_B: /tmp/a230o-py312
+          A230Q_SOURCE_311: /tmp/a230p-py311
+          A230Q_SOURCE_312: /tmp/a230p-py312
+          A230R_SOURCE: /tmp/a230p-py311
         run: |
           python -m unittest discover -s tests -p 'test_stage12_*.py' -q
       - name: Contrasted Stage12 and P-47 evidence contracts
@@ -81,6 +102,13 @@ jobs:
           python -m unittest discover -s tests -p 'test_v131_stage12_sixpass_operator_integration.py' -v
 
   water-sleep-followup:
+    # Expensive historical replication: never block routine PR integration.
+    # Explicitly opt in on this exact PR head via stage12-full label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == 'stage12-full')
     name: model-support and sleep duration follow-up (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -108,6 +136,13 @@ jobs:
           if-no-files-found: warn
 
   issue132-horizon:
+    # Expensive historical replication: never block routine PR integration.
+    # Explicitly opt in on this exact PR head via stage12-full label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == 'stage12-full')
     name: issue132 two-step motive evidence (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -135,6 +170,13 @@ jobs:
           if-no-files-found: warn
 
   issue132-water:
+    # Expensive historical replication: never block routine PR integration.
+    # Explicitly opt in on this exact PR head via stage12-full label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == 'stage12-full')
     name: issue132 drinking versus equipment (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -162,6 +204,13 @@ jobs:
           if-no-files-found: warn
 
   issue133-paid-index:
+    # Expensive historical replication: never block routine PR integration.
+    # Explicitly opt in on this exact PR head via stage12-full label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == 'stage12-full')
     name: issue133 preregistered paid index vs full scan 600 steps (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 110
@@ -189,6 +238,13 @@ jobs:
           if-no-files-found: warn
 
   issue133-horizon600:
+    # Expensive historical replication: never block routine PR integration.
+    # Explicitly opt in on this exact PR head via stage12-full label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == 'stage12-full')
     name: issue133 P6B6 aging 600 steps in two worlds (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -216,6 +272,13 @@ jobs:
           if-no-files-found: warn
 
   issue133-capacity-factorial:
+    # Expensive historical replication: never block routine PR integration.
+    # Explicitly opt in on this exact PR head via stage12-full label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == 'stage12-full')
     name: issue133 preregistered 3/6 passes x 3/6 batches (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 55
@@ -243,6 +306,13 @@ jobs:
           if-no-files-found: warn
 
   issue133-multipass:
+    # Expensive historical replication: never block routine PR integration.
+    # Explicitly opt in on this exact PR head via stage12-full label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == 'stage12-full')
     name: issue133 paid 1 vs 3 passes per sleep step (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 55
@@ -270,6 +340,13 @@ jobs:
           if-no-files-found: warn
 
   issue133-longscan:
+    # Expensive historical replication: never block routine PR integration.
+    # Explicitly opt in on this exact PR head via stage12-full label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == 'stage12-full')
     name: issue133 long-lived paid incremental scan (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 55
@@ -297,6 +374,13 @@ jobs:
           if-no-files-found: warn
 
   issue133-batch:
+    # Expensive historical replication: never block routine PR integration.
+    # Explicitly opt in on this exact PR head via stage12-full label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == 'stage12-full')
     name: issue133 real-life batch selection 1 vs 3 (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -324,6 +408,13 @@ jobs:
           if-no-files-found: warn
 
   issue133-calibration:
+    # Expensive historical replication: never block routine PR integration.
+    # Explicitly opt in on this exact PR head via stage12-full label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == 'stage12-full')
     name: issue133 calibrated weight 12 lives (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -351,6 +442,13 @@ jobs:
           if-no-files-found: warn
 
   issue133-sleep-deep:
+    # Expensive historical replication: never block routine PR integration.
+    # Explicitly opt in on this exact PR head via stage12-full label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == 'stage12-full')
     name: issue133 six-pass and pressure factorial (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -378,6 +476,13 @@ jobs:
           if-no-files-found: warn
 
   exploratory-behavior-science:
+    # Expensive historical replication: never block routine PR integration.
+    # Explicitly opt in on this exact PR head via stage12-full label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == 'stage12-full')
     name: preregistered 12-life exploratory Stage12 (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 55
@@ -407,6 +512,13 @@ jobs:
           if-no-files-found: warn
 
   retained-600-trial:
+    # Expensive historical replication: never block routine PR integration.
+    # Explicitly opt in on this exact PR head via stage12-full label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == 'stage12-full')
     name: retained-mortal-600-step-operator-development-trial
     runs-on: ubuntu-latest
     timeout-minutes: 35
