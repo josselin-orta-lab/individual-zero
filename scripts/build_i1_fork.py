@@ -192,7 +192,7 @@ def i1_private_consolidation_source(source: str) -> str:
         '        if ((candidate.get("forms") != self.slow_history.read_committed()["forms"]\n'
         '             and not canonical)\n'
         '                or (canonical and set(candidate.get("forms", {}))\n'
-        '                    != {"value_needs"})):\n'
+        '                    != set(Stage10PublicationCoordinator.REQUIRED))):\n'
     )
     if source.count(old) != 1:
         raise ValueError("unreviewed I1 active-form publication guard")
@@ -384,6 +384,20 @@ def generate(output: Path) -> dict[str, object]:
                     '        configuration = (*configuration,\n'
                     '            ("i1-water-firstperson-birth-v1", runtime._i1_water_contract))\n'
                     + hash_anchor,
+                )
+                # The canonical natural actor exposes three authoritative
+                # owner views in the M11 roster. Their private cold installers
+                # must receive the same authenticated M11 capability.
+                cold_hook = '        if key == "i1_lived_water_model":'
+                if transformed.count(cold_hook) != 1:
+                    raise ValueError("unreviewed M11 active owner cold installer")
+                transformed = transformed.replace(
+                    cold_hook,
+                    '        if (key in ("causal_model", "perception",'
+                    ' "metacognition_health") and type(runtime) is I1Runtime):\n'
+                    '            owner.install_m11_cold_state(\n'
+                    '                deepcopy(value), capability=_M11_COLD_OWNER_TOKEN)\n'
+                    '        elif key == "i1_lived_water_model":',
                 )
                 transformed = i1_m11_active_publication_custody_source(transformed)
             # No stale absolute Python imports may silently reach I0.
