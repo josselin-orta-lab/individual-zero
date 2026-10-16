@@ -33,6 +33,62 @@ SLEEP_INTRINSIC_WEIGHT = 0.9
 CONSOLIDATION_STEP_UC = 640
 CONSOLIDATION_PERIOD_UC = 2560
 
+# Ordinary birth metabolism, explicitly versioned and physically observable.
+# These are provisional simulation units rather than biological constants.
+LIVING_PHYSIOLOGY_POLICY = "i1-living-physical-defaults-v1"
+DEFAULT_FOOD_DECAY = 0.20
+DEFAULT_WATER_DECAY = 0.40
+DEFAULT_REST_INTEGRITY_GAIN = 0.20
+DEFAULT_ACTION_ENERGY_COSTS = {
+    "se_deplacer": 2.0,
+    "collecter": 1.0,
+    "manger": 0.5,
+    "boire": 0.5,
+    "poser_une_pierre": 1.5,
+    "fabriquer_outil": 1.5,
+    "dormir": 0.25,
+    "attendre": 0.35,
+}
+
+
+def enable_living_physiology_birth(world_config):
+    """Replace inert reference defaults with a living, versioned I1 world.
+
+    Preserve nonzero world-specific costs, decay and healing (e.g. a designed
+    heldout environment). This is frozen before birth, never modified from
+    an observed result. Historical experiments remain reproducible by their
+    original source revision; no I0 or shared Lab world is changed.
+    """
+    if not type(world_config).__module__.startswith("i1lab."):
+        raise TypeError("living physiology applies only to generated I1")
+    if LIVING_PHYSIOLOGY_POLICY in world_config.version:
+        raise ValueError("living I1 physiology was already installed")
+    costs = dict(world_config.action_energy_costs)
+    if set(costs) != set(DEFAULT_ACTION_ENERGY_COSTS):
+        raise ValueError("unknown physical action-cost schema")
+    if all(float(v) == 0.0 for v in costs.values()):
+        costs = dict(DEFAULT_ACTION_ENERGY_COSTS)
+    upgraded = replace(
+        world_config,
+        version=world_config.version + "+" + LIVING_PHYSIOLOGY_POLICY,
+        food_decay_per_step=(
+            DEFAULT_FOOD_DECAY if world_config.food_decay_per_step == 0.0
+            else world_config.food_decay_per_step
+        ),
+        water_decay_per_step=(
+            DEFAULT_WATER_DECAY if world_config.water_decay_per_step == 0.0
+            else world_config.water_decay_per_step
+        ),
+        action_energy_costs=costs,
+        rest_integrity_gain=(
+            DEFAULT_REST_INTEGRITY_GAIN
+            if world_config.rest_integrity_gain == 0.0
+            else world_config.rest_integrity_gain
+        ),
+    )
+    upgraded.validate()
+    return upgraded
+
 
 def enable_natural_sleep_birth(*, world_config, stage10_config):
     """Return fresh I1 physical and Stage10 configs, without mutating sources.
