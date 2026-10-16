@@ -19,6 +19,16 @@ from i1.modules.geographic_exploration import GeographicExplorationConfig
 from .i1_birth_temperament import configure_birth_temperament
 from .i1_natural_sleep import enable_natural_sleep_birth
 
+_PRIVATE_RECALL_VERSION = "i1-private-procedure-advisory-v1"
+_PRIVATE_RECALL_OPERATION = "i1_private_procedure_recall"
+_PRIVATE_RECALL_COST_UC = 1
+_PRIVATE_OBSERVED_FIELDS = {
+    "boire": "drank",
+    "collecter": "collected",
+    "fabriquer_outil": "tool_crafted",
+    "poser_une_pierre": "stone_placed",
+}
+
 # Historical arms remain available explicitly from the independent
 # I1A238ExperimentalRuntime / I1A239ExperimentalRuntime classes. They are
 # intentionally not accepted by the canonical runtime's constructor.
@@ -144,23 +154,141 @@ class I1Runtime(I1WaterPrudentRuntime):
         self._i1_last_nonplannable_observation = None
         super().__init__(**kwargs)
 
+    def _parent_runtime_config(self, config):
+        """Reserve a real P-43 allowance for optional private lived recall."""
+        base = super()._parent_runtime_config(config)
+        stage9 = base.stage9
+        stage8 = stage9.stage8
+        stage7 = stage8.stage7
+        stage6 = stage7.stage6
+        stage4 = stage6.stage4
+        original = stage4.compute_budget
+        if _PRIVATE_RECALL_OPERATION in original.operation_costs:
+            raise ValueError("I1 private recall operation already registered")
+        budget = replace(
+            original,
+            version=original.version + "+" + _PRIVATE_RECALL_VERSION,
+            cycle_ceiling=original.cycle_ceiling + _PRIVATE_RECALL_COST_UC,
+            module_envelopes={
+                **original.module_envelopes,
+                "planning": original.module_envelopes["planning"]
+                + _PRIVATE_RECALL_COST_UC,
+            },
+            operation_costs={
+                **original.operation_costs,
+                _PRIVATE_RECALL_OPERATION: _PRIVATE_RECALL_COST_UC,
+            },
+        )
+        return replace(
+            base,
+            stage9=replace(
+                stage9, stage8=replace(
+                    stage8, stage7=replace(
+                        stage7, stage6=replace(
+                            stage6, stage4=replace(
+                                stage4, compute_budget=budget,
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
     def _consider_uncertain_affordance(
         self, *, capture, goal, st_version, cycle, exact,
     ):
-        """Never silently replace an existing verified Stage6 plan.
+        """Optional, paid, first-person private evidence on an unknown option.
 
-        The inherited experimental overlay may substitute an unknown
-        primitive even when Stage6 has already proposed a causal model-backed
-        action. The ordinary living I1 instead treats uncertainty as a
-        fall-back when an existing plan is unavailable. This does not inject a
-        command or mislabel an uncertain physical consequence.
+        An executable Stage6 plan has priority. SlowHistory is not an active
+        planner, safety oracle or motor authority: a privately consolidated
+        effect can only give a bounded *advisory* preference to an already
+        perceived and otherwise admissible action. All outcomes remain unknown
+        and Action Control must independently admit any eventual command.
         """
         if exact is not None:
             return None
-        return super()._consider_uncertain_affordance(
+        proposed = super()._consider_uncertain_affordance(
             capture=capture, goal=goal, st_version=st_version,
             cycle=cycle, exact=exact,
         )
+        if proposed is None or proposed.plan is None:
+            return proposed
+        command = proposed.plan.steps[0].command
+        field = _PRIVATE_OBSERVED_FIELDS.get(command.primitive)
+        if field is None:
+            return proposed
+        # Debit BEFORE touching committed private history. A refused charge
+        # does not prevent the original UC-paid uncertainty proposal.
+        if not self._charge(
+            module="planning", operation=_PRIVATE_RECALL_OPERATION,
+        ):
+            return proposed
+        private = self.slow_history.read_committed()
+        rows = private.get("procedural", ())
+        if type(rows) is not list:
+            raise ValueError("invalid committed private procedure index")
+        matched = []
+        for item in rows:
+            if (type(item) is not dict
+                    or item.get("state") != "compiled_private"
+                    or item.get("evidence_scope")
+                        != "experienced_local_physical_result"
+                    or item.get("goal_success_inferred") is not False
+                    or item.get("safety_certified") is not False
+                    or item.get("primitive") != command.primitive
+                    or item.get("parameters") != dict(command.parameters)
+                    or item.get("observed_field") != field):
+                continue
+            scope = item.get("near_context")
+            successes = item.get("distinct_success_count")
+            trials = item.get("distinct_trial_count")
+            ratio = item.get("success_rate")
+            if (type(scope) is not dict
+                    or any(type(scope.get(key)) is not int
+                           for key in ("x", "y", "radius"))
+                    or type(successes) is not int
+                    or type(trials) is not int
+                    or successes < 2 or trials < successes
+                    or type(ratio) not in (float, int)
+                    or not 0.0 <= ratio <= 1.0):
+                continue
+            distance = (abs(capture.x - scope["x"])
+                        + abs(capture.y - scope["y"]))
+            if distance <= scope["radius"]:
+                matched.append(item)
+        if not matched:
+            return proposed
+        # Choose a single private witness family, never count overlapping
+        # nearby context summaries as independent evidence.
+        match = min(
+            matched, key=lambda row: (
+                -row["distinct_success_count"], -row["success_rate"],
+                row["id"],
+            ),
+        )
+        confidence = (float(match["success_rate"])
+                      * min(1.0, match["distinct_success_count"] / 4.0))
+        boost = min(0.12, 0.12 * confidence)
+        existing = float(self._i1_pending["prior_evidence"])
+        self._i1_pending["prior_evidence"] = min(1.0, existing + boost)
+        self._i1_pending["private_procedure_refs"] = (match["id"],)
+        self._write(
+            kind="i1_private_procedure_recall_considered", cycle=cycle,
+            data={
+                "policy": _PRIVATE_RECALL_VERSION,
+                "option_ref": proposed.option.id,
+                "private_history_version": self.slow_history.current_version,
+                "procedure_ref": match["id"],
+                "source_episode_refs": list(match["source_episode_refs"]),
+                "source_event_refs": list(match["source_event_refs"]),
+                "advisory_evidence_increase": boost,
+                "effects_predicted": False,
+                "goal_success_inferred": False,
+                "safety_certified": False,
+                "command_forced": False,
+            },
+        )
+        return proposed
 
     @property
     def temperament_parameters(self):
