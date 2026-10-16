@@ -47,3 +47,15 @@ The intended semantics remain narrowly scoped:
 Audit observations, NOT proof of execution: the Stage4 reference computation budget already declares `goal_arbitrate` under the `goal_manager` module; no new unpriced GoalManager operation was added in this pass. The I1 generated M11 rewrite already replaces the Stage12 exact-type gate in three source occurrences with an `isinstance` gate, so the natural Stage12 descendant can be considered by M11; whether its complete independent owner graph can actually cold-recover remains unverified.
 
 No scripts, tests, builds or new lives were executed under the standing no-additional-tests instruction. All new functionality and cold recovery still require technical verification before an integration or scientific GO.
+
+## Final static safety review (2026-10-16)
+
+The I1-generated M11 type gate was broadened to every Stage12 descendant in an earlier version. That admits experimental subclasses whose owner graphs, cold-state contracts and snapshot responsibilities may differ. This is not defensible for irreversible mortal SQLite custody.
+
+The generator now allows the original exact Stage12 type **or only the exact canonical `I1Runtime`**, while retaining the existing M11 SQLite opt-in and fresh-body requirements. It injects the local canonical-class import into the same local M11 method scopes using their existing indentation. This does not certify cold restoration: it only tightens the code-level acceptance boundary. No caller can infer that all Stage12 subclasses are transaction-safe.
+
+The consolidation active-form rebase remains intentionally fail-closed. Private hypotheses/procedures in SlowHistory are not promoted to active or safety-authoritative skills. The archived A2.38/A2.39 experiments remain immutable.
+
+### Finalization gate that is still missing
+
+No source build, Python 3.11/3.12 execution, M11 real birth/recovery, WAL audit, physical lives, or independent scientific review was performed. The GitHub head has zero status checks and zero workflow runs in the inspected revision. Therefore the requested scientific GO and merge into main are **not authorized by evidence**. The PR remains a technical candidate, not a completed verified integration.
