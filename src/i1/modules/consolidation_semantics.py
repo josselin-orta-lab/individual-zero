@@ -260,7 +260,10 @@ class LivedSixPassAlgorithm:
                     continue
                 succeeded = (
                     (effect == "drank" and value == "true")
-                    or (effect == "ate" and value in ("berry_a", "berry_b"))
+                    # Merely swallowing a berry is not evidence of
+                    # nourishment, harmlessness or a successful food goal.
+                    # Its physical consequences may be toxic and cannot be
+                    # inferred from the "ate" effect alone.
                     or (effect == "collected" and value.endswith(":True"))
                     or (effect == "tool_crafted" and value == "true")
                     or (effect == "movement" and value == "moved")
