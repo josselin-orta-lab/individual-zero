@@ -1,7 +1,7 @@
 name: Stage6 A2.30-I first-step diagnostics
 on:
   pull_request:
-    branches: [science/stage12-b-a229-choice-arbitration-20261015]
+    branches: [main]
     paths:
       - 'src/i0/modules/stage6_planning.py'
       - 'tests/test_stage6_a230i_first_step_diagnostic.py'

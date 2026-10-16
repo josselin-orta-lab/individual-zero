@@ -1,0 +1,55 @@
+name: Stage12 A2.30-T shadow food predecision
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/run_stage12_issue110_b_a230t_food_shadow.py'
+      - 'tests/test_stage12_a230t_food_shadow.py'
+      - 'docs/research/stage12-issue110-b-a230t-*.md'
+      - '.github/workflows/stage12-b-a230t.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  frozen-food-shadows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Download original immutable P physical training ONLY
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/a230t-immutable-training
+          gh run download 38730415503 --repo "$GITHUB_REPOSITORY" --name a230p-py3.11 --dir /tmp/a230t-immutable-training
+      - name: Check no live I0 action, matched first-person states and unsafe optimistic result
+        env:
+          A230T_TRAINING_SOURCE: /tmp/a230t-immutable-training
+        run: |
+          python -m unittest discover -s tests -p test_stage12_a230t_food_shadow.py -v
+      - name: Score external shadow food choice before executing laboratory cells
+        run: |
+          python -u scripts/run_stage12_issue110_b_a230t_food_shadow.py \
+            --source-training /tmp/a230t-immutable-training \
+            --output-dir /tmp/a230t-study > /tmp/a230t.log 2>&1 \
+            || { tail -n 160 /tmp/a230t.log; exit 2; }
+          grep A230T_SUMMARY /tmp/a230t.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a230t-py${{ matrix.python-version }}
+          path: |
+            /tmp/a230t-study
+            /tmp/a230t.log
+          retention-days: 30

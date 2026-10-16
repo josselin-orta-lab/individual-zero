@@ -1,7 +1,7 @@
 name: Stage12 A2.30-N offline uncertain predictor evaluation
 on:
   pull_request:
-    branches: [science/stage12-b-a230-model-completeness-20261015]
+    branches: [main]
     paths:
       - 'scripts/audit_stage12_issue110_b_a230n_uncertain_predictor.py'
       - 'scripts/run_stage12_issue110_b_a230n_predictor_evaluation.py'
