@@ -59,3 +59,9 @@ The consolidation active-form rebase remains intentionally fail-closed. Private 
 ### Finalization gate that is still missing
 
 No source build, Python 3.11/3.12 execution, M11 real birth/recovery, WAL audit, physical lives, or independent scientific review was performed. The GitHub head has zero status checks and zero workflow runs in the inspected revision. Therefore the requested scientific GO and merge into main are **not authorized by evidence**. The PR remains a technical candidate, not a completed verified integration.
+
+## Continued generator audit: actual M11 import syntax
+
+On this revision, code review detected that the I1-only generator had still emitted a literal backslash-n sequence between local M11 imports. The earlier indentation correction did not eliminate this defect. Commit `aa541207a75e1f1b093c0546e71e7f07549bb235` replaces it with an actual source newline. Commit `4808dd1aae722295994dec4d6648b11ee24fa3dc` adds a deterministic generation-time assertion requiring all three exact canonical actor import scopes. Both are I1-only generator changes; no original I0 or Lab module is edited.
+
+**Remaining gates:** actual source-generation/build and a new mortal I1 birth have still not been executed. There is no executed M11 cold recovery or confirmed active-form reconciliation. All previously documented source-level claims remain provisional. Do not merge #245 or claim scientific GO on static inspection alone.
