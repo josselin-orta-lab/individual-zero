@@ -18,6 +18,7 @@ from .determinism import canonical_causal_bytes, sha256_hex
 from i1.modules.geographic_exploration import GeographicExplorationConfig
 from .i1_birth_temperament import configure_birth_temperament
 from .i1_natural_sleep import enable_natural_sleep_birth
+from .i1_cognitive_publication import ActiveConsolidatedOwner
 
 _PRIVATE_RECALL_VERSION = "i1-private-procedure-advisory-v1"
 _PRIVATE_RECALL_OPERATION = "i1_private_procedure_recall"
@@ -164,6 +165,26 @@ class I1Runtime(I1WaterPrudentRuntime):
         # durable refractory and failure counters (M11 causal state).
         self._i1_last_nonplannable_observation = None
         super().__init__(**kwargs)
+        self._i1_active_owner_views = {
+            "causal_model": ActiveConsolidatedOwner(
+                self.causal_model, "causal_model",
+            ),
+            "perception": ActiveConsolidatedOwner(
+                self.stage3.perception, "perception",
+            ),
+            "metacognition_health": ActiveConsolidatedOwner(
+                self._meta_custody, "metacognition_health",
+            ),
+        }
+
+    @property
+    def causal_owners(self):
+        owners = super().causal_owners
+        views = getattr(self, "_i1_active_owner_views", None)
+        if views is None:
+            return owners
+        return tuple(views.get(owner.owner_id, owner) for owner in owners)
+
 
     def _parent_runtime_config(self, config):
         """Reserve a real P-43 allowance for optional private lived recall."""
