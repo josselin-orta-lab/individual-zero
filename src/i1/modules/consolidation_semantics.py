@@ -310,7 +310,10 @@ class LivedSixPassAlgorithm:
                 # successful trial. It counts conservatively as unsuccessful.
                 successes = successes_observed - failures
                 trials = successes_observed | failures
-                if len(successes) < self.policy.skill_success_threshold:
+                # Preserve first-person evidence even when one cut alone
+                # cannot reach the independent-success threshold. No such
+                # observation is considered a compiled or executable skill.
+                if not successes:
                     continue
                 total = len(trials)
                 evidence = [
@@ -347,7 +350,11 @@ class LivedSixPassAlgorithm:
                     "distinct_success_count": len(successes),
                     "distinct_trial_count": total,
                     "success_rate": len(successes) / total,
-                    "state": "compiled_private",
+                    "state": (
+                        "compiled_private"
+                        if len(successes) >= self.policy.skill_success_threshold
+                        else "witnessed_private"
+                    ),
                 }
                 result.append(item)
         result.sort(key=lambda row: row["id"])
@@ -355,25 +362,28 @@ class LivedSixPassAlgorithm:
 
     @staticmethod
     def _merge_private_procedures(previous, newly_compiled):
-        """Retain trusted private evidence across separately paid sleep cuts.
+        """Accumulate private evidence across separately paid sleep cuts.
 
         Counts only unique autobiographical episodes. An existing skill can
         receive more evidence from a disjoint new batch, but cannot silently
-        change its action, contextual scope, or private/non-executable state.
+        change its action or contextual scope. Observed witnesses acquire the
+        non-executable compiled_private designation only after reaching the
+        independently versioned success threshold across multiple cuts.
         All saved records remain private SlowHistory, not active policies.
         """
         if type(previous) is not list or type(newly_compiled) is not list:
             raise ValueError("private procedures must be typed lists")
         combined = {}
+        states = {"witnessed_private", "compiled_private"}
         for row in previous:
             if (type(row) is not dict or type(row.get("id")) is not str
-                    or row.get("state") != "compiled_private"
+                    or row.get("state") not in states
                     or row["id"] in combined):
                 raise ValueError("invalid or duplicated committed private procedure")
             combined[row["id"]] = deepcopy(row)
         for row in newly_compiled:
             if (type(row) is not dict or type(row.get("id")) is not str
-                    or row.get("state") != "compiled_private"):
+                    or row.get("state") not in states):
                 raise ValueError("invalid newly compiled private procedure")
             old = combined.get(row["id"])
             if old is None:
@@ -382,7 +392,7 @@ class LivedSixPassAlgorithm:
             immutable = (
                 "plan_signature", "primitive", "parameters", "observed_field",
                 "evidence_scope", "goal_success_inferred", "safety_certified",
-                "near_context", "preconditions", "state",
+                "near_context", "preconditions",
             )
             if any(old.get(key) != row.get(key) for key in immutable):
                 raise ValueError("conflicting private procedural identity")
@@ -413,7 +423,7 @@ class LivedSixPassAlgorithm:
             success = old["distinct_success_count"] + row["distinct_success_count"]
             trials = old["distinct_trial_count"] + row["distinct_trial_count"]
             if (type(success) is not int or type(trials) is not int
-                    or success < 2 or trials < success
+                    or success < 1 or trials < success
                     or old["distinct_success_count"] != len(old_episodes)
                     or row["distinct_success_count"] != len(new_episodes)
                     or old["distinct_trial_count"] != len(old_trials)
@@ -427,6 +437,10 @@ class LivedSixPassAlgorithm:
             merged["distinct_success_count"] = success
             merged["distinct_trial_count"] = trials
             merged["success_rate"] = success / trials
+            merged["state"] = (
+                "compiled_private"
+                if success >= 2 else "witnessed_private"
+            )
             combined[row["id"]] = merged
         return [combined[k] for k in sorted(combined)]
 
@@ -538,9 +552,19 @@ class LivedSixPassAlgorithm:
                or len(rule.get("source_event_refs",()))!=len(set(rule["source_event_refs"]))
                for rule in state.get("hypotheses",[])):
             return False
-        if any(item.get("distinct_success_count",0)<self.policy.skill_success_threshold
-               or not 0<=item.get("success_rate",-1)<=1
-               for item in state.get("procedural",[])):
+        if any(
+            (item.get("state") not in (
+                "witnessed_private", "compiled_private"))
+            or type(item.get("distinct_success_count")) is not int
+            or item["distinct_success_count"] < 1
+            or ((item["distinct_success_count"]
+                 >= self.policy.skill_success_threshold)
+                != (item["state"] == "compiled_private"))
+            or not 0 <= item.get("success_rate", -1) <= 1
+            or item.get("goal_success_inferred") is not False
+            or item.get("safety_certified") is not False
+            for item in state.get("procedural", [])
+        ):
             return False
         try:
             canonical_causal_bytes(state)
