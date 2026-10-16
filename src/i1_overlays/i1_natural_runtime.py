@@ -242,10 +242,12 @@ class I1Runtime(I1WaterPrudentRuntime):
             module="planning", operation=_PRIVATE_RECALL_OPERATION,
         ):
             return proposed
-        private = self.slow_history.read_committed()
-        rows = private.get("procedural", ())
+        # Active advisory belongs to the canonical Value/Needs owner and
+        # exists only AFTER the six-pass, coordinator-acknowledged publication.
+        # A merely prepared/private skill must not masquerade as active.
+        rows = self.value_needs.active_observed_procedures()
         if type(rows) is not list:
-            raise ValueError("invalid committed private procedure index")
+            raise ValueError("invalid committed active procedural advisory")
         matched = []
         for item in rows:
             if (type(item) is not dict
@@ -296,7 +298,8 @@ class I1Runtime(I1WaterPrudentRuntime):
             data={
                 "policy": _PRIVATE_RECALL_VERSION,
                 "option_ref": proposed.option.id,
-                "private_history_version": self.slow_history.current_version,
+                "active_owner": "value_and_needs",
+                "committed_history_version": self.slow_history.current_version,
                 "procedure_ref": match["id"],
                 "source_episode_refs": list(match["source_episode_refs"]),
                 "source_event_refs": list(match["source_event_refs"]),
