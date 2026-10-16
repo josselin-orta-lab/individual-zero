@@ -114,3 +114,11 @@ This correction deliberately does not turn private procedures into action author
 - `eda732ca`: physical `ate=berry_*` is no longer deemed procedural success by itself. An ingestion event is a witnessed act, not evidence of safe or beneficial nutrition. Toxic-food confidence cannot be manufactured by private consolidation.
 
 No tests, generator runs, newborn physical lives or M11 cold-recovery have been executed. Active owner semantic rebase stays fail-closed. These source changes are a code candidate, not a scientific GO. I0 and original Lab are unchanged.
+
+## Isolation correction: deprivation is opt-in for historical ablation types, default-on for canonical natural I1
+
+The isolated I1 builder previously added `starvation_integrity_damage_per_step=0.5` and `dehydration_integrity_damage_per_step=1.0` as unconditional dataclass defaults for *all* I1-generated worlds. Although natural sleep was recently moved to the canonical constructor, these shared world physics defaults still silently modified historic A2.38/A2.39 arm configurations. Commit `4d4ab22c` now extends the generated WorldPhysicsConfig schema with zero deprivation defaults, leaving controlled old I1 ablation configs unchanged when not explicitly overridden.
+
+Commit `d6d02fb1` restores gradual starvation (0.5) and dehydration (1.0) as **mandatory birth-time defaults in the canonical living I1 natural physiology installer**, along with the previously versioned food/water per-step decay and energetic costs. Explicitly nonzero environmental damage values remain untouched. I0 and common source Lab physics are never modified.
+
+The existing world transition still applies real post-action deprivation before death determination; no new hidden sensory data enters cognition. This is a code-only scope correction. No tests, build, lives, cold M11 recovery, or scientific calibration were performed. PR #245 remains draft / NO-GO.
