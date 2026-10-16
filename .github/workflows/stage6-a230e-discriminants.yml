@@ -1,7 +1,7 @@
 name: Stage6 A2.30-E discriminant controls
 on:
   pull_request:
-    branches: [science/stage12-b-a229-choice-arbitration-20261015]
+    branches: [main]
     paths:
       - 'tests/test_stage6_a230e_discriminants.py'
       - 'docs/research/stage12-issue110-b-a230-edge-necessity-prereg-2026-10-15.fr.md'
