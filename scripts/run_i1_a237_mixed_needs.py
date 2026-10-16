@@ -413,6 +413,12 @@ def experiment(output: Path, *, head: str) -> dict[str, object]:
                     "water_learning_lives":sum(bool(r["firstperson_water_evidence"]) for r in rows),
                     "water_transfer_lives":sum(r["successful_transfer"] for r in rows),
                     "positive_berry_collection_lives":sum(r["positive_collections"]>0 for r in rows),
+                    "physically_joint_positive_lives":sum(r["joint_physically_positive"] for r in rows),
+                    "drinking_lives":sum(r["positive_drinking_episodes"]>0 for r in rows),
+                    "collect_then_drink_lives":sum(
+                        next((i for i,s in enumerate(r["steps"]) if s["positive_collection"]),999)
+                        <next((i for i,s in enumerate(r["steps"]) if s["positive_drinking"]),-1)
+                        for r in rows),
                     "source_backed_recall_lives":sum(r["source_backed_reviews"]>0 for r in rows),
                     "berry_boost_lives":sum(r["boost_evaluations"]>0 for r in rows),
                     "d2_review_lives":sum(r["d2_reviews"]>0 for r in rows),
@@ -429,34 +435,29 @@ def experiment(output: Path, *, head: str) -> dict[str, object]:
                     "technical_violations":sum(bool(r["hard_violations"]) for r in rows),
                 }
         nbad=sum(bool(r["hard_violations"]) for r in records)
-        expected=6*8*len(ARMS)
-        berry_supported=(
-            grouped["BERRY_LOCAL"]["FULL"]["berry_boost_lives"]>=6
-            and grouped["BERRY_LOCAL"]["NO_D2"]["berry_boost_lives"]>=6
-            and grouped["BERRY_LOCAL"]["NO_RECALL"]["berry_boost_lives"]==0)
-        water_supported=(
-            grouped["WATER_NEW_E_SAFE"]["NO_D2"]["water_transfer_lives"]>=6
-            and grouped["WATER_VISIT_N_SAFE"]["FULL"]["water_transfer_lives"]>=6)
-        changed_lethal=grouped["WATER_VISIT_N_CHANGED_LETHAL"]["FULL"]["deaths"]>0
+        expected=4*8*len(ARMS)
+        both_local=grouped["BOTH_LOCAL"]["FULL"]["physically_joint_positive_lives"]
+        local_berry_east_water=grouped["BERRY_LOCAL_WATER_E"]["FULL"]["physically_joint_positive_lives"]
+        mixed_success=both_local>=6 and local_berry_east_water>=6
         summary={
-            "schema":"i1-a237-all-active-merged-main-summary-v1",
+            "schema":"i1-a237-mixed-needs-all-active-summary-v1",
             "protocol":"a237-v1","source_sha":head,
             "original_main_sha":"bf59eceaf97805f04a18b0b28f1396f2e98bfa89",
             "prereg_sha":PREREG,"external_training_sha256":corpus.digest(),
             "training_examples":len(training),
-            "mortal_lives":len(records),"matched_triplets":6*8,
+            "mortal_lives":len(records),"matched_triplets":4*8,
             "physical_steps":sum(r["physical_steps"] for r in records),
             "hard_violations":nbad,
             "integration_technical_status":"PASS" if len(records)==expected and not nbad else "FAIL",
-            "berry_recall_status":"SUPPORTED_LIMITED" if berry_supported else "NOT_DEMONSTRATED",
-            "water_transfer_status":"SUPPORTED_LIMITED" if water_supported else "NOT_DEMONSTRATED",
-            "epistemic_risk_status":"SAFETY_NO_GO" if changed_lethal else "UNRESOLVED",
-            "m11_all_active_cold_recovery":"PENDING",
-            "model_combined_cognitive_deployment":"NO-GO",
+            "mixed_goal_status":"MIXED_GOAL_SUPPORTED" if mixed_success else "MIXED_GOAL_NOT_DEMONSTRATED",
+            "mixed_goal_primary":{"BOTH_LOCAL":both_local,"BERRY_LOCAL_WATER_E":local_berry_east_water},
+            "hidden_lethal_deaths":{arm:grouped["BOTH_LOCAL_WATER_E_HIDDEN_LETHAL"][arm]["deaths"] for arm in ARMS},
+            "m11_integrated_regression":"PREVIOUSLY_PASSED_NOT_REPEATED_IN_THIS_COHORT",
+            "scientific_cognitive_deployment":"NO-GO",
             "by_stratum":grouped,
             "i0_modified":False,
-            "replication":"same deterministic cohort on two Python versions, not independent science",
-            "limits":"External relocation is not self movement; identical hidden lethal preaction views cannot distinguish safety.",
+            "replication":"same deterministic cohort on two Python versions; not independent science",
+            "limits":"One active goal at a time; mixed-needs opportunity may be absent despite simultaneous resources; no action injection.",
         }
         (output/"summary.json").write_text(json.dumps(summary,indent=2,sort_keys=True)+"\n")
         return summary
@@ -468,7 +469,7 @@ def main() -> None:
     args=parser.parse_args()
     summary=experiment(args.output,head=args.source_sha)
     print(json.dumps(summary,sort_keys=True))
-    if summary["mortal_lives"]!=144 or summary["hard_violations"]:
+    if summary["mortal_lives"]!=96 or summary["hard_violations"]:
         raise SystemExit(1)
 
 if __name__=="__main__":
