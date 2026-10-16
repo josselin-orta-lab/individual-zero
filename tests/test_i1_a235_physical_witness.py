@@ -96,6 +96,12 @@ with TemporaryDirectory() as root:
  assert results["off"]["review"]==[] and results["off"]["charged"]==0
  assert results["on"]["charged"]>=1 and results["failed"]["charged"]>=1
  assert all(v["evidence"]==0.35 for v in results["off"]["evidence"])
+ assert all(v["evidence"]==0.35 for v in results["on"]["evidence"] if v["t"]<=2)
+ assert all(v["evidence"]==0.35 for v in results["failed"]["evidence"] if v["t"]<=2)
+ assert results["on"]["positive_lived_boost"]
+ assert any(x["sources"] for x in results["on"]["review"] if x["t"]>=3)
+ assert not any(x["sources"] for x in results["failed"]["review"] if x["t"]<=2)
+ assert all(x["action"]=="collecter" and x["status"]=="applied" for x in results["off"]["steps"])
  print("A235_WITNESS:"+json.dumps(results,sort_keys=True))
 """
             env=os.environ.copy()
