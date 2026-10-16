@@ -94,31 +94,6 @@ def i1_physiology_source(source: str) -> str:
         source = source.replace(original, replacement)
     return source
 
-def i1_default_sleep_source(source: str) -> str:
-    """Bind the existing Stage10 physical/sleep policy at every mortal I1 birth.
-
-    Stage11SleepRuntime is the common parent of the living Stage12 I1
-    descendants. This generator edits only the separately built i1lab copy,
-    never the reference Lab implementation. All descendant constructors
-    receive the same immutable versioned physical/sleep configuration.
-    """
-    anchor = (
-        "        stage11_config.validate()\n"
-        "        stage10_config.validate()\n"
-    )
-    replacement = (
-        "        from .i1_natural_sleep import enable_natural_sleep_birth\n"
-        "        kwargs['world_config'], stage10_config = enable_natural_sleep_birth(\n"
-        "            world_config=kwargs['world_config'],\n"
-        "            stage10_config=stage10_config,\n"
-        "        )\n"
-        + anchor
-    )
-    if source.count(anchor) != 1:
-        raise ValueError("unreviewed I1 Stage11Sleep birth entrypoint")
-    return source.replace(anchor, replacement)
-
-
 def i1_private_consolidation_source(source: str) -> str:
     """Let proven private procedures reach SlowHistory, not active cognition.
 
