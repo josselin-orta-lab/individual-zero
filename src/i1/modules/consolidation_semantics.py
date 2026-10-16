@@ -361,7 +361,7 @@ class LivedSixPassAlgorithm:
         return result
 
     @staticmethod
-    def _merge_private_procedures(previous, newly_compiled):
+    def _merge_private_procedures(previous, newly_compiled, threshold):
         """Accumulate private evidence across separately paid sleep cuts.
 
         Counts only unique autobiographical episodes. An existing skill can
@@ -374,6 +374,8 @@ class LivedSixPassAlgorithm:
         if type(previous) is not list or type(newly_compiled) is not list:
             raise ValueError("private procedures must be typed lists")
         combined = {}
+        if type(threshold) is not int or threshold < 1:
+            raise ValueError("invalid private skill compilation threshold")
         states = {"witnessed_private", "compiled_private"}
         for row in previous:
             if (type(row) is not dict or type(row.get("id")) is not str
@@ -439,7 +441,7 @@ class LivedSixPassAlgorithm:
             merged["success_rate"] = success / trials
             merged["state"] = (
                 "compiled_private"
-                if success >= 2 else "witnessed_private"
+                if success >= threshold else "witnessed_private"
             )
             combined[row["id"]] = merged
         return [combined[k] for k in sorted(combined)]
@@ -500,6 +502,7 @@ class LivedSixPassAlgorithm:
                 state["procedural"] = self._merge_private_procedures(
                     state.get("procedural", []),
                     self._compile_from_proven_plans(cut),
+                    self.policy.skill_success_threshold,
                 )
                 state.pop("_private_procedural_scanned")
         elif name=="kappa_recalibration":
