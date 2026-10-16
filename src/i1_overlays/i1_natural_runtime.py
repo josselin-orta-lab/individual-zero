@@ -139,6 +139,9 @@ class I1Runtime(I1WaterPrudentRuntime):
         kwargs["i1_water_probe_enabled"] = True
         kwargs["i1_water_learning_enabled"] = True
         kwargs["i1_d2_prudence"] = False
+        # Quiescent, step-local accounting only. GoalManager itself owns the
+        # durable refractory and failure counters (M11 causal state).
+        self._i1_last_nonplannable_observation = None
         super().__init__(**kwargs)
 
     @property
@@ -166,6 +169,12 @@ class I1Runtime(I1WaterPrudentRuntime):
         if (self.goal_manager.active_goal is None
                 or self.goal_manager.active_goal.id != goal_for_planning.id):
             return proposal
+        # A world step can contain multiple paid cognitive cycles, but all
+        # those cycles observe the SAME physical capture. Count an inability
+        # to plan at most once for that observation and active goal.
+        observation_key = (capture.t_monde, goal_for_planning.id)
+        if self._i1_last_nonplannable_observation == observation_key:
+            return proposal
         # Native GoalManager failure accounting instead of H1's specialist
         # arm. Genuine unchanged first-person context is required; an
         # unmodelled effect is not misrepresented as a successful action.
@@ -189,6 +198,7 @@ class I1Runtime(I1WaterPrudentRuntime):
         # goal arbitration budget instead of minting a new H1 UC entitlement.
         if not self._charge(module="goal_manager", operation="goal_arbitrate"):
             return proposal
+        self._i1_last_nonplannable_observation = observation_key
         released = self.goal_manager.note_non_plannable(
             material_context_hash=context, t_monde=capture.t_monde
         )
