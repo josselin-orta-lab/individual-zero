@@ -294,6 +294,10 @@ def i1_consolidation_runner_copy_source(source: str) -> str:
             "        result = self._working\n",
         ),
         (
+            "            executor=lambda _base, _batch, _cut: deepcopy(result),\n",
+            "            executor=lambda _base, _batch, _cut: result,\n",
+        ),
+        (
             '        without_digest = {k: deepcopy(v) for k, v in state.items() if k != "state_digest"}\n',
             '        without_digest = {k: v for k, v in state.items() if k != "state_digest"}\n',
         ),
@@ -344,12 +348,9 @@ def i1_consolidation_digest_metadata_source(source: str) -> str:
             "            self._checkpoints[-1].candidate if self._checkpoints else self._initial\n"
             "        )\n"
             "        self._status = \"suspended\"\n",
-            "        restored_candidate = deepcopy(\n"
-            "            self._checkpoints[-1].candidate if self._checkpoints else self._initial\n"
-            "        )\n"
-            "        restored_digest = _digest(restored_candidate)\n"
-            "        self._candidate = restored_candidate\n"
-            "        self._candidate_digest_cached = restored_digest\n"
+            "        # Current candidate is already a private copy of the latest\n"
+            "        # validated checkpoint; unfinished runner work lives elsewhere.\n"
+            "        # Suspending does not replace the checkpoint candidate.\n"
             "        self._status = \"suspended\"\n",
         ),
         (

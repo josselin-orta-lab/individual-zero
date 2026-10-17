@@ -476,3 +476,35 @@ remain unchanged.
 **NON VALIDÉ**: static-source assessment only. Per request, no test, build,
 benchmark, CI or simulation was executed. The ordering equivalence and lower
 selection complexity are reasoned from the code, not measured experimentally.
+
+## I1 checkpoint retention and interruption/finalization copies (2026-10-17)
+
+Source inspection distinguishes the **necessary** independent
+`_initial`, `_candidate`, and validated `PassCheckpoint.candidate` trees
+from extra transient copies. Those persistent versions are deliberately
+retained: they are needed for rollback, chained evidence validation and
+M11 causal snapshot restoration. No snapshot schema or six-pass checkpoint
+was removed.
+
+In the generated I1 transaction only, `interrupt()` now changes the
+transaction to suspended without re-copying the last validated checkpoint.
+The private current candidate already equals the last checkpoint (or the
+independently owned initial state), because all transaction entry points
+copy into private state and a unit's unfinished working candidate exists
+only inside the separate pass runner. Neither `_candidate` nor checkpoint
+data is exposed by reference through public read methods. As the candidate
+itself is unchanged, its existing privately cached SHA-256 digest stays
+valid, and no extra whole-history digest is needed at wake.
+
+In the generated I1 runner only, `finalize_pass()` hands the runner-owned,
+unpublished result directly to the transaction's executor. The transaction
+still performs `_owned(result)` before validation and creates a separate
+deepcopy for its immutable checkpoint. The runner clears its working
+reference only after successful completion; no change occurs to pre-debit
+P-42 checks, handler evidence isolation, technical validation or
+journal publication.
+
+**NON VALIDÉ**: these are strictly static source deductions, not tested
+behavior or measured performance. Per request no tests, builds, CI,
+benchmarks or simulations were executed. I0 and the pinned I1 snapshot
+remain unchanged.
