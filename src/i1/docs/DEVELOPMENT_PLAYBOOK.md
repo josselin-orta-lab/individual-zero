@@ -51,3 +51,14 @@ For serialization, owner-roster, episode provenance, M11 cold reconstruction and
 Stop and report a blocker for missing ground truth provenance, hidden observation injection, compromised mortality, noncanonical M11 commit, incorrect owner publication, unaccounted UC or test omission. Do not mask those failures with replaying a life, relaxing tests or calling an inconclusive trace a scientific success.
 
 Registered smoke/full test vectors must pass a unique `--junit` path through `engine.json`; the CLI requires this option. See [TEST_PLAN.md](TEST_PLAN.md) before copying command lines into a shell.
+
+## Diagnostic: a documentary CI fails but I1 executes normally
+
+1. Pin the failed workflow **and exact head SHA**; identify the failing job and step. Do not infer that the natural I1 runtime failed merely because a generation-owned structural test was red.
+2. Run `python scripts/check_i1_handbook.py --json` to identify missing canonical Markdown, broken links, missing quoted source paths, and invalid explicit `file.py::Class.method` references. The checker uses Python AST; it does not execute the engine or prove that a referenced symbol behaves correctly.
+3. For a missing Python symbol, inspect its actual defining class/file in `src/i1/`. A module-level constant such as `PASSES` is not a callable; document its file and the constant separately rather than misrepresenting it as a method.
+4. When testing a **negative fixture**, ensure the fixture itself is valid Markdown. Use literal backtick delimiters around the injected code span. Escaping a closing backtick with a backslash can make the extracted symbol `Sample.missing\\` instead of `Sample.missing`, invalidating the test rather than demonstrating a broken-reference detection.
+5. Re-run `python -m unittest discover -s tests/i1 -p 'test_i1_handbook*.py' -v`, then `python tools/run_engine_checks.py --engine I1 --suite structure --execute --json`. Verify Python 3.11 and 3.12 on the *new* pushed SHA.
+6. Report separately: validator status, natural-I1 tests, scientific evidence, and any still-open documentation references. A green documentation check validates links and declared names only.
+
+**Negative test contract:** the fixture should contain a real temporary `Sample.existing` and intentionally reference `Sample.missing`. Assert both the reported path and the missing method. Avoid accepting an unrelated missing-directory error as proof that AST validation works.
