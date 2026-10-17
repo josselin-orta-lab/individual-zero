@@ -1466,3 +1466,48 @@ was changed.
 generation, tests, CI, simulations or benchmarks were executed. The
 smaller lookup and avoided no-op sorts are algorithmic deductions;
 runtime equivalence and measured performance are not established.
+
+## I1 CausalModel M11 cold validation: one pass for witnessed failures and successes (2026-10-17)
+
+Static inspection of `CausalModel._restore_causal_state_unchecked` showed two
+unnecessary repeated operations in authentication of an already persisted
+causal history. To validate `causal_revision_boundaries`, the old decoder
+sorted **every** published intervention by `(observed_step, identifier)`,
+then retained only the latest observed negative intervention for each
+contingency. To validate "tested" and "established" causal statuses, it
+scanned **every** intervention again for **each** qualifying contingency
+and retained only positive, self-compatible physically witnessed trials.
+
+The I1-only decoder now traverses the entire published intervention
+ledger **once**, accumulating (a) the latest negative boundary per
+contingency, and (b) a temporary index of all positive
+`self_compatible` trials per contingency. It still checks every
+published intervention against its canonical contingency, independently
+published agency comparison and any required matching closed physical
+drinking witness BEFORE admitting the statuses.
+
+Tie behavior is explicit and unchanged: sorting negatives by
+`(observed_step, identifier)` in ascending order and updating only
+for a strictly later world-step retained the **lexicographically smallest**
+negative ID at the most recent observed step. The new one-pass version
+chooses a later step, or the smaller identifier on an equal step, no
+matter the incoming iteration order. The full exact comparison with the
+persisted `boundary_index` still runs.
+
+A restored "tested" contingency still requires at least one published,
+physically compatible success. An "established" contingency still
+requires `n2` distinct successfully witnessed context signatures
+AFTER its exact latest negative boundary. The index stores ordinary
+temporary references to decoded, immutable trial records and never
+becomes published owner state, a remembered belief or a reusable
+cross-step cache. Pending reports are excluded just as before.
+
+The negative-boundary selection changes from O(I log I) to O(I)
+for I published interventions; success lookup changes from
+O(H × I) for H qualifying hypotheses to O(I + H + matching-success
+checks). These are source-level algorithmic comparisons, not
+measured benchmarks. Original I0 and Lab code are not modified.
+
+**NON VALIDÉ:** no generator, test suite, CI, simulation or benchmark
+was executed under the user's explicit instruction. Runtime, error
+equivalence and numerical performance gains remain unverified.

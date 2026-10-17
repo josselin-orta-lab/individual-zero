@@ -2978,15 +2978,25 @@ class CausalModel:
         # the same stable ordering and tie rule as phase-5 publication.
         # Pending interventions have not yet established new boundaries.
         witnessed_boundaries = {}
-        for trial in sorted(
-            trials.values(), key=lambda value: (value.observed_step, value.identifier)
-        ):
+        successful_by_contingency = {}
+        # Restore checks every published intervention. Do not sort the full
+        # history just to find the latest failed physical outcome. The old
+        # stable chronological rule keeps the smallest identifier among
+        # failures at the same last observed world-step.
+        for trial in trials.values():
             if trial.observed_effect:
+                if trial.attribution == "self_compatible":
+                    successful_by_contingency.setdefault(
+                        trial.contingency_ref, []
+                    ).append(trial)
                 continue
-            latest_step = witnessed_boundaries.get(
-                trial.contingency_ref, (-1, "")
-            )[0]
-            if trial.observed_step > latest_step:
+            prior = witnessed_boundaries.get(trial.contingency_ref)
+            if (
+                prior is None
+                or trial.observed_step > prior[0]
+                or (trial.observed_step == prior[0]
+                    and trial.identifier < prior[1])
+            ):
                 witnessed_boundaries[trial.contingency_ref] = (
                     trial.observed_step, trial.identifier,
                 )
@@ -3052,12 +3062,9 @@ class CausalModel:
                 "testee_par_intervention", "etablie",
             }:
                 continue
-            positive = [
-                row for row in trials.values()
-                if row.contingency_ref == contingency.ref
-                and row.observed_effect
-                and row.attribution == "self_compatible"
-            ]
+            # The temporary index was built from the entire independently
+            # validated published trial ledger, never pending interventions.
+            positive = successful_by_contingency.get(contingency.ref, ())
             if not positive:
                 raise ValueError(
                     "causal snapshot tested status lacks lived intervention"
