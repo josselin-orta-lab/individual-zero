@@ -207,14 +207,18 @@ class I1ActiveValueNeeds(ValueAndNeeds):
             ):
                 if not set(prior[field]).issubset(newer[field]):
                     raise ValueError("active procedure dropped its lived witnesses")
-        merged = deepcopy(baseline)
+        # The coordinator gives this rebaser an already-detached owner
+        # snapshot and makes its own validated copy of the result. Mutate only
+        # the orthogonal advisory field, never its online TD state.
+        unchanged = canonical_causal_bytes({
+            k: v for k, v in baseline.items() if k != ACTIVE_FORM_KEY
+        })
         if proposed:
-            merged[ACTIVE_FORM_KEY] = deepcopy(proposed)
+            baseline[ACTIVE_FORM_KEY] = deepcopy(proposed)
         else:
-            merged.pop(ACTIVE_FORM_KEY, None)
-        # All original Value/Needs and TD owner fields remain byte-for-byte.
-        preserved = {k: v for k, v in merged.items() if k != ACTIVE_FORM_KEY}
-        before = {k: v for k, v in baseline.items() if k != ACTIVE_FORM_KEY}
-        if canonical_causal_bytes(preserved) != canonical_causal_bytes(before):
+            baseline.pop(ACTIVE_FORM_KEY, None)
+        if canonical_causal_bytes({
+            k: v for k, v in baseline.items() if k != ACTIVE_FORM_KEY
+        }) != unchanged:
             raise ValueError("active advisory attempted to overwrite online learning")
-        return merged
+        return baseline
