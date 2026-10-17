@@ -8,6 +8,8 @@ on:
       - 'scripts/build_i1_fork.py'
       - 'scripts/test_i1_ci.py'
       - 'tests/test_i1_source_snapshot.py'
+      - 'scripts/test_i1_artifact_parity.py'
+      - 'tests/test_i1_m11_adversarial.py'
       - '.github/workflows/i1-current-ci.yml'
   workflow_dispatch:
     inputs:
@@ -39,6 +41,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install baseline
         run: python -m pip install -e .
+      - name: Checkout pre-migration M11 reference (exact I1 code, not past science)
+        uses: actions/checkout@v4
+        with:
+          ref: f0038a4021dacd3f9af3980d3115dc31b8ef7527
+          path: .i1-migration-reference
+          persist-credentials: false
+      - name: Exact generated I1 artifact parity
+        run: python scripts/test_i1_artifact_parity.py --reference-root .i1-migration-reference
       - name: Engine boundary and archived source integrity
         run: |
           python scripts/check_engine_repository.py --json
