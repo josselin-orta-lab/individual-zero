@@ -1,7 +1,7 @@
 name: I1 current-model validation
 on:
   pull_request:
-    branches: [main]
+    branches: [main, chore/archive-i0-historical-ci-20261017]
     paths:
       - 'src/i1/**'
       - 'src/i1_overlays/**'
@@ -39,6 +39,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install baseline
         run: python -m pip install -e .
+      - name: Engine boundary and archived source integrity
+        run: |
+          python scripts/check_engine_repository.py --json
+          python -m unittest discover -s tests -p test_engine_repository.py -v
       - name: Static syntax
         run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
       - name: Current I1 independent SMOKE/FULL
