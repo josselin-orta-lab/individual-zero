@@ -1951,16 +1951,36 @@ class CausalModel:
             observations.values(), self._pending_causal_observations,
         ))
 
+        # Most publication cycles have zero or one new observation. Build
+        # this transient index only for batches large enough to amortize it.
+        # It is not persistent evidence, memory or another causal owner.
+        index_physical_sources = len(self._pending_causal_observations) >= 3
+        first_physical: dict[tuple[str, str], CausalObservation] = {}
+        if index_physical_sources:
+            for prior in observations.values():
+                first_physical.setdefault(
+                    (prior.contingency_ref, prior.observation_ref), prior
+                )
+
         # Batch arrival never bypasses the prior published lifecycle level.
         for o in sorted(self._pending_causal_observations, key=lambda x: x.identifier):
             if o.predicate not in SAFETY_PREDICATES and o.predicate not in self.config.causal_predicates:
                 raise ValueError("unregistered causal predicate")
             key = (o.contingency_ref, o.observation_ref, "observation")
-            same_physical = (
-                v for v in observations.values()
-                if v.contingency_ref == o.contingency_ref
-                and v.observation_ref == o.observation_ref
-            )
+            # A colliding identifier may replace an earlier physical
+            # source in the mapping. Keep exact old scan semantics for the
+            # rest of this batch instead of retaining a stale indexed row.
+            if index_physical_sources and o.identifier in observations:
+                index_physical_sources = False
+            if index_physical_sources:
+                first = first_physical.get((o.contingency_ref, o.observation_ref))
+                same_physical = (first,) if first is not None else ()
+            else:
+                same_physical = (
+                    v for v in observations.values()
+                    if v.contingency_ref == o.contingency_ref
+                    and v.observation_ref == o.observation_ref
+                )
             for existing in same_physical:
                 # A second identifier for the same physical transition is
                 # harmless only if every claim about its provenance and
@@ -1993,6 +2013,10 @@ class CausalModel:
                     raise ValueError("observation mismatches canonical contingency")
                 credits.add(key)
                 observations[o.identifier] = o
+                if index_physical_sources:
+                    first_physical.setdefault(
+                        (o.contingency_ref, o.observation_ref), o
+                    )
                 published[o.contingency_ref] = old
                 continue
             # An identical physical alias has no second P-35 credit.
