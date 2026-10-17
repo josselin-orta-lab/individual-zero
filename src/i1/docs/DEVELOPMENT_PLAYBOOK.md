@@ -28,6 +28,20 @@ A change is acceptable only if it preserves autonomous, UC-priced, mortal and fi
 
 **Do not** append a food-first action. Inspect whether collection changed inventory but not physiological food, whether inventory is perceptible, whether need pressure reached the Goal Manager, whether `manger` was a permissible candidate and whether competition or gatekeeper excluded it. Verify actual command and `ate` outcome separately, then that a lived effect updates the appropriate memories or models without an oracle. Reproduce with `oasis` or `foraging` and vary only predeclared physical conditions.
 
+## Worked diagnostics by causal boundary
+
+| Observation | First code entrypoint to inspect | Next distinguishing check |
+| --- | --- | --- |
+| Physiological need never motivates | `src/i1/modules/value_needs.py::assess` and `produce` | Capture body, deficit, weight, `p_min`, `GoalManager.arbitrate`; separate a below-setpoint value from a published proposal. |
+| Proposed goal but no action | `src/i1/runtime/stage4_runtime.py::_phase_hooks` | Compare `option_registration`, `competition_cycle`, `ActionControl.admit`, `_dispatch_decision` and the real `WorldBody.apply` receipt; note UC refusals. |
+| Lived event missing from memory | `src/i1/runtime/journal_views.py::JournalViews.commit_autobiographical` | Verify technical event, allowed policy fields, single-attempt refs, projected event, memory owner update and UC; never read hidden journal fields as experience. |
+| No Stage10 owner change | `src/i1/runtime/stage10_runtime.py::_run_live_consolidation` and `_publish_live_consolidation` | Distinguish no pending episode, low pressure, refused scan charge, suspended transaction, rejected rebase, committed history and nonempty active owner diff. See [CONSOLIDATION_AND_PUBLICATION.md](CONSOLIDATION_AND_PUBLICATION.md). |
+| M11 cold recovery refused | `src/i1/runtime/m11_transactional_mortal.py::cold_recover` and `src/i1/runtime/sqlite_life_store.py::recover_current_bytes` | Audit identity, terminal status, pending intent, current-only committed hash, journal and owner roster; never replay from an older generation. |
+| UC suddenly rises | `src/i1/lab/compute_budget.py::CycleComputeBudget.charge` | Separate accepted from requested UC and P-43 from P-42; review per-operation `count` and refusal reason in [UC_AND_SCHEDULING.md](UC_AND_SCHEDULING.md). |
+| Apparent hidden-world knowledge | `src/i1/runtime/world.py::capture_local` and `src/i1/runtime/journal_views.py` | Compare operator-only truth with actual first-person capture and allowed autobiographical fields; use canary-negative tests, never inject the operator frame into a live individual. |
+
+These are **investigation entrypoints**, not claims that every field is exported by the standard world-preset report. `tools/inspect_i1_world_report.py` reports missing cognition as `NOT_OBSERVED`; add a reviewed passive observer before asserting the reason for any choice.
+
 ## Stop conditions
 
 Stop and report a blocker for missing ground truth provenance, hidden observation injection, compromised mortality, noncanonical M11 commit, incorrect owner publication, unaccounted UC or test omission. Do not mask those failures with replaying a life, relaxing tests or calling an inconclusive trace a scientific success.
