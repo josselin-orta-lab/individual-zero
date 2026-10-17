@@ -104,15 +104,13 @@ def generate_report(*, root: Path, report_dir: Path, engine: str,
         for key in ("structure", "m11", "source")
     }
     junit = {
-        key: _read_junit(
-            report_dir / f"{engine.lower()}-{suffix}-{python_version}.xml"
-        )
-        for key, suffix in (("smoke", ""), ("full", "full-"))
+        "smoke": _read_junit(
+            report_dir / f"{engine.lower()}-{python_version}.xml"
+        ),
+        "full": _read_junit(
+            report_dir / f"{engine.lower()}-full-{python_version}.xml"
+        ),
     }
-    # The original smoke JUnit is i1-3.11.xml, not i1--3.11.xml.
-    junit["smoke"] = _read_junit(
-        report_dir / f"{engine.lower()}-{python_version}.xml"
-    )
     all_evidence = [*suite_evidence.values(), *junit.values()]
     failures = any(e["status"] in ("INVALID", "FAIL") for e in all_evidence)
     missing = [name for name, item in {**suite_evidence, **junit}.items()

@@ -90,12 +90,10 @@ jobs:
           assert int(suite.attrib["failures"]) == 1, suite.attrib
           assert int(suite.attrib["errors"]) == 1, suite.attrib
           PY
-      - name: Current I1 M11 cold recovery
-        run: python -m unittest discover -s tests/i1 -p test_i1_natural_m11_cold_recovery.py -v
-      - name: Current I1 M11 adversarial COMMIT and irreversible death
-        run: python -m unittest discover -s tests/i1 -p test_i1_m11_adversarial.py -v
-      - name: Current I1 generated-world separation
-        run: python -m unittest discover -s tests/i1 -p test_i1_generated_isolation.py -q
+      - name: Current I1 authenticated and adversarial M11 (declared suite)
+        run: python tools/run_engine_checks.py --engine I1 --suite m11 --execute --json > reports/i1-m11-${{ matrix.python-version }}.json
+      - name: Current I1 generated-world separation (declared suite)
+        run: python tools/run_engine_checks.py --engine I1 --suite source --execute --json > reports/i1-source-${{ matrix.python-version }}.json
       - name: I0 baseline non-regression (archived fixtures, unchanged bytes)
         run: |
           cp -a archive/i0/lab src/lab

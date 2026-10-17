@@ -60,6 +60,21 @@ class CampaignEvidenceTests(unittest.TestCase):
                                 engine="I1", python_version="3.12", env={})
                 ["software"]["status"], "EVIDENCE_FAILURE")
 
+    def test_full_junit_filename_matches_current_ci(self):
+        with TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            (folder / "i1-full-3.11.xml").write_text(
+                '<testsuite tests="3" failures="0" errors="0">'
+                '<testcase name="a"/><testcase name="b"/>'
+                '<testcase name="c"/></testsuite>'
+            )
+            report = generate_report(root=ROOT, report_dir=folder,
+                                     engine="I1", python_version="3.11", env={})
+            self.assertEqual(report["software"]["junit"]["full"]["status"], "PASS")
+            self.assertEqual(report["software"]["junit"]["full"]["tests"], 3)
+            self.assertIn("smoke", report["software"]["not_observed"])
+            self.assertNotIn("full", report["software"]["not_observed"])
+
     def test_wrong_generation_is_refused(self):
         with TemporaryDirectory() as tmp:
             with self.assertRaises(ValueError):
