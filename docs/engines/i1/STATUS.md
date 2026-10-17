@@ -45,3 +45,9 @@
 Update this page with factual PR/commit links and new unresolved issues at
 the end of each campaign. Do not mark a scientific property achieved on the
 strength of software tests alone. No automated rollback of living states.
+
+## Campagne de structuration #254, tranche 2
+
+Les suites logicielles du moteur sont déclarées dans `src/i1/engine.json` et planifiées/exécutées par `tools/run_engine_checks.py` : `structure`, `smoke`, `full`, `m11` et `source`. Le mode par défaut prépare les commandes sans les exécuter ; seul `--execute` exécute les vecteurs Python prédéfinis sans shell. Les générations non actives et non enregistrées sont refusées. L'outil ne délivre aucun GO scientifique.
+
+La CI [#39039120881](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39039120881) valide le commit `9df88896f298cdf45e434d721a67345c3c71b8a7` sur Python 3.11 et 3.12. L'outil de squelette `tools/new_engine.py` reste inerte et non enregistreur : I2 n'a pas été créé ni activé. Les prochaines priorités organisationnelles restent la traçabilité des campagnes, la séparation des tests par génération et la finalisation prudente du générateur transitoire.
