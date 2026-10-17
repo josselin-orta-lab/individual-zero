@@ -263,7 +263,7 @@ def i1_m11_active_publication_custody_source(source: str) -> str:
         raise RecoveryBlocked("missing canonical I1 consolidated active forms")
     forms = history["forms"]
     from .i1_cognitive_publication import (
-        build_consolidated_owner_forms, validate_owner_rows,
+        build_consolidated_owner_form, validate_owner_rows,
     )
     required = {"value_needs", "causal_model", "perception", "metacognition_health"}
     if set(forms) not in (set(), required):
@@ -285,17 +285,14 @@ def i1_m11_active_publication_custody_source(source: str) -> str:
             )):
         raise RecoveryBlocked("I1 active owner and consolidated history diverged")
     names = ("causal_model", "perception", "metacognition_health")
-    recomputed = (
-        build_consolidated_owner_forms(history) if forms
-        else {name: [] for name in names}
-    )
     for name in names:
         published = forms.get(name, [])
+        recomputed = build_consolidated_owner_form(history, name) if forms else []
         live = runtime._i1_active_owner_views[name].observed_consolidated()
         validate_owner_rows(name, published)
         validate_owner_rows(name, live)
         if (canonical_causal_bytes(published)
-                != canonical_causal_bytes(recomputed[name])
+                != canonical_causal_bytes(recomputed)
                 or canonical_causal_bytes(published)
                 != canonical_causal_bytes(live)):
             # An empty private history must NEVER conceal a live published
