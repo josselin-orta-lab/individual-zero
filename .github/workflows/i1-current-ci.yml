@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   current-i1:
-    name: I1 natural SMOKE (Python ${{ matrix.python-version }})
+    name: I1 natural SMOKE + FULL (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -43,6 +43,9 @@ jobs:
         run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
       - name: Current I1 independent SMOKE/FULL
         run: python scripts/test_i1_ci.py --mode ${{ github.event.inputs.mode || 'smoke' }} --seed 246 --junit reports/i1-${{ matrix.python-version }}.xml
+      - name: I1 natural FULL (multiple autonomous mortal lives)
+        if: github.event_name == 'pull_request'
+        run: python scripts/test_i1_ci.py --mode full --seed 247 --junit reports/i1-full-${{ matrix.python-version }}.xml
       - name: Harness detects controlled failures
         run: |
           python - <<'PY'
