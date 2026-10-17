@@ -24,13 +24,13 @@ class Stage10CanonicalPublicationTests(unittest.TestCase):
                   b"        coordinator = Stage10PublicationCoordinator(\n"
                   b"            owner=True)\n"
                   b"        canonical = type(self).__name__ == \"I1Runtime\"\n"
-                  b"        if ((not canonical and candidate.get(\"forms\"):\n"
+                  b"        if ((not canonical and candidate.get(\"forms\")\n"
                   b"            return None\n")
         after = (b"    def publish(self):\n"
                  b"        canonical = type(self).__name__ == \"I1Runtime\"\n"
                  b"        coordinator = Stage10PublicationCoordinator(\n"
                  b"            owner=True)\n"
-                 b"        if ((not canonical and candidate.get(\"forms\"):\n"
+                 b"        if ((not canonical and candidate.get(\"forms\")\n"
                  b"            return None\n")
         self.assertTrue(parity._approved_stage10_initialization_move(before, after))
         self.assertFalse(parity._approved_stage10_initialization_move(before, after + b" # other change"))
