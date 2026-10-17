@@ -15,6 +15,8 @@ on:
       - 'tools/run_engine_checks.py'
       - 'tools/campaign_report.py'
       - 'tools/check_tool_inventory.py'
+      - 'tools/scan_script_dependencies.py'
+      - 'config/script-custody.json'
       - 'config/tool-inventory.json'
       - 'scripts/**'
       - 'docs/engines/i1/**'
@@ -77,6 +79,10 @@ jobs:
           python tools/run_engine_checks.py --engine I1 --suite structure --execute --json > reports/i1-structure-${{ matrix.python-version }}.json
       - name: Script inventory without historical reactivation
         run: python tools/check_tool_inventory.py
+      - name: Static script custody and dependency audit
+        run: |
+          mkdir -p reports
+          python tools/scan_script_dependencies.py --output reports/i1-script-dependencies-${{ matrix.python-version }}.json --markdown-output reports/i1-script-dependencies-${{ matrix.python-version }}.md
       - name: Static syntax
         run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
       - name: Frozen I0 and versioned Lab source guard
