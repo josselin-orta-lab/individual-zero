@@ -605,13 +605,13 @@ def generate(output: Path) -> dict[str, object]:
                 # exact I1Runtime type in this separate cold-install function,
                 # not only in birth/cold-factory admission scopes.
                 cold_owner_anchor = (
-                    '    current_owner_ids = {o.owner_id: o for o in runtime.causal_owners}\\n'
+                    '    current_owner_ids = {o.owner_id: o for o in runtime.causal_owners}\n'
                 )
                 if transformed.count(cold_owner_anchor) != 1:
                     raise ValueError("unreviewed M11 cold owner import scope")
                 transformed = transformed.replace(
                     cold_owner_anchor,
-                    '    from .i1_natural_runtime import I1Runtime\\n'
+                    '    from .i1_natural_runtime import I1Runtime\n'
                     + cold_owner_anchor,
                 )
                 cold_hook = '        if key == "i1_lived_water_model":'
