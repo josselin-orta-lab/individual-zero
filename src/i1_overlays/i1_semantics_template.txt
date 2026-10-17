@@ -477,11 +477,45 @@ class LivedSixPassAlgorithm:
             if event_ref in replayed:
                 raise ValueError("cannot replay physical event twice in one pass")
             replayed.append(event_ref)
-            state.setdefault("private_replay_observations",[]).append({
+            # Retain a very narrow first-person observation that a
+            # future owning module can actually consult. No Lab world,
+            # undisclosed cause, predicted safety or external verifier.
+            observation = None
+            if item["kind"] == "world_transition_experienced":
+                pos = item.get("position_after")
+                body = item.get("body_after")
+                keys = ("energy", "food", "water", "integrity")
+                if (not isinstance(pos, Mapping)
+                        or any(type(pos.get(k)) is not int for k in ("x", "y"))
+                        or not isinstance(body, Mapping)
+                        or any(type(body.get(k)) not in (int, float)
+                               or not isfinite(body[k]) for k in keys)):
+                    raise ValueError("physical perception lacks lived body/position")
+                observation = {
+                    "position": [pos["x"], pos["y"]],
+                    "body": {key: float(body[key]) for key in keys},
+                }
+            elif item["kind"] == "agency_comparison":
+                comparison = item.get("data")
+                if (type(comparison) is not dict
+                        or comparison.get("status") not in (
+                            "conforming", "nonconforming", "indeterminable"
+                        )
+                        or type(comparison.get("attribution")) is not str
+                        or not 0 < len(comparison["attribution"]) <= 64):
+                    raise ValueError("agency comparison lacks observed judgement")
+                observation = {
+                    "status": comparison["status"],
+                    "attribution": comparison["attribution"],
+                }
+            entry = {
                 "episode_ref":ref,"event_ref":event_ref,
                 "event_kind":item["kind"],
                 "projection_digest":sha256_hex(canonical_causal_bytes(item)),
-            })
+            }
+            if observation is not None:
+                entry["lived_observation"] = observation
+            state.setdefault("private_replay_observations",[]).append(entry)
         elif name=="rule_extraction":
             all_rules={r["id"]:r for r in state.get("hypotheses",[])}
             for rule_ref,item in self._extract_episode_rules(unit.episode_refs[0],events,cut):
