@@ -63,7 +63,7 @@ class I1GeneratedIsolationTests(unittest.TestCase):
         with TemporaryDirectory() as folder:
             generate(Path(folder))
             self.assertIn("from i0.interfaces import PrimitiveCommand",
-                          (ROOT / "src/lab/world.py").read_text())
+                          (ROOT / "archive/i0/lab/world.py").read_text())
             self.assertIn("from i1.interfaces import PrimitiveCommand",
                           (Path(folder) / "i1lab/world.py").read_text())
             self.assertIn("from i1.modules", (
