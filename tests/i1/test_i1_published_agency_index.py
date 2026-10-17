@@ -21,7 +21,7 @@ from types import SimpleNamespace as NS
 from i1.modules.causal_model import CausalModel, CausalModelConfig
 
 config = CausalModelConfig(version="index-test", n1=1, n2=1, n_sec=1, m_sec=1)
-source = textwrap.dedent(inspect.getsource(CausalModel.established_prediction_corrections))
+source = inspect.getsource(CausalModel.established_prediction_corrections)
 new_a = '''        # Derived, read-only index of already published agency evidence.
         # Rebuild on every query: no stale cache, no new causal owner, and
         # preserve the original lexical evidence-ID ordering within keys.
@@ -47,7 +47,7 @@ new_b = '''            for report in published_by_action.get(
 assert source.count(new_a) == source.count(new_b) == 1
 former = source.replace(new_a, "", 1).replace(new_b, old_b, 1)
 ns = dict(CausalModel.established_prediction_corrections.__globals__)
-exec("from __future__ import annotations\n" + former, ns)
+exec("from __future__ import annotations\n" + textwrap.dedent(former), ns)
 baseline = ns["established_prediction_corrections"]
 
 for noise in (0, 16, 128, 512):
