@@ -576,6 +576,10 @@ class WorldBody:
 
         visible_entities: list[VisibleEntity] = []
         for index, position in enumerate(sorted(self._water_sources)):
+            # Keep the globally ranked entity ID, but allocate only entities
+            # inside the first-person perceptual field.
+            if position not in local_positions:
+                continue
             visible_entities.append(
                 VisibleEntity(
                     entity_id=f"water_source:{index}",
@@ -598,6 +602,10 @@ class WorldBody:
                     )
                 )
         for index, position in enumerate(sorted(self._creatures)):
+            # Keep the globally ranked entity ID, but allocate only entities
+            # inside the first-person perceptual field.
+            if position not in local_positions:
+                continue
             visible_entities.append(
                 VisibleEntity(
                     entity_id=f"creature:{index}",
@@ -607,6 +615,10 @@ class WorldBody:
                 )
             )
         for index, position in enumerate(sorted(self._shelters)):
+            # Keep the globally ranked entity ID, but allocate only entities
+            # inside the first-person perceptual field.
+            if position not in local_positions:
+                continue
             visible_entities.append(
                 VisibleEntity(
                     entity_id=f"shelter:{index}",
