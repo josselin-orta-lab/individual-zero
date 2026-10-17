@@ -2,7 +2,10 @@
 import importlib.util
 from collections import deque
 from pathlib import Path
+import json
+import os
 import random
+import statistics
 import time
 import unittest
 
@@ -36,6 +39,42 @@ class Stage6BFSDequeTests(unittest.TestCase):
                             seen.add(child)
                             source.append(child)
                 self.assertEqual(old_visit, new_visit)
+
+    def test_fifo_cost_microbenchmark_optional(self):
+        """Informational CPU-only benchmark; timings cannot fail the CI."""
+        if os.environ.get("I1_STAGE6_BFS_BENCH") != "1":
+            return
+        measurements = []
+        for size in (32, 256, 1024, 4096, 8192):
+            old_ns, new_ns = [], []
+            expected = size * (size - 1) // 2
+            for iteration in range(9):
+                cases = [("list", old_ns), ("deque", new_ns)]
+                if iteration % 2:
+                    cases.reverse()
+                for kind, samples in cases:
+                    q = list(range(size)) if kind == "list" else deque(range(size))
+                    total = 0
+                    start = time.perf_counter_ns()
+                    while q:
+                        total += q.pop(0) if kind == "list" else q.popleft()
+                    elapsed = time.perf_counter_ns() - start
+                    self.assertEqual(total, expected)
+                    samples.append(elapsed / size)
+            old = statistics.median(old_ns)
+            new = statistics.median(new_ns)
+            measurements.append({
+                "queued_states": size,
+                "old_ns_per_dequeue": round(old, 2),
+                "deque_ns_per_dequeue": round(new, 2),
+                "ratio": round(old / new, 2) if new else None,
+            })
+        print("I1_STAGE6_BFS_BENCH_JSON " + json.dumps({
+            "kind": "isolated_FIFO_CPU_microbenchmark_not_full_planning",
+            "python": os.sys.version.split()[0],
+            "repetitions": 9,
+            "workloads": measurements,
+        }, sort_keys=True), flush=True)
 
     def test_exact_parity_helper_rejects_unrelated_drift(self):
         spec = importlib.util.spec_from_file_location(
