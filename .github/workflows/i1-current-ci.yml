@@ -1,7 +1,7 @@
 name: I1 current-model validation
 on:
   pull_request:
-    branches: [main, chore/archive-i0-historical-ci-20261017]
+    branches: [main, chore/archive-i0-historical-ci-20261017, chore/engine-generations-tooling-20261017]
     paths:
       - 'src/i1/**'
       - 'src/i1/runtime/**'
