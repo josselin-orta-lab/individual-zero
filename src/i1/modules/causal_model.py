@@ -2086,7 +2086,8 @@ class CausalModel:
             }
             if len(confirmed) < self.config.n1:
                 continue
-            if sum(x.effect_present for x in e.values()) * len(b) <= (
+            # Already counted distinct positive exposed identifiers above.
+            if len(confirmed) * len(b) <= (
                 sum(y.effect_present for y in b.values()) * len(e)
             ):
                 continue
