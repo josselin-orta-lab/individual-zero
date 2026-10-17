@@ -16,6 +16,11 @@ from .determinism import canonical_causal_bytes, sha256_hex
 ACTIVE_FORM_KEY = "i1_active_observed_procedures"
 ACTIVE_FORM_SCHEMA_KEY = "i1_active_observed_procedures_schema"
 SCHEMA = "i1-observed-procedural-advisory-v1"
+# The coordinator publishes all four forms as ONE validated candidate.
+# Value/Needs owns only its own form, never the other owners' state.
+EXPECTED_ACTIVE_OWNERS = frozenset({
+    "value_needs", "causal_model", "perception", "metacognition_health",
+})
 _SOURCE_FIELDS = frozenset({
     "id", "plan_signature", "primitive", "parameters", "observed_field",
     "evidence_scope", "goal_success_inferred", "safety_certified",
@@ -146,7 +151,7 @@ class I1ActiveValueNeeds(ValueAndNeeds):
         """
         if (type(candidate) is not dict or type(baseline) is not dict
                 or type(candidate.get("forms")) is not dict
-                or set(candidate["forms"]) != {"value_needs"}
+                or set(candidate["forms"]) != EXPECTED_ACTIVE_OWNERS
                 or type(candidate.get("procedural")) is not list
                 or baseline.get(ACTIVE_FORM_SCHEMA_KEY) != SCHEMA):
             raise ValueError("I1 active form requires one versioned canonical owner")
