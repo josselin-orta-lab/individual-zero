@@ -243,3 +243,7 @@ Identified optimization opportunities, ordered by safety:
 5. Unchanged I0/I1 source snapshot and Lab input must remain isolated. Any optimization affecting the runtime belongs in generated I1-only code, never the canonical I0 reference.
 
 **Evidence limit:** no benchmark, generator invocation, new unit tests, full-life execution or M11 restore was conducted in this pass per the operator's existing no-new-tests restriction. Therefore no numerical speed-up is claimed. Optimization is committed as a source change only; PR #246 remains draft and scientifically unvalidated.
+
+## Follow-up: constant-time waking backlog count
+
+Commit `a1ac7627` removes another per-waking-step full scan of closed Memory episodes. Under the canonical living I1 append-only episode contract and charged Stage10 selection of existing closed episode IDs, `pending = memory.episode_count - len(slow_history.committed_episode_refs())` computes the same backlog in O(1) time; a negative count fails closed. The number of episodes for memory saturation is reused from the same immutable count. The existing fully charged sleep selection still reads actual evidence; no P-42 costs are reduced and no causal owner is bypassed. Performance improvement remains unbenchmarked and generated code remains unexecuted. A scientific or technical GO is not claimed.
