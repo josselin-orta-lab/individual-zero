@@ -98,6 +98,47 @@ def i1_physiology_source(source: str) -> str:
         source = source.replace(original, replacement)
     return source
 
+def i1_committed_history_metadata_source(source: str) -> str:
+    """Generated I1-only SlowHistory: O(1) immutable committed-ref access.
+
+    The cached frozenset is owned by the same SlowHistory instance, derived
+    exclusively at the canonical birth and every checked restore. It is not
+    a new writer, snapshot source, or cognitive read with different UC rules.
+    """
+    birth = '        self._lineage: list[dict[str, object]] = []\\n'
+    birth_new = (
+        birth + '        self._i1_committed_refs = frozenset(\\n'
+        '            self._current_state["consolidated_episode_refs"]\\n'
+        '        )\\n'
+    )
+    if source.count(birth) != 1:
+        raise ValueError("unreviewed SlowHistory I1 birth metadata")
+    source = source.replace(birth, birth_new)
+    read = '    def read_committed(self) -> object:\\n'
+    method = (
+        '    def committed_episode_refs(self) -> frozenset[str]:\\n'
+        '        """Read exact committed identifiers without copying private forms."""\\n'
+        '        return self._i1_committed_refs\\n\\n'
+    )
+    if source.count(read) != 1:
+        raise ValueError("unreviewed SlowHistory committed-ref read")
+    source = source.replace(read, method + read)
+    restore = '        # Assign only after validating the entire replacement.\\n'
+    amended = (
+        '        refs = current.get("consolidated_episode_refs")\\n'
+        '        if (type(refs) is not list\\n'
+        '                or any(type(ref) is not str or not ref for ref in refs)\\n'
+        '                or len(refs) != len(set(refs))):\\n'
+        '            raise ValueError("unverified consolidated episode references")\\n'
+        '        committed = frozenset(refs)\\n'
+        + restore
+        + '        self._i1_committed_refs = committed\\n'
+    )
+    if source.count(restore) != 1:
+        raise ValueError("unreviewed SlowHistory committed-ref restore")
+    return source.replace(restore, amended)
+
+
 def i1_canonical_active_value_source(source: str) -> str:
     """Switch the generated Stage4 value owner only for natural I1.
 
@@ -324,6 +365,9 @@ def generate(output: Path) -> dict[str, object]:
                 if material.count("class LivedSixPassAlgorithm:") != 1:
                     raise ValueError("invalid isolated semantic compiler template")
                 transformed = rewrite(material)
+            if (output_package == "i1lab"
+                    and relative.as_posix() == "consolidation_publication.py"):
+                transformed = i1_committed_history_metadata_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "stage4_runtime.py"):
                 transformed = i1_canonical_active_value_source(transformed)
