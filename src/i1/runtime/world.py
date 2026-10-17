@@ -542,14 +542,22 @@ class WorldBody:
         if t_monde < 1:
             raise ValueError("t_monde must be >= 1")
 
+        # Stage-3 only sees the current cell and four cardinal neighbors.
+        # Inspect every resource once rather than re-scanning the entire world
+        # for each of those cells. This lookup is ephemeral observation work:
+        # it is never retained by the individual or populated from Oracle data.
+        local_positions = {self._position}
+        local_positions.update(
+            self._position.moved(direction)
+            for direction in ("north", "south", "east", "west")
+        )
+        local_resource_rows: dict[Position, list[tuple[str, int]]] = {}
+        for (position, kind), quantity in self._resources.items():
+            if position in local_positions and quantity > 0:
+                local_resource_rows.setdefault(position, []).append((kind, quantity))
+
         def resource_kinds(position: Position) -> tuple[str, ...]:
-            return tuple(
-                sorted(
-                    kind
-                    for (resource_position, kind), quantity in self._resources.items()
-                    if resource_position == position and quantity > 0
-                )
-            )
+            return tuple(sorted(kind for kind, _ in local_resource_rows.get(position, ())))
 
         adjacent: list[LocalCell] = []
         for direction in ("north", "south", "east", "west"):
@@ -576,20 +584,19 @@ class WorldBody:
                     properties={},
                 )
             )
-        for (position, kind), quantity in sorted(
-            self._resources.items(),
-            key=lambda row: (row[0][0].x, row[0][0].y, row[0][1]),
-        ):
-            if quantity <= 0:
-                continue
-            visible_entities.append(
-                VisibleEntity(
-                    entity_id=f"{kind}:{position.x}:{position.y}",
-                    entity_type=kind,
-                    position=position,
-                    properties={"quantity": quantity},
+        # Visible resources already belong to the local field. Their final
+        # entity order is established below by (entity_type, entity_id), so
+        # sorting remote resource cells cannot influence the capture.
+        for position, resources in local_resource_rows.items():
+            for kind, quantity in resources:
+                visible_entities.append(
+                    VisibleEntity(
+                        entity_id=f"{kind}:{position.x}:{position.y}",
+                        entity_type=kind,
+                        position=position,
+                        properties={"quantity": quantity},
+                    )
                 )
-            )
         for index, position in enumerate(sorted(self._creatures)):
             visible_entities.append(
                 VisibleEntity(
