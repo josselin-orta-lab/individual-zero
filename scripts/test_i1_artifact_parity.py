@@ -228,6 +228,26 @@ def _approved_agency_publication_duplicate_index(before: bytes, after: bytes) ->
             and original.replace(old, new, 1) == changed)
 
 
+def _approved_numeric_publication_index(before: bytes, after: bytes) -> bool:
+    """Allow exactly the transient numeric physical-reference index."""
+    old = "        numeric = dict(self._numeric_witnesses)\n        for witness in sorted(\n            self._pending_numeric_witnesses, key=lambda row: row.identifier,\n        ):\n            witness.validate()\n            if (\n                witness.identifier in numeric\n                or any(\n                    prior.transition_event_ref == witness.transition_event_ref\n                    for prior in numeric.values()\n                )\n            ):\n                raise ValueError(\"duplicate published physical numeric witness\")\n            numeric[witness.identifier] = witness"
+    new = "        numeric = dict(self._numeric_witnesses)\n        # One transient index per publication. The identifier guard rejects\n        # overwrites, so every accepted physical reference stays present.\n        numeric_transition_refs = {\n            prior.transition_event_ref for prior in numeric.values()\n        }\n        for witness in sorted(\n            self._pending_numeric_witnesses, key=lambda row: row.identifier,\n        ):\n            witness.validate()\n            if (\n                witness.identifier in numeric\n                or witness.transition_event_ref in numeric_transition_refs\n            ):\n                raise ValueError(\"duplicate published physical numeric witness\")\n            numeric[witness.identifier] = witness\n            numeric_transition_refs.add(witness.transition_event_ref)"
+    original, candidate = before.decode("utf-8"), after.decode("utf-8")
+    return (original.count(old) == 1 and candidate.count(new) == 1
+            and original.replace(old, new, 1) == candidate)
+
+
+def _reference_numeric_publication(before: bytes) -> bytes:
+    """Reconstruct the already approved agency publication index exactly."""
+    # The previous migration exception still constrains the historical block.
+    old = "        agency = dict(self._agency_evidence)\n        for report in sorted(\n            self._pending_agency_evidence,\n            key=lambda value: (value.observed_t_monde, value.event_ref),\n        ):\n            if report.event_ref in {v.event_ref for v in agency.values()}:\n                raise ValueError(\"duplicate published physical agency observation\")\n            agency[report.identifier] = report"
+    new = "        agency = dict(self._agency_evidence)\n        # Build an ephemeral index of physical references present in the\n        # current mapping. Identifier replacements must not leave stale refs.\n        agency_event_refs = {report.event_ref for report in agency.values()}\n        for report in sorted(\n            self._pending_agency_evidence,\n            key=lambda value: (value.observed_t_monde, value.event_ref),\n        ):\n            if report.event_ref in agency_event_refs:\n                raise ValueError(\"duplicate published physical agency observation\")\n            displaced = agency.get(report.identifier)\n            if displaced is not None and not any(\n                other.event_ref == displaced.event_ref\n                for key, other in agency.items()\n                if key != report.identifier\n            ):\n                # An overwritten report no longer occupies its old source.\n                # This rare fallback preserves exact previous semantics.\n                agency_event_refs.discard(displaced.event_ref)\n            agency[report.identifier] = report\n            agency_event_refs.add(report.event_ref)"
+    text = before.decode("utf-8")
+    if text.count(old) != 1:
+        raise ValueError("agency publication reference drift")
+    return text.replace(old, new, 1).encode("utf-8")
+
+
 def _reference_agency_index(before: bytes) -> bytes:
     """Reconstruct the previously approved causal-query transformation."""
     source = before.decode("utf-8")
@@ -271,8 +291,10 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/causal_model.py"
-                    and _approved_agency_publication_duplicate_index(
-                        _reference_agency_index((old_root / rel).read_bytes()),
+                    and _approved_numeric_publication_index(
+                        _reference_numeric_publication(
+                            _reference_agency_index((old_root / rel).read_bytes())
+                        ),
                         (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/stage6_planning.py"

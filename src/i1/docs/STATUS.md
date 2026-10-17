@@ -130,3 +130,16 @@ références dupliquées et séquences courtes exhaustives. Le chemin commun
 sans remplacement reste un contrôle O(1) par observation après construction
 initiale. La validation des deux versions Python sur le SHA corrigé et la
 fusion restent à constater ; aucun GO scientifique n'en découle.
+
+## PR #260 : index transitoire des témoins numériques
+
+La publication des témoins physiques numériques utilisait une recherche
+linéaire dans toutes les références déjà publiées pour chaque nouveau témoin.
+Le candidat ajoute un ensemble transitoire des `transition_event_ref` existants,
+mis à jour seulement après admission. Contrairement aux rapports AgencyEvidence,
+les témoins numériques interdisent déjà le remplacement d'identifiant; aucun
+cas d'éviction n'est autorisé. L'ordre, la validation, l'atomicité, la provenance
+et la persistance sont inchangés. Les tests différentiels couvrent les collisions
+dans l'historique et le lot, et des comparaisons exhaustives de petits lots.
+Le GO scientifique et les performances réelles restent non établis; la fusion
+attend les contrôles CI exacts Python 3.11 et 3.12.

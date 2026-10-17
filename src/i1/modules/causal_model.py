@@ -2287,19 +2287,22 @@ class CausalModel:
             agency[report.identifier] = report
             agency_event_refs.add(report.event_ref)
         numeric = dict(self._numeric_witnesses)
+        # One transient index per publication. The identifier guard rejects
+        # overwrites, so every accepted physical reference stays present.
+        numeric_transition_refs = {
+            prior.transition_event_ref for prior in numeric.values()
+        }
         for witness in sorted(
             self._pending_numeric_witnesses, key=lambda row: row.identifier,
         ):
             witness.validate()
             if (
                 witness.identifier in numeric
-                or any(
-                    prior.transition_event_ref == witness.transition_event_ref
-                    for prior in numeric.values()
-                )
+                or witness.transition_event_ref in numeric_transition_refs
             ):
                 raise ValueError("duplicate published physical numeric witness")
             numeric[witness.identifier] = witness
+            numeric_transition_refs.add(witness.transition_event_ref)
         self._published = published
         self._numeric_witnesses = numeric
         self._pending_numeric_witnesses.clear()
