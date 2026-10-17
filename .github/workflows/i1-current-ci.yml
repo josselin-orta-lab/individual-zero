@@ -1,0 +1,56 @@
+name: I1 current-model validation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/i1/**'
+      - 'src/i1_overlays/**'
+      - 'scripts/build_i1_fork.py'
+      - 'scripts/test_i1_ci.py'
+      - 'tests/test_i1_source_snapshot.py'
+      - '.github/workflows/i1-current-ci.yml'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Current I1 validation depth
+        type: choice
+        options: [smoke, full]
+        default: smoke
+permissions:
+  contents: read
+concurrency:
+  group: i1-current-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  current-i1:
+    name: I1 natural SMOKE (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install baseline
+        run: python -m pip install -e .
+      - name: Static syntax
+        run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
+      - name: Current I1 independent SMOKE/FULL
+        run: python scripts/test_i1_ci.py --mode ${{ github.event.inputs.mode || 'smoke' }} --seed 246 --junit reports/i1-${{ matrix.python-version }}.xml
+      - name: Current I1 generated-world separation
+        run: python -m unittest discover -s tests -p test_i1_generated_isolation.py -q
+      - name: I0 planning non-regression
+        run: python -m unittest discover -s tests -p test_stage6_planning.py -q
+      - name: JUnit diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-current-junit-${{ matrix.python-version }}
+          path: reports/*.xml
+          if-no-files-found: warn
