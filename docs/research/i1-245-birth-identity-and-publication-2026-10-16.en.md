@@ -226,3 +226,7 @@ CausalModel continues to receive first-person command/effect hypotheses only, wi
 ## Four-owner commit blocker removed
 
 Commit `1472c97e` fixes an incompatible validation gate in `I1ActiveValueNeeds.prepare_stage10_advisory_rebase`: the existing Value/Needs rebaser required the *entire* candidate forms map to contain only `value_needs`, which made every correctly formed four-owner publication fail. It now requires exactly the four registered keys (`value_needs`, `causal_model`, `perception`, `metacognition_health`) and continues to validate and own only the Value/Needs portion. This preserves the atomic four-owner coordinator contract and prevents publication of a partial unexpected owner roster. The fix is recorded, not executed; no additional tests or model lives were run.
+
+## M11 active owner parity applies before first publication
+
+Commit `f0d87bc5` closes a pre-genesis/cold-recovery inconsistency. Previously the M11 parity function checked the three new owner views only when committed SlowHistory `forms` was nonempty. A previously uncommitted active owner observation could therefore be captured with an empty committed form map. The generated I1 M11 now checks all three owner views in both cases, requiring each to be empty before the first publication and exactly equal to its already committed, validated counterpart thereafter. This check operates before transactional capture and after cold installation. Code is committed; no tests or simulated life were executed, and the whole PR remains draft/NO-GO.
