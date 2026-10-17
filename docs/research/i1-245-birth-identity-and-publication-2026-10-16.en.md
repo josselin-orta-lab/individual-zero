@@ -450,3 +450,29 @@ These rewrites apply only to the generated I1, not I0 or the retained
 unmodified source snapshot. Source anchors are guarded against drift.
 STATUS: NON VALIDÉ, source inspection only, no tests, build,
 CI, benchmark or simulated lives executed.
+
+## Static I1 consolidation backlog selection and private indexed projection (2026-10-17)
+
+The P-42 batch selector always computes and validates the priority score of
+every admitted, charged episode. It previously sorted the *entire* candidate
+list before keeping at most `maximum_episodes`. Generated I1 now uses
+`heapq.nsmallest` with the same complete ordering key:
+`(-score, -age_steps, episode_ref)`. All candidate inspections, score
+validation, quoted work, repetition accounting and unselected episodes remain
+unchanged. For N paid candidates and a small policy bound K, the selection
+phase is O(N log K) rather than a full O(N log N) sort; the earlier O(N)
+projection and scoring passes are intentionally retained.
+
+Inside I1's charged pending-index owner, the private `_IndexedEpisode`
+wrapper had copied its already owned payload when `as_dict` was called,
+followed immediately by the selector's independently validated deepcopy of
+the very same mapping. The wrapper now exposes the internal payload only to
+that private selection boundary; `_projection` still checks canonical shape,
+serializability and creates the detached snapshot stored by the selector.
+The public Memory Episode projection, `_pending`/`_ranked` independence,
+charged cursor, serialized snapshot fields, journal provenance and I0 all
+remain unchanged.
+
+**NON VALIDÉ**: static-source assessment only. Per request, no test, build,
+benchmark, CI or simulation was executed. The ordering equivalence and lower
+selection complexity are reasoned from the code, not measured experimentally.

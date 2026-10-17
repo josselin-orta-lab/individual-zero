@@ -227,6 +227,49 @@ def i1_committed_history_metadata_source(source: str) -> str:
     return source.replace(restore, amended)
 
 
+def i1_bounded_batch_selection_source(source: str) -> str:
+    """Select the same P-42 best episodes without sorting the whole backlog."""
+    import_anchor = "from dataclasses import dataclass\n"
+    old = (
+        "        priorities.sort(key=lambda item: (-item.score, -item.age_steps, item.episode_ref))\n"
+        "        selected = tuple(priorities[:cfg.maximum_episodes])\n"
+    )
+    new = (
+        "        # Full scores are still paid, computed and validated. Only the\n"
+        "        # policy-bounded best group is sorted at the end.\n"
+        "        selected = tuple(nsmallest(\n"
+        "            cfg.maximum_episodes, priorities,\n"
+        "            key=lambda item: (-item.score, -item.age_steps, item.episode_ref),\n"
+        "        ))\n"
+    )
+    if source.count(import_anchor) != 1 or source.count(old) != 1:
+        raise ValueError("unreviewed I1 bounded consolidation selection")
+    return source.replace(
+        import_anchor, import_anchor + "from heapq import nsmallest\n",
+    ).replace(old, new)
+
+
+def i1_pending_projection_copy_source(source: str) -> str:
+    """Keep exactly one detached copy of a trusted, indexed episode.
+
+    The private wrapper is consumed by ConsolidationBatchSelector._projection,
+    which validates the returned raw mapping and deepcopies it. Never change
+    the public Episode.as_dict contract or the paid pending-index ledger.
+    """
+    if source.count("class _IndexedEpisode:\n") != 1:
+        raise ValueError("unreviewed I1 pending index projection type")
+    old = "    def as_dict(self):\n        return deepcopy(self.payload)\n"
+    new = (
+        "    def as_dict(self):\n"
+        "        # Private view only: selector._projection validates and then\n"
+        "        # deepcopies this exact mapping before retaining it.\n"
+        "        return self.payload\n"
+    )
+    if source.count(old) != 1:
+        raise ValueError("unreviewed I1 pending projection copy site")
+    return source.replace(old, new)
+
+
 def i1_consolidation_runner_copy_source(source: str) -> str:
     """Avoid duplicating already detached private data in generated I1 only."""
     pairs = (
@@ -654,6 +697,12 @@ def generate(output: Path) -> dict[str, object]:
             if (output_package == "i1"
                     and relative.as_posix() == "modules/memory.py"):
                 transformed = i1_memory_recall_source(transformed)
+            if (output_package == "i1"
+                    and relative.as_posix() == "modules/consolidation_batch.py"):
+                transformed = i1_bounded_batch_selection_source(transformed)
+            if (output_package == "i1"
+                    and relative.as_posix() == "modules/consolidation_pending_index.py"):
+                transformed = i1_pending_projection_copy_source(transformed)
             if (output_package == "i1"
                     and relative.as_posix() == "modules/consolidation_pass_runner.py"):
                 transformed = i1_consolidation_runner_copy_source(transformed)
