@@ -174,7 +174,7 @@ class I1ActiveValueNeeds(ValueAndNeeds):
             raise ValueError("I1 active form requires one versioned canonical owner")
         proposed = candidate["forms"]["value_needs"]
         expected = sorted(
-            [deepcopy(row) for row in candidate["procedural"]
+            [row for row in candidate["procedural"]
              if type(row) is dict and row.get("state") == "compiled_private"],
             key=lambda row: row["id"],
         )

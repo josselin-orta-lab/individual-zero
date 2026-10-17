@@ -747,3 +747,30 @@ cache of trust. Original I0 and baseline Lab sources remain untouched.
 **NON VALIDÉ:** per instruction, no code generation, tests, CI runs,
 benchmarks or simulations were executed. Exact performance gains and
 runtime equivalence remain unmeasured.
+
+## Static Stage10 rollback-state and Value/Needs evidence comparison (2026-10-17)
+
+Further review showed that `Stage10PublicationCoordinator.publish()` first
+obtains a fully detached `SlowHistory.export_causal_state()` snapshot for
+rollback, then performs an unnecessary `deepcopy` of **that entire history**
+just to stage a new `current_version`, replace `current_state`, and append
+one provenance row to `lineage`. Generated I1lab now creates a shallow top
+level mapping and a new lineage list only, before replacing the new state.
+Neither the original `before_history` (needed for safe rollback) nor any
+existing lineage row is mutated. `SlowHistory.restore_causal_state()`
+continues full structure validation and creates independent copies of the
+new state and lineage before committing them. The separate temporary
+SlowHistory validation remains unchanged, as does the journal cut/receipt
+boundary.
+
+In the natural I1 Value/Needs rebaser, `expected` is built exclusively
+to compare the compiled procedural rows against the proposed already-private
+owner form. There is no mutation of these expected rows. Sorting can therefore
+operate on row references in its *own new list* rather than deep-copying
+each complete row, its source/trial references and nested context. Source
+provenance, exact comparison, advisory validation, unchanged online TD
+checks and final owner-copy boundaries all remain in place.
+
+**NON VALIDÉ:** no generated model, test, CI, benchmark or simulation was
+executed. This is a guarded source-only optimization; runtime parity and
+performance gains require future independent validation. I0 is unchanged.

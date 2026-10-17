@@ -197,6 +197,10 @@ def i1_publication_detached_candidate_source(source: str) -> str:
          "        # The transaction already validates and detaches its private candidate.\n        candidate = transaction.validated_candidate(\n            validator=technical_validator)\n"),
         ("        staged_history[\"current_state\"] = _copy_causal(prepared.candidate_history)\n",
          "        # SlowHistory.restore_causal_state independently validates and detaches\n        # this candidate before installing it as the current owned state.\n        staged_history[\"current_state\"] = prepared.candidate_history\n"),
+        (
+            "        staged_history = deepcopy(before_history)\n",
+            "        # The committed history export already owns its nested state.\n        # Copy only the lineage list we append to; rollback retains its own\n        # independent before_history and SlowHistory.restore still detaches.\n        staged_history = dict(before_history)\n        staged_history[\"lineage\"] = list(before_history[\"lineage\"])\n",
+        ),
     )
     for before, after in changes:
         if source.count(before) != 1:
