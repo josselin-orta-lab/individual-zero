@@ -262,6 +262,25 @@ def _reference_approved_physical_alias(before: bytes) -> bytes:
     return original.replace(old, new, 1).encode("utf-8")
 
 
+def _reference_approved_confirmed_count(before: bytes) -> bytes:
+    """Reconstruct the exact already approved P-35 count optimization."""
+    old = "            if sum(x.effect_present for x in e.values()) * len(b) <= (\n                sum(y.effect_present for y in b.values()) * len(e)\n            ):"
+    new = "            # Already counted distinct positive exposed identifiers above.\n            if len(confirmed) * len(b) <= (\n                sum(y.effect_present for y in b.values()) * len(e)\n            ):"
+    original = before.decode("utf-8")
+    if original.count(old) != 1:
+        raise ValueError("P-35 confirmed-count reference drift")
+    return original.replace(old, new, 1).encode("utf-8")
+
+
+def _approved_lived_review_predicate_dispatch(before: bytes, after: bytes) -> bool:
+    """Allow only mutually exclusive lived-review calls, preserving order."""
+    old = "            for review in (\n                self._lived_food_hypothesis_review(record, observations),\n                self._lived_hydration_hypothesis_review(record, observations),\n            )"
+    new = "            # Each reviewer requires a distinct predicate. Never invoke\n            # both expensive observation scans for the same contingency.\n            for review in (\n                (\n                    self._lived_food_hypothesis_review(record, observations)\n                    if record.predicate == \"toxic_item\" else\n                    self._lived_hydration_hypothesis_review(record, observations)\n                    if record.predicate == \"hydration_effect\" else None\n                ),\n            )"
+    original, candidate = before.decode("utf-8"), after.decode("utf-8")
+    return (original.count(old) == 1 and candidate.count(new) == 1
+            and original.replace(old, new, 1) == candidate)
+
+
 def _approved_confirmed_count_reuse(before: bytes, after: bytes) -> bool:
     """Only reuse the already built distinct positive-ID set count."""
     old = "            if sum(x.effect_present for x in e.values()) * len(b) <= (\n                sum(y.effect_present for y in b.values()) * len(e)\n            ):"
@@ -418,8 +437,9 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/causal_model.py"
-                    and _approved_confirmed_count_reuse(
-                        _reference_approved_physical_alias(
+                    and _approved_lived_review_predicate_dispatch(
+                        _reference_approved_confirmed_count(
+                            _reference_approved_physical_alias(
                             _reference_approved_active_context_cache(
                                 _reference_hydration_control_lookup(
                                     _reference_food_control_sort(
@@ -435,6 +455,7 @@ def verify(reference_root: Path) -> None:
                                     )
                                 )
                             )
+                        )
                         ),
                         (new_root / rel).read_bytes()
                     ))

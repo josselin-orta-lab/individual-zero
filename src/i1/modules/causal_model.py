@@ -2110,9 +2110,15 @@ class CausalModel:
             review
             for ref, record in sorted(original.items())
             if ref not in pending_review_refs
+            # Each reviewer requires a distinct predicate. Never invoke
+            # both expensive observation scans for the same contingency.
             for review in (
-                self._lived_food_hypothesis_review(record, observations),
-                self._lived_hydration_hypothesis_review(record, observations),
+                (
+                    self._lived_food_hypothesis_review(record, observations)
+                    if record.predicate == "toxic_item" else
+                    self._lived_hydration_hypothesis_review(record, observations)
+                    if record.predicate == "hydration_effect" else None
+                ),
             )
             if review is not None
         )
