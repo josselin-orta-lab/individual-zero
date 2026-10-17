@@ -155,17 +155,24 @@ def i1_m11_active_publication_custody_source(source: str) -> str:
                 runtime.value_needs.active_observed_procedures()
             )):
         raise RecoveryBlocked("I1 active owner and consolidated history diverged")
-    if forms:
-        recomputed = build_consolidated_owner_forms(history)
-        for name in ("causal_model", "perception", "metacognition_health"):
-            validate_owner_rows(name, forms[name])
-            if (canonical_causal_bytes(forms[name])
-                    != canonical_causal_bytes(recomputed[name])
-                    or canonical_causal_bytes(forms[name])
-                    != canonical_causal_bytes(
-                        runtime._i1_active_owner_views[name].observed_consolidated()
-                    )):
-                raise RecoveryBlocked("I1 active owner differs from published lived evidence")
+    names = ("causal_model", "perception", "metacognition_health")
+    recomputed = (
+        build_consolidated_owner_forms(history) if forms
+        else {name: [] for name in names}
+    )
+    for name in names:
+        published = forms.get(name, [])
+        live = runtime._i1_active_owner_views[name].observed_consolidated()
+        validate_owner_rows(name, published)
+        validate_owner_rows(name, live)
+        if (canonical_causal_bytes(published)
+                != canonical_causal_bytes(recomputed[name])
+                or canonical_causal_bytes(published)
+                != canonical_causal_bytes(live)):
+            # An empty private history must NEVER conceal a live published
+            # owner form. This parity applies before the first publication
+            # and to every authentic later SQLite generation.
+            raise RecoveryBlocked("I1 active owner differs from published lived evidence")
 
 
 '''
