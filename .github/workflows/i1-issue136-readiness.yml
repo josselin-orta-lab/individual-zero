@@ -1,13 +1,7 @@
 name: I1 issue136 water D0 scientific diagnostic
 
 on:
-  pull_request:
-    branches: [main, experiment/i1-isolated-model-fork-20261016]
-    paths:
-      - 'tests/test_i1_issue136_water_readiness.py'
-      - 'scripts/run_i1_issue136_water_d0.py'
-      - 'docs/research/i1-issue136-water-d0-prereg-2026-10-16.en.md'
-      - '.github/workflows/i1-issue136-readiness.yml'
+  # Historical research executable by explicit dispatch only.
   workflow_dispatch:
 
 permissions:

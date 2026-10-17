@@ -1,12 +1,6 @@
 name: I1 D2 epistemic risk validation
 on:
-  pull_request:
-    branches: [experiment/i1-issue136-d1b-transfer-20261016]
-    paths:
-      - 'src/i1_overlays/i1_d2_runtime.py'
-      - 'scripts/run_i1_issue136_d2.py'
-      - 'docs/research/i1-issue136-d2-prereg-2026-10-16.en.md'
-      - '.github/workflows/i1-issue136-d2.yml'
+  # Historical research executable by explicit dispatch only.
   workflow_dispatch:
 permissions:
   contents: read
