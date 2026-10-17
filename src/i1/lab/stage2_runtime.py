@@ -586,10 +586,11 @@ class ScriptedStage2Runtime:
             raise RuntimeError("operator capture requires a durable journal WAL")
         if self.scheduler.active_attempt is not None:
             raise RuntimeError("cannot capture an open world step")
-        entries = self.journal.entries
-        if not entries:
+        # Operator-only read: inspect the last immutable occurrence without
+        # copying the entire technical journal at every closed world step.
+        closure = next(self.journal.iter_entries_reversed(), None)
+        if closure is None:
             raise RuntimeError("no journaled closure")
-        closure = entries[-1]
         event = closure.causal_event
         if event["kind"] != "step_closed" or event["data"]["world_advance_count"] != 1:
             raise RuntimeError("latest journal event is not a physical step closure")
@@ -602,7 +603,7 @@ class ScriptedStage2Runtime:
             "attempt_ref": event["attempt_ref"],
             "journal_closure_hash": closure.event_hash,
             "journal_head_sha256": self.journal.head_hash,
-            "journal_event_count": len(entries),
+            "journal_event_count": self.journal.entry_count,
             "geometry": self.world.operator_world_geometry(),
         }
 
