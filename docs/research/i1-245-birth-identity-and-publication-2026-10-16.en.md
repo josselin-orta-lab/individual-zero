@@ -604,3 +604,22 @@ source site and applies only to generated I1lab. No I0 code changed.
 
 **NON VALIDÉ:** static inspection only; no generator, tests, CI,
 benchmarks or simulations were executed. Gains remain unmeasured.
+
+## I1 selective M11 owner-export detachment (2026-10-17)
+
+The I1-generated SQLite current-state capture now skips one redundant
+full-state deepcopy for **exactly** two previously audited owner types:
+`SlowHistory` and `ConsolidationSlot`. The former exports independently
+deepcopied current-state and lineage trees; the latter exports a new
+envelope whose active transaction already returns a completely detached
+private JSON tree. No subclass or unrecognized owner is exempted.
+All other owners still receive the prior defensive deepcopy, and every
+captured export still undergoes canonical causal-tree validation and
+the immutable SQLite generation hash. The whole journal is verified,
+owner roster checks remain intact, and the physical/clock second reads
+continue to detect drift during the quiescent capture.
+
+No I0 or original lab files are modified; only generated I1lab gets this
+exact-type guarded change. **NON VALIDÉ:** no generation, tests, CI,
+benchmarks or simulations were executed; behavioral parity and numerical
+gains are not asserted.
