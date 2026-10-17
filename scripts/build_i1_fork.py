@@ -38,58 +38,6 @@ def rewrite(text: str) -> str:
 
 
 
-def i1_scoped_consolidation_evidence_source(source: str) -> str:
-    """Generate bounded P-42-selected evidence without touching Lab source.
-
-    The full technical hash-chain and EVERY autobiography commitment are
-    validated just as before. Only already frozen episode event payloads
-    are projected or retained for the semantic runner.
-    """
-    old = '        projection = views.autobiographical(policies=policies)\n'
-    new = (
-        '        episodes = transaction.frozen_episodes_copy()\n'
-        '        selected = set()\n'
-        '        for episode_ref in transaction.batch:\n'
-        '            refs = episodes[episode_ref].get("event_refs")\n'
-        '            if (type(refs) is not list or not refs\n'
-        '                    or any(type(ref) is not str or not ref for ref in refs)\n'
-        '                    or len(set(refs)) != len(refs)\n'
-        '                    or selected.intersection(refs)):\n'
-        '                raise ValueError("invalid or overlapping frozen episode refs")\n'
-        '            selected.update(refs)\n'
-        '        projection = views.autobiographical(\n'
-        '            policies=policies, selected_event_refs=frozenset(selected),\n'
-        '        )\n'
-    )
-    if source.count(old) != 1:
-        raise ValueError("unreviewed verified evidence projection anchor")
-    source = source.replace(old, new)
-    committed = '                committed_before_cut.add(event_ref)\n'
-    if source.count(committed) != 1:
-        raise ValueError("unreviewed pre-cut authorization scan")
-    source = source.replace(
-        committed,
-        '                if event_ref in selected:\n'
-        '                    committed_before_cut.add(event_ref)\n',
-    )
-    duplicate = '        episodes = transaction.frozen_episodes_copy()\n'
-    if source.count(duplicate) != 2:
-        raise ValueError("missing scoped episode input or duplicate legacy copy")
-    # Keep the first, already checked snapshot. Do not copy the entire
-    # selected batch a second time before creating owned projections.
-    prefix, suffix = source.split(duplicate, 1)
-    if duplicate not in suffix:
-        raise ValueError("unreviewed duplicate episode materialization")
-    suffix = suffix.replace(duplicate, '', 1)
-    rewritten = prefix + duplicate + suffix
-    old_copy = "            projected[ref] = deepcopy(record)\n"
-    if rewritten.count(old_copy) != 1:
-        raise ValueError("unreviewed detached autobiography intermediate projection")
-    # policy.project() already returns a private dict. The eventual episode
-    # copy below remains the independent immutable evidence boundary.
-    return rewritten.replace(old_copy, "            projected[ref] = record\n")
-
-
 def i1_stage10_canonical_baseline_source(source: str) -> str:
     """Hold byte-exact owner baselines rather than live-state rollback copies.
 
@@ -266,45 +214,6 @@ def i1_committed_history_metadata_source(source: str) -> str:
     if source.count(restore) != 1:
         raise ValueError("unreviewed SlowHistory committed-ref restore")
     return source.replace(restore, amended)
-
-
-def i1_postcut_bounded_verification_source(source: str) -> str:
-    """Keep full postcut integrity checks without duplicate full history reads.
-
-    Applies only to the generated I1lab journal coordinator, after the
-    generated I1lab HashChainedJournal gains entry_count/entries_since.
-    """
-    replacements = (
-        (
-            "    def _verified(self) -> tuple:\n        if not self._journal.verify():\n            raise ValueError(\"hash-chained journal integrity failure\")\n        return self._journal.entries\n",
-            "    def _verified(self) -> HashChainedJournal:\n        if not self._journal.verify():\n            raise ValueError(\"hash-chained journal integrity failure\")\n        return self._journal\n",
-        ),
-        (
-            "    def _check_cut(self, cut: ConsolidationCut, entries: tuple) -> None:\n        cut.validate()\n        if cut.journal_index >= len(entries):\n            raise ValueError(\"cut journal occurrence is absent\")\n        original = entries[cut.journal_index]\n        if (original.event_id != cut.journal_event_id\n                or original.event_hash != cut.journal_hash):\n            raise ValueError(\"cut identity or head hash mismatches journal\")\n",
-            "    def _check_cut(self, cut: ConsolidationCut, journal: HashChainedJournal) -> None:\n        cut.validate()\n        if cut.journal_index >= journal.entry_count:\n            raise ValueError(\"cut journal occurrence is absent\")\n        original = journal.get(cut.journal_event_id)\n        if (original is None or original.index != cut.journal_index\n                or original.event_hash != cut.journal_hash):\n            raise ValueError(\"cut identity or head hash mismatches journal\")\n",
-        ),
-        (
-            "        entries = self._verified()\n        self._check_cut(cut, entries)\n        end_index = len(entries) - 1\n        end_hash = entries[-1].event_hash\n",
-            "        journal = self._verified()\n        self._check_cut(cut, journal)\n        end_index = journal.entry_count - 1\n        end_hash = journal.head_hash\n",
-        ),
-        (
-            "        for event in entries[cut.journal_index + 1:]:\n",
-            "        for event in journal.entries_since(cut.journal_index + 1):\n",
-        ),
-        (
-            "        entries = self._verified()\n        self._check_cut(frozen.cut, entries)\n        if (len(entries) - 1 != frozen.end_index\n                or self._journal.head_hash != frozen.end_hash):\n            raise ValueError(\"journal advanced after private rebase preparation\")\n        current = self.freeze(cut=frozen.cut)\n",
-            "        # A single complete verification happens inside freeze(), which also\n        # rechecks the causal cut and builds the exact post-cut digest.\n        current = self.freeze(cut=frozen.cut)\n        if (current.end_index != frozen.end_index\n                or current.end_hash != frozen.end_hash):\n            raise ValueError(\"journal advanced after private rebase preparation\")\n",
-        ),
-        (
-            "                t_monde=t, kind=kind, payload=deepcopy(dict(payload)),\n",
-            "                t_monde=t, kind=kind, payload=dict(payload),\n",
-        ),
-    )
-    for before, after in replacements:
-        if source.count(before) != 1:
-            raise ValueError("unreviewed I1 postcut journal verification boundary")
-        source = source.replace(before, after)
-    return source
 
 
 def i1_m11_bounded_journal_source(source: str) -> str:
@@ -811,13 +720,10 @@ def generate(output: Path) -> dict[str, object]:
             relative = file.relative_to(source)
             if input_package == "i1" and relative.parts[0] == "runtime":
                 continue  # Built into i1lab below, never twice in generated i1.
-            if input_package == "lab" and relative.as_posix() in {"world.py", "journal.py", "journal_views.py"}:
+            if input_package == "lab" and relative.as_posix() in {"world.py", "journal.py", "journal_views.py", "consolidation_lived_evidence.py", "consolidation_postcut_journal.py"}:
                 continue  # Versioned native I1 world, journal and lived views.
             contents = file.read_text(encoding="utf-8")
             transformed = rewrite(contents)
-            if (output_package == "i1lab"
-                    and relative.as_posix() == "consolidation_lived_evidence.py"):
-                transformed = i1_scoped_consolidation_evidence_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "sqlite_life_store.py"):
                 transformed = i1_sqlite_life_audit_canonical_source(transformed)
@@ -826,9 +732,6 @@ def generate(output: Path) -> dict[str, object]:
                     and relative.as_posix() == "sqlite_runtime_custody.py"):
                 transformed = i1_sqlite_journal_count_source(transformed)
                 transformed = i1_sqlite_detached_owner_export_source(transformed)
-            if (output_package == "i1lab"
-                    and relative.as_posix() == "consolidation_postcut_journal.py"):
-                transformed = i1_postcut_bounded_verification_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "consolidation_publication.py"):
                 transformed = i1_committed_history_metadata_source(transformed)
