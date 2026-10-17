@@ -43,8 +43,8 @@
   "validation": {
     "workflow": ".github/workflows/i1-current-ci.yml",
     "harness": "scripts/test_i1_ci.py",
-    "smoke": "python scripts/test_i1_ci.py --mode smoke --seed 246",
-    "full": "python scripts/test_i1_ci.py --mode full --seed 247",
+    "smoke": "python scripts/test_i1_ci.py --mode smoke --seed 246 --junit reports/i1-smoke-contract.xml",
+    "full": "python scripts/test_i1_ci.py --mode full --seed 247 --junit reports/i1-full-contract.xml",
     "m11": "tests/i1/test_i1_natural_m11_cold_recovery.py",
     "m11_adversarial": "tests/i1/test_i1_m11_adversarial.py",
     "generated_source": "tests/i1/test_i1_generated_isolation.py",
@@ -76,7 +76,9 @@
           "--mode",
           "smoke",
           "--seed",
-          "246"
+          "246",
+          "--junit",
+          "reports/i1-smoke-contract.xml"
         ]
       ],
       "full": [
@@ -85,7 +87,9 @@
           "--mode",
           "full",
           "--seed",
-          "247"
+          "247",
+          "--junit",
+          "reports/i1-full-contract.xml"
         ]
       ],
       "m11": [
