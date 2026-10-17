@@ -264,6 +264,15 @@ class Exploration:
         return IntrinsicAssessment("available", value, "physically_grounded_interest",
                                    (f"exploration:question:{ref}:proof:{q['proof']}",))
 
+    def known_causal_question_refs(self) -> set[str]:
+        """Snapshot IDs of questions already registered through causal evidence.
+
+        This reads only the owner-local question index, without serializing
+        unrelated geographic visits, surveys or active frontier offers.
+        It never grants new causal evidence or authority to a planner.
+        """
+        return set(self._questions)
+
     def cibles(self, *, degraded=False):
         if degraded:
             return ()

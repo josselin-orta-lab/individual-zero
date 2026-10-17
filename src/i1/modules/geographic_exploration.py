@@ -317,7 +317,10 @@ class GeographicExploration:
                 or target.origin != self._last_capture[1:]
                 or target.observed_frontier in self._visits
                 or target.destination not in self._visits
-                or not set(target.visited_path) <= set(self._visits)):
+                # The route is validated to contain at most nine typed
+                # coordinates. Probe the existing ledger, never rebuild it.
+                or any(site not in self._visits
+                       for site in target.visited_path)):
                 raise ValueError("route transit not tied to physical visit ledger")
             for a, b in zip(target.visited_path, target.visited_path[1:]):
                 if a not in self._surveys or b not in self._surveys[a].free_neighbors:
@@ -405,7 +408,7 @@ class GeographicExploration:
         # Real owner exports always pair an observed visit ledger with its
         # latest physical Perception capture. A nonempty visit history with
         # no last capture is not an alternate empty state: accepting it
-        # silently breaks replay chronology, especially after a rollback.
+        # silently breaks replay chronology, especially at cold import.
         # Reject before assigning any restored owner fields (atomic failure).
         if (last is None) != (not visited):
             raise ValueError("visit ledger and last physical capture disagree")

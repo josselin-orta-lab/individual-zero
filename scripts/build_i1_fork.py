@@ -1008,6 +1008,18 @@ def i1_stage11_owned_geography_lookup_source(source: str) -> str:
             "                    current_survey = next(\n                        q for q in geo.surveys\n                        if q.position == (capture.x, capture.y)\n                    )\n",
             "                    current_survey = geo.observed_survey_at(\n                        (capture.x, capture.y)\n                    )\n                    if current_survey is None:\n                        raise LookupError(\"recorded current survey is unavailable\")\n",
         ),
+        (
+            "        frozen_geography = (\n            None if self.exploration.geographic is None\n            else self.exploration.geographic.export_causal_state()\n        )\n",
+            "        # Phase-0 must freeze route data before Phase-1 observations, but\n        # copying the entire ledger is pointless unless a grounded route\n        # search can actually be requested in this cycle.\n        demand_skip_geo_preflight = (\n            self.exploration.geographic is not None\n            and self._stage11_config.geographic_preflight\n            and self._stage11_config.geographic_preflight_requires_frontier\n            and not raw_geo_targets\n        )\n        frozen_geography = (\n            self.exploration.geographic.export_causal_state()\n            if (demand_skip_geo_preflight\n                and self._stage11_config.geographic_route_enabled)\n            else None\n        )\n",
+        ),
+        (
+            "        demand_skip_geo_preflight = (\n            self.exploration.geographic is not None\n            and self._stage11_config.geographic_preflight\n            and self._stage11_config.geographic_preflight_requires_frontier\n            and not raw_geo_targets\n        )\n        self._stage11_prospective_state = frozen\n",
+            "        self._stage11_prospective_state = frozen\n",
+        ),
+        (
+            "        known = {\n            ref for ref, _ in self.exploration.export_causal_state()[\"questions\"]\n        }\n",
+            "        # Capture only existing causal question IDs BEFORE Phase-1; do not\n        # materialize the full geographic owner to answer a membership test.\n        known = self.exploration.known_causal_question_refs()\n",
+        ),
     )
     for before, after in changes:
         if source.count(before) != 1:

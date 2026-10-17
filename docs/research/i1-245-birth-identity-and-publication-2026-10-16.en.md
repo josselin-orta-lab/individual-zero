@@ -1331,3 +1331,47 @@ generation, tests, CI runs, simulations or benchmarks were executed.
 The asymptotic avoidance of full serialization for these direct
 lookups is structurally evident, but actual speedups and behavioral
 parity require future permitted validation.
+
+## I1 Stage11: demand-driven prior geography snapshot and direct causal question IDs (2026-10-17)
+
+Static inspection of `Stage11Runtime._phase_hooks` showed that every
+eligible cognitive cycle exported the *entire*, lexicographically sorted
+visit/survey ledger as `frozen_geography`, despite consuming that
+snapshot only when all of these conditions held **before Phase-1**:
+there is a geographic owner, geographic preflight is enabled, the
+preflight requires a known frontier, there are no raw locally perceived
+frontier targets, and configured observed-route search is enabled.
+
+The I1-only generated Stage11 now computes the existing
+`demand_skip_geo_preflight` predicate immediately after freezing the raw
+perception targets. It materializes `frozen_geography` **only if** that
+predicate and the route-enabled contract both hold. The snapshot is
+still taken strictly BEFORE any Phase-1 Exploration update, preserving
+INV-08's ban on using same-phase discoveries in Planning. On other
+cycles, `frozen_geography` is unused, so its absence has no effect on
+decision or event data. The paid route-search operation, capacity guard,
+physical visit ledger, perception chronology and deterministic target
+selection remain unchanged.
+
+Stage11 also previously exported the complete Exploration owner,
+including its full geographical records, merely to build a set of
+previously registered causal-question references. The I1 Exploration
+owner now supplies `known_causal_question_refs()`, a fresh set of the
+identical dictionary keys, which is read at the same PRE-Phase-1
+boundary. The following `cibles()` still independently filters
+positive informational interests, and Planning's no-stale-test rule
+remains unchanged.
+
+Finally, a validated `GeographicTransitTarget.visited_path` is bounded
+to at most nine typed coordinates. `freeze_transits` now verifies
+membership directly against the owner-private visited dictionary,
+without building a complete set of every lifetime location for a
+tiny path. The original refusal for unknown transit edges and the
+observed-survey validation are preserved. An obsolete reference to
+rollback in cold-import commentary was removed; I1's life remains
+irreversible. Original Lab/I0 sources are not edited.
+
+**NON VALIDÉ:** source-code review only. No build, generation, tests,
+simulations, CI runs or benchmarks were executed. Asymptotic avoidance
+of needless full-ledger copies is deduced from the code; actual savings
+and exact behavioral equivalence have not been measured.
