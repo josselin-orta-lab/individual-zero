@@ -816,8 +816,32 @@ def i1_memory_recall_source(source: str) -> str:
     source = source.replace(signature, signature.replace(
         "    ) -> float:\n",
         "        current_refs: set[str] | None = None,\n"
+        "        active_goal_id: object = ...,\n"
         "    ) -> float:\n",
     ))
+    goal_block = (
+        "        if episode.active_goal_ref is not None:\n"
+        "            active = st.fixed.get(\"active_goal\")\n"
+        "            if (\n"
+        "                isinstance(active, Mapping)\n"
+        "                and active.get(\"id\") == episode.active_goal_ref\n"
+        "            ):\n"
+        "                return 1.0\n"
+    )
+    goal_cached = (
+        "        if episode.active_goal_ref is not None:\n"
+        "            if active_goal_id is ...:\n"
+        "                active = st.fixed.get(\"active_goal\")\n"
+        "                active_goal_id = (\n"
+        "                    active.get(\"id\") if isinstance(active, Mapping)\n"
+        "                    else None\n"
+        "                )\n"
+        "            if active_goal_id == episode.active_goal_ref:\n"
+        "                return 1.0\n"
+    )
+    if source.count(goal_block) != 1:
+        raise ValueError("unreviewed generated I1 Memory active-goal relevance")
+    source = source.replace(goal_block, goal_cached)
     per_episode = (
         "        current_refs = {\n"
         "            element.contribution_ref for element in st.competitive\n"
@@ -847,13 +871,18 @@ def i1_memory_recall_source(source: str) -> str:
         "            {element.contribution_ref for element in st.competitive}\n"
         "            if st is not None else None\n"
         "        )\n"
+        "        active = st.fixed.get(\"active_goal\") if st is not None else None\n"
+        "        visible_goal_id = (\n"
+        "            active.get(\"id\") if isinstance(active, Mapping)\n"
+        "            else None\n"
+        "        )\n"
         + old_scan
     ))
     call = "            relevance = self._relevance(episode, st)\n"
     if source.count(call) != 1:
         raise ValueError("unreviewed generated I1 Memory relevance call")
     return source.replace(
-        call, "            relevance = self._relevance(episode, st, visible_refs)\n"
+        call, "            relevance = self._relevance(episode, st, visible_refs, visible_goal_id)\n"
     )
 
 

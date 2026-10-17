@@ -641,6 +641,12 @@ class EpisodicMemory:
         # long episode's event list cannot provide additional relevance.
         if not current_refs:
             return 0.0
+        if len(current_refs) == 1:
+            # One visible contribution ref: perform the tuple membership
+            # search in C instead of one Python set lookup per episode event.
+            return (
+                1.0 if next(iter(current_refs)) in episode.event_refs else 0.0
+            )
         if any(ref in current_refs for ref in episode.event_refs):
             return 1.0
         return 0.0

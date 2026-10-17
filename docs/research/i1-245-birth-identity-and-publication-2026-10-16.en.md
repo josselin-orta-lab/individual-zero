@@ -1255,3 +1255,38 @@ death and I0 are unchanged.
 explicit request. No generator execution, tests, CI, benchmarks or simulated
 lives were run. Numeric savings and complete behavioral parity remain
 unverified.
+
+## I1 Stage7: efficient one-ref episode matching and one active-goal lookup per recall (2026-10-17)
+
+The remaining symbolic relevance test still needed to compare every episode's
+event references with the currently perceived `S_t.competitive` references.
+The prior generated I1 optimization already built that visible set only
+once per recall. The I1 source now specializes the common, exact
+**one-visible-reference** case: checking tuple membership
+(`single_ref in episode.event_refs`) runs the inner linear comparison in
+the Python runtime rather than issuing one Python generator iteration
+and set lookup for each remembered event. For zero visible refs the
+existing fast return remains. Multiple visible refs retain the
+original `any(ref in current_refs ...)` semantics and short-circuit.
+
+The generated I1 recall scoring iterator also extracts the current
+`S_t.fixed["active_goal"]` identifier **once** and supplies it to
+`_relevance` with the already cached competitive references. That
+private method retains the original direct-call API: its optional
+`active_goal_id=...` sentinel re-reads the active goal when invoked
+outside the scoring iterator. Thus only the immutable in-call S_t
+snapshot is reused, not any cross-step cognitive cache. Matching a
+previously experienced active goal still wins before searching event
+references; all episodes, including arbitrarily old ones, remain
+individually scored.
+
+No reverse journal lookup, new hash index, event exposure, priority
+inference, forgotten memory, UC charge changes, or live-state rewind
+is introduced. The constructor/restore/export of Memory stay
+unchanged, so cold-authenticated M11 recovery and I0 remain untouched.
+
+**NON VALIDÉ:** guarded source inspection and Git commit only.
+No generator, tests, CI, benchmark or simulated lives were run.
+The expected reduction in interpreter-level operations is structural,
+not a measured performance claim, and behavioral equivalence remains
+to be verified in a permitted validation campaign.
