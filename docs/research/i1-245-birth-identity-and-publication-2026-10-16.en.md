@@ -536,3 +536,28 @@ authoritative journal writer does not change. No I0 source is modified.
 **NON VALIDÉ**: source inspection only. No generator, tests, CI, simulation or
 benchmarks were executed, and no numerical speedup or complete behavioral
 equivalence is claimed.
+
+## I1 Stage10 postcut journal verification and bounded replay (2026-10-17)
+
+Static inspection showed that `Stage10PostCutJournal.validate_no_intervening_updates`
+verified the entire append-only journal before calling `freeze()`, which
+then verified that entire chain a second time. The generated I1-only
+implementation now calls `freeze()` once: it still cryptographically
+verifies every journal occurrence, checks the exact causal cut, rebuilds
+the complete authorized postcut update digest, and rejects mismatched
+end-index, end-hash or digest. There is no cached trust assertion and no
+assumption that previously verified entries cannot be tampered with.
+
+The same private I1 journal coordinator now uses the already verified
+`HashChainedJournal.get(event_id)`, `entry_count`, `head_hash`, and
+`entries_since(cut_index + 1)` to avoid constructing a tuple of every
+historical occurrence merely to inspect the point of consolidation or
+rebase the postcut suffix. The cut index and identity are checked together
+after the complete SHA-256 verification, and the processed update sequence
+and serialized digest fields are unchanged. The legacy `entries` API is
+preserved for callers requiring whole-journal snapshots.
+
+No skip, no relaxed provenance, no new cognitive prior, and no changes to
+the original I0 or lab sources. **NON VALIDÉ:** source-only modification;
+tests, generator execution, benchmarks, CI and simulations were not run,
+and no runtime gain or behavioral equivalence is claimed.

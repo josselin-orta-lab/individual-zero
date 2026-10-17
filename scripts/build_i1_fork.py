@@ -296,6 +296,41 @@ def i1_journal_bounded_view_source(source: str) -> str:
     return source.replace("len(replay.entries)", "replay.entry_count")
 
 
+def i1_postcut_bounded_verification_source(source: str) -> str:
+    """Keep full postcut integrity checks without duplicate full history reads.
+
+    Applies only to the generated I1lab journal coordinator, after the
+    generated I1lab HashChainedJournal gains entry_count/entries_since.
+    """
+    replacements = (
+        (
+            "    def _verified(self) -> tuple:\n        if not self._journal.verify():\n            raise ValueError(\"hash-chained journal integrity failure\")\n        return self._journal.entries\n",
+            "    def _verified(self) -> HashChainedJournal:\n        if not self._journal.verify():\n            raise ValueError(\"hash-chained journal integrity failure\")\n        return self._journal\n",
+        ),
+        (
+            "    def _check_cut(self, cut: ConsolidationCut, entries: tuple) -> None:\n        cut.validate()\n        if cut.journal_index >= len(entries):\n            raise ValueError(\"cut journal occurrence is absent\")\n        original = entries[cut.journal_index]\n        if (original.event_id != cut.journal_event_id\n                or original.event_hash != cut.journal_hash):\n            raise ValueError(\"cut identity or head hash mismatches journal\")\n",
+            "    def _check_cut(self, cut: ConsolidationCut, journal: HashChainedJournal) -> None:\n        cut.validate()\n        if cut.journal_index >= journal.entry_count:\n            raise ValueError(\"cut journal occurrence is absent\")\n        original = journal.get(cut.journal_event_id)\n        if (original is None or original.index != cut.journal_index\n                or original.event_hash != cut.journal_hash):\n            raise ValueError(\"cut identity or head hash mismatches journal\")\n",
+        ),
+        (
+            "        entries = self._verified()\n        self._check_cut(cut, entries)\n        end_index = len(entries) - 1\n        end_hash = entries[-1].event_hash\n",
+            "        journal = self._verified()\n        self._check_cut(cut, journal)\n        end_index = journal.entry_count - 1\n        end_hash = journal.head_hash\n",
+        ),
+        (
+            "        for event in entries[cut.journal_index + 1:]:\n",
+            "        for event in journal.entries_since(cut.journal_index + 1):\n",
+        ),
+        (
+            "        entries = self._verified()\n        self._check_cut(frozen.cut, entries)\n        if (len(entries) - 1 != frozen.end_index\n                or self._journal.head_hash != frozen.end_hash):\n            raise ValueError(\"journal advanced after private rebase preparation\")\n        current = self.freeze(cut=frozen.cut)\n",
+            "        # A single complete verification happens inside freeze(), which also\n        # rechecks the causal cut and builds the exact post-cut digest.\n        current = self.freeze(cut=frozen.cut)\n        if (current.end_index != frozen.end_index\n                or current.end_hash != frozen.end_hash):\n            raise ValueError(\"journal advanced after private rebase preparation\")\n",
+        ),
+    )
+    for before, after in replacements:
+        if source.count(before) != 1:
+            raise ValueError("unreviewed I1 postcut journal verification boundary")
+        source = source.replace(before, after)
+    return source
+
+
 def i1_m11_bounded_journal_source(source: str) -> str:
     """Avoid whole-journal tuple materialization in I1 M11 and cold restore.
 
@@ -810,6 +845,9 @@ def generate(output: Path) -> dict[str, object]:
             if (output_package == "i1lab"
                     and relative.as_posix() == "sqlite_runtime_custody.py"):
                 transformed = i1_sqlite_journal_count_source(transformed)
+            if (output_package == "i1lab"
+                    and relative.as_posix() == "consolidation_postcut_journal.py"):
+                transformed = i1_postcut_bounded_verification_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "consolidation_publication.py"):
                 transformed = i1_committed_history_metadata_source(transformed)
