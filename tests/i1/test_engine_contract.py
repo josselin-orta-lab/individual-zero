@@ -7,7 +7,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
-from check_engine_contracts import inspect
+from check_engine_contracts import inspect, valid_publication_owners
 
 
 class VersionedEngineContractTests(unittest.TestCase):
@@ -33,6 +33,17 @@ class VersionedEngineContractTests(unittest.TestCase):
             report = inspect(path)
             self.assertEqual(report["status"], "FAIL")
             self.assertTrue(any("registered birth differs" in x for x in report["errors"]))
+
+    def test_future_engines_do_not_inherit_i1_four_owner_roster(self):
+        self.assertTrue(valid_publication_owners("I2", ["sensor", "motivation"]))
+        self.assertTrue(valid_publication_owners("I2", []))
+        self.assertFalse(valid_publication_owners("I2", ["duplicated", "duplicated"]))
+        self.assertFalse(valid_publication_owners("I2", ["sensor", None]))
+        self.assertFalse(valid_publication_owners("I1", ["sensor", "motivation"]))
+        self.assertTrue(valid_publication_owners(
+            "I1", ["value_and_needs", "causal_model",
+                   "perception", "metacognition_health"]
+        ))
 
     def test_forbidden_shared_lab_fails_closed(self):
         with TemporaryDirectory() as folder:

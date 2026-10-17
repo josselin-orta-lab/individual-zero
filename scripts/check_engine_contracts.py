@@ -12,7 +12,18 @@ GEN = re.compile(r"I[1-9][0-9]*\Z")
 REQUIRED = ("engine", "lab", "runtime", "tests", "documentation")
 TRUE_INVARIANTS = ("first_person_observations_only", "uc_billed_cognition",
                    "mortality_irreversible", "hidden_oracle_input")
-OWNER_SET = {"value_and_needs", "causal_model", "perception", "metacognition_health"}
+I1_OWNER_SET = {"value_and_needs", "causal_model", "perception", "metacognition_health"}
+
+
+def valid_publication_owners(generation: str, owners: object) -> bool:
+    """Each engine owns its roster; only current I1 has four exact owners."""
+    if (not isinstance(owners, list)
+            or any(not isinstance(x, str) or not x for x in owners)
+            or len(owners) != len(set(owners))):
+        return False
+    if generation == "I1":
+        return len(owners) == 4 and set(owners) == I1_OWNER_SET
+    return True
 
 
 def inspect(root: Path = ROOT) -> dict:
@@ -87,7 +98,7 @@ def inspect(root: Path = ROOT) -> dict:
                 or flags.get("legacy_h1_h2_default") is not False):
             errors.append(name + ": forbidden oracle, rollback or H1/H2 setting")
         owners = raw.get("publication_owners")
-        if not isinstance(owners, list) or len(owners) != 4 or set(owners) != OWNER_SET:
+        if not valid_publication_owners(name, owners):
             errors.append(name + ": publication owner roster mismatch")
         if raw.get("persistence", {}).get("no_postmortem_recovery") is not True:
             errors.append(name + ": terminal recovery must be refused")

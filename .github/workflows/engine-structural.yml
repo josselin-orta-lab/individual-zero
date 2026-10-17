@@ -1,0 +1,49 @@
+name: Versioned engine structural checks
+
+on:
+  workflow_call:
+    inputs:
+      engine:
+        description: Registered active engine ID, e.g. I1
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      engine:
+        description: Registered active engine ID, e.g. I1
+        type: string
+        default: I1
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate-engine:
+    name: ${{ inputs.engine }} structure (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      ENGINE: ${{ inputs.engine }}
+    steps:
+      - name: Checkout exact requested source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Validate registered contract and active-engine ownership
+        run: |
+          python scripts/check_engine_contracts.py --json
+          python tools/run_engine_checks.py --engine "$ENGINE" --suite structure --json
+      - name: Guard immutable I0, Lab and archive
+        run: python scripts/check_engine_repository.py --json
+      - name: Validate inventory without running historical cohorts
+        run: python tools/check_tool_inventory.py

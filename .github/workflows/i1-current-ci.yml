@@ -21,6 +21,7 @@ on:
       - 'config/engine-registry.json'
       - 'tests/test_i1_m11_adversarial.py'
       - '.github/workflows/i1-current-ci.yml'
+      - '.github/workflows/engine-structural.yml'
   workflow_dispatch:
     inputs:
       mode:
@@ -34,6 +35,11 @@ concurrency:
   group: i1-current-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  engine-structure:
+    name: Shared engine I1 structural gate
+    uses: ./.github/workflows/engine-structural.yml
+    with:
+      engine: I1
   current-i1:
     name: I1 natural SMOKE + FULL (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
