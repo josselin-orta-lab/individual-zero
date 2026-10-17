@@ -38,6 +38,29 @@ idx._seen_count = 200
 idx._history_version = "h:0"
 idx._cut = SimpleNamespace(world_step=300)
 idx._target = 200
+class Budget:
+    config = SimpleNamespace(step_slot_uc=8, period_capacity_uc=8,
+                             operation_costs={"episode_scan":1})
+    open_world_step = 300
+    consumed_step_uc = 0
+    consumed_period_uc = 0
+    def charge(self, *, operation, count):
+        assert operation == "episode_scan" and count <= 8
+        self.consumed_step_uc += count
+        self.consumed_period_uc += count
+        return SimpleNamespace(accepted=True, count=count)
+budget = Budget()
+selector = SimpleNamespace(policy=SimpleNamespace(version="p1", scan_uc_per_episode=1))
+read_calls = []
+def forbidden_reader(start, end):
+    read_calls.append((start,end))
+    raise AssertionError("rank may not read unseen episode payloads")
+assert idx.advance(budget=budget, episode_count=200,
+                   read_paid_slice=forbidden_reader, selector=selector) == 8
+assert idx._rank_cursor == 78
+assert idx._ranked == list(payloads.values())[:78]
+assert budget.consumed_step_uc == 8
+assert not read_calls
 # The indexed slice and original insertion-order slice must be exactly equal.
 for cursor in (0, 1, 70, 99, 199):
     for count in (1, 7, 30):
