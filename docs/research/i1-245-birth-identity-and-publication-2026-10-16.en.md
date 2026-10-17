@@ -336,3 +336,18 @@ equivalence is claimed without execution.
 
 STATUS: SOURCE INSPECTION ONLY, NON VALIDÉ. No tests, simulations,
 benchmarks, generation or validation executions were run.
+
+## I1 unknown-action candidate ranking without an intermediate list
+
+The canonical inherited I1 affordance generator retained a complete temporary
+list of scored candidates, then recomputed the winning command's signature
+suffix. A source-only change streams exactly the same candidates in original
+order, scoring each once and retaining only the best rank, command, signature,
+lived Q state and suffix. It applies the same `(-evidence, time-rotated-index)`
+comparison and retains the first result on exact ties. No decision priority,
+physiological reward, tempered exploration coefficient, or UC charge was
+altered. The visible candidate count and primitive list in the journal remain
+based on the unchanged `choices` tuple.
+
+STATUS: STATIC CODE REVIEW ONLY. No tests, simulations, benchmarks or
+runtime build were executed; parity and quantitative gain remain non validated.

@@ -390,30 +390,26 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         evaluation_state = self._evaluation_state(capture)
         # Associative TD feedback comes only from earlier physically lived
         # decisions. Unlearned values are neutral, not an edible/safe prior.
-        candidates = []
-        for command in choices:
+        # Stream the exact same learned-value ranking. Only the winning
+        # option must be retained; no candidate list or second signature
+        # formatting pass is needed. Equal ranks still select the first.
+        winner = None
+        choice_count = len(choices)
+        for ordinal, command in enumerate(choices):
             suffix = ":".join(
                 f"{key}={command.parameters[key]}"
                 for key in sorted(command.parameters)
             ) or "here"
             signature = ("i1:affordance:" + command.primitive + ":" + suffix)
             learned = self.q_active.learned_value(evaluation_state, signature)
-            # Empirical values rank proposals; a missing value is neutral,
-            # not proof of any consequence. Ties rotate with world time so
-            # unknown alternatives remain possible, not hard-coded habits.
-            row = (
+            # Unlearned values remain neutral, not a physical prediction.
+            rank = (
                 -float(learned.evidence or 0.0),
-                (capture.t_monde + len(candidates)) % len(choices),
-                command, signature, learned,
+                (capture.t_monde + ordinal) % choice_count,
             )
-            candidates.append(row)
-        _, _, command, signature, learned = min(
-            candidates, key=lambda row: (row[0], row[1])
-        )
-        suffix = ":".join(
-            f"{key}={command.parameters[key]}"
-            for key in sorted(command.parameters)
-        ) or "here"
+            if winner is None or rank < winner[0]:
+                winner = (rank, command, signature, learned, suffix)
+        _, command, signature, learned, suffix = winner
         pressure = max(0.0, min(1.0, float(goal.current_pressure)))
         exploration = float(self.temperament_parameters.exploration_coefficient)
         uncertainty_penalty = float(
