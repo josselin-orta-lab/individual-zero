@@ -71,3 +71,15 @@ Sur le commit `2ece981fc4160e4d1c3a4bd0610be184afd844c2`, le run [#39029365995](
 La campagne ne revendique pas de validation scientifique complète ni de couverture de tous les comportements émergents. Le test FULL n'a pas encore été exécuté sur ce commit. Les contrats de publication active non vide / continuité de tous propriétaires et l'autonomie de l'ingestion restent des travaux ouverts.
 
 Aucun fichier `src/i0/**` ni `src/lab/**` n'a été modifié. PR #246 encore brouillon, non fusionnée.
+
+## Rectificatif impératif : intégrité du modèle pendant la validation
+
+Un workflow GitHub Actions historique est un lanceur d'essais, **pas un module cognitif**. Retirer son déclenchement automatique ne doit et ne peut être interprété comme une autorisation de neutraliser un mécanisme de I1. Les classes expérimentales archivées (H1/H2, modèle de prédiction externe) restent séparées de la naissance canonique naturelle ; leur ancienne activation n'est pas nécessaire pour valider le nouveau modèle. Aucune classe I1 en production ne doit être modifiée en réponse à ces anciennes attentes.
+
+La naissance canonique de tous les tests de vie est créée par `birth_i1`, avec les politiques **naturelles actuelles**, sans ablation de perception, des besoins, de la mémoire, de l'apprentissage, de la planification, de l'exploration, de l'agence, du sommeil ni de la consolidation. Les environnements de test ne fournissent que des états physiques initiaux et des ressources observables ; ils n'injectent pas de décisions, de connaissances acquises ni de dangers cachés. Les tests directs sur `WorldBody` sont explicitement des **contrôles de physique isolés**, et ne sauraient démontrer à eux seuls l'aptitude comportementale autonome à boire et manger.
+
+Le SMOKE inclut maintenant un contrôle bloquant `test_complete_natural_architecture_is_enabled` qui vérifie les propriétaires, le modèle cognitif vécu, les mécanismes d'agence, la géographie, les opérations UC facturées, la planification progressive et la motivation de sommeil et consolidation. `test_active_modules_participate_in_real_step` exige un véritable pas, des charges UC et un reçu perceptif durable. Un champ de capture transitoire ne doit pas survivre à la fin du pas ; sa libération est un fonctionnement attendu, non la preuve d'une perception désactivée.
+
+Comparaison Git effectuée : du SHA initial `305fe98d2937ec979f9a82b416d7cc1ae5bf9046` aux commits de refonte du testeur, aucune modification de `src/i1/**`, `src/i1_overlays/**`, `src/lab/**` ou du générateur `scripts/build_i1_fork.py` n'a été introduite par cette campagne. L'exécution des anciens workflows en mode manuel n'est pas un substitut à la validation de la vraie naissance `I1Runtime`.
+
+Test du rectificatif : run GitHub [#39029716113](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39029716113), réussi en Python 3.11 et 3.12 (12 tests SMOKE par version). Aucune prétention de couverture scientifique exhaustive : publication cognitive active après six passages, consommation autonome et apprentissage à horizon long restent à approfondir.
