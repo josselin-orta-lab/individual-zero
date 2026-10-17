@@ -190,7 +190,7 @@ def _approved_wal_streaming(before: bytes, after: bytes) -> bool:
         return False
     candidate = original.replace(old_doc, new_doc, 1).replace(former, newer, 1)
     # All lines in the streaming loop's old body become four spaces deeper.
-    start = candidate.index("                if not raw:")
+    start = candidate.index("            if not raw:")
     end = candidate.index("        if not replay.verify():", start)
     candidate = candidate[:start] + "".join(
         "    " + line if line.strip() else line
