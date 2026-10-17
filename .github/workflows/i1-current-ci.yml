@@ -11,6 +11,7 @@ on:
       - 'scripts/test_i1_artifact_parity.py'
       - 'scripts/check_engine_contracts.py'
       - 'tools/new_engine.py'
+      - 'tools/run_engine_checks.py'
       - 'docs/engines/i1/**'
       - 'tests/i1/**'
       - 'AGENTS.md'
@@ -59,10 +60,10 @@ jobs:
         run: |
           python scripts/check_engine_repository.py --json
           python -m unittest discover -s tests -p test_engine_repository.py -v
-      - name: Generation contracts and structural tests
+      - name: Generation-owned structural test suite
         run: |
-          python scripts/check_engine_contracts.py --json
-          python -m unittest discover -s tests/i1 -p 'test_*.py' -v
+          mkdir -p reports
+          python tools/run_engine_checks.py --engine I1 --suite structure --execute --json > reports/i1-structure-${{ matrix.python-version }}.json
       - name: Static syntax
         run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
       - name: Frozen I0 and versioned Lab source guard

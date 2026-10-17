@@ -48,7 +48,81 @@
     "m11": "tests/test_i1_natural_m11_cold_recovery.py",
     "m11_adversarial": "tests/test_i1_m11_adversarial.py",
     "generated_source": "tests/test_i1_generated_isolation.py",
-    "architecture": "scripts/check_engine_repository.py"
+    "architecture": "scripts/check_engine_repository.py",
+    "suites": {
+      "structure": [
+        [
+          "scripts/check_engine_repository.py",
+          "--json"
+        ],
+        [
+          "scripts/check_engine_contracts.py",
+          "--json"
+        ],
+        [
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests/i1",
+          "-p",
+          "test_*.py",
+          "-v"
+        ]
+      ],
+      "smoke": [
+        [
+          "scripts/test_i1_ci.py",
+          "--mode",
+          "smoke",
+          "--seed",
+          "246"
+        ]
+      ],
+      "full": [
+        [
+          "scripts/test_i1_ci.py",
+          "--mode",
+          "full",
+          "--seed",
+          "247"
+        ]
+      ],
+      "m11": [
+        [
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_i1_natural_m11_cold_recovery.py",
+          "-v"
+        ],
+        [
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_i1_m11_adversarial.py",
+          "-v"
+        ]
+      ],
+      "source": [
+        [
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_i1_generated_isolation.py",
+          "-v"
+        ]
+      ]
+    }
   },
   "scientific": {
     "gate": "not_established",
