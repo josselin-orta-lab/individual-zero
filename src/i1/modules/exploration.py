@@ -153,14 +153,26 @@ class Exploration:
         """
         if not isinstance(state, dict):
             raise ValueError("canonical causal state must be a mapping")
+        # Only IDs actually named by lived causal review pairs can be used
+        # to establish the review proofs. The full causal owner is already
+        # exported and audited independently; do not retain every unrelated
+        # historical observation in this short-lived lookup dictionary.
+        reviews = state.get("causal_review_proofs", ())
+        referenced_observations = {
+            observation_ref
+            for review in reviews
+            for pair in review.get("contrasting_pairs", ())
+            for observation_ref in pair
+        }
         observations = {
             v["identifier"]: v for v in state.get("causal_observations", ())
             if v.get("source") == "monde" and v.get("independent_episode") is True
             and not v.get("oracle_derived") and not v.get("counterfactual")
             and not v.get("rollback_cancelled")
+            and v["identifier"] in referenced_observations
         }
         proofs = {}
-        for review in state.get("causal_review_proofs", ()):
+        for review in reviews:
             ref = review["contingency_ref"]
             for first, second in review.get("contrasting_pairs", ()):
                 a, b = observations.get(first), observations.get(second)
@@ -181,17 +193,35 @@ class Exploration:
             if status not in self._rank or row["safety_status"] != "aucun":
                 continue
             old = self._questions.get(ref)
-            prior_ids = set() if old is None else set(old["ids"])
             accepted = observed.get(ref, {})
-            now_ids = prior_ids | set(accepted)
-            new_ids = set(accepted) - prior_ids
+            accepted_ids = set(accepted)
+            if old is None:
+                new_ids = accepted_ids
+                merged_ids = tuple(sorted(accepted_ids))
+            elif not accepted_ids:
+                new_ids = set()
+                merged_ids = old["ids"]
+            else:
+                prior_ids = set(old["ids"])
+                new_ids = accepted_ids - prior_ids
+                # The private owner and M11 cold importer guarantee that
+                # previous IDs are already strictly sorted and unique.
+                # With no new IDs the old immutable tuple is the exact
+                # canonical union: do not sort the entire history again.
+                merged_ids = (
+                    tuple(sorted(prior_ids | accepted_ids))
+                    if new_ids else old["ids"]
+                )
             attempts = () if old is None else old["executed_keys"]
             # A physically applied and recorded test was counted when the
             # command was executed. Its later independently verified
             # intervention must not create a fictitious extra exploration.
+            # With multiple new reports, membership in a temporary set
+            # avoids repeatedly scanning all previously executed keys.
+            attempted_keys = set(attempts) if len(new_ids) > 1 else attempts
             not_yet_counted = sum(
                 f"{accepted[ident].get('command_ref')}@"
-                f"{accepted[ident].get('emitted_step')}" not in attempts
+                f"{accepted[ident].get('emitted_step')}" not in attempted_keys
                 for ident in new_ids
             )
             progress = (
@@ -201,7 +231,7 @@ class Exploration:
             updates[ref] = {
                 "version": row["version"], "status": status,
                 "proof": proofs.get(ref),
-                "ids": tuple(sorted(now_ids)),
+                "ids": merged_ids,
                 "executed_keys": attempts,
                 "visits": (0 if old is None else old["visits"]) + not_yet_counted,
                 "stagnant": 0 if progress else (

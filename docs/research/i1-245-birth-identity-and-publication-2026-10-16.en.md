@@ -1422,3 +1422,47 @@ CI run, benchmark, or life simulation was executed. Future changes
 to the paid Stage11 hook must revisit the explicit inventory of
 geographic mutation sites before this differential guard can be
 scientifically validated. Mortal I1 never rewinds its lived history.
+
+## I1 Exploration: bounded proof lookup and no-op historical intervention reuse (2026-10-17)
+
+Static review of `Exploration.observe_causal_state` found two sources of
+repeated work after the already-paid Phase-1 CausalModel snapshot.
+
+First, the local Exploration adapter built an index containing **all**
+eligible historical causal observations, although only observation IDs
+referenced by the published `causal_review_proofs[].contrasting_pairs`
+can enter a physically witnessed review proof. I1 now first extracts
+those explicitly referenced IDs from the current published review
+pairs, and retains only their eligible records in the temporary
+observation lookup. The proof loop itself and its checks for
+contingency identity, distinct physical observation references and
+positive/negative contrasts are unchanged. This is not a global
+cognitive cache and cannot grant evidence that the current first-person
+CausalModel did not already publish. The authoritative causal history
+and M11 cold attestation remain complete.
+
+Second, every eligible causal question rebuilt two sets of accepted
+intervention IDs and sorted the whole historical ID union, even when
+no new independently witnessed intervention had been published.
+The I1 adapter now constructs the accepted-ID set once. If no new ID
+is present, it retains the previously validated, strictly sorted
+immutable `old["ids"]` tuple. A genuinely new intervention still
+forces the same full deterministic union and sort. The old owner is
+populated only by this canonical construction or the strict
+`restore_causal_state` import validator, both of which establish
+sorted/unique evidence IDs.
+
+When more than one new intervention is considered in a cycle, the
+historical executed-command keys are also materialized as a single
+temporary set for membership checks rather than searched repeatedly.
+The original `not_yet_counted` computation and distinction between
+physically executed tests and subsequently verified causal evidence
+remain the same; visits, stagnation, progress, status changes and
+error handling still depend on the same lived observations. No
+independent life history, safety classification, rollback or I0 code
+was changed.
+
+**NON VALIDÉ:** source inspection and Git commit only. No model
+generation, tests, CI, simulations or benchmarks were executed. The
+smaller lookup and avoided no-op sorts are algorithmic deductions;
+runtime equivalence and measured performance are not established.
