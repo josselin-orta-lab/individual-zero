@@ -30,6 +30,17 @@ class I1GeneratedIsolationTests(unittest.TestCase):
                 "i1/runtime/world.py",
             )
             self.assertNotIn("i1/runtime/world.py", first["files"])
+            # Journal and lived views are now I1-owned, not text-patched Lab.
+            for module in ("journal.py", "journal_views.py"):
+                rel = "i1lab/" + module
+                source = src / "i1" / "runtime" / module
+                self.assertEqual(
+                    first["files"][rel]["source_path"],
+                    "i1/runtime/" + module,
+                )
+                self.assertEqual((Path(a) / rel).read_text(),
+                                 rewrite(source.read_text()))
+                self.assertNotIn("i1/runtime/" + module, first["files"])
             for rel, data in first["files"].items():
                 content = (Path(a) / rel).read_bytes()
                 self.assertEqual(sha256(content).hexdigest(), data["built_sha256"])
