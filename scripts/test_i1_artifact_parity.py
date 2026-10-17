@@ -46,6 +46,22 @@ def _build(root: Path, output: Path) -> dict[str, str]:
     return observed
 
 
+
+def _approved_stage10_initialization_move(before: bytes, after: bytes) -> bool:
+    """Permit only #255's exact assignment move, not general stage10 drift."""
+    line = b'        canonical = type(self).__name__ == "I1Runtime"\n'
+    early = b'        coordinator = Stage10PublicationCoordinator(\n'
+    late = b'        if ((not canonical and candidate.get("forms")\n'
+    if (before.count(line) != 1 or after.count(line) != 1
+            or before.count(early) != 1 or after.count(early) != 1
+            or before.count(late) != 1 or after.count(late) != 1):
+        return False
+    if not (before.index(early) < before.index(line) < before.index(late)
+            and after.index(line) < after.index(early) < after.index(late)):
+        return False
+    reconstructed = after.replace(line, b"", 1).replace(late, line + late, 1)
+    return reconstructed == before
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -58,7 +74,13 @@ def verify(reference_root: Path) -> None:
         missing = sorted(set(old) - set(new))
         added = sorted(set(new) - set(old))
         changed = sorted(
-            rel for rel in old.keys() & new.keys() if old[rel] != new[rel]
+            rel for rel in old.keys() & new.keys()
+            if old[rel] != new[rel] and not (
+                rel == "i1lab/stage10_runtime.py"
+                and _approved_stage10_initialization_move(
+                    (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                )
+            )
         )
         if missing or added or changed:
             print(f"I1 byte-parity FAIL: missing={missing} added={added}"
@@ -72,7 +94,7 @@ def verify(reference_root: Path) -> None:
                 )
                 print("".join(list(diff)[:100]), file=sys.stderr)
             raise AssertionError("native migration changed generated I1 bytes")
-        print(f"I1_GENERATED_PARITY_OK: {len(new)} identical Python source files")
+        print(f"I1_GENERATED_PARITY_OK: {len(new)} files; only explicitly reviewed #255 move permitted")
 
 
 def main() -> None:
