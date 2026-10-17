@@ -79,7 +79,7 @@ def check():
         if not (ROOT / active[key]).exists():
             errors.append("I1 missing " + key + ": " + active[key])
     old = sorted((ROOT / ".github/workflows").glob("*.yml"))
-    allowed = set([Path(active["ci"]).name, "i0-archive-manual.yml"])
+    allowed = set([Path(active["ci"]).name, "i0-archive-manual.yml", "engine-structural.yml"])
     if Path(active["ci"]).name not in {p.name for p in old}:
         errors.append("missing active I1 workflow")
     unexpected = [x.name for x in old if not x.name.startswith("i1-") and x.name not in allowed]
