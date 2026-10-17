@@ -575,7 +575,10 @@ class WorldBody:
             )
 
         visible_entities: list[VisibleEntity] = []
-        for index, position in enumerate(sorted(self._water_sources)):
+        for index, position in enumerate(
+            sorted(self._water_sources)
+            if not self._water_sources.isdisjoint(local_positions) else ()
+        ):
             # Keep the globally ranked entity ID, but allocate only entities
             # inside the first-person perceptual field.
             if position not in local_positions:
@@ -601,7 +604,10 @@ class WorldBody:
                         properties={"quantity": quantity},
                     )
                 )
-        for index, position in enumerate(sorted(self._creatures)):
+        for index, position in enumerate(
+            sorted(self._creatures)
+            if not self._creatures.isdisjoint(local_positions) else ()
+        ):
             # Keep the globally ranked entity ID, but allocate only entities
             # inside the first-person perceptual field.
             if position not in local_positions:
@@ -614,7 +620,10 @@ class WorldBody:
                     properties={},
                 )
             )
-        for index, position in enumerate(sorted(self._shelters)):
+        for index, position in enumerate(
+            sorted(self._shelters)
+            if not self._shelters.isdisjoint(local_positions) else ()
+        ):
             # Keep the globally ranked entity ID, but allocate only entities
             # inside the first-person perceptual field.
             if position not in local_positions:
