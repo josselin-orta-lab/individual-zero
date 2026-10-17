@@ -24,9 +24,9 @@ class LocalPerceptionOptimizationTests(unittest.TestCase):
             self.assertEqual(run.returncode, 0, run.stderr)
             script = r"""
 from i1lab.world import WorldBody, WorldLayout, Position, VisibleEntity
-from i1lab.world import WorldPhysicsConfig, BodyState, BerryEffect, ToolRecipe
+from types import SimpleNamespace
 from i1lab import world
-from dataclasses import replace
+import json
 import random
 
 def old_capture(world_body, t):
@@ -64,13 +64,32 @@ def old_capture(world_body, t):
         inventory=dict(sorted(world_body._inventory.items()))
     )
 
-# Construct a true WorldBody by the same explicit frozen configuration as
-# the registered natural I1 world fixture.
-from i1lab.i1_birth import birth_i1
-from i1lab.world import WorldPhysicsConfig
-from i1lab.i1_birth_temperament import natural_i1_birth_config
+# Exercise the real method with a read-only physical owner stub. The method
+# reads exactly these attributes and cannot dispatch or mutate the world.
+rng = random.Random(246)
+for case in range(100):
+    current = Position(rng.randrange(1,31), rng.randrange(1,31))
+    resources = {}
+    for i in range(200 + case):
+        p = Position(rng.randrange(1,31), rng.randrange(1,31))
+        kind = ("berry_a","berry_b","wood","stone")[i%4]
+        resources[p,kind] = rng.randrange(0,4)
+    for delta,kind in [((0,0),"berry_a"),((1,0),"berry_b"),((-1,0),"wood"),((0,1),"stone")]:
+        p=Position(current.x+delta[0],current.y+delta[1])
+        resources[p,kind] = 2
+    fake = SimpleNamespace(
+        _position=current, _resources=resources, _obstacles=set(),
+        _water_sources={Position(2,2),current}, _creatures={Position(3,3)},
+        _shelters={current.moved("north")}, _inventory={"berry_a":case%3},
+        _is_interior=lambda p: 0 <= p.x < 32 and 0 <= p.y < 32
+    )
+    got = WorldBody.capture_local(fake,t_monde=case+1).as_dict()
+    expected = old_capture(fake,case+1).as_dict()
+    assert got == expected, (case,got,expected)
+print("I1_LOCAL_PERCEPTION_PARITY_OK")
 """
-            # This test instead performs an independent source-level transform
-            # comparison of both algorithms in the same checked-in WorldBody:
-            # avoid inventing birth fixture APIs in the reference program.
-            self.assertIn("def old_capture", script)
+            process = subprocess.run(
+                [sys.executable, "-c", script], capture_output=True, text=True,
+                env={"PYTHONPATH": str(output)}, check=False)
+            self.assertEqual(process.returncode, 0, process.stderr)
+            self.assertIn("I1_LOCAL_PERCEPTION_PARITY_OK", process.stdout)
