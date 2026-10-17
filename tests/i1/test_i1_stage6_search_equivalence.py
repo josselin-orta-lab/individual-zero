@@ -28,7 +28,7 @@ import textwrap
 from dataclasses import replace
 from types import SimpleNamespace
 from i1.modules.stage6_planning import SimulatorPlanner, Stage6PlanningConfig
-from i0.equipment import SimulationState, SimulationNeighbor
+from i1.equipment import SimulationState, SimulationNeighbor
 
 # The exact original Stage6 queue code is reconstructed inside this isolated
 # test process. The strict generated source-parity gate also rejects changes
