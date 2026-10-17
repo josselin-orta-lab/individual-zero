@@ -40,6 +40,11 @@ class ChargedPendingEpisodeIndex:
         self._history_version: str | None = None
         self._seen_count = 0
         self._pending: dict[str, dict] = {}
+        # Derived insertion-order key index: built only from already charged
+        # discovered episodes; never exported as another causal-state owner.
+        # Constant-time cursor access avoids rewalking all earlier episodes
+        # on every UC-priced rank slice. Restored from authenticated _pending.
+        self._pending_order: list[str] = []
         self._cut: ConsolidationCut | None = None
         self._target = 0
         self._seen_on_begin = 0
@@ -139,7 +144,9 @@ class ChargedPendingEpisodeIndex:
                            for p in staged)):
                 raise ValueError("late or duplicate episode at frozen causal cut")
             for payload in staged:
-                self._pending[payload["id"]] = payload
+                ref = payload["id"]
+                self._pending[ref] = payload
+                self._pending_order.append(ref)
             self._seen_count += count
             return count
 
@@ -151,10 +158,10 @@ class ChargedPendingEpisodeIndex:
         if not debit.accepted:
             raise RuntimeError("quoted candidate rank charge was refused")
         # Inspection of these owned projections starts only AFTER P-42 debit.
-        inspected = list(islice(
-            self._pending.values(), self._rank_cursor, self._rank_cursor + count))
-        if len(inspected) != count:
+        refs = self._pending_order[self._rank_cursor:self._rank_cursor + count]
+        if len(refs) != count or len(self._pending_order) != len(self._pending):
             raise RuntimeError("index changed during frozen paid selection")
+        inspected = [self._pending[ref] for ref in refs]
         # The already owned pending projections cannot be mutated while
         # the frozen paid rank stage is active. The final selector
         # validates and detaches each episode; M11 export still deepcopies.
@@ -206,6 +213,12 @@ class ChargedPendingEpisodeIndex:
             raise ValueError("h published unknown or already retired episode")
         for ref in refs:
             del self._pending[ref]
+        # This maintenance occurs after the already UC-priced retirement;
+        # future ranks retain the exact original insertion order.
+        removed = set(refs)
+        self._pending_order = [
+            ref for ref in self._pending_order if ref not in removed
+        ]
         self._history_version = new_version
 
     def export_causal_state(self) -> dict[str, object]:
@@ -275,6 +288,7 @@ class ChargedPendingEpisodeIndex:
         # No owner field changes before all structural checks pass.
         self._history_version, self._seen_count = history, seen
         self._pending = check
+        self._pending_order = list(check)
         self._cut, self._target = cut, target
         self._seen_on_begin, self._pending_on_begin = before, old_pending
         self._rank_cursor, self._ranked = rank, inspected
