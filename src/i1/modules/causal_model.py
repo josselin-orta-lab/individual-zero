@@ -1576,12 +1576,14 @@ class CausalModel:
                 continue
             verified_interventions.setdefault(trial.contingency_ref, []).append(trial)
 
-        # Derived, read-only index built only when an eligible witnessed
-        # correction actually needs published evidence. No persistent cache
-        # or new causal owner; original lexical ordering is preserved.
+        # Ephemeral published evidence view. The first two admissible
+        # lookups scan it directly; only a third lookup pays for an index.
+        # No persistent cache, extra causal owner or hidden information.
+        published_reports: tuple[AgencyEvidence, ...] | None = None
         published_by_action: dict[
             tuple[str, int, int], list[AgencyEvidence]
         ] | None = None
+        eligible_lookups = 0
 
         rules: list[NumericPredictionCorrection] = []
         for _, witness in sorted(self._numeric_witnesses.items()):
@@ -1617,19 +1619,32 @@ class CausalModel:
             if len(matching_contexts) < self.config.n2:
                 continue
 
-            if published_by_action is None:
+            if published_reports is None:
+                published_reports = self.published_agency_evidence()
+            eligible_lookups += 1
+            if eligible_lookups == 3:
                 published_by_action = {}
-                for report in self.published_agency_evidence():
+                for report in published_reports:
                     key = (
                         report.option_ref, report.sent_t_monde,
                         report.observed_t_monde,
                     )
                     published_by_action.setdefault(key, []).append(report)
 
-            for report in published_by_action.get(
-                (witness.option_ref, witness.sent_t_monde,
-                 witness.observed_t_monde), ()
-            ):
+            witness_key = (
+                witness.option_ref, witness.sent_t_monde,
+                witness.observed_t_monde,
+            )
+            matching_reports = (
+                published_by_action.get(witness_key, ())
+                if published_by_action is not None
+                else (
+                    report for report in published_reports
+                    if (report.option_ref, report.sent_t_monde,
+                        report.observed_t_monde) == witness_key
+                )
+            )
+            for report in matching_reports:
                 compatible = any(
                     variable == witness.variable
                     and status in {"conforming", "nonconforming"}
