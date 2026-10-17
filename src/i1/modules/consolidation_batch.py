@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+from heapq import nsmallest
 from math import isfinite
 from typing import Protocol, Sequence, Mapping
 
@@ -221,8 +222,12 @@ class ConsolidationBatchSelector:
             priorities.append(EpisodePriority(
                 ref, score, age, reward, surprise, recency, repetition,
             ))
-        priorities.sort(key=lambda item: (-item.score, -item.age_steps, item.episode_ref))
-        selected = tuple(priorities[:cfg.maximum_episodes])
+        # Full scores are still paid, computed and validated. Only the
+        # policy-bounded best group is sorted at the end.
+        selected = tuple(nsmallest(
+            cfg.maximum_episodes, priorities,
+            key=lambda item: (-item.score, -item.age_steps, item.episode_ref),
+        ))
         return FrozenBatchSelection(
             cut=cut, policy_version=cfg.version, priorities=selected,
             episode_payloads={item.episode_ref: candidates[item.episode_ref] for item in selected},

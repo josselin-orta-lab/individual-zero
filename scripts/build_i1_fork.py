@@ -370,69 +370,6 @@ def i1_committed_history_metadata_source(source: str) -> str:
     return source.replace(restore, amended)
 
 
-def i1_bounded_batch_selection_source(source: str) -> str:
-    """Select the same P-42 best episodes without sorting the whole backlog."""
-    import_anchor = "from dataclasses import dataclass\n"
-    old = (
-        "        priorities.sort(key=lambda item: (-item.score, -item.age_steps, item.episode_ref))\n"
-        "        selected = tuple(priorities[:cfg.maximum_episodes])\n"
-    )
-    new = (
-        "        # Full scores are still paid, computed and validated. Only the\n"
-        "        # policy-bounded best group is sorted at the end.\n"
-        "        selected = tuple(nsmallest(\n"
-        "            cfg.maximum_episodes, priorities,\n"
-        "            key=lambda item: (-item.score, -item.age_steps, item.episode_ref),\n"
-        "        ))\n"
-    )
-    if source.count(import_anchor) != 1 or source.count(old) != 1:
-        raise ValueError("unreviewed I1 bounded consolidation selection")
-    return source.replace(
-        import_anchor, import_anchor + "from heapq import nsmallest\n",
-    ).replace(old, new)
-
-
-def i1_pending_projection_copy_source(source: str) -> str:
-    """Keep exactly one detached copy of a trusted, indexed episode.
-
-    The private wrapper is consumed by ConsolidationBatchSelector._projection,
-    which validates the returned raw mapping and deepcopies it. Never change
-    the public Episode.as_dict contract or the paid pending-index ledger.
-    """
-    if source.count("class _IndexedEpisode:\n") != 1:
-        raise ValueError("unreviewed I1 pending index projection type")
-    old = "    def as_dict(self):\n        return deepcopy(self.payload)\n"
-    new = (
-        "    def as_dict(self):\n"
-        "        # Private view only: selector._projection validates and then\n"
-        "        # deepcopies this exact mapping before retaining it.\n"
-        "        return self.payload\n"
-    )
-    if source.count(old) != 1:
-        raise ValueError("unreviewed I1 pending projection copy site")
-    return source.replace(old, new)
-
-
-def i1_pending_paid_rank_owner_source(source: str) -> str:
-    """Keep charged rank rows within the already privately owned selection.
-
-    Pending entries cannot be inserted or retired while ranking: discovery
-    has finished, and published retirement requires an inactive selection.
-    Both public causal export and final batch-selection ownership still
-    detach data from the live private owner.
-    """
-    before = "        self._ranked.extend(deepcopy(inspected))\n"
-    after = (
-        "        # The already owned pending projections cannot be mutated while\n"
-        "        # the frozen paid rank stage is active. The final selector\n"
-        "        # validates and detaches each episode; M11 export still deepcopies.\n"
-        "        self._ranked.extend(inspected)\n"
-    )
-    if source.count(before) != 1:
-        raise ValueError("unreviewed I1 private rank snapshot copy")
-    return source.replace(before, after)
-
-
 def i1_journal_bounded_view_source(source: str) -> str:
     """I1-only bounded journal reads; preserve all legacy .entries semantics."""
     anchor = (
@@ -798,94 +735,6 @@ def i1_consolidation_digest_metadata_source(source: str) -> str:
     return source
 
 
-def i1_memory_recall_source(source: str) -> str:
-    """Reuse visible competitive refs once per I1 episodic recall.
-
-    The generated I1-only transformation preserves scoring, thresholds, tie
-    ordering, UC custody and original source snapshots.
-    """
-    signature = (
-        "    def _relevance(\n"
-        "        self,\n"
-        "        episode: Episode,\n"
-        "        st: STVersion | None,\n"
-        "    ) -> float:\n"
-    )
-    if source.count(signature) != 1:
-        raise ValueError("unreviewed generated I1 Memory relevance signature")
-    source = source.replace(signature, signature.replace(
-        "    ) -> float:\n",
-        "        current_refs: set[str] | None = None,\n"
-        "        active_goal_id: object = ...,\n"
-        "    ) -> float:\n",
-    ))
-    goal_block = (
-        "        if episode.active_goal_ref is not None:\n"
-        "            active = st.fixed.get(\"active_goal\")\n"
-        "            if (\n"
-        "                isinstance(active, Mapping)\n"
-        "                and active.get(\"id\") == episode.active_goal_ref\n"
-        "            ):\n"
-        "                return 1.0\n"
-    )
-    goal_cached = (
-        "        if episode.active_goal_ref is not None:\n"
-        "            if active_goal_id is ...:\n"
-        "                active = st.fixed.get(\"active_goal\")\n"
-        "                active_goal_id = (\n"
-        "                    active.get(\"id\") if isinstance(active, Mapping)\n"
-        "                    else None\n"
-        "                )\n"
-        "            if active_goal_id == episode.active_goal_ref:\n"
-        "                return 1.0\n"
-    )
-    if source.count(goal_block) != 1:
-        raise ValueError("unreviewed generated I1 Memory active-goal relevance")
-    source = source.replace(goal_block, goal_cached)
-    per_episode = (
-        "        current_refs = {\n"
-        "            element.contribution_ref for element in st.competitive\n"
-        "        }\n"
-    )
-    if source.count(per_episode) != 1:
-        raise ValueError("unreviewed generated I1 Memory competitive references")
-    source = source.replace(per_episode, (
-        "        if current_refs is None:\n"
-        "            current_refs = {\n"
-        "                element.contribution_ref for element in st.competitive\n"
-        "            }\n"
-    ))
-    streaming = (
-        "    def _iter_scored_recall(\n"
-        "        self, *, st: STVersion | None, t_monde: int,\n"
-        "    ) -> Iterator[RecallResult]:\n"
-    )
-    if source.count(streaming) != 1:
-        raise ValueError("unreviewed generated I1 Memory scoring iterator")
-    # Insert the shared visible competitive refs once, before any scores.
-    old_scan = "        for episode in self._episodes:\n"
-    if source.count(old_scan) != 1:
-        raise ValueError("unreviewed generated I1 Memory episode score scan")
-    source = source.replace(old_scan, (
-        "        visible_refs = (\n"
-        "            {element.contribution_ref for element in st.competitive}\n"
-        "            if st is not None else None\n"
-        "        )\n"
-        "        active = st.fixed.get(\"active_goal\") if st is not None else None\n"
-        "        visible_goal_id = (\n"
-        "            active.get(\"id\") if isinstance(active, Mapping)\n"
-        "            else None\n"
-        "        )\n"
-        + old_scan
-    ))
-    call = "            relevance = self._relevance(episode, st)\n"
-    if source.count(call) != 1:
-        raise ValueError("unreviewed generated I1 Memory relevance call")
-    return source.replace(
-        call, "            relevance = self._relevance(episode, st, visible_refs, visible_goal_id)\n"
-    )
-
-
 def i1_canonical_active_value_source(source: str) -> str:
     """Switch the generated Stage4 value owner only for natural I1.
 
@@ -1231,16 +1080,6 @@ def generate(output: Path) -> dict[str, object]:
                 continue  # Built into i1lab below, never twice in generated i1.
             contents = file.read_text(encoding="utf-8")
             transformed = rewrite(contents)
-            if (output_package == "i1"
-                    and relative.as_posix() == "modules/memory.py"):
-                transformed = i1_memory_recall_source(transformed)
-            if (output_package == "i1"
-                    and relative.as_posix() == "modules/consolidation_batch.py"):
-                transformed = i1_bounded_batch_selection_source(transformed)
-            if (output_package == "i1"
-                    and relative.as_posix() == "modules/consolidation_pending_index.py"):
-                transformed = i1_pending_projection_copy_source(transformed)
-                transformed = i1_pending_paid_rank_owner_source(transformed)
             if (output_package == "i1"
                     and relative.as_posix() == "modules/consolidation_pass_runner.py"):
                 transformed = i1_consolidation_runner_copy_source(transformed)
