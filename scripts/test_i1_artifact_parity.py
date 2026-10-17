@@ -62,6 +62,25 @@ def _approved_stage10_initialization_move(before: bytes, after: bytes) -> bool:
     reconstructed = after.replace(line, b"", 1).replace(late, line + late, 1)
     return reconstructed == before
 
+
+def _approved_local_capture_resource_optimization(before: bytes, after: bytes) -> bool:
+    """Allow only the two reviewed WorldBody.capture_local resource blocks.
+
+    Rejects every other generated-source drift; this is NOT a scientific
+    equivalence assertion. Independent first-person differential tests apply.
+    """
+    old_a = "        def resource_kinds(position: Position) -> tuple[str, ...]:\n            return tuple(\n                sorted(\n                    kind\n                    for (resource_position, kind), quantity in self._resources.items()\n                    if resource_position == position and quantity > 0\n                )\n            )\n"
+    new_a = "        # Stage-3 only sees the current cell and four cardinal neighbors.\n        # Inspect every resource once rather than re-scanning the entire world\n        # for each of those cells. This lookup is ephemeral observation work:\n        # it is never retained by the individual or populated from Oracle data.\n        local_positions = {self._position}\n        local_positions.update(\n            self._position.moved(direction)\n            for direction in (\"north\", \"south\", \"east\", \"west\")\n        )\n        local_resource_rows: dict[Position, list[tuple[str, int]]] = {}\n        for (position, kind), quantity in self._resources.items():\n            if position in local_positions and quantity > 0:\n                local_resource_rows.setdefault(position, []).append((kind, quantity))\n\n        def resource_kinds(position: Position) -> tuple[str, ...]:\n            return tuple(sorted(kind for kind, _ in local_resource_rows.get(position, ())))\n"
+    old_b = "        for (position, kind), quantity in sorted(\n            self._resources.items(),\n            key=lambda row: (row[0][0].x, row[0][0].y, row[0][1]),\n        ):\n            if quantity <= 0:\n                continue\n            visible_entities.append(\n                VisibleEntity(\n                    entity_id=f\"{kind}:{position.x}:{position.y}\",\n                    entity_type=kind,\n                    position=position,\n                    properties={\"quantity\": quantity},\n                )\n            )\n"
+    new_b = "        # Visible resources already belong to the local field. Their final\n        # entity order is established below by (entity_type, entity_id), so\n        # sorting remote resource cells cannot influence the capture.\n        for position, resources in local_resource_rows.items():\n            for kind, quantity in resources:\n                visible_entities.append(\n                    VisibleEntity(\n                        entity_id=f\"{kind}:{position.x}:{position.y}\",\n                        entity_type=kind,\n                        position=position,\n                        properties={\"quantity\": quantity},\n                    )\n                )\n"
+    original = before.decode("utf-8")
+    candidate = after.decode("utf-8")
+    if any(original.count(block) != 1 for block in (old_a, old_b)):
+        return False
+    if any(candidate.count(block) != 1 for block in (new_a, new_b)):
+        return False
+    return original.replace(old_a, new_a, 1).replace(old_b, new_b, 1) == candidate
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -76,10 +95,14 @@ def verify(reference_root: Path) -> None:
         changed = sorted(
             rel for rel in old.keys() & new.keys()
             if old[rel] != new[rel] and not (
-                rel == "i1lab/stage10_runtime.py"
-                and _approved_stage10_initialization_move(
-                    (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
-                )
+                (rel == "i1lab/stage10_runtime.py"
+                 and _approved_stage10_initialization_move(
+                     (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                 ))
+                or (rel == "i1lab/world.py"
+                    and _approved_local_capture_resource_optimization(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
             )
         )
         if missing or added or changed:
@@ -94,7 +117,7 @@ def verify(reference_root: Path) -> None:
                 )
                 print("".join(list(diff)[:100]), file=sys.stderr)
             raise AssertionError("native migration changed generated I1 bytes")
-        print(f"I1_GENERATED_PARITY_OK: {len(new)} files; only explicitly reviewed #255 move permitted")
+        print(f"I1_GENERATED_PARITY_OK: {len(new)} files; only reviewed #255 and local-capture block transformations permitted")
 
 
 def main() -> None:
