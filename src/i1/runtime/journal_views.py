@@ -80,11 +80,16 @@ class JournalViews:
 
     def __init__(self, *, journal: HashChainedJournal) -> None:
         self._journal = journal
+        # Rehydrate in journal order without materializing the complete
+        # technical history. The reverse iterator is read-only and covers
+        # every original occurrence; only committed autobiographical IDs
+        # are retained, in their original chronological order.
         self._commit_event_ids = [
             entry.event_id
-            for entry in journal.entries
+            for entry in journal.iter_entries_reversed()
             if entry.causal_event.get("kind") == "auto_segment_commit"
         ]
+        self._commit_event_ids.reverse()
         self._commit_sequence = len(self._commit_event_ids)
 
     def technical(self) -> tuple[JournalEntry, ...]:
