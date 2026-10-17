@@ -4,6 +4,7 @@ Compare the optimized capture with a faithful reference implementation of
 the former world resource observation algorithm. Never pass operator truth
 to a living actor.
 """
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import subprocess
@@ -28,6 +29,10 @@ from types import SimpleNamespace
 from i1lab import world
 import json
 import random
+import os
+import sys
+import time
+import statistics
 
 def old_capture(world_body, t):
     current = world_body._position
@@ -86,10 +91,74 @@ for case in range(100):
     got = WorldBody.capture_local(fake,t_monde=case+1).as_dict()
     expected = old_capture(fake,case+1).as_dict()
     assert got == expected, (case,got,expected)
+
+# Optional informational microbenchmark. No speed threshold is enforced.
+# The source of each path is the current built I1 source and the frozen
+# pre-change local-capture algorithm above, on identical synthetic worlds.
+if os.environ.get("I1_CAPTURE_BENCH") == "1":
+    kinds = ("berry_a", "berry_b", "wood", "stone")
+    positions = [Position(x, y) for x in range(1, 31) for y in range(1, 31)]
+    keys = [(p, kind) for p in positions for kind in kinds]
+    random.Random(101).shuffle(keys)
+    rows = []
+    for requested in (16, 128, 512, 2000, 3400):
+        resources = {key: 1 for key in keys[:requested]}
+        center = Position(16, 16)
+        # Keep locally perceivable resources in every workload.
+        resources.update({
+            (center, "berry_a"): 3,
+            (center.moved("east"), "berry_b"): 2,
+            (center.moved("north"), "stone"): 1,
+        })
+        fake = SimpleNamespace(
+            _position=center, _resources=resources, _obstacles=set(),
+            _water_sources={Position(1, 1), center},
+            _creatures={Position(4, 4)}, _shelters=set(),
+            _inventory={"berry_a": 2},
+            _is_interior=lambda p: 0 <= p.x < 32 and 0 <= p.y < 32,
+        )
+        assert old_capture(fake, 1).as_dict() == WorldBody.capture_local(fake, t_monde=1).as_dict()
+        older = []
+        newer = []
+        for rep in range(5):
+            old_capture(fake, 1)
+            WorldBody.capture_local(fake, t_monde=1)
+            tests = [
+                (lambda: old_capture(fake, 1), older),
+                (lambda: WorldBody.capture_local(fake, t_monde=1), newer),
+            ]
+            if rep % 2:
+                tests.reverse()
+            for run_capture, samples in tests:
+                start = time.perf_counter_ns()
+                for _ in range(60):
+                    run_capture()
+                samples.append((time.perf_counter_ns() - start) / 60)
+        old_ns = statistics.median(older)
+        new_ns = statistics.median(newer)
+        rows.append({
+            "resource_rows": len(resources),
+            "old_median_us": round(old_ns / 1000, 2),
+            "optimized_median_us": round(new_ns / 1000, 2),
+            "ratio": round(old_ns / new_ns, 2) if new_ns else None,
+        })
+    print("I1_LOCAL_CAPTURE_BENCH_JSON " + json.dumps({
+        "kind": "synthetic_microbenchmark_not_scientific_evidence",
+        "python": sys.version.split()[0],
+        "repetitions": 5,
+        "captures_per_repetition": 60,
+        "workloads": rows,
+    }, sort_keys=True))
+
 print("I1_LOCAL_PERCEPTION_PARITY_OK")
 """
             process = subprocess.run(
                 [sys.executable, "-c", script], capture_output=True, text=True,
-                env={"PYTHONPATH": str(output)}, check=False)
+                env={"PYTHONPATH": str(output),
+                     "I1_CAPTURE_BENCH": os.environ.get("I1_CAPTURE_BENCH", "0")},
+                check=False)
             self.assertEqual(process.returncode, 0, process.stderr)
             self.assertIn("I1_LOCAL_PERCEPTION_PARITY_OK", process.stdout)
+            if os.environ.get("I1_CAPTURE_BENCH") == "1":
+                self.assertIn("I1_LOCAL_CAPTURE_BENCH_JSON ", process.stdout)
+                print(process.stdout.split("I1_LOCAL_CAPTURE_BENCH_JSON ", 1)[1].splitlines()[0], flush=True)
