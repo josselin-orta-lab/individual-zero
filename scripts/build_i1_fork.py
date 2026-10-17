@@ -255,128 +255,6 @@ def i1_m11_bounded_journal_source(source: str) -> str:
     return source
 
 
-def i1_sqlite_life_audit_canonical_source(source: str) -> str:
-    """Retain all full SQL and schema checks but avoid duplicate decoding.
-
-    The exact old-current generation already carries a verified receipt;
-    this is only for the generated I1lab SQLite ledger.
-    """
-    changes = (
-        ("            if canonical_causal_bytes(decoded) != data:\n                raise ValueError(\"noncanonical state\")\n            _canonical_state(decoded, identity)\n",
-         "            # _canonical_state performs the full schema and causal\n            # normalization checks; reuse its bytes for the exact comparison.\n            if _canonical_state(decoded, identity) != data:\n                raise ValueError(\"noncanonical state\")\n"),
-        ("            old_bytes = self._db.execute(\n                \"SELECT state_bytes FROM life_current WHERE slot=1\"\n            ).fetchone()[0]\n            old_metadata = registered_current_metadata(json.loads(old_bytes))\n            new_metadata = registered_current_metadata(current_state)\n            if (old_metadata is None) != (new_metadata is None):\n                raise ValueError(\"current identity cannot switch registered custody contract\")\n            if (\n                old_metadata is not None\n                and new_metadata is not None\n                and old_metadata[0] != new_metadata[0]\n            ):\n                raise ValueError(\"registered causal owner roster changed within one identity\")\n",
-         "            # The receipt came from a complete audit of the current SQL\n            # generation. Under BEGIN IMMEDIATE, _checked_current_anchor\n            # rechecks its state bytes and pinned roster against that receipt;\n            # the fallback path audits under the lock instead. There is no\n            # need to deserialize the old complete cognitive state again.\n            old_roster_hash = receipt.registered_roster_hash\n            new_metadata = registered_current_metadata(current_state)\n            if (old_roster_hash is None) != (new_metadata is None):\n                raise ValueError(\"current identity cannot switch registered custody contract\")\n            if (old_roster_hash is not None\n                    and new_metadata is not None\n                    and old_roster_hash != new_metadata[0]):\n                raise ValueError(\"registered causal owner roster changed within one identity\")\n"),
-    )
-    for before, after in changes:
-        if source.count(before) != 1:
-            raise ValueError("unreviewed I1 SQLite life ledger audit boundary")
-        source = source.replace(before, after)
-    return source
-
-
-def i1_sqlite_streaming_audit_source(source: str) -> str:
-    """Avoid redundant owner metadata scans and hex conversion per occurrence.
-
-    Applies only to generated I1lab; preserves every full hash-chain audit,
-    canonical byte check, terminal sequence rule and SQL head/count check.
-    """
-    changes = (
-        (
-            "from dataclasses import dataclass\n",
-            "from dataclasses import dataclass\nfrom hashlib import sha256\n",
-        ),
-        (
-            "def _canonical_state(state: Mapping[str, object], identity: str) -> bytes:\n",
-            "def _canonical_state_with_metadata(\n    state: Mapping[str, object], identity: str,\n) -> tuple[bytes, tuple[str, str, int, str, str] | None]:\n",
-        ),
-        (
-            "    registered_current_metadata(state)\n    return canonical_causal_bytes(state)\n",
-            "    metadata = registered_current_metadata(state)\n    return canonical_causal_bytes(state), metadata\n\n\ndef _canonical_state(state: Mapping[str, object], identity: str) -> bytes:\n    \"\"\"Keep canonical state bytes and owner-roster verification for all callers.\"\"\"\n    return _canonical_state_with_metadata(state, identity)[0]\n",
-        ),
-        (
-            "            if _canonical_state(decoded, identity) != data:\n                raise ValueError(\"noncanonical state\")\n",
-            "            canonical, metadata = _canonical_state_with_metadata(decoded, identity)\n            if canonical != data:\n                raise ValueError(\"noncanonical state\")\n",
-        ),
-        (
-            "        previous = GENESIS_HASH\n        expected = 0\n",
-            "        # The large decoded state is no longer needed during the full event audit.\n        del decoded\n        previous = GENESIS_HASH\n        previous_digest = bytes.fromhex(GENESIS_HASH)\n        expected = 0\n",
-        ),
-        (
-            "            actual = sha256_hex(bytes.fromhex(previous) + payload)\n",
-            "            actual_digest = sha256(previous_digest + payload).digest()\n            actual = actual_digest.hex()\n",
-        ),
-        (
-            "            previous = actual\n            expected += 1\n",
-            "            previous = actual\n            previous_digest = actual_digest\n            expected += 1\n",
-        ),
-        (
-            "        metadata = registered_current_metadata(decoded)\n",
-            "        # The current envelope was fully checked before streaming occurrences.\n",
-        ),
-        (
-            "        payload = _canonical_state(initial_state, individual_id)\n        metadata = registered_current_metadata(initial_state)\n",
-            "        payload, metadata = _canonical_state_with_metadata(\n            initial_state, individual_id,\n        )\n",
-        ),
-        (
-            "            payload = _canonical_state(current_state, receipt.individual_id)\n",
-            "            payload, new_metadata = _canonical_state_with_metadata(\n                current_state, receipt.individual_id,\n            )\n",
-        ),
-        (
-            "            new_metadata = registered_current_metadata(current_state)\n",
-            "",
-        ),
-        (
-            "            head = receipt.journal_head\n            index = receipt.journal_count\n",
-            "            head = receipt.journal_head\n            head_digest = bytes.fromhex(head)\n            index = receipt.journal_count\n",
-        ),
-        (
-            "                event_hash = sha256_hex(bytes.fromhex(head) + canonical_causal_bytes(\n                    {\"event_id\": event_id, \"causal_event\": causal}\n                ))\n",
-            "                event_digest = sha256(head_digest + canonical_causal_bytes(\n                    {\"event_id\": event_id, \"causal_event\": causal}\n                )).digest()\n                event_hash = event_digest.hex()\n",
-        ),
-        (
-            "                head = event_hash\n                index += 1\n",
-            "                head = event_hash\n                head_digest = event_digest\n                index += 1\n",
-        ),
-    )
-    for before, after in changes:
-        if source.count(before) != 1:
-            raise ValueError("unreviewed I1 SQL incremental audit boundary")
-        source = source.replace(before, after)
-    return source
-
-
-def i1_sqlite_detached_owner_export_source(source: str) -> str:
-    """Elide copies only for exact I1 owners with proven detached exports.
-
-    SlowHistory.export_causal_state detaches both its state and lineage.
-    ConsolidationSlot.export_causal_state returns a fresh envelope and the
-    complete transaction exports its checkpoint and candidate trees deeply.
-    All other owners retain a defensive deepcopy before SQLite custody.
-    """
-    old = "        state = deepcopy(owner.export_causal_state())\n"
-    new = (
-        "        exported = owner.export_causal_state()\n"
-        "        # Explicitly scoped exact types only: never trust an unknown\n"
-        "        # owner, subclass or mutable nested export by assumption.\n"
-        "        from .consolidation_publication import SlowHistory\n"
-        "        from i1.modules.consolidation_transaction import ConsolidationSlot\n"
-        "        state = (exported if type(owner) in (SlowHistory, ConsolidationSlot)\n"
-        "                 else deepcopy(exported))\n"
-    )
-    if source.count(old) != 1:
-        raise ValueError("unreviewed I1 SQLite detached export boundary")
-    return source.replace(old, new)
-
-
-def i1_sqlite_journal_count_source(source: str) -> str:
-    """Read exact journal count without allocating one full occurrence tuple."""
-    before = '"count": len(journal.entries), "head": journal.head_hash,'
-    after = '"count": journal.entry_count, "head": journal.head_hash,'
-    if source.count(before) != 1:
-        raise ValueError("unreviewed I1 SQLite capture journal-count anchor")
-    return source.replace(before, after)
-
-
 def i1_canonical_active_value_source(source: str) -> str:
     """Switch the generated Stage4 value owner only for natural I1.
 
@@ -720,18 +598,10 @@ def generate(output: Path) -> dict[str, object]:
             relative = file.relative_to(source)
             if input_package == "i1" and relative.parts[0] == "runtime":
                 continue  # Built into i1lab below, never twice in generated i1.
-            if input_package == "lab" and relative.as_posix() in {"world.py", "journal.py", "journal_views.py", "consolidation_lived_evidence.py", "consolidation_postcut_journal.py"}:
+            if input_package == "lab" and relative.as_posix() in {"world.py", "journal.py", "journal_views.py", "consolidation_lived_evidence.py", "consolidation_postcut_journal.py", "sqlite_life_store.py", "sqlite_runtime_custody.py"}:
                 continue  # Versioned native I1 world, journal and lived views.
             contents = file.read_text(encoding="utf-8")
             transformed = rewrite(contents)
-            if (output_package == "i1lab"
-                    and relative.as_posix() == "sqlite_life_store.py"):
-                transformed = i1_sqlite_life_audit_canonical_source(transformed)
-                transformed = i1_sqlite_streaming_audit_source(transformed)
-            if (output_package == "i1lab"
-                    and relative.as_posix() == "sqlite_runtime_custody.py"):
-                transformed = i1_sqlite_journal_count_source(transformed)
-                transformed = i1_sqlite_detached_owner_export_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "consolidation_publication.py"):
                 transformed = i1_committed_history_metadata_source(transformed)

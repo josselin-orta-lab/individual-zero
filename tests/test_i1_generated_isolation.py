@@ -31,7 +31,7 @@ class I1GeneratedIsolationTests(unittest.TestCase):
             )
             self.assertNotIn("i1/runtime/world.py", first["files"])
             # Journal and lived views are now I1-owned, not text-patched Lab.
-            for module in ("journal.py", "journal_views.py", "consolidation_lived_evidence.py", "consolidation_postcut_journal.py"):
+            for module in ("journal.py", "journal_views.py", "consolidation_lived_evidence.py", "consolidation_postcut_journal.py", "sqlite_life_store.py", "sqlite_runtime_custody.py"):
                 rel = "i1lab/" + module
                 source = src / "i1" / "runtime" / module
                 self.assertEqual(
