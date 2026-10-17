@@ -109,6 +109,73 @@ class CurrentI1(unittest.TestCase):
         self.assertGreater(
             life.world.config.dehydration_integrity_damage_per_step, 0)
 
+    def test_complete_natural_architecture_is_enabled(self):
+        """No historical test flags or disabled current-I1 cognitive modules.
+
+        Validate the real canonical birth without ablation, mocks, forced
+        decisions or altered policy weights. Old external predictors are NOT
+        part of the present first-person architecture.
+        """
+        from i1lab.i1_active_value_needs import I1ActiveValueNeeds
+        from i1lab.i1_water_runtime import CONSIDER, ACQUIRE
+        from i1lab.i1_active_runtime import I1_AFFORDANCE_OPERATION
+
+        life, _ = self.born()
+        self.assertIs(type(life.value_needs), I1ActiveValueNeeds)
+        self.assertTrue(life._i1_unknown_action_enabled)
+        self.assertTrue(life._i1_water_probe_enabled)
+        self.assertTrue(life._i1_water_learning_enabled)
+        self.assertTrue(life._goal_agency_enabled)
+        self.assertTrue(life._dual_scope_enabled)
+        self.assertTrue(life._spatial_goal_enabled)
+        self.assertIsNotNone(life.exploration.geographic)
+        self.assertIsNotNone(life._water_learner)
+        self.assertIsNotNone(life.goal_manager)
+        self.assertIsNotNone(life.memory)
+        self.assertIsNotNone(life.planning)
+        self.assertIsNotNone(life.competition)
+        self.assertIsNotNone(life.causal_model)
+        self.assertIsNotNone(life.slow_history)
+        self.assertIsNotNone(life.sleep_health)
+        self.assertIsNotNone(life.modulation)
+        self.assertEqual(
+            set(life._i1_active_owner_views),
+            {"causal_model", "perception", "metacognition_health"},
+        )
+        config = life._stage11_config
+        self.assertTrue(config.cycle_occurrence_guard_enabled)
+        self.assertTrue(config.geographic_capacity_guard_enabled)
+        self.assertIsNotNone(config.geographic)
+        self.assertTrue(
+            config.stage9.stage8.stage7.stage6.planning.progressive_subgoals)
+        sleep = life._stage10_config.sleep
+        self.assertGreater(sleep.fatigue_gain, 0)
+        self.assertGreater(sleep.consolidation_weight, 0)
+        self.assertGreater(sleep.night_weight, 0)
+        costs = life.compute_budget._config.operation_costs
+        for operation in (
+            I1_AFFORDANCE_OPERATION, CONSIDER, ACQUIRE,
+            "i1_private_procedure_recall", "stage12_diagnostic_sample",
+            "goal_agency_assessment", "goal_outcome_responsibility_assessment",
+        ):
+            self.assertIn(operation, costs, operation)
+            self.assertGreater(costs[operation], 0, operation)
+        self.assertTrue(life.journal.verify())
+
+    def test_active_modules_participate_in_real_step(self):
+        """Witness a genuine charged cognitive pass, without selecting actions."""
+        life, _ = self.born()
+        before = len(life.journal.entries)
+        outcome = life.run_step()
+        self.assertIn(outcome.execution_status,
+                      ("applied", "dead", "safety_block"))
+        self.assertGreater(len(life.journal.entries), before)
+        kinds = [entry.causal_event["kind"]
+                 for entry in life.journal.entries[before:]]
+        self.assertIn("compute_charge", kinds)
+        self.assertIsNotNone(life.stage3._capture)
+        self.assertTrue(life.journal.verify())
+
     def test_local_perception_excludes_hidden_truth(self):
         life, _ = self.born()
         local = life.world.capture_local(t_monde=1).as_dict()
