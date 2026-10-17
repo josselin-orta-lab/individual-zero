@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+from heapq import merge
 from math import isfinite
 from typing import Mapping
 from lab.determinism import canonical_causal_bytes, sha256_hex
@@ -398,6 +399,22 @@ class LivedSixPassAlgorithm:
         return result
 
     @staticmethod
+    def _merge_witness_refs(old_refs, new_refs):
+        """Preserve exact sorted witness IDs without a full re-sort.
+
+        Canonical compiled skills already carry sorted, unique provenance.
+        Incoming noncanonical order still gets the historical full sort.
+        Neither input is mutated, and validation of disjointness precedes
+        every call from the private merge.
+        """
+        if (all(old_refs[i - 1] < old_refs[i]
+                for i in range(1, len(old_refs)))
+                and all(new_refs[i - 1] < new_refs[i]
+                        for i in range(1, len(new_refs)))):
+            return list(merge(old_refs, new_refs))
+        return sorted(old_refs + new_refs)
+
+    @staticmethod
     def _merge_private_procedures(
         previous, newly_compiled, threshold, *, already_detached=False,
     ):
@@ -457,14 +474,24 @@ class LivedSixPassAlgorithm:
                 old_episodes, new_episodes, old_events, new_events,
                 old_trials, new_trials, old_trial_events, new_trial_events,
             )
-            if (not all(type(v) is list and v for v in lists)
-                    or any(len(set(v)) != len(v) for v in lists)
-                    or not set(old_episodes).issubset(old_trials)
-                    or not set(new_episodes).issubset(new_trials)
-                    or not set(old_events).issubset(old_trial_events)
-                    or not set(new_events).issubset(new_trial_events)
-                    or set(old_trials).intersection(new_trials)
-                    or set(old_trial_events).intersection(new_trial_events)):
+            if not all(type(v) is list and v for v in lists):
+                raise ValueError(
+                    "private successes and failures require disjoint "
+                    "verified episode and event provenance"
+                )
+            # Each list's set was previously recreated for uniqueness,
+            # containment and cross-cut disjointness. Materialize it once.
+            unique = tuple(set(v) for v in lists)
+            (old_ep_set, new_ep_set, old_event_set, new_event_set,
+             old_trial_set, new_trial_set,
+             old_trial_event_set, new_trial_event_set) = unique
+            if (any(len(refs) != len(v) for refs, v in zip(unique, lists))
+                    or not old_ep_set.issubset(old_trial_set)
+                    or not new_ep_set.issubset(new_trial_set)
+                    or not old_event_set.issubset(old_trial_event_set)
+                    or not new_event_set.issubset(new_trial_event_set)
+                    or not old_trial_set.isdisjoint(new_trial_set)
+                    or not old_trial_event_set.isdisjoint(new_trial_event_set)):
                 raise ValueError(
                     "private successes and failures require disjoint "
                     "verified episode and event provenance"
@@ -482,10 +509,18 @@ class LivedSixPassAlgorithm:
             # ownership mode. Do not clone it again before replacing
             # the witness arrays; no outside caller aliases this row.
             merged = old
-            merged["source_episode_refs"] = sorted(old_episodes + new_episodes)
-            merged["source_event_refs"] = sorted(old_events + new_events)
-            merged["trial_episode_refs"] = sorted(old_trials + new_trials)
-            merged["trial_event_refs"] = sorted(old_trial_events + new_trial_events)
+            merged["source_episode_refs"] = LivedSixPassAlgorithm._merge_witness_refs(
+                old_episodes, new_episodes,
+            )
+            merged["source_event_refs"] = LivedSixPassAlgorithm._merge_witness_refs(
+                old_events, new_events,
+            )
+            merged["trial_episode_refs"] = LivedSixPassAlgorithm._merge_witness_refs(
+                old_trials, new_trials,
+            )
+            merged["trial_event_refs"] = LivedSixPassAlgorithm._merge_witness_refs(
+                old_trial_events, new_trial_events,
+            )
             merged["distinct_success_count"] = success
             merged["distinct_trial_count"] = trials
             merged["success_rate"] = success / trials

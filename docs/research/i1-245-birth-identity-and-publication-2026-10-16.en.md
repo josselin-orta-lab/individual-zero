@@ -1064,3 +1064,38 @@ instead. It does not invent evidence or waive causal checks.
 **NON VALIDÉ**: source inspection only. No code generation, test, CI,
 benchmark or simulated life was run. No numerical speedup or runtime
 behavioral parity is claimed. I0 is untouched and PR #246 remains draft.
+
+## I1 paid procedural history: linear witness merge and single-use validation sets (2026-10-17)
+
+During each fully paid, privately owned skill consolidation, the old
+`_merge_private_procedures` reconstructed the same historical episode/event
+sets repeatedly: once to check uniqueness, again to check success is a
+subset of trials, and again to reject reused trials across sleep cuts.
+The I1-only semantics template now builds one set per original evidence
+list, reuses all eight sets for exact uniqueness, containment and
+old/new disjointness checks, and retains the same fail-closed error
+condition. No witness is accepted without the original checks.
+
+The four accumulated source/trial episode/event arrays were also
+resorted from concatenated lists after every repeated observation.
+Canonical private compilation emits these arrays in strict sorted order;
+for these validated unique and disjoint old/new lists, the new
+`_merge_witness_refs` method checks ordering and uses
+`heapq.merge` to construct the **same** globally sorted list without
+re-sorting the full history. If either input is not strictly sorted,
+the original `sorted(old_refs + new_refs)` normalization is retained.
+Both paths allocate fresh result arrays; neither modifies caller lists.
+With M old and K new witness identifiers, sorting work changes from
+O((M+K) log(M+K)) to O(M+K) for correctly ordered arrays, although the
+explicit source-order checks and independent authenticity verifications
+still run.
+
+These are private Stage10 algorithmic optimizations only. They do not
+alter UC debits, distinct witnessed episodes, negative-trial handling,
+confidence calculation, skill identity, safety assumptions, action
+choice, irreversible life semantics, or I0. No experimental legacy
+results were used as validity references.
+
+**NON VALIDÉ:** source inspection and commit only, without code
+generation, tests, CI runs, simulations or benchmarks. Equivalence and
+numerical gains require a later permitted verification.
