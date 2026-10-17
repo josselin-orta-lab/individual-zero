@@ -1873,8 +1873,29 @@ class CausalModel:
              and not value.effect_present),
             key=lambda value: value.identifier,
         )
-        for effect in treated:
+        # Recovered or directly validated observations may contain lists:
+        # equality comparisons worked for them, but list-backed controls
+        # cannot be used as dictionary keys. Never silently normalize proof.
+        # Preserve the original ordered scan for these uncommon inputs.
+        canonical_controls = all(
+            type(row.controlled_variables) is tuple
+            and all(type(pair) is tuple for pair in row.controlled_variables)
+            for rows in (treated, controls) for row in rows
+        )
+        controls_by_context: dict[
+            tuple[str, tuple[tuple[str, str], ...]], list[CausalObservation]
+        ] = {}
+        if canonical_controls:
             for baseline in controls:
+                key = (baseline.observation_context, baseline.controlled_variables)
+                controls_by_context.setdefault(key, []).append(baseline)
+        for effect in treated:
+            comparable = (
+                controls_by_context.get(
+                    (effect.observation_context, effect.controlled_variables), ()
+                ) if canonical_controls else controls
+            )
+            for baseline in comparable:
                 if (
                     effect.observation_ref == baseline.observation_ref
                     or effect.observed_step == baseline.observed_step
