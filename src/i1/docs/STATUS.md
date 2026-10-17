@@ -99,3 +99,13 @@ The source-level `UnboundLocalError` in `Stage10Runtime._publish_live_consolidat
 Added [STAGES_AND_INTERFACES.md](STAGES_AND_INTERFACES.md) by inspecting current source: the natural `I1Runtime` resolves a cooperative multiple-inheritance chain through I1-specific water/uncertainty and Stage12, `Stage11SleepRuntime(Stage11Runtime, Stage10Runtime)`, Stage9 to Stage4 and the Stage3/2 physical substrate. Stage1 and Stage5 are not on that active inheritance chain. The guide maps concrete phase entrypoints, cross-module data, provenance restrictions, UC, M11 custody and current test anchors, without promoting old cohorts or software tests to scientific proof. The handbook index and required-document tests now include this guide.
 
 Previous head `ca716fe501622e1c90dff8cb746b376d8a2c05bd` passed GitHub Actions #39053624321 on its exact SHA. The current documentation edits require their own workflow validation; no new scientific GO is asserted. Remaining gaps include an executable per-mechanism evidence map with direct tests and prospective four-owner publication traces.
+
+## Documentation, state custody and runnable suite contracts (2026-10-17)
+
+The prior source-backed guide commit `af03d5c79bdde097eddceb181cdda772c31efc00` passed [GitHub CI #39053993737](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39053993737). This success applies **only** to that SHA.
+
+This iteration added [DATA_CONTRACTS_AND_CUSTODY.md](DATA_CONTRACTS_AND_CUSTODY.md), covering `Contribution`, `STVersion`, the technical/autobiographical boundary, Stage10 publication keys versus canonical owner IDs, owned cold-state envelopes and M11 failure fencing. [LIVED_EVIDENCE_WALKTHROUGH.md](LIVED_EVIDENCE_WALKTHROUGH.md) gives the existing, operator-only `report.json` walkthrough with the explicit `NOT_OBSERVED` cognitive fields. Existing Memory, M11, development and README guides now cross-reference them. Documentation presence checks cover both new guides.
+
+A separate **source-inspected executable-contract error** was found: `scripts/test_i1_ci.py` requires `--junit`, but the declared `engine.json` smoke/full suite argument lists omitted it. Both registered test vectors and example commands now include their own report targets, with a focused `tests/i1/test_engine_suites.py` assertion. This changes test dispatch only, not I1 cognition, Stage10, physics, owner state or I0.
+
+**Acceptance at this iteration's newest commit is pending** the exact CI workflow result. Neither a green previous SHA nor current documentation constitutes proof of natural learning or multi-owner publication. Those remain OPEN / NOT_OBSERVED.
