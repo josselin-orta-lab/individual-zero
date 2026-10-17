@@ -1,0 +1,2555 @@
+{
+  "schema": "individual-zero-archived-sources/v1",
+  "snapshot_ref": "704a20ee048d7dee5151ccfed439be37ba02e36b",
+  "description": "Verbatim legacy I0/shared Lab workflows and tests, not I1 behavioral oracles",
+  "counts": {
+    "workflows": 127,
+    "tests": 297
+  },
+  "entries": [
+    {
+      "source": ".github/workflows/agent-b-stage10-validation.yml",
+      "archived": "archive/i0/workflows/agent-b-stage10-validation.yml",
+      "blob_sha": "6c7dec1975355261cee478c5b0cb20a93e779e09",
+      "bytes": 1834
+    },
+    {
+      "source": ".github/workflows/ci.yml",
+      "archived": "archive/i0/workflows/ci.yml",
+      "blob_sha": "b3edce69f41870317f58993f43e2be32be29805e",
+      "bytes": 48482
+    },
+    {
+      "source": ".github/workflows/issue133-index-crash-matrix.yml",
+      "archived": "archive/i0/workflows/issue133-index-crash-matrix.yml",
+      "blob_sha": "bf17183178f2f32c88434b5219683b716ca55fd5",
+      "bytes": 2891
+    },
+    {
+      "source": ".github/workflows/m11-custody-audit.yml",
+      "archived": "archive/i0/workflows/m11-custody-audit.yml",
+      "blob_sha": "9f5604780f2e5d7f266dcba7335bc7bb71e90dfd",
+      "bytes": 1519
+    },
+    {
+      "source": ".github/workflows/m11-release-campaign.yml",
+      "archived": "archive/i0/workflows/m11-release-campaign.yml",
+      "blob_sha": "1043172d4827cba17ef21f38c456956b41e2be40",
+      "bytes": 1722
+    },
+    {
+      "source": ".github/workflows/m11-sqlite-gate.yml",
+      "archived": "archive/i0/workflows/m11-sqlite-gate.yml",
+      "blob_sha": "78356aceeba94554363b5dff745a7f0ffd2b301f",
+      "bytes": 1460
+    },
+    {
+      "source": ".github/workflows/m11-stage12-atomic.yml",
+      "archived": "archive/i0/workflows/m11-stage12-atomic.yml",
+      "blob_sha": "2e45b472e3148891e7c875072633e7fc0fc98b27",
+      "bytes": 2638
+    },
+    {
+      "source": ".github/workflows/m11-stage12-h120.yml",
+      "archived": "archive/i0/workflows/m11-stage12-h120.yml",
+      "blob_sha": "9f93626944b9ee46843f4b726e98dcdccdcf6f9d",
+      "bytes": 1408
+    },
+    {
+      "source": ".github/workflows/m11-stage12-opt1-h600.yml",
+      "archived": "archive/i0/workflows/m11-stage12-opt1-h600.yml",
+      "blob_sha": "dba697ce1d4868d93f910a9208b8ff562e0e8adb",
+      "bytes": 1275
+    },
+    {
+      "source": ".github/workflows/m11-stage12-opt1-profile30.yml",
+      "archived": "archive/i0/workflows/m11-stage12-opt1-profile30.yml",
+      "blob_sha": "01f6f91f4970aef9e3211df4d77e58b6618530fc",
+      "bytes": 1227
+    },
+    {
+      "source": ".github/workflows/m11-stage12-profile30.yml",
+      "archived": "archive/i0/workflows/m11-stage12-profile30.yml",
+      "blob_sha": "c99def64b965ece81ec6a97d5fd5144fe6c735bd",
+      "bytes": 1238
+    },
+    {
+      "source": ".github/workflows/observer-phase2-600.yml",
+      "archived": "archive/i0/workflows/observer-phase2-600.yml",
+      "blob_sha": "f4f728fb20d85039e30e66b5f15776e37688c9b5",
+      "bytes": 4246
+    },
+    {
+      "source": ".github/workflows/observer.yml",
+      "archived": "archive/i0/workflows/observer.yml",
+      "blob_sha": "36a99d2a7145440dacb527a146b3e98b2d01a9d0",
+      "bytes": 7100
+    },
+    {
+      "source": ".github/workflows/postmerge-v131-transversal.yml",
+      "archived": "archive/i0/workflows/postmerge-v131-transversal.yml",
+      "blob_sha": "f7cb083de6aa4612c5208a6943b7594d26d85842",
+      "bytes": 5970
+    },
+    {
+      "source": ".github/workflows/stage12-a26-smoke-regression.yml",
+      "archived": "archive/i0/workflows/stage12-a26-smoke-regression.yml",
+      "blob_sha": "9de01e5abd543dee40d4ab63b05f28bee6d6d373",
+      "bytes": 1067
+    },
+    {
+      "source": ".github/workflows/stage12-b-a228-funnel.yml",
+      "archived": "archive/i0/workflows/stage12-b-a228-funnel.yml",
+      "blob_sha": "d54cf621991a07b91c510158076f2610f2eb01a2",
+      "bytes": 1371
+    },
+    {
+      "source": ".github/workflows/stage12-b-a229.yml",
+      "archived": "archive/i0/workflows/stage12-b-a229.yml",
+      "blob_sha": "5a2b2affb7ef7006642a8b9494c6d1b64775517c",
+      "bytes": 1273
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230.yml",
+      "blob_sha": "7aa934df74184d7a8dd53bdffb891f022a90df38",
+      "bytes": 1336
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230e.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230e.yml",
+      "blob_sha": "f3c9e0685778f1fb3c94bf9265506bb50fbaaa3b",
+      "bytes": 1323
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230g.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230g.yml",
+      "blob_sha": "cc7ab061c26a0ceecaee2b16a2a67e84015dcc24",
+      "bytes": 1951
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230h.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230h.yml",
+      "blob_sha": "906ce0468f348150be02a20746937a46eafa868b",
+      "bytes": 1863
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230j.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230j.yml",
+      "blob_sha": "a66b3f6f8a92410b3a7f77d530e9cffa3cbadcfd",
+      "bytes": 1608
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230k.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230k.yml",
+      "blob_sha": "4b57412ba1402092ae44a67f358fee1a1986748f",
+      "bytes": 1903
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230l.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230l.yml",
+      "blob_sha": "e55fee2352142b3750d2ac71aac0bcd0947cf07d",
+      "bytes": 1544
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230n.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230n.yml",
+      "blob_sha": "7f6341d7dc46c30c7f39cb2bed470693057f3950",
+      "bytes": 1670
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230o.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230o.yml",
+      "blob_sha": "3bc2907a193579d59fda3cd9ebfb5af28b8fbef8",
+      "bytes": 2235
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230p.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230p.yml",
+      "blob_sha": "3e95eed089dcbc5cd7caea57668b453c8d64fbec",
+      "bytes": 1670
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230q.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230q.yml",
+      "blob_sha": "d81900bdb8f4aec2484c6f939f833e0dd1cdff2e",
+      "bytes": 2231
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230r.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230r.yml",
+      "blob_sha": "0576783f92faca28381b4472a38df60a16b2eb69",
+      "bytes": 1945
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230s-shadow.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230s-shadow.yml",
+      "blob_sha": "e5e1f652e770f79059c01080a14f4e84103d5f04",
+      "bytes": 1608
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230s.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230s.yml",
+      "blob_sha": "423a724ac21feddfc024bfb8bb54432c0e05525f",
+      "bytes": 1556
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230t-shadow.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230t-shadow.yml",
+      "blob_sha": "a36303428cf90a47312c077503397a69a9b0a1d8",
+      "bytes": 2331
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230t.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230t.yml",
+      "blob_sha": "fa432f6ed786757db5db2ca551f12093955f2fa1",
+      "bytes": 2038
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230u-shadow.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230u-shadow.yml",
+      "blob_sha": "572a6edd735f6d658f777c8c67be6bed0d13ad38",
+      "bytes": 2068
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230u.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230u.yml",
+      "blob_sha": "7592bb94f301d91a3e323734d99cf8cdd699cd6d",
+      "bytes": 2764
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230v.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230v.yml",
+      "blob_sha": "23bb0d328196b7d82e4f732122d25523207acd2e",
+      "bytes": 3354
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230w.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230w.yml",
+      "blob_sha": "6a3e61461fceb979aa0275f8b42fad0db09dd801",
+      "bytes": 1597
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230x.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230x.yml",
+      "blob_sha": "d9758a11df6898e37c3366fc996f76f568bfdb2a",
+      "bytes": 2294
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230y.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230y.yml",
+      "blob_sha": "3927f3b912adb85b41166e34be3f7fe166c3d34c",
+      "bytes": 2030
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230z.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230z.yml",
+      "blob_sha": "4373b8fe9fa7b258e3767f249c59a4e8d80f42c2",
+      "bytes": 1623
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230za.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230za.yml",
+      "blob_sha": "f2c2ca6cdb4076239134f4d9029d2ac6cb076523",
+      "bytes": 2343
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zb.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zb.yml",
+      "blob_sha": "6aa64d677f6d4a3670aff2b2151df6d843e41e86",
+      "bytes": 1693
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zd.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zd.yml",
+      "blob_sha": "89592b145064c5706d222b20ce6de0119e226671",
+      "bytes": 2274
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230ze.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230ze.yml",
+      "blob_sha": "0708fd34e0f7abc717c40672296e48ac18e83f31",
+      "bytes": 1638
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zf.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zf.yml",
+      "blob_sha": "8dcbfa09e2907603dc966181800ca1dc1f0e9920",
+      "bytes": 2266
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zg.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zg.yml",
+      "blob_sha": "06e310bee70a0110edb42f9ca906854e80b448a2",
+      "bytes": 2400
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zh.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zh.yml",
+      "blob_sha": "f1c35dc266477de6c894b9d4f24a37b79b11c53b",
+      "bytes": 2725
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zi.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zi.yml",
+      "blob_sha": "4d5be2bcada9c99edfec98bae0fb2d8e950e3891",
+      "bytes": 2252
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zk.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zk.yml",
+      "blob_sha": "ed9be16396b7d04bab6ac160bb5d3137065a2516",
+      "bytes": 2360
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zl.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zl.yml",
+      "blob_sha": "0fbd71b0caef9025ded0295c6b8dc6997436a6b4",
+      "bytes": 3205
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zm.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zm.yml",
+      "blob_sha": "b291eaa6ab4003ca69137f9c6dca96e49a3e3bee",
+      "bytes": 1698
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zn.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zn.yml",
+      "blob_sha": "5cf294dddaa9e2e2ba2f6498709bac64ae3776a5",
+      "bytes": 2596
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zo.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zo.yml",
+      "blob_sha": "503f320e52ec57cd94b562ba0791f9c459c1d550",
+      "bytes": 1736
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zp.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zp.yml",
+      "blob_sha": "22d70a1802ca002ede9af57260b8bc642befc406",
+      "bytes": 2534
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zq.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zq.yml",
+      "blob_sha": "41daf7e43be3d2010836d73784448cae88045d77",
+      "bytes": 2312
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zqa.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zqa.yml",
+      "blob_sha": "5ab574cae304a28acad7817b839e174c7e1da0fe",
+      "bytes": 3068
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zr.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zr.yml",
+      "blob_sha": "17952b09443dc09ca47051dc934fe28d1533c102",
+      "bytes": 2077
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zs-splitjob.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zs-splitjob.yml",
+      "blob_sha": "2d7d70b571f6cb7e10757f7f494860064692c309",
+      "bytes": 3760
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zs.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zs.yml",
+      "blob_sha": "e6bdfec16ff3ac3cb965b691805d87c7d8e448a5",
+      "bytes": 1737
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zt-preaction.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zt-preaction.yml",
+      "blob_sha": "e007a26ef9daa0be5abb1001101a4b0efa7f9c62",
+      "bytes": 2369
+    },
+    {
+      "source": ".github/workflows/stage12-b-a230zt.yml",
+      "archived": "archive/i0/workflows/stage12-b-a230zt.yml",
+      "blob_sha": "8a11d8f289a5afbbd0982fab5d456c2c9f092a3f",
+      "bytes": 2997
+    },
+    {
+      "source": ".github/workflows/stage12-b-long.yml",
+      "archived": "archive/i0/workflows/stage12-b-long.yml",
+      "blob_sha": "91903d8b25ec21898085857e734a6b51b59b705b",
+      "bytes": 1611
+    },
+    {
+      "source": ".github/workflows/stage12-contrasted-evidence.yml",
+      "archived": "archive/i0/workflows/stage12-contrasted-evidence.yml",
+      "blob_sha": "d12688dafa649c923200d83885e734d40791c0f6",
+      "bytes": 3640
+    },
+    {
+      "source": ".github/workflows/stage12-dual-scope-b.yml",
+      "archived": "archive/i0/workflows/stage12-dual-scope-b.yml",
+      "blob_sha": "703a37be010d74ec364caa94fad8b361a1944b34",
+      "bytes": 1538
+    },
+    {
+      "source": ".github/workflows/stage12-focused.yml",
+      "archived": "archive/i0/workflows/stage12-focused.yml",
+      "blob_sha": "b1dc6adbd0f09aacd2a120371c8b7407c771aa42",
+      "bytes": 26941
+    },
+    {
+      "source": ".github/workflows/stage12-ga08-reconciled.yml",
+      "archived": "archive/i0/workflows/stage12-ga08-reconciled.yml",
+      "blob_sha": "e9792e358fcfdb5cb2c2e2a3b49b459a277a9520",
+      "bytes": 1529
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a2-autonomous.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a2-autonomous.yml",
+      "blob_sha": "1e274c9ec33eb926708e857c3f3ca689cfe1bdae",
+      "bytes": 1584
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a2-physical.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a2-physical.yml",
+      "blob_sha": "3eddfef6890444c6b48fb4415b1061e8ff268b77",
+      "bytes": 2085
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a210-local-boundary.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a210-local-boundary.yml",
+      "blob_sha": "2308c73fb6f1fdfc6db6f926067bd5bd339450b9",
+      "bytes": 1924
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a210b.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a210b.yml",
+      "blob_sha": "460993569498ef64b4a722d06eea4d71a205bbe8",
+      "bytes": 1842
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a211.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a211.yml",
+      "blob_sha": "bfa526af8f747c352b54b1b12a403f94390b3230",
+      "bytes": 2161
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a211b.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a211b.yml",
+      "blob_sha": "c13e16332a04cce15c9bbaf9023ea52a2a84bdb0",
+      "bytes": 1775
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a212.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a212.yml",
+      "blob_sha": "1896b06fd896ce886289adc3025e630b7600113d",
+      "bytes": 1709
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a213.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a213.yml",
+      "blob_sha": "a1b1c86f334a9c07c67f17ff1af40e7e3cb5cfde",
+      "bytes": 1717
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a214.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a214.yml",
+      "blob_sha": "b4a23e36c83d8369a3aaec787ab14f7b7ad2ef0b",
+      "bytes": 1734
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a215.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a215.yml",
+      "blob_sha": "446b610ccbd4732d575bebe8062a52afc005a44e",
+      "bytes": 1741
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a216.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a216.yml",
+      "blob_sha": "bbcb7b3fb8988a24c6e6d049250afc871344bccf",
+      "bytes": 1675
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a217.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a217.yml",
+      "blob_sha": "68b545bda4821bb4e00ab7dc3f051359d6d6367e",
+      "bytes": 1521
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a217b-collection.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a217b-collection.yml",
+      "blob_sha": "503423f0e979e0e24217e88637032701fb33b756",
+      "bytes": 1313
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a217b.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a217b.yml",
+      "blob_sha": "08cc89ce72a8cd09ecef827ba2a8ea2156c1b1f1",
+      "bytes": 1553
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a218.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a218.yml",
+      "blob_sha": "6273002cf22944810eff8ba8986ba07ede19ec75",
+      "bytes": 1359
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a219.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a219.yml",
+      "blob_sha": "8b42a9894e9cc08f78adaf304a25afa91d334c9b",
+      "bytes": 1361
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a220.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a220.yml",
+      "blob_sha": "9401c5df93bf6094c8491fd91391066b49f35d2b",
+      "bytes": 1348
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a221.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a221.yml",
+      "blob_sha": "a7f666d58c4d5718e4bc2d2d9ffd5ce93b93e8d5",
+      "bytes": 1327
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a222.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a222.yml",
+      "blob_sha": "123234726cd8188fbe11c9003c59901da096befe",
+      "bytes": 1344
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a223.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a223.yml",
+      "blob_sha": "e9830e0db97a5a19e961521e628000ac1668cad2",
+      "bytes": 1318
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a223b.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a223b.yml",
+      "blob_sha": "1733e7be26fb5d12cdf5c977626b53fef4c0303a",
+      "bytes": 1351
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a224.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a224.yml",
+      "blob_sha": "e94c03b982097e2810b1568f21aae9ebfe40273f",
+      "bytes": 1324
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a225.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a225.yml",
+      "blob_sha": "50a8897cf9cdaeefbdecde33d298168dbdc40c11",
+      "bytes": 1353
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a226.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a226.yml",
+      "blob_sha": "393c84c93adc67c5cbcde9af6df5a5cfcbba4abd",
+      "bytes": 1328
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a227.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a227.yml",
+      "blob_sha": "4751709c30c787c78448f71c978c26dc57db07a1",
+      "bytes": 1267
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a25-epistemic.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a25-epistemic.yml",
+      "blob_sha": "0b186f60994f970c252f849618722137ce9803a1",
+      "bytes": 1733
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a26-long.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a26-long.yml",
+      "blob_sha": "acca9be1cad6f2fdd8145aff378cf19e6a397959",
+      "bytes": 1747
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a27.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a27.yml",
+      "blob_sha": "ffdfe68919460a6f87fcaa857e885f918f18c238",
+      "bytes": 1971
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a28.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a28.yml",
+      "blob_sha": "2246ae6eba078d490f3eabfcbb83a348d6ddf6e9",
+      "bytes": 1754
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-a29.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-a29.yml",
+      "blob_sha": "cb89c61cc486305343ba028945c2c16e38e90376",
+      "bytes": 1741
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-calibration-feasibility.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-calibration-feasibility.yml",
+      "blob_sha": "c18c52f7e07b7dfce858775871376ba7e9f8f99e",
+      "bytes": 2259
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-contrasted-science.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-contrasted-science.yml",
+      "blob_sha": "04c6d961d15db6eeb8f0c85a29f5fa5a574e637f",
+      "bytes": 2943
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-depth-contrast.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-depth-contrast.yml",
+      "blob_sha": "5c100f57fe29d25aed7a7dcbc82dbf9f2f0b8d89",
+      "bytes": 1432
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-food-self-science.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-food-self-science.yml",
+      "blob_sha": "e94ff356a94f00644b7accb166a1f14050a104be",
+      "bytes": 2730
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-ga-600.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-ga-600.yml",
+      "blob_sha": "f7e5c5b7c3dfe704b0a28552931df64964988b5e",
+      "bytes": 4654
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-ga-independence.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-ga-independence.yml",
+      "blob_sha": "8a76bd18041d03e353ce082bc52a047fae74956a",
+      "bytes": 1027
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-ga-smoke.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-ga-smoke.yml",
+      "blob_sha": "ed72c8a5033646bd5cd58bd1166b122fcc865d35",
+      "bytes": 1654
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-goal-access-ablation.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-goal-access-ablation.yml",
+      "blob_sha": "339476a3c29f1e6906c8ccd31abd5deeaf0e458d",
+      "bytes": 2702
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-instrumental-ab.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-instrumental-ab.yml",
+      "blob_sha": "fd0ebf22281729b948af195652f7f7444c9e040a",
+      "bytes": 1681
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-intrinsic-sensitivity.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-intrinsic-sensitivity.yml",
+      "blob_sha": "a7e293fcc28c5596b90461c73a5d296723b32d2a",
+      "bytes": 1347
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-main-integration.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-main-integration.yml",
+      "blob_sha": "70333f431fb767f5958f4e36d3d5a6d3a78440f1",
+      "bytes": 1995
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-multi-engagement.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-multi-engagement.yml",
+      "blob_sha": "65fb22f2c0d1a6c232518d929141a0ae51369017",
+      "bytes": 4034
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-option-a-contract.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-option-a-contract.yml",
+      "blob_sha": "f4ec5df394be6b137e9cee970323f858f098d3ee",
+      "bytes": 3047
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-option-a-feasibility.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-option-a-feasibility.yml",
+      "blob_sha": "47a4128d3f1a718abcd08ebe25ab554d91a486e2",
+      "bytes": 2570
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-option-a-first-state.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-option-a-first-state.yml",
+      "blob_sha": "c171d7466e40251420af55114744d315cb0e0833",
+      "bytes": 2725
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-option-a-integrated.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-option-a-integrated.yml",
+      "blob_sha": "ca45909df0518d0a00be4ae31fd37df288416299",
+      "bytes": 2494
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-option-a-m11-identity.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-option-a-m11-identity.yml",
+      "blob_sha": "f1ff944166341b373ddb07e5b12bb2d214e3f4a5",
+      "bytes": 1768
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-option-a-situated.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-option-a-situated.yml",
+      "blob_sha": "ddd22f4114aca338fb145a29cbeb267685209473",
+      "bytes": 2474
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-prefix-ab.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-prefix-ab.yml",
+      "blob_sha": "465dd06770ea29ac7a074aa19e4a159340778564",
+      "bytes": 1532
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-progressive-ab.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-progressive-ab.yml",
+      "blob_sha": "af59ed0b338373f3849c9c75d934518191ded6cd",
+      "bytes": 1624
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-progressive.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-progressive.yml",
+      "blob_sha": "ed5d897bd4e5085a492691db91c41d4da01ba734",
+      "bytes": 1615
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-reachability.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-reachability.yml",
+      "blob_sha": "b47ac28841f8cc801ef2639199b68f707346a474",
+      "bytes": 1366
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-sleep-window.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-sleep-window.yml",
+      "blob_sha": "fa72af12aab80b4be4bddbff34cdce47aa57d2e6",
+      "bytes": 2441
+    },
+    {
+      "source": ".github/workflows/stage12-issue110-trained-goal-agency.yml",
+      "archived": "archive/i0/workflows/stage12-issue110-trained-goal-agency.yml",
+      "blob_sha": "d78f081e312263a72343cbd251c110aae0b77b3c",
+      "bytes": 2541
+    },
+    {
+      "source": ".github/workflows/stage4-local-e0-regression.yml",
+      "archived": "archive/i0/workflows/stage4-local-e0-regression.yml",
+      "blob_sha": "cdd0df6838b82b32472af204b6e9f394660c2762",
+      "bytes": 1069
+    },
+    {
+      "source": ".github/workflows/stage5-local-perseverance-regression.yml",
+      "archived": "archive/i0/workflows/stage5-local-perseverance-regression.yml",
+      "blob_sha": "2b5205ca6de6b42fc930eb8ce3d7cf59ec190531",
+      "bytes": 2871
+    },
+    {
+      "source": ".github/workflows/stage6-a230e-discriminants.yml",
+      "archived": "archive/i0/workflows/stage6-a230e-discriminants.yml",
+      "blob_sha": "f61716b93dd0873aee67ef84f90665ee3f30fe43",
+      "bytes": 1050
+    },
+    {
+      "source": ".github/workflows/stage6-a230i-parity.yml",
+      "archived": "archive/i0/workflows/stage6-a230i-parity.yml",
+      "blob_sha": "8f66efa1e245b039b4ab98b90e1ff0392267db29",
+      "bytes": 1698
+    },
+    {
+      "source": ".github/workflows/stage6-a230i.yml",
+      "archived": "archive/i0/workflows/stage6-a230i.yml",
+      "blob_sha": "9a1b9cbf122eee36380d35ca8626c46388423010",
+      "bytes": 1606
+    },
+    {
+      "source": ".github/workflows/stage6-v133-shadow.yml",
+      "archived": "archive/i0/workflows/stage6-v133-shadow.yml",
+      "blob_sha": "128676a02cd91b6ece975343361c85d32cf63f6d",
+      "bytes": 1428
+    },
+    {
+      "source": ".github/workflows/stage9-concurrent-cause.yml",
+      "archived": "archive/i0/workflows/stage9-concurrent-cause.yml",
+      "blob_sha": "442bb8f4f36c78ed221748bac4c8cb34dc94c9a1",
+      "bytes": 2729
+    },
+    {
+      "source": "tests/README.md",
+      "archived": "archive/i0/tests/README.md",
+      "blob_sha": "3310cc4cbbb70f1e6f3c524047d3bc1445d6dbe2",
+      "bytes": 1265
+    },
+    {
+      "source": "tests/test_action_control.py",
+      "archived": "archive/i0/tests/test_action_control.py",
+      "blob_sha": "340587bb2cd5ab904373901012dc276ce4c3fffd",
+      "bytes": 8000
+    },
+    {
+      "source": "tests/test_autonomous_external_observer_parity.py",
+      "archived": "archive/i0/tests/test_autonomous_external_observer_parity.py",
+      "blob_sha": "62045a6d1c3d718b62f3a6162bf9c453a3871ebd",
+      "bytes": 6067
+    },
+    {
+      "source": "tests/test_autonomous_reference_factories.py",
+      "archived": "archive/i0/tests/test_autonomous_reference_factories.py",
+      "blob_sha": "c657205d0a145ef7204845172740ba6a080c8440",
+      "bytes": 3565
+    },
+    {
+      "source": "tests/test_battery_scenarios.py",
+      "archived": "archive/i0/tests/test_battery_scenarios.py",
+      "blob_sha": "a0bb4619ee0a052e0ae229a37889e01792feece3",
+      "bytes": 3066
+    },
+    {
+      "source": "tests/test_bench_exported_journal_audit.py",
+      "archived": "archive/i0/tests/test_bench_exported_journal_audit.py",
+      "blob_sha": "49a8bdcef678f2c22355f0f8a962be8e0974f6f4",
+      "bytes": 3046
+    },
+    {
+      "source": "tests/test_bench_no_cognitive_imports.py",
+      "archived": "archive/i0/tests/test_bench_no_cognitive_imports.py",
+      "blob_sha": "16a292001dda4e54ca71f8b461c9a354508ecd71",
+      "bytes": 1833
+    },
+    {
+      "source": "tests/test_bootstrap_i0.py",
+      "archived": "archive/i0/tests/test_bootstrap_i0.py",
+      "blob_sha": "14ae07371eed980aa3d2540075cc4c97ee514335",
+      "bytes": 1135
+    },
+    {
+      "source": "tests/test_bootstrap_runtime.py",
+      "archived": "archive/i0/tests/test_bootstrap_runtime.py",
+      "blob_sha": "b9994cc1260dd8b4a59c52d0007068de4d32a5f9",
+      "bytes": 2023
+    },
+    {
+      "source": "tests/test_causal_journal.py",
+      "archived": "archive/i0/tests/test_causal_journal.py",
+      "blob_sha": "bda0ff80b1a002c0c6d111131545c9119c7de34e",
+      "bytes": 13335
+    },
+    {
+      "source": "tests/test_compact_life_custody.py",
+      "archived": "archive/i0/tests/test_compact_life_custody.py",
+      "blob_sha": "f6e185bcd8595f64049442c8324130b14d46635f",
+      "bytes": 12774
+    },
+    {
+      "source": "tests/test_compute_budget.py",
+      "archived": "archive/i0/tests/test_compute_budget.py",
+      "blob_sha": "27207d2516fc1ebcdd2d9deb44a954c52d90a4cc",
+      "bytes": 46286
+    },
+    {
+      "source": "tests/test_determinism.py",
+      "archived": "archive/i0/tests/test_determinism.py",
+      "blob_sha": "6051c4080eb1720f772b4d3769f7958cc3ad9b6b",
+      "bytes": 6336
+    },
+    {
+      "source": "tests/test_durable_causal_journal.py",
+      "archived": "archive/i0/tests/test_durable_causal_journal.py",
+      "blob_sha": "e29cbd0467928018bf07e9054541c6da4d84b7e7",
+      "bytes": 5199
+    },
+    {
+      "source": "tests/test_epistemic_journal_isolation.py",
+      "archived": "archive/i0/tests/test_epistemic_journal_isolation.py",
+      "blob_sha": "2067abb07b680915bcb5efaf8b40701c54723b16",
+      "bytes": 17446
+    },
+    {
+      "source": "tests/test_immutable_journal_export.py",
+      "archived": "archive/i0/tests/test_immutable_journal_export.py",
+      "blob_sha": "c2866639ce8ed2e0ada28bad305f961173f2ebef",
+      "bytes": 6327
+    },
+    {
+      "source": "tests/test_in_memory_bus.py",
+      "archived": "archive/i0/tests/test_in_memory_bus.py",
+      "blob_sha": "ae3d1b62a8f09bd8357628d99674f1c2a648dc94",
+      "bytes": 6346
+    },
+    {
+      "source": "tests/test_independent_journal_audit.py",
+      "archived": "archive/i0/tests/test_independent_journal_audit.py",
+      "blob_sha": "37032a83d88c5ded47cd61dc4392ec89ed0b8179",
+      "bytes": 14192
+    },
+    {
+      "source": "tests/test_independent_journal_nested_truth.py",
+      "archived": "archive/i0/tests/test_independent_journal_nested_truth.py",
+      "blob_sha": "bea716b331777a82ffc400d621ac6d9e259fac5d",
+      "bytes": 1980
+    },
+    {
+      "source": "tests/test_independent_journal_required_receipts.py",
+      "archived": "archive/i0/tests/test_independent_journal_required_receipts.py",
+      "blob_sha": "bd846f026ae81f8bcf31f8c07b9dbb7d481e1b8d",
+      "bytes": 3331
+    },
+    {
+      "source": "tests/test_independent_journal_stopped_step.py",
+      "archived": "archive/i0/tests/test_independent_journal_stopped_step.py",
+      "blob_sha": "9e99bfbe1447239621fd2208d2659ffedffa8e9e",
+      "bytes": 2850
+    },
+    {
+      "source": "tests/test_integrated_mortal_uncertain_step_halt.py",
+      "archived": "archive/i0/tests/test_integrated_mortal_uncertain_step_halt.py",
+      "blob_sha": "ec81a0146b937a3c8596cd2df6a2ec3e4fbba788",
+      "bytes": 4612
+    },
+    {
+      "source": "tests/test_journal_views.py",
+      "archived": "archive/i0/tests/test_journal_views.py",
+      "blob_sha": "9df1817e9a866e2fc76a304fc5beb46e8428d705",
+      "bytes": 7396
+    },
+    {
+      "source": "tests/test_jsonl_sink.py",
+      "archived": "archive/i0/tests/test_jsonl_sink.py",
+      "blob_sha": "2eb1d3f438a10e8d4265cb04f826443c402409ee",
+      "bytes": 1009
+    },
+    {
+      "source": "tests/test_m11_coordinated_crash_matrix.py",
+      "archived": "archive/i0/tests/test_m11_coordinated_crash_matrix.py",
+      "blob_sha": "dd4db749dc755c717ce55f588b0727317c91307f",
+      "bytes": 4220
+    },
+    {
+      "source": "tests/test_m11_ledger_operator_terminal_semantics.py",
+      "archived": "archive/i0/tests/test_m11_ledger_operator_terminal_semantics.py",
+      "blob_sha": "5278b4bafcb835be61ab3105bd4cf9f95b8b67dd",
+      "bytes": 3927
+    },
+    {
+      "source": "tests/test_m11_operator_trial_cli.py",
+      "archived": "archive/i0/tests/test_m11_operator_trial_cli.py",
+      "blob_sha": "ff73394419cc8e5eed6512ffe1f8641e55b51a64",
+      "bytes": 2969
+    },
+    {
+      "source": "tests/test_m11_real_transactional_runtime.py",
+      "archived": "archive/i0/tests/test_m11_real_transactional_runtime.py",
+      "blob_sha": "d2f7ad0a9a9a5e2cce79faf59020ca13794ebc6d",
+      "bytes": 13480
+    },
+    {
+      "source": "tests/test_m11_stage12_atomic_preflight.py",
+      "archived": "archive/i0/tests/test_m11_stage12_atomic_preflight.py",
+      "blob_sha": "6069848fd8c25fdbc1c626b50f1e0fc962f29e10",
+      "bytes": 8364
+    },
+    {
+      "source": "tests/test_m11_stage12_compatibility.py",
+      "archived": "archive/i0/tests/test_m11_stage12_compatibility.py",
+      "blob_sha": "4761d2ab561cfc644285da88afa7055eb0bad0f3",
+      "bytes": 2793
+    },
+    {
+      "source": "tests/test_m11_stage12_hard_crash.py",
+      "archived": "archive/i0/tests/test_m11_stage12_hard_crash.py",
+      "blob_sha": "38c30f5e075c41d14772d91b93ec7c7048312773",
+      "bytes": 7237
+    },
+    {
+      "source": "tests/test_m11_verified_anchor_optimization.py",
+      "archived": "archive/i0/tests/test_m11_verified_anchor_optimization.py",
+      "blob_sha": "65a43e4580f08f52956bc75e979df3ea7e1adaf6",
+      "bytes": 6984
+    },
+    {
+      "source": "tests/test_mortal_abrupt_crash_window.py",
+      "archived": "archive/i0/tests/test_mortal_abrupt_crash_window.py",
+      "blob_sha": "f75c057d30dd93890af27dd987ccc621ddc15cde",
+      "bytes": 4846
+    },
+    {
+      "source": "tests/test_mortal_execution.py",
+      "archived": "archive/i0/tests/test_mortal_execution.py",
+      "blob_sha": "96aa98bc008b7cfa6c054df0c55e599b5306c363",
+      "bytes": 6425
+    },
+    {
+      "source": "tests/test_mortal_forward_only_world.py",
+      "archived": "archive/i0/tests/test_mortal_forward_only_world.py",
+      "blob_sha": "5556d9d42253ce3e167e387200b69b237e0c1867",
+      "bytes": 7444
+    },
+    {
+      "source": "tests/test_mortal_lethal_physics_matrix.py",
+      "archived": "archive/i0/tests/test_mortal_lethal_physics_matrix.py",
+      "blob_sha": "170c855fdf740e99474104b55fa7d0b96c4e3b48",
+      "bytes": 5636
+    },
+    {
+      "source": "tests/test_mortal_publication_guards.py",
+      "archived": "archive/i0/tests/test_mortal_publication_guards.py",
+      "blob_sha": "3489615cedf289ede83dc3d96dd2a8a6cd5f7310",
+      "bytes": 2959
+    },
+    {
+      "source": "tests/test_mortal_runtime_optin.py",
+      "archived": "archive/i0/tests/test_mortal_runtime_optin.py",
+      "blob_sha": "903bd98e2c306636ff041b696ce4d24c4e07b61f",
+      "bytes": 9728
+    },
+    {
+      "source": "tests/test_mortal_scenario_atomic.py",
+      "archived": "archive/i0/tests/test_mortal_scenario_atomic.py",
+      "blob_sha": "10ba2e1c7b6f183cc5400244ee9a264d42babc9d",
+      "bytes": 7111
+    },
+    {
+      "source": "tests/test_mortal_sleep_terminal.py",
+      "archived": "archive/i0/tests/test_mortal_sleep_terminal.py",
+      "blob_sha": "28a354ae6916d8d175b33a733b27ddac72f17f0d",
+      "bytes": 3214
+    },
+    {
+      "source": "tests/test_mortal_terminal_cognitive_writes.py",
+      "archived": "archive/i0/tests/test_mortal_terminal_cognitive_writes.py",
+      "blob_sha": "563cbe44f558e74fa267f5aa4cb62531ea584627",
+      "bytes": 3921
+    },
+    {
+      "source": "tests/test_mortal_world_terminal_freeze.py",
+      "archived": "archive/i0/tests/test_mortal_world_terminal_freeze.py",
+      "blob_sha": "d5f36b9147d46250108943bc21a38045d263778d",
+      "bytes": 4509
+    },
+    {
+      "source": "tests/test_observer_engine_frame.py",
+      "archived": "archive/i0/tests/test_observer_engine_frame.py",
+      "blob_sha": "458d605dfcba22bce46549bd3bd0eeafb0fc922c",
+      "bytes": 4185
+    },
+    {
+      "source": "tests/test_operator_frame_archive.py",
+      "archived": "archive/i0/tests/test_operator_frame_archive.py",
+      "blob_sha": "17fb284e23252a15bc20cbb6cbd1610dea523982",
+      "bytes": 12249
+    },
+    {
+      "source": "tests/test_oracle_bench.py",
+      "archived": "archive/i0/tests/test_oracle_bench.py",
+      "blob_sha": "a70b18424fdf6a1d9b42945c4923e6f61d39cd4a",
+      "bytes": 7403
+    },
+    {
+      "source": "tests/test_replay.py",
+      "archived": "archive/i0/tests/test_replay.py",
+      "blob_sha": "96d69992759d384dfff8e2159314da0a95ce2b5a",
+      "bytes": 1887
+    },
+    {
+      "source": "tests/test_scheduler.py",
+      "archived": "archive/i0/tests/test_scheduler.py",
+      "blob_sha": "05a85a8a634fa60ba8d7e4bc3d596b89663ff140",
+      "bytes": 5534
+    },
+    {
+      "source": "tests/test_separated_evaluation_trace.py",
+      "archived": "archive/i0/tests/test_separated_evaluation_trace.py",
+      "blob_sha": "f5bb206269b68b5cb6a2db6fe777a80142e9e9ab",
+      "bytes": 1936
+    },
+    {
+      "source": "tests/test_snapshots.py",
+      "archived": "archive/i0/tests/test_snapshots.py",
+      "blob_sha": "796f365938e200268d4d531a49196a033f9102c7",
+      "bytes": 12385
+    },
+    {
+      "source": "tests/test_sqlite_corrupt_storage.py",
+      "archived": "archive/i0/tests/test_sqlite_corrupt_storage.py",
+      "blob_sha": "dfed7efff6bb7ae9dbfa63cb99040200be7d63d4",
+      "bytes": 3790
+    },
+    {
+      "source": "tests/test_sqlite_life_store.py",
+      "archived": "archive/i0/tests/test_sqlite_life_store.py",
+      "blob_sha": "07d0a875e0fa3ffdab6f1f7d420f3ddbb189ffdd",
+      "bytes": 15573
+    },
+    {
+      "source": "tests/test_sqlite_occurrence_index_types.py",
+      "archived": "archive/i0/tests/test_sqlite_occurrence_index_types.py",
+      "blob_sha": "887f65f758fddcb347971e5099ad4e5812a0b3c7",
+      "bytes": 3577
+    },
+    {
+      "source": "tests/test_sqlite_owner_custody.py",
+      "archived": "archive/i0/tests/test_sqlite_owner_custody.py",
+      "blob_sha": "cce6639664581ba15714e0ce6ab00716d01c5ace",
+      "bytes": 16325
+    },
+    {
+      "source": "tests/test_sqlite_staged_world.py",
+      "archived": "archive/i0/tests/test_sqlite_staged_world.py",
+      "blob_sha": "034c1c856826aa13282039bf0ff60acc09b64617",
+      "bytes": 5032
+    },
+    {
+      "source": "tests/test_sqlite_terminal_crash_windows.py",
+      "archived": "archive/i0/tests/test_sqlite_terminal_crash_windows.py",
+      "blob_sha": "3a82e9d828ab927f942cd2747843d97f0bb78c5f",
+      "bytes": 4855
+    },
+    {
+      "source": "tests/test_sqlite_terminal_sequence_guard.py",
+      "archived": "archive/i0/tests/test_sqlite_terminal_sequence_guard.py",
+      "blob_sha": "bdda5b60c2e7f083d2f22f7eb31bbb89d1717799",
+      "bytes": 15358
+    },
+    {
+      "source": "tests/test_sqlite_writer_path_alias.py",
+      "archived": "archive/i0/tests/test_sqlite_writer_path_alias.py",
+      "blob_sha": "bc44399adebfd3f80d7b0b6d81948b801b1f822d",
+      "bytes": 4102
+    },
+    {
+      "source": "tests/test_stage1_runtime.py",
+      "archived": "archive/i0/tests/test_stage1_runtime.py",
+      "blob_sha": "a1f8826d8b03626f6a3c7213948aba97c45da228",
+      "bytes": 5211
+    },
+    {
+      "source": "tests/test_stage10_consolidation_batch.py",
+      "archived": "archive/i0/tests/test_stage10_consolidation_batch.py",
+      "blob_sha": "e342910e9799cbd5ac4e84632c7ae9cca1901b37",
+      "bytes": 8369
+    },
+    {
+      "source": "tests/test_stage10_consolidation_budget.py",
+      "archived": "archive/i0/tests/test_stage10_consolidation_budget.py",
+      "blob_sha": "27b71e5a8fcd80809c4ca1f4ba08bbae771dce72",
+      "bytes": 9089
+    },
+    {
+      "source": "tests/test_stage10_consolidation_pass_runner.py",
+      "archived": "archive/i0/tests/test_stage10_consolidation_pass_runner.py",
+      "blob_sha": "8afbec7e3624674472e5cfb2063bacf8af857776",
+      "bytes": 14812
+    },
+    {
+      "source": "tests/test_stage10_consolidation_publication.py",
+      "archived": "archive/i0/tests/test_stage10_consolidation_publication.py",
+      "blob_sha": "344babae003cfd3e7b23d8f82daff65af2490e7f",
+      "bytes": 10826
+    },
+    {
+      "source": "tests/test_stage10_consolidation_replay_agenda.py",
+      "archived": "archive/i0/tests/test_stage10_consolidation_replay_agenda.py",
+      "blob_sha": "968401797a8040abf42b78763f6b465da2ee0c3c",
+      "bytes": 7561
+    },
+    {
+      "source": "tests/test_stage10_consolidation_replay_builder.py",
+      "archived": "archive/i0/tests/test_stage10_consolidation_replay_builder.py",
+      "blob_sha": "93f7470feb50d1430560f9df294a32180a43147e",
+      "bytes": 17604
+    },
+    {
+      "source": "tests/test_stage10_consolidation_transaction.py",
+      "archived": "archive/i0/tests/test_stage10_consolidation_transaction.py",
+      "blob_sha": "9de0cf075b77e0d305e95e66eb4aa2a90ea9adb5",
+      "bytes": 6445
+    },
+    {
+      "source": "tests/test_stage10_health_runtime.py",
+      "archived": "archive/i0/tests/test_stage10_health_runtime.py",
+      "blob_sha": "036069472d1787d32fba326a1e6a2f50a7b4334f",
+      "bytes": 10238
+    },
+    {
+      "source": "tests/test_stage10_incremental_selection.py",
+      "archived": "archive/i0/tests/test_stage10_incremental_selection.py",
+      "blob_sha": "95db2726a0a0ab553392a119c4b2b5d8ab53de03",
+      "bytes": 5615
+    },
+    {
+      "source": "tests/test_stage10_index_soft_faults.py",
+      "archived": "archive/i0/tests/test_stage10_index_soft_faults.py",
+      "blob_sha": "16c05d45f905dc6981538343124c9c646892964f",
+      "bytes": 4904
+    },
+    {
+      "source": "tests/test_stage10_index_wal_operator_gate.py",
+      "archived": "archive/i0/tests/test_stage10_index_wal_operator_gate.py",
+      "blob_sha": "0b7f9adbc00bd2bcfaaa37691890cf9ee331956d",
+      "bytes": 6024
+    },
+    {
+      "source": "tests/test_stage10_live_postcut_and_halt.py",
+      "archived": "archive/i0/tests/test_stage10_live_postcut_and_halt.py",
+      "blob_sha": "07a0fceff3bf9eae54e61cfac02a363b78ee1cc7",
+      "bytes": 8561
+    },
+    {
+      "source": "tests/test_stage10_live_sixpass_runtime.py",
+      "archived": "archive/i0/tests/test_stage10_live_sixpass_runtime.py",
+      "blob_sha": "f4edab1c90f08e0127ad5e164201120a051fa162",
+      "bytes": 11131
+    },
+    {
+      "source": "tests/test_stage10_lived_evidence.py",
+      "archived": "archive/i0/tests/test_stage10_lived_evidence.py",
+      "blob_sha": "6a1492cbf2aaa766c6431b472995b01339bc609d",
+      "bytes": 4252
+    },
+    {
+      "source": "tests/test_stage10_pass_runner_contract.py",
+      "archived": "archive/i0/tests/test_stage10_pass_runner_contract.py",
+      "blob_sha": "0da01f51ee754eaea7230fd369a0e3742a78936a",
+      "bytes": 3617
+    },
+    {
+      "source": "tests/test_stage10_pending_paid_index.py",
+      "archived": "archive/i0/tests/test_stage10_pending_paid_index.py",
+      "blob_sha": "96837fa077aadcfd09fa300015f875ad58e66a25",
+      "bytes": 5703
+    },
+    {
+      "source": "tests/test_stage10_postcut_journal.py",
+      "archived": "archive/i0/tests/test_stage10_postcut_journal.py",
+      "blob_sha": "ab755ba2b8ca1ec1f6320fd1eb04468d3829199c",
+      "bytes": 4892
+    },
+    {
+      "source": "tests/test_stage10_postcut_runtime_emitter.py",
+      "archived": "archive/i0/tests/test_stage10_postcut_runtime_emitter.py",
+      "blob_sha": "4decf02d63376ca74c834d8476b08b8030cacc08",
+      "bytes": 3401
+    },
+    {
+      "source": "tests/test_stage10_runtime.py",
+      "archived": "archive/i0/tests/test_stage10_runtime.py",
+      "blob_sha": "4275f814844bdd5c7bfa9091e40964a2dc805434",
+      "bytes": 2877
+    },
+    {
+      "source": "tests/test_stage10_six_semantic_passes.py",
+      "archived": "archive/i0/tests/test_stage10_six_semantic_passes.py",
+      "blob_sha": "cbeb1fb7df0c78e74fc2ba7f4b58daf0578eb201",
+      "bytes": 7086
+    },
+    {
+      "source": "tests/test_stage10_sleep_competition.py",
+      "archived": "archive/i0/tests/test_stage10_sleep_competition.py",
+      "blob_sha": "c32dea5d2f97007babf62b2118827ad42afd4583",
+      "bytes": 7963
+    },
+    {
+      "source": "tests/test_stage10_sleep_pressure.py",
+      "archived": "archive/i0/tests/test_stage10_sleep_pressure.py",
+      "blob_sha": "b232fbcbe6745592d171abedf628a899f71bf439",
+      "bytes": 8526
+    },
+    {
+      "source": "tests/test_stage10_sleep_real_world.py",
+      "archived": "archive/i0/tests/test_stage10_sleep_real_world.py",
+      "blob_sha": "464effab7dd9cc30569911fb9f1fa176a3a876f6",
+      "bytes": 9199
+    },
+    {
+      "source": "tests/test_stage10_sleep_reduced.py",
+      "archived": "archive/i0/tests/test_stage10_sleep_reduced.py",
+      "blob_sha": "8dd6dfcc3a2662ad5414566465d8ed61c77082ed",
+      "bytes": 4443
+    },
+    {
+      "source": "tests/test_stage10_sleep_session.py",
+      "archived": "archive/i0/tests/test_stage10_sleep_session.py",
+      "blob_sha": "df15c59c56a1ec551bdf7bef4448fa72f341e9f2",
+      "bytes": 7702
+    },
+    {
+      "source": "tests/test_stage11_atomic_memory.py",
+      "archived": "archive/i0/tests/test_stage11_atomic_memory.py",
+      "blob_sha": "4591f035f01a7102d59928a9db0d809c41b8a68a",
+      "bytes": 4332
+    },
+    {
+      "source": "tests/test_stage11_autonomous_600_step_probe.py",
+      "archived": "archive/i0/tests/test_stage11_autonomous_600_step_probe.py",
+      "blob_sha": "d730944aaae9fba25774f3ece759054b0e21c59c",
+      "bytes": 1660
+    },
+    {
+      "source": "tests/test_stage11_creature_reflex_remediation.py",
+      "archived": "archive/i0/tests/test_stage11_creature_reflex_remediation.py",
+      "blob_sha": "27f6de0eff05f9986e4f9d84273a03241232ac40",
+      "bytes": 4857
+    },
+    {
+      "source": "tests/test_stage11_cycle_occurrence_custody.py",
+      "archived": "archive/i0/tests/test_stage11_cycle_occurrence_custody.py",
+      "blob_sha": "fe7d7a7e9c0de1b1e074ad6d72c2f9d7019bea18",
+      "bytes": 4352
+    },
+    {
+      "source": "tests/test_stage11_cycle_occurrence_guard.py",
+      "archived": "archive/i0/tests/test_stage11_cycle_occurrence_guard.py",
+      "blob_sha": "7cba077a6e4fbc28f6b8eaab524abba650b7c90d",
+      "bytes": 12879
+    },
+    {
+      "source": "tests/test_stage11_exploration.py",
+      "archived": "archive/i0/tests/test_stage11_exploration.py",
+      "blob_sha": "9f16e0c5afc5ecc3217f17594223abd4c2e3c87a",
+      "bytes": 14155
+    },
+    {
+      "source": "tests/test_stage11_external_input_atomicity.py",
+      "archived": "archive/i0/tests/test_stage11_external_input_atomicity.py",
+      "blob_sha": "953af3c0e873fd4f795e1bfb7144d39a62ab2dc0",
+      "bytes": 24302
+    },
+    {
+      "source": "tests/test_stage11_external_position_capacity.py",
+      "archived": "archive/i0/tests/test_stage11_external_position_capacity.py",
+      "blob_sha": "92d793e2bba1a9aa4cbe50c06e19d199eda62315",
+      "bytes": 6519
+    },
+    {
+      "source": "tests/test_stage11_geographic_capacity_guard.py",
+      "archived": "archive/i0/tests/test_stage11_geographic_capacity_guard.py",
+      "blob_sha": "9c9c754957bfb384918cf8367b32dbad238ddfb4",
+      "bytes": 10002
+    },
+    {
+      "source": "tests/test_stage11_geographic_exploration.py",
+      "archived": "archive/i0/tests/test_stage11_geographic_exploration.py",
+      "blob_sha": "b72d83b9efd84d6b6f604391c0675c7fa4044693",
+      "bytes": 14709
+    },
+    {
+      "source": "tests/test_stage11_geographic_frontier_gate.py",
+      "archived": "archive/i0/tests/test_stage11_geographic_frontier_gate.py",
+      "blob_sha": "1cd4d45d91ec31668bc983696362e9941a1cfa67",
+      "bytes": 7507
+    },
+    {
+      "source": "tests/test_stage11_geographic_probe.py",
+      "archived": "archive/i0/tests/test_stage11_geographic_probe.py",
+      "blob_sha": "67ab86258dfbc9742c2ee2bc9c9049a9b386e7a0",
+      "bytes": 8809
+    },
+    {
+      "source": "tests/test_stage11_geographic_robustness.py",
+      "archived": "archive/i0/tests/test_stage11_geographic_robustness.py",
+      "blob_sha": "7bb6f0c0aa7bb53df637360397a63627165a3093",
+      "bytes": 3731
+    },
+    {
+      "source": "tests/test_stage11_geographic_uc_probe.py",
+      "archived": "archive/i0/tests/test_stage11_geographic_uc_probe.py",
+      "blob_sha": "3462da98ff0e9d12779bdc562118eb94f3c9c20b",
+      "bytes": 5425
+    },
+    {
+      "source": "tests/test_stage11_guarded_lethal_rollback.py",
+      "archived": "archive/i0/tests/test_stage11_guarded_lethal_rollback.py",
+      "blob_sha": "7f98a660e68b0b2b6e7d95631f1dd51a6b3d78cd",
+      "bytes": 6619
+    },
+    {
+      "source": "tests/test_stage11_hidden_hazard_budget_snapshots.py",
+      "archived": "archive/i0/tests/test_stage11_hidden_hazard_budget_snapshots.py",
+      "blob_sha": "edf834682fb4421238b908eea440ab979f7f2cb2",
+      "bytes": 20188
+    },
+    {
+      "source": "tests/test_stage11_hydration_probe.py",
+      "archived": "archive/i0/tests/test_stage11_hydration_probe.py",
+      "blob_sha": "4e564baad863de1da812ad18d79b8bd49d9725ed",
+      "bytes": 12367
+    },
+    {
+      "source": "tests/test_stage11_intrinsic_gain_isolation.py",
+      "archived": "archive/i0/tests/test_stage11_intrinsic_gain_isolation.py",
+      "blob_sha": "4c51b19eb60ee9b5c49131b22ca8cbf424f81e33",
+      "bytes": 7608
+    },
+    {
+      "source": "tests/test_stage11_junction_probe.py",
+      "archived": "archive/i0/tests/test_stage11_junction_probe.py",
+      "blob_sha": "a8b92ccdffeecaa86f3f93003a1bcfd63d57ea6f",
+      "bytes": 2337
+    },
+    {
+      "source": "tests/test_stage11_known_danger_transitions.py",
+      "archived": "archive/i0/tests/test_stage11_known_danger_transitions.py",
+      "blob_sha": "2113fabdf7289a03dd8f7d428ec2a2c6ce9f06ce",
+      "bytes": 8189
+    },
+    {
+      "source": "tests/test_stage11_lived_prediction_dispatch.py",
+      "archived": "archive/i0/tests/test_stage11_lived_prediction_dispatch.py",
+      "blob_sha": "e28995b50b25abe08f646ef66bb69f48a528b0a1",
+      "bytes": 5690
+    },
+    {
+      "source": "tests/test_stage11_lived_prediction.py",
+      "archived": "archive/i0/tests/test_stage11_lived_prediction.py",
+      "blob_sha": "4f558147be0982644d63cd8c4420a45f64d0bdf5",
+      "bytes": 6103
+    },
+    {
+      "source": "tests/test_stage11_modulation_public.py",
+      "archived": "archive/i0/tests/test_stage11_modulation_public.py",
+      "blob_sha": "d98893f58226104721229fce4f97d167fba76599",
+      "bytes": 4324
+    },
+    {
+      "source": "tests/test_stage11_modulation_runtime.py",
+      "archived": "archive/i0/tests/test_stage11_modulation_runtime.py",
+      "blob_sha": "29ad80f917e49b555f7e724b492774516d2ddcc8",
+      "bytes": 3746
+    },
+    {
+      "source": "tests/test_stage11_modulation.py",
+      "archived": "archive/i0/tests/test_stage11_modulation.py",
+      "blob_sha": "15916e54b8a69fc59570a55ce6349d5a68bb1d67",
+      "bytes": 8136
+    },
+    {
+      "source": "tests/test_stage11_multistep_probe.py",
+      "archived": "archive/i0/tests/test_stage11_multistep_probe.py",
+      "blob_sha": "a240a8f46e5ffe60cb943943b9839b2db335c308",
+      "bytes": 3890
+    },
+    {
+      "source": "tests/test_stage11_multistep_unknown_danger_budget.py",
+      "archived": "archive/i0/tests/test_stage11_multistep_unknown_danger_budget.py",
+      "blob_sha": "72daf1205f842fcb38c5f6f12c3f0aa1c538834a",
+      "bytes": 6119
+    },
+    {
+      "source": "tests/test_stage11_observed_frontier_routing.py",
+      "archived": "archive/i0/tests/test_stage11_observed_frontier_routing.py",
+      "blob_sha": "51503f93e3db88edeadd8aa95bdc6f4ceba0a734",
+      "bytes": 3282
+    },
+    {
+      "source": "tests/test_stage11_observed_route_integration.py",
+      "archived": "archive/i0/tests/test_stage11_observed_route_integration.py",
+      "blob_sha": "c561ddd1f228b7a9ef035c50b45122e649cfa223",
+      "bytes": 5646
+    },
+    {
+      "source": "tests/test_stage11_observed_survey_snapshots.py",
+      "archived": "archive/i0/tests/test_stage11_observed_survey_snapshots.py",
+      "blob_sha": "da65d2575389fc7094035a74ea4db5874e7ab791",
+      "bytes": 3572
+    },
+    {
+      "source": "tests/test_stage11_route_divergence_trace.py",
+      "archived": "archive/i0/tests/test_stage11_route_divergence_trace.py",
+      "blob_sha": "26047925bf0afa0b29858c5ba3a62a13894d5f06",
+      "bytes": 5245
+    },
+    {
+      "source": "tests/test_stage11_routed_capacity.py",
+      "archived": "archive/i0/tests/test_stage11_routed_capacity.py",
+      "blob_sha": "e60acfa73b9e929f38198db8521ca796eeff3565",
+      "bytes": 6777
+    },
+    {
+      "source": "tests/test_stage11_routed_junction_budget_matrix.py",
+      "archived": "archive/i0/tests/test_stage11_routed_junction_budget_matrix.py",
+      "blob_sha": "938e891aa3e8bee20a2f53d4a4a600f5646f889f",
+      "bytes": 3909
+    },
+    {
+      "source": "tests/test_stage11_scenario_payload_custody.py",
+      "archived": "archive/i0/tests/test_stage11_scenario_payload_custody.py",
+      "blob_sha": "f90fe656897da63376ade38b148e14bdb4ce948f",
+      "bytes": 4512
+    },
+    {
+      "source": "tests/test_stage11_scenario_snapshot_schedule.py",
+      "archived": "archive/i0/tests/test_stage11_scenario_snapshot_schedule.py",
+      "blob_sha": "635eb29f6398f357cef0fe7dc4c6a5c132975ec6",
+      "bytes": 8464
+    },
+    {
+      "source": "tests/test_stage11_sleep_integration.py",
+      "archived": "archive/i0/tests/test_stage11_sleep_integration.py",
+      "blob_sha": "f33a60440f52c8c3a3120cd87596ae5626a85c58",
+      "bytes": 5381
+    },
+    {
+      "source": "tests/test_stage11_snapshot_capture_lineage.py",
+      "archived": "archive/i0/tests/test_stage11_snapshot_capture_lineage.py",
+      "blob_sha": "218ee4979f1dbab9e6005ab5c5921563be339ac7",
+      "bytes": 5373
+    },
+    {
+      "source": "tests/test_stage11_stale_route_safety.py",
+      "archived": "archive/i0/tests/test_stage11_stale_route_safety.py",
+      "blob_sha": "fceb2da94f3f45f5d731776cdc8ce6b7919800e6",
+      "bytes": 7987
+    },
+    {
+      "source": "tests/test_stage11_strict_budget_and_snapshot.py",
+      "archived": "archive/i0/tests/test_stage11_strict_budget_and_snapshot.py",
+      "blob_sha": "7ec83792d82194d5aeacb54823551c394800ca12",
+      "bytes": 12729
+    },
+    {
+      "source": "tests/test_stage11_survey_phase1_runtime.py",
+      "archived": "archive/i0/tests/test_stage11_survey_phase1_runtime.py",
+      "blob_sha": "799d63864d2b0e1f80eb12f2232722f68e0f6909",
+      "bytes": 2986
+    },
+    {
+      "source": "tests/test_stage11_survey_refresh_comparison.py",
+      "archived": "archive/i0/tests/test_stage11_survey_refresh_comparison.py",
+      "blob_sha": "f95bce760a2e6a14d58208a33a80394c726d170d",
+      "bytes": 6932
+    },
+    {
+      "source": "tests/test_stage11_survey_refresh_owner.py",
+      "archived": "archive/i0/tests/test_stage11_survey_refresh_owner.py",
+      "blob_sha": "44c34287f96232e76c99a6f95f278a0556c7484b",
+      "bytes": 6064
+    },
+    {
+      "source": "tests/test_stage11_transient_hidden_route_uc_snapshots.py",
+      "archived": "archive/i0/tests/test_stage11_transient_hidden_route_uc_snapshots.py",
+      "blob_sha": "7e87493d8147a80b101191e687eefe00b15710e3",
+      "bytes": 7057
+    },
+    {
+      "source": "tests/test_stage11_transit_owner_snapshots.py",
+      "archived": "archive/i0/tests/test_stage11_transit_owner_snapshots.py",
+      "blob_sha": "951495f3d01d4fd32524f22dee7a31e28b748719",
+      "bytes": 3969
+    },
+    {
+      "source": "tests/test_stage12_a2_after_admission.py",
+      "archived": "archive/i0/tests/test_stage12_a2_after_admission.py",
+      "blob_sha": "1bb42324158f0d7cf328616451f8f65ecf555f10",
+      "bytes": 4163
+    },
+    {
+      "source": "tests/test_stage12_a2_causal_audit.py",
+      "archived": "archive/i0/tests/test_stage12_a2_causal_audit.py",
+      "blob_sha": "17ca7e647ae3f548b6999142253b0e79044d6091",
+      "bytes": 3371
+    },
+    {
+      "source": "tests/test_stage12_a2_external_obstacle.py",
+      "archived": "archive/i0/tests/test_stage12_a2_external_obstacle.py",
+      "blob_sha": "b13e68d285ccef266fcb33b07a23bde7b9a8158d",
+      "bytes": 4232
+    },
+    {
+      "source": "tests/test_stage12_a2_m11_crash.py",
+      "archived": "archive/i0/tests/test_stage12_a2_m11_crash.py",
+      "blob_sha": "caa5b148eb21b2a06e748c42debf258df52ffc86",
+      "bytes": 3754
+    },
+    {
+      "source": "tests/test_stage12_a211b_equipment_corpus.py",
+      "archived": "archive/i0/tests/test_stage12_a211b_equipment_corpus.py",
+      "blob_sha": "416992f0c8506af0153a1b44e81a4c9186143591",
+      "bytes": 2909
+    },
+    {
+      "source": "tests/test_stage12_a212_key_audit.py",
+      "archived": "archive/i0/tests/test_stage12_a212_key_audit.py",
+      "blob_sha": "f88002c9d26fffa71525dbbff5e9f0dc321ac78d",
+      "bytes": 1579
+    },
+    {
+      "source": "tests/test_stage12_a213_projection_safety.py",
+      "archived": "archive/i0/tests/test_stage12_a213_projection_safety.py",
+      "blob_sha": "a18dacba46ff26e91a6415dfc26b19d2abcbb973",
+      "bytes": 2239
+    },
+    {
+      "source": "tests/test_stage12_a214_relational_abstention.py",
+      "archived": "archive/i0/tests/test_stage12_a214_relational_abstention.py",
+      "blob_sha": "1e51412e07b288c621c7f1220ca79968bc40ff72",
+      "bytes": 2728
+    },
+    {
+      "source": "tests/test_stage12_a230g_graph_witness.py",
+      "archived": "archive/i0/tests/test_stage12_a230g_graph_witness.py",
+      "blob_sha": "23e3f9c1653535839cd55700d83a72e38c044cdc",
+      "bytes": 4333
+    },
+    {
+      "source": "tests/test_stage12_a230h_root_features.py",
+      "archived": "archive/i0/tests/test_stage12_a230h_root_features.py",
+      "blob_sha": "29e4624dc5e3ee4cbc6f89946c48059e4c475ee0",
+      "bytes": 3942
+    },
+    {
+      "source": "tests/test_stage12_a230j_prebirth_coverage.py",
+      "archived": "archive/i0/tests/test_stage12_a230j_prebirth_coverage.py",
+      "blob_sha": "fdc24a3bd32d3277dfd9c92190b6cb2191d02ad9",
+      "bytes": 3675
+    },
+    {
+      "source": "tests/test_stage12_a230k_impact.py",
+      "archived": "archive/i0/tests/test_stage12_a230k_impact.py",
+      "blob_sha": "92e9b9ec0fac7c59d5debe326d84e5e7b4b89c82",
+      "bytes": 2208
+    },
+    {
+      "source": "tests/test_stage12_a230l_counterexamples.py",
+      "archived": "archive/i0/tests/test_stage12_a230l_counterexamples.py",
+      "blob_sha": "bc8ce5bbe2b97769fa9e91026fa31d59f7e2cc62",
+      "bytes": 3392
+    },
+    {
+      "source": "tests/test_stage12_a230n_uncertain_predictor.py",
+      "archived": "archive/i0/tests/test_stage12_a230n_uncertain_predictor.py",
+      "blob_sha": "ed4502190561646cb2d2e9fac2c2e8a3ba281eb7",
+      "bytes": 6668
+    },
+    {
+      "source": "tests/test_stage12_a230o_independent_archive_scoring.py",
+      "archived": "archive/i0/tests/test_stage12_a230o_independent_archive_scoring.py",
+      "blob_sha": "54155ce74da42b6145f3c7588867e14fdff9c4da",
+      "bytes": 4987
+    },
+    {
+      "source": "tests/test_stage12_a230p_joint_trajectory.py",
+      "archived": "archive/i0/tests/test_stage12_a230p_joint_trajectory.py",
+      "blob_sha": "f9a70ee5c49d3d3bbc2fd3a5af4dda17523fbc15",
+      "bytes": 7401
+    },
+    {
+      "source": "tests/test_stage12_a230q_archive_witness.py",
+      "archived": "archive/i0/tests/test_stage12_a230q_archive_witness.py",
+      "blob_sha": "dd3977f09bf7c7ef7692c83f24c5a62d199a0575",
+      "bytes": 5292
+    },
+    {
+      "source": "tests/test_stage12_a230r_physical_replay.py",
+      "archived": "archive/i0/tests/test_stage12_a230r_physical_replay.py",
+      "blob_sha": "3b04864f6d8a436811eb5c005a84f914984c36fd",
+      "bytes": 4601
+    },
+    {
+      "source": "tests/test_stage12_a230s_firstperson_shadow.py",
+      "archived": "archive/i0/tests/test_stage12_a230s_firstperson_shadow.py",
+      "blob_sha": "665bd861c77d22936a5ed1469954e39a6683ecce",
+      "bytes": 8808
+    },
+    {
+      "source": "tests/test_stage12_a230s_observable_probes.py",
+      "archived": "archive/i0/tests/test_stage12_a230s_observable_probes.py",
+      "blob_sha": "b5cbaf531a3b8d78af3c5c4e31e053fd18ba2cc8",
+      "bytes": 5636
+    },
+    {
+      "source": "tests/test_stage12_a230t_food_shadow.py",
+      "archived": "archive/i0/tests/test_stage12_a230t_food_shadow.py",
+      "blob_sha": "9bbe85bf9853c08269e6c451231a463d0b84a0b6",
+      "bytes": 6714
+    },
+    {
+      "source": "tests/test_stage12_a230t_shadow_independent_audit.py",
+      "archived": "archive/i0/tests/test_stage12_a230t_shadow_independent_audit.py",
+      "blob_sha": "8f21c8ddcba4a36900f9215430bb161863fa70fb",
+      "bytes": 4780
+    },
+    {
+      "source": "tests/test_stage12_a230u_blind_audit.py",
+      "archived": "archive/i0/tests/test_stage12_a230u_blind_audit.py",
+      "blob_sha": "c62c0612e1576afdeb73014fbdde8ed8f4796d30",
+      "bytes": 6996
+    },
+    {
+      "source": "tests/test_stage12_a230u_shadow_physical_replay.py",
+      "archived": "archive/i0/tests/test_stage12_a230u_shadow_physical_replay.py",
+      "blob_sha": "790b4f593119e415edcfb3efc055e12660993bc3",
+      "bytes": 5098
+    },
+    {
+      "source": "tests/test_stage12_a230v_decision_equivalence.py",
+      "archived": "archive/i0/tests/test_stage12_a230v_decision_equivalence.py",
+      "blob_sha": "717aab6bb6e5d0c69177c54660867340cf4248f1",
+      "bytes": 7858
+    },
+    {
+      "source": "tests/test_stage12_a230w_preexposure_probes.py",
+      "archived": "archive/i0/tests/test_stage12_a230w_preexposure_probes.py",
+      "blob_sha": "a3ea58d66c4576204c0622c236a1093ee385bd9a",
+      "bytes": 9374
+    },
+    {
+      "source": "tests/test_stage12_a230x_independent_archives.py",
+      "archived": "archive/i0/tests/test_stage12_a230x_independent_archives.py",
+      "blob_sha": "f7e0ef56d753bb61c62d52d16b32fe699da1ba33",
+      "bytes": 7500
+    },
+    {
+      "source": "tests/test_stage12_a230y_physical_replay.py",
+      "archived": "archive/i0/tests/test_stage12_a230y_physical_replay.py",
+      "blob_sha": "12270261ae4361b427913ca0202c45f675e9d359",
+      "bytes": 7061
+    },
+    {
+      "source": "tests/test_stage12_a230z_alternative_food.py",
+      "archived": "archive/i0/tests/test_stage12_a230z_alternative_food.py",
+      "blob_sha": "7abb794e6778cd3ad86054dffb725ee90bae751d",
+      "bytes": 9832
+    },
+    {
+      "source": "tests/test_stage12_a230za_independent_archive.py",
+      "archived": "archive/i0/tests/test_stage12_a230za_independent_archive.py",
+      "blob_sha": "e286466b5363b32c240cdda7f9da53cb8b327d58",
+      "bytes": 10533
+    },
+    {
+      "source": "tests/test_stage12_a230zb_autonomous_food.py",
+      "archived": "archive/i0/tests/test_stage12_a230zb_autonomous_food.py",
+      "blob_sha": "49a2052dfbcd7eb3851eab2f45e300a682d824bb",
+      "bytes": 8762
+    },
+    {
+      "source": "tests/test_stage12_a230zd_autonomous_funnel.py",
+      "archived": "archive/i0/tests/test_stage12_a230zd_autonomous_funnel.py",
+      "blob_sha": "1469862b778e5f534590c85a5e456b3192308626",
+      "bytes": 8275
+    },
+    {
+      "source": "tests/test_stage12_a230ze_model_coverage.py",
+      "archived": "archive/i0/tests/test_stage12_a230ze_model_coverage.py",
+      "blob_sha": "e93c2b6a9574220a08cd2b5e624c88b57c02a6f2",
+      "bytes": 8182
+    },
+    {
+      "source": "tests/test_stage12_a230zf_sealed_shadow.py",
+      "archived": "archive/i0/tests/test_stage12_a230zf_sealed_shadow.py",
+      "blob_sha": "973d11ffbe1ed98414b3758d011b1df877710d00",
+      "bytes": 7649
+    },
+    {
+      "source": "tests/test_stage12_a230zg_lived_root_shadow.py",
+      "archived": "archive/i0/tests/test_stage12_a230zg_lived_root_shadow.py",
+      "blob_sha": "92c2bfb2aab571206c19425f4cfb5245bdbdb97e",
+      "bytes": 10420
+    },
+    {
+      "source": "tests/test_stage12_a230zh_sealed_roots.py",
+      "archived": "archive/i0/tests/test_stage12_a230zh_sealed_roots.py",
+      "blob_sha": "70a505108f44301b8f023e9ff37cb75044af63aa",
+      "bytes": 9111
+    },
+    {
+      "source": "tests/test_stage12_a230zi_independent_audit.py",
+      "archived": "archive/i0/tests/test_stage12_a230zi_independent_audit.py",
+      "blob_sha": "05e85968bdaa18848a7c244982de959dc8db4f56",
+      "bytes": 8473
+    },
+    {
+      "source": "tests/test_stage12_a230zk_ownworld_probe.py",
+      "archived": "archive/i0/tests/test_stage12_a230zk_ownworld_probe.py",
+      "blob_sha": "f303f45a2abff8149f7115f62d1f08205d08dd51",
+      "bytes": 15180
+    },
+    {
+      "source": "tests/test_stage12_a230zl_ownworld_sealed.py",
+      "archived": "archive/i0/tests/test_stage12_a230zl_ownworld_sealed.py",
+      "blob_sha": "8d96b900dfa1287a3ef4ac78608456159f5ceed1",
+      "bytes": 10442
+    },
+    {
+      "source": "tests/test_stage12_a230zm_exact_reentry.py",
+      "archived": "archive/i0/tests/test_stage12_a230zm_exact_reentry.py",
+      "blob_sha": "d16e71c1f6ff2bce450e4a764ad33175b7c9ebcf",
+      "bytes": 11226
+    },
+    {
+      "source": "tests/test_stage12_a230zn_independent_reentry.py",
+      "archived": "archive/i0/tests/test_stage12_a230zn_independent_reentry.py",
+      "blob_sha": "2b555eecaf107c296b44906183bc40550a3b8c0b",
+      "bytes": 9957
+    },
+    {
+      "source": "tests/test_stage12_a230zo_factorized_heldout.py",
+      "archived": "archive/i0/tests/test_stage12_a230zo_factorized_heldout.py",
+      "blob_sha": "c4b77827b56d618c627edc96fa048310edbdfed5",
+      "bytes": 11568
+    },
+    {
+      "source": "tests/test_stage12_a230zp_sealed_factorized.py",
+      "archived": "archive/i0/tests/test_stage12_a230zp_sealed_factorized.py",
+      "blob_sha": "797d55572604dde2187751df0b1fcd9f2f335885",
+      "bytes": 12533
+    },
+    {
+      "source": "tests/test_stage12_a230zq_autonomous_hidden_motor.py",
+      "archived": "archive/i0/tests/test_stage12_a230zq_autonomous_hidden_motor.py",
+      "blob_sha": "08a54794d8c91e9af0db79eeb6a4e3c5d306a9da",
+      "bytes": 13588
+    },
+    {
+      "source": "tests/test_stage12_a230zqa_independent_autonomous_mortality.py",
+      "archived": "archive/i0/tests/test_stage12_a230zqa_independent_autonomous_mortality.py",
+      "blob_sha": "53fa136c1b9587e0eb9bd9da64606e87f91159ba",
+      "bytes": 9344
+    },
+    {
+      "source": "tests/test_stage12_a230zr_physical_replay.py",
+      "archived": "archive/i0/tests/test_stage12_a230zr_physical_replay.py",
+      "blob_sha": "b5938e5600c8f935bc02f9ea93eb6cc4e5b413a9",
+      "bytes": 6437
+    },
+    {
+      "source": "tests/test_stage12_a230zs_preaction_sealed.py",
+      "archived": "archive/i0/tests/test_stage12_a230zs_preaction_sealed.py",
+      "blob_sha": "e9b52220249f9e1fde23b0e2e7f19ed13db8a668",
+      "bytes": 13375
+    },
+    {
+      "source": "tests/test_stage12_a230zs_sealed_preaction.py",
+      "archived": "archive/i0/tests/test_stage12_a230zs_sealed_preaction.py",
+      "blob_sha": "113f961d63aee121a8ed0891471f9199b029974b",
+      "bytes": 14563
+    },
+    {
+      "source": "tests/test_stage12_a230zt_independent_preaction.py",
+      "archived": "archive/i0/tests/test_stage12_a230zt_independent_preaction.py",
+      "blob_sha": "ae5304de1f7bb6523c31f265a7eb3ddace65bb68",
+      "bytes": 13121
+    },
+    {
+      "source": "tests/test_stage12_a230zt_independent_splitjob.py",
+      "archived": "archive/i0/tests/test_stage12_a230zt_independent_splitjob.py",
+      "blob_sha": "21c89ed7bd6fb80bd2822ccd5ada1699923cba55",
+      "bytes": 11175
+    },
+    {
+      "source": "tests/test_stage12_a26_long_horizon.py",
+      "archived": "archive/i0/tests/test_stage12_a26_long_horizon.py",
+      "blob_sha": "47b2a77259c8bc5f6d2e5cbc710b0c08daa63f18",
+      "bytes": 4740
+    },
+    {
+      "source": "tests/test_stage12_a27_revalidation.py",
+      "archived": "archive/i0/tests/test_stage12_a27_revalidation.py",
+      "blob_sha": "f6cf90819bcaaf147cf8800c7de39e4154197672",
+      "bytes": 3936
+    },
+    {
+      "source": "tests/test_stage12_a28_extrinsic_gain.py",
+      "archived": "archive/i0/tests/test_stage12_a28_extrinsic_gain.py",
+      "blob_sha": "fd11e88c04041dee9ce768694d6d26472d019c5a",
+      "bytes": 1942
+    },
+    {
+      "source": "tests/test_stage12_alignment.py",
+      "archived": "archive/i0/tests/test_stage12_alignment.py",
+      "blob_sha": "8ba97e382708905ada244737ffcf0887a7a36a43",
+      "bytes": 8568
+    },
+    {
+      "source": "tests/test_stage12_attribution_coverage_census.py",
+      "archived": "archive/i0/tests/test_stage12_attribution_coverage_census.py",
+      "blob_sha": "b4189df08e557f527c058a7effe6029245637071",
+      "bytes": 2194
+    },
+    {
+      "source": "tests/test_stage12_attribution_pairs.py",
+      "archived": "archive/i0/tests/test_stage12_attribution_pairs.py",
+      "blob_sha": "b5b9ce1f5299807b9ca522c63835491ffe372332",
+      "bytes": 4065
+    },
+    {
+      "source": "tests/test_stage12_attribution_provenance.py",
+      "archived": "archive/i0/tests/test_stage12_attribution_provenance.py",
+      "blob_sha": "40f0a7825f42ca8a64b50210ea3d07f44e176d61",
+      "bytes": 9204
+    },
+    {
+      "source": "tests/test_stage12_attribution_sleep_expiry.py",
+      "archived": "archive/i0/tests/test_stage12_attribution_sleep_expiry.py",
+      "blob_sha": "51117bb8fe1aca6ab3dc5e2e41dfcdfb5cae14d9",
+      "bytes": 4154
+    },
+    {
+      "source": "tests/test_stage12_diagnostic_audit.py",
+      "archived": "archive/i0/tests/test_stage12_diagnostic_audit.py",
+      "blob_sha": "4f74e18f57ddc7f8fc44cc6563972a9b5cf2286e",
+      "bytes": 9560
+    },
+    {
+      "source": "tests/test_stage12_dual_scope_m11.py",
+      "archived": "archive/i0/tests/test_stage12_dual_scope_m11.py",
+      "blob_sha": "1caf325443049798c246d74e3b81e1ee226bbea2",
+      "bytes": 2512
+    },
+    {
+      "source": "tests/test_stage12_dual_scope_runtime.py",
+      "archived": "archive/i0/tests/test_stage12_dual_scope_runtime.py",
+      "blob_sha": "3c0c9d67576367222e7313823a790810e97551ed",
+      "bytes": 7069
+    },
+    {
+      "source": "tests/test_stage12_dual_scope.py",
+      "archived": "archive/i0/tests/test_stage12_dual_scope.py",
+      "blob_sha": "f98ddf366cf73679b47b5383291e70868664e432",
+      "bytes": 4108
+    },
+    {
+      "source": "tests/test_stage12_goal_agency_independence.py",
+      "archived": "archive/i0/tests/test_stage12_goal_agency_independence.py",
+      "blob_sha": "382e042c59f4fe4a1133eafd9f8720a0d9dc8318",
+      "bytes": 2426
+    },
+    {
+      "source": "tests/test_stage12_goal_agency_runtime.py",
+      "archived": "archive/i0/tests/test_stage12_goal_agency_runtime.py",
+      "blob_sha": "c130942678850a4adef81c839d3afe65da24a1e8",
+      "bytes": 7612
+    },
+    {
+      "source": "tests/test_stage12_goal_agency.py",
+      "archived": "archive/i0/tests/test_stage12_goal_agency.py",
+      "blob_sha": "04ac8b0d0fff0346d16225bd43aea2bd79f1cfca",
+      "bytes": 5067
+    },
+    {
+      "source": "tests/test_stage12_goal_progress.py",
+      "archived": "archive/i0/tests/test_stage12_goal_progress.py",
+      "blob_sha": "d719284881930bba841359cf9401ca05c86f0c31",
+      "bytes": 12656
+    },
+    {
+      "source": "tests/test_stage12_instrumental_geographic.py",
+      "archived": "archive/i0/tests/test_stage12_instrumental_geographic.py",
+      "blob_sha": "677fca5dacf994a4c927b5d0739fd7ebe4440bf6",
+      "bytes": 2269
+    },
+    {
+      "source": "tests/test_stage12_issue110_contrasted_summary.py",
+      "archived": "archive/i0/tests/test_stage12_issue110_contrasted_summary.py",
+      "blob_sha": "54f3b28ece2855d789c018c033604892c417aa74",
+      "bytes": 3719
+    },
+    {
+      "source": "tests/test_stage12_issue110_goal_access_counts.py",
+      "archived": "archive/i0/tests/test_stage12_issue110_goal_access_counts.py",
+      "blob_sha": "c3a2d92b181b1ef7f9a6c1b4cb5dcac0f06251b8",
+      "bytes": 2299
+    },
+    {
+      "source": "tests/test_stage12_lived_detectors.py",
+      "archived": "archive/i0/tests/test_stage12_lived_detectors.py",
+      "blob_sha": "786396dd13640d5afe0bc736c1555fd2d496416f",
+      "bytes": 7543
+    },
+    {
+      "source": "tests/test_stage12_local_entity_visibility.py",
+      "archived": "archive/i0/tests/test_stage12_local_entity_visibility.py",
+      "blob_sha": "e06fc579714088a8e36e83d7fe7069228ad99371",
+      "bytes": 2235
+    },
+    {
+      "source": "tests/test_stage12_module_occupancy.py",
+      "archived": "archive/i0/tests/test_stage12_module_occupancy.py",
+      "blob_sha": "7db873dcbc260ef708f95a7dda10b80dbeef267c",
+      "bytes": 2252
+    },
+    {
+      "source": "tests/test_stage12_mortal_runtime.py",
+      "archived": "archive/i0/tests/test_stage12_mortal_runtime.py",
+      "blob_sha": "91fff052220cfbe4b78e499fd5397c7f3577e584",
+      "bytes": 11933
+    },
+    {
+      "source": "tests/test_stage12_observer_mortal_interop.py",
+      "archived": "archive/i0/tests/test_stage12_observer_mortal_interop.py",
+      "blob_sha": "cfedc909584630eec78e4716d580f80fa5819d8d",
+      "bytes": 4319
+    },
+    {
+      "source": "tests/test_stage12_occupancy_runtime.py",
+      "archived": "archive/i0/tests/test_stage12_occupancy_runtime.py",
+      "blob_sha": "a5f2139326f6ab012afd55f335c619b802eacd30",
+      "bytes": 9581
+    },
+    {
+      "source": "tests/test_stage12_operator_alert_runtime.py",
+      "archived": "archive/i0/tests/test_stage12_operator_alert_runtime.py",
+      "blob_sha": "7bb58b8b8a223cc1103febabb9b769fbcd6f8cb1",
+      "bytes": 19629
+    },
+    {
+      "source": "tests/test_stage12_operator_alerts.py",
+      "archived": "archive/i0/tests/test_stage12_operator_alerts.py",
+      "blob_sha": "1c4492ffc846e0b5651c790087573f93db124f33",
+      "bytes": 5659
+    },
+    {
+      "source": "tests/test_stage12_operator_console.py",
+      "archived": "archive/i0/tests/test_stage12_operator_console.py",
+      "blob_sha": "626c148bc37cfca5c2a163e20e51deb1397744ff",
+      "bytes": 10520
+    },
+    {
+      "source": "tests/test_stage12_operator_control_audit.py",
+      "archived": "archive/i0/tests/test_stage12_operator_control_audit.py",
+      "blob_sha": "5a8c446449a4e9b2132a0918ca76a276ab1e1618",
+      "bytes": 8345
+    },
+    {
+      "source": "tests/test_stage12_operator_packet.py",
+      "archived": "archive/i0/tests/test_stage12_operator_packet.py",
+      "blob_sha": "0192153107b3ea239bccb036b255a01dbbae6404",
+      "bytes": 13450
+    },
+    {
+      "source": "tests/test_stage12_operator_trial.py",
+      "archived": "archive/i0/tests/test_stage12_operator_trial.py",
+      "blob_sha": "5f241db4622e346dab028b5006dc0b808a8d1bbd",
+      "bytes": 17603
+    },
+    {
+      "source": "tests/test_stage12_p48_diversity_audit.py",
+      "archived": "archive/i0/tests/test_stage12_p48_diversity_audit.py",
+      "blob_sha": "38e653982773f81168328404ded0c4bb9889f752",
+      "bytes": 5148
+    },
+    {
+      "source": "tests/test_stage12_progressive_planning.py",
+      "archived": "archive/i0/tests/test_stage12_progressive_planning.py",
+      "blob_sha": "993fa8ba41e0c955a52e15c037283f7d5297f7d8",
+      "bytes": 2593
+    },
+    {
+      "source": "tests/test_stage12_spatial_cognitive_agency.py",
+      "archived": "archive/i0/tests/test_stage12_spatial_cognitive_agency.py",
+      "blob_sha": "4c6ab3154a3d1cd74d6daf9371b07e8c51d6b7d4",
+      "bytes": 4293
+    },
+    {
+      "source": "tests/test_stage12_spatial_cue_audit.py",
+      "archived": "archive/i0/tests/test_stage12_spatial_cue_audit.py",
+      "blob_sha": "03cea0d5b770f1b14595bd023b9869d11d408ab0",
+      "bytes": 3644
+    },
+    {
+      "source": "tests/test_stage12_spatial_cue_policy.py",
+      "archived": "archive/i0/tests/test_stage12_spatial_cue_policy.py",
+      "blob_sha": "1954e7d8f9157e20f0bafd9b0d84e7e6d1414914",
+      "bytes": 3590
+    },
+    {
+      "source": "tests/test_stage12_spatial_cue_worldbody.py",
+      "archived": "archive/i0/tests/test_stage12_spatial_cue_worldbody.py",
+      "blob_sha": "0ef4ac3cc3cb82ddaf762838754d1bee9ba681c7",
+      "bytes": 2628
+    },
+    {
+      "source": "tests/test_stage12_spatial_goal_progress.py",
+      "archived": "archive/i0/tests/test_stage12_spatial_goal_progress.py",
+      "blob_sha": "8e43398c0c37810ae6f4c67f623ccb9a86cc12b4",
+      "bytes": 3916
+    },
+    {
+      "source": "tests/test_stage12_spatial_integrated_rehash.py",
+      "archived": "archive/i0/tests/test_stage12_spatial_integrated_rehash.py",
+      "blob_sha": "a88cd6622fc8dea57c7d6513e2159eddc6aaf2be",
+      "bytes": 4328
+    },
+    {
+      "source": "tests/test_stage12_spatial_m11_identity.py",
+      "archived": "archive/i0/tests/test_stage12_spatial_m11_identity.py",
+      "blob_sha": "00e6979f4f5a11ae5af7a6a7076b58b95e42e766",
+      "bytes": 8280
+    },
+    {
+      "source": "tests/test_stage12_spatial_physical_progress.py",
+      "archived": "archive/i0/tests/test_stage12_spatial_physical_progress.py",
+      "blob_sha": "92062baa88b9d14f987b67fd594b316b544dc50f",
+      "bytes": 4532
+    },
+    {
+      "source": "tests/test_stage12_spatial_world_reachability.py",
+      "archived": "archive/i0/tests/test_stage12_spatial_world_reachability.py",
+      "blob_sha": "4f29a58767eb26e0e5e4ecdc30dce4351c572e79",
+      "bytes": 2303
+    },
+    {
+      "source": "tests/test_stage12_waking_capture_provenance.py",
+      "archived": "archive/i0/tests/test_stage12_waking_capture_provenance.py",
+      "blob_sha": "0b742087672b63d0f752b4e87d15ab38bc7bfe71",
+      "bytes": 2026
+    },
+    {
+      "source": "tests/test_stage13_final_preregistration.py",
+      "archived": "archive/i0/tests/test_stage13_final_preregistration.py",
+      "blob_sha": "1d238d443b0d740625e49a71868f68c3cf58a4f5",
+      "bytes": 6346
+    },
+    {
+      "source": "tests/test_stage2_runtime.py",
+      "archived": "archive/i0/tests/test_stage2_runtime.py",
+      "blob_sha": "30da6ed8616cbacdbcb57b9ac7a8250efc2941ac",
+      "bytes": 9869
+    },
+    {
+      "source": "tests/test_stage3_runtime.py",
+      "archived": "archive/i0/tests/test_stage3_runtime.py",
+      "blob_sha": "985ad4faf3ff0150dad8a7f4946c156fa979c719",
+      "bytes": 8222
+    },
+    {
+      "source": "tests/test_stage4_modules.py",
+      "archived": "archive/i0/tests/test_stage4_modules.py",
+      "blob_sha": "7e905cdd6e8a5e07198aa2e1a7556da1d4d1e151",
+      "bytes": 12783
+    },
+    {
+      "source": "tests/test_stage4_runtime.py",
+      "archived": "archive/i0/tests/test_stage4_runtime.py",
+      "blob_sha": "93a14e99a91bd7d61b8019693185064506e75dc7",
+      "bytes": 22393
+    },
+    {
+      "source": "tests/test_stage5_copies.py",
+      "archived": "archive/i0/tests/test_stage5_copies.py",
+      "blob_sha": "d79913fc2155c9c6aacdac6f3e1ba61ddc1cb65f",
+      "bytes": 4450
+    },
+    {
+      "source": "tests/test_stage5_mortal_copy_custody.py",
+      "archived": "archive/i0/tests/test_stage5_mortal_copy_custody.py",
+      "blob_sha": "1ad0f0b6857bf10d98da71a1a1cbcd22c4ad2560",
+      "bytes": 3447
+    },
+    {
+      "source": "tests/test_stage5_temperament.py",
+      "archived": "archive/i0/tests/test_stage5_temperament.py",
+      "blob_sha": "526318875969e68f8cbecedf53cb55708945a4eb",
+      "bytes": 9567
+    },
+    {
+      "source": "tests/test_stage5_trait_battery.py",
+      "archived": "archive/i0/tests/test_stage5_trait_battery.py",
+      "blob_sha": "de6dad9b478964b252cce16a5a2ba3b492aad488",
+      "bytes": 7653
+    },
+    {
+      "source": "tests/test_stage5_trait_profiles.py",
+      "archived": "archive/i0/tests/test_stage5_trait_profiles.py",
+      "blob_sha": "72036017a7365ead7d3848d8ba63617cf1f79866",
+      "bytes": 5064
+    },
+    {
+      "source": "tests/test_stage6_a230e_discriminants.py",
+      "archived": "archive/i0/tests/test_stage6_a230e_discriminants.py",
+      "blob_sha": "72d835f0daf7c6c28fd2bd713e345c8b8dcd1aaf",
+      "bytes": 5316
+    },
+    {
+      "source": "tests/test_stage6_a230i_first_step_diagnostic.py",
+      "archived": "archive/i0/tests/test_stage6_a230i_first_step_diagnostic.py",
+      "blob_sha": "9fadc066384e929d58d1041ea79e8a497f0e8a05",
+      "bytes": 5048
+    },
+    {
+      "source": "tests/test_stage6_corpus.py",
+      "archived": "archive/i0/tests/test_stage6_corpus.py",
+      "blob_sha": "f2e4e9a5bfdf5dc267b8a9f07f2313d42aa0ef86",
+      "bytes": 3251
+    },
+    {
+      "source": "tests/test_stage6_equipment_benchmark.py",
+      "archived": "archive/i0/tests/test_stage6_equipment_benchmark.py",
+      "blob_sha": "2bb7fff9e7086a1c4ccceb908df2dd3ff7d65438",
+      "bytes": 4349
+    },
+    {
+      "source": "tests/test_stage6_equipment.py",
+      "archived": "archive/i0/tests/test_stage6_equipment.py",
+      "blob_sha": "71f53c891ea5c499ad6057d81430fd4dc4ecd187",
+      "bytes": 5898
+    },
+    {
+      "source": "tests/test_stage6_evaluator.py",
+      "archived": "archive/i0/tests/test_stage6_evaluator.py",
+      "blob_sha": "41bd1aaed98cafb4b7b25146ee9b000a060d1294",
+      "bytes": 11014
+    },
+    {
+      "source": "tests/test_stage6_planning.py",
+      "archived": "archive/i0/tests/test_stage6_planning.py",
+      "blob_sha": "4c695419878e77c7dd322837f1269c04aa74e2ef",
+      "bytes": 4167
+    },
+    {
+      "source": "tests/test_stage6_reference_equipment.py",
+      "archived": "archive/i0/tests/test_stage6_reference_equipment.py",
+      "blob_sha": "dc7977b16045ed0f2aab2f1822b9d19e627aa5c5",
+      "bytes": 3776
+    },
+    {
+      "source": "tests/test_stage6_reference_fixture.py",
+      "archived": "archive/i0/tests/test_stage6_reference_fixture.py",
+      "blob_sha": "69fcbe74940cad0a8d4fafd071b5445b09fdb206",
+      "bytes": 1840
+    },
+    {
+      "source": "tests/test_stage6_replanning.py",
+      "archived": "archive/i0/tests/test_stage6_replanning.py",
+      "blob_sha": "99718594ce5d43a4195b1139b72a86834c127dde",
+      "bytes": 7103
+    },
+    {
+      "source": "tests/test_stage6_runtime.py",
+      "archived": "archive/i0/tests/test_stage6_runtime.py",
+      "blob_sha": "c608791a692f05257eab0e94bb60104eb5947bff",
+      "bytes": 8976
+    },
+    {
+      "source": "tests/test_stage6_v133_shadow_contract.py",
+      "archived": "archive/i0/tests/test_stage6_v133_shadow_contract.py",
+      "blob_sha": "d8ed4f4d8d85a84ba4115cd701ae24a97104904d",
+      "bytes": 4937
+    },
+    {
+      "source": "tests/test_stage7_memory.py",
+      "archived": "archive/i0/tests/test_stage7_memory.py",
+      "blob_sha": "e2daccd6270056af15e19a7c392f0fdf620d0e1d",
+      "bytes": 12886
+    },
+    {
+      "source": "tests/test_stage7_requests.py",
+      "archived": "archive/i0/tests/test_stage7_requests.py",
+      "blob_sha": "2e626fbfd121e566e7bef4dd133ae90eb31d383b",
+      "bytes": 7372
+    },
+    {
+      "source": "tests/test_stage7_runtime.py",
+      "archived": "archive/i0/tests/test_stage7_runtime.py",
+      "blob_sha": "867385e1fb08b9ac12428de95802f525430334cb",
+      "bytes": 8944
+    },
+    {
+      "source": "tests/test_stage8_calibration_stress.py",
+      "archived": "archive/i0/tests/test_stage8_calibration_stress.py",
+      "blob_sha": "289966255b4bb4ee8ad2875c5ee07a6cc95b8e43",
+      "bytes": 1234
+    },
+    {
+      "source": "tests/test_stage8_evidence.py",
+      "archived": "archive/i0/tests/test_stage8_evidence.py",
+      "blob_sha": "eb7819919fd1183060d5eee88127c48f8f230a47",
+      "bytes": 5355
+    },
+    {
+      "source": "tests/test_stage8_kappa.py",
+      "archived": "archive/i0/tests/test_stage8_kappa.py",
+      "blob_sha": "3a7db68f7d7d74a465acb51d34beae8897fcfd79",
+      "bytes": 7112
+    },
+    {
+      "source": "tests/test_stage8_learning_benchmark.py",
+      "archived": "archive/i0/tests/test_stage8_learning_benchmark.py",
+      "blob_sha": "93b5a4620c46b7acb94dc2b6342be46cd5f5d411",
+      "bytes": 1654
+    },
+    {
+      "source": "tests/test_stage8_precision.py",
+      "archived": "archive/i0/tests/test_stage8_precision.py",
+      "blob_sha": "4329fadd8f24b795006fd3172361887ff2fc2ed3",
+      "bytes": 4757
+    },
+    {
+      "source": "tests/test_stage8_td_values.py",
+      "archived": "archive/i0/tests/test_stage8_td_values.py",
+      "blob_sha": "9a2faab5bdce495a8c5b4fb3adf33f8da779b2b3",
+      "bytes": 5293
+    },
+    {
+      "source": "tests/test_stage9_acceptance_report.py",
+      "archived": "archive/i0/tests/test_stage9_acceptance_report.py",
+      "blob_sha": "ce60d08207692c90027516ff116af69540f40548",
+      "bytes": 5219
+    },
+    {
+      "source": "tests/test_stage9_agency_comparator.py",
+      "archived": "archive/i0/tests/test_stage9_agency_comparator.py",
+      "blob_sha": "067d8de7196c6c7ed06ecfaa2e8f1428a04154b7",
+      "bytes": 9218
+    },
+    {
+      "source": "tests/test_stage9_agency_evidence.py",
+      "archived": "archive/i0/tests/test_stage9_agency_evidence.py",
+      "blob_sha": "33893380d501355547e898eb6e338c7ff1cf37b5",
+      "bytes": 11179
+    },
+    {
+      "source": "tests/test_stage9_autonomous_hydration_lifecycle.py",
+      "archived": "archive/i0/tests/test_stage9_autonomous_hydration_lifecycle.py",
+      "blob_sha": "dca75814b17fb710f40743f8b9726997bc465900",
+      "bytes": 11370
+    },
+    {
+      "source": "tests/test_stage9_autonomous_hypothesis.py",
+      "archived": "archive/i0/tests/test_stage9_autonomous_hypothesis.py",
+      "blob_sha": "a02c1db7d2554754e1096e7d93d71a43ca662094",
+      "bytes": 6393
+    },
+    {
+      "source": "tests/test_stage9_canonical_corrections.py",
+      "archived": "archive/i0/tests/test_stage9_canonical_corrections.py",
+      "blob_sha": "544f7d82091ef5e90bcc774fd3d94d5994f11fa7",
+      "bytes": 23097
+    },
+    {
+      "source": "tests/test_stage9_causal_config_contract.py",
+      "archived": "archive/i0/tests/test_stage9_causal_config_contract.py",
+      "blob_sha": "5d58c5024ff4e5f4449a41c8914acb2a4ed74864",
+      "bytes": 2190
+    },
+    {
+      "source": "tests/test_stage9_causal_corrections.py",
+      "archived": "archive/i0/tests/test_stage9_causal_corrections.py",
+      "blob_sha": "428db8d8653ee2e738a7189f5f2bc76797084f0d",
+      "bytes": 8605
+    },
+    {
+      "source": "tests/test_stage9_causal_lifecycle.py",
+      "archived": "archive/i0/tests/test_stage9_causal_lifecycle.py",
+      "blob_sha": "fd0231341b71a50f9859fa4be228ec910de932f2",
+      "bytes": 57718
+    },
+    {
+      "source": "tests/test_stage9_causal_model.py",
+      "archived": "archive/i0/tests/test_stage9_causal_model.py",
+      "blob_sha": "7c1a6e0c6c1d481bcedd527f2b2b0c81656edc6c",
+      "bytes": 10738
+    },
+    {
+      "source": "tests/test_stage9_causal_replay.py",
+      "archived": "archive/i0/tests/test_stage9_causal_replay.py",
+      "blob_sha": "982a7990c02ca50e005caebde798e987693b4c64",
+      "bytes": 6723
+    },
+    {
+      "source": "tests/test_stage9_causal_test_pipeline.py",
+      "archived": "archive/i0/tests/test_stage9_causal_test_pipeline.py",
+      "blob_sha": "095f4592646da0a8ecc32698b7f74f0a49ba1d12",
+      "bytes": 8880
+    },
+    {
+      "source": "tests/test_stage9_causal_test_targets.py",
+      "archived": "archive/i0/tests/test_stage9_causal_test_targets.py",
+      "blob_sha": "2368f97ea7f1a140661f46455e602da77fb8f9f1",
+      "bytes": 3893
+    },
+    {
+      "source": "tests/test_stage9_committed_world_step.py",
+      "archived": "archive/i0/tests/test_stage9_committed_world_step.py",
+      "blob_sha": "ac46c8e22eb59d9362a5d3b1d8aed2230bb97575",
+      "bytes": 12102
+    },
+    {
+      "source": "tests/test_stage9_concurrent_cause_audit.py",
+      "archived": "archive/i0/tests/test_stage9_concurrent_cause_audit.py",
+      "blob_sha": "3c5f4441a8898133221d602495927a041e02d323",
+      "bytes": 26251
+    },
+    {
+      "source": "tests/test_stage9_cooccurrence_threshold.py",
+      "archived": "archive/i0/tests/test_stage9_cooccurrence_threshold.py",
+      "blob_sha": "40aa01cc74de373341d34cece0ace1cf27efc05a",
+      "bytes": 2757
+    },
+    {
+      "source": "tests/test_stage9_frozen_worktree.py",
+      "archived": "archive/i0/tests/test_stage9_frozen_worktree.py",
+      "blob_sha": "89e2b8e92a35d20727438f1f8e0671409158546f",
+      "bytes": 13134
+    },
+    {
+      "source": "tests/test_stage9_heldout_artifact_custody.py",
+      "archived": "archive/i0/tests/test_stage9_heldout_artifact_custody.py",
+      "blob_sha": "ff1af48797950d531a7ff92130fa879b65eb21ba",
+      "bytes": 118341
+    },
+    {
+      "source": "tests/test_stage9_heldout_operator_integration.py",
+      "archived": "archive/i0/tests/test_stage9_heldout_operator_integration.py",
+      "blob_sha": "2fd9d95aeae416d00cd39cdbea5e59d198b480d5",
+      "bytes": 9017
+    },
+    {
+      "source": "tests/test_stage9_heldout_runner.py",
+      "archived": "archive/i0/tests/test_stage9_heldout_runner.py",
+      "blob_sha": "a3420e585e3b5c992cb0b084e25cd67fbfa43002",
+      "bytes": 15585
+    },
+    {
+      "source": "tests/test_stage9_hydration_contrast_report.py",
+      "archived": "archive/i0/tests/test_stage9_hydration_contrast_report.py",
+      "blob_sha": "0196ed67f85930874258220ba54f02ccf403a685",
+      "bytes": 8929
+    },
+    {
+      "source": "tests/test_stage9_hydration_observations.py",
+      "archived": "archive/i0/tests/test_stage9_hydration_observations.py",
+      "blob_sha": "6dd6e772648622104052fc85d1fea250e0f05aa6",
+      "bytes": 3144
+    },
+    {
+      "source": "tests/test_stage9_independent_handoff.py",
+      "archived": "archive/i0/tests/test_stage9_independent_handoff.py",
+      "blob_sha": "4a959a99dc5424a4075898aba2859fd8b17b8eb5",
+      "bytes": 28939
+    },
+    {
+      "source": "tests/test_stage9_known_causes_benchmark.py",
+      "archived": "archive/i0/tests/test_stage9_known_causes_benchmark.py",
+      "blob_sha": "fc1ab9bb5bd99ea7fc2be50465ddc75555bc60c0",
+      "bytes": 10431
+    },
+    {
+      "source": "tests/test_stage9_lived_ambient_confound.py",
+      "archived": "archive/i0/tests/test_stage9_lived_ambient_confound.py",
+      "blob_sha": "4b935f582a78060daa1a7163acd31889be14e8f5",
+      "bytes": 5641
+    },
+    {
+      "source": "tests/test_stage9_lived_causal_intervention.py",
+      "archived": "archive/i0/tests/test_stage9_lived_causal_intervention.py",
+      "blob_sha": "9c634255d59a83dcedb66c3c99f2d3c37cb9d6ff",
+      "bytes": 32732
+    },
+    {
+      "source": "tests/test_stage9_lived_evidence.py",
+      "archived": "archive/i0/tests/test_stage9_lived_evidence.py",
+      "blob_sha": "6289c0f3f4719dc12ecb394cb139bf26493cbd71",
+      "bytes": 20512
+    },
+    {
+      "source": "tests/test_stage9_positive_hydration_benchmark.py",
+      "archived": "archive/i0/tests/test_stage9_positive_hydration_benchmark.py",
+      "blob_sha": "a0006f22d20f5948bd14c56cc61550e3297b327b",
+      "bytes": 5191
+    },
+    {
+      "source": "tests/test_stage9_random_reward_benchmark.py",
+      "archived": "archive/i0/tests/test_stage9_random_reward_benchmark.py",
+      "blob_sha": "c4acf3c995dd06db3ed9ef9c9212f748903dd734",
+      "bytes": 12608
+    },
+    {
+      "source": "tests/test_stage9_reference_replay.py",
+      "archived": "archive/i0/tests/test_stage9_reference_replay.py",
+      "blob_sha": "ed06ab9d746fc5a930d528d2bf7c4e5561028079",
+      "bytes": 4145
+    },
+    {
+      "source": "tests/test_stage9_registered_manifest_custody.py",
+      "archived": "archive/i0/tests/test_stage9_registered_manifest_custody.py",
+      "blob_sha": "cca599f29707e986de4f8a41b685131d956d04c1",
+      "bytes": 18943
+    },
+    {
+      "source": "tests/test_stage9_registration_chronology.py",
+      "archived": "archive/i0/tests/test_stage9_registration_chronology.py",
+      "blob_sha": "ab25fefbe348c501bb6f29fefc28e2a82662d3aa",
+      "bytes": 45943
+    },
+    {
+      "source": "tests/test_stage9_runtime.py",
+      "archived": "archive/i0/tests/test_stage9_runtime.py",
+      "blob_sha": "ff1b858580d5badede6182ba7cc8ef0a25234874",
+      "bytes": 3912
+    },
+    {
+      "source": "tests/test_stage9_scientific_assessment.py",
+      "archived": "archive/i0/tests/test_stage9_scientific_assessment.py",
+      "blob_sha": "4bce5cbd734dcf55938cb783e07a41438654b2b0",
+      "bytes": 30178
+    },
+    {
+      "source": "tests/test_stage9_scientific_preregistration.py",
+      "archived": "archive/i0/tests/test_stage9_scientific_preregistration.py",
+      "blob_sha": "e0bef630107d1a4d74fc9e7bae962aa2d170738c",
+      "bytes": 12334
+    },
+    {
+      "source": "tests/test_stage9_secure_file_read.py",
+      "archived": "archive/i0/tests/test_stage9_secure_file_read.py",
+      "blob_sha": "8ef725815e7a3e229e7fa2cd5ec6ee0de255e76f",
+      "bytes": 10790
+    },
+    {
+      "source": "tests/test_stage9_single_snapshot_custody.py",
+      "archived": "archive/i0/tests/test_stage9_single_snapshot_custody.py",
+      "blob_sha": "4ecf178dba100d7c974b79586e0f85a707124bc0",
+      "bytes": 7647
+    },
+    {
+      "source": "tests/test_stage9_spontaneous_superstition_matrix.py",
+      "archived": "archive/i0/tests/test_stage9_spontaneous_superstition_matrix.py",
+      "blob_sha": "71884ade0e328977e72a27b948b909a0bd06126b",
+      "bytes": 5202
+    },
+    {
+      "source": "tests/test_standalone_exhaustive_journal.py",
+      "archived": "archive/i0/tests/test_standalone_exhaustive_journal.py",
+      "blob_sha": "e6b8c9476521b28be225fb70804baee223afe988",
+      "bytes": 7882
+    },
+    {
+      "source": "tests/test_structural_contracts.py",
+      "archived": "archive/i0/tests/test_structural_contracts.py",
+      "blob_sha": "b7b4331c9ff1000fcd1e1a051cce55d7bfa4de0b",
+      "bytes": 9379
+    },
+    {
+      "source": "tests/test_symbolic_perception.py",
+      "archived": "archive/i0/tests/test_symbolic_perception.py",
+      "blob_sha": "c90b36865aa9c5fb32791453d1be239da810d711",
+      "bytes": 2518
+    },
+    {
+      "source": "tests/test_terminal_journal_seal.py",
+      "archived": "archive/i0/tests/test_terminal_journal_seal.py",
+      "blob_sha": "7cec3a4addc5fc4df62f49ca1f2123ae180da58b",
+      "bytes": 3587
+    },
+    {
+      "source": "tests/test_v131_stage12_autonomous_600_steps.py",
+      "archived": "archive/i0/tests/test_v131_stage12_autonomous_600_steps.py",
+      "blob_sha": "c5cc8192a2667cdad25353c4425fdc165210cbd8",
+      "bytes": 8639
+    },
+    {
+      "source": "tests/test_v131_stage12_sixpass_operator_integration.py",
+      "archived": "archive/i0/tests/test_v131_stage12_sixpass_operator_integration.py",
+      "blob_sha": "af285c89954184b8aeb06077e68496cbfbd47985",
+      "bytes": 6578
+    },
+    {
+      "source": "tests/test_world_generation.py",
+      "archived": "archive/i0/tests/test_world_generation.py",
+      "blob_sha": "325ded8129c0a6228f1a6f0742bd8ffadbf46a8c",
+      "bytes": 4649
+    },
+    {
+      "source": "tests/test_world_physics.py",
+      "archived": "archive/i0/tests/test_world_physics.py",
+      "blob_sha": "31684d9e0c1d726923fc3d648ca6dc0d995da429",
+      "bytes": 14925
+    }
+  ]
+}

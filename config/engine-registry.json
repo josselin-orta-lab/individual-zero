@@ -1,0 +1,29 @@
+{
+  "schema": "individual-zero-engine-registry/v1",
+  "active_generation": "I1",
+  "reference_commit": "704a20ee048d7dee5151ccfed439be37ba02e36b",
+  "archive_manifest": "config/archives/i0-20261017.json",
+  "generations": {
+    "I0": {
+      "role": "frozen_reference",
+      "source": "src/i0",
+      "shared_lab": "src/lab",
+      "source_tree_sha": "e1c30c78e1f8c89339b6616c1808508d2265bf68",
+      "shared_lab_tree_sha": "18f5aabdd49a5cc2f7cae3b0996bf958a0843028",
+      "historical_tests": "archive/i0/tests",
+      "historical_workflows": "archive/i0/workflows"
+    },
+    "I1": {
+      "role": "active",
+      "parent": "I0",
+      "source": "src/i1",
+      "overlays": "src/i1_overlays",
+      "build": "scripts/build_i1_fork.py",
+      "runtime": "i1lab.i1_natural_runtime.I1Runtime",
+      "birth": "i1lab.i1_birth.birth_i1",
+      "tester": "scripts/test_i1_ci.py",
+      "ci": ".github/workflows/i1-current-ci.yml",
+      "frozen_reference_guard": "tests/test_i1_source_snapshot.py"
+    }
+  }
+}
