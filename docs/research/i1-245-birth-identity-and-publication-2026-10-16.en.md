@@ -404,3 +404,23 @@ claimed until execution.
 **NON VALIDÉ:** This is a static source optimization, not an executed
 experiment. No model generation, tests, CI runs, benchmarks or simulations
 were performed. I0 and the retained `src/i1` source snapshot are unchanged.
+
+## Static copy-path optimization of canonical I1 (2026-10-17)
+
+The generated Stage10 publication gate now checks `not canonical` before
+reading `SlowHistory.read_committed()`, avoiding a full private-history
+deepcopy for the current natural I1. The noncanonical branch retains its
+original comparison, and canonical form-roster verification remains intact.
+
+The generated I1-only pass runner passes the explicitly detached, paid
+`frozen_episode_subset_copy` directly to the private semantic handler,
+rather than cloning the same selected episode subset a second time. The
+handler's candidate remains detached, P-42 charging precedes evidence
+access, and the transaction owner retains its frozen episode source.
+The runner also consumes the budget owner's already freshly constructed
+causal-state export without an extra deepcopy. Budget identity checks
+remain complete; exported causal-state keys and digests do not change.
+
+STATUS: non validated. No tests, build, CI execution, benchmark, or
+simulation was run. These are source-review improvements only; behavior
+and performance gains require independent verification.
