@@ -7,7 +7,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools"))
-from new_engine import plan
+from new_engine import plan, plan_workspace, apply_workspace
 
 
 class EngineScaffoldingTests(unittest.TestCase):
@@ -31,6 +31,46 @@ class EngineScaffoldingTests(unittest.TestCase):
             out.mkdir()
             with self.assertRaises(FileExistsError):
                 plan("I2", "I1", out)
+
+    def test_workspace_has_dedicated_lab_tests_docs_and_inert_ci(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config").mkdir()
+            (root / "config/engine-registry.json").write_bytes(
+                (ROOT / "config/engine-registry.json").read_bytes())
+            target = root / "src/i2"
+            files = plan_workspace("I2", "I1", target, root=root)
+            self.assertFalse(target.exists())
+            self.assertIn("src/i2/lab/__init__.py", files)
+            self.assertIn("tests/i2/test_proposal.py", files)
+            self.assertIn("docs/engines/i2/CI_WORKFLOW_TEMPLATE.yml", files)
+            self.assertFalse((root / ".github/workflows").exists())
+            created = apply_workspace("I2", "I1", target, root=root)
+            self.assertEqual(sorted(files), created)
+            self.assertTrue((root / "src/i2/engine.json").exists())
+            self.assertTrue((root / "tests/i2/test_proposal.py").exists())
+            self.assertFalse((root / ".github/workflows").exists())
+            self.assertNotIn(
+                "I2", json.loads(
+                    (root / "config/engine-registry.json").read_text()
+                )["generations"]
+            )
+            with self.assertRaises(FileExistsError):
+                apply_workspace("I2", "I1", target, root=root)
+
+    def test_workspace_cannot_overwrite_existing_test_owner(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config").mkdir()
+            (root / "config/engine-registry.json").write_bytes(
+                (ROOT / "config/engine-registry.json").read_bytes())
+            (root / "tests/i2").mkdir(parents=True)
+            sentinel = root / "tests/i2/keep.txt"
+            sentinel.write_text("DO NOT OVERWRITE")
+            with self.assertRaises(FileExistsError):
+                apply_workspace("I2", "I1", root / "src/i2", root=root)
+            self.assertEqual(sentinel.read_text(), "DO NOT OVERWRITE")
+            self.assertFalse((root / "src/i2").exists())
 
     def test_proposal_has_no_born_runtime_or_scientific_go(self):
         with TemporaryDirectory() as temp:
