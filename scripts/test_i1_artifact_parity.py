@@ -228,6 +228,27 @@ def _approved_agency_publication_duplicate_index(before: bytes, after: bytes) ->
             and original.replace(old, new, 1) == changed)
 
 
+def _reference_causal_minimum(before: bytes) -> bytes:
+    """Reconstruct the #261 exact stable intervention witness change."""
+    old_one = "            if len(matching_contexts) < self.config.n2:\n                continue\n\n            if published_reports is None:"
+    new_one = "            if len(matching_contexts) < self.config.n2:\n                continue\n            # This provenance witness is constant for this numeric outcome.\n            # Compute it once, not once for each compatible P-47 report.\n            intervention_ref = min(trial.identifier for trial in active_trials)\n\n            if published_reports is None:"
+    old_two = "                    intervention_ref=min(\n                        trial.identifier for trial in active_trials\n                    ),"
+    new_two = "                    intervention_ref=intervention_ref,"
+    text = before.decode("utf-8")
+    if text.count(old_one) != 1 or text.count(old_two) != 1:
+        raise ValueError("causal minimum reference drift")
+    return text.replace(old_one, new_one, 1).replace(old_two, new_two, 1).encode("utf-8")
+
+
+def _approved_food_review_control_sort(before: bytes, after: bytes) -> bool:
+    """Only hoist an invariant food-control sort out of the exposed loop."""
+    old = "        for present in sorted(exposed, key=lambda row: row.identifier):\n            for absent in sorted(controls, key=lambda row: row.identifier):"
+    new = "        # The sorted controls are invariant across all exposed observations.\n        # Sorting once preserves the exact first admissible pair and ranking.\n        sorted_controls = sorted(controls, key=lambda row: row.identifier)\n        for present in sorted(exposed, key=lambda row: row.identifier):\n            for absent in sorted_controls:"
+    original, candidate = before.decode("utf-8"), after.decode("utf-8")
+    return (original.count(old) == 1 and candidate.count(new) == 1
+            and original.replace(old, new, 1) == candidate)
+
+
 def _reference_approved_numeric_index(before: bytes) -> bytes:
     """Recreate the existing #260 exact numeric publication transformation."""
     old = "        numeric = dict(self._numeric_witnesses)\n        for witness in sorted(\n            self._pending_numeric_witnesses, key=lambda row: row.identifier,\n        ):\n            witness.validate()\n            if (\n                witness.identifier in numeric\n                or any(\n                    prior.transition_event_ref == witness.transition_event_ref\n                    for prior in numeric.values()\n                )\n            ):\n                raise ValueError(\"duplicate published physical numeric witness\")\n            numeric[witness.identifier] = witness"
@@ -316,10 +337,12 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/causal_model.py"
-                    and _approved_causal_intervention_min_index(
-                        _reference_approved_numeric_index(
-                            _reference_numeric_publication(
-                                _reference_agency_index((old_root / rel).read_bytes())
+                    and _approved_food_review_control_sort(
+                        _reference_causal_minimum(
+                            _reference_approved_numeric_index(
+                                _reference_numeric_publication(
+                                    _reference_agency_index((old_root / rel).read_bytes())
+                                )
                             )
                         ),
                         (new_root / rel).read_bytes()

@@ -155,3 +155,14 @@ différentielle exhaustive de petites combinaisons et la parité exacte de
 deux blocs limitent le changement. Aucun fait cognitif, test forcé ou
 jugement causal supplémentaire. Validation CI du nouveau SHA exigée
 avant fusion; pas de GO scientifique.
+
+## PR #262 : tri unique des contrôles alimentaires (2026-10-18)
+
+La revue d'hypothèse alimentaire retraiait `sorted(controls)` dans la
+boucle de chaque exposition, alors que les contrôles sont inchangés pour
+toute la requête. Un tri transitoire unique avant la boucle réduit ces
+triages sans modifier l'ordre lexical, la sélection du premier couple
+observé ou la preuve physique. La parité exacte est prolongée à partir
+des transformations approuvées #258–#261. L'essai exhaustif de petites
+séquences compare les mêmes résultats des deux algorithmes. La CI du
+commit précis reste nécessaire avant fusion ; aucun GO scientifique.

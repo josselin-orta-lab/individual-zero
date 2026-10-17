@@ -1811,8 +1811,11 @@ class CausalModel:
                 continue
             controls.append(observation)
 
+        # The sorted controls are invariant across all exposed observations.
+        # Sorting once preserves the exact first admissible pair and ranking.
+        sorted_controls = sorted(controls, key=lambda row: row.identifier)
         for present in sorted(exposed, key=lambda row: row.identifier):
-            for absent in sorted(controls, key=lambda row: row.identifier):
+            for absent in sorted_controls:
                 if (
                     present.observation_ref == absent.observation_ref
                     or present.observed_step == absent.observed_step
