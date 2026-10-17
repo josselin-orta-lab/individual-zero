@@ -209,11 +209,11 @@ class ConsolidationPassRunner:
         if not debit.accepted:
             return False
         # Never retain references to mutable caller-owned plan data.
-        frozen = ConsolidationPassPlan.from_state(deepcopy(plan.export()))
+        frozen = ConsolidationPassPlan.from_state(plan.export())
         frozen.validate(self.transaction, self.budget)
         self._plan = frozen
         self._period_ref = self.budget.active_period_ref
-        self._working = _json(self.transaction.candidate_copy())
+        self._working = self.transaction.candidate_copy()
         self._cursor = 0
         return True
 
@@ -247,7 +247,7 @@ class ConsolidationPassRunner:
         result = handler(
             deepcopy(self._working),
             deepcopy(unit),
-            deepcopy(scoped), self.transaction.cut,
+            scoped, self.transaction.cut,
         )
         working = _json(result)
         self._working = working
@@ -264,10 +264,10 @@ class ConsolidationPassRunner:
         debit = self.budget.charge(operation="pass_validate")
         if not debit.accepted:
             return False
-        result = deepcopy(self._working)
+        result = self._working
         self.transaction.run_pass(
             name=plan.pass_name,
-            executor=lambda _base, _batch, _cut: deepcopy(result),
+            executor=lambda _base, _batch, _cut: result,
             validator=validator,
         )
         self._plan = None
@@ -294,7 +294,7 @@ class ConsolidationPassRunner:
         # Capture the complete causal ledger, not only the current counters.
         # The prior closed-period history is part of reproducible continuity.
         # Restoring a runner against a different budget lineage is rejected.
-        return deepcopy(self.budget.export_causal_state())
+        return self.budget.export_causal_state()
 
     def export_causal_state(self) -> dict[str, object]:
         raw = {
@@ -320,7 +320,7 @@ class ConsolidationPassRunner:
             "unit_cursor", "working", "state_digest",
         } or state.get("schema") != self.schema):
             raise ValueError("incompatible pass-runner snapshot schema")
-        without_digest = {k: deepcopy(v) for k, v in state.items() if k != "state_digest"}
+        without_digest = {k: v for k, v in state.items() if k != "state_digest"}
         if state["state_digest"] != _hash(without_digest):
             raise ValueError("pass-runner snapshot digest mismatch")
         if (state["consolidation_id"] != self.transaction.id
@@ -338,7 +338,7 @@ class ConsolidationPassRunner:
                 raise ValueError("idle pass-runner snapshot contains pending work")
             restored_plan, restored_working = None, None
         else:
-            restored_plan = ConsolidationPassPlan.from_state(deepcopy(plan_raw))
+            restored_plan = ConsolidationPassPlan.from_state(plan_raw)
             restored_plan.validate(self.transaction, self.budget)
             if (type(cursor) is not int or cursor < 0 or cursor > len(restored_plan.units)
                     or self.budget.open_world_step is None
