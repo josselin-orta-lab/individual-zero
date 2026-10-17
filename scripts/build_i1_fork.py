@@ -239,6 +239,18 @@ def i1_m11_active_publication_custody_source(source: str) -> str:
     )
 
 
+def i1_waking_pending_source(source: str) -> str:
+    """Avoid cloning the entire h on every awake step in natural I1."""
+    old = (
+        '        committed = set(self.slow_history.read_committed()'
+        '["consolidated_episode_refs"])\\n'
+    )
+    new = '        committed = self.slow_history.committed_episode_refs()\\n'
+    if source.count(old) != 1:
+        raise ValueError("unreviewed Stage10 waking history read")
+    return source.replace(old, new)
+
+
 def i1_private_consolidation_source(source: str) -> str:
     """Generated Stage10: active Value/Needs advisory, all other forms inert.
 
@@ -379,6 +391,7 @@ def generate(output: Path) -> dict[str, object]:
             if (output_package == "i1lab"
                     and relative.as_posix() == "stage10_runtime.py"):
                 transformed = i1_private_consolidation_source(transformed)
+                transformed = i1_waking_pending_source(transformed)
             # I1-only M11 custody: admit ONLY the exact canonical I1
             # runtime, not any experimental Stage12 subclass with unknown
             # mutable owners or unregistered cold-state behavior. Retain the
