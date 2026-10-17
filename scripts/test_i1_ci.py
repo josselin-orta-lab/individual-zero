@@ -173,7 +173,9 @@ class CurrentI1(unittest.TestCase):
         kinds = [entry.causal_event["kind"]
                  for entry in life.journal.entries[before:]]
         self.assertIn("compute_charge", kinds)
-        self.assertIsNotNone(life.stage3._capture)
+        # Stage3 deliberately clears its transient capture at step closure.
+        # A durable perceptual receipt is the correct post-step evidence.
+        self.assertIn("perceptual_capture", kinds)
         self.assertTrue(life.journal.verify())
 
     def test_local_perception_excludes_hidden_truth(self):
