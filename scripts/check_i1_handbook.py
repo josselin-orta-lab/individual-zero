@@ -7,6 +7,7 @@ scientific evidence. Standard-library-only on Python 3.11 and 3.12.
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 from pathlib import Path
 import re
@@ -52,6 +53,7 @@ def inspect(root: Path = ROOT) -> dict:
             errors.append("missing canonical document: " + name)
         if name != "README.md" and f"]({name})" not in index:
             errors.append("handbook index missing link: " + name)
+    trees = {}
     for file in sorted(docs.glob("*.md")):
         data = file.read_text(encoding="utf-8")
         for target in LINK.findall(data):
@@ -65,7 +67,7 @@ def inspect(root: Path = ROOT) -> dict:
             if not dest.is_relative_to(root) or not dest.exists():
                 errors.append(f"{file.relative_to(root)}: broken link {target}")
         for raw in CODE.findall(data):
-            raw = raw.split("::", 1)[0]
+            raw, sep, symbol = raw.partition("::")
             if not (raw.endswith(SUFFIX) or raw.endswith("/")):
                 continue
             if not PATH.fullmatch(raw):
@@ -80,6 +82,24 @@ def inspect(root: Path = ROOT) -> dict:
             dest = dest.resolve()
             if not dest.is_relative_to(root) or not dest.exists():
                 errors.append(f"{file.relative_to(root)}: missing source path {raw}")
+                continue
+            if sep and dest.suffix == ".py" and re.fullmatch(r"[A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*", symbol):
+                try:
+                    if dest not in trees:
+                        trees[dest] = ast.parse(dest.read_text(encoding="utf-8"))
+                    parts = symbol.split(".")
+                    nodes = trees[dest].body
+                    for part in parts:
+                        match = next((n for n in nodes if isinstance(n, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == part), None)
+                        if match is None and len(parts) == 1:
+                            match = next((n for n in ast.walk(trees[dest]) if isinstance(n, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == part), None)
+                        if match is None:
+                            errors.append(f"{file.relative_to(root)}: missing Python symbol {raw}::{symbol}")
+                            break
+                        nodes = getattr(match, "body", ())
+                    checks += 1
+                except (SyntaxError, OSError, UnicodeError) as exc:
+                    errors.append(f"{file.relative_to(root)}: unreadable Python symbol source {raw}: {exc}")
     return {"status": "PASS" if not errors else "FAIL",
             "documents": len(list(docs.glob("*.md"))),
             "checks": checks, "errors": sorted(set(errors)),
