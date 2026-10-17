@@ -99,6 +99,18 @@ for case in range(100):
     got = WorldBody.capture_local(fake,t_monde=case+1).as_dict()
     expected = old_capture(fake,case+1).as_dict()
     assert got == expected, (case,got,expected)
+    # Explicit no-local-entity scenario exercises the early empty-sort path
+    # for all three sets while remote global IDs remain defined.
+    fake._water_sources = {Position(1, 1), Position(30, 30)}
+    fake._creatures = {Position(1, 30), Position(30, 1)}
+    fake._shelters = {Position(2, 2), Position(29, 29)}
+    if any(p.manhattan(current) <= 1 for p in (
+        *fake._water_sources, *fake._creatures, *fake._shelters
+    )):
+        fake._position = Position(16, 16)
+    got = WorldBody.capture_local(fake, t_monde=case+1).as_dict()
+    expected = old_capture(fake, case+1).as_dict()
+    assert got == expected, ("empty neighborhood", case, got, expected)
 
 # Optional informational microbenchmark. No speed threshold is enforced.
 # The source of each path is the current built I1 source and the frozen
