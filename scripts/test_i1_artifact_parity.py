@@ -240,6 +240,28 @@ def _reference_causal_minimum(before: bytes) -> bytes:
     return text.replace(old_one, new_one, 1).replace(old_two, new_two, 1).encode("utf-8")
 
 
+def _approved_active_context_cache(before: bytes, after: bytes) -> bool:
+    """Only allow the exact request-local revision-invariant cache."""
+    old_a = "        rules: list[NumericPredictionCorrection] = []\n        for _, witness in sorted(self._numeric_witnesses.items()):"
+    new_a = "        # Query-local eligibility cache: every numeric witness of the same\n        # published contingency shares the same revision and interventions.\n        # Never persist this index or grant another owner causal authority.\n        active_by_contingency: dict[str, tuple[str, ...] | None] = {}\n        rules: list[NumericPredictionCorrection] = []\n        for _, witness in sorted(self._numeric_witnesses.items()):"
+    old_b = "            active_trials = tuple(\n                trial for trial in trials\n                if trial.observed_step > revision\n            )\n            matching_contexts = {\n                trial.context_signature for trial in active_trials\n            }\n            if len(matching_contexts) < self.config.n2:\n                continue\n            # This provenance witness is constant for this numeric outcome.\n            # Compute it once, not once for each compatible P-47 report.\n            intervention_ref = min(trial.identifier for trial in active_trials)"
+    new_b = "            if contingency.ref not in active_by_contingency:\n                active_trials = tuple(\n                    trial for trial in trials\n                    if trial.observed_step > revision\n                )\n                matching_contexts = {\n                    trial.context_signature for trial in active_trials\n                }\n                active_by_contingency[contingency.ref] = (\n                    (min(trial.identifier for trial in active_trials),)\n                    if len(matching_contexts) >= self.config.n2\n                    else None\n                )\n            selected = active_by_contingency[contingency.ref]\n            if selected is None:\n                continue\n            intervention_ref = selected[0]"
+    original, candidate = before.decode("utf-8"), after.decode("utf-8")
+    return (original.count(old_a) == original.count(old_b) == 1
+            and candidate.count(new_a) == candidate.count(new_b) == 1
+            and original.replace(old_a, new_a, 1).replace(old_b, new_b, 1) == candidate)
+
+
+def _reference_hydration_control_lookup(before: bytes) -> bytes:
+    """Reconstruct the exact already reviewed #263 hydration transformation."""
+    old = "        for effect in treated:\n            for baseline in controls:\n                if (\n                    effect.observation_ref == baseline.observation_ref\n                    or effect.observed_step == baseline.observed_step\n                    or effect.controlled_variables != baseline.controlled_variables\n                    or effect.observation_context != baseline.observation_context\n                ):\n                    continue"
+    new = "        # Recovered or directly validated observations may contain lists:\n        # equality comparisons worked for them, but list-backed controls\n        # cannot be used as dictionary keys. Never silently normalize proof.\n        # Preserve the original ordered scan for these uncommon inputs.\n        canonical_controls = all(\n            type(row.controlled_variables) is tuple\n            and all(type(pair) is tuple for pair in row.controlled_variables)\n            for rows in (treated, controls) for row in rows\n        )\n        controls_by_context: dict[\n            tuple[str, tuple[tuple[str, str], ...]], list[CausalObservation]\n        ] = {}\n        if canonical_controls:\n            for baseline in controls:\n                key = (baseline.observation_context, baseline.controlled_variables)\n                controls_by_context.setdefault(key, []).append(baseline)\n        for effect in treated:\n            comparable = (\n                controls_by_context.get(\n                    (effect.observation_context, effect.controlled_variables), ()\n                ) if canonical_controls else controls\n            )\n            for baseline in comparable:\n                if (\n                    effect.observation_ref == baseline.observation_ref\n                    or effect.observed_step == baseline.observed_step\n                    or effect.controlled_variables != baseline.controlled_variables\n                    or effect.observation_context != baseline.observation_context\n                ):\n                    continue"
+    content = before.decode("utf-8")
+    if content.count(old) != 1:
+        raise ValueError("hydration reference drift")
+    return content.replace(old, new, 1).encode("utf-8")
+
+
 def _approved_hydration_control_lookup(before: bytes, after: bytes) -> bool:
     """Only permit the context-keyed, order-preserving hydration control lookup."""
     old = "        for effect in treated:\n            for baseline in controls:\n                if (\n                    effect.observation_ref == baseline.observation_ref\n                    or effect.observed_step == baseline.observed_step\n                    or effect.controlled_variables != baseline.controlled_variables\n                    or effect.observation_context != baseline.observation_context\n                ):\n                    continue"
@@ -356,14 +378,16 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/causal_model.py"
-                    and _approved_hydration_control_lookup(
-                        _reference_food_control_sort(
+                    and _approved_active_context_cache(
+                        _reference_hydration_control_lookup(
+                            _reference_food_control_sort(
                             _reference_causal_minimum(
                             _reference_approved_numeric_index(
                                 _reference_numeric_publication(
                                     _reference_agency_index((old_root / rel).read_bytes())
                                 )
                             )
+                        )
                         )
                         ),
                         (new_root / rel).read_bytes()

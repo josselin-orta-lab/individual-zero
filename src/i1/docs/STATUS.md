@@ -187,3 +187,14 @@ ordonné original reste utilisé pour les entrées comparables mais non
 indexables. Aucun contrôle ne reçoit une interprétation nouvelle. Les tests
 différentiels incluent maintenant les représentations mixtes ainsi que les
 séquences canoniques. La validation du commit corrigé reste nécessaire.
+
+## PR #264 : cache transitoire des interventions admissibles
+
+Les témoins numériques d'une même contingence publiée recalculaient à
+chaque requête la même fenêtre de révision, le nombre de contextes
+physiques indépendants et la première provenance. La PR propose une
+mémorisation strictement locale à l'appel, sans nouveau propriétaire,
+évidence, persistance, ou changement des frontières DC-09. Les tests
+différentiels couvrent plusieurs témoins, contextes et bornes de
+réfutation. Validation Python 3.11/3.12 requise avant fusion;
+aucun GO scientifique n'en découle.

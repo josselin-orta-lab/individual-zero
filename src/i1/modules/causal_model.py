@@ -1585,6 +1585,10 @@ class CausalModel:
         ] | None = None
         eligible_lookups = 0
 
+        # Query-local eligibility cache: every numeric witness of the same
+        # published contingency shares the same revision and interventions.
+        # Never persist this index or grant another owner causal authority.
+        active_by_contingency: dict[str, tuple[str, ...] | None] = {}
         rules: list[NumericPredictionCorrection] = []
         for _, witness in sorted(self._numeric_witnesses.items()):
             contingency = self._published.get(witness.contingency_ref)
@@ -1609,18 +1613,23 @@ class CausalModel:
             # Only interventions after the latest published refutation
             # establish the current rule. Export provenance from that same
             # revision window, never from a stale pre-refutation success.
-            active_trials = tuple(
-                trial for trial in trials
-                if trial.observed_step > revision
-            )
-            matching_contexts = {
-                trial.context_signature for trial in active_trials
-            }
-            if len(matching_contexts) < self.config.n2:
+            if contingency.ref not in active_by_contingency:
+                active_trials = tuple(
+                    trial for trial in trials
+                    if trial.observed_step > revision
+                )
+                matching_contexts = {
+                    trial.context_signature for trial in active_trials
+                }
+                active_by_contingency[contingency.ref] = (
+                    (min(trial.identifier for trial in active_trials),)
+                    if len(matching_contexts) >= self.config.n2
+                    else None
+                )
+            selected = active_by_contingency[contingency.ref]
+            if selected is None:
                 continue
-            # This provenance witness is constant for this numeric outcome.
-            # Compute it once, not once for each compatible P-47 report.
-            intervention_ref = min(trial.identifier for trial in active_trials)
+            intervention_ref = selected[0]
 
             if published_reports is None:
                 published_reports = self.published_agency_evidence()
