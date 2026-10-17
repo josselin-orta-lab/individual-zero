@@ -57,3 +57,9 @@ La CI [#39039120881](https://github.com/josselin-orta-lab/individual-zero/action
 Quatre tests actifs ont été transférés sans changer les scénarios de `tests/` vers `tests/i1/` : séparation du build, garde I0/archives, récupération froide M11 et défaillances M11 adversariales. Leurs racines d'import sont adaptées à la nouvelle profondeur; le contrat `engine.json`, le registre et le workflow utilisent leurs nouveaux chemins. Les anciennes campagnes A2 demeurent hors critères d'acceptation du naturel I1.
 
 La CI [#39039607085](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39039607085) a conclu avec succès en Python 3.11 et 3.12 sur le commit `8387ba8ff4f910142d6e8e1ed4cd5bf163d2e122`. La présente documentation est postérieure à ce commit : revérifier le dernier HEAD si une nouvelle validation est demandée.
+
+## Campagne de structuration : rapport de provenance
+
+`tools/campaign_report.py` lit le vrai `git HEAD` de l'environnement, le SHA-256 du contrat I1 et les résultats des suites enregistrées / JUnit, puis produit `reports/i1-campaign-3.11.json`, `reports/i1-campaign-3.11.md` (et leurs variantes 3.12). Il distingue `PASS`, `FAIL`, `NOT_OBSERVED` et `INVALID`, sans attribuer un statut de merge ou un GO scientifique. Le rapport n'interroge pas GitHub et n'affirme pas que tous les contrôles du workflow ont réussi : le statut final du workflow reste à contrôler séparément.
+
+La CI [#39040216449](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39040216449) a validé les deux jobs Python 3.11 et 3.12 pour le commit `1d2bfe3fff1f6ffc341015c4ca1fcdd3cc763d01`. Les anciennes campagnes scientifiques non vérifiées ne sont pas reprises comme référentiel.
