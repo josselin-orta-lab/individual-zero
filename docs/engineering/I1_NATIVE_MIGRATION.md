@@ -32,3 +32,12 @@ The generator still applies other source transformations, in particular to physi
 Migration order: (1) native noncritical optimizations, (2) native typed cognitive owners, (3) native physical and durability implementations, (4) remove mechanical source rewriting only when the new build produces equivalent imports/states and the full CI and fresh independent experiments justify the architectural switch.
 
 This work stays on PR #253, dependent on #252 and #251. Do not merge out of order.
+## Phase suivante : physique native I1 (2026-10-17)
+
+La copie indépendante `src/i1/runtime/world.py` possède désormais nativement les débits de privation, leurs paramètres versionnés, leur validation, leur sérialisation et les conséquences physiques par pas. Les substitutions `i1_physiology_source` ont été retirées de `scripts/build_i1_fork.py`. Le constructeur copie ce module exactement dans `i1lab/world.py`, sans recopier le `src/lab/world.py` historique. L'identité externe du module `i1lab.world` est préservée. Le test `test_i1_generated_isolation.py` vérifie la provenance `i1/runtime/world.py`, l'unicité du fichier produit et les sources I0/Lab inchangées.
+
+La physique est copiée depuis la version isolée déjà produite précédemment : mêmes paramètres par défaut pour les anciennes naissances explicites, mêmes taux positifs activés par la naissance naturelle, même séquencement après action et mêmes effets de privation. La mort reste irréversible et toute défaillance d'état reste une défaillance, sans rollback.
+
+La CI [#39032694945](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39032694945) a réussi sur Python 3.11 et 3.12 pour le commit `cbc3ce4cd1e4c607335a6c5a28281259bb312280`. Le renforcement ultérieur de l'assertion de provenance dispose de son propre commit et nécessite un contrôle sur ce dernier SHA avant toute fusion. **Aucune conclusion scientifique nouvelle n'est déduite de ce résultat logiciel.**
+
+**Restent à migrer** : transformations de journaux et du sélecteur d'épisodes, publication Stage10 et chaînes M11, puis retrait final du générateur de texte uniquement après vérifications de parité et des naissances/récupérations authentiques.
