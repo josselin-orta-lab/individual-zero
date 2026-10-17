@@ -33,6 +33,26 @@ class HandbookIntegrityTests(unittest.TestCase):
             self.assertTrue(any("broken link NO-SUCH-DOC.md" in e for e in report["errors"]))
             self.assertTrue(any("missing source path" in e for e in report["errors"]))
 
+    def test_missing_python_symbol_is_rejected_without_importing_runtime(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            shutil.copytree(ROOT / "src/i1/docs", root / "src/i1/docs")
+            (root / "src/i1/engine.json").write_text(
+                (ROOT / "src/i1/engine.json").read_text())
+            (root / "config").mkdir()
+            (root / "config/engine-registry.json").write_text(
+                (ROOT / "config/engine-registry.json").read_text())
+            source = root / "src/i1/modules"
+            source.mkdir(parents=True)
+            (source / "sample.py").write_text(
+                "class Sample:\n    def existing(self):\n        pass\n")
+            doc = root / "src/i1/docs/README.md"
+            doc.write_text(doc.read_text() + "\n\`src/i1/modules/sample.py::Sample.missing\`\n")
+            report = check.inspect(root)
+            self.assertEqual(report["status"], "FAIL")
+            self.assertTrue(any("missing Python symbol" in e and "Sample.missing" in e
+                                for e in report["errors"]), report["errors"])
+
     def test_registry_mismatch_and_missing_index_are_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
