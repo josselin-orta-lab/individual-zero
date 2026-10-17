@@ -482,7 +482,7 @@ selection complexity are reasoned from the code, not measured experimentally.
 Source inspection distinguishes the **necessary** independent
 `_initial`, `_candidate`, and validated `PassCheckpoint.candidate` trees
 from extra transient copies. Those persistent versions are deliberately
-retained: they are needed for rollback, chained evidence validation and
+retained: they are needed for private checkpoint integrity, chained evidence validation and
 M11 causal snapshot restoration. No snapshot schema or six-pass checkpoint
 was removed.
 
@@ -640,13 +640,13 @@ scheduler-authorized consolidation-publication path:
    candidate to the local staged mapping without another full-history copy
    before this owner-owned restoration. A separate tentative `SlowHistory`
    instance still validates the complete version/lineage before any
-   publication, and the existing original `before_history` rollback
+   publication, and the original `before_history` baseline-consistency
    snapshot remains independent.
 
 **Unchanged**: all four baseline cognitive-owner snapshots, rebase isolation,
 canonical validation of the owner-prepared states, journal cut/head checks,
 P-42 charges, six-pass receipts, two-phase publication, and fail-closed
-rollback before journal append. The transformation is confined to
+termination if a publication installation fails. The transformation is confined to
 generated I1lab; neither I0 nor the source lab implementation is touched.
 
 **NON VALIDÉ**: source review only. No generator build, unit test, CI,
@@ -748,15 +748,15 @@ cache of trust. Original I0 and baseline Lab sources remain untouched.
 benchmarks or simulations were executed. Exact performance gains and
 runtime equivalence remain unmeasured.
 
-## Static Stage10 rollback-state and Value/Needs evidence comparison (2026-10-17)
+## Static Stage10 staging-state and Value/Needs evidence comparison (2026-10-17)
 
 Further review showed that `Stage10PublicationCoordinator.publish()` first
 obtains a fully detached `SlowHistory.export_causal_state()` snapshot for
-rollback, then performs an unnecessary `deepcopy` of **that entire history**
+prepublication consistency checks, then performs an unnecessary `deepcopy` of **that entire history**
 just to stage a new `current_version`, replace `current_state`, and append
 one provenance row to `lineage`. Generated I1lab now creates a shallow top
 level mapping and a new lineage list only, before replacing the new state.
-Neither the original `before_history` (needed for safe rollback) nor any
+Neither the original `before_history` (needed for baseline consistency comparison) nor any
 existing lineage row is mutated. `SlowHistory.restore_causal_state()`
 continues full structure validation and creates independent copies of the
 new state and lineage before committing them. The separate temporary
@@ -774,3 +774,37 @@ checks and final owner-copy boundaries all remain in place.
 **NON VALIDÉ:** no generated model, test, CI, benchmark or simulation was
 executed. This is a guarded source-only optimization; runtime parity and
 performance gains require future independent validation. I0 is unchanged.
+
+## I1 normative clarification: irreversible life, no published-owner rollback (2026-10-17)
+
+The operator confirmed that I1 must NEVER rewind a lived step or restore a
+dead individual from an earlier version. Normative MVP v1.3.3, V133-MDL-07
+already prohibits rollback, postmortem cognition and resurrection.
+
+Static inspection found a contradictory exception handler in Stage10:
+after attempting to install active-owner states, it restored previous owner
+snapshots whenever journal append had not yet succeeded. The generated
+canonical I1 Stage10 coordinator now raises a fail-stop error regardless of
+whether the journal record was appended, and never re-installs those earlier
+live cognitive values. On the same attempted execution, the existing mortal
+Stage10.run_step exception guard irreversibly halts technical dispatch, and
+the SQLite M11 wrapper poisons any uncertain generation and refuses recovery.
+The original Lab/I0 source retains its historical behavior unmodified.
+
+Canonical I1 Value/Needs previously tried to reinstall its preceding TD
+state upon a failed owner restore. That historical-state restoration has
+also been removed: an invalid installation now propagates failure to the
+mortal owner boundary. No physical transition is replayed.
+
+**Distinct mechanics:** discarding unpublished private candidate work, or
+SQL ROLLBACK of an *uncommitted SQLite transaction*, does NOT resurrect a
+living individual or negate a physically applied command. These storage
+operations remain necessary for crash atomicity. M11 cold recovery admits
+only the exact, authenticated, fully committed current nonterminal generation.
+Technical halt is represented as technical halt, not fabricated physical
+death. A genuine lethal WorldBody transition is irreversibly dead, and no
+further perception, deliberation or learning is authorized.
+
+**NON VALIDÉ:** source-only correction; no generation, tests, CI runs,
+benchmarks or simulated lives were executed. Runtime behavior remains to
+be independently verified.

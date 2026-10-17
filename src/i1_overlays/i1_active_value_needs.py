@@ -148,15 +148,11 @@ class I1ActiveValueNeeds(ValueAndNeeds):
         bare = dict(state)
         bare.pop(ACTIVE_FORM_KEY, None)
         bare.pop(ACTIVE_FORM_SCHEMA_KEY)
-        before = super().export_causal_state()
-        try:
-            super().restore_causal_state(bare)
-            self._i1_active_observed_procedures = proposed
-        except Exception:
-            # Recovery of an invalid technical state must not leave a partially
-            # updated live TD owner or a partially published advisory form.
-            super().restore_causal_state(before)
-            raise
+        # Do not rewind a living TD/Value-Needs owner if installation fails.
+        # Stage10.run_step and M11 fail-stop the identity on the exception;
+        # authenticated cold recovery imports only a fresh nonterminal owner.
+        super().restore_causal_state(bare)
+        self._i1_active_observed_procedures = proposed
 
     def prepare_stage10_advisory_rebase(self, candidate, baseline, updates):
         """Pure owner-specific rebase: preserve *actual current* online Q state.

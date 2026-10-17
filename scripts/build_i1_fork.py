@@ -199,12 +199,30 @@ def i1_publication_detached_candidate_source(source: str) -> str:
          "        # SlowHistory.restore_causal_state independently validates and detaches\n        # this candidate before installing it as the current owned state.\n        staged_history[\"current_state\"] = prepared.candidate_history\n"),
         (
             "        staged_history = deepcopy(before_history)\n",
-            "        # The committed history export already owns its nested state.\n        # Copy only the lineage list we append to; rollback retains its own\n        # independent before_history and SlowHistory.restore still detaches.\n        staged_history = dict(before_history)\n        staged_history[\"lineage\"] = list(before_history[\"lineage\"])\n",
+            "        # The committed history export already owns its nested state.\n        # Copy only the lineage list we append to; baseline checks retain the\n        # independent before_history and SlowHistory.restore still detaches.\n        staged_history = dict(before_history)\n        staged_history[\"lineage\"] = list(before_history[\"lineage\"])\n",
         ),
     )
     for before, after in changes:
         if source.count(before) != 1:
             raise ValueError("unreviewed I1 Stage10 publication copy boundary")
+        source = source.replace(before, after)
+    return source
+
+
+def i1_no_live_publication_rollback_source(source: str) -> str:
+    """Ban live owner rewind after attempted canonical I1 publication.
+
+    Errors propagate to the already fail-stopped mortal Stage10.run_step and
+    the independent M11 poison/uncertain-intent gate. The source lab and I0
+    implementations are deliberately unchanged.
+    """
+    changes = (
+        ("no owner changes until every candidate is valid, and a failed installation\nrestores the complete prior states before the Scheduler continues.\n", "all candidates are validated before owner installation. Any failed\ninstallation halts the mortal step without restoring earlier live states.\n"),
+        ("        except Exception as error:\n            # A successful journal append is an irreversible publication\n            # boundary. If acknowledgement fails AFTER the append, rolling\n            # the active owners or h back would contradict the durable causal\n            # journal and permit a second publication of the same life.\n            #\n            # A failed fsync may have left a torn WAL: a poisoned journal\n            # likewise cannot authorize restoring active published forms.\n            journal_committed = (\n                len(self.journal.entries) != event_index\n                or self.journal.head_hash != prepared.postcut_slice.end_hash\n            )\n            if journal_committed or not self.journal.verify():\n                raise RuntimeError(\n                    \"irreversible consolidation journal fault after publication; \"\n                    \"halt the individual, never restore committed active state\"\n                ) from error\n            # Before the journal event exists, all states were private and\n            # the scheduler has not exposed an activation; safe to discard.\n            self.history.restore_causal_state(before_history)\n            for name in sorted(self.owners):\n                self.owners[name].restore_causal_state(\n                    deepcopy(prepared.baseline_owner_states[name]))\n            raise\n", "        except Exception as error:\n            # Installation of a newly published version may have mutated a\n            # live owner even if the journal event was not appended. I1 may\n            # never rewind such an owner. Stage10.run_step irreversibly halts\n            # the mortal identity on the propagated error, while M11 also\n            # refuses continuation of an uncertain private generation.\n            journal_committed = (\n                len(self.journal.entries) != event_index\n                or self.journal.head_hash != prepared.postcut_slice.end_hash\n            )\n            if journal_committed or not self.journal.verify():\n                raise RuntimeError(\n                    \"irreversible consolidation journal fault after publication; \"\n                    \"halt the individual, never restore committed active state\"\n                ) from error\n            raise RuntimeError(\n                \"incomplete consolidation owner publication; \"\n                \"halt the individual, never restore previous cognitive state\"\n            ) from error\n"),
+    )
+    for before, after in changes:
+        if source.count(before) != 1:
+            raise ValueError("unreviewed I1 no-rollback Stage10 boundary")
         source = source.replace(before, after)
     return source
 
@@ -1025,6 +1043,7 @@ def generate(output: Path) -> dict[str, object]:
                     and relative.as_posix() == "consolidation_publication.py"):
                 transformed = i1_committed_history_metadata_source(transformed)
                 transformed = i1_publication_detached_candidate_source(transformed)
+                transformed = i1_no_live_publication_rollback_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "stage4_runtime.py"):
                 transformed = i1_canonical_active_value_source(transformed)
