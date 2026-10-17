@@ -55,14 +55,37 @@ cases = [
     ((), (report("new:1", "event:1", 2), report("new:2", "event:1", 3))),
     ((), (report("new:1", "event:1", 2), report("new:2", "event:2", 3))),
     ((), (report("new:2", "event:2", 3), report("new:1", "event:1", 2))),
+    # Replacing an existing identifier removes only that mapping's old ref.
+    ((report("prior", "event:1", 1),),
+     (report("prior", "event:2", 2), report("new", "event:1", 3))),
+    ((), (report("same", "event:1", 1), report("same", "event:2", 2),
+          report("new", "event:1", 3))),
+    # If another published identifier still holds the old ref, it stays blocked.
+    ((report("prior", "event:1", 1), report("other", "event:1", 1)),
+     (report("prior", "event:2", 2), report("new", "event:1", 3))),
 ]
+def attempt(fn, inp):
+    try: return "ok", fn(inp)
+    except ValueError as e: return "error", str(e)
 for prior, pending in cases:
     inp = NS(_agency_evidence={r.identifier:r for r in prior},
              _pending_agency_evidence=list(pending))
-    def attempt(fn):
-        try: return "ok", fn(inp)
-        except ValueError as e: return "error", str(e)
-    assert attempt(old) == attempt(new), (prior, pending)
+    assert attempt(old, inp) == attempt(new, inp), (prior, pending)
+# Exhaustively compare short accepted/rejected sequences, including repeated
+# mapping identifiers and physical references. No clock or randomness involved.
+from itertools import product
+possible = tuple((identifier, physical) for identifier in ("id:0", "id:1", "id:2")
+                 for physical in ("event:1", "event:2", "event:3"))
+for prior_count in range(3):
+    for initial_refs in product(("event:1", "event:2"), repeat=prior_count):
+        prior = tuple(report(f"id:{i}", ref, i) for i, ref in enumerate(initial_refs))
+        for pending_count in range(4):
+            for rows in product(possible, repeat=pending_count):
+                pending = tuple(report(identifier, ref, i+1)
+                                for i, (identifier, ref) in enumerate(rows))
+                inp = NS(_agency_evidence={r.identifier:r for r in prior},
+                         _pending_agency_evidence=list(pending))
+                assert attempt(old, inp) == attempt(new, inp), (prior, pending)
 if os.environ.get("I1_AGENCY_PUBLICATION_BENCH") == "1":
     results = []
     for existing, incoming in ((0, 0), (32, 1), (512, 8), (2048, 32), (8192, 64)):

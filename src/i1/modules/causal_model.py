@@ -2266,8 +2266,8 @@ class CausalModel:
         # Comparator descriptions do not influence causal or safety statuses.
         # Publish them only after all staged inference validations succeed.
         agency = dict(self._agency_evidence)
-        # A transient index preserves the exact duplicate physical-reference
-        # rejection, including duplicates introduced earlier in this batch.
+        # Build an ephemeral index of physical references present in the
+        # current mapping. Identifier replacements must not leave stale refs.
         agency_event_refs = {report.event_ref for report in agency.values()}
         for report in sorted(
             self._pending_agency_evidence,
@@ -2275,6 +2275,15 @@ class CausalModel:
         ):
             if report.event_ref in agency_event_refs:
                 raise ValueError("duplicate published physical agency observation")
+            displaced = agency.get(report.identifier)
+            if displaced is not None and not any(
+                other.event_ref == displaced.event_ref
+                for key, other in agency.items()
+                if key != report.identifier
+            ):
+                # An overwritten report no longer occupies its old source.
+                # This rare fallback preserves exact previous semantics.
+                agency_event_refs.discard(displaced.event_ref)
             agency[report.identifier] = report
             agency_event_refs.add(report.event_ref)
         numeric = dict(self._numeric_witnesses)

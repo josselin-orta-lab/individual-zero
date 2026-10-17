@@ -117,3 +117,16 @@ Confirmed successful workflow [#39054465750](https://github.com/josselin-orta-la
 The present documentation iteration expands [UC_AND_SCHEDULING.md](UC_AND_SCHEDULING.md) with exact P-43/P-42 requested/accepted charge semantics, configuration-level protected modules versus runtime protected-hook refusal, and no-cost quotes; expands [CONSOLIDATION_AND_PUBLICATION.md](CONSOLIDATION_AND_PUBLICATION.md) into executable sleep/cut/pass/rebase/commit/M11 decision gates; expands [OBSERVABILITY.md](OBSERVABILITY.md) with measured versus absent fields for WAL/M11 and permitted passive observation. **None** of these commits changes I1's cognitive runtime, the six world presets, I0 or mortal recovery.
 
 `scripts/check_i1_handbook.py` now attempts static AST validation of explicitly annotated Python functions and class methods, without importing a living runtime. `tests/i1/test_i1_handbook_integrity.py` includes a missing method reference negative case. Exact-SHA CI must confirm the validator does not overclaim coverage: bare unannotated symbols and scientific claims remain outside its scope. No novel nonempty four-owner publication was measured; OPEN / NOT_OBSERVED still applies.
+
+## PR #259 : intégrité des références physiques (revue du 2026-10-18)
+
+La revue de l'index transitoire de publication causale a identifié une limite
+du premier diff : le remplacement d'un identifiant de rapport pouvait
+conserver indûment une ancienne référence physique dans le set temporaire.
+La correction fait expirer cette référence uniquement si aucun autre
+identifiant publié ne la détient encore. Les essais différentiels comparent
+l'ancien bloc avec l'implémentation réelle, y compris collisions d'identifiants,
+références dupliquées et séquences courtes exhaustives. Le chemin commun
+sans remplacement reste un contrôle O(1) par observation après construction
+initiale. La validation des deux versions Python sur le SHA corrigé et la
+fusion restent à constater ; aucun GO scientifique n'en découle.
