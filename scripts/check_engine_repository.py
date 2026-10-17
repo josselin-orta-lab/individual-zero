@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import argparse
-from hashlib import sha1
 import json
 from pathlib import Path
-import re
 import subprocess
 import sys
 
@@ -65,7 +63,7 @@ def check():
         raw = path.read_bytes()
         # Git blob identity proves content preserved byte-for-byte.
         import hashlib
-        actual = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\\0" + raw).hexdigest()
+        actual = hashlib.sha1(b"blob " + str(len(raw)).encode() + bytes([0]) + raw).hexdigest()
         if actual != item["blob_sha"]:
             errors.append("modified archived Git blob: " + item["archived"])
         if (ROOT / item["source"]).exists():
