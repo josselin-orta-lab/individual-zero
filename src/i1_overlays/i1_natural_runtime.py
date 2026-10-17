@@ -266,7 +266,12 @@ class I1Runtime(I1WaterPrudentRuntime):
         # Active advisory belongs to the canonical Value/Needs owner and
         # exists only AFTER the six-pass, coordinator-acknowledged publication.
         # A merely prepared/private skill must not masquerade as active.
-        rows = self.value_needs.active_observed_procedures()
+        command_parameters = dict(command.parameters)
+        rows = self.value_needs.matching_active_observed_procedures(
+            primitive=command.primitive,
+            parameters=command_parameters,
+            observed_field=field,
+        )
         if type(rows) is not list:
             raise ValueError("invalid committed active procedural advisory")
         matched = []
@@ -278,7 +283,7 @@ class I1Runtime(I1WaterPrudentRuntime):
                     or item.get("goal_success_inferred") is not False
                     or item.get("safety_certified") is not False
                     or item.get("primitive") != command.primitive
-                    or item.get("parameters") != dict(command.parameters)
+                    or item.get("parameters") != command_parameters
                     or item.get("observed_field") != field):
                 continue
             scope = item.get("near_context")

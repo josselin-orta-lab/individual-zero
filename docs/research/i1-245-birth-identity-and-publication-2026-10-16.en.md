@@ -267,3 +267,25 @@ Commits `7e1de013` and `93b9cffe` reduce CPU and memory work during I1 natural f
 Commit `c34ea3a7` removes cross-owner construction during the M11 h/active publication parity check. For the currently authenticated SlowHistory snapshot, the generated I1-only M11 gate reconstructs each of the three active observational views **only for its corresponding owner**, compares the published form and the independently exported live owner view, and continues enforcing the empty-before-first-publication invariant. The Value/Needs procedure provenance check is unchanged. No result is cached across steps or SQLite generations: each captured state remains independently checked against its actual owner and committed SlowHistory.
 
 The complete SQL current-generation checksum, causal journal chain, append order, pending-intent fence, detached candidate and atomic publication are deliberately NOT short-circuited. These checks dominate potential long-life recovery cost, but skipping them without equivalent evidence would violate the unique physical authority of a mortal identity. No numerical performance claims are made, since code generation, execution, benchmarking and tests were not run during this optimization pass. The PR remains draft and scientific acceptance unproven.
+
+## I1 static memory-path optimization, October 17, 2026
+
+Static review found that the previous episodic recall reconstructed the same
+current S_t competitive-reference set once per historical episode. The
+I1-only generator now constructs it once for the recall call and reuses the
+same set for each existing relevance check. Score formulas, threshold
+crossings, ordering, UC and source-provenance semantics are unchanged by
+construction. The pinned src/i1 source snapshot and I0 remain untouched.
+
+The canonical I1 Value/Needs owner now detaches only *already published*
+procedural rows matching a perceived option's primitive, parameters and
+observed-effect family. The later provenance, independent-success,
+spatial-context, confidence, safety and motor-admission guards are
+unchanged, and the original P-43 read charge still precedes the lookup.
+The filtered read remains a linear scan; it avoids cloning unrelated
+nested evidence rather than introducing a second cache or causal owner.
+
+STATUS: SOURCE-ONLY OPTIMIZATION CANDIDATES, NON VALIDÉ. No tests, code
+generation, new lives or performance measurements were executed as part
+of this revision. Neither equivalence under all states nor numerical
+speedups are claimed before future independent validation.

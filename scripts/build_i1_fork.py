@@ -227,6 +227,58 @@ def i1_committed_history_metadata_source(source: str) -> str:
     return source.replace(restore, amended)
 
 
+def i1_memory_recall_source(source: str) -> str:
+    """Reuse visible competitive refs once per I1 episodic recall.
+
+    The generated I1-only transformation preserves scoring, thresholds, tie
+    ordering, UC custody and original source snapshots.
+    """
+    signature = (
+        "    def _relevance(\n"
+        "        self,\n"
+        "        episode: Episode,\n"
+        "        st: STVersion | None,\n"
+        "    ) -> float:\n"
+    )
+    if source.count(signature) != 1:
+        raise ValueError("unreviewed generated I1 Memory relevance signature")
+    source = source.replace(signature, signature.replace(
+        "    ) -> float:\n",
+        "        current_refs: set[str] | None = None,\n"
+        "    ) -> float:\n",
+    ))
+    per_episode = (
+        "        current_refs = {\n"
+        "            element.contribution_ref for element in st.competitive\n"
+        "        }\n"
+    )
+    if source.count(per_episode) != 1:
+        raise ValueError("unreviewed generated I1 Memory competitive references")
+    source = source.replace(per_episode, (
+        "        if current_refs is None:\n"
+        "            current_refs = {\n"
+        "                element.contribution_ref for element in st.competitive\n"
+        "            }\n"
+    ))
+    scored = ("        scored: list[RecallResult] = []\n"
+              "        for episode in self._episodes:\n")
+    if source.count(scored) != 1:
+        raise ValueError("unreviewed generated I1 Memory recall loop")
+    source = source.replace(scored, (
+        "        visible_refs = (\n"
+        "            {element.contribution_ref for element in st.competitive}\n"
+        "            if st is not None else None\n"
+        "        )\n"
+        + scored
+    ))
+    call = "            relevance = self._relevance(episode, st)\n"
+    if source.count(call) != 1:
+        raise ValueError("unreviewed generated I1 Memory relevance call")
+    return source.replace(
+        call, "            relevance = self._relevance(episode, st, visible_refs)\n"
+    )
+
+
 def i1_canonical_active_value_source(source: str) -> str:
     """Switch the generated Stage4 value owner only for natural I1.
 
@@ -492,6 +544,9 @@ def generate(output: Path) -> dict[str, object]:
             relative = file.relative_to(source)
             contents = file.read_text(encoding="utf-8")
             transformed = rewrite(contents)
+            if (output_package == "i1"
+                    and relative.as_posix() == "modules/memory.py"):
+                transformed = i1_memory_recall_source(transformed)
             if (output_package == "i1"
                     and relative.as_posix() == "modules/consolidation_semantics.py"):
                 # The source snapshot is immutable. I1-only cognitive changes

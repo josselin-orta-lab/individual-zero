@@ -112,6 +112,23 @@ class I1ActiveValueNeeds(ValueAndNeeds):
         """Read a detached committed owner view for UC-paid option evaluation."""
         return deepcopy(self._i1_active_observed_procedures)
 
+    def matching_active_observed_procedures(
+        self, *, primitive, parameters, observed_field,
+    ):
+        """Detach only already-active evidence matching the proposed action.
+
+        The source is owner-validated at publication and restore. Planning
+        never receives aliases to the active owner's internal rows.
+        """
+        return [
+            deepcopy(row)
+            for row in self._i1_active_observed_procedures
+            if (type(row) is dict
+                and row.get("primitive") == primitive
+                and row.get("parameters") == parameters
+                and row.get("observed_field") == observed_field)
+        ]
+
     def export_causal_state(self):
         state = super().export_causal_state()
         # This versioned marker is part of the natural owner's M11 state,
