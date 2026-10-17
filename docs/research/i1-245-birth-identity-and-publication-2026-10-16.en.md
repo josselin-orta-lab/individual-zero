@@ -289,3 +289,27 @@ STATUS: SOURCE-ONLY OPTIMIZATION CANDIDATES, NON VALIDÉ. No tests, code
 generation, new lives or performance measurements were executed as part
 of this revision. Neither equivalence under all states nor numerical
 speedups are claimed before future independent validation.
+
+## I1 private consolidation: anchor and index correction (2026-10-17)
+
+Static source inspection exposed an accidental reassignment in the private
+procedural compiler. The local `trials` variable initially referred to
+ordered physical observation records, but later became a set of unique
+episode identifiers. With more than one distinct successful spatial anchor
+the next context's record scan would access string identifiers as records,
+instead of scanning experienced events. The compiler now keeps the original
+witnessed records in `witnessed_trials` and stores episode identities in
+`trial_episode_refs`. This protects all spatial anchors while preserving
+the independent-episode success/failure rule, sorted source witnesses,
+private learning state and existing output schema.
+
+The charged index-maintenance pass previously re-scanned every hypothesis
+and every procedure for each distinct group key. It now groups identifiers
+in a single traversal of each private form, then sorts the same keys and
+identifiers. P-42 accounting, rule expiry, provenance and deterministic
+serialized index structure are unchanged by design.
+
+STATUS: SOURCE INSPECTION ONLY, NON VALIDÉ. Neither tests, benchmarks, CI,
+generated-model execution nor simulations were run. Functional equivalence
+and quantitative performance gains have not been measured. No I0 source
+or normative contract was modified.

@@ -312,10 +312,10 @@ class LivedSixPassAlgorithm:
                 })
         result = []
         for signature in sorted(records):
-            trials = records[signature]
-            for anchor in sorted({r["context"] for r in trials if r["success"]}):
+            witnessed_trials = records[signature]
+            for anchor in sorted({r["context"] for r in witnessed_trials if r["success"]}):
                 candidates = [
-                    row for row in trials if (
+                    row for row in witnessed_trials if (
                         abs(row["context"][0] - anchor[0])
                         + abs(row["context"][1] - anchor[1])
                         <= self.policy.nearby_context_radius
@@ -330,13 +330,13 @@ class LivedSixPassAlgorithm:
                 # A mixed success/failure episode is NOT an independent
                 # successful trial. It counts conservatively as unsuccessful.
                 successes = successes_observed - failures
-                trials = successes_observed | failures
+                trial_episode_refs = successes_observed | failures
                 # Preserve first-person evidence even when one cut alone
                 # cannot reach the independent-success threshold. No such
                 # observation is considered a compiled or executable skill.
                 if not successes:
                     continue
-                total = len(trials)
+                total = len(trial_episode_refs)
                 evidence = [
                     r for r in candidates if r["episode"] in successes
                     and r["success"]
@@ -364,7 +364,7 @@ class LivedSixPassAlgorithm:
                     # Both positive and negative trials need a durable
                     # provenance identity: prior versions persisted only
                     # successes, leaving the denominator unauditable.
-                    "trial_episode_refs": sorted(trials),
+                    "trial_episode_refs": sorted(trial_episode_refs),
                     "trial_event_refs": sorted({
                         event for row in candidates for event in row["events"]
                     }),
@@ -591,18 +591,22 @@ class LivedSixPassAlgorithm:
                 item for item in state.get("hypotheses",[])
                 if item["expires_at_step"]>cut.world_step
             ]
+            # Single pass per private owner form, with identical sorted keys
+            # and sorted identifiers in the committed deterministic index.
+            by_primitive = {}
+            for row in state["hypotheses"]:
+                by_primitive.setdefault(
+                    row["predicate"]["primitive"], []).append(row["id"])
+            by_signature = {}
+            for row in state.get("procedural", []):
+                by_signature.setdefault(
+                    row["plan_signature"], []).append(row["id"])
             state["indices"]={
                 "hypothesis_by_primitive":{
-                    key:sorted(row["id"] for row in state["hypotheses"]
-                               if row["predicate"]["primitive"]==key)
-                    for key in sorted({row["predicate"]["primitive"]
-                                       for row in state["hypotheses"]})
+                    key:sorted(by_primitive[key]) for key in sorted(by_primitive)
                 },
                 "procedural_by_signature":{
-                    key:sorted(row["id"] for row in state.get("procedural",[])
-                               if row["plan_signature"]==key)
-                    for key in sorted({row["plan_signature"]
-                                       for row in state.get("procedural",[])})
+                    key:sorted(by_signature[key]) for key in sorted(by_signature)
                 },
             }
             merged=set(state.get("consolidated_episode_refs",[]))
