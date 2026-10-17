@@ -1211,3 +1211,47 @@ remain numerically well-formed as assumed by the existing ranking.
 **NON VALIDÉ:** source inspection and Git commit only. No generator run,
 tests, CI, benchmarks or simulated lives were executed. I0, the
 physical life, UC rules, and irreversible mortality remain untouched.
+
+## I1 episodic scoring: cheap upper bound before expensive symbolic relevance (2026-10-17)
+
+Source inspection found that `EpisodicMemory._iter_scored_recall()` evaluated
+`_relevance()` for **every** closed autobiographical episode. This could
+traverse the episode's entire list of lived event IDs even when its
+best possible relevance value could not raise the episode's computed score
+to the configured recall threshold. Memory's own implementation returns
+only `0.0` or `1.0` for relevance, while `MemoryConfig.validate()`
+requires nonnegative recency, importance, and relevance weights.
+
+The I1-only scorer now computes the identical recency and importance base
+score first. If `base_score + relevance_weight < recall_threshold`, the
+episode cannot be recalled for **any** currently perceived relevance,
+so only its expensive symbolic event-reference matching is omitted.
+Otherwise the original `_relevance()`, full score, threshold comparison
+and `RecallResult` construction remain in the original order. All
+episodes are **still visited on every recall**: no fixed time window,
+arbitrary memory age cap, new externally authored priority, forgotten old
+episode, or across-step cache is introduced. An ancient, sufficiently
+important or newly relevant experience still passes through the exact
+original scoring path. The score arithmetic retains its original
+left-associative multiply/add order and the code uses a strict upper
+bound to avoid false exclusion at the threshold.
+
+Scoring configuration values are read once per iterator rather than once
+per episode. When the current first-person ST contains no competitive
+contribution refs, an episode's `event_refs` cannot match; the goal-match
+check still takes precedence, then the irrelevant scan returns zero.
+The pre-existing generated I1-only collection of visible competitive refs
+once per scoring call remains applicable to the unchanged generator anchors.
+
+The total episodic scan remains O(E), since skipping ancient experience
+would risk changing memory and behavior. The expensive term from repeatedly
+walking episode event-reference tuples is omitted only for the provably
+ineligible subset. This is an algorithmic source deduction, not a
+measured runtime gain. P-42 and P-43 charge boundaries, spontaneous
+threshold crossing, causal memory export, M11 cold recovery, irreversible
+death and I0 are unchanged.
+
+**NON VALIDÉ:** static inspection and Git commit only, at the user's
+explicit request. No generator execution, tests, CI, benchmarks or simulated
+lives were run. Numeric savings and complete behavioral parity remain
+unverified.

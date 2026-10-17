@@ -637,6 +637,10 @@ class EpisodicMemory:
                 and active.get("id") == episode.active_goal_ref
             ):
                 return 1.0
+        # Without any currently visible contribution reference, matching a
+        # long episode's event list cannot provide additional relevance.
+        if not current_refs:
+            return 0.0
         if any(ref in current_refs for ref in episode.event_refs):
             return 1.0
         return 0.0
@@ -649,20 +653,31 @@ class EpisodicMemory:
         Evaluation remains first-person and unchanged; callers decide how
         many results to retain and whether a full ranking is required.
         """
+        # Snapshot immutable scoring parameters once per first-person recall.
+        # All episodes are still considered, including ancient high-impact
+        # experiences. The filter below only avoids *symbolic* event matching
+        # when even the maximal relevance bonus cannot clear the threshold.
+        scale = self._config.recall_recency_scale_steps
+        w_recency = self._config.recall_weight_recency
+        w_importance = self._config.recall_weight_importance
+        w_relevance = self._config.recall_weight_relevance
+        threshold = self._config.recall_threshold
         for episode in self._episodes:
             age = max(0, t_monde - episode.end_t_monde)
             recency = max(
                 0.0,
-                1.0 - age / self._config.recall_recency_scale_steps,
+                1.0 - age / scale,
             )
             importance = episode.importance
+            # _relevance() returns exactly 0.0 or 1.0; its coefficient is
+            # nonnegative by MemoryConfig.validate(). This upper bound is
+            # conservative even when the episode is centuries old.
+            base_score = w_recency * recency + w_importance * importance
+            if base_score + w_relevance < threshold:
+                continue
             relevance = self._relevance(episode, st)
-            score = (
-                self._config.recall_weight_recency * recency
-                + self._config.recall_weight_importance * importance
-                + self._config.recall_weight_relevance * relevance
-            )
-            if score < self._config.recall_threshold:
+            score = base_score + w_relevance * relevance
+            if score < threshold:
                 continue
             yield RecallResult(
                 episode_ref=episode.id,
