@@ -831,16 +831,23 @@ def i1_memory_recall_source(source: str) -> str:
         "                element.contribution_ref for element in st.competitive\n"
         "            }\n"
     ))
-    scored = ("        scored: list[RecallResult] = []\n"
-              "        for episode in self._episodes:\n")
-    if source.count(scored) != 1:
-        raise ValueError("unreviewed generated I1 Memory recall loop")
-    source = source.replace(scored, (
+    streaming = (
+        "    def _iter_scored_recall(\n"
+        "        self, *, st: STVersion | None, t_monde: int,\n"
+        "    ) -> Iterator[RecallResult]:\n"
+    )
+    if source.count(streaming) != 1:
+        raise ValueError("unreviewed generated I1 Memory scoring iterator")
+    # Insert the shared visible competitive refs once, before any scores.
+    old_scan = "        for episode in self._episodes:\n"
+    if source.count(old_scan) != 1:
+        raise ValueError("unreviewed generated I1 Memory episode score scan")
+    source = source.replace(old_scan, (
         "        visible_refs = (\n"
         "            {element.contribution_ref for element in st.competitive}\n"
         "            if st is not None else None\n"
         "        )\n"
-        + scored
+        + old_scan
     ))
     call = "            relevance = self._relevance(episode, st)\n"
     if source.count(call) != 1:

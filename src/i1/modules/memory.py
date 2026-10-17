@@ -9,7 +9,8 @@ Spec: 10.1-10.4, 20.3 Stage 7, P-34, DC-09, INV-02, INV-27.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping, Sequence
+from heapq import nsmallest
+from typing import Iterator, Mapping, Sequence
 
 from i0.contracts import Contribution, GoalProposal, STVersion
 from i0.requests import Request, Response
@@ -640,14 +641,14 @@ class EpisodicMemory:
             return 1.0
         return 0.0
 
-    def recall(
-        self,
-        *,
-        st: STVersion | None,
-        t_monde: int,
-        limit: int | None = None,
-    ) -> tuple[RecallResult, ...]:
-        scored: list[RecallResult] = []
+    def _iter_scored_recall(
+        self, *, st: STVersion | None, t_monde: int,
+    ) -> Iterator[RecallResult]:
+        """Stream all threshold-eligible memories in their natural order.
+
+        Evaluation remains first-person and unchanged; callers decide how
+        many results to retain and whether a full ranking is required.
+        """
         for episode in self._episodes:
             age = max(0, t_monde - episode.end_t_monde)
             recency = max(
@@ -663,16 +664,30 @@ class EpisodicMemory:
             )
             if score < self._config.recall_threshold:
                 continue
-            scored.append(
-                RecallResult(
-                    episode_ref=episode.id,
-                    score=score,
-                    recency=recency,
-                    importance=importance,
-                    relevance=relevance,
-                )
+            yield RecallResult(
+                episode_ref=episode.id,
+                score=score,
+                recency=recency,
+                importance=importance,
+                relevance=relevance,
             )
 
+    def recall(
+        self,
+        *,
+        st: STVersion | None,
+        t_monde: int,
+        limit: int | None = None,
+    ) -> tuple[RecallResult, ...]:
+        if limit is not None and type(limit) is int and limit >= 1:
+            # Retain only the best K without materializing or sorting all N
+            # admitted memories. The tie-break key is unchanged.
+            return tuple(nsmallest(
+                limit, self._iter_scored_recall(st=st, t_monde=t_monde),
+                key=lambda item: (-item.score, item.episode_ref),
+            ))
+        # Preserve the full-ranking API and legacy invalid-limit behavior.
+        scored = list(self._iter_scored_recall(st=st, t_monde=t_monde))
         scored.sort(key=lambda item: (-item.score, item.episode_ref))
         if limit is not None:
             if limit < 1:
@@ -785,17 +800,21 @@ class EpisodicMemory:
         t_monde: int,
         cycle: int,
     ) -> Contribution | None:
-        recalled = self.recall(st=st, t_monde=t_monde)
-        current_refs = {item.episode_ref for item in recalled}
-        newly_crossed = [
-            item
-            for item in recalled
-            if item.episode_ref not in self._recall_above_threshold
-        ]
+        # Keep the complete threshold-crossing set, but select its strongest
+        # newly eligible episode without allocating or sorting all recalls.
+        previous_refs = self._recall_above_threshold
+        current_refs: set[str] = set()
+        top: RecallResult | None = None
+        for item in self._iter_scored_recall(st=st, t_monde=t_monde):
+            current_refs.add(item.episode_ref)
+            if item.episode_ref not in previous_refs:
+                if (top is None
+                        or (-item.score, item.episode_ref)
+                           < (-top.score, top.episode_ref)):
+                    top = item
         self._recall_above_threshold = current_refs
-        if not newly_crossed:
+        if top is None:
             return None
-        top = newly_crossed[0]
         episode = self._find_closed_episode(top.episode_ref)
         if episode is None:
             raise LookupError("recall referenced an absent closed episode")

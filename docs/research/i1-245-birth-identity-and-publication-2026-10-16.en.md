@@ -1169,3 +1169,45 @@ model, tests, CI, simulated lives or benchmarks were run. The O(1)
 versus O(N) operation counts concern only an individual targeted
 episode lookup, not the whole recall/step runtime. Exact performance
 gains and end-to-end equivalence remain unmeasured.
+
+## I1 Stage7: bounded recall and streaming spontaneous threshold crossings (2026-10-17)
+
+Static inspection found that the existing `EpisodicMemory.recall(limit=K)`
+scored *and globally sorted* every threshold-admissible episode before
+keeping its top K, while `spontaneous_contribution()` called the
+unbounded global sort even though it only published the top
+**newly threshold-crossing** episode. That spontaneous path also needs
+the full set of currently above-threshold episode refs, which cannot be
+discarded without breaking memory's causally persistent edge detection.
+
+The I1 source now shares an iterator that produces exactly the previous
+age/recency/importance/relevance score for every episode, in the original
+inspection order. An explicitly positive integer `limit=K` uses
+`heapq.nsmallest` with the unchanged complete priority key
+`(-score, episode_ref)`, avoiding a full list of results and a full
+O(N log N) sort for that bounded request. Unbounded `recall()` retains
+its full ordered tuple and the original fallback for invalid/noninteger
+limit values.
+
+`spontaneous_contribution()` now streams that same scoring iterator,
+collects **every** threshold-eligible ref in the exact
+`_recall_above_threshold` causal set, and retains only the best newly
+eligible score using the same deterministic tie-break. Only that winner
+is resolved to its authentically stored episode; the same contribution
+fields, event provenance, ID, deadlines, crossing semantics and
+`_last_recalled_ref` remain unchanged. An empty newly crossed set
+still produces no contribution. The source generator's existing I1-only
+optimization that collects `st.competitive` references once per call
+was updated to target the shared scoring iterator, so the new paths
+still avoid per-episode competitive-set reconstruction.
+
+For E episodes and K requested recalls, bounded selection is O(E log K)
+time and O(K) result space rather than a full O(E log E) ranking; the
+spontaneous path is O(E) selection and O(A) threshold-state memory
+for A above-threshold refs, rather than a full ranked list.
+These are structural estimates, **not** measured speedups. Scores must
+remain numerically well-formed as assumed by the existing ranking.
+
+**NON VALIDÉ:** source inspection and Git commit only. No generator run,
+tests, CI, benchmarks or simulated lives were executed. I0, the
+physical life, UC rules, and irreversible mortality remain untouched.
