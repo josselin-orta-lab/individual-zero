@@ -413,6 +413,26 @@ def i1_pending_projection_copy_source(source: str) -> str:
     return source.replace(old, new)
 
 
+def i1_pending_paid_rank_owner_source(source: str) -> str:
+    """Keep charged rank rows within the already privately owned selection.
+
+    Pending entries cannot be inserted or retired while ranking: discovery
+    has finished, and published retirement requires an inactive selection.
+    Both public causal export and final batch-selection ownership still
+    detach data from the live private owner.
+    """
+    before = "        self._ranked.extend(deepcopy(inspected))\n"
+    after = (
+        "        # The already owned pending projections cannot be mutated while\n"
+        "        # the frozen paid rank stage is active. The final selector\n"
+        "        # validates and detaches each episode; M11 export still deepcopies.\n"
+        "        self._ranked.extend(inspected)\n"
+    )
+    if source.count(before) != 1:
+        raise ValueError("unreviewed I1 private rank snapshot copy")
+    return source.replace(before, after)
+
+
 def i1_journal_bounded_view_source(source: str) -> str:
     """I1-only bounded journal reads; preserve all legacy .entries semantics."""
     anchor = (
@@ -1109,6 +1129,7 @@ def generate(output: Path) -> dict[str, object]:
             if (output_package == "i1"
                     and relative.as_posix() == "modules/consolidation_pending_index.py"):
                 transformed = i1_pending_projection_copy_source(transformed)
+                transformed = i1_pending_paid_rank_owner_source(transformed)
             if (output_package == "i1"
                     and relative.as_posix() == "modules/consolidation_pass_runner.py"):
                 transformed = i1_consolidation_runner_copy_source(transformed)

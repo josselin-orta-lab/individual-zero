@@ -1099,3 +1099,35 @@ results were used as validity references.
 **NON VALIDÉ:** source inspection and commit only, without code
 generation, tests, CI runs, simulations or benchmarks. Equivalence and
 numerical gains require a later permitted verification.
+
+## I1 P-42 rank stage: reuse private pending projections until final selection (2026-10-17)
+
+Static inspection of `ChargedPendingEpisodeIndex.advance()` found a full
+`deepcopy(inspected)` each time an already independently owned
+`_pending` episode projection crosses the **paid** ranking cursor.
+During this frozen phase, discovery is complete and the pending dictionary
+cannot be appended to; `acknowledge_published()` explicitly refuses
+mutating its records while a selection is active. The generated I1-only
+rank stage now adds references to these already private projections to
+its short-lived `_ranked` list, without a second full copy.
+
+The P-42 `episode_scan` debit still happens **before** reading the
+bounded slice; the cursor, quoted work, immutable causal cut and
+deterministic discovery/rank order remain unchanged. On
+`finalize()`, `ConsolidationBatchSelector._projection()` still validates
+and independently deepcopies each consumed episode, and
+`FrozenBatchSelection` retains its own detached payloads. M11
+`export_causal_state()` also retains its complete defensive deepcopy,
+and cold restore independently validates all pending and ranked rows
+against the authenticated paid prefix. After finalization the temporary
+ranked references are discarded, prior to any charged retirement of
+published episodes.
+
+A persistent iterator across M11 runtime clones was **not** introduced:
+iterating or deep-copying such an iterator might silently consume
+unpaid episodes. Therefore the existing cursor-based `islice` and
+its documented scaling opportunity remain intentionally unchanged.
+
+**NON VALIDÉ:** source-level optimization only. No generator, tests, CI,
+benchmarks or simulated lives were executed. No I0 changes or fabricated
+performance gains.
