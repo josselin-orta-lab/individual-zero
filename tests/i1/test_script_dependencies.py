@@ -8,7 +8,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools"))
-from scan_script_dependencies import analyze
+from scan_script_dependencies import analyze, _scope
 
 
 def fixture(root):
@@ -28,12 +28,57 @@ def fixture(root):
 
 
 class ScriptDependencyScanTests(unittest.TestCase):
+    def test_unversioned_lab_import_is_not_attributed_to_i0(self):
+        self.assertEqual(_scope([{"namespace": "lab"}]),
+                         "LEGACY_UNVERSIONED_LAB_IMPORT_NOT_I0_PROOF")
+        self.assertEqual(_scope([{"namespace": "i0"}]),
+                         "I0_NAMESPACED_IMPORT_NOT_OWNERSHIP")
+        self.assertEqual(_scope([{"namespace": "i1lab"}]),
+                         "I1_NAMESPACED_IMPORT_NOT_OWNERSHIP")
+        self.assertEqual(_scope([{"namespace": "lab"}, {"namespace": "i1lab"}]),
+                         "LEGACY_LAB_AND_I1_IMPORTS_UNRESOLVED")
+        self.assertEqual(_scope([{"namespace": "i0"}, {"namespace": "i1"}]),
+                         "CROSS_GENERATION_IMPORTS_REVIEW_REQUIRED")
+
+    def test_review_queue_is_not_authorization_to_move_scripts(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            fixture(root)
+            report = analyze(root)
+            self.assertEqual(len(report["review_queue"]), 1)
+            row = report["review_queue"][0]
+            self.assertEqual(row["path"], "scripts/historical.py")
+            self.assertIn("lab", row["observed_roots"])
+            self.assertIn("SHARED_LEGACY_LAB_IMPORT_IS_NOT_I0_OWNERSHIP",
+                          row["risk_signals"])
+            self.assertFalse(row["automatic_move"])
+            self.assertFalse(row["scientific_oracle"])
+            self.assertEqual(report["review_queue_status"],
+                             "TRIAGE_ONLY_NOT_APPROVED_FOR_MIGRATION")
+
+    def test_inbound_dependency_is_a_high_priority_manual_review(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            fixture(root)
+            (root / "scripts/active.py").write_text(
+                "from historical import HashChainedJournal\n"
+            )
+            report = analyze(root)
+            self.assertEqual(report["status"], "FAIL")
+            row = report["review_queue"][0]
+            self.assertIn("scripts/active.py", row["direct_dependents"])
+            self.assertIn("ACTIVE_DEPENDENCY_MUST_BE_RESOLVED",
+                          row["risk_signals"])
+            self.assertFalse(row["automatic_move"])
+
     def test_current_inventory_is_complete_and_non_scientific(self):
         report = analyze(ROOT)
         self.assertEqual(report["status"], "PASS_WITH_REVIEW", report["errors"])
         self.assertEqual(report["active_scripts"], 5)
         self.assertEqual(report["review_pending"], 148)
         self.assertEqual(report["reviewed_with_import_evidence"], 5)
+        self.assertEqual(len(report["review_queue"]), 143)
+        self.assertTrue(report["observed_import_root_counts"])
         self.assertEqual(report["scientific_conclusion"], "NOT_EVALUATED")
         self.assertIn("scripts/audit_i0_sqlite.py", report["scripts"])
 

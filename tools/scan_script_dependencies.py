@@ -190,16 +190,28 @@ def _inspect_script(path: Path, modules: set[str]) -> dict:
 
 
 def _scope(evidence: list[dict]) -> str:
+    """Describe import evidence, NEVER infer who owns the source.
+
+    The unversioned lab namespace appears in older I1 research, too.
+    It is not evidence that a script belongs to I0.
+    """
     roots = {x["namespace"] for x in evidence}
-    i0 = bool(roots & {"i0", "lab"})
+    i0 = "i0" in roots
     i1 = bool(roots & {"i1", "i1lab"})
+    shared = "lab" in roots
     if i0 and i1:
-        return "MIXED_I0_I1_IMPORTS_NOT_OWNERSHIP"
+        return "CROSS_GENERATION_IMPORTS_REVIEW_REQUIRED"
+    if shared and i1:
+        return "LEGACY_LAB_AND_I1_IMPORTS_UNRESOLVED"
+    if shared and i0:
+        return "I0_AND_LEGACY_LAB_IMPORTS_UNRESOLVED"
+    if shared:
+        return "LEGACY_UNVERSIONED_LAB_IMPORT_NOT_I0_PROOF"
     if i0:
-        return "I0_OR_LEGACY_LAB_IMPORTS_NOT_OWNERSHIP"
+        return "I0_NAMESPACED_IMPORT_NOT_OWNERSHIP"
     if i1:
-        return "I1_IMPORTS_NOT_OWNERSHIP"
-    return "UNDETERMINED_FROM_STATIC_IMPORTS"
+        return "I1_NAMESPACED_IMPORT_NOT_OWNERSHIP"
+    return "NO_GENERATION_IMPORT_EVIDENCE"
 
 
 def _reachable(start: str, scripts: dict) -> set[str]:
@@ -213,6 +225,60 @@ def _reachable(start: str, scripts: dict) -> set[str]:
         pending.extend(scripts[item]["script_dependencies"])
         pending.extend(scripts[item]["resolved_subprocess_script_dependencies"])
     return visited
+
+
+def _build_review_queue(pending: set[str], scripts: dict) -> list[dict]:
+    """Rank manual reviews by observed uncertainty, never by scientific merit."""
+    inbound: dict[str, set[str]] = {path: set() for path in scripts}
+    for caller, item in scripts.items():
+        for target in (item["script_dependencies"]
+                       + item["resolved_subprocess_script_dependencies"]):
+            if target in inbound:
+                inbound[target].add(caller)
+    rows = []
+    for path in sorted(pending & scripts.keys()):
+        data = scripts[path]
+        if "reviewed_custody" in data:
+            continue
+        roots = sorted({e["namespace"] for e in data["namespace_evidence"]})
+        callers = sorted(inbound[path])
+        active_callers = [p for p in callers
+                          if scripts[p]["declared_role"] == "CURRENT_CI_TOOL"]
+        risks = []
+        if active_callers:
+            risks.append("ACTIVE_DEPENDENCY_MUST_BE_RESOLVED")
+        if "lab" in roots:
+            risks.append("SHARED_LEGACY_LAB_IMPORT_IS_NOT_I0_OWNERSHIP")
+        if "i0" in roots and bool(set(roots) & {"i1", "i1lab"}):
+            risks.append("CROSS_GENERATION_NAMESPACE_EVIDENCE")
+        if data["parse_error"]:
+            risks.append("STATIC_PARSE_FAILED")
+        if (data["dynamic_or_relative_import_lines"]
+                or any(c["dependency_resolution"] != "LITERAL_TARGETS_ONLY"
+                       for c in data["subprocess_calls"])):
+            risks.append("INCOMPLETE_DYNAMIC_DEPENDENCY_EVIDENCE")
+        if not roots:
+            risks.append("NO_EXPLICIT_ENGINE_NAMESPACE_EVIDENCE")
+        score = (100 * bool(active_callers)
+                 + 40 * bool(data["parse_error"])
+                 + 30 * ("CROSS_GENERATION_NAMESPACE_EVIDENCE" in risks)
+                 + 20 * ("lab" in roots)
+                 + 15 * bool(set(roots) & {"i0", "i1", "i1lab"})
+                 + 10 * ("INCOMPLETE_DYNAMIC_DEPENDENCY_EVIDENCE" in risks)
+                 + min(15, 3 * len(callers)))
+        rows.append({
+            "path": path,
+            "review_priority": score,
+            "source_git_blob_sha1": data["source_git_blob_sha1"],
+            "observed_roots": roots,
+            "scope": data["import_scope_observation"],
+            "direct_dependents": callers,
+            "risk_signals": risks,
+            "action": "MANUAL_REVIEW_WITH_SOURCE_PROVENANCE_ONLY",
+            "automatic_move": False,
+            "scientific_oracle": False,
+        })
+    return sorted(rows, key=lambda row: (-row["review_priority"], row["path"]))
 
 
 def analyze(root: Path = ROOT) -> dict:
@@ -237,6 +303,9 @@ def analyze(root: Path = ROOT) -> dict:
         item = _inspect_script(root / path, modules)
         item["declared_role"] = "CURRENT_CI_TOOL" if path in active else "REVIEW_REQUIRED"
         item["import_scope_observation"] = _scope(item["namespace_evidence"])
+        item["observed_import_roots"] = sorted(
+            {e["namespace"] for e in item["namespace_evidence"]}
+        )
         scripts[path] = item
         if item["parse_error"] and path in active:
             errors.append(path + ": active script cannot be parsed")
@@ -274,8 +343,13 @@ def analyze(root: Path = ROOT) -> dict:
         else:
             scripts[path]["reviewed_custody"] = claim
     scope_counts = dict(sorted(Counter(
-        scripts[p]["import_scope_observation"] for p in sorted(pending)
+        scripts[p]["import_scope_observation"] for p in sorted(pending & scripts.keys())
     ).items()))
+    raw_roots = dict(sorted(Counter(
+        root for p in sorted(pending & scripts.keys())
+        for root in scripts[p]["observed_import_roots"]
+    ).items()))
+    queue = _build_review_queue(pending, scripts)
     return {
         "schema": "individual-zero-script-dependencies/v1",
         "status": "FAIL" if errors else "PASS_WITH_REVIEW",
@@ -284,6 +358,9 @@ def analyze(root: Path = ROOT) -> dict:
         "review_pending": len(pending),
         "reviewed_with_import_evidence": len(reviewed),
         "candidate_scope_counts": scope_counts,
+        "observed_import_root_counts": raw_roots,
+        "review_queue": queue,
+        "review_queue_status": "TRIAGE_ONLY_NOT_APPROVED_FOR_MIGRATION",
         "subprocess_calls_observed": sum(len(x["subprocess_calls"]) for x in scripts.values()),
         "literal_child_scripts_observed": sum(len(x["resolved_subprocess_script_dependencies"]) for x in scripts.values()),
         "errors": errors,
@@ -306,6 +383,31 @@ def markdown(report: dict) -> str:
     ]
     for label, count in sorted(report["candidate_scope_counts"].items()):
         rows.append("| " + label + " | " + str(count) + " |")
+    rows.extend([
+        "",
+        "## Direct namespace roots (overlapping counts)",
+        "",
+        "The unscoped lab import is not I0 ownership evidence.",
+        "",
+        "| Namespace | Scripts with imports |",
+        "| --- | ---: |",
+    ])
+    for key, count in sorted(report["observed_import_root_counts"].items()):
+        rows.append("| " + key + " | " + str(count) + " |")
+    rows.extend([
+        "",
+        "## Manual-review queue (first 20 only)",
+        "",
+        "Scores are triage heuristics, never engine attribution.",
+        "",
+        "| Script | Score | Observed roots | Risk signals |",
+        "| --- | ---: | --- | --- |",
+    ])
+    for entry in report["review_queue"][:20]:
+        rows.append("| " + entry["path"] + " | " +
+                    str(entry["review_priority"]) + " | " +
+                    ", ".join(entry["observed_roots"]) + " | " +
+                    ", ".join(entry["risk_signals"]) + " |")
     rows.extend(["", "## Reviewed direct imports", ""])
     for path, item in sorted(report["scripts"].items()):
         if "reviewed_custody" in item:

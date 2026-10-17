@@ -12,6 +12,7 @@ on:
       - 'tools/new_engine.py'
       - 'tools/assess_engine_proposal.py'
       - 'docs/engineering/ENGINE_PROMOTION.md'
+      - 'docs/engineering/SCRIPT_INVENTORY.md'
       - 'tools/run_engine_checks.py'
       - 'tools/campaign_report.py'
       - 'tools/check_tool_inventory.py'

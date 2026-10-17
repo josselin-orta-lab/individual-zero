@@ -11,3 +11,21 @@ Use `python tools/check_tool_inventory.py` to verify that the inventory accurate
 ## Dependency evidence without running old cohorts
 
 Run `python tools/scan_script_dependencies.py --output reports/script-dependencies.json --markdown-output reports/script-dependencies.md`. The scanner parses all 153 script files via Python AST, records direct local imports, transitive dependencies between scripts, unresolved dynamic imports, and `i0` / `i1` / `lab` / `i1lab` namespace observations. **A namespace is evidence of an import, not proof of ownership or scientific relevance.** The five active infrastructure scripts are blocked from depending transitively on unreviewed historical scripts. Two historical I0 compatibility scripts have a direct import attested in `config/script-custody.json`; all others remain pending explicit review. The report is diagnostic, never an execution or scientific GO.
+
+## Generation-aware import evidence and manual script triage
+
+Run the static scanner on the current commit. The JSON report now contains
+`observed_import_root_counts`, `review_queue` and `review_queue_status`.
+It distinguishes `i0`, `i1`, `i1lab` and the **unscoped legacy**
+`lab` namespace. The old `lab` import does not establish I0 ownership,
+since older I1 research also used it.
+
+The review queue prioritizes scripts with ambiguous Lab dependencies,
+cross-generation references, unresolved dynamic launches and inbound
+dependencies from active infrastructure. The score is an **organizational**
+heuristic and never a scientific confidence score. Every row includes
+the Git blob SHA, observed roots, callers and reasons.
+
+An actual owner assignment still requires separately reviewed source
+provenance, tested dependency closure and an explicit manual decision.
+Neither the report nor this inventory moves, activates or executes scripts.
