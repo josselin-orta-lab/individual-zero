@@ -203,14 +203,15 @@ class I1ActiveValueNeeds(ValueAndNeeds):
             ):
                 if not set(prior[field]).issubset(newer[field]):
                     raise ValueError("active procedure dropped its lived witnesses")
-        # The coordinator gives this rebaser an already-detached owner
-        # snapshot and makes its own validated copy of the result. Mutate only
-        # the orthogonal advisory field, never its online TD state.
+        # The coordinator gives each rebaser separate detached candidate
+        # and baseline snapshots, then validates and deeply owns its returned
+        # mapping through _copy_causal(state). Keep the intermediate advisory
+        # rows by reference only until that final ownership boundary.
         unchanged = canonical_causal_bytes({
             k: v for k, v in baseline.items() if k != ACTIVE_FORM_KEY
         })
         if proposed:
-            baseline[ACTIVE_FORM_KEY] = deepcopy(proposed)
+            baseline[ACTIVE_FORM_KEY] = proposed
         else:
             baseline.pop(ACTIVE_FORM_KEY, None)
         if canonical_causal_bytes({

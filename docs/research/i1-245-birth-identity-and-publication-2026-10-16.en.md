@@ -895,3 +895,30 @@ actual performance gain remains unmeasured.
 **NON VALIDÉ:** source inspection and GitHub commit only, with no generated
 build, tests, benchmarks, CI or simulated lives, per request. I0 and
 the pinned original Lab sources remain unchanged.
+
+## I1 Stage10 owner-rebase evidence: remove transient nested copies (2026-10-17)
+
+Both the Perception/CausalModel/Metacognition-Health wrapper and Value/Needs
+advisory rebaser received **separate, fully detached** candidate and owner
+baseline copies from `Stage10PublicationCoordinator.prepare()`. Each
+validated its proposed lived evidence before installing the reference into
+its local candidate mapping, then made a new `deepcopy(proposed)`. The
+coordinator immediately called `_copy_causal(state)`, which canonically
+validates and deep-copies the entire returned candidate. That additional
+rebaser-level nested deepcopy was therefore never a distinct ownership
+boundary; it only occupied temporary memory before the validated final copy.
+
+The natural I1 rebasers now attach the proposed evidence to their
+**temporary** detached baselines without another nested deepcopy. The
+coordinator's unchanged `_copy_causal` continues to detach the prepared
+owner form prior to publication, and the underlying owner
+`restore_causal_state` methods still independently validate and own
+their live evidence. No candidate or temporary rebase reference is
+published outside this boundary. Provenance checks, monotonic procedural
+witnesses, non-mutation checks on online owners, journal freeze,
+P-42 charges, no-lived-state-rollback, and the M11 independent capture
+checks remain intact.
+
+**NON VALIDÉ:** static source inspection only. No tests, generated build,
+CI, simulations or benchmarks were executed, and performance/behavior
+parity has not been measured.
