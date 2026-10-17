@@ -103,6 +103,16 @@ def _approved_memory_overlap(before: bytes, after: bytes) -> bool:
             and original.replace(former, improved, 1) == candidate)
 
 
+def _approved_stage9_episode_slice(before: bytes, after: bytes) -> bool:
+    """Permit only the count-and-bounded-slice Stage9 substitution."""
+    former = "            before = len(self.memory.episodes)\n            original_memory(_ctx)\n            newly_closed = self.memory.episodes[before:]"
+    newer = "            # Count-only checkpoint: do not materialize the full lifetime\n            # episode tuple twice during every waking cognitive cycle.\n            before = self.memory.episode_count\n            original_memory(_ctx)\n            newly_closed = self.memory.read_episodes_range(\n                before, self.memory.episode_count,\n            )"
+    prior = before.decode("utf-8")
+    current = after.decode("utf-8")
+    return (prior.count(former) == 1 and current.count(newer) == 1
+            and prior.replace(former, newer, 1) == current)
+
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -131,6 +141,10 @@ def verify(reference_root: Path) -> None:
                     ))
                 or (rel == "i1/modules/memory.py"
                     and _approved_memory_overlap(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
+                or (rel == "i1lab/stage9_runtime.py"
+                    and _approved_stage9_episode_slice(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
             )
