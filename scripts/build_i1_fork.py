@@ -38,29 +38,6 @@ def rewrite(text: str) -> str:
 
 
 
-def i1_bounded_stage10_sleep_anchor_source(source: str) -> str:
-    """Reverse-scan append-only frozen journal entries without allocating all."""
-    old = "            e for e in reversed(self.journal.entries)\n"
-    new = "            e for e in self.journal.iter_entries_reversed()\n"
-    if source.count(old) != 1:
-        raise ValueError("unreviewed I1 sleep-cut journal anchor")
-    return source.replace(old, new)
-
-
-def i1_no_meta_custody_rollback_source(source: str) -> str:
-    """Do not save and reinstall previous living Meta/Health owner versions.
-
-    The generated natural I1 runs under the mortal fail-stop boundary.
-    A fresh authenticated M11 cold import is never allowed to rescue an
-    incomplete owner graph. Keep both defensive input copies.
-    """
-    before = "        old_meta = self.meta.export_causal_state()\n        old_health = self.health.export_causal_state()\n        try:\n            self.meta.restore_causal_state(deepcopy(state[\"metacognition\"]))\n            self.health.restore_causal_state(deepcopy(state[\"sleep_health\"]))\n        except Exception:\n            self.meta.restore_causal_state(old_meta)\n            self.health.restore_causal_state(old_health)\n            raise\n"
-    after = "        # No backup of living owners for a compensating rewind. If an\n        # installation fails, the mortal Stage10 step halts the individual;\n        # M11 cold installation instead aborts the unpublished new runtime.\n        self.meta.restore_causal_state(deepcopy(state[\"metacognition\"]))\n        self.health.restore_causal_state(deepcopy(state[\"sleep_health\"]))\n"
-    if source.count(before) != 1:
-        raise ValueError("unreviewed I1 metacognition/health no-rewind boundary")
-    return source.replace(before, after)
-
-
 def i1_m11_bounded_journal_source(source: str) -> str:
     """Avoid whole-journal tuple materialization in I1 M11 and cold restore.
 
@@ -275,149 +252,6 @@ def i1_stage11_paid_exploration_probe_source(source: str) -> str:
     return source
 
 
-def i1_waking_pending_source(source: str) -> str:
-    """Avoid cloning the entire h on every awake step in natural I1."""
-    old = (
-        '        committed = set(self.slow_history.read_committed()'
-        '["consolidated_episode_refs"])\n'
-    )
-    new = '        committed = self.slow_history.committed_episode_refs()\n'
-    if source.count(old) != 1:
-        raise ValueError("unreviewed Stage10 waking history read")
-    source = source.replace(old, new)
-    # The EpisodicMemory owner only appends uniquely numbered closed
-    # episodes. Stage10 can publish IDs exclusively from its charged,
-    # already-frozen Memory batches; it never deletes a closed episode.
-    # Therefore pending = closed_count - published_count, with O(1) read
-    # complexity rather than a full history iteration on EVERY waking step.
-    pending_old = (
-        '        pending = sum(episode.id not in committed '
-        'for episode in self.memory.episodes)\n'
-        '        relevant = min(1.0, len(self.memory.episodes)\n'
-    )
-    pending_new = (
-        '        total = self.memory.episode_count\n'
-        '        pending = total - len(committed)\n'
-        '        if pending < 0:\n'
-        '            raise ValueError("committed episodes exceed lived closed episodes")\n'
-        '        relevant = min(1.0, total\n'
-    )
-    if source.count(pending_old) != 1:
-        raise ValueError("unreviewed waking episode count semantics")
-    source = source.replace(pending_old, pending_new)
-    # Sleep selection can also consult immutable ownership metadata. Actual
-    # episode bodies are still read only through the charged selection path.
-    prior = (
-        '                            tuple(self.slow_history.read_committed()'
-        '["consolidated_episode_refs"])\n'
-    )
-    if source.count(prior) != 1:
-        raise ValueError("unreviewed incremental sleep selection metadata")
-    source = source.replace(
-        prior,
-        '                            tuple(sorted(self.slow_history.committed_episode_refs()))\n',
-    )
-    prior = (
-        '                old_refs = set(\n'
-        '                    self.slow_history.read_committed()["consolidated_episode_refs"]\n'
-        '                )\n'
-    )
-    if source.count(prior) != 1:
-        raise ValueError("unreviewed full sleep selection metadata")
-    return source.replace(
-        prior, '                old_refs = self.slow_history.committed_episode_refs()\n',
-    )
-
-
-def i1_private_consolidation_source(source: str) -> str:
-    """Generated Stage10: active Value/Needs advisory, all other forms inert.
-
-    Original Lab code and historic I1 arms keep the ordinary private-only
-    identity rebase. Canonical I1 may publish a validated *non-executable*
-    consultative index to the one Value/Needs owner without changing TD.
-    """
-    old = (
-        '        if (candidate.get("forms") != self.slow_history.read_committed()["forms"]\n'
-        '                or candidate.get("procedural")):\n'
-    )
-    new = (
-        '        canonical = type(self).__name__ == "I1Runtime"\n'
-        '        if ((not canonical and candidate.get("forms")\n'
-        '             != self.slow_history.read_committed()["forms"])\n'
-        '                or (canonical and set(candidate.get("forms", {}))\n'
-        '                    != set(Stage10PublicationCoordinator.REQUIRED))):\n'
-    )
-    if source.count(old) != 1:
-        raise ValueError("unreviewed I1 active-form publication guard")
-    source = source.replace(old, new)
-    # The exact candidate consumed by coordinator.prepare must be the SAME
-    # versioned candidate that passed the paid sixth semantic checkpoint.
-    # Never mutate an already validated transaction during publication.
-    old_handler = "            advance = runner.advance_unit(algorithm.handle)\n"
-    new_handler = (
-        "            def canonical_paid_semantic_handler(candidate, unit, scoped, cut):\n"
-        "                updated = (algorithm.handle_detached(candidate, unit, scoped, cut)\n"
-        "                           if type(self).__name__ == 'I1Runtime'\n"
-        "                           else algorithm.handle(candidate, unit, scoped, cut))\n"
-        "                if (type(self).__name__ == 'I1Runtime'\n"
-        "                        and unit.operation == 'index_maintenance'):\n"
-        "                    from .i1_cognitive_publication import build_consolidated_owner_forms\n"
-        "                    updated['forms'] = build_consolidated_owner_forms(updated)\n"
-        "                return updated\n"
-        "            advance = runner.advance_unit(canonical_paid_semantic_handler)\n"
-    )
-    if source.count(old_handler) != 1:
-        raise ValueError("unreviewed I1 paid semantic handler")
-    source = source.replace(old_handler, new_handler)
-    old_rebaser = (
-        '        # The final private rebase freezes the journal\'s exact current head.\n'
-    )
-    new_rebaser = (
-        '        if canonical:\n'
-        '            def publish_validated_advisory(candidate, baseline, updates):\n'
-        '                return self.value_needs.prepare_stage10_advisory_rebase(\n'
-        '                    candidate, baseline, updates,\n'
-        '                )\n'
-        '            rebasers = {\n'
-        '                name: (publish_validated_advisory if name == "value_needs"\n'
-        '                       else self._i1_active_owner_views[name].prepare_stage10_owner_rebase)\n'
-        '                for name in Stage10PublicationCoordinator.REQUIRED\n'
-        '            }\n'
-        '        else:\n'
-        '            rebasers = {\n'
-        '                name: preserve_unmodified_active_form\n'
-        '                for name in Stage10PublicationCoordinator.REQUIRED\n'
-        '            }\n\n'
-    )
-    if source.count(old_rebaser) != 1:
-        raise ValueError("unreviewed I1 Stage10 private rebase anchor")
-    source = source.replace(old_rebaser, new_rebaser + old_rebaser)
-    old_owner = (
-        '                owner_rebasers={\n'
-        '                    name: preserve_unmodified_active_form\n'
-        '                    for name in Stage10PublicationCoordinator.REQUIRED\n'
-        '                },\n'
-    )
-    if source.count(old_owner) != 1:
-        raise ValueError("unreviewed I1 Stage10 coordinator owner rebasers")
-    source = source.replace(old_owner, '                owner_rebasers=rebasers,\n')
-    for name, reference in (
-        ("causal_model", "self.causal_model"),
-        ("perception", "self.stage3.perception"),
-        ("metacognition_health", "self._meta_custody"),
-    ):
-        original = '                "' + name + '": ' + reference + ','
-        replacement = (
-            '                "' + name + '": (self._i1_active_owner_views["'
-            + name + '"] if canonical else ' + reference + '),'
-        )
-        if source.count(original) != 1:
-            raise ValueError("unreviewed Stage10 active owner map " + name)
-        source = source.replace(original, replacement)
-    return source
-
-
-
 def generate(output: Path) -> dict[str, object]:
     output = output.resolve()
     # A mis-specified output must never clobber the checked-in cognition.
@@ -443,7 +277,7 @@ def generate(output: Path) -> dict[str, object]:
             relative = file.relative_to(source)
             if input_package == "i1" and relative.parts[0] == "runtime":
                 continue  # Built into i1lab below, never twice in generated i1.
-            if input_package == "lab" and relative.as_posix() in {"world.py", "journal.py", "journal_views.py", "consolidation_lived_evidence.py", "consolidation_postcut_journal.py", "sqlite_life_store.py", "sqlite_runtime_custody.py", "consolidation_publication.py"}:
+            if input_package == "lab" and relative.as_posix() in {"world.py", "journal.py", "journal_views.py", "consolidation_lived_evidence.py", "consolidation_postcut_journal.py", "sqlite_life_store.py", "sqlite_runtime_custody.py", "consolidation_publication.py", "stage10_runtime.py"}:
                 continue  # Versioned native I1 world, journal and lived views.
             contents = file.read_text(encoding="utf-8")
             transformed = rewrite(contents)
@@ -457,12 +291,6 @@ def generate(output: Path) -> dict[str, object]:
                     and relative.as_posix() == "stage11_runtime.py"):
                 transformed = i1_stage11_owned_geography_lookup_source(transformed)
                 transformed = i1_stage11_paid_exploration_probe_source(transformed)
-            if (output_package == "i1lab"
-                    and relative.as_posix() == "stage10_runtime.py"):
-                transformed = i1_private_consolidation_source(transformed)
-                transformed = i1_waking_pending_source(transformed)
-                transformed = i1_no_meta_custody_rollback_source(transformed)
-                transformed = i1_bounded_stage10_sleep_anchor_source(transformed)
             # I1-only M11 custody: admit ONLY the exact canonical I1
             # runtime, not any experimental Stage12 subclass with unknown
             # mutable owners or unregistered cold-state behavior. Retain the
