@@ -365,6 +365,7 @@ def verify(reference_root: Path) -> None:
                                 )
                             )
                         )
+                        )
                         ),
                         (new_root / rel).read_bytes()
                     ))
