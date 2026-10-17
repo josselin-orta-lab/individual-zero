@@ -17,6 +17,8 @@
 - [MEMORY_AND_LEARNING.md](MEMORY_AND_LEARNING.md): autobiographical provenance, causal hypotheses and subjective agency
 - [CONSOLIDATION_AND_PUBLICATION.md](CONSOLIDATION_AND_PUBLICATION.md): paid Stage10 consolidation, four-owner publishing and open evidence gates
 - [MORTALITY_AND_M11.md](MORTALITY_AND_M11.md): irrevocable death, authenticated committed generation and negative tests
+- [DATA_CONTRACTS_AND_CUSTODY.md](DATA_CONTRACTS_AND_CUSTODY.md): versioned cognitive schemas, provenance, owner state and exclusive M11 custody
+- [LIVED_EVIDENCE_WALKTHROUGH.md](LIVED_EVIDENCE_WALKTHROUGH.md): reproducible observer-side causal checkpoints and diagnostic uncertainty
 - [STAGES_AND_INTERFACES.md](STAGES_AND_INTERFACES.md): executable Stage ownership, multiple inheritance, data handoffs and intervention map
 - [UC_AND_SCHEDULING.md](UC_AND_SCHEDULING.md): two independent logical UC ledgers, actual charge points, failure diagnosis
 - [EXPERIMENT_PROTOCOL.md](EXPERIMENT_PROTOCOL.md): independent mortal lives, controls, traces and limits of scientific inference
