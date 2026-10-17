@@ -682,3 +682,37 @@ path retains its complete audit. The original I0/lab source remains pinned.
 **NON VALIDÉ**: no model generation, tests, CI runs, benchmarks or
 simulated lives were performed. The elimination of repeated O(state-size)
 serialization/parsing is established by code inspection, not measured.
+
+## I1 full SQLite audit: one validated owner envelope, bounded digest operations (2026-10-17)
+
+The generated I1lab `SQLiteLifeLedger.audit()` still validates every retained
+causal occurrence before permitting any further step, and the existing
+post-COMMIT full audit remains mandatory. The optimization is entirely
+within that checked traversal; **no historical event is trusted because
+it was validated in an earlier call**.
+
+Static inspection found that `_canonical_state()` validated the current
+owner-roster metadata, then `audit()` validated that same envelope again
+after processing every causal occurrence. A private I1-only helper now
+returns both the exact canonical state bytes and the already verified
+roster metadata in one pass. The standard `_canonical_state()` still
+returns bytes to all other callers. After validating the exact SQLite
+state bytes, the auditor releases its large decoded current-state mapping
+before beginning the full journal scan. Its verified roster/status/count/head
+metadata is retained to check the final independently recomputed journal
+head and the external stored owner-roster hash.
+
+The audit SHA-256 chain also keeps the previous digest in its native
+32-byte form instead of hex-decoding the previous occurrence's hash for
+each next event. Each occurrence still undergoes canonical JSON validation,
+exact index/ID/previous-hash checks, recomputed SHA-256, terminal sequence
+verification, and the final journal count/head comparison. The value used
+for the stored hash comparison remains `.hex()` of the real SHA-256 digest.
+No cached trust or shortcut is introduced.
+
+The I1-only generator refuses unexpected source anchors. No I0 or original
+lab source or historical experimental result was used as a baseline.
+
+**NON VALIDÉ:** static code review only. No code generation, tests,
+CI execution, benchmarks, or simulated lives were run; memory and speed
+benefits remain unmeasured and full behavioral parity unproven.

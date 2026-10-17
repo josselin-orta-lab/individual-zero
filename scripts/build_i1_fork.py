@@ -439,6 +439,53 @@ def i1_sqlite_life_audit_canonical_source(source: str) -> str:
     return source
 
 
+def i1_sqlite_streaming_audit_source(source: str) -> str:
+    """Avoid redundant owner metadata scans and hex conversion per occurrence.
+
+    Applies only to generated I1lab; preserves every full hash-chain audit,
+    canonical byte check, terminal sequence rule and SQL head/count check.
+    """
+    changes = (
+        (
+            "from dataclasses import dataclass\n",
+            "from dataclasses import dataclass\nfrom hashlib import sha256\n",
+        ),
+        (
+            "def _canonical_state(state: Mapping[str, object], identity: str) -> bytes:\n",
+            "def _canonical_state_with_metadata(\n    state: Mapping[str, object], identity: str,\n) -> tuple[bytes, tuple[str, str, int, str, str] | None]:\n",
+        ),
+        (
+            "    registered_current_metadata(state)\n    return canonical_causal_bytes(state)\n",
+            "    metadata = registered_current_metadata(state)\n    return canonical_causal_bytes(state), metadata\n\n\ndef _canonical_state(state: Mapping[str, object], identity: str) -> bytes:\n    \"\"\"Keep canonical state bytes and owner-roster verification for all callers.\"\"\"\n    return _canonical_state_with_metadata(state, identity)[0]\n",
+        ),
+        (
+            "            if _canonical_state(decoded, identity) != data:\n                raise ValueError(\"noncanonical state\")\n",
+            "            canonical, metadata = _canonical_state_with_metadata(decoded, identity)\n            if canonical != data:\n                raise ValueError(\"noncanonical state\")\n",
+        ),
+        (
+            "        previous = GENESIS_HASH\n        expected = 0\n",
+            "        # The large decoded state is no longer needed during the full event audit.\n        del decoded\n        previous = GENESIS_HASH\n        previous_digest = bytes.fromhex(GENESIS_HASH)\n        expected = 0\n",
+        ),
+        (
+            "            actual = sha256_hex(bytes.fromhex(previous) + payload)\n",
+            "            actual_digest = sha256(previous_digest + payload).digest()\n            actual = actual_digest.hex()\n",
+        ),
+        (
+            "            previous = actual\n            expected += 1\n",
+            "            previous = actual\n            previous_digest = actual_digest\n            expected += 1\n",
+        ),
+        (
+            "        metadata = registered_current_metadata(decoded)\n",
+            "        # The current envelope was fully checked before streaming occurrences.\n",
+        ),
+    )
+    for before, after in changes:
+        if source.count(before) != 1:
+            raise ValueError("unreviewed I1 SQL incremental audit boundary")
+        source = source.replace(before, after)
+    return source
+
+
 def i1_sqlite_detached_owner_export_source(source: str) -> str:
     """Elide copies only for exact I1 owners with proven detached exports.
 
@@ -938,6 +985,7 @@ def generate(output: Path) -> dict[str, object]:
             if (output_package == "i1lab"
                     and relative.as_posix() == "sqlite_life_store.py"):
                 transformed = i1_sqlite_life_audit_canonical_source(transformed)
+                transformed = i1_sqlite_streaming_audit_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "sqlite_runtime_custody.py"):
                 transformed = i1_sqlite_journal_count_source(transformed)
