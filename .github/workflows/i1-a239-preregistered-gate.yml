@@ -1,14 +1,6 @@
 name: I1 A2.39 prospective lock software gate
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'scripts/i1_a239_lock.py'
-      - 'scripts/i1_a239_fixtures.py'
-      - 'scripts/run_i1_a239_preflight.py'
-      - 'scripts/audit_i1_a239_historical_baseline.py'
-      - 'docs/research/i1-a239-nutrition-geography-food-first-prereg-2026-10-16.en.md'
-      - '.github/workflows/i1-a239-preregistered-gate.yml'
+  # Prior experimental campaign: manual only, not I1 acceptance.
   workflow_dispatch:
 permissions:
   contents: read

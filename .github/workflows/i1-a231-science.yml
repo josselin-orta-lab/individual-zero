@@ -1,12 +1,7 @@
 name: I1 A2.31 paired prospective science
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'scripts/run_i1_a231_pairs.py'
-      - 'docs/research/i1-a231-prereg-2026-10-16.en.md'
-      - '.github/workflows/i1-a231-science.yml'
+  # Prior experimental campaign: manual only, not I1 acceptance.
   workflow_dispatch:
 
 permissions:

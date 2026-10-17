@@ -1,12 +1,6 @@
 name: I1 A2.38 sealed 160 mortal births
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'scripts/i1_a238_*.py'
-      - 'scripts/run_i1_a238_factorial.py'
-      - 'scripts/audit_i1_a238_factorial.py'
-      - '.github/workflows/i1-a238-confirmatory.yml'
+  # Prior experimental campaign: manual only, not I1 acceptance.
   workflow_dispatch:
 permissions:
   contents: read

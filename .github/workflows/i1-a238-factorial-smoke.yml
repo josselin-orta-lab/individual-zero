@@ -1,11 +1,6 @@
 name: I1 A2.38 preconfirmatory factorial software smoke
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'src/i1_overlays/i1_a238_runtime.py'
-      - 'tests/test_i1_a238_factorial_smoke.py'
-      - '.github/workflows/i1-a238-factorial-smoke.yml'
+  # Prior experimental campaign: manual only, not I1 acceptance.
   workflow_dispatch:
 permissions:
   contents: read
