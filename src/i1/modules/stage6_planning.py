@@ -9,6 +9,7 @@ Spec: 8.11, 12.1-12.4, 20.3 Stage 6.
 
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass
 from typing import Callable, Mapping
 
@@ -269,13 +270,13 @@ class SimulatorPlanner:
                 unavailable_edges=0,
             ))
 
-        queue: list[_Node] = [
+        queue = deque([
             _Node(
                 state=initial_state,
                 commands=(),
                 predictions=(),
             )
-        ]
+        ])
         visited = {self._state_key(initial_state)}
         expanded = 0
         unavailable = 0
@@ -298,7 +299,7 @@ class SimulatorPlanner:
         )
 
         while queue:
-            node = queue.pop(0)
+            node = queue.popleft()
             if len(node.commands) >= self._config.max_depth:
                 continue
             expanded += 1
