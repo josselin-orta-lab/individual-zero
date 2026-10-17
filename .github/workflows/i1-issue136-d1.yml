@@ -1,16 +1,7 @@
 name: I1 D1 first-person water acquisition
 
 on:
-  pull_request:
-    branches: [main, experiment/i1-isolated-model-fork-20261016, audit/i1-issue136-onlife-water-20261016]
-    paths:
-      - 'src/i1/experimental/lived_water.py'
-      - 'src/i1_overlays/i1_water_runtime.py'
-      - 'scripts/build_i1_fork.py'
-      - 'tests/test_i1_issue136_d1_learning.py'
-      - 'scripts/run_i1_issue136_water_d1.py'
-      - 'docs/research/i1-issue136-d1-prereg-2026-10-16.en.md'
-      - '.github/workflows/i1-issue136-d1.yml'
+  # Archived model tests: manual only; canonical I1 has a separate gate.
   workflow_dispatch:
 
 permissions:

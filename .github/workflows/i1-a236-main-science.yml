@@ -1,14 +1,7 @@
 name: I1 A2.36 merged-main all models active science
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'scripts/run_i1_a236_merged_active.py'
-      - 'docs/research/i1-a236-main-integrated-active-prereg-2026-10-16.en.md'
-      - '.github/workflows/i1-a236-main-science.yml'
-      - 'tests/test_i1_a236_combined_m11_cold.py'
-      - 'tests/test_i1_a236_combined_m11_water.py'
+  # Archived model tests: manual only; canonical I1 has a separate gate.
   workflow_dispatch:
 
 permissions:

@@ -1,14 +1,7 @@
 name: I1 A2.37-R1 corrected D2 mixed-needs regression
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - '.github/workflows/i1-a237-r1-science.yml'
-      - 'src/i1_overlays/i1_d2_runtime.py'
-      - 'tests/test_i1_a237_d2_no_geography.py'
-      - 'scripts/run_i1_a237_mixed_needs.py'
-      - 'docs/research/i1-a237-fault-amendment-1-2026-10-16.en.md'
+  # Archived model tests: manual only; canonical I1 has a separate gate.
   workflow_dispatch:
 
 permissions:

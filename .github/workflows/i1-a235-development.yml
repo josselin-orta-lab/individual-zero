@@ -1,17 +1,7 @@
 name: I1 A2.35 experimental recall software gate
 
 on:
-  pull_request:
-    branches: [main, experiment/i1-isolated-model-fork-20261016]
-    paths:
-      - 'src/i1_overlays/i1_lived_recall.py'
-      - 'src/i1_overlays/i1_active_runtime.py'
-      - 'tests/test_i1_a235_lived_recall.py'
-      - 'tests/test_i1_a235_runtime_birth.py'
-      - 'tests/test_i1_a235_physical_witness.py'
-      - 'tests/test_i1_a235_m11_recall_contract.py'
-      - 'tests/test_i1_a235_m11_cold_recall.py'
-      - '.github/workflows/i1-a235-development.yml'
+  # Archived model tests: manual only; canonical I1 has a separate gate.
   workflow_dispatch:
 
 permissions:
