@@ -321,7 +321,9 @@ class LivedSixPassAlgorithm:
                     "context": (pos["x"], pos["y"]),
                     "success": succeeded,
                     "primitive": command["primitive"],
-                    "parameters": deepcopy(params),
+                    # The private records are never exported or mutated.
+                    # Only final compiled skills receive a detached copy.
+                    "parameters": params,
                     "observed_field": effect,
                 })
         result = []
@@ -396,7 +398,9 @@ class LivedSixPassAlgorithm:
         return result
 
     @staticmethod
-    def _merge_private_procedures(previous, newly_compiled, threshold):
+    def _merge_private_procedures(
+        previous, newly_compiled, threshold, *, already_detached=False,
+    ):
         """Accumulate private evidence across separately paid sleep cuts.
 
         Counts only unique autobiographical episodes. An existing skill can
@@ -408,6 +412,10 @@ class LivedSixPassAlgorithm:
         """
         if type(previous) is not list or type(newly_compiled) is not list:
             raise ValueError("private procedures must be typed lists")
+        if type(already_detached) is not bool:
+            raise ValueError("private procedure ownership mode must be explicit")
+        # Only the P-42 paid handler supplies an independently owned
+        # candidate; other callers preserve the original detached output.
         combined = {}
         if type(threshold) is not int or threshold < 1:
             raise ValueError("invalid private skill compilation threshold")
@@ -417,14 +425,18 @@ class LivedSixPassAlgorithm:
                     or row.get("state") not in states
                     or row["id"] in combined):
                 raise ValueError("invalid or duplicated committed private procedure")
-            combined[row["id"]] = deepcopy(row)
+            combined[row["id"]] = (
+                row if already_detached else deepcopy(row)
+            )
         for row in newly_compiled:
             if (type(row) is not dict or type(row.get("id")) is not str
                     or row.get("state") not in states):
                 raise ValueError("invalid newly compiled private procedure")
             old = combined.get(row["id"])
             if old is None:
-                combined[row["id"]] = deepcopy(row)
+                combined[row["id"]] = (
+                    row if already_detached else deepcopy(row)
+                )
                 continue
             immutable = (
                 "plan_signature", "primitive", "parameters", "observed_field",
@@ -466,7 +478,10 @@ class LivedSixPassAlgorithm:
                     or old["distinct_trial_count"] != len(old_trials)
                     or row["distinct_trial_count"] != len(new_trials)):
                 raise ValueError("invalid cumulative independent trial counts")
-            merged = deepcopy(old)
+            # The combined old row is already private, regardless of
+            # ownership mode. Do not clone it again before replacing
+            # the witness arrays; no outside caller aliases this row.
+            merged = old
             merged["source_episode_refs"] = sorted(old_episodes + new_episodes)
             merged["source_event_refs"] = sorted(old_events + new_events)
             merged["trial_episode_refs"] = sorted(old_trials + new_trials)
@@ -558,17 +573,35 @@ class LivedSixPassAlgorithm:
                 entry["lived_observation"] = observation
             state.setdefault("private_replay_observations",[]).append(entry)
         elif name=="rule_extraction":
-            all_rules={r["id"]:r for r in state.get("hypotheses",[])}
-            for rule_ref,item in self._extract_episode_rules(unit.episode_refs[0],events,cut):
-                prior=all_rules.get(rule_ref)
-                if prior is None:
-                    all_rules[rule_ref]=item
-                else:
-                    prior["source_episode_refs"]=sorted(
-                        set(prior["source_episode_refs"]+item["source_episode_refs"]))
-                    prior["source_event_refs"]=sorted(
-                        set(prior["source_event_refs"]+item["source_event_refs"]))
-            state["hypotheses"]=[all_rules[k] for k in sorted(all_rules)]
+            extracted = self._extract_episode_rules(
+                unit.episode_refs[0], events, cut,
+            )
+            existing = state.get("hypotheses", [])
+            if (not extracted and type(existing) is list
+                    and all(existing[i-1]["id"] < existing[i]["id"]
+                            for i in range(1, len(existing)))):
+                # No newly lived causal witness: preserve the already ordered
+                # private forms instead of rebuilding and sorting their
+                # complete historical rule index for an empty episode.
+                state["hypotheses"] = existing
+            else:
+                # Normalize exactly as before when a new observation exists
+                # or a malformed/legacy candidate needs id deduplication.
+                all_rules = {row["id"]: row for row in existing}
+                for rule_ref, item in extracted:
+                    prior = all_rules.get(rule_ref)
+                    if prior is None:
+                        all_rules[rule_ref] = item
+                    else:
+                        prior["source_episode_refs"] = sorted(
+                            set(prior["source_episode_refs"]
+                                + item["source_episode_refs"]))
+                        prior["source_event_refs"] = sorted(
+                            set(prior["source_event_refs"]
+                                + item["source_event_refs"]))
+                state["hypotheses"] = [
+                    all_rules[k] for k in sorted(all_rules)
+                ]
         elif name=="skill_compilation":
             # The per-episode scan is charged. Only the final one assembles
             # aggregates from independent, verified plan-execution reports.
@@ -582,6 +615,7 @@ class LivedSixPassAlgorithm:
                     state.get("procedural", []),
                     self._compile_from_proven_plans(cut),
                     self.policy.skill_success_threshold,
+                    already_detached=True,
                 )
                 state.pop("_private_procedural_scanned")
         elif name=="kappa_recalibration":

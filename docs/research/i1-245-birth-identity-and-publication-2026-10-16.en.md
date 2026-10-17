@@ -1026,3 +1026,41 @@ new belief, owner merger, post-mortem action or lived-state rewind occurs.
 **NON VALIDÉ:** static source inspection only. No tests, simulations,
 generator runs, CI or benchmarks were executed; runtime parity and measured
 speedup remain to be established.
+
+## I1 six-pass private compilation: reuse owned procedural witnesses (2026-10-17)
+
+Static source review of the I1-only six-pass semantic template identified
+redundant copying and sorting while learning from the **same lived evidence**.
+The per-observation trial aggregation previously deepcopied command
+`parameters` into a temporary `records` map, though those records are
+never changed, escaped or published. Only the final skill objects are
+installed in the private candidate. The ephemeral records now refer to the
+algorithm's already privately owned autobiographical parameters; final
+skill emission still deepcopies parameters for independent ownership.
+
+The last paid `skill_compilation` unit receives its own already detached
+candidate from `ConsolidationPassRunner`. The private procedural merge now
+takes an explicit `already_detached=True` for **that specific call**,
+avoiding full copies of all previously learned skill rows before merging
+new verified trials. The default merge mode remains independently owned
+for any other caller. In both paths, the `combined` old row is already
+independent; the second deepcopy at a matching skill was unnecessary.
+The published owner and authenticated SlowHistory checkpoint still receive
+their own copies before publication. Both success and failure witnesses,
+distinct-episode disjointness checks, unverified safety status, probability
+counts, temperamental agency and no-lived-state-rewind remain unchanged.
+
+The paid `rule_extraction` unit previously rebuilt a dictionary and
+fully sorted *every* historical hypothesis even when that episode yielded
+no new causal observation. When its existing hypotheses are already a
+strictly identity-sorted list and extraction is empty, the I1 algorithm
+retains that private list directly, assigning the same `hypotheses` key
+as before. If new witnesses exist, or prior hypotheses are not strictly
+sorted/unique, the original merge, deduplication, provenance updates and
+full deterministic normalization remain in force. This saves repeated
+O(H log H) reindexing for zero-rule episodes, using an O(H) order check
+instead. It does not invent evidence or waive causal checks.
+
+**NON VALIDÉ**: source inspection only. No code generation, test, CI,
+benchmark or simulated life was run. No numerical speedup or runtime
+behavioral parity is claimed. I0 is untouched and PR #246 remains draft.
