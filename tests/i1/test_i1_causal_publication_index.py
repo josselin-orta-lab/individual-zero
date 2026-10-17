@@ -1,6 +1,7 @@
 """Differential phase-5 agency publication duplicate checks, not scientific evidence."""
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import os
 import subprocess
 import sys
 import unittest
@@ -17,7 +18,7 @@ class CausalPublicationIndexTests(unittest.TestCase):
                 capture_output=True, text=True)
             self.assertEqual(build.returncode, 0, build.stderr)
             program = r"""
-import inspect, textwrap
+import inspect, textwrap, json, os, statistics, sys, time
 from types import SimpleNamespace as NS
 from i1.modules.causal_model import CausalModel
 
@@ -62,13 +63,49 @@ for prior, pending in cases:
         try: return "ok", fn(inp)
         except ValueError as e: return "error", str(e)
     assert attempt(old) == attempt(new), (prior, pending)
+if os.environ.get("I1_AGENCY_PUBLICATION_BENCH") == "1":
+    results = []
+    for existing, incoming in ((0, 0), (32, 1), (512, 8), (2048, 32), (8192, 64)):
+        prior = {f"old:{i:05d}": report(f"old:{i:05d}", f"ref:old:{i}", i)
+                 for i in range(existing)}
+        pending = [report(f"new:{i:05d}", f"ref:new:{i}", existing + i)
+                   for i in range(incoming)]
+        old_samples, new_samples = [], []
+        for repetition in range(7):
+            candidates = [(old, old_samples), (new, new_samples)]
+            if repetition % 2:
+                candidates.reverse()
+            for operation, samples in candidates:
+                item = NS(_agency_evidence=prior, _pending_agency_evidence=pending)
+                start_ns = time.perf_counter_ns()
+                observed = operation(item)
+                samples.append(time.perf_counter_ns() - start_ns)
+                assert len(observed) == existing + incoming
+        former_ns = statistics.median(old_samples)
+        current_ns = statistics.median(new_samples)
+        results.append({
+            "existing_reports": existing, "new_reports": incoming,
+            "old_median_us": round(former_ns/1000, 2),
+            "new_median_us": round(current_ns/1000, 2),
+            "speedup": round(former_ns/current_ns, 2) if current_ns else None,
+        })
+    print("I1_AGENCY_PUBLICATION_BENCH_JSON " + json.dumps({
+        "kind": "synthetic_publication_duplicate_check_only",
+        "repetitions": 7, "python": sys.version.split()[0],
+        "workloads": results,
+    }, sort_keys=True))
 print("I1_CAUSAL_PUBLICATION_DUPLICATES_EQUIVALENT")
 """
             result = subprocess.run(
                 [sys.executable, "-c", program],
-                env={"PYTHONPATH":str(output)}, capture_output=True, text=True)
+                env={"PYTHONPATH":str(output),
+                     "I1_AGENCY_PUBLICATION_BENCH": os.environ.get("I1_AGENCY_PUBLICATION_BENCH", "0")},
+                capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("I1_CAUSAL_PUBLICATION_DUPLICATES_EQUIVALENT", result.stdout)
+            if os.environ.get("I1_AGENCY_PUBLICATION_BENCH") == "1":
+                self.assertIn("I1_AGENCY_PUBLICATION_BENCH_JSON ", result.stdout)
+                print(result.stdout.split("I1_AGENCY_PUBLICATION_BENCH_JSON ", 1)[1].splitlines()[0], flush=True)
 
 
 if __name__ == "__main__":
