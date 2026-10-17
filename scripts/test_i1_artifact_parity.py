@@ -228,6 +228,31 @@ def _approved_agency_publication_duplicate_index(before: bytes, after: bytes) ->
             and original.replace(old, new, 1) == changed)
 
 
+def _reference_approved_numeric_index(before: bytes) -> bytes:
+    """Recreate the existing #260 exact numeric publication transformation."""
+    old = "        numeric = dict(self._numeric_witnesses)\n        for witness in sorted(\n            self._pending_numeric_witnesses, key=lambda row: row.identifier,\n        ):\n            witness.validate()\n            if (\n                witness.identifier in numeric\n                or any(\n                    prior.transition_event_ref == witness.transition_event_ref\n                    for prior in numeric.values()\n                )\n            ):\n                raise ValueError(\"duplicate published physical numeric witness\")\n            numeric[witness.identifier] = witness"
+    new = "        numeric = dict(self._numeric_witnesses)\n        # One transient index per publication. The identifier guard rejects\n        # overwrites, so every accepted physical reference stays present.\n        numeric_transition_refs = {\n            prior.transition_event_ref for prior in numeric.values()\n        }\n        for witness in sorted(\n            self._pending_numeric_witnesses, key=lambda row: row.identifier,\n        ):\n            witness.validate()\n            if (\n                witness.identifier in numeric\n                or witness.transition_event_ref in numeric_transition_refs\n            ):\n                raise ValueError(\"duplicate published physical numeric witness\")\n            numeric[witness.identifier] = witness\n            numeric_transition_refs.add(witness.transition_event_ref)"
+    text = before.decode("utf-8")
+    if text.count(old) != 1:
+        raise ValueError("numeric publication reference drift")
+    return text.replace(old, new, 1).encode("utf-8")
+
+
+def _approved_causal_intervention_min_index(before: bytes, after: bytes) -> bool:
+    """Constrain the new invariant-preserving two-block calculation move."""
+    old_one = "            if len(matching_contexts) < self.config.n2:\n                continue\n\n            if published_reports is None:"
+    new_one = "            if len(matching_contexts) < self.config.n2:\n                continue\n            # This provenance witness is constant for this numeric outcome.\n            # Compute it once, not once for each compatible P-47 report.\n            intervention_ref = min(trial.identifier for trial in active_trials)\n\n            if published_reports is None:"
+    old_two = "                    intervention_ref=min(\n                        trial.identifier for trial in active_trials\n                    ),"
+    new_two = "                    intervention_ref=intervention_ref,"
+    original, candidate = before.decode("utf-8"), after.decode("utf-8")
+    if any(original.count(v) != 1 for v in (old_one, old_two)):
+        return False
+    if any(candidate.count(v) != 1 for v in (new_one, new_two)):
+        return False
+    return (original.replace(old_one, new_one, 1)
+                    .replace(old_two, new_two, 1) == candidate)
+
+
 def _approved_numeric_publication_index(before: bytes, after: bytes) -> bool:
     """Allow exactly the transient numeric physical-reference index."""
     old = "        numeric = dict(self._numeric_witnesses)\n        for witness in sorted(\n            self._pending_numeric_witnesses, key=lambda row: row.identifier,\n        ):\n            witness.validate()\n            if (\n                witness.identifier in numeric\n                or any(\n                    prior.transition_event_ref == witness.transition_event_ref\n                    for prior in numeric.values()\n                )\n            ):\n                raise ValueError(\"duplicate published physical numeric witness\")\n            numeric[witness.identifier] = witness"
@@ -291,9 +316,11 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/causal_model.py"
-                    and _approved_numeric_publication_index(
-                        _reference_numeric_publication(
-                            _reference_agency_index((old_root / rel).read_bytes())
+                    and _approved_causal_intervention_min_index(
+                        _reference_approved_numeric_index(
+                            _reference_numeric_publication(
+                                _reference_agency_index((old_root / rel).read_bytes())
+                            )
                         ),
                         (new_root / rel).read_bytes()
                     ))
