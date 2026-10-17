@@ -408,7 +408,9 @@ def i1_private_consolidation_source(source: str) -> str:
     old_handler = "            advance = runner.advance_unit(algorithm.handle)\n"
     new_handler = (
         "            def canonical_paid_semantic_handler(candidate, unit, scoped, cut):\n"
-        "                updated = algorithm.handle(candidate, unit, scoped, cut)\n"
+        "                updated = (algorithm.handle_detached(candidate, unit, scoped, cut)\n"
+        "                           if type(self).__name__ == 'I1Runtime'\n"
+        "                           else algorithm.handle(candidate, unit, scoped, cut))\n"
         "                if (type(self).__name__ == 'I1Runtime'\n"
         "                        and unit.operation == 'index_maintenance'):\n"
         "                    from .i1_cognitive_publication import build_consolidated_owner_forms\n"
