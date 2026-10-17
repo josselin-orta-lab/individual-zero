@@ -869,3 +869,29 @@ mortality, physical history or I0 baseline.
 **NON VALIDÉ:** static inspection and guarded source edits only. No model
 generation, tests, CI runs, benchmark or simulation was executed. Quantitative
 gains and full runtime/behavioral parity remain unverified.
+
+## I1 Stage10 preflight owner creation without full-history birth clone (2026-10-17)
+
+During a scheduler-authorized consolidation publication, the coordinator
+constructs a **temporary, unpublished** `SlowHistory` instance before
+touching any live cognitive owner. This is necessary for fail-closed
+validation of the complete destination state, but its old constructor
+received the entire candidate history, which it validated and deepcopied
+even though `temp.restore_causal_state(staged_history)` immediately
+overwrote that constructor state after validating and deep-copying the
+same destination again.
+
+The generated I1lab coordinator now uses `birth_state={}` **only for this
+throwaway preflight constructor**. The unchanged `restore_causal_state`
+then verifies the complete intended `staged_history` including its
+version lineage, copies its current memory and lineage independently,
+and fails before any owner installation if that replacement is invalid.
+The real published owner is untouched until this preflight passes.
+No bypass of the full destination validation, no resurrection, and no
+live-owner rollback was introduced. The optimization eliminates one
+O(history-size) validation plus deepcopy on each publication preparation;
+actual performance gain remains unmeasured.
+
+**NON VALIDÉ:** source inspection and GitHub commit only, with no generated
+build, tests, benchmarks, CI or simulated lives, per request. I0 and
+the pinned original Lab sources remain unchanged.

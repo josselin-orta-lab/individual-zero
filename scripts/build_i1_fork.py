@@ -192,6 +192,19 @@ def i1_scoped_consolidation_evidence_source(source: str) -> str:
     return rewritten.replace(old_copy, "            projected[ref] = record\n")
 
 
+def i1_slow_history_preflight_no_full_birth_copy_source(source: str) -> str:
+    """Preflight staged history without cloning the candidate twice.
+
+    The temporary owner is never published. Its restore method still checks
+    the complete staged history and creates an independent owned copy.
+    """
+    before = "        # Validate h before applying ANY owner states.\n        temp = SlowHistory(\n            birth_version=prepared.source_version,\n            birth_state=prepared.candidate_history,\n        )\n        temp.restore_causal_state(staged_history)\n"
+    after = "        # Preflight exact staged state before touching any living owner.\n        # SlowHistory.restore_causal_state validates and detaches that state;\n        # the temporary constructor's birth payload is immediately discarded.\n        temp = SlowHistory(\n            birth_version=prepared.source_version,\n            birth_state={},\n        )\n        temp.restore_causal_state(staged_history)\n"
+    if source.count(before) != 1:
+        raise ValueError("unreviewed I1 SlowHistory preflight source")
+    return source.replace(before, after)
+
+
 def i1_publication_detached_candidate_source(source: str) -> str:
     """Avoid duplicate private-history materialization in generated I1 only.
 
@@ -1088,6 +1101,7 @@ def generate(output: Path) -> dict[str, object]:
                     and relative.as_posix() == "consolidation_publication.py"):
                 transformed = i1_committed_history_metadata_source(transformed)
                 transformed = i1_publication_detached_candidate_source(transformed)
+                transformed = i1_slow_history_preflight_no_full_birth_copy_source(transformed)
                 transformed = i1_no_live_publication_rollback_source(transformed)
                 transformed = i1_stage10_publication_bounded_count_source(transformed)
             if (output_package == "i1lab"
