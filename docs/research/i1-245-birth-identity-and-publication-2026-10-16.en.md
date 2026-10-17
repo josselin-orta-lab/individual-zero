@@ -561,3 +561,27 @@ No skip, no relaxed provenance, no new cognitive prior, and no changes to
 the original I0 or lab sources. **NON VALIDÉ:** source-only modification;
 tests, generator execution, benchmarks, CI and simulations were not run,
 and no runtime gain or behavioral equivalence is claimed.
+
+## I1 M11 verification: avoid defensive copies while rehashing (2026-10-17)
+
+Source review found that the protected journal event mapping deepcopied
+nested values on every read, including each read made by the full
+hash-chain verifier. Yet the journal already owns a private detached
+event dictionary captured during append. Generated I1lab now adds an
+internal encoder that hashes that owned dictionary directly, returning
+only immutable canonical bytes, not a mutable reference. All entries
+are still reserialized and SHA-256-verified on every integrity check.
+Public `JournalEntry.as_dict()` and `causal_event` remain detached.
+
+An O(N) seen-identifiers set was redundant: the one-to-one
+`_by_id[event_id] is entry` check, equal index cardinalities, and
+sequential per-occurrence index check already prove uniqueness.
+The generated verifier omits the duplicate set and checks that each
+owned event is still the expected private wrapper type.
+
+No journal records, hash algorithms, M11 custody rules, owner schemas,
+external observations, causal evidence or I0 source changed.
+
+**NON VALIDÉ:** no tests, generated code execution, benchmarks, CI or
+simulations were run. Only static inspection supports the change; no
+measured performance gain or proven runtime parity is claimed.

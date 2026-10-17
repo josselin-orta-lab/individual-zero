@@ -331,6 +331,33 @@ def i1_postcut_bounded_verification_source(source: str) -> str:
     return source
 
 
+def i1_journal_full_integrity_copy_source(source: str) -> str:
+    """Keep SHA-256 verification but avoid copying already-owned nested events.
+
+    This generator-only transformation leaves the public journal export and
+    all I0/Lab source snapshots unchanged.
+    """
+    changes = (
+        ("    def __len__(self) -> int:\n        return len(self.__contents)\n",
+         "    def __len__(self) -> int:\n        return len(self.__contents)\n\n    def _canonical_occurrence_bytes(self, event_id: str) -> bytes:\n        \"\"\"Hash owned causal payload without exposing internal mutable values.\"\"\"\n        return canonical_causal_bytes({\n            \"event_id\": event_id, \"causal_event\": self.__contents,\n        })\n"),
+        ("        seen_ids: set[str] = set()\n",
+         ""),
+        ("                or entry.event_id in seen_ids\n",
+         ""),
+        ("            seen_ids.add(entry.event_id)\n",
+         ""),
+        ("                or self._by_id.get(entry.event_id) is not entry\n",
+         "                or self._by_id.get(entry.event_id) is not entry\n                or type(entry.causal_event) is not _DetachedCausalEvent\n"),
+        ("            expected_hash = sha256_hex(\n                bytes.fromhex(previous_hash)\n                + canonical_causal_bytes(\n                    {\n                        \"event_id\": entry.event_id,\n                        \"causal_event\": entry.causal_event,\n                    }\n                )\n            )\n",
+         "            expected_hash = sha256_hex(\n                bytes.fromhex(previous_hash)\n                + entry.causal_event._canonical_occurrence_bytes(entry.event_id)\n            )\n"),
+    )
+    for before, after in changes:
+        if source.count(before) != 1:
+            raise ValueError("unreviewed I1 full-journal verification anchor")
+        source = source.replace(before, after)
+    return source
+
+
 def i1_m11_bounded_journal_source(source: str) -> str:
     """Avoid whole-journal tuple materialization in I1 M11 and cold restore.
 
@@ -842,6 +869,7 @@ def generate(output: Path) -> dict[str, object]:
             if (output_package == "i1lab"
                     and relative.as_posix() == "journal.py"):
                 transformed = i1_journal_bounded_view_source(transformed)
+                transformed = i1_journal_full_integrity_copy_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "sqlite_runtime_custody.py"):
                 transformed = i1_sqlite_journal_count_source(transformed)
