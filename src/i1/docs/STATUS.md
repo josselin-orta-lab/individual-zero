@@ -198,3 +198,19 @@ mémorisation strictement locale à l'appel, sans nouveau propriétaire,
 différentiels couvrent plusieurs témoins, contextes et bornes de
 réfutation. Validation Python 3.11/3.12 requise avant fusion;
 aucun GO scientifique n'en découle.
+
+## PR #265 : index transitoire des sources physiques causales (2026-10-18)
+
+Après #264, le traitement des observations `publish_causal_inference`
+balayait `observations.values()` pour chaque nouvel alias physique.
+La tranche #265 construit un index de première occurrence uniquement
+pour les lots de trois observations ou plus. Il est mis à jour après
+admission et reste privé à cette publication. Une collision d'identifiant
+désactive immédiatement le chemin indexé pour tout le reste du lot,
+préservant les remplacements du dictionnaire historique et les contrôles
+de contradiction. Les petits lots et lots vides conservent le scan.
+Le test exécute directement l'ancien et le nouveau bloc de publication
+sur des combinaisons exhaustives, incluant alias, conflits, collisions et
+crédits orphelins; benchmark CPU synthétique facultatif. Les garanties
+I0, M11 et causalité vécue restent intactes. La CI exacte est nécessaire
+avant fusion. Aucun GO scientifique n'est affirmé.
