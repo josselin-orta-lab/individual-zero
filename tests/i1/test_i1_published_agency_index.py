@@ -22,13 +22,12 @@ from i1.modules.causal_model import CausalModel, CausalModelConfig
 
 config = CausalModelConfig(version="index-test", n1=1, n2=1, n_sec=1, m_sec=1)
 source = inspect.getsource(CausalModel.established_prediction_corrections)
-new_a = '''        # Derived, read-only index of already published agency evidence.
-        # Rebuild on every query: no stale cache, no new causal owner, and
-        # preserve the original lexical evidence-ID ordering within keys.
-        published_by_action: dict[tuple[str, int, int], list[AgencyEvidence]] = {}
-        for report in self.published_agency_evidence():
-            key = (report.option_ref, report.sent_t_monde, report.observed_t_monde)
-            published_by_action.setdefault(key, []).append(report)
+new_a = '''        # Derived, read-only index built only when an eligible witnessed
+        # correction actually needs published evidence. No persistent cache
+        # or new causal owner; original lexical ordering is preserved.
+        published_by_action: dict[
+            tuple[str, int, int], list[AgencyEvidence]
+        ] | None = None
 
 '''
 old_b = '''            for report in self.published_agency_evidence():
@@ -39,7 +38,16 @@ old_b = '''            for report in self.published_agency_evidence():
                 ):
                     continue
                 compatible = any('''
-new_b = '''            for report in published_by_action.get(
+new_b = '''            if published_by_action is None:
+                published_by_action = {}
+                for report in self.published_agency_evidence():
+                    key = (
+                        report.option_ref, report.sent_t_monde,
+                        report.observed_t_monde,
+                    )
+                    published_by_action.setdefault(key, []).append(report)
+
+            for report in published_by_action.get(
                 (witness.option_ref, witness.sent_t_monde,
                  witness.observed_t_monde), ()
             ):
@@ -49,6 +57,14 @@ former = source.replace(new_a, "", 1).replace(new_b, old_b, 1)
 ns = dict(CausalModel.established_prediction_corrections.__globals__)
 exec("from __future__ import annotations\n" + textwrap.dedent(former), ns)
 baseline = ns["established_prediction_corrections"]
+
+# No numeric witness should require any agency projection or index.
+empty = CausalModel(config)
+empty._agency_evidence["noise"] = object()
+empty.published_agency_evidence = lambda: (_ for _ in ()).throw(
+    AssertionError("unused agency evidence eagerly accessed")
+)
+assert empty.established_prediction_corrections() == ()
 
 for noise in (0, 16, 128, 512):
     model = CausalModel(config)
