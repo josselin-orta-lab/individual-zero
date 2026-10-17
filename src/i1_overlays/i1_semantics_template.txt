@@ -162,10 +162,24 @@ class LivedSixPassAlgorithm:
             if not isinstance(unit.data, Mapping):
                 raise ValueError("replay work needs a typed agenda reference")
             event_ref = unit.data.get("event_ref")
-            witnessed = next(
-                (item for item in self._events[ref]
-                 if item["event_id"] == event_ref), None,
-            )
+            offset = unit.data.get("event_offset")
+            if offset is None:
+                # Preserve the original lookup for a caller without an
+                # explicit offset. Priced canonical agendas always have one.
+                witnessed = next(
+                    (item for item in self._events[ref]
+                     if item["event_id"] == event_ref), None,
+                )
+            else:
+                # The charged replay agenda stores the original within-episode
+                # offset. The frozen episode/event order was already verified
+                # against the autobiographical projections at construction.
+                if (type(offset) is not int
+                        or not 0 <= offset < len(self._events[ref])):
+                    raise ValueError("replay agenda event offset outside lived episode")
+                witnessed = self._events[ref][offset]
+                if witnessed["event_id"] != event_ref:
+                    raise ValueError("replay agenda offset mismatches lived event")
             return () if witnessed is None else (deepcopy(witnessed),)
         # Scanning, skill-compilation and kappa pass units only need their
         # checked episode identity. Their actual semantic work still happens
