@@ -227,6 +227,74 @@ def i1_committed_history_metadata_source(source: str) -> str:
     return source.replace(restore, amended)
 
 
+def i1_consolidation_digest_metadata_source(source: str) -> str:
+    """Keep the current private checkpoint digest in the I1 transaction owner.
+
+    The canonical candidate is an owned JSON tree. All its assignment sites
+    are enumerated here; no caller can acquire a mutable candidate alias.
+    The cache is derived metadata, not a new persisted/authoritative field.
+    """
+    if (source.count("self._candidate =") != 3
+            or source.count("restored._candidate =") != 1):
+        raise ValueError("unreviewed I1 candidate mutation sites")
+    changes = (
+        (
+            "        self._initial = _owned(history_candidate)\n"
+            "        self._candidate = _owned(history_candidate)\n",
+            "        self._initial = _owned(history_candidate)\n"
+            "        # Clone only the already validated private JSON tree.\n"
+            "        self._candidate = deepcopy(self._initial)\n"
+            "        self._candidate_digest_cached = _digest(self._initial)\n",
+        ),
+        (
+            '"batch_digest": self._batch_digest, "initial_digest": _digest(self._initial),',
+            '"batch_digest": self._batch_digest, "initial_digest": self._candidate_digest_cached,',
+        ),
+        (
+            "    def candidate_digest(self) -> str:\n"
+            "        return _digest(self._candidate)\n",
+            "    def candidate_digest(self) -> str:\n"
+            "        # Updated only at a validated candidate replacement.\n"
+            "        return self._candidate_digest_cached\n",
+        ),
+        (
+            "        self._candidate = deepcopy(\n"
+            "            self._checkpoints[-1].candidate if self._checkpoints else self._initial\n"
+            "        )\n"
+            "        self._status = \"suspended\"\n",
+            "        restored_candidate = deepcopy(\n"
+            "            self._checkpoints[-1].candidate if self._checkpoints else self._initial\n"
+            "        )\n"
+            "        restored_digest = _digest(restored_candidate)\n"
+            "        self._candidate = restored_candidate\n"
+            "        self._candidate_digest_cached = restored_digest\n"
+            "        self._status = \"suspended\"\n",
+        ),
+        (
+            "        digest = self._point_digest(name=name, candidate=candidate)\n"
+            "        self._checkpoints.append(PassCheckpoint(name, deepcopy(candidate), digest))\n"
+            "        self._candidate = candidate\n",
+            "        digest = self._point_digest(name=name, candidate=candidate)\n"
+            "        candidate_digest = _digest(candidate)\n"
+            "        self._checkpoints.append(PassCheckpoint(name, deepcopy(candidate), digest))\n"
+            "        self._candidate = candidate\n"
+            "        self._candidate_digest_cached = candidate_digest\n",
+        ),
+        (
+            "        restored._candidate = deepcopy(expected)\n"
+            "        restored._status = status\n",
+            "        restored._candidate = deepcopy(expected)\n"
+            "        restored._candidate_digest_cached = _digest(restored._candidate)\n"
+            "        restored._status = status\n",
+        ),
+    )
+    for before, after in changes:
+        if source.count(before) != 1:
+            raise ValueError("unreviewed I1 consolidation candidate digest anchor")
+        source = source.replace(before, after)
+    return source
+
+
 def i1_memory_recall_source(source: str) -> str:
     """Reuse visible competitive refs once per I1 episodic recall.
 
@@ -547,6 +615,9 @@ def generate(output: Path) -> dict[str, object]:
             if (output_package == "i1"
                     and relative.as_posix() == "modules/memory.py"):
                 transformed = i1_memory_recall_source(transformed)
+            if (output_package == "i1"
+                    and relative.as_posix() == "modules/consolidation_transaction.py"):
+                transformed = i1_consolidation_digest_metadata_source(transformed)
             if (output_package == "i1"
                     and relative.as_posix() == "modules/consolidation_semantics.py"):
                 # The source snapshot is immutable. I1-only cognitive changes

@@ -376,3 +376,31 @@ atomic publication boundary.
 or benchmarks were run in this pass, per the instruction to continue code
 optimization without testing. Runtime speedups, behavior parity and scientific
 GO cannot yet be asserted. The original I0 source was not changed.
+
+## I1 consolidation checkpoint digest metadata (2026-10-17)
+
+Static source inspection found that `ConsolidationTransaction.candidate_digest`
+rehashed the entire private SlowHistory candidate on every access. The pass
+runner checks this property at each charged unit, and the incremental replay
+agenda queries it while constructing a paid operation; the cost therefore
+grows with the history size even when the candidate is unchanged.
+
+Only the generated I1 `consolidation_transaction.py` now tracks an
+**unpublished, derived current-candidate digest**. It is computed from the
+owned initial JSON tree and updated upon a validated pass checkpoint, wake
+interruption, and authenticated restore. All candidate assignment sites are
+explicitly guarded by the generator. The current candidate remains detached
+from caller arguments and checkpoints, while export/restore schema, chained
+pass hashes, journal identity, M11 independent restoration verification and
+UC prices remain unchanged. Birth construction also avoids revalidating
+the same initial JSON history a second time before cloning the independent
+candidate tree.
+
+The cache is never the independent verifier of incoming state and is not a
+serialized causal assertion. This prevents per-unit repetition of a
+whole-history SHA-256 serialization; no time gain or functional parity can be
+claimed until execution.
+
+**NON VALIDÉ:** This is a static source optimization, not an executed
+experiment. No model generation, tests, CI runs, benchmarks or simulations
+were performed. I0 and the retained `src/i1` source snapshot are unchanged.
