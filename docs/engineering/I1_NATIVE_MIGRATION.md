@@ -41,3 +41,13 @@ La physique est copiée depuis la version isolée déjà produite précédemment
 La CI [#39032694945](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39032694945) a réussi sur Python 3.11 et 3.12 pour le commit `cbc3ce4cd1e4c607335a6c5a28281259bb312280`. Le renforcement ultérieur de l'assertion de provenance dispose de son propre commit et nécessite un contrôle sur ce dernier SHA avant toute fusion. **Aucune conclusion scientifique nouvelle n'est déduite de ce résultat logiciel.**
 
 **Restent à migrer** : transformations de journaux et du sélecteur d'épisodes, publication Stage10 et chaînes M11, puis retrait final du générateur de texte uniquement après vérifications de parité et des naissances/récupérations authentiques.
+
+## Phase suivante : journal causal et vues vécues natifs
+
+Les sources `src/i1/runtime/journal.py` et `src/i1/runtime/journal_views.py` sont désormais détenues par I1 et copiées directement sous `i1lab/` pendant la construction. Trois fonctions de remplacement textuel ont été retirées du générateur : `i1_journal_bounded_view_source`, `i1_journal_full_integrity_copy_source` et `i1_scoped_autobiographical_view_source`.
+
+Le journal conserve la vérification complète des SHA-256 et introduit nativement `entry_count`, `entries_since` et `iter_entries_reversed`; la vue autobiographique peut filtrer les événements sélectionnés tout en vérifiant chaque engagement de source. Les importations I0/Lab ont été réécrites uniquement dans ces copies I1, sans modifier les références d'origine. La naissance, les propriétaires et le format de persistance n'ont pas été modifiés.
+
+La CI [#39033959465](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39033959465) a réussi en Python 3.11 et 3.12 sur `cf8ad3cc`. Le test de provenance du générateur a ensuite été renforcé ; **la réussite du SHA suivant doit être vérifiée indépendamment**. La couverture reste logicielle : il faudra encore des essais de corruption adversariale et de publication non vide à horizon long avant d'annoncer une équivalence complète scientifique et opérationnelle.
+
+La prochaine famille de sources à migrer concerne `consolidation_lived_evidence`, `consolidation_postcut_journal`, les propriétaires Stage10 et la garde M11. Les migrations sensibles ne seront fusionnées qu'après confirmation de la parité et des conditions de refus M11.
