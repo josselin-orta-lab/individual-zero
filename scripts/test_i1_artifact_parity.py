@@ -240,6 +240,25 @@ def _reference_causal_minimum(before: bytes) -> bytes:
     return text.replace(old_one, new_one, 1).replace(old_two, new_two, 1).encode("utf-8")
 
 
+def _approved_hydration_control_lookup(before: bytes, after: bytes) -> bool:
+    """Only permit the context-keyed, order-preserving hydration control lookup."""
+    old = "        for effect in treated:\n            for baseline in controls:\n                if (\n                    effect.observation_ref == baseline.observation_ref\n                    or effect.observed_step == baseline.observed_step\n                    or effect.controlled_variables != baseline.controlled_variables\n                    or effect.observation_context != baseline.observation_context\n                ):\n                    continue"
+    new = "        # Per-review read-only grouping avoids scanning incompatible\n        # controls for every treated event, without changing lexical order.\n        controls_by_context: dict[\n            tuple[str, tuple[tuple[str, str], ...]], list[CausalObservation]\n        ] = {}\n        for baseline in controls:\n            key = (baseline.observation_context, baseline.controlled_variables)\n            controls_by_context.setdefault(key, []).append(baseline)\n        for effect in treated:\n            for baseline in controls_by_context.get(\n                (effect.observation_context, effect.controlled_variables), ()\n            ):\n                if (\n                    effect.observation_ref == baseline.observation_ref\n                    or effect.observed_step == baseline.observed_step\n                ):\n                    continue"
+    original, candidate = before.decode("utf-8"), after.decode("utf-8")
+    return (original.count(old) == 1 and candidate.count(new) == 1
+            and original.replace(old, new, 1) == candidate)
+
+
+def _reference_food_control_sort(before: bytes) -> bytes:
+    """Reconstruct the approved #262 sorted food-controls transformation."""
+    old = "        for present in sorted(exposed, key=lambda row: row.identifier):\n            for absent in sorted(controls, key=lambda row: row.identifier):"
+    new = "        # The sorted controls are invariant across all exposed observations.\n        # Sorting once preserves the exact first admissible pair and ranking.\n        sorted_controls = sorted(controls, key=lambda row: row.identifier)\n        for present in sorted(exposed, key=lambda row: row.identifier):\n            for absent in sorted_controls:"
+    original = before.decode("utf-8")
+    if original.count(old) != 1:
+        raise ValueError("food controls reference drift")
+    return original.replace(old, new, 1).encode("utf-8")
+
+
 def _approved_food_review_control_sort(before: bytes, after: bytes) -> bool:
     """Only hoist an invariant food-control sort out of the exposed loop."""
     old = "        for present in sorted(exposed, key=lambda row: row.identifier):\n            for absent in sorted(controls, key=lambda row: row.identifier):"
@@ -337,13 +356,15 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/causal_model.py"
-                    and _approved_food_review_control_sort(
-                        _reference_causal_minimum(
+                    and _approved_hydration_control_lookup(
+                        _reference_food_control_sort(
+                            _reference_causal_minimum(
                             _reference_approved_numeric_index(
                                 _reference_numeric_publication(
                                     _reference_agency_index((old_root / rel).read_bytes())
                                 )
                             )
+                        )
                         ),
                         (new_root / rel).read_bytes()
                     ))

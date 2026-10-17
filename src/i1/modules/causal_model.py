@@ -1873,13 +1873,21 @@ class CausalModel:
              and not value.effect_present),
             key=lambda value: value.identifier,
         )
+        # Per-review read-only grouping avoids scanning incompatible
+        # controls for every treated event, without changing lexical order.
+        controls_by_context: dict[
+            tuple[str, tuple[tuple[str, str], ...]], list[CausalObservation]
+        ] = {}
+        for baseline in controls:
+            key = (baseline.observation_context, baseline.controlled_variables)
+            controls_by_context.setdefault(key, []).append(baseline)
         for effect in treated:
-            for baseline in controls:
+            for baseline in controls_by_context.get(
+                (effect.observation_context, effect.controlled_variables), ()
+            ):
                 if (
                     effect.observation_ref == baseline.observation_ref
                     or effect.observed_step == baseline.observed_step
-                    or effect.controlled_variables != baseline.controlled_variables
-                    or effect.observation_context != baseline.observation_context
                 ):
                     continue
                 review = CausalHypothesisReview(

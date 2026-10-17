@@ -166,3 +166,14 @@ observé ou la preuve physique. La parité exacte est prolongée à partir
 des transformations approuvées #258–#261. L'essai exhaustif de petites
 séquences compare les mêmes résultats des deux algorithmes. La CI du
 commit précis reste nécessaire avant fusion ; aucun GO scientifique.
+
+## PR #263 : recherche des contrôles d'hydratation (2026-10-18)
+
+Le parcours de tous les contrôles déjà triés pour chaque exposition
+hydrique est remplacé par un index temporaire par contexte observé et
+variables de contrôle. L'index préserve strictement l'ordre d'insertion
+des témoins triés et ne filtre que les comparaisons qui auraient déjà été
+éliminées. Le premier couple admissible, les références physiques et les
+gardes de causalité restent inchangés. Les tests différentiels couvrent
+de petites séquences exhaustives; contrôle exact du code généré, CI 3.11/3.12,
+M11 et I0 restent nécessaires avant fusion. Pas de GO scientifique.
