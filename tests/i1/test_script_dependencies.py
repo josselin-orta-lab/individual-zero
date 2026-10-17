@@ -1,5 +1,6 @@
 """The historical script dependency scanner is non-executing and cautious."""
 import json
+from hashlib import sha1
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import sys
@@ -18,7 +19,7 @@ def fixture(root):
         "research_or_legacy_review": ["scripts/historical.py"],
     }))
     (root / "config/script-custody.json").write_text(json.dumps({
-        "schema": "individual-zero-script-custody/v1", "reviewed": {},
+        "schema": "individual-zero-script-custody/v2", "reviewed": {},
     }))
     (root / "scripts/active.py").write_text("from pathlib import Path\n")
     (root / "scripts/historical.py").write_text(
@@ -62,6 +63,39 @@ class ScriptDependencyScanTests(unittest.TestCase):
             self.assertEqual(report["status"], "FAIL")
             self.assertTrue(any("import evidence" in x for x in report["errors"]))
 
+
+    def test_attestation_requires_exact_source_blob_and_import_line(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            fixture(root)
+            script = root / "scripts/historical.py"
+            content = script.read_bytes()
+            digest = sha1(
+                b"blob " + str(len(content)).encode("ascii") +
+                bytes([0]) + content
+            ).hexdigest()
+            manifest_path = root / "config/script-custody.json"
+            manifest = json.loads(manifest_path.read_text())
+            claim = {
+                "context": "archived_i0_lab_compatibility",
+                "verified_import": "lab.journal",
+                "verified_line": 1,
+                "verified_git_blob_sha1": digest,
+                "scientific_oracle": False,
+            }
+            manifest["reviewed"]["scripts/historical.py"] = claim
+            manifest_path.write_text(json.dumps(manifest))
+            self.assertEqual(analyze(root)["status"], "PASS_WITH_REVIEW")
+            # Even if the old import still exists, changed bytes void review.
+            script.write_text(script.read_text() + "# changed after review\n")
+            changed = analyze(root)
+            self.assertEqual(changed["status"], "FAIL")
+            self.assertTrue(any("review import evidence" in e
+                                for e in changed["errors"]))
+            script.write_bytes(content)
+            claim["verified_line"] = 2
+            manifest_path.write_text(json.dumps(manifest))
+            self.assertEqual(analyze(root)["status"], "FAIL")
 
     def test_literal_subprocess_execution_of_unreviewed_script_is_rejected(self):
         with TemporaryDirectory() as temp:

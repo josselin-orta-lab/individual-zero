@@ -9,14 +9,14 @@ from __future__ import annotations
 import argparse
 import ast
 from collections import Counter
-from hashlib import sha256
+from hashlib import sha1, sha256
 import json
 from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 SCOPE_ROOTS = frozenset({"i0", "i1", "i1lab", "lab"})
-SCHEMA = "individual-zero-script-custody/v1"
+SCHEMA = "individual-zero-script-custody/v2"
 
 
 
@@ -127,6 +127,7 @@ def _static_execution_and_file_evidence(source: ast.AST,
 def _inspect_script(path: Path, modules: set[str]) -> dict:
     raw = path.read_bytes()
     imports, dependencies, evidence, uncertainties = set(), set(), [], []
+    direct_import_evidence = []
     process_calls, launched_scripts, path_literals = [], [], []
     parse_error = None
     try:
@@ -159,6 +160,7 @@ def _inspect_script(path: Path, modules: set[str]) -> dict:
                 if not module:
                     continue
                 imports.add(module)
+                direct_import_evidence.append({"module": module, "line": node.lineno})
                 parts = module.split(".")
                 if parts[0] in SCOPE_ROOTS:
                     evidence.append({"module": module, "line": node.lineno,
@@ -169,7 +171,13 @@ def _inspect_script(path: Path, modules: set[str]) -> dict:
                     dependencies.add("scripts/" + local + ".py")
     return {
         "source_sha256": sha256(raw).hexdigest(),
+        "source_git_blob_sha1": sha1(
+            b"blob " + str(len(raw)).encode("ascii") + bytes([0]) + raw
+        ).hexdigest(),
         "imports": sorted(imports),
+        "direct_import_evidence": sorted(
+            direct_import_evidence, key=lambda x: (x["line"], x["module"])
+        ),
         "script_dependencies": sorted(dependencies),
         "subprocess_calls": process_calls,
         "resolved_subprocess_script_dependencies": launched_scripts,
@@ -256,6 +264,11 @@ def analyze(root: Path = ROOT) -> dict:
                 or claim.get("context") not in {"archived_i0_lab_compatibility",
                                                  "historical_i1_experiment_review"}
                 or claim.get("verified_import") not in scripts[path]["imports"]
+                or type(claim.get("verified_line")) is not int
+                or {"module": claim.get("verified_import"),
+                    "line": claim.get("verified_line")}
+                   not in scripts[path]["direct_import_evidence"]
+                or claim.get("verified_git_blob_sha1") != scripts[path]["source_git_blob_sha1"]
                 or claim.get("scientific_oracle") is not False):
             errors.append(path + ": review import evidence not verified")
         else:
@@ -298,7 +311,9 @@ def markdown(report: dict) -> str:
         if "reviewed_custody" in item:
             claim = item["reviewed_custody"]
             rows.append("- " + path + ": " + claim["context"] +
-                        "; imported " + claim["verified_import"])
+                        "; imported " + claim["verified_import"] +
+                        " at line " + str(claim["verified_line"]) +
+                        "; Git blob " + claim["verified_git_blob_sha1"][:12])
     rows.extend(["", "Subprocess calls observed: " + str(report["subprocess_calls_observed"]),
                  "Resolved literal child-script references: " + str(report["literal_child_scripts_observed"]),
                  "", "## Limitations", "",

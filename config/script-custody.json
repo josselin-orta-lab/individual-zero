@@ -1,36 +1,46 @@
 {
-  "schema": "individual-zero-script-custody/v1",
-  "notes": "The two source imports were inspected directly. Pending reviews are not active I1 science or an authorization to execute.",
+  "schema": "individual-zero-script-custody/v2",
+  "notes": "Each human-reviewed association is pinned to exact Git blob bytes and a directly observed import line. Attribution remains historical/diagnostic, not scientific validity.",
   "reviewed": {
     "scripts/audit_i0_sqlite.py": {
       "context": "archived_i0_lab_compatibility",
       "verified_import": "lab.sqlite_life_store",
       "scientific_oracle": false,
-      "comment": "Historical Lab SQLite dependency; investigate compatibility only."
+      "comment": "Historical Lab SQLite dependency; investigate compatibility only.",
+      "verified_git_blob_sha1": "a16914844028e86c33caa9102b1c6eff20a569dc",
+      "verified_line": 12
     },
     "scripts/verify_i0_journal.py": {
       "context": "archived_i0_lab_compatibility",
       "verified_import": "lab.independent_journal_audit",
       "scientific_oracle": false,
-      "comment": "Historical Lab journal dependency; not a current natural-I1 oracle."
+      "comment": "Historical Lab journal dependency; not a current natural-I1 oracle.",
+      "verified_git_blob_sha1": "1ecf1d4b3678ddc3f31297d5e99d745324e88e8f",
+      "verified_line": 21
     },
     "scripts/i1_a238_model.py": {
       "context": "historical_i1_experiment_review",
       "verified_import": "i1_a238_fixtures",
       "scientific_oracle": false,
-      "comment": "Direct historical A2.38 fixture import. This is not validated as an I1 natural behavior reference."
+      "comment": "Direct historical A2.38 fixture import. This is not validated as an I1 natural behavior reference.",
+      "verified_git_blob_sha1": "96a62e2958179b102c3a37bfa67ecf535cabd4ce",
+      "verified_line": 7
     },
     "scripts/run_i1_a235b_natural_competition.py": {
       "context": "historical_i1_experiment_review",
       "verified_import": "i1.experimental.stage6_visible_delta_shadow",
       "scientific_oracle": false,
-      "comment": "Direct experimental shadow import; no normative scientific authority for current I1."
+      "comment": "Direct experimental shadow import; no normative scientific authority for current I1.",
+      "verified_git_blob_sha1": "ad16477c7147004258afbde9e78515fb2ad8a1e3",
+      "verified_line": 29
     },
     "scripts/diagnose_i1_issue229.py": {
       "context": "historical_i1_experiment_review",
       "verified_import": "i1_a238_fixtures",
       "scientific_oracle": false,
-      "comment": "Uses historical A2.38 fixtures for issue investigation, not a natural I1 oracle."
+      "comment": "Uses historical A2.38 fixtures for issue investigation, not a natural I1 oracle.",
+      "verified_git_blob_sha1": "6e1ce289b41657e8cd417a592b529a798538116e",
+      "verified_line": 17
     }
   }
 }
