@@ -1,0 +1,18 @@
+{
+  "schema": "individual-zero-script-custody/v1",
+  "notes": "The two source imports were inspected directly. Pending reviews are not active I1 science or an authorization to execute.",
+  "reviewed": {
+    "scripts/audit_i0_sqlite.py": {
+      "context": "archived_i0_lab_compatibility",
+      "verified_import": "lab.sqlite_life_store",
+      "scientific_oracle": false,
+      "comment": "Historical Lab SQLite dependency; investigate compatibility only."
+    },
+    "scripts/verify_i0_journal.py": {
+      "context": "archived_i0_lab_compatibility",
+      "verified_import": "lab.independent_journal_audit",
+      "scientific_oracle": false,
+      "comment": "Historical Lab journal dependency; not a current natural-I1 oracle."
+    }
+  }
+}
