@@ -192,6 +192,54 @@ def i1_scoped_consolidation_evidence_source(source: str) -> str:
     return rewritten.replace(old_copy, "            projected[ref] = record\n")
 
 
+def i1_stage10_canonical_baseline_source(source: str) -> str:
+    """Hold byte-exact owner baselines rather than live-state rollback copies.
+
+    Applied only to the generated I1lab Stage10 coordinator, AFTER the
+    no-live-rollback transform removes all exception-path old-state restores.
+    Original owner snapshots still exist locally for detached preparation;
+    the retained cross-boundary references are exact canonical bytes.
+    """
+    changes = (
+        (
+            "    source_history_state: object\n    baseline_owner_states: Mapping[str, object]\n",
+            "    source_history_canonical: bytes\n    baseline_owner_canonical: Mapping[str, bytes]\n",
+        ),
+        (
+            "        baseline = {\n            name: _copy_causal(owner.export_causal_state())\n            for name, owner in sorted(self.owners.items())\n        }\n",
+            "        # The snapshots are needed only during rebase. Retain canonical\n        # bytes for precise pre-publication equality, not rollback copies.\n        baseline = {}\n        baseline_canonical = {}\n        for name, owner in sorted(self.owners.items()):\n            exported = owner.export_causal_state()\n            baseline_canonical[name] = canonical_causal_bytes(exported)\n            baseline[name] = deepcopy(exported)\n",
+        ),
+        (
+            "            if canonical_causal_bytes(owner.export_causal_state()) != canonical_causal_bytes(baseline[name]):\n",
+            "            if (canonical_causal_bytes(owner.export_causal_state())\n                    != baseline_canonical[name]):\n",
+        ),
+        (
+            "        previous_history = self.history.export_causal_state()\n",
+            "        source_history_canonical = canonical_causal_bytes(\n            self.history.export_causal_state()\n        )\n",
+        ),
+        (
+            "            source_history_state=previous_history,\n            baseline_owner_states=baseline,\n",
+            "            source_history_canonical=source_history_canonical,\n            baseline_owner_canonical=baseline_canonical,\n",
+        ),
+        (
+            "        if canonical_causal_bytes(before_history) != canonical_causal_bytes(prepared.source_history_state):\n",
+            "        if canonical_causal_bytes(before_history) != prepared.source_history_canonical:\n",
+        ),
+        (
+            "            if (canonical_causal_bytes(owner.export_causal_state())\n                    != canonical_causal_bytes(prepared.baseline_owner_states[name])):\n",
+            "            if (canonical_causal_bytes(owner.export_causal_state())\n                    != prepared.baseline_owner_canonical[name]):\n",
+        ),
+    )
+    for before, after in changes:
+        if source.count(before) != 1:
+            raise ValueError("unreviewed I1 Stage10 canonical baseline anchor")
+        source = source.replace(before, after)
+    if ("prepared.baseline_owner_states" in source
+            or "prepared.source_history_state" in source):
+        raise ValueError("unmigrated I1 Stage10 rollback snapshot references")
+    return source
+
+
 def i1_slow_history_preflight_no_full_birth_copy_source(source: str) -> str:
     """Preflight staged history without cloning the candidate twice.
 
@@ -1104,6 +1152,7 @@ def generate(output: Path) -> dict[str, object]:
                 transformed = i1_slow_history_preflight_no_full_birth_copy_source(transformed)
                 transformed = i1_no_live_publication_rollback_source(transformed)
                 transformed = i1_stage10_publication_bounded_count_source(transformed)
+                transformed = i1_stage10_canonical_baseline_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "stage4_runtime.py"):
                 transformed = i1_canonical_active_value_source(transformed)

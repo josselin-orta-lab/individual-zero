@@ -922,3 +922,36 @@ checks remain intact.
 **NON VALIDÉ:** static source inspection only. No tests, generated build,
 CI, simulations or benchmarks were executed, and performance/behavior
 parity has not been measured.
+
+## I1 Stage10: exact canonical baselines instead of retained owner rollback trees (2026-10-17)
+
+A source inspection of `Stage10PublicationCoordinator.prepare()` and
+`publish()` found a memory retention issue. Four full detached cognitive
+owner states and a full `SlowHistory` snapshot were retained in
+`PreparedConsolidationPublication` after preparation, even though the
+mortal I1 no longer permits restoring those prior living states.
+The only remaining post-preparation consumers compare them with current
+published owners to reject intervening mutations.
+
+The I1-generated coordinator now retains the **complete canonical byte
+representations** of those five baselines instead of separate nested
+state trees. At preparation, it canonically validates each exported
+owner once, stores those original exact bytes, and makes the *same
+independent deep copy* needed for each private rebaser. After each
+rebaser, and again immediately before publication, it re-exports the
+live owner and compares freshly canonicalized bytes with the retained
+baseline bytes. `SlowHistory` is also re-exported and compared byte for
+byte at the final publication boundary. These are **exact canonical
+byte equality checks, not SHA collisions or cached cross-step trust**.
+
+Four separately detached rebaser inputs, full committed evidence
+validation, P-42 charging, journal cut/head checks, the independent
+SlowHistory preflight, final prepared-owner copies, live owner installation,
+M11 post-step attestation and irreversible failure semantics remain
+unchanged. The original I0/Lab source stays untouched. This change
+removes retention of the old cognitive state trees between preparation
+and publication, not the checks themselves.
+
+**NON VALIDÉ:** source inspection only. No generator run, tests, CI,
+benchmarks or simulations were executed. Peak-memory reduction and
+behavioral parity remain to be verified independently.
