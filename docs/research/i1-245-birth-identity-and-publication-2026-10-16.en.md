@@ -1290,3 +1290,44 @@ No generator, tests, CI, benchmark or simulated lives were run.
 The expected reduction in interpreter-level operations is structural,
 not a measured performance claim, and behavioral equivalence remains
 to be verified in a permitted validation campaign.
+
+## I1 Stage11: direct first-person geography lookups instead of whole exported ledgers (2026-10-17)
+
+Static source review found repeated O(V log V) work to answer bounded
+first-person membership questions, where V is the number of physically
+registered sites. The generated i1lab Stage11 `_on_open_step_capture`
+formerly serialized and sorted the entire geographic owner state,
+allocated an additional set of visited coordinate pairs, and only then
+checked whether the visit ledger had reached capacity. In I1 the
+authoritative visit record is already the private `GeographicExploration`
+dictionary keyed by coordinates. The coordinator now checks capacity
+**first**, then calls `has_recorded_site((x,y))` only when full.
+
+Similarly, `Exploration.geographic_transit_motivation` previously
+materialized the full exported visit ledger to reject an objective that
+had meanwhile been visited. It now asks the same exact private dictionary
+for membership. The original recheck and 'already visited' refusal are
+retained.
+
+After a paid local survey, Stage11 previously sorted **all** known
+surveys once to inspect the old observation and again to find the
+current one. The I1-only generated code now uses
+`observed_survey_at((x,y))`, keyed by the actually perceived coordinates.
+If a newly recorded survey is inexplicably missing, it fails closed.
+Both public getters validate the type of their query coordinates; they
+never insert observations, expose an unknown cell, or read the world
+layout. The original sorted `surveys` property and complete
+`export_causal_state` API remain unchanged for full custody snapshots.
+
+Physical visit accounting, capacity refusals, funded Phase-1 exploration,
+fresh-vs-revised survey distinction, frozen S_t access, action authorization,
+mortality and immutable M11 committed generations are unchanged by
+design. The two private helper methods exist only in the I1 geography
+module, and generated Stage11 is transformed by exact guarded anchors;
+I0 and original Lab sources remain untouched.
+
+**NON VALIDÉ:** source inspection and Git commit only. No model
+generation, tests, CI runs, simulations or benchmarks were executed.
+The asymptotic avoidance of full serialization for these direct
+lookups is structurally evident, but actual speedups and behavioral
+parity require future permitted validation.

@@ -988,6 +988,34 @@ def i1_m11_active_publication_custody_source(source: str) -> str:
     )
 
 
+def i1_stage11_owned_geography_lookup_source(source: str) -> str:
+    """Avoid full ledger/survey materialization for first-person lookups.
+
+    Exact generated i1lab Stage11 source only; I0 and Lab originals
+    preserve their source contracts. Physical capture and survey charging
+    still precede registration, and all cold-export integrity remains.
+    """
+    changes = (
+        (
+            "        over_capacity = (\n            (capture.x, capture.y) not in {\n                tuple(site[:2])\n                for site in geo.export_causal_state()[\"visits\"]\n            }\n            and geo.distinct_sites >= geo.config.max_distinct_sites\n        )\n",
+            "        # The owned visit dictionary answers this question directly.\n        # Test capacity first, avoiding a lookup until the bound is reached.\n        over_capacity = (\n            geo.distinct_sites >= geo.config.max_distinct_sites\n            and not geo.has_recorded_site((capture.x, capture.y))\n        )\n",
+        ),
+        (
+            "                earlier_survey = (\n                    next((q for q in geo.surveys\n                          if q.position == (capture.x, capture.y)), None)\n                    if geo.config.refresh_surveys else None\n                )\n",
+            "                earlier_survey = (\n                    geo.observed_survey_at((capture.x, capture.y))\n                    if geo.config.refresh_surveys else None\n                )\n",
+        ),
+        (
+            "                    current_survey = next(\n                        q for q in geo.surveys\n                        if q.position == (capture.x, capture.y)\n                    )\n",
+            "                    current_survey = geo.observed_survey_at(\n                        (capture.x, capture.y)\n                    )\n                    if current_survey is None:\n                        raise LookupError(\"recorded current survey is unavailable\")\n",
+        ),
+    )
+    for before, after in changes:
+        if source.count(before) != 1:
+            raise ValueError("unreviewed I1 Stage11 geographic lookup anchor")
+        source = source.replace(before, after)
+    return source
+
+
 def i1_waking_pending_source(source: str) -> str:
     """Avoid cloning the entire h on every awake step in natural I1."""
     old = (
@@ -1223,6 +1251,9 @@ def generate(output: Path) -> dict[str, object]:
             # Only i1_natural_runtime.I1Runtime installs the natural sleep
             # policy. Do not rewrite the common Stage11Sleep ancestor, which
             # would silently change historical A2.38/A2.39 ablation births.
+            if (output_package == "i1lab"
+                    and relative.as_posix() == "stage11_runtime.py"):
+                transformed = i1_stage11_owned_geography_lookup_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "stage10_runtime.py"):
                 transformed = i1_private_consolidation_source(transformed)

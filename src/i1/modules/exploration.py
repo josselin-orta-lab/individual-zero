@@ -123,9 +123,7 @@ class Exploration:
             return IntrinsicAssessment(
                 "unavailable", None, "not_a_funded_observed_frontier_route",
             )
-        if target.observed_frontier in {
-            tuple(v[:2]) for v in geo.export_causal_state()["visits"]
-        }:
+        if geo.has_recorded_site(target.observed_frontier):
             return IntrinsicAssessment(
                 "unavailable", None, "route_objective_already_visited",
             )

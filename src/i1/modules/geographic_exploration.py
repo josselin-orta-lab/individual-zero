@@ -92,6 +92,17 @@ class GeographicExploration:
     def distinct_sites(self) -> int:
         return len(self._visits)
 
+    def has_recorded_site(self, position: tuple[int, int]) -> bool:
+        """Read the individual's own observed visit ledger in O(1).
+
+        A check here neither inspects terrain nor creates a visit. The same
+        private dictionary remains the authoritative source for observations.
+        """
+        if (type(position) is not tuple or len(position) != 2
+                or any(type(v) is not int for v in position)):
+            raise ValueError("observed geographic coordinates must be integers")
+        return position in self._visits
+
     @property
     def visit_count(self) -> int:
         return sum(self._visits.values())
@@ -135,6 +146,15 @@ class GeographicExploration:
     @property
     def surveys(self) -> tuple[ObservedSurvey, ...]:
         return tuple(self._surveys[key] for key in sorted(self._surveys))
+
+    def observed_survey_at(
+        self, position: tuple[int, int],
+    ) -> ObservedSurvey | None:
+        """Read a witnessed local survey without sorting every known survey."""
+        if (type(position) is not tuple or len(position) != 2
+                or any(type(v) is not int for v in position)):
+            raise ValueError("survey coordinates must be real observations")
+        return self._surveys.get(position)
 
     def record_survey(self, capture) -> bool:
         """Only an accepted Exploration observation may store local topology.
