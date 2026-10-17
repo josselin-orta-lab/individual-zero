@@ -511,8 +511,8 @@ def i1_private_consolidation_source(source: str) -> str:
     )
     new = (
         '        canonical = type(self).__name__ == "I1Runtime"\n'
-        '        if ((candidate.get("forms") != self.slow_history.read_committed()["forms"]\n'
-        '             and not canonical)\n'
+        '        if ((not canonical and candidate.get("forms")\n'
+        '             != self.slow_history.read_committed()["forms"])\n'
         '                or (canonical and set(candidate.get("forms", {}))\n'
         '                    != set(Stage10PublicationCoordinator.REQUIRED))):\n'
     )
