@@ -165,6 +165,17 @@ def _reference_autobio_fastpath(before: bytes) -> bytes:
     return from_source.encode("utf-8")
 
 
+def _approved_stage2_operator_closure(before: bytes, after: bytes) -> bool:
+    """Approve only two exact operator-side full-journal copy removals."""
+    source, changed = before.decode("utf-8"), after.decode("utf-8")
+    pairs = [["        entries = self.journal.entries\n        if not entries:\n            raise RuntimeError(\"no journaled closure\")\n        closure = entries[-1]","        # Operator-only read: inspect the last immutable occurrence without\n        # copying the entire technical journal at every closed world step.\n        closure = next(self.journal.iter_entries_reversed(), None)\n        if closure is None:\n            raise RuntimeError(\"no journaled closure\")"],["            \"journal_event_count\": len(entries),","            \"journal_event_count\": self.journal.entry_count,"]]
+    for old, new in pairs:
+        if source.count(old) != 1 or changed.count(new) != 1:
+            return False
+        source = source.replace(old, new, 1)
+    return source == changed
+
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -193,6 +204,10 @@ def verify(reference_root: Path) -> None:
                     ))
                 or (rel == "i1/modules/memory.py"
                     and _approved_memory_overlap(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
+                or (rel == "i1lab/stage2_runtime.py"
+                    and _approved_stage2_operator_closure(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1lab/stage9_runtime.py"
