@@ -176,6 +176,29 @@ def _approved_stage2_operator_closure(before: bytes, after: bytes) -> bool:
     return source == changed
 
 
+def _approved_wal_streaming(before: bytes, after: bytes) -> bool:
+    """Only the source-inspected WAL streaming body, not weaker auditing."""
+    original = before.decode("utf-8")
+    current = after.decode("utf-8")
+    former = "        with open(path, \"rb\") as stream:\n            contents = stream.read()\n        if contents and not contents.endswith(b\"\\n\"):\n            raise ValueError(\"unterminated durable journal record\")\n        replay = HashChainedJournal()\n        for raw in contents.splitlines():"
+    newer = "        replay = HashChainedJournal()\n        with open(path, \"rb\") as stream:\n            for record in stream:\n                if not record.endswith(b\"\\n\"):\n                    raise ValueError(\"unterminated durable journal record\")\n                raw = record[:-1]\n                # Match bytes.splitlines() for the previously accepted CRLF\n                # separator, without relaxing canonical JSON record checks.\n                if raw.endswith(b\"\\r\"):\n                    raw = raw[:-1]"
+    # Docstring change is explicitly reviewed as part of the same method.
+    old_doc = "Verify a complete durable file offline; never resurrect an individual.\n\n        A torn last record or any rewritten, duplicated or reordered event\n        fails closed. Only an attestation is returned, not a runnable journal."
+    new_doc = "Verify an entire durable WAL offline without buffering the file.\n\n        The replay still performs every canonical-byte, occurrence-order,\n        SHA-256 chain and terminal-state check. Only the transient full-file\n        byte buffer and splitlines list are removed. This never recovers life."
+    if (original.count(former) != 1 or current.count(newer) != 1
+            or original.count(old_doc) != 1 or current.count(new_doc) != 1):
+        return False
+    candidate = original.replace(old_doc, new_doc, 1).replace(former, newer, 1)
+    # All lines in the streaming loop's old body become four spaces deeper.
+    start = candidate.index("                if not raw:")
+    end = candidate.index("        if not replay.verify():", start)
+    candidate = candidate[:start] + "".join(
+        "    " + line if line.strip() else line
+        for line in candidate[start:end].splitlines(keepends=True)
+    ) + candidate[end:]
+    return candidate == current
+
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -204,6 +227,10 @@ def verify(reference_root: Path) -> None:
                     ))
                 or (rel == "i1/modules/memory.py"
                     and _approved_memory_overlap(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
+                or (rel == "i1lab/journal.py"
+                    and _approved_wal_streaming(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1lab/stage2_runtime.py"
