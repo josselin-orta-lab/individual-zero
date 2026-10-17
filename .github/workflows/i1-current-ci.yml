@@ -67,8 +67,14 @@ jobs:
         run: python -m unittest discover -s tests -p test_i1_natural_m11_cold_recovery.py -v
       - name: Current I1 generated-world separation
         run: python -m unittest discover -s tests -p test_i1_generated_isolation.py -q
-      - name: I0 planning non-regression
-        run: python -m unittest discover -s tests -p test_stage6_planning.py -q
+      - name: I0 baseline non-regression (archived fixtures, unchanged bytes)
+        run: |
+          cp archive/i0/tests/test_stage4_runtime.py tests/
+          cp archive/i0/tests/test_stage5_trait_battery.py tests/
+          cp archive/i0/tests/test_stage6_planning.py tests/
+          for pattern in test_stage4_runtime.py test_stage5_trait_battery.py test_stage6_planning.py; do
+            python -m unittest discover -s tests -p "$pattern" -q
+          done
       - name: JUnit diagnostics
         if: always()
         uses: actions/upload-artifact@v4
