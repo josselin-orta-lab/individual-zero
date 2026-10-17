@@ -19,15 +19,24 @@ class MinimumInterventionWitnessTests(unittest.TestCase):
             and item.name == "established_prediction_corrections"
         )
         method_text = ast.get_source_segment(source, method)
-        self.assertIn(
-            "intervention_ref = min(trial.identifier for trial in active_trials)",
-            method_text,
-        )
+        # The prior #261 test asserted an incidental placement of min().
+        # #264 computes it once per eligible contingency instead of once per
+        # witness. Verify the same provenance and refutation gates, not a
+        # specific previous optimization's local variable assignment.
+        self.assertIn("active_by_contingency[contingency.ref] = (", method_text)
+        self.assertIn("(min(trial.identifier for trial in active_trials),)", method_text)
+        self.assertIn("if len(matching_contexts) >= self.config.n2", method_text)
+        self.assertIn("intervention_ref = selected[0]", method_text)
         self.assertIn("intervention_ref=intervention_ref", method_text)
         self.assertNotIn("intervention_ref=min(", method_text)
-        # The n2 gate must precede calculation: no empty eligible set.
-        self.assertLess(method_text.index("if len(matching_contexts) < self.config.n2:"),
-                        method_text.index("intervention_ref = min("))
+        self.assertLess(
+            method_text.index("if witness.observed_t_monde <= revision:"),
+            method_text.index("if contingency.ref not in active_by_contingency:")
+        )
+        self.assertLess(
+            method_text.index("if len(matching_contexts) >= self.config.n2"),
+            method_text.index("intervention_ref = selected[0]")
+        )
         # Compare per-report recomputation and hoisted result on deliberately
         # unsorted, repeated and lexically competing identifiers.
         from itertools import product
