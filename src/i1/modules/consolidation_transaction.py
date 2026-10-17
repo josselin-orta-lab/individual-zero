@@ -148,13 +148,15 @@ class ConsolidationTransaction:
         self._batch = episode_refs
         self._frozen_episodes = frozen
         self._initial = _owned(history_candidate)
-        self._candidate = _owned(history_candidate)
+        # Clone only the already validated private JSON tree.
+        self._candidate = deepcopy(self._initial)
+        self._candidate_digest_cached = _digest(self._initial)
         self._checkpoints: list[PassCheckpoint] = []
         self._status = "active"
         self._batch_digest = _digest({"refs": list(self._batch), "episodes": frozen})
         self._seed_digest = _digest({
             "schema": self.schema, "id": self.id, "cut": self.cut.as_dict(),
-            "batch_digest": self._batch_digest, "initial_digest": _digest(self._initial),
+            "batch_digest": self._batch_digest, "initial_digest": self._candidate_digest_cached,
         })
 
     @property
@@ -195,7 +197,8 @@ class ConsolidationTransaction:
 
     @property
     def candidate_digest(self) -> str:
-        return _digest(self._candidate)
+        # Updated only at a validated candidate replacement.
+        return self._candidate_digest_cached
 
     def candidate_copy(self) -> object:
         return deepcopy(self._candidate)
@@ -203,9 +206,9 @@ class ConsolidationTransaction:
     def interrupt(self) -> None:
         if self._status != "active":
             raise ValueError("only an active transaction can be interrupted")
-        self._candidate = deepcopy(
-            self._checkpoints[-1].candidate if self._checkpoints else self._initial
-        )
+        # Current candidate is already a private copy of the latest
+        # validated checkpoint; unfinished runner work lives elsewhere.
+        # Suspending does not replace the checkpoint candidate.
         self._status = "suspended"
 
     def resume(self) -> None:
@@ -233,8 +236,10 @@ class ConsolidationTransaction:
         if validator(deepcopy(candidate)) is not True:
             raise ValueError("private pass failed technical validation")
         digest = self._point_digest(name=name, candidate=candidate)
+        candidate_digest = _digest(candidate)
         self._checkpoints.append(PassCheckpoint(name, deepcopy(candidate), digest))
         self._candidate = candidate
+        self._candidate_digest_cached = candidate_digest
 
     def validated_candidate(self, *, validator: Callable[[object], bool]) -> object:
         if self._status != "active" or self.cursor != len(PASSES):
@@ -298,6 +303,7 @@ class ConsolidationTransaction:
         if canonical_causal_bytes(state["candidate"]) != canonical_causal_bytes(expected):
             raise ValueError("candidate differs from last validated checkpoint")
         restored._candidate = deepcopy(expected)
+        restored._candidate_digest_cached = _digest(restored._candidate)
         restored._status = status
         return restored
 

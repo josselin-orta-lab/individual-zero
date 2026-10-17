@@ -622,20 +622,25 @@ class EpisodicMemory:
         self,
         episode: Episode,
         st: STVersion | None,
+        current_refs: set[str] | None = None,
+        active_goal_id: object = ...,
     ) -> float:
         if st is None:
             return 0.0
         # Stage-7 exact-search stub: relevance is symbolic exact overlap between
         # episode goal/event references and current S_t references.
-        current_refs = {
-            element.contribution_ref for element in st.competitive
-        }
+        if current_refs is None:
+            current_refs = {
+                element.contribution_ref for element in st.competitive
+            }
         if episode.active_goal_ref is not None:
-            active = st.fixed.get("active_goal")
-            if (
-                isinstance(active, Mapping)
-                and active.get("id") == episode.active_goal_ref
-            ):
+            if active_goal_id is ...:
+                active = st.fixed.get("active_goal")
+                active_goal_id = (
+                    active.get("id") if isinstance(active, Mapping)
+                    else None
+                )
+            if active_goal_id == episode.active_goal_ref:
                 return 1.0
         # Without any currently visible contribution reference, matching a
         # long episode's event list cannot provide additional relevance.
@@ -668,6 +673,15 @@ class EpisodicMemory:
         w_importance = self._config.recall_weight_importance
         w_relevance = self._config.recall_weight_relevance
         threshold = self._config.recall_threshold
+        visible_refs = (
+            {element.contribution_ref for element in st.competitive}
+            if st is not None else None
+        )
+        active = st.fixed.get("active_goal") if st is not None else None
+        visible_goal_id = (
+            active.get("id") if isinstance(active, Mapping)
+            else None
+        )
         for episode in self._episodes:
             age = max(0, t_monde - episode.end_t_monde)
             recency = max(
@@ -681,7 +695,7 @@ class EpisodicMemory:
             base_score = w_recency * recency + w_importance * importance
             if base_score + w_relevance < threshold:
                 continue
-            relevance = self._relevance(episode, st)
+            relevance = self._relevance(episode, st, visible_refs, visible_goal_id)
             score = base_score + w_relevance * relevance
             if score < threshold:
                 continue

@@ -1,13 +1,15 @@
 name: I1 current-model validation
 on:
   pull_request:
-    branches: [main, chore/archive-i0-historical-ci-20261017]
+    branches: [main, chore/archive-i0-historical-ci-20261017, chore/engine-generations-tooling-20261017]
     paths:
       - 'src/i1/**'
-      - 'src/i1_overlays/**'
+      - 'src/i1/runtime/**'
       - 'scripts/build_i1_fork.py'
       - 'scripts/test_i1_ci.py'
       - 'tests/test_i1_source_snapshot.py'
+      - 'scripts/test_i1_artifact_parity.py'
+      - 'tests/test_i1_m11_adversarial.py'
       - '.github/workflows/i1-current-ci.yml'
   workflow_dispatch:
     inputs:
@@ -39,12 +41,22 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install baseline
         run: python -m pip install -e .
+      - name: Checkout pre-migration M11 reference (exact I1 code, not past science)
+        uses: actions/checkout@v4
+        with:
+          ref: f0038a4021dacd3f9af3980d3115dc31b8ef7527
+          path: .i1-migration-reference
+          persist-credentials: false
+      - name: Exact generated I1 artifact parity
+        run: python scripts/test_i1_artifact_parity.py --reference-root .i1-migration-reference
       - name: Engine boundary and archived source integrity
         run: |
           python scripts/check_engine_repository.py --json
           python -m unittest discover -s tests -p test_engine_repository.py -v
       - name: Static syntax
         run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
+      - name: Frozen I0 and versioned Lab source guard
+        run: python -m unittest discover -s tests -p test_i1_source_snapshot.py -v
       - name: Current I1 independent SMOKE/FULL
         run: python scripts/test_i1_ci.py --mode ${{ github.event.inputs.mode || 'smoke' }} --seed 246 --junit reports/i1-${{ matrix.python-version }}.xml
       - name: I1 natural FULL (multiple autonomous mortal lives)
@@ -69,16 +81,20 @@ jobs:
           PY
       - name: Current I1 M11 cold recovery
         run: python -m unittest discover -s tests -p test_i1_natural_m11_cold_recovery.py -v
+      - name: Current I1 M11 adversarial COMMIT and irreversible death
+        run: python -m unittest discover -s tests -p test_i1_m11_adversarial.py -v
       - name: Current I1 generated-world separation
         run: python -m unittest discover -s tests -p test_i1_generated_isolation.py -q
       - name: I0 baseline non-regression (archived fixtures, unchanged bytes)
         run: |
+          cp -a archive/i0/lab src/lab
           cp archive/i0/tests/test_stage4_runtime.py tests/
           cp archive/i0/tests/test_stage5_trait_battery.py tests/
           cp archive/i0/tests/test_stage6_planning.py tests/
           for pattern in test_stage4_runtime.py test_stage5_trait_battery.py test_stage6_planning.py; do
             python -m unittest discover -s tests -p "$pattern" -q
           done
+          rm -rf src/lab
       - name: JUnit diagnostics
         if: always()
         uses: actions/upload-artifact@v4

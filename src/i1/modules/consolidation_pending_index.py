@@ -24,7 +24,9 @@ class _IndexedEpisode:
     payload: dict
 
     def as_dict(self):
-        return deepcopy(self.payload)
+        # Private view only: selector._projection validates and then
+        # deepcopies this exact mapping before retaining it.
+        return self.payload
 
 
 class ChargedPendingEpisodeIndex:
@@ -153,7 +155,10 @@ class ChargedPendingEpisodeIndex:
             self._pending.values(), self._rank_cursor, self._rank_cursor + count))
         if len(inspected) != count:
             raise RuntimeError("index changed during frozen paid selection")
-        self._ranked.extend(deepcopy(inspected))
+        # The already owned pending projections cannot be mutated while
+        # the frozen paid rank stage is active. The final selector
+        # validates and detaches each episode; M11 export still deepcopies.
+        self._ranked.extend(inspected)
         self._rank_cursor += count
         return count
 

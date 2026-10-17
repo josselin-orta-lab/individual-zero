@@ -1,6 +1,6 @@
 # Start here: current Individual Zero engineering
 
-**Active generation: I1. Preserved reference: I0.** The repository's older top-level README describes an early bootstrap and is not current operational authority for I1.
+**Active generation: I1. Preserved reference: I0.** Lab sources are now generation-owned: `src/i1/lab/` and `archive/i0/lab/`; there is no active shared `src/lab/`. The repository's older top-level README describes an early bootstrap and is not current operational authority for I1.
 
 1. [Engine map](../architecture/ENGINE_GENERATIONS.md) explains boundaries, ownership and how future generations are promoted.
 2. [Machine registry](../../config/engine-registry.json) declares locations and test entrypoints.

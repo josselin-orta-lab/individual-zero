@@ -84,6 +84,35 @@ with TemporaryDirectory() as temp:
         assert second.journal_head == after.journal_head
     assert SQLiteLifeLedger.audit_read_only(
         path=cold, expected_individual_id=life_id).generation == 2
+    fenced = str(Path(temp) / "fenced.sqlite")
+    with birth_i1_m11(db_path=fenced, life_id=life_id, **params) as life:
+        def cut_after_intent(point):
+            if point == "after_intent":
+                raise RuntimeError("injected failure after durable M11 intent")
+        try:
+            life.run_step(test_fault=cut_after_intent)
+        except RuntimeError as exc:
+            assert "injected failure" in str(exc)
+        else:
+            raise AssertionError("injected durable-intent failure did not abort")
+        try:
+            life.run_step()
+        except RecoveryBlocked:
+            pass
+        else:
+            raise AssertionError("failed M11 identity executed a second step")
+    fenced_audit = SQLiteLifeLedger.audit_read_only(
+        path=fenced, expected_individual_id=life_id)
+    assert fenced_audit.pending_intent
+    assert not fenced_audit.may_recover
+    try:
+        with recover_i1_m11(
+            db_path=fenced, life_id=life_id, runtime_factory=factory):
+            pass
+    except RecoveryBlocked:
+        pass
+    else:
+        raise AssertionError("unresolved durable intent was cold recovered")
 print("I1_NATURAL_M11_ROUNDTRIP_OK")
 """
             proc = subprocess.run(

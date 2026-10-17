@@ -1,3 +1,7 @@
+# Source template for the I1-only generated consolidation semantics module.
+# Deliberately not a .py file: src/i1 must remain a byte-identical copy of src/i0.
+# The generator validates the source anchor and writes only to disposable i1 output.
+
 """Stage-10 six genuine private semantic passes over verified lived projections.
 
 Passes NEVER consult the Lab, WorldBody, oracle or a mutable active owner.
@@ -11,6 +15,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+from heapq import merge
 from math import isfinite
 from typing import Mapping
 from lab.determinism import canonical_causal_bytes, sha256_hex
@@ -151,29 +156,66 @@ class LivedSixPassAlgorithm:
             raise ValueError("priced unit can access only its detached episode")
         if canonical_causal_bytes(scoped[ref]) != canonical_causal_bytes(self._episodes[ref]):
             raise ValueError("semantic handler was given altered autobiography")
+        # A charged replay unit has authority to inspect one event, never
+        # an entire episode worth of unrelated payloads. Match its explicit
+        # agenda ref against the already verified, frozen episode projection.
+        if unit.operation == "episode_replay":
+            if not isinstance(unit.data, Mapping):
+                raise ValueError("replay work needs a typed agenda reference")
+            event_ref = unit.data.get("event_ref")
+            offset = unit.data.get("event_offset")
+            if offset is None:
+                # Preserve the original lookup for a caller without an
+                # explicit offset. Priced canonical agendas always have one.
+                witnessed = next(
+                    (item for item in self._events[ref]
+                     if item["event_id"] == event_ref), None,
+                )
+            else:
+                # The charged replay agenda stores the original within-episode
+                # offset. The frozen episode/event order was already verified
+                # against the autobiographical projections at construction.
+                if (type(offset) is not int
+                        or not 0 <= offset < len(self._events[ref])):
+                    raise ValueError("replay agenda event offset outside lived episode")
+                witnessed = self._events[ref][offset]
+                if witnessed["event_id"] != event_ref:
+                    raise ValueError("replay agenda offset mismatches lived event")
+            return () if witnessed is None else (deepcopy(witnessed),)
+        # Scanning, skill-compilation and kappa pass units only need their
+        # checked episode identity. Their actual semantic work still happens
+        # through the paid unit in handle() and its frozen evidence.
+        if unit.operation != "rule_extraction":
+            return ()
         return tuple(deepcopy(self._events[ref]))
 
     @staticmethod
     def _observed_pairs(events):
         """At most one physical command and result per simulated step."""
         sent, arrived = {}, {}
-        for event in events:
-            t=event.get("t_monde")
+        for ordinal, event in enumerate(events):
+            t = event.get("t_monde")
             if type(t) is not int:
                 continue
             if event["kind"] == "command_experienced":
-                sent.setdefault(t,[]).append(event)
+                sent.setdefault(t, []).append((ordinal, event))
             elif event["kind"] == "world_transition_experienced":
-                arrived.setdefault(t,[]).append(event)
-        for t in sorted(set(sent)&set(arrived)):
+                arrived.setdefault(t, []).append((ordinal, event))
+        for t in sorted(set(sent) & set(arrived)):
             if len(sent[t]) != 1 or len(arrived[t]) != 1:
                 continue
-            a,b=sent[t][0],arrived[t][0]
-            if a.get("primitive") in {
-                "se_deplacer","collecter","manger","boire","fabriquer_outil",
-                "poser_une_pierre",
-            } and isinstance(b.get("effects"),Mapping):
-                yield a,b
+            command_index, command = sent[t][0]
+            result_index, physical = arrived[t][0]
+            # The autobiographical projection preserves chronological event
+            # refs. A future or unrelated transition cannot corroborate an
+            # earlier command, even when its world-step number matches.
+            if command_index >= result_index:
+                continue
+            if (command.get("primitive") in {
+                    "se_deplacer", "collecter", "manger", "boire",
+                    "fabriquer_outil", "poser_une_pierre",
+                } and isinstance(physical.get("effects"), Mapping)):
+                yield command, physical
 
     @staticmethod
     def _physical_result(command, transition):
@@ -230,78 +272,278 @@ class LivedSixPassAlgorithm:
         return output
 
     def _compile_from_proven_plans(self, cut):
-        records={}
+        """Compile *private* one-step affordances from lived physical receipts.
+
+        Earlier code required a nonexistent 'stage10_plan_applied' producer.
+        Only an actual paired command/transition with an explicit positive
+        effect can contribute a success. This establishes observed execution,
+        NOT general safety, nutrition, a distal goal, or causal certainty.
+        Distinct episodes are required. Nothing is installed in active owners.
+        """
+        records = {}
         for episode_ref in self.transaction.batch:
-            events=self._events[episode_ref]
-            physics={e["event_id"] for e in events
-                     if e["kind"]=="world_transition_experienced"}
-            for ev in events:
-                if ev["kind"]!="stage10_plan_applied":
+            events = self._events[episode_ref]
+            for command, physical in self._observed_pairs(events):
+                observed = self._physical_result(command, physical)
+                if observed is None:
                     continue
-                data=ev.get("data")
-                if (not isinstance(data,Mapping)
-                        or type(data.get("plan_signature")) is not str
-                        or not data["plan_signature"]
-                        or data.get("transition_ref") not in physics
-                        or type(data.get("success")) is not bool):
+                effect, value = observed
+                # No witnessed pre-action position is present in this
+                # autobiographical schema. A successful movement's *arrival*
+                # cannot establish a reusable departure-site precondition.
+                # Keep movement learning in online TD/geographical owners.
+                if command["primitive"] == "se_deplacer":
                     continue
-                context=data.get("context")
-                if (not isinstance(context,Mapping)
-                        or type(context.get("x")) is not int
-                        or type(context.get("y")) is not int):
+                succeeded = (
+                    (effect == "drank" and value == "true")
+                    # Merely swallowing a berry is not evidence of
+                    # nourishment, harmlessness or a successful food goal.
+                    # Its physical consequences may be toxic and cannot be
+                    # inferred from the "ate" effect alone.
+                    or (effect == "collected" and value.endswith(":True"))
+                    or (effect == "tool_crafted" and value == "true")
+                    or (effect == "movement" and value == "moved")
+                    or (effect == "stone_placed" and value == "true")
+                )
+                params = command.get("parameters")
+                pos = physical.get("position_after")
+                if (type(params) is not dict or not isinstance(pos, Mapping)
+                        or type(pos.get("x")) is not int
+                        or type(pos.get("y")) is not int):
                     continue
-                key=data["plan_signature"]
-                records.setdefault(key,[]).append({
-                    "episode":episode_ref,"event":ev["event_id"],
-                    "context":(context["x"],context["y"]),
-                    "success":data["success"],
-                    "preconditions":deepcopy(data.get("preconditions",[])),
+                signature = sha256_hex(canonical_causal_bytes({
+                    "primitive": command["primitive"],
+                    "parameters": params,
+                    "observed_field": effect,
+                }))
+                records.setdefault(signature, []).append({
+                    "episode": episode_ref,
+                    "events": (command["event_id"], physical["event_id"]),
+                    "context": (pos["x"], pos["y"]),
+                    "success": succeeded,
+                    "primitive": command["primitive"],
+                    # The private records are never exported or mutated.
+                    # Only final compiled skills receive a detached copy.
+                    "parameters": params,
+                    "observed_field": effect,
                 })
-        result=[]
+        result = []
         for signature in sorted(records):
-            trials=records[signature]
-            for anchor in sorted(
-                {r["context"] for r in trials if r["success"]},
-            ):
-                candidates=[
-                    row for row in trials if (
-                        abs(row["context"][0]-anchor[0])
-                        + abs(row["context"][1]-anchor[1])
+            witnessed_trials = records[signature]
+            for anchor in sorted({r["context"] for r in witnessed_trials if r["success"]}):
+                candidates = [
+                    row for row in witnessed_trials if (
+                        abs(row["context"][0] - anchor[0])
+                        + abs(row["context"][1] - anchor[1])
                         <= self.policy.nearby_context_radius
                     )
                 ]
-                # One *episode* one independent success. Duplicated replay
-                # cannot inflate n_comp or the measured success rate.
-                successes={r["episode"] for r in candidates if r["success"]}
-                failures={r["episode"] for r in candidates if not r["success"]}
-                if len(successes)<self.policy.skill_success_threshold:
+                successes_observed = {
+                    r["episode"] for r in candidates if r["success"]
+                }
+                failures = {
+                    r["episode"] for r in candidates if not r["success"]
+                }
+                # A mixed success/failure episode is NOT an independent
+                # successful trial. It counts conservatively as unsuccessful.
+                successes = successes_observed - failures
+                trial_episode_refs = successes_observed | failures
+                # Preserve first-person evidence even when one cut alone
+                # cannot reach the independent-success threshold. No such
+                # observation is considered a compiled or executable skill.
+                if not successes:
                     continue
-                evidence=[r for r in candidates if r["episode"] in successes]
-                prec=evidence[0]["preconditions"]
-                if any(r["preconditions"]!=prec for r in evidence):
-                    continue
-                total=len(successes|failures)
-                item={
-                    "id":"skill:"+sha256_hex(canonical_causal_bytes(
-                        {"signature":signature,"anchor":list(anchor)}))[:28],
-                    "plan_signature":signature,
-                    "near_context":{"x":anchor[0],"y":anchor[1],
-                                    "radius":self.policy.nearby_context_radius},
-                    "preconditions":prec,
-                    "source_episode_refs":sorted(successes),
-                    "source_event_refs":sorted({r["event"] for r in evidence}),
-                    "distinct_success_count":len(successes),
-                    "distinct_trial_count":total,
-                    "success_rate":len(successes)/total,
-                    "state":"compiled_private",
+                total = len(trial_episode_refs)
+                evidence = [
+                    r for r in candidates if r["episode"] in successes
+                    and r["success"]
+                ]
+                example = evidence[0]
+                item = {
+                    "id": "skill:" + sha256_hex(canonical_causal_bytes({
+                        "signature": signature, "anchor": list(anchor),
+                    }))[:28],
+                    # Physical command effects, not verified plan success.
+                    "plan_signature": "observed_primitive:" + signature,
+                    "primitive": example["primitive"],
+                    "parameters": deepcopy(example["parameters"]),
+                    "observed_field": example["observed_field"],
+                    "evidence_scope": "experienced_local_physical_result",
+                    "goal_success_inferred": False,
+                    "safety_certified": False,
+                    "near_context": {"x": anchor[0], "y": anchor[1],
+                                     "radius": self.policy.nearby_context_radius},
+                    "preconditions": [],
+                    "source_episode_refs": sorted(successes),
+                    "source_event_refs": sorted({
+                        event for row in evidence for event in row["events"]
+                    }),
+                    # Both positive and negative trials need a durable
+                    # provenance identity: prior versions persisted only
+                    # successes, leaving the denominator unauditable.
+                    "trial_episode_refs": sorted(trial_episode_refs),
+                    "trial_event_refs": sorted({
+                        event for row in candidates for event in row["events"]
+                    }),
+                    "distinct_success_count": len(successes),
+                    "distinct_trial_count": total,
+                    "success_rate": len(successes) / total,
+                    "state": (
+                        "compiled_private"
+                        if len(successes) >= self.policy.skill_success_threshold
+                        else "witnessed_private"
+                    ),
                 }
                 result.append(item)
-        result.sort(key=lambda row:row["id"])
+        result.sort(key=lambda row: row["id"])
         return result
 
+    @staticmethod
+    def _merge_witness_refs(old_refs, new_refs):
+        """Preserve exact sorted witness IDs without a full re-sort.
+
+        Canonical compiled skills already carry sorted, unique provenance.
+        Incoming noncanonical order still gets the historical full sort.
+        Neither input is mutated, and validation of disjointness precedes
+        every call from the private merge.
+        """
+        if (all(old_refs[i - 1] < old_refs[i]
+                for i in range(1, len(old_refs)))
+                and all(new_refs[i - 1] < new_refs[i]
+                        for i in range(1, len(new_refs)))):
+            return list(merge(old_refs, new_refs))
+        return sorted(old_refs + new_refs)
+
+    @staticmethod
+    def _merge_private_procedures(
+        previous, newly_compiled, threshold, *, already_detached=False,
+    ):
+        """Accumulate private evidence across separately paid sleep cuts.
+
+        Counts only unique autobiographical episodes. An existing skill can
+        receive more evidence from a disjoint new batch, but cannot silently
+        change its action or contextual scope. Observed witnesses acquire the
+        non-executable compiled_private designation only after reaching the
+        independently versioned success threshold across multiple cuts.
+        All saved records remain private SlowHistory, not active policies.
+        """
+        if type(previous) is not list or type(newly_compiled) is not list:
+            raise ValueError("private procedures must be typed lists")
+        if type(already_detached) is not bool:
+            raise ValueError("private procedure ownership mode must be explicit")
+        # Only the P-42 paid handler supplies an independently owned
+        # candidate; other callers preserve the original detached output.
+        combined = {}
+        if type(threshold) is not int or threshold < 1:
+            raise ValueError("invalid private skill compilation threshold")
+        states = {"witnessed_private", "compiled_private"}
+        for row in previous:
+            if (type(row) is not dict or type(row.get("id")) is not str
+                    or row.get("state") not in states
+                    or row["id"] in combined):
+                raise ValueError("invalid or duplicated committed private procedure")
+            combined[row["id"]] = (
+                row if already_detached else deepcopy(row)
+            )
+        for row in newly_compiled:
+            if (type(row) is not dict or type(row.get("id")) is not str
+                    or row.get("state") not in states):
+                raise ValueError("invalid newly compiled private procedure")
+            old = combined.get(row["id"])
+            if old is None:
+                combined[row["id"]] = (
+                    row if already_detached else deepcopy(row)
+                )
+                continue
+            immutable = (
+                "plan_signature", "primitive", "parameters", "observed_field",
+                "evidence_scope", "goal_success_inferred", "safety_certified",
+                "near_context", "preconditions",
+            )
+            if any(old.get(key) != row.get(key) for key in immutable):
+                raise ValueError("conflicting private procedural identity")
+            old_episodes = old.get("source_episode_refs")
+            new_episodes = row.get("source_episode_refs")
+            old_events = old.get("source_event_refs")
+            new_events = row.get("source_event_refs")
+            old_trials = old.get("trial_episode_refs")
+            new_trials = row.get("trial_episode_refs")
+            old_trial_events = old.get("trial_event_refs")
+            new_trial_events = row.get("trial_event_refs")
+            lists = (
+                old_episodes, new_episodes, old_events, new_events,
+                old_trials, new_trials, old_trial_events, new_trial_events,
+            )
+            if not all(type(v) is list and v for v in lists):
+                raise ValueError(
+                    "private successes and failures require disjoint "
+                    "verified episode and event provenance"
+                )
+            # Each list's set was previously recreated for uniqueness,
+            # containment and cross-cut disjointness. Materialize it once.
+            unique = tuple(set(v) for v in lists)
+            (old_ep_set, new_ep_set, old_event_set, new_event_set,
+             old_trial_set, new_trial_set,
+             old_trial_event_set, new_trial_event_set) = unique
+            if (any(len(refs) != len(v) for refs, v in zip(unique, lists))
+                    or not old_ep_set.issubset(old_trial_set)
+                    or not new_ep_set.issubset(new_trial_set)
+                    or not old_event_set.issubset(old_trial_event_set)
+                    or not new_event_set.issubset(new_trial_event_set)
+                    or not old_trial_set.isdisjoint(new_trial_set)
+                    or not old_trial_event_set.isdisjoint(new_trial_event_set)):
+                raise ValueError(
+                    "private successes and failures require disjoint "
+                    "verified episode and event provenance"
+                )
+            success = old["distinct_success_count"] + row["distinct_success_count"]
+            trials = old["distinct_trial_count"] + row["distinct_trial_count"]
+            if (type(success) is not int or type(trials) is not int
+                    or success < 1 or trials < success
+                    or old["distinct_success_count"] != len(old_episodes)
+                    or row["distinct_success_count"] != len(new_episodes)
+                    or old["distinct_trial_count"] != len(old_trials)
+                    or row["distinct_trial_count"] != len(new_trials)):
+                raise ValueError("invalid cumulative independent trial counts")
+            # The combined old row is already private, regardless of
+            # ownership mode. Do not clone it again before replacing
+            # the witness arrays; no outside caller aliases this row.
+            merged = old
+            merged["source_episode_refs"] = LivedSixPassAlgorithm._merge_witness_refs(
+                old_episodes, new_episodes,
+            )
+            merged["source_event_refs"] = LivedSixPassAlgorithm._merge_witness_refs(
+                old_events, new_events,
+            )
+            merged["trial_episode_refs"] = LivedSixPassAlgorithm._merge_witness_refs(
+                old_trials, new_trials,
+            )
+            merged["trial_event_refs"] = LivedSixPassAlgorithm._merge_witness_refs(
+                old_trial_events, new_trial_events,
+            )
+            merged["distinct_success_count"] = success
+            merged["distinct_trial_count"] = trials
+            merged["success_rate"] = success / trials
+            merged["state"] = (
+                "compiled_private"
+                if success >= threshold else "witnessed_private"
+            )
+            combined[row["id"]] = merged
+        return [combined[k] for k in sorted(combined)]
+
     def handle(self, candidate, unit, scoped, cut:ConsolidationCut):
-        """Pure work-unit handler; only detached immutable provenance arrives."""
-        state=self._candidate(deepcopy(candidate))
+        """Pure public handler, retaining ownership isolation for callers."""
+        return self.handle_detached(deepcopy(candidate), unit, scoped, cut)
+
+    def handle_detached(self, candidate, unit, scoped, cut:ConsolidationCut):
+        """Consume the already-detached candidate supplied by the paid runner.
+
+        The runner made its own private copy of the working state before the
+        P-42 handler was invoked. The canonical natural I1 path can reuse
+        that copy instead of repeating another full clone per event. Never
+        call this entrypoint with mutable external or owner-held state.
+        """
+        state=self._candidate(candidate)
         if cut != self.transaction.cut:
             raise ValueError("semantic handler cut mismatches frozen transaction")
         name=unit.operation
@@ -326,23 +568,75 @@ class LivedSixPassAlgorithm:
             if event_ref in replayed:
                 raise ValueError("cannot replay physical event twice in one pass")
             replayed.append(event_ref)
-            state.setdefault("private_replay_observations",[]).append({
+            # Retain a very narrow first-person observation that a
+            # future owning module can actually consult. No Lab world,
+            # undisclosed cause, predicted safety or external verifier.
+            observation = None
+            if item["kind"] == "world_transition_experienced":
+                pos = item.get("position_after")
+                body = item.get("body_after")
+                keys = ("energy", "food", "water", "integrity")
+                if (not isinstance(pos, Mapping)
+                        or any(type(pos.get(k)) is not int for k in ("x", "y"))
+                        or not isinstance(body, Mapping)
+                        or any(type(body.get(k)) not in (int, float)
+                               or not isfinite(body[k]) for k in keys)):
+                    raise ValueError("physical perception lacks lived body/position")
+                observation = {
+                    "position": [pos["x"], pos["y"]],
+                    "body": {key: float(body[key]) for key in keys},
+                }
+            elif item["kind"] == "agency_comparison":
+                comparison = item.get("data")
+                if (type(comparison) is not dict
+                        or comparison.get("status") not in (
+                            "conforming", "nonconforming", "indeterminable"
+                        )
+                        or type(comparison.get("attribution")) is not str
+                        or not 0 < len(comparison["attribution"]) <= 64):
+                    raise ValueError("agency comparison lacks observed judgement")
+                observation = {
+                    "status": comparison["status"],
+                    "attribution": comparison["attribution"],
+                }
+            entry = {
                 "episode_ref":ref,"event_ref":event_ref,
                 "event_kind":item["kind"],
                 "projection_digest":sha256_hex(canonical_causal_bytes(item)),
-            })
+            }
+            if observation is not None:
+                entry["lived_observation"] = observation
+            state.setdefault("private_replay_observations",[]).append(entry)
         elif name=="rule_extraction":
-            all_rules={r["id"]:r for r in state.get("hypotheses",[])}
-            for rule_ref,item in self._extract_episode_rules(unit.episode_refs[0],events,cut):
-                prior=all_rules.get(rule_ref)
-                if prior is None:
-                    all_rules[rule_ref]=item
-                else:
-                    prior["source_episode_refs"]=sorted(
-                        set(prior["source_episode_refs"]+item["source_episode_refs"]))
-                    prior["source_event_refs"]=sorted(
-                        set(prior["source_event_refs"]+item["source_event_refs"]))
-            state["hypotheses"]=[all_rules[k] for k in sorted(all_rules)]
+            extracted = self._extract_episode_rules(
+                unit.episode_refs[0], events, cut,
+            )
+            existing = state.get("hypotheses", [])
+            if (not extracted and type(existing) is list
+                    and all(existing[i-1]["id"] < existing[i]["id"]
+                            for i in range(1, len(existing)))):
+                # No newly lived causal witness: preserve the already ordered
+                # private forms instead of rebuilding and sorting their
+                # complete historical rule index for an empty episode.
+                state["hypotheses"] = existing
+            else:
+                # Normalize exactly as before when a new observation exists
+                # or a malformed/legacy candidate needs id deduplication.
+                all_rules = {row["id"]: row for row in existing}
+                for rule_ref, item in extracted:
+                    prior = all_rules.get(rule_ref)
+                    if prior is None:
+                        all_rules[rule_ref] = item
+                    else:
+                        prior["source_episode_refs"] = sorted(
+                            set(prior["source_episode_refs"]
+                                + item["source_episode_refs"]))
+                        prior["source_event_refs"] = sorted(
+                            set(prior["source_event_refs"]
+                                + item["source_event_refs"]))
+                state["hypotheses"] = [
+                    all_rules[k] for k in sorted(all_rules)
+                ]
         elif name=="skill_compilation":
             # The per-episode scan is charged. Only the final one assembles
             # aggregates from independent, verified plan-execution reports.
@@ -352,7 +646,12 @@ class LivedSixPassAlgorithm:
                 raise ValueError("procedural evidence counted twice")
             visited.append(ref)
             if len(visited)==len(self.transaction.batch):
-                state["procedural"]=self._compile_from_proven_plans(cut)
+                state["procedural"] = self._merge_private_procedures(
+                    state.get("procedural", []),
+                    self._compile_from_proven_plans(cut),
+                    self.policy.skill_success_threshold,
+                    already_detached=True,
+                )
                 state.pop("_private_procedural_scanned")
         elif name=="kappa_recalibration":
             # Stage8/9 autobiographical comparison lacks the independent
@@ -375,18 +674,22 @@ class LivedSixPassAlgorithm:
                 item for item in state.get("hypotheses",[])
                 if item["expires_at_step"]>cut.world_step
             ]
+            # Single pass per private owner form, with identical sorted keys
+            # and sorted identifiers in the committed deterministic index.
+            by_primitive = {}
+            for row in state["hypotheses"]:
+                by_primitive.setdefault(
+                    row["predicate"]["primitive"], []).append(row["id"])
+            by_signature = {}
+            for row in state.get("procedural", []):
+                by_signature.setdefault(
+                    row["plan_signature"], []).append(row["id"])
             state["indices"]={
                 "hypothesis_by_primitive":{
-                    key:sorted(row["id"] for row in state["hypotheses"]
-                               if row["predicate"]["primitive"]==key)
-                    for key in sorted({row["predicate"]["primitive"]
-                                       for row in state["hypotheses"]})
+                    key:sorted(by_primitive[key]) for key in sorted(by_primitive)
                 },
                 "procedural_by_signature":{
-                    key:sorted(row["id"] for row in state.get("procedural",[])
-                               if row["plan_signature"]==key)
-                    for key in sorted({row["plan_signature"]
-                                       for row in state.get("procedural",[])})
+                    key:sorted(by_signature[key]) for key in sorted(by_signature)
                 },
             }
             merged=set(state.get("consolidated_episode_refs",[]))
@@ -404,9 +707,19 @@ class LivedSixPassAlgorithm:
                or len(rule.get("source_event_refs",()))!=len(set(rule["source_event_refs"]))
                for rule in state.get("hypotheses",[])):
             return False
-        if any(item.get("distinct_success_count",0)<self.policy.skill_success_threshold
-               or not 0<=item.get("success_rate",-1)<=1
-               for item in state.get("procedural",[])):
+        if any(
+            (item.get("state") not in (
+                "witnessed_private", "compiled_private"))
+            or type(item.get("distinct_success_count")) is not int
+            or item["distinct_success_count"] < 1
+            or ((item["distinct_success_count"]
+                 >= self.policy.skill_success_threshold)
+                != (item["state"] == "compiled_private"))
+            or not 0 <= item.get("success_rate", -1) <= 1
+            or item.get("goal_success_inferred") is not False
+            or item.get("safety_certified") is not False
+            for item in state.get("procedural", [])
+        ):
             return False
         try:
             canonical_causal_bytes(state)

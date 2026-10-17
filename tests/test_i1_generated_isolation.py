@@ -12,7 +12,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from build_i1_fork import generate, rewrite, i1_physiology_source
+from build_i1_fork import generate, rewrite
 
 
 class I1GeneratedIsolationTests(unittest.TestCase):
@@ -25,25 +25,45 @@ class I1GeneratedIsolationTests(unittest.TestCase):
             self.assertIn("i1/modules/stage6_planning.py", first["files"])
             self.assertIn("i1lab/stage12_runtime.py", first["files"])
             self.assertIn("i1lab/world.py", first["files"])
+            self.assertEqual(first["files"]["i1lab/__init__.py"]["source_path"],
+                             "i1/lab/__init__.py")
+            self.assertEqual(
+                first["files"]["i1lab/world.py"]["source_path"],
+                "i1/runtime/world.py",
+            )
+            self.assertNotIn("i1/runtime/world.py", first["files"])
+            # Journals and Stage10 publication are I1-owned, not text-patched Lab.
+            for module in ("journal.py", "journal_views.py", "consolidation_lived_evidence.py", "consolidation_postcut_journal.py", "sqlite_life_store.py", "sqlite_runtime_custody.py", "consolidation_publication.py", "stage10_runtime.py", "stage4_runtime.py", "stage11_runtime.py", "m11_transactional_mortal.py"):
+                rel = "i1lab/" + module
+                source = src / "i1" / "runtime" / module
+                self.assertEqual(
+                    first["files"][rel]["source_path"],
+                    "i1/runtime/" + module,
+                )
+                self.assertEqual((Path(a) / rel).read_text(),
+                                 rewrite(source.read_text()))
+                self.assertNotIn("i1/runtime/" + module, first["files"])
             for rel, data in first["files"].items():
+                if rel.startswith("i1lab/"):
+                    self.assertTrue(
+                        data["source_path"].startswith(("i1/lab/", "i1/runtime/")),
+                        (rel, data["source_path"]),
+                    )
                 content = (Path(a) / rel).read_bytes()
                 self.assertEqual(sha256(content).hexdigest(), data["built_sha256"])
                 self.assertTrue((src / data["source_path"]).exists())
-            # The I1-only generated WorldBody has a deliberately versioned
-            # physiological schema. Require the exact declared transformation
-            # of the unchanged source rather than erroneously requiring a
-            # generated world with zero deprivation mechanisms.
-            source_world = (src / "lab" / "world.py").read_text()
+            # Physics belongs to I1 directly, not to generated string patches.
+            source_world = (src / "i1" / "runtime" / "world.py").read_text()
             self.assertEqual(
                 (Path(a) / "i1lab" / "world.py").read_text(),
-                i1_physiology_source(rewrite(source_world)),
+                rewrite(source_world),
             )
 
     def test_ordinary_i0_and_lab_sources_unchanged(self):
         with TemporaryDirectory() as folder:
             generate(Path(folder))
             self.assertIn("from i0.interfaces import PrimitiveCommand",
-                          (ROOT / "src/lab/world.py").read_text())
+                          (ROOT / "archive/i0/lab/world.py").read_text())
             self.assertIn("from i1.interfaces import PrimitiveCommand",
                           (Path(folder) / "i1lab/world.py").read_text())
             self.assertIn("from i1.modules", (

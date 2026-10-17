@@ -1,89 +1,23 @@
-# I0
+# I1: active natural artificial individual
 
-This directory contains the reference cognitive architecture and behavior of Individual Zero.
+This is the **active** engine, independent from frozen `src/i0`.
 
-## Role
+- `modules/`, `architecture/`, `config/`: cognitive contracts, state and mechanisms.
+- `lab/`: dedicated I1 scientific and execution infrastructure; frozen I0 Lab lives in `archive/i0/lab/`.
+- `runtime/`: first-person I1 birth, temperament, natural-life runtime,
+  learning, sleeping and active publication sources. These are part of I1,
+  **not optional overlays**.
+- `scripts/build_i1_fork.py`: currently builds an isolated `i1lab`
+  package, from this generation's own `lab/`. This is still a
+  transition mechanism: source-string transforms remain and need their own
+  controlled migration before being removed.
+- `scripts/test_i1_ci.py`: real I1 smoke/full, irreversible mortality and
+  authenticated M11 checks.
 
-I0 is the first integrated research baseline.
+The first native-source migration moves the runtime source files **byte for
+byte** into `runtime/`, but preserves the original generated namespace
+`i1lab.i1_natural_runtime` and birth contract. The generator skips
+`i1/runtime/` in its `i1` copy and installs it exactly once in `i1lab`.
 
-It should remain small enough to understand and instrument, but complete enough to support meaningful experiments.
-
-I0 owns:
-
-- the reference execution cycle;
-- cognitive interfaces;
-- project-developed cognitive modules;
-- reference configuration;
-- assembly and structural relationships between components.
-
-I0 does not own:
-
-- neutral research runtime;
-- generic logging and metrics;
-- external API translation;
-- experiment evidence.
-
-Those belong in the Lab, adapters, or experiment records.
-
-## Structure
-
-```text
-src/i0/
-├── interfaces/
-├── architecture/
-├── modules/
-└── config/
-```
-
-### `interfaces/`
-
-Contracts between cognitive roles and implementations.
-
-Use interfaces when they help substitution, comparison, observability, or structural clarity.
-
-### `architecture/`
-
-Global execution-cycle logic, coordination, and structural relationships between subsystems.
-
-### `modules/`
-
-Cognitive mechanisms developed in the project.
-
-Do not mirror research axes mechanically. Source organization should follow implementation boundaries.
-
-### `config/`
-
-Reference configuration for the current I0 baseline.
-
-## Example
-
-A rule deciding which memory item wins recall belongs in I0.
-
-A logger recording the selected memory item belongs in the Lab.
-
-A translation layer to an external retrieval package belongs in adapters.
-
-The experiment comparing two recall mechanisms belongs in `experiments/`.
-
-## Behavioral changes
-
-A change that can alter reference cognition should be connected to an EXP before integration.
-
-A shared architectural change may later require an ADR.
-
-See [I0 overview](../../docs/architecture/I0_OVERVIEW.md) and [repository placement examples](../../examples/repository-placement.md).
-
-## Current bootstrap implementation
-
-The first executable I0 code is intentionally non-cognitive.
-
-`architecture/bootstrap.py` currently:
-
-- accepts observations through the shared Individual contract;
-- tracks only technical execution state;
-- returns a deliberate `noop` action;
-- exposes enough state for the Lab to verify and record the execution path.
-
-The no-op policy is not a candidate action-selection theory. It prevents the repository from acquiring accidental cognitive assumptions before the first scientific question is registered.
-
-See [Bootstrap runtime boundary](../../docs/architecture/BOOTSTRAP_RUNTIME.md).
+Do not re-enable H1/H2 experiment arms as I1 defaults. Historical trials can
+remain importable but do not define the natural actor. I0 is untouched.

@@ -19,7 +19,9 @@ class EngineToolingTests(unittest.TestCase):
         self.assertEqual(report["archived"], {"workflows": 127, "tests": 297})
 
     def test_original_engine_sources_are_present(self):
-        for name in ("i0", "i1", "lab", "i1_overlays"):
+        self.assertFalse((ROOT / "src/lab").exists())
+        self.assertTrue((ROOT / "archive/i0/lab/__init__.py").is_file())
+        for name in ("i0", "i1", "i1/lab", "i1/runtime"):
             self.assertTrue((ROOT / "src" / name).is_dir(), name)
 
 
