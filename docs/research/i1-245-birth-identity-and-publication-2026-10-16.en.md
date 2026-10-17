@@ -623,3 +623,32 @@ No I0 or original lab files are modified; only generated I1lab gets this
 exact-type guarded change. **NON VALIDÉ:** no generation, tests, CI,
 benchmarks or simulations were executed; behavioral parity and numerical
 gains are not asserted.
+
+## I1 Stage10: eliminate duplicate full-history candidate copies (2026-10-17)
+
+Static code inspection identified two redundant materializations along the
+scheduler-authorized consolidation-publication path:
+
+1. `ConsolidationTransaction.validated_candidate()` already returns a
+   privately detached JSON candidate after its validator has completed.
+   The generated I1 Stage10 coordinator therefore consumes that candidate
+   directly, rather than immediately re-encoding and deep-copying the entire
+   history with `_copy_causal()`.
+2. `SlowHistory.restore_causal_state()` independently validates the complete
+   staged replacement and deep-copies the newly published current state.
+   The generated I1 coordinator may attach its already detached prepared
+   candidate to the local staged mapping without another full-history copy
+   before this owner-owned restoration. A separate tentative `SlowHistory`
+   instance still validates the complete version/lineage before any
+   publication, and the existing original `before_history` rollback
+   snapshot remains independent.
+
+**Unchanged**: all four baseline cognitive-owner snapshots, rebase isolation,
+canonical validation of the owner-prepared states, journal cut/head checks,
+P-42 charges, six-pass receipts, two-phase publication, and fail-closed
+rollback before journal append. The transformation is confined to
+generated I1lab; neither I0 nor the source lab implementation is touched.
+
+**NON VALIDÉ**: source review only. No generator build, unit test, CI,
+benchmark or simulated life was executed. Runtime equivalence and performance
+gains remain to be demonstrated independently.

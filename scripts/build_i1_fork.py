@@ -186,6 +186,25 @@ def i1_scoped_consolidation_evidence_source(source: str) -> str:
     return prefix + duplicate + suffix
 
 
+def i1_publication_detached_candidate_source(source: str) -> str:
+    """Avoid duplicate private-history materialization in generated I1 only.
+
+    The validated transaction returns a detached tree, and the SlowHistory
+    restore boundary validates and owns its own independent replacement.
+    """
+    changes = (
+        ("        candidate = _copy_causal(transaction.validated_candidate(\n            validator=technical_validator))\n",
+         "        # The transaction already validates and detaches its private candidate.\n        candidate = transaction.validated_candidate(\n            validator=technical_validator)\n"),
+        ("        staged_history[\"current_state\"] = _copy_causal(prepared.candidate_history)\n",
+         "        # SlowHistory.restore_causal_state independently validates and detaches\n        # this candidate before installing it as the current owned state.\n        staged_history[\"current_state\"] = prepared.candidate_history\n"),
+    )
+    for before, after in changes:
+        if source.count(before) != 1:
+            raise ValueError("unreviewed I1 Stage10 publication copy boundary")
+        source = source.replace(before, after)
+    return source
+
+
 def i1_committed_history_metadata_source(source: str) -> str:
     """Generated I1-only SlowHistory: O(1) immutable committed-ref access.
 
@@ -907,6 +926,7 @@ def generate(output: Path) -> dict[str, object]:
             if (output_package == "i1lab"
                     and relative.as_posix() == "consolidation_publication.py"):
                 transformed = i1_committed_history_metadata_source(transformed)
+                transformed = i1_publication_detached_candidate_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "stage4_runtime.py"):
                 transformed = i1_canonical_active_value_source(transformed)
