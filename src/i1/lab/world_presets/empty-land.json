@@ -1,0 +1,25 @@
+{
+  "schema": "individual-zero-i1-world-preset/v1",
+  "engine": "I1",
+  "id": "empty-land",
+  "description": "No replenishing food or water; deprivation can progress naturally.",
+  "spawn": [
+    8,
+    8
+  ],
+  "initial_body": {
+    "energy": 65,
+    "food": 22,
+    "water": 21,
+    "integrity": 78
+  },
+  "layout": {
+    "water_sources": [],
+    "resources": [],
+    "obstacles": [],
+    "creatures": [],
+    "danger_zones": [],
+    "lethal_zones": []
+  },
+  "recommended_steps": 38
+}

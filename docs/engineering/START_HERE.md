@@ -2,7 +2,8 @@
 
 **Active generation: I1. Preserved reference: I0.** Lab sources are now generation-owned: `src/i1/lab/` and `archive/i0/lab/`; there is no active shared `src/lab/`. The repository's older top-level README describes an early bootstrap and is not current operational authority for I1.
 
-1. [Engine map](../architecture/ENGINE_GENERATIONS.md) explains boundaries, ownership and how future generations are promoted.
+1. [I1 Handbook](../../src/i1/docs/README.md) describes the active model's theory, cognitive architecture, evidence and development rules.
+2. [Engine map](../architecture/ENGINE_GENERATIONS.md) explains boundaries, ownership and how future generations are promoted.
 2. [Machine registry](../../config/engine-registry.json) declares locations and test entrypoints.
 3. [Historical archive index](../../config/archives/i0-20261017.json) pins every archived file to its original Git blob.
 4. [PR #246 test audit](../research/i1-pr246-current-test-audit-2026-10-17.fr.md) documents I1 SMOKE/FULL, residual scientific limits and I0 protections.

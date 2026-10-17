@@ -1,16 +1,34 @@
 name: I1 current-model validation
 on:
   pull_request:
-    branches: [main, chore/archive-i0-historical-ci-20261017, chore/engine-generations-tooling-20261017]
+    branches: [main, chore/archive-i0-historical-ci-20261017, chore/engine-generations-tooling-20261017, refactor/i1-native-sources-phase1-20261017]
     paths:
       - 'src/i1/**'
       - 'src/i1/runtime/**'
       - 'scripts/build_i1_fork.py'
       - 'scripts/test_i1_ci.py'
-      - 'tests/test_i1_source_snapshot.py'
       - 'scripts/test_i1_artifact_parity.py'
+      - 'scripts/check_engine_contracts.py'
+      - 'tools/new_engine.py'
+      - 'tools/assess_engine_proposal.py'
+      - 'docs/engineering/ENGINE_PROMOTION.md'
+      - 'docs/engineering/SCRIPT_INVENTORY.md'
+      - 'tools/run_engine_checks.py'
+      - 'tools/campaign_report.py'
+      - 'tools/check_tool_inventory.py'
+      - 'tools/scan_script_dependencies.py'
+      - 'tools/run_i1_world_preset.py'
+      - 'src/i1/lab/world_presets/**'
+      - 'config/script-custody.json'
+      - 'config/tool-inventory.json'
+      - 'scripts/**'
+      - 'docs/engines/i1/**'
+      - 'tests/i1/**'
+      - 'AGENTS.md'
+      - 'config/engine-registry.json'
       - 'tests/test_i1_m11_adversarial.py'
       - '.github/workflows/i1-current-ci.yml'
+      - '.github/workflows/engine-structural.yml'
   workflow_dispatch:
     inputs:
       mode:
@@ -24,6 +42,11 @@ concurrency:
   group: i1-current-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  engine-structure:
+    name: Shared engine I1 structural gate
+    uses: ./.github/workflows/engine-structural.yml
+    with:
+      engine: I1
   current-i1:
     name: I1 natural SMOKE + FULL (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
@@ -53,10 +76,26 @@ jobs:
         run: |
           python scripts/check_engine_repository.py --json
           python -m unittest discover -s tests -p test_engine_repository.py -v
+      - name: Generation-owned structural test suite
+        run: |
+          mkdir -p reports
+          python tools/run_engine_checks.py --engine I1 --suite structure --execute --json > reports/i1-structure-${{ matrix.python-version }}.json
+      - name: Script inventory without historical reactivation
+        run: python tools/check_tool_inventory.py
+      - name: Static script custody and dependency audit
+        run: |
+          mkdir -p reports
+          python tools/scan_script_dependencies.py --output reports/i1-script-dependencies-${{ matrix.python-version }}.json --markdown-output reports/i1-script-dependencies-${{ matrix.python-version }}.md
+      - name: Validate all registered natural-I1 preset worlds
+        run: python tools/run_i1_world_preset.py --list
+      - name: Real natural I1 preset birth and mortal WAL smoke
+        run: python tools/run_i1_world_preset.py --preset oasis --seed 246 --steps 2 --lives 1 --custody wal --output-dir reports/preset-oasis-ci
+      - name: Real natural I1 preset M11 transactional smoke
+        run: python tools/run_i1_world_preset.py --preset empty-land --seed 247 --steps 1 --lives 1 --custody m11 --output-dir reports/preset-empty-m11-ci
       - name: Static syntax
         run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
       - name: Frozen I0 and versioned Lab source guard
-        run: python -m unittest discover -s tests -p test_i1_source_snapshot.py -v
+        run: python -m unittest discover -s tests/i1 -p test_i1_source_snapshot.py -v
       - name: Current I1 independent SMOKE/FULL
         run: python scripts/test_i1_ci.py --mode ${{ github.event.inputs.mode || 'smoke' }} --seed 246 --junit reports/i1-${{ matrix.python-version }}.xml
       - name: I1 natural FULL (multiple autonomous mortal lives)
@@ -79,12 +118,10 @@ jobs:
           assert int(suite.attrib["failures"]) == 1, suite.attrib
           assert int(suite.attrib["errors"]) == 1, suite.attrib
           PY
-      - name: Current I1 M11 cold recovery
-        run: python -m unittest discover -s tests -p test_i1_natural_m11_cold_recovery.py -v
-      - name: Current I1 M11 adversarial COMMIT and irreversible death
-        run: python -m unittest discover -s tests -p test_i1_m11_adversarial.py -v
-      - name: Current I1 generated-world separation
-        run: python -m unittest discover -s tests -p test_i1_generated_isolation.py -q
+      - name: Current I1 authenticated and adversarial M11 (declared suite)
+        run: python tools/run_engine_checks.py --engine I1 --suite m11 --execute --json > reports/i1-m11-${{ matrix.python-version }}.json
+      - name: Current I1 generated-world separation (declared suite)
+        run: python tools/run_engine_checks.py --engine I1 --suite source --execute --json > reports/i1-source-${{ matrix.python-version }}.json
       - name: I0 baseline non-regression (archived fixtures, unchanged bytes)
         run: |
           cp -a archive/i0/lab src/lab
@@ -95,10 +132,19 @@ jobs:
             python -m unittest discover -s tests -p "$pattern" -q
           done
           rm -rf src/lab
+      - name: Engine campaign report with explicit evidence gaps
+        if: always()
+        run: |
+          python tools/campaign_report.py --engine I1 --python-version ${{ matrix.python-version }} --output reports/i1-campaign-${{ matrix.python-version }}.json --markdown-output reports/i1-campaign-${{ matrix.python-version }}.md
       - name: JUnit diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: i1-current-junit-${{ matrix.python-version }}
-          path: reports/*.xml
+          path: |
+            reports/*.xml
+            reports/*.json
+            reports/*.md
+            reports/preset-oasis-ci/report.json
+            reports/preset-empty-m11-ci/report.json
           if-no-files-found: warn

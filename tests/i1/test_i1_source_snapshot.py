@@ -8,7 +8,7 @@ import subprocess
 import unittest
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 I0_SOURCE_TREE = "e1c30c78e1f8c89339b6616c1808508d2265bf68"
 
 

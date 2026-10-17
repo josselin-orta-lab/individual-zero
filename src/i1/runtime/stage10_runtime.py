@@ -676,6 +676,7 @@ class Stage10Runtime(Stage9Runtime):
         stays pending. Existing TD / kappa / precision / causal state never
         receives an invented update or an irreversible rewind.
         """
+        canonical = type(self).__name__ == "I1Runtime"
         coordinator = Stage10PublicationCoordinator(
             journal=self.journal, history=self.slow_history,
             slot=self.consolidation,
@@ -691,7 +692,6 @@ class Stage10Runtime(Stage9Runtime):
                 type(state) is dict and "forms" in state
             ),
         )
-        canonical = type(self).__name__ == "I1Runtime"
         if ((not canonical and candidate.get("forms")
              != self.slow_history.read_committed()["forms"])
                 or (canonical and set(candidate.get("forms", {}))

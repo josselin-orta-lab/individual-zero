@@ -6,7 +6,7 @@ This document reflects the live repository after #246 and the staged historical 
 | --- | --- | --- | --- |
 | I0 | immutable reference | `src/i0/` | no changes in an I1 development PR |
 | I0 Lab | frozen historical reference | `archive/i0/lab/` | byte-identical to former common Lab |
-| I1 | active artificial individual and version-owned Lab | `src/i1/`, `src/i1/lab/`, `src/i1/runtime/` | versioned modifications with explicit real-life tests |
+| I1 | active artificial individual and version-owned Lab | `src/i1/`, `src/i1/lab/`, `src/i1/runtime/`, `src/i1/docs/` | versioned modifications with explicit real-life tests |
 | I1 isolated Lab | generated from `src/i1/lab/` and `src/i1/runtime/` | temporary `i1lab/` | never commit generated output |
 | I1 birth | canonical natural identity | `i1lab.i1_birth.birth_i1` | no old experimental flags / hidden oracle |
 | I1 test harness | real engine, SMOKE/FULL | `scripts/test_i1_ci.py` | assert mechanism and observed outcomes, not fixed choices |
@@ -44,3 +44,7 @@ Avoid creating generic names such as `latest_model` in runtime imports. Every li
 Each motor version owns its own laboratory: the current I1 Lab is `src/i1/lab/`, and the frozen I0 Lab is `archive/i0/lab/` (original Git tree SHA `18f5aabdd49a5cc2f7cae3b0996bf958a0843028`). The unversioned `src/lab/` path is removed. The only exception is a temporary restoration of I0's original Lab in a disposable CI checkout to run archived I0 tests against their original imports. This is not an active shared Lab. Future I2 needs `src/i2/lab/` and its own tested custody; no engine should silently use another generation's Lab. The canonical I1 runner retains the generated `i1lab` import namespace for persisted birth compatibility, but its sources now come exclusively from I1.
 
 `individual-zero` remains a legacy I0 bootstrap demonstration, not a natural I1 CLI or scientific gate. Natural I1 must use its versioned birth entrypoint.
+
+## Documentation ownership
+
+Each engine owns its documentation under `src/iN/docs/`, beside its source, runtime and Lab. I1's authoritative handbook begins at [`src/i1/docs/README.md`](../../src/i1/docs/README.md). Global `docs/engineering/` contains shared infrastructure documentation and must not duplicate I1's theoretical authority.

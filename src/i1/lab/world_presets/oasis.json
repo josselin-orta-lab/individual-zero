@@ -1,0 +1,67 @@
+{
+  "schema": "individual-zero-i1-world-preset/v1",
+  "engine": "I1",
+  "id": "oasis",
+  "description": "Resources and drinkable water at the birth cell; no imposed actions.",
+  "spawn": [
+    8,
+    8
+  ],
+  "initial_body": {
+    "energy": 70,
+    "food": 35,
+    "water": 35,
+    "integrity": 85
+  },
+  "layout": {
+    "water_sources": [
+      [
+        8,
+        8
+      ],
+      [
+        9,
+        9
+      ]
+    ],
+    "resources": [
+      {
+        "cell": [
+          8,
+          8
+        ],
+        "kind": "berry_a",
+        "quantity": 5
+      },
+      {
+        "cell": [
+          11,
+          9
+        ],
+        "kind": "berry_b",
+        "quantity": 2
+      },
+      {
+        "cell": [
+          9,
+          8
+        ],
+        "kind": "wood",
+        "quantity": 3
+      },
+      {
+        "cell": [
+          8,
+          9
+        ],
+        "kind": "stone",
+        "quantity": 4
+      }
+    ],
+    "obstacles": [],
+    "creatures": [],
+    "danger_zones": [],
+    "lethal_zones": []
+  },
+  "recommended_steps": 24
+}

@@ -1,0 +1,83 @@
+{
+  "schema": "individual-zero-i1-world-preset/v1",
+  "engine": "I1",
+  "id": "hazard-edge",
+  "description": "Locally perceptible terrain and creatures coexist with hidden physical danger.",
+  "spawn": [
+    8,
+    8
+  ],
+  "initial_body": {
+    "energy": 70,
+    "food": 38,
+    "water": 32,
+    "integrity": 83
+  },
+  "layout": {
+    "water_sources": [
+      [
+        8,
+        9
+      ]
+    ],
+    "resources": [
+      {
+        "cell": [
+          9,
+          8
+        ],
+        "kind": "berry_a",
+        "quantity": 3
+      },
+      {
+        "cell": [
+          11,
+          9
+        ],
+        "kind": "berry_b",
+        "quantity": 3
+      },
+      {
+        "cell": [
+          10,
+          10
+        ],
+        "kind": "wood",
+        "quantity": 2
+      },
+      {
+        "cell": [
+          7,
+          9
+        ],
+        "kind": "stone",
+        "quantity": 2
+      }
+    ],
+    "obstacles": [
+      [
+        8,
+        7
+      ]
+    ],
+    "creatures": [
+      [
+        7,
+        8
+      ]
+    ],
+    "danger_zones": [
+      [
+        9,
+        8
+      ]
+    ],
+    "lethal_zones": [
+      [
+        10,
+        8
+      ]
+    ]
+  },
+  "recommended_steps": 30
+}
