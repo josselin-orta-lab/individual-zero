@@ -53,20 +53,22 @@ new_b = '''            if published_reports is None:
                     )
                     published_by_action.setdefault(key, []).append(report)
 
-            witness_key = (
-                witness.option_ref, witness.sent_t_monde,
-                witness.observed_t_monde,
-            )
+            # Preserve the original direct scan for small histories; do
+            # not allocate a filtering generator for one or two witnesses.
             matching_reports = (
-                published_by_action.get(witness_key, ())
-                if published_by_action is not None
-                else (
-                    report for report in published_reports
-                    if (report.option_ref, report.sent_t_monde,
-                        report.observed_t_monde) == witness_key
+                published_reports if published_by_action is None
+                else published_by_action.get(
+                    (witness.option_ref, witness.sent_t_monde,
+                     witness.observed_t_monde), ()
                 )
             )
             for report in matching_reports:
+                if (
+                    report.option_ref != witness.option_ref
+                    or report.sent_t_monde != witness.sent_t_monde
+                    or report.observed_t_monde != witness.observed_t_monde
+                ):
+                    continue
                 compatible = any('''
 assert source.count(new_a) == source.count(new_b) == 1
 former = source.replace(new_a, "", 1).replace(new_b, old_b, 1)
