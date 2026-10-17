@@ -989,3 +989,40 @@ unchanged.
 tests, CI, benchmarks or simulations were executed. Numerical performance
 gains and complete runtime/behavior parity remain to be independently
 established.
+
+## I1 P-42 sixth pass: shared one-pass selection for two observational owners (2026-10-17)
+
+Static inspection showed that `build_consolidated_owner_forms` invoked
+`build_consolidated_owner_form` for Perception and Metacognition/Health
+independently, traversing the whole private
+`private_replay_observations` history **twice**. This history grows with
+witnessed episodes, yet publication only needs the latest 64 physical
+observations and the latest 64 agency comparisons by deterministic
+`(event_ref, original_ordinal)` order.
+
+The I1-only overlay now collects those two independent bounded heaps in
+**one traversal** of the private record list when the paid sixth pass
+builds all four owner forms. A row is routed only by its *already witnessed*
+`event_kind`, never by hidden world or oracle facts. The exact prior
+eligibility checks, stable tie-breaking by original ordinal, identical
+top-64 limit for each owner, chronological sorted output, live-evidence
+validation and independent `deepcopy` of the selected nested observations
+are retained. Both owners remain separate causal proprietors. The
+Value/Needs procedural and CausalModel hypothesis forms retain their
+unchanged checks and order.
+
+One-owner reconstruction by Stage10/M11 still calls
+`build_consolidated_owner_form`, which uses this same selection helper
+with a single owner; its explicit `detach_evidence=False` means
+temporary read-only evidence is not retained or published. This avoids
+two separate implementations of the selection semantics.
+
+The previous sixth-pass observation-selection phase performed two
+O(R) scans of R private records; the new route performs one O(R) scan
+with the same two bounded heaps (each at most 64). This is a source-level
+operation count, **not a benchmark result**. No I0 change, UC shortcut,
+new belief, owner merger, post-mortem action or lived-state rewind occurs.
+
+**NON VALIDÉ:** static source inspection only. No tests, simulations,
+generator runs, CI or benchmarks were executed; runtime parity and measured
+speedup remain to be established.

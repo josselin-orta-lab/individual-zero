@@ -120,6 +120,54 @@ def validate_owner_rows(owner_id, rows):
         raise ValueError("active lived-replay index exceeded explicit bound")
 
 
+def _replay_forms_from_one_scan(candidate, owners, *, detach_evidence):
+    """Collect the latest witnessed rows per owner with a shared source scan.
+
+    This never merges owner evidence, grants authority, or changes the stable
+    last-64-by-event-ref selection. Stage10/M11 may compare read-only forms;
+    the sixth pass always detaches the two published owner forms.
+    """
+    owner_for_kind = {REPLAY_KIND[owner]: owner for owner in owners}
+    heaps = {owner: [] for owner in owners}
+    for ordinal, row in enumerate(candidate.get("private_replay_observations", [])):
+        if type(row) is not dict:
+            raise ValueError("unreviewed private replay row")
+        owner = owner_for_kind.get(row.get("event_kind"))
+        if owner is None:
+            continue
+        if type(row.get("lived_observation")) is not dict:
+            raise ValueError("active observation must originate in lived replay")
+        event_ref = row["event_ref"]
+        row["episode_ref"]
+        row["projection_digest"]
+        ranking = (event_ref, ordinal)
+        kept = heaps[owner]
+        if len(kept) < MAX_VISIBLE_REPLAY_REFS:
+            heappush(kept, (event_ref, ordinal, row))
+        elif ranking > kept[0][:2]:
+            heapreplace(kept, (event_ref, ordinal, row))
+
+    forms = {}
+    for owner in owners:
+        rows = [
+            {
+                "episode_ref": row["episode_ref"],
+                "event_ref": event_ref,
+                "event_kind": REPLAY_KIND[owner],
+                "projection_digest": row["projection_digest"],
+                "lived_observation": (
+                    deepcopy(row["lived_observation"])
+                    if detach_evidence else row["lived_observation"]
+                ),
+                "verification_status": "observed_not_verified",
+            }
+            for event_ref, _, row in sorted(heaps[owner])
+        ]
+        validate_owner_rows(owner, rows)
+        forms[owner] = rows
+    return forms
+
+
 def build_consolidated_owner_form(candidate, owner_id, *, detach_evidence=True):
     """Rebuild one owner's lived form; detach only when its result will be owned.
 
@@ -151,53 +199,25 @@ def build_consolidated_owner_form(candidate, owner_id, *, detach_evidence=True):
         return rows
     if owner_id not in REPLAY_KIND:
         raise ValueError("unknown active cognitive publication owner")
-    # Only the lexicographically latest 64 observations may become active.
-    # Select those first, then detach their nested evidence. The ordinal
-    # preserves Python's stable sorting semantics for duplicate event refs.
-    # All matching source rows still undergo the original structural checks.
-    kept = []
-    wanted = REPLAY_KIND[owner_id]
-    for ordinal, row in enumerate(candidate.get("private_replay_observations", [])):
-        if type(row) is not dict:
-            raise ValueError("unreviewed private replay row")
-        if row.get("event_kind") != wanted:
-            continue
-        if type(row.get("lived_observation")) is not dict:
-            raise ValueError("active observation must originate in lived replay")
-        event_ref = row["event_ref"]
-        row["episode_ref"]
-        row["projection_digest"]
-        ranking = (event_ref, ordinal)
-        if len(kept) < MAX_VISIBLE_REPLAY_REFS:
-            heappush(kept, (event_ref, ordinal, row))
-        elif ranking > kept[0][:2]:
-            heapreplace(kept, (event_ref, ordinal, row))
-    rows = [
-        {
-            "episode_ref": row["episode_ref"],
-            "event_ref": event_ref,
-            "event_kind": wanted,
-            "projection_digest": row["projection_digest"],
-            "lived_observation": (
-                deepcopy(row["lived_observation"])
-                if detach_evidence else row["lived_observation"]
-            ),
-            "verification_status": "observed_not_verified",
-        }
-        for event_ref, _, row in sorted(kept)
-    ]
-    validate_owner_rows(owner_id, rows)
-    return rows
+    return _replay_forms_from_one_scan(
+        candidate, (owner_id,), detach_evidence=detach_evidence,
+    )[owner_id]
 
 
 def build_consolidated_owner_forms(candidate):
-    """Assemble the same four owner-specific forms at the paid sixth pass."""
-    return {
+    """Assemble four independently owned forms; scan lived replay only once."""
+    # The first two forms keep the previous owner-specific validation.
+    forms = {
         owner: build_consolidated_owner_form(candidate, owner)
-        for owner in (
-            "value_needs", "causal_model", "perception", "metacognition_health",
-        )
+        for owner in ("value_needs", "causal_model")
     }
+    # One private observation can belong to only one of these two owners.
+    # Both keep their independent top-64 heap, ordering and provenance check.
+    forms.update(_replay_forms_from_one_scan(
+        candidate, ("perception", "metacognition_health"),
+        detach_evidence=True,
+    ))
+    return forms
 
 
 class ActiveConsolidatedOwner:
