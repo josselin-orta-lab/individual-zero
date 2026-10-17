@@ -1,0 +1,57 @@
+{
+  "schema": "individual-zero-engine-contract/v1",
+  "generation": "I1",
+  "status": "active",
+  "parent": "I0",
+  "paths": {
+    "engine": "src/i1",
+    "lab": "src/i1/lab",
+    "runtime": "src/i1/runtime",
+    "tests": "tests/i1",
+    "documentation": "docs/engines/i1"
+  },
+  "entrypoints": {
+    "runtime": "i1lab.i1_natural_runtime.I1Runtime",
+    "birth": "i1lab.i1_birth.birth_i1",
+    "m11_birth": "i1lab.i1_birth.birth_i1_m11",
+    "m11_recovery": "i1lab.i1_birth.recover_i1_m11"
+  },
+  "publication_owners": [
+    "value_and_needs",
+    "causal_model",
+    "perception",
+    "metacognition_health"
+  ],
+  "constraints": {
+    "first_person_observations_only": true,
+    "uc_billed_cognition": true,
+    "mortality_irreversible": true,
+    "live_state_rollback": false,
+    "hidden_oracle_input": false,
+    "legacy_h1_h2_default": false
+  },
+  "persistence": {
+    "mechanism": "sqlite-m11",
+    "cold_recovery": "authenticated_current_generation_only",
+    "no_postmortem_recovery": true
+  },
+  "build": {
+    "script": "scripts/build_i1_fork.py",
+    "output_namespace": "i1lab",
+    "stage": "temporary_compatibility_builder"
+  },
+  "validation": {
+    "workflow": ".github/workflows/i1-current-ci.yml",
+    "harness": "scripts/test_i1_ci.py",
+    "smoke": "python scripts/test_i1_ci.py --mode smoke --seed 246",
+    "full": "python scripts/test_i1_ci.py --mode full --seed 247",
+    "m11": "tests/test_i1_natural_m11_cold_recovery.py",
+    "m11_adversarial": "tests/test_i1_m11_adversarial.py",
+    "generated_source": "tests/test_i1_generated_isolation.py",
+    "architecture": "scripts/check_engine_repository.py"
+  },
+  "scientific": {
+    "gate": "not_established",
+    "evidence_index": "docs/engines/i1/STATUS.md"
+  }
+}
