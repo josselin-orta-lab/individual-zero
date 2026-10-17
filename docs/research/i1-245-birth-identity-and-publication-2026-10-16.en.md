@@ -313,3 +313,26 @@ STATUS: SOURCE INSPECTION ONLY, NON VALIDÉ. Neither tests, benchmarks, CI,
 generated-model execution nor simulations were run. Functional equivalence
 and quantitative performance gains have not been measured. No I0 source
 or normative contract was modified.
+
+## I1 bounded active observational publication (2026-10-17)
+
+Static inspection showed that each of the canonical Perception and
+Metacognition/Health publication forms was sorted and deep-copied in full
+even though its published projection retains at most 64 latest event
+references. The I1-only owner compiler now streams those already witnessed
+rows through a bounded min-heap keyed by (event reference, source ordinal).
+The ordinal preserves stable sort selection for equal event identities.
+Required raw source fields and observed-payload types are checked for
+every eligible row, not only the winners; the 64 final nested observations
+are detached, sorted and checked with the unchanged owner validator.
+The complete private lived history remains preserved in SlowHistory.
+
+The publication bound, provenance fields, six-pass computation, causal
+ownership, postcut rebase, and M11 checks were not relaxed. This limits the
+temporary selection buffer to 64 rows per observational owner and nested
+deepcopies to 64 items per owner per build, instead of the number of
+private matching records. No numeric runtime improvement or semantic
+equivalence is claimed without execution.
+
+STATUS: SOURCE INSPECTION ONLY, NON VALIDÉ. No tests, simulations,
+benchmarks, generation or validation executions were run.

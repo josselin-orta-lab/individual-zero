@@ -9,6 +9,7 @@ on the current online owner state without replaying online learning.
 from __future__ import annotations
 
 from copy import deepcopy
+from heapq import heappush, heapreplace
 from string import hexdigits
 
 from .determinism import canonical_causal_bytes, sha256_hex
@@ -146,27 +147,38 @@ def build_consolidated_owner_form(candidate, owner_id):
         return rows
     if owner_id not in REPLAY_KIND:
         raise ValueError("unknown active cognitive publication owner")
-    matching = []
+    # Only the lexicographically latest 64 observations may become active.
+    # Select those first, then detach their nested evidence. The ordinal
+    # preserves Python's stable sorting semantics for duplicate event refs.
+    # All matching source rows still undergo the original structural checks.
+    kept = []
     wanted = REPLAY_KIND[owner_id]
-    for row in candidate.get("private_replay_observations", []):
+    for ordinal, row in enumerate(candidate.get("private_replay_observations", [])):
         if type(row) is not dict:
             raise ValueError("unreviewed private replay row")
         if row.get("event_kind") != wanted:
             continue
         if type(row.get("lived_observation")) is not dict:
             raise ValueError("active observation must originate in lived replay")
-        matching.append({
+        event_ref = row["event_ref"]
+        row["episode_ref"]
+        row["projection_digest"]
+        ranking = (event_ref, ordinal)
+        if len(kept) < MAX_VISIBLE_REPLAY_REFS:
+            heappush(kept, (event_ref, ordinal, row))
+        elif ranking > kept[0][:2]:
+            heapreplace(kept, (event_ref, ordinal, row))
+    rows = [
+        {
             "episode_ref": row["episode_ref"],
-            "event_ref": row["event_ref"],
+            "event_ref": event_ref,
             "event_kind": wanted,
             "projection_digest": row["projection_digest"],
             "lived_observation": deepcopy(row["lived_observation"]),
             "verification_status": "observed_not_verified",
-        })
-    # A bounded owner-specific live view; the full private record remains h.
-    matching.sort(key=lambda item: item["event_ref"])
-    rows = matching[-MAX_VISIBLE_REPLAY_REFS:]
-    rows.sort(key=lambda item: item["event_ref"])
+        }
+        for event_ref, _, row in sorted(kept)
+    ]
     validate_owner_rows(owner_id, rows)
     return rows
 
