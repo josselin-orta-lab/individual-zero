@@ -10,7 +10,7 @@ python tools/run_i1_world_preset.py --preset foraging --seed 246 --steps 24 --li
 python tools/inspect_i1_world_report.py --report reports/foraging-246/report.json
 ```
 
-The **third command is illustrative only**: verify the report filename emitted by the runner before executing the inspector, since it requires `--report` and must receive the actual JSON path. The output directory must be new. The runner selects external initial conditions; `seed` governs the reproducible birth identity, not the individual's decisions or the world's hidden information. `--custody m11` selects mutually exclusive transactional persistence.
+The runner writes `report.json` in the requested output directory in its `finally` block, including on technical failure; the inspector reads that exact file via `--report`. Check `status` and `technical_error` before interpreting any results. The output directory must be new. The runner selects external initial conditions; `seed` governs the reproducible birth identity, not the individual's decisions or the world's hidden information. `--custody m11` selects mutually exclusive transactional persistence.
 
 The external world report currently exposes physical observations and terminal/storage receipts; it explicitly marks `needs_arbitration`, `goal_selection`, `option_competition`, `uc_expenditure`, `first_person_learning`, `stage10_nonempty_publication`, and `subjective_agency` as **NOT_OBSERVED**. Never fill these fields from operator truth or assumptions about the selected action.
 
