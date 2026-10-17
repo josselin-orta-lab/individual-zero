@@ -209,6 +209,16 @@ def _approved_stage6_bfs_deque(before: bytes, after: bytes) -> bool:
     return original == candidate
 
 
+def _approved_agency_evidence_index(before: bytes, after: bytes) -> bool:
+    """Allow only the two reviewed read-only evidence indexing changes."""
+    old, new = before.decode("utf-8"), after.decode("utf-8")
+    for prior, replacement in [["        rules: list[NumericPredictionCorrection] = []\n        for _, witness in sorted(self._numeric_witnesses.items()):","        # Derived, read-only index of already published agency evidence.\n        # Rebuild on every query: no stale cache, no new causal owner, and\n        # preserve the original lexical evidence-ID ordering within keys.\n        published_by_action: dict[tuple[str, int, int], list[AgencyEvidence]] = {}\n        for report in self.published_agency_evidence():\n            key = (report.option_ref, report.sent_t_monde, report.observed_t_monde)\n            published_by_action.setdefault(key, []).append(report)\n\n        rules: list[NumericPredictionCorrection] = []\n        for _, witness in sorted(self._numeric_witnesses.items()):"],["            for report in self.published_agency_evidence():\n                if (\n                    report.option_ref != witness.option_ref\n                    or report.sent_t_monde != witness.sent_t_monde\n                    or report.observed_t_monde != witness.observed_t_monde\n                ):\n                    continue\n                compatible = any(","            for report in published_by_action.get(\n                (witness.option_ref, witness.sent_t_monde,\n                 witness.observed_t_monde), ()\n            ):\n                compatible = any("]]:
+        if old.count(prior) != 1 or new.count(replacement) != 1:
+            return False
+        old = old.replace(prior, replacement, 1)
+    return old == new
+
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -233,6 +243,10 @@ def verify(reference_root: Path) -> None:
                     ))
                 or (rel == "i1/modules/consolidation_pending_index.py"
                     and _approved_pending_index_cursor(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
+                or (rel == "i1/modules/causal_model.py"
+                    and _approved_agency_evidence_index(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/stage6_planning.py"
