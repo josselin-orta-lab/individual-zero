@@ -1611,3 +1611,51 @@ and no I0 change was introduced.
 **NON VALIDÉ:** source inspection and Git commit only. No generated I1,
 tests, CI, simulations or benchmarks were executed. Actual speedups
 and runtime equivalence remain unverified.
+
+## I1 M11 correlation witness restoration: linear, symmetric context proof (2026-10-17)
+
+Static inspection of `CausalModel._restore_causal_state_unchecked()` found
+three independent sources of repeated work inside every restored
+`causal_correlation_witnesses` record:
+
+1. The old decoder checked that each treated and control evidence-ID list
+   was exactly `sorted(set(refs))` after separately validating that
+   every ID was a nonempty string. This is equivalent to requiring
+   strictly increasing lexicographic IDs, so the I1-only decoder now
+   compares adjacent IDs in one pass. Duplicates, unsorted IDs, missing
+   IDs, and malformed evidence still fail closed.
+2. For every treated observation the old decoder walked all controls
+   looking for matching `observation_context` and
+   `controlled_variables`, and then repeated this operation in the
+   opposite direction. Every restored observation first passes
+   `decode_observation`, which validates nonempty string values and
+   normalizes controls to immutable tuple pairs. Consequently BOTH
+   directions of existence matching hold if and only if the sets of
+   exact `(observation_context, controlled_variables)` keys are
+   equal. The I1-only decoder compares these two sets, rejecting any
+   unmatched treated or control record, while retaining all original
+   independent evidence, contingency and cause-present checks.
+3. The treated-positive numerator was computed twice for `n1` and the
+   above-control-base-rate inequality. It is now computed once and reused
+   in both exact integer-count comparisons. No floating-point or
+   approximation is introduced.
+
+The newly structured checks preserve the same
+`ValueError("causal snapshot invalid controlled correlation witness")`
+for invalid restored witnesses, and independently verify every
+published correlation witness as before. The original stored witness
+ID tuples, comparison frequencies, full CausalModel provenance and
+M11 authenticated generation guards remain unchanged.
+
+For T treated, C controls and U distinct witnessed context keys, the
+compatibility stage is now expected O(T+C) in time and O(U) in
+temporary sets rather than O(T*C) in the worst case. Each ID-order
+check is O(T+C) rather than sorting all witness refs. These are static
+algorithmic bounds, **not measured runtime speedups**.
+This introduces no scientific knowledge, new authority, mutation of
+published evidence, rollback, or I0 change.
+
+**NON VALIDÉ:** source inspection and commit only. No tests, I1
+generation, CI, benchmark or simulated life was run at the user's
+request. End-to-end equivalence and actual performance gains require
+independent validation before any GO decision.

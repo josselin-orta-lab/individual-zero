@@ -2953,30 +2953,48 @@ class CausalModel:
                 or not isinstance(control_ids, (list, tuple))
                 or not treated_ids or not control_ids
                 or any(not isinstance(k, str) or not k for k in (*treated_ids, *control_ids))
-                or list(treated_ids) != sorted(set(treated_ids))
-                or list(control_ids) != sorted(set(control_ids))
+                # These are validated nonempty string references. Equality
+                # with sorted(set(refs)) is precisely strict lexical order;
+                # check adjacent IDs instead of sorting and copying history.
+                or any(
+                    refs[i - 1] >= refs[i]
+                    for refs in (treated_ids, control_ids)
+                    for i in range(1, len(refs))
+                )
             ):
                 raise ValueError("invalid causal snapshot correlation witness samples")
             treated = [obs.get(k) for k in treated_ids]
             controls = [obs.get(k) for k in control_ids]
+            # First reject absent, foreign or wrongly classified records,
+            # before reading their context. No pending observation can satisfy
+            # these lookups: obs contains published lived evidence only.
             if (
                 any(x is None or x.contingency_ref != ref or not x.cause_present
                     for x in treated)
                 or any(x is None or x.contingency_ref != ref or x.cause_present
                     for x in controls)
-                or not all(any(
-                    x.observation_context == y.observation_context
-                    and x.controlled_variables == y.controlled_variables
-                    for y in controls
-                ) for x in treated)
-                or not all(any(
-                    x.observation_context == y.observation_context
-                    and x.controlled_variables == y.controlled_variables
-                    for x in treated
-                ) for y in controls)
-                or sum(x.effect_present for x in treated) < self.config.n1
+            ):
+                raise ValueError("causal snapshot invalid controlled correlation witness")
+            # Each restored observation has already passed decode_observation,
+            # which canonicalizes the witnessed control pairs to tuples of
+            # nonempty strings. Both old all(any(...)) directions hold iff the
+            # complete sets of exact observable context/controls keys agree.
+            # No unmatched treated OR control record may gain causal credit.
+            treated_keys = {
+                (x.observation_context, x.controlled_variables)
+                for x in treated
+            }
+            control_keys = {
+                (y.observation_context, y.controlled_variables)
+                for y in controls
+            }
+            if treated_keys != control_keys:
+                raise ValueError("causal snapshot invalid controlled correlation witness")
+            treated_positive = sum(x.effect_present for x in treated)
+            if (
+                treated_positive < self.config.n1
                 or (
-                    sum(x.effect_present for x in treated) * len(controls)
+                    treated_positive * len(controls)
                     <= sum(y.effect_present for y in controls) * len(treated)
                 )
             ):
