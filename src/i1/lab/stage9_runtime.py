@@ -124,9 +124,13 @@ class Stage9Runtime(Stage8Runtime):
                 t_monde=capture.t_monde,
                 water=float(capture.body["water"]),
             )
-            before = len(self.memory.episodes)
+            # Count-only checkpoint: do not materialize the full lifetime
+            # episode tuple twice during every waking cognitive cycle.
+            before = self.memory.episode_count
             original_memory(_ctx)
-            newly_closed = self.memory.episodes[before:]
+            newly_closed = self.memory.read_episodes_range(
+                before, self.memory.episode_count,
+            )
             if newly_closed:
                 autobiography = self._autobiographical_events(cycle=cycle)
             for episode in newly_closed:
