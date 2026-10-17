@@ -38,90 +38,6 @@ def rewrite(text: str) -> str:
 
 
 
-def i1_stage10_canonical_baseline_source(source: str) -> str:
-    """Hold byte-exact owner baselines rather than live-state rollback copies.
-
-    Applied only to the generated I1lab Stage10 coordinator, AFTER the
-    no-live-rollback transform removes all exception-path old-state restores.
-    Original owner snapshots still exist locally for detached preparation;
-    the retained cross-boundary references are exact canonical bytes.
-    """
-    changes = (
-        (
-            "    source_history_state: object\n    baseline_owner_states: Mapping[str, object]\n",
-            "    source_history_canonical: bytes\n    baseline_owner_canonical: Mapping[str, bytes]\n",
-        ),
-        (
-            "        baseline = {\n            name: _copy_causal(owner.export_causal_state())\n            for name, owner in sorted(self.owners.items())\n        }\n",
-            "        # The snapshots are needed only during rebase. Retain canonical\n        # bytes for precise pre-publication equality, not rollback copies.\n        baseline = {}\n        baseline_canonical = {}\n        for name, owner in sorted(self.owners.items()):\n            exported = owner.export_causal_state()\n            baseline_canonical[name] = canonical_causal_bytes(exported)\n            baseline[name] = deepcopy(exported)\n",
-        ),
-        (
-            "            if canonical_causal_bytes(owner.export_causal_state()) != canonical_causal_bytes(baseline[name]):\n",
-            "            if (canonical_causal_bytes(owner.export_causal_state())\n                    != baseline_canonical[name]):\n",
-        ),
-        (
-            "        previous_history = self.history.export_causal_state()\n",
-            "        source_history_canonical = canonical_causal_bytes(\n            self.history.export_causal_state()\n        )\n",
-        ),
-        (
-            "            source_history_state=previous_history,\n            baseline_owner_states=baseline,\n",
-            "            source_history_canonical=source_history_canonical,\n            baseline_owner_canonical=baseline_canonical,\n",
-        ),
-        (
-            "        if canonical_causal_bytes(before_history) != canonical_causal_bytes(prepared.source_history_state):\n",
-            "        if canonical_causal_bytes(before_history) != prepared.source_history_canonical:\n",
-        ),
-        (
-            "            if (canonical_causal_bytes(owner.export_causal_state())\n                    != canonical_causal_bytes(prepared.baseline_owner_states[name])):\n",
-            "            if (canonical_causal_bytes(owner.export_causal_state())\n                    != prepared.baseline_owner_canonical[name]):\n",
-        ),
-    )
-    for before, after in changes:
-        if source.count(before) != 1:
-            raise ValueError("unreviewed I1 Stage10 canonical baseline anchor")
-        source = source.replace(before, after)
-    if ("prepared.baseline_owner_states" in source
-            or "prepared.source_history_state" in source):
-        raise ValueError("unmigrated I1 Stage10 rollback snapshot references")
-    return source
-
-
-def i1_slow_history_preflight_no_full_birth_copy_source(source: str) -> str:
-    """Preflight staged history without cloning the candidate twice.
-
-    The temporary owner is never published. Its restore method still checks
-    the complete staged history and creates an independent owned copy.
-    """
-    before = "        # Validate h before applying ANY owner states.\n        temp = SlowHistory(\n            birth_version=prepared.source_version,\n            birth_state=prepared.candidate_history,\n        )\n        temp.restore_causal_state(staged_history)\n"
-    after = "        # Preflight exact staged state before touching any living owner.\n        # SlowHistory.restore_causal_state validates and detaches that state;\n        # the temporary constructor's birth payload is immediately discarded.\n        temp = SlowHistory(\n            birth_version=prepared.source_version,\n            birth_state={},\n        )\n        temp.restore_causal_state(staged_history)\n"
-    if source.count(before) != 1:
-        raise ValueError("unreviewed I1 SlowHistory preflight source")
-    return source.replace(before, after)
-
-
-def i1_publication_detached_candidate_source(source: str) -> str:
-    """Avoid duplicate private-history materialization in generated I1 only.
-
-    The validated transaction returns a detached tree, and the SlowHistory
-    restore boundary validates and owns its own independent replacement.
-    """
-    changes = (
-        ("        candidate = _copy_causal(transaction.validated_candidate(\n            validator=technical_validator))\n",
-         "        # The transaction already validates and detaches its private candidate.\n        candidate = transaction.validated_candidate(\n            validator=technical_validator)\n"),
-        ("        staged_history[\"current_state\"] = _copy_causal(prepared.candidate_history)\n",
-         "        # SlowHistory.restore_causal_state independently validates and detaches\n        # this candidate before installing it as the current owned state.\n        staged_history[\"current_state\"] = prepared.candidate_history\n"),
-        (
-            "        staged_history = deepcopy(before_history)\n",
-            "        # The committed history export already owns its nested state.\n        # Copy only the lineage list we append to; baseline checks retain the\n        # independent before_history and SlowHistory.restore still detaches.\n        staged_history = dict(before_history)\n        staged_history[\"lineage\"] = list(before_history[\"lineage\"])\n",
-        ),
-    )
-    for before, after in changes:
-        if source.count(before) != 1:
-            raise ValueError("unreviewed I1 Stage10 publication copy boundary")
-        source = source.replace(before, after)
-    return source
-
-
 def i1_bounded_stage10_sleep_anchor_source(source: str) -> str:
     """Reverse-scan append-only frozen journal entries without allocating all."""
     old = "            e for e in reversed(self.journal.entries)\n"
@@ -143,77 +59,6 @@ def i1_no_meta_custody_rollback_source(source: str) -> str:
     if source.count(before) != 1:
         raise ValueError("unreviewed I1 metacognition/health no-rewind boundary")
     return source.replace(before, after)
-
-
-def i1_stage10_publication_bounded_count_source(source: str) -> str:
-    """Read journal cardinality without repeatedly allocating all entries.
-
-    The generated I1lab journal has an exact O(1) entry_count view; full
-    journal verification, append and owner/version checks are unchanged.
-    """
-    before = "len(self.journal.entries)"
-    if source.count(before) != 3:
-        raise ValueError("unreviewed I1 Stage10 publication occurrence count")
-    return source.replace(before, "self.journal.entry_count")
-
-
-def i1_no_live_publication_rollback_source(source: str) -> str:
-    """Ban live owner rewind after attempted canonical I1 publication.
-
-    Errors propagate to the already fail-stopped mortal Stage10.run_step and
-    the independent M11 poison/uncertain-intent gate. The source lab and I0
-    implementations are deliberately unchanged.
-    """
-    changes = (
-        ("no owner changes until every candidate is valid, and a failed installation\nrestores the complete prior states before the Scheduler continues.\n", "all candidates are validated before owner installation. Any failed\ninstallation halts the mortal step without restoring earlier live states.\n"),
-        ("        except Exception as error:\n            # A successful journal append is an irreversible publication\n            # boundary. If acknowledgement fails AFTER the append, rolling\n            # the active owners or h back would contradict the durable causal\n            # journal and permit a second publication of the same life.\n            #\n            # A failed fsync may have left a torn WAL: a poisoned journal\n            # likewise cannot authorize restoring active published forms.\n            journal_committed = (\n                len(self.journal.entries) != event_index\n                or self.journal.head_hash != prepared.postcut_slice.end_hash\n            )\n            if journal_committed or not self.journal.verify():\n                raise RuntimeError(\n                    \"irreversible consolidation journal fault after publication; \"\n                    \"halt the individual, never restore committed active state\"\n                ) from error\n            # Before the journal event exists, all states were private and\n            # the scheduler has not exposed an activation; safe to discard.\n            self.history.restore_causal_state(before_history)\n            for name in sorted(self.owners):\n                self.owners[name].restore_causal_state(\n                    deepcopy(prepared.baseline_owner_states[name]))\n            raise\n", "        except Exception as error:\n            # Installation of a newly published version may have mutated a\n            # live owner even if the journal event was not appended. I1 may\n            # never rewind such an owner. Stage10.run_step irreversibly halts\n            # the mortal identity on the propagated error, while M11 also\n            # refuses continuation of an uncertain private generation.\n            journal_committed = (\n                len(self.journal.entries) != event_index\n                or self.journal.head_hash != prepared.postcut_slice.end_hash\n            )\n            if journal_committed or not self.journal.verify():\n                raise RuntimeError(\n                    \"irreversible consolidation journal fault after publication; \"\n                    \"halt the individual, never restore committed active state\"\n                ) from error\n            raise RuntimeError(\n                \"incomplete consolidation owner publication; \"\n                \"halt the individual, never restore previous cognitive state\"\n            ) from error\n"),
-    )
-    for before, after in changes:
-        if source.count(before) != 1:
-            raise ValueError("unreviewed I1 no-rollback Stage10 boundary")
-        source = source.replace(before, after)
-    return source
-
-
-def i1_committed_history_metadata_source(source: str) -> str:
-    """Generated I1-only SlowHistory: O(1) immutable committed-ref access.
-
-    The cached frozenset is owned by the same SlowHistory instance, derived
-    exclusively at the canonical birth and every checked restore. It is not
-    a new writer, snapshot source, or cognitive read with different UC rules.
-    """
-    birth = '        self._lineage: list[dict[str, object]] = []\n'
-    birth_new = (
-        birth + '        self._i1_committed_refs = frozenset(\n'
-        '            self._current_state["consolidated_episode_refs"]\n'
-        '        )\n'
-    )
-    if source.count(birth) != 1:
-        raise ValueError("unreviewed SlowHistory I1 birth metadata")
-    source = source.replace(birth, birth_new)
-    read = '    def read_committed(self) -> object:\n'
-    method = (
-        '    def committed_episode_refs(self) -> frozenset[str]:\n'
-        '        """Read exact committed identifiers without copying private forms."""\n'
-        '        return self._i1_committed_refs\n\n'
-    )
-    if source.count(read) != 1:
-        raise ValueError("unreviewed SlowHistory committed-ref read")
-    source = source.replace(read, method + read)
-    restore = '        # Assign only after validating the entire replacement.\n'
-    amended = (
-        '        refs = current.get("consolidated_episode_refs")\n'
-        '        if (type(refs) is not list\n'
-        '                or any(type(ref) is not str or not ref for ref in refs)\n'
-        '                or len(refs) != len(set(refs))):\n'
-        '            raise ValueError("unverified consolidated episode references")\n'
-        '        committed = frozenset(refs)\n'
-        + restore
-        + '        self._i1_committed_refs = committed\n'
-    )
-    if source.count(restore) != 1:
-        raise ValueError("unreviewed SlowHistory committed-ref restore")
-    return source.replace(restore, amended)
 
 
 def i1_m11_bounded_journal_source(source: str) -> str:
@@ -598,18 +443,10 @@ def generate(output: Path) -> dict[str, object]:
             relative = file.relative_to(source)
             if input_package == "i1" and relative.parts[0] == "runtime":
                 continue  # Built into i1lab below, never twice in generated i1.
-            if input_package == "lab" and relative.as_posix() in {"world.py", "journal.py", "journal_views.py", "consolidation_lived_evidence.py", "consolidation_postcut_journal.py", "sqlite_life_store.py", "sqlite_runtime_custody.py"}:
+            if input_package == "lab" and relative.as_posix() in {"world.py", "journal.py", "journal_views.py", "consolidation_lived_evidence.py", "consolidation_postcut_journal.py", "sqlite_life_store.py", "sqlite_runtime_custody.py", "consolidation_publication.py"}:
                 continue  # Versioned native I1 world, journal and lived views.
             contents = file.read_text(encoding="utf-8")
             transformed = rewrite(contents)
-            if (output_package == "i1lab"
-                    and relative.as_posix() == "consolidation_publication.py"):
-                transformed = i1_committed_history_metadata_source(transformed)
-                transformed = i1_publication_detached_candidate_source(transformed)
-                transformed = i1_slow_history_preflight_no_full_birth_copy_source(transformed)
-                transformed = i1_no_live_publication_rollback_source(transformed)
-                transformed = i1_stage10_publication_bounded_count_source(transformed)
-                transformed = i1_stage10_canonical_baseline_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "stage4_runtime.py"):
                 transformed = i1_canonical_active_value_source(transformed)
