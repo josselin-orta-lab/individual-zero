@@ -7,7 +7,6 @@ on:
       - 'src/i1/runtime/**'
       - 'scripts/build_i1_fork.py'
       - 'scripts/test_i1_ci.py'
-      - 'tests/test_i1_source_snapshot.py'
       - 'scripts/test_i1_artifact_parity.py'
       - 'scripts/check_engine_contracts.py'
       - 'tools/new_engine.py'
@@ -67,7 +66,7 @@ jobs:
       - name: Static syntax
         run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
       - name: Frozen I0 and versioned Lab source guard
-        run: python -m unittest discover -s tests -p test_i1_source_snapshot.py -v
+        run: python -m unittest discover -s tests/i1 -p test_i1_source_snapshot.py -v
       - name: Current I1 independent SMOKE/FULL
         run: python scripts/test_i1_ci.py --mode ${{ github.event.inputs.mode || 'smoke' }} --seed 246 --junit reports/i1-${{ matrix.python-version }}.xml
       - name: I1 natural FULL (multiple autonomous mortal lives)
@@ -91,11 +90,11 @@ jobs:
           assert int(suite.attrib["errors"]) == 1, suite.attrib
           PY
       - name: Current I1 M11 cold recovery
-        run: python -m unittest discover -s tests -p test_i1_natural_m11_cold_recovery.py -v
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_m11_cold_recovery.py -v
       - name: Current I1 M11 adversarial COMMIT and irreversible death
-        run: python -m unittest discover -s tests -p test_i1_m11_adversarial.py -v
+        run: python -m unittest discover -s tests/i1 -p test_i1_m11_adversarial.py -v
       - name: Current I1 generated-world separation
-        run: python -m unittest discover -s tests -p test_i1_generated_isolation.py -q
+        run: python -m unittest discover -s tests/i1 -p test_i1_generated_isolation.py -q
       - name: I0 baseline non-regression (archived fixtures, unchanged bytes)
         run: |
           cp -a archive/i0/lab src/lab

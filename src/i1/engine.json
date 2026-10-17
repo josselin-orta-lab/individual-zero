@@ -45,9 +45,9 @@
     "harness": "scripts/test_i1_ci.py",
     "smoke": "python scripts/test_i1_ci.py --mode smoke --seed 246",
     "full": "python scripts/test_i1_ci.py --mode full --seed 247",
-    "m11": "tests/test_i1_natural_m11_cold_recovery.py",
-    "m11_adversarial": "tests/test_i1_m11_adversarial.py",
-    "generated_source": "tests/test_i1_generated_isolation.py",
+    "m11": "tests/i1/test_i1_natural_m11_cold_recovery.py",
+    "m11_adversarial": "tests/i1/test_i1_m11_adversarial.py",
+    "generated_source": "tests/i1/test_i1_generated_isolation.py",
     "architecture": "scripts/check_engine_repository.py",
     "suites": {
       "structure": [
@@ -94,7 +94,7 @@
           "unittest",
           "discover",
           "-s",
-          "tests",
+          "tests/i1",
           "-p",
           "test_i1_natural_m11_cold_recovery.py",
           "-v"
@@ -104,7 +104,7 @@
           "unittest",
           "discover",
           "-s",
-          "tests",
+          "tests/i1",
           "-p",
           "test_i1_m11_adversarial.py",
           "-v"
@@ -116,7 +116,7 @@
           "unittest",
           "discover",
           "-s",
-          "tests",
+          "tests/i1",
           "-p",
           "test_i1_generated_isolation.py",
           "-v"

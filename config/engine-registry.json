@@ -23,7 +23,7 @@
       "birth": "i1lab.i1_birth.birth_i1",
       "tester": "scripts/test_i1_ci.py",
       "ci": ".github/workflows/i1-current-ci.yml",
-      "frozen_reference_guard": "tests/test_i1_source_snapshot.py",
+      "frozen_reference_guard": "tests/i1/test_i1_source_snapshot.py",
       "lab": "src/i1/lab",
       "lab_overrides": "src/i1/runtime",
       "legacy_namespace": "i1lab"
