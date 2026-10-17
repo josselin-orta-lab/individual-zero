@@ -38,48 +38,6 @@ def rewrite(text: str) -> str:
 
 
 
-def i1_scoped_autobiographical_view_source(source: str) -> str:
-    """Generated I1 only: project selected event payloads, validate ALL commits.
-
-    Every AutoSegmentCommit and authorized source is still examined in order,
-    including sources outside the chosen batch. The only saved work is
-    projecting and storing irrelevant lived payloads. No uncommitted source
-    can enter the scoped result and no cognitive P-42 charge is skipped.
-    """
-    definition = (
-        '    def autobiographical(\n'
-        '        self,\n'
-        '        *,\n'
-        '        policies: Mapping[str, AutobiographicalPolicy],\n'
-        '    ) -> tuple[dict[str, object], ...]:\n'
-    )
-    expanded = (
-        '    def autobiographical(\n'
-        '        self,\n'
-        '        *,\n'
-        '        policies: Mapping[str, AutobiographicalPolicy],\n'
-        '        selected_event_refs: frozenset[str] | None = None,\n'
-        '    ) -> tuple[dict[str, object], ...]:\n'
-        '        if selected_event_refs is not None and (\n'
-        '                type(selected_event_refs) is not frozenset\n'
-        '                or any(type(ref) is not str or not ref\n'
-        '                       for ref in selected_event_refs)):\n'
-        '            raise ValueError("invalid scoped autobiographical refs")\n'
-    )
-    if source.count(definition) != 1:
-        raise ValueError("unreviewed generated JournalViews policy boundary")
-    source = source.replace(definition, expanded)
-    projection = '                projected.append(policy.project(source))\n'
-    if source.count(projection) != 1:
-        raise ValueError("unreviewed I1 autobiographical projected occurrence")
-    return source.replace(
-        projection,
-        '                if (selected_event_refs is None\n'
-        '                        or event_ref in selected_event_refs):\n'
-        '                    projected.append(policy.project(source))\n',
-    )
-
-
 def i1_scoped_consolidation_evidence_source(source: str) -> str:
     """Generate bounded P-42-selected evidence without touching Lab source.
 
@@ -310,36 +268,6 @@ def i1_committed_history_metadata_source(source: str) -> str:
     return source.replace(restore, amended)
 
 
-def i1_journal_bounded_view_source(source: str) -> str:
-    """I1-only bounded journal reads; preserve all legacy .entries semantics."""
-    anchor = (
-        "    @property\n"
-        "    def entries(self) -> tuple[JournalEntry, ...]:\n"
-        "        return tuple(self._entries)\n"
-    )
-    addition = (
-        "\n"
-        "    @property\n"
-        "    def entry_count(self) -> int:\n"
-        "        \"\"\"Read append-only occurrence count without materializing a tuple.\"\"\"\n"
-        "        return len(self._entries)\n"
-        "\n"
-        "    def entries_since(self, start: int) -> tuple[JournalEntry, ...]:\n"
-        "        \"\"\"Detach only the append-only suffix requested by the caller.\"\"\"\n"
-        "        if type(start) is not int or not 0 <= start <= len(self._entries):\n"
-        "            raise ValueError(\"invalid journal suffix boundary\")\n"
-        "        return tuple(self._entries[start:])\n"
-        "\n"
-        "    def iter_entries_reversed(self):\n"
-        "        \"\"\"Iterate frozen append-only events without a full tuple.\"\"\"\n"
-        "        return reversed(self._entries)\n"
-    )
-    if source.count(anchor) != 1 or source.count("len(replay.entries)") != 2:
-        raise ValueError("unreviewed I1 technical journal read boundary")
-    source = source.replace(anchor, anchor + addition)
-    return source.replace("len(replay.entries)", "replay.entry_count")
-
-
 def i1_postcut_bounded_verification_source(source: str) -> str:
     """Keep full postcut integrity checks without duplicate full history reads.
 
@@ -375,33 +303,6 @@ def i1_postcut_bounded_verification_source(source: str) -> str:
     for before, after in replacements:
         if source.count(before) != 1:
             raise ValueError("unreviewed I1 postcut journal verification boundary")
-        source = source.replace(before, after)
-    return source
-
-
-def i1_journal_full_integrity_copy_source(source: str) -> str:
-    """Keep SHA-256 verification but avoid copying already-owned nested events.
-
-    This generator-only transformation leaves the public journal export and
-    all I0/Lab source snapshots unchanged.
-    """
-    changes = (
-        ("    def __len__(self) -> int:\n        return len(self.__contents)\n",
-         "    def __len__(self) -> int:\n        return len(self.__contents)\n\n    def _canonical_occurrence_bytes(self, event_id: str) -> bytes:\n        \"\"\"Hash owned causal payload without exposing internal mutable values.\"\"\"\n        return canonical_causal_bytes({\n            \"event_id\": event_id, \"causal_event\": self.__contents,\n        })\n"),
-        ("        seen_ids: set[str] = set()\n",
-         ""),
-        ("                or entry.event_id in seen_ids\n",
-         ""),
-        ("            seen_ids.add(entry.event_id)\n",
-         ""),
-        ("                or self._by_id.get(entry.event_id) is not entry\n",
-         "                or self._by_id.get(entry.event_id) is not entry\n                or type(entry.causal_event) is not _DetachedCausalEvent\n"),
-        ("            expected_hash = sha256_hex(\n                bytes.fromhex(previous_hash)\n                + canonical_causal_bytes(\n                    {\n                        \"event_id\": entry.event_id,\n                        \"causal_event\": entry.causal_event,\n                    }\n                )\n            )\n",
-         "            expected_hash = sha256_hex(\n                bytes.fromhex(previous_hash)\n                + entry.causal_event._canonical_occurrence_bytes(entry.event_id)\n            )\n"),
-    )
-    for before, after in changes:
-        if source.count(before) != 1:
-            raise ValueError("unreviewed I1 full-journal verification anchor")
         source = source.replace(before, after)
     return source
 
@@ -910,20 +811,13 @@ def generate(output: Path) -> dict[str, object]:
             relative = file.relative_to(source)
             if input_package == "i1" and relative.parts[0] == "runtime":
                 continue  # Built into i1lab below, never twice in generated i1.
-            if input_package == "lab" and relative.as_posix() == "world.py":
-                continue  # I1 owns its physical WorldBody in i1/runtime/world.py.
+            if input_package == "lab" and relative.as_posix() in {"world.py", "journal.py", "journal_views.py"}:
+                continue  # Versioned native I1 world, journal and lived views.
             contents = file.read_text(encoding="utf-8")
             transformed = rewrite(contents)
             if (output_package == "i1lab"
-                    and relative.as_posix() == "journal_views.py"):
-                transformed = i1_scoped_autobiographical_view_source(transformed)
-            if (output_package == "i1lab"
                     and relative.as_posix() == "consolidation_lived_evidence.py"):
                 transformed = i1_scoped_consolidation_evidence_source(transformed)
-            if (output_package == "i1lab"
-                    and relative.as_posix() == "journal.py"):
-                transformed = i1_journal_bounded_view_source(transformed)
-                transformed = i1_journal_full_integrity_copy_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "sqlite_life_store.py"):
                 transformed = i1_sqlite_life_audit_canonical_source(transformed)
