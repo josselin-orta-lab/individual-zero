@@ -38,66 +38,6 @@ def rewrite(text: str) -> str:
 
 
 
-def i1_physiology_source(source: str) -> str:
-    """Versioned I1-only physical deprivation, never applied to I0 or Lab.
-
-    The generated copy owns the consequences; cognitive code sees only the
-    same body telemetry on the next authorized capture. Rates are frozen
-    constructor inputs, carried by the normal WorldPhysicsConfig / M11 digest.
-    """
-    patches = (
-        (
-            "    shelter_stones_required: int = 4\n",
-            "    shelter_stones_required: int = 4\n"
-            # The generated world type is shared by archived I1 ablations.
-            # Merely extending its physical schema must not silently turn
-            # deprivation ON for their explicitly chosen experimental worlds.
-            # The canonical natural birth profile supplies positive defaults.
-            "    starvation_integrity_damage_per_step: float = 0.0\n"
-            "    dehydration_integrity_damage_per_step: float = 0.0\n"
-        ),
-        (
-            "        self.tool_recipe.validate()\n",
-            "        for damage in (self.starvation_integrity_damage_per_step,\n"
-            "                       self.dehydration_integrity_damage_per_step):\n"
-            "            if not 0.0 <= damage <= 100.0 or damage != damage:\n"
-            "                raise ValueError('I1 deprivation rates must be finite in [0,100]')\n"
-            "        self.tool_recipe.validate()\n"
-        ),
-        (
-            '            "shelter_stones_required": self.shelter_stones_required,\n',
-            '            "shelter_stones_required": self.shelter_stones_required,\n'
-            '            "starvation_integrity_damage_per_step": self.starvation_integrity_damage_per_step,\n'
-            '            "dehydration_integrity_damage_per_step": self.dehydration_integrity_damage_per_step,\n'
-        ),
-        (
-            "        lethal_reasons: list[str] = []\n",
-            "        # #231: apply *after* the actual action. Successful eating or\n"
-            "        # drinking prevents same-step deprivation. Rest, a failed\n"
-            "        # action, and physical hazards do not suspend metabolism.\n"
-            "        starvation = (self._config.starvation_integrity_damage_per_step\n"
-            "                      if body.food <= 0.0 else 0.0)\n"
-            "        dehydration = (self._config.dehydration_integrity_damage_per_step\n"
-            "                       if body.water <= 0.0 else 0.0)\n"
-            "        if starvation or dehydration:\n"
-            "            integrity_before = body.integrity\n"
-            "            body = BodyState(\n"
-            "                energy=body.energy, food=body.food, water=body.water,\n"
-            "                integrity=self._clamp(integrity_before - starvation - dehydration),\n"
-            "            )\n"
-            "            effects['deprivation_integrity_damage'] = {\n"
-            "                'starvation': starvation, 'dehydration': dehydration,\n"
-            "                'actual_integrity_loss': integrity_before - body.integrity,\n"
-            "            }\n"
-            "        lethal_reasons: list[str] = []\n"
-        ),
-    )
-    for original, replacement in patches:
-        if source.count(original) != 1:
-            raise ValueError("I1 deprivation source anchor changed")
-        source = source.replace(original, replacement)
-    return source
-
 def i1_scoped_autobiographical_view_source(source: str) -> str:
     """Generated I1 only: project selected event payloads, validate ALL commits.
 
@@ -970,6 +910,8 @@ def generate(output: Path) -> dict[str, object]:
             relative = file.relative_to(source)
             if input_package == "i1" and relative.parts[0] == "runtime":
                 continue  # Built into i1lab below, never twice in generated i1.
+            if input_package == "lab" and relative.as_posix() == "world.py":
+                continue  # I1 owns its physical WorldBody in i1/runtime/world.py.
             contents = file.read_text(encoding="utf-8")
             transformed = rewrite(contents)
             if (output_package == "i1lab"
@@ -1004,8 +946,6 @@ def generate(output: Path) -> dict[str, object]:
             if (output_package == "i1lab"
                     and relative.as_posix() == "stage4_runtime.py"):
                 transformed = i1_canonical_active_value_source(transformed)
-            if output_package == "i1lab" and relative.as_posix() == "world.py":
-                transformed = i1_physiology_source(transformed)
             # Only i1_natural_runtime.I1Runtime installs the natural sleep
             # policy. Do not rewrite the common Stage11Sleep ancestor, which
             # would silently change historical A2.38/A2.39 ablation births.
@@ -1137,6 +1077,8 @@ def generate(output: Path) -> dict[str, object]:
     overlays = SOURCE_ROOT / "i1" / "runtime"
     if overlays.exists():
         for file in sorted(overlays.glob("*.py")):
+            if file.name == "__init__.py":
+                continue  # Preserve the authentic isolated Lab package root.
             transformed = rewrite(file.read_text(encoding="utf-8"))
             target = output / "i1lab" / file.name
             target.parent.mkdir(parents=True, exist_ok=True)

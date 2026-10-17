@@ -12,7 +12,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from build_i1_fork import generate, rewrite, i1_physiology_source
+from build_i1_fork import generate, rewrite
 
 
 class I1GeneratedIsolationTests(unittest.TestCase):
@@ -29,14 +29,11 @@ class I1GeneratedIsolationTests(unittest.TestCase):
                 content = (Path(a) / rel).read_bytes()
                 self.assertEqual(sha256(content).hexdigest(), data["built_sha256"])
                 self.assertTrue((src / data["source_path"]).exists())
-            # The I1-only generated WorldBody has a deliberately versioned
-            # physiological schema. Require the exact declared transformation
-            # of the unchanged source rather than erroneously requiring a
-            # generated world with zero deprivation mechanisms.
-            source_world = (src / "lab" / "world.py").read_text()
+            # Physics belongs to I1 directly, not to generated string patches.
+            source_world = (src / "i1" / "runtime" / "world.py").read_text()
             self.assertEqual(
                 (Path(a) / "i1lab" / "world.py").read_text(),
-                i1_physiology_source(rewrite(source_world)),
+                rewrite(source_world),
             )
 
     def test_ordinary_i0_and_lab_sources_unchanged(self):
