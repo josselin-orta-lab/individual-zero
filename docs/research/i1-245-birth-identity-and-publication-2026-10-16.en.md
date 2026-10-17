@@ -1511,3 +1511,56 @@ measured benchmarks. Original I0 and Lab code are not modified.
 **NON VALIDÉ:** no generator, test suite, CI, simulation or benchmark
 was executed under the user's explicit instruction. Runtime, error
 equivalence and numerical performance gains remain unverified.
+
+## I1 Phase-5 causal publication: indexed witness reuse and last-context selection (2026-10-17)
+
+Static inspection of `CausalModel.publish_causal_inference()` found that
+each pending causal intervention scanned **every previously credited
+intervention** to detect physical aliasing or conflicting claims. It
+also re-scanned the complete ledger to compute the number of physically
+observed, self-compatible independent contexts after a negative
+counterexample, and the final "tested to established" pass scanned and
+sorted the same ledger once per candidate hypothesis.
+
+I1 now builds **temporary per-publication indexes** over the already
+published, immutable intervention objects: physical observation reference;
+per-contingency comparator reference; per-contingency emitted world step;
+per-contingency observed world step; and per-contingency positive,
+self-compatible observed outcomes. Each genuinely accepted new trial is
+added to all of the appropriate indexes **immediately**, before the next
+pending trial is evaluated in its original sorted order. An aliased or
+conflicting trial is never indexed or credited a second time.
+
+The alias lookup is the union of the original four predicates. A trial
+matching multiple predicates may be encountered more than once in this
+short-lived candidate tuple, which cannot alter the existing existential
+`any(conflicting_claim)` test or the existing `if key in credits or
+prior_uses` denial of repeated credit. The original full dataclass
+comparison of physical provenance is retained for same-contingency
+aliases. In particular, unrelated rules may share a physical transition
+without granting the same causal credit twice.
+
+The positive outcome list is filtered by the SAME latest published
+negative boundary before calculating distinct contexts. The frozen
+input `old.causal_status` still prevents skipping hypothesis levels in
+one phase-5 publication. The later established-status promotion consults
+the per-contingency positive list and chooses the maximum
+`(observed_step, identifier)` witness rather than sorting the full
+list: this is exactly the prior stable `sorted(...)[-1]` witness.
+All original physically applied-command checks, published DC-09
+comparator checks, P-47 Memory-closed witnesses, safety prohibitions,
+revision/demotion rules, UC boundaries and irreversible I1 lifecycle
+remain untouched.
+
+For I prior credited trials, B newly considered trial rows and H tested
+contingencies, the previous repeated alias and context checks could
+cost O(B × I + H × I) plus sorting. The indexed route builds O(I)
+short-lived references, then probes the matching buckets and positive
+subsets; it removes global scans and full success sorting without
+changing causal authority. These are source-level operation counts,
+**not measured speedups**. I0 remains unchanged.
+
+**NON VALIDÉ:** source-only inspection and commit; no generated build,
+tests, CI runs, benchmark or life simulation was executed per instruction.
+Runtime parity and exact performance gains still require scientific
+verification before any GO decision.

@@ -1866,6 +1866,7 @@ class CausalModel:
     def publish_causal_inference(self) -> tuple[CausalInferenceChange, ...]:
         """Publish independent §13.2 evidence atomically, with frozen input stages."""
         from collections import defaultdict
+        from itertools import chain
         original = dict(self._published)
         published = dict(original)
         observations = dict(self._causal_observations)
@@ -2015,6 +2016,34 @@ class CausalModel:
             published[old.ref] = new
             changes.append(CausalInferenceChange(old.ref, current.causal_status, new.causal_status, new.version, review.identifier, "matched_alternatives"))
 
+        # Build a private, per-publication lookup from already accepted
+        # intervention witnesses. These lists are not part of any causal
+        # snapshot and do not provide evidence or a cross-step trust cache.
+        # Index each newly credited trial immediately, so later rows in the
+        # same sorted pending batch see precisely the same earlier witnesses.
+        prior_by_physical = defaultdict(list)
+        prior_by_comparator = defaultdict(list)
+        prior_by_emitted = defaultdict(list)
+        prior_by_observed = defaultdict(list)
+        positive_by_ref = defaultdict(list)
+
+        def index_admitted_trial(item: CausalIntervention) -> None:
+            prior_by_physical[item.observation_ref].append(item)
+            prior_by_comparator[
+                (item.contingency_ref, item.comparator_ref)
+            ].append(item)
+            prior_by_emitted[
+                (item.contingency_ref, item.emitted_step)
+            ].append(item)
+            prior_by_observed[
+                (item.contingency_ref, item.observed_step)
+            ].append(item)
+            if item.observed_effect and item.attribution == "self_compatible":
+                positive_by_ref[item.contingency_ref].append(item)
+
+        for item in interventions.values():
+            index_admitted_trial(item)
+
         for trial in sorted(self._pending_causal_interventions, key=lambda x: (x.observed_step, x.identifier)):
             old = original.get(trial.contingency_ref)
             if old is None or old.causal_status not in {
@@ -2052,18 +2081,23 @@ class CausalModel:
             # contingency. Different event IDs pointing to the same observed
             # step cannot manufacture an additional independent context.
             key = (trial.contingency_ref, trial.observation_ref, "intervention")
-            prior_uses = tuple(
-                other for other in interventions.values()
-                if other.observation_ref == trial.observation_ref
-                or (
-                    other.contingency_ref == trial.contingency_ref
-                    and (
-                        other.comparator_ref == trial.comparator_ref
-                        or other.emitted_step == trial.emitted_step
-                        or other.observed_step == trial.observed_step
-                    )
-                )
-            )
+            # All four index predicates exactly match the previous scan of
+            # interventions.values(). A witness may appear in several index
+            # buckets; repeated references do not change the existential
+            # alias/conflict check below, or the fact that any reuse denies
+            # a second intervention credit.
+            prior_uses = tuple(chain(
+                prior_by_physical.get(trial.observation_ref, ()),
+                prior_by_comparator.get(
+                    (trial.contingency_ref, trial.comparator_ref), ()
+                ),
+                prior_by_emitted.get(
+                    (trial.contingency_ref, trial.emitted_step), ()
+                ),
+                prior_by_observed.get(
+                    (trial.contingency_ref, trial.observed_step), ()
+                ),
+            ))
             # A reused physical source grants no extra n2 credit. It is only
             # a harmless alias if every physical claim matches: action,
             # Memory episode, context, controls, world steps, comparator,
@@ -2085,6 +2119,7 @@ class CausalModel:
                 continue
             credits.add(key)
             interventions[trial.identifier] = trial
+            index_admitted_trial(trial)
             current = published[old.ref]
             if not trial.observed_effect:
                 # A failed lived intervention invalidates the assumption
@@ -2107,10 +2142,11 @@ class CausalModel:
                 )
             else:
                 boundary = revisions.get(old.ref, (-1, ""))[0]
+                # Check only positive, self-compatible interventions of
+                # this contingency, including earlier accepted batch rows.
                 contexts = {
-                    x.context_signature for x in interventions.values()
-                    if x.contingency_ref == old.ref and x.observed_effect
-                    and x.attribution == "self_compatible" and x.observed_step > boundary
+                    x.context_signature for x in positive_by_ref.get(old.ref, ())
+                    if x.observed_step > boundary
                 }
                 if trial.observed_effect and old.causal_status == "hypothese_causale":
                     next_status = "testee_par_intervention"
@@ -2135,20 +2171,19 @@ class CausalModel:
             ):
                 continue
             boundary = revisions.get(ref, (-1, ""))[0]
-            successful = sorted(
-                (
-                    item for item in interventions.values()
-                    if item.contingency_ref == ref
-                    and item.observed_effect
-                    and item.attribution == "self_compatible"
-                    and item.observed_step > boundary
-                ),
-                key=lambda item: (item.observed_step, item.identifier),
-            )
+            successful = [
+                item for item in positive_by_ref.get(ref, ())
+                if item.observed_step > boundary
+            ]
             if len({item.context_signature for item in successful}) < self.config.n2:
                 continue
             current = published[ref]
-            witness = successful[-1]
+            # The previous sorted(...)[-1] chose the greatest observed
+            # (world-step, identifier) pair. Select the same witness without
+            # sorting every historical success of this contingency.
+            witness = max(
+                successful, key=lambda item: (item.observed_step, item.identifier)
+            )
             new = replace(
                 current, causal_status="etablie", version=current.version + 1,
             )
