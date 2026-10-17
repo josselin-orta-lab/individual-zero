@@ -39,7 +39,7 @@ For Stage10, `Stage10Config.validate` requires costs for `semantic_plan_build`, 
 
 ## Tests and evidence level
 
-Use `python tools/run_engine_checks.py --engine I1 --suite structure --execute --json` for currently registered structural suites, then `python scripts/test_i1_ci.py --mode smoke --seed 246` and `--mode full --seed 247`. When modifying generation/owner custody, also run `tests/i1/test_i1_m11_adversarial.py` and `tests/i1/test_i1_natural_m11_cold_recovery.py`. These commands/test paths exist in the PR HEAD; their success at a **new SHA** must be checked independently.
+Use `python tools/run_engine_checks.py --engine I1 --suite structure --execute --json` for currently registered structural suites, then `python scripts/test_i1_ci.py --mode smoke --seed 246 --junit reports/i1-smoke-contract.xml` and `--mode full --seed 247 --junit reports/i1-full-contract.xml`. When modifying generation/owner custody, also run `tests/i1/test_i1_m11_adversarial.py` and `tests/i1/test_i1_natural_m11_cold_recovery.py`. These commands/test paths exist in the PR HEAD; their success at a **new SHA** must be checked independently.
 
 **NOT_OBSERVED:** `tools/inspect_i1_world_report.py` expressly does not expose UC or option competition from world-preset report JSON. No inference about energy efficiency, learning quality or scientific fitness follows from a green budget test.
 
