@@ -113,6 +113,16 @@ def _approved_stage9_episode_slice(before: bytes, after: bytes) -> bool:
             and prior.replace(former, newer, 1) == current)
 
 
+def _approved_autobiographical_policy_fastpath(before: bytes, after: bytes) -> bool:
+    """Only permit reviewed first-person policy-validation transformations."""
+    prior, current = before.decode("utf-8"), after.decode("utf-8")
+    for old, new in [["        self.validate()\n        kind = event.causal_event.get(\"kind\")\n        if not isinstance(kind, str) or kind not in self.allowed_fields_by_kind:","        self.validate()\n        return self._project_validated(event)\n\n    def _project_validated(self, event: JournalEntry) -> dict[str, object]:\n        \"\"\"Internal fast path: caller validated this exact policy already.\n\n        No exemption from the event-kind or lived-field epistemic guards.\n        Direct callers must keep using project(), which always validates.\n        \"\"\"\n        kind = event.causal_event.get(\"kind\")\n        if not isinstance(kind, str) or kind not in self.allowed_fields_by_kind:"],["            policy.project(entry)\n            validated.append(event_ref)","            if type(policy) is AutobiographicalPolicy:\n                policy._project_validated(entry)\n            else:\n                policy.project(entry)\n            validated.append(event_ref)"],["        projected: list[dict[str, object]] = []\n\n        for commit_event_id in self._commit_event_ids:","        projected: list[dict[str, object]] = []\n        # Exact built-in immutable policies can be validated once per read;\n        # custom policy subclasses keep their original validation cadence.\n        validated_versions: set[str] = set()\n\n        for commit_event_id in self._commit_event_ids:"],["            policy.validate()\n\n            for event_ref in refs:","            if type(policy) is AutobiographicalPolicy:\n                if version not in validated_versions:\n                    policy.validate()\n                    validated_versions.add(version)\n            else:\n                policy.validate()\n\n            for event_ref in refs:"],["                    projected.append(policy.project(source))","                    projected.append(\n                        policy._project_validated(source)\n                        if type(policy) is AutobiographicalPolicy\n                        else policy.project(source)\n                    )"]]:
+        if prior.count(old) != 1 or current.count(new) != 1:
+            return False
+        prior = prior.replace(old, new, 1)
+    return prior == current
+
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -145,6 +155,10 @@ def verify(reference_root: Path) -> None:
                     ))
                 or (rel == "i1lab/stage9_runtime.py"
                     and _approved_stage9_episode_slice(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
+                or (rel == "i1lab/journal_views.py"
+                    and _approved_autobiographical_policy_fastpath(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
             )
