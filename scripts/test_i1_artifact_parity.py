@@ -146,6 +146,25 @@ def _approved_local_visible_entity_filter(before: bytes, after: bytes) -> bool:
     return prior == current
 
 
+def _approved_autobio_index_rehydration(before: bytes, after: bytes) -> bool:
+    """Verify the exact reviewed JournalViews index construction only."""
+    old = "        self._commit_event_ids = [\n            entry.event_id\n            for entry in journal.entries\n            if entry.causal_event.get(\"kind\") == \"auto_segment_commit\"\n        ]"
+    new = "        # Rehydrate in journal order without materializing the complete\n        # technical history. The reverse iterator is read-only and covers\n        # every original occurrence; only committed autobiographical IDs\n        # are retained, in their original chronological order.\n        self._commit_event_ids = [\n            entry.event_id\n            for entry in journal.iter_entries_reversed()\n            if entry.causal_event.get(\"kind\") == \"auto_segment_commit\"\n        ]\n        self._commit_event_ids.reverse()"
+    source, candidate = before.decode("utf-8"), after.decode("utf-8")
+    return source.count(old) == 1 and candidate.count(new) == 1 and source.replace(old, new, 1) == candidate
+
+
+def _reference_autobio_fastpath(before: bytes) -> bytes:
+    """Construct the exact reviewed earlier JournalViews intermediate."""
+    from_source = before.decode("utf-8")
+    pairs = [["        self.validate()\n        kind = event.causal_event.get(\"kind\")\n        if not isinstance(kind, str) or kind not in self.allowed_fields_by_kind:","        self.validate()\n        return self._project_validated(event)\n\n    def _project_validated(self, event: JournalEntry) -> dict[str, object]:\n        \"\"\"Internal fast path: caller validated this exact policy already.\n\n        No exemption from the event-kind or lived-field epistemic guards.\n        Direct callers must keep using project(), which always validates.\n        \"\"\"\n        kind = event.causal_event.get(\"kind\")\n        if not isinstance(kind, str) or kind not in self.allowed_fields_by_kind:"],["            policy.project(entry)\n            validated.append(event_ref)","            if type(policy) is AutobiographicalPolicy:\n                policy._project_validated(entry)\n            else:\n                policy.project(entry)\n            validated.append(event_ref)"],["        projected: list[dict[str, object]] = []\n\n        for commit_event_id in self._commit_event_ids:","        projected: list[dict[str, object]] = []\n        # Exact built-in immutable policies can be validated once per read;\n        # custom policy subclasses keep their original validation cadence.\n        validated_versions: set[str] = set()\n\n        for commit_event_id in self._commit_event_ids:"],["            policy.validate()\n\n            for event_ref in refs:","            if type(policy) is AutobiographicalPolicy:\n                if version not in validated_versions:\n                    policy.validate()\n                    validated_versions.add(version)\n            else:\n                policy.validate()\n\n            for event_ref in refs:"],["                    projected.append(policy.project(source))","                    projected.append(\n                        policy._project_validated(source)\n                        if type(policy) is AutobiographicalPolicy\n                        else policy.project(source)\n                    )"]]
+    for old, new in pairs:
+        if from_source.count(old) != 1:
+            raise ValueError("earlier JournalViews reference drifted")
+        from_source = from_source.replace(old, new, 1)
+    return from_source.encode("utf-8")
+
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -181,8 +200,9 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1lab/journal_views.py"
-                    and _approved_autobiographical_policy_fastpath(
-                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    and _approved_autobio_index_rehydration(
+                        _reference_autobio_fastpath((old_root / rel).read_bytes()),
+                        (new_root / rel).read_bytes()
                     ))
             )
         )
