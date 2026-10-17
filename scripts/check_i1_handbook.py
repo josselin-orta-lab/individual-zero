@@ -83,7 +83,7 @@ def inspect(root: Path = ROOT) -> dict:
             if not dest.is_relative_to(root) or not dest.exists():
                 errors.append(f"{file.relative_to(root)}: missing source path {raw}")
                 continue
-            if sep and dest.suffix == ".py" and re.fullmatch(r"[A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*", symbol):
+            if sep and dest.suffix == ".py" and re.fullmatch(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*", symbol):
                 try:
                     if dest not in trees:
                         trees[dest] = ast.parse(dest.read_text(encoding="utf-8"))
