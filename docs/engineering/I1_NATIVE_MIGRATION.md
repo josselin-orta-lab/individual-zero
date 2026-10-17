@@ -51,3 +51,13 @@ Le journal conserve la vérification complète des SHA-256 et introduit nativeme
 La CI [#39033959465](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39033959465) a réussi en Python 3.11 et 3.12 sur `cf8ad3cc`. Le test de provenance du générateur a ensuite été renforcé ; **la réussite du SHA suivant doit être vérifiée indépendamment**. La couverture reste logicielle : il faudra encore des essais de corruption adversariale et de publication non vide à horizon long avant d'annoncer une équivalence complète scientifique et opérationnelle.
 
 La prochaine famille de sources à migrer concerne `consolidation_lived_evidence`, `consolidation_postcut_journal`, les propriétaires Stage10 et la garde M11. Les migrations sensibles ne seront fusionnées qu'après confirmation de la parité et des conditions de refus M11.
+
+## Migration native SQLite et capture M11 (2026-10-17)
+
+La branche #253 contient désormais les fichiers natifs `src/i1/runtime/sqlite_life_store.py` et `src/i1/runtime/sqlite_runtime_custody.py`. Quatre transformations de génération ont été retirées : `i1_sqlite_life_audit_canonical_source`, `i1_sqlite_streaming_audit_source`, `i1_sqlite_journal_count_source` et `i1_sqlite_detached_owner_export_source`. La réduction est d'environ 9 173 caractères. Le générateur copie ces sources I1 dans `i1lab` et ne les recopie plus depuis `src/lab`.
+
+Les contrats conservés comprennent la validation canonique de chaque état, le contrôle de la chaîne SHA-256, la continuité du roster de propriétaires, les fences SQLite d'intention, la mort terminale et le refus de reprise M11 en cas d'incertitude. La capture des propriétaires reste non publiante et fail-closed ; seules les instances de types strictement identifiés autorisent des exports déjà détachés.
+
+Le test `test_i1_generated_isolation.py` vérifie la provenance et le contenu direct des deux modules. [GitHub Actions #39034795110](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39034795110) a conclu **success** sur Python 3.11 et 3.12 pour le commit `fe8427ba131bfa156a4b3fe222c2a641a43be5da`.
+
+Le moteur I0 et le Lab historique n'ont pas été changés. L'absence de nouveaux défauts dans cette CI ne remplace pas une campagne adversariale exhaustive de corruptions SQLite, crashes entre COMMIT et ACK et publications Stage10 non vides. Ces scénarios restent des conditions à satisfaire avant la suppression finale du générateur et la fusion de #253.
