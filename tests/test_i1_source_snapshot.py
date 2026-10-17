@@ -38,12 +38,14 @@ class I1SnapshotTests(unittest.TestCase):
             (i0 / "modules/causal_model.py").read_bytes(),
             (i1 / "modules/causal_model.py").read_bytes(),
         )
-        self.assertTrue((src / "i1_overlays" / "i1_natural_runtime.py").is_file())
+        self.assertTrue((src / "i1" / "runtime" / "i1_natural_runtime.py").is_file())
 
     def test_generated_i1_runtime_does_not_replace_lab(self):
         src = ROOT / "src"
         self.assertFalse((src / "i1_runtime").exists())
-        self.assertTrue((src / "lab" / "stage12_runtime.py").is_file())
+        self.assertTrue((src / "i1" / "lab" / "stage12_runtime.py").is_file())
+        self.assertTrue((ROOT / "archive/i0/lab/stage12_runtime.py").is_file())
+        self.assertFalse((src / "lab").exists())
 
 
 if __name__ == "__main__":

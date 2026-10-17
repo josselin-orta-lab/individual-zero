@@ -15,8 +15,8 @@ authors = [
 dependencies = []
 
 [project.scripts]
-individual-zero = "lab.cli:main"
+individual-zero = "i1.lab.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["lab*", "i0*", "adapters*"]
+include = ["i0*", "i1*", "adapters*"]

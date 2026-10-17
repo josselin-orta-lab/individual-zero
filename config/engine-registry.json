@@ -7,11 +7,11 @@
     "I0": {
       "role": "frozen_reference",
       "source": "src/i0",
-      "shared_lab": "src/lab",
       "source_tree_sha": "e1c30c78e1f8c89339b6616c1808508d2265bf68",
-      "shared_lab_tree_sha": "18f5aabdd49a5cc2f7cae3b0996bf958a0843028",
       "historical_tests": "archive/i0/tests",
-      "historical_workflows": "archive/i0/workflows"
+      "historical_workflows": "archive/i0/workflows",
+      "lab": "archive/i0/lab",
+      "lab_tree_sha": "18f5aabdd49a5cc2f7cae3b0996bf958a0843028"
     },
     "I1": {
       "role": "active",
@@ -23,7 +23,10 @@
       "birth": "i1lab.i1_birth.birth_i1",
       "tester": "scripts/test_i1_ci.py",
       "ci": ".github/workflows/i1-current-ci.yml",
-      "frozen_reference_guard": "tests/test_i1_source_snapshot.py"
+      "frozen_reference_guard": "tests/test_i1_source_snapshot.py",
+      "lab": "src/i1/lab",
+      "lab_overrides": "src/i1/runtime",
+      "legacy_namespace": "i1lab"
     }
   }
 }

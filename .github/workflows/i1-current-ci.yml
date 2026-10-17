@@ -55,6 +55,8 @@ jobs:
           python -m unittest discover -s tests -p test_engine_repository.py -v
       - name: Static syntax
         run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
+      - name: Frozen I0 and versioned Lab source guard
+        run: python -m unittest discover -s tests -p test_i1_source_snapshot.py -v
       - name: Current I1 independent SMOKE/FULL
         run: python scripts/test_i1_ci.py --mode ${{ github.event.inputs.mode || 'smoke' }} --seed 246 --junit reports/i1-${{ matrix.python-version }}.xml
       - name: I1 natural FULL (multiple autonomous mortal lives)
@@ -85,12 +87,14 @@ jobs:
         run: python -m unittest discover -s tests -p test_i1_generated_isolation.py -q
       - name: I0 baseline non-regression (archived fixtures, unchanged bytes)
         run: |
+          cp -a archive/i0/lab src/lab
           cp archive/i0/tests/test_stage4_runtime.py tests/
           cp archive/i0/tests/test_stage5_trait_battery.py tests/
           cp archive/i0/tests/test_stage6_planning.py tests/
           for pattern in test_stage4_runtime.py test_stage5_trait_battery.py test_stage6_planning.py; do
             python -m unittest discover -s tests -p "$pattern" -q
           done
+          rm -rf src/lab
       - name: JUnit diagnostics
         if: always()
         uses: actions/upload-artifact@v4

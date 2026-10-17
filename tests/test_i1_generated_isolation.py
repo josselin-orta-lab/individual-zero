@@ -25,6 +25,8 @@ class I1GeneratedIsolationTests(unittest.TestCase):
             self.assertIn("i1/modules/stage6_planning.py", first["files"])
             self.assertIn("i1lab/stage12_runtime.py", first["files"])
             self.assertIn("i1lab/world.py", first["files"])
+            self.assertEqual(first["files"]["i1lab/__init__.py"]["source_path"],
+                             "i1/lab/__init__.py")
             self.assertEqual(
                 first["files"]["i1lab/world.py"]["source_path"],
                 "i1/runtime/world.py",
@@ -42,6 +44,11 @@ class I1GeneratedIsolationTests(unittest.TestCase):
                                  rewrite(source.read_text()))
                 self.assertNotIn("i1/runtime/" + module, first["files"])
             for rel, data in first["files"].items():
+                if rel.startswith("i1lab/"):
+                    self.assertTrue(
+                        data["source_path"].startswith(("i1/lab/", "i1/runtime/")),
+                        (rel, data["source_path"]),
+                    )
                 content = (Path(a) / rel).read_bytes()
                 self.assertEqual(sha256(content).hexdigest(), data["built_sha256"])
                 self.assertTrue((src / data["source_path"]).exists())

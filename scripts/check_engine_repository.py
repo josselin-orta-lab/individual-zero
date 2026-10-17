@@ -32,7 +32,7 @@ def check():
     frozen = generations["I0"]
     for path, expected in (
         (frozen["source"], frozen["source_tree_sha"]),
-        (frozen["shared_lab"], frozen["shared_lab_tree_sha"]),
+        (frozen["lab"], frozen["lab_tree_sha"]),
     ):
         observed = git("rev-parse", "HEAD:" + path)
         if observed != expected:
@@ -42,6 +42,13 @@ def check():
         )
         if dirty.returncode:
             errors.append(path + ": uncommitted reference modification")
+    active = generations["I1"]
+    if not (ROOT / active["lab"] / "__init__.py").is_file():
+        errors.append("I1 must own an importable generation-scoped Lab")
+    if (ROOT / "src/lab").exists():
+        errors.append("unscoped shared src/lab is forbidden")
+    if frozen["lab"] == active["lab"]:
+        errors.append("engines cannot share one Lab")
     entries = manifest["entries"]
     if len(entries) != len({row["source"] for row in entries}):
         errors.append("duplicate archived source path")
@@ -68,8 +75,7 @@ def check():
             errors.append("modified archived Git blob: " + item["archived"])
         if (ROOT / item["source"]).exists():
             errors.append("historical file unexpectedly active: " + item["source"])
-    active = generations["I1"]
-    for key in ("overlays", "build", "tester", "ci", "frozen_reference_guard"):
+    for key in ("lab", "overlays", "build", "tester", "ci", "frozen_reference_guard"):
         if not (ROOT / active[key]).exists():
             errors.append("I1 missing " + key + ": " + active[key])
     old = sorted((ROOT / ".github/workflows").glob("*.yml"))

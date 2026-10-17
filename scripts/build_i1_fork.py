@@ -1,11 +1,9 @@
 """Build a separately importable I1 descendant without editing I0 or lab.
 
-The checked-in src/i1 tree is the exact source snapshot from the approved
-I0 main SHA. This build mechanically namespaces that copy and the complete
-laboratory runtime in a separate output directory. No src/i0 or src/lab file
-is written. The I1-generated WorldBody alone receives versioned physical deprivation
-by default, and the generated mortal Stage11Sleep entrypoint activates the
-natural sleep policy for every new I1 birth. Reference I0 and Lab are unchanged.
+The I1 engine owns its cognition at src/i1, its development laboratory at
+src/i1/lab, and its runtime overrides at src/i1/runtime. No shared Lab is
+loaded. The original I0 laboratory is frozen at archive/i0/lab.
+The build changes only legacy import namespaces inside disposable output.
 
 Output is disposable build code, not an archived living individual.
 """
@@ -45,8 +43,10 @@ def generate(output: Path) -> dict[str, object]:
         raise ValueError("I1 build output must not be inside src/")
     if not (SOURCE_ROOT / "i0").is_dir() or not (SOURCE_ROOT / "i1").is_dir():
         raise ValueError("both baseline I0 and I1 source snapshot are required")
-    if not (SOURCE_ROOT / "lab").is_dir():
-        raise ValueError("independent laboratory runtime source unavailable")
+    if not (SOURCE_ROOT / "i1" / "lab").is_dir():
+        raise ValueError("I1-owned laboratory runtime source unavailable")
+    if (SOURCE_ROOT / "lab").exists():
+        raise ValueError("obsolete shared src/lab must not be used for I1")
     if output.exists() and any(output.iterdir()):
         raise FileExistsError("I1 output must be an empty directory")
     manifest: dict[str, object] = {
@@ -56,14 +56,16 @@ def generate(output: Path) -> dict[str, object]:
         "oracle_or_bench_transferred_into_individual": False,
         "files": {},
     }
-    for input_package, output_package in (("i1", "i1"), ("lab", "i1lab")):
-        source = SOURCE_ROOT / input_package
+    for input_package, output_package, source in (
+        ("i1", "i1", SOURCE_ROOT / "i1"),
+        ("i1-lab", "i1lab", SOURCE_ROOT / "i1" / "lab"),
+    ):
         dest = output / output_package
         for file in sorted(source.rglob("*.py")):
             relative = file.relative_to(source)
-            if input_package == "i1" and relative.parts[0] == "runtime":
-                continue  # Built into i1lab below, never twice in generated i1.
-            if input_package == "lab" and relative.as_posix() in {"world.py", "journal.py", "journal_views.py", "consolidation_lived_evidence.py", "consolidation_postcut_journal.py", "sqlite_life_store.py", "sqlite_runtime_custody.py", "consolidation_publication.py", "stage10_runtime.py", "stage4_runtime.py", "stage11_runtime.py", "m11_transactional_mortal.py"}:
+            if input_package == "i1" and relative.parts[0] in ("runtime", "lab"):
+                continue  # Both are installed exclusively in i1lab below.
+            if input_package == "i1-lab" and relative.as_posix() in {"world.py", "journal.py", "journal_views.py", "consolidation_lived_evidence.py", "consolidation_postcut_journal.py", "sqlite_life_store.py", "sqlite_runtime_custody.py", "consolidation_publication.py", "stage10_runtime.py", "stage4_runtime.py", "stage11_runtime.py", "m11_transactional_mortal.py"}:
                 continue  # Versioned native I1 world, journal and lived views.
             contents = file.read_text(encoding="utf-8")
             transformed = rewrite(contents)
@@ -89,7 +91,7 @@ def generate(output: Path) -> dict[str, object]:
                 "source_sha256": sha256(contents.encode()).hexdigest(),
                 "built_sha256": sha256(transformed.encode()).hexdigest(),
             }
-    # I1-only model/runtime overlays are namespaced source, not part of I0.
+    # I1-owned runtime implementations replace or extend the I1 Lab.
     overlays = SOURCE_ROOT / "i1" / "runtime"
     if overlays.exists():
         for file in sorted(overlays.glob("*.py")):
