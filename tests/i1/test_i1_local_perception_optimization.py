@@ -30,7 +30,7 @@ import json
 import random
 
 def old_capture(world_body, t):
-    current = world_body.position
+    current = world_body._position
     def resource_kinds(position):
         return tuple(sorted(kind for (p, kind), qty in world_body._resources.items()
                             if p == position and qty > 0))
