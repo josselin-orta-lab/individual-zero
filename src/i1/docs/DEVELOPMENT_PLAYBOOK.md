@@ -42,6 +42,10 @@ A change is acceptable only if it preserves autonomous, UC-priced, mortal and fi
 
 These are **investigation entrypoints**, not claims that every field is exported by the standard world-preset report. `tools/inspect_i1_world_report.py` reports missing cognition as `NOT_OBSERVED`; add a reviewed passive observer before asserting the reason for any choice.
 
+## Persistent state and lived evidence
+
+For serialization, owner-roster, episode provenance, M11 cold reconstruction and private/public form distinction, follow [DATA_CONTRACTS_AND_CUSTODY.md](DATA_CONTRACTS_AND_CUSTODY.md). For an end-to-end read-only investigation, follow [LIVED_EVIDENCE_WALKTHROUGH.md](LIVED_EVIDENCE_WALKTHROUGH.md). The existing preset report does not expose UC or private cognitive owner decisions; do not assume they can be deduced from operator-only truth.
+
 ## Stop conditions
 
 Stop and report a blocker for missing ground truth provenance, hidden observation injection, compromised mortality, noncanonical M11 commit, incorrect owner publication, unaccounted UC or test omission. Do not mask those failures with replaying a life, relaxing tests or calling an inconclusive trace a scientific success.
