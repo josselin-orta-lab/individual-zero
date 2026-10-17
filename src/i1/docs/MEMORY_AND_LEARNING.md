@@ -26,3 +26,7 @@ For subjective agency, compare `modules/agency_comparator.py`, `modules/stage12_
 ## Evidence needed
 
 Fresh subject identity, exact SHA, first-person observation, source event reference, owner state before/after, UC expenditure, counterfactual alternatives and an independently inspectable outcome. If the current observer does not expose an owner state, write **NOT_OBSERVED**. Historical A2/H1/H2 findings are not prospective acceptance criteria.
+
+## End-to-end evidence custody
+
+Use [DATA_CONTRACTS_AND_CUSTODY.md](DATA_CONTRACTS_AND_CUSTODY.md) to distinguish `JournalEntry`, `AutoSegmentCommit`, `Episode`, `SlowHistory` and advisory published owner forms. Follow [LIVED_EVIDENCE_WALKTHROUGH.md](LIVED_EVIDENCE_WALKTHROUGH.md) to diagnose why an observed physical effect may be missing from autobiographical memory or a durable owner. Technical log inclusion is not permission to learn hidden facts; owner updates and authenticated publication are separate boundaries.
