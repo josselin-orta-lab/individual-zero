@@ -87,3 +87,9 @@ An additional static guard `scripts/check_i1_handbook.py --json` checks the actu
 **OPEN #255:** [Stage10 canonical initialization before owner mapping](https://github.com/josselin-orta-lab/individual-zero/issues/255). This runtime repair is isolated from the documentation PR: current CI retains byte-exact I1 generated-output parity against a frozen pre-migration commit. No parity gate was relaxed, and no cognitive runtime source was modified in this tranche.
 
 The previous documentation HEAD `f861ac4afb95bfe3d9641af351a4f8b4950bc869` completed [CI #39052847125](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39052847125) successfully. The new validator and workflow commits require separate SHA-specific acceptance; **not yet certified** by this historical result.
+
+## Stage10 issue #255 targeted repair
+
+The source-level `UnboundLocalError` in `Stage10Runtime._publish_live_consolidation` is addressed by moving the `canonical` assignment ahead of coordinator construction, without changing the selected owner mapping, cognitive choices, M11, physical dynamics or frozen I0. Dedicated test: `tests/i1/test_i1_stage10_canonical_publication.py` (natural and generic owner dispatch and invalid-form deferral). The migration parity gate `scripts/test_i1_artifact_parity.py` retains byte equality for all artifacts except the exact, independently checked movement of this one Stage10 assignment. The CI script inventory was also updated to include `scripts/check_i1_handbook.py`, resolving the known inventory mismatch from workflow #39053148874.
+
+**Verification status:** pending on the exact final patch SHA at the time of this report. A green earlier commit is not sufficient. This change does not establish the scientific usefulness of four-owner consolidation; real nonempty form deltas, attribution, P-42 UC and M11 cold state evidence remain OPEN / NOT_OBSERVED.
