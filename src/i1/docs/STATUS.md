@@ -227,3 +227,15 @@ l'indépendance des sources, les seuils et le statut restent identiques.
 Une suite différentielle et la parité source exacte sont fournies.
 Les performances réelles et toute validation scientifique restent
 non établies avant les contrôles CI du SHA courant.
+
+## PR #267 : dispatch par prédicat des revues vécues (2026-10-18)
+
+Chaque contingence précédemment corrélée invoquait les revues alimentaires
+et hydriques, bien que leurs gardes de prédicat soient mutuellement
+exclusives (`toxic_item` et `hydration_effect`). Une seule revue est
+maintenant appelée, avec le même résultat ou `None`. Aucun fait n'est
+produit sans preuve physique, et le statut causal reste soumis aux
+contrats en vigueur. À la demande de l'utilisateur, aucun test nouveau
+ni campagne manuelle supplémentaire n'a été ajouté ou exécuté.
+Revue de code et contrôle de parité exact sont fournis; la PR reste
+non fusionnée tant que les contrôles existants ne sont pas satisfaits.
