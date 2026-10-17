@@ -1131,3 +1131,41 @@ its documented scaling opportunity remain intentionally unchanged.
 **NON VALIDÉ:** source-level optimization only. No generator, tests, CI,
 benchmarks or simulated lives were executed. No I0 changes or fabricated
 performance gains.
+
+## I1 episodic memory: O(1) lookup of native sequential episode IDs (2026-10-17)
+
+Static inspection of `EpisodicMemory.respond()` and
+`spontaneous_contribution()` found full-history `next(... for episode in
+self._episodes ...)` searches for a single closed episode **after** its
+identifier is already known. During ordinary I1 life, `_close()` emits
+IDs `episode:0`, `episode:1`, etc. and appends them in the same order.
+The I1 source now tracks a derived boolean
+`_episode_ids_dense` (no array or dict of duplicate episode records).
+When this invariant is valid, `_find_closed_episode` uses the numeric
+ordinal for O(1) list access and rechecks the retrieved identifier for
+exact equality. It rejects noncanonical suffixes and bounds integer
+parsing for untrusted long request strings.
+
+The integrity of this fast path is explicitly managed at every
+`_close()` and fully **re-derived** when `restore_causal_state()`
+constructs the authenticated episode list during M11 cold recovery.
+If restored IDs are nonsequential, reordered, or duplicated, the fast
+path is disabled and the original first-match linear lookup is
+preserved. Existing `respond` empty responses remain empty and
+spontaneous recalls still refer to the exact same previously scored
+episode. The latter still calculates full memory salience and the
+`_recall_above_threshold` causal crossing state before resolving the
+winning record, exactly as before.
+
+The derived flag is not a causal record, is not serialized, and cannot
+supply observations, provenance or new knowledge. This avoids the
+permanent O(N) memory and per-step M11 copying costs of a secondary
+episode-ID dictionary. There are no changes to event exposure rights,
+episode boundaries, planned behavior, UC charging, physical mortality,
+or I0.
+
+**NON VALIDÉ:** source inspection and Git commit only. No generated
+model, tests, CI, simulated lives or benchmarks were run. The O(1)
+versus O(N) operation counts concern only an individual targeted
+episode lookup, not the whole recall/step runtime. Exact performance
+gains and end-to-end equivalence remain unmeasured.

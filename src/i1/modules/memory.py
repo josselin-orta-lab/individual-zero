@@ -150,6 +150,9 @@ class EpisodicMemory:
         self._atomic_world_step_length_boundary = atomic_world_step_length_boundary
         self._config = config
         self._episodes: list[Episode] = []
+        # Derived lookup property, never exported as autobiographical state.
+        # M11 cold restore recomputes it from the authenticated episodes.
+        self._episode_ids_dense = True
         self._seen_event_refs: set[str] = set()
         self._open_event_refs: list[str] = []
         self._open_start_t: int | None = None
@@ -480,6 +483,13 @@ class EpisodicMemory:
             linked_previous_ref=linked_previous,
         )
         self._episode_sequence += 1
+        # Preserve the constant-time lookup invariant only for the ordinary
+        # sequential born episodes. Imported unusual histories keep the
+        # original linear first-match lookup semantics.
+        self._episode_ids_dense = (
+            self._episode_ids_dense
+            and episode.id == f"episode:{len(self._episodes)}"
+        )
         self._episodes.append(episode)
 
         self._open_event_refs = []
@@ -670,6 +680,35 @@ class EpisodicMemory:
             scored = scored[:limit]
         return tuple(scored)
 
+    def _find_closed_episode(self, episode_ref: str) -> Episode | None:
+        """Use the verified native episode ordinal without another full scan.
+
+        The fast path is available only when every episode id matches its
+        sequence position. A noncanonical, reordered or duplicated imported
+        list uses the original first-match linear search.
+        """
+        if self._episode_ids_dense:
+            prefix = "episode:"
+            suffix = (
+                episode_ref[len(prefix):]
+                if episode_ref.startswith(prefix) else ""
+            )
+            # Bound parsing before int conversion for arbitrarily large
+            # external request strings. The native format has no zero pad.
+            if (suffix.isascii() and suffix.isdigit()
+                    and len(suffix) <= len(str(len(self._episodes)))):
+                ordinal = int(suffix)
+                if ordinal < len(self._episodes):
+                    episode = self._episodes[ordinal]
+                    if episode.id == episode_ref:
+                        return episode
+            return None
+        return next(
+            (episode for episode in self._episodes
+             if episode.id == episode_ref),
+            None,
+        )
+
     def respond(
         self,
         request: Request,
@@ -713,10 +752,7 @@ class EpisodicMemory:
 
         if request.question.startswith("episode:"):
             episode_ref = request.question.split(":", 1)[1]
-            episode = next(
-                (item for item in self._episodes if item.id == episode_ref),
-                None,
-            )
+            episode = self._find_closed_episode(episode_ref)
             if episode is None:
                 return Response(
                     request_ref=request.id,
@@ -760,10 +796,9 @@ class EpisodicMemory:
         if not newly_crossed:
             return None
         top = newly_crossed[0]
-        episode = next(
-            episode for episode in self._episodes
-            if episode.id == top.episode_ref
-        )
+        episode = self._find_closed_episode(top.episode_ref)
+        if episode is None:
+            raise LookupError("recall referenced an absent closed episode")
         self._last_recalled_ref = episode.id
         contribution = Contribution(
             id=f"memory-recall:{episode.id}:{t_monde}:{cycle}",
@@ -904,7 +939,14 @@ class EpisodicMemory:
             raise ValueError("invalid Memory recall threshold snapshot")
         restored_above = set(raw_above)
 
+        # Re-derive the lookup mode from the complete authenticated imported
+        # history. Do not trust a persisted flag or select an older snapshot.
+        restored_dense = all(
+            episode.id == f"episode:{ordinal}"
+            for ordinal, episode in enumerate(restored)
+        )
         self._episodes = restored
+        self._episode_ids_dense = restored_dense
         self._recall_above_threshold = restored_above
         self._seen_event_refs = {
             str(x) for x in state.get("seen_event_refs", [])
