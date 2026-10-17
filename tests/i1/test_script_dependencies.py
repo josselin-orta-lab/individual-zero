@@ -74,7 +74,7 @@ class ScriptDependencyScanTests(unittest.TestCase):
     def test_current_inventory_is_complete_and_non_scientific(self):
         report = analyze(ROOT)
         self.assertEqual(report["status"], "PASS_WITH_REVIEW", report["errors"])
-        self.assertEqual(report["active_scripts"], 5)
+        self.assertEqual(report["active_scripts"], 6)
         self.assertEqual(report["review_pending"], 148)
         self.assertEqual(report["reviewed_with_import_evidence"], 5)
         self.assertEqual(len(report["review_queue"]), 143)
