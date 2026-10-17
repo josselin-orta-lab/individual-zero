@@ -248,7 +248,29 @@ def i1_waking_pending_source(source: str) -> str:
     new = '        committed = self.slow_history.committed_episode_refs()\n'
     if source.count(old) != 1:
         raise ValueError("unreviewed Stage10 waking history read")
-    return source.replace(old, new)
+    source = source.replace(old, new)
+    # Sleep selection can also consult immutable ownership metadata. Actual
+    # episode bodies are still read only through the charged selection path.
+    prior = (
+        '                            tuple(self.slow_history.read_committed()'
+        '["consolidated_episode_refs"])\n'
+    )
+    if source.count(prior) != 1:
+        raise ValueError("unreviewed incremental sleep selection metadata")
+    source = source.replace(
+        prior,
+        '                            tuple(sorted(self.slow_history.committed_episode_refs()))\n',
+    )
+    prior = (
+        '                old_refs = set(\n'
+        '                    self.slow_history.read_committed()["consolidated_episode_refs"]\n'
+        '                )\n'
+    )
+    if source.count(prior) != 1:
+        raise ValueError("unreviewed full sleep selection metadata")
+    return source.replace(
+        prior, '                old_refs = self.slow_history.committed_episode_refs()\n',
+    )
 
 
 def i1_private_consolidation_source(source: str) -> str:
