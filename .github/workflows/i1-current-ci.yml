@@ -11,6 +11,7 @@ on:
       - 'scripts/check_engine_contracts.py'
       - 'tools/new_engine.py'
       - 'tools/run_engine_checks.py'
+      - 'tools/campaign_report.py'
       - 'docs/engines/i1/**'
       - 'tests/i1/**'
       - 'AGENTS.md'
@@ -105,10 +106,17 @@ jobs:
             python -m unittest discover -s tests -p "$pattern" -q
           done
           rm -rf src/lab
+      - name: Engine campaign report with explicit evidence gaps
+        if: always()
+        run: |
+          python tools/campaign_report.py --engine I1 --python-version ${{ matrix.python-version }} --output reports/i1-campaign-${{ matrix.python-version }}.json --markdown-output reports/i1-campaign-${{ matrix.python-version }}.md
       - name: JUnit diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: i1-current-junit-${{ matrix.python-version }}
-          path: reports/*.xml
+          path: |
+            reports/*.xml
+            reports/*.json
+            reports/*.md
           if-no-files-found: warn
