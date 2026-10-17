@@ -49,3 +49,5 @@ For serialization, owner-roster, episode provenance, M11 cold reconstruction and
 ## Stop conditions
 
 Stop and report a blocker for missing ground truth provenance, hidden observation injection, compromised mortality, noncanonical M11 commit, incorrect owner publication, unaccounted UC or test omission. Do not mask those failures with replaying a life, relaxing tests or calling an inconclusive trace a scientific success.
+
+Registered smoke/full test vectors must pass a unique `--junit` path through `engine.json`; the CLI requires this option. See [TEST_PLAN.md](TEST_PLAN.md) before copying command lines into a shell.
