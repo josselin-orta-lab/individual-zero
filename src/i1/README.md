@@ -3,11 +3,12 @@
 This is the **active** engine, independent from frozen `src/i0`.
 
 - `modules/`, `architecture/`, `config/`: cognitive contracts, state and mechanisms.
+- `lab/`: dedicated I1 scientific and execution infrastructure; frozen I0 Lab lives in `archive/i0/lab/`.
 - `runtime/`: first-person I1 birth, temperament, natural-life runtime,
   learning, sleeping and active publication sources. These are part of I1,
   **not optional overlays**.
 - `scripts/build_i1_fork.py`: currently builds an isolated `i1lab`
-  package, including an isolated copy of the shared Lab. This is still a
+  package, from this generation's own `lab/`. This is still a
   transition mechanism: source-string transforms remain and need their own
   controlled migration before being removed.
 - `scripts/test_i1_ci.py`: real I1 smoke/full, irreversible mortality and

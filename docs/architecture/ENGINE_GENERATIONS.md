@@ -5,9 +5,9 @@ This document reflects the live repository after #246 and the staged historical 
 | Component | Authority | Location | Change policy |
 | --- | --- | --- | --- |
 | I0 | immutable reference | `src/i0/` | no changes in an I1 development PR |
-| shared original Lab | historical reference runtime | `src/lab/` | no I1-specific behavior here |
-| I1 | active artificial individual | `src/i1/`, `src/i1/runtime/` | versioned modifications with explicit real-life tests |
-| I1 isolated Lab | generated from source and overlays | temporary `i1lab/` | never commit generated output |
+| I0 Lab | frozen historical reference | `archive/i0/lab/` | byte-identical to former common Lab |
+| I1 | active artificial individual and version-owned Lab | `src/i1/`, `src/i1/lab/`, `src/i1/runtime/` | versioned modifications with explicit real-life tests |
+| I1 isolated Lab | generated from `src/i1/lab/` and `src/i1/runtime/` | temporary `i1lab/` | never commit generated output |
 | I1 birth | canonical natural identity | `i1lab.i1_birth.birth_i1` | no old experimental flags / hidden oracle |
 | I1 test harness | real engine, SMOKE/FULL | `scripts/test_i1_ci.py` | assert mechanism and observed outcomes, not fixed choices |
 | I0 history | non-authoritative for I1 | `archive/i0/` | byte immutable; manual restoration only |
@@ -26,15 +26,21 @@ This document reflects the live repository after #246 and the staged historical 
 
 ## Next engine generation: I2, I3, ...
 
-**No new engine has been created yet.** For each proposed generation, keep `src/iN/` source separate from previous generations, define canonical constructor/identity, isolated shared runtime, typed contracts, a unique test harness, an explicit activation decision, and a separate CI workflow. Update the registry only after the generation is actually implemented. Do not rename I1 to I2 or inherit an experiment's measurements as normative requirements.
+**No new engine has been created yet.** For each proposed generation, keep `src/iN/` source separate from previous generations, define canonical constructor/identity, isolated generation-owned Lab, typed contracts, a unique test harness, an explicit activation decision, and a separate CI workflow. Update the registry only after the generation is actually implemented. Do not rename I1 to I2 or inherit an experiment's measurements as normative requirements.
 
 Use this promotion sequence: design proposal → architectural decision → isolated prototype → software invariants → new preregistered physical evidence → explicit activation. Record NO-GO and limitations. Keep older generations available for reproducible historical audits.
 
 ## Validation layers
 
-- **Structural:** repository registry, immutable I0 / Lab tree, original archival SHA.
+- **Structural:** repository registry, immutable I0 source and archived I0 Lab trees, original archival SHA.
 - **Software:** generated imports, authentic I1 birth, real physical action, starvation/thirst, irreversible death, owner custody, WAL/M11 recovery.
 - **Behavioral:** real choices, learnable outcomes, temperament, cognitive publication and consolidation without forced scripts.
 - **Scientific:** fresh independent mortal lives, controls and externally audited evidence. Never infer science from an all-green test badge alone.
 
 Avoid creating generic names such as `latest_model` in runtime imports. Every life carries its generation/constructor/frozen config and authentic birth identity.
+
+## Lab ownership per generation
+
+Each motor version owns its own laboratory: the current I1 Lab is `src/i1/lab/`, and the frozen I0 Lab is `archive/i0/lab/` (original Git tree SHA `18f5aabdd49a5cc2f7cae3b0996bf958a0843028`). The unversioned `src/lab/` path is removed. The only exception is a temporary restoration of I0's original Lab in a disposable CI checkout to run archived I0 tests against their original imports. This is not an active shared Lab. Future I2 needs `src/i2/lab/` and its own tested custody; no engine should silently use another generation's Lab. The canonical I1 runner retains the generated `i1lab` import namespace for persisted birth compatibility, but its sources now come exclusively from I1.
+
+`individual-zero` remains a legacy I0 bootstrap demonstration, not a natural I1 CLI or scientific gate. Natural I1 must use its versioned birth entrypoint.

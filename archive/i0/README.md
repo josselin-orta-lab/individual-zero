@@ -22,3 +22,7 @@ python -m unittest discover -s tests -p 'test_*.py'
 Perform this only in an isolated checkout or temporary worktree. This command **restores** the original test-tree/CI state for archive inspection; it is *not* the new I1 acceptance gate.
 
 The archive does not establish I0 scientific acceptance, nor justify skipping functional regressions in the live code. All runtime mechanics and irreversible mortality contracts remain in source.
+
+## Frozen generation-owned Lab
+
+The former `src/lab/` has been preserved, byte-for-byte, under `archive/i0/lab/` (125 tracked original files, Git tree `18f5aabdd49a5cc2f7cae3b0996bf958a0843028`). It belongs to I0's historical tests and bootstrap, not to active I1. The active I1 laboratory resides at `src/i1/lab/`, independently versioned. The original `src/lab/` path has been removed except for temporary test-only reconstruction in a disposable CI checkout.
