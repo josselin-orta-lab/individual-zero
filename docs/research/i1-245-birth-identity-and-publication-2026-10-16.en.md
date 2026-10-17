@@ -1564,3 +1564,50 @@ changing causal authority. These are source-level operation counts,
 tests, CI runs, benchmark or life simulation was executed per instruction.
 Runtime parity and exact performance gains still require scientific
 verification before any GO decision.
+
+## I1 P-35 controlled correlation: one-pass shared-key admission without quadratic pairs (2026-10-17)
+
+During `CausalModel.publish_causal_inference()`, the original P-35
+correlation calculation built every `(exposed, control)` pair whose
+first-person `observation_context` and `controlled_variables`
+matched. That Cartesian pair list was then discarded after retaining
+only the DISTINCT treated and control records that occurred in at
+least one compatible pair. If T treated and C control observations
+shared a context, this unnecessarily allocated O(T*C) pairs.
+
+The I1-only publication now uses two sets of exact witnessed
+`(observation_context, controlled_variables)` keys and intersects
+them. It retains a treated or control record only when its key
+belongs to that intersection. On the native and cold-decoded
+tuple-of-tuples evidence representation, this yields exactly the
+same unique `e` and `b` dictionaries without constructing any
+Cartesian pairs. A `CausalObservation.validate()` call also permits
+legacy list-valued controls; if ANY record of the current contingency
+uses such a noncanonical representation, the original equality-based
+pair algorithm is preserved for the whole contingency. This guards
+against accidentally changing list-versus-tuple equality semantics
+or hashing unhashable input, without admitting new evidence.
+
+The original `n1` distinct treated-positive observation threshold,
+above-control-base-rate comparison, chronological status progression
+and independent hashed journal proofs are unchanged. The sorted
+treated/control witness reference tuples and evidence reference for
+the status change remain identical; treated IDs are now sorted
+once, not twice. Cold restore still independently cross-validates
+every stored correlation witness against the same original
+P-35 constraints. Shared physical-transition provenance is still
+verified for all old and pending records before any publication,
+but its single-pass verifier now consumes `itertools.chain` instead
+of allocating a complete concatenated tuple of the two datasets.
+
+In the canonical case, witness matching changes structurally from
+O(T*C) time and space to expected O(T+C) time and O(T+C) extra space
+for the shared keys plus retained witnesses. The atypical noncanonical
+case deliberately preserves the previous full matching behavior.
+No global evidence cache, no new inference, no privileged world
+observation, no historical experiment benchmark, no life rewind,
+and no I0 change was introduced.
+
+**NON VALIDÉ:** source inspection and Git commit only. No generated I1,
+tests, CI, simulations or benchmarks were executed. Actual speedups
+and runtime equivalence remain unverified.

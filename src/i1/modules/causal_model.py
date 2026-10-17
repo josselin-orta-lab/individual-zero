@@ -17,7 +17,7 @@ from dataclasses import dataclass, replace
 from hashlib import sha256
 from json import dumps
 from math import isfinite
-from typing import Mapping, Sequence
+from typing import Iterable, Mapping, Sequence
 
 from .action_control import StaticSafetyFacts
 from .causal_corrections import (
@@ -39,7 +39,7 @@ SAFETY_STATUSES = frozenset({"aucun", "etabli_pour_securite"})
 
 
 def _verify_shared_observation_provenance(
-    rows: Sequence[CausalObservation],
+    rows: Iterable[CausalObservation],
 ) -> None:
     """One physical transition keeps its episode and world step across rules.
 
@@ -1881,8 +1881,10 @@ class CausalModel:
         # Cross-rule causal interpretations may share a physical transition,
         # but cannot manufacture a different Memory episode or world clock
         # for that single source. Check the whole batch before publication.
-        _verify_shared_observation_provenance((
-            *observations.values(), *self._pending_causal_observations,
+        # The verifier consumes its input exactly once. Do not allocate a
+        # second full-history tuple solely to check shared lived provenance.
+        _verify_shared_observation_provenance(chain(
+            observations.values(), self._pending_causal_observations,
         ))
 
         # Batch arrival never bypasses the prior published lifecycle level.
@@ -1944,30 +1946,68 @@ class CausalModel:
             control = [x for x in byref[ref] if not x.cause_present]
             if not control:
                 continue
-            # Above-base-rate comparisons require matching observable context
-            # and controlled variables. No mismatched context can create a rate.
-            matched = [(x, y) for x in exposed for y in control
-                       if x.observation_context == y.observation_context
-                       and x.controlled_variables == y.controlled_variables]
-            if not matched:
-                continue
-            # P-35 n1 counts observed cause+effect co-occurrences,
-            # not merely cause-present episodes without the effect.
+            # A control and a treated observation are compatible only if
+            # BOTH the first-person observation context and their ordered,
+            # witnessed controlled variables match exactly. Most native and
+            # cold-imported records use hashable tuple-of-tuples controls.
+            # Find shared keys instead of allocating the Cartesian product.
+            if all(
+                type(row.controlled_variables) is tuple
+                and all(type(pair) is tuple for pair in row.controlled_variables)
+                for row in byref[ref]
+            ):
+                exposed_keys = {
+                    (x.observation_context, x.controlled_variables)
+                    for x in exposed
+                }
+                control_keys = {
+                    (y.observation_context, y.controlled_variables)
+                    for y in control
+                }
+                shared_keys = exposed_keys & control_keys
+                if not shared_keys:
+                    continue
+                e = {
+                    x.identifier: x for x in exposed
+                    if (x.observation_context, x.controlled_variables)
+                    in shared_keys
+                }
+                b = {
+                    y.identifier: y for y in control
+                    if (y.observation_context, y.controlled_variables)
+                    in shared_keys
+                }
+            else:
+                # A directly integrated record may use list-valued controls,
+                # which CausalObservation.validate() also accepts. Preserve
+                # the original list/tuple equality semantics exactly for
+                # these noncanonical, potentially unhashable representations.
+                matched = [
+                    (x, y) for x in exposed for y in control
+                    if x.observation_context == y.observation_context
+                    and x.controlled_variables == y.controlled_variables
+                ]
+                if not matched:
+                    continue
+                e = {x.identifier: x for x, _ in matched}
+                b = {y.identifier: y for _, y in matched}
+            # P-35 n1 counts DISTINCT cause+effect observations, never
+            # duplicate treated/control PAIRS for the same physical record.
             confirmed = {
-                x.identifier for x, _ in matched if x.effect_present
+                x.identifier for x in e.values() if x.effect_present
             }
             if len(confirmed) < self.config.n1:
                 continue
-            e = {x.identifier: x for x, _ in matched}
-            b = {y.identifier: y for _, y in matched}
             if sum(x.effect_present for x in e.values()) * len(b) <= (
                 sum(y.effect_present for y in b.values()) * len(e)
             ):
                 continue
             new = replace(current, causal_status="correlation_observee", version=current.version + 1)
             published[ref] = new
-            correlation_witnesses[ref] = (tuple(sorted(e)), tuple(sorted(b)))
-            changes.append(CausalInferenceChange(ref, current.causal_status, new.causal_status, new.version, sorted(e)[-1], "controlled_base_rate"))
+            treated_ids = tuple(sorted(e))
+            control_ids = tuple(sorted(b))
+            correlation_witnesses[ref] = (treated_ids, control_ids)
+            changes.append(CausalInferenceChange(ref, current.causal_status, new.causal_status, new.version, treated_ids[-1], "controlled_base_rate"))
 
         # An already published correlation may autonomously become a
         # hypothesis when the preregistered alternative was *physically*
