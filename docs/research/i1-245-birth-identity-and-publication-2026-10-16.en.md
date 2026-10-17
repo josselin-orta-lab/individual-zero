@@ -955,3 +955,37 @@ and publication, not the checks themselves.
 **NON VALIDÉ:** source inspection only. No generator run, tests, CI,
 benchmarks or simulations were executed. Peak-memory reduction and
 behavioral parity remain to be verified independently.
+
+## I1 publication forms: explicit retained copy versus temporary read-only comparison (2026-10-17)
+
+Static review found that `build_consolidated_owner_form` served three
+different ownership contexts: constructing all four private forms in the
+paid sixth pass, reconstructing an expected owner form for Stage10 publication
+checks, and reconstructing an expected source form for M11 pre-capture and
+cold-recovery parity. Previously **all** contexts detached potentially large
+hypothesis, procedural and lived-observation structures by deepcopy,
+although the latter two only compared the result and discarded it.
+
+The I1-only builder now accepts an explicit, exactly boolean
+`detach_evidence` option, defaulting to **True**. The sixth-pass
+`build_consolidated_owner_forms` keeps the default, producing the same
+independent owned forms and validating causal/perceptual provenance as before.
+The Stage10 cognitive owner rebaser and the generated M11 parity check
+explicitly select `detach_evidence=False` to construct an isolated *list*
+of references to already-detached private candidate or committed SlowHistory
+data. They do not mutate the returned items or retain them beyond the
+immediate comparison. The causal-model and observational validators still
+run. The final prepared-owner `_copy_causal` and the live-owner
+`restore_causal_state` retain their independent snapshot boundaries.
+
+The deterministic ordering, top-64 observational selection, exposure rights,
+P-42 charging, owner identity, pre-publication journal verification and
+M11 per-generation integrity comparisons remain unchanged by design.
+There is no new prior, inference, safety permission, retrospective
+knowledge, or rollback of lived state. I0 and the shared Lab sources are
+unchanged.
+
+**NON VALIDÉ**: static source review and commit only. No generated build,
+tests, CI, benchmarks or simulations were executed. Numerical performance
+gains and complete runtime/behavior parity remain to be independently
+established.

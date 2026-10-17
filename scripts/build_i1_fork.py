@@ -891,7 +891,12 @@ def i1_m11_active_publication_custody_source(source: str) -> str:
     names = ("causal_model", "perception", "metacognition_health")
     for name in names:
         published = forms.get(name, [])
-        recomputed = build_consolidated_owner_form(history, name) if forms else []
+        # The recomputation is read-only and immediately serialized for
+        # parity. Keep published owner snapshots detached elsewhere.
+        recomputed = (
+            build_consolidated_owner_form(history, name, detach_evidence=False)
+            if forms else []
+        )
         live = runtime._i1_active_owner_views[name].observed_consolidated()
         validate_owner_rows(name, published)
         validate_owner_rows(name, live)

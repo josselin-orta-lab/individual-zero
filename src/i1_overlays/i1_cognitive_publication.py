@@ -120,13 +120,15 @@ def validate_owner_rows(owner_id, rows):
         raise ValueError("active lived-replay index exceeded explicit bound")
 
 
-def build_consolidated_owner_form(candidate, owner_id):
-    """Rebuild only ONE owner's admissible form from private lived evidence.
+def build_consolidated_owner_form(candidate, owner_id, *, detach_evidence=True):
+    """Rebuild one owner's lived form; detach only when its result will be owned.
 
-    The paid sixth pass assembles all four with this same function. During
-    Stage10's owner rebase, each canonical owner checks its own source only;
-    it must not repeatedly copy and validate the other three owners' rows.
+    The paid sixth pass retains the default independent copies. Stage10 and
+    M11 may request a temporary read-only view for immediate comparison,
+    never for retention, publication, or mutation.
     """
+    if type(detach_evidence) is not bool:
+        raise ValueError("active evidence ownership mode must be explicit")
     if (type(candidate) is not dict
             or type(candidate.get("hypotheses")) is not list
             or type(candidate.get("private_replay_observations", [])) is not list
@@ -134,13 +136,15 @@ def build_consolidated_owner_form(candidate, owner_id):
         raise ValueError("unvalidated private six-pass evidence")
     if owner_id == "value_needs":
         return sorted(
-            (deepcopy(row) for row in candidate["procedural"]
+            (deepcopy(row) if detach_evidence else row
+             for row in candidate["procedural"]
              if type(row) is dict and row.get("state") == "compiled_private"),
             key=lambda row: row["id"],
         )
     if owner_id == "causal_model":
         rows = sorted(
-            (deepcopy(row) for row in candidate["hypotheses"]),
+            (deepcopy(row) if detach_evidence else row
+             for row in candidate["hypotheses"]),
             key=lambda row: row["id"],
         )
         validate_owner_rows(owner_id, rows)
@@ -174,7 +178,10 @@ def build_consolidated_owner_form(candidate, owner_id):
             "event_ref": event_ref,
             "event_kind": wanted,
             "projection_digest": row["projection_digest"],
-            "lived_observation": deepcopy(row["lived_observation"]),
+            "lived_observation": (
+                deepcopy(row["lived_observation"])
+                if detach_evidence else row["lived_observation"]
+            ),
             "verification_status": "observed_not_verified",
         }
         for event_ref, _, row in sorted(kept)
@@ -280,7 +287,11 @@ class ActiveConsolidatedOwner:
                 or baseline.get("schema") != SCHEMA
                 or baseline.get("owner_id") != self.owner_id):
             raise ValueError("I1 published owner candidate not versioned")
-        expected = build_consolidated_owner_form(candidate, self.owner_id)
+        # The comparison is read-only. The subsequent coordinator copy is
+        # the first retained ownership boundary for a prepared active form.
+        expected = build_consolidated_owner_form(
+            candidate, self.owner_id, detach_evidence=False,
+        )
         proposed = candidate["forms"].get(self.owner_id)
         if canonical_causal_bytes(expected) != canonical_causal_bytes(proposed):
             raise ValueError("I1 active owner would publish unverified source")
