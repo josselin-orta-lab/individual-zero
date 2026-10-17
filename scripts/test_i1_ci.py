@@ -226,8 +226,11 @@ class CurrentI1(unittest.TestCase):
             temperament_for_life(life.individual_id),
             temperament_for_life(other.individual_id))
         self.assertEqual(
-            life.temperament_parameters.temperament,
-            temperament_for_life(life.individual_id))
+            life.temperament_parameters.mapping_version,
+            other.temperament_parameters.mapping_version)
+        self.assertNotEqual(
+            life.temperament_parameters.exploration_coefficient,
+            other.temperament_parameters.exploration_coefficient)
         self.assertEqual(
             dict(life.value_needs.config.weights),
             dict(life.temperament_parameters.body_weights))
