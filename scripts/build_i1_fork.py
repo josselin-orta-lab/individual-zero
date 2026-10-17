@@ -420,6 +420,25 @@ def i1_m11_bounded_journal_source(source: str) -> str:
     return source
 
 
+def i1_sqlite_life_audit_canonical_source(source: str) -> str:
+    """Retain all full SQL and schema checks but avoid duplicate decoding.
+
+    The exact old-current generation already carries a verified receipt;
+    this is only for the generated I1lab SQLite ledger.
+    """
+    changes = (
+        ("            if canonical_causal_bytes(decoded) != data:\n                raise ValueError(\"noncanonical state\")\n            _canonical_state(decoded, identity)\n",
+         "            # _canonical_state performs the full schema and causal\n            # normalization checks; reuse its bytes for the exact comparison.\n            if _canonical_state(decoded, identity) != data:\n                raise ValueError(\"noncanonical state\")\n"),
+        ("            old_bytes = self._db.execute(\n                \"SELECT state_bytes FROM life_current WHERE slot=1\"\n            ).fetchone()[0]\n            old_metadata = registered_current_metadata(json.loads(old_bytes))\n            new_metadata = registered_current_metadata(current_state)\n            if (old_metadata is None) != (new_metadata is None):\n                raise ValueError(\"current identity cannot switch registered custody contract\")\n            if (\n                old_metadata is not None\n                and new_metadata is not None\n                and old_metadata[0] != new_metadata[0]\n            ):\n                raise ValueError(\"registered causal owner roster changed within one identity\")\n",
+         "            # The receipt came from a complete audit of the current SQL\n            # generation. Under BEGIN IMMEDIATE, _checked_current_anchor\n            # rechecks its state bytes and pinned roster against that receipt;\n            # the fallback path audits under the lock instead. There is no\n            # need to deserialize the old complete cognitive state again.\n            old_roster_hash = receipt.registered_roster_hash\n            new_metadata = registered_current_metadata(current_state)\n            if (old_roster_hash is None) != (new_metadata is None):\n                raise ValueError(\"current identity cannot switch registered custody contract\")\n            if (old_roster_hash is not None\n                    and new_metadata is not None\n                    and old_roster_hash != new_metadata[0]):\n                raise ValueError(\"registered causal owner roster changed within one identity\")\n"),
+    )
+    for before, after in changes:
+        if source.count(before) != 1:
+            raise ValueError("unreviewed I1 SQLite life ledger audit boundary")
+        source = source.replace(before, after)
+    return source
+
+
 def i1_sqlite_detached_owner_export_source(source: str) -> str:
     """Elide copies only for exact I1 owners with proven detached exports.
 
@@ -916,6 +935,9 @@ def generate(output: Path) -> dict[str, object]:
                     and relative.as_posix() == "journal.py"):
                 transformed = i1_journal_bounded_view_source(transformed)
                 transformed = i1_journal_full_integrity_copy_source(transformed)
+            if (output_package == "i1lab"
+                    and relative.as_posix() == "sqlite_life_store.py"):
+                transformed = i1_sqlite_life_audit_canonical_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "sqlite_runtime_custody.py"):
                 transformed = i1_sqlite_journal_count_source(transformed)

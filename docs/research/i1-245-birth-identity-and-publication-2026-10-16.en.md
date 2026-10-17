@@ -652,3 +652,33 @@ generated I1lab; neither I0 nor the source lab implementation is touched.
 **NON VALIDÉ**: source review only. No generator build, unit test, CI,
 benchmark or simulated life was executed. Runtime equivalence and performance
 gains remain to be demonstrated independently.
+
+## Generated I1 M11 ledger: eliminate duplicate full-state canonicalization and old-state reparse (2026-10-17)
+
+Static source review of the I1lab SQLite custodian found two entire-state
+operations repeated during every physical generation:
+
+* In `SQLiteLifeLedger.audit()`, canonical encoding of the decoded current
+  state was used once for an exact raw-byte comparison and again inside
+  `_canonical_state()`. Generated I1 now uses the latter's fully checked
+  canonical bytes for the same exact comparison. Both the registered-owner
+  schema check and byte-identical canonical verification remain mandatory.
+* In `commit_generation()`, the old state bytes were reread from SQLite
+  and JSON-decoded solely to determine the registered owner roster's SHA.
+  The preceding complete `LifeReceipt` already contains
+  `registered_roster_hash`. The M11 `verified_intent` path rechecks
+  the old SQL state digest and roster under `BEGIN IMMEDIATE` using
+  `_checked_current_anchor`; an ordinary non-verified caller performs
+  `audit()` in that same locked transaction. The generated I1 code
+  compares the receipt's verified roster SHA to the newly validated
+  metadata without a second old-state JSON decode.
+
+In particular, these source-only changes do **not** remove full causal
+occurrence replay audits, state hash checks, the write-intent fence,
+the registered-owner inventory check, atomic WAL commit, the post-COMMIT
+audit, or terminal receipt verification. The fallback non-M11 transaction
+path retains its complete audit. The original I0/lab source remains pinned.
+
+**NON VALIDÉ**: no model generation, tests, CI runs, benchmarks or
+simulated lives were performed. The elimination of repeated O(state-size)
+serialization/parsing is established by code inspection, not measured.
