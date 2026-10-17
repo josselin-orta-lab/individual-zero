@@ -98,6 +98,94 @@ def i1_physiology_source(source: str) -> str:
         source = source.replace(original, replacement)
     return source
 
+def i1_scoped_autobiographical_view_source(source: str) -> str:
+    """Generated I1 only: project selected event payloads, validate ALL commits.
+
+    Every AutoSegmentCommit and authorized source is still examined in order,
+    including sources outside the chosen batch. The only saved work is
+    projecting and storing irrelevant lived payloads. No uncommitted source
+    can enter the scoped result and no cognitive P-42 charge is skipped.
+    """
+    definition = (
+        '    def autobiographical(\n'
+        '        self,\n'
+        '        *,\n'
+        '        policies: Mapping[str, AutobiographicalPolicy],\n'
+        '    ) -> tuple[dict[str, object], ...]:\n'
+    )
+    expanded = (
+        '    def autobiographical(\n'
+        '        self,\n'
+        '        *,\n'
+        '        policies: Mapping[str, AutobiographicalPolicy],\n'
+        '        selected_event_refs: frozenset[str] | None = None,\n'
+        '    ) -> tuple[dict[str, object], ...]:\n'
+        '        if selected_event_refs is not None and (\n'
+        '                type(selected_event_refs) is not frozenset\n'
+        '                or any(type(ref) is not str or not ref\n'
+        '                       for ref in selected_event_refs)):\n'
+        '            raise ValueError("invalid scoped autobiographical refs")\n'
+    )
+    if source.count(definition) != 1:
+        raise ValueError("unreviewed generated JournalViews policy boundary")
+    source = source.replace(definition, expanded)
+    projection = '                projected.append(policy.project(source))\n'
+    if source.count(projection) != 1:
+        raise ValueError("unreviewed I1 autobiographical projected occurrence")
+    return source.replace(
+        projection,
+        '                if (selected_event_refs is None\n'
+        '                        or event_ref in selected_event_refs):\n'
+        '                    projected.append(policy.project(source))\n',
+    )
+
+
+def i1_scoped_consolidation_evidence_source(source: str) -> str:
+    """Generate bounded P-42-selected evidence without touching Lab source.
+
+    The full technical hash-chain and EVERY autobiography commitment are
+    validated just as before. Only already frozen episode event payloads
+    are projected or retained for the semantic runner.
+    """
+    old = '        projection = views.autobiographical(policies=policies)\n'
+    new = (
+        '        episodes = transaction.frozen_episodes_copy()\n'
+        '        selected = set()\n'
+        '        for episode_ref in transaction.batch:\n'
+        '            refs = episodes[episode_ref].get("event_refs")\n'
+        '            if (type(refs) is not list or not refs\n'
+        '                    or any(type(ref) is not str or not ref for ref in refs)\n'
+        '                    or len(set(refs)) != len(refs)\n'
+        '                    or selected.intersection(refs)):\n'
+        '                raise ValueError("invalid or overlapping frozen episode refs")\n'
+        '            selected.update(refs)\n'
+        '        projection = views.autobiographical(\n'
+        '            policies=policies, selected_event_refs=frozenset(selected),\n'
+        '        )\n'
+    )
+    if source.count(old) != 1:
+        raise ValueError("unreviewed verified evidence projection anchor")
+    source = source.replace(old, new)
+    committed = '                committed_before_cut.add(event_ref)\n'
+    if source.count(committed) != 1:
+        raise ValueError("unreviewed pre-cut authorization scan")
+    source = source.replace(
+        committed,
+        '                if event_ref in selected:\n'
+        '                    committed_before_cut.add(event_ref)\n',
+    )
+    duplicate = '        episodes = transaction.frozen_episodes_copy()\n'
+    if source.count(duplicate) != 2:
+        raise ValueError("missing scoped episode input or duplicate legacy copy")
+    # Keep the first, already checked snapshot. Do not copy the entire
+    # selected batch a second time before creating owned projections.
+    prefix, suffix = source.split(duplicate, 1)
+    if duplicate not in suffix:
+        raise ValueError("unreviewed duplicate episode materialization")
+    suffix = suffix.replace(duplicate, '', 1)
+    return prefix + duplicate + suffix
+
+
 def i1_committed_history_metadata_source(source: str) -> str:
     """Generated I1-only SlowHistory: O(1) immutable committed-ref access.
 
@@ -419,6 +507,12 @@ def generate(output: Path) -> dict[str, object]:
                 if material.count("class LivedSixPassAlgorithm:") != 1:
                     raise ValueError("invalid isolated semantic compiler template")
                 transformed = rewrite(material)
+            if (output_package == "i1lab"
+                    and relative.as_posix() == "journal_views.py"):
+                transformed = i1_scoped_autobiographical_view_source(transformed)
+            if (output_package == "i1lab"
+                    and relative.as_posix() == "consolidation_lived_evidence.py"):
+                transformed = i1_scoped_consolidation_evidence_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "consolidation_publication.py"):
                 transformed = i1_committed_history_metadata_source(transformed)
