@@ -17,7 +17,7 @@ from dataclasses import dataclass, replace
 from hashlib import sha256
 from json import dumps
 from math import isfinite
-from typing import Mapping, Sequence
+from typing import Iterable, Mapping, Sequence
 
 from .action_control import StaticSafetyFacts
 from .causal_corrections import (
@@ -39,7 +39,7 @@ SAFETY_STATUSES = frozenset({"aucun", "etabli_pour_securite"})
 
 
 def _verify_shared_observation_provenance(
-    rows: Sequence[CausalObservation],
+    rows: Iterable[CausalObservation],
 ) -> None:
     """One physical transition keeps its episode and world step across rules.
 
@@ -1866,6 +1866,7 @@ class CausalModel:
     def publish_causal_inference(self) -> tuple[CausalInferenceChange, ...]:
         """Publish independent §13.2 evidence atomically, with frozen input stages."""
         from collections import defaultdict
+        from itertools import chain
         original = dict(self._published)
         published = dict(original)
         observations = dict(self._causal_observations)
@@ -1880,8 +1881,10 @@ class CausalModel:
         # Cross-rule causal interpretations may share a physical transition,
         # but cannot manufacture a different Memory episode or world clock
         # for that single source. Check the whole batch before publication.
-        _verify_shared_observation_provenance((
-            *observations.values(), *self._pending_causal_observations,
+        # The verifier consumes its input exactly once. Do not allocate a
+        # second full-history tuple solely to check shared lived provenance.
+        _verify_shared_observation_provenance(chain(
+            observations.values(), self._pending_causal_observations,
         ))
 
         # Batch arrival never bypasses the prior published lifecycle level.
@@ -1943,30 +1946,68 @@ class CausalModel:
             control = [x for x in byref[ref] if not x.cause_present]
             if not control:
                 continue
-            # Above-base-rate comparisons require matching observable context
-            # and controlled variables. No mismatched context can create a rate.
-            matched = [(x, y) for x in exposed for y in control
-                       if x.observation_context == y.observation_context
-                       and x.controlled_variables == y.controlled_variables]
-            if not matched:
-                continue
-            # P-35 n1 counts observed cause+effect co-occurrences,
-            # not merely cause-present episodes without the effect.
+            # A control and a treated observation are compatible only if
+            # BOTH the first-person observation context and their ordered,
+            # witnessed controlled variables match exactly. Most native and
+            # cold-imported records use hashable tuple-of-tuples controls.
+            # Find shared keys instead of allocating the Cartesian product.
+            if all(
+                type(row.controlled_variables) is tuple
+                and all(type(pair) is tuple for pair in row.controlled_variables)
+                for row in byref[ref]
+            ):
+                exposed_keys = {
+                    (x.observation_context, x.controlled_variables)
+                    for x in exposed
+                }
+                control_keys = {
+                    (y.observation_context, y.controlled_variables)
+                    for y in control
+                }
+                shared_keys = exposed_keys & control_keys
+                if not shared_keys:
+                    continue
+                e = {
+                    x.identifier: x for x in exposed
+                    if (x.observation_context, x.controlled_variables)
+                    in shared_keys
+                }
+                b = {
+                    y.identifier: y for y in control
+                    if (y.observation_context, y.controlled_variables)
+                    in shared_keys
+                }
+            else:
+                # A directly integrated record may use list-valued controls,
+                # which CausalObservation.validate() also accepts. Preserve
+                # the original list/tuple equality semantics exactly for
+                # these noncanonical, potentially unhashable representations.
+                matched = [
+                    (x, y) for x in exposed for y in control
+                    if x.observation_context == y.observation_context
+                    and x.controlled_variables == y.controlled_variables
+                ]
+                if not matched:
+                    continue
+                e = {x.identifier: x for x, _ in matched}
+                b = {y.identifier: y for _, y in matched}
+            # P-35 n1 counts DISTINCT cause+effect observations, never
+            # duplicate treated/control PAIRS for the same physical record.
             confirmed = {
-                x.identifier for x, _ in matched if x.effect_present
+                x.identifier for x in e.values() if x.effect_present
             }
             if len(confirmed) < self.config.n1:
                 continue
-            e = {x.identifier: x for x, _ in matched}
-            b = {y.identifier: y for _, y in matched}
             if sum(x.effect_present for x in e.values()) * len(b) <= (
                 sum(y.effect_present for y in b.values()) * len(e)
             ):
                 continue
             new = replace(current, causal_status="correlation_observee", version=current.version + 1)
             published[ref] = new
-            correlation_witnesses[ref] = (tuple(sorted(e)), tuple(sorted(b)))
-            changes.append(CausalInferenceChange(ref, current.causal_status, new.causal_status, new.version, sorted(e)[-1], "controlled_base_rate"))
+            treated_ids = tuple(sorted(e))
+            control_ids = tuple(sorted(b))
+            correlation_witnesses[ref] = (treated_ids, control_ids)
+            changes.append(CausalInferenceChange(ref, current.causal_status, new.causal_status, new.version, treated_ids[-1], "controlled_base_rate"))
 
         # An already published correlation may autonomously become a
         # hypothesis when the preregistered alternative was *physically*
@@ -2015,6 +2056,34 @@ class CausalModel:
             published[old.ref] = new
             changes.append(CausalInferenceChange(old.ref, current.causal_status, new.causal_status, new.version, review.identifier, "matched_alternatives"))
 
+        # Build a private, per-publication lookup from already accepted
+        # intervention witnesses. These lists are not part of any causal
+        # snapshot and do not provide evidence or a cross-step trust cache.
+        # Index each newly credited trial immediately, so later rows in the
+        # same sorted pending batch see precisely the same earlier witnesses.
+        prior_by_physical = defaultdict(list)
+        prior_by_comparator = defaultdict(list)
+        prior_by_emitted = defaultdict(list)
+        prior_by_observed = defaultdict(list)
+        positive_by_ref = defaultdict(list)
+
+        def index_admitted_trial(item: CausalIntervention) -> None:
+            prior_by_physical[item.observation_ref].append(item)
+            prior_by_comparator[
+                (item.contingency_ref, item.comparator_ref)
+            ].append(item)
+            prior_by_emitted[
+                (item.contingency_ref, item.emitted_step)
+            ].append(item)
+            prior_by_observed[
+                (item.contingency_ref, item.observed_step)
+            ].append(item)
+            if item.observed_effect and item.attribution == "self_compatible":
+                positive_by_ref[item.contingency_ref].append(item)
+
+        for item in interventions.values():
+            index_admitted_trial(item)
+
         for trial in sorted(self._pending_causal_interventions, key=lambda x: (x.observed_step, x.identifier)):
             old = original.get(trial.contingency_ref)
             if old is None or old.causal_status not in {
@@ -2052,18 +2121,23 @@ class CausalModel:
             # contingency. Different event IDs pointing to the same observed
             # step cannot manufacture an additional independent context.
             key = (trial.contingency_ref, trial.observation_ref, "intervention")
-            prior_uses = tuple(
-                other for other in interventions.values()
-                if other.observation_ref == trial.observation_ref
-                or (
-                    other.contingency_ref == trial.contingency_ref
-                    and (
-                        other.comparator_ref == trial.comparator_ref
-                        or other.emitted_step == trial.emitted_step
-                        or other.observed_step == trial.observed_step
-                    )
-                )
-            )
+            # All four index predicates exactly match the previous scan of
+            # interventions.values(). A witness may appear in several index
+            # buckets; repeated references do not change the existential
+            # alias/conflict check below, or the fact that any reuse denies
+            # a second intervention credit.
+            prior_uses = tuple(chain(
+                prior_by_physical.get(trial.observation_ref, ()),
+                prior_by_comparator.get(
+                    (trial.contingency_ref, trial.comparator_ref), ()
+                ),
+                prior_by_emitted.get(
+                    (trial.contingency_ref, trial.emitted_step), ()
+                ),
+                prior_by_observed.get(
+                    (trial.contingency_ref, trial.observed_step), ()
+                ),
+            ))
             # A reused physical source grants no extra n2 credit. It is only
             # a harmless alias if every physical claim matches: action,
             # Memory episode, context, controls, world steps, comparator,
@@ -2085,6 +2159,7 @@ class CausalModel:
                 continue
             credits.add(key)
             interventions[trial.identifier] = trial
+            index_admitted_trial(trial)
             current = published[old.ref]
             if not trial.observed_effect:
                 # A failed lived intervention invalidates the assumption
@@ -2107,10 +2182,11 @@ class CausalModel:
                 )
             else:
                 boundary = revisions.get(old.ref, (-1, ""))[0]
+                # Check only positive, self-compatible interventions of
+                # this contingency, including earlier accepted batch rows.
                 contexts = {
-                    x.context_signature for x in interventions.values()
-                    if x.contingency_ref == old.ref and x.observed_effect
-                    and x.attribution == "self_compatible" and x.observed_step > boundary
+                    x.context_signature for x in positive_by_ref.get(old.ref, ())
+                    if x.observed_step > boundary
                 }
                 if trial.observed_effect and old.causal_status == "hypothese_causale":
                     next_status = "testee_par_intervention"
@@ -2135,20 +2211,19 @@ class CausalModel:
             ):
                 continue
             boundary = revisions.get(ref, (-1, ""))[0]
-            successful = sorted(
-                (
-                    item for item in interventions.values()
-                    if item.contingency_ref == ref
-                    and item.observed_effect
-                    and item.attribution == "self_compatible"
-                    and item.observed_step > boundary
-                ),
-                key=lambda item: (item.observed_step, item.identifier),
-            )
+            successful = [
+                item for item in positive_by_ref.get(ref, ())
+                if item.observed_step > boundary
+            ]
             if len({item.context_signature for item in successful}) < self.config.n2:
                 continue
             current = published[ref]
-            witness = successful[-1]
+            # The previous sorted(...)[-1] chose the greatest observed
+            # (world-step, identifier) pair. Select the same witness without
+            # sorting every historical success of this contingency.
+            witness = max(
+                successful, key=lambda item: (item.observed_step, item.identifier)
+            )
             new = replace(
                 current, causal_status="etablie", version=current.version + 1,
             )
@@ -2878,30 +2953,48 @@ class CausalModel:
                 or not isinstance(control_ids, (list, tuple))
                 or not treated_ids or not control_ids
                 or any(not isinstance(k, str) or not k for k in (*treated_ids, *control_ids))
-                or list(treated_ids) != sorted(set(treated_ids))
-                or list(control_ids) != sorted(set(control_ids))
+                # These are validated nonempty string references. Equality
+                # with sorted(set(refs)) is precisely strict lexical order;
+                # check adjacent IDs instead of sorting and copying history.
+                or any(
+                    refs[i - 1] >= refs[i]
+                    for refs in (treated_ids, control_ids)
+                    for i in range(1, len(refs))
+                )
             ):
                 raise ValueError("invalid causal snapshot correlation witness samples")
             treated = [obs.get(k) for k in treated_ids]
             controls = [obs.get(k) for k in control_ids]
+            # First reject absent, foreign or wrongly classified records,
+            # before reading their context. No pending observation can satisfy
+            # these lookups: obs contains published lived evidence only.
             if (
                 any(x is None or x.contingency_ref != ref or not x.cause_present
                     for x in treated)
                 or any(x is None or x.contingency_ref != ref or x.cause_present
                     for x in controls)
-                or not all(any(
-                    x.observation_context == y.observation_context
-                    and x.controlled_variables == y.controlled_variables
-                    for y in controls
-                ) for x in treated)
-                or not all(any(
-                    x.observation_context == y.observation_context
-                    and x.controlled_variables == y.controlled_variables
-                    for x in treated
-                ) for y in controls)
-                or sum(x.effect_present for x in treated) < self.config.n1
+            ):
+                raise ValueError("causal snapshot invalid controlled correlation witness")
+            # Each restored observation has already passed decode_observation,
+            # which canonicalizes the witnessed control pairs to tuples of
+            # nonempty strings. Both old all(any(...)) directions hold iff the
+            # complete sets of exact observable context/controls keys agree.
+            # No unmatched treated OR control record may gain causal credit.
+            treated_keys = {
+                (x.observation_context, x.controlled_variables)
+                for x in treated
+            }
+            control_keys = {
+                (y.observation_context, y.controlled_variables)
+                for y in controls
+            }
+            if treated_keys != control_keys:
+                raise ValueError("causal snapshot invalid controlled correlation witness")
+            treated_positive = sum(x.effect_present for x in treated)
+            if (
+                treated_positive < self.config.n1
                 or (
-                    sum(x.effect_present for x in treated) * len(controls)
+                    treated_positive * len(controls)
                     <= sum(y.effect_present for y in controls) * len(treated)
                 )
             ):
@@ -2978,15 +3071,25 @@ class CausalModel:
         # the same stable ordering and tie rule as phase-5 publication.
         # Pending interventions have not yet established new boundaries.
         witnessed_boundaries = {}
-        for trial in sorted(
-            trials.values(), key=lambda value: (value.observed_step, value.identifier)
-        ):
+        successful_by_contingency = {}
+        # Restore checks every published intervention. Do not sort the full
+        # history just to find the latest failed physical outcome. The old
+        # stable chronological rule keeps the smallest identifier among
+        # failures at the same last observed world-step.
+        for trial in trials.values():
             if trial.observed_effect:
+                if trial.attribution == "self_compatible":
+                    successful_by_contingency.setdefault(
+                        trial.contingency_ref, []
+                    ).append(trial)
                 continue
-            latest_step = witnessed_boundaries.get(
-                trial.contingency_ref, (-1, "")
-            )[0]
-            if trial.observed_step > latest_step:
+            prior = witnessed_boundaries.get(trial.contingency_ref)
+            if (
+                prior is None
+                or trial.observed_step > prior[0]
+                or (trial.observed_step == prior[0]
+                    and trial.identifier < prior[1])
+            ):
                 witnessed_boundaries[trial.contingency_ref] = (
                     trial.observed_step, trial.identifier,
                 )
@@ -3052,12 +3155,9 @@ class CausalModel:
                 "testee_par_intervention", "etablie",
             }:
                 continue
-            positive = [
-                row for row in trials.values()
-                if row.contingency_ref == contingency.ref
-                and row.observed_effect
-                and row.attribution == "self_compatible"
-            ]
+            # The temporary index was built from the entire independently
+            # validated published trial ledger, never pending interventions.
+            positive = successful_by_contingency.get(contingency.ref, ())
             if not positive:
                 raise ValueError(
                     "causal snapshot tested status lacks lived intervention"

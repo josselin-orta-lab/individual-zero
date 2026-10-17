@@ -1,12 +1,7 @@
 name: I1 A2.32 lived learning scientific audit
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'scripts/run_i1_a232_learning.py'
-      - 'docs/research/i1-a232-prereg-2026-10-16.en.md'
-      - '.github/workflows/i1-a232-science.yml'
+  # Prior experimental campaign: manual only, not I1 acceptance.
   workflow_dispatch:
 
 permissions:

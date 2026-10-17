@@ -1,0 +1,49 @@
+name: I1 A2.36 merged-main all models active science
+
+on:
+  # Archived model tests: manual only; canonical I1 has a separate gate.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a236-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  full-active-physical:
+    name: A2.36 I1 144 mortal births Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Combined I1 owners and provenance unit/regression gates
+        run: |
+          python -m unittest discover -s tests -p 'test_i1_a235_lived_recall.py' -v
+          python -m unittest discover -s tests -p 'test_i1_a235_m11_cold_recall.py' -v
+          python -m unittest discover -s tests -p 'test_i1_a236_combined_m11_cold.py' -v
+          python -m unittest discover -s tests -p 'test_i1_a236_combined_m11_water.py' -v
+          python -m unittest discover -s tests -p 'test_i1_issue136_d1_learning.py' -v
+          python -m unittest discover -s tests -p 'test_i1_generated_isolation.py' -v
+      - name: Execute A2.36 144 true independent mortal births (models active)
+        run: |
+          python scripts/run_i1_a236_merged_active.py --output "a236-py${{ matrix.python-version }}" --source-sha "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Preserve each mortal WAL and complete external records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-a236-main-py${{ matrix.python-version }}
+          path: a236-py${{ matrix.python-version }}/
+          retention-days: 90
+          if-no-files-found: warn

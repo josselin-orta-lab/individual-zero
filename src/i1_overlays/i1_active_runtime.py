@@ -2,7 +2,9 @@
 
 This is NOT the I0 runtime and not a second command authority. It may propose
 one uncertain, first-person grounded move/collection when the exact Stage6
-equipment is incomplete. A sealed external visible-delta model is an inherited
+equipment is incomplete. An independently opted-in I1 affordance policy may
+consider a physically available action without predicting its unknown effects.
+A sealed external visible-delta model is an inherited
 EXPERIMENTAL PRIOR, never masquerading as the I1 individual's lived memories.
 No hidden physics, Oracle, postmortem observations or terminal certifications.
 
@@ -36,6 +38,8 @@ from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY
 I1_POLICY = "i1-stage6-live-partial-prebirth-v1"
 I1_SCORE = 0.35  # fixed *instrumental preference*, NOT predicted E_sim
 I1_EXPERIMENTAL_OPERATION = "i1_partial_model_forecast"
+I1_AFFORDANCE_POLICY = "i1-unknown-action-affordance-v2-general-local"
+I1_AFFORDANCE_OPERATION = "i1_unknown_action_consider"
 
 
 class I1PartialEvidenceAdapter:
@@ -58,13 +62,48 @@ class I1PartialEvidenceAdapter:
         return getattr(underlying, key)
 
     def evaluate(self, *, proposal, **kwargs):
-        receipt = self._pending.get("receipt")
-        if (receipt is None
-                or proposal.option.id != self._pending.get("option_ref")
+        provenance = proposal.option.provenance
+        if (proposal.option.id != self._pending.get("option_ref")
                 or proposal.plan is None
                 or len(proposal.plan.steps) != 1
-                or proposal.option.provenance != "i1_partial_experiment"
+                or provenance not in ("i1_partial_experiment",
+                                      "i1_unknown_affordance")
                 or kwargs.get("t_monde") != self._pending.get("world_step")):
+            return self._underlying.evaluate(proposal=proposal, **kwargs)
+
+        if provenance == "i1_unknown_affordance":
+            # Only a previously UC-paid, first-person-grounded candidate may
+            # receive exploratory evidence. Unknown effects stay unknown.
+            if self._pending.get("affordance") is not True:
+                return self._underlying.evaluate(proposal=proposal, **kwargs)
+            prior = float(self._pending["prior_evidence"])
+            learned_evidence = self._pending.get("learned_evidence")
+            evidence = (prior if learned_evidence is None else
+                        max(-1.0, min(1.0, 0.25 * prior
+                                       + 0.75 * float(learned_evidence))))
+            learned = self._pending.get("learned_status") == "learned"
+            e = EvaluationOption(
+                option_ref=proposal.option.id,
+                option_version=proposal.option.version,
+                cycle=kwargs["cycle"], t_monde=kwargs["t_monde"],
+                status="evaluated",
+                learned_value_status="learned" if learned else "unlearned",
+                learned_value=(
+                    float(self._pending["learned_value"]) if learned else None
+                ),
+                simulated_value_status="unavailable", simulated_value=None,
+                intrinsic_status="not_applicable", intrinsic_value=None,
+                risk_status="unknown", risk=None, safety_uncertainty=1.0,
+                protection=False, signal_ids=(),
+                producers=(I1_AFFORDANCE_POLICY,)
+                          + (("value_needs.q_active",) if learned else ()),
+            )
+            result = OptionEvidenceInput(evaluation=e, evidence=evidence)
+            result.validate()
+            return result
+
+        receipt = self._pending.get("receipt")
+        if receipt is None:
             return self._underlying.evaluate(proposal=proposal, **kwargs)
         sources = tuple(self._pending.get("lived_sources", ()))
         evidence = 0.45 if sources else I1_SCORE
@@ -102,6 +141,8 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         self, *, i1_model: ShadowVisibleDeltaModel | None = None,
         i1_model_enabled: bool = False, i1_forecast_cost_uc: int = 2,
         i1_lived_recall_enabled: bool = False, i1_recall_cost_uc: int = 1,
+        i1_unknown_action_enabled: bool = True,
+        i1_unknown_action_cost_uc: int = 2,
         **kwargs,
     ) -> None:
         if type(i1_model_enabled) is not bool:
@@ -112,6 +153,16 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
             raise ValueError("invalid I1 lived recall opt-in or cost")
         if i1_lived_recall_enabled and not i1_model_enabled:
             raise ValueError("I1 recall requires active I1 predictor")
+        if (type(i1_unknown_action_enabled) is not bool
+                or type(i1_unknown_action_cost_uc) is not int
+                or i1_unknown_action_cost_uc < 1):
+            raise ValueError("unknown affordances require explicit positive-UC birth settings")
+        if i1_unknown_action_enabled:
+            birth_id = kwargs.get("birth_life_id")
+            if (kwargs.get("autonomous_mortal") is not True
+                    or not isinstance(birth_id, str)
+                    or not birth_id.startswith("i1:")):
+                raise ValueError("unknown action exploration requires a mortal I1 birth")
         if i1_model_enabled:
             who = kwargs.get("birth_life_id")
             if (not isinstance(who, str) or not who.startswith("i1:")
@@ -135,6 +186,8 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         self._i1_model = i1_model
         self._i1_enabled = i1_model_enabled
         self._i1_forecast_cost_uc = i1_forecast_cost_uc
+        self._i1_unknown_action_enabled = i1_unknown_action_enabled
+        self._i1_unknown_action_cost_uc = i1_unknown_action_cost_uc
         self._i1_model_contract = (
             (I1_POLICY, i1_model_enabled, i1_forecast_cost_uc,
              None if i1_model is None else i1_model.version,
@@ -143,14 +196,30 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
              None if i1_model is None else i1_model.counts,
              RECALL_POLICY, i1_lived_recall_enabled, i1_recall_cost_uc)
         )
+        # Append only for opted-in new births. Historical I1 M11 birth hashes
+        # and the unmodified A2.38/A2.39 variants retain their exact contract.
+        if i1_unknown_action_enabled:
+            self._i1_model_contract += (
+                I1_AFFORDANCE_POLICY, True, i1_unknown_action_cost_uc,
+            )
         self._i1_pending = {}
         super().__init__(**kwargs)
         if self.stage3.substrate.bench is not None:
             raise RuntimeError("autonomous I1 cannot receive Bench access")
 
+    @property
+    def temperament_parameters(self):
+        """Read Stage11's frozen projection without requiring Stage5 mixin.
+
+        Both historical research arms and the natural I1 inherit this
+        substrate. The frozen experimental neutral projection stays neutral;
+        only canonical natural birth may configure individual differences.
+        """
+        return self._stage11_config.temperament_parameters
+
     def _parent_runtime_config(self, config):
         base = super()._parent_runtime_config(config)
-        if not self._i1_enabled:
+        if not (self._i1_enabled or self._i1_unknown_action_enabled):
             return base
         stage9 = base.stage9
         stage8 = stage9.stage8
@@ -158,20 +227,32 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         stage6 = stage7.stage6
         stage4 = stage6.stage4
         original = stage4.compute_budget
-        cost = self._i1_forecast_cost_uc
+        forecast_cost = self._i1_forecast_cost_uc if self._i1_enabled else 0
+        affordance_cost = (self._i1_unknown_action_cost_uc
+                           if self._i1_unknown_action_enabled else 0)
+        # Alternative paths never issue two additional planning charges in
+        # one cycle. Reserve the largest, not their sum; each actual attempt
+        # is still charged by the canonical UC owner.
+        reserve = max(forecast_cost, affordance_cost)
         extra = self._i1_recall_cost_uc if self._i1_lived_recall_enabled else 0
         budget = replace(
             original,
-            version=original.version + "+" + I1_POLICY,
-            cycle_ceiling=original.cycle_ceiling + cost + extra,
+            version=(original.version
+                     + ("+" + I1_POLICY if self._i1_enabled else "")
+                     + ("+" + I1_AFFORDANCE_POLICY
+                        if self._i1_unknown_action_enabled else "")),
+            cycle_ceiling=original.cycle_ceiling + reserve + extra,
             module_envelopes={
                 **original.module_envelopes,
-                "planning": original.module_envelopes["planning"] + cost,
+                "planning": original.module_envelopes["planning"] + reserve,
                 "competition": original.module_envelopes["competition"] + extra,
             },
             operation_costs={
                 **original.operation_costs,
-                I1_EXPERIMENTAL_OPERATION: cost,
+                **({I1_EXPERIMENTAL_OPERATION: forecast_cost}
+                   if forecast_cost else {}),
+                **({I1_AFFORDANCE_OPERATION: affordance_cost}
+                   if affordance_cost else {}),
                 **({"i1_lived_recall_review": extra} if extra else {}),
             },
         )
@@ -188,6 +269,7 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         if (self._i1_lived_recall_enabled
                 and self._i1_pending.get("option_ref")
                 and self._i1_pending.get("world_step") == capture.t_monde
+                and self._i1_pending.get("command_primitive") == "collecter"
                 and not self._i1_pending.get("reviewed")):
             self._i1_pending["reviewed"] = True
             if self._charge(module="competition", operation="i1_lived_recall_review"):
@@ -233,6 +315,186 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         self._i1_pending.clear()
         return super()._on_open_step_capture(capture)
 
+
+    def _consider_uncertain_affordance(
+        self, *, capture, goal, st_version, cycle, exact,
+    ):
+        """One need-linked opportunity from perceived, physically legal actions.
+
+        Unknown effects stay unknown. This is a possibility generator, never
+        a fixed collect/eat/move sequence, a food/poison oracle, or dispatch.
+        D1 owns water learning when it is active, while Stage10 separately
+        proposes intrinsically motivated sleep and Stage11 handles curiosity.
+        """
+        if not self._i1_unknown_action_enabled or goal is None:
+            return None
+        if (goal.goal_type == "drink"
+                and getattr(self, "_i1_water_probe_enabled", False)):
+            # Preserve the original first-person D1 water causal follow-up.
+            return None
+        if (exact is not None and
+                exact.option.success_condition != "step_completed"):
+            # A fully predictive goal plan must not be displaced by an
+            # exploratory unknown option. Partial stock accumulation is not
+            # a physiologically satisfied food goal.
+            return None
+        state = state_from_capture(
+            capture=capture,
+            is_night=self.world.is_night(capture.t_monde),
+        )
+        available = self.planning.candidate_commands(state)
+        direct = {
+            "eat": {"manger", "collecter"},
+            "drink": {"boire"},
+            "recover_energy": {"dormir"},
+            "restore_integrity": {"attendre"},
+        }.get(goal.goal_type, set())
+
+        def relevant(candidate):
+            primitive = candidate.primitive
+            if primitive in direct:
+                if primitive == "collecter":
+                    # Local food can be tried without a nutritional prior.
+                    return candidate.parameters.get("target") in ("berry_a", "berry_b")
+                return True
+            if primitive != "se_deplacer":
+                return False
+            direction = candidate.parameters.get("direction")
+            if goal.goal_type == "eat":
+                return any(
+                    a.direction == direction and a.passable
+                    and set(a.resources).intersection(("berry_a", "berry_b"))
+                    for a in state.adjacent
+                )
+            if goal.goal_type == "drink":
+                return any(
+                    a.direction == direction and a.passable and a.water_source
+                    for a in state.adjacent
+                )
+            return False
+
+        choices = tuple(cmd for cmd in available if relevant(cmd))
+        if not choices:
+            return None
+        if not self._charge(
+            module="planning", operation=I1_AFFORDANCE_OPERATION
+        ):
+            self._write(kind="i1_unknown_affordance_unavailable",
+                        cycle=cycle, data={
+                            "reason": "insufficient_uc",
+                            "world_step": capture.t_monde,
+                            "goal_ref": goal.id,
+                        })
+            return None
+
+        evaluation_state = self._evaluation_state(capture)
+        # Associative TD feedback comes only from earlier physically lived
+        # decisions. Unlearned values are neutral, not an edible/safe prior.
+        # Stream the exact same learned-value ranking. Only the winning
+        # option must be retained; no candidate list or second signature
+        # formatting pass is needed. Equal ranks still select the first.
+        winner = None
+        choice_count = len(choices)
+        for ordinal, command in enumerate(choices):
+            suffix = ":".join(
+                f"{key}={command.parameters[key]}"
+                for key in sorted(command.parameters)
+            ) or "here"
+            signature = ("i1:affordance:" + command.primitive + ":" + suffix)
+            learned = self.q_active.learned_value(evaluation_state, signature)
+            # Unlearned values remain neutral, not a physical prediction.
+            rank = (
+                -float(learned.evidence or 0.0),
+                (capture.t_monde + ordinal) % choice_count,
+            )
+            if winner is None or rank < winner[0]:
+                winner = (rank, command, signature, learned, suffix)
+        _, command, signature, learned, suffix = winner
+        pressure = max(0.0, min(1.0, float(goal.current_pressure)))
+        exploration = float(self.temperament_parameters.exploration_coefficient)
+        uncertainty_penalty = float(
+            self.temperament_parameters.uncertainty_penalty_scale
+        )
+        # A bounded motivation to *consider*, not a predicted food reward:
+        # genuine need, inherited exploration and uncertainty aversion affect
+        # competition. Stage9 and Action Control remain independently binding.
+        prior_evidence = max(0.0, min(1.0,
+            I1_SCORE * (0.5 + 0.5 * pressure)
+            * (1.0 + 0.25 * exploration)
+            / (1.0 + 0.25 * uncertainty_penalty)
+        ))
+        option_id = (
+            f"option:i1:affordance:{goal.id}:t{capture.t_monde}:"
+            f"{command.primitive}:{suffix}"
+        )
+        plan_id = "plan:" + option_id + ":v1"
+        plan = Plan(
+            id=plan_id, option_ref=option_id, version=I1_AFFORDANCE_POLICY,
+            steps=(PlanStep(
+                index=0, command=command, preconditions=(),
+                predicted_consequences=(), observation_window_steps=1,
+            ),),
+            goal_ref=goal.id, budget_used_uc=self._i1_unknown_action_cost_uc,
+            status="valid", st_version=st_version,
+        )
+        retained = {
+            item.contribution_ref for item in self.s_t.current.competitive
+        } if self.s_t.current is not None else set()
+        grounded = tuple(sorted(
+            ref for ref in self.stage3.perception.observation_ref_by_entity.values()
+            if ref in retained
+        ))
+        option = Option(
+            id=option_id, version=I1_AFFORDANCE_POLICY, type="primitive",
+            learning_signature=signature, preconditions=(),
+            success_condition="step_completed",
+            failure_condition="outcome_unconfirmed",
+            invalidation_condition="new_real_capture_or_goal_changed",
+            motive_ref=MotiveRef(type="active_goal", id=goal.id),
+            founding_st_version=st_version,
+            expires_at_step=capture.t_monde + 1,
+            provenance="i1_unknown_affordance",
+            grounding_contribution_refs=grounded,
+            goal_ref=goal.id, plan_ref=plan_id,
+        )
+        proposed = OptionProposal(
+            option=option, plan=plan,
+            preliminary_admissibility="indeterminate",
+        )
+        proposed.validate()
+        self._i1_pending.update(
+            option_ref=option_id, world_step=capture.t_monde,
+            affordance=True, command_primitive=command.primitive,
+            prior_evidence=prior_evidence,
+            learned_evidence=learned.evidence,
+            learned_value=learned.value, learned_status=learned.status,
+        )
+        self._write(kind="i1_unknown_affordance_proposed", cycle=cycle,
+                    data={
+                        "policy": I1_AFFORDANCE_POLICY,
+                        "option_ref": option_id,
+                        "goal_ref": goal.id,
+                        "command": command.as_dict(),
+                        "accessible_inventory": dict(state.inventory),
+                        "candidate_count": len(choices),
+                        "candidate_primitives": [c.primitive for c in choices],
+                        "visible_input_sha256": sha256_hex(
+                            canonical_causal_bytes(state.as_dict())
+                        ),
+                        "goal_pressure": pressure,
+                        "temperament_exploration": exploration,
+                        "uncertainty_penalty_scale": uncertainty_penalty,
+                        "prior_evidence": prior_evidence,
+                        "learned_value_status": learned.status,
+                        "learned_value": learned.value,
+                        "predicted_consequences": None,
+                        "source_scope": "first_person_affordance_and_lived_q",
+                        "risk_status": "unknown", "safety_certificate": None,
+                        "goal_success_claimed": False,
+                        "command_imposed": False,
+                    })
+        return proposed
+
     def _propose_for_cycle(
         self, *, capture, goal_for_planning, st_before_cycle, cycle,
     ):
@@ -240,6 +502,15 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
             capture=capture, goal_for_planning=goal_for_planning,
             st_before_cycle=st_before_cycle, cycle=cycle,
         )
+        if goal_for_planning is not None and st_before_cycle is not None:
+            uncertain = self._consider_uncertain_affordance(
+                capture=capture, goal=goal_for_planning,
+                st_version=st_before_cycle.version,
+                cycle=cycle, exact=exact,
+            )
+            if uncertain is not None:
+                # Producing an option never authorizes its execution.
+                return uncertain
         if (exact is not None or not self._i1_enabled
                 or goal_for_planning is None
                 or goal_for_planning.goal_type != "eat"

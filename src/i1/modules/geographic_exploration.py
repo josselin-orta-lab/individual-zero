@@ -92,6 +92,17 @@ class GeographicExploration:
     def distinct_sites(self) -> int:
         return len(self._visits)
 
+    def has_recorded_site(self, position: tuple[int, int]) -> bool:
+        """Read the individual's own observed visit ledger in O(1).
+
+        A check here neither inspects terrain nor creates a visit. The same
+        private dictionary remains the authoritative source for observations.
+        """
+        if (type(position) is not tuple or len(position) != 2
+                or any(type(v) is not int for v in position)):
+            raise ValueError("observed geographic coordinates must be integers")
+        return position in self._visits
+
     @property
     def visit_count(self) -> int:
         return sum(self._visits.values())
@@ -135,6 +146,29 @@ class GeographicExploration:
     @property
     def surveys(self) -> tuple[ObservedSurvey, ...]:
         return tuple(self._surveys[key] for key in sorted(self._surveys))
+
+    def phase_observation_fixed_fields(self):
+        """Snapshot the immutable geographic fields of a paid Phase-1 pass.
+
+        The visit counters and survey dictionary are intentionally omitted:
+        their only mutations in Stage11's paid hook have explicit boolean
+        results. The captured tuple fields are frozen and never changed in
+        place. This is NOT a replacement for the full M11 causal export.
+        """
+        return (
+            self._last_capture,
+            self._offered,
+            self._transit_offered,
+        )
+
+    def observed_survey_at(
+        self, position: tuple[int, int],
+    ) -> ObservedSurvey | None:
+        """Read a witnessed local survey without sorting every known survey."""
+        if (type(position) is not tuple or len(position) != 2
+                or any(type(v) is not int for v in position)):
+            raise ValueError("survey coordinates must be real observations")
+        return self._surveys.get(position)
 
     def record_survey(self, capture) -> bool:
         """Only an accepted Exploration observation may store local topology.
@@ -297,7 +331,10 @@ class GeographicExploration:
                 or target.origin != self._last_capture[1:]
                 or target.observed_frontier in self._visits
                 or target.destination not in self._visits
-                or not set(target.visited_path) <= set(self._visits)):
+                # The route is validated to contain at most nine typed
+                # coordinates. Probe the existing ledger, never rebuild it.
+                or any(site not in self._visits
+                       for site in target.visited_path)):
                 raise ValueError("route transit not tied to physical visit ledger")
             for a, b in zip(target.visited_path, target.visited_path[1:]):
                 if a not in self._surveys or b not in self._surveys[a].free_neighbors:
@@ -385,7 +422,7 @@ class GeographicExploration:
         # Real owner exports always pair an observed visit ledger with its
         # latest physical Perception capture. A nonempty visit history with
         # no last capture is not an alternate empty state: accepting it
-        # silently breaks replay chronology, especially after a rollback.
+        # silently breaks replay chronology, especially at cold import.
         # Reject before assigning any restored owner fields (atomic failure).
         if (last is None) != (not visited):
             raise ValueError("visit ledger and last physical capture disagree")

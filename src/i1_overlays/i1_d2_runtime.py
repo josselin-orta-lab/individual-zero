@@ -60,7 +60,12 @@ class I1WaterPrudentRuntime(I1WaterLearningRuntime):
             raise ValueError("D2 refuses malformed movement direction")
         dx,dy=DIRECTIONS[direction]
         target=(current.x+dx,current.y+dy)
-        visits=self.exploration.geographic.export_causal_state()["visits"]
+        # Stage11 geography is optional.  Its absence cannot provide a
+        # positive visit receipt.  Abstain normally instead of raising after
+        # an otherwise valid first-person water-learning proposal.
+        geography=self.exploration.geographic
+        visits=(geography.export_causal_state()["visits"]
+                if geography is not None else ())
         past=frozenset((int(v[0]),int(v[1])) for v in visits)
         paid=self._charge(module="competition",operation=REVIEW)
         previously_visited=target in past

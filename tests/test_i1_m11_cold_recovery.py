@@ -1,4 +1,9 @@
-"""I1 M11 live committed step, cold recovery and frozen model rejection."""
+"""M11 admission boundary: uncoordinated experimental I1 cannot own a life.
+
+The current canonical I1 cold-recovery test lives in
+``test_i1_natural_m11_cold_recovery.py``. Historical experiments are not a
+scientific reference for current I1, but negative custody checks remain valid.
+"""
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import subprocess
@@ -10,7 +15,7 @@ from build_i1_fork import generate
 
 
 class I1M11RecoveryTests(unittest.TestCase):
-    def test_current_generation_and_wrong_model_cost(self):
+    def test_experimental_descendant_cannot_bypass_m11_owner_custody(self):
         with TemporaryDirectory() as folder:
             output=Path(folder)/"i1build"
             generate(output)
@@ -57,26 +62,19 @@ with TemporaryDirectory() as folder:
  from i1lab.stage12_runtime import Stage12Runtime
  assert isinstance(candidate,Stage12Runtime),str(type(candidate).__mro__)
  assert candidate._m11_sqlite_custody is True
- with M11TransactionalMortal.birth(db_path=path,runtime=candidate,
-                                    individual_id=identity) as owner:
-  receipt=owner.run_step()
-  assert receipt.generation==1 and receipt.world_step==1
-  assert receipt.status=="active"
-  head=receipt.journal_head
- audit=SQLiteLifeLedger.audit_read_only(path=path,expected_individual_id=identity)
- assert audit.generation==1 and audit.journal_head==head
+ # This experimental descendant is NOT the canonical natural I1
+ # and has not established full M11 owner/writer coordination. Rejection is
+ # the current security contract, not a regression in cold recovery.
  try:
-  with M11TransactionalMortal.cold_recover(
-   db_path=path,individual_id=identity,runtime_factory=lambda:factory(3)): pass
- except RecoveryBlocked: pass
- else: raise AssertionError("wrong UC/model birth contract recovered")
- with M11TransactionalMortal.cold_recover(
-  db_path=path,individual_id=identity,runtime_factory=factory) as restored:
-  receipt=restored.run_step()
-  assert receipt.generation==2 and receipt.world_step==2
- assert SQLiteLifeLedger.audit_read_only(
-  path=path,expected_individual_id=identity).generation==2
-print("I1_M11_COLD_RECOVERY_OK")
+  with M11TransactionalMortal.birth(
+      db_path=path, runtime=candidate, individual_id=identity):
+   pass
+ except RecoveryBlocked as exc:
+  assert "additional mutable/WAL owners not coordinated" in str(exc), str(exc)
+ else:
+  raise AssertionError("M11 admitted uncoordinated experimental owners")
+ assert not Path(path).exists(), "denied experimental birth created a SQL life"
+print("I1_M11_EXPERIMENTAL_OWNER_DENIAL_OK")
 """
             proc=subprocess.run(
                 [sys.executable,"-c",code],
@@ -85,7 +83,7 @@ print("I1_M11_COLD_RECOVERY_OK")
                 capture_output=True,text=True,check=False,
             )
             self.assertEqual(proc.returncode,0,proc.stderr)
-            self.assertIn("I1_M11_COLD_RECOVERY_OK",proc.stdout)
+            self.assertIn("I1_M11_EXPERIMENTAL_OWNER_DENIAL_OK",proc.stdout)
 
 
 if __name__=="__main__":

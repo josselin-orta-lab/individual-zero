@@ -1,0 +1,476 @@
+"""A2.37 merged-main I1 multiple-model activation experiment.
+
+New I1 mortal births only; external lab priors are not lived knowledge.
+"""
+from __future__ import annotations
+
+import argparse
+from collections import Counter
+from dataclasses import replace
+from hashlib import sha256
+import json
+from pathlib import Path
+import sys
+from tempfile import TemporaryDirectory
+from build_i1_fork import generate
+
+PREREG = "4aea5ee862459934c1165207b242883ed38552cb"
+INPUT_LOCK = PREREG
+STRATA = ("BOTH_LOCAL", "BERRY_LOCAL_WATER_E", "WATER_LOCAL_BERRY_E", "BOTH_LOCAL_WATER_E_HIDDEN_LETHAL")
+ARMS = ("FULL","NO_RECALL","NO_D2")
+LIVES_PER_ARM = 8
+MAX_ACTUAL_STEPS = 16
+
+
+def experiment(output: Path, *, head: str) -> dict[str, object]:
+    output=output.resolve()
+    output.mkdir(parents=True,exist_ok=False)
+    with TemporaryDirectory(prefix="i1-a237-code-") as temp:
+        generated=Path(temp)/"generated"
+        generate(generated)
+        sys.path.insert(0,str(generated))
+        from i1.modules.stage12_detectors import Stage12DetectionPolicy
+        from i1.equipment import EquipmentCorpus,EquipmentCorpusExample,SimulationNeighbor,SimulationState
+        from i1.interfaces import PrimitiveCommand
+        from i1.experimental.stage6_visible_delta_shadow import fit_external_lab_shadow
+        from i1lab.stage11_reference_fixture import build_stage11_reference_runtime
+        from i1lab.stage10_reference_fixture import build_stage10_reference_runtime
+        from i1lab.i1_water_runtime import CONSIDER, ACQUIRE
+        from i1lab.i1_d2_runtime import I1WaterPrudentRuntime, REVIEW
+        from i1lab.world import Position,WorldBody
+        from i1lab.injected_scenario import ScenarioEvent
+        from i1lab.journal import HashChainedJournal
+        from i1lab.independent_journal_audit import audit_export_bytes
+        from i1lab.determinism import canonical_causal_bytes, sha256_hex
+
+        s11=build_stage11_reference_runtime(
+            enable_geography=True,autonomous_mortal=True)
+        s10=build_stage10_reference_runtime(autonomous_mortal=True)
+        orig=s11.world.config.initial_position
+        # Pure external prebirth research prior. It never enters I1 Memory.
+        def visible_lab(world,step):
+            cap=world.capture_local(t_monde=step)
+            return SimulationState(
+                schema_version="simulation-state-v1",
+                x=cap.position.x,y=cap.position.y,
+                body=world.telemetry(),inventory=world.inventory(),
+                current_water_source=cap.current_water_source,
+                current_resources=cap.current_resources,
+                adjacent=tuple(SimulationNeighbor(
+                    direction=n.direction,x=n.position.x,y=n.position.y,
+                    passable=n.passable,water_source=n.water_source,
+                    resources=n.resources,creature=n.creature) for n in cap.adjacent),
+                known_shelter_here=False,is_night=world.is_night(step))
+        training=[]
+        for action in ("MOVE_E","COLLECT_B"):
+            for i in range(8):
+                phy=replace(s11.world.config,
+                    version=s11.world.config.version+"-a237-train",
+                    initial_body=replace(s11.world.config.initial_body,
+                        energy=60.0+i,food=28.0+i,water=70.0+i))
+                local_resources=((orig,"berry_b",3+i),) if action=="COLLECT_B" else ()
+                training_layout=replace(s11.world._layout,
+                    obstacles=frozenset(),water_sources=frozenset(),
+                    resources=local_resources,danger_zones=frozenset(),
+                    lethal_zones=frozenset(),creatures=frozenset())
+                w=WorldBody(config=phy,layout=training_layout)
+                before=visible_lab(w,1)
+                cmd=(PrimitiveCommand("se_deplacer",{"direction":"east"})
+                    if action=="MOVE_E" else
+                    PrimitiveCommand("collecter",{"target":"berry_b"}))
+                delta=w.apply(cmd,t_monde=1)
+                after=visible_lab(w,2)
+                assert not delta.lethal
+                training.append(EquipmentCorpusExample(
+                    f"a237:{action}:{i}",before,cmd,after,False))
+        corpus=EquipmentCorpus("a237-main-prebirth-external-physical-v1",tuple(training))
+        model=fit_external_lab_shadow(corpus=corpus)
+        if model.corpus_sha256!=corpus.digest() or dict(model.counts)!={"MOVE_E":8,"COLLECT_B":8}:
+            raise RuntimeError("unsealed or incomplete external training prior")
+
+        c11=s11._stage11_config
+        c9=c11.stage9;c8=c9.stage8;c7=c8.stage7;c6=c7.stage6;c4=c6.stage4
+        water_needs=replace(
+            c4.value_needs,version="a237-mixed-needs-v1",
+            setpoints={**c4.value_needs.setpoints,"water":95.0,"food":80.0})
+        water_plan=replace(
+            c6.planning,version="a237-mixed-plan-v1",
+            setpoints={**c6.planning.setpoints,"water":95.0,"food":80.0})
+        revised9=replace(c9,stage8=replace(c8,stage7=replace(
+            c7,stage6=replace(c6,stage4=replace(
+                c4,value_needs=water_needs),planning=water_plan))))
+        revised11=replace(c11,stage9=revised9)
+        sleep=replace(s10._stage10_config.sleep,version="a237-dev-zero-consolidation-weight",
+            fatigue_gain=0.0,night_weight=0.0,consolidation_weight=0.0)
+        revised10=replace(s10._stage10_config,stage9=revised9,sleep=sleep)
+        policy=Stage12DetectionPolicy(version="a237-logged-v1",
+            window=12,stagnation_steps=3,stagnation_tolerance=.05,
+            loop_repetitions=2,loop_max_period=2,entropy_min_samples=3,
+            entropy_warning_fraction=.25,bias_min_outcomes_each=2,
+            attribution_bias_threshold=.75)
+        records=[]
+        with (output/"lives.jsonl").open("w",encoding="utf-8") as export:
+
+
+            for stratum in STRATA:
+                for idx in range(LIVES_PER_ARM):
+                    berry_here=(stratum!="WATER_LOCAL_BERRY_E")
+                    water_here=stratum in ("BOTH_LOCAL","WATER_LOCAL_BERRY_E",
+                        "BOTH_LOCAL_WATER_E_HIDDEN_LETHAL")
+                    target=orig.moved("east")
+                    for arm in (ARMS if idx%2==0 else tuple(reversed(ARMS))):
+                        enabled=True
+                        life_id=f"i1:a237:{stratum}:{idx:02d}:{arm}"
+                        life_dir=output/life_id.replace(":","-")
+                        life_dir.mkdir()
+                        config=replace(s11.world.config,
+                            version="a237-mixed-real-physiology-v1",
+                            initial_body=replace(s11.world.config.initial_body,
+                                energy=float(65+idx%2),food=float(14+idx%3),
+                                water=float(12+idx%3),integrity=100.0))
+                        water_sources=frozenset({orig}) if water_here else frozenset({target})
+                        if stratum=="BOTH_LOCAL_WATER_E_HIDDEN_LETHAL":
+                            water_sources=frozenset({orig,target})
+                        layout=replace(s11.world._layout,
+                            obstacles=frozenset(),creatures=frozenset(),
+                            danger_zones=frozenset(),
+                            water_sources=water_sources,
+                            resources=(((orig if berry_here else target),
+                                "berry_b",12+idx%3),),
+                            lethal_zones=(frozenset({target}) if
+                                stratum=="BOTH_LOCAL_WATER_E_HIDDEN_LETHAL" else frozenset()))
+                        layout.validate(config)
+                        life=I1WaterPrudentRuntime(
+                            world_config=config,layout=layout,
+                            safety_config=s11.stage3.substrate.safety._config,
+                            safety_facts=s11._canonical_safety._innate,
+                            protected_integrity_threshold=(
+                                s11.stage3.control._config.protected_integrity_threshold),
+                            stage11_config=replace(revised11,geographic=None),
+                            stage10_config=revised10,equipment=s11.equipment,
+                            autonomous_mortal=True,
+                            wal_path=str((life_dir/"life.wal").resolve()),
+                            birth_life_id=life_id,detector_policy=policy,
+                            diagnostic_sample_cost_uc=1,module_occupancy_cost_uc=1,
+                            i1_model_enabled=True,i1_model=model,i1_forecast_cost_uc=2,
+                            i1_lived_recall_enabled=(arm!="NO_RECALL"),i1_recall_cost_uc=1,
+                            i1_water_probe_enabled=True,i1_water_learning_enabled=True,
+                            i1_water_consider_uc=2,i1_water_acquire_uc=2,
+                            i1_d2_prudence=(arm!="NO_D2"),i1_d2_review_uc=1,
+                        )
+                        target=orig.moved("east")
+                        remote=orig
+                        berry=True
+                        birth_e_digest=life.equipment.artifact_digest
+                        if not (life._i1_enabled and life._i1_water_probe_enabled
+                                and life._i1_water_learning_enabled):
+                            raise RuntimeError("I1 A2.37 active birth flags missing")
+                        if life._i1_lived_recall_enabled!=(arm!="NO_RECALL"):
+                            raise RuntimeError("A2.37 recall arm mismatch")
+                        if life._d2_prudence!=(arm!="NO_D2"):
+                            raise RuntimeError("A2.37 D2 arm mismatch")
+                        steps=[]
+                        failure=None
+                        for _ in range(MAX_ACTUAL_STEPS):
+                            start=len(life.journal.entries)
+                            before_body=dict(life.world.telemetry())
+                            before_inventory=dict(life.world.inventory())
+                            water_before=float(before_body["water"])
+                            position_before=life.world.position.as_dict()
+                            try:
+                                outcome=life.run_step()
+                            except BaseException as exc:
+                                failure={"class":type(exc).__name__,
+                                    "detail":str(exc)[:350]}
+                                break
+                            after_body=dict(life.world.telemetry())
+                            after_inventory=dict(life.world.inventory())
+                            water_after=float(after_body["water"])
+                            position_after=life.world.position.as_dict()
+                            new_events=[entry.causal_event for entry in life.journal.entries[start:]]
+                            actual_capture=next((
+                                e.get("data",{}).get("position")
+                                for e in new_events
+                                if e.get("kind")=="perceptual_capture"),None)
+                            physical_step=int(life.scheduler.t_monde)
+                            steps.append({
+                                "t_monde":physical_step,
+                                "command":outcome.command_primitive,
+                                "option_ref":outcome.option_ref,
+                                "source":outcome.source,
+                                "status":outcome.execution_status,
+                                "position_before_open_step":position_before,
+                                "authorized_preaction_position":actual_capture,
+                                "position_after_action":position_after,
+                                "water_before_world_step":water_before,
+                                "water_after_world_step":water_after,
+                                "integrity_after":after_body["integrity"],
+                                "food_after":after_body["food"],
+                                "berries_before":before_inventory.get("berry_b",0),
+                                "berries_after":after_inventory.get("berry_b",0),
+                                "positive_collection":bool(
+                                    outcome.execution_status=="applied"
+                                    and outcome.command_primitive=="collecter"
+                                    and after_inventory.get("berry_b",0)>before_inventory.get("berry_b",0)),
+                                "positive_drinking":bool(
+                                    outcome.execution_status=="applied"
+                                    and outcome.command_primitive=="boire"
+                                    and water_after>water_before),
+                            })
+                            if outcome.execution_status!="applied":
+                                break
+                        entries=life.journal.entries
+                        all_events=[dict(e.causal_event) for e in entries]
+                        canonical=life.journal.canonical_bytes()
+                        (life_dir/"canonical.jsonl").write_bytes(canonical)
+                        audit_error=None
+                        try:
+                            attestation=HashChainedJournal.audit_durable_wal(
+                                str((life_dir/"life.wal").resolve()))
+                            if (attestation["head_hash"]!=life.journal.head_hash
+                                    or attestation["verified_entries"]!=len(entries)
+                                    or not life.journal.verify()):
+                                raise ValueError("WAL and living journal diverged")
+                            audit_export_bytes(canonical)
+                        except Exception as exc:
+                            audit_error=type(exc).__name__+": "+str(exc)
+                        provenance=[{
+                            "event_id":entry.event_id,
+                            "world_step":entry.causal_event.get("t_monde"),
+                            "data":entry.causal_event.get("data",{})
+                        } for entry in entries if entry.causal_event.get("kind")
+                            =="i1_water_lived_outcome_admitted"]
+                        proposed=[{
+                            "event_id":entry.event_id,
+                            "world_step":entry.causal_event.get("t_monde"),
+                            "data":entry.causal_event.get("data",{})
+                        } for entry in entries if entry.causal_event.get("kind")
+                            =="i1_water_option_proposed"]
+                        admissions={
+                            e.get("data",{}).get("option_ref")
+                            for e in all_events if e.get("kind")=="command_admitted"}
+                        learned_source_before_transfer=any(
+                            e["world_step"] is not None
+                            and e["world_step"]<4
+                            and e["data"].get("admitted") is True
+                            for e in provenance)
+                        planned_transfer={
+                            e["data"]["option_ref"] for e in proposed
+                            if e["world_step"]>=4 and
+                                e["data"].get("modality")=="lived_transfer"
+                                and e["data"].get("command",{}).get("primitive")
+                                    =="se_deplacer"}
+                        moves=[s for s in steps
+                            if s["status"]=="applied"
+                            and s["command"]=="se_deplacer"
+                            and s["option_ref"] in planned_transfer
+                            and s["option_ref"] in admissions
+                            and s["t_monde"]>=4
+                            and s["authorized_preaction_position"]==remote.as_dict()
+                            and s["position_after_action"]==target.as_dict()
+                            and learned_source_before_transfer]
+                        selected_move=min(
+                            (s["t_monde"] for s in moves),default=None)
+                        drinks=[s for s in steps if selected_move is not None
+                            and s["t_monde"]>selected_move
+                            and s["command"]=="boire"
+                            and s["status"]=="applied"
+                            and s["positive_drinking"]
+                            and s["authorized_preaction_position"]==target.as_dict()]
+                        successful_transfer=bool(drinks)
+                        charges=[e.get("data",{}) for e in all_events
+                            if e.get("kind")=="compute_charge"]
+                        uc_charged=sum(
+                            int(c.get("requested_uc") or 0)
+                            for c in charges if c.get("accepted") is True)
+                        uc_refused=sum(1 for c in charges
+                                       if c.get("accepted") is False)
+                        op_uc=Counter()
+                        for c in charges:
+                            if c.get("accepted") is True:
+                                op_uc[str(c.get("operation"))] += int(
+                                    c.get("requested_uc") or 0)
+                        learner=life.lived_water_model
+                        model_receipts=[e for e in all_events if e.get("kind")=="i1_partial_preaction_forecast"]
+                        model_proposals=[e for e in all_events if e.get("kind")=="i1_partial_instrumental_option_proposed"]
+                        reviews=[e for e in all_events if e.get("kind")=="i1_lived_recall_review"]
+                        boosts=[e for e in all_events if e.get("kind")=="stage8_option_evaluation"
+                            and e.get("data",{}).get("evidence")==0.45]
+                        d2_reviews=[e for e in all_events if e.get("kind")=="i1_d2_movement_commitment_review"]
+                        recall_charges=[e for e in charges if e.get("operation")=="i1_lived_recall_review"]
+                        d2_charges=[e for e in charges if e.get("operation")==REVIEW]
+                        false_certainty=[e for e in model_receipts
+                            if any(e.get("data",{}).get("result",{}).get(k) is not None
+                            for k in ("safe","terminal","next_adjacency","causal_responsibility"))]
+                        hard_violations=[]
+                        if learner["enabled"]!=enabled:
+                            hard_violations.append("owner_wrong_arm")
+                        if model.corpus_sha256!=corpus.digest():
+                            hard_violations.append("training_artifact_modified")
+                        if arm=="NO_RECALL" and (recall_charges or reviews or boosts):
+                            hard_violations.append("recall_disabled_bypassed")
+                        if arm=="NO_D2" and (d2_charges or d2_reviews):
+                            hard_violations.append("d2_disabled_bypassed")
+                        if false_certainty:
+                            hard_violations.append("unearned_model_certainty")
+                        if boosts and not any(
+                            r.get("data",{}).get("source_event_refs") for r in reviews):
+                            hard_violations.append("unattributed_recall_boost")
+                        if any(
+                            r.get("data",{}).get("decision")=="permit_historically_visited"
+                            and r.get("data",{}).get("review_uc_paid") is not True
+                            for r in d2_reviews):
+                            hard_violations.append("d2_permit_without_uc")
+                        if not enabled and learner["examples"]:
+                            hard_violations.append("disabled_learner_updated")
+                        if life.equipment.artifact_digest!=birth_e_digest:
+                            hard_violations.append("exact_e_mutated")
+                        if any(p["data"].get("safety_certificate") is not None
+                               or p["data"].get("distal_causal_responsibility") is not None
+                               for p in proposed):
+                            hard_violations.append("unearned_certainty")
+                        if successful_transfer and not (
+                                enabled and learned_source_before_transfer and moves):
+                            hard_violations.append("transfer_without_lived_proof")
+                        if (audit_error or failure):
+                            hard_violations.append("invalid_execution_or_audit")
+                        record={
+                            "schema":"i1-a237-life-v1",
+                            "prereg_sha":PREREG,"input_lock_sha":INPUT_LOCK,
+                            "source_sha":head,"life_id":life_id,
+                            "stratum":stratum,"pair_index":idx,"arm":arm,
+                            "remote_target_operator_only":target.as_dict(),
+                            "external_relocation_operator_only":remote.as_dict(),
+                            "birth_water":float(12+idx%3),
+                            "birth_food":float(14+idx%3),
+                            "model_training_sha256":corpus.digest(),
+                            "model_version":model.version,
+                            "i1_model_enabled":True,
+                            "i1_water_learning_enabled":True,
+                            "i1_recall_enabled":arm!="NO_RECALL",
+                            "i1_d2_enabled":arm!="NO_D2",
+                            "physics_digest":sha256_hex(canonical_causal_bytes(config.as_dict())),
+                            "world_layout_digest":sha256_hex(canonical_causal_bytes(layout.as_dict())),
+                            "exact_e_birth_digest":birth_e_digest,
+                            "exact_e_final_digest":life.equipment.artifact_digest,
+                            "steps":steps,
+                            "physical_steps":sum(x["status"] in ("applied","dead") for x in steps),
+                            "initial_drinking":any(s["positive_drinking"] for s in steps),
+                            "positive_drinking_episodes":sum(bool(s["positive_drinking"]) for s in steps),
+                            "joint_physically_positive":any(s["positive_collection"] for s in steps)
+                                and any(s["positive_drinking"] for s in steps),
+                            "primitives_executed":[s["command"] for s in steps],
+                            "firstperson_water_evidence":provenance,
+                            "learner_final_state":learner,
+                            "learning_before_transfer":learned_source_before_transfer,
+                            "learned_transfer_candidates":len(planned_transfer),
+                            "learned_origin_transfers_applied":len(moves),
+                            "physical_transfer_drinks":len(drinks),
+                            "successful_transfer":successful_transfer,
+                            "uc_total_accepted":uc_charged,
+                            "uc_refused_ops":uc_refused,
+                            "uc_water_consider":op_uc[CONSIDER],
+                            "uc_water_acquire":op_uc[ACQUIRE],
+                            "uc_model_forecast":op_uc["i1_partial_model_forecast"],
+                            "uc_recall_review":op_uc["i1_lived_recall_review"],
+                            "uc_d2_review":op_uc[REVIEW],
+                            "model_forecasts":len(model_receipts),
+                            "model_proposals":len(model_proposals),
+                            "recall_reviews":len(reviews),
+                            "source_backed_reviews":sum(bool(r.get("data",{}).get("source_event_refs")) for r in reviews),
+                            "boost_evaluations":len(boosts),
+                            "d2_reviews":len(d2_reviews),
+                            "d2_deferred":sum(r.get("data",{}).get("decision")=="defer_unknown_or_unfunded" for r in d2_reviews),
+                            "positive_collections":sum(bool(s["positive_collection"]) for s in steps),
+                            "closed_episodes":len(life.memory.episodes),
+                            "false_certainty_violations":len(false_certainty),
+                            "mortal_status":life.stage3.substrate.mortal_status.value,
+                            "external_scenario_receipts":sum(
+                                e.get("kind")=="external_input_applied" for e in all_events),
+                            "stage12_goal_followups":sum(
+                                e.get("kind")=="stage12_goal_progress_followup" for e in all_events),
+                            "journal_sha256":sha256(canonical).hexdigest(),
+                            "journal_head":life.journal.head_hash,
+                            "journal_entries":len(entries),
+                            "hard_violations":hard_violations,
+                            "failure":failure,"audit_error":audit_error,
+                            "model_cannot_see_hidden_truth":True,
+                        }
+                        records.append(record)
+                        (life_dir/"life-result.json").write_text(
+                            json.dumps(record,indent=2,sort_keys=True)+"\n")
+                        export.write(json.dumps(record,sort_keys=True)+"\n")
+        grouped={}
+        for stratum in STRATA:
+            grouped[stratum]={}
+            for arm in ARMS:
+                rows=[r for r in records if r["stratum"]==stratum and r["arm"]==arm]
+                grouped[stratum][arm]={
+                    "births":len(rows),
+                    "physical_steps":sum(r["physical_steps"] for r in rows),
+                    "deaths":sum(r["mortal_status"]=="dead" for r in rows),
+                    "initial_drinking_lives":sum(r["initial_drinking"] for r in rows),
+                    "water_learning_lives":sum(bool(r["firstperson_water_evidence"]) for r in rows),
+                    "water_transfer_lives":sum(r["successful_transfer"] for r in rows),
+                    "positive_berry_collection_lives":sum(r["positive_collections"]>0 for r in rows),
+                    "physically_joint_positive_lives":sum(r["joint_physically_positive"] for r in rows),
+                    "drinking_lives":sum(r["positive_drinking_episodes"]>0 for r in rows),
+                    "collect_then_drink_lives":sum(
+                        next((i for i,s in enumerate(r["steps"]) if s["positive_collection"]),999)
+                        <next((i for i,s in enumerate(r["steps"]) if s["positive_drinking"]),-1)
+                        for r in rows),
+                    "source_backed_recall_lives":sum(r["source_backed_reviews"]>0 for r in rows),
+                    "berry_boost_lives":sum(r["boost_evaluations"]>0 for r in rows),
+                    "d2_review_lives":sum(r["d2_reviews"]>0 for r in rows),
+                    "d2_deferred_count":sum(r["d2_deferred"] for r in rows),
+                    "model_forecast_lives":sum(r["model_forecasts"]>0 for r in rows),
+                    "model_proposal_lives":sum(r["model_proposals"]>0 for r in rows),
+                    "closed_memory_episode_lives":sum(r["closed_episodes"]>0 for r in rows),
+                    "uc_accepted":sum(r["uc_total_accepted"] for r in rows),
+                    "uc_refused_ops":sum(r["uc_refused_ops"] for r in rows),
+                    "uc_water":sum(r["uc_water_consider"]+r["uc_water_acquire"] for r in rows),
+                    "uc_model":sum(r["uc_model_forecast"] for r in rows),
+                    "uc_recall":sum(r["uc_recall_review"] for r in rows),
+                    "uc_d2":sum(r["uc_d2_review"] for r in rows),
+                    "technical_violations":sum(bool(r["hard_violations"]) for r in rows),
+                }
+        nbad=sum(bool(r["hard_violations"]) for r in records)
+        expected=4*8*len(ARMS)
+        both_local=grouped["BOTH_LOCAL"]["FULL"]["physically_joint_positive_lives"]
+        local_berry_east_water=grouped["BERRY_LOCAL_WATER_E"]["FULL"]["physically_joint_positive_lives"]
+        mixed_success=both_local>=6 and local_berry_east_water>=6
+        summary={
+            "schema":"i1-a237-mixed-needs-all-active-summary-v1",
+            "protocol":"a237-v1","source_sha":head,
+            "original_main_sha":"bf59eceaf97805f04a18b0b28f1396f2e98bfa89",
+            "prereg_sha":PREREG,"external_training_sha256":corpus.digest(),
+            "training_examples":len(training),
+            "mortal_lives":len(records),"matched_triplets":4*8,
+            "physical_steps":sum(r["physical_steps"] for r in records),
+            "hard_violations":nbad,
+            "integration_technical_status":"PASS" if len(records)==expected and not nbad else "FAIL",
+            "mixed_goal_status":"MIXED_GOAL_SUPPORTED" if mixed_success else "MIXED_GOAL_NOT_DEMONSTRATED",
+            "mixed_goal_primary":{"BOTH_LOCAL":both_local,"BERRY_LOCAL_WATER_E":local_berry_east_water},
+            "hidden_lethal_deaths":{arm:grouped["BOTH_LOCAL_WATER_E_HIDDEN_LETHAL"][arm]["deaths"] for arm in ARMS},
+            "m11_integrated_regression":"PREVIOUSLY_PASSED_NOT_REPEATED_IN_THIS_COHORT",
+            "scientific_cognitive_deployment":"NO-GO",
+            "by_stratum":grouped,
+            "i0_modified":False,
+            "replication":"same deterministic cohort on two Python versions; not independent science",
+            "limits":"One active goal at a time; mixed-needs opportunity may be absent despite simultaneous resources; no action injection.",
+        }
+        (output/"summary.json").write_text(json.dumps(summary,indent=2,sort_keys=True)+"\n")
+        return summary
+
+def main() -> None:
+    parser=argparse.ArgumentParser()
+    parser.add_argument("--output",type=Path,required=True)
+    parser.add_argument("--source-sha",required=True)
+    args=parser.parse_args()
+    summary=experiment(args.output,head=args.source_sha)
+    print(json.dumps(summary,sort_keys=True))
+    if summary["mortal_lives"]!=96 or summary["hard_violations"]:
+        raise SystemExit(1)
+
+if __name__=="__main__":
+    main()

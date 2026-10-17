@@ -1,0 +1,29 @@
+name: I1 A2.38 preconfirmatory factorial software smoke
+on:
+  # Prior experimental campaign: manual only, not I1 acceptance.
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: i1-a238-smoke-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - name: Real mortal I1 factorial smoke with WAL audit
+        run: python -m unittest discover -s tests -p 'test_i1_a238_factorial_smoke.py' -v
+      - name: Preserved D2 no-geography regression
+        run: python -m unittest discover -s tests -p 'test_i1_a237_d2_no_geography.py' -v

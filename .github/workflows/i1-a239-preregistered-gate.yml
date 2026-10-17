@@ -1,0 +1,32 @@
+name: I1 A2.39 prospective lock software gate
+on:
+  # Prior experimental campaign: manual only, not I1 acceptance.
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: a239-lock-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+jobs:
+  prereg:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify frozen prospective preregistration and allocation
+        run: |
+          python -m compileall -q scripts/i1_a239_lock.py scripts/i1_a239_fixtures.py scripts/run_i1_a239_preflight.py scripts/audit_i1_a239_historical_baseline.py
+          python scripts/i1_a239_lock.py
+          python -m pip install -e .
+          python scripts/run_i1_a239_preflight.py --output a239-preflight --source-sha "$(git rev-parse HEAD)"
+          python -c "import sys; sys.path.insert(0, 'scripts'); from i1_a239_lock import assigned; a=assigned(); assert len(a)==160 and len({(s,i) for s,i,x in a})==32 and all(sum((q,j)==(s,i) for q,j,z in a)==5 for s,i,x in a)"

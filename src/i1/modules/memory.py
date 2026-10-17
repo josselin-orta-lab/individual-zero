@@ -9,7 +9,8 @@ Spec: 10.1-10.4, 20.3 Stage 7, P-34, DC-09, INV-02, INV-27.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping, Sequence
+from heapq import nsmallest
+from typing import Iterator, Mapping, Sequence
 
 from i0.contracts import Contribution, GoalProposal, STVersion
 from i0.requests import Request, Response
@@ -150,6 +151,9 @@ class EpisodicMemory:
         self._atomic_world_step_length_boundary = atomic_world_step_length_boundary
         self._config = config
         self._episodes: list[Episode] = []
+        # Derived lookup property, never exported as autobiographical state.
+        # M11 cold restore recomputes it from the authenticated episodes.
+        self._episode_ids_dense = True
         self._seen_event_refs: set[str] = set()
         self._open_event_refs: list[str] = []
         self._open_start_t: int | None = None
@@ -480,6 +484,13 @@ class EpisodicMemory:
             linked_previous_ref=linked_previous,
         )
         self._episode_sequence += 1
+        # Preserve the constant-time lookup invariant only for the ordinary
+        # sequential born episodes. Imported unusual histories keep the
+        # original linear first-match lookup semantics.
+        self._episode_ids_dense = (
+            self._episode_ids_dense
+            and episode.id == f"episode:{len(self._episodes)}"
+        )
         self._episodes.append(episode)
 
         self._open_event_refs = []
@@ -626,9 +637,61 @@ class EpisodicMemory:
                 and active.get("id") == episode.active_goal_ref
             ):
                 return 1.0
+        # Without any currently visible contribution reference, matching a
+        # long episode's event list cannot provide additional relevance.
+        if not current_refs:
+            return 0.0
+        if len(current_refs) == 1:
+            # One visible contribution ref: perform the tuple membership
+            # search in C instead of one Python set lookup per episode event.
+            return (
+                1.0 if next(iter(current_refs)) in episode.event_refs else 0.0
+            )
         if any(ref in current_refs for ref in episode.event_refs):
             return 1.0
         return 0.0
+
+    def _iter_scored_recall(
+        self, *, st: STVersion | None, t_monde: int,
+    ) -> Iterator[RecallResult]:
+        """Stream all threshold-eligible memories in their natural order.
+
+        Evaluation remains first-person and unchanged; callers decide how
+        many results to retain and whether a full ranking is required.
+        """
+        # Snapshot immutable scoring parameters once per first-person recall.
+        # All episodes are still considered, including ancient high-impact
+        # experiences. The filter below only avoids *symbolic* event matching
+        # when even the maximal relevance bonus cannot clear the threshold.
+        scale = self._config.recall_recency_scale_steps
+        w_recency = self._config.recall_weight_recency
+        w_importance = self._config.recall_weight_importance
+        w_relevance = self._config.recall_weight_relevance
+        threshold = self._config.recall_threshold
+        for episode in self._episodes:
+            age = max(0, t_monde - episode.end_t_monde)
+            recency = max(
+                0.0,
+                1.0 - age / scale,
+            )
+            importance = episode.importance
+            # _relevance() returns exactly 0.0 or 1.0; its coefficient is
+            # nonnegative by MemoryConfig.validate(). This upper bound is
+            # conservative even when the episode is centuries old.
+            base_score = w_recency * recency + w_importance * importance
+            if base_score + w_relevance < threshold:
+                continue
+            relevance = self._relevance(episode, st)
+            score = base_score + w_relevance * relevance
+            if score < threshold:
+                continue
+            yield RecallResult(
+                episode_ref=episode.id,
+                score=score,
+                recency=recency,
+                importance=importance,
+                relevance=relevance,
+            )
 
     def recall(
         self,
@@ -637,38 +700,50 @@ class EpisodicMemory:
         t_monde: int,
         limit: int | None = None,
     ) -> tuple[RecallResult, ...]:
-        scored: list[RecallResult] = []
-        for episode in self._episodes:
-            age = max(0, t_monde - episode.end_t_monde)
-            recency = max(
-                0.0,
-                1.0 - age / self._config.recall_recency_scale_steps,
-            )
-            importance = episode.importance
-            relevance = self._relevance(episode, st)
-            score = (
-                self._config.recall_weight_recency * recency
-                + self._config.recall_weight_importance * importance
-                + self._config.recall_weight_relevance * relevance
-            )
-            if score < self._config.recall_threshold:
-                continue
-            scored.append(
-                RecallResult(
-                    episode_ref=episode.id,
-                    score=score,
-                    recency=recency,
-                    importance=importance,
-                    relevance=relevance,
-                )
-            )
-
+        if limit is not None and type(limit) is int and limit >= 1:
+            # Retain only the best K without materializing or sorting all N
+            # admitted memories. The tie-break key is unchanged.
+            return tuple(nsmallest(
+                limit, self._iter_scored_recall(st=st, t_monde=t_monde),
+                key=lambda item: (-item.score, item.episode_ref),
+            ))
+        # Preserve the full-ranking API and legacy invalid-limit behavior.
+        scored = list(self._iter_scored_recall(st=st, t_monde=t_monde))
         scored.sort(key=lambda item: (-item.score, item.episode_ref))
         if limit is not None:
             if limit < 1:
                 raise ValueError("recall limit must be >= 1")
             scored = scored[:limit]
         return tuple(scored)
+
+    def _find_closed_episode(self, episode_ref: str) -> Episode | None:
+        """Use the verified native episode ordinal without another full scan.
+
+        The fast path is available only when every episode id matches its
+        sequence position. A noncanonical, reordered or duplicated imported
+        list uses the original first-match linear search.
+        """
+        if self._episode_ids_dense:
+            prefix = "episode:"
+            suffix = (
+                episode_ref[len(prefix):]
+                if episode_ref.startswith(prefix) else ""
+            )
+            # Bound parsing before int conversion for arbitrarily large
+            # external request strings. The native format has no zero pad.
+            if (suffix.isascii() and suffix.isdigit()
+                    and len(suffix) <= len(str(len(self._episodes)))):
+                ordinal = int(suffix)
+                if ordinal < len(self._episodes):
+                    episode = self._episodes[ordinal]
+                    if episode.id == episode_ref:
+                        return episode
+            return None
+        return next(
+            (episode for episode in self._episodes
+             if episode.id == episode_ref),
+            None,
+        )
 
     def respond(
         self,
@@ -713,10 +788,7 @@ class EpisodicMemory:
 
         if request.question.startswith("episode:"):
             episode_ref = request.question.split(":", 1)[1]
-            episode = next(
-                (item for item in self._episodes if item.id == episode_ref),
-                None,
-            )
+            episode = self._find_closed_episode(episode_ref)
             if episode is None:
                 return Response(
                     request_ref=request.id,
@@ -749,21 +821,24 @@ class EpisodicMemory:
         t_monde: int,
         cycle: int,
     ) -> Contribution | None:
-        recalled = self.recall(st=st, t_monde=t_monde)
-        current_refs = {item.episode_ref for item in recalled}
-        newly_crossed = [
-            item
-            for item in recalled
-            if item.episode_ref not in self._recall_above_threshold
-        ]
+        # Keep the complete threshold-crossing set, but select its strongest
+        # newly eligible episode without allocating or sorting all recalls.
+        previous_refs = self._recall_above_threshold
+        current_refs: set[str] = set()
+        top: RecallResult | None = None
+        for item in self._iter_scored_recall(st=st, t_monde=t_monde):
+            current_refs.add(item.episode_ref)
+            if item.episode_ref not in previous_refs:
+                if (top is None
+                        or (-item.score, item.episode_ref)
+                           < (-top.score, top.episode_ref)):
+                    top = item
         self._recall_above_threshold = current_refs
-        if not newly_crossed:
+        if top is None:
             return None
-        top = newly_crossed[0]
-        episode = next(
-            episode for episode in self._episodes
-            if episode.id == top.episode_ref
-        )
+        episode = self._find_closed_episode(top.episode_ref)
+        if episode is None:
+            raise LookupError("recall referenced an absent closed episode")
         self._last_recalled_ref = episode.id
         contribution = Contribution(
             id=f"memory-recall:{episode.id}:{t_monde}:{cycle}",
@@ -904,7 +979,14 @@ class EpisodicMemory:
             raise ValueError("invalid Memory recall threshold snapshot")
         restored_above = set(raw_above)
 
+        # Re-derive the lookup mode from the complete authenticated imported
+        # history. Do not trust a persisted flag or select an older snapshot.
+        restored_dense = all(
+            episode.id == f"episode:{ordinal}"
+            for ordinal, episode in enumerate(restored)
+        )
         self._episodes = restored
+        self._episode_ids_dense = restored_dense
         self._recall_above_threshold = restored_above
         self._seen_event_refs = {
             str(x) for x in state.get("seen_event_refs", [])
