@@ -15,6 +15,27 @@ from build_i1_fork import generate
 
 
 class Stage10CanonicalPublicationTests(unittest.TestCase):
+    def test_parity_accepts_only_exact_assignment_move(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("i1_parity", ROOT / "scripts/test_i1_artifact_parity.py")
+        parity = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(parity)
+        before = (b"    def publish(self):\n"
+                  b"        coordinator = Stage10PublicationCoordinator(\n"
+                  b"            owner=True)\n"
+                  b"        canonical = type(self).__name__ == \\"I1Runtime\\"\n"
+                  b"        if ((not canonical and candidate.get(\\"forms\\"):\n"
+                  b"            return None\n")
+        after = (b"    def publish(self):\n"
+                 b"        canonical = type(self).__name__ == \\"I1Runtime\\"\n"
+                 b"        coordinator = Stage10PublicationCoordinator(\n"
+                 b"            owner=True)\n"
+                 b"        if ((not canonical and candidate.get(\\"forms\\"):\n"
+                 b"            return None\n")
+        self.assertTrue(parity._approved_stage10_initialization_move(before, after))
+        self.assertFalse(parity._approved_stage10_initialization_move(before, after + b" # other change"))
+        self.assertFalse(parity._approved_stage10_initialization_move(before, before))
+
     def test_publication_selects_exact_owner_views_before_validating_candidate(self):
         with TemporaryDirectory() as directory:
             generated = Path(directory) / "generated"
