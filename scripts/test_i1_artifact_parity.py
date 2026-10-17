@@ -272,6 +272,25 @@ def _reference_approved_confirmed_count(before: bytes) -> bytes:
     return original.replace(old, new, 1).encode("utf-8")
 
 
+def _reference_lived_review_dispatch(before: bytes) -> bytes:
+    """Reconstruct exactly the already approved #267 transformation."""
+    old = "            for review in (\n                self._lived_food_hypothesis_review(record, observations),\n                self._lived_hydration_hypothesis_review(record, observations),\n            )"
+    new = "            # Each reviewer requires a distinct predicate. Never invoke\n            # both expensive observation scans for the same contingency.\n            for review in (\n                (\n                    self._lived_food_hypothesis_review(record, observations)\n                    if record.predicate == \"toxic_item\" else\n                    self._lived_hydration_hypothesis_review(record, observations)\n                    if record.predicate == \"hydration_effect\" else None\n                ),\n            )"
+    text = before.decode("utf-8")
+    if text.count(old) != 1:
+        raise ValueError("review dispatch reference drift")
+    return text.replace(old, new, 1).encode("utf-8")
+
+
+def _approved_stream_noncanonical_pairs(before: bytes, after: bytes) -> bool:
+    """Only replace list materialization with ordered matching projections."""
+    old = "                matched = [\n                    (x, y) for x in exposed for y in control\n                    if x.observation_context == y.observation_context\n                    and x.controlled_variables == y.controlled_variables\n                ]\n                if not matched:\n                    continue\n                e = {x.identifier: x for x, _ in matched}\n                b = {y.identifier: y for _, y in matched}"
+    new = "                e = {}\n                b = {}\n                for x in exposed:\n                    for y in control:\n                        if (\n                            x.observation_context == y.observation_context\n                            and x.controlled_variables == y.controlled_variables\n                        ):\n                            e[x.identifier] = x\n                            b[y.identifier] = y\n                if not e:\n                    continue"
+    original, candidate = before.decode("utf-8"), after.decode("utf-8")
+    return (original.count(old) == 1 and candidate.count(new) == 1
+            and original.replace(old, new, 1) == candidate)
+
+
 def _approved_lived_review_predicate_dispatch(before: bytes, after: bytes) -> bool:
     """Allow only mutually exclusive lived-review calls, preserving order."""
     old = "            for review in (\n                self._lived_food_hypothesis_review(record, observations),\n                self._lived_hydration_hypothesis_review(record, observations),\n            )"
@@ -437,8 +456,9 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/causal_model.py"
-                    and _approved_lived_review_predicate_dispatch(
-                        _reference_approved_confirmed_count(
+                    and _approved_stream_noncanonical_pairs(
+                        _reference_lived_review_dispatch(
+                            _reference_approved_confirmed_count(
                             _reference_approved_physical_alias(
                             _reference_approved_active_context_cache(
                                 _reference_hydration_control_lookup(
@@ -455,6 +475,7 @@ def verify(reference_root: Path) -> None:
                                     )
                                 )
                             )
+                        )
                         )
                         ),
                         (new_root / rel).read_bytes()

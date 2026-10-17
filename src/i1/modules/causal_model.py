@@ -2070,15 +2070,18 @@ class CausalModel:
                 # which CausalObservation.validate() also accepts. Preserve
                 # the original list/tuple equality semantics exactly for
                 # these noncanonical, potentially unhashable representations.
-                matched = [
-                    (x, y) for x in exposed for y in control
-                    if x.observation_context == y.observation_context
-                    and x.controlled_variables == y.controlled_variables
-                ]
-                if not matched:
+                e = {}
+                b = {}
+                for x in exposed:
+                    for y in control:
+                        if (
+                            x.observation_context == y.observation_context
+                            and x.controlled_variables == y.controlled_variables
+                        ):
+                            e[x.identifier] = x
+                            b[y.identifier] = y
+                if not e:
                     continue
-                e = {x.identifier: x for x, _ in matched}
-                b = {y.identifier: y for _, y in matched}
             # P-35 n1 counts DISTINCT cause+effect observations, never
             # duplicate treated/control PAIRS for the same physical record.
             confirmed = {
