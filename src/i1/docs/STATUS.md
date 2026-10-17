@@ -239,3 +239,14 @@ contrats en vigueur. À la demande de l'utilisateur, aucun test nouveau
 ni campagne manuelle supplémentaire n'a été ajouté ou exécuté.
 Revue de code et contrôle de parité exact sont fournis; la PR reste
 non fusionnée tant que les contrôles existants ne sont pas satisfaits.
+
+## PR #268 : projection directe des paires de contrôle non canoniques
+
+Le chemin P-35 acceptant des contrôles sous forme de listes matérialisait
+d'abord toutes les paires compatibles, puis effectuait deux parcours pour
+les réduire en dictionnaires d'identifiants. Cette optimisation construit
+directement les deux dictionnaires pendant le parcours exposé/contrôle.
+Les tests, contrats, ordre d'insertion et résultats cognitifs restent
+conceptuellement inchangés. Aucun nouveau test n'est ajouté à la demande
+de l'utilisateur. Un contrôle de parité source contraint le seul bloc
+modifié. Aucun GO scientifique ou gain CPU mesuré n'est revendiqué.
