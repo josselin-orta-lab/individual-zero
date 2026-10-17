@@ -43,7 +43,10 @@ with tempfile.TemporaryDirectory() as directory:
     trials = [
         (b"",True),
         (valid,True),
-        (valid.replace(b"\n", b"\r\n"), False),
+        # The original contents.splitlines() accepted CRLF separators;
+        # preserving this is required for strict behavioral equivalence.
+        (valid.replace(b"\n", b"\r\n"), True),
+        (valid.replace(b"\n", b"\r\n", 1), True),
         (valid[:-1],False),
         (valid + b"\n",False),
         (valid.replace(b'"event:42"', b'"event:99"', 1),False),
