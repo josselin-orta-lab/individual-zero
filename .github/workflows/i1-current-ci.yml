@@ -10,6 +10,8 @@ on:
       - 'tests/test_i1_source_snapshot.py'
       - 'scripts/test_i1_artifact_parity.py'
       - 'scripts/check_engine_contracts.py'
+      - 'tools/new_engine.py'
+      - 'docs/engines/i1/**'
       - 'tests/i1/**'
       - 'AGENTS.md'
       - 'config/engine-registry.json'
