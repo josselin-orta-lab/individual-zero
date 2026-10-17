@@ -155,6 +155,23 @@ class LivedSixPassAlgorithm:
             raise ValueError("priced unit can access only its detached episode")
         if canonical_causal_bytes(scoped[ref]) != canonical_causal_bytes(self._episodes[ref]):
             raise ValueError("semantic handler was given altered autobiography")
+        # A charged replay unit has authority to inspect one event, never
+        # an entire episode worth of unrelated payloads. Match its explicit
+        # agenda ref against the already verified, frozen episode projection.
+        if unit.operation == "episode_replay":
+            if not isinstance(unit.data, Mapping):
+                raise ValueError("replay work needs a typed agenda reference")
+            event_ref = unit.data.get("event_ref")
+            witnessed = next(
+                (item for item in self._events[ref]
+                 if item["event_id"] == event_ref), None,
+            )
+            return () if witnessed is None else (deepcopy(witnessed),)
+        # Scanning, skill-compilation and kappa pass units only need their
+        # checked episode identity. Their actual semantic work still happens
+        # through the paid unit in handle() and its frozen evidence.
+        if unit.operation != "rule_extraction":
+            return ()
         return tuple(deepcopy(self._events[ref]))
 
     @staticmethod
@@ -451,8 +468,18 @@ class LivedSixPassAlgorithm:
         return [combined[k] for k in sorted(combined)]
 
     def handle(self, candidate, unit, scoped, cut:ConsolidationCut):
-        """Pure work-unit handler; only detached immutable provenance arrives."""
-        state=self._candidate(deepcopy(candidate))
+        """Pure public handler, retaining ownership isolation for callers."""
+        return self.handle_detached(deepcopy(candidate), unit, scoped, cut)
+
+    def handle_detached(self, candidate, unit, scoped, cut:ConsolidationCut):
+        """Consume the already-detached candidate supplied by the paid runner.
+
+        The runner made its own private copy of the working state before the
+        P-42 handler was invoked. The canonical natural I1 path can reuse
+        that copy instead of repeating another full clone per event. Never
+        call this entrypoint with mutable external or owner-held state.
+        """
+        state=self._candidate(candidate)
         if cut != self.transaction.cut:
             raise ValueError("semantic handler cut mismatches frozen transaction")
         name=unit.operation
