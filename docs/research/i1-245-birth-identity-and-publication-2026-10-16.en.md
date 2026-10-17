@@ -508,3 +508,31 @@ journal publication.
 behavior or measured performance. Per request no tests, builds, CI,
 benchmarks or simulations were executed. I0 and the pinned I1 snapshot
 remain unchanged.
+
+## Static I1 M11 journal reads and cold-history reconstruction (2026-10-17)
+
+A hot path in the independent SQLite mortal coordinator previously created a
+tuple of **every historical journal occurrence** to obtain only its count
+(`len(journal.entries)`) and again to enumerate only the newly appended
+generation's suffix. Each cold-imported occurrence also recreated the whole
+tuple simply to inspect its last entry. The internal journal already maintains
+an append-only list and returns the exact committed entry from `append()`.
+
+The generated I1lab HashChainedJournal now exposes a read-only O(1)
+`entry_count` and an `entries_since(start)` suffix snapshot with an explicit
+nonnegative in-bounds cursor contract. The legacy `entries` property and its
+immutable-tuple semantics remain unchanged for all other consumers. The
+generated M11 coordinator uses the bounded reads, and during cold restore
+compares the returned entry directly with the independently validated durable
+row. The generated SQLite registered-owner capture and offline WAL auditor
+also read the same authoritative list length without full tuple allocations.
+
+These are structural allocation optimizations, **not** shortcuts around
+`journal.verify()`, the cryptographic chain, canonical encoding, durable
+SQLite intent fencing, ownership checks or the full causal image. The
+existing serialization of authenticated event data remains intact, and the
+authoritative journal writer does not change. No I0 source is modified.
+
+**NON VALIDÉ**: source inspection only. No generator, tests, CI, simulation or
+benchmarks were executed, and no numerical speedup or complete behavioral
+equivalence is claimed.

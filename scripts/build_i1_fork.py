@@ -270,6 +270,80 @@ def i1_pending_projection_copy_source(source: str) -> str:
     return source.replace(old, new)
 
 
+def i1_journal_bounded_view_source(source: str) -> str:
+    """I1-only bounded journal reads; preserve all legacy .entries semantics."""
+    anchor = (
+        "    @property\n"
+        "    def entries(self) -> tuple[JournalEntry, ...]:\n"
+        "        return tuple(self._entries)\n"
+    )
+    addition = (
+        "\n"
+        "    @property\n"
+        "    def entry_count(self) -> int:\n"
+        "        \"\"\"Read append-only occurrence count without materializing a tuple.\"\"\"\n"
+        "        return len(self._entries)\n"
+        "\n"
+        "    def entries_since(self, start: int) -> tuple[JournalEntry, ...]:\n"
+        "        \"\"\"Detach only the append-only suffix requested by the caller.\"\"\"\n"
+        "        if type(start) is not int or not 0 <= start <= len(self._entries):\n"
+        "            raise ValueError(\"invalid journal suffix boundary\")\n"
+        "        return tuple(self._entries[start:])\n"
+    )
+    if source.count(anchor) != 1 or source.count("len(replay.entries)") != 2:
+        raise ValueError("unreviewed I1 technical journal read boundary")
+    source = source.replace(anchor, anchor + addition)
+    return source.replace("len(replay.entries)", "replay.entry_count")
+
+
+def i1_m11_bounded_journal_source(source: str) -> str:
+    """Avoid whole-journal tuple materialization in I1 M11 and cold restore.
+
+    Journal verification, hash checks, durable-intent fencing, state capture,
+    commit ordering and published owner isolation remain unchanged.
+    """
+    substitutions = (
+        (
+            "        runtime.journal.append(\n",
+            "        appended = runtime.journal.append(\n",
+        ),
+        (
+            "        if runtime.journal.entries[-1].as_dict() != entry:\n",
+            "        if appended.as_dict() != entry:\n",
+        ),
+        (
+            'or len(runtime.journal.entries) != image["journal"]["count"]',
+            'or runtime.journal.entry_count != image["journal"]["count"]',
+        ),
+        (
+            "                or runtime.journal.entries\n",
+            "                or runtime.journal.entry_count\n",
+        ),
+        (
+            "                or base.journal_count != len(self._runtime.journal.entries)):\n",
+            "                or base.journal_count != self._runtime.journal.entry_count):\n",
+        ),
+        (
+            "                for event in candidate.journal.entries[base.journal_count:]\n",
+            "                for event in candidate.journal.entries_since(base.journal_count)\n",
+        ),
+    )
+    for before, after in substitutions:
+        if source.count(before) != 1:
+            raise ValueError("unreviewed I1 M11 journal-copy anchor")
+        source = source.replace(before, after)
+    return source
+
+
+def i1_sqlite_journal_count_source(source: str) -> str:
+    """Read exact journal count without allocating one full occurrence tuple."""
+    before = '"count": len(journal.entries), "head": journal.head_hash,'
+    after = '"count": journal.entry_count, "head": journal.head_hash,'
+    if source.count(before) != 1:
+        raise ValueError("unreviewed I1 SQLite capture journal-count anchor")
+    return source.replace(before, after)
+
+
 def i1_consolidation_runner_copy_source(source: str) -> str:
     """Avoid duplicating already detached private data in generated I1 only."""
     pairs = (
@@ -731,6 +805,12 @@ def generate(output: Path) -> dict[str, object]:
                     and relative.as_posix() == "consolidation_lived_evidence.py"):
                 transformed = i1_scoped_consolidation_evidence_source(transformed)
             if (output_package == "i1lab"
+                    and relative.as_posix() == "journal.py"):
+                transformed = i1_journal_bounded_view_source(transformed)
+            if (output_package == "i1lab"
+                    and relative.as_posix() == "sqlite_runtime_custody.py"):
+                transformed = i1_sqlite_journal_count_source(transformed)
+            if (output_package == "i1lab"
                     and relative.as_posix() == "consolidation_publication.py"):
                 transformed = i1_committed_history_metadata_source(transformed)
             if (output_package == "i1lab"
@@ -844,6 +924,7 @@ def generate(output: Path) -> dict[str, object]:
                     '        elif key == "i1_lived_water_model":',
                 )
                 transformed = i1_m11_active_publication_custody_source(transformed)
+                transformed = i1_m11_bounded_journal_source(transformed)
             # No stale absolute Python imports may silently reach I0.
             for line in transformed.splitlines():
                 stripped = line.lstrip()
