@@ -105,34 +105,34 @@ def i1_committed_history_metadata_source(source: str) -> str:
     exclusively at the canonical birth and every checked restore. It is not
     a new writer, snapshot source, or cognitive read with different UC rules.
     """
-    birth = '        self._lineage: list[dict[str, object]] = []\\n'
+    birth = '        self._lineage: list[dict[str, object]] = []\n'
     birth_new = (
-        birth + '        self._i1_committed_refs = frozenset(\\n'
-        '            self._current_state["consolidated_episode_refs"]\\n'
-        '        )\\n'
+        birth + '        self._i1_committed_refs = frozenset(\n'
+        '            self._current_state["consolidated_episode_refs"]\n'
+        '        )\n'
     )
     if source.count(birth) != 1:
         raise ValueError("unreviewed SlowHistory I1 birth metadata")
     source = source.replace(birth, birth_new)
-    read = '    def read_committed(self) -> object:\\n'
+    read = '    def read_committed(self) -> object:\n'
     method = (
-        '    def committed_episode_refs(self) -> frozenset[str]:\\n'
-        '        """Read exact committed identifiers without copying private forms."""\\n'
-        '        return self._i1_committed_refs\\n\\n'
+        '    def committed_episode_refs(self) -> frozenset[str]:\n'
+        '        """Read exact committed identifiers without copying private forms."""\n'
+        '        return self._i1_committed_refs\n\n'
     )
     if source.count(read) != 1:
         raise ValueError("unreviewed SlowHistory committed-ref read")
     source = source.replace(read, method + read)
-    restore = '        # Assign only after validating the entire replacement.\\n'
+    restore = '        # Assign only after validating the entire replacement.\n'
     amended = (
-        '        refs = current.get("consolidated_episode_refs")\\n'
-        '        if (type(refs) is not list\\n'
-        '                or any(type(ref) is not str or not ref for ref in refs)\\n'
-        '                or len(refs) != len(set(refs))):\\n'
-        '            raise ValueError("unverified consolidated episode references")\\n'
-        '        committed = frozenset(refs)\\n'
+        '        refs = current.get("consolidated_episode_refs")\n'
+        '        if (type(refs) is not list\n'
+        '                or any(type(ref) is not str or not ref for ref in refs)\n'
+        '                or len(refs) != len(set(refs))):\n'
+        '            raise ValueError("unverified consolidated episode references")\n'
+        '        committed = frozenset(refs)\n'
         + restore
-        + '        self._i1_committed_refs = committed\\n'
+        + '        self._i1_committed_refs = committed\n'
     )
     if source.count(restore) != 1:
         raise ValueError("unreviewed SlowHistory committed-ref restore")
@@ -243,9 +243,9 @@ def i1_waking_pending_source(source: str) -> str:
     """Avoid cloning the entire h on every awake step in natural I1."""
     old = (
         '        committed = set(self.slow_history.read_committed()'
-        '["consolidated_episode_refs"])\\n'
+        '["consolidated_episode_refs"])\n'
     )
-    new = '        committed = self.slow_history.committed_episode_refs()\\n'
+    new = '        committed = self.slow_history.committed_episode_refs()\n'
     if source.count(old) != 1:
         raise ValueError("unreviewed Stage10 waking history read")
     return source.replace(old, new)
