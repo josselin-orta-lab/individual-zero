@@ -114,6 +114,10 @@ jobs:
         env:
           I1_STAGE6_BFS_BENCH: "1"
         run: python -m unittest discover -s tests/i1 -p test_i1_stage6_bfs_deque.py -v
+      - name: I1 causal evidence-index benchmark (informational)
+        env:
+          I1_AGENCY_INDEX_BENCH: "1"
+        run: python -m unittest discover -s tests/i1 -p test_i1_published_agency_index.py -v
       - name: I1 natural FULL (multiple autonomous mortal lives)
         if: github.event_name == 'pull_request'
         run: python scripts/test_i1_ci.py --mode full --seed 247 --junit reports/i1-full-${{ matrix.python-version }}.xml
