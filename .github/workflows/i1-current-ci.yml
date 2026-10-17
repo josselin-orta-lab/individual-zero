@@ -43,6 +43,25 @@ jobs:
         run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
       - name: Current I1 independent SMOKE/FULL
         run: python scripts/test_i1_ci.py --mode ${{ github.event.inputs.mode || 'smoke' }} --seed 246 --junit reports/i1-${{ matrix.python-version }}.xml
+      - name: Harness detects controlled failures
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+          import xml.etree.ElementTree as ET
+          path = Path("reports/i1-selftest.xml")
+          result = subprocess.run([
+              sys.executable, "scripts/test_i1_ci.py",
+              "--self-test", "--seed", "246", "--junit", str(path)
+          ], check=False)
+          assert result.returncode != 0, "I1 tester concealed an invalid assertion"
+          suite = ET.parse(path).getroot()
+          assert int(suite.attrib["failures"]) == 1, suite.attrib
+          assert int(suite.attrib["errors"]) == 1, suite.attrib
+          PY
+      - name: Current I1 M11 cold recovery
+        run: python -m unittest discover -s tests -p test_i1_natural_m11_cold_recovery.py -v
       - name: Current I1 generated-world separation
         run: python -m unittest discover -s tests -p test_i1_generated_isolation.py -q
       - name: I0 planning non-regression
