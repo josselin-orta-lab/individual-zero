@@ -585,3 +585,22 @@ external observations, causal evidence or I0 source changed.
 **NON VALIDÉ:** no tests, generated code execution, benchmarks, CI or
 simulations were run. Only static inspection supports the change; no
 measured performance gain or proven runtime parity is claimed.
+
+## I1 post-cut owner replay: remove a second deep copy (2026-10-17)
+
+After authenticating the entire journal, Stage10 freezes each published
+owner update from `JournalEntry.causal_event`, whose private
+`_DetachedCausalEvent` mapping deepcopies nested values when read.
+The `data` field, or the selected root precision fields, are therefore
+already independent of the hash-chained journal before the post-cut
+snapshot is assembled. The I1-generated post-cut adapter now constructs
+only a fresh outer dict for that previously detached payload, instead of
+deepcopying those newly detached nested values a second time.
+
+The full SHA-256 chain verification, owner-kind validation, cut index,
+causal time, `VerifiedOnlineUpdate` fields, digest and M11 publication
+boundaries remain unchanged. The patch is guarded by the exact original
+source site and applies only to generated I1lab. No I0 code changed.
+
+**NON VALIDÉ:** static inspection only; no generator, tests, CI,
+benchmarks or simulations were executed. Gains remain unmeasured.

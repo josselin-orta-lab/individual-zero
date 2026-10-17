@@ -323,6 +323,10 @@ def i1_postcut_bounded_verification_source(source: str) -> str:
             "        entries = self._verified()\n        self._check_cut(frozen.cut, entries)\n        if (len(entries) - 1 != frozen.end_index\n                or self._journal.head_hash != frozen.end_hash):\n            raise ValueError(\"journal advanced after private rebase preparation\")\n        current = self.freeze(cut=frozen.cut)\n",
             "        # A single complete verification happens inside freeze(), which also\n        # rechecks the causal cut and builds the exact post-cut digest.\n        current = self.freeze(cut=frozen.cut)\n        if (current.end_index != frozen.end_index\n                or current.end_hash != frozen.end_hash):\n            raise ValueError(\"journal advanced after private rebase preparation\")\n",
         ),
+        (
+            "                t_monde=t, kind=kind, payload=deepcopy(dict(payload)),\n",
+            "                t_monde=t, kind=kind, payload=dict(payload),\n",
+        ),
     )
     for before, after in replacements:
         if source.count(before) != 1:
