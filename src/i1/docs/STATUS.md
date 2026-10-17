@@ -79,3 +79,11 @@ At the initial verified PR HEAD `84d7e0ef47ade9be804a680b96eb5fe1ad396db8`, the 
 This iteration added [UC_AND_SCHEDULING.md](UC_AND_SCHEDULING.md) covering the two separately metered P-43/P-42 UC budgets and connected it from the handbook, expanded the executable failure-diagnosis index, and recorded an **OPEN source-level Stage10 defect**: `_publish_live_consolidation` references the local `canonical` before assigning it. No living publication execution or scientific validation was run for this observation. Targeted code correction and a regression test remain needed before nonempty publication claims.
 
 The GitHub workflow for documentation HEAD `dbbf1d732d8a9c1b52e4986dd44af1e529b49d41` was **pending at the time checked**; subsequent commits require checking their own exact SHA. Local suites were **NOT_RUN** because no repository checkout / GitHub clone was available in the execution container. Structural and scientific state must not be inferred from an earlier green SHA.
+
+## PR #254: documentation integrity checks, tranche suivante
+
+An additional static guard `scripts/check_i1_handbook.py --json` checks the actual `src/i1/docs/` Markdown inventory, local links, quoted explicit source paths and agreement between `engine.json`, the evidence index and active generation registry. The checker does not execute referenced commands or infer scientific results. Negative regressions live in `tests/i1/test_i1_handbook_integrity.py`; `.github/workflows/engine-structural.yml` executes the guard on Python 3.11 and 3.12.
+
+**OPEN #255:** [Stage10 canonical initialization before owner mapping](https://github.com/josselin-orta-lab/individual-zero/issues/255). This runtime repair is isolated from the documentation PR: current CI retains byte-exact I1 generated-output parity against a frozen pre-migration commit. No parity gate was relaxed, and no cognitive runtime source was modified in this tranche.
+
+The previous documentation HEAD `f861ac4afb95bfe3d9641af351a4f8b4950bc869` completed [CI #39052847125](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39052847125) successfully. The new validator and workflow commits require separate SHA-specific acceptance; **not yet certified** by this historical result.
