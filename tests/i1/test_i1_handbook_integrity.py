@@ -47,7 +47,7 @@ class HandbookIntegrityTests(unittest.TestCase):
             (source / "sample.py").write_text(
                 "class Sample:\n    def existing(self):\n        pass\n")
             doc = root / "src/i1/docs/README.md"
-            doc.write_text(doc.read_text() + "\n\`src/i1/modules/sample.py::Sample.missing\`\n")
+            doc.write_text(doc.read_text() + "\n`src/i1/modules/sample.py::Sample.missing`\n")
             report = check.inspect(root)
             self.assertEqual(report["status"], "FAIL")
             self.assertTrue(any("missing Python symbol" in e and "Sample.missing" in e
