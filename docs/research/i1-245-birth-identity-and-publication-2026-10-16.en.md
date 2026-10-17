@@ -424,3 +424,29 @@ remain complete; exported causal-state keys and digests do not change.
 STATUS: non validated. No tests, build, CI execution, benchmark, or
 simulation was run. These are source-review improvements only; behavior
 and performance gains require independent verification.
+
+## I1 private pass-runner copying and recovery (2026-10-17)
+
+Static inspection of `ConsolidationPassRunner` found repeated complete
+materializations that had already crossed a checked ownership boundary.
+The I1-generated implementation now constructs a sealed pass through
+`ConsolidationPassPlan.from_state(plan.export())` without first deep-copying
+the detached export. It begins a pass with the transaction's detached,
+previously validated `candidate_copy()` instead of creating a second JSON
+tree via `_json`. On finalization, it retains the runner-owned result until
+the existing executor produces its separate detached copy for the
+transaction's validated checkpoint.
+
+During technical recovery, the snapshot digest hashes a new *shallow
+top-level mapping* of the supplied state. No nested input is mutated or
+retained through this validation, and `ConsolidationPassPlan.from_state`
+already validates and owns each unit's JSON data, so a preceding full
+deepcopy of `plan_raw` is unnecessary. The recovered working state still
+passes through `_json` before being installed. Budget anchors, scheduler
+gates, UC charges, candidate hashing, transaction checkpoints and
+restore-before-mutation semantics remain as before.
+
+These rewrites apply only to the generated I1, not I0 or the retained
+unmodified source snapshot. Source anchors are guarded against drift.
+STATUS: NON VALIDÉ, source inspection only, no tests, build,
+CI, benchmark or simulated lives executed.

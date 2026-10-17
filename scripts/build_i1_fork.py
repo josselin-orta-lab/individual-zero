@@ -238,6 +238,26 @@ def i1_consolidation_runner_copy_source(source: str) -> str:
             "        return deepcopy(self.budget.export_causal_state())\n",
             "        return self.budget.export_causal_state()\n",
         ),
+        (
+            "        frozen = ConsolidationPassPlan.from_state(deepcopy(plan.export()))\n",
+            "        frozen = ConsolidationPassPlan.from_state(plan.export())\n",
+        ),
+        (
+            "        self._working = _json(self.transaction.candidate_copy())\n",
+            "        self._working = self.transaction.candidate_copy()\n",
+        ),
+        (
+            "        result = deepcopy(self._working)\n",
+            "        result = self._working\n",
+        ),
+        (
+            '        without_digest = {k: deepcopy(v) for k, v in state.items() if k != "state_digest"}\n',
+            '        without_digest = {k: v for k, v in state.items() if k != "state_digest"}\n',
+        ),
+        (
+            "            restored_plan = ConsolidationPassPlan.from_state(deepcopy(plan_raw))\n",
+            "            restored_plan = ConsolidationPassPlan.from_state(plan_raw)\n",
+        ),
     )
     for before, after in pairs:
         if source.count(before) != 1:
