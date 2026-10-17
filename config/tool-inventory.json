@@ -6,6 +6,7 @@
     "scripts/build_i1_fork.py",
     "scripts/check_engine_contracts.py",
     "scripts/check_engine_repository.py",
+    "scripts/check_i1_handbook.py",
     "scripts/test_i1_artifact_parity.py",
     "scripts/test_i1_ci.py"
   ],
