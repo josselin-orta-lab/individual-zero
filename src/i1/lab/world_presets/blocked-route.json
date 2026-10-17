@@ -1,0 +1,80 @@
+{
+  "schema": "individual-zero-i1-world-preset/v1",
+  "engine": "I1",
+  "id": "blocked-route",
+  "description": "Nearby obstacles create a detour between starting cell and food and water.",
+  "spawn": [
+    8,
+    8
+  ],
+  "initial_body": {
+    "energy": 72,
+    "food": 38,
+    "water": 35,
+    "integrity": 85
+  },
+  "layout": {
+    "water_sources": [
+      [
+        12,
+        8
+      ]
+    ],
+    "resources": [
+      {
+        "cell": [
+          11,
+          8
+        ],
+        "kind": "berry_a",
+        "quantity": 4
+      },
+      {
+        "cell": [
+          12,
+          9
+        ],
+        "kind": "berry_b",
+        "quantity": 2
+      },
+      {
+        "cell": [
+          8,
+          10
+        ],
+        "kind": "wood",
+        "quantity": 3
+      },
+      {
+        "cell": [
+          11,
+          10
+        ],
+        "kind": "stone",
+        "quantity": 3
+      }
+    ],
+    "obstacles": [
+      [
+        9,
+        8
+      ],
+      [
+        9,
+        9
+      ],
+      [
+        9,
+        10
+      ],
+      [
+        8,
+        9
+      ]
+    ],
+    "creatures": [],
+    "danger_zones": [],
+    "lethal_zones": []
+  },
+  "recommended_steps": 36
+}

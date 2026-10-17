@@ -1,0 +1,75 @@
+{
+  "schema": "individual-zero-i1-world-preset/v1",
+  "engine": "I1",
+  "id": "foraging",
+  "description": "Food and water dispersed at local and intermediate distances.",
+  "spawn": [
+    8,
+    8
+  ],
+  "initial_body": {
+    "energy": 70,
+    "food": 45,
+    "water": 42,
+    "integrity": 85
+  },
+  "layout": {
+    "water_sources": [
+      [
+        10,
+        8
+      ],
+      [
+        11,
+        10
+      ]
+    ],
+    "resources": [
+      {
+        "cell": [
+          9,
+          8
+        ],
+        "kind": "berry_a",
+        "quantity": 4
+      },
+      {
+        "cell": [
+          8,
+          10
+        ],
+        "kind": "berry_a",
+        "quantity": 3
+      },
+      {
+        "cell": [
+          12,
+          9
+        ],
+        "kind": "berry_b",
+        "quantity": 3
+      },
+      {
+        "cell": [
+          7,
+          8
+        ],
+        "kind": "wood",
+        "quantity": 3
+      },
+      {
+        "cell": [
+          10,
+          10
+        ],
+        "kind": "stone",
+        "quantity": 5
+      }
+    ],
+    "obstacles": [],
+    "creatures": [],
+    "danger_zones": [],
+    "lethal_zones": []
+  },
+  "recommended_steps": 32
+}

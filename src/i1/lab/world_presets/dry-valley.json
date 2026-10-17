@@ -1,0 +1,63 @@
+{
+  "schema": "individual-zero-i1-world-preset/v1",
+  "engine": "I1",
+  "id": "dry-valley",
+  "description": "Distant water and sparse supplies; no survival strategy is scripted.",
+  "spawn": [
+    8,
+    8
+  ],
+  "initial_body": {
+    "energy": 70,
+    "food": 37,
+    "water": 24,
+    "integrity": 80
+  },
+  "layout": {
+    "water_sources": [
+      [
+        16,
+        8
+      ]
+    ],
+    "resources": [
+      {
+        "cell": [
+          8,
+          8
+        ],
+        "kind": "berry_a",
+        "quantity": 2
+      },
+      {
+        "cell": [
+          12,
+          10
+        ],
+        "kind": "berry_a",
+        "quantity": 2
+      },
+      {
+        "cell": [
+          13,
+          8
+        ],
+        "kind": "wood",
+        "quantity": 1
+      },
+      {
+        "cell": [
+          15,
+          8
+        ],
+        "kind": "stone",
+        "quantity": 2
+      }
+    ],
+    "obstacles": [],
+    "creatures": [],
+    "danger_zones": [],
+    "lethal_zones": []
+  },
+  "recommended_steps": 36
+}
