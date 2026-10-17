@@ -230,3 +230,16 @@ Commit `1472c97e` fixes an incompatible validation gate in `I1ActiveValueNeeds.p
 ## M11 active owner parity applies before first publication
 
 Commit `f0d87bc5` closes a pre-genesis/cold-recovery inconsistency. Previously the M11 parity function checked the three new owner views only when committed SlowHistory `forms` was nonempty. A previously uncommitted active owner observation could therefore be captured with an empty committed form map. The generated I1 M11 now checks all three owner views in both cases, requiring each to be empty before the first publication and exactly equal to its already committed, validated counterpart thereafter. This check operates before transactional capture and after cold installation. Code is committed; no tests or simulated life were executed, and the whole PR remains draft/NO-GO.
+
+## Transversal I1 natural performance audit and first conservative optimization
+
+GitHub recursive tree inspection of the current PR branch confirms 72 checked-in I1 source files, 13 I1 overlay files and 125 Lab source files. The living I1 runs from an isolated generated copy; the checked-in I0 reference remains untouched.
+
+Identified optimization opportunities, ordered by safety:
+1. **Repeated SlowHistory copies during each waking step and during paid sleep candidate selection.** Commits `c66c841d`, `1ca4f1bf`, `34974ea5`, `a3758759` add an O(1), immutable `frozenset` of committed episode identifiers to generated I1 SlowHistory and use it for awake pending counts and the metadata-only sleep selection phases. The cache is derived solely from the owner’s validated birth/restore state and reconstructed on every accepted history commit. It never replaces the full SlowHistory for actual P-42 charged evidence reads.
+2. The six-pass semantic compilation and post-cut publication repeatedly validate and deep-copy full owner states. A bulk speed-up requires measured profiles plus proof of immutable detached snapshots and M11 atomicity before changing code. Do not skip any owner/hash guards or reduce P-42/P-43 charges.
+3. Cold M11 recovery reads, validates and hashes the current generation and WAL repeatedly. These are safety-critical integrity checks; do not remove or reuse unauthenticated digests.
+4. The cognitive phase cycle frequently materializes candidate states and evaluates options. Memoization is admissible only within a versioned, immutable capture and must never treat unobserved physical changes as known.
+5. Unchanged I0/I1 source snapshot and Lab input must remain isolated. Any optimization affecting the runtime belongs in generated I1-only code, never the canonical I0 reference.
+
+**Evidence limit:** no benchmark, generator invocation, new unit tests, full-life execution or M11 restore was conducted in this pass per the operator's existing no-new-tests restriction. Therefore no numerical speed-up is claimed. Optimization is committed as a source change only; PR #246 remains draft and scientifically unvalidated.
