@@ -79,7 +79,13 @@ def _approved_local_capture_resource_optimization(before: bytes, after: bytes) -
         return False
     if any(candidate.count(block) != 1 for block in (new_a, new_b)):
         return False
-    return original.replace(old_a, new_a, 1).replace(old_b, new_b, 1) == candidate
+    intermediate = original.replace(old_a, new_a, 1).replace(old_b, new_b, 1)
+    filters = [["        for index, position in enumerate(sorted(self._water_sources)):\n            visible_entities.append(","        for index, position in enumerate(sorted(self._water_sources)):\n            # Keep the globally ranked entity ID, but allocate only entities\n            # inside the first-person perceptual field.\n            if position not in local_positions:\n                continue\n            visible_entities.append("],["        for index, position in enumerate(sorted(self._creatures)):\n            visible_entities.append(","        for index, position in enumerate(sorted(self._creatures)):\n            # Keep the globally ranked entity ID, but allocate only entities\n            # inside the first-person perceptual field.\n            if position not in local_positions:\n                continue\n            visible_entities.append("],["        for index, position in enumerate(sorted(self._shelters)):\n            visible_entities.append(","        for index, position in enumerate(sorted(self._shelters)):\n            # Keep the globally ranked entity ID, but allocate only entities\n            # inside the first-person perceptual field.\n            if position not in local_positions:\n                continue\n            visible_entities.append("]]
+    for old, new in filters:
+        if intermediate.count(old) != 1 or candidate.count(new) != 1:
+            return False
+        intermediate = intermediate.replace(old, new, 1)
+    return intermediate == candidate
 
 
 def _approved_pending_index_cursor(before: bytes, after: bytes) -> bool:
@@ -117,6 +123,16 @@ def _approved_autobiographical_policy_fastpath(before: bytes, after: bytes) -> b
     """Only permit reviewed first-person policy-validation transformations."""
     prior, current = before.decode("utf-8"), after.decode("utf-8")
     for old, new in [["        self.validate()\n        kind = event.causal_event.get(\"kind\")\n        if not isinstance(kind, str) or kind not in self.allowed_fields_by_kind:","        self.validate()\n        return self._project_validated(event)\n\n    def _project_validated(self, event: JournalEntry) -> dict[str, object]:\n        \"\"\"Internal fast path: caller validated this exact policy already.\n\n        No exemption from the event-kind or lived-field epistemic guards.\n        Direct callers must keep using project(), which always validates.\n        \"\"\"\n        kind = event.causal_event.get(\"kind\")\n        if not isinstance(kind, str) or kind not in self.allowed_fields_by_kind:"],["            policy.project(entry)\n            validated.append(event_ref)","            if type(policy) is AutobiographicalPolicy:\n                policy._project_validated(entry)\n            else:\n                policy.project(entry)\n            validated.append(event_ref)"],["        projected: list[dict[str, object]] = []\n\n        for commit_event_id in self._commit_event_ids:","        projected: list[dict[str, object]] = []\n        # Exact built-in immutable policies can be validated once per read;\n        # custom policy subclasses keep their original validation cadence.\n        validated_versions: set[str] = set()\n\n        for commit_event_id in self._commit_event_ids:"],["            policy.validate()\n\n            for event_ref in refs:","            if type(policy) is AutobiographicalPolicy:\n                if version not in validated_versions:\n                    policy.validate()\n                    validated_versions.add(version)\n            else:\n                policy.validate()\n\n            for event_ref in refs:"],["                    projected.append(policy.project(source))","                    projected.append(\n                        policy._project_validated(source)\n                        if type(policy) is AutobiographicalPolicy\n                        else policy.project(source)\n                    )"]]:
+        if prior.count(old) != 1 or current.count(new) != 1:
+            return False
+        prior = prior.replace(old, new, 1)
+    return prior == current
+
+
+def _approved_local_visible_entity_filter(before: bytes, after: bytes) -> bool:
+    """Allow only the three reviewed remote-entity preallocation filters."""
+    prior, current = before.decode("utf-8"), after.decode("utf-8")
+    for old, new in [["        for index, position in enumerate(sorted(self._water_sources)):\n            visible_entities.append(","        for index, position in enumerate(sorted(self._water_sources)):\n            # Keep the globally ranked entity ID, but allocate only entities\n            # inside the first-person perceptual field.\n            if position not in local_positions:\n                continue\n            visible_entities.append("],["        for index, position in enumerate(sorted(self._creatures)):\n            visible_entities.append(","        for index, position in enumerate(sorted(self._creatures)):\n            # Keep the globally ranked entity ID, but allocate only entities\n            # inside the first-person perceptual field.\n            if position not in local_positions:\n                continue\n            visible_entities.append("],["        for index, position in enumerate(sorted(self._shelters)):\n            visible_entities.append(","        for index, position in enumerate(sorted(self._shelters)):\n            # Keep the globally ranked entity ID, but allocate only entities\n            # inside the first-person perceptual field.\n            if position not in local_positions:\n                continue\n            visible_entities.append("]]:
         if prior.count(old) != 1 or current.count(new) != 1:
             return False
         prior = prior.replace(old, new, 1)
