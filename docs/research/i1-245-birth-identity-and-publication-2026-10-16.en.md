@@ -835,3 +835,37 @@ unchanged. I0 and original shared Lab source remain untouched.
 **NON VALIDÉ:** static source inspection only. No generated build, tests,
 benchmarks, CI runs or simulations were performed. No numerical gains or
 runtime-equivalence claims are made.
+
+## Static I1: bounded reverse journal access, autobiography copies and M11 parity (2026-10-17)
+
+The generated I1lab technical journal now provides an **append-only reverse
+iterator** in addition to its original immutable `entries` tuple API.
+Stage10's search for the authentic current `step_opened` occurrence consumes
+this iterator. It still tests the exact event kind and attempt reference,
+then freezes the same journal index, event ID and causal hash. No full-log
+temporary tuple is constructed simply to find the most recent sleep cut.
+Each yielded `JournalEntry` is the same frozen, detached-read object already
+exposed by the original API; iteration occurs synchronously without writer
+interleaving, and the downstream full journal provenance check remains.
+
+For P-42-selected autobiographical replay, `JournalViews` returns newly
+allocated private policy-projected dicts; the generated I1lab evidence
+collector previously deepcopied each into an intermediate `projected` map
+and then made a second independent deep copy into the paid, frozen episode
+data. It now holds each new projection in the temporary index **without a
+copy**, retaining the independent per-episode deepcopy, duplicate-source
+consistency checks, event cut, visibility policy and full hash verification.
+
+The generated M11 active-publication custody verification previously
+canonically serialized `expected` Value/Needs evidence twice and every
+`published` owner form twice in the same check. It now caches those
+canonical bytes **only for the duration of that one verification call**.
+All independent source, published-form, and live-owner comparisons still
+execute, including pre-capture and cold-import parity; no across-step
+trust cache or stale owner state is introduced. None of these adjustments
+changes the individual's knowledge, motor authorization, UC pricing,
+mortality, physical history or I0 baseline.
+
+**NON VALIDÉ:** static inspection and guarded source edits only. No model
+generation, tests, CI runs, benchmark or simulation was executed. Quantitative
+gains and full runtime/behavioral parity remain unverified.

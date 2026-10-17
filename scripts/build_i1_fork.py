@@ -183,7 +183,13 @@ def i1_scoped_consolidation_evidence_source(source: str) -> str:
     if duplicate not in suffix:
         raise ValueError("unreviewed duplicate episode materialization")
     suffix = suffix.replace(duplicate, '', 1)
-    return prefix + duplicate + suffix
+    rewritten = prefix + duplicate + suffix
+    old_copy = "            projected[ref] = deepcopy(record)\n"
+    if rewritten.count(old_copy) != 1:
+        raise ValueError("unreviewed detached autobiography intermediate projection")
+    # policy.project() already returns a private dict. The eventual episode
+    # copy below remains the independent immutable evidence boundary.
+    return rewritten.replace(old_copy, "            projected[ref] = record\n")
 
 
 def i1_publication_detached_candidate_source(source: str) -> str:
@@ -207,6 +213,15 @@ def i1_publication_detached_candidate_source(source: str) -> str:
             raise ValueError("unreviewed I1 Stage10 publication copy boundary")
         source = source.replace(before, after)
     return source
+
+
+def i1_bounded_stage10_sleep_anchor_source(source: str) -> str:
+    """Reverse-scan append-only frozen journal entries without allocating all."""
+    old = "            e for e in reversed(self.journal.entries)\n"
+    new = "            e for e in self.journal.iter_entries_reversed()\n"
+    if source.count(old) != 1:
+        raise ValueError("unreviewed I1 sleep-cut journal anchor")
+    return source.replace(old, new)
 
 
 def i1_no_meta_custody_rollback_source(source: str) -> str:
@@ -356,6 +371,10 @@ def i1_journal_bounded_view_source(source: str) -> str:
         "        if type(start) is not int or not 0 <= start <= len(self._entries):\n"
         "            raise ValueError(\"invalid journal suffix boundary\")\n"
         "        return tuple(self._entries[start:])\n"
+        "\n"
+        "    def iter_entries_reversed(self):\n"
+        "        \"\"\"Iterate frozen append-only events without a full tuple.\"\"\"\n"
+        "        return reversed(self._entries)\n"
     )
     if source.count(anchor) != 1 or source.count("len(replay.entries)") != 2:
         raise ValueError("unreviewed I1 technical journal read boundary")
@@ -802,8 +821,9 @@ def i1_m11_active_publication_custody_source(source: str) -> str:
         (row for row in witnessed if row.get("state") == "compiled_private"),
         key=lambda row: row["id"],
     )
-    if (canonical_causal_bytes(expected) != canonical_causal_bytes(authorized)
-            or canonical_causal_bytes(expected) != canonical_causal_bytes(
+    expected_bytes = canonical_causal_bytes(expected)
+    if (expected_bytes != canonical_causal_bytes(authorized)
+            or expected_bytes != canonical_causal_bytes(
                 runtime.value_needs.active_observed_procedures()
             )):
         raise RecoveryBlocked("I1 active owner and consolidated history diverged")
@@ -814,10 +834,9 @@ def i1_m11_active_publication_custody_source(source: str) -> str:
         live = runtime._i1_active_owner_views[name].observed_consolidated()
         validate_owner_rows(name, published)
         validate_owner_rows(name, live)
-        if (canonical_causal_bytes(published)
-                != canonical_causal_bytes(recomputed)
-                or canonical_causal_bytes(published)
-                != canonical_causal_bytes(live)):
+        published_bytes = canonical_causal_bytes(published)
+        if (published_bytes != canonical_causal_bytes(recomputed)
+                or published_bytes != canonical_causal_bytes(live)):
             # An empty private history must NEVER conceal a live published
             # owner form. This parity applies before the first publication
             # and to every authentic later SQLite generation.
@@ -1084,6 +1103,7 @@ def generate(output: Path) -> dict[str, object]:
                 transformed = i1_private_consolidation_source(transformed)
                 transformed = i1_waking_pending_source(transformed)
                 transformed = i1_no_meta_custody_rollback_source(transformed)
+                transformed = i1_bounded_stage10_sleep_anchor_source(transformed)
             # I1-only M11 custody: admit ONLY the exact canonical I1
             # runtime, not any experimental Stage12 subclass with unknown
             # mutable owners or unregistered cold-state behavior. Retain the
