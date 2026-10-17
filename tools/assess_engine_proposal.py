@@ -46,7 +46,7 @@ def inspect_proposal(generation: str, *, root: Path = ROOT) -> dict:
     stem = generation.lower()
     engine = root / "src" / stem
     tests = root / "tests" / stem
-    docs = root / "docs" / "engines" / stem
+    docs = engine / "docs"
     checks = {}
 
     try:
@@ -97,7 +97,7 @@ def inspect_proposal(generation: str, *, root: Path = ROOT) -> dict:
         "lab": f"src/{stem}/lab",
         "runtime": f"src/{stem}/runtime",
         "tests": f"tests/{stem}",
-        "documentation": f"docs/engines/{stem}",
+        "documentation": f"src/{stem}/docs",
     }
     flags = contract.get("constraints", {})
     checks["life_safety_declared"] = (

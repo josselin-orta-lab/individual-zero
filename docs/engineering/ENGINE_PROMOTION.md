@@ -6,7 +6,7 @@ engine's Lab, cognitive policy, persistent identity or historical scientific
 results.
 
 1. Create an inert source proposal with `tools/new_engine.py` and inspect
-   the generated `src/iN/`, `tests/iN/` and `docs/engines/iN/` trees.
+   the generated `src/iN/`, `tests/iN/` and `src/iN/docs/` trees.
 2. Run `python tools/assess_engine_proposal.py --generation I2 --json`.
    A new scaffold is deliberately **BLOCKED**, because its cognition, Lab,
    runtime and independent tests are placeholders.

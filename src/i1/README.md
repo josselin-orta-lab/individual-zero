@@ -4,6 +4,7 @@ This is the **active** engine, independent from frozen `src/i0`.
 
 - `modules/`, `architecture/`, `config/`: cognitive contracts, state and mechanisms.
 - `lab/`: dedicated I1 scientific and execution infrastructure; frozen I0 Lab lives in `archive/i0/lab/`.
+- `docs/`: generation-owned theory, cognitive flow, evidence ledger, engineering playbook and observation limits. Start at [docs/README.md](docs/README.md).
 - `runtime/`: first-person I1 birth, temperament, natural-life runtime,
   learning, sleeping and active publication sources. These are part of I1,
   **not optional overlays**.

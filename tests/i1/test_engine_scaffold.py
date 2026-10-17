@@ -43,7 +43,7 @@ class EngineScaffoldingTests(unittest.TestCase):
             self.assertFalse(target.exists())
             self.assertIn("src/i2/lab/__init__.py", files)
             self.assertIn("tests/i2/test_proposal.py", files)
-            self.assertIn("docs/engines/i2/CI_WORKFLOW_TEMPLATE.yml", files)
+            self.assertIn("src/i2/docs/CI_WORKFLOW_TEMPLATE.yml", files)
             self.assertFalse((root / ".github/workflows").exists())
             created = apply_workspace("I2", "I1", target, root=root)
             self.assertEqual(sorted(files), created)

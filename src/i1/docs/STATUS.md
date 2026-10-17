@@ -6,11 +6,11 @@
 
 ## Authority
 
-- Declarative contract: [engine.json](../../../src/i1/engine.json).
+- Declarative contract: [engine.json](../engine.json).
 - Registry: [engine-registry.json](../../../config/engine-registry.json).
 - Architecture map: [ARCHITECTURE.md](ARCHITECTURE.md).
 - Validation obligations: [TEST_PLAN.md](TEST_PLAN.md).
-- Native migration evidence: [I1_NATIVE_MIGRATION.md](../../engineering/I1_NATIVE_MIGRATION.md).
+- Native migration evidence: [I1_NATIVE_MIGRATION.md](../../../docs/engineering/I1_NATIVE_MIGRATION.md).
 
 ## Current implementation at creation of this ledger
 
@@ -70,4 +70,4 @@ La CI [#39040216449](https://github.com/josselin-orta-lab/individual-zero/action
 
 ## Monde prédéfinis pour le Lab I1 (2026-10-17)
 
-Six mondes ont été ajoutés dans `src/i1/lab/world_presets/` : oasis, foraging, dry-valley, empty-land, hazard-edge, blocked-route. Le lanceur `tools/run_i1_world_preset.py` utilise la naissance naturelle d'I1, avec WAL ou M11, sans injecter d'oracle ni choisir les actions. Le workflow manuel `.github/workflows/i1-preset-worlds.yml` est préparé pour GitHub Actions, avec rapports JSON et données de custody ; sa disponibilité dans le menu Actions dépendra de son intégration à la branche par défaut. Les contrôles automatiques exécutent deux naissances réelles courtes, oasis/WAL et empty-land/M11, mais ces essais techniques ne constituent pas une preuve scientifique de survie ou d'émergence. Les cartes sont fixes par nom, la graine contrôle l'identité individuelle. Documentation : `docs/engines/i1/WORLD_PRESETS.md`.
+Six mondes ont été ajoutés dans `src/i1/lab/world_presets/` : oasis, foraging, dry-valley, empty-land, hazard-edge, blocked-route. Le lanceur `tools/run_i1_world_preset.py` utilise la naissance naturelle d'I1, avec WAL ou M11, sans injecter d'oracle ni choisir les actions. Le workflow manuel `.github/workflows/i1-preset-worlds.yml` est préparé pour GitHub Actions, avec rapports JSON et données de custody ; sa disponibilité dans le menu Actions dépendra de son intégration à la branche par défaut. Les contrôles automatiques exécutent deux naissances réelles courtes, oasis/WAL et empty-land/M11, mais ces essais techniques ne constituent pas une preuve scientifique de survie ou d'émergence. Les cartes sont fixes par nom, la graine contrôle l'identité individuelle. Documentation : `src/i1/docs/WORLD_PRESETS.md`.

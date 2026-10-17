@@ -24,7 +24,7 @@ class VersionedEngineContractTests(unittest.TestCase):
             (path / "src/i1/lab").mkdir()
             (path / "src/i1/runtime").mkdir()
             (path / "tests/i1").mkdir(parents=True)
-            (path / "docs/engines/i1").mkdir(parents=True)
+            (path / "src/i1/docs").mkdir(parents=True)
             registry = json.loads((ROOT / "config/engine-registry.json").read_text())
             (path / "config/engine-registry.json").write_text(json.dumps(registry))
             contract = json.loads((ROOT / "src/i1/engine.json").read_text())
@@ -53,7 +53,7 @@ class VersionedEngineContractTests(unittest.TestCase):
             (path / "src/i1/runtime").mkdir()
             (path / "src/lab").mkdir()
             (path / "tests/i1").mkdir(parents=True)
-            (path / "docs/engines/i1").mkdir(parents=True)
+            (path / "src/i1/docs").mkdir(parents=True)
             (path / "config/engine-registry.json").write_bytes(
                 (ROOT / "config/engine-registry.json").read_bytes())
             (path / "src/i1/engine.json").write_bytes(

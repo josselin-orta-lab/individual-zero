@@ -8,7 +8,7 @@
     "lab": "src/i1/lab",
     "runtime": "src/i1/runtime",
     "tests": "tests/i1",
-    "documentation": "docs/engines/i1"
+    "documentation": "src/i1/docs"
   },
   "entrypoints": {
     "runtime": "i1lab.i1_natural_runtime.I1Runtime",
@@ -126,6 +126,6 @@
   },
   "scientific": {
     "gate": "not_established",
-    "evidence_index": "docs/engines/i1/STATUS.md"
+    "evidence_index": "src/i1/docs/EVIDENCE_MATRIX.md"
   }
 }

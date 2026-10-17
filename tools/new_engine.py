@@ -49,7 +49,7 @@ def plan(generation: str, parent: str, output: Path, *,
             "lab": "src/" + generation.lower() + "/lab",
             "runtime": "src/" + generation.lower() + "/runtime",
             "tests": "tests/" + generation.lower(),
-            "documentation": "docs/engines/" + generation.lower(),
+            "documentation": "src/" + generation.lower() + "/docs",
         },
         "entrypoints": {},
         "publication_owners": [],
@@ -98,7 +98,7 @@ def plan_workspace(generation: str, parent: str, output: Path, *,
     engine_files = plan(generation, parent, output, root=root)
     stem = generation.lower()
     tests = root / "tests" / stem
-    docs = root / "docs" / "engines" / stem
+    docs = root / "src" / stem / "docs"
     if tests.exists() or tests.is_symlink() or docs.exists() or docs.is_symlink():
         raise FileExistsError("generation tests or documentation already exist")
     result = {f"src/{stem}/{name}": data
@@ -118,7 +118,7 @@ def plan_workspace(generation: str, parent: str, output: Path, *,
         f'        self.assertNotIn("{generation}", registry["generations"])\n'
         '        self.assertEqual(contract["scientific"]["gate"], "not_established")\n'
     )
-    result[f"docs/engines/{stem}/STATUS.md"] = (
+    result[f"src/{stem}/docs/STATUS.md"] = (
         f"# {generation} engineering status\n\n"
         "**PROPOSAL ONLY. NOT REGISTERED. NOT EXECUTABLE.**\n\n"
         f"Design parent: {parent}. Own Lab: src/{stem}/lab/.\n"
@@ -126,13 +126,13 @@ def plan_workspace(generation: str, parent: str, output: Path, *,
         "Before registration: implement independent cognition and tests, review\n"
         "owner roster and durability contracts, then validate cold recovery.\n"
     )
-    result[f"docs/engines/{stem}/ARCHITECTURE.md"] = (
+    result[f"src/{stem}/docs/ARCHITECTURE.md"] = (
         f"# {generation} proposed architecture\n\n"
         "Version-owned lab/, runtime/, modules/ and config/.\n"
         "Do not import the parent's Lab or memory as a fallback.\n"
         "No runtime is instantiated by this scaffold.\n"
     )
-    result[f"docs/engines/{stem}/TEST_PLAN.md"] = (
+    result[f"src/{stem}/docs/TEST_PLAN.md"] = (
         f"# {generation} test plan (unimplemented)\n\n"
         "1. Structural contract and isolated Lab.\n"
         "2. Real birth and first-person observations.\n"
@@ -141,7 +141,7 @@ def plan_workspace(generation: str, parent: str, output: Path, *,
         "5. Independent scientific trials, without inherited oracles.\n\n"
         "**Every item is NOT EVALUATED until implemented.**\n"
     )
-    result[f"docs/engines/{stem}/CI_WORKFLOW_TEMPLATE.yml"] = (
+    result[f"src/{stem}/docs/CI_WORKFLOW_TEMPLATE.yml"] = (
         f"name: {generation} structure (example, NOT installed)\n"
         "on:\n"
         "  pull_request:\n"
@@ -165,8 +165,7 @@ def apply_workspace(generation: str, parent: str, output: Path, *,
     root = root.resolve()
     files = plan_workspace(generation, parent, output, root=root)
     stem = generation.lower()
-    roots = [root / "src" / stem, root / "tests" / stem,
-             root / "docs" / "engines" / stem]
+    roots = [root / "src" / stem, root / "tests" / stem]
     if any(path.exists() or path.is_symlink() for path in roots):
         raise FileExistsError("generation target already exists")
     made = []

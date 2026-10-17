@@ -70,7 +70,7 @@ def inspect(root: Path = ROOT) -> dict:
         for key in REQUIRED:
             expected = source if key == "engine" else (
                 f"tests/{name.lower()}" if key == "tests" else
-                f"docs/engines/{name.lower()}" if key == "documentation" else
+                f"{source}/docs" if key == "documentation" else
                 f"{source}/{key}"
             )
             if paths.get(key) != expected:

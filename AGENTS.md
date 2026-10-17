@@ -3,7 +3,7 @@
 These instructions govern work on this repository, not the cognitive rules
 of a living individual. Before acting, read:
 1. `config/engine-registry.json` and the active `src/iN/engine.json`.
-2. `docs/engines/iN/STATUS.md` and `docs/engines/iN/ARCHITECTURE.md`.
+2. `src/iN/docs/README.md`, `src/iN/docs/STATUS.md` and the engine's own theoretical handbook.
 3. `docs/engineering/START_HERE.md` and relevant ADRs.
 4. The real GitHub branch HEAD, open PR dependencies and latest CI; never
    assume status from a previous conversation or a dated report.
@@ -72,3 +72,7 @@ an independent Lab, source, contracts, tests, CI and new scientific evidence.
 ## Read-only promotion assessment
 
 For future I2+ proposals run `python tools/assess_engine_proposal.py --generation I2 --json`. It does not register or activate an engine. Review `docs/engineering/ENGINE_PROMOTION.md`; an assessment containing all structural checks is still NOT a scientific GO or authorization to instantiate a life.
+
+## Generation-owned knowledge
+
+I1's canonical theory, mechanism map, evidence statuses, development playbook and observer instructions live under `src/i1/docs/`, next to the motor. Future generations follow `src/iN/docs/`. The cross-generation `docs/engineering/` directory holds shared tooling procedures only. Do not elevate a proposed scientific mechanism into I1 policy without new first-person evidence and explicit tests.
