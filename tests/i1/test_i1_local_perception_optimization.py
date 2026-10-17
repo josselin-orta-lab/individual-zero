@@ -88,6 +88,14 @@ for case in range(100):
         _shelters={current.moved("north")}, _inventory={"berry_a":case%3},
         _is_interior=lambda p: 0 <= p.x < 32 and 0 <= p.y < 32
     )
+    # Remote objects still participate in global indices. Sorting first
+    # must retain the exact visible IDs after the preallocation filter.
+    fake._water_sources.update(Position(i, 1) for i in range(1, 31))
+    fake._creatures.update(Position(i, 2) for i in range(1, 31))
+    fake._shelters.update(Position(i, 3) for i in range(1, 31))
+    fake._water_sources.add(current)
+    fake._creatures.add(current.moved("west"))
+    fake._shelters.add(current.moved("south"))
     got = WorldBody.capture_local(fake,t_monde=case+1).as_dict()
     expected = old_capture(fake,case+1).as_dict()
     assert got == expected, (case,got,expected)
