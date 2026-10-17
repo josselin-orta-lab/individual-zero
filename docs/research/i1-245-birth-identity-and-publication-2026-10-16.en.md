@@ -716,3 +716,34 @@ lab source or historical experimental result was used as a baseline.
 **NON VALIDÉ:** static code review only. No code generation, tests,
 CI execution, benchmarks, or simulated lives were run; memory and speed
 benefits remain unmeasured and full behavioral parity unproven.
+
+## I1 SQLite metadata reuse on birth/commit and binary suffix hashing (2026-10-17)
+
+Source-only optimization of the generated I1lab SQLite custodian extends
+the existing private `_canonical_state_with_metadata` helper. Birth now
+receives the fully checked canonical state bytes and the already validated
+roster metadata from that one helper call, instead of invoking
+`registered_current_metadata` again immediately. During
+`commit_generation`, the newly proposed current state is likewise
+canonicalized and owner-roster-validated once. The returned metadata
+is checked against the **independently audited and transaction-pinned**
+previous-generation roster hash exactly as before. Neither the SQL intent
+fence nor the old-state digest and roster checks are bypassed.
+
+During insertion of the new generation's append-only event suffix, the
+verifier retains the preceding SHA-256 digest as 32 bytes, converting it
+to a lowercase hex string only for the stored row and cross-checks.
+The validated head string is decoded once before the loop rather than
+once per appended occurrence. Every new event is still independently
+encoded, SHA-256-rehashed, terminal-sequence-validated, inserted under
+the same SQLite transaction, and compared to its claimed event hash.
+
+**Not optimized away:** the full pre-step and post-commit SQLite journal
+audits, per-owner causal capture, post-private-step detection of mutations
+to the published individual, and post-commit validation before publication
+all remain mandatory. An audit result does not become an across-step
+cache of trust. Original I0 and baseline Lab sources remain untouched.
+
+**NON VALIDÉ:** per instruction, no code generation, tests, CI runs,
+benchmarks or simulations were executed. Exact performance gains and
+runtime equivalence remain unmeasured.

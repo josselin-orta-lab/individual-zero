@@ -478,6 +478,30 @@ def i1_sqlite_streaming_audit_source(source: str) -> str:
             "        metadata = registered_current_metadata(decoded)\n",
             "        # The current envelope was fully checked before streaming occurrences.\n",
         ),
+        (
+            "        payload = _canonical_state(initial_state, individual_id)\n        metadata = registered_current_metadata(initial_state)\n",
+            "        payload, metadata = _canonical_state_with_metadata(\n            initial_state, individual_id,\n        )\n",
+        ),
+        (
+            "            payload = _canonical_state(current_state, receipt.individual_id)\n",
+            "            payload, new_metadata = _canonical_state_with_metadata(\n                current_state, receipt.individual_id,\n            )\n",
+        ),
+        (
+            "            new_metadata = registered_current_metadata(current_state)\n",
+            "",
+        ),
+        (
+            "            head = receipt.journal_head\n            index = receipt.journal_count\n",
+            "            head = receipt.journal_head\n            head_digest = bytes.fromhex(head)\n            index = receipt.journal_count\n",
+        ),
+        (
+            "                event_hash = sha256_hex(bytes.fromhex(head) + canonical_causal_bytes(\n                    {\"event_id\": event_id, \"causal_event\": causal}\n                ))\n",
+            "                event_digest = sha256(head_digest + canonical_causal_bytes(\n                    {\"event_id\": event_id, \"causal_event\": causal}\n                )).digest()\n                event_hash = event_digest.hex()\n",
+        ),
+        (
+            "                head = event_hash\n                index += 1\n",
+            "                head = event_hash\n                head_digest = event_digest\n                index += 1\n",
+        ),
     )
     for before, after in changes:
         if source.count(before) != 1:
