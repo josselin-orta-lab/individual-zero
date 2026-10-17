@@ -808,3 +808,30 @@ further perception, deliberation or learning is authorized.
 **NON VALIDÉ:** source-only correction; no generation, tests, CI runs,
 benchmarks or simulated lives were executed. Runtime behavior remains to
 be independently verified.
+
+## Canonical I1: remove Meta/Health compensating rewind and O(N) Stage10 journal counts (2026-10-17)
+
+The inherited `_MetacognitionAndSleepCustody.restore_causal_state` previously
+exported two complete snapshots of the living Metacognition and SleepHealth
+owners solely to *reinstall* them after a partial restore failure. This
+contradicts the clarified irreversible-life rule. The generated I1lab
+Stage10 implementation no longer creates either rollback-only snapshot or
+performs a compensating owner restoration. It still validates the combined
+custody envelope and passes independently detached state to each owner.
+Any exception propagates to the existing mortal Stage10 fail-stop boundary.
+During cold recovery, a failed import aborts an as-yet-unpublished new
+runtime; it never selects an earlier generation or revives a terminal life.
+
+In the same generated I1lab Stage10 publication coordinator, the journal
+was unnecessarily materialized as a complete tuple **three** times just
+to compute its current length, including in the fail-stop error branch.
+The generated `HashChainedJournal.entry_count` accessor already returns
+the exact length of its append-only private list. The publication
+coordinator now uses that O(1) count instead. The deterministic activation
+event ID, journal index, full chain verification when required, receipt
+identity, owner integrity and irreversible publication contract are
+unchanged. I0 and original shared Lab source remain untouched.
+
+**NON VALIDÉ:** static source inspection only. No generated build, tests,
+benchmarks, CI runs or simulations were performed. No numerical gains or
+runtime-equivalence claims are made.

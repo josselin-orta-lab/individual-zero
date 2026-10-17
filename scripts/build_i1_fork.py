@@ -209,6 +209,32 @@ def i1_publication_detached_candidate_source(source: str) -> str:
     return source
 
 
+def i1_no_meta_custody_rollback_source(source: str) -> str:
+    """Do not save and reinstall previous living Meta/Health owner versions.
+
+    The generated natural I1 runs under the mortal fail-stop boundary.
+    A fresh authenticated M11 cold import is never allowed to rescue an
+    incomplete owner graph. Keep both defensive input copies.
+    """
+    before = "        old_meta = self.meta.export_causal_state()\n        old_health = self.health.export_causal_state()\n        try:\n            self.meta.restore_causal_state(deepcopy(state[\"metacognition\"]))\n            self.health.restore_causal_state(deepcopy(state[\"sleep_health\"]))\n        except Exception:\n            self.meta.restore_causal_state(old_meta)\n            self.health.restore_causal_state(old_health)\n            raise\n"
+    after = "        # No backup of living owners for a compensating rewind. If an\n        # installation fails, the mortal Stage10 step halts the individual;\n        # M11 cold installation instead aborts the unpublished new runtime.\n        self.meta.restore_causal_state(deepcopy(state[\"metacognition\"]))\n        self.health.restore_causal_state(deepcopy(state[\"sleep_health\"]))\n"
+    if source.count(before) != 1:
+        raise ValueError("unreviewed I1 metacognition/health no-rewind boundary")
+    return source.replace(before, after)
+
+
+def i1_stage10_publication_bounded_count_source(source: str) -> str:
+    """Read journal cardinality without repeatedly allocating all entries.
+
+    The generated I1lab journal has an exact O(1) entry_count view; full
+    journal verification, append and owner/version checks are unchanged.
+    """
+    before = "len(self.journal.entries)"
+    if source.count(before) != 3:
+        raise ValueError("unreviewed I1 Stage10 publication occurrence count")
+    return source.replace(before, "self.journal.entry_count")
+
+
 def i1_no_live_publication_rollback_source(source: str) -> str:
     """Ban live owner rewind after attempted canonical I1 publication.
 
@@ -1044,6 +1070,7 @@ def generate(output: Path) -> dict[str, object]:
                 transformed = i1_committed_history_metadata_source(transformed)
                 transformed = i1_publication_detached_candidate_source(transformed)
                 transformed = i1_no_live_publication_rollback_source(transformed)
+                transformed = i1_stage10_publication_bounded_count_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "stage4_runtime.py"):
                 transformed = i1_canonical_active_value_source(transformed)
@@ -1056,6 +1083,7 @@ def generate(output: Path) -> dict[str, object]:
                     and relative.as_posix() == "stage10_runtime.py"):
                 transformed = i1_private_consolidation_source(transformed)
                 transformed = i1_waking_pending_source(transformed)
+                transformed = i1_no_meta_custody_rollback_source(transformed)
             # I1-only M11 custody: admit ONLY the exact canonical I1
             # runtime, not any experimental Stage12 subclass with unknown
             # mutable owners or unregistered cold-state behavior. Retain the
