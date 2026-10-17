@@ -20,6 +20,18 @@ class EngineSuiteContractTests(unittest.TestCase):
                 planned = plan("I1", name)
                 self.assertTrue(planned)
 
+    def test_smoke_and_full_contracts_supply_required_junit_paths(self):
+        for suite in ("smoke", "full"):
+            with self.subTest(suite=suite):
+                commands = plan("I1", suite)
+                self.assertEqual(len(commands), 1)
+                argv = commands[0]
+                self.assertEqual(argv[0], "scripts/test_i1_ci.py")
+                self.assertEqual(argv.count("--junit"), 1)
+                target = argv[argv.index("--junit") + 1]
+                self.assertTrue(target.startswith("reports/i1-"))
+                self.assertTrue(target.endswith(".xml"))
+
     def test_only_active_registered_generation_runs(self):
         for engine in ("I0", "I2", "experimental", "i1"):
             with self.subTest(engine=engine), self.assertRaises(ValueError):
