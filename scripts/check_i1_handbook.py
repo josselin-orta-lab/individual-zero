@@ -22,7 +22,7 @@ REQUIRED = ("README.md", "THEORY.md", "COGNITIVE_FLOW.md",
             "TEST_PLAN.md", "WORLD_PRESETS.md", "NEEDS_AND_ACTION.md",
             "MEMORY_AND_LEARNING.md", "CONSOLIDATION_AND_PUBLICATION.md",
             "MORTALITY_AND_M11.md", "EXPERIMENT_PROTOCOL.md",
-            "UC_AND_SCHEDULING.md")
+            "UC_AND_SCHEDULING.md", "STAGES_AND_INTERFACES.md")
 
 
 def inspect(root: Path = ROOT) -> dict:
