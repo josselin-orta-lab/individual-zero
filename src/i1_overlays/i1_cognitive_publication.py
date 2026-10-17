@@ -272,11 +272,12 @@ class ActiveConsolidatedOwner:
                or update.kind not in _ALLOWED_UPDATES[self.owner_id]
                for update in updates):
             raise ValueError("unreconciled online owner update after sleep cut")
-        prepared = deepcopy(baseline)
-        prepared["observed_consolidated"] = deepcopy(proposed)
-        # The full inner online-owner state including kappa/precision/causal
-        # revisions and sleep/health MUST remain byte-for-byte current.
-        if (canonical_causal_bytes(prepared["canonical_owner"])
-                != canonical_causal_bytes(baseline["canonical_owner"])):
+        # Coordinator.prepare gave us a detached baseline and creates the
+        # final owned validated copy of the result. Reusing this isolated
+        # mapping eliminates an intermediate whole-owner deepcopy; the
+        # underlying online state is never assigned or modified here.
+        unchanged = canonical_causal_bytes(baseline["canonical_owner"])
+        baseline["observed_consolidated"] = deepcopy(proposed)
+        if canonical_causal_bytes(baseline["canonical_owner"]) != unchanged:
             raise ValueError("online learning changed in advisory rebase")
-        return prepared
+        return baseline
