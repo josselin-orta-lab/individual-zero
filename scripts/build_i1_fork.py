@@ -227,6 +227,25 @@ def i1_committed_history_metadata_source(source: str) -> str:
     return source.replace(restore, amended)
 
 
+def i1_consolidation_runner_copy_source(source: str) -> str:
+    """Avoid duplicating already detached private data in generated I1 only."""
+    pairs = (
+        (
+            "            deepcopy(scoped), self.transaction.cut,\n",
+            "            scoped, self.transaction.cut,\n",
+        ),
+        (
+            "        return deepcopy(self.budget.export_causal_state())\n",
+            "        return self.budget.export_causal_state()\n",
+        ),
+    )
+    for before, after in pairs:
+        if source.count(before) != 1:
+            raise ValueError("unreviewed I1 pass-runner detached copy site")
+        source = source.replace(before, after)
+    return source
+
+
 def i1_consolidation_digest_metadata_source(source: str) -> str:
     """Keep the current private checkpoint digest in the I1 transaction owner.
 
@@ -615,6 +634,9 @@ def generate(output: Path) -> dict[str, object]:
             if (output_package == "i1"
                     and relative.as_posix() == "modules/memory.py"):
                 transformed = i1_memory_recall_source(transformed)
+            if (output_package == "i1"
+                    and relative.as_posix() == "modules/consolidation_pass_runner.py"):
+                transformed = i1_consolidation_runner_copy_source(transformed)
             if (output_package == "i1"
                     and relative.as_posix() == "modules/consolidation_transaction.py"):
                 transformed = i1_consolidation_digest_metadata_source(transformed)
