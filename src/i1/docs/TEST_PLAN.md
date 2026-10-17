@@ -7,8 +7,8 @@ Python 3.11 and 3.12. Every result is associated with an exact commit SHA.
 | --- | --- | --- |
 | Generation structure | `python scripts/check_engine_contracts.py --json` and `python -m unittest discover -s tests/i1 -p 'test_*.py' -v` | Registry, contract, ownership, independent Lab, rejection tests |
 | Frozen reference and archive | `python scripts/check_engine_repository.py --json` | I0 source and Lab tree SHAs; archived Git blobs |
-| Canonical natural I1 | `python scripts/test_i1_ci.py --mode smoke --seed 246` | Real birth, needs, perception, action, mortality |
-| Longer software suite | `python scripts/test_i1_ci.py --mode full --seed 247` | Multiple independent mortal lives, no forced decisions |
+| Canonical natural I1 | `python scripts/test_i1_ci.py --mode smoke --seed 246 --junit reports/i1-smoke-contract.xml` | Real birth, needs, perception, action, mortality |
+| Longer software suite | `python scripts/test_i1_ci.py --mode full --seed 247 --junit reports/i1-full-contract.xml` | Multiple independent mortal lives, no forced decisions |
 | Authenticated M11 | `python -m unittest discover -s tests/i1 -p test_i1_natural_m11_cold_recovery.py -v` | Current generation recovery, identity/contract mismatch |
 | Adversarial M11 | `python -m unittest discover -s tests/i1 -p test_i1_m11_adversarial.py -v` | COMMIT/ACK faults, roster mismatch, irrevocable death |
 | Generated import parity | `python -m unittest discover -s tests/i1 -p test_i1_generated_isolation.py -v` | I1 source provenance, immutable Lab independence |
@@ -21,3 +21,5 @@ prospective scientific GO without dedicated evidence. Never reenable obsolete
 H1/H2 conditions as I1 acceptance criteria.
 
 The four actively enforced I1 source/M11 tests now live in `tests/i1/`. Their import root is adjusted to retain identical execution against the repository. Historical A2/issue-oriented tests remain separate and are **not** promoted to scientific oracles or included implicitly in the natural-I1 CI.
+
+The registered `engine.json` smoke/full argv vectors include mandatory `--junit` paths; `scripts/test_i1_ci.py` rejects their omission. The pipeline has distinct report outputs per Python version. Run via `python tools/run_engine_checks.py --engine I1 --suite smoke --execute --json` or `--suite full`, or pass `--junit` explicitly in standalone CLI use. `tests/i1/test_engine_suites.py` rejects future contract omissions.
