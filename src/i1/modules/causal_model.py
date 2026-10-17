@@ -1618,6 +1618,9 @@ class CausalModel:
             }
             if len(matching_contexts) < self.config.n2:
                 continue
+            # This provenance witness is constant for this numeric outcome.
+            # Compute it once, not once for each compatible P-47 report.
+            intervention_ref = min(trial.identifier for trial in active_trials)
 
             if published_reports is None:
                 published_reports = self.published_agency_evidence()
@@ -1658,9 +1661,7 @@ class CausalModel:
                     continue
                 rule = NumericPredictionCorrection(
                     contingency_ref=contingency.ref,
-                    intervention_ref=min(
-                        trial.identifier for trial in active_trials
-                    ),
+                    intervention_ref=intervention_ref,
                     agency_evidence_ref=report.identifier,
                     command_primitive=witness.command_primitive,
                     command_target=witness.command_target,

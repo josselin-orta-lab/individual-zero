@@ -143,3 +143,15 @@ et la persistance sont inchangés. Les tests différentiels couvrent les collisi
 dans l'historique et le lot, et des comparaisons exhaustives de petits lots.
 Le GO scientifique et les performances réelles restent non établis; la fusion
 attend les contrôles CI exacts Python 3.11 et 3.12.
+
+## PR #261 : sélection unique de provenance par témoin (2026-10-18)
+
+Dans `established_prediction_corrections`, le minimum lexical des
+identifiants d'interventions actives était recalculé pour chaque rapport
+P-47 compatible d'un même témoin numérique. La valeur est indépendante
+des rapports : la calculer une fois après la garde `n2` garde le même
+identifiant de provenance pour tous les résultats. Une vérification
+différentielle exhaustive de petites combinaisons et la parité exacte de
+deux blocs limitent le changement. Aucun fait cognitif, test forcé ou
+jugement causal supplémentaire. Validation CI du nouveau SHA exigée
+avant fusion; pas de GO scientifique.
