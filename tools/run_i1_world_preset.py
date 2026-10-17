@@ -205,8 +205,11 @@ def _wal_life(*, birth, params, life_id, path, steps):
     if not trajectory or not life.journal.verify():
         raise RuntimeError("mortal journal verification failed")
     audit = HashChainedJournal.audit_durable_wal(str(path))
+    # Compare the audited count without copying the entire append-only
+    # journal into a tuple. The independent WAL audit still checks every
+    # occurrence and its cryptographic chain.
     if (audit["head_hash"] != life.journal.head_hash
-            or audit["verified_entries"] != len(life.journal.entries)):
+            or audit["verified_entries"] != life.journal.entry_count):
         raise RuntimeError("durable journal differs from live journal")
     return {
         "lifecycle": life.stage3.substrate.mortal_status.value,

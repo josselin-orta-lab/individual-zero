@@ -42,6 +42,14 @@ class AutobiographicalPolicy:
         # Also protect direct policy.project callers, not only the
         # JournalViews commit/read entrypoints which validate policies.
         self.validate()
+        return self._project_validated(event)
+
+    def _project_validated(self, event: JournalEntry) -> dict[str, object]:
+        """Internal fast path: caller validated this exact policy already.
+
+        No exemption from the event-kind or lived-field epistemic guards.
+        Direct callers must keep using project(), which always validates.
+        """
         kind = event.causal_event.get("kind")
         if not isinstance(kind, str) or kind not in self.allowed_fields_by_kind:
             raise ValueError("event kind is not autobiographically allowed")
@@ -72,11 +80,16 @@ class JournalViews:
 
     def __init__(self, *, journal: HashChainedJournal) -> None:
         self._journal = journal
+        # Rehydrate in journal order without materializing the complete
+        # technical history. The reverse iterator is read-only and covers
+        # every original occurrence; only committed autobiographical IDs
+        # are retained, in their original chronological order.
         self._commit_event_ids = [
             entry.event_id
-            for entry in journal.entries
+            for entry in journal.iter_entries_reversed()
             if entry.causal_event.get("kind") == "auto_segment_commit"
         ]
+        self._commit_event_ids.reverse()
         self._commit_sequence = len(self._commit_event_ids)
 
     def technical(self) -> tuple[JournalEntry, ...]:
@@ -115,7 +128,10 @@ class JournalViews:
                 raise ValueError("autobiographical source world step mismatch")
             # Check the entire authorized nested projection before publishing
             # the append-only commitment, not only at the next Memory read.
-            policy.project(entry)
+            if type(policy) is AutobiographicalPolicy:
+                policy._project_validated(entry)
+            else:
+                policy.project(entry)
             validated.append(event_ref)
 
         commit_event_id = deterministic_id(
@@ -160,6 +176,9 @@ class JournalViews:
                        for ref in selected_event_refs)):
             raise ValueError("invalid scoped autobiographical refs")
         projected: list[dict[str, object]] = []
+        # Exact built-in immutable policies can be validated once per read;
+        # custom policy subclasses keep their original validation cadence.
+        validated_versions: set[str] = set()
 
         for commit_event_id in self._commit_event_ids:
             entry = self._journal.get(commit_event_id)
@@ -185,7 +204,12 @@ class JournalViews:
                 raise ValueError(
                     f"missing autobiographical policy version: {version}"
                 )
-            policy.validate()
+            if type(policy) is AutobiographicalPolicy:
+                if version not in validated_versions:
+                    policy.validate()
+                    validated_versions.add(version)
+            else:
+                policy.validate()
 
             for event_ref in refs:
                 source = self._journal.get(event_ref)
@@ -199,7 +223,11 @@ class JournalViews:
                     raise ValueError("illegal autobiographical source provenance")
                 if (selected_event_refs is None
                         or event_ref in selected_event_refs):
-                    projected.append(policy.project(source))
+                    projected.append(
+                        policy._project_validated(source)
+                        if type(policy) is AutobiographicalPolicy
+                        else policy.project(source)
+                    )
 
         return tuple(projected)
 

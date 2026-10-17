@@ -122,41 +122,46 @@ class HashChainedJournal:
 
     @staticmethod
     def audit_durable_wal(path: str) -> dict[str, object]:
-        """Verify a complete durable file offline; never resurrect an individual.
+        """Verify an entire durable WAL offline without buffering the file.
 
-        A torn last record or any rewritten, duplicated or reordered event
-        fails closed. Only an attestation is returned, not a runnable journal.
+        The replay still performs every canonical-byte, occurrence-order,
+        SHA-256 chain and terminal-state check. Only the transient full-file
+        byte buffer and splitlines list are removed. This never recovers life.
         """
         if type(path) is not str or not os.path.isabs(path):
             raise ValueError("offline WAL audit requires an absolute path")
-        with open(path, "rb") as stream:
-            contents = stream.read()
-        if contents and not contents.endswith(b"\n"):
-            raise ValueError("unterminated durable journal record")
         replay = HashChainedJournal()
-        for raw in contents.splitlines():
-            if not raw:
-                raise ValueError("empty durable journal record")
-            try:
-                payload = json.loads(raw.decode("utf-8"))
-            except (UnicodeDecodeError, json.JSONDecodeError) as error:
-                raise ValueError("invalid durable journal JSON") from error
-            if (type(payload) is not dict or set(payload) != {
-                "index", "event_id", "previous_hash", "event_hash", "causal_event",
-            } or type(payload["index"]) is not int
-                    or type(payload["event_id"]) is not str
-                    or type(payload["causal_event"]) is not dict
-                    or canonical_causal_bytes(payload) != raw):
-                raise ValueError("noncanonical durable journal record")
-            if (payload["index"] != replay.entry_count
-                    or payload["previous_hash"] != replay.head_hash):
-                raise ValueError("durable journal occurrence order or chain broken")
-            reconstructed = replay.append(
-                event_id=payload["event_id"],
-                causal_event=payload["causal_event"],
-            )
-            if reconstructed.event_hash != payload["event_hash"]:
-                raise ValueError("durable journal entry hash mismatch")
+        with open(path, "rb") as stream:
+            for record in stream:
+                if not record.endswith(b"\n"):
+                    raise ValueError("unterminated durable journal record")
+                raw = record[:-1]
+                # Match bytes.splitlines() for the previously accepted CRLF
+                # separator, without relaxing canonical JSON record checks.
+                if raw.endswith(b"\r"):
+                    raw = raw[:-1]
+                if not raw:
+                    raise ValueError("empty durable journal record")
+                try:
+                    payload = json.loads(raw.decode("utf-8"))
+                except (UnicodeDecodeError, json.JSONDecodeError) as error:
+                    raise ValueError("invalid durable journal JSON") from error
+                if (type(payload) is not dict or set(payload) != {
+                    "index", "event_id", "previous_hash", "event_hash", "causal_event",
+                } or type(payload["index"]) is not int
+                        or type(payload["event_id"]) is not str
+                        or type(payload["causal_event"]) is not dict
+                        or canonical_causal_bytes(payload) != raw):
+                    raise ValueError("noncanonical durable journal record")
+                if (payload["index"] != replay.entry_count
+                        or payload["previous_hash"] != replay.head_hash):
+                    raise ValueError("durable journal occurrence order or chain broken")
+                reconstructed = replay.append(
+                    event_id=payload["event_id"],
+                    causal_event=payload["causal_event"],
+                )
+                if reconstructed.event_hash != payload["event_hash"]:
+                    raise ValueError("durable journal entry hash mismatch")
         if not replay.verify():
             raise ValueError("durable journal internal consistency failed")
         return {"verified_entries": replay.entry_count, "head_hash": replay.head_hash}

@@ -98,6 +98,18 @@ jobs:
         run: python -m unittest discover -s tests/i1 -p test_i1_source_snapshot.py -v
       - name: Current I1 independent SMOKE/FULL
         run: python scripts/test_i1_ci.py --mode ${{ github.event.inputs.mode || 'smoke' }} --seed 246 --junit reports/i1-${{ matrix.python-version }}.xml
+      - name: I1 local perception differential microbenchmark (informational)
+        env:
+          I1_CAPTURE_BENCH: "1"
+        run: python -m unittest discover -s tests/i1 -p test_i1_local_perception_optimization.py -v
+      - name: I1 Stage10 pending cursor scaling (informational)
+        env:
+          I1_STAGE10_BENCH: "1"
+        run: python -m unittest discover -s tests/i1 -p test_i1_pending_cursor.py -v
+      - name: I1 autobiographical read differential benchmark (informational)
+        env:
+          I1_AUTOBIO_BENCH: "1"
+        run: python -m unittest discover -s tests/i1 -p test_i1_autobiographical_read_equivalence.py -v
       - name: I1 natural FULL (multiple autonomous mortal lives)
         if: github.event_name == 'pull_request'
         run: python scripts/test_i1_ci.py --mode full --seed 247 --junit reports/i1-full-${{ matrix.python-version }}.xml

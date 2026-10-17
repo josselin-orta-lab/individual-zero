@@ -652,7 +652,9 @@ class EpisodicMemory:
             return (
                 1.0 if next(iter(current_refs)) in episode.event_refs else 0.0
             )
-        if any(ref in current_refs for ref in episode.event_refs):
+        # Exact overlap in C avoids one Python-level membership test per
+        # episode event. Neither recall eligibility nor subjective inputs change.
+        if not current_refs.isdisjoint(episode.event_refs):
             return 1.0
         return 0.0
 
