@@ -401,6 +401,29 @@ def i1_m11_bounded_journal_source(source: str) -> str:
     return source
 
 
+def i1_sqlite_detached_owner_export_source(source: str) -> str:
+    """Elide copies only for exact I1 owners with proven detached exports.
+
+    SlowHistory.export_causal_state detaches both its state and lineage.
+    ConsolidationSlot.export_causal_state returns a fresh envelope and the
+    complete transaction exports its checkpoint and candidate trees deeply.
+    All other owners retain a defensive deepcopy before SQLite custody.
+    """
+    old = "        state = deepcopy(owner.export_causal_state())\n"
+    new = (
+        "        exported = owner.export_causal_state()\n"
+        "        # Explicitly scoped exact types only: never trust an unknown\n"
+        "        # owner, subclass or mutable nested export by assumption.\n"
+        "        from .consolidation_publication import SlowHistory\n"
+        "        from i1.modules.consolidation_transaction import ConsolidationSlot\n"
+        "        state = (exported if type(owner) in (SlowHistory, ConsolidationSlot)\n"
+        "                 else deepcopy(exported))\n"
+    )
+    if source.count(old) != 1:
+        raise ValueError("unreviewed I1 SQLite detached export boundary")
+    return source.replace(old, new)
+
+
 def i1_sqlite_journal_count_source(source: str) -> str:
     """Read exact journal count without allocating one full occurrence tuple."""
     before = '"count": len(journal.entries), "head": journal.head_hash,'
@@ -877,6 +900,7 @@ def generate(output: Path) -> dict[str, object]:
             if (output_package == "i1lab"
                     and relative.as_posix() == "sqlite_runtime_custody.py"):
                 transformed = i1_sqlite_journal_count_source(transformed)
+                transformed = i1_sqlite_detached_owner_export_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "consolidation_postcut_journal.py"):
                 transformed = i1_postcut_bounded_verification_source(transformed)
