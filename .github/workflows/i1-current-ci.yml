@@ -10,6 +10,8 @@ on:
       - 'scripts/test_i1_artifact_parity.py'
       - 'scripts/check_engine_contracts.py'
       - 'tools/new_engine.py'
+      - 'tools/assess_engine_proposal.py'
+      - 'docs/engineering/ENGINE_PROMOTION.md'
       - 'tools/run_engine_checks.py'
       - 'tools/campaign_report.py'
       - 'tools/check_tool_inventory.py'

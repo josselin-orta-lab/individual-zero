@@ -63,3 +63,7 @@ La CI [#39039607085](https://github.com/josselin-orta-lab/individual-zero/action
 `tools/campaign_report.py` lit le vrai `git HEAD` de l'environnement, le SHA-256 du contrat I1 et les résultats des suites enregistrées / JUnit, puis produit `reports/i1-campaign-3.11.json`, `reports/i1-campaign-3.11.md` (et leurs variantes 3.12). Il distingue `PASS`, `FAIL`, `NOT_OBSERVED` et `INVALID`, sans attribuer un statut de merge ou un GO scientifique. Le rapport n'interroge pas GitHub et n'affirme pas que tous les contrôles du workflow ont réussi : le statut final du workflow reste à contrôler séparément.
 
 La CI [#39040216449](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39040216449) a validé les deux jobs Python 3.11 et 3.12 pour le commit `1d2bfe3fff1f6ffc341015c4ca1fcdd3cc763d01`. Les anciennes campagnes scientifiques non vérifiées ne sont pas reprises comme référentiel.
+
+## Structuration : examen des propositions non activables
+
+`tools/assess_engine_proposal.py` évalue en lecture seule les propositions I2+ (structure, Lab propre, contrats, tests, dépendances parentales), mais ne les enregistre et ne les active jamais. Des tests négatifs couvrent le squelette incomplet, un import direct du runtime parent et une fausse activation. Voir `docs/engineering/ENGINE_PROMOTION.md`. Cette campagne ne crée aucune génération I2.

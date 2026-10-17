@@ -68,3 +68,7 @@ Use `python tools/new_engine.py --generation I2 --parent I1 --output <dir>`
 for a no-write preview. Explicit `--apply` only creates a *proposal* scaffold;
 it does NOT register, activate, import or instantiate I2. Each generation needs
 an independent Lab, source, contracts, tests, CI and new scientific evidence.
+
+## Read-only promotion assessment
+
+For future I2+ proposals run `python tools/assess_engine_proposal.py --generation I2 --json`. It does not register or activate an engine. Review `docs/engineering/ENGINE_PROMOTION.md`; an assessment containing all structural checks is still NOT a scientific GO or authorization to instantiate a life.
