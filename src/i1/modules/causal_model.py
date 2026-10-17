@@ -1576,6 +1576,14 @@ class CausalModel:
                 continue
             verified_interventions.setdefault(trial.contingency_ref, []).append(trial)
 
+        # Derived, read-only index of already published agency evidence.
+        # Rebuild on every query: no stale cache, no new causal owner, and
+        # preserve the original lexical evidence-ID ordering within keys.
+        published_by_action: dict[tuple[str, int, int], list[AgencyEvidence]] = {}
+        for report in self.published_agency_evidence():
+            key = (report.option_ref, report.sent_t_monde, report.observed_t_monde)
+            published_by_action.setdefault(key, []).append(report)
+
         rules: list[NumericPredictionCorrection] = []
         for _, witness in sorted(self._numeric_witnesses.items()):
             contingency = self._published.get(witness.contingency_ref)
@@ -1610,13 +1618,10 @@ class CausalModel:
             if len(matching_contexts) < self.config.n2:
                 continue
 
-            for report in self.published_agency_evidence():
-                if (
-                    report.option_ref != witness.option_ref
-                    or report.sent_t_monde != witness.sent_t_monde
-                    or report.observed_t_monde != witness.observed_t_monde
-                ):
-                    continue
+            for report in published_by_action.get(
+                (witness.option_ref, witness.sent_t_monde,
+                 witness.observed_t_monde), ()
+            ):
                 compatible = any(
                     variable == witness.variable
                     and status in {"conforming", "nonconforming"}
