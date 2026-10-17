@@ -71,3 +71,11 @@ La CI [#39040216449](https://github.com/josselin-orta-lab/individual-zero/action
 ## Monde prédéfinis pour le Lab I1 (2026-10-17)
 
 Six mondes ont été ajoutés dans `src/i1/lab/world_presets/` : oasis, foraging, dry-valley, empty-land, hazard-edge, blocked-route. Le lanceur `tools/run_i1_world_preset.py` utilise la naissance naturelle d'I1, avec WAL ou M11, sans injecter d'oracle ni choisir les actions. Le workflow manuel `.github/workflows/i1-preset-worlds.yml` est préparé pour GitHub Actions, avec rapports JSON et données de custody ; sa disponibilité dans le menu Actions dépendra de son intégration à la branche par défaut. Les contrôles automatiques exécutent deux naissances réelles courtes, oasis/WAL et empty-land/M11, mais ces essais techniques ne constituent pas une preuve scientifique de survie ou d'émergence. Les cartes sont fixes par nom, la graine contrôle l'identité individuelle. Documentation : `src/i1/docs/WORLD_PRESETS.md`.
+
+## PR #254: follow-up implementation handbook (2026-10-17)
+
+At the initial verified PR HEAD `84d7e0ef47ade9be804a680b96eb5fe1ad396db8`, the current workflow run [#39052167410](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39052167410) was reported as successful. That result does **not** validate later documentation commits.
+
+This iteration added [UC_AND_SCHEDULING.md](UC_AND_SCHEDULING.md) covering the two separately metered P-43/P-42 UC budgets and connected it from the handbook, expanded the executable failure-diagnosis index, and recorded an **OPEN source-level Stage10 defect**: `_publish_live_consolidation` references the local `canonical` before assigning it. No living publication execution or scientific validation was run for this observation. Targeted code correction and a regression test remain needed before nonempty publication claims.
+
+The GitHub workflow for documentation HEAD `dbbf1d732d8a9c1b52e4986dd44af1e529b49d41` was **pending at the time checked**; subsequent commits require checking their own exact SHA. Local suites were **NOT_RUN** because no repository checkout / GitHub clone was available in the execution container. Structural and scientific state must not be inferred from an earlier green SHA.
