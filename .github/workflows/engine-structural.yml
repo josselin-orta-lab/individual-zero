@@ -43,6 +43,8 @@ jobs:
         run: |
           python scripts/check_engine_contracts.py --json
           python tools/run_engine_checks.py --engine "$ENGINE" --suite structure --json
+      - name: Verify I1 canonical handbook paths and links
+        run: python scripts/check_i1_handbook.py --json
       - name: Guard immutable I0, Lab and archive
         run: python scripts/check_engine_repository.py --json
       - name: Validate inventory without running historical cohorts
