@@ -119,49 +119,66 @@ def validate_owner_rows(owner_id, rows):
         raise ValueError("active lived-replay index exceeded explicit bound")
 
 
-def build_consolidated_owner_forms(candidate):
-    """Use exclusively authorized *private* Stage10 evidence, never owners."""
+def build_consolidated_owner_form(candidate, owner_id):
+    """Rebuild only ONE owner's admissible form from private lived evidence.
+
+    The paid sixth pass assembles all four with this same function. During
+    Stage10's owner rebase, each canonical owner checks its own source only;
+    it must not repeatedly copy and validate the other three owners' rows.
+    """
     if (type(candidate) is not dict
             or type(candidate.get("hypotheses")) is not list
             or type(candidate.get("private_replay_observations", [])) is not list
             or type(candidate.get("procedural")) is not list):
         raise ValueError("unvalidated private six-pass evidence")
-    replay = candidate.get("private_replay_observations", [])
-    forms = {"value_needs": sorted(
-        (deepcopy(row) for row in candidate["procedural"]
-         if type(row) is dict and row.get("state") == "compiled_private"),
-        key=lambda row: row["id"],
-    )}
-    forms["causal_model"] = sorted(
-        (deepcopy(row) for row in candidate["hypotheses"]),
-        key=lambda row: row["id"],
-    )
-    for owner in ("perception", "metacognition_health"):
-        wanted = REPLAY_KIND[owner]
-        matching = []
-        for row in replay:
-            if type(row) is not dict:
-                raise ValueError("unreviewed private replay row")
-            if row.get("event_kind") != wanted:
-                continue
-            if type(row.get("lived_observation")) is not dict:
-                raise ValueError("active observation must originate in lived replay")
-            matching.append({
-                "episode_ref": row["episode_ref"],
-                "event_ref": row["event_ref"],
-                "event_kind": wanted,
-                "projection_digest": row["projection_digest"],
-                "lived_observation": deepcopy(row["lived_observation"]),
-                "verification_status": "observed_not_verified",
-            })
-        # The active index is a bounded view; the complete original
-        # experience remains in SlowHistory rather than being lost.
-        matching.sort(key=lambda item: item["event_ref"])
-        forms[owner] = matching[-MAX_VISIBLE_REPLAY_REFS:]
-        forms[owner].sort(key=lambda item: item["event_ref"])
-        validate_owner_rows(owner, forms[owner])
-    validate_owner_rows("causal_model", forms["causal_model"])
-    return forms
+    if owner_id == "value_needs":
+        return sorted(
+            (deepcopy(row) for row in candidate["procedural"]
+             if type(row) is dict and row.get("state") == "compiled_private"),
+            key=lambda row: row["id"],
+        )
+    if owner_id == "causal_model":
+        rows = sorted(
+            (deepcopy(row) for row in candidate["hypotheses"]),
+            key=lambda row: row["id"],
+        )
+        validate_owner_rows(owner_id, rows)
+        return rows
+    if owner_id not in REPLAY_KIND:
+        raise ValueError("unknown active cognitive publication owner")
+    matching = []
+    wanted = REPLAY_KIND[owner_id]
+    for row in candidate.get("private_replay_observations", []):
+        if type(row) is not dict:
+            raise ValueError("unreviewed private replay row")
+        if row.get("event_kind") != wanted:
+            continue
+        if type(row.get("lived_observation")) is not dict:
+            raise ValueError("active observation must originate in lived replay")
+        matching.append({
+            "episode_ref": row["episode_ref"],
+            "event_ref": row["event_ref"],
+            "event_kind": wanted,
+            "projection_digest": row["projection_digest"],
+            "lived_observation": deepcopy(row["lived_observation"]),
+            "verification_status": "observed_not_verified",
+        })
+    # A bounded owner-specific live view; the full private record remains h.
+    matching.sort(key=lambda item: item["event_ref"])
+    rows = matching[-MAX_VISIBLE_REPLAY_REFS:]
+    rows.sort(key=lambda item: item["event_ref"])
+    validate_owner_rows(owner_id, rows)
+    return rows
+
+
+def build_consolidated_owner_forms(candidate):
+    """Assemble the same four owner-specific forms at the paid sixth pass."""
+    return {
+        owner: build_consolidated_owner_form(candidate, owner)
+        for owner in (
+            "value_needs", "causal_model", "perception", "metacognition_health",
+        )
+    }
 
 
 class ActiveConsolidatedOwner:
@@ -246,7 +263,7 @@ class ActiveConsolidatedOwner:
                 or baseline.get("schema") != SCHEMA
                 or baseline.get("owner_id") != self.owner_id):
             raise ValueError("I1 published owner candidate not versioned")
-        expected = build_consolidated_owner_forms(candidate)[self.owner_id]
+        expected = build_consolidated_owner_form(candidate, self.owner_id)
         proposed = candidate["forms"].get(self.owner_id)
         if canonical_causal_bytes(expected) != canonical_causal_bytes(proposed):
             raise ValueError("I1 active owner would publish unverified source")
