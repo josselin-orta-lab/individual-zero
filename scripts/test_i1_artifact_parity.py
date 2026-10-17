@@ -209,6 +209,16 @@ def _approved_stage6_bfs_deque(before: bytes, after: bytes) -> bool:
     return original == candidate
 
 
+def _approved_agency_evidence_index(before: bytes, after: bytes) -> bool:
+    """Only two exact reviewed adaptive index blocks."""
+    old, new = before.decode("utf-8"), after.decode("utf-8")
+    for prior, replacement in [["        rules: list[NumericPredictionCorrection] = []\n        for _, witness in sorted(self._numeric_witnesses.items()):","        # Ephemeral published evidence view. The first two admissible\n        # lookups scan it directly; only a third lookup pays for an index.\n        # No persistent cache, extra causal owner or hidden information.\n        published_reports: tuple[AgencyEvidence, ...] | None = None\n        published_by_action: dict[\n            tuple[str, int, int], list[AgencyEvidence]\n        ] | None = None\n        eligible_lookups = 0\n\n        rules: list[NumericPredictionCorrection] = []\n        for _, witness in sorted(self._numeric_witnesses.items()):"],["            for report in self.published_agency_evidence():\n                if (\n                    report.option_ref != witness.option_ref\n                    or report.sent_t_monde != witness.sent_t_monde\n                    or report.observed_t_monde != witness.observed_t_monde\n                ):\n                    continue\n                compatible = any(","            if published_reports is None:\n                published_reports = self.published_agency_evidence()\n            eligible_lookups += 1\n            if eligible_lookups == 3:\n                published_by_action = {}\n                for report in published_reports:\n                    key = (\n                        report.option_ref, report.sent_t_monde,\n                        report.observed_t_monde,\n                    )\n                    published_by_action.setdefault(key, []).append(report)\n\n            # Preserve the original direct scan for small histories; do\n            # not allocate a filtering generator for one or two witnesses.\n            matching_reports = (\n                published_reports if published_by_action is None\n                else published_by_action.get(\n                    (witness.option_ref, witness.sent_t_monde,\n                     witness.observed_t_monde), ()\n                )\n            )\n            for report in matching_reports:\n                if (\n                    report.option_ref != witness.option_ref\n                    or report.sent_t_monde != witness.sent_t_monde\n                    or report.observed_t_monde != witness.observed_t_monde\n                ):\n                    continue\n                compatible = any("]]:
+        if old.count(prior) != 1 or new.count(replacement) != 1:
+            return False
+        old = old.replace(prior, replacement, 1)
+    return old == new
+
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -233,6 +243,10 @@ def verify(reference_root: Path) -> None:
                     ))
                 or (rel == "i1/modules/consolidation_pending_index.py"
                     and _approved_pending_index_cursor(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
+                or (rel == "i1/modules/causal_model.py"
+                    and _approved_agency_evidence_index(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/stage6_planning.py"

@@ -1576,6 +1576,15 @@ class CausalModel:
                 continue
             verified_interventions.setdefault(trial.contingency_ref, []).append(trial)
 
+        # Ephemeral published evidence view. The first two admissible
+        # lookups scan it directly; only a third lookup pays for an index.
+        # No persistent cache, extra causal owner or hidden information.
+        published_reports: tuple[AgencyEvidence, ...] | None = None
+        published_by_action: dict[
+            tuple[str, int, int], list[AgencyEvidence]
+        ] | None = None
+        eligible_lookups = 0
+
         rules: list[NumericPredictionCorrection] = []
         for _, witness in sorted(self._numeric_witnesses.items()):
             contingency = self._published.get(witness.contingency_ref)
@@ -1610,7 +1619,28 @@ class CausalModel:
             if len(matching_contexts) < self.config.n2:
                 continue
 
-            for report in self.published_agency_evidence():
+            if published_reports is None:
+                published_reports = self.published_agency_evidence()
+            eligible_lookups += 1
+            if eligible_lookups == 3:
+                published_by_action = {}
+                for report in published_reports:
+                    key = (
+                        report.option_ref, report.sent_t_monde,
+                        report.observed_t_monde,
+                    )
+                    published_by_action.setdefault(key, []).append(report)
+
+            # Preserve the original direct scan for small histories; do
+            # not allocate a filtering generator for one or two witnesses.
+            matching_reports = (
+                published_reports if published_by_action is None
+                else published_by_action.get(
+                    (witness.option_ref, witness.sent_t_monde,
+                     witness.observed_t_monde), ()
+                )
+            )
+            for report in matching_reports:
                 if (
                     report.option_ref != witness.option_ref
                     or report.sent_t_monde != witness.sent_t_monde
