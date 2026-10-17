@@ -79,6 +79,8 @@ jobs:
           PY
       - name: Current I1 M11 cold recovery
         run: python -m unittest discover -s tests -p test_i1_natural_m11_cold_recovery.py -v
+      - name: Current I1 M11 adversarial COMMIT and irreversible death
+        run: python -m unittest discover -s tests -p test_i1_m11_adversarial.py -v
       - name: Current I1 generated-world separation
         run: python -m unittest discover -s tests -p test_i1_generated_isolation.py -q
       - name: I0 baseline non-regression (archived fixtures, unchanged bytes)
