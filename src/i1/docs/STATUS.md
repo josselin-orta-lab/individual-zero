@@ -177,3 +177,13 @@ des témoins triés et ne filtre que les comparaisons qui auraient déjà été
 gardes de causalité restent inchangés. Les tests différentiels couvrent
 de petites séquences exhaustives; contrôle exact du code généré, CI 3.11/3.12,
 M11 et I0 restent nécessaires avant fusion. Pas de GO scientifique.
+
+### PR #263 : garde des observations non canoniques
+
+Revue complémentaire avant fusion : les contrats existants acceptent des
+variables de contrôle sous forme de tuples **ou de listes**. L'index
+transitoire ne s'active donc que pour les tuples de tuples, et le parcours
+ordonné original reste utilisé pour les entrées comparables mais non
+indexables. Aucun contrôle ne reçoit une interprétation nouvelle. Les tests
+différentiels incluent maintenant les représentations mixtes ainsi que les
+séquences canoniques. La validation du commit corrigé reste nécessaire.

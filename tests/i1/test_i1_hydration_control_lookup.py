@@ -19,12 +19,24 @@ class HydrationControlLookupTests(unittest.TestCase):
         )
         snippet = ast.get_source_segment(source, method)
         self.assertIn("controls_by_context.setdefault(key, []).append(baseline)", snippet)
-        self.assertIn("for baseline in controls_by_context.get(", snippet)
+        self.assertIn("if canonical_controls:", snippet)
+        self.assertIn("if canonical_controls else controls", snippet)
+        self.assertIn("for baseline in comparable:", snippet)
+        # CausalObservation.validate() accepts list- and tuple-backed
+        # controls. These older/mixed representations must not crash.
+        variations = (
+            (("site", "0"),),
+            [["site", "0"]],
+            [("site", "0")],
+            (["site", "0"],),
+            (("site", "1"),),
+            [["site", "1"]],
+        )
         rows = tuple(
-            NS(identifier=f"id:{j}", observation_ref=f"physical:{j%2}",
-               observed_step=j%3, observation_context=f"context:{j%2}",
-               controlled_variables=(("site", f"{j%2}"),))
-            for j in range(4)
+            NS(identifier=f"id:{j}", observation_ref=f"physical:{j%3}",
+               observed_step=j%4, observation_context=f"context:{j%2}",
+               controlled_variables=variations[j])
+            for j in range(len(variations))
         )
         def old(treated, controls):
             for effect in sorted(treated, key=lambda x: x.identifier):
@@ -37,17 +49,28 @@ class HydrationControlLookupTests(unittest.TestCase):
                     return effect.identifier, baseline.identifier
             return None
         def new(treated, controls):
+            treated = sorted(treated, key=lambda x: x.identifier)
             controls = sorted(controls, key=lambda x: x.identifier)
+            canonical = all(
+                type(row.controlled_variables) is tuple
+                and all(type(pair) is tuple for pair in row.controlled_variables)
+                for group in (treated, controls) for row in group
+            )
             index = {}
-            for baseline in controls:
-                key = (baseline.observation_context, baseline.controlled_variables)
-                index.setdefault(key, []).append(baseline)
-            for effect in sorted(treated, key=lambda x: x.identifier):
-                for baseline in index.get(
-                    (effect.observation_context, effect.controlled_variables), ()
-                ):
+            if canonical:
+                for baseline in controls:
+                    key = (baseline.observation_context, baseline.controlled_variables)
+                    index.setdefault(key, []).append(baseline)
+            for effect in treated:
+                comparable = (
+                    index.get((effect.observation_context, effect.controlled_variables), ())
+                    if canonical else controls
+                )
+                for baseline in comparable:
                     if (effect.observation_ref == baseline.observation_ref
-                        or effect.observed_step == baseline.observed_step):
+                        or effect.observed_step == baseline.observed_step
+                        or effect.controlled_variables != baseline.controlled_variables
+                        or effect.observation_context != baseline.observation_context):
                         continue
                     return effect.identifier, baseline.identifier
             return None
