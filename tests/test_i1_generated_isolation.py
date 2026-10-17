@@ -25,6 +25,11 @@ class I1GeneratedIsolationTests(unittest.TestCase):
             self.assertIn("i1/modules/stage6_planning.py", first["files"])
             self.assertIn("i1lab/stage12_runtime.py", first["files"])
             self.assertIn("i1lab/world.py", first["files"])
+            self.assertEqual(
+                first["files"]["i1lab/world.py"]["source_path"],
+                "i1/runtime/world.py",
+            )
+            self.assertNotIn("i1/runtime/world.py", first["files"])
             for rel, data in first["files"].items():
                 content = (Path(a) / rel).read_bytes()
                 self.assertEqual(sha256(content).hexdigest(), data["built_sha256"])
