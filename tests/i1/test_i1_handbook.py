@@ -23,6 +23,8 @@ class I1HandbookTests(unittest.TestCase):
     def test_handbook_reading_order_is_resolvable(self):
         start = (DOCS / "README.md").read_text()
         for name in REQUIRED:
+            if name == "README.md":
+                continue  # This page is the index; it need not link to itself.
             self.assertIn(name, start)
 
     def test_observer_keeps_absent_science_unproven(self):
