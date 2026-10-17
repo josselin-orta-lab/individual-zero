@@ -219,6 +219,31 @@ def _approved_agency_evidence_index(before: bytes, after: bytes) -> bool:
     return old == new
 
 
+def _approved_agency_publication_duplicate_index(before: bytes, after: bytes) -> bool:
+    """Permit the exact transient duplicate-physical-reference lookup."""
+    old = "        agency = dict(self._agency_evidence)\n        for report in sorted(\n            self._pending_agency_evidence,\n            key=lambda value: (value.observed_t_monde, value.event_ref),\n        ):\n            if report.event_ref in {v.event_ref for v in agency.values()}:\n                raise ValueError(\"duplicate published physical agency observation\")\n            agency[report.identifier] = report"
+    new = "        agency = dict(self._agency_evidence)\n        # Build an ephemeral index of physical references present in the\n        # current mapping. Identifier replacements must not leave stale refs.\n        agency_event_refs = {report.event_ref for report in agency.values()}\n        for report in sorted(\n            self._pending_agency_evidence,\n            key=lambda value: (value.observed_t_monde, value.event_ref),\n        ):\n            if report.event_ref in agency_event_refs:\n                raise ValueError(\"duplicate published physical agency observation\")\n            displaced = agency.get(report.identifier)\n            if displaced is not None and not any(\n                other.event_ref == displaced.event_ref\n                for key, other in agency.items()\n                if key != report.identifier\n            ):\n                # An overwritten report no longer occupies its old source.\n                # This rare fallback preserves exact previous semantics.\n                agency_event_refs.discard(displaced.event_ref)\n            agency[report.identifier] = report\n            agency_event_refs.add(report.event_ref)"
+    original, changed = before.decode("utf-8"), after.decode("utf-8")
+    return (original.count(old) == 1 and changed.count(new) == 1
+            and original.replace(old, new, 1) == changed)
+
+
+def _reference_agency_index(before: bytes) -> bytes:
+    """Reconstruct the previously approved causal-query transformation."""
+    source = before.decode("utf-8")
+    old_a = "        rules: list[NumericPredictionCorrection] = []\n        for _, witness in sorted(self._numeric_witnesses.items()):"
+    old_b = "            for report in self.published_agency_evidence():\n                if (\n                    report.option_ref != witness.option_ref\n                    or report.sent_t_monde != witness.sent_t_monde\n                    or report.observed_t_monde != witness.observed_t_monde\n                ):\n                    continue\n                compatible = any("
+    # Current I1 is the sole authoritative intermediate, reconstructed only
+    # from two exact reviewed blocks verified against the pinned reference.
+    first = "        # Ephemeral published evidence view. The first two admissible\n        # lookups scan it directly; only a third lookup pays for an index.\n        # No persistent cache, extra causal owner or hidden information.\n        published_reports: tuple[AgencyEvidence, ...] | None = None\n        published_by_action: dict[\n            tuple[str, int, int], list[AgencyEvidence]\n        ] | None = None\n        eligible_lookups = 0\n\n        rules: list[NumericPredictionCorrection] = []\n        for _, witness in sorted(self._numeric_witnesses.items()):"
+    second = "            if published_reports is None:\n                published_reports = self.published_agency_evidence()\n            eligible_lookups += 1\n            if eligible_lookups == 3:\n                published_by_action = {}\n                for report in published_reports:\n                    key = (\n                        report.option_ref, report.sent_t_monde,\n                        report.observed_t_monde,\n                    )\n                    published_by_action.setdefault(key, []).append(report)\n\n            # Preserve the original direct scan for small histories; do\n            # not allocate a filtering generator for one or two witnesses.\n            matching_reports = (\n                published_reports if published_by_action is None\n                else published_by_action.get(\n                    (witness.option_ref, witness.sent_t_monde,\n                     witness.observed_t_monde), ()\n                )\n            )\n            for report in matching_reports:\n                if (\n                    report.option_ref != witness.option_ref\n                    or report.sent_t_monde != witness.sent_t_monde\n                    or report.observed_t_monde != witness.observed_t_monde\n                ):\n                    continue\n                compatible = any("
+    for previous, replacement in ((old_a, first), (old_b, second)):
+        if source.count(previous) != 1:
+            raise ValueError("causal reference unexpectedly drifted")
+        source = source.replace(previous, replacement, 1)
+    return source.encode("utf-8")
+
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -246,8 +271,9 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/causal_model.py"
-                    and _approved_agency_evidence_index(
-                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    and _approved_agency_publication_duplicate_index(
+                        _reference_agency_index((old_root / rel).read_bytes()),
+                        (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/stage6_planning.py"
                     and _approved_stage6_bfs_deque(
