@@ -28,3 +28,7 @@ Do not claim all paths are tested merely because this list exists. Consult the p
 ## Scientific interpretation
 
 A death in `empty-land` or `dry-valley` is not itself a code failure. A postmortem step, hidden state restoration, invalid receipt or continuing from a previous generation **is** a contract failure. Distinguish human-readable reports from living identities: reporting on a dead life is allowed; continuing that life is not.
+
+## Storage schema and evidence trace
+
+[DATA_CONTRACTS_AND_CUSTODY.md](DATA_CONTRACTS_AND_CUSTODY.md) identifies the registered current-state envelope, its owner roster/hash, `runtime_local` constructor digest, and the distinction between exclusive birth WAL and SQLite M11. [LIVED_EVIDENCE_WALKTHROUGH.md](LIVED_EVIDENCE_WALKTHROUGH.md) explains how to observe the terminal lifecycle without issuing another physical command or recovering an earlier living image.
