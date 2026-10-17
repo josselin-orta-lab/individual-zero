@@ -109,3 +109,11 @@ This iteration added [DATA_CONTRACTS_AND_CUSTODY.md](DATA_CONTRACTS_AND_CUSTODY.
 A separate **source-inspected executable-contract error** was found: `scripts/test_i1_ci.py` requires `--junit`, but the declared `engine.json` smoke/full suite argument lists omitted it. Both registered test vectors and example commands now include their own report targets, with a focused `tests/i1/test_engine_suites.py` assertion. This changes test dispatch only, not I1 cognition, Stage10, physics, owner state or I0.
 
 **Acceptance at this iteration's newest commit is pending** the exact CI workflow result. Neither a green previous SHA nor current documentation constitutes proof of natural learning or multi-owner publication. Those remain OPEN / NOT_OBSERVED.
+
+## PR #254: charged-work and Stage10 publication diagnostics (2026-10-17)
+
+Confirmed successful workflow [#39054465750](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39054465750) for the **prior** SHA `f895ad3bc62a3096de071284ce85294b35275fc3`. This is not certification of the current changes.
+
+The present documentation iteration expands [UC_AND_SCHEDULING.md](UC_AND_SCHEDULING.md) with exact P-43/P-42 requested/accepted charge semantics, configuration-level protected modules versus runtime protected-hook refusal, and no-cost quotes; expands [CONSOLIDATION_AND_PUBLICATION.md](CONSOLIDATION_AND_PUBLICATION.md) into executable sleep/cut/pass/rebase/commit/M11 decision gates; expands [OBSERVABILITY.md](OBSERVABILITY.md) with measured versus absent fields for WAL/M11 and permitted passive observation. **None** of these commits changes I1's cognitive runtime, the six world presets, I0 or mortal recovery.
+
+`scripts/check_i1_handbook.py` now attempts static AST validation of explicitly annotated Python functions and class methods, without importing a living runtime. `tests/i1/test_i1_handbook_integrity.py` includes a missing method reference negative case. Exact-SHA CI must confirm the validator does not overclaim coverage: bare unannotated symbols and scientific claims remain outside its scope. No novel nonempty four-owner publication was measured; OPEN / NOT_OBSERVED still applies.
