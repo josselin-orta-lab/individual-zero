@@ -81,6 +81,18 @@ def _approved_local_capture_resource_optimization(before: bytes, after: bytes) -
         return False
     return original.replace(old_a, new_a, 1).replace(old_b, new_b, 1) == candidate
 
+
+def _approved_pending_index_cursor(before: bytes, after: bytes) -> bool:
+    """Only allow five reviewed P-42 indexing transformations."""
+    old = before.decode('utf-8')
+    new = after.decode('utf-8')
+    pairs = [["        self._pending: dict[str, dict] = {}\n        self._cut: ConsolidationCut | None = None","        self._pending: dict[str, dict] = {}\n        # Derived insertion-order key index: built only from already charged\n        # discovered episodes; never exported as another causal-state owner.\n        # Constant-time cursor access avoids rewalking all earlier episodes\n        # on every UC-priced rank slice. Restored from authenticated _pending.\n        self._pending_order: list[str] = []\n        self._cut: ConsolidationCut | None = None"],["            for payload in staged:\n                self._pending[payload[\"id\"]] = payload\n            self._seen_count += count","            for payload in staged:\n                ref = payload[\"id\"]\n                self._pending[ref] = payload\n                self._pending_order.append(ref)\n            self._seen_count += count"],["        inspected = list(islice(\n            self._pending.values(), self._rank_cursor, self._rank_cursor + count))\n        if len(inspected) != count:\n            raise RuntimeError(\"index changed during frozen paid selection\")","        refs = self._pending_order[self._rank_cursor:self._rank_cursor + count]\n        if len(refs) != count or len(self._pending_order) != len(self._pending):\n            raise RuntimeError(\"index changed during frozen paid selection\")\n        inspected = [self._pending[ref] for ref in refs]"],["        for ref in refs:\n            del self._pending[ref]\n        self._history_version = new_version","        for ref in refs:\n            del self._pending[ref]\n        # This maintenance occurs after the already UC-priced retirement;\n        # future ranks retain the exact original insertion order.\n        removed = set(refs)\n        self._pending_order = [\n            ref for ref in self._pending_order if ref not in removed\n        ]\n        self._history_version = new_version"],["        self._pending = check\n        self._cut, self._target = cut, target","        self._pending = check\n        self._pending_order = list(check)\n        self._cut, self._target = cut, target"]]
+    for prior, replacement in pairs:
+        if old.count(prior) != 1 or new.count(replacement) != 1:
+            return False
+        old = old.replace(prior, replacement, 1)
+    return old == new
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -101,6 +113,10 @@ def verify(reference_root: Path) -> None:
                  ))
                 or (rel == "i1lab/world.py"
                     and _approved_local_capture_resource_optimization(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
+                or (rel == "i1/modules/consolidation_pending_index.py"
+                    and _approved_pending_index_cursor(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
             )
