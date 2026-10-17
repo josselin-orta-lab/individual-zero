@@ -41,7 +41,9 @@ class CanonicalContingency:
 class PhysicalObservationIndexTests(unittest.TestCase):
     def test_actual_source_matches_original_admission_and_failure(self):
         raw = SOURCE.read_text()
-        begin = raw.index("        # Batch arrival never bypasses the prior published lifecycle level.")
+        # Include the hoisted index initialization in the extracted block.
+        # Otherwise we would compare a truncated implementation to the baseline.
+        begin = raw.index("        # Most publication cycles have zero or one new observation. Build")
         end = raw.index("        byref = defaultdict(list)", begin)
         current = raw[begin:end]
         setup = "        # Most publication cycles have zero or one new observation. Build\n        # this transient index only for batches large enough to amortize it.\n        # It is not persistent evidence, memory or another causal owner.\n        index_physical_sources = len(self._pending_causal_observations) >= 3\n        first_physical: dict[tuple[str, str], CausalObservation] = {}\n        if index_physical_sources:\n            for prior in observations.values():\n                first_physical.setdefault(\n                    (prior.contingency_ref, prior.observation_ref), prior\n                )\n\n"
