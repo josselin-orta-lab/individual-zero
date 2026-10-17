@@ -16,7 +16,7 @@ from .determinism import canonical_causal_bytes, sha256_hex
 SCHEMA = "i1-active-owner-lived-observations-v1"
 FORM_KINDS = frozenset({"causal_model", "perception", "metacognition_health"})
 REPLAY_KIND = {
-    "perception": "s_t_published",
+    "perception": "world_transition_experienced",
     "metacognition_health": "agency_comparison",
 }
 MAX_VISIBLE_REPLAY_REFS = 64
@@ -74,6 +74,7 @@ def validate_owner_rows(owner_id, rows):
             if set(item) != {
                 "episode_ref", "event_ref", "event_kind",
                 "projection_digest", "verification_status",
+                "lived_observation",
             }:
                 raise ValueError("unreviewed perceptual/metacognitive claim")
             if (type(item["episode_ref"]) is not str or not item["episode_ref"]
@@ -84,6 +85,27 @@ def validate_owner_rows(owner_id, rows):
                     or len(item["projection_digest"]) != 64
                     or any(char not in hexdigits for char in item["projection_digest"])):
                 raise ValueError("unverified event is not an authorized lived record")
+            observation = item["lived_observation"]
+            if owner_id == "perception":
+                if (type(observation) is not dict
+                        or set(observation) != {"position", "body"}
+                        or type(observation["position"]) is not list
+                        or len(observation["position"]) != 2
+                        or any(type(x) is not int for x in observation["position"])
+                        or type(observation["body"]) is not dict
+                        or set(observation["body"])
+                            != {"energy", "food", "water", "integrity"}
+                        or any(type(x) not in (int, float)
+                               for x in observation["body"].values())):
+                    raise ValueError("invalid first-person physical observation")
+            elif (type(observation) is not dict
+                    or set(observation) != {"status", "attribution"}
+                    or observation["status"] not in {
+                        "conforming", "nonconforming", "indeterminable",
+                    }
+                    or type(observation["attribution"]) is not str
+                    or not observation["attribution"]):
+                raise ValueError("invalid first-person agency judgement")
             ref = item["event_ref"]
         if ref in seen:
             raise ValueError("duplicate active owner evidence identifier")
@@ -122,11 +144,14 @@ def build_consolidated_owner_forms(candidate):
                 raise ValueError("unreviewed private replay row")
             if row.get("event_kind") != wanted:
                 continue
+            if type(row.get("lived_observation")) is not dict:
+                raise ValueError("active observation must originate in lived replay")
             matching.append({
                 "episode_ref": row["episode_ref"],
                 "event_ref": row["event_ref"],
                 "event_kind": wanted,
                 "projection_digest": row["projection_digest"],
+                "lived_observation": deepcopy(row["lived_observation"]),
                 "verification_status": "observed_not_verified",
             })
         # The active index is a bounded view; the complete original
