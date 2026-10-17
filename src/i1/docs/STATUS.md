@@ -214,3 +214,16 @@ sur des combinaisons exhaustives, incluant alias, conflits, collisions et
 crédits orphelins; benchmark CPU synthétique facultatif. Les garanties
 I0, M11 et causalité vécue restent intactes. La CI exacte est nécessaire
 avant fusion. Aucun GO scientifique n'est affirmé.
+
+## PR #266 : réutilisation du comptage P-35 des observations positives
+
+Après #265, la publication d'une corrélation calculait les identifiants
+positifs distincts dans `confirmed`, puis reparcourait les mêmes
+observations `e.values()` pour les recompter dans la comparaison de taux
+de base. L'expression utilise maintenant `len(confirmed)` déjà validé
+contre le seuil n1. Cette égalité repose sur la construction de `e`
+comme dictionnaire à identifiant unique. Les gardes des témoins,
+l'indépendance des sources, les seuils et le statut restent identiques.
+Une suite différentielle et la parité source exacte sont fournies.
+Les performances réelles et toute validation scientifique restent
+non établies avant les contrôles CI du SHA courant.
