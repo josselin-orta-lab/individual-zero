@@ -77,25 +77,6 @@ def i1_m11_bounded_journal_source(source: str) -> str:
     return source
 
 
-def i1_canonical_active_value_source(source: str) -> str:
-    """Switch the generated Stage4 value owner only for natural I1.
-
-    All experimental arms still use the unchanged value owner; the
-    canonical actor changes the exact owner at birth before any life step.
-    """
-    anchor = "        self.value_needs = ValueAndNeeds(config.value_needs)\n"
-    replacement = (
-        "        if type(self).__name__ == 'I1Runtime':\n"
-        "            from .i1_active_value_needs import I1ActiveValueNeeds\n"
-        "            self.value_needs = I1ActiveValueNeeds(config.value_needs)\n"
-        "        else:\n"
-        "            self.value_needs = ValueAndNeeds(config.value_needs)\n"
-    )
-    if source.count(anchor) != 1:
-        raise ValueError("unreviewed generated Stage4 value owner initialization")
-    return source.replace(anchor, replacement)
-
-
 def i1_m11_active_publication_custody_source(source: str) -> str:
     """Generated M11 must preserve h <-> active Value/Needs identity.
 
@@ -277,13 +258,10 @@ def generate(output: Path) -> dict[str, object]:
             relative = file.relative_to(source)
             if input_package == "i1" and relative.parts[0] == "runtime":
                 continue  # Built into i1lab below, never twice in generated i1.
-            if input_package == "lab" and relative.as_posix() in {"world.py", "journal.py", "journal_views.py", "consolidation_lived_evidence.py", "consolidation_postcut_journal.py", "sqlite_life_store.py", "sqlite_runtime_custody.py", "consolidation_publication.py", "stage10_runtime.py"}:
+            if input_package == "lab" and relative.as_posix() in {"world.py", "journal.py", "journal_views.py", "consolidation_lived_evidence.py", "consolidation_postcut_journal.py", "sqlite_life_store.py", "sqlite_runtime_custody.py", "consolidation_publication.py", "stage10_runtime.py", "stage4_runtime.py"}:
                 continue  # Versioned native I1 world, journal and lived views.
             contents = file.read_text(encoding="utf-8")
             transformed = rewrite(contents)
-            if (output_package == "i1lab"
-                    and relative.as_posix() == "stage4_runtime.py"):
-                transformed = i1_canonical_active_value_source(transformed)
             # Only i1_natural_runtime.I1Runtime installs the natural sleep
             # policy. Do not rewrite the common Stage11Sleep ancestor, which
             # would silently change historical A2.38/A2.39 ablation births.
