@@ -199,6 +199,16 @@ def _approved_wal_streaming(before: bytes, after: bytes) -> bool:
     return candidate == current
 
 
+def _approved_stage6_bfs_deque(before: bytes, after: bytes) -> bool:
+    """Only the three reviewed FIFO queue transformations."""
+    original, candidate = before.decode("utf-8"), after.decode("utf-8")
+    for old, new in [["from dataclasses import dataclass","from collections import deque\nfrom dataclasses import dataclass"],["        queue: list[_Node] = [\n            _Node(\n                state=initial_state,\n                commands=(),\n                predictions=(),\n            )\n        ]","        queue = deque([\n            _Node(\n                state=initial_state,\n                commands=(),\n                predictions=(),\n            )\n        ])"],["            node = queue.pop(0)","            node = queue.popleft()"]]:
+        if original.count(old) != 1 or candidate.count(new) != 1:
+            return False
+        original = original.replace(old, new, 1)
+    return original == candidate
+
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -223,6 +233,10 @@ def verify(reference_root: Path) -> None:
                     ))
                 or (rel == "i1/modules/consolidation_pending_index.py"
                     and _approved_pending_index_cursor(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
+                or (rel == "i1/modules/stage6_planning.py"
+                    and _approved_stage6_bfs_deque(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/memory.py"
