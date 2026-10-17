@@ -63,3 +63,11 @@ Les validations actuellement codées couvrent la naissance naturelle, l'unicité
 Au SHA initial, les workflows A2.36, A2.37, A2.37-R1 et D1 échouaient sur `RecoveryBlocked: unsupported runtime: additional mutable/WAL owners not coordinated` lors de naissances M11 expérimentales. Le test de décision synthétique de l'ancien workflow d'isolement attendait de pouvoir poursuivre alors que la trace de l'ingestion aboutissait à `dead`. Ce n'est pas un motif pour restaurer un individu mort. Le nouveau testeur a initialement détecté une erreur de test (accès au champ inexistant `ParametresTemperament.temperament`) ; l'assertion a été corrigée pour vérifier les paramètres projetés réellement exposés. Tous les autres tests SMOKE avaient réussi dans ce premier run.
 
 Les liens de CI doivent toujours être lus sur le **dernier SHA** de la PR ; aucun résultat historique ne confirme une exécution ultérieure. Le dépôt I0 et `src/lab` n'ont pas été modifiés dans cette campagne.
+
+## Exécution constatée de la nouvelle CI (2026-10-17)
+
+Sur le commit `2ece981fc4160e4d1c3a4bd0610be184afd844c2`, le run [#39029365995](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39029365995) est **success** sur Python 3.11 et 3.12, en 11 secondes environ par job. À chaque version : 10 tests SMOKE actuels réussis, auto-test contrôlé confirmant 1 assertion invalide et 1 exception détectées, 1 test de reprise M11 canonique réussi, 4 tests d'isolement du fork et le contrôle Stage6 I0 réussis. Rapports JUnit déposés comme artifacts. Le workflow général `CI` reste **skipped** en PR brouillon : son absence d'exécution n'est pas un succès.
+
+La campagne ne revendique pas de validation scientifique complète ni de couverture de tous les comportements émergents. Le test FULL n'a pas encore été exécuté sur ce commit. Les contrats de publication active non vide / continuité de tous propriétaires et l'autonomie de l'ingestion restent des travaux ouverts.
+
+Aucun fichier `src/i0/**` ni `src/lab/**` n'a été modifié. PR #246 encore brouillon, non fusionnée.
