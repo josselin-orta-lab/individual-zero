@@ -200,7 +200,12 @@ class ActiveConsolidatedOwner:
         self._m11_cold_installed = False
 
     def __getattr__(self, name):
-        return getattr(self._canonical_owner, name)
+        # deepcopy probes __setstate__ on an instance before restoring __dict__.
+        # Do not recurse through an owner that is not yet initialized.
+        canonical = object.__getattribute__(self, "__dict__").get("_canonical_owner")
+        if canonical is None:
+            raise AttributeError(name)
+        return getattr(canonical, name)
 
     def observed_consolidated(self):
         return deepcopy(self._active_observations)
