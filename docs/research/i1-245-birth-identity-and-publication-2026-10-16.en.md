@@ -1375,3 +1375,50 @@ irreversible. Original Lab/I0 sources are not edited.
 simulations, CI runs or benchmarks were executed. Asymptotic avoidance
 of needless full-ledger copies is deduced from the code; actual savings
 and exact behavioral equivalence have not been measured.
+
+## I1 Stage11 paid Exploration: compare actual owner-local changes, not two complete snapshots (2026-10-17)
+
+In the `exploration_observe` paid Phase-1 hook, Stage11 previously
+called `Exploration.export_causal_state()` twice and compared the full
+result. Each export sorted and converted all causal question rows, all
+physical visit counters, and all stored route surveys, even if the
+current perception changed nothing in the Exploration owner.
+
+The natural I1 owner now exposes `phase_observation_probe()`, which
+copies only the existing question-row dictionary for exact intra-hook
+equality and retains the frozen, immutable geographic
+`last_capture`, `offered` and `transit_offered` tuple fields. The
+question rows themselves hold immutable scalar or tuple witness values;
+the paid `observe_causal_state` method replaces rather than mutates
+the question dictionary. The two remaining mutable geography containers
+have fully identified writers in this hook: `observe_capture` reports
+a changed physical visit through `new_geo_visit`, and
+`record_survey` reports a new/revised witnessed survey through
+`survey_recorded`. The tuple fields also catch an update of world-step
+last capture or withdrawal of previously offered targets even when no
+new position is credited.
+
+The exact-source-guarded I1lab Stage11 now emits
+`stage11_exploration_updated` only when one of these explicit signals
+or the local question/immutable-field comparison indicates a real
+change. Only in that case does it perform a complete
+`export_causal_state()` to obtain the unchanged public
+`question_refs` and `verified_visits` event fields. The output event,
+order, and provenance contract remain the same by design. The full
+owner export for independent M11 custody and authenticated recovery
+is untouched. No new sensory information, implicit safe terrain
+knowledge, UC credit or new decision criterion is introduced.
+
+This reduces two mandatory O(V log V + S log S + Q log Q) snapshot
+builds to two unsorted O(Q) question probes with constant-size
+geographic tuple comparisons when there is no change. When there is
+a real change, the ordinary full export still occurs once for event
+data. Here V is the number of visited sites, S stored surveys, and
+Q causal questions. These are structural operation counts, not
+performance measurements. Original Lab and I0 remain unchanged.
+
+**NON VALIDÉ:** no generated I1lab build, unit/integration tests,
+CI run, benchmark, or life simulation was executed. Future changes
+to the paid Stage11 hook must revisit the explicit inventory of
+geographic mutation sites before this differential guard can be
+scientifically validated. Mortal I1 never rewinds its lived history.

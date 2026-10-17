@@ -1028,6 +1028,39 @@ def i1_stage11_owned_geography_lookup_source(source: str) -> str:
     return source
 
 
+def i1_stage11_paid_exploration_probe_source(source: str) -> str:
+    """Avoid two full lifetime Exploration exports around paid Phase-1.
+
+    The latest actual visit and survey record mutations are tracked by their
+    return values. The unchanged question rows and immutable geographic
+    fields are compared directly. Full export is retained for real updates
+    and for M11 persistence. Apply AFTER geo lookup transformations.
+    """
+    changes = (
+        (
+            "            previous = self.exploration.export_causal_state()\n",
+            "            # Capture questions and immutable geographic markers only.\n            # Actual visit/survey writes are checked via operation results.\n            previous = self.exploration.phase_observation_probe()\n",
+        ),
+        (
+            "            geo = self.exploration.geographic\n            if geo is not None and geo.config.observe_routes and not over_capacity:\n",
+            "            geo = self.exploration.geographic\n            survey_recorded = False\n            if geo is not None and geo.config.observe_routes and not over_capacity:\n",
+        ),
+        (
+            "                if geo.record_survey(capture):\n                    current_survey = geo.observed_survey_at(\n",
+            "                if geo.record_survey(capture):\n                    survey_recorded = True\n                    current_survey = geo.observed_survey_at(\n",
+        ),
+        (
+            "            current = self.exploration.export_causal_state()\n            if current != previous:\n                self._write(\n                    kind=\"stage11_exploration_updated\", cycle=cycle,\n",
+            "            # No source-owned counters/observations can change in this\n            # hook except via the paid visit and survey operations above.\n            # Rebuild the full canonical event state only on a real change.\n            if (new_geo_visit or survey_recorded\n                    or self.exploration.phase_observation_probe() != previous):\n                current = self.exploration.export_causal_state()\n                self._write(\n                    kind=\"stage11_exploration_updated\", cycle=cycle,\n",
+        ),
+    )
+    for before, after in changes:
+        if source.count(before) != 1:
+            raise ValueError("unreviewed I1 paid Exploration differential source")
+        source = source.replace(before, after)
+    return source
+
+
 def i1_waking_pending_source(source: str) -> str:
     """Avoid cloning the entire h on every awake step in natural I1."""
     old = (
@@ -1266,6 +1299,7 @@ def generate(output: Path) -> dict[str, object]:
             if (output_package == "i1lab"
                     and relative.as_posix() == "stage11_runtime.py"):
                 transformed = i1_stage11_owned_geography_lookup_source(transformed)
+                transformed = i1_stage11_paid_exploration_probe_source(transformed)
             if (output_package == "i1lab"
                     and relative.as_posix() == "stage10_runtime.py"):
                 transformed = i1_private_consolidation_source(transformed)

@@ -264,6 +264,21 @@ class Exploration:
         return IntrinsicAssessment("available", value, "physically_grounded_interest",
                                    (f"exploration:question:{ref}:proof:{q['proof']}",))
 
+    def phase_observation_probe(self):
+        """Detect only changes possible inside paid Stage11 Exploration.
+
+        Question rows contain immutable scalars and tuple witness refs.
+        Copy each row without sorting or serializing the geography. During
+        this phase observe_causal_state replaces the question dictionary;
+        the geographic visit and survey mutations are tracked separately
+        by their truthful operation results.
+        """
+        return (
+            {ref: dict(row) for ref, row in self._questions.items()},
+            None if self._geographic is None
+            else self._geographic.phase_observation_fixed_fields(),
+        )
+
     def known_causal_question_refs(self) -> set[str]:
         """Snapshot IDs of questions already registered through causal evidence.
 

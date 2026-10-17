@@ -147,6 +147,20 @@ class GeographicExploration:
     def surveys(self) -> tuple[ObservedSurvey, ...]:
         return tuple(self._surveys[key] for key in sorted(self._surveys))
 
+    def phase_observation_fixed_fields(self):
+        """Snapshot the immutable geographic fields of a paid Phase-1 pass.
+
+        The visit counters and survey dictionary are intentionally omitted:
+        their only mutations in Stage11's paid hook have explicit boolean
+        results. The captured tuple fields are frozen and never changed in
+        place. This is NOT a replacement for the full M11 causal export.
+        """
+        return (
+            self._last_capture,
+            self._offered,
+            self._transit_offered,
+        )
+
     def observed_survey_at(
         self, position: tuple[int, int],
     ) -> ObservedSurvey | None:
