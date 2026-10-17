@@ -351,3 +351,28 @@ based on the unchanged `choices` tuple.
 
 STATUS: STATIC CODE REVIEW ONLY. No tests, simulations, benchmarks or
 runtime build were executed; parity and quantitative gain remain non validated.
+
+## Static long-horizon optimization: priced replay lookup and advisory rebase (2026-10-17)
+
+In the I1-only private six-pass handler, the paid replay agenda already carries
+the original in-episode event offset. The handler now accesses that offset
+directly, verifies its identity against the agenda event reference, and
+detaches only the selected event. An absent offset retains the prior bounded
+linear lookup; a supplied invalid offset fails closed. Frozen episode
+provenance, per-unit P-42 charging, sequential replay ordering, and canonical
+pass checkpointing remain in place. This removes a repeated per-event
+full-episode scan in the offset-bearing path without granting unpriced
+history access.
+
+During active Value/Needs publication, the Stage10 coordinator already
+supplies an isolated baseline and subsequently takes a validated ownership
+copy. I1's owner-specific advisory rebaser now updates only that detached
+baseline rather than cloning the complete online state again. Pre/post
+checksums of all non-advisory fields are retained, along with checked
+proposal provenance, postcut owner-update checks, and the coordinator's
+atomic publication boundary.
+
+**NON VALIDÉ:** no tests, CI executions, simulations, generated I1 builds,
+or benchmarks were run in this pass, per the instruction to continue code
+optimization without testing. Runtime speedups, behavior parity and scientific
+GO cannot yet be asserted. The original I0 source was not changed.
