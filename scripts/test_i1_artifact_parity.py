@@ -421,19 +421,20 @@ def verify(reference_root: Path) -> None:
                     and _approved_confirmed_count_reuse(
                         _reference_approved_physical_alias(
                             _reference_approved_active_context_cache(
-                            _reference_hydration_control_lookup(
-                            _reference_food_control_sort(
-                            _reference_causal_minimum(
-                            _reference_approved_numeric_index(
-                                _reference_numeric_publication(
-                                    _reference_agency_index((old_root / rel).read_bytes())
+                                _reference_hydration_control_lookup(
+                                    _reference_food_control_sort(
+                                        _reference_causal_minimum(
+                                            _reference_approved_numeric_index(
+                                                _reference_numeric_publication(
+                                                    _reference_agency_index(
+                                                        (old_root / rel).read_bytes()
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
                                 )
                             )
-                        )
-                        )
-                        ),
-                        ),
-                        )
                         ),
                         (new_root / rel).read_bytes()
                     ))
