@@ -24,3 +24,11 @@ For any claim of generalized active publication, capture an actual life and prov
 ## Failure policy
 
 Corrupt content, bad owner roster, ambiguous publication or uncertain storage commit must stop the path. No compensating rollback of living owner state. A failed publication cannot be made successful by replaying the life from an earlier checkpoint. Consult `tests/i1/test_i1_m11_adversarial.py` and `tests/i1/test_i1_natural_m11_cold_recovery.py`.
+
+## Current executable gates and an identified defect (OPEN)
+
+- `src/i1/runtime/stage10_runtime.py::_run_live_consolidation` requires enabled selection/semantic policies, sufficient frozen consolidation pressure, a valid scheduler journal cut and a paid episode scan. Its `ConsolidationWorkBudget` is a distinct P-42 ledger; see [UC_AND_SCHEDULING.md](UC_AND_SCHEDULING.md).
+- `Stage10PublicationCoordinator.REQUIRED` is precisely the four registered owners. `prepare` freezes the post-cut online update slice, validates private rebases and snapshots canonical owner states. `publish` rechecks journal and owner identity at a scheduler synchronization point, rejecting intervening changes.
+- The natural runtime chooses `I1Runtime`-specific owner adapters in `_publish_live_consolidation`; inspect each before claiming a *nonempty* change. A history version increment is not sufficient evidence of altered retained cognition.
+
+**OPEN software defect observed by source inspection at PR #254 original HEAD `84d7e0ef`:** `_publish_live_consolidation` constructs the `owners` mapping using `canonical` in three conditional values **before** the following assignment `canonical = type(self).__name__ == "I1Runtime"`. On reaching this function, Python's local-variable scoping therefore raises `UnboundLocalError` before publication preparation. The source inspection establishes an executable defect, **not** a measured frequency in living runs. Fix only with a focused negative/positive path test, and do not claim multi-owner publication after a simple syntax check. Until a tested correction exists: publication behavior remains **UNVERIFIED / OPEN**.
