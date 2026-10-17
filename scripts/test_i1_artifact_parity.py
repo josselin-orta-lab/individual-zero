@@ -93,6 +93,16 @@ def _approved_pending_index_cursor(before: bytes, after: bytes) -> bool:
         old = old.replace(prior, replacement, 1)
     return old == new
 
+def _approved_memory_overlap(before: bytes, after: bytes) -> bool:
+    """Allow only the reviewed Stage7 exact reference-overlap replacement."""
+    original = before.decode("utf-8")
+    candidate = after.decode("utf-8")
+    former = "        if any(ref in current_refs for ref in episode.event_refs):\n            return 1.0"
+    improved = "        # Exact overlap in C avoids one Python-level membership test per\n        # episode event. Neither recall eligibility nor subjective inputs change.\n        if not current_refs.isdisjoint(episode.event_refs):\n            return 1.0"
+    return (original.count(former) == 1 and candidate.count(improved) == 1
+            and original.replace(former, improved, 1) == candidate)
+
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -117,6 +127,10 @@ def verify(reference_root: Path) -> None:
                     ))
                 or (rel == "i1/modules/consolidation_pending_index.py"
                     and _approved_pending_index_cursor(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
+                or (rel == "i1/modules/memory.py"
+                    and _approved_memory_overlap(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
             )
