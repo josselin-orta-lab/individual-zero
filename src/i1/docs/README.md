@@ -11,6 +11,14 @@
 5. [DEVELOPMENT_PLAYBOOK.md](DEVELOPMENT_PLAYBOOK.md): disciplined interventions and CI
 6. [ARCHITECTURE.md](ARCHITECTURE.md), [TEST_PLAN.md](TEST_PLAN.md), [STATUS.md](STATUS.md), [WORLD_PRESETS.md](WORLD_PRESETS.md): active engineering reference
 
+## Deep technical guides
+
+- [NEEDS_AND_ACTION.md](NEEDS_AND_ACTION.md): bodily reserves versus inventory, needs, option admission and physical consequences
+- [MEMORY_AND_LEARNING.md](MEMORY_AND_LEARNING.md): autobiographical provenance, causal hypotheses and subjective agency
+- [CONSOLIDATION_AND_PUBLICATION.md](CONSOLIDATION_AND_PUBLICATION.md): paid Stage10 consolidation, four-owner publishing and open evidence gates
+- [MORTALITY_AND_M11.md](MORTALITY_AND_M11.md): irrevocable death, authenticated committed generation and negative tests
+- [EXPERIMENT_PROTOCOL.md](EXPERIMENT_PROTOCOL.md): independent mortal lives, controls, traces and limits of scientific inference
+
 ## Authority
 
 `src/i1/engine.json` and current executable code decide **what runs**; theory states **why** mechanisms are candidates, not what an individual must choose. The current natural I1 is not the historic A2.38/A2.39/H1/H2 experimental actors. Frozen I0 is reference-only. The normative MVP files are versioned research contracts; do not silently activate an experimental clause from a former revision.

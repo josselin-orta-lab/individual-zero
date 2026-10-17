@@ -8,7 +8,10 @@ DOCS = ROOT / "src/i1/docs"
 REQUIRED = ("README.md", "THEORY.md", "COGNITIVE_FLOW.md",
             "EVIDENCE_MATRIX.md", "DEVELOPMENT_PLAYBOOK.md",
             "OBSERVABILITY.md", "ARCHITECTURE.md", "STATUS.md",
-            "TEST_PLAN.md", "WORLD_PRESETS.md")
+            "TEST_PLAN.md", "WORLD_PRESETS.md",
+            "NEEDS_AND_ACTION.md", "MEMORY_AND_LEARNING.md",
+            "CONSOLIDATION_AND_PUBLICATION.md", "MORTALITY_AND_M11.md",
+            "EXPERIMENT_PROTOCOL.md")
 
 
 class I1HandbookTests(unittest.TestCase):

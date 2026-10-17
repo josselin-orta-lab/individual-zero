@@ -28,3 +28,7 @@
 For each meaningful claim record the exact Git HEAD, contract and world digest, birth identity, physics step sequence, UC and journal evidence, relevant observer fields, code path, counter-example and alternative explanations. Label the distinction between **software correctness**, **observed behavior**, **causal interpretation** and **scientific acceptance**.
 
 Do not elevate former A2.38/A2.39/H1/H2 studies or experiments built on broken model versions to natural I1 normative evidence. Those files remain historical only. The authoritative *current* status is [STATUS.md](STATUS.md) plus real CI and reproducible new observations, never a copied assertion.
+
+## Detailed mechanism guides
+
+Consult [NEEDS_AND_ACTION.md](NEEDS_AND_ACTION.md), [MEMORY_AND_LEARNING.md](MEMORY_AND_LEARNING.md), [CONSOLIDATION_AND_PUBLICATION.md](CONSOLIDATION_AND_PUBLICATION.md), [MORTALITY_AND_M11.md](MORTALITY_AND_M11.md) and [EXPERIMENT_PROTOCOL.md](EXPERIMENT_PROTOCOL.md). These explain what to measure and what remains unproven; none changes the scientific gate.
