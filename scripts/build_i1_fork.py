@@ -249,6 +249,26 @@ def i1_waking_pending_source(source: str) -> str:
     if source.count(old) != 1:
         raise ValueError("unreviewed Stage10 waking history read")
     source = source.replace(old, new)
+    # The EpisodicMemory owner only appends uniquely numbered closed
+    # episodes. Stage10 can publish IDs exclusively from its charged,
+    # already-frozen Memory batches; it never deletes a closed episode.
+    # Therefore pending = closed_count - published_count, with O(1) read
+    # complexity rather than a full history iteration on EVERY waking step.
+    pending_old = (
+        '        pending = sum(episode.id not in committed '
+        'for episode in self.memory.episodes)\n'
+        '        relevant = min(1.0, len(self.memory.episodes)\n'
+    )
+    pending_new = (
+        '        total = self.memory.episode_count\n'
+        '        pending = total - len(committed)\n'
+        '        if pending < 0:\n'
+        '            raise ValueError("committed episodes exceed lived closed episodes")\n'
+        '        relevant = min(1.0, total\n'
+    )
+    if source.count(pending_old) != 1:
+        raise ValueError("unreviewed waking episode count semantics")
+    source = source.replace(pending_old, pending_new)
     # Sleep selection can also consult immutable ownership metadata. Actual
     # episode bodies are still read only through the charged selection path.
     prior = (
