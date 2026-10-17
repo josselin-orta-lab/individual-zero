@@ -94,7 +94,7 @@ for limit in (16, 128, 512):
             "t_monde": i + 1,
             "primitive": "move",
             "parameters": {"direction": ("north" if i % 3 else "south"),
-                           "hidden_operator_truth": "never observable"},
+                           "unapproved_but_nonoracle": 3},
             "oracle_canary": "not_autobiographical",
         })
         views.commit_autobiographical(
