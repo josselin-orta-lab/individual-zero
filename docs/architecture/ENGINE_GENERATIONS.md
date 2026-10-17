@@ -6,7 +6,7 @@ This document reflects the live repository after #246 and the staged historical 
 | --- | --- | --- | --- |
 | I0 | immutable reference | `src/i0/` | no changes in an I1 development PR |
 | shared original Lab | historical reference runtime | `src/lab/` | no I1-specific behavior here |
-| I1 | active artificial individual | `src/i1/`, `src/i1_overlays/` | versioned modifications with explicit real-life tests |
+| I1 | active artificial individual | `src/i1/`, `src/i1/runtime/` | versioned modifications with explicit real-life tests |
 | I1 isolated Lab | generated from source and overlays | temporary `i1lab/` | never commit generated output |
 | I1 birth | canonical natural identity | `i1lab.i1_birth.birth_i1` | no old experimental flags / hidden oracle |
 | I1 test harness | real engine, SMOKE/FULL | `scripts/test_i1_ci.py` | assert mechanism and observed outcomes, not fixed choices |
@@ -19,7 +19,7 @@ This document reflects the live repository after #246 and the staged historical 
 1. Read `docs/engineering/START_HERE.md` and `config/engine-registry.json`. Verify the actual HEAD, open PRs and checks. Do not trust dated experimental outcomes as current-I1 truth.
 2. Run `python scripts/check_engine_repository.py --json` to check preserved source boundaries and SHA-identified archives.
 3. Run `python scripts/test_i1_ci.py --mode smoke --seed 246 --junit reports/i1-smoke.xml` and `--mode full`. Install the package with `python -m pip install -e .` first.
-4. Change `src/i1/` and/or `src/i1_overlays/` intentionally. The canonical builder in `scripts/build_i1_fork.py` generates a private `i1lab` world. Treat its transformations and anchor failures as architecture contracts, not disposable nuisances.
+4. Change `src/i1/` and/or `src/i1/runtime/` intentionally. The canonical builder in `scripts/build_i1_fork.py` generates a private `i1lab` world. Treat its transformations and anchor failures as architecture contracts, not disposable nuisances.
 5. Trace a real individual end to end: capture → bodily needs / temperament / lived history → candidate generation → Competition → Stage9 / Action Control → one WorldBody effect → memory and outcomes → paid consolidation → current-generation M11. Don't disable modules to make green tests.
 6. Separate functional software proof from prospective scientific experiment; report seeds, birth identity, physical steps, UC, journal head, mortality and unknowns.
 7. Keep irreversible death, first-person observability, genuine learning provenance and atomic publication. No rollback, resurrected life, hidden safety knowledge or artificial goals.

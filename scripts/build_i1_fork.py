@@ -1227,6 +1227,8 @@ def generate(output: Path) -> dict[str, object]:
         dest = output / output_package
         for file in sorted(source.rglob("*.py")):
             relative = file.relative_to(source)
+            if input_package == "i1" and relative.parts[0] == "runtime":
+                continue  # Built into i1lab below, never twice in generated i1.
             contents = file.read_text(encoding="utf-8")
             transformed = rewrite(contents)
             if (output_package == "i1"
@@ -1254,7 +1256,7 @@ def generate(output: Path) -> dict[str, object]:
                 )
                 if contents != baseline:
                     raise ValueError("I1 six-pass snapshot diverged from I0")
-                template = SOURCE_ROOT / "i1_overlays" / "i1_semantics_template.txt"
+                template = SOURCE_ROOT / "i1" / "runtime" / "i1_semantics_template.txt"
                 material = template.read_text(encoding="utf-8")
                 if material.count("class LivedSixPassAlgorithm:") != 1:
                     raise ValueError("invalid isolated semantic compiler template")
@@ -1421,7 +1423,7 @@ def generate(output: Path) -> dict[str, object]:
                 "built_sha256": sha256(transformed.encode()).hexdigest(),
             }
     # I1-only model/runtime overlays are namespaced source, not part of I0.
-    overlays = SOURCE_ROOT / "i1_overlays"
+    overlays = SOURCE_ROOT / "i1" / "runtime"
     if overlays.exists():
         for file in sorted(overlays.glob("*.py")):
             transformed = rewrite(file.read_text(encoding="utf-8"))

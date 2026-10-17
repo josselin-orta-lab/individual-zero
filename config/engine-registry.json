@@ -17,7 +17,7 @@
       "role": "active",
       "parent": "I0",
       "source": "src/i1",
-      "overlays": "src/i1_overlays",
+      "overlays": "src/i1/runtime",
       "build": "scripts/build_i1_fork.py",
       "runtime": "i1lab.i1_natural_runtime.I1Runtime",
       "birth": "i1lab.i1_birth.birth_i1",
