@@ -27,7 +27,7 @@ BOUNDS = {
     "competition_gain": (0.75, 1.25),
 }
 BASELINE = dict(competition_threshold=0.50, competition_gain=1.00)
-WORLDS = ("oasis", "foraging")
+WORLDS = ("oasis", "foraging", "dry-valley")
 
 
 def candidates(count=6):
