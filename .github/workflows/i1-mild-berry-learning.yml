@@ -4,6 +4,7 @@ on:
     branches: [science/i1-mild-berry-learning-20261018]
     paths:
       - 'tools/run_i1_need_movement_investigation.py'
+      - 'tools/audit_i1_berry_learning.py'
       - '.github/workflows/i1-mild-berry-learning.yml'
   workflow_dispatch:
 permissions:
@@ -48,6 +49,8 @@ jobs:
               --output-dir "$folder"
             python tools/analyze_i1_need_movement.py \
               --input "$folder" --output "$folder/observation.json"
+            python tools/audit_i1_berry_learning.py \
+              --input "$folder" --output "$folder/toxic-learning.json"
           done
       - name: Preserve death-inclusive physical WAL
         if: always()
