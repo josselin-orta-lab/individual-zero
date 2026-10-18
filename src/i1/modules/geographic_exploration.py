@@ -221,6 +221,10 @@ class GeographicExploration:
         """Backwards-compatible one-target interface."""
         self.freeze_places(() if target is None else (target,))
 
+    @property
+    def place_offered(self) -> tuple[SpatialReturnTarget, ...]:
+        return self._place_offered
+
     def place_for(self, option) -> SpatialReturnTarget | None:
         """Read only the currently offered, funded and goal-linked option."""
         motive = getattr(option, "motive_ref", None)
