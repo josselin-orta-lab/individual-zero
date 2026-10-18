@@ -1,0 +1,47 @@
+name: I1 317 goal-neutral paired WAL guardrails
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_317_architecture_cohort.py'
+      - '.github/workflows/i1-issue317-architecture-compare.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download immutable original and architectural cohorts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p reports/baseline reports/architecture
+          gh run download 39163777292 --repo "$GITHUB_REPOSITORY" --pattern 'i1-317-*' --dir reports/baseline
+          gh run download 39167867604 --repo "$GITHUB_REPOSITORY" --pattern 'i1-317-*' --dir reports/architecture
+      - name: Audit sealed WALs and compare all 8 matched physical lives
+        run: |
+          python tools/audit_i1_317_architecture_cohort.py \
+            --control-dir reports/baseline \
+            --treatment-dir reports/architecture \
+            --control-sha c775281862c177ed35d87331bd97fad35c0d326e \
+            --treatment-sha 537798e6c02b1600ecc24cdd8c75c9299d704247 \
+            --worlds oasis foraging dry-valley blocked-route \
+            --seeds 1141 1142 \
+            --output reports/issue317-goal-neutral-paired.json
+      - name: Retain authenticated scientific comparison
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue317-goal-neutral-paired
+          path: reports/issue317-goal-neutral-paired.json
+          retention-days: 30
+          if-no-files-found: warn
