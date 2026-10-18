@@ -50,3 +50,33 @@ jobs:
           path: reports/
           retention-days: 30
           if-no-files-found: warn
+  rank:
+    needs: evaluate
+    if: ${{ needs.evaluate.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: i1-population-*
+          path: paired-lives
+          merge-multiple: false
+      - name: Fail closed on missing or mixed cohorts, rank outcomes
+        shell: bash
+        run: |
+          mapfile -t REPORTS < <(find paired-lives -name report.json -type f | sort)
+          test "${#REPORTS[@]}" -eq 24
+          mkdir -p ranking
+          python tools/run_i1_population_calibration.py aggregate "${REPORTS[@]}" > ranking/scoreboard.json
+          cat ranking/scoreboard.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i1-population-scoreboard
+          path: ranking/scoreboard.json
+          retention-days: 30
