@@ -386,8 +386,15 @@ def _install_trusted_current_on_fresh(
             if isinstance(left, dict) and isinstance(right, dict):
                 exploration_keys = sorted(key for key in set(left) | set(right)
                     if canonical_causal_bytes(left.get(key)) != canonical_causal_bytes(right.get(key)))
+        geography_keys = []
+        if "geography" in exploration_keys:
+            old = owners_expected["exploration"].get("geography", {})
+            new = owners_actual["exploration"].get("geography", {})
+            if isinstance(old, dict) and isinstance(new, dict):
+                geography_keys = sorted(k for k in set(old) | set(new)
+                    if canonical_causal_bytes(old.get(k)) != canonical_causal_bytes(new.get(k)))
         raise RecoveryBlocked("cold reconstructed world/owners do not match committed state"
-                              f" (owners={divergent}, sections={sections}, exploration_keys={exploration_keys})")
+                              f" (owners={divergent}, sections={sections}, exploration_keys={exploration_keys}, geography_keys={geography_keys})")
 
 
 @dataclass(frozen=True, slots=True)
