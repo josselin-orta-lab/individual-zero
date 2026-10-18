@@ -367,10 +367,21 @@ def _install_trusted_current_on_fresh(
     if hasattr(runtime, "_stage11_modulation_signals"):
         runtime._stage11_modulation_signals = dict(
             local["stage11_modulation_signals"])
-    if canonical_causal_bytes(_runtime_image(
-        runtime, individual_id=image["individual_id"]
-    )) != canonical_causal_bytes(image):
-        raise RecoveryBlocked("cold reconstructed world/owners do not match committed state")
+    rebuilt = _runtime_image(runtime, individual_id=image["individual_id"])
+    if canonical_causal_bytes(rebuilt) != canonical_causal_bytes(image):
+        # No bypass: identify only divergent owner names so CI can diagnose
+        # a broken strict M11 restoration without disclosing causal values.
+        owners_expected = image.get("owners", {})
+        owners_actual = rebuilt.get("owners", {})
+        divergent = sorted(k for k in set(owners_expected) | set(owners_actual)
+                           if canonical_causal_bytes(owners_expected.get(k))
+                           != canonical_causal_bytes(owners_actual.get(k)))
+        sections = sorted(k for k in set(image) | set(rebuilt)
+                          if k != "owners"
+                          and canonical_causal_bytes(image.get(k))
+                          != canonical_causal_bytes(rebuilt.get(k)))
+        raise RecoveryBlocked("cold reconstructed world/owners do not match committed state"
+                              f" (owners={divergent}, sections={sections})")
 
 
 @dataclass(frozen=True, slots=True)
