@@ -1475,21 +1475,35 @@ class CausalModel:
                 for old in self._pending_causal_observations
             ):
                 raise ValueError("duplicate closed Memory causal observation")
-        # The admission preflight does not mutate historical or pending
-        # witnesses, so their physical references are invariant for this lot.
-        existing_numeric_transition_refs = {
-            old.transition_event_ref
-            for rows in (
-                self._numeric_witnesses.values(),
-                self._pending_numeric_witnesses,
-            )
-            for old in rows
-        }
+        # Most closed episodes contain no numeric witnesses. Avoid paying
+        # for an all-history index in empty or very small batches.
+        # Existing history is immutable throughout this admission preflight.
+        existing_numeric_transition_refs = (
+            {
+                old.transition_event_ref
+                for rows in (
+                    self._numeric_witnesses.values(),
+                    self._pending_numeric_witnesses,
+                )
+                for old in rows
+            } if len(numeric_witnesses) >= 3 else None
+        )
         for witness in numeric_witnesses:
             witness.validate()
             if (
                 witness.identifier in self._numeric_witnesses
-                or witness.transition_event_ref in existing_numeric_transition_refs
+                or (
+                    witness.transition_event_ref in existing_numeric_transition_refs
+                    if existing_numeric_transition_refs is not None
+                    else any(
+                        old.transition_event_ref == witness.transition_event_ref
+                        for rows in (
+                            self._numeric_witnesses.values(),
+                            self._pending_numeric_witnesses,
+                        )
+                        for old in rows
+                    )
+                )
             ):
                 raise ValueError("duplicated closed physical numeric outcome")
         # Publish verified control state only AFTER the entire incoming

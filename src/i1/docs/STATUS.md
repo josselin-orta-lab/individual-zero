@@ -391,3 +391,14 @@ témoins du lot lui-même n'est pas ajoutée au précontrôle, comme dans
 la version existante, afin de ne pas changer son comportement.
 Aucun nouveau test ni exécution manuelle selon la consigne; CI habituelle
 et parité de source exactes requises avant fusion.
+
+### PR #280 : garde de coût sur épisodes sans témoin numérique
+
+Une revue avant fusion a révélé que l'index de tout l'historique était
+construit même pour un lot sans résultat numérique, ce qui aurait pu
+introduire une régression significative sur le chemin naturel habituel.
+L'index transitoire n'est donc construit que pour trois témoins ou plus.
+Avec zéro, un ou deux témoins, le contrôle précédent par parcours
+ordonné est conservé, ainsi que l'ordre de validation et le court-circuit
+d'identifiant. Ce n'est pas un nouveau test et n'autorise aucune preuve
+nouvelle. Nouveau SHA et CI existante obligatoires avant fusion.
