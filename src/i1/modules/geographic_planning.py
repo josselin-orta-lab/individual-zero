@@ -236,7 +236,7 @@ def propose_spatial_return(
         preconditions=("adjacent_passable",),
         success_condition="target_position_observed",
         failure_condition="target_position_not_observed",
-        invalidation_condition="remembered_water_context_changed",
+        invalidation_condition="observed_entity_place_or_goal_changed",
         motive_ref=MotiveRef(type="place_memory", id=target.ref),
         founding_st_version=st_version,
         expires_at_step=t_monde + ttl_steps,
