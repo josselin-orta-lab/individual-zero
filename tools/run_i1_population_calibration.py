@@ -80,7 +80,7 @@ def prenatal_stage4(params, values, label):
 def run(candidate, world, seed, steps, out, count=6):
     if candidate not in range(count) or world not in WORLDS or type(seed) is not int:
         raise ValueError("unknown candidate, world or seed")
-    if type(steps) is not int or not 1 <= steps <= 300:
+    if type(steps) is not int or not 1 <= steps <= 1000:
         raise ValueError("initial horizon out of range")
     out = Path(out).resolve()
     if out.exists():
@@ -99,6 +99,7 @@ def run(candidate, world, seed, steps, out, count=6):
             sys.path.insert(0,str(build))
             from i1lab.i1_birth import birth_i1
             from i1lab.journal import HashChainedJournal
+            from audit_i1_birth_capabilities import audit_birth
             preset, digest = load_preset(world)
             params, _ = _birth_parameters(preset)
             original_world_digest = params["world_config"].digest()
@@ -107,6 +108,10 @@ def run(candidate, world, seed, steps, out, count=6):
             life_id = f"i1:population:{world}:{seed}"
             wal = out/"life.wal"
             life = birth_i1(life_id=life_id,wal_path=str(wal),**params)
+            birth_manifest = audit_birth(life, expected_competition={
+                'base_threshold': values['competition_threshold'],
+                'gain': values['competition_gain'],
+            })
             born = life.goal_manager._config
             owner_comp = life.competition._config
             if (born.replacement_hysteresis, born.critical_pressure) != (0.04,0.35):
@@ -119,9 +124,16 @@ def run(candidate, world, seed, steps, out, count=6):
             actual = []
             transitions = []
             previous_goal = None
+            cumulative_shortage = 0.0
+            lowest_integrity = 100.0
             for _ in range(steps):
                 receipt = life.run_step()
                 body = dict(life.world.telemetry())
+                cumulative_shortage += sum(
+                    (100.0 - max(0.0, min(100.0, float(body[key])))) / 100.0
+                    for key in ("water", "food", "energy", "integrity")
+                ) / 4.0
+                lowest_integrity = min(lowest_integrity, float(body["integrity"]))
                 goal = life.goal_manager.active_goal
                 kind = None if goal is None else goal.goal_type
                 if previous_goal is not None and kind is not None and previous_goal != kind:
@@ -152,9 +164,11 @@ def run(candidate, world, seed, steps, out, count=6):
                     for k in ("water","food","energy")}
             physical_steps = len(actual)
             survival_fraction = physical_steps / steps
-            # Equal priority on survival, then shortages; no rewards injected in TD.
-            deficit_fraction = sum(zero.values()) / (3*physical_steps)
-            score = 0.8*survival_fraction + 0.2*(1.0-deficit_fraction)
+            # Physical deprivation is continuous; a brief critical deficit
+            # matters even if the body variable has not reached exactly zero.
+            # This objective is external ONLY; I1 TD reward is unchanged.
+            mean_shortage = cumulative_shortage / physical_steps
+            score = 0.7*survival_fraction + 0.3*(1.0-mean_shortage)
             report.update({
                 "status":"COMPLETED_WITHOUT_SCIENTIFIC_VERDICT",
                 "life_id":life_id,"world_sha256":digest,
@@ -174,6 +188,10 @@ def run(candidate, world, seed, steps, out, count=6):
                 "actions":dict(actions),
                 "goal_type_transitions":transitions,
                 "score":round(score,9),
+                "mean_normalized_shortage":round(mean_shortage,9),
+                "lowest_integrity":lowest_integrity,
+                "birth_capability_sha256":birth_manifest["birth_profile_sha256"],
+                "birth_capability_manifest":birth_manifest,
                 "wal_entries":audit["verified_entries"],
                 "wal_head":audit["head_hash"],
                 "trajectory":actual,
@@ -193,8 +211,11 @@ def aggregate(paths):
     groups={}
     for r in reports:
         groups.setdefault(r["candidate"],[]).append(r)
-    required={(w,s) for w in WORLDS for s in (901,902)}
-    if any({(x["world"],x["seed"]) for x in xs}!=required for xs in groups.values()):
+    sets=[{(x["world"],x["seed"]) for x in xs} for xs in groups.values()]
+    if (not sets or any(set_ != sets[0] for set_ in sets)
+            or any(len(set_) != len(xs) for set_,xs in zip(sets,groups.values()))
+            or any(w not in WORLDS for w,s in sets[0])):
+
         raise ValueError("candidate worlds and seeds not paired")
     rows=[]
     for index, xs in sorted(groups.items()):
