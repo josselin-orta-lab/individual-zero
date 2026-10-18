@@ -441,7 +441,6 @@ class Stage11Runtime(Stage9Runtime):
             self.exploration.geographic is not None
             and self.exploration.geographic.config.remember_entities
             and goal_for_planning is not None
-            and goal_for_planning.goal_type == "drink"
             and bool(self.exploration.geographic.place_memories)
         )
         frozen_geography = (
@@ -1151,12 +1150,17 @@ class Stage11Runtime(Stage9Runtime):
                         if target.ref in funded
                     )
                 )
-            geo.freeze_place(
-                self._stage11_frozen_place_target
-                if (not self._cycle_degraded and
-                    self._stage11_place_proposal_this_cycle is not None)
-                else None
-            ) if geo is not None and geo.config.remember_entities else None
+            if geo is not None and geo.config.remember_entities:
+                geo.freeze_place(
+                    self._stage11_frozen_place_target
+                    if (not self._cycle_degraded and
+                        self._stage11_place_proposal_this_cycle is not None)
+                    else None
+                )
+                if (self._stage11_place_proposal_this_cycle is not None
+                    and geo.place_for(self._stage11_place_proposal_this_cycle.option)
+                        is None):
+                    self._stage11_place_proposal_this_cycle = None
             previous_register(ctx)
             for old in self.competition.candidate_proposals:
                 if (old.option.motive_ref.type == "place_memory"
