@@ -17,3 +17,14 @@ Risk 2 (to verify with WALs): options based on remembered sites may be registere
 Do not alter the engine to make a test pass. In case of genuine owner/module defects, isolate them as an issue and a separate code fix PR with a legitimate test, maintaining an unmodified main control.
 
 **Status:** RUNNING / SCIENTIFIC VERDICT PENDING.
+
+
+## 2026-10-18 completed first post-314 cohort and follow-up
+
+Actions [#39157472272](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39157472272), immutable SHA `fb401ee4d2bbcf9d7e359d3bbd72965bcdf40b40`, finished **36/36** and the independent 36-report ranking gate PASS. C0 native = 4/6 deaths, mean 266 steps, 9 drinks, 12 eats, 98 moves. C1/C2/C3 = 5/6 deaths each, means 245/247/247 steps; C4/C5 = 6/6 deaths, means 230/235 steps. Increased novelty weights also increase movements, water-zero exposure and premature mortality. No treatment beats native on this screen. More site memories or moves must never be claimed as successful return or useful memory until WAL proves admission, physical action and return arrival.
+
+The full main I1 CI failure at `fb401ee4` was laboratory documentation, not I1: the handbook interpreted a literal `tools/audit_i1_birth_capabilities.py::EXPECTED` as a missing Python symbol. Fixed at `24a8c4c7` and subsequently verified by full Python 3.11/3.12 CI success.
+
+**New independent hypothesis**: given the adverse response to excessive novelty, compare *less* intrinsic curiosity without removing learned spatial navigation. New 32-life study: native C0; C1 novelty 0.08, intrinsic 0.35; C2 novelty 0.15, intrinsic 0.20; C3 novelty 0.08, intrinsic 0.20, worlds oasis/foraging/dry-valley/blocked-route, fresh paired seeds 1141/1142, 450-step censoring. Every born individual retains the main memory and route capabilities; 0.04/0.35 GoalManager, TD reward, fatigue/sleep and -10 berry are untouched. Each WAL undergoes independent `audit_i1_spatial_navigation_314.audit`, which differentiates observed place, proposed memory option, physically sent hop and verified arrival without claiming learned resource efficacy. No merge or scientific promotion without replicated survival, preserved eating/drinking, and authentic WAL witness.
+
+**Toxic berries**: canonical I1 `berry_b` produces +5 food and -10 integrity, not guaranteed death from a healthy body. It can still kill if integrity is depleted to zero and the usual body dynamics still apply. Explicit software tests cover the natural I1-only effect; I0 and reference fixtures retain historical -100.
