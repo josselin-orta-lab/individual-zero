@@ -1863,25 +1863,24 @@ class CausalModel:
             or contingency.context_signature != "water_source"
         ):
             return None
-        observed = [
-            value for value in observations.values()
-            if value.identifier in self._hydration_observation_witnesses
-            and value.contingency_ref == contingency.ref
-            and value.predicate == contingency.predicate
-            and value.application_context == contingency.context_signature
-            and value.observation_context == "water_source"
-            and value.controlled_variables
-        ]
-        treated = sorted(
-            (value for value in observed if value.cause_present
-             and value.effect_present),
-            key=lambda value: value.identifier,
-        )
-        controls = sorted(
-            (value for value in observed if not value.cause_present
-             and not value.effect_present),
-            key=lambda value: value.identifier,
-        )
+        treated = []
+        controls = []
+        for value in observations.values():
+            if (
+                value.identifier not in self._hydration_observation_witnesses
+                or value.contingency_ref != contingency.ref
+                or value.predicate != contingency.predicate
+                or value.application_context != contingency.context_signature
+                or value.observation_context != "water_source"
+                or not value.controlled_variables
+            ):
+                continue
+            if value.cause_present and value.effect_present:
+                treated.append(value)
+            elif not value.cause_present and not value.effect_present:
+                controls.append(value)
+        treated.sort(key=lambda value: value.identifier)
+        controls.sort(key=lambda value: value.identifier)
         # Recovered or directly validated observations may contain lists:
         # equality comparisons worked for them, but list-backed controls
         # cannot be used as dictionary keys. Never silently normalize proof.
