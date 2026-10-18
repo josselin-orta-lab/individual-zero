@@ -179,6 +179,48 @@ def _vary_preset_layout(preset, base_digest, variant):
     return changed, digest
 
 
+def _prepare_berry_exposure_ecology(preset, varied_sha, ecology):
+    """Operator-only prebirth ecology; no instructions to newborn agents.
+
+    Berry_b is locally observable at birth, water is accessible and safe
+    berry_a remains elsewhere. I1 must voluntarily collect/eat/discover it.
+    """
+    if ecology == "baseline":
+        return preset, varied_sha
+    if ecology != "berry-b-first-v1" or preset["id"] != "longlife-garden":
+        raise ValueError("berry challenge is registered only for longlife-garden")
+    changed = deepcopy(preset)
+    spawn = tuple(changed["spawn"])
+    layout = changed["layout"]
+    if spawn in {tuple(c) for layer in ("obstacles", "creatures",
+                    "danger_zones", "lethal_zones") for c in layout[layer]}:
+        raise ValueError("dangerous/blocked birth cell in berry challenge")
+    def nearby(item):
+        x, y = item["cell"]
+        return abs(x-spawn[0]) + abs(y-spawn[1]) <= 1
+    layout["resources"] = [item for item in layout["resources"]
+                           if not (item["kind"] in ("berry_a", "berry_b")
+                                   and nearby(item))]
+    layout["resources"].append({
+        "cell": list(spawn), "kind": "berry_b", "quantity": 40,
+    })
+    if not any(item["kind"] == "berry_a" for item in layout["resources"]):
+        raise ValueError("berry challenge requires safe alternatives elsewhere")
+    if list(spawn) not in layout["water_sources"]:
+        layout["water_sources"].append(list(spawn))
+    layout["water_sources"].sort()
+    changed["initial_body"]["food"] = 20
+    changed["initial_body"]["water"] = 75
+    changed["description"] = (
+        "Prebirth natural encounter study: unknown berry_b at birthplace, "
+        "alternate berry_a elsewhere, accessible water. No scripted decisions."
+    )
+    digest = sha256(json.dumps(
+        changed, sort_keys=True, separators=(",", ":"),
+    ).encode("utf-8")).hexdigest()
+    return changed, digest
+
+
 def _build_physics_and_layout(preset, baseline):
     from i1lab.world import BodyState, Position, WorldBody, WorldLayout
 
@@ -415,7 +457,8 @@ def _m11_life(*, birth, params, life_id, path, steps):
 def execute(*, preset_name, seed, steps, lives, custody, output_dir,
             observe_owner_digests=False, experimental_fatigue_weight=None,
             world_variant=0, geographic_novelty_weight=None,
-            research_positive_lived_floor=False, experimental_berry_b_damage=None):
+            research_positive_lived_floor=False, experimental_berry_b_damage=None,
+            berry_exposure_ecology="baseline"):
     if (type(seed) is not int or not 0 <= seed <= 2**32 - 1
             or type(steps) is not int or not 1 <= steps <= MAX_STEPS
             or type(lives) is not int or not 1 <= lives <= MAX_LIVES
@@ -428,6 +471,8 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                  or experimental_fatigue_weight not in RESEARCH_WEIGHTS
                  or custody != "wal")):
         raise ValueError("isolated scientific fatigue arms require WAL and exact registered weights")
+    if berry_exposure_ecology not in ("baseline", "berry-b-first-v1"):
+        raise ValueError("unknown preregistered berry exposure ecology")
     if experimental_berry_b_damage not in (None, 0.0, -10.0, -100.0):
         raise ValueError("unknown preregistered berry toxicity")
     if type(research_positive_lived_floor) is not bool:
@@ -440,6 +485,9 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
         raise ValueError("invalid environment variation index")
     preset, base_digest = load_preset(preset_name)
     preset, digest = _vary_preset_layout(preset, base_digest, world_variant)
+    preset, digest = _prepare_berry_exposure_ecology(
+        preset, digest, berry_exposure_ecology,
+    )
     output_dir = Path(output_dir).resolve()
     if output_dir.exists():
         raise FileExistsError("a world run must use a fresh output directory")
@@ -452,6 +500,7 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                    "base_preset_sha256": base_digest,
                    "world_variant": world_variant,
                    "variation_policy": "i1-longlife-layout-v1",
+                   "berry_exposure_ecology": berry_exposure_ecology,
                    "description": preset["description"]},
         "run": {"seed": seed, "requested_steps": steps,
                 "requested_lives": lives, "custody": custody,
@@ -463,6 +512,7 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                 "geographic_policy": GEO_POLICY,
                 "research_positive_lived_floor": research_positive_lived_floor,
                 "experimental_berry_b_damage": experimental_berry_b_damage,
+                "berry_exposure_ecology": berry_exposure_ecology,
                 "research_floor_policy": (
                     "i1-research-positive-lived-floor-v1" if research_positive_lived_floor
                     else "control-canonical-I1-affordance-evidence")},
@@ -589,6 +639,10 @@ def main():
     parser.add_argument("--geographic-novelty-weight", type=float,
                         required=False, choices=GEOGRAPHIC_NOVELTY_WEIGHTS,
                         help="prebirth sensitivity arm; never an action dispatch")
+    parser.add_argument("--berry-exposure-ecology",
+                        choices=("baseline", "berry-b-first-v1"),
+                        default="baseline",
+                        help="prebirth observed-berry world, without forced behavior")
     parser.add_argument("--experimental-berry-b-damage", type=float,
                         choices=(0.0, -10.0, -100.0), default=None,
                         help="I1-only prebirth research effect, not innate knowledge")
@@ -638,6 +692,7 @@ def main():
             geographic_novelty_weight=args.geographic_novelty_weight,
             research_positive_lived_floor=args.research_positive_lived_floor,
             experimental_berry_b_damage=args.experimental_berry_b_damage,
+            berry_exposure_ecology=args.berry_exposure_ecology,
         )
         print(json.dumps({
             "status": report["status"],
