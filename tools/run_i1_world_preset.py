@@ -183,12 +183,33 @@ def _birth_parameters(preset):
     return params, local
 
 
-def _wal_life(*, birth, params, life_id, path, steps):
+def _observer_owner_hashes(life):
+    """Operator-only hashes of existing published owner state; no writes."""
+    from i1lab.determinism import canonical_causal_bytes, sha256_hex
+
+    owners = {
+        "value_needs": life.value_needs,
+        "causal_model": life._i1_active_owner_views["causal_model"],
+        "perception": life._i1_active_owner_views["perception"],
+        "metacognition_health": life._i1_active_owner_views["metacognition_health"],
+        "slow_history": life.slow_history,
+    }
+    return {
+        name: sha256_hex(canonical_causal_bytes(owner.export_causal_state()))
+        for name, owner in sorted(owners.items())
+    }
+
+
+def _wal_life(*, birth, params, life_id, path, steps, observe_owner_digests=False):
     from i1lab.journal import HashChainedJournal
 
     life = birth(life_id=life_id, wal_path=str(path), **params)
     trajectory = []
     for _ in range(steps):
+        # Read-only observer, strictly outside the cognitive world step.
+        before = _observer_owner_hashes(life) if observe_owner_digests else None
+        history_before = life.slow_history.current_version if observe_owner_digests else None
+        entry_count_before = life.journal.entry_count if observe_owner_digests else None
         receipt = life.run_step()
         if receipt.execution_status not in ("applied", "dead", "safety_block"):
             raise RuntimeError("unexpected I1 step outcome")
@@ -207,6 +228,20 @@ def _wal_life(*, birth, params, life_id, path, steps):
             "inventory": dict(life.world.inventory()),
             "journal_head": life.journal.head_hash,
         })
+        if observe_owner_digests:
+            committed_refs = [
+                entry.event_id
+                for entry in life.journal.entries_since(entry_count_before)
+                if entry.causal_event.get("kind") == "stage10_consolidation_committed"
+            ]
+            trajectory[-1]["owner_observation"] = {
+                "before": before,
+                "after": _observer_owner_hashes(life),
+                "history_version_before": history_before,
+                "history_version_after": life.slow_history.current_version,
+                "stage10_commit_event_ids": committed_refs,
+                "interpretation": "OPERATOR_OBSERVATION_NOT_CAUSAL_ATTRIBUTION",
+            }
         if receipt.execution_status == "dead":
             break
     if not trajectory or not life.journal.verify():
@@ -265,12 +300,15 @@ def _m11_life(*, birth, params, life_id, path, steps):
     }
 
 
-def execute(*, preset_name, seed, steps, lives, custody, output_dir):
+def execute(*, preset_name, seed, steps, lives, custody, output_dir,
+            observe_owner_digests=False):
     if (type(seed) is not int or not 0 <= seed <= 2**32 - 1
             or type(steps) is not int or not 1 <= steps <= MAX_STEPS
             or type(lives) is not int or not 1 <= lives <= MAX_LIVES
             or custody not in {"wal", "m11"}):
         raise ValueError("out-of-bounds seed, steps, lives or custody")
+    if observe_owner_digests and custody != "wal":
+        raise ValueError("owner observer is only implemented for immutable WAL")
     preset, digest = load_preset(preset_name)
     output_dir = Path(output_dir).resolve()
     if output_dir.exists():
@@ -284,7 +322,8 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir):
                    "description": preset["description"]},
         "run": {"seed": seed, "requested_steps": steps,
                 "requested_lives": lives, "custody": custody,
-                "git_head": None},
+                "git_head": None,
+                "observe_owner_digests": bool(observe_owner_digests)},
         "scientific_gate": "NOT_EVALUATED",
         "old_cohorts_used_as_oracles": False,
         "lives": [],
@@ -325,6 +364,7 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir):
                     life = _wal_life(
                         birth=birth_i1, params=params, life_id=life_id,
                         path=path, steps=steps,
+                        observe_owner_digests=observe_owner_digests,
                     )
                 else:
                     life = _m11_life(
@@ -358,6 +398,10 @@ def main():
                         help="maximum steps per mortal life, default preset recommendation")
     parser.add_argument("--lives", type=int, default=1)
     parser.add_argument("--custody", choices=("wal", "m11"), default="wal")
+    parser.add_argument(
+        "--observe-owner-digests", action="store_true",
+        help="operator-only before/after owner state hashes, WAL only; no motor feedback",
+    )
     parser.add_argument("--output-dir", type=Path,
                         help="new output directory for reports and durable files")
     args = parser.parse_args()
@@ -389,6 +433,7 @@ def main():
             else preset["recommended_steps"],
             lives=args.lives, custody=args.custody,
             output_dir=args.output_dir,
+            observe_owner_digests=args.observe_owner_digests,
         )
         print(json.dumps({
             "status": report["status"],
