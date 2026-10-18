@@ -346,3 +346,13 @@ et dans le même ordre, en conservant la règle de rejet du premier doublon.
 Pas de nouvelle mémoire cognitive ni de modification de I0/M11, mortalité
 ou admission physique. Aucun test ajouté ou exécuté manuellement; la CI
 habituelle doit valider le SHA exact avant toute fusion.
+
+## PR #277 : lecture triée directe des rapports Agency publiés
+
+`published_agency_evidence` triait les identifiants des preuves publiées
+avant de relire chaque valeur depuis le même dictionnaire. Le parcours
+des paires identifiant/valeur triées conserve le résultat dans le même
+ordre lexical sans seconde recherche par identifiant. Il ne change
+aucune donnée persistée, provenance DC-09, statut causal ou admission.
+Aucun nouveau test ni campagne manuelle; contrôle de parité exact
+et CI existante requis avant fusion. Pas de gain mesuré ni GO scientifique.
