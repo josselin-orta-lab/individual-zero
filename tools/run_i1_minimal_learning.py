@@ -255,6 +255,11 @@ def _wal_life(*, birth, params, life_id, path, steps, observe_owner_digests=Fals
         raise RuntimeError("durable journal differs from live journal")
     return {
         "lifecycle": life.stage3.substrate.mortal_status.value,
+        "effective_sleep_coefficients": {
+            "fatigue": life._stage10_config.sleep.fatigue_weight,
+            "consolidation": life._stage10_config.sleep.consolidation_weight,
+            "night": life._stage10_config.sleep.night_weight,
+        },
         "steps": trajectory,
         "journal_head": life.journal.head_hash,
         "durable_entries": audit["verified_entries"],
@@ -302,7 +307,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
 
 def execute(*, preset_name, seed, steps, lives, custody, output_dir,
             observe_owner_digests=False, learning_read_ablation=False,
-            food_role='a'):
+            food_role='a', food_gain=None, quiet_cognitive_sleep=False):
     if (type(seed) is not int or not 0 <= seed <= 2**32 - 1
             or type(steps) is not int or not 1 <= steps <= MAX_STEPS
             or type(lives) is not int or not 1 <= lives <= MAX_LIVES
@@ -312,8 +317,16 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
         raise ValueError("owner observer is only implemented for immutable WAL")
     if type(learning_read_ablation) is not bool or food_role not in ('a','b'):
         raise ValueError('invalid preregistered learning arm')
-    if preset_name != 'learning-cell' or custody != 'wal' or lives != 1:
-        raise ValueError('minimal learning study needs one WAL mortal life in learning-cell')
+    if preset_name not in ('learning-cell', 'learning-cell-one') or custody != 'wal' or lives != 1:
+        raise ValueError('minimal learning study requires a registered WAL mortal world')
+    if type(quiet_cognitive_sleep) is not bool:
+        raise ValueError('quiet cognitive sleep must be explicitly boolean')
+    if preset_name == 'learning-cell-one':
+        if (food_gain not in (0.0, 10.0) or not quiet_cognitive_sleep
+                or food_role != 'a'):
+            raise ValueError('one-food study requires gain=0/10, quiet sleep and role a')
+    elif food_gain is not None or quiet_cognitive_sleep:
+        raise ValueError('original two-food arm must remain unchanged')
     preset, digest = load_preset(preset_name)
     output_dir = Path(output_dir).resolve()
     if output_dir.exists():
@@ -330,7 +343,9 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                 "git_head": None,
                 "observe_owner_digests": bool(observe_owner_digests),
                 "learning_read_ablation": learning_read_ablation,
-                "food_role": food_role},
+                "food_role": food_role,
+                "food_gain": food_gain,
+                "quiet_cognitive_sleep": quiet_cognitive_sleep},
         "scientific_gate": "NOT_EVALUATED",
         "old_cohorts_used_as_oracles": False,
         "lives": [],
@@ -356,12 +371,41 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
             from i1lab.world import BerryEffect
             physics = params["world_config"]
             effects = dict(physics.berry_effects)
-            effects["berry_a"] = BerryEffect(10.0 if food_role=="a" else 0.0,0.0)
-            effects["berry_b"] = BerryEffect(10.0 if food_role=="b" else 0.0,0.0)
-            params["world_config"] = replace(physics,
-                version=physics.version+"+i1-learning-cell-roles-v1-"+food_role,
-                berry_effects=effects)
+            if preset_name == "learning-cell-one":
+                effects["berry_a"] = BerryEffect(float(food_gain), 0.0)
+                version = physics.version+"+i1-one-berry-food-effect-v1-"+str(food_gain)
+            else:
+                effects["berry_a"] = BerryEffect(10.0 if food_role=="a" else 0.0,0.0)
+                effects["berry_b"] = BerryEffect(10.0 if food_role=="b" else 0.0,0.0)
+                version = physics.version+"+i1-learning-cell-roles-v1-"+food_role
+            params["world_config"] = replace(
+                physics, version=version, berry_effects=effects)
             params["world_config"].validate()
+            if quiet_cognitive_sleep:
+                # Remove only nonphysiological cognitive and clock-driven sleep
+                # pressure after the standard I1 prebirth sleep policy is built.
+                # Real energy need, voluntary action selection and sleep physics
+                # are unchanged; a zero-pressure sleep option gets no free win.
+                import i1lab.i1_natural_runtime as natural
+                natural_original = natural.enable_natural_sleep_birth
+                quiet_policy = "i1-minimal-learning-no-cognitive-sleep-v1"
+                def quiet_sleep(*, world_config, stage10_config):
+                    world, stage10 = natural_original(
+                        world_config=world_config, stage10_config=stage10_config,
+                    )
+                    sleep = replace(
+                        stage10.sleep,
+                        version=stage10.sleep.version+"+"+quiet_policy,
+                        fatigue_weight=0.0, consolidation_weight=0.0,
+                        night_weight=0.0,
+                    )
+                    config = replace(
+                        stage10, version=stage10.version+"+"+quiet_policy,
+                        sleep=sleep,
+                    )
+                    config.validate()
+                    return world, config
+                natural.enable_natural_sleep_birth = quiet_sleep
             # An observer-only ablation removes access to learned TD values,
             # never learning updates, physical reward, or intrinsic priorities.
             if learning_read_ablation:
@@ -397,6 +441,10 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                         birth=birth_i1_m11, params=params, life_id=life_id,
                         path=path, steps=steps,
                     )
+                if preset_name == "learning-cell-one":
+                    actual = life["effective_sleep_coefficients"]
+                    if actual != {"fatigue": 0.0, "consolidation": 0.0, "night": 0.0}:
+                        raise AssertionError("not actually isolated from cognitive sleep")
                 life["individual_id"] = life_id
                 report["lives"].append(life)
         report["status"] = "COMPLETED_WITHOUT_SCIENTIFIC_VERDICT"
@@ -426,6 +474,8 @@ def main():
     parser.add_argument("--custody", choices=("wal", "m11"), default="wal")
     parser.add_argument("--learning-read-ablation", action="store_true")
     parser.add_argument("--food-role", choices=("a","b"), default="a")
+    parser.add_argument("--food-gain", type=float, choices=(0.0,10.0))
+    parser.add_argument("--quiet-cognitive-sleep", action="store_true")
     parser.add_argument(
         "--observe-owner-digests", action="store_true",
         help="operator-only before/after owner state hashes, WAL only; no motor feedback",
@@ -464,6 +514,8 @@ def main():
             observe_owner_digests=args.observe_owner_digests,
             learning_read_ablation=args.learning_read_ablation,
             food_role=args.food_role,
+            food_gain=args.food_gain,
+            quiet_cognitive_sleep=args.quiet_cognitive_sleep,
         )
         print(json.dumps({
             "status": report["status"],
