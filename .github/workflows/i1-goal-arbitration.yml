@@ -1,0 +1,59 @@
+name: I1 goal arbitration sensitivity
+on:
+  push:
+    branches: [science/i1-goal-arbitration-20261018]
+    paths:
+      - '.github/workflows/i1-goal-arbitration.yml'
+      - 'tools/run_i1_minimal_learning.py'
+      - 'tests/i1/test_i1_goal_pressure_research.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  matched-births:
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        policy: [baseline, calibrated-004, responsive-002]
+        seed_group: [501, 601]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Structural and deterministic goal tests
+        run: |
+          python -m pip install -e .
+          python scripts/check_engine_repository.py --json
+          python -m unittest discover -s tests/i1 -p test_i1_goal_pressure_research.py -v
+          python tools/run_i1_minimal_learning.py --preset learning-cell-one --validate-only
+      - name: Independent mortal lives, unforced decisions
+        shell: bash
+        env:
+          POLICY: ${{ matrix.policy }}
+          BASE: ${{ matrix.seed_group }}
+        run: |
+          set -euo pipefail
+          for offset in 0 1 2 3; do
+            seed="$((BASE + offset))"
+            folder="reports/${POLICY}/seed-${seed}"
+            python tools/run_i1_minimal_learning.py \
+              --preset learning-cell-one --food-gain 10.0 \
+              --quiet-cognitive-sleep --reward-model absolute \
+              --goal-arbitration-arm "$POLICY" \
+              --seed "$seed" --steps 300 --lives 1 --custody wal \
+              --output-dir "$folder"
+          done
+      - name: Retain all evidence including deaths
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-goal-${{ matrix.policy }}-${{ matrix.seed_group }}-${{ github.run_id }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
