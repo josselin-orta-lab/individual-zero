@@ -31,6 +31,7 @@ Spatial = sys.modules[f"{_NS}.spatial_memory"]
 Geography = sys.modules[f"{_NS}.geographic_exploration"]
 ObservedSurvey = sys.modules[f"{_NS}.observed_frontier_routing"].ObservedSurvey
 PlaceMemory, find_spatial_return = Spatial.PlaceMemory, Spatial.find_spatial_return
+find_spatial_returns = Spatial.find_spatial_returns
 GeographicExploration = Geography.GeographicExploration
 GeographicExplorationConfig = Geography.GeographicExplorationConfig
 
@@ -146,6 +147,41 @@ class GenericSpatialMemoryTests(unittest.TestCase):
             find_spatial_return(places=(sample(step=5),), **kwargs)
         with self.assertRaises(ValueError):
             find_spatial_return(places=(sample(), sample()), **kwargs)
+
+
+    def test_retrieval_returns_distinct_alternatives(self):
+        water = sample("water_source:0", "water_source")
+        berry = replace(sample("berry_a:1:0", "berry_a"),
+                        position=(0, 1), observed_from=(0, 0))
+        found = find_spatial_returns(
+            origin=(0, 0), visits=frozenset(((0, 0),)),
+            surveys=(), places=(water, berry),
+            current_free_neighbors=frozenset(((1, 0), (0, 1))),
+            current_world_step=2, max_candidates=2,
+        )
+        self.assertEqual({t.entity_type for t in found}, {"water_source", "berry_a"})
+        self.assertEqual(len(found), 2)
+
+    def test_stale_offer_contradiction_is_withdrawn_without_exception(self):
+        geo = owner()
+        first = capture(1, 0, 0, (("berry_a:1:0", "berry_a", 1, 0),))
+        geo.observe_capture(first)
+        geo.observe_entities(first, observer_id="i1:sample")
+        at2 = capture(2, 0, 0)
+        geo.observe_capture(at2)
+        # Freeze Phase-0 belief, as Planning does before Phase-1 observation.
+        original = geo.place_memories
+        target = find_spatial_return(
+            origin=(0, 0), visits=frozenset(((0, 0),)),
+            surveys=(), places=original,
+            current_free_neighbors=frozenset(((1, 0),)),
+            current_world_step=2,
+        )
+        self.assertIsNotNone(target)
+        geo.observe_entities(at2, observer_id="i1:sample")
+        self.assertLess(geo.place_memories[0].confidence, target.confidence)
+        geo.freeze_place(target)
+        self.assertEqual(geo._place_offered, ())
 
     def test_owner_snapshot_roundtrip_is_independent(self):
         geo=owner()
