@@ -1,0 +1,55 @@
+name: I1 instrumental credit eligibility
+on:
+  push:
+    branches: [science/i1-minimal-learning-proof-20261018]
+    paths:
+      - '.github/workflows/i1-instrumental-credit.yml'
+      - 'tools/run_i1_minimal_learning.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  eligibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        lambda: ['0.0','0.8','0.95','1.0']
+        gain: ['0.0','10.0']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify source and registered world
+        run: |
+          python -m pip install -e .
+          python scripts/check_engine_repository.py --json
+          python tools/run_i1_minimal_learning.py --preset learning-cell-one --validate-only
+      - name: Matched fresh births with only TD eligibility altered
+        shell: bash
+        env:
+          LAMBDA: ${{ matrix.lambda }}
+          GAIN: ${{ matrix.gain }}
+        run: |
+          set -euo pipefail
+          for seed in 411 412 413; do
+            folder="reports/lambda-${LAMBDA}/gain-${GAIN}/seed-${seed}"
+            python tools/run_i1_minimal_learning.py \
+              --preset learning-cell-one --food-gain "$GAIN" \
+              --quiet-cognitive-sleep --eligibility-lambda "$LAMBDA" \
+              --goal-arbitration-arm baseline --seed "$seed" --steps 300 --lives 1 --custody wal \
+              --output-dir "$folder"
+          done
+      - name: Preserve all death-inclusive WAL
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-credit-lambda-${{ matrix.lambda }}-gain-${{ matrix.gain }}-${{ github.run_id }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn

@@ -1,0 +1,58 @@
+name: I1 one-resource learning mechanism
+on:
+  push:
+    branches: [science/i1-minimal-learning-proof-20261018]
+    paths:
+      - '.github/workflows/i1-one-resource-learning.yml'
+      - 'tools/run_i1_minimal_learning.py'
+      - 'src/i1/lab/world_presets/learning-cell-one.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  one-resource:
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        food_gain: ['0.0','10.0']
+        td_read: ['active','masked']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Source and registered world validation
+        run: |
+          python -m pip install -e .
+          python scripts/check_engine_repository.py --json
+          python tools/run_i1_minimal_learning.py --preset learning-cell-one --validate-only
+      - name: Eight mortal paired newborns per arm
+        shell: bash
+        env:
+          GAIN: ${{ matrix.food_gain }}
+          MODE: ${{ matrix.td_read }}
+        run: |
+          set -euo pipefail
+          extra=()
+          if [[ "$MODE" == "masked" ]]; then extra=(--learning-read-ablation); fi
+          for seed in 301 302 303 304 305 306 307 308; do
+            folder="reports/gain-${GAIN}/${MODE}/seed-${seed}"
+            python tools/run_i1_minimal_learning.py \
+              --preset learning-cell-one --food-gain "$GAIN" \
+              --quiet-cognitive-sleep \
+              --goal-arbitration-arm baseline --seed "$seed" --steps 300 --lives 1 --custody wal \
+              "${extra[@]}" --output-dir "$folder"
+          done
+      - name: Keep every mortal life journal
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-one-resource-${{ matrix.food_gain }}-${{ matrix.td_read }}-${{ github.run_id }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn

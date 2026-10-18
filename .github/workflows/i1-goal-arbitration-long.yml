@@ -1,0 +1,51 @@
+name: I1 goal arbitration 1000-step mortality campaign
+on:
+  push:
+    branches: [science/i1-goal-arbitration-20261018]
+    paths:
+      - '.github/workflows/i1-goal-arbitration-long.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  matched-lives:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        arm: [baseline, calibrated-004]
+        seed: [711, 712]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate scientific isolation and calibrated default
+        run: |
+          python -m pip install -e .
+          python scripts/check_engine_repository.py --json
+          python -m unittest discover -s tests/i1 -p 'test_i1_goal_pressure_research.py' -v
+          python tools/run_i1_minimal_learning.py --preset learning-cell-one --validate-only
+      - name: Born mortal I1, 1000-step maximum
+        env:
+          ARM: ${{ matrix.arm }}
+          SEED: ${{ matrix.seed }}
+        run: |
+          python tools/run_i1_minimal_learning.py \
+            --preset learning-cell-one --food-gain 10.0 \
+            --quiet-cognitive-sleep --reward-model absolute \
+            --goal-arbitration-arm "$ARM" --seed "$SEED" \
+            --steps 1000 --lives 1 --custody wal \
+            --output-dir "reports/${ARM}/seed-${SEED}"
+      - name: Preserve both living and terminal WAL
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-goal-long-${{ matrix.arm }}-${{ matrix.seed }}-${{ github.run_id }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: error
