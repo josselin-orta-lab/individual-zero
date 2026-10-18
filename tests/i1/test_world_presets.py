@@ -13,10 +13,10 @@ from run_i1_world_preset import available, load_preset
 class WorldPresetsTests(unittest.TestCase):
     def test_six_worlds_validate_without_a_birth(self):
         worlds = available()
-        self.assertEqual({p["id"] for p, _ in worlds},
-                         {"oasis", "foraging", "dry-valley", "empty-land",
-                          "hazard-edge", "blocked-route"})
-        self.assertEqual(len({digest for _p, digest in worlds}), 6)
+        expected = {"oasis", "foraging", "dry-valley", "empty-land",
+                    "hazard-edge", "blocked-route", "longlife-garden"}
+        self.assertEqual({p["id"] for p, _ in worlds}, expected)
+        self.assertEqual(len({digest for _p, digest in worlds}), len(expected))
         for p, digest in worlds:
             with self.subTest(world=p["id"]):
                 self.assertEqual(len(digest), 64)
