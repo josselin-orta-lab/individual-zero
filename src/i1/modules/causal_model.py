@@ -2234,7 +2234,9 @@ class CausalModel:
             # buckets; repeated references do not change the existential
             # alias/conflict check below, or the fact that any reuse denies
             # a second intervention credit.
-            prior_uses = tuple(chain(
+            # Keep the four existing buckets by reference, not a tuple
+            # materializing their concatenation (which may repeat a trial).
+            prior_use_buckets = (
                 prior_by_physical.get(trial.observation_ref, ()),
                 prior_by_comparator.get(
                     (trial.contingency_ref, trial.comparator_ref), ()
@@ -2245,7 +2247,7 @@ class CausalModel:
                 prior_by_observed.get(
                     (trial.contingency_ref, trial.observed_step), ()
                 ),
-            ))
+            )
             # A reused physical source grants no extra n2 credit. It is only
             # a harmless alias if every physical claim matches: action,
             # Memory episode, context, controls, world steps, comparator,
@@ -2258,12 +2260,13 @@ class CausalModel:
             if any(
                 other.contingency_ref == trial.contingency_ref
                 and replace(other, identifier=trial.identifier) != trial
-                for other in prior_uses
+                for bucket in prior_use_buckets
+                for other in bucket
             ):
                 raise ValueError(
                     "conflicting causal intervention claims for one physical source"
                 )
-            if key in credits or prior_uses:
+            if key in credits or any(prior_use_buckets):
                 continue
             credits.add(key)
             interventions[trial.identifier] = trial

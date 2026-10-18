@@ -268,3 +268,18 @@ Le contrôle de parité du code généré autorise exactement quatre blocs.
 Aucun nouveau test n'est ajouté ni lancé manuellement, conformément
 à la consigne. Aucune validation scientifique ni accélération mesurée
 n'est revendiquée avant les contrôles habituels du dépôt.
+
+## PR #270 : parcours direct des index de provenance physique (2026-10-18)
+
+Le contrôle des interventions précédemment admises construisait un tuple
+contenant la concaténation de quatre index déjà en mémoire, y compris les
+répétitions possibles d'un même témoin. Cette optimisation conserve les
+quatre listes par référence et les parcourt dans l'ordre identique pour
+toute vérification de conflit. La simple présence d'une référence dans
+l'un de ces index continue à bloquer tout nouveau crédit, y compris pour
+les descriptions d'autres contingences. Le contrôle de conflit s'exécute
+toujours avant celui de crédit. Aucun autre statut causal ou preuve
+vécue n'est modifié. Aucun nouveau test ni campagne manuelle n'est
+ajouté, conformément à la consigne. Le changement de code généré est
+contraint par trois blocs exacts et attend la CI existante; aucun gain
+mesuré ou GO scientifique n'est revendiqué.
