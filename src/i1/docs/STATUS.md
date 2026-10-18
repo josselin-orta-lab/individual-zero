@@ -316,3 +316,13 @@ Le résultat de recherche était déjà `None` dans ce cas. Le parcours
 vécu, les seuils, les témoins admis et la provenance sont inchangés.
 Aucun test nouveau et aucune campagne manuelle. Le diff source est
 strictement contrôlé; fusion après CI existante seulement.
+
+## PR #274 : retour anticipé sans paire alimentaire observée
+
+Après avoir filtré les preuves vécues, la revue alimentaire ne peut
+produire de comparaison sans exposition positive ni contrôle observé.
+Un retour anticipé `None` évite alors les tris lexicographiques et
+leurs allocations. Les gardes de provenance, P-35 et les situations où
+les deux bras existent restent inchangées. Aucun test ajouté ou lancé
+manuellement conformément à la consigne. Parité source strictement
+limitée au bloc révisé ; fusion soumise à la CI existante.

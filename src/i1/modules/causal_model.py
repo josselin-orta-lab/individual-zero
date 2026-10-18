@@ -1820,6 +1820,10 @@ class CausalModel:
                 continue
             controls.append(observation)
 
+        # A matched physical pair requires both arms. Empty groups could
+        # never pass the existing comparison loop, so skip its sorting.
+        if not exposed or not controls:
+            return None
         # The sorted controls are invariant across all exposed observations.
         # Sorting once preserves the exact first admissible pair and ranking.
         sorted_controls = sorted(controls, key=lambda row: row.identifier)
