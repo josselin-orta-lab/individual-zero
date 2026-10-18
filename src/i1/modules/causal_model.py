@@ -1477,10 +1477,11 @@ class CausalModel:
                 witness.identifier in self._numeric_witnesses
                 or any(
                     old.transition_event_ref == witness.transition_event_ref
-                    for old in (
-                        *self._numeric_witnesses.values(),
-                        *self._pending_numeric_witnesses,
+                    for rows in (
+                        self._numeric_witnesses.values(),
+                        self._pending_numeric_witnesses,
                     )
+                    for old in rows
                 )
             ):
                 raise ValueError("duplicated closed physical numeric outcome")

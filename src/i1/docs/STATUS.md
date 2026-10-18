@@ -336,3 +336,13 @@ au fil des références fermées, sans liste intermédiaire. La sélection
 `agency_source_refs` et l'ordre de la vérification préalable à tout
 décodage et admission restent inchangés. Aucun nouveau test ni campagne
 manuelle selon la consigne; parité source exacte avant fusion.
+
+## PR #276 : parcours direct des témoins numériques physiques
+
+Le précontrôle de l'épisode autobiographique recréait un tuple concaténé
+de l'historique des témoins numériques et de la liste en attente pour chaque
+nouveau témoin. Cette tranche parcourt ces deux collections directement
+et dans le même ordre, en conservant la règle de rejet du premier doublon.
+Pas de nouvelle mémoire cognitive ni de modification de I0/M11, mortalité
+ou admission physique. Aucun test ajouté ou exécuté manuellement; la CI
+habituelle doit valider le SHA exact avant toute fusion.
