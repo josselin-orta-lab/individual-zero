@@ -28,6 +28,8 @@ def _summarize(report):
         raise ValueError("incomplete or impossible life trajectory")
     if report["wal_entries"] < n:
         raise ValueError("not enough authenticated WAL records")
+    if "journal_head" not in trace[-1] or "wal_head" not in report:
+        raise ValueError("missing final WAL head in report")
     if trace[-1]["journal_head"] != report["wal_head"]:
         raise ValueError("reported WAL head differs from last observed step")
     if report["birth_capability_manifest"]["birth_profile_sha256"] != report["birth_capability_sha256"]:
