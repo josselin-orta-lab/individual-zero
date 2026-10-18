@@ -196,10 +196,12 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             valid = (target is not None and target.source_t_monde == t_monde
                      and proposal.option.goal_ref is not None
                      and proposal.option.provenance == "memory"
+                     and proposal.plan is not None
                      and proposal.option.plan_ref == proposal.plan.id
+                     and proposal.option.type == "primitive"
                      and proposal.option.learning_signature == (
                          f"memory_place_return:{target.entity_id}"
-                     ) and proposal.plan is not None
+                     )
                      and proposal.plan.goal_ref == proposal.option.goal_ref
                      and proposal.plan.st_version ==
                          proposal.option.founding_st_version
