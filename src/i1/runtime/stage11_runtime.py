@@ -1168,7 +1168,7 @@ class Stage11Runtime(Stage9Runtime):
             if geo is not None:
                 approved = {
                     f"option:place-memory:{target.ref}:t{target.source_t_monde}"
-                    for target in geo._place_offered
+                    for target in geo.place_offered
                 }
             for old in self.competition.candidate_proposals:
                 if (old.option.motive_ref.type == "place_memory"
