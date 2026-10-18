@@ -811,8 +811,8 @@ DEFAULT_TOXIC_BERRY_INTEGRITY_DELTA = -10.0
 # source changes until each is reviewed and the digest is explicitly updated.
 # All other generated I1 files retain their existing strict migration parity.
 _ISSUE_314_PINNED_BLOBS = {
-    "i1/modules/spatial_memory.py": "92315ec5c39a63fb70224e0f2d193f3f327bc90a",
-    "i1/modules/geographic_exploration.py": "d4fd275677b89ab7f7dfe45cfba427fa8044ecdc",
+    "i1/modules/spatial_memory.py": "05a0ccb234b1df7a19132308f7ae805dcac807bb",
+    "i1/modules/geographic_exploration.py": "401e7f7ed0a2222dcacab89f399512f1d3894274",
     "i1/modules/geographic_planning.py": "340fe53c2ee1d1cd1cd9025b929fc157a5ea2e31",
     "i1/modules/stage11_evaluator.py": "521fc97815ec46b67bf87fbd65951808142e5bca",
     "i1lab/i1_natural_runtime.py": "f4f6f35e3b3d323256845602253e90d7212b2ae5",
