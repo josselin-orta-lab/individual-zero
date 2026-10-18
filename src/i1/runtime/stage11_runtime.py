@@ -228,8 +228,8 @@ class Stage11Runtime(Stage9Runtime):
         )
         self._stage11_geographic_proposals_this_cycle = ()
         self._stage11_unregistered_physical_step = None
-        self._stage11_place_proposal_this_cycle = None
-        self._stage11_frozen_place_target = None
+        self._stage11_place_proposals_this_cycle = ()
+        self._stage11_frozen_place_targets = ()
 
         self.modulation = GlobalModulation(config.modulation)
         self._stage11_modulation_signals = {
@@ -424,8 +424,8 @@ class Stage11Runtime(Stage9Runtime):
         )
         frozen_geo_targets = ()
         frozen_transit_target = None
-        frozen_place_target = None
-        self._stage11_place_proposal_this_cycle = None
+        frozen_place_targets = ()
+        self._stage11_place_proposals_this_cycle = ()
         # Copy only already-owned pre-Phase-1 state; current Phase-1 surveys
         # cannot become same-phase Planning knowledge (INV-08).
         # Phase-0 must freeze route data before Phase-1 observations, but
@@ -727,9 +727,9 @@ class Stage11Runtime(Stage9Runtime):
         previous_plan = hooks[1]["planning"]
 
         def plan_only_informational_targets(ctx):
-            nonlocal frozen_geo_targets, frozen_transit_target, frozen_place_target, excluded_geo
+            nonlocal frozen_geo_targets, frozen_transit_target, frozen_place_targets, excluded_geo
             self._stage11_geographic_proposals_this_cycle = ()
-            self._stage11_frozen_place_target = None
+            self._stage11_frozen_place_targets = ()
             emitted = self._causal_test_targets_this_cycle
             permitted = tuple(
                 item for item in emitted
@@ -758,25 +758,27 @@ class Stage11Runtime(Stage9Runtime):
                 return
             if st_before_cycle is None:
                 return
+            place_proposals = []
+            place_targets = []
             if want_place_route:
                 if not self._charge(module="planning", operation="geographic_route_search"):
                     defer_geo_once("geographic_route_search")
                     return
                 from i1.modules.observed_frontier_routing import ObservedSurvey
+                from i1.modules.spatial_memory import find_spatial_returns
                 prior_surveys = tuple(ObservedSurvey(
                     position=tuple(row["position"]),
                     world_step=row["world_step"],
                     free_neighbors=tuple(tuple(p) for p in row["free_neighbors"]),
                 ) for row in frozen_geography["surveys"])
-                from i1.modules.spatial_memory import PlaceMemory
                 remembered = tuple(PlaceMemory(**{
                     **row, "position": tuple(row["position"]),
                     "observed_from": tuple(row["observed_from"]),
                 }) for row in frozen_geography.get("entity_places", ()))
-                remembered = tuple(
-                    site for site in remembered if site.observer_id == getattr(self, "_i1_personal_id", self.individual_id)
-                )
-                frozen_place_target = find_spatial_return(
+                remembered = tuple(site for site in remembered
+                    if site.observer_id == getattr(
+                        self, "_i1_personal_id", self.individual_id))
+                frozen_place_targets = find_spatial_returns(
                     origin=(capture.x, capture.y),
                     visits=frozenset(tuple(row[:2]) for row in frozen_geography["visits"]),
                     surveys=prior_surveys, places=remembered,
@@ -784,48 +786,54 @@ class Stage11Runtime(Stage9Runtime):
                         (cell.x, cell.y) for cell in capture.adjacent
                         if cell.passable is True and cell.creature is False
                     ), current_world_step=capture.t_monde,
+                    max_candidates=self.exploration.geographic.config.max_targets_per_cycle,
                 )
                 self._write(kind="i1_place_memory_recalled", cycle=cycle,
-                            data={"candidate": None if frozen_place_target is None
-                                  else frozen_place_target.ref,
+                            data={"candidates": [t.ref for t in frozen_place_targets],
                                   "sites": len(remembered),
                                   "source": "prior_frozen_geographic_owner"})
-            if frozen_place_target is not None:
+            for target in frozen_place_targets:
                 if not self._charge(module="planning",
                                     operation="geographic_admissibility_preflight"):
                     defer_geo_once("geographic_admissibility_preflight")
-                    return
+                    break
                 if self.stage3.control.verifier_admissibilite(
                     capture=capture, prepared=PreparedCommand(
                         command=PrimitiveCommand("se_deplacer",
-                            {"direction": frozen_place_target.direction}),
-                        source="decision")) is not Admissibility.INADMISSIBLE:
-                    if not self._charge(module="planning", operation="planning_build"):
-                        defer_geo_once("planning_build")
-                        return
-                    state = state_from_capture(
-                        capture=capture, is_night=self.world.is_night(capture.t_monde))
-                    proposal = propose_spatial_return(
-                        target=frozen_place_target, initial_state=state,
-                        simulator=self.simulator,
-                        st_version=st_before_cycle.version, t_monde=capture.t_monde,
-                        ttl_steps=self._stage6_config.planning.option_ttl_steps,
-                        goal_ref=goal_for_planning.id,
-                    )
-                    if proposal is not None and (
-                        self.stage3.control.verifier_plan_connu(proposal)
-                        is not Admissibility.INADMISSIBLE
-                    ):
-                        self._publish_contribution(self._planning_contribution(
-                            proposal, t_monde=capture.t_monde, cycle=cycle))
-                        self._stage11_place_proposal_this_cycle = proposal
-                        self._stage11_frozen_place_target = frozen_place_target
-                        self._write(kind="i1_place_memory_option_proposed", cycle=cycle,
-                                    data={"option_ref": proposal.option.id,
-                                          "target": list(frozen_place_target.observed_position),
-                                          "next": list(frozen_place_target.destination),
-                                          "confidence": frozen_place_target.confidence,
-                                          "active_goal": goal_for_planning.id})
+                            {"direction": target.direction}),
+                        source="decision")) is Admissibility.INADMISSIBLE:
+                    continue
+                if not self._charge(module="planning", operation="planning_build"):
+                    defer_geo_once("planning_build")
+                    break
+                state = state_from_capture(
+                    capture=capture, is_night=self.world.is_night(capture.t_monde))
+                proposal = propose_spatial_return(
+                    target=target, initial_state=state,
+                    simulator=self.simulator,
+                    st_version=st_before_cycle.version, t_monde=capture.t_monde,
+                    ttl_steps=self._stage6_config.planning.option_ttl_steps,
+                    goal_ref=goal_for_planning.id,
+                )
+                if proposal is None or (
+                    self.stage3.control.verifier_plan_connu(proposal)
+                    is Admissibility.INADMISSIBLE
+                ):
+                    continue
+                self._publish_contribution(self._planning_contribution(
+                    proposal, t_monde=capture.t_monde, cycle=cycle))
+                place_proposals.append(proposal)
+                place_targets.append(target)
+                self._write(kind="i1_place_memory_option_proposed", cycle=cycle,
+                            data={"option_ref": proposal.option.id,
+                                  "entity_id": target.entity_id,
+                                  "entity_type": target.entity_type,
+                                  "target": list(target.observed_position),
+                                  "next": list(target.destination),
+                                  "confidence": target.confidence,
+                                  "active_goal": goal_for_planning.id})
+            self._stage11_place_proposals_this_cycle = tuple(place_proposals)
+            self._stage11_frozen_place_targets = tuple(place_targets)
             # The 1-UC Planning charge and the canonical read-only safety
             # lookup both execute here in Phase-1 Planning, using only raw
             # frontier inputs frozen BEFORE all Phase-1 producers (INV-08).
@@ -1151,34 +1159,38 @@ class Stage11Runtime(Stage9Runtime):
                     )
                 )
             if geo is not None and geo.config.remember_entities:
-                geo.freeze_place(
-                    self._stage11_frozen_place_target
-                    if (not self._cycle_degraded and
-                        self._stage11_place_proposal_this_cycle is not None)
-                    else None
+                geo.freeze_places(
+                    self._stage11_frozen_place_targets
+                    if not self._cycle_degraded else ()
                 )
-                if (self._stage11_place_proposal_this_cycle is not None
-                    and geo.place_for(self._stage11_place_proposal_this_cycle.option)
-                        is None):
-                    self._stage11_place_proposal_this_cycle = None
             previous_register(ctx)
+            approved = set()
+            if geo is not None:
+                approved = {
+                    f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                    for target in geo._place_offered
+                }
             for old in self.competition.candidate_proposals:
                 if (old.option.motive_ref.type == "place_memory"
-                    and (self._stage11_place_proposal_this_cycle is None
-                         or old.option.id != self._stage11_place_proposal_this_cycle.option.id)):
+                    and old.option.id not in approved):
                     self.competition.invalidate_candidate(old.option.id)
                     self.stage3.control.clear_option_step(old.option.id)
-            if self._stage11_place_proposal_this_cycle is not None and not self._cycle_degraded:
-                if self._charge(module="competition", operation="competition_register"):
+            if not self._cycle_degraded:
+                for proposal in self._stage11_place_proposals_this_cycle:
+                    if proposal.option.id not in approved:
+                        continue
+                    if not self._charge(module="competition",
+                                        operation="competition_register"):
+                        break
                     accepted = self._register_option_proposal(
-                        proposal=self._stage11_place_proposal_this_cycle,
+                        proposal=proposal,
                         active_goal_id=(
                             None if self.goal_manager.active_goal is None
                             else self.goal_manager.active_goal.id),
                         t_monde=capture.t_monde, cycle=cycle)
-                    self._write(kind="i1_place_memory_option_registration", cycle=cycle,
-                                data={"option_ref":
-                                      self._stage11_place_proposal_this_cycle.option.id,
+                    self._write(kind="i1_place_memory_option_registration",
+                                cycle=cycle,
+                                data={"option_ref": proposal.option.id,
                                       "registered": accepted})
             current = {
                 proposal.option.id
