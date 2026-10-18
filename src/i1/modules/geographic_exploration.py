@@ -120,6 +120,8 @@ class GeographicExploration:
             old = self._water.get(position)
             if old is None and len(self._water) >= self.config.max_distinct_sites:
                 continue
+            if old is not None and old.last_confirmed_step == capture.t_monde:
+                continue
             first = capture.t_monde if old is None else old.first_seen_step
             prev = 0 if old is None else old.contradictions
             reached = (capture.t_monde if position == (capture.x, capture.y)
