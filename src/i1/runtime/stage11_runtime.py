@@ -792,6 +792,7 @@ class Stage11Runtime(Stage9Runtime):
                             data={"candidates": [t.ref for t in frozen_place_targets],
                                   "sites": len(remembered),
                                   "source": "prior_frozen_geographic_owner"})
+            memory_initial_state = None
             for target in frozen_place_targets:
                 if not self._charge(module="planning",
                                     operation="geographic_admissibility_preflight"):
@@ -806,10 +807,16 @@ class Stage11Runtime(Stage9Runtime):
                 if not self._charge(module="planning", operation="planning_build"):
                     defer_geo_once("planning_build")
                     break
-                state = state_from_capture(
-                    capture=capture, is_night=self.world.is_night(capture.t_monde))
+                # Same physical capture for every competing proposal.
+                # A single materialization is sufficient and cannot leak
+                # extra world data between alternative one-hop simulations.
+                if memory_initial_state is None:
+                    memory_initial_state = state_from_capture(
+                        capture=capture,
+                        is_night=self.world.is_night(capture.t_monde),
+                    )
                 proposal = propose_spatial_return(
-                    target=target, initial_state=state,
+                    target=target, initial_state=memory_initial_state,
                     simulator=self.simulator,
                     st_version=st_before_cycle.version, t_monde=capture.t_monde,
                     ttl_steps=self._stage6_config.planning.option_ttl_steps,
@@ -1159,6 +1166,8 @@ class Stage11Runtime(Stage9Runtime):
                     )
                 )
             if geo is not None and geo.config.remember_entities:
+                # Phase-1 knowledge is only a *candidate*. Validate it against
+                # the now observed owner before spending Competition UC.
                 geo.freeze_places(
                     self._stage11_frozen_place_targets
                     if not self._cycle_degraded else ()
@@ -1175,6 +1184,7 @@ class Stage11Runtime(Stage9Runtime):
                     and old.option.id not in approved):
                     self.competition.invalidate_candidate(old.option.id)
                     self.stage3.control.clear_option_step(old.option.id)
+            funded_refs = set()
             if not self._cycle_degraded:
                 for proposal in self._stage11_place_proposals_this_cycle:
                     if proposal.option.id not in approved:
@@ -1188,10 +1198,34 @@ class Stage11Runtime(Stage9Runtime):
                             None if self.goal_manager.active_goal is None
                             else self.goal_manager.active_goal.id),
                         t_monde=capture.t_monde, cycle=cycle)
+                    if accepted:
+                        funded_refs.add(proposal.option.id)
                     self._write(kind="i1_place_memory_option_registration",
                                 cycle=cycle,
                                 data={"option_ref": proposal.option.id,
                                       "registered": accepted})
+            if geo is not None and geo.config.remember_entities:
+                # Only charged and *retained* Competition candidates may
+                # remain published. An eligible but unfunded target cannot
+                # masquerade as an active option in this cycle.
+                geo.freeze_places(tuple(
+                    target for target in geo.place_offered
+                    if not self._cycle_degraded
+                    and f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                       in funded_refs
+                    and self.competition.proposal_for(
+                        f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                    ) is not None
+                ))
+                now_funded = {
+                    f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                    for target in geo.place_offered
+                }
+                for old in self.competition.candidate_proposals:
+                    if (old.option.motive_ref.type == "place_memory"
+                        and old.option.id not in now_funded):
+                        self.competition.invalidate_candidate(old.option.id)
+                        self.stage3.control.clear_option_step(old.option.id)
             current = {
                 proposal.option.id
                 for proposal in self._stage11_geographic_proposals_this_cycle
