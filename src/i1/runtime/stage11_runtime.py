@@ -305,7 +305,7 @@ class Stage11Runtime(Stage9Runtime):
         observed = self.exploration.observe_geographic_capture(capture)
         if geo.config.remember_water:
             for memory in geo.observe_water(
-                capture, observer_id=self.individual_id,
+                capture, observer_id=getattr(self, "_i1_personal_id", self.individual_id),
             ):
                 self._write(kind="i1_water_place_observed", cycle=1,
                             data={"position": list(memory.position),
@@ -772,7 +772,7 @@ class Stage11Runtime(Stage9Runtime):
                     "observed_from": tuple(row["observed_from"]),
                 }) for row in frozen_geography.get("water_places", ()))
                 remembered = tuple(
-                    site for site in remembered if site.observer_id == self.individual_id
+                    site for site in remembered if site.observer_id == getattr(self, "_i1_personal_id", self.individual_id)
                 )
                 frozen_water_target = find_water_return(
                     origin=(capture.x, capture.y),
