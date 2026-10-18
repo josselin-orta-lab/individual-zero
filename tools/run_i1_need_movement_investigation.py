@@ -362,6 +362,8 @@ def _wal_life(*, birth, params, life_id, path, steps, observe_owner_digests=Fals
         "effective_sleep_fatigue_weight": life._stage10_config.sleep.fatigue_weight,
         "effective_geographic_novelty_weight": life._stage11_config.geographic.novelty_weight,
         "effective_geographic_policy_version": life._stage11_config.geographic.version,
+        "effective_affordance_policy": next((x for x in life._i1_model_contract
+            if isinstance(x, str) and x.startswith("i1-unknown-action-affordance-")), None),
         "effective_sleep_fatigue_gain": life._stage10_config.sleep.fatigue_gain,
         "effective_sleep_consolidation_weight": life._stage10_config.sleep.consolidation_weight,
         "steps": trajectory,
@@ -411,7 +413,8 @@ def _m11_life(*, birth, params, life_id, path, steps):
 
 def execute(*, preset_name, seed, steps, lives, custody, output_dir,
             observe_owner_digests=False, experimental_fatigue_weight=None,
-            world_variant=0, geographic_novelty_weight=None):
+            world_variant=0, geographic_novelty_weight=None,
+            research_positive_lived_floor=False):
     if (type(seed) is not int or not 0 <= seed <= 2**32 - 1
             or type(steps) is not int or not 1 <= steps <= MAX_STEPS
             or type(lives) is not int or not 1 <= lives <= MAX_LIVES
@@ -424,6 +427,8 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                  or experimental_fatigue_weight not in RESEARCH_WEIGHTS
                  or custody != "wal")):
         raise ValueError("isolated scientific fatigue arms require WAL and exact registered weights")
+    if type(research_positive_lived_floor) is not bool:
+        raise ValueError("research positive-evidence mode must be bool")
     if geographic_novelty_weight not in GEOGRAPHIC_NOVELTY_WEIGHTS:
         raise ValueError("registered geographic novelty arm is mandatory")
     if custody != "wal":
@@ -452,7 +457,11 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                 "experimental_fatigue_weight": experimental_fatigue_weight,
                 "world_variant": world_variant,
                 "geographic_novelty_weight": geographic_novelty_weight,
-                "geographic_policy": GEO_POLICY},
+                "geographic_policy": GEO_POLICY,
+                "research_positive_lived_floor": research_positive_lived_floor,
+                "research_floor_policy": (
+                    "i1-research-positive-lived-floor-v1" if research_positive_lived_floor
+                    else "control-canonical-I1-affordance-evidence")},
         "scientific_gate": "NOT_EVALUATED",
         "old_cohorts_used_as_oracles": False,
         "lives": [],
@@ -473,6 +482,11 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
             generate(build)
             sys.path.insert(0, str(build))
             from i1lab.i1_birth import birth_i1, birth_i1_m11
+            if research_positive_lived_floor:
+                # Fresh research process: version and override only this I1
+                # evaluator. Canonical actor source and I0 remain untouched.
+                from i1_research_lived_evidence_floor import install_research_positive_floor
+                install_research_positive_floor()
             if experimental_fatigue_weight is not None:
                 # Research-only in-memory override, before any birth and in
                 # a separate process per arm. Never modify canonical source.
@@ -512,6 +526,10 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                 if (custody == "wal" and life["effective_geographic_novelty_weight"]
                         != geographic_novelty_weight):
                     raise AssertionError("actual born I1 geographic novelty mismatch")
+                expected_floor = "i1-research-positive-lived-floor-v1"
+                effective = life["effective_affordance_policy"] or ""
+                if (expected_floor in effective) != research_positive_lived_floor:
+                    raise AssertionError("actual I1 affordance policy differs from research arm")
                 life["individual_id"] = life_id
                 report["lives"].append(life)
         report["status"] = "COMPLETED_WITHOUT_SCIENTIFIC_VERDICT"
@@ -544,6 +562,8 @@ def main():
     parser.add_argument("--geographic-novelty-weight", type=float,
                         required=False, choices=GEOGRAPHIC_NOVELTY_WEIGHTS,
                         help="prebirth sensitivity arm; never an action dispatch")
+    parser.add_argument("--research-positive-lived-floor", action="store_true",
+                        help="isolated post-living-positive-TD non-attenuation ablation")
     parser.add_argument("--experimental-fatigue-weight", type=float,
                         choices=RESEARCH_WEIGHTS, default=None,
                         help="research-only WAL arm; birth-only in-memory weight override")
@@ -586,6 +606,7 @@ def main():
             experimental_fatigue_weight=args.experimental_fatigue_weight,
             world_variant=args.world_variant,
             geographic_novelty_weight=args.geographic_novelty_weight,
+            research_positive_lived_floor=args.research_positive_lived_floor,
         )
         print(json.dumps({
             "status": report["status"],
