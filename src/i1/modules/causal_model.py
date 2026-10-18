@@ -1436,7 +1436,11 @@ class CausalModel:
         # A *different actually eaten food* may be an independently lived
         # no-exposure comparison for a preregistered treatment. Same episode
         # and physical reference are preserved: this is NOT a new experience.
-        for observed in tuple(causal_observations):
+        # Iterate only the initial observed exposures. Appended controls
+        # must never be recycled as independent physical observations.
+        original_observation_count = len(causal_observations)
+        for index in range(original_observation_count):
+            observed = causal_observations[index]
             for treatment, control in self.config.food_control_pairs:
                 if observed.subject_ref != control:
                     continue
