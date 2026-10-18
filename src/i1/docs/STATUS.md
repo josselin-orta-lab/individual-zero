@@ -283,3 +283,14 @@ vécue n'est modifié. Aucun nouveau test ni campagne manuelle n'est
 ajouté, conformément à la consigne. Le changement de code généré est
 contraint par trois blocs exacts et attend la CI existante; aucun gain
 mesuré ou GO scientifique n'est revendiqué.
+
+## PR #271 : comptage et sélection P-47 en un parcours
+
+La promotion différée au statut établi conserve désormais seulement les
+signatures de contextes et le témoin maximal pendant un unique parcours
+des interventions déjà admises au-delà de la borne de réfutation. Elle
+n'alloue plus la liste temporaire des témoins positifs. Le seuil n2 et
+la règle de sélection du maximum (pas du monde, identifiant) restent
+identiques ; les interventions invalidées sont ignorées. Aucun test
+supplémentaire ni campagne manuelle selon la consigne. Validation CI
+habituelle requise avant fusion, sans GO scientifique revendiqué.

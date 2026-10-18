@@ -2336,19 +2336,21 @@ class CausalModel:
             ):
                 continue
             boundary = revisions.get(ref, (-1, ""))[0]
-            successful = [
-                item for item in positive_by_ref.get(ref, ())
-                if item.observed_step > boundary
-            ]
-            if len({item.context_signature for item in successful}) < self.config.n2:
+            # Accumulate independent contexts and the same maximal physical
+            # witness in one scan, without retaining another history list.
+            contexts: set[str] = set()
+            witness = None
+            for item in positive_by_ref.get(ref, ()):
+                if item.observed_step <= boundary:
+                    continue
+                contexts.add(item.context_signature)
+                if witness is None or (
+                    item.observed_step, item.identifier
+                ) > (witness.observed_step, witness.identifier):
+                    witness = item
+            if len(contexts) < self.config.n2:
                 continue
             current = published[ref]
-            # The previous sorted(...)[-1] chose the greatest observed
-            # (world-step, identifier) pair. Select the same witness without
-            # sorting every historical success of this contingency.
-            witness = max(
-                successful, key=lambda item: (item.observed_step, item.identifier)
-            )
             new = replace(
                 current, causal_status="etablie", version=current.version + 1,
             )
