@@ -1,0 +1,639 @@
+{
+  "schema": "individual-zero-i1-world-preset/v1",
+  "engine": "I1",
+  "id": "longlife-garden",
+  "description": "Abundant stationary food and water dispersed through a large hazard-free zone, offering genuine long-life opportunities without commands or privileged knowledge.",
+  "spawn": [
+    8,
+    8
+  ],
+  "initial_body": {
+    "energy": 75,
+    "food": 45,
+    "water": 45,
+    "integrity": 90
+  },
+  "layout": {
+    "water_sources": [
+      [
+        4,
+        4
+      ],
+      [
+        8,
+        4
+      ],
+      [
+        12,
+        4
+      ],
+      [
+        16,
+        4
+      ],
+      [
+        20,
+        4
+      ],
+      [
+        24,
+        4
+      ],
+      [
+        28,
+        4
+      ],
+      [
+        4,
+        8
+      ],
+      [
+        8,
+        8
+      ],
+      [
+        12,
+        8
+      ],
+      [
+        16,
+        8
+      ],
+      [
+        20,
+        8
+      ],
+      [
+        24,
+        8
+      ],
+      [
+        28,
+        8
+      ],
+      [
+        4,
+        12
+      ],
+      [
+        8,
+        12
+      ],
+      [
+        12,
+        12
+      ],
+      [
+        16,
+        12
+      ],
+      [
+        20,
+        12
+      ],
+      [
+        24,
+        12
+      ],
+      [
+        28,
+        12
+      ],
+      [
+        4,
+        16
+      ],
+      [
+        8,
+        16
+      ],
+      [
+        12,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        20,
+        16
+      ],
+      [
+        24,
+        16
+      ],
+      [
+        28,
+        16
+      ],
+      [
+        4,
+        20
+      ],
+      [
+        8,
+        20
+      ],
+      [
+        12,
+        20
+      ],
+      [
+        16,
+        20
+      ],
+      [
+        20,
+        20
+      ],
+      [
+        24,
+        20
+      ],
+      [
+        28,
+        20
+      ],
+      [
+        4,
+        24
+      ],
+      [
+        8,
+        24
+      ],
+      [
+        12,
+        24
+      ],
+      [
+        16,
+        24
+      ],
+      [
+        20,
+        24
+      ],
+      [
+        24,
+        24
+      ],
+      [
+        28,
+        24
+      ],
+      [
+        4,
+        28
+      ],
+      [
+        8,
+        28
+      ],
+      [
+        12,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        20,
+        28
+      ],
+      [
+        24,
+        28
+      ],
+      [
+        28,
+        28
+      ]
+    ],
+    "resources": [
+      {
+        "cell": [
+          4,
+          4
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          8,
+          4
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          12,
+          4
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          16,
+          4
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          20,
+          4
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          24,
+          4
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          28,
+          4
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          4,
+          8
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          8,
+          8
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          12,
+          8
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          16,
+          8
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          20,
+          8
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          24,
+          8
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          28,
+          8
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          4,
+          12
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          8,
+          12
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          12,
+          12
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          16,
+          12
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          20,
+          12
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          24,
+          12
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          28,
+          12
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          4,
+          16
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          8,
+          16
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          12,
+          16
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          16,
+          16
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          20,
+          16
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          24,
+          16
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          28,
+          16
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          4,
+          20
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          8,
+          20
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          12,
+          20
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          16,
+          20
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          20,
+          20
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          24,
+          20
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          28,
+          20
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          4,
+          24
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          8,
+          24
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          12,
+          24
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          16,
+          24
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          20,
+          24
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          24,
+          24
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          28,
+          24
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          4,
+          28
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          8,
+          28
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          12,
+          28
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          16,
+          28
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          20,
+          28
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          24,
+          28
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          28,
+          28
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          8,
+          9
+        ],
+        "kind": "berry_b",
+        "quantity": 100
+      },
+      {
+        "cell": [
+          9,
+          8
+        ],
+        "kind": "wood",
+        "quantity": 20
+      },
+      {
+        "cell": [
+          9,
+          9
+        ],
+        "kind": "stone",
+        "quantity": 20
+      }
+    ],
+    "obstacles": [],
+    "creatures": [],
+    "danger_zones": [],
+    "lethal_zones": []
+  },
+  "recommended_steps": 300
+}

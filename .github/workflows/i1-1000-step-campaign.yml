@@ -1,0 +1,62 @@
+name: I1 1000-step paired sleep and learning
+on:
+  push:
+    branches: [science/i1-longlife-learning-sleep-20261018]
+    paths:
+      - '.github/workflows/i1-1000-step-campaign.yml'
+      - 'tools/summarize_i1_1000_cohorts.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: i1-1000-paired-${{ github.ref }}-${{ github.run_id }}
+  cancel-in-progress: false
+jobs:
+  cohort:
+    runs-on: ubuntu-latest
+    timeout-minutes: 115
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        world: [oasis, foraging, dry-valley, blocked-route, longlife-garden]
+        weight: ['0.0', '0.1', '0.2', '0.65']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify engine and world contracts
+        run: |
+          python -m pip install -e .
+          python scripts/check_engine_repository.py --json
+          python scripts/check_engine_contracts.py --json
+          python tools/run_i1_longlife_science.py --preset "${{ matrix.world }}" --validate-only
+      - name: Two paired mortal births, exactly 1000-step horizon
+        shell: bash
+        env:
+          WORLD: ${{ matrix.world }}
+          WEIGHT: ${{ matrix.weight }}
+        run: |
+          set -euo pipefail
+          for variant in 101 102; do
+            seed=$((880000 + variant))
+            folder="reports/${WORLD}/weight-${WEIGHT}/variant-${variant}"
+            python tools/run_i1_longlife_science.py \
+              --preset "$WORLD" --seed "$seed" --world-variant "$variant" \
+              --steps 1000 --lives 1 --custody wal \
+              --experimental-fatigue-weight "$WEIGHT" \
+              --observe-owner-digests --output-dir "$folder"
+            python tools/analyze_i1_longlife_science.py \
+              --input "$folder" --output "$folder/science-summary.json"
+          done
+      - name: Preserve every WAL including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-1000-${{ matrix.world }}-${{ matrix.weight }}-${{ github.run_id }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
