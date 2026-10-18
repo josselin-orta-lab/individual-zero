@@ -32,19 +32,25 @@ PROFILES = (
     (0.30, 0.55),
     (0.45, 0.55),
 )
-WORLDS = ("oasis", "foraging", "dry-valley")
+LOW_PROFILES = (
+    None,
+    (0.08, 0.35),
+    (0.15, 0.20),
+    (0.08, 0.20),
+)
+WORLDS = ("oasis", "foraging", "dry-valley", "blocked-route")
 POLICY = "i1-post314-spatial-natural-population-v1"
 
 
-def configure_before_birth(params, candidate):
+def configure_before_birth(params, candidate, *, profiles=PROFILES, policy=POLICY):
     """Return only frozen prenatal config, with canonical I1 flags untouched."""
-    if type(candidate) is not int or candidate not in range(len(PROFILES)):
+    if type(candidate) is not int or candidate not in range(len(profiles)):
         raise ValueError("unregistered curiosity profile")
     if candidate == 0:
         return params
     from i1lab.i1_natural_runtime import GeographicExplorationConfig
 
-    novelty, weight = PROFILES[candidate]
+    novelty, weight = profiles[candidate]
     if not (0.0 < novelty <= 1.0 and 0.0 < weight <= 1.0):
         raise ValueError("out-of-bounds exploratory configuration")
     original = params["stage11_config"]
@@ -53,7 +59,7 @@ def configure_before_birth(params, candidate):
     # Match the exact same booleans, geometry/UC guards and capacity that the
     # default constructor installs. Only curiosity magnitude differs.
     geo = GeographicExplorationConfig(
-        version="i1-firstperson-frontier-v1+" + POLICY + ":" + str(candidate),
+        version="i1-firstperson-frontier-v1+" + policy + ":" + str(candidate),
         novelty_weight=novelty,
         max_distinct_sites=1024,
         max_targets_per_cycle=1,
@@ -63,7 +69,7 @@ def configure_before_birth(params, candidate):
         max_place_candidates=3,
     )
     configured = replace(
-        original, version=original.version + "+" + POLICY + ":" + str(candidate),
+        original, version=original.version + "+" + policy + ":" + str(candidate),
         geographic=geo, intrinsic_weight=weight,
         local_threat_alerts=True,
         geographic_capacity_guard_enabled=True,
@@ -73,11 +79,15 @@ def configure_before_birth(params, candidate):
     return {**params, "stage11_config": configured}
 
 
-def study_one(*, candidate, world, seed, steps, out):
-    if (type(candidate) is not int or candidate not in range(len(PROFILES))
+def study_one(*, candidate, world, seed, steps, out, study="initial"):
+    if (study not in ("initial", "lowcuriosity")
+            or type(candidate) is not int
+            or candidate not in range(len(PROFILES if study == "initial" else LOW_PROFILES))
             or world not in WORLDS or type(seed) is not int
             or type(steps) is not int or not 1 <= steps <= 1000):
         raise ValueError("unregistered prospective study arm")
+    profiles = PROFILES if study == "initial" else LOW_PROFILES
+    policy = POLICY if study == "initial" else "i1-post314-low-curiosity-prenatal-v1"
     out = Path(out).resolve()
     if out.exists():
         raise FileExistsError("never overwrite a mortal life's evidence")
@@ -86,12 +96,13 @@ def study_one(*, candidate, world, seed, steps, out):
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     report = {
         "status": "TECHNICAL_FAILURE", "scientific_verdict": "NOT_EVALUATED",
+        "study": study,
         "source_sha": source_sha, "candidate": candidate, "world": world,
         "seed": seed, "steps_requested": steps,
         "prenatal_profile": (
             {"native_unchanged": True} if candidate == 0
-            else {"geographic_novelty": PROFILES[candidate][0],
-                  "stage11_intrinsic_weight": PROFILES[candidate][1]}
+            else {"geographic_novelty": profiles[candidate][0],
+                  "stage11_intrinsic_weight": profiles[candidate][1]}
         ),
     }
     try:
@@ -105,7 +116,8 @@ def study_one(*, candidate, world, seed, steps, out):
             preset, preset_sha = load_preset(world)
             params, _ = _birth_parameters(preset)
             native_physics = params["world_config"].digest()
-            params = configure_before_birth(params, candidate)
+            params = configure_before_birth(
+                params, candidate, profiles=profiles, policy=policy)
             # Same identity within a paired world/seed set = same temperament.
             # Distinct process and unique WAL = no memory/history sharing.
             life_id = f"i1:geo-population:{world}:{seed}"
@@ -118,8 +130,8 @@ def study_one(*, candidate, world, seed, steps, out):
             if (geo is None or not geo.remember_entities or not geo.observe_routes
                     or not life._stage11_config.geographic_route_enabled):
                 raise AssertionError("corrected natural I1 spatial capability disabled")
-            expected_geo = 0.15 if candidate == 0 else PROFILES[candidate][0]
-            expected_weight = 0.35 if candidate == 0 else PROFILES[candidate][1]
+            expected_geo = 0.15 if candidate == 0 else profiles[candidate][0]
+            expected_weight = 0.35 if candidate == 0 else profiles[candidate][1]
             if (geo.novelty_weight != expected_geo
                     or life._stage11_config.intrinsic_weight != expected_weight):
                 raise AssertionError("effective exploratory birth differs from arm")
@@ -168,6 +180,14 @@ def study_one(*, candidate, world, seed, steps, out):
             audit = HashChainedJournal.audit_durable_wal(str(wal))
             if audit["head_hash"] != life.journal.head_hash:
                 raise AssertionError("durable WAL fails final hash attestation")
+            # Read-only independent verifier for the sealed WAL, preserving
+            # distinction between recall, proposed options and physical acts.
+            from audit_i1_spatial_navigation_314 import audit as audit_spatial
+            spatial = audit_spatial(wal)
+            if (not spatial["independent_hash_chain_verified"]
+                    or spatial["journal_head"] != audit["head_hash"]
+                    or spatial["journal_entries"] != audit["verified_entries"]):
+                raise AssertionError("spatial WAL attestation mismatch")
             n = len(trace)
             avg_shortage = cumulative_shortage / n
             score = 0.7 * (n / steps) + 0.3 * (1 - avg_shortage)
@@ -195,6 +215,7 @@ def study_one(*, candidate, world, seed, steps, out):
                                for k in ("water","food","energy")},
                 "mean_shortage": round(avg_shortage, 9),
                 "external_score": round(score, 9),
+                "spatial_wal_audit": spatial,
                 "wal_head": audit["head_hash"],
                 "wal_entries": audit["verified_entries"],
                 "trajectory": trace,
@@ -209,6 +230,7 @@ def study_one(*, candidate, world, seed, steps, out):
 
 def main():
     p = argparse.ArgumentParser()
+    p.add_argument("--study", choices=("initial", "lowcuriosity"), default="initial")
     p.add_argument("--candidate", required=True, type=int)
     p.add_argument("--world", required=True, choices=WORLDS)
     p.add_argument("--seed", required=True, type=int)
@@ -216,9 +238,9 @@ def main():
     p.add_argument("--output-dir", required=True, type=Path)
     a = p.parse_args()
     value = study_one(candidate=a.candidate, world=a.world,
-                      seed=a.seed, steps=a.steps, out=a.output_dir)
+                      seed=a.seed, steps=a.steps, out=a.output_dir, study=a.study)
     print(json.dumps({k: value[k] for k in (
-        "status", "candidate", "world", "seed",
+        "status", "study", "candidate", "world", "seed",
         "observed_steps", "lifecycle", "actions",
         "zero_steps", "external_score",
     )}, sort_keys=True))
