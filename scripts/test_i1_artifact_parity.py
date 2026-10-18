@@ -730,6 +730,23 @@ def _reference_agency_index(before: bytes) -> bytes:
     return source.encode("utf-8")
 
 
+def _approved_i1_fcog_020_birth(before: bytes, after: bytes) -> bool:
+    """Exactly one prospective I1 sleep-policy change, not migration parity."""
+    old = before.decode("utf-8")
+    target = after.decode("utf-8")
+    substitutions = (
+        ('POLICY = "i1-natural-sleep-fatigue-memory-night-energy-v2-procedural-batch"',
+         'POLICY = "i1-natural-sleep-fatigue-memory-night-energy-v3-fcog-020"'),
+        ('FATIGUE_WEIGHT = 0.65',
+         'FATIGUE_WEIGHT = 0.20  # Canonical w_F: dynamic F_cog still accrues and recovers.'),
+    )
+    for earlier, current in substitutions:
+        if old.count(earlier) != 1 or target.count(current) != 1:
+            return False
+        old = old.replace(earlier, current, 1)
+    return old == target
+
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -745,6 +762,10 @@ def verify(reference_root: Path) -> None:
             rel for rel in old.keys() & new.keys()
             if old[rel] != new[rel] and not (
                 False  # Stage10 is handled by the stacked exact approval below
+                or (rel == "i1lab/i1_natural_sleep.py"
+                    and _approved_i1_fcog_020_birth(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
                 or (rel == "i1lab/stage10_runtime.py"
                     and _approved_i1_287_stage10_authentic_policy_union(
                         _reference_i1_255_stage10_move(
