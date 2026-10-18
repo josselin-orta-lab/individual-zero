@@ -1879,6 +1879,10 @@ class CausalModel:
                 treated.append(value)
             elif not value.cause_present and not value.effect_present:
                 controls.append(value)
+        # Both physical arms are necessary for any contrasting pair.
+        # Avoid sorting and indexing when one arm was never observed.
+        if not treated or not controls:
+            return None
         treated.sort(key=lambda value: value.identifier)
         controls.sort(key=lambda value: value.identifier)
         # Recovered or directly validated observations may contain lists:

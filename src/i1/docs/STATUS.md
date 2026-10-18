@@ -306,3 +306,13 @@ La provenance vécue, l'ordre d'admission et les conditions physiques
 ne sont pas modifiés. Aucun test ajouté ni lancement manuel selon la
 consigne. Source générée limitée à un bloc exact, CI habituelle avant
 fusion. Aucun GO scientifique.
+
+## PR #273 : éviter les tris sans paire hydrique disponible
+
+Une revue hydrique nécessite une exposition et un contrôle physique.
+Lorsqu'un des deux groupes est vide après classification, retourner
+immédiatement `None` évite deux tris et la construction d'un index.
+Le résultat de recherche était déjà `None` dans ce cas. Le parcours
+vécu, les seuils, les témoins admis et la provenance sont inchangés.
+Aucun test nouveau et aucune campagne manuelle. Le diff source est
+strictement contrôlé; fusion après CI existante seulement.

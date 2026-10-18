@@ -341,6 +341,24 @@ def _reference_deferred_single_scan(before: bytes) -> bytes:
     return value.replace(old, new, 1).encode("utf-8")
 
 
+def _reference_hydration_classification(before: bytes) -> bytes:
+    """Reconstruct the exact #272 reviewed classification."""
+    old = "        observed = [\n            value for value in observations.values()\n            if value.identifier in self._hydration_observation_witnesses\n            and value.contingency_ref == contingency.ref\n            and value.predicate == contingency.predicate\n            and value.application_context == contingency.context_signature\n            and value.observation_context == \"water_source\"\n            and value.controlled_variables\n        ]\n        treated = sorted(\n            (value for value in observed if value.cause_present\n             and value.effect_present),\n            key=lambda value: value.identifier,\n        )\n        controls = sorted(\n            (value for value in observed if not value.cause_present\n             and not value.effect_present),\n            key=lambda value: value.identifier,\n        )"
+    new = "        treated = []\n        controls = []\n        for value in observations.values():\n            if (\n                value.identifier not in self._hydration_observation_witnesses\n                or value.contingency_ref != contingency.ref\n                or value.predicate != contingency.predicate\n                or value.application_context != contingency.context_signature\n                or value.observation_context != \"water_source\"\n                or not value.controlled_variables\n            ):\n                continue\n            if value.cause_present and value.effect_present:\n                treated.append(value)\n            elif not value.cause_present and not value.effect_present:\n                controls.append(value)\n        treated.sort(key=lambda value: value.identifier)\n        controls.sort(key=lambda value: value.identifier)"
+    text = before.decode("utf-8")
+    if text.count(old) != 1:
+        raise ValueError("hydration classification source drift")
+    return text.replace(old, new, 1).encode("utf-8")
+
+
+def _approved_hydration_empty_arm_shortcut(before: bytes, after: bytes) -> bool:
+    """Allow only the empty treated/control arm early return."""
+    old = "        treated.sort(key=lambda value: value.identifier)\n        controls.sort(key=lambda value: value.identifier)\n        # Recovered or directly validated observations may contain lists:"
+    new = "        # Both physical arms are necessary for any contrasting pair.\n        # Avoid sorting and indexing when one arm was never observed.\n        if not treated or not controls:\n            return None\n        treated.sort(key=lambda value: value.identifier)\n        controls.sort(key=lambda value: value.identifier)\n        # Recovered or directly validated observations may contain lists:"
+    original, candidate = before.decode("utf-8"), after.decode("utf-8")
+    return original.count(old) == 1 and candidate.count(new) == 1 and original.replace(old, new, 1) == candidate
+
+
 def _approved_hydration_single_classification(before: bytes, after: bytes) -> bool:
     """Allow only stream classification before existing lexical sorts."""
     old = "        observed = [\n            value for value in observations.values()\n            if value.identifier in self._hydration_observation_witnesses\n            and value.contingency_ref == contingency.ref\n            and value.predicate == contingency.predicate\n            and value.application_context == contingency.context_signature\n            and value.observation_context == \"water_source\"\n            and value.controlled_variables\n        ]\n        treated = sorted(\n            (value for value in observed if value.cause_present\n             and value.effect_present),\n            key=lambda value: value.identifier,\n        )\n        controls = sorted(\n            (value for value in observed if not value.cause_present\n             and not value.effect_present),\n            key=lambda value: value.identifier,\n        )"
@@ -574,22 +592,26 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/causal_model.py"
-                    and _approved_hydration_single_classification(
-                        _reference_deferred_single_scan(
-                            _reference_approved_physical_prior_buckets(
-                            _reference_approved_revision_contexts(
-                            _reference_approved_stream_noncanonical_pairs(
-                                _reference_lived_review_dispatch(
-                                    _reference_approved_confirmed_count(
-                                        _reference_approved_physical_alias(
-                                            _reference_approved_active_context_cache(
-                                                _reference_hydration_control_lookup(
-                                                    _reference_food_control_sort(
-                                                        _reference_causal_minimum(
-                                                            _reference_approved_numeric_index(
-                                                                _reference_numeric_publication(
-                                                                    _reference_agency_index(
-                                                                        (old_root / rel).read_bytes()
+                    and _approved_hydration_empty_arm_shortcut(
+                        _reference_hydration_classification(
+                            _reference_deferred_single_scan(
+                                _reference_approved_physical_prior_buckets(
+                                    _reference_approved_revision_contexts(
+                                        _reference_approved_stream_noncanonical_pairs(
+                                            _reference_lived_review_dispatch(
+                                                _reference_approved_confirmed_count(
+                                                    _reference_approved_physical_alias(
+                                                        _reference_approved_active_context_cache(
+                                                            _reference_hydration_control_lookup(
+                                                                _reference_food_control_sort(
+                                                                    _reference_causal_minimum(
+                                                                        _reference_approved_numeric_index(
+                                                                            _reference_numeric_publication(
+                                                                                _reference_agency_index(
+                                                                                    (old_root / rel).read_bytes()
+                                                                                )
+                                                                            )
+                                                                        )
                                                                     )
                                                                 )
                                                             )
@@ -601,8 +623,6 @@ def verify(reference_root: Path) -> None:
                                     )
                                 )
                             )
-                        )
-                        )
                         ),
                         (new_root / rel).read_bytes()
                     ))
