@@ -10,7 +10,7 @@ from math import isfinite
 from typing import Mapping
 
 from .observed_frontier_routing import ObservedSurvey, GeographicTransitTarget
-from .spatial_memory import PlaceMemory, SpatialReturnTarget
+from .spatial_memory import PlaceMemory, SpatialReturnTarget, EntityMotionDiagnosis
 
 DIRECTION_DELTAS = {"north": (0, -1), "east": (1, 0),
                     "south": (0, 1), "west": (-1, 0)}
@@ -93,10 +93,12 @@ class GeographicExploration:
         self._places: dict[str, PlaceMemory] = {}
         self._place_observer_id: str | None = None
         self._place_offered: tuple[SpatialReturnTarget, ...] = ()
+        self._motion: dict[str, EntityMotionDiagnosis] = {}
+        self._motion_updates: tuple[EntityMotionDiagnosis, ...] = ()
 
     def _snapshot_schema(self) -> str:
         if self.config.remember_entities:
-            return "geographic-exploration-v4-entity-place"
+            return "geographic-exploration-v5-entity-motion"
         if self.config.refresh_surveys:
             return "geographic-exploration-v3-survey-refresh"
         if self.config.observe_routes:
@@ -107,6 +109,59 @@ class GeographicExploration:
     def place_memories(self) -> tuple[PlaceMemory, ...]:
         """First-person last sightings, never a hidden world map."""
         return tuple(self._places[key] for key in sorted(self._places))
+
+    @property
+    def motion_diagnoses(self) -> tuple[EntityMotionDiagnosis, ...]:
+        return tuple(self._motion[k] for k in sorted(self._motion))
+
+    @property
+    def motion_updates(self) -> tuple[EntityMotionDiagnosis, ...]:
+        return self._motion_updates
+
+    def _observe_motion(self, *, capture, observer_id: str, visible: dict) -> None:
+        """Only unique sightings in uninterrupted physical captures are linked.
+
+        Multiple same-kind entities, gaps and unobserved replacements break
+        the tentative link. No use of the raw sensor label as an identity.
+        """
+        counts = {}
+        for kind, position in visible:
+            counts.setdefault(kind, []).append(position)
+        updated = []
+        active = {}
+        for kind, positions in sorted(counts.items()):
+            if len(positions) != 1:
+                continue
+            point = positions[0]
+            previous = self._motion.get(kind)
+            if (previous is not None
+                and previous.last_seen_step == capture.t_monde):
+                active[kind] = previous
+                continue
+            if (previous is not None
+                and previous.last_seen_step == capture.t_monde - 1):
+                moved = point != previous.last_position
+                record = replace(
+                    previous, last_seen_step=capture.t_monde,
+                    last_position=point,
+                    observations=previous.observations + 1,
+                    observed_moves=previous.observed_moves + int(moved),
+                    observed_stays=previous.observed_stays + int(not moved),
+                )
+            else:
+                record = EntityMotionDiagnosis(
+                    observer_id=observer_id,
+                    trace_ref=f"motion:{kind}:{capture.t_monde}:{point[0]}:{point[1]}",
+                    entity_type=kind, first_seen_step=capture.t_monde,
+                    last_seen_step=capture.t_monde,
+                    first_position=point, last_position=point,
+                    observations=1, observed_moves=0, observed_stays=0,
+                )
+            record.validate()
+            active[kind] = record
+            updated.append(record)
+        self._motion = active
+        self._motion_updates = tuple(updated)
 
     def observe_entities(self, capture, *, observer_id: str) -> tuple[PlaceMemory, ...]:
         """Store only witnessed visible_entities, with repeat-step idempotence.
@@ -134,6 +189,7 @@ class GeographicExploration:
                 raise ValueError("invalid or duplicated first-person entity")
             visible[(entity.entity_type, position)] = entity
         self._place_observer_id = observer_id
+        self._observe_motion(capture=capture, observer_id=observer_id, visible=visible)
         updates = []
         for (kind, position), entity in sorted(visible.items()):
             key = f"sighting:{kind}:{position[0]}:{position[1]}"
@@ -544,6 +600,7 @@ class GeographicExploration:
             **({"entity_places": [asdict(x) for x in self.place_memories],
                 "place_observer_id": self._place_observer_id,
                 "place_offered": [asdict(x) for x in self._place_offered],
+                "motion_diagnoses": [asdict(x) for x in self.motion_diagnoses],
             } if self.config.remember_entities else {}),
             **({
                 "surveys": [asdict(x) for x in self.surveys],
@@ -722,6 +779,30 @@ class GeographicExploration:
         elif any(key in state for key in
                  ("entity_places", "place_offered", "place_observer_id")):
             raise ValueError("unexpected place memory in legacy snapshot")
+        restored_motion = {}
+        if self.config.remember_entities:
+            raw_motion = state.get("motion_diagnoses")
+            if (not isinstance(raw_motion, list)
+                or len(raw_motion) > self.config.max_distinct_sites):
+                raise ValueError("invalid motion snapshot")
+            for row in raw_motion:
+                if (not isinstance(row, Mapping)
+                    or set(row) != set(EntityMotionDiagnosis.__dataclass_fields__)):
+                    raise ValueError("malformed motion diagnosis")
+                record = EntityMotionDiagnosis(**{
+                    **row, "first_position": tuple(row["first_position"]),
+                    "last_position": tuple(row["last_position"]),
+                })
+                record.validate()
+                if (last is None or record.last_seen_step > last[0]
+                    or record.observer_id != place_observer
+                    or record.entity_type in restored_motion):
+                    raise ValueError("foreign or future motion diagnosis")
+                restored_motion[record.entity_type] = record
+        elif "motion_diagnoses" in state:
+            raise ValueError("unexpected motion diagnosis")
+        self._motion = restored_motion
+        self._motion_updates = ()
         self._places = places
         self._place_observer_id = place_observer
         self._place_offered = place_offered
