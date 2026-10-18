@@ -101,6 +101,15 @@ jobs:
                   kinds=Counter()
                   max_memory_ratio=0.0
                   memory_eval_count=0
+                  memory_crossing_traces=0
+                  learned_memory_evaluations=0
+                  def wal_float(v):
+                      if type(v) in (float,int):
+                          return float(v)
+                      if (isinstance(v,dict) and set(v)=={"$f64"}
+                              and isinstance(v["$f64"],str)):
+                          return float.fromhex(v["$f64"])
+                      raise ValueError("unexpected canonical WAL float encoding")
                   wal_path=base/"life-01.wal"
                   with wal_path.open(encoding="utf-8") as f:
                       for line in f:
@@ -118,10 +127,13 @@ jobs:
                               for trace in data.get("traces",[]):
                                   if isinstance(trace,dict) and str(trace.get("option_ref","")).startswith("option:place-memory:"):
                                       memory_eval_count+=1
-                                      threshold=trace.get("threshold")
-                                      accumulator=trace.get("accumulator_after")
-                                      if isinstance(threshold,(int,float)) and threshold>0 and isinstance(accumulator,(int,float)):
-                                          max_memory_ratio=max(max_memory_ratio,accumulator/threshold)
+                                      threshold=wal_float(trace["threshold"])
+                                      accumulator=wal_float(trace["accumulator_after"])
+                                      assert threshold>0 and accumulator>=0
+                                      max_memory_ratio=max(max_memory_ratio,accumulator/threshold)
+                                      memory_crossing_traces+=int(trace["crossed"])
+                          elif kind=="stage8_option_evaluation" and str(data.get("option_ref","")).startswith("option:place-memory:"):
+                              learned_memory_evaluations+=int(data.get("learned_value_status")=="learned")
                   found[key]=dict(
                       world=key[0],seed=key[1],sha=SOURCE[arm],life_id=life["individual_id"],
                       world_digest=report["source"]["sha256"],
@@ -134,7 +146,10 @@ jobs:
                       mean_cycles=sum(s["cycles_used"] for s in trajectory)/len(trajectory),
                       max_memory_accumulation_over_threshold=max_memory_ratio,
                       memory_evaluations=memory_eval_count,
+                      learned_memory_evaluations=learned_memory_evaluations,
+                      memory_crossing_traces=memory_crossing_traces,
                       memory=dict(audit["stages"]),
+                      memory_crossings_consistent=(memory_crossing_traces==audit["stages"].get("crossed",0)),
                       recalled=audit["recalls_with_candidates"],
                       journal_entries=audit["journal_entries"],
                       journal_head=audit["journal_head"],
@@ -150,6 +165,7 @@ jobs:
               return found
           controls=parse("controls","control")
           changes=parse("treatments","treatment")
+          assert all(z["memory_crossings_consistent"] for z in [*controls.values(),*changes.values()])
           pairs=[]
           for key in sorted(EXPECTED):
               control,treatment=controls[key],changes[key]
