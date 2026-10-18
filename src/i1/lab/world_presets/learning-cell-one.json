@@ -1,0 +1,56 @@
+{
+  "schema": "individual-zero-i1-world-preset/v1",
+  "engine": "I1",
+  "id": "learning-cell-one",
+  "description": "Minimal one-resource natural test, water in cell, no dangers, no geography. Unseen food effect is assigned by physics before newborn birth.",
+  "spawn": [
+    8,
+    8
+  ],
+  "initial_body": {
+    "energy": 50,
+    "food": 35,
+    "water": 60,
+    "integrity": 100
+  },
+  "layout": {
+    "water_sources": [
+      [
+        8,
+        8
+      ]
+    ],
+    "resources": [
+      {
+        "cell": [
+          8,
+          8
+        ],
+        "kind": "berry_a",
+        "quantity": 100
+      }
+    ],
+    "obstacles": [
+      [
+        7,
+        8
+      ],
+      [
+        9,
+        8
+      ],
+      [
+        8,
+        7
+      ],
+      [
+        8,
+        9
+      ]
+    ],
+    "creatures": [],
+    "danger_zones": [],
+    "lethal_zones": []
+  },
+  "recommended_steps": 300
+}
