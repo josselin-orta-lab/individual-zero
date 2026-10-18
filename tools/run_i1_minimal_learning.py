@@ -27,7 +27,10 @@ KINDS = {"berry_a", "berry_b", "wood", "stone"}
 LAYERS = ("water_sources", "resources", "obstacles", "creatures",
           "danger_zones", "lethal_zones")
 BODY = ("energy", "food", "water", "integrity")
-MAX_STEPS, MAX_LIVES = 300, 3
+# The world-preset registry still caps its *recommended* horizon at 300.
+# Long-life sensitivity studies may explicitly request up to 1000 steps.
+# Mortality always interrupts this horizon; it never resets body state.
+MAX_STEPS, MAX_LIVES = 1000, 3
 
 
 def _fields(value, names, label):
@@ -212,6 +215,9 @@ GOAL_ARBITRATION_ARMS = {
     "calibrated-004": (0.04, 0.35),
     "responsive-002": (0.02, 0.25),
 }
+# The I1 goal campaign tests the calibrated arm by default. Every archival
+# study and control must explicitly request "baseline" for comparability.
+DEFAULT_GOAL_ARBITRATION_ARM = "calibrated-004"
 
 
 def _experimental_goal_arbitration_birth(params, arm):
@@ -386,7 +392,7 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
             observe_owner_digests=False, learning_read_ablation=False,
             food_role='a', food_gain=None, quiet_cognitive_sleep=False,
             eligibility_lambda=None, reward_model='absolute',
-            goal_arbitration_arm='baseline'):
+            goal_arbitration_arm=DEFAULT_GOAL_ARBITRATION_ARM):
     if (type(seed) is not int or not 0 <= seed <= 2**32 - 1
             or type(steps) is not int or not 1 <= steps <= MAX_STEPS
             or type(lives) is not int or not 1 <= lives <= MAX_LIVES
@@ -598,8 +604,9 @@ def main():
     parser.add_argument("--food-gain", type=float, choices=(0.0,10.0))
     parser.add_argument("--reward-model", choices=("absolute", "deficit-only-v1"), default="absolute")
     parser.add_argument("--goal-arbitration-arm",
-                        choices=tuple(GOAL_ARBITRATION_ARMS), default="baseline",
-                        help="I1-only prebirth hysteresis / critical pressure research")
+                        choices=tuple(GOAL_ARBITRATION_ARMS),
+                        default=DEFAULT_GOAL_ARBITRATION_ARM,
+                        help="I1-only prebirth goal thresholds (default calibrated-004; baseline is explicit control)")
     parser.add_argument("--eligibility-lambda", type=float,
                         choices=ELIGIBILITY_RESEARCH_ARMS, default=None,
                         help="registered prebirth TD eligibility research arm")
