@@ -356,3 +356,14 @@ ordre lexical sans seconde recherche par identifiant. Il ne change
 aucune donnée persistée, provenance DC-09, statut causal ou admission.
 Aucun nouveau test ni campagne manuelle; contrôle de parité exact
 et CI existante requis avant fusion. Pas de gain mesuré ni GO scientifique.
+
+## PR #278 : aucun rapport Agency ne déclenche un scan historique
+
+Le précontrôle d'un épisode Memory fermé construisait systématiquement
+les références historiques et en attente, même lorsqu'aucun rapport
+Agency n'avait été décodé. Après les vérifications d'identifiants de
+source et le décodage inchangés, un lot admis vide retourne directement
+`()`, comme le traitement précédent, sans écriture ni publication.
+Aucune donnée vécue n'est inventée, aucun statut causal n'est changé.
+Aucun test supplémentaire ou lancement manuel; parité exacte et CI
+habituelle requises avant fusion.
