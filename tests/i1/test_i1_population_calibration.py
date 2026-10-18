@@ -11,7 +11,7 @@ class PopulationResearchTests(unittest.TestCase):
         self.assertEqual(candidates(), candidates())
         self.assertEqual(candidates()[0], BASELINE)
         self.assertEqual(len(candidates()),6)
-        self.assertEqual(set(WORLDS), {"oasis","foraging"})
+        self.assertEqual(set(WORLDS), {"oasis", "foraging", "dry-valley"})
         for candidate in candidates():
             self.assertEqual(set(candidate),set(BOUNDS))
             for k,value in candidate.items():
