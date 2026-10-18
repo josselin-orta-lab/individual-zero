@@ -752,7 +752,7 @@ def _approved_natural_goal_birth(before: bytes, after: bytes) -> bool:
         if goal_policy not in _I1_GOAL_POLICIES:
             raise ValueError("unregistered I1 natural goal arbitration policy")
 '''
-    original = "    def __init__(self, **kwargs):\\n"
+    original = "    def __init__(self, **kwargs):\n"
     if candidate.count(original + inserted) != 1:
         return False
     candidate = candidate.replace(original + inserted, original, 1)
@@ -760,14 +760,14 @@ def _approved_natural_goal_birth(before: bytes, after: bytes) -> bool:
         # created. No action, learned value, world fact or survival rule changes.
         cfg = _configure_birth_goal_policy(cfg, goal_policy)
 '''
-    original = "        cfg = configure_birth_temperament(cfg, life_id=life_id)\\n"
+    original = "        cfg = configure_birth_temperament(cfg, life_id=life_id)\n"
     if candidate.count(original + inserted) != 1:
         return False
     candidate = candidate.replace(original + inserted, original, 1)
     replaced = '''            sleep_cfg, version=(sleep_cfg.version + "+i1-birth-temperament-v1"
                                 + "+" + _GOAL_POLICY_VERSION + ":" + goal_policy),
 '''
-    original = '            sleep_cfg, version=sleep_cfg.version + "+i1-birth-temperament-v1",\\n'
+    original = '            sleep_cfg, version=sleep_cfg.version + "+i1-birth-temperament-v1",\n'
     if candidate.count(replaced) != 1:
         return False
     candidate = candidate.replace(replaced, original, 1)
