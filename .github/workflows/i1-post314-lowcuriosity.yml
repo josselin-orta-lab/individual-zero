@@ -1,0 +1,47 @@
+name: I1 post-314 low-curiosity paired cohort
+on:
+  push:
+    branches: [science/i1-post314-natural-population-20261018]
+    paths:
+      - 'tools/run_i1_post314_population.py'
+      - 'tests/i1/test_i1_post314_population.py'
+      - '.github/workflows/i1-post314-lowcuriosity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  paired:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        candidate: [0, 1, 2, 3]
+        world: [oasis, foraging, dry-valley, blocked-route]
+        seed: [1141, 1142]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - run: python -m unittest discover -s tests/i1 -p test_i1_post314_population.py -v
+      - name: Autonomous post-314 I1 mortality and authenticated memory evidence
+        env:
+          CANDIDATE: ${{ matrix.candidate }}
+          WORLD: ${{ matrix.world }}
+          SEED: ${{ matrix.seed }}
+        run: |
+          python tools/run_i1_post314_population.py --study lowcuriosity \
+            --candidate "$CANDIDATE" --world "$WORLD" --seed "$SEED" \
+            --steps 450 --output-dir "reports/candidate-$CANDIDATE/$WORLD/seed-$SEED"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-lowcuriosity-${{ matrix.candidate }}-${{ matrix.world }}-${{ matrix.seed }}
+          path: reports/
+          if-no-files-found: warn
+          retention-days: 30
