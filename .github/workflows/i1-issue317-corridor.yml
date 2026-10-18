@@ -4,6 +4,8 @@ on:
     branches: [fix/i1-memory-competition-317]
     paths:
       - '.github/workflows/i1-issue317-corridor.yml'
+      - 'src/i1/modules/competition.py'
+      - 'tests/i1/test_i1_memory_competition_317.py'
   workflow_dispatch:
 permissions:
   contents: read
