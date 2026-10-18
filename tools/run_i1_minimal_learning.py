@@ -333,7 +333,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
 def execute(*, preset_name, seed, steps, lives, custody, output_dir,
             observe_owner_digests=False, learning_read_ablation=False,
             food_role='a', food_gain=None, quiet_cognitive_sleep=False,
-            eligibility_lambda=None):
+            eligibility_lambda=None, reward_model='absolute'):
     if (type(seed) is not int or not 0 <= seed <= 2**32 - 1
             or type(steps) is not int or not 1 <= steps <= MAX_STEPS
             or type(lives) is not int or not 1 <= lives <= MAX_LIVES
@@ -345,6 +345,10 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
         raise ValueError('invalid preregistered learning arm')
     if preset_name not in ('learning-cell', 'learning-cell-one') or custody != 'wal' or lives != 1:
         raise ValueError('minimal learning study requires a registered WAL mortal world')
+    if reward_model not in ('absolute', 'deficit-only-v1'):
+        raise ValueError('unknown preregistered reward model')
+    if reward_model != 'absolute' and preset_name != 'learning-cell-one':
+        raise ValueError('reward investigation requires single-resource world')
     if eligibility_lambda is not None and (type(eligibility_lambda) is not float
             or eligibility_lambda not in ELIGIBILITY_RESEARCH_ARMS):
         raise ValueError('unknown TD eligibility research coefficient')
@@ -377,6 +381,7 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                 "food_role": food_role,
                 "food_gain": food_gain,
                 "quiet_cognitive_sleep": quiet_cognitive_sleep,
+                 "reward_model": reward_model,
                  "eligibility_lambda": eligibility_lambda,
                  "eligibility_research_policy": (ELIGIBILITY_RESEARCH_POLICY
                     if eligibility_lambda is not None else None)},
@@ -404,6 +409,14 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
             params, initial_local = _birth_parameters(preset)
             if eligibility_lambda is not None:
                 params = _experimental_td_eligibility_birth(params, eligibility_lambda)
+            if reward_model == "deficit-only-v1":
+                from i1.modules.value_needs import ValueAndNeeds, BODY_VARIABLES
+                def deficit_reward(self, before, after):
+                    conf = self.config
+                    before_loss = sum(conf.weights[name] * max(0.0, conf.setpoints[name]-float(before[name])) for name in BODY_VARIABLES)
+                    after_loss = sum(conf.weights[name] * max(0.0, conf.setpoints[name]-float(after[name])) for name in BODY_VARIABLES)
+                    return before_loss-after_loss
+                ValueAndNeeds.reward_between = deficit_reward
             from i1lab.world import BerryEffect
             physics = params["world_config"]
             effects = dict(physics.berry_effects)
@@ -516,6 +529,7 @@ def main():
     parser.add_argument("--learning-read-ablation", action="store_true")
     parser.add_argument("--food-role", choices=("a","b"), default="a")
     parser.add_argument("--food-gain", type=float, choices=(0.0,10.0))
+    parser.add_argument("--reward-model", choices=("absolute", "deficit-only-v1"), default="absolute")
     parser.add_argument("--eligibility-lambda", type=float,
                         choices=ELIGIBILITY_RESEARCH_ARMS, default=None,
                         help="registered prebirth TD eligibility research arm")
@@ -561,6 +575,7 @@ def main():
             food_gain=args.food_gain,
             quiet_cognitive_sleep=args.quiet_cognitive_sleep,
             eligibility_lambda=args.eligibility_lambda,
+            reward_model=args.reward_model,
         )
         print(json.dumps({
             "status": report["status"],
