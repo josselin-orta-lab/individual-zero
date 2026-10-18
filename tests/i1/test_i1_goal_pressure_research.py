@@ -10,9 +10,14 @@ import sys
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "tools"))
+sys.path.insert(0, str(ROOT / "scripts"))
+from tempfile import TemporaryDirectory
+from build_i1_fork import generate
 
+_ISOLATED_I1 = TemporaryDirectory(prefix="i1-test-goals-")
+generate(Path(_ISOLATED_I1.name))
+sys.path.insert(0, _ISOLATED_I1.name)
 from i1.contracts import GoalProposal
 from i1.modules.goal_manager import GoalManager, GoalManagerConfig
 from run_i1_minimal_learning import GOAL_ARBITRATION_ARMS
