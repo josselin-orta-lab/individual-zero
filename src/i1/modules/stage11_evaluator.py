@@ -196,6 +196,7 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             valid = (target is not None and target.source_t_monde == t_monde
                      and proposal.option.goal_ref is not None
                      and proposal.option.provenance == "memory"
+                     and proposal.option.plan_ref == proposal.plan.id
                      and proposal.option.learning_signature == (
                          f"memory_place_return:{target.entity_id}"
                      ) and proposal.plan is not None
@@ -221,7 +222,7 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             # Existing goal pressure is supplied by Stage4's real need owner.
             # No built-in entity-usefulness relation: even a remembered berry
             # has no prelearned nutritional value. Stage8 TD stays authoritative.
-            value = min(0.12, 0.12 * target.confidence)
+            value = min(0.12, self._intrinsic_weight * 0.12 * target.confidence)
             ext = 0.0 if original.evidence is None else original.evidence
             assessment = replace(
                 original.evaluation, status="evaluated",
