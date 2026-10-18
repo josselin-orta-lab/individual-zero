@@ -50,7 +50,9 @@ def execute(world_name, seed, policy, steps, directory):
             else:
                 life = I1Runtime(
                     birth_life_id=life_id, wal_path=str(wal),
-                    autonomous_mortal=True, i1_goal_policy=policy, **params)
+                    autonomous_mortal=True, i1_goal_policy=policy,
+                    diagnostic_sample_cost_uc=1, module_occupancy_cost_uc=1,
+                    **params)
             cfg = life.goal_manager._config
             expected = (.04,.35) if policy == "natural-004" else (.10,.90)
             actual = (cfg.replacement_hysteresis, cfg.critical_pressure)
