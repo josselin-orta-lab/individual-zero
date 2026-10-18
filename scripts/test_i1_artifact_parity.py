@@ -582,8 +582,8 @@ def verify(reference_root: Path) -> None:
                                     )
                                 )
                             )
-                        ),
                         )
+                        ),
                         (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/stage6_planning.py"
