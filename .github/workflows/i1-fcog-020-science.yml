@@ -1,0 +1,77 @@
+name: I1 f_cog 0.20 prospective paired laboratory
+on:
+  push:
+    branches: [science/i1-fcog-020-20261018]
+    paths:
+      - 'src/i1/runtime/i1_natural_sleep.py'
+      - 'tools/run_i1_world_preset.py'
+      - 'tools/analyze_i1_fcog_arm.py'
+      - '.github/workflows/i1-fcog-020-science.yml'
+      - 'src/i1/docs/FCOG_020_PROSPECTIVE.md'
+  workflow_dispatch:
+    inputs:
+      seed_blocks:
+        description: Independent seed blocks (2 pilot, 10 minimum comparison)
+        type: choice
+        options: ['2', '10']
+        default: '2'
+      steps:
+        description: Per-life upper limit
+        type: choice
+        options: ['120', '300']
+        default: '120'
+permissions:
+  contents: read
+concurrency:
+  group: i1-fcog-science-${{ github.ref }}-${{ github.run_id }}
+  cancel-in-progress: false
+jobs:
+  natural-contrast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 115
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        preset: [oasis, foraging, dry-valley, empty-land, hazard-edge, blocked-route]
+        weight: ['0.0', '0.1', '0.2', '0.3']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify source and install
+        run: |
+          python -m pip install -e .
+          python scripts/check_engine_repository.py --json
+          python scripts/check_engine_contracts.py --json
+          python -m unittest discover -s tests/i1 -p test_i1_fcog_020_birth.py -v
+          python tools/run_i1_world_preset.py --preset "${{ matrix.preset }}" --validate-only
+      - name: Born mortal paired cohort with sealed WAL and physical actions
+        env:
+          PRESET: ${{ matrix.preset }}
+          WEIGHT: ${{ matrix.weight }}
+          BLOCKS: ${{ inputs.seed_blocks || '2' }}
+          STEPS: ${{ inputs.steps || '120' }}
+        run: |
+          set -euo pipefail
+          for ((i=0;i<BLOCKS;i++)); do
+            seed=$((920260 + i))
+            folder="reports/${PRESET}/weight-${WEIGHT}/seed-${seed}"
+            python tools/run_i1_world_preset.py --preset "$PRESET" \
+              --seed "$seed" --steps "$STEPS" --lives 3 \
+              --custody wal --experimental-fatigue-weight "$WEIGHT" \
+              --observe-owner-digests --output-dir "$folder"
+            python tools/analyze_i1_fcog_arm.py --input "$folder" \
+              --output "$folder/science-arm.json"
+          done
+      - name: Preserve traces, all births and all mortality
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-fcog-${{ matrix.preset }}-${{ matrix.weight }}-${{ github.run_id }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
