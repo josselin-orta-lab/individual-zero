@@ -207,6 +207,7 @@ class I1Runtime(I1WaterPrudentRuntime):
         kwargs["i1_d2_prudence"] = False
         # Quiescent, step-local accounting only. GoalManager itself owns the
         # durable refractory and failure counters (M11 causal state).
+        self._i1_personal_id = life_id
         self._i1_last_nonplannable_observation = None
         super().__init__(**kwargs)
         self._i1_active_owner_views = {
