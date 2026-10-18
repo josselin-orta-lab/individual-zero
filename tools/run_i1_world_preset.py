@@ -195,6 +195,13 @@ def _wal_life(*, birth, params, life_id, path, steps):
         trajectory.append({
             "world_step": life.scheduler.t_monde,
             "execution": receipt.execution_status,
+            # Operator-only passive sensor. These fields are already computed
+            # by the natural runtime and are never fed back into cognition.
+            "action_primitive": receipt.command_primitive,
+            "action_source": receipt.source,
+            "reflex_triggered": receipt.reflex_triggered,
+            "fallback_used": receipt.fallback_used,
+            "cycles_used": receipt.cycles_used,
             "body": dict(life.world.telemetry()),
             "position": life.world.position.as_dict(),
             "inventory": dict(life.world.inventory()),
