@@ -182,9 +182,12 @@ class GeographicExploration:
             updates.append(memory)
         return tuple(updates)
 
-    def freeze_place(self, target: SpatialReturnTarget | None) -> None:
-        """Stage-3 offer is tied to this owner's first-person observations."""
-        if target is not None:
+    def freeze_places(self, targets: tuple[SpatialReturnTarget, ...]) -> None:
+        """Only unchanged, physically grounded candidates survive Phase-1."""
+        if not isinstance(targets, tuple) or len(targets) > self.config.max_targets_per_cycle:
+            raise ValueError("invalid offered place targets")
+        accepted = []
+        for target in targets:
             target.validate()
             memory = self._places.get(target.entity_id)
             if (not self.config.remember_entities or memory is None
@@ -202,8 +205,17 @@ class GeographicExploration:
                            target.visited_path[1:-1],
                            target.visited_path[2:]))
                 or target.confidence > memory.confidence):
-                raise ValueError("spatial return is not owned by perception")
-        self._place_offered = () if target is None else (target,)
+                # A new perception can contradict the Phase-0 frozen memory.
+                # Discard this proposal, never crash the living individual.
+                continue
+            accepted.append(target)
+        if len({t.ref for t in accepted}) != len(accepted):
+            raise ValueError("duplicate place offer")
+        self._place_offered = tuple(accepted)
+
+    def freeze_place(self, target: SpatialReturnTarget | None) -> None:
+        """Backwards-compatible one-target interface."""
+        self.freeze_places(() if target is None else (target,))
 
     def place_for(self, option) -> SpatialReturnTarget | None:
         """Read only the currently offered, funded and goal-linked option."""
@@ -669,7 +681,7 @@ class GeographicExploration:
                     raise ValueError("future, duplicate or alien entity-place memory")
                 places[place.entity_id] = place
             raw_offered = state.get("place_offered")
-            if not isinstance(raw_offered, list) or len(raw_offered) > 1:
+            if not isinstance(raw_offered, list) or len(raw_offered) > self.config.max_targets_per_cycle:
                 raise ValueError("invalid offered entity-place snapshot")
             place_targets = []
             for row in raw_offered:
