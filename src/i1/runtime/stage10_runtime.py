@@ -44,6 +44,7 @@ from i1.modules.consolidation_pending_index import ChargedPendingEpisodeIndex
 from .consolidation_lived_evidence import FrozenLivedReplayEvidence
 from .determinism import deterministic_id
 from .stage4_runtime import Stage4StepResult
+from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY
 from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY
 from .stage9_runtime import Stage9Config, Stage9Runtime
 
@@ -559,6 +560,8 @@ class Stage10Runtime(Stage9Runtime):
             FrozenLivedReplayEvidence(
                 journal=self.journal, views=self.stage3.substrate.views, transaction=tx,
                 policies={
+                    STAGE2_AUTOBIOGRAPHICAL_POLICY.version:
+                        STAGE2_AUTOBIOGRAPHICAL_POLICY,
                     STAGE7_AUTOBIOGRAPHICAL_POLICY.version:
                         STAGE7_AUTOBIOGRAPHICAL_POLICY,
                 },
@@ -589,6 +592,8 @@ class Stage10Runtime(Stage9Runtime):
         evidence = FrozenLivedReplayEvidence(
             journal=self.journal, views=self.stage3.substrate.views, transaction=tx,
             policies={
+                STAGE2_AUTOBIOGRAPHICAL_POLICY.version:
+                    STAGE2_AUTOBIOGRAPHICAL_POLICY,
                 STAGE7_AUTOBIOGRAPHICAL_POLICY.version:
                     STAGE7_AUTOBIOGRAPHICAL_POLICY,
             },
