@@ -4,6 +4,7 @@ on:
     branches: [science/i1-natural-population-calibration-20261018]
     paths:
       - 'tools/analyze_i1_population_cohort.py'
+      - 'tools/run_i1_population_calibration.py'
       - 'tests/i1/test_i1_population_analysis.py'
       - '.github/workflows/i1-population-heldout.yml'
   workflow_dispatch:
