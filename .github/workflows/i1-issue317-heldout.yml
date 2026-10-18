@@ -1,0 +1,87 @@
+name: I1 issue 317 held-out memory survival
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - '.github/workflows/i1-issue317-heldout.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        sha: [c775281862c177ed35d87331bd97fad35c0d326e, 537798e6c02b1600ecc24cdd8c75c9299d704247]
+        world: [oasis, foraging, dry-valley, blocked-route]
+        seed: [2027, 2028]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - name: Mortal autonomous held-out life with immutable WAL
+        env:
+          WORLD: ${{ matrix.world }}
+          SEED: ${{ matrix.seed }}
+        run: |
+          python tools/run_i1_world_preset.py --preset "$WORLD" --seed "$SEED" --steps 300 --lives 1 --custody wal --output-dir "reports/$WORLD/$SEED"
+          python tools/audit_i1_spatial_navigation_314.py "reports/$WORLD/$SEED/life-01.wal" --output "reports/$WORLD/$SEED/memory-audit.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: heldout-${{ matrix.sha }}-${{ matrix.world }}-${{ matrix.seed }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
+  compare:
+    needs: independent
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    if: ${{ needs.independent.result == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Retrieve sealed independent lives
+        uses: actions/download-artifact@v4
+        with:
+          pattern: heldout-*
+          path: runs
+      - name: Build separate immutable arm views
+        run: |
+          mkdir -p arm-control arm-treatment
+          for path in runs/heldout-*; do
+            case "$path" in
+              *c775281862c177ed35d87331bd97fad35c0d326e*) cp -R "$path"/. arm-control/ ;;
+              *537798e6c02b1600ecc24cdd8c75c9299d704247*) cp -R "$path"/. arm-treatment/ ;;
+              *) echo "unknown arm $path" >&2; exit 1 ;;
+            esac
+          done
+      - name: Verify every matched durable WAL
+        run: |
+          python tools/audit_i1_317_architecture_cohort.py \
+            --control-dir arm-control \
+            --treatment-dir arm-treatment \
+            --control-sha c775281862c177ed35d87331bd97fad35c0d326e \
+            --treatment-sha 537798e6c02b1600ecc24cdd8c75c9299d704247 \
+            --worlds oasis foraging dry-valley blocked-route \
+            --seeds 2027 2028 \
+            --output result/issue317-heldout.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-heldout-paired
+          path: result/issue317-heldout.json
+          retention-days: 30
+          if-no-files-found: warn
