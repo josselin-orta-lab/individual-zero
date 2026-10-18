@@ -83,7 +83,7 @@ with TemporaryDirectory() as tmp:
             birth_life_id="i1:goal:test:" + policy,
             autonomous_mortal=True,
             wal_path=str(Path(tmp)/(policy+".wal")),
-            i1_goal_policy=policy, **params)
+            i1_goal_policy=policy, diagnostic_sample_cost_uc=1,\n            module_occupancy_cost_uc=1, **params)
         manager = real.goal_manager
         first = manager.arbitrate([proposal("recover_energy",.358268,1)],
                                   t_monde=1,cycle=1)
