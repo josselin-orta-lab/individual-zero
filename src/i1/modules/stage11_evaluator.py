@@ -190,6 +190,54 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
 
     def evaluate(self, *, proposal, evaluation_state, initial_state, cycle, t_monde,
                  remaining_plan_index=0):
+        if proposal.option.motive_ref.type == "water_memory":
+            geo = self._exploration.geographic
+            target = None if geo is None else geo.water_for(proposal.option)
+            valid = (target is not None and target.source_t_monde == t_monde
+                     and proposal.option.goal_ref is not None
+                     and evaluation_state.active_goal_type == "drink"
+                     and proposal.option.provenance == "memory"
+                     and proposal.option.learning_signature == (
+                         f"memory_water_return:{target.water_position[0]}:"
+                         f"{target.water_position[1]}"
+                     ) and proposal.plan is not None
+                     and proposal.plan.goal_ref == proposal.option.goal_ref
+                     and proposal.plan.st_version ==
+                         proposal.option.founding_st_version
+                     and len(proposal.plan.steps) == 1
+                     and proposal.plan.steps[0].command.primitive == "se_deplacer"
+                     and proposal.plan.steps[0].command.parameters ==
+                         {"direction": target.direction}
+                     and proposal.plan.steps[0].preconditions ==
+                         ("adjacent_passable",))
+            if not valid:
+                return self._unscored_geographic(
+                    proposal, cycle=cycle, t_monde=t_monde)
+            original = Stage8OptionEvaluator.evaluate(
+                self, proposal=proposal, evaluation_state=evaluation_state,
+                initial_state=initial_state, cycle=cycle, t_monde=t_monde,
+                remaining_plan_index=remaining_plan_index,
+            )
+            # This is confidence in a remembered destination, NOT a claim
+            # about physiology or an artificially learned Q value.
+            # Existing goal pressure is supplied by Stage4's real need owner.
+            need = max(0.0, min(1.0,
+                float((100.0 - evaluation_state.body.get("water", 100.0)) / 100.0)))
+            value = min(0.35, 0.35 * target.confidence * need)
+            ext = 0.0 if original.evidence is None else original.evidence
+            assessment = replace(
+                original.evaluation, status="evaluated",
+                intrinsic_status="applicable", intrinsic_value=value,
+                signal_ids=tuple(original.evaluation.signal_ids) + (
+                    f"water-memory:{target.water_position}:seen-t{target.observed_step}",
+                ),
+                producers=tuple(dict.fromkeys(
+                    original.evaluation.producers + ("exploration:water_place_recall",)
+                )),
+            )
+            scored = OptionEvidenceInput(assessment, max(-1.0, min(1.0, ext + value)))
+            scored.validate()
+            return scored
         if proposal.option.motive_ref.type == "cible_exploration":
             geographic = self._exploration.geographic
             target = (
