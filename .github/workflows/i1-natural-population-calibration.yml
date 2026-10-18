@@ -5,6 +5,7 @@ on:
     paths:
       - 'tools/run_i1_population_calibration.py'
       - 'tests/i1/test_i1_population_calibration.py'
+      - 'tools/audit_i1_birth_capabilities.py'
       - '.github/workflows/i1-natural-population-calibration.yml'
   workflow_dispatch:
 permissions:
@@ -19,7 +20,7 @@ jobs:
       matrix:
         candidate: [0, 1, 2, 3, 4, 5]
         world: [oasis, foraging]
-        seed: [901, 902]
+        seed: [911, 912]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,7 +41,7 @@ jobs:
         run: |
           python tools/run_i1_population_calibration.py evaluate \
             --candidate "$CANDIDATE" --world "$WORLD" --seed "$SEED" \
-            --steps 120 --output-dir "reports/candidate-${CANDIDATE}/${WORLD}/seed-${SEED}"
+            --steps 300 --output-dir "reports/candidate-${CANDIDATE}/${WORLD}/seed-${SEED}"
       - name: Preserve full WAL and report even after death
         if: always()
         uses: actions/upload-artifact@v4
