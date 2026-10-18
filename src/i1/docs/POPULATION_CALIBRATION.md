@@ -24,3 +24,14 @@ Initial search dimensions: Competition base threshold [0.30,0.65] and gain [0.75
 - No automatic promotion or merge. I0 remains unchanged, all mortal deaths final.
 
 Scientific status: `NOT_EVALUATED` until full paired cohort and held-out replication.
+
+
+## Follow-up after first completed screen (2026-10-18)
+
+The post-berry, post-hysteresis natural cohort [Actions #39140561923](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39140561923), SHA `1f96e78b`, completed 24/24 trials successfully. Every candidate scored exactly 1.0 in oasis and 0.991666667 in foraging at 120 steps; all 24 survived to censoring. The score was saturated, so it **cannot rank the six parameter sets**. No finalist was selected from these data.
+
+PR #313 (read-only birth capability audit and strict toxic-berry parity) has since been merged to main at `2161b834`; this research branch is rebuilt on that main. A new prospective batch uses independent paired seeds 911/912, both worlds, 6 candidates, 300-step maximum. Each real I1 birth is independently validated with the same passive Stage4–12 audit as merged main. Every candidate retains natural GoalManager `0.04/0.35`, toxic berry `-10`, TD reward, fatigue, consolidation and all normal active cognitive capacities.
+
+The external training score is now `0.7 * observed_steps/horizon + 0.3 * (1 - average normalized physical deficit)`, where each channel `water`, `food`, `energy`, `integrity` contributes the bounded shortage `(100 - clamp(body,0,100))/100`. This rewards lower shortage even when no channel reaches zero, but **does not modify the internal TD reward**. Report minimum integrity, death, drinks, food actions and physical history independently. This is still screening: no scientific GO or parameter promotion without held-out worlds/seeds and long survival.
+
+Software risk: the previous score saturating is an **experimental evaluation deficiency**, not evidence of a broken I1 engine. Previous full-I1 CI failure was caused by the historical toxic-berry parity approval and is repaired by #313 with all general CI checks passing. Any newly identified genuine causal bug must be isolated rather than silently compensated by optimized parameters.
