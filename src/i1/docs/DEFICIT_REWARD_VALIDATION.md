@@ -15,3 +15,19 @@ Seize naissances indépendantes, 2 mondes (oasis et foraging), 4 graines appari�
 ## Conditions GO/NO-GO
 
 Vérifier la cohérence mathématique et TD, les actions proposées et appliquées, boissons/repas réellement bénéfiques, réserves et pas à zéro, choix après apprentissage, mortalité et absence de nouvelles stratégies nocives. Un GO scientifique exige une amélioration répétée de la survie et des besoins sur des horizons plus longs et des environnements alimentaires contrôlés, et non seulement une métrique de récompense positive. Ne pas modifier I0, ni intégrer la récompense candidate sans évaluation indépendante. Ne jamais ressusciter ou relancer une identité morte.
+
+
+## Première réplication prospective complétée (pas de promotion canonique)
+
+**Actions #39134383627**, source physique `e408a9ce0c0de3bd958a4736da2d4438b447c41a`. Les 16/16 jobs ont réussi et déclaré `COMPLETED_WITHOUT_SCIENTIFIC_VERDICT`, chaque job ayant archivé sa WAL. Chiffres ci-dessous : extraction de la sortie terminale des 16 jobs (les rapports WAL demandent toujours un audit transversal indépendant).
+
+| Monde / récompense | Naissances | Morts avant 300 | Pas à eau 0 | Pas à food 0 | Boissons appliquées | Repas appliqués |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| oasis / absolue | 4 | 1 | 223 | 0 | 9 | 16 |
+| oasis / déficit seulement | 4 | 0 | 226 | 0 | 10 | 16 |
+| foraging / absolue | 4 | 4 | 483 | 0 | 0 | 4 |
+| foraging / déficit seulement | 4 | 4 | 492 | 16 | 0 | 0 |
+
+Strate `oasis` : le contrôle absolu graine 812 est mort au pas 297; le traitement par déficits atteint 300 mais passe 113 pas avec eau zéro. Aux graines 813 et 814 les deux bras montrent respectivement le même comportement de boisson et de faim; la graine 811 gagne une boisson par déficit. Le contraste n'est pas uniformément bénéfique. Strate `foraging` : **8/8 décès** à pas 213–230 (absolue) et 228 (déficit), **aucune boisson dans aucun bras**. La récompense déficits produit quatre vies avec zéro repas appliqué et quatre pas nourriture à zéro chacune; le témoin totalise quatre repas. Ce défaut ne peut pas être masqué par l'amélioration du signal théorique. Aucune preuve de généralisation ou de survie autonome n'est acquise.
+
+Décision provisoire : **GO mécanistique limité / NO-GO scientifique** pour une promotion de la récompense seule. L'expérience suggère un effet positif possible en oasis et un obstacle de navigation/Competition indépendant dans foraging. Les nouveaux témoins de source effective, de stabilité par vie et de distinction `td_applied_reward` versus récompense contrefactuelle sont engagés dans une seconde exécution; ses cohortes seront analysées indépendamment et ne doivent pas être additionnées sans vérifier la comparabilité de leur code physique.
