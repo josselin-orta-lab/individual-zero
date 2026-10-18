@@ -367,3 +367,13 @@ source et le décodage inchangés, un lot admis vide retourne directement
 Aucune donnée vécue n'est inventée, aucun statut causal n'est changé.
 Aucun test supplémentaire ou lancement manuel; parité exacte et CI
 habituelle requises avant fusion.
+
+## PR #279 : projection des contrôles alimentaires sans copie initiale
+
+Le traitement d'un épisode fermé copiait toutes les observations causales
+dans un tuple pour figer la liste avant d'ajouter les contrôles alimentaires.
+Un parcours indexé, borné par sa longueur initiale, évite cette copie et
+continue d'ignorer les contrôles ajoutés pendant l'itération. L'ordre des
+preuves physiques et l'unicité de l'épisode vécu restent identiques.
+Aucun nouveau test ni lancement manuel, conformément à la consigne;
+CI existante et parité de source requises avant fusion.
