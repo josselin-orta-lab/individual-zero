@@ -4,6 +4,7 @@ on:
     branches: [science/i1-natural-population-calibration-20261018]
     paths:
       - 'tools/run_i1_geo_population.py'
+      - 'tools/analyze_i1_geo_population.py'
       - 'tests/i1/test_i1_geo_population.py'
       - '.github/workflows/i1-geo-population.yml'
   workflow_dispatch:
@@ -43,6 +44,38 @@ jobs:
         if: always()
         with:
           name: i1-geo-${{ matrix.candidate }}-${{ matrix.world }}-${{ matrix.seed }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
+  forensic-audit:
+    needs: paired
+    if: ${{ needs.paired.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: i1-geo-*
+          path: artifacts/
+          merge-multiple: false
+      - name: Audit all 36 full hash chains and paired physical outcomes
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          mkdir -p reports
+          python tools/analyze_i1_geo_population.py \
+            --root artifacts --sha "$SOURCE_SHA" \
+            --output reports/verified-population.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-geographic-population-audit
           path: reports/
           retention-days: 30
           if-no-files-found: warn
