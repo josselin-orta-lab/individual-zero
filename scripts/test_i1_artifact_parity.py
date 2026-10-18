@@ -816,7 +816,7 @@ _ISSUE_314_PINNED_BLOBS = {
     "i1/modules/geographic_planning.py": "340fe53c2ee1d1cd1cd9025b929fc157a5ea2e31",
     "i1/modules/stage11_evaluator.py": "521fc97815ec46b67bf87fbd65951808142e5bca",
     "i1lab/i1_natural_runtime.py": "51e09acf50ce1fc33879bed576c43b306c5a7711",
-    "i1lab/stage11_runtime.py": "29d20bae52d510fff720e426d7098ff72e5770b4",
+    "i1lab/stage11_runtime.py": "c308110a49ec100976e33d7cf43f446fe79d8e03",
 }
 
 
