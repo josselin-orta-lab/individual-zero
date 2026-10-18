@@ -437,3 +437,23 @@ nouvelle. Nouveau SHA et CI existante obligatoires avant fusion.
   évolutions comportementales nécessitent une campagne distincte et
   une décision explicite. Aucune nouvelle tranche d'optimisation n'est
   ouverte au titre de cette campagne clôturée.
+
+## Correction scientifique #283 : prévalidation SlowHistory Stage10 (2026-10-18)
+
+L'exécution prospective S1 du modèle naturel figé
+`f87cbc15a34f9b0f2a43749bb2b3377a45401b84` a atteint la publication
+Stage10 puis échoué par `KeyError: consolidated_episode_refs`.
+Le constructeur du validateur `SlowHistory` temporaire recevait
+`birth_state={}` alors que son invariant de naissance exige la liste
+d'épisodes consolidés. Le précontrôle reçoit désormais l'état
+`before_history["current_state"]`, copié depuis la source h engagée et
+vérifié sur les mêmes octets canoniques juste avant la publication.
+Le candidat garde la validation complète
+`SlowHistory.restore_causal_state(staged_history)` **avant** toute
+mutation des quatre propriétaires. Aucun rollback, candidat synthétique,
+coût UC gratuit ni fait vécu artificiel.
+
+La campagne scientifique S1 sur le SHA précédent reste bloquée et ses
+résultats ne sont pas requalifiés ; une future campagne prospective
+nécessitera un nouveau SHA de moteur validé. La correction est suivie
+par l'[issue #283](https://github.com/josselin-orta-lab/individual-zero/issues/283).
