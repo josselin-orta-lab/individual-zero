@@ -502,7 +502,16 @@ class Competition:
         if self._engaged_option_id == option_ref:
             self._engaged_option_id = None
 
-    def close_deliberation(self, winner: OptionProposal | None) -> None:
+    def close_deliberation(
+        self, winner: OptionProposal | None, *, adjudicated: bool = True,
+    ) -> None:
+        # A fallback is not a Competition victory. No candidate was judged
+        # sufficient, so do not erase accumulated evidence for viable plans
+        # merely because the body had to perform a default safe action.
+        # Old candidates still expire, lose their goal, change material plans,
+        # or face normal capacity limits. No threshold or TD is altered.
+        if not adjudicated:
+            return
         winner_id = None if winner is None else winner.option.id
         for option_id, state in self._registry.items():
             if option_id == winner_id:
