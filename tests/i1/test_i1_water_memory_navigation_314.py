@@ -2,7 +2,7 @@
 from dataclasses import replace
 from types import SimpleNamespace
 
-import pytest
+import unittest
 
 from i1.modules.geographic_exploration import (
     GeographicExploration, GeographicExplorationConfig,
@@ -69,9 +69,13 @@ def test_current_obstacle_revokes_old_first_hop():
 
 
 def test_future_water_memory_rejected():
-    with pytest.raises(ValueError, match="future"):
+    try:
         route(places=(site(step=20),), surveys=(),
               visits={(2, 0)}, current_free={(1, 0)})
+    except ValueError as exc:
+        assert "future" in str(exc)
+    else:
+        raise AssertionError("future water memory must be rejected")
 
 
 def test_old_memory_is_not_a_permanent_command():
@@ -146,3 +150,32 @@ def test_legacy_config_does_not_store_memory():
     owner.observe_capture(c1)
     assert owner.observe_water(c1, observer_id="i1:test") == ()
     assert "water_places" not in owner.export_causal_state()
+
+
+class TestWaterMemoryNavigation314(unittest.TestCase):
+    def test_no_memory_no_water_route(self):
+        globals()["test_no_memory_no_water_route"]()
+
+    def test_recall_uses_real_adjacency_and_is_one_hop(self):
+        globals()["test_recall_uses_real_adjacency_and_is_one_hop"]()
+
+    def test_unknown_intermediate_edge_never_invented(self):
+        globals()["test_unknown_intermediate_edge_never_invented"]()
+
+    def test_current_obstacle_revokes_old_first_hop(self):
+        globals()["test_current_obstacle_revokes_old_first_hop"]()
+
+    def test_future_water_memory_rejected(self):
+        globals()["test_future_water_memory_rejected"]()
+
+    def test_old_memory_is_not_a_permanent_command(self):
+        globals()["test_old_memory_is_not_a_permanent_command"]()
+
+    def test_capture_memory_and_contradiction_and_restore(self):
+        globals()["test_capture_memory_and_contradiction_and_restore"]()
+
+    def test_duplicate_capture_does_not_invent_second_observation(self):
+        globals()["test_duplicate_capture_does_not_invent_second_observation"]()
+
+    def test_legacy_config_does_not_store_memory(self):
+        globals()["test_legacy_config_does_not_store_memory"]()
