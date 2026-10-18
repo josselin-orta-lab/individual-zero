@@ -1,0 +1,77 @@
+name: I1 population heldout mortality and forensics
+on:
+  push:
+    branches: [science/i1-natural-population-calibration-20261018]
+    paths:
+      - 'tools/analyze_i1_population_cohort.py'
+      - 'tests/i1/test_i1_population_analysis.py'
+      - '.github/workflows/i1-population-heldout.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  paired:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        candidate: [0, 3, 4]
+        world: [oasis, foraging, dry-valley]
+        seed: [921, 922]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - run: python -m unittest discover -s tests/i1 -p test_i1_population_analysis.py -v
+      - name: Natural independent born mortal, no forced behaviors
+        env:
+          CANDIDATE: ${{ matrix.candidate }}
+          WORLD: ${{ matrix.world }}
+          SEED: ${{ matrix.seed }}
+        run: |
+          python tools/run_i1_population_calibration.py evaluate \
+            --candidate "$CANDIDATE" --world "$WORLD" --seed "$SEED" \
+            --steps 500 --output-dir "reports/candidate-$CANDIDATE/$WORLD/seed-$SEED"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: heldout-${{ matrix.candidate }}-${{ matrix.world }}-${{ matrix.seed }}
+          path: reports/
+          retention-days: 30
+  forensics:
+    needs: paired
+    if: ${{ needs.paired.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: heldout-*
+          path: lives/
+      - name: Cross-world paired forensic validation
+        env:
+          RUN_SHA: ${{ github.sha }}
+        run: |
+          mkdir -p reports
+          python tools/analyze_i1_population_cohort.py --root lives \
+            --sha "$RUN_SHA" --candidates 0 3 4 \
+            --worlds oasis foraging dry-valley --seeds 921 922 \
+            --output reports/heldout-forensics.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-heldout-forensics
+          path: reports/
+          retention-days: 30
