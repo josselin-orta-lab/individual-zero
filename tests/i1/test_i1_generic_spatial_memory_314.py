@@ -122,6 +122,60 @@ class GenericSpatialMemoryTests(unittest.TestCase):
         self.assertEqual(len(geo.place_memories), 2)
         self.assertEqual({m.position for m in geo.place_memories}, {(1, 0), (1, 2)})
 
+    def test_mobility_diagnosis_requires_consecutive_unique_sightings(self):
+        geo = owner()
+        for t, pos in ((1, (1, 0)), (2, (1, 0)), (3, (1, 0)),
+                       (4, (0, 1))):
+            c = capture(t, 0, 0, (("creature:0", "creature", *pos),))
+            geo.observe_capture(c)
+            geo.observe_entities(c, observer_id="i1:sample")
+        motion = geo.motion_diagnoses[0]
+        self.assertEqual(motion.diagnosis, "mobile_probable")
+        self.assertEqual(motion.observed_moves, 1)
+        self.assertEqual(motion.identity_certainty, "tentative")
+        cold = owner()
+        cold.restore_causal_state(geo.export_causal_state())
+        self.assertEqual(cold.motion_diagnoses, geo.motion_diagnoses)
+
+    def test_stable_observation_is_only_apparent_immobility(self):
+        geo = owner()
+        for t in (1, 2, 3):
+            c = capture(t, 0, 0, (("object", "unknown_kind", 1, 0),))
+            geo.observe_capture(c)
+            geo.observe_entities(c, observer_id="i1:sample")
+        self.assertEqual(geo.motion_diagnoses[0].diagnosis, "immobile_apparente")
+        self.assertEqual(geo.motion_diagnoses[0].identity_certainty, "tentative")
+
+    def test_multiple_indistinguishable_entities_break_identity_link(self):
+        geo = owner()
+        first = capture(1, 0, 0, (("creature:0", "creature", 1, 0),))
+        geo.observe_capture(first)
+        geo.observe_entities(first, observer_id="i1:sample")
+        ambiguous = capture(2, 0, 0, (
+            ("creature:0", "creature", 1, 0),
+            ("creature:1", "creature", 0, 1),
+        ))
+        geo.observe_capture(ambiguous)
+        geo.observe_entities(ambiguous, observer_id="i1:sample")
+        self.assertEqual(geo.motion_diagnoses, ())
+        after = capture(3, 0, 0, (("creature:1", "creature", 0, 1),))
+        geo.observe_capture(after)
+        geo.observe_entities(after, observer_id="i1:sample")
+        self.assertEqual(geo.motion_diagnoses[0].diagnosis, "indetermine")
+
+    def test_gap_prevents_false_motion_or_stationarity(self):
+        geo = owner()
+        for t, entities in (
+            (1, (("creature:0", "creature", 1, 0),)),
+            (2, ()),
+            (3, (("creature:0", "creature", 0, 1),)),
+        ):
+            c = capture(t, 0, 0, entities)
+            geo.observe_capture(c)
+            geo.observe_entities(c, observer_id="i1:sample")
+        self.assertEqual(geo.motion_diagnoses[0].observations, 1)
+        self.assertEqual(geo.motion_diagnoses[0].diagnosis, "indetermine")
+
     def test_route_for_food_water_or_unnamed_type(self):
         surveys=(ObservedSurvey(
             position=(1, 0), world_step=2,
