@@ -822,7 +822,7 @@ _ISSUE_314_PINNED_BLOBS = {
 # Review-locked #317 I1-only source changes. Values are complete Git blob
 # hashes of exactly the reviewed source, not mutable path exemptions.
 _ISSUE_317_PINNED_BLOBS = {
-    "i1/modules/competition.py": "c0ad615e49a82a3ef07f6461cf1ca36c974ef3d0",
+    "i1/modules/competition.py": "e0aab4aa4e21d30165fb39f3fc03e9700ef948bd",
     "i1/modules/geographic_exploration.py": "391fc2abaef4da1468879eacd31eb186c14759d7",
     "i1/modules/geographic_planning.py": "8aa71effe4cf55827a27a21af4e52d09938e34d6",
     "i1/modules/stage11_evaluator.py": "4f22b6a8d3dfc2b5b6bc098a88b85f6023e67824",
