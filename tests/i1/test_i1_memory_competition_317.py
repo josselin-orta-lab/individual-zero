@@ -137,7 +137,7 @@ assert crossed, "same-personal-intention accumulation must eventually compete"
 # one-hop motor candidate. Only a previously selected memory winner may
 # carry residual intention evidence after the current Perception confirms
 # reaching its last planned next hop.
-from i1.runtime.stage11_runtime import Stage11Runtime
+from i1lab.stage11_runtime import Stage11Runtime
 
 def follow_on(t, entity="unknown_artifact"):
     entity_id = "sighting:" + entity + ":0:0"
