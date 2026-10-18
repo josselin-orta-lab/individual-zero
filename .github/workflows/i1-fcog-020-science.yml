@@ -9,6 +9,7 @@ on:
       - '.github/workflows/i1-fcog-020-science.yml'
       - 'src/i1/docs/FCOG_020_PROSPECTIVE.md'
       - 'src/i1/docs/STATUS.md'
+      - 'tests/i1/test_i1_sleep_goal_entry.py'
       - 'scripts/test_i1_artifact_parity.py'
   workflow_dispatch:
     inputs:
@@ -35,7 +36,8 @@ jobs:
       fail-fast: false
       max-parallel: 8
       matrix:
-        preset: [oasis, foraging, dry-valley, empty-land, hazard-edge, blocked-route]
+        # Every push is a bounded diagnostic; the broad factorial is manual.
+        preset: ${{ fromJSON(github.event_name == 'workflow_dispatch' && '["oasis","foraging","dry-valley","empty-land","hazard-edge","blocked-route"]' || '["oasis"]') }}
         weight: ['0.0', '0.1', '0.2', '0.3']
     steps:
       - uses: actions/checkout@v4
@@ -50,13 +52,14 @@ jobs:
           python scripts/check_engine_repository.py --json
           python scripts/check_engine_contracts.py --json
           python -m unittest discover -s tests/i1 -p test_i1_fcog_020_birth.py -v
+          python -m unittest discover -s tests/i1 -p test_i1_sleep_goal_entry.py -v
           python tools/run_i1_world_preset.py --preset "${{ matrix.preset }}" --validate-only
       - name: Born mortal paired cohort with sealed WAL and physical actions
         env:
           PRESET: ${{ matrix.preset }}
           WEIGHT: ${{ matrix.weight }}
-          BLOCKS: ${{ inputs.seed_blocks || '2' }}
-          STEPS: ${{ inputs.steps || '120' }}
+          BLOCKS: ${{ github.event_name == 'workflow_dispatch' && inputs.seed_blocks || '1' }}
+          STEPS: ${{ github.event_name == 'workflow_dispatch' && inputs.steps || '24' }}
         run: |
           set -euo pipefail
           for ((i=0;i<BLOCKS;i++)); do
