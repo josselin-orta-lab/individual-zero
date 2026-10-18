@@ -36,3 +36,7 @@ New regression coverage: independent same-label water sightings and moving-entit
 ## Latest correction and read-only evidence audit
 
 A missing OptionProposal plan is rejected before dereferencing its ID in the spatial evaluator. A standalone read-only WAL auditor is available at `tools/audit_i1_spatial_navigation_314.py`; it independently audits the durable hash chain, counts sighting/recall/proposal/registration/crossing events, and **explicitly refuses to infer applied physical action, arrival or learning from these events alone**. It requires a paired, independently verified physical trajectory to promote a scientific claim. The audit never rewrites or resumes an individual and does not touch the original I0 model or scientific PR #311.
+
+## Physical trace attestation v2
+
+`tools/audit_i1_spatial_navigation_314.py` now matches the same WAL attempt and chronological order across a prior perceived site, Planning proposal, Competition registration/crossing, Action Control admission, sent command digest, single physical world transition and committed step closure. A step is marked as a witnessed return only when the physically observed next position matches the proposed hop and the site was seen **before** the action step. An arrival at the remembered site is a separate, stricter conclusion. Unit tests use synthetic event sequences to prove false-positive resistance; those tests are *not* a lived physical demonstration. TD/cause learning and survival gains remain independent scientific questions.
