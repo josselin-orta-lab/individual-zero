@@ -360,6 +360,7 @@ def _wal_life(*, birth, params, life_id, path, steps, observe_owner_digests=Fals
     return {
         "lifecycle": life.stage3.substrate.mortal_status.value,
         "effective_sleep_fatigue_weight": life._stage10_config.sleep.fatigue_weight,
+        "effective_berry_b_damage": life.world.config.berry_effects["berry_b"].integrity_delta,
         "effective_geographic_novelty_weight": life._stage11_config.geographic.novelty_weight,
         "effective_geographic_policy_version": life._stage11_config.geographic.version,
         "effective_affordance_policy": next((x for x in life._i1_model_contract
@@ -414,7 +415,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
 def execute(*, preset_name, seed, steps, lives, custody, output_dir,
             observe_owner_digests=False, experimental_fatigue_weight=None,
             world_variant=0, geographic_novelty_weight=None,
-            research_positive_lived_floor=False):
+            research_positive_lived_floor=False, experimental_berry_b_damage=None):
     if (type(seed) is not int or not 0 <= seed <= 2**32 - 1
             or type(steps) is not int or not 1 <= steps <= MAX_STEPS
             or type(lives) is not int or not 1 <= lives <= MAX_LIVES
@@ -427,6 +428,8 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                  or experimental_fatigue_weight not in RESEARCH_WEIGHTS
                  or custody != "wal")):
         raise ValueError("isolated scientific fatigue arms require WAL and exact registered weights")
+    if experimental_berry_b_damage not in (None, 0.0, -10.0, -100.0):
+        raise ValueError("unknown preregistered berry toxicity")
     if type(research_positive_lived_floor) is not bool:
         raise ValueError("research positive-evidence mode must be bool")
     if geographic_novelty_weight not in GEOGRAPHIC_NOVELTY_WEIGHTS:
@@ -459,6 +462,7 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                 "geographic_novelty_weight": geographic_novelty_weight,
                 "geographic_policy": GEO_POLICY,
                 "research_positive_lived_floor": research_positive_lived_floor,
+                "experimental_berry_b_damage": experimental_berry_b_damage,
                 "research_floor_policy": (
                     "i1-research-positive-lived-floor-v1" if research_positive_lived_floor
                     else "control-canonical-I1-affordance-evidence")},
@@ -495,6 +499,23 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                 sleep_policy.POLICY += "-longlife-research-wf-" + str(experimental_fatigue_weight).replace(".", "p")
 
             params, initial_local = _birth_parameters(preset)
+            if experimental_berry_b_damage is not None:
+                from i1lab.world import BerryEffect
+                cfg = params["world_config"]
+                effects = dict(cfg.berry_effects)
+                old = effects["berry_b"]
+                effects["berry_b"] = BerryEffect(
+                    food_gain=old.food_gain,
+                    integrity_delta=experimental_berry_b_damage,
+                )
+                updated = replace(
+                    cfg,
+                    version=cfg.version + "+i1-berry-b-toxicity-research-v1:"
+                    + str(experimental_berry_b_damage),
+                    berry_effects=effects,
+                )
+                updated.validate()
+                params["world_config"] = updated
             params = _research_geographic_birth(params, geographic_novelty_weight)
             report["environment"] = {
                 "spawn": preset["spawn"],
@@ -523,6 +544,12 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                         birth=birth_i1_m11, params=params, life_id=life_id,
                         path=path, steps=steps,
                     )
+                expected_damage = (
+                    -100.0 if experimental_berry_b_damage is None
+                    else experimental_berry_b_damage
+                )
+                if life["effective_berry_b_damage"] != expected_damage:
+                    raise AssertionError("effective born berry_b toxicity mismatch")
                 if (custody == "wal" and life["effective_geographic_novelty_weight"]
                         != geographic_novelty_weight):
                     raise AssertionError("actual born I1 geographic novelty mismatch")
@@ -562,6 +589,9 @@ def main():
     parser.add_argument("--geographic-novelty-weight", type=float,
                         required=False, choices=GEOGRAPHIC_NOVELTY_WEIGHTS,
                         help="prebirth sensitivity arm; never an action dispatch")
+    parser.add_argument("--experimental-berry-b-damage", type=float,
+                        choices=(0.0, -10.0, -100.0), default=None,
+                        help="I1-only prebirth research effect, not innate knowledge")
     parser.add_argument("--research-positive-lived-floor", action="store_true",
                         help="isolated post-living-positive-TD non-attenuation ablation")
     parser.add_argument("--experimental-fatigue-weight", type=float,
@@ -607,6 +637,7 @@ def main():
             world_variant=args.world_variant,
             geographic_novelty_weight=args.geographic_novelty_weight,
             research_positive_lived_floor=args.research_positive_lived_floor,
+            experimental_berry_b_damage=args.experimental_berry_b_damage,
         )
         print(json.dumps({
             "status": report["status"],
