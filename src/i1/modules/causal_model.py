@@ -1475,18 +1475,21 @@ class CausalModel:
                 for old in self._pending_causal_observations
             ):
                 raise ValueError("duplicate closed Memory causal observation")
+        # The admission preflight does not mutate historical or pending
+        # witnesses, so their physical references are invariant for this lot.
+        existing_numeric_transition_refs = {
+            old.transition_event_ref
+            for rows in (
+                self._numeric_witnesses.values(),
+                self._pending_numeric_witnesses,
+            )
+            for old in rows
+        }
         for witness in numeric_witnesses:
             witness.validate()
             if (
                 witness.identifier in self._numeric_witnesses
-                or any(
-                    old.transition_event_ref == witness.transition_event_ref
-                    for rows in (
-                        self._numeric_witnesses.values(),
-                        self._pending_numeric_witnesses,
-                    )
-                    for old in rows
-                )
+                or witness.transition_event_ref in existing_numeric_transition_refs
             ):
                 raise ValueError("duplicated closed physical numeric outcome")
         # Publish verified control state only AFTER the entire incoming

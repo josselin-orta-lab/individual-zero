@@ -411,6 +411,24 @@ def _reference_empty_agency_preflight(before: bytes) -> bytes:
     return text.replace(old, new, 1).encode("utf-8")
 
 
+def _reference_food_control_index_loop(before: bytes) -> bytes:
+    """Reconstruct the reviewed #279 single-view food-control generation."""
+    old = "        for observed in tuple(causal_observations):\n            for treatment, control in self.config.food_control_pairs:"
+    new = "        # Iterate only the initial observed exposures. Appended controls\n        # must never be recycled as independent physical observations.\n        original_observation_count = len(causal_observations)\n        for index in range(original_observation_count):\n            observed = causal_observations[index]\n            for treatment, control in self.config.food_control_pairs:"
+    original = before.decode("utf-8")
+    if original.count(old) != 1:
+        raise ValueError("prior food-control source drift")
+    return original.replace(old, new, 1).encode("utf-8")
+
+
+def _approved_numeric_episode_ref_index(before: bytes, after: bytes) -> bool:
+    """Only allow a read-only per-episode physical witness reference set."""
+    old = "        for witness in numeric_witnesses:\n            witness.validate()\n            if (\n                witness.identifier in self._numeric_witnesses\n                or any(\n                    old.transition_event_ref == witness.transition_event_ref\n                    for rows in (\n                        self._numeric_witnesses.values(),\n                        self._pending_numeric_witnesses,\n                    )\n                    for old in rows\n                )\n            ):\n                raise ValueError(\"duplicated closed physical numeric outcome\")"
+    new = "        # The admission preflight does not mutate historical or pending\n        # witnesses, so their physical references are invariant for this lot.\n        existing_numeric_transition_refs = {\n            old.transition_event_ref\n            for rows in (\n                self._numeric_witnesses.values(),\n                self._pending_numeric_witnesses,\n            )\n            for old in rows\n        }\n        for witness in numeric_witnesses:\n            witness.validate()\n            if (\n                witness.identifier in self._numeric_witnesses\n                or witness.transition_event_ref in existing_numeric_transition_refs\n            ):\n                raise ValueError(\"duplicated closed physical numeric outcome\")"
+    original, candidate = before.decode("utf-8"), after.decode("utf-8")
+    return original.count(old) == 1 and candidate.count(new) == 1 and original.replace(old, new, 1) == candidate
+
+
 def _approved_food_control_index_loop(before: bytes, after: bytes) -> bool:
     """Allow only index-bounded traversal of original food observations."""
     old = "        for observed in tuple(causal_observations):\n            for treatment, control in self.config.food_control_pairs:"
@@ -700,29 +718,31 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/causal_model.py"
-                    and _approved_food_control_index_loop(
-                        _reference_empty_agency_preflight(
-                            _reference_published_agency_sorted_items(
-                                _reference_numeric_no_concat(
-                                    _reference_agency_projection_stream(
-                                        _reference_food_empty_arm(
-                                            _reference_hydration_empty_arm(
-                                                _reference_hydration_classification(
-                                                    _reference_deferred_single_scan(
-                                                        _reference_approved_physical_prior_buckets(
-                                                            _reference_approved_revision_contexts(
-                                                                _reference_approved_stream_noncanonical_pairs(
-                                                                    _reference_lived_review_dispatch(
-                                                                        _reference_approved_confirmed_count(
-                                                                            _reference_approved_physical_alias(
-                                                                                _reference_approved_active_context_cache(
-                                                                                    _reference_hydration_control_lookup(
-                                                                                        _reference_food_control_sort(
-                                                                                            _reference_causal_minimum(
-                                                                                                _reference_approved_numeric_index(
-                                                                                                    _reference_numeric_publication(
-                                                                                                        _reference_agency_index(
-                                                                                                            (old_root / rel).read_bytes()
+                    and _approved_numeric_episode_ref_index(
+                        _reference_food_control_index_loop(
+                            _reference_empty_agency_preflight(
+                                _reference_published_agency_sorted_items(
+                                    _reference_numeric_no_concat(
+                                        _reference_agency_projection_stream(
+                                            _reference_food_empty_arm(
+                                                _reference_hydration_empty_arm(
+                                                    _reference_hydration_classification(
+                                                        _reference_deferred_single_scan(
+                                                            _reference_approved_physical_prior_buckets(
+                                                                _reference_approved_revision_contexts(
+                                                                    _reference_approved_stream_noncanonical_pairs(
+                                                                        _reference_lived_review_dispatch(
+                                                                            _reference_approved_confirmed_count(
+                                                                                _reference_approved_physical_alias(
+                                                                                    _reference_approved_active_context_cache(
+                                                                                        _reference_hydration_control_lookup(
+                                                                                            _reference_food_control_sort(
+                                                                                                _reference_causal_minimum(
+                                                                                                    _reference_approved_numeric_index(
+                                                                                                        _reference_numeric_publication(
+                                                                                                            _reference_agency_index(
+                                                                                                                (old_root / rel).read_bytes()
+                                                                                                            )
                                                                                                         )
                                                                                                     )
                                                                                                 )
