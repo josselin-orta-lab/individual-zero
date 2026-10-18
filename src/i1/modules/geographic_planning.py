@@ -12,7 +12,7 @@ from i0.interfaces import PrimitiveCommand
 
 from .geographic_exploration import GeographicTarget
 from .observed_frontier_routing import GeographicTransitTarget
-from .water_memory_navigation import WaterReturnTarget
+from .spatial_memory import SpatialReturnTarget
 from .simulator import Simulator
 from .stage6_planning import SimulatorPlanner
 
@@ -200,8 +200,8 @@ def propose_geographic_transit(
     result.validate()
     return result
 
-def propose_water_return(
-    *, target: WaterReturnTarget, initial_state: SimulationState,
+def propose_spatial_return(
+    *, target: SpatialReturnTarget, initial_state: SimulationState,
     simulator: Simulator, st_version: str, t_monde: int, ttl_steps: int,
     goal_ref: str,
 ) -> OptionProposal | None:
@@ -218,7 +218,7 @@ def propose_water_return(
     )
     if effects is None:
         return None
-    option_id = f"option:water-memory:{target.ref}:t{t_monde}"
+    option_id = f"option:place-memory:{target.ref}:t{t_monde}"
     plan_id = f"plan:{option_id}:v1"
     plan = Plan(
         id=plan_id, option_ref=option_id, version="1",
@@ -232,13 +232,12 @@ def propose_water_return(
     )
     option = Option(
         id=option_id, version="1", type="primitive",
-        learning_signature=(f"memory_water_return:{target.water_position[0]}:"
-                            f"{target.water_position[1]}"),
+        learning_signature=(f"memory_place_return:{target.entity_id}"),
         preconditions=("adjacent_passable",),
         success_condition="target_position_observed",
         failure_condition="target_position_not_observed",
         invalidation_condition="remembered_water_context_changed",
-        motive_ref=MotiveRef(type="water_memory", id=target.ref),
+        motive_ref=MotiveRef(type="place_memory", id=target.ref),
         founding_st_version=st_version,
         expires_at_step=t_monde + ttl_steps,
         provenance="memory", goal_ref=goal_ref, plan_ref=plan_id,
