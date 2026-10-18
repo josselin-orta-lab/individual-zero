@@ -303,17 +303,6 @@ class Stage11Runtime(Stage9Runtime):
             )
             return
         observed = self.exploration.observe_geographic_capture(capture)
-        if geo.config.remember_entities:
-            for memory in geo.observe_entities(
-                capture, observer_id=getattr(self, "_i1_personal_id", self.individual_id),
-            ):
-                self._write(kind="i1_entity_place_observed", cycle=1,
-                            data={"position": list(memory.position),
-                                  "first_seen_step": memory.first_seen_step,
-                                  "last_seen_step": memory.last_seen_step,
-                                  "confidence": memory.confidence,
-                                  "contradictions": memory.contradictions,
-                                  "source": memory.provenance})
         if observed:
             self._write(
                 kind="stage11_geographic_visit_observed",
@@ -626,6 +615,20 @@ class Stage11Runtime(Stage9Runtime):
                 )
             geo = self.exploration.geographic
             survey_recorded = False
+            if geo is not None and geo.config.remember_entities and not over_capacity:
+                for memory in geo.observe_entities(
+                    capture, observer_id=getattr(self, "_i1_personal_id", self.individual_id),
+                ):
+                    self._write(kind="i1_entity_place_observed", cycle=cycle,
+                                data={"entity_id": memory.entity_id,
+                                      "entity_type": memory.entity_type,
+                                      "position": list(memory.position),
+                                      "first_seen_step": memory.first_seen_step,
+                                      "last_seen_step": memory.last_seen_step,
+                                      "confidence": memory.confidence,
+                                      "contradictions": memory.contradictions,
+                                      "source": memory.provenance})
+
             if geo is not None and geo.config.observe_routes and not over_capacity:
                 # After an accepted Phase-1 Exploration observation charge.
                 # A v3 revision can only replace topology at the *current*
