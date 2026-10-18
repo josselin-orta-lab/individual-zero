@@ -73,6 +73,58 @@ class PlaceMemory:
 
 
 @dataclass(frozen=True, slots=True)
+class EntityMotionDiagnosis:
+    """Tentative identity by unique consecutive local sightings, not world IDs."""
+
+    observer_id: str
+    trace_ref: str
+    entity_type: str
+    first_seen_step: int
+    last_seen_step: int
+    first_position: tuple[int, int]
+    last_position: tuple[int, int]
+    observations: int
+    observed_moves: int
+    observed_stays: int
+    recognition_basis: str = "unique_consecutive_local_sightings"
+
+    @property
+    def diagnosis(self) -> str:
+        if self.observed_moves:
+            return "mobile_probable"
+        if self.observed_stays >= 2:
+            return "immobile_apparente"
+        return "indetermine"
+
+    @property
+    def identity_certainty(self) -> str:
+        return "tentative"
+
+    def validate(self) -> None:
+        if (not isinstance(self.observer_id, str) or not self.observer_id
+            or not isinstance(self.entity_type, str) or not self.entity_type
+            or not isinstance(self.trace_ref, str)
+            or not _point(self.first_position) or not _point(self.last_position)
+            or type(self.first_seen_step) is not int
+            or type(self.last_seen_step) is not int
+            or self.first_seen_step < 1
+            or self.last_seen_step < self.first_seen_step
+            or type(self.observations) is not int or self.observations < 1
+            or type(self.observed_moves) is not int or self.observed_moves < 0
+            or type(self.observed_stays) is not int or self.observed_stays < 0
+            or self.observations != 1 + self.observed_moves + self.observed_stays
+            or self.last_seen_step - self.first_seen_step != self.observations - 1
+            or (self.observed_moves == 0
+                and self.first_position != self.last_position)
+            or self.recognition_basis != "unique_consecutive_local_sightings"
+            or self.trace_ref != (
+                f"motion:{self.entity_type}:{self.first_seen_step}:"
+                f"{self.first_position[0]}:{self.first_position[1]}"
+            )):
+            raise ValueError("entity mobility diagnosis lacks personal continuity")
+
+
+@dataclass(frozen=True, slots=True)
 class SpatialReturnTarget:
     """One locally valid step toward a past observation, never the full route."""
 
