@@ -819,6 +819,39 @@ _ISSUE_314_PINNED_BLOBS = {
     "i1lab/stage11_runtime.py": "76a161dec8c0e0b99e0f18fd81aa10ac9e34731b",
 }
 
+# Review-locked #317 I1-only source changes. Values are complete Git blob
+# hashes of exactly the reviewed source, not mutable path exemptions.
+_ISSUE_317_PINNED_BLOBS = {
+    "i1/modules/competition.py": "9513a3d82b3f8b9475e3f9a8fd0e2aad969a69a1",
+    "i1/modules/geographic_exploration.py": "391fc2abaef4da1468879eacd31eb186c14759d7",
+    "i1/modules/geographic_planning.py": "8aa71effe4cf55827a27a21af4e52d09938e34d6",
+    "i1lab/stage11_runtime.py": "15295d162d21b56e24c07d1dd8835a104f2bea6f",
+    "i1lab/stage4_runtime.py": "80a7504009205f3481f936251cddcaa2e2df8393",
+}
+_ISSUE_317_NATIVE_SOURCES = {
+    "i1/modules/competition.py": "src/i1/modules/competition.py",
+    "i1/modules/geographic_exploration.py": "src/i1/modules/geographic_exploration.py",
+    "i1/modules/geographic_planning.py": "src/i1/modules/geographic_planning.py",
+    "i1lab/stage11_runtime.py": "src/i1/runtime/stage11_runtime.py",
+    "i1lab/stage4_runtime.py": "src/i1/runtime/stage4_runtime.py",
+}
+
+
+def _approved_issue317_blob(root: Path, rel: str) -> bool:
+    expected = _ISSUE_317_PINNED_BLOBS.get(rel)
+    if expected is None:
+        return False
+    source = (ROOT / _ISSUE_317_NATIVE_SOURCES[rel]).read_bytes()
+    source_digest = sha1(
+        b"blob " + str(len(source)).encode("ascii") + b"\0" + source
+    ).hexdigest()
+    if source_digest != expected:
+        return False
+    # Generated source parity to the current checked-in source is independently
+    # enforced by the builder manifest in _build; never admit arbitrary changes.
+    return (root / rel).is_file()
+
+
 
 def _approved_issue314_blob(root: Path, rel: str) -> bool:
     expected = _ISSUE_314_PINNED_BLOBS.get(rel)
@@ -857,10 +890,10 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not _approved_issue314_blob(new_root, rel))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_issue317_blob(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not _approved_issue314_blob(new_root, rel) and not (
+            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_issue317_blob(new_root, rel)) and not (
                 False  # Stage10 is handled by the stacked exact approval below
                 or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_natural_toxic_berry_birth(
