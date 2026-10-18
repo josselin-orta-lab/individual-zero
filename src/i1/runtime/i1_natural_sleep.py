@@ -36,6 +36,8 @@ CONSOLIDATION_PERIOD_UC = 2560
 # Ordinary birth metabolism, explicitly versioned and physically observable.
 # These are provisional simulation units rather than biological constants.
 LIVING_PHYSIOLOGY_POLICY = "i1-living-physical-defaults-v2-deprivation-canonical-only"
+TOXIC_BERRY_POLICY = "i1-natural-toxic-berry-integrity-minus-10-v1"
+DEFAULT_TOXIC_BERRY_INTEGRITY_DELTA = -10.0
 DEFAULT_STARVATION_DAMAGE = 0.5
 DEFAULT_DEHYDRATION_DAMAGE = 1.0
 DEFAULT_FOOD_DECAY = 0.20
@@ -105,6 +107,19 @@ def enable_living_physiology_birth(world_config):
             else world_config.rest_integrity_gain
         ),
     )
+    # Natural I1 physics only. Keep the historical software-reference
+    # fixture untouched, including its original -100 toxic-berry effect.
+    # The fruit is still unknown to the newborn; no behavior is imposed.
+    from i1lab.world import BerryEffect
+    effects = dict(upgraded.berry_effects)
+    toxic = effects["berry_b"]
+    if toxic.integrity_delta == -100.0:
+        effects["berry_b"] = BerryEffect(
+            toxic.food_gain, DEFAULT_TOXIC_BERRY_INTEGRITY_DELTA)
+        upgraded = replace(
+            upgraded, version=upgraded.version + "+" + TOXIC_BERRY_POLICY,
+            berry_effects=effects,
+        )
     upgraded.validate()
     return upgraded
 
