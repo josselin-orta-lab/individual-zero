@@ -229,23 +229,29 @@ def audit(path: Path) -> dict:
 
     # The generation wrapper builds the exact current I1, not an archived I0
     # lab. The reader never instantiates the world or a living individual.
+    # Read the immutable evidence image once. Both hash-chain verification
+    # and semantic classification MUST consume these exact bytes, avoiding
+    # a validate-then-reread race on a WAL being extended by a live birth.
+    with path.open("rb") as stream:
+        raw_evidence = stream.read()
     with TemporaryDirectory(prefix="i1-spatial-wal-audit-") as folder:
-        build = Path(folder) / "generated"
+        isolated = Path(folder)
+        sealed_wal = isolated / "sealed-evidence.wal"
+        sealed_wal.write_bytes(raw_evidence)
+        build = isolated / "generated"
         generate(build)
         sys.path.insert(0, str(build))
         try:
             from i1lab.journal import HashChainedJournal
             attestation = HashChainedJournal.audit_durable_wal(
-                str(path.resolve()))
+                str(sealed_wal))
         finally:
             sys.path.remove(str(build))
 
-    events = []
-    with path.open("rb") as stream:
-        for line in stream:
-            events.append(json.loads(line)["causal_event"])
+    events = [json.loads(line)["causal_event"]
+              for line in raw_evidence.splitlines()]
     if len(events) != attestation["verified_entries"]:
-        raise ValueError("WAL changed during verification")
+        raise ValueError("verified WAL evidence count mismatch")
     report = classify_events(events)
     report.update({
         "wal": path.name,
