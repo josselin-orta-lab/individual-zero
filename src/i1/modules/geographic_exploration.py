@@ -26,6 +26,7 @@ class GeographicExplorationConfig:
     observe_routes: bool = False
     refresh_surveys: bool = False
     remember_entities: bool = False
+    max_place_candidates: int = 1
 
     def validate(self) -> None:
         if not isinstance(self.version, str) or not self.version:
@@ -38,6 +39,9 @@ class GeographicExplorationConfig:
             raise ValueError("route survey flag must be boolean")
         if type(self.refresh_surveys) is not bool:
             raise ValueError("survey refresh flag must be boolean")
+        if (type(self.max_place_candidates) is not int
+            or not 1 <= self.max_place_candidates <= 4):
+            raise ValueError("invalid bounded place candidate count")
         if type(self.remember_entities) is not bool:
             raise ValueError("entity-place flag must be boolean")
         if self.remember_entities and not self.observe_routes:
@@ -184,7 +188,7 @@ class GeographicExploration:
 
     def freeze_places(self, targets: tuple[SpatialReturnTarget, ...]) -> None:
         """Only unchanged, physically grounded candidates survive Phase-1."""
-        if not isinstance(targets, tuple) or len(targets) > self.config.max_targets_per_cycle:
+        if not isinstance(targets, tuple) or len(targets) > self.config.max_place_candidates:
             raise ValueError("invalid offered place targets")
         accepted = []
         for target in targets:
@@ -681,7 +685,7 @@ class GeographicExploration:
                     raise ValueError("future, duplicate or alien entity-place memory")
                 places[place.entity_id] = place
             raw_offered = state.get("place_offered")
-            if not isinstance(raw_offered, list) or len(raw_offered) > self.config.max_targets_per_cycle:
+            if not isinstance(raw_offered, list) or len(raw_offered) > self.config.max_place_candidates:
                 raise ValueError("invalid offered entity-place snapshot")
             place_targets = []
             for row in raw_offered:
