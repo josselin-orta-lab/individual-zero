@@ -1,0 +1,11 @@
+# Read-only natural I1 birth capability audit
+
+This gate audits the **effective born** I1, not its theoretical source classes or reference fixtures. Owner configurations are read after the canonical `birth_i1` call and **before any world step**. It records Stage 4–12 versions, capability status (`active`, `conditional`, `disabled`), current frozen GoalManager and Competition parameters, TD and consolidation versions, physics hash, toxic berry injury and causal owner IDs.
+
+A capability marked **active** is wired into the runtime, not proof that a corresponding action or learning event will occur. **Conditional** means constructed but requiring normal cognitive, sleep, memory, world and UC conditions. **Disabled** is an intentional feature choice, not an untested assertion of success. The explicit `EXPECTED` table is version-controlled and reviewed whenever a native capability intentionally changes.
+
+Run `python tools/audit_i1_birth_capabilities.py --preset oasis --output reports/audit-oasis.json`; similarly for `foraging`. The tool generates a disposable namespaced build, constructs exactly one normally mortal I1 with a dedicated WAL, reads birth-time owners once and audits no world steps. The same logic can be called through `audit_birth(life, expected_competition=...)` in an experiment immediately after birth; observers must not modify born configs or inject decision commands. CI fails closed if stages 4–12 are incomplete, expected modes drift, an owner is duplicated, stages 4/10/11 diverge, the effective goals are not 0.04/0.35, the native toxic berry is not -10, or the audit itself advances a step.
+
+**Important limitation:** this checks source wiring, identity and configuration at birth. It does not prove functional execution, TD convergence, learned survival, consolidation quality or robust behavioral capability. Those still require physical WAL campaigns. For every individual in PR #311, embed the effective birth audit result and profile hash before evaluating a candidate.
+
+The native-generated artifact parity comparison predates merged PR #312. An exact byte-for-byte approval helper now recognizes only the explicitly reviewed toxic berry `-100 → -10` natural-birth conversion. It does not add a generic skip, and any unexpected changes still break CI.
