@@ -14,7 +14,7 @@ from i1.modules.consolidation_budget import ConsolidationBudgetConfig
 from i1.modules.consolidation_replay_agenda import ReplayAgendaPolicy
 from i1.modules.consolidation_semantics import SemanticPassPolicy
 
-POLICY = "i1-natural-sleep-fatigue-memory-night-energy-v2-procedural-batch"
+POLICY = "i1-natural-sleep-fatigue-memory-night-energy-v3-fcog-020"
 
 # Explicit experimental values, not a discovered or learned food/water prior.
 # Energy is deliberately ABSENT from the intrinsic sleep-pressure formula:
@@ -22,7 +22,7 @@ POLICY = "i1-natural-sleep-fatigue-memory-night-energy-v2-procedural-batch"
 SLEEP_ENERGY_GAIN = 3.0
 FATIGUE_GAIN_PER_UC_FRACTION = 0.7
 FATIGUE_RECOVERY_PER_SLEEP_STEP = 0.3
-FATIGUE_WEIGHT = 0.65
+FATIGUE_WEIGHT = 0.20  # Canonical w_F: dynamic F_cog still accrues and recovers.
 CONSOLIDATION_WEIGHT = 0.25
 NIGHT_WEIGHT = 0.20
 SLEEP_INTRINSIC_WEIGHT = 0.9
