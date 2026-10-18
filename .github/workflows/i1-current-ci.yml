@@ -90,6 +90,8 @@ jobs:
         run: python tools/run_i1_world_preset.py --list
       - name: Real natural I1 preset birth and mortal WAL smoke
         run: python tools/run_i1_world_preset.py --preset oasis --seed 246 --steps 2 --lives 1 --custody wal --output-dir reports/preset-oasis-ci
+      - name: Issue 314 WAL false-positive regression tests
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_wal_audit_314.py -v
       - name: Read-only spatial memory WAL evidence audit
         run: |
           python tools/audit_i1_spatial_navigation_314.py reports/preset-oasis-ci/life-01.wal --output reports/preset-oasis-ci/spatial-audit.json
