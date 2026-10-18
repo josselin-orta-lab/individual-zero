@@ -26,3 +26,9 @@ The new unit scenarios include resources, water, creatures and an unknown type, 
 - Entity-neutral option invalidation and the configured intrinsic modulation scale are respected. TD learning signatures remain keyed by personally observed entity ID, and only normal applied-action learning can update them.
 - Deterministic owner tests now cover multiple offers, cold snapshot restore and local contradiction handling. End-to-end physical selection, resource efficacy attribution, UC/cycle frequencies and 300/1000-step paired survival are pending and do not justify a scientific GO.
 - The world presently ranks water/creature/shelter IDs by visible-set enumeration; stable physical identifiers for mutable entities need a separate correction to avoid apparent identity shifts. No claim of lifetime tracking across motion is made.
+
+## 2026-10-18 identity-custody refinement
+
+Perception currently labels water, shelter and creatures by a transient local index. This is **not** a durable individual identity. The spatial owner consequently keys each first-person place by observed entity type and exact *personally seen* coordinates (`sighting:type:x:y`), retaining the raw `perceived_entity_id` as provenance only. Two independent sightings with recycled sensor label cannot be fused, and a moving creature leaves uncertain observations of sites rather than magically tracked personal identity. This deliberately avoids claiming that two encounters concern one creature. It requires future separately evidenced identity tracking for genuinely mobile entities.
+
+New regression coverage: independent same-label water sightings and moving-entity observations, in addition to generic multi-option memory tests. Current physical-action and survival GO remain not demonstrated. The separate PR #311 is untouched.
