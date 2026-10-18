@@ -190,16 +190,14 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
 
     def evaluate(self, *, proposal, evaluation_state, initial_state, cycle, t_monde,
                  remaining_plan_index=0):
-        if proposal.option.motive_ref.type == "water_memory":
+        if proposal.option.motive_ref.type == "place_memory":
             geo = self._exploration.geographic
-            target = None if geo is None else geo.water_for(proposal.option)
+            target = None if geo is None else geo.place_for(proposal.option)
             valid = (target is not None and target.source_t_monde == t_monde
                      and proposal.option.goal_ref is not None
-                     and evaluation_state.active_goal_type == "drink"
                      and proposal.option.provenance == "memory"
                      and proposal.option.learning_signature == (
-                         f"memory_water_return:{target.water_position[0]}:"
-                         f"{target.water_position[1]}"
+                         f"memory_place_return:{target.entity_id}"
                      ) and proposal.plan is not None
                      and proposal.plan.goal_ref == proposal.option.goal_ref
                      and proposal.plan.st_version ==
@@ -221,18 +219,18 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             # This is confidence in a remembered destination, NOT a claim
             # about physiology or an artificially learned Q value.
             # Existing goal pressure is supplied by Stage4's real need owner.
-            need = max(0.0, min(1.0,
-                float((100.0 - evaluation_state.body.get("water", 100.0)) / 100.0)))
-            value = min(0.35, 0.35 * target.confidence * need)
+            # No built-in entity-usefulness relation: even a remembered berry
+            # has no prelearned nutritional value. Stage8 TD stays authoritative.
+            value = min(0.12, 0.12 * target.confidence)
             ext = 0.0 if original.evidence is None else original.evidence
             assessment = replace(
                 original.evaluation, status="evaluated",
                 intrinsic_status="applicable", intrinsic_value=value,
                 signal_ids=tuple(original.evaluation.signal_ids) + (
-                    f"water-memory:{target.water_position}:seen-t{target.observed_step}",
+                    f"place-memory:{target.entity_id}:seen-t{target.observed_step}",
                 ),
                 producers=tuple(dict.fromkeys(
-                    original.evaluation.producers + ("exploration:water_place_recall",)
+                    original.evaluation.producers + ("exploration:entity_place_recall",)
                 )),
             )
             scored = OptionEvidenceInput(assessment, max(-1.0, min(1.0, ext + value)))
