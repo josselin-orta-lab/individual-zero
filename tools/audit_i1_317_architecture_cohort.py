@@ -11,7 +11,15 @@ from collections import Counter
 import json
 from pathlib import Path
 from statistics import mean
-from tools.audit_i1_spatial_navigation_314 import audit as audit_wal
+import importlib.util
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+AUDITOR = ROOT / "tools" / "audit_i1_spatial_navigation_314.py"
+spec = importlib.util.spec_from_file_location("_i1_audit_317", AUDITOR)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+audit_wal = module.audit
 
 
 def number(value):
