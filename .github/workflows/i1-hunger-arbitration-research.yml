@@ -1,0 +1,64 @@
+name: I1 hunger arbitration research contrast
+on:
+  push:
+    branches: [science/i1-need-movement-investigation-20261018]
+    paths:
+      - 'tools/i1_research_lived_evidence_floor.py'
+      - 'tools/run_i1_need_movement_investigation.py'
+      - '.github/workflows/i1-hunger-arbitration-research.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  hunger-study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        world: [longlife-garden, oasis]
+        mode: ['control', 'positive-floor']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate sources and isolate intervention
+        run: |
+          python -m pip install -e .
+          python scripts/check_engine_repository.py --json
+          python tools/run_i1_need_movement_investigation.py --preset "${{ matrix.world }}" --validate-only
+          python -m unittest discover -s tests/i1 -p test_i1_positive_lived_floor.py -v
+      - name: New mortal matched cohort
+        shell: bash
+        env:
+          WORLD: ${{ matrix.world }}
+          MODE: ${{ matrix.mode }}
+        run: |
+          set -euo pipefail
+          flag=()
+          if [[ "$MODE" == "positive-floor" ]]; then flag=(--research-positive-lived-floor); fi
+          for variant in 51 52; do
+            folder="reports/${WORLD}/${MODE}/variant-${variant}"
+            python tools/run_i1_need_movement_investigation.py \
+              --preset "$WORLD" --seed "$((991000 + variant))" \
+              --world-variant "$variant" --steps 800 --lives 1 \
+              --custody wal --geographic-novelty-weight 0.3 \
+              --experimental-fatigue-weight 0.0 \
+              "${flag[@]}" --output-dir "$folder"
+            python tools/analyze_i1_need_movement.py \
+              --input "$folder" --output "$folder/investigation.json"
+            python tools/audit_i1_need_arbitration_wal.py \
+              --input "$folder" --output "$folder/hunger-arbitration.json"
+          done
+      - name: Preserve individual WAL and all deaths
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-hunger-${{ matrix.world }}-${{ matrix.mode }}-${{ github.run_id }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
