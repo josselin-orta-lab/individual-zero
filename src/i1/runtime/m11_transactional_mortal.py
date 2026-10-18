@@ -380,8 +380,14 @@ def _install_trusted_current_on_fresh(
                           if k != "owners"
                           and canonical_causal_bytes(image.get(k))
                           != canonical_causal_bytes(rebuilt.get(k)))
+        exploration_keys = []
+        if "exploration" in divergent:
+            left, right = owners_expected.get("exploration", {}), owners_actual.get("exploration", {})
+            if isinstance(left, dict) and isinstance(right, dict):
+                exploration_keys = sorted(key for key in set(left) | set(right)
+                    if canonical_causal_bytes(left.get(key)) != canonical_causal_bytes(right.get(key)))
         raise RecoveryBlocked("cold reconstructed world/owners do not match committed state"
-                              f" (owners={divergent}, sections={sections})")
+                              f" (owners={divergent}, sections={sections}, exploration_keys={exploration_keys})")
 
 
 @dataclass(frozen=True, slots=True)
