@@ -11,12 +11,12 @@ from i1.contracts import Contribution
 from i1.interfaces import PrimitiveCommand
 from i1.modules.geographic_exploration import GeographicExplorationConfig
 from i1.modules.geographic_planning import (
-    propose_geographic_frontier, propose_geographic_transit, propose_water_return,
+    propose_geographic_frontier, propose_geographic_transit, propose_spatial_return,
 )
 from i1.modules.observed_frontier_routing import (
     find_observed_frontier_route, GeographicTransitTarget,
 )
-from i1.modules.water_memory_navigation import find_water_return
+from i1.modules.spatial_memory import find_spatial_return, PlaceMemory
 from i1.modules.action_control import Admissibility, PreparedCommand
 from i1.modules.simulator import state_from_capture
 from i1.modules.global_modulation import GlobalModulation, ModulationConfig
@@ -228,8 +228,8 @@ class Stage11Runtime(Stage9Runtime):
         )
         self._stage11_geographic_proposals_this_cycle = ()
         self._stage11_unregistered_physical_step = None
-        self._stage11_water_proposal_this_cycle = None
-        self._stage11_frozen_water_target = None
+        self._stage11_place_proposal_this_cycle = None
+        self._stage11_frozen_place_target = None
 
         self.modulation = GlobalModulation(config.modulation)
         self._stage11_modulation_signals = {
@@ -303,17 +303,17 @@ class Stage11Runtime(Stage9Runtime):
             )
             return
         observed = self.exploration.observe_geographic_capture(capture)
-        if geo.config.remember_water:
-            for memory in geo.observe_water(
+        if geo.config.remember_entities:
+            for memory in geo.observe_entities(
                 capture, observer_id=getattr(self, "_i1_personal_id", self.individual_id),
             ):
-                self._write(kind="i1_water_place_observed", cycle=1,
+                self._write(kind="i1_entity_place_observed", cycle=1,
                             data={"position": list(memory.position),
                                   "first_seen_step": memory.first_seen_step,
-                                  "last_confirmed_step": memory.last_confirmed_step,
+                                  "last_seen_step": memory.last_seen_step,
                                   "confidence": memory.confidence,
                                   "contradictions": memory.contradictions,
-                                  "source": memory.source})
+                                  "source": memory.provenance})
         if observed:
             self._write(
                 kind="stage11_geographic_visit_observed",
@@ -435,8 +435,8 @@ class Stage11Runtime(Stage9Runtime):
         )
         frozen_geo_targets = ()
         frozen_transit_target = None
-        frozen_water_target = None
-        self._stage11_water_proposal_this_cycle = None
+        frozen_place_target = None
+        self._stage11_place_proposal_this_cycle = None
         # Copy only already-owned pre-Phase-1 state; current Phase-1 surveys
         # cannot become same-phase Planning knowledge (INV-08).
         # Phase-0 must freeze route data before Phase-1 observations, but
@@ -448,18 +448,18 @@ class Stage11Runtime(Stage9Runtime):
             and self._stage11_config.geographic_preflight_requires_frontier
             and not raw_geo_targets
         )
-        want_water_route = (
+        want_place_route = (
             self.exploration.geographic is not None
-            and self.exploration.geographic.config.remember_water
+            and self.exploration.geographic.config.remember_entities
             and goal_for_planning is not None
             and goal_for_planning.goal_type == "drink"
-            and bool(self.exploration.geographic.water_places)
+            and bool(self.exploration.geographic.place_memories)
         )
         frozen_geography = (
             self.exploration.geographic.export_causal_state()
             if ((demand_skip_geo_preflight
                  and self._stage11_config.geographic_route_enabled)
-                or want_water_route)
+                or want_place_route)
             else None
         )
         excluded_geo = ()
@@ -725,9 +725,9 @@ class Stage11Runtime(Stage9Runtime):
         previous_plan = hooks[1]["planning"]
 
         def plan_only_informational_targets(ctx):
-            nonlocal frozen_geo_targets, frozen_transit_target, frozen_water_target, excluded_geo
+            nonlocal frozen_geo_targets, frozen_transit_target, frozen_place_target, excluded_geo
             self._stage11_geographic_proposals_this_cycle = ()
-            self._stage11_frozen_water_target = None
+            self._stage11_frozen_place_target = None
             emitted = self._causal_test_targets_this_cycle
             permitted = tuple(
                 item for item in emitted
@@ -756,7 +756,7 @@ class Stage11Runtime(Stage9Runtime):
                 return
             if st_before_cycle is None:
                 return
-            if want_water_route:
+            if want_place_route:
                 if not self._charge(module="planning", operation="geographic_route_search"):
                     defer_geo_once("geographic_route_search")
                     return
@@ -766,15 +766,15 @@ class Stage11Runtime(Stage9Runtime):
                     world_step=row["world_step"],
                     free_neighbors=tuple(tuple(p) for p in row["free_neighbors"]),
                 ) for row in frozen_geography["surveys"])
-                from i1.modules.water_memory_navigation import WaterPlace
-                remembered = tuple(WaterPlace(**{
+                from i1.modules.place_memory_navigation import WaterPlace
+                remembered = tuple(PlaceMemory(**{
                     **row, "position": tuple(row["position"]),
                     "observed_from": tuple(row["observed_from"]),
-                }) for row in frozen_geography.get("water_places", ()))
+                }) for row in frozen_geography.get("place_memories", ()))
                 remembered = tuple(
                     site for site in remembered if site.observer_id == getattr(self, "_i1_personal_id", self.individual_id)
                 )
-                frozen_water_target = find_water_return(
+                frozen_place_target = find_spatial_return(
                     origin=(capture.x, capture.y),
                     visits=frozenset(tuple(row[:2]) for row in frozen_geography["visits"]),
                     surveys=prior_surveys, places=remembered,
@@ -783,12 +783,12 @@ class Stage11Runtime(Stage9Runtime):
                         if cell.passable is True and cell.creature is False
                     ), current_world_step=capture.t_monde,
                 )
-                self._write(kind="i1_water_memory_recalled", cycle=cycle,
-                            data={"candidate": None if frozen_water_target is None
-                                  else frozen_water_target.ref,
+                self._write(kind="i1_place_memory_recalled", cycle=cycle,
+                            data={"candidate": None if frozen_place_target is None
+                                  else frozen_place_target.ref,
                                   "sites": len(remembered),
                                   "source": "prior_frozen_geographic_owner"})
-            if frozen_water_target is not None:
+            if frozen_place_target is not None:
                 if not self._charge(module="planning",
                                     operation="geographic_admissibility_preflight"):
                     defer_geo_once("geographic_admissibility_preflight")
@@ -796,15 +796,15 @@ class Stage11Runtime(Stage9Runtime):
                 if self.stage3.control.verifier_admissibilite(
                     capture=capture, prepared=PreparedCommand(
                         command=PrimitiveCommand("se_deplacer",
-                            {"direction": frozen_water_target.direction}),
+                            {"direction": frozen_place_target.direction}),
                         source="decision")) is not Admissibility.INADMISSIBLE:
                     if not self._charge(module="planning", operation="planning_build"):
                         defer_geo_once("planning_build")
                         return
                     state = state_from_capture(
                         capture=capture, is_night=self.world.is_night(capture.t_monde))
-                    proposal = propose_water_return(
-                        target=frozen_water_target, initial_state=state,
+                    proposal = propose_spatial_return(
+                        target=frozen_place_target, initial_state=state,
                         simulator=self.simulator,
                         st_version=st_before_cycle.version, t_monde=capture.t_monde,
                         ttl_steps=self._stage6_config.planning.option_ttl_steps,
@@ -816,13 +816,13 @@ class Stage11Runtime(Stage9Runtime):
                     ):
                         self._publish_contribution(self._planning_contribution(
                             proposal, t_monde=capture.t_monde, cycle=cycle))
-                        self._stage11_water_proposal_this_cycle = proposal
-                        self._stage11_frozen_water_target = frozen_water_target
-                        self._write(kind="i1_water_memory_option_proposed", cycle=cycle,
+                        self._stage11_place_proposal_this_cycle = proposal
+                        self._stage11_frozen_place_target = frozen_place_target
+                        self._write(kind="i1_place_memory_option_proposed", cycle=cycle,
                                     data={"option_ref": proposal.option.id,
-                                          "target": list(frozen_water_target.water_position),
-                                          "next": list(frozen_water_target.destination),
-                                          "confidence": frozen_water_target.confidence,
+                                          "target": list(frozen_place_target.observed_position),
+                                          "next": list(frozen_place_target.destination),
+                                          "confidence": frozen_place_target.confidence,
                                           "active_goal": goal_for_planning.id})
             # The 1-UC Planning charge and the canonical read-only safety
             # lookup both execute here in Phase-1 Planning, using only raw
@@ -1148,30 +1148,30 @@ class Stage11Runtime(Stage9Runtime):
                         if target.ref in funded
                     )
                 )
-            geo.freeze_water(
-                self._stage11_frozen_water_target
+            geo.freeze_place(
+                self._stage11_frozen_place_target
                 if (not self._cycle_degraded and
-                    self._stage11_water_proposal_this_cycle is not None)
+                    self._stage11_place_proposal_this_cycle is not None)
                 else None
-            ) if geo is not None and geo.config.remember_water else None
+            ) if geo is not None and geo.config.remember_entities else None
             previous_register(ctx)
             for old in self.competition.candidate_proposals:
-                if (old.option.motive_ref.type == "water_memory"
-                    and (self._stage11_water_proposal_this_cycle is None
-                         or old.option.id != self._stage11_water_proposal_this_cycle.option.id)):
+                if (old.option.motive_ref.type == "place_memory"
+                    and (self._stage11_place_proposal_this_cycle is None
+                         or old.option.id != self._stage11_place_proposal_this_cycle.option.id)):
                     self.competition.invalidate_candidate(old.option.id)
                     self.stage3.control.clear_option_step(old.option.id)
-            if self._stage11_water_proposal_this_cycle is not None and not self._cycle_degraded:
+            if self._stage11_place_proposal_this_cycle is not None and not self._cycle_degraded:
                 if self._charge(module="competition", operation="competition_register"):
                     accepted = self._register_option_proposal(
-                        proposal=self._stage11_water_proposal_this_cycle,
+                        proposal=self._stage11_place_proposal_this_cycle,
                         active_goal_id=(
                             None if self.goal_manager.active_goal is None
                             else self.goal_manager.active_goal.id),
                         t_monde=capture.t_monde, cycle=cycle)
-                    self._write(kind="i1_water_memory_option_registration", cycle=cycle,
+                    self._write(kind="i1_place_memory_option_registration", cycle=cycle,
                                 data={"option_ref":
-                                      self._stage11_water_proposal_this_cycle.option.id,
+                                      self._stage11_place_proposal_this_cycle.option.id,
                                       "registered": accepted})
             current = {
                 proposal.option.id
