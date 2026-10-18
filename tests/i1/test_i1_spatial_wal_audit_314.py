@@ -94,6 +94,63 @@ class SpatialWalAuditTests(unittest.TestCase):
         self.assertEqual(metrics["physically_applied_memory_actions_using_prior_td"], 0)
         self.assertEqual(metrics["assessments_with_prior_published_td"], 0)
 
+    def test_317_remote_multihop_arrival_across_sleep_is_certified(self):
+        entity = "sighting:wood:9:8"
+        old = "option:place-memory:place:sighting:wood:9:8:at:9:8:from:11:8:via:10:8"
+        new = "option:place-memory:place:sighting:wood:9:8:at:9:8:from:10:8:via:9:8"
+        rows = [event("i1_entity_place_observed", dict(
+            entity_id=entity, position=[9,8], first_seen_step=1,
+            source="perceptual_capture"),step=1,attempt="a1")]
+        def add_step(t, start, finish, option, *, sleep=False):
+            attempt = "a"+str(t)
+            if not sleep:
+                rows.append(event("perceptual_capture", dict(
+                    capture_t_monde=t, position={"x":start[0],"y":start[1]},
+                    agency_visible_adjacent=[
+                        {"x": start[0]-1, "y":start[1]}],
+                ),step=t,attempt=attempt))
+                rows.append(event("i1_place_memory_option_proposed",dict(
+                    option_ref=option,entity_id=entity,target=[9,8],
+                    next=list(finish)),step=t,attempt=attempt))
+                rows.append(event("i1_place_memory_option_registration",
+                    dict(option_ref=option,registered=True),step=t,attempt=attempt))
+                rows.append(event("competition_cycle", {"traces":[dict(
+                    option_ref=option,crossed=True)]},step=t,attempt=attempt))
+            primitive="dormir" if sleep else "se_deplacer"
+            ref="option:sleep" if sleep else option
+            h="hash"+str(t)
+            rows.extend([
+                event("command_admitted",dict(option_ref=ref,
+                    primitive=primitive,command_hash=h),step=t,attempt=attempt),
+                event("command_experienced",{},step=t,attempt=attempt,
+                    emitter="action_control",primitive=primitive,command_hash=h),
+                event("world_transition_experienced",{},step=t,attempt=attempt,
+                    emitter="world_and_body",
+                    position_after={"x":finish[0],"y":finish[1]}),
+                event("step_closed",dict(outcome="normal",
+                    applied_command_count=1,world_advance_count=1),
+                    step=t,attempt=attempt)])
+        add_step(4,(11,8),(10,8),old)
+        rows.append(event("i1_place_memory_intention_continued",dict(
+            previous_option_ref=old,next_option_ref=new,
+            confirmed_position=[10,8],
+            source="previous_applied_command_and_current_perception",
+            forced_motor_selection=False),step=5,attempt="a5"))
+        add_step(5,(10,8),(10,8),None,sleep=True)
+        add_step(6,(10,8),(10,8),None,sleep=True)
+        add_step(7,(10,8),(9,8),new)
+        answer=audit314.classify_events(rows)["memory_causality_317"]
+        self.assertEqual(answer["completed_remote_multihop_returns"],1)
+        self.assertEqual(answer["completed_remote_returns_after_sleep"],1)
+        self.assertEqual(answer["completed_remote_return_examples"][0][
+            "motor_world_steps"],[4,7])
+        # No physical completion without the intermediate explicit cognitive
+        # continuation event, irrespective of a later matching physical hop.
+        damaged=[e for e in rows if e["kind"] !=
+                 "i1_place_memory_intention_continued"]
+        self.assertEqual(audit314.classify_events(damaged)[
+            "memory_causality_317"]["completed_remote_multihop_returns"],0)
+
     def test_proposal_without_action_cannot_prove_return(self):
         report = audit314.classify_events(self.example()[:4])
         self.assertFalse(report["proven_memory_action_applied"])
