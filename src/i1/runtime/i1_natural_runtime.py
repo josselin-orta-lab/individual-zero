@@ -114,13 +114,15 @@ class I1Runtime(I1WaterPrudentRuntime):
                 version="i1-firstperson-frontier-v1",
                 novelty_weight=0.15, max_distinct_sites=1024,
                 max_targets_per_cycle=1,
-                observe_routes=False, refresh_surveys=False,
+                observe_routes=True, refresh_surveys=True, remember_entities=True,
+                max_place_candidates=3,
             )
             cfg = replace(
                 cfg, version=cfg.version + "+i1-firstperson-frontier-v1",
                 geographic=geographic, intrinsic_weight=min(cfg.intrinsic_weight, 0.35),
                 local_threat_alerts=True,
                 geographic_capacity_guard_enabled=True,
+                geographic_route_enabled=True,
             )
         # Ordinary I1 identifies each charged cognitive cycle by the
         # actual Scheduler world-step/attempt/cycle tuple. This prevents a
@@ -206,6 +208,7 @@ class I1Runtime(I1WaterPrudentRuntime):
         kwargs["i1_d2_prudence"] = False
         # Quiescent, step-local accounting only. GoalManager itself owns the
         # durable refractory and failure counters (M11 causal state).
+        self._i1_personal_id = life_id
         self._i1_last_nonplannable_observation = None
         super().__init__(**kwargs)
         self._i1_active_owner_views = {

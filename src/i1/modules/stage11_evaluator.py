@@ -190,6 +190,55 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
 
     def evaluate(self, *, proposal, evaluation_state, initial_state, cycle, t_monde,
                  remaining_plan_index=0):
+        if proposal.option.motive_ref.type == "place_memory":
+            geo = self._exploration.geographic
+            target = None if geo is None else geo.place_for(proposal.option)
+            valid = (target is not None and target.source_t_monde == t_monde
+                     and proposal.option.goal_ref is not None
+                     and proposal.option.provenance == "memory"
+                     and proposal.plan is not None
+                     and proposal.option.plan_ref == proposal.plan.id
+                     and proposal.option.type == "primitive"
+                     and proposal.option.learning_signature == (
+                         f"memory_place_return:{target.entity_id}"
+                     )
+                     and proposal.plan.goal_ref == proposal.option.goal_ref
+                     and proposal.plan.st_version ==
+                         proposal.option.founding_st_version
+                     and len(proposal.plan.steps) == 1
+                     and proposal.plan.steps[0].command.primitive == "se_deplacer"
+                     and proposal.plan.steps[0].command.parameters ==
+                         {"direction": target.direction}
+                     and proposal.plan.steps[0].preconditions ==
+                         ("adjacent_passable",))
+            if not valid:
+                return self._unscored_geographic(
+                    proposal, cycle=cycle, t_monde=t_monde)
+            original = Stage8OptionEvaluator.evaluate(
+                self, proposal=proposal, evaluation_state=evaluation_state,
+                initial_state=initial_state, cycle=cycle, t_monde=t_monde,
+                remaining_plan_index=remaining_plan_index,
+            )
+            # This is confidence in a remembered destination, NOT a claim
+            # about physiology or an artificially learned Q value.
+            # Existing goal pressure is supplied by Stage4's real need owner.
+            # No built-in entity-usefulness relation: even a remembered berry
+            # has no prelearned nutritional value. Stage8 TD stays authoritative.
+            value = min(0.12, self._intrinsic_weight * 0.12 * target.confidence)
+            ext = 0.0 if original.evidence is None else original.evidence
+            assessment = replace(
+                original.evaluation, status="evaluated",
+                intrinsic_status="applicable", intrinsic_value=value,
+                signal_ids=tuple(original.evaluation.signal_ids) + (
+                    f"place-memory:{target.entity_id}:seen-t{target.observed_step}",
+                ),
+                producers=tuple(dict.fromkeys(
+                    original.evaluation.producers + ("exploration:entity_place_recall",)
+                )),
+            )
+            scored = OptionEvidenceInput(assessment, max(-1.0, min(1.0, ext + value)))
+            scored.validate()
+            return scored
         if proposal.option.motive_ref.type == "cible_exploration":
             geographic = self._exploration.geographic
             target = (

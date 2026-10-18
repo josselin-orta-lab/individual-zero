@@ -11,11 +11,12 @@ from i1.contracts import Contribution
 from i1.interfaces import PrimitiveCommand
 from i1.modules.geographic_exploration import GeographicExplorationConfig
 from i1.modules.geographic_planning import (
-    propose_geographic_frontier, propose_geographic_transit,
+    propose_geographic_frontier, propose_geographic_transit, propose_spatial_return,
 )
 from i1.modules.observed_frontier_routing import (
     find_observed_frontier_route, GeographicTransitTarget,
 )
+from i1.modules.spatial_memory import find_spatial_return, PlaceMemory
 from i1.modules.action_control import Admissibility, PreparedCommand
 from i1.modules.simulator import state_from_capture
 from i1.modules.global_modulation import GlobalModulation, ModulationConfig
@@ -227,6 +228,8 @@ class Stage11Runtime(Stage9Runtime):
         )
         self._stage11_geographic_proposals_this_cycle = ()
         self._stage11_unregistered_physical_step = None
+        self._stage11_place_proposals_this_cycle = ()
+        self._stage11_frozen_place_targets = ()
 
         self.modulation = GlobalModulation(config.modulation)
         self._stage11_modulation_signals = {
@@ -421,6 +424,8 @@ class Stage11Runtime(Stage9Runtime):
         )
         frozen_geo_targets = ()
         frozen_transit_target = None
+        frozen_place_targets = ()
+        self._stage11_place_proposals_this_cycle = ()
         # Copy only already-owned pre-Phase-1 state; current Phase-1 surveys
         # cannot become same-phase Planning knowledge (INV-08).
         # Phase-0 must freeze route data before Phase-1 observations, but
@@ -432,10 +437,17 @@ class Stage11Runtime(Stage9Runtime):
             and self._stage11_config.geographic_preflight_requires_frontier
             and not raw_geo_targets
         )
+        want_place_route = (
+            self.exploration.geographic is not None
+            and self.exploration.geographic.config.remember_entities
+            and goal_for_planning is not None
+            and bool(self.exploration.geographic.place_memories)
+        )
         frozen_geography = (
             self.exploration.geographic.export_causal_state()
-            if (demand_skip_geo_preflight
-                and self._stage11_config.geographic_route_enabled)
+            if ((demand_skip_geo_preflight
+                 and self._stage11_config.geographic_route_enabled)
+                or want_place_route)
             else None
         )
         excluded_geo = ()
@@ -602,6 +614,31 @@ class Stage11Runtime(Stage9Runtime):
                 )
             geo = self.exploration.geographic
             survey_recorded = False
+            if geo is not None and geo.config.remember_entities and not over_capacity:
+                for memory in geo.observe_entities(
+                    capture, observer_id=getattr(self, "_i1_personal_id", self.individual_id),
+                ):
+                    self._write(kind="i1_entity_place_observed", cycle=cycle,
+                                data={"entity_id": memory.entity_id,
+                                      "entity_type": memory.entity_type,
+                                      "position": list(memory.position),
+                                      "first_seen_step": memory.first_seen_step,
+                                      "last_seen_step": memory.last_seen_step,
+                                      "confidence": memory.confidence,
+                                      "contradictions": memory.contradictions,
+                                      "source": memory.provenance})
+                for motion in geo.motion_updates:
+                    self._write(kind="i1_entity_motion_diagnosed", cycle=cycle,
+                                data={"entity_type": motion.entity_type,
+                                      "trace_ref": motion.trace_ref,
+                                      "diagnosis": motion.diagnosis,
+                                      "identity_certainty": motion.identity_certainty,
+                                      "recognition_basis": motion.recognition_basis,
+                                      "observations": motion.observations,
+                                      "observed_moves": motion.observed_moves,
+                                      "observed_stays": motion.observed_stays,
+                                      "last_position": list(motion.last_position)})
+
             if geo is not None and geo.config.observe_routes and not over_capacity:
                 # After an accepted Phase-1 Exploration observation charge.
                 # A v3 revision can only replace topology at the *current*
@@ -701,8 +738,9 @@ class Stage11Runtime(Stage9Runtime):
         previous_plan = hooks[1]["planning"]
 
         def plan_only_informational_targets(ctx):
-            nonlocal frozen_geo_targets, frozen_transit_target, excluded_geo
+            nonlocal frozen_geo_targets, frozen_transit_target, frozen_place_targets, excluded_geo
             self._stage11_geographic_proposals_this_cycle = ()
+            self._stage11_frozen_place_targets = ()
             emitted = self._causal_test_targets_this_cycle
             permitted = tuple(
                 item for item in emitted
@@ -731,6 +769,89 @@ class Stage11Runtime(Stage9Runtime):
                 return
             if st_before_cycle is None:
                 return
+            place_proposals = []
+            place_targets = []
+            if want_place_route:
+                if not self._charge(module="planning", operation="geographic_route_search"):
+                    defer_geo_once("geographic_route_search")
+                    return
+                from i1.modules.observed_frontier_routing import ObservedSurvey
+                from i1.modules.spatial_memory import find_spatial_returns
+                prior_surveys = tuple(ObservedSurvey(
+                    position=tuple(row["position"]),
+                    world_step=row["world_step"],
+                    free_neighbors=tuple(tuple(p) for p in row["free_neighbors"]),
+                ) for row in frozen_geography["surveys"])
+                remembered = tuple(PlaceMemory(**{
+                    **row, "position": tuple(row["position"]),
+                    "observed_from": tuple(row["observed_from"]),
+                }) for row in frozen_geography.get("entity_places", ()))
+                remembered = tuple(site for site in remembered
+                    if site.observer_id == getattr(
+                        self, "_i1_personal_id", self.individual_id))
+                frozen_place_targets = find_spatial_returns(
+                    origin=(capture.x, capture.y),
+                    visits=frozenset(tuple(row[:2]) for row in frozen_geography["visits"]),
+                    surveys=prior_surveys, places=remembered,
+                    current_free_neighbors=frozenset(
+                        (cell.x, cell.y) for cell in capture.adjacent
+                        if cell.passable is True and cell.creature is False
+                    ), current_world_step=capture.t_monde,
+                    max_candidates=self.exploration.geographic.config.max_place_candidates,
+                )
+                self._write(kind="i1_place_memory_recalled", cycle=cycle,
+                            data={"candidates": [t.ref for t in frozen_place_targets],
+                                  "sites": len(remembered),
+                                  "source": "prior_frozen_geographic_owner"})
+            memory_initial_state = None
+            for target in frozen_place_targets:
+                if not self._charge(module="planning",
+                                    operation="geographic_admissibility_preflight"):
+                    defer_geo_once("geographic_admissibility_preflight")
+                    break
+                if self.stage3.control.verifier_admissibilite(
+                    capture=capture, prepared=PreparedCommand(
+                        command=PrimitiveCommand("se_deplacer",
+                            {"direction": target.direction}),
+                        source="decision")) is Admissibility.INADMISSIBLE:
+                    continue
+                if not self._charge(module="planning", operation="planning_build"):
+                    defer_geo_once("planning_build")
+                    break
+                # Same physical capture for every competing proposal.
+                # A single materialization is sufficient and cannot leak
+                # extra world data between alternative one-hop simulations.
+                if memory_initial_state is None:
+                    memory_initial_state = state_from_capture(
+                        capture=capture,
+                        is_night=self.world.is_night(capture.t_monde),
+                    )
+                proposal = propose_spatial_return(
+                    target=target, initial_state=memory_initial_state,
+                    simulator=self.simulator,
+                    st_version=st_before_cycle.version, t_monde=capture.t_monde,
+                    ttl_steps=self._stage6_config.planning.option_ttl_steps,
+                    goal_ref=goal_for_planning.id,
+                )
+                if proposal is None or (
+                    self.stage3.control.verifier_plan_connu(proposal)
+                    is Admissibility.INADMISSIBLE
+                ):
+                    continue
+                self._publish_contribution(self._planning_contribution(
+                    proposal, t_monde=capture.t_monde, cycle=cycle))
+                place_proposals.append(proposal)
+                place_targets.append(target)
+                self._write(kind="i1_place_memory_option_proposed", cycle=cycle,
+                            data={"option_ref": proposal.option.id,
+                                  "entity_id": target.entity_id,
+                                  "entity_type": target.entity_type,
+                                  "target": list(target.observed_position),
+                                  "next": list(target.destination),
+                                  "confidence": target.confidence,
+                                  "active_goal": goal_for_planning.id})
+            self._stage11_place_proposals_this_cycle = tuple(place_proposals)
+            self._stage11_frozen_place_targets = tuple(place_targets)
             # The 1-UC Planning charge and the canonical read-only safety
             # lookup both execute here in Phase-1 Planning, using only raw
             # frontier inputs frozen BEFORE all Phase-1 producers (INV-08).
@@ -1055,7 +1176,67 @@ class Stage11Runtime(Stage9Runtime):
                         if target.ref in funded
                     )
                 )
+            if geo is not None and geo.config.remember_entities:
+                # Phase-1 knowledge is only a *candidate*. Validate it against
+                # the now observed owner before spending Competition UC.
+                geo.freeze_places(
+                    self._stage11_frozen_place_targets
+                    if not self._cycle_degraded else ()
+                )
             previous_register(ctx)
+            approved = set()
+            if geo is not None:
+                approved = {
+                    f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                    for target in geo.place_offered
+                }
+            for old in self.competition.candidate_proposals:
+                if (old.option.motive_ref.type == "place_memory"
+                    and old.option.id not in approved):
+                    self.competition.invalidate_candidate(old.option.id)
+                    self.stage3.control.clear_option_step(old.option.id)
+            funded_refs = set()
+            if not self._cycle_degraded:
+                for proposal in self._stage11_place_proposals_this_cycle:
+                    if proposal.option.id not in approved:
+                        continue
+                    if not self._charge(module="competition",
+                                        operation="competition_register"):
+                        break
+                    accepted = self._register_option_proposal(
+                        proposal=proposal,
+                        active_goal_id=(
+                            None if self.goal_manager.active_goal is None
+                            else self.goal_manager.active_goal.id),
+                        t_monde=capture.t_monde, cycle=cycle)
+                    if accepted:
+                        funded_refs.add(proposal.option.id)
+                    self._write(kind="i1_place_memory_option_registration",
+                                cycle=cycle,
+                                data={"option_ref": proposal.option.id,
+                                      "registered": accepted})
+            if geo is not None and geo.config.remember_entities:
+                # Only charged and *retained* Competition candidates may
+                # remain published. An eligible but unfunded target cannot
+                # masquerade as an active option in this cycle.
+                geo.freeze_places(tuple(
+                    target for target in geo.place_offered
+                    if not self._cycle_degraded
+                    and f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                       in funded_refs
+                    and self.competition.proposal_for(
+                        f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                    ) is not None
+                ))
+                now_funded = {
+                    f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                    for target in geo.place_offered
+                }
+                for old in self.competition.candidate_proposals:
+                    if (old.option.motive_ref.type == "place_memory"
+                        and old.option.id not in now_funded):
+                        self.competition.invalidate_candidate(old.option.id)
+                        self.stage3.control.clear_option_step(old.option.id)
             current = {
                 proposal.option.id
                 for proposal in self._stage11_geographic_proposals_this_cycle

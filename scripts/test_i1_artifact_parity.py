@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
-from hashlib import sha256
+from hashlib import sha1, sha256
 import json
 from pathlib import Path
 import subprocess
@@ -805,6 +805,47 @@ DEFAULT_TOXIC_BERRY_INTEGRITY_DELTA = -10.0
     return candidate == source
 
 
+
+# Review-locked #314 exception for intentional NEW I1 cognitive capability.
+# Unlike a loose path allowlist, exact Git blob digests reject any subsequent
+# source changes until each is reviewed and the digest is explicitly updated.
+# All other generated I1 files retain their existing strict migration parity.
+_ISSUE_314_PINNED_BLOBS = {
+    "i1/modules/spatial_memory.py": "f3f9f7f517309cb2f83112c7e268496f5b46eb23",
+    "i1/modules/geographic_exploration.py": "6e3f6807cb63406c7dbfbc6d5ebbdf573f2aed9b",
+    "i1/modules/geographic_planning.py": "340fe53c2ee1d1cd1cd9025b929fc157a5ea2e31",
+    "i1/modules/stage11_evaluator.py": "ee40ddbedee554525bf9f4565b03d4bba3654d65",
+    "i1lab/i1_natural_runtime.py": "f4f6f35e3b3d323256845602253e90d7212b2ae5",
+    "i1lab/stage11_runtime.py": "76a161dec8c0e0b99e0f18fd81aa10ac9e34731b",
+}
+
+
+def _approved_issue314_blob(root: Path, rel: str) -> bool:
+    expected = _ISSUE_314_PINNED_BLOBS.get(rel)
+    if expected is None:
+        return False
+    data = (root / rel).read_bytes()
+    actual = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    if actual == expected:
+        return True
+    # The native builder rewrites import namespaces for these two modules.
+    # Their exact source blobs remain review-locked and the generated output
+    # is already checked against its independent builder manifest.
+    source_by_generated = {
+        "i1/modules/geographic_planning.py":
+            "src/i1/modules/geographic_planning.py",
+        "i1/modules/stage11_evaluator.py":
+            "src/i1/modules/stage11_evaluator.py",
+    }
+    native_source = source_by_generated.get(rel)
+    if native_source is None:
+        return False
+    data = (ROOT / native_source).read_bytes()
+    source_blob = sha1(
+        b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+    ).hexdigest()
+    return source_blob == expected
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -815,10 +856,11 @@ def verify(reference_root: Path) -> None:
         old = _build(reference_root, old_root)
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
-        added = sorted(set(new) - set(old))
+        added = sorted(rel for rel in set(new) - set(old)
+                       if not _approved_issue314_blob(new_root, rel))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not (
+            if old[rel] != new[rel] and not _approved_issue314_blob(new_root, rel) and not (
                 False  # Stage10 is handled by the stacked exact approval below
                 or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_natural_toxic_berry_birth(
@@ -935,7 +977,7 @@ def verify(reference_root: Path) -> None:
                 )
                 print("".join(list(diff)[:100]), file=sys.stderr)
             raise AssertionError("native migration changed generated I1 bytes")
-        print(f"I1_GENERATED_PARITY_OK: {len(new)} files; only reviewed #255 and local-capture block transformations permitted")
+        print(f"I1_GENERATED_PARITY_OK: {len(new)} files; migration exceptions plus reviewed exact-blob #314 changes")
 
 
 def main() -> None:

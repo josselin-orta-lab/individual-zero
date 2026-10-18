@@ -5,11 +5,12 @@ No map oracle, world physics, reward, counterfactual or action sender access.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from math import isfinite
 from typing import Mapping
 
 from .observed_frontier_routing import ObservedSurvey, GeographicTransitTarget
+from .spatial_memory import PlaceMemory, SpatialReturnTarget, EntityMotionDiagnosis
 
 DIRECTION_DELTAS = {"north": (0, -1), "east": (1, 0),
                     "south": (0, 1), "west": (-1, 0)}
@@ -24,6 +25,8 @@ class GeographicExplorationConfig:
     max_targets_per_cycle: int
     observe_routes: bool = False
     refresh_surveys: bool = False
+    remember_entities: bool = False
+    max_place_candidates: int = 1
 
     def validate(self) -> None:
         if not isinstance(self.version, str) or not self.version:
@@ -36,6 +39,13 @@ class GeographicExplorationConfig:
             raise ValueError("route survey flag must be boolean")
         if type(self.refresh_surveys) is not bool:
             raise ValueError("survey refresh flag must be boolean")
+        if (type(self.max_place_candidates) is not int
+            or not 1 <= self.max_place_candidates <= 4):
+            raise ValueError("invalid bounded place candidate count")
+        if type(self.remember_entities) is not bool:
+            raise ValueError("entity-place flag must be boolean")
+        if self.remember_entities and not self.observe_routes:
+            raise ValueError("entity-place recall requires paid route observations")
         if self.refresh_surveys and not self.observe_routes:
             raise ValueError("survey refresh requires opted-in route observations")
         if (type(self.max_distinct_sites) is not int or self.max_distinct_sites < 1
@@ -80,13 +90,212 @@ class GeographicExploration:
         self._offered: tuple[GeographicTarget, ...] = ()
         self._surveys: dict[tuple[int, int], ObservedSurvey] = {}
         self._transit_offered: tuple[GeographicTransitTarget, ...] = ()
+        self._places: dict[str, PlaceMemory] = {}
+        self._place_observer_id: str | None = None
+        self._place_offered: tuple[SpatialReturnTarget, ...] = ()
+        self._motion: dict[str, EntityMotionDiagnosis] = {}
+        self._motion_updates: tuple[EntityMotionDiagnosis, ...] = ()
 
     def _snapshot_schema(self) -> str:
+        if self.config.remember_entities:
+            return "geographic-exploration-v5-entity-motion"
         if self.config.refresh_surveys:
             return "geographic-exploration-v3-survey-refresh"
         if self.config.observe_routes:
             return "geographic-exploration-v2-survey"
         return "geographic-exploration-v1"
+
+    @property
+    def place_memories(self) -> tuple[PlaceMemory, ...]:
+        """First-person last sightings, never a hidden world map."""
+        return tuple(self._places[key] for key in sorted(self._places))
+
+    @property
+    def motion_diagnoses(self) -> tuple[EntityMotionDiagnosis, ...]:
+        return tuple(self._motion[k] for k in sorted(self._motion))
+
+    @property
+    def motion_updates(self) -> tuple[EntityMotionDiagnosis, ...]:
+        return self._motion_updates
+
+    def _observe_motion(self, *, capture, observer_id: str, visible: dict) -> None:
+        """Only unique sightings in uninterrupted physical captures are linked.
+
+        Multiple same-kind entities, gaps and unobserved replacements break
+        the tentative link. No use of the raw sensor label as an identity.
+        """
+        counts = {}
+        for kind, position in visible:
+            counts.setdefault(kind, []).append(position)
+        updated = []
+        active = {}
+        for kind, positions in sorted(counts.items()):
+            if len(positions) != 1:
+                continue
+            point = positions[0]
+            previous = self._motion.get(kind)
+            if (previous is not None
+                and previous.last_seen_step == capture.t_monde):
+                active[kind] = previous
+                continue
+            if (previous is not None
+                and previous.last_seen_step == capture.t_monde - 1):
+                moved = point != previous.last_position
+                record = replace(
+                    previous, last_seen_step=capture.t_monde,
+                    last_position=point,
+                    observations=previous.observations + 1,
+                    observed_moves=previous.observed_moves + int(moved),
+                    observed_stays=previous.observed_stays + int(not moved),
+                )
+            else:
+                record = EntityMotionDiagnosis(
+                    observer_id=observer_id,
+                    trace_ref=f"motion:{kind}:{capture.t_monde}:{point[0]}:{point[1]}",
+                    entity_type=kind, first_seen_step=capture.t_monde,
+                    last_seen_step=capture.t_monde,
+                    first_position=point, last_position=point,
+                    observations=1, observed_moves=0, observed_stays=0,
+                )
+            record.validate()
+            active[kind] = record
+            updated.append(record)
+        self._motion = active
+        self._motion_updates = tuple(updated)
+
+    def observe_entities(self, capture, *, observer_id: str) -> tuple[PlaceMemory, ...]:
+        """Store only witnessed visible_entities, with repeat-step idempotence.
+
+        Re-observing a known site updates its confidence; a fully visible but
+        missing entity weakens confidence. Remote absence does not.
+        """
+        if not self.config.remember_entities:
+            return ()
+        if (not isinstance(observer_id, str) or not observer_id
+            or self._last_capture !=
+                (capture.t_monde, capture.x, capture.y)
+            or (self._place_observer_id is not None
+                and self._place_observer_id != observer_id)):
+            raise ValueError("entity memory must belong to this physical life")
+        visible = {}
+        for entity in capture.visible_entities:
+            position = (entity.x, entity.y)
+            if (not isinstance(entity.entity_id, str) or not entity.entity_id
+                or not isinstance(entity.entity_type, str) or not entity.entity_type
+                or (position != (capture.x, capture.y)
+                    and (position[0]-capture.x, position[1]-capture.y)
+                    not in DIRECTION_DELTAS.values())
+                or (entity.entity_type, position) in visible):
+                raise ValueError("invalid or duplicated first-person entity")
+            visible[(entity.entity_type, position)] = entity
+        self._place_observer_id = observer_id
+        self._observe_motion(capture=capture, observer_id=observer_id, visible=visible)
+        updates = []
+        for (kind, position), entity in sorted(visible.items()):
+            key = f"sighting:{kind}:{position[0]}:{position[1]}"
+            old = self._places.get(key)
+            if old is None and len(self._places) >= self.config.max_distinct_sites:
+                continue
+            if old is not None and old.last_seen_step == capture.t_monde:
+                if old.position != (entity.x, entity.y):
+                    raise ValueError("same-step entity location contradiction")
+                continue
+            if old is not None and old.entity_type != entity.entity_type:
+                raise ValueError("entity type cannot silently change for one ID")
+            position = (entity.x, entity.y)
+            reached = (
+                capture.t_monde if position == (capture.x, capture.y) else
+                old.reached_step if old is not None and old.position == position
+                else None
+            )
+            memory = PlaceMemory(
+                observer_id=observer_id, entity_id=key,
+                entity_type=entity.entity_type, position=position,
+                observed_from=(capture.x, capture.y),
+                first_seen_step=(capture.t_monde if old is None
+                                 else old.first_seen_step),
+                last_seen_step=capture.t_monde,
+                reached_step=reached,
+                contradiction_step=None if old is None else old.contradiction_step,
+                contradictions=0 if old is None else old.contradictions,
+                confidence=min(0.9, 0.55 if old is None
+                               else old.confidence + 0.15),
+                perceived_entity_id=entity.entity_id,
+            )
+            memory.validate()
+            self._places[key] = memory
+            updates.append(memory)
+        local_positions = {(capture.x, capture.y)}
+        local_positions.update((cell.x, cell.y) for cell in capture.adjacent)
+        for key, old in tuple(self._places.items()):
+            if ((old.entity_type, old.position) in visible
+                or old.last_seen_step == capture.t_monde
+                or old.position not in local_positions
+                or old.contradiction_step == capture.t_monde):
+                continue
+            # A missing entity at its last *currently sensed* position might
+            # have disappeared or moved, not proof the whole type is absent.
+            memory = replace(old,
+                contradiction_step=capture.t_monde,
+                contradictions=old.contradictions + 1,
+                confidence=old.confidence * 0.25,
+            )
+            memory.validate()
+            self._places[key] = memory
+            updates.append(memory)
+        return tuple(updates)
+
+    def freeze_places(self, targets: tuple[SpatialReturnTarget, ...]) -> None:
+        """Only unchanged, physically grounded candidates survive Phase-1."""
+        if not isinstance(targets, tuple) or len(targets) > self.config.max_place_candidates:
+            raise ValueError("invalid offered place targets")
+        accepted = []
+        for target in targets:
+            target.validate()
+            memory = self._places.get(target.entity_id)
+            if (not self.config.remember_entities or memory is None
+                or target.observed_position != memory.position
+                or target.entity_type != memory.entity_type
+                or target.observed_step != memory.first_seen_step
+                or self._last_capture is None
+                or target.origin != self._last_capture[1:]
+                or target.source_t_monde != self._last_capture[0]
+                or any(point not in self._visits
+                       for point in target.visited_path[:-1])
+                or any(a not in self._surveys
+                       or b not in self._surveys[a].free_neighbors
+                       for a, b in zip(
+                           target.visited_path[1:-1],
+                           target.visited_path[2:]))
+                or target.confidence > memory.confidence):
+                # A new perception can contradict the Phase-0 frozen memory.
+                # Discard this proposal, never crash the living individual.
+                continue
+            accepted.append(target)
+        if len({t.ref for t in accepted}) != len(accepted):
+            raise ValueError("duplicate place offer")
+        self._place_offered = tuple(accepted)
+
+    def freeze_place(self, target: SpatialReturnTarget | None) -> None:
+        """Backwards-compatible one-target interface."""
+        self.freeze_places(() if target is None else (target,))
+
+    @property
+    def place_offered(self) -> tuple[SpatialReturnTarget, ...]:
+        return self._place_offered
+
+    def place_for(self, option) -> SpatialReturnTarget | None:
+        """Read only the currently offered, funded and goal-linked option."""
+        motive = getattr(option, "motive_ref", None)
+        if (getattr(motive, "type", None) != "place_memory"
+            or getattr(option, "provenance", None) != "memory"):
+            return None
+        for target in self._place_offered:
+            if (motive.id == target.ref
+                and option.id ==
+                    f"option:place-memory:{target.ref}:t{target.source_t_monde}"):
+                return target
+        return None
 
     @property
     def distinct_sites(self) -> int:
@@ -129,6 +338,7 @@ class GeographicExploration:
                 raise ValueError("geographic visit register capacity exhausted")
             if t > old_t:
                 self._transit_offered = ()
+                self._place_offered = ()
             if t == old_t or (x, y) == (old_x, old_y):
                 self._last_capture = (t, x, y)
                 return False
@@ -387,6 +597,11 @@ class GeographicExploration:
                 else list(self._last_capture)
             ),
             "offered": [asdict(t) for t in self._offered],
+            **({"entity_places": [asdict(x) for x in self.place_memories],
+                "place_observer_id": self._place_observer_id,
+                "place_offered": [asdict(x) for x in self._place_offered],
+                "motion_diagnoses": [asdict(x) for x in self.motion_diagnoses],
+            } if self.config.remember_entities else {}),
             **({
                 "surveys": [asdict(x) for x in self.surveys],
                 "transit_offered": [asdict(x) for x in self._transit_offered],
@@ -506,6 +721,91 @@ class GeographicExploration:
             trial._surveys = restored_surveys
             trial.freeze_transits(tuple(transits))
             restored_transits = trial.transit_offered
+        places = {}
+        place_observer = None
+        place_offered = ()
+        if self.config.remember_entities:
+            raw_places = state.get("entity_places")
+            place_observer = state.get("place_observer_id")
+            if (not isinstance(raw_places, list)
+                or len(raw_places) > self.config.max_distinct_sites
+                or (place_observer is not None and
+                    (not isinstance(place_observer, str) or not place_observer))
+                or (bool(raw_places) and place_observer is None)):
+                raise ValueError("invalid entity-place memory snapshot")
+            for row in raw_places:
+                if (not isinstance(row, Mapping)
+                    or set(row) != set(PlaceMemory.__dataclass_fields__)):
+                    raise ValueError("malformed entity-place snapshot")
+                place = PlaceMemory(**{
+                    **row, "position": tuple(row["position"]),
+                    "observed_from": tuple(row["observed_from"]),
+                })
+                place.validate()
+                if (place.entity_id in places or place.observer_id != place_observer
+                    or last is None or place.last_seen_step > last[0]
+                    or any(t is not None and t > last[0] for t in
+                           (place.reached_step, place.contradiction_step))):
+                    raise ValueError("future, duplicate or alien entity-place memory")
+                places[place.entity_id] = place
+            raw_offered = state.get("place_offered")
+            if not isinstance(raw_offered, list) or len(raw_offered) > self.config.max_place_candidates:
+                raise ValueError("invalid offered entity-place snapshot")
+            place_targets = []
+            for row in raw_offered:
+                if (not isinstance(row, Mapping)
+                    or set(row) != set(SpatialReturnTarget.__dataclass_fields__)):
+                    raise ValueError("invalid entity-place target fields")
+                target = SpatialReturnTarget(**{
+                    **row, "origin": tuple(row["origin"]),
+                    "destination": tuple(row["destination"]),
+                    "observed_position": tuple(row["observed_position"]),
+                    "visited_path": tuple(tuple(p) for p in row["visited_path"]),
+                })
+                target.validate()
+                site = places.get(target.entity_id)
+                if (site is None or last is None
+                    or target.source_t_monde != last[0]
+                    or target.origin != last[1:]
+                    or target.observed_position != site.position
+                    or target.entity_type != site.entity_type
+                    or target.observed_step != site.first_seen_step
+                    or target.confidence > site.confidence
+                    or any(point not in visited for point in
+                           target.visited_path[:-1])):
+                    raise ValueError("stale entity-place snapshot target")
+                place_targets.append(target)
+            place_offered = tuple(place_targets)
+        elif any(key in state for key in
+                 ("entity_places", "place_offered", "place_observer_id")):
+            raise ValueError("unexpected place memory in legacy snapshot")
+        restored_motion = {}
+        if self.config.remember_entities:
+            raw_motion = state.get("motion_diagnoses")
+            if (not isinstance(raw_motion, list)
+                or len(raw_motion) > self.config.max_distinct_sites):
+                raise ValueError("invalid motion snapshot")
+            for row in raw_motion:
+                if (not isinstance(row, Mapping)
+                    or set(row) != set(EntityMotionDiagnosis.__dataclass_fields__)):
+                    raise ValueError("malformed motion diagnosis")
+                record = EntityMotionDiagnosis(**{
+                    **row, "first_position": tuple(row["first_position"]),
+                    "last_position": tuple(row["last_position"]),
+                })
+                record.validate()
+                if (last is None or record.last_seen_step > last[0]
+                    or record.observer_id != place_observer
+                    or record.entity_type in restored_motion):
+                    raise ValueError("foreign or future motion diagnosis")
+                restored_motion[record.entity_type] = record
+        elif "motion_diagnoses" in state:
+            raise ValueError("unexpected motion diagnosis")
+        self._motion = restored_motion
+        self._motion_updates = ()
+        self._places = places
+        self._place_observer_id = place_observer
+        self._place_offered = place_offered
         self._visits = visited
         self._last_capture = last
         self._offered = tuple(offered)
