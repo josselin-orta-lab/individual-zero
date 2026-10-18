@@ -42,7 +42,7 @@ def competition():
     ))
 
 
-def proposal(t, entity="unknown_artifact", via=(1, 0), goal="goal-1"):
+def proposal(t, entity="unknown_artifact", via=(1, 0)):
     entity_id = "sighting:" + entity + ":0:0"
     target = SpatialReturnTarget(
         ref=f"place:{entity_id}:at:0:0:from:2:0:via:{via[0]}:{via[1]}",
@@ -64,7 +64,7 @@ def proposal(t, entity="unknown_artifact", via=(1, 0), goal="goal-1"):
     result = propose_spatial_return(
         target=target, initial_state=local, simulator=simulator,
         st_version="same-personally-perceived-context", t_monde=t,
-        ttl_steps=20, goal_ref=goal,
+        ttl_steps=20,
     )
     assert result is not None
     assert result.preliminary_admissibility == "indeterminate"
@@ -96,7 +96,8 @@ assert first.option.id == again.option.id, (
     "identical personal route must not turn into new candidate every step")
 assert first.option.expires_at_step != again.option.expires_at_step
 assert first.option.learning_signature == again.option.learning_signature
-assert first.option.goal_ref == again.option.goal_ref
+assert first.option.goal_ref is None and again.option.goal_ref is None
+assert first.plan.goal_ref is None and again.plan.goal_ref is None
 assert first.option.plan_ref == again.option.plan_ref
 assert first.option.id.startswith("option:place-memory:")
 
@@ -157,8 +158,21 @@ c.close_deliberation(None,adjudicated=True)
 assert abs(c.accumulator_for(p.option.id)-a*0.5) < 1e-10, (
     "real adjudication must preserve original residual")
 c.open_deliberation(active_goal_id="different-goal",t_monde=11)
-assert c.accumulator_for(p.option.id) is None, (
-    "goal change must invalidate accumulated past intention")
+assert abs(c.accumulator_for(p.option.id)-a*0.5) < 1e-10, (
+    "goal-independent spatial information must not vanish with a new need")
+# Truly goal-conditioned motor options still lose their evidence on a
+# goal change; goal-independent knowledge is NOT permission for a motor act.
+conditioned = OptionProposal(
+    option=replace(p.option, goal_ref="goal-1", id="option:goal-bound:demo"),
+    plan=replace(p.plan, goal_ref="goal-1", id="plan:goal-bound:demo",
+                 option_ref="option:goal-bound:demo"),
+)
+conditioned = replace(conditioned,
+    option=replace(conditioned.option, plan_ref=conditioned.plan.id))
+assert c.register(conditioned, active_goal_id="goal-1", t_monde=11)
+c.open_deliberation(active_goal_id="different-goal",t_monde=12)
+assert c.accumulator_for(conditioned.option.id) is None, (
+    "goal-conditioned motor commitment must still be invalidated")
 
 assert proposal(10,entity="water_source").option.id != proposal(
     11,entity="berry_b").option.id

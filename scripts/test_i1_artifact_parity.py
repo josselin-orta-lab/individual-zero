@@ -813,10 +813,10 @@ DEFAULT_TOXIC_BERRY_INTEGRITY_DELTA = -10.0
 _ISSUE_314_PINNED_BLOBS = {
     "i1/modules/spatial_memory.py": "f3f9f7f517309cb2f83112c7e268496f5b46eb23",
     "i1/modules/geographic_exploration.py": "6e3f6807cb63406c7dbfbc6d5ebbdf573f2aed9b",
-    "i1/modules/geographic_planning.py": "340fe53c2ee1d1cd1cd9025b929fc157a5ea2e31",
+    "i1/modules/geographic_planning.py": "eb0201fb608e95164df5b2f35477c3496182a391",
     "i1/modules/stage11_evaluator.py": "ee40ddbedee554525bf9f4565b03d4bba3654d65",
     "i1lab/i1_natural_runtime.py": "f4f6f35e3b3d323256845602253e90d7212b2ae5",
-    "i1lab/stage11_runtime.py": "76a161dec8c0e0b99e0f18fd81aa10ac9e34731b",
+    "i1lab/stage11_runtime.py": "5886db177934e1114b1973e8898619a6a511daf9",
 }
 
 # Review-locked #317 I1-only source changes. Values are complete Git blob
@@ -825,6 +825,7 @@ _ISSUE_317_PINNED_BLOBS = {
     "i1/modules/competition.py": "9513a3d82b3f8b9475e3f9a8fd0e2aad969a69a1",
     "i1/modules/geographic_exploration.py": "391fc2abaef4da1468879eacd31eb186c14759d7",
     "i1/modules/geographic_planning.py": "8aa71effe4cf55827a27a21af4e52d09938e34d6",
+    "i1/modules/stage11_evaluator.py": "4f22b6a8d3dfc2b5b6bc098a88b85f6023e67824",
     "i1lab/stage11_runtime.py": "15295d162d21b56e24c07d1dd8835a104f2bea6f",
     "i1lab/stage4_runtime.py": "80a7504009205f3481f936251cddcaa2e2df8393",
 }
@@ -832,6 +833,7 @@ _ISSUE_317_NATIVE_SOURCES = {
     "i1/modules/competition.py": "src/i1/modules/competition.py",
     "i1/modules/geographic_exploration.py": "src/i1/modules/geographic_exploration.py",
     "i1/modules/geographic_planning.py": "src/i1/modules/geographic_planning.py",
+    "i1/modules/stage11_evaluator.py": "src/i1/modules/stage11_evaluator.py",
     "i1lab/stage11_runtime.py": "src/i1/runtime/stage11_runtime.py",
     "i1lab/stage4_runtime.py": "src/i1/runtime/stage4_runtime.py",
 }

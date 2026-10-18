@@ -831,7 +831,6 @@ class Stage11Runtime(Stage9Runtime):
                     simulator=self.simulator,
                     st_version=st_before_cycle.version, t_monde=capture.t_monde,
                     ttl_steps=self._stage6_config.planning.option_ttl_steps,
-                    goal_ref=goal_for_planning.id,
                 )
                 if proposal is None or (
                     self.stage3.control.verifier_plan_connu(proposal)

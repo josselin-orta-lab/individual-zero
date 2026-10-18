@@ -194,7 +194,7 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             geo = self._exploration.geographic
             target = None if geo is None else geo.place_for(proposal.option)
             valid = (target is not None and target.source_t_monde == t_monde
-                     and proposal.option.goal_ref is not None
+                     and proposal.option.goal_ref is None
                      and proposal.option.provenance == "memory"
                      and proposal.plan is not None
                      and proposal.option.plan_ref == proposal.plan.id
