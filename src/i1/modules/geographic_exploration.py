@@ -5,12 +5,12 @@ No map oracle, world physics, reward, counterfactual or action sender access.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from math import isfinite
 from typing import Mapping
 
 from .observed_frontier_routing import ObservedSurvey, GeographicTransitTarget
-from .water_memory_navigation import WaterPlace, WaterReturnTarget
+from .spatial_memory import PlaceMemory, SpatialReturnTarget
 
 DIRECTION_DELTAS = {"north": (0, -1), "east": (1, 0),
                     "south": (0, 1), "west": (-1, 0)}
@@ -25,7 +25,7 @@ class GeographicExplorationConfig:
     max_targets_per_cycle: int
     observe_routes: bool = False
     refresh_surveys: bool = False
-    remember_water: bool = False
+    remember_entities: bool = False
 
     def validate(self) -> None:
         if not isinstance(self.version, str) or not self.version:
@@ -38,10 +38,10 @@ class GeographicExplorationConfig:
             raise ValueError("route survey flag must be boolean")
         if type(self.refresh_surveys) is not bool:
             raise ValueError("survey refresh flag must be boolean")
-        if type(self.remember_water) is not bool:
-            raise ValueError("water-place flag must be boolean")
-        if self.remember_water and not self.observe_routes:
-            raise ValueError("water recall requires paid route observations")
+        if type(self.remember_entities) is not bool:
+            raise ValueError("entity-place flag must be boolean")
+        if self.remember_entities and not self.observe_routes:
+            raise ValueError("entity-place recall requires paid route observations")
         if self.refresh_surveys and not self.observe_routes:
             raise ValueError("survey refresh requires opted-in route observations")
         if (type(self.max_distinct_sites) is not int or self.max_distinct_sites < 1
@@ -86,12 +86,13 @@ class GeographicExploration:
         self._offered: tuple[GeographicTarget, ...] = ()
         self._surveys: dict[tuple[int, int], ObservedSurvey] = {}
         self._transit_offered: tuple[GeographicTransitTarget, ...] = ()
-        self._water: dict[tuple[int, int], WaterPlace] = {}
-        self._water_offered: tuple[WaterReturnTarget, ...] = ()
+        self._places: dict[str, PlaceMemory] = {}
+        self._place_observer_id: str | None = None
+        self._place_offered: tuple[SpatialReturnTarget, ...] = ()
 
     def _snapshot_schema(self) -> str:
-        if self.config.remember_water:
-            return "geographic-exploration-v4-water-place"
+        if self.config.remember_entities:
+            return "geographic-exploration-v4-entity-place"
         if self.config.refresh_surveys:
             return "geographic-exploration-v3-survey-refresh"
         if self.config.observe_routes:
@@ -99,89 +100,121 @@ class GeographicExploration:
         return "geographic-exploration-v1"
 
     @property
-    def water_places(self) -> tuple[WaterPlace, ...]:
-        return tuple(self._water[k] for k in sorted(self._water))
+    def place_memories(self) -> tuple[PlaceMemory, ...]:
+        """First-person last sightings, never a hidden world map."""
+        return tuple(self._places[key] for key in sorted(self._places))
 
-    def observe_water(self, capture, *, observer_id: str) -> tuple[WaterPlace, ...]:
-        """Record only witnessed water, and contradict only fully observed absence."""
-        if not self.config.remember_water:
+    def observe_entities(self, capture, *, observer_id: str) -> tuple[PlaceMemory, ...]:
+        """Store only witnessed visible_entities, with repeat-step idempotence.
+
+        Re-observing a known site updates its confidence; a fully visible but
+        missing entity weakens confidence. Remote absence does not.
+        """
+        if not self.config.remember_entities:
             return ()
-        if (not observer_id or self._last_capture !=
-                (capture.t_monde, capture.x, capture.y)):
-            raise ValueError("water observation needs same-step physical capture")
-        visible = set()
-        if capture.current_water_source is True:
-            visible.add((capture.x, capture.y))
-        for cell in capture.adjacent:
-            if cell.water_source is True:
-                visible.add((cell.x, cell.y))
-        updated = []
-        for position in sorted(visible):
-            old = self._water.get(position)
-            if old is None and len(self._water) >= self.config.max_distinct_sites:
+        if (not isinstance(observer_id, str) or not observer_id
+            or self._last_capture !=
+                (capture.t_monde, capture.x, capture.y)
+            or (self._place_observer_id is not None
+                and self._place_observer_id != observer_id)):
+            raise ValueError("entity memory must belong to this physical life")
+        visible = {}
+        for entity in capture.visible_entities:
+            position = (entity.x, entity.y)
+            if (not isinstance(entity.entity_id, str) or not entity.entity_id
+                or not isinstance(entity.entity_type, str) or not entity.entity_type
+                or (position != (capture.x, capture.y)
+                    and (position[0]-capture.x, position[1]-capture.y)
+                    not in DIRECTION_DELTAS.values())
+                or entity.entity_id in visible):
+                raise ValueError("invalid or duplicated first-person entity")
+            visible[entity.entity_id] = entity
+        self._place_observer_id = observer_id
+        updates = []
+        for key, entity in sorted(visible.items()):
+            old = self._places.get(key)
+            if old is None and len(self._places) >= self.config.max_distinct_sites:
                 continue
-            if old is not None and old.last_confirmed_step == capture.t_monde:
+            if old is not None and old.last_seen_step == capture.t_monde:
+                if old.position != (entity.x, entity.y):
+                    raise ValueError("same-step entity location contradiction")
                 continue
-            first = capture.t_monde if old is None else old.first_seen_step
-            prev = 0 if old is None else old.contradictions
-            reached = (capture.t_monde if position == (capture.x, capture.y)
-                       else None if old is None else old.reached_step)
-            site = WaterPlace(
-                observer_id=observer_id, position=position,
-                observed_from=(capture.x, capture.y),
-                first_seen_step=first, last_confirmed_step=capture.t_monde,
-                reached_step=reached, used_step=None if old is None else old.used_step,
-                contradiction_step=None if old is None else old.contradiction_step,
-                contradictions=prev,
-                confidence=min(0.9, (0.55 if old is None else
-                                      old.confidence + 0.15)),
+            if old is not None and old.entity_type != entity.entity_type:
+                raise ValueError("entity type cannot silently change for one ID")
+            position = (entity.x, entity.y)
+            reached = (
+                capture.t_monde if position == (capture.x, capture.y) else
+                old.reached_step if old is not None and old.position == position
+                else None
             )
-            site.validate()
-            self._water[position] = site
-            updated.append(site)
-        for position, old in tuple(self._water.items()):
-            if position in visible or old.last_confirmed_step == capture.t_monde:
+            memory = PlaceMemory(
+                observer_id=observer_id, entity_id=key,
+                entity_type=entity.entity_type, position=position,
+                observed_from=(capture.x, capture.y),
+                first_seen_step=(capture.t_monde if old is None
+                                 else old.first_seen_step),
+                last_seen_step=capture.t_monde,
+                reached_step=reached,
+                contradiction_step=None if old is None else old.contradiction_step,
+                contradictions=0 if old is None else old.contradictions,
+                confidence=min(0.9, 0.55 if old is None
+                               else old.confidence + 0.15),
+            )
+            memory.validate()
+            self._places[key] = memory
+            updates.append(memory)
+        local_positions = {(capture.x, capture.y)}
+        local_positions.update((cell.x, cell.y) for cell in capture.adjacent)
+        for key, old in tuple(self._places.items()):
+            if (key in visible or old.last_seen_step == capture.t_monde
+                or old.position not in local_positions
+                or old.contradiction_step == capture.t_monde):
                 continue
-            # Only a position directly visible in the present physical
-            # capture can contradict this memory, never out-of-range absence.
-            current = position == (capture.x, capture.y)
-            adjacent = [cell for cell in capture.adjacent
-                        if (cell.x, cell.y) == position]
-            absent = ((current and capture.current_water_source is False)
-                      or (len(adjacent) == 1 and
-                          adjacent[0].water_source is False))
-            if absent and old.contradiction_step != capture.t_monde:
-                site = WaterPlace(
-                    observer_id=old.observer_id, position=position,
-                    observed_from=old.observed_from,
-                    first_seen_step=old.first_seen_step,
-                    last_confirmed_step=old.last_confirmed_step,
-                    reached_step=old.reached_step, used_step=old.used_step,
-                    contradiction_step=capture.t_monde,
-                    contradictions=old.contradictions + 1,
-                    confidence=old.confidence * 0.25,
-                )
-                site.validate()
-                self._water[position] = site
-                updated.append(site)
-        return tuple(updated)
+            # A missing entity at its last *currently sensed* position might
+            # have disappeared or moved, not proof the whole type is absent.
+            memory = replace(old,
+                contradiction_step=capture.t_monde,
+                contradictions=old.contradictions + 1,
+                confidence=old.confidence * 0.25,
+            )
+            memory.validate()
+            self._places[key] = memory
+            updates.append(memory)
+        return tuple(updates)
 
-    def freeze_water(self, target: WaterReturnTarget | None) -> None:
+    def freeze_place(self, target: SpatialReturnTarget | None) -> None:
+        """Stage-3 offer is tied to this owner's first-person observations."""
         if target is not None:
             target.validate()
-            site = self._water.get(target.water_position)
-            if (not self.config.remember_water or site is None
-                or site.first_seen_step != target.observed_step
+            memory = self._places.get(target.entity_id)
+            if (not self.config.remember_entities or memory is None
+                or target.observed_position != memory.position
+                or target.entity_type != memory.entity_type
+                or target.observed_step != memory.first_seen_step
+                or self._last_capture is None
                 or target.origin != self._last_capture[1:]
-                or target.source_t_monde != self._last_capture[0]):
-                raise ValueError("water return not grounded in owner")
-        self._water_offered = () if target is None else (target,)
+                or target.source_t_monde != self._last_capture[0]
+                or any(point not in self._visits
+                       for point in target.visited_path[:-1])
+                or any(a not in self._surveys
+                       or b not in self._surveys[a].free_neighbors
+                       for a, b in zip(
+                           target.visited_path[1:-1],
+                           target.visited_path[2:]))
+                or target.confidence > memory.confidence):
+                raise ValueError("spatial return is not owned by perception")
+        self._place_offered = () if target is None else (target,)
 
-    def water_for(self, option) -> WaterReturnTarget | None:
-        for target in self._water_offered:
-            if (option.motive_ref.type == "water_memory"
-                and option.motive_ref.id == target.ref
-                and option.id == f"option:water-memory:{target.ref}:t{target.source_t_monde}"):
+    def place_for(self, option) -> SpatialReturnTarget | None:
+        """Read only the currently offered, funded and goal-linked option."""
+        motive = getattr(option, "motive_ref", None)
+        if (getattr(motive, "type", None) != "place_memory"
+            or getattr(option, "provenance", None) != "memory"):
+            return None
+        for target in self._place_offered:
+            if (motive.id == target.ref
+                and option.id ==
+                    f"option:place-memory:{target.ref}:t{target.source_t_monde}"):
                 return target
         return None
 
@@ -226,7 +259,7 @@ class GeographicExploration:
                 raise ValueError("geographic visit register capacity exhausted")
             if t > old_t:
                 self._transit_offered = ()
-                self._water_offered = ()
+                self._place_offered = ()
             if t == old_t or (x, y) == (old_x, old_y):
                 self._last_capture = (t, x, y)
                 return False
@@ -485,9 +518,10 @@ class GeographicExploration:
                 else list(self._last_capture)
             ),
             "offered": [asdict(t) for t in self._offered],
-            **({"water_places": [asdict(x) for x in self.water_places],
-                "water_offered": [asdict(x) for x in self._water_offered],
-            } if self.config.remember_water else {}),
+            **({"entity_places": [asdict(x) for x in self.place_memories],
+                "place_observer_id": self._place_observer_id,
+                "place_offered": [asdict(x) for x in self._place_offered],
+            } if self.config.remember_entities else {}),
             **({
                 "surveys": [asdict(x) for x in self.surveys],
                 "transit_offered": [asdict(x) for x in self._transit_offered],
@@ -607,47 +641,67 @@ class GeographicExploration:
             trial._surveys = restored_surveys
             trial.freeze_transits(tuple(transits))
             restored_transits = trial.transit_offered
-        water = {}
-        offered_water = ()
-        if self.config.remember_water:
-            raw_water = state.get("water_places")
-            if not isinstance(raw_water, list) or len(raw_water) > self.config.max_distinct_sites:
-                raise ValueError("invalid water-place snapshot")
-            for row in raw_water:
-                if not isinstance(row, Mapping) or set(row) != set(WaterPlace.__dataclass_fields__):
-                    raise ValueError("malformed water-place snapshot")
-                place = WaterPlace(**{
+        places = {}
+        place_observer = None
+        place_offered = ()
+        if self.config.remember_entities:
+            raw_places = state.get("entity_places")
+            place_observer = state.get("place_observer_id")
+            if (not isinstance(raw_places, list)
+                or len(raw_places) > self.config.max_distinct_sites
+                or (place_observer is not None and
+                    (not isinstance(place_observer, str) or not place_observer))
+                or (bool(raw_places) and place_observer is None)):
+                raise ValueError("invalid entity-place memory snapshot")
+            for row in raw_places:
+                if (not isinstance(row, Mapping)
+                    or set(row) != set(PlaceMemory.__dataclass_fields__)):
+                    raise ValueError("malformed entity-place snapshot")
+                place = PlaceMemory(**{
                     **row, "position": tuple(row["position"]),
                     "observed_from": tuple(row["observed_from"]),
                 })
                 place.validate()
-                if (place.position in water or last is None
-                    or place.last_confirmed_step > last[0]
-                    or place.observer_id != getattr(self, "_water_observer_id", place.observer_id)):
-                    raise ValueError("duplicate/future water-place snapshot")
-                water[place.position] = place
-            raw_offered = state.get("water_offered")
+                if (place.entity_id in places or place.observer_id != place_observer
+                    or last is None or place.last_seen_step > last[0]
+                    or any(t is not None and t > last[0] for t in
+                           (place.reached_step, place.contradiction_step))):
+                    raise ValueError("future, duplicate or alien entity-place memory")
+                places[place.entity_id] = place
+            raw_offered = state.get("place_offered")
             if not isinstance(raw_offered, list) or len(raw_offered) > 1:
-                raise ValueError("invalid offered water snapshot")
-            restored = []
+                raise ValueError("invalid offered entity-place snapshot")
+            offered = []
             for row in raw_offered:
-                if not isinstance(row, Mapping) or set(row) != set(WaterReturnTarget.__dataclass_fields__):
-                    raise ValueError("malformed offered water target")
-                target = WaterReturnTarget(**{**row, "origin": tuple(row["origin"]),
+                if (not isinstance(row, Mapping)
+                    or set(row) != set(SpatialReturnTarget.__dataclass_fields__)):
+                    raise ValueError("invalid entity-place target fields")
+                target = SpatialReturnTarget(**{
+                    **row, "origin": tuple(row["origin"]),
                     "destination": tuple(row["destination"]),
-                    "water_position": tuple(row["water_position"]),
-                    "visited_path": tuple(tuple(x) for x in row["visited_path"])})
+                    "observed_position": tuple(row["observed_position"]),
+                    "visited_path": tuple(tuple(p) for p in row["visited_path"]),
+                })
                 target.validate()
-                if (last is None or target.source_t_monde != last[0]
+                site = places.get(target.entity_id)
+                if (site is None or last is None
+                    or target.source_t_monde != last[0]
                     or target.origin != last[1:]
-                    or target.water_position not in water):
-                    raise ValueError("stale water target")
-                restored.append(target)
-            offered_water = tuple(restored)
-        elif "water_places" in state or "water_offered" in state:
-            raise ValueError("unexpected water memory in legacy snapshot")
-        self._water = water
-        self._water_offered = offered_water
+                    or target.observed_position != site.position
+                    or target.entity_type != site.entity_type
+                    or target.observed_step != site.first_seen_step
+                    or target.confidence > site.confidence
+                    or any(point not in visited for point in
+                           target.visited_path[:-1])):
+                    raise ValueError("stale entity-place snapshot target")
+                offered.append(target)
+            place_offered = tuple(offered)
+        elif any(key in state for key in
+                 ("entity_places", "place_offered", "place_observer_id")):
+            raise ValueError("unexpected place memory in legacy snapshot")
+        self._places = places
+        self._place_observer_id = place_observer
+        self._place_offered = place_offered
         self._visits = visited
         self._last_capture = last
         self._offered = tuple(offered)
