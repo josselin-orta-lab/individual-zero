@@ -10,6 +10,7 @@ from math import isfinite
 from typing import Mapping
 
 from .observed_frontier_routing import ObservedSurvey, GeographicTransitTarget
+from .water_memory_navigation import WaterPlace, WaterReturnTarget
 
 DIRECTION_DELTAS = {"north": (0, -1), "east": (1, 0),
                     "south": (0, 1), "west": (-1, 0)}
@@ -24,6 +25,7 @@ class GeographicExplorationConfig:
     max_targets_per_cycle: int
     observe_routes: bool = False
     refresh_surveys: bool = False
+    remember_water: bool = False
 
     def validate(self) -> None:
         if not isinstance(self.version, str) or not self.version:
@@ -36,6 +38,10 @@ class GeographicExplorationConfig:
             raise ValueError("route survey flag must be boolean")
         if type(self.refresh_surveys) is not bool:
             raise ValueError("survey refresh flag must be boolean")
+        if type(self.remember_water) is not bool:
+            raise ValueError("water-place flag must be boolean")
+        if self.remember_water and not self.observe_routes:
+            raise ValueError("water recall requires paid route observations")
         if self.refresh_surveys and not self.observe_routes:
             raise ValueError("survey refresh requires opted-in route observations")
         if (type(self.max_distinct_sites) is not int or self.max_distinct_sites < 1
@@ -80,13 +86,102 @@ class GeographicExploration:
         self._offered: tuple[GeographicTarget, ...] = ()
         self._surveys: dict[tuple[int, int], ObservedSurvey] = {}
         self._transit_offered: tuple[GeographicTransitTarget, ...] = ()
+        self._water: dict[tuple[int, int], WaterPlace] = {}
+        self._water_offered: tuple[WaterReturnTarget, ...] = ()
 
     def _snapshot_schema(self) -> str:
+        if self.config.remember_water:
+            return "geographic-exploration-v4-water-place"
         if self.config.refresh_surveys:
             return "geographic-exploration-v3-survey-refresh"
         if self.config.observe_routes:
             return "geographic-exploration-v2-survey"
         return "geographic-exploration-v1"
+
+    @property
+    def water_places(self) -> tuple[WaterPlace, ...]:
+        return tuple(self._water[k] for k in sorted(self._water))
+
+    def observe_water(self, capture, *, observer_id: str) -> tuple[WaterPlace, ...]:
+        """Record only witnessed water, and contradict only fully observed absence."""
+        if not self.config.remember_water:
+            return ()
+        if (not observer_id or self._last_capture !=
+                (capture.t_monde, capture.x, capture.y)):
+            raise ValueError("water observation needs same-step physical capture")
+        visible = set()
+        if capture.current_water_source is True:
+            visible.add((capture.x, capture.y))
+        for cell in capture.adjacent:
+            if cell.water_source is True:
+                visible.add((cell.x, cell.y))
+        updated = []
+        for position in sorted(visible):
+            old = self._water.get(position)
+            if old is None and len(self._water) >= self.config.max_distinct_sites:
+                continue
+            first = capture.t_monde if old is None else old.first_seen_step
+            prev = 0 if old is None else old.contradictions
+            reached = (capture.t_monde if position == (capture.x, capture.y)
+                       else None if old is None else old.reached_step)
+            site = WaterPlace(
+                observer_id=observer_id, position=position,
+                observed_from=(capture.x, capture.y),
+                first_seen_step=first, last_confirmed_step=capture.t_monde,
+                reached_step=reached, used_step=None if old is None else old.used_step,
+                contradiction_step=None if old is None else old.contradiction_step,
+                contradictions=prev,
+                confidence=min(0.9, (0.55 if old is None else
+                                      old.confidence + 0.15)),
+            )
+            site.validate()
+            self._water[position] = site
+            updated.append(site)
+        for position, old in tuple(self._water.items()):
+            if position in visible or old.last_confirmed_step == capture.t_monde:
+                continue
+            # Only a position directly visible in the present physical
+            # capture can contradict this memory, never out-of-range absence.
+            current = position == (capture.x, capture.y)
+            adjacent = [cell for cell in capture.adjacent
+                        if (cell.x, cell.y) == position]
+            absent = ((current and capture.current_water_source is False)
+                      or (len(adjacent) == 1 and
+                          adjacent[0].water_source is False))
+            if absent and old.contradiction_step != capture.t_monde:
+                site = WaterPlace(
+                    observer_id=old.observer_id, position=position,
+                    observed_from=old.observed_from,
+                    first_seen_step=old.first_seen_step,
+                    last_confirmed_step=old.last_confirmed_step,
+                    reached_step=old.reached_step, used_step=old.used_step,
+                    contradiction_step=capture.t_monde,
+                    contradictions=old.contradictions + 1,
+                    confidence=old.confidence * 0.25,
+                )
+                site.validate()
+                self._water[position] = site
+                updated.append(site)
+        return tuple(updated)
+
+    def freeze_water(self, target: WaterReturnTarget | None) -> None:
+        if target is not None:
+            target.validate()
+            site = self._water.get(target.water_position)
+            if (not self.config.remember_water or site is None
+                or site.first_seen_step != target.observed_step
+                or target.origin != self._last_capture[1:]
+                or target.source_t_monde != self._last_capture[0]):
+                raise ValueError("water return not grounded in owner")
+        self._water_offered = () if target is None else (target,)
+
+    def water_for(self, option) -> WaterReturnTarget | None:
+        for target in self._water_offered:
+            if (option.motive_ref.type == "water_memory"
+                and option.motive_ref.id == target.ref
+                and option.id == f"option:water-memory:{target.ref}:t{target.source_t_monde}"):
+                return target
+        return None
 
     @property
     def distinct_sites(self) -> int:
@@ -129,6 +224,7 @@ class GeographicExploration:
                 raise ValueError("geographic visit register capacity exhausted")
             if t > old_t:
                 self._transit_offered = ()
+                self._water_offered = ()
             if t == old_t or (x, y) == (old_x, old_y):
                 self._last_capture = (t, x, y)
                 return False
@@ -387,6 +483,9 @@ class GeographicExploration:
                 else list(self._last_capture)
             ),
             "offered": [asdict(t) for t in self._offered],
+            **({"water_places": [asdict(x) for x in self.water_places],
+                "water_offered": [asdict(x) for x in self._water_offered],
+            } if self.config.remember_water else {}),
             **({
                 "surveys": [asdict(x) for x in self.surveys],
                 "transit_offered": [asdict(x) for x in self._transit_offered],
@@ -506,6 +605,47 @@ class GeographicExploration:
             trial._surveys = restored_surveys
             trial.freeze_transits(tuple(transits))
             restored_transits = trial.transit_offered
+        water = {}
+        offered_water = ()
+        if self.config.remember_water:
+            raw_water = state.get("water_places")
+            if not isinstance(raw_water, list) or len(raw_water) > self.config.max_distinct_sites:
+                raise ValueError("invalid water-place snapshot")
+            for row in raw_water:
+                if not isinstance(row, Mapping) or set(row) != set(WaterPlace.__dataclass_fields__):
+                    raise ValueError("malformed water-place snapshot")
+                place = WaterPlace(**{
+                    **row, "position": tuple(row["position"]),
+                    "observed_from": tuple(row["observed_from"]),
+                })
+                place.validate()
+                if (place.position in water or last is None
+                    or place.last_confirmed_step > last[0]
+                    or place.observer_id != getattr(self, "_water_observer_id", place.observer_id)):
+                    raise ValueError("duplicate/future water-place snapshot")
+                water[place.position] = place
+            raw_offered = state.get("water_offered")
+            if not isinstance(raw_offered, list) or len(raw_offered) > 1:
+                raise ValueError("invalid offered water snapshot")
+            restored = []
+            for row in raw_offered:
+                if not isinstance(row, Mapping) or set(row) != set(WaterReturnTarget.__dataclass_fields__):
+                    raise ValueError("malformed offered water target")
+                target = WaterReturnTarget(**{**row, "origin": tuple(row["origin"]),
+                    "destination": tuple(row["destination"]),
+                    "water_position": tuple(row["water_position"]),
+                    "visited_path": tuple(tuple(x) for x in row["visited_path"])})
+                target.validate()
+                if (last is None or target.source_t_monde != last[0]
+                    or target.origin != last[1:]
+                    or target.water_position not in water):
+                    raise ValueError("stale water target")
+                restored.append(target)
+            offered_water = tuple(restored)
+        elif "water_places" in state or "water_offered" in state:
+            raise ValueError("unexpected water memory in legacy snapshot")
+        self._water = water
+        self._water_offered = offered_water
         self._visits = visited
         self._last_capture = last
         self._offered = tuple(offered)
