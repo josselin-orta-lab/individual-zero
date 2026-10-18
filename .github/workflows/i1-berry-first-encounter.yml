@@ -6,6 +6,7 @@ on:
       - '.github/workflows/i1-berry-first-encounter.yml'
       - 'tools/run_i1_need_movement_investigation.py'
       - 'tools/audit_i1_berry_learning.py'
+      - 'tools/audit_i1_berry_valence.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -48,6 +49,8 @@ jobs:
               --output-dir "$folder"
             python tools/audit_i1_berry_learning.py \
               --input "$folder" --output "$folder/toxic-learning.json"
+            python tools/audit_i1_berry_valence.py \
+              --input "$folder" --output "$folder/subjective-valence.json"
           done
       - name: Preserve mortal life histories
         if: always()
