@@ -120,11 +120,19 @@ class Competition:
         self._noise_draw = noise_draw
         self._registry: dict[str, CandidateState] = {}
         self._engaged_option_id: str | None = None
+        # A re-grounded, previously *applied* multi-hop intent is not an
+        # engaged motor candidate. It may be suspended by genuine sleep,
+        # without turning into a fallback command or a physiological oracle.
+        self._interruptible_intention_id: str | None = None
         self._cycle = 0
 
     @property
     def engaged_option_id(self) -> str | None:
         return self._engaged_option_id
+
+    @property
+    def interrupted_intention_id(self) -> str | None:
+        return self._interruptible_intention_id
 
     @property
     def registry_size(self) -> int:
@@ -227,7 +235,12 @@ class Competition:
         new.accumulator = min(
             old.accumulator, new.last_threshold * self._config.residual,
         )
-        self._engaged_option_id = next_ref
+        # Preserve ONLY an informational intention. An unselected new motor
+        # plan must NEVER become the engaged fallback simply by being
+        # proposed after a previously applied, verified hop.
+        self._interruptible_intention_id = next_ref
+        self._engaged_option_id = None
+        self._registry.pop(prior_ref, None)
         return True
 
     def is_engaged(self, option_ref: str) -> bool:
@@ -258,6 +271,8 @@ class Competition:
                 # a non-engaged option never transfers to the revised plan.
                 existing.accumulator = 0.0
                 existing.last_threshold = self._config.base_threshold
+                if self._interruptible_intention_id == option.id:
+                    self._interruptible_intention_id = None
             existing.proposal = proposal
             existing.last_proposal_t = t_monde
             return True
@@ -352,7 +367,7 @@ class Competition:
             if option_id == "permanent:attendre":
                 continue
             if option_id not in keep_ids:
-                self._registry.pop(option_id, None)
+                self.invalidate_candidate(option_id)
 
     def open_deliberation(
         self,
@@ -372,9 +387,7 @@ class Competition:
                 )
             )
             if invalid:
-                self._registry.pop(option_id, None)
-                if self._engaged_option_id == option_id:
-                    self._engaged_option_id = None
+                self.invalidate_candidate(option_id)
                 continue
             if option_id == self._engaged_option_id:
                 if (option.provenance == "memory"
@@ -472,7 +485,10 @@ class Competition:
                 self._config.base_threshold
                 - (
                     self._config.inertia
-                    if option_id == self._engaged_option_id
+                    if option_id in (
+                        self._engaged_option_id,
+                        self._interruptible_intention_id,
+                    )
                     else 0.0
                 ),
             )
@@ -490,6 +506,10 @@ class Competition:
             )
             state.accumulator = after
             state.last_threshold = threshold
+            # A genuine negative lived evaluation terminates the suspended
+            # intention; it cannot survive contradictory learned evidence.
+            if evidence < 0 and option_id == self._interruptible_intention_id:
+                self._interruptible_intention_id = None
             did_cross = after >= threshold
             traces.append(
                 CompetitionTrace(
@@ -552,6 +572,8 @@ class Competition:
         self._registry.pop(option_ref, None)
         if self._engaged_option_id == option_ref:
             self._engaged_option_id = None
+        if self._interruptible_intention_id == option_ref:
+            self._interruptible_intention_id = None
 
     def close_deliberation(
         self, winner: OptionProposal | None, *, adjudicated: bool = True,
@@ -564,12 +586,28 @@ class Competition:
         if not adjudicated:
             return
         winner_id = None if winner is None else winner.option.id
+        # One continuation can be suspended by an actually *applied* sleep:
+        # sleep is a physiological interruption, not contrary evidence that
+        # the personally witnessed destination has disappeared. The
+        # candidate gains NO evidence and remains below its threshold;
+        # neither motor engagement nor fallback admission is inherited.
+        sleepy = winner is not None and self._primitive_for(winner) == "dormir"
+        suspended_id = (
+            self._interruptible_intention_id if sleepy else None
+        )
+        if suspended_id is not None:
+            pending = self._registry.get(suspended_id)
+            if (pending is None
+                or pending.accumulator >= pending.last_threshold):
+                suspended_id = None
         for option_id, state in self._registry.items():
-            if option_id == winner_id:
+            if option_id == winner_id or option_id == suspended_id:
                 continue
             state.accumulator *= self._config.residual
         if winner_id is not None:
             self._engaged_option_id = winner_id
+        if not sleepy or suspended_id is None:
+            self._interruptible_intention_id = None
 
     def fallback_candidates(self) -> tuple[OptionProposal, ...]:
         candidates: list[OptionProposal] = []
@@ -591,7 +629,7 @@ class Competition:
         return candidates[0]
 
     def export_causal_state(self) -> object:
-        return {
+        state = {
             "config_version": self._config.version,
             "cycle": self._cycle,
             "engaged_option_id": self._engaged_option_id,
@@ -605,6 +643,11 @@ class Competition:
                 for _, state in sorted(self._registry.items())
             ],
         }
+        # Leave legacy snapshots byte-for-byte identical without a suspended
+        # intent. Only a personally verified continuation adds causal state.
+        if self._interruptible_intention_id is not None:
+            state["interrupted_intention_id"] = self._interruptible_intention_id
+        return state
 
     def restore_causal_state(self, state: object) -> None:
         if not isinstance(state, Mapping):
@@ -634,6 +677,23 @@ class Competition:
                 last_threshold=float(row["last_threshold"]),
                 last_proposal_t=int(row["last_proposal_t"]),
             )
+        suspended = state.get("interrupted_intention_id")
+        if suspended is not None:
+            from math import isfinite
+            candidate = registry.get(suspended)
+            if (not isinstance(suspended, str)
+                or candidate is None or suspended == engaged
+                or candidate.proposal.option.provenance != "memory"
+                or candidate.proposal.option.motive_ref.type != "place_memory"
+                or candidate.proposal.option.goal_ref is not None
+                or candidate.proposal.plan is None
+                or candidate.proposal.plan.goal_ref is not None
+                or len(candidate.proposal.plan.steps) != 1
+                or candidate.proposal.plan.steps[0].command.primitive != "se_deplacer"
+                or not isfinite(candidate.accumulator)
+                or candidate.accumulator < 0):
+                raise ValueError("invalid interrupted first-person memory intention")
         self._cycle = cycle
         self._engaged_option_id = engaged
+        self._interruptible_intention_id = suspended
         self._registry = registry
