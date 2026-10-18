@@ -108,7 +108,19 @@ class GenericSpatialMemoryTests(unittest.TestCase):
         moved = capture(2, 0, 0, (("creature:0", "creature", 0, 1),))
         geo.observe_capture(moved)
         geo.observe_entities(moved, observer_id="i1:sample")
-        self.assertEqual(geo.place_memories[0].position, (0, 1))
+        self.assertEqual({m.position for m in geo.place_memories}, {(1, 0), (0, 1)})
+        self.assertTrue(any(m.contradictions == 1 for m in geo.place_memories))
+
+    def test_reused_sensor_label_does_not_merge_distinct_water_sites(self):
+        geo = owner()
+        first = capture(1, 0, 0, (("water_source:0", "water_source", 1, 0),))
+        geo.observe_capture(first)
+        geo.observe_entities(first, observer_id="i1:sample")
+        second = capture(2, 0, 2, (("water_source:0", "water_source", 1, 2),))
+        geo.observe_capture(second)
+        geo.observe_entities(second, observer_id="i1:sample")
+        self.assertEqual(len(geo.place_memories), 2)
+        self.assertEqual({m.position for m in geo.place_memories}, {(1, 0), (1, 2)})
 
     def test_route_for_food_water_or_unnamed_type(self):
         surveys=(ObservedSurvey(
