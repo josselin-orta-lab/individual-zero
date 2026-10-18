@@ -23,7 +23,12 @@ def _adjacent(a, b):
 
 @dataclass(frozen=True, slots=True)
 class PlaceMemory:
-    """Last *perceived* position, with no claim that an entity remains there."""
+    """First-person sighting anchored to a place, not an instance tracker.
+
+    entity_id is the stable observed-place key computed from type + observed
+    coordinates; perceived_entity_id is the raw first-person sensor label.
+    The latter may be reused for unrelated entities across captures.
+    """
 
     observer_id: str
     entity_id: str
@@ -37,6 +42,7 @@ class PlaceMemory:
     contradictions: int
     confidence: float
     provenance: str = "perceptual_capture"
+    perceived_entity_id: str | None = None
 
     def validate(self):
         if (not isinstance(self.observer_id, str) or not self.observer_id
@@ -59,7 +65,10 @@ class PlaceMemory:
             or type(self.confidence) not in (int, float)
             or not isfinite(self.confidence)
             or not 0 <= self.confidence <= 1
-            or self.provenance != "perceptual_capture"):
+            or self.provenance != "perceptual_capture"
+            or (self.perceived_entity_id is not None
+                and (not isinstance(self.perceived_entity_id, str)
+                     or not self.perceived_entity_id))):
             raise ValueError("unfounded or malformed first-person place memory")
 
 
