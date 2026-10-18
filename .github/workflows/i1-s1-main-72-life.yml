@@ -1,0 +1,64 @@
+name: I1 S1 main 72 newborn lives
+on:
+  push:
+    branches: [science/i1-s1-main-72-life-20261018]
+    paths:
+      - '.github/workflows/i1-s1-main-72-life.yml'
+      - 'docs/research/i1-s1-main-72-life-prereg.md'
+      - 'tools/analyze_i1_s1_main_shard.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: i1-s1-main-72-life
+  cancel-in-progress: false
+jobs:
+  main-cohort:
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        preset: [oasis, foraging, dry-valley, empty-land, hazard-edge, blocked-route]
+        seed: [246, 247, 248, 249]
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: science
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 11fa9104e7e9d2c7ad70e837c80463fc4cbe4777
+          path: frozen
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Exact frozen I1 and install
+        run: |
+          test "$(git -C frozen rev-parse HEAD)" = 11fa9104e7e9d2c7ad70e837c80463fc4cbe4777
+          git -C frozen diff --exit-code
+          python -m pip install -e frozen
+      - name: Birth three mortal I1 lives in independent WAL
+        shell: bash
+        run: |
+          set -euo pipefail
+          python frozen/tools/run_i1_world_preset.py \
+            --preset "${{ matrix.preset }}" --seed "${{ matrix.seed }}" \
+            --lives 3 --steps 300 --custody wal --observe-owner-digests \
+            --output-dir "$PWD/reports/${{ matrix.preset }}-${{ matrix.seed }}"
+      - name: Analyze read-only shard with owner signals
+        if: success()
+        run: |
+          python science/tools/analyze_i1_s1_main_shard.py \
+            --input "reports/${{ matrix.preset }}-${{ matrix.seed }}" \
+            --output "reports/${{ matrix.preset }}-${{ matrix.seed }}/science-summary.json"
+      - name: Preserve evidence including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: s1-main-${{ matrix.preset }}-${{ matrix.seed }}-${{ github.run_id }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
