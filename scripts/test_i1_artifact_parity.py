@@ -730,6 +730,50 @@ def _reference_agency_index(before: bytes) -> bytes:
     return source.encode("utf-8")
 
 
+def _approved_natural_goal_birth(before: bytes, after: bytes) -> bool:
+    """Approve only the reviewed natural I1 threshold birth transformation."""
+    source, candidate = before.decode("utf-8"), after.decode("utf-8")
+    helper_start = "# I1-only birth calibration. Historical values remain opt-in"
+    helper_end = "class I1Runtime(I1WaterPrudentRuntime):"
+    if candidate.count(helper_start) != 1 or candidate.count(helper_end) != 1:
+        return False
+    a = candidate.index(helper_start)
+    b = candidate.index(helper_end)
+    block = candidate[a:b]
+    if ("_I1_GOAL_POLICIES = {" not in block
+            or '"natural-004": (0.04, 0.35)' not in block
+            or '"historical-010": (0.10, 0.90)' not in block
+            or "def _configure_birth_goal_policy(config, policy):" not in block):
+        return False
+    candidate = candidate[:a] + candidate[b:]
+    inserted = '''        # This selector is research-only. The canonical birth_i1 entry point
+        # always uses natural-004 and cannot override it.
+        goal_policy = kwargs.pop("i1_goal_policy", "natural-004")
+        if goal_policy not in _I1_GOAL_POLICIES:
+            raise ValueError("unregistered I1 natural goal arbitration policy")
+'''
+    original = "    def __init__(self, **kwargs):\n"
+    if candidate.count(original + inserted) != 1:
+        return False
+    candidate = candidate.replace(original + inserted, original, 1)
+    inserted = '''        # The immutable goal subtree is installed before any owner or body is
+        # created. No action, learned value, world fact or survival rule changes.
+        cfg = _configure_birth_goal_policy(cfg, goal_policy)
+'''
+    original = "        cfg = configure_birth_temperament(cfg, life_id=life_id)\n"
+    if candidate.count(original + inserted) != 1:
+        return False
+    candidate = candidate.replace(original + inserted, original, 1)
+    replaced = '''            sleep_cfg, version=(sleep_cfg.version + "+i1-birth-temperament-v1"
+                                + "+" + _GOAL_POLICY_VERSION + ":" + goal_policy),
+'''
+    original = '            sleep_cfg, version=sleep_cfg.version + "+i1-birth-temperament-v1",\n'
+    if candidate.count(replaced) != 1:
+        return False
+    candidate = candidate.replace(replaced, original, 1)
+    return candidate == source
+
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -745,6 +789,10 @@ def verify(reference_root: Path) -> None:
             rel for rel in old.keys() & new.keys()
             if old[rel] != new[rel] and not (
                 False  # Stage10 is handled by the stacked exact approval below
+                or (rel == "i1lab/i1_natural_runtime.py"
+                    and _approved_natural_goal_birth(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
                 or (rel == "i1lab/stage10_runtime.py"
                     and _approved_i1_287_stage10_authentic_policy_union(
                         _reference_i1_255_stage10_move(
