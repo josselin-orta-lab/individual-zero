@@ -1,0 +1,59 @@
+name: I1 movement and needs 800-step endurance
+on:
+  push:
+    branches: [science/i1-need-movement-investigation-20261018]
+    paths:
+      - '.github/workflows/i1-need-movement-800.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  survival:
+    runs-on: ubuntu-latest
+    timeout-minutes: 115
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        world: [longlife-garden, oasis, foraging]
+        novelty: ['0.3', '0.6']
+        cognitive_weight: ['0.0', '0.2']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate engine, physical worlds and study contract
+        run: |
+          python -m pip install -e .
+          python scripts/check_engine_repository.py --json
+          python tools/run_i1_need_movement_investigation.py --preset "${{ matrix.world }}" --validate-only
+      - name: Long mortal paired newborn lives
+        shell: bash
+        env:
+          WORLD: ${{ matrix.world }}
+          NOVELTY: ${{ matrix.novelty }}
+          COG: ${{ matrix.cognitive_weight }}
+        run: |
+          set -euo pipefail
+          for variant in 31 32; do
+            output="reports/${WORLD}/geo-${NOVELTY}/cog-${COG}/variant-${variant}"
+            python tools/run_i1_need_movement_investigation.py \
+              --preset "$WORLD" --seed "$((886000 + variant))" \
+              --world-variant "$variant" --steps 800 --lives 1 \
+              --custody wal --experimental-fatigue-weight "$COG" \
+              --geographic-novelty-weight "$NOVELTY" \
+              --output-dir "$output"
+            python tools/analyze_i1_need_movement.py \
+              --input "$output" --output "$output/investigation.json"
+          done
+      - name: Archive unmodified WAL and all mortality
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-movement800-${{ matrix.world }}-g${{ matrix.novelty }}-c${{ matrix.cognitive_weight }}-${{ github.run_id }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
