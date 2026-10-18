@@ -8,6 +8,8 @@ on:
       - 'tools/analyze_i1_fcog_arm.py'
       - '.github/workflows/i1-fcog-020-science.yml'
       - 'src/i1/docs/FCOG_020_PROSPECTIVE.md'
+      - 'src/i1/docs/STATUS.md'
+      - 'scripts/test_i1_artifact_parity.py'
   workflow_dispatch:
     inputs:
       seed_blocks:
