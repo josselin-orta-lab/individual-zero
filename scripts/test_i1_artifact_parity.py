@@ -63,6 +63,33 @@ def _approved_stage10_initialization_move(before: bytes, after: bytes) -> bool:
     return reconstructed == before
 
 
+def _reference_i1_255_stage10_move(before: bytes) -> bytes:
+    """Reapply exact #255 assignment move before independent #287 change."""
+    line = b'        canonical = type(self).__name__ == "I1Runtime"\n'
+    early = b'        coordinator = Stage10PublicationCoordinator(\n'
+    late = b'        if ((not canonical and candidate.get("forms")\n'
+    if before.count(line) != 1 or before.count(early) != 1 or before.count(late) != 1:
+        raise ValueError("I1 Stage10 reference drift")
+    if not (before.index(early) < before.index(line) < before.index(late)):
+        raise ValueError("I1 Stage10 approval reference order drift")
+    return before.replace(line, b"", 1).replace(early, line + early, 1)
+
+
+def _approved_i1_287_stage10_authentic_policy_union(before: bytes, after: bytes) -> bool:
+    """Only allow Stage2+Stage7 exact lived autobiography on Stage10 replay."""
+    changes = (
+        ("from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY", "from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY\nfrom .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY"),
+        ("                policies={\n                    STAGE7_AUTOBIOGRAPHICAL_POLICY.version:\n                        STAGE7_AUTOBIOGRAPHICAL_POLICY,\n                },", "                policies={\n                    STAGE2_AUTOBIOGRAPHICAL_POLICY.version:\n                        STAGE2_AUTOBIOGRAPHICAL_POLICY,\n                    STAGE7_AUTOBIOGRAPHICAL_POLICY.version:\n                        STAGE7_AUTOBIOGRAPHICAL_POLICY,\n                },"),
+        ("            policies={\n                STAGE7_AUTOBIOGRAPHICAL_POLICY.version:\n                    STAGE7_AUTOBIOGRAPHICAL_POLICY,\n            },", "            policies={\n                STAGE2_AUTOBIOGRAPHICAL_POLICY.version:\n                    STAGE2_AUTOBIOGRAPHICAL_POLICY,\n                STAGE7_AUTOBIOGRAPHICAL_POLICY.version:\n                    STAGE7_AUTOBIOGRAPHICAL_POLICY,\n            },"),
+    )
+    text = before.decode("utf-8")
+    for old, new in changes:
+        if text.count(old) != 1:
+            return False
+        text = text.replace(old, new, 1)
+    return text.encode("utf-8") == after
+
+
 def _approved_i1_283_slow_history_preflight(before: bytes, after: bytes) -> bool:
     """Allow only using already committed SlowHistory as preflight birth state."""
     old = "        # Preflight exact staged state before touching any living owner.\n        # SlowHistory.restore_causal_state validates and detaches that state;\n        # the temporary constructor's birth payload is immediately discarded.\n        temp = SlowHistory(\n            birth_version=prepared.source_version,\n            birth_state={},\n        )"
@@ -717,10 +744,14 @@ def verify(reference_root: Path) -> None:
         changed = sorted(
             rel for rel in old.keys() & new.keys()
             if old[rel] != new[rel] and not (
-                (rel == "i1lab/stage10_runtime.py"
-                 and _approved_stage10_initialization_move(
-                     (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
-                 ))
+                False  # Stage10 is handled by the stacked exact approval below
+                or (rel == "i1lab/stage10_runtime.py"
+                    and _approved_i1_287_stage10_authentic_policy_union(
+                        _reference_i1_255_stage10_move(
+                            (old_root / rel).read_bytes()
+                        ),
+                        (new_root / rel).read_bytes()
+                    ))
                 or (rel == "i1lab/consolidation_publication.py"
                     and _approved_i1_283_slow_history_preflight(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
