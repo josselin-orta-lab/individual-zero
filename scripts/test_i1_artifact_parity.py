@@ -63,6 +63,18 @@ def _approved_stage10_initialization_move(before: bytes, after: bytes) -> bool:
     return reconstructed == before
 
 
+def _approved_i1_283_slow_history_preflight(before: bytes, after: bytes) -> bool:
+    """Allow only using already committed SlowHistory as preflight birth state."""
+    old = "        # Preflight exact staged state before touching any living owner.\n        # SlowHistory.restore_causal_state validates and detaches that state;\n        # the temporary constructor's birth payload is immediately discarded.\n        temp = SlowHistory(\n            birth_version=prepared.source_version,\n            birth_state={},\n        )"
+    new = "        # Seed this throwaway validator with the genuine committed state.\n        # SlowHistory requires existing consolidated_episode_refs at birth;\n        # an invented empty mapping would crash before validation can start.\n        # The candidate is still checked before touching any living owner.\n        temp = SlowHistory(\n            birth_version=prepared.source_version,\n            birth_state=before_history[\"current_state\"],\n        )"
+    old_bytes, new_bytes = old.encode("utf-8"), new.encode("utf-8")
+    return (
+        before.count(old_bytes) == 1
+        and after.count(new_bytes) == 1
+        and before.replace(old_bytes, new_bytes, 1) == after
+    )
+
+
 def _approved_local_capture_resource_optimization(before: bytes, after: bytes) -> bool:
     """Allow only the two reviewed WorldBody.capture_local resource blocks.
 
@@ -709,6 +721,10 @@ def verify(reference_root: Path) -> None:
                  and _approved_stage10_initialization_move(
                      (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                  ))
+                or (rel == "i1lab/consolidation_publication.py"
+                    and _approved_i1_283_slow_history_preflight(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
                 or (rel == "i1lab/world.py"
                     and _approved_local_capture_resource_optimization(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()

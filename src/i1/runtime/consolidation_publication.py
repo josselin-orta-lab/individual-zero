@@ -282,12 +282,13 @@ class Stage10PublicationCoordinator:
             "candidate_digest": prepared.candidate_digest,
             "commit_index": event_index,
         })
-        # Preflight exact staged state before touching any living owner.
-        # SlowHistory.restore_causal_state validates and detaches that state;
-        # the temporary constructor's birth payload is immediately discarded.
+        # Seed this throwaway validator with the genuine committed state.
+        # SlowHistory requires existing consolidated_episode_refs at birth;
+        # an invented empty mapping would crash before validation can start.
+        # The candidate is still checked before touching any living owner.
         temp = SlowHistory(
             birth_version=prepared.source_version,
-            birth_state={},
+            birth_state=before_history["current_state"],
         )
         temp.restore_causal_state(staged_history)
 
