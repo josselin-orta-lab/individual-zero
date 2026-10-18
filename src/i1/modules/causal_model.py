@@ -1740,6 +1740,10 @@ class CausalModel:
             )
             if report is not None:
                 admitted.append(report)
+        # No newly decoded agency comparison can collide or be buffered.
+        # Avoid scanning the entire published history on unrelated episodes.
+        if not admitted:
+            return ()
         # Preflight the whole episode; no partial causal buffering if one
         # observation is duplicate or has inconsistent physical provenance.
         historical_refs = {v.event_ref for v in self._agency_evidence.values()}
