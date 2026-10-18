@@ -627,6 +627,17 @@ class Stage11Runtime(Stage9Runtime):
                                       "confidence": memory.confidence,
                                       "contradictions": memory.contradictions,
                                       "source": memory.provenance})
+                for motion in geo.motion_updates:
+                    self._write(kind="i1_entity_motion_diagnosed", cycle=cycle,
+                                data={"entity_type": motion.entity_type,
+                                      "trace_ref": motion.trace_ref,
+                                      "diagnosis": motion.diagnosis,
+                                      "identity_certainty": motion.identity_certainty,
+                                      "recognition_basis": motion.recognition_basis,
+                                      "observations": motion.observations,
+                                      "observed_moves": motion.observed_moves,
+                                      "observed_stays": motion.observed_stays,
+                                      "last_position": list(motion.last_position)})
 
             if geo is not None and geo.config.observe_routes and not over_capacity:
                 # After an accepted Phase-1 Exploration observation charge.
