@@ -825,7 +825,7 @@ def _approved_issue314_blob(root: Path, rel: str) -> bool:
     if expected is None:
         return False
     data = (root / rel).read_bytes()
-    actual = sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest()
+    actual = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
     return actual == expected
 
 def verify(reference_root: Path) -> None:
