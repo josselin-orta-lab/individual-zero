@@ -98,9 +98,11 @@ jobs:
           from pathlib import Path
           data = json.loads(Path("reports/preset-oasis-ci/spatial-audit.json").read_text())
           assert data["journal_entries"] > 0
-          assert data["physical_memory_actions"] is None
-          assert not data["physical_arrival_proven"]
+          assert data["independent_hash_chain_verified"] is True
+          assert data["stages"]["proposed"] >= 0
+          assert data["stages"]["physically_applied"] >= 0
           assert not data["causal_learning_proven"]
+          assert not data["survival_improvement_proven"]
           print("I1_SPATIAL_WAL_READ_ONLY_AUDIT_OK")
           PY
       - name: Real natural I1 preset M11 transactional smoke
