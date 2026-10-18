@@ -130,12 +130,13 @@ class GeographicExploration:
                 or (position != (capture.x, capture.y)
                     and (position[0]-capture.x, position[1]-capture.y)
                     not in DIRECTION_DELTAS.values())
-                or entity.entity_id in visible):
+                or (entity.entity_type, position) in visible):
                 raise ValueError("invalid or duplicated first-person entity")
-            visible[entity.entity_id] = entity
+            visible[(entity.entity_type, position)] = entity
         self._place_observer_id = observer_id
         updates = []
-        for key, entity in sorted(visible.items()):
+        for (kind, position), entity in sorted(visible.items()):
+            key = f"sighting:{kind}:{position[0]}:{position[1]}"
             old = self._places.get(key)
             if old is None and len(self._places) >= self.config.max_distinct_sites:
                 continue
@@ -163,6 +164,7 @@ class GeographicExploration:
                 contradictions=0 if old is None else old.contradictions,
                 confidence=min(0.9, 0.55 if old is None
                                else old.confidence + 0.15),
+                perceived_entity_id=entity.entity_id,
             )
             memory.validate()
             self._places[key] = memory
@@ -170,7 +172,8 @@ class GeographicExploration:
         local_positions = {(capture.x, capture.y)}
         local_positions.update((cell.x, cell.y) for cell in capture.adjacent)
         for key, old in tuple(self._places.items()):
-            if (key in visible or old.last_seen_step == capture.t_monde
+            if ((old.entity_type, old.position) in visible
+                or old.last_seen_step == capture.t_monde
                 or old.position not in local_positions
                 or old.contradiction_step == capture.t_monde):
                 continue
