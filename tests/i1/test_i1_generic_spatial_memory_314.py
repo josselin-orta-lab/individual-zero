@@ -3,13 +3,36 @@ import unittest
 from types import SimpleNamespace
 from dataclasses import replace
 
-from i1.modules.spatial_memory import (
-    PlaceMemory, find_spatial_return,
-)
-from i1.modules.geographic_exploration import (
-    GeographicExploration, GeographicExplorationConfig,
-)
-from i1.modules.observed_frontier_routing import ObservedSurvey
+# Source-only tests: avoid importing i0's historical Lab namespace and do
+# not write __pycache__ into src/, which would break the I0/I1 tree guard.
+import importlib.util
+from pathlib import Path
+import sys
+import types
+
+_MODULES = Path(__file__).resolve().parents[2] / "src/i1/modules"
+_NS = "_i1_spatial_314"
+_PACKAGE = types.ModuleType(_NS)
+_PACKAGE.__path__ = [str(_MODULES)]
+sys.modules[_NS] = _PACKAGE
+_prior_bytecode = sys.dont_write_bytecode
+sys.dont_write_bytecode = True
+try:
+    for _name in ("observed_frontier_routing", "spatial_memory",
+                  "geographic_exploration"):
+        _spec = importlib.util.spec_from_file_location(
+            f"{_NS}.{_name}", _MODULES / f"{_name}.py")
+        _module = importlib.util.module_from_spec(_spec)
+        sys.modules[_spec.name] = _module
+        _spec.loader.exec_module(_module)
+finally:
+    sys.dont_write_bytecode = _prior_bytecode
+Spatial = sys.modules[f"{_NS}.spatial_memory"]
+Geography = sys.modules[f"{_NS}.geographic_exploration"]
+ObservedSurvey = sys.modules[f"{_NS}.observed_frontier_routing"].ObservedSurvey
+PlaceMemory, find_spatial_return = Spatial.PlaceMemory, Spatial.find_spatial_return
+GeographicExploration = Geography.GeographicExploration
+GeographicExplorationConfig = Geography.GeographicExplorationConfig
 
 
 def capture(t, x, y, entities=()):
