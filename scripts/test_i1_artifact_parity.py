@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
-from hashlib import sha256
+from hashlib import sha1, sha256
 import json
 from pathlib import Path
 import subprocess
@@ -805,6 +805,29 @@ DEFAULT_TOXIC_BERRY_INTEGRITY_DELTA = -10.0
     return candidate == source
 
 
+
+# Review-locked #314 exception for intentional NEW I1 cognitive capability.
+# Unlike a loose path allowlist, exact Git blob digests reject any subsequent
+# source changes until each is reviewed and the digest is explicitly updated.
+# All other generated I1 files retain their existing strict migration parity.
+_ISSUE_314_PINNED_BLOBS = {
+    "i1/modules/spatial_memory.py": "48fb79fbdcec2a8d912bc92dade30083f85ff3b2",
+    "i1/modules/geographic_exploration.py": "704810369dcbd00c1d201581d0bc2de0be8c4e5b",
+    "i1/modules/geographic_planning.py": "f5f8edfb0f95cdf80f49809e66e9355cb59dc01f",
+    "i1/modules/stage11_evaluator.py": "3f89aaf9273ac2a562bfa2f493b36b8695480d47",
+    "i1lab/i1_natural_runtime.py": "51e09acf50ce1fc33879bed576c43b306c5a7711",
+    "i1lab/stage11_runtime.py": "fa1a26b53a9fbf588204e56b090c982d55bf586d",
+}
+
+
+def _approved_issue314_blob(root: Path, rel: str) -> bool:
+    expected = _ISSUE_314_PINNED_BLOBS.get(rel)
+    if expected is None:
+        return False
+    data = (root / rel).read_bytes()
+    actual = sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest()
+    return actual == expected
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -815,10 +838,11 @@ def verify(reference_root: Path) -> None:
         old = _build(reference_root, old_root)
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
-        added = sorted(set(new) - set(old))
+        added = sorted(rel for rel in set(new) - set(old)
+                       if not _approved_issue314_blob(new_root, rel))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not (
+            if old[rel] != new[rel] and not _approved_issue314_blob(new_root, rel) and not (
                 False  # Stage10 is handled by the stacked exact approval below
                 or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_natural_toxic_berry_birth(
@@ -935,7 +959,7 @@ def verify(reference_root: Path) -> None:
                 )
                 print("".join(list(diff)[:100]), file=sys.stderr)
             raise AssertionError("native migration changed generated I1 bytes")
-        print(f"I1_GENERATED_PARITY_OK: {len(new)} files; only reviewed #255 and local-capture block transformations permitted")
+        print(f"I1_GENERATED_PARITY_OK: {len(new)} files; migration exceptions plus reviewed exact-blob #314 changes")
 
 
 def main() -> None:
