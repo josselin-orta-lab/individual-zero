@@ -2,7 +2,8 @@
 
 MVP v1.2.1 sections 15.1-15.5, DC-13, INV-39/47/52/53.
 Only an *applied* Action Control-admitted ordinary Competition sleep option
-can arm entry on the next world step. Reduced capture, reflex admission,
+can arm entry on the next world step. In I1, the same physical dormir may be
+motivated by cognitive sleep pressure or a legitimate active bodily goal. Reduced capture, reflex admission,
 world advancement, journaling and cognition are supplied by their owners.
 This object owns only pending/active sleep-mode timing; it never dispatches.
 """
@@ -99,7 +100,7 @@ class SleepSession:
                 or self._admitted_sleep_step is not None
                 or self._pending_result is not None
                 or execution_status != "applied"
-                or motive_type != "sleep_pressure"
+                or motive_type not in ("sleep_pressure", "active_goal")
                 or not self._applied_admission(
                     admission=admission, prepared=prepared,
                     expected_primitive="dormir", expected_source="decision")):

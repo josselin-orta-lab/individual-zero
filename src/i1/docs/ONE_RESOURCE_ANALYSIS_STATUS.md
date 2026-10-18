@@ -1,0 +1,11 @@
+# One-resource study: analysis state
+
+Prospective 32-life cohort from workflow 39122746545, physical SHA b5b4c14bd92938ce12d7821ed5bc2c13faedea1f. Long-running workflow is pending completion, do not claim a learning verdict. Baseline old two-food experiment is distinct. All mortality terminal, read-ablation controls compared pairwise.
+
+## Audited first stratum (original physical run SHA b5b4c14, do not relabel)
+
+The original `learning-cell-one` 32-life GitHub Actions run [#39122746545](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39122746545) continues independently on immutable commit `b5b4c14bd92938ce12d7821ed5bc2c13faedea1f`; current branch CI still passes. The first archived eight counterfactual-control lives (berry_a gives 0 food; all TD reads masked) are **8/8 terminal deaths** after **228–293 steps**, **1,965 physical steps** total. WALs are chained and match recorded heads, and TD read status remains unlearned in the masked arm even though **TD updates continue to be published**. These eight lives execute **778 genuine eating actions**, 784 collections, only four drinking actions (two lives), and **565 food-zero observed steps**. The neutral berry never restores food. This is a controlled observation of the absence of nutritive reward, **not** evidence that memory has failed.
+
+## Decision gates before comparing other three strata
+
+**PASS mechanical** requires genuine autonomous `collecter` → `manger` → physical food gain in +10 arms, linked `td_update_published`, and later `i1_unknown_affordance_proposed` reading learned TD values in active arms; masked control must retain updates but not learned reads. **Evidence of beneficial learning** additionally requires post-experience behavior in the active arm to improve relative to the matched masked arm *after the first learnable event*, rather than only higher action counts; a pairwise divergence before any effective Q access invalidates the causal interpretation. **GO generalizable** requires replication in a reversed 2-resource world to rule out berry identity/initial-option preference, and independent environments and long-horizon survival, not covered by this initial 32-life fixed-map study. All 32 initial births, including early deaths, stay in the denominator. No false "learning curve" based on memory counts.

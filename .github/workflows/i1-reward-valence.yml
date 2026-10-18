@@ -1,0 +1,55 @@
+name: I1 homeostatic reward valence research
+on:
+  push:
+    branches: [science/i1-minimal-learning-proof-20261018]
+    paths:
+      - '.github/workflows/i1-reward-valence.yml'
+      - 'tools/run_i1_minimal_learning.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  homeostasis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        reward: ['absolute','deficit-only-v1']
+        gain: ['0.0','10.0']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify source and world
+        run: |
+          python -m pip install -e .
+          python scripts/check_engine_repository.py --json
+          python tools/run_i1_minimal_learning.py --preset learning-cell-one --validate-only
+      - name: Fresh mortal paired newborns
+        shell: bash
+        env:
+          REWARD: ${{ matrix.reward }}
+          GAIN: ${{ matrix.gain }}
+        run: |
+          set -euo pipefail
+          for seed in 511 512 513; do
+            folder="reports/reward-${REWARD}/gain-${GAIN}/seed-${seed}"
+            python tools/run_i1_minimal_learning.py \
+              --preset learning-cell-one --food-gain "$GAIN" \
+              --quiet-cognitive-sleep --eligibility-lambda 0.8 \
+              --reward-model "$REWARD" --seed "$seed" \
+              --steps 300 --lives 1 --custody wal --output-dir "$folder"
+          done
+      - name: Preserve all lived WAL
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-reward-${{ matrix.reward }}-gain-${{ matrix.gain }}-${{ github.run_id }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
