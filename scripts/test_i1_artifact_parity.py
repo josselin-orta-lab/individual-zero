@@ -816,13 +816,13 @@ _ISSUE_314_PINNED_BLOBS = {
     "i1/modules/geographic_planning.py": "eb0201fb608e95164df5b2f35477c3496182a391",
     "i1/modules/stage11_evaluator.py": "ee40ddbedee554525bf9f4565b03d4bba3654d65",
     "i1lab/i1_natural_runtime.py": "f4f6f35e3b3d323256845602253e90d7212b2ae5",
-    "i1lab/stage11_runtime.py": "5886db177934e1114b1973e8898619a6a511daf9",
+    "i1lab/stage11_runtime.py": "e67aaca4a923a13619c6ca66d79c3beb30ce290c",
 }
 
 # Review-locked #317 I1-only source changes. Values are complete Git blob
 # hashes of exactly the reviewed source, not mutable path exemptions.
 _ISSUE_317_PINNED_BLOBS = {
-    "i1/modules/competition.py": "9513a3d82b3f8b9475e3f9a8fd0e2aad969a69a1",
+    "i1/modules/competition.py": "c0ad615e49a82a3ef07f6461cf1ca36c974ef3d0",
     "i1/modules/geographic_exploration.py": "391fc2abaef4da1468879eacd31eb186c14759d7",
     "i1/modules/geographic_planning.py": "8aa71effe4cf55827a27a21af4e52d09938e34d6",
     "i1/modules/stage11_evaluator.py": "4f22b6a8d3dfc2b5b6bc098a88b85f6023e67824",

@@ -188,6 +188,48 @@ class Competition:
         state = self._registry.get(option_ref)
         return None if state is None else state.accumulator
 
+    def continue_engaged_memory(
+        self, *, prior_ref: str, next_ref: str, t_monde: int,
+    ) -> bool:
+        """Carry bounded commitment, never motor evidence or invented TD.
+
+        Only Stage11 may invoke this after verifying a truly executed,
+        personally observed route hop and re-grounding a new step in today's
+        Perception. A different option ID always receives a fresh motor plan
+        and must be evaluated/admitted again.
+        """
+        if (type(t_monde) is not int or t_monde < 2
+            or prior_ref == next_ref or self._engaged_option_id != prior_ref):
+            return False
+        old = self._registry.get(prior_ref)
+        new = self._registry.get(next_ref)
+        if old is None or new is None:
+            return False
+        p, q = old.proposal.option, new.proposal.option
+        if (old.last_proposal_t != t_monde - 1
+            or new.last_proposal_t != t_monde
+            or p.provenance != "memory" or q.provenance != "memory"
+            or p.motive_ref.type != "place_memory"
+            or q.motive_ref.type != "place_memory"
+            or p.goal_ref is not None or q.goal_ref is not None
+            or p.learning_signature != q.learning_signature
+            or old.proposal.plan is None or new.proposal.plan is None
+            or old.proposal.plan.goal_ref is not None
+            or new.proposal.plan.goal_ref is not None
+            or len(old.proposal.plan.steps) != 1
+            or len(new.proposal.plan.steps) != 1
+            or old.proposal.plan.steps[0].command.primitive != "se_deplacer"
+            or new.proposal.plan.steps[0].command.primitive != "se_deplacer"
+            or new.accumulator != 0.0 or old.accumulator <= 0.0):
+            return False
+        # The old, already evaluated target may support the semantic
+        # intention, but cannot by itself cross the NEW motor threshold.
+        new.accumulator = min(
+            old.accumulator, new.last_threshold * self._config.residual,
+        )
+        self._engaged_option_id = next_ref
+        return True
+
     def is_engaged(self, option_ref: str) -> bool:
         return self._engaged_option_id == option_ref
 
@@ -335,7 +377,16 @@ class Competition:
                     self._engaged_option_id = None
                 continue
             if option_id == self._engaged_option_id:
-                state.accumulator = 0.0
+                if (option.provenance == "memory"
+                    and option.motive_ref.type == "place_memory"):
+                    # A physically admitted memory winner can remain an
+                    # intention, not an automatic next motor command. Carry
+                    # at most the existing configured residual of its proof.
+                    state.accumulator = min(
+                        state.accumulator, state.last_threshold,
+                    ) * self._config.residual
+                else:
+                    state.accumulator = 0.0
 
     def urgency(self, cycle: int) -> float:
         return 1.0 + (self._config.urgency_max - 1.0) * (

@@ -133,6 +133,86 @@ for t in (11,12):
 assert crossed, "same-personal-intention accumulation must eventually compete"
 # Still not proof of movement. The motor pipeline remains independently gated.
 
+# A physically observed change of position must create an entirely NEW
+# one-hop motor candidate. Only a previously selected memory winner may
+# carry residual intention evidence after the current Perception confirms
+# reaching its last planned next hop.
+from i1.runtime.stage11_runtime import Stage11Runtime
+
+def follow_on(t, entity="unknown_artifact"):
+    entity_id = "sighting:" + entity + ":0:0"
+    target = SpatialReturnTarget(
+        ref=f"place:{entity_id}:at:0:0:from:1:0:via:0:0",
+        source_t_monde=t, origin=(1, 0), destination=(0, 0),
+        direction="west", entity_id=entity_id, entity_type=entity,
+        observed_position=(0, 0), visited_path=((1, 0), (0, 0)),
+        observed_step=1, confidence=0.65,
+    )
+    initial = SimpleNamespace(x=1, y=0, validate=lambda: None,
+        adjacent=(SimpleNamespace(
+            direction="west", passable=True, creature=False,
+            x=0, y=0),))
+    simulator = SimpleNamespace(rollout=lambda **kwargs: SimpleNamespace(
+        complete=False, reason="equipment_input_unseen"))
+    new = propose_spatial_return(
+        target=target, initial_state=initial, simulator=simulator,
+        st_version="new-physically-observed-step", t_monde=t, ttl_steps=20)
+    assert new is not None
+    return target, new
+
+c = competition()
+a = proposal(20, entity="stone")
+c.register(a, active_goal_id="goal-1", t_monde=20)
+c.open_deliberation(active_goal_id="goal-1", t_monde=20)
+winner = None
+for cy in range(1, 6):
+    winner = c.evaluate(cycle=cy, t_monde=20, evidence_inputs={
+        a.option.id: evidence(a, 0.14, cy, 20)}).winner
+    if winner:
+        break
+assert winner is not None
+c.close_deliberation(winner)
+assert c.is_engaged(a.option.id)
+old = c.accumulator_for(a.option.id)
+c.open_deliberation(active_goal_id="goal:changed", t_monde=21)
+assert 0 < c.accumulator_for(a.option.id) <= old*c._config.residual
+target, b = follow_on(21, "stone")
+capture = SimpleNamespace(x=1, y=0)
+control = (a.option.id, a.plan.id, 1)
+assert Stage11Runtime._grounded_memory_continuation(
+    previous=a,target=target,capture=capture,control_step=control)
+assert not Stage11Runtime._grounded_memory_continuation(
+    previous=a,target=target,capture=capture,
+    control_step=("option:unrelated", a.plan.id, 1))
+assert not Stage11Runtime._grounded_memory_continuation(
+    previous=a,target=target,capture=SimpleNamespace(x=8,y=0),
+    control_step=control)
+assert not Stage11Runtime._grounded_memory_continuation(
+    previous=a,target=follow_on(21,"wood")[0],capture=capture,
+    control_step=control)
+assert c.register(b, active_goal_id="goal:changed", t_monde=21)
+assert c.continue_engaged_memory(
+    prior_ref=a.option.id,next_ref=b.option.id,t_monde=21)
+assert c.is_engaged(b.option.id)
+assert c.accumulator_for(b.option.id) > 0
+assert c.accumulator_for(b.option.id) < c._config.base_threshold
+assert c.accumulator_for(b.option.id) <= c._config.base_threshold*c._config.residual
+# Carried intention is BELOW Competition's threshold: it does not force a
+# motor choice and cannot override an unfavourable new Stage8 observation.
+assert c.evaluate(cycle=1,t_monde=21,evidence_inputs={
+    b.option.id:evidence(b,-1.0,1,21),
+    a.option.id:evidence(a,0.0,1,21)}).winner is None
+assert c.accumulator_for(b.option.id)==0.0
+# Neither time gaps, other targets, nor unengaged options transfer evidence.
+c = competition()
+a = proposal(20, entity="stone")
+_, b = follow_on(22, "stone")
+assert c.register(a, active_goal_id=None, t_monde=20)
+assert c.register(b, active_goal_id=None, t_monde=22)
+assert not c.continue_engaged_memory(
+    prior_ref=a.option.id,next_ref=b.option.id,t_monde=22)
+
+
 c=competition()
 untried = proposal(10, entity="wood")
 assert c.register(untried,active_goal_id="goal-1",t_monde=10)
