@@ -17,3 +17,12 @@ The new unit scenarios include resources, water, creatures and an unknown type, 
 - Before scientific GO: pass CI, verify M11 cold recovery, inspect WAL for proposal, crossing, admitted action and physical destination arrival. Run matched 300- and 1000-step lives on untouched main and experimental commit. The independent scientific PR #311 must not be changed.
 
 **Current verdict: implementation experimental, end-to-end learning and survival NO-GO / INCONCLUSIVE.**
+
+## Audit remediation, active branch
+
+- Goal gate is no longer hardcoded to `drink`. Other active first-person goals may retrieve a location, but no innate link to the resource's physiological value is made.
+- A bounded retrieval API returns up to 3 spatial alternatives in natural I1. Every alternative must pass independent charged one-hop planning, local safety and normal Competition registration, with a separate cap from geographic novelty proposals.
+- Phase-0 options contradicted by later paid Phase-1 perception are withdrawn without crashing the life; each candidate retains its own reference and causal provenance.
+- Entity-neutral option invalidation and the configured intrinsic modulation scale are respected. TD learning signatures remain keyed by personally observed entity ID, and only normal applied-action learning can update them.
+- Deterministic owner tests now cover multiple offers, cold snapshot restore and local contradiction handling. End-to-end physical selection, resource efficacy attribution, UC/cycle frequencies and 300/1000-step paired survival are pending and do not justify a scientific GO.
+- The world presently ranks water/creature/shelter IDs by visible-set enumeration; stable physical identifiers for mutable entities need a separate correction to avoid apparent identity shifts. No claim of lifetime tracking across motion is made.
