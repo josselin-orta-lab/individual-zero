@@ -1,0 +1,73 @@
+name: I1 longlife learning-sleep scientific pilot
+on:
+  push:
+    branches: [science/i1-longlife-learning-sleep-20261018]
+    paths:
+      - 'tools/run_i1_longlife_science.py'
+      - 'tools/analyze_i1_longlife_science.py'
+      - '.github/workflows/i1-longlife-learning-sleep.yml'
+  workflow_dispatch:
+    inputs:
+      steps:
+        type: choice
+        options: ['300', '800', '1600']
+        default: '800'
+      variants:
+        type: choice
+        options: ['1', '5', '20', '30']
+        default: '5'
+permissions:
+  contents: read
+concurrency:
+  group: i1-longlife-${{ github.ref }}-${{ github.run_id }}
+  cancel-in-progress: false
+jobs:
+  longlife:
+    runs-on: ubuntu-latest
+    timeout-minutes: 115
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        world: [oasis, foraging, dry-valley, blocked-route]
+        weight: ['0.0', '0.1', '0.2', '0.65']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify source and dependencies
+        run: |
+          python -m pip install -e .
+          python scripts/check_engine_repository.py --json
+          python scripts/check_engine_contracts.py --json
+          python tools/run_i1_longlife_science.py --preset "${{ matrix.world }}" --validate-only
+      - name: Fresh mortal long-life births with paired world layouts
+        shell: bash
+        env:
+          PRESET: ${{ matrix.world }}
+          WEIGHT: ${{ matrix.weight }}
+          NVAR: ${{ github.event_name == 'workflow_dispatch' && inputs.variants || '1' }}
+          STEPS: ${{ github.event_name == 'workflow_dispatch' && inputs.steps || '300' }}
+        run: |
+          set -euo pipefail
+          for ((variant=1;variant<=NVAR;variant++)); do
+            seed=$((773000 + variant))
+            folder="reports/${PRESET}/weight-${WEIGHT}/variant-${variant}"
+            python tools/run_i1_longlife_science.py --preset "$PRESET" \
+              --seed "$seed" --world-variant "$variant" --steps "$STEPS" \
+              --lives 1 --custody wal --experimental-fatigue-weight "$WEIGHT" \
+              --observe-owner-digests --output-dir "$folder"
+            python tools/analyze_i1_longlife_science.py \
+              --input "$folder" --output "$folder/science-summary.json"
+          done
+      - name: Preserve evidence including failed experimental runs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-longlife-${{ matrix.world }}-${{ matrix.weight }}-${{ github.run_id }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
