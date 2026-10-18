@@ -294,3 +294,15 @@ la règle de sélection du maximum (pas du monde, identifiant) restent
 identiques ; les interventions invalidées sont ignorées. Aucun test
 supplémentaire ni campagne manuelle selon la consigne. Validation CI
 habituelle requise avant fusion, sans GO scientifique revendiqué.
+
+## PR #272 : classification unique des observations hydriques
+
+La revue hydrique ne matérialise plus une liste de toutes les observations
+candidates avant de la filtrer deux fois. L'unique parcours sépare
+directement les interventions positives et les contrôles négatifs ;
+les deux groupes sont ensuite triés lexicalement comme auparavant.
+Les observations de modalités mixtes restent exclues de chaque groupe.
+La provenance vécue, l'ordre d'admission et les conditions physiques
+ne sont pas modifiés. Aucun test ajouté ni lancement manuel selon la
+consigne. Source générée limitée à un bloc exact, CI habituelle avant
+fusion. Aucun GO scientifique.

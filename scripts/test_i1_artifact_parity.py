@@ -331,6 +331,24 @@ def _reference_approved_physical_prior_buckets(before: bytes) -> bytes:
     return text.encode("utf-8")
 
 
+def _reference_deferred_single_scan(before: bytes) -> bytes:
+    """Reapply precisely the reviewed #271 source transformation."""
+    old = "            successful = [\n                item for item in positive_by_ref.get(ref, ())\n                if item.observed_step > boundary\n            ]\n            if len({item.context_signature for item in successful}) < self.config.n2:\n                continue\n            current = published[ref]\n            # The previous sorted(...)[-1] chose the greatest observed\n            # (world-step, identifier) pair. Select the same witness without\n            # sorting every historical success of this contingency.\n            witness = max(\n                successful, key=lambda item: (item.observed_step, item.identifier)\n            )"
+    new = "            # Accumulate independent contexts and the same maximal physical\n            # witness in one scan, without retaining another history list.\n            contexts: set[str] = set()\n            witness = None\n            for item in positive_by_ref.get(ref, ()):\n                if item.observed_step <= boundary:\n                    continue\n                contexts.add(item.context_signature)\n                if witness is None or (\n                    item.observed_step, item.identifier\n                ) > (witness.observed_step, witness.identifier):\n                    witness = item\n            if len(contexts) < self.config.n2:\n                continue\n            current = published[ref]"
+    value = before.decode("utf-8")
+    if value.count(old) != 1:
+        raise ValueError("reviewed deferred selection drift")
+    return value.replace(old, new, 1).encode("utf-8")
+
+
+def _approved_hydration_single_classification(before: bytes, after: bytes) -> bool:
+    """Allow only stream classification before existing lexical sorts."""
+    old = "        observed = [\n            value for value in observations.values()\n            if value.identifier in self._hydration_observation_witnesses\n            and value.contingency_ref == contingency.ref\n            and value.predicate == contingency.predicate\n            and value.application_context == contingency.context_signature\n            and value.observation_context == \"water_source\"\n            and value.controlled_variables\n        ]\n        treated = sorted(\n            (value for value in observed if value.cause_present\n             and value.effect_present),\n            key=lambda value: value.identifier,\n        )\n        controls = sorted(\n            (value for value in observed if not value.cause_present\n             and not value.effect_present),\n            key=lambda value: value.identifier,\n        )"
+    new = "        treated = []\n        controls = []\n        for value in observations.values():\n            if (\n                value.identifier not in self._hydration_observation_witnesses\n                or value.contingency_ref != contingency.ref\n                or value.predicate != contingency.predicate\n                or value.application_context != contingency.context_signature\n                or value.observation_context != \"water_source\"\n                or not value.controlled_variables\n            ):\n                continue\n            if value.cause_present and value.effect_present:\n                treated.append(value)\n            elif not value.cause_present and not value.effect_present:\n                controls.append(value)\n        treated.sort(key=lambda value: value.identifier)\n        controls.sort(key=lambda value: value.identifier)"
+    original, candidate = before.decode("utf-8"), after.decode("utf-8")
+    return original.count(old) == 1 and candidate.count(new) == 1 and original.replace(old, new, 1) == candidate
+
+
 def _approved_deferred_single_scan(before: bytes, after: bytes) -> bool:
     """Allow only single-pass positive history witness selection."""
     old = "            successful = [\n                item for item in positive_by_ref.get(ref, ())\n                if item.observed_step > boundary\n            ]\n            if len({item.context_signature for item in successful}) < self.config.n2:\n                continue\n            current = published[ref]\n            # The previous sorted(...)[-1] chose the greatest observed\n            # (world-step, identifier) pair. Select the same witness without\n            # sorting every historical success of this contingency.\n            witness = max(\n                successful, key=lambda item: (item.observed_step, item.identifier)\n            )"
@@ -556,8 +574,9 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/causal_model.py"
-                    and _approved_deferred_single_scan(
-                        _reference_approved_physical_prior_buckets(
+                    and _approved_hydration_single_classification(
+                        _reference_deferred_single_scan(
+                            _reference_approved_physical_prior_buckets(
                             _reference_approved_revision_contexts(
                             _reference_approved_stream_noncanonical_pairs(
                                 _reference_lived_review_dispatch(
@@ -582,6 +601,7 @@ def verify(reference_root: Path) -> None:
                                     )
                                 )
                             )
+                        )
                         )
                         ),
                         (new_root / rel).read_bytes()
