@@ -4,6 +4,7 @@ on:
     branches: [science/i1-post314-natural-population-20261018]
     paths:
       - 'tools/run_i1_post314_population.py'
+      - 'tools/analyze_i1_post314_population.py'
       - 'tests/i1/test_i1_post314_population.py'
       - '.github/workflows/i1-post314-lowcuriosity.yml'
   workflow_dispatch:
@@ -43,5 +44,36 @@ jobs:
         with:
           name: i1-lowcuriosity-${{ matrix.candidate }}-${{ matrix.world }}-${{ matrix.seed }}
           path: reports/
+          if-no-files-found: warn
+          retention-days: 30
+  rank:
+    needs: paired
+    if: ${{ needs.paired.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: i1-lowcuriosity-*
+          path: paired/
+      - name: Validate all 32 paired mortal reports, physical and memory outcomes
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          mkdir -p ranking
+          python tools/analyze_i1_post314_population.py \
+            --study lowcuriosity --root paired --sha "$SOURCE_SHA" \
+            --out ranking/lowcuriosity-scoreboard.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-lowcuriosity-scoreboard
+          path: ranking/
           if-no-files-found: warn
           retention-days: 30
