@@ -731,13 +731,13 @@ def _reference_agency_index(before: bytes) -> bytes:
 
 
 def _approved_i1_goal_sleep_entry(before: bytes, after: bytes) -> bool:
-    """Allow only two exact I1 sleep entry clarifications."""
+    """Allow only I1 sleep motive admission change and its exact doc update."""
     source, candidate = before.decode("utf-8"), after.decode("utf-8")
     changes = (
-        ("Only an *applied* Action Control-admitted ordinary Competition sleep option\\ncan arm entry on the next world step.",
-         "Only an *applied* Action Control-admitted ordinary Competition sleep option\\ncan arm entry on the next world step. In I1, the same physical dormir may be\\nmotivated by cognitive sleep pressure or a legitimate active bodily goal."),
-        ('                or motive_type != "sleep_pressure"',
-         '                or motive_type not in ("sleep_pressure", "active_goal")'),
+        ("Only an *applied* Action Control-admitted ordinary Competition sleep option\ncan arm entry on the next world step.",
+         "Only an *applied* Action Control-admitted ordinary Competition sleep option\ncan arm entry on the next world step. In I1, the same physical dormir may be\nmotivated by cognitive sleep pressure or a legitimate active bodily goal."),
+        ("                or motive_type != \"sleep_pressure\"",
+         "                or motive_type not in (\"sleep_pressure\", \"active_goal\")"),
     )
     for old, new in changes:
         if source.count(old) != 1 or candidate.count(new) != 1:
@@ -778,7 +778,11 @@ def verify(reference_root: Path) -> None:
             rel for rel in old.keys() & new.keys()
             if old[rel] != new[rel] and not (
                 False  # Stage10 is handled by the stacked exact approval below
-                or (rel == "i1/modules/sleep_session.py"\n                    and _approved_i1_goal_sleep_entry(\n                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()\n                    ))\n                or (rel == "i1lab/i1_natural_sleep.py"
+                or (rel == "i1/modules/sleep_session.py"
+                    and _approved_i1_goal_sleep_entry(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
+                or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_i1_fcog_020_birth(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
