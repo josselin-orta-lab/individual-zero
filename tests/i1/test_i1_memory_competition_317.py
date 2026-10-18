@@ -27,6 +27,7 @@ from dataclasses import replace
 from math import exp
 from types import SimpleNamespace
 from i1.contracts import EvaluationOption, OptionProposal
+from i1.interfaces import PrimitiveCommand
 from i1.modules.competition import Competition, CompetitionConfig, OptionEvidenceInput
 from i1.modules.spatial_memory import SpatialReturnTarget
 from i1.modules.geographic_planning import propose_spatial_return
