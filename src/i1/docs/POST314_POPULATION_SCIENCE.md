@@ -10,7 +10,7 @@ Born Stage4–12 capability audit must pass before any step and verifies spatial
 
 ## Software investigation
 
-Audit suspect 1 (confirmed): stale `tools/audit_i1_birth_capabilities.py::EXPECTED` still expected geographic route search and survey disabled despite merged main #315 activating them. Changed only this lab contract to the real corrected natural birth; tests preserve fail-closed activation expectations.
+Audit suspect 1 (confirmed): stale `the `EXPECTED` table in `tools/audit_i1_birth_capabilities.py`` still expected geographic route search and survey disabled despite merged main #315 activating them. Changed only this lab contract to the real corrected natural birth; tests preserve fail-closed activation expectations.
 
 Risk 2 (to verify with WALs): options based on remembered sites may be registered but never cross Competition, or be outcompeted by gratuitous exploration. The existing `tools/audit_i1_spatial_navigation_314.py` distinguishes mere sighting, recall, proposed option, registered, crossed, physically applied and actual destination arrival. No answer may infer successful learning from a mere recall.
 
