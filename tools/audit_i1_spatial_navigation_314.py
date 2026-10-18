@@ -99,6 +99,7 @@ def classify_events(events):
 
     stages = Counter()
     examples = []
+    physically_certified = []
     seen_attempts = set()
     for (attempt, option_ref), (p_idx, proposal) in sorted(
         proposals.items(), key=lambda x: x[1][0]
@@ -181,6 +182,7 @@ def classify_events(events):
         )
         if witnessed:
             stages["applied_with_prior_personal_sighting"] += 1
+            physically_certified.append((attempt, option_ref, p_idx, proposal, after))
             if after == target_position:
                 stages["arrived_at_previously_seen_site"] += 1
         else:
@@ -207,6 +209,12 @@ def classify_events(events):
             stages["applied_with_prior_personal_sighting"] > 0),
         "proven_return_arrival": (
             stages["arrived_at_previously_seen_site"] > 0),
+        # This is a passive interpretation of exactly the SAME WAL events
+        # already cryptographically sealed by audit(). It makes no motor,
+        # learning or hidden-world inference and never weakens the #314 gate.
+        "memory_causality_317": classify_memory_causality_317(
+            events, proposals, physically_certified,
+        ),
         "causal_learning_proven": False,
         "survival_improvement_proven": False,
         "examples": examples,
@@ -215,6 +223,174 @@ def classify_events(events):
             "Action Control, command, physical transition and committed closure "
             "events plus an earlier personal sighting. This does not establish "
             "learned resource usefulness, causal attribution, or survival gain."
+        ),
+    }
+
+
+def classify_memory_causality_317(events, proposals, physically_certified):
+    """Separate remote, locally visible and genuinely learned memory evidence.
+
+    \`events\` must be from the same sealed WAL passed through the original
+    #314 audit. This function is also testable on synthetic events, which
+    are NOT in themselves evidence of physical behaviour or learned utility.
+    """
+    from collections import defaultdict
+
+    captures = defaultdict(list)
+    assessments = defaultdict(list)
+    learned_updates = defaultdict(list)
+    crossing_traces = defaultdict(list)
+    for idx, row in enumerate(events):
+        t = row.get("t_monde")
+        attempt = row.get("attempt_ref")
+        data = _data(row)
+        if type(t) is not int or not isinstance(attempt, str):
+            continue
+        key = (t, attempt)
+        kind = row.get("kind")
+        if kind == "perceptual_capture":
+            captures[key].append((idx, data))
+        elif kind == "stage8_option_evaluation":
+            opt = data.get("option_ref")
+            if isinstance(opt, str) and opt.startswith("option:place-memory:"):
+                assessments[(key, opt)].append((idx, data))
+        elif kind == "td_update_published":
+            signatures = data.get("updated_signatures", ())
+            if isinstance(signatures, list):
+                for signature in signatures:
+                    if isinstance(signature, str):
+                        learned_updates[signature].append(idx)
+        elif kind == "competition_cycle":
+            for trace in data.get("traces", ()):
+                if isinstance(trace, dict):
+                    ref = trace.get("option_ref")
+                    if isinstance(ref, str) and ref.startswith("option:place-memory:"):
+                        crossing_traces[(key, ref)].append((idx, trace))
+
+    def capture_before(attempt, proposal_index):
+        prior = [d for idx, d in captures.get(attempt, ())
+                 if idx < proposal_index]
+        if len(prior) != 1:
+            return None
+        capture = prior[0]
+        if capture.get("capture_t_monde") != attempt[0]:
+            return None
+        position = _position(capture.get("position"))
+        adjacent = capture.get("agency_visible_adjacent")
+        if (position is None or not isinstance(adjacent, list)
+                or len(adjacent) > 4):
+            return None
+        coords = {position}
+        for cell in adjacent:
+            if not isinstance(cell, dict):
+                return None
+            x, y = cell.get("x"), cell.get("y")
+            if type(x) is not int or type(y) is not int:
+                return None
+            coords.add((x, y))
+        return (position, coords)
+
+    def prior_genuine_td(option_ref, attempt, proposal_index):
+        evaluated = assessments.get((attempt, option_ref), ())
+        for idx, data in evaluated:
+            if idx <= proposal_index or data.get("status") != "evaluated":
+                continue
+            if data.get("learned_value_status") != "learned":
+                continue
+            if data.get("learned_value") is None:
+                continue
+            signature = data.get("learning_signature")
+            if not isinstance(signature, str):
+                continue
+            if any(update_idx < idx for update_idx in learned_updates.get(signature, ())):
+                return True
+        return False
+
+    evaluated_proposals = 0
+    remote_candidates = 0
+    unseen_candidates = 0
+    unseen_ratio = None
+    learned_assessments_with_td = 0
+    for (attempt, option_ref), (idx, proposal) in proposals.items():
+        capture = capture_before(attempt, idx)
+        target = _position(proposal.get("target"))
+        next_hop = _position(proposal.get("next"))
+        if capture is not None and target is not None and next_hop is not None:
+            evaluated_proposals += 1
+            if target not in capture[1]:
+                unseen_candidates += 1
+                if target != next_hop:
+                    remote_candidates += 1
+                for _, trace in crossing_traces.get((attempt, option_ref), ()):
+                    ratio = None
+                    try:
+                        threshold = trace.get("threshold")
+                        accumulator = trace.get("accumulator_after")
+                        if isinstance(threshold, dict) and set(threshold) == {"$f64"}:
+                            threshold = float.fromhex(threshold["$f64"])
+                        if isinstance(accumulator, dict) and set(accumulator) == {"$f64"}:
+                            accumulator = float.fromhex(accumulator["$f64"])
+                        if (type(threshold) in (int, float)
+                                and type(accumulator) in (int, float)
+                                and threshold > 0 and accumulator >= 0):
+                            ratio = accumulator / threshold
+                    except (ValueError, TypeError):
+                        pass
+                    if ratio is not None:
+                        unseen_ratio = (ratio if unseen_ratio is None
+                                        else max(unseen_ratio, ratio))
+        learned_assessments_with_td += int(
+            prior_genuine_td(option_ref, attempt, idx)
+        )
+
+    confirmed = []
+    remote_memory_actions = 0
+    arrival_from_outside_capture = 0
+    actions_after_td = 0
+    for attempt, option_ref, idx, proposal, after in physically_certified:
+        capture = capture_before(attempt, idx)
+        target = _position(proposal.get("target"))
+        next_hop = _position(proposal.get("next"))
+        learned = prior_genuine_td(option_ref, attempt, idx)
+        if learned:
+            actions_after_td += 1
+        if capture is not None and target is not None and next_hop is not None:
+            unseen = target not in capture[1]
+            remote = unseen and next_hop != target
+            if remote:
+                remote_memory_actions += 1
+            if unseen and after == target:
+                arrival_from_outside_capture += 1
+            if len(confirmed) < 16:
+                confirmed.append({
+                    "t_monde": attempt[0],
+                    "option_ref": option_ref,
+                    "entity_id": proposal.get("entity_id"),
+                    "origin": list(capture[0]),
+                    "target": list(target),
+                    "next_hop": list(next_hop),
+                    "target_outside_perception": unseen,
+                    "unseen_multihop_first_step": remote,
+                    "arrived_on_this_step": after == target,
+                    "previous_td_used_in_evaluation": learned,
+                })
+
+    return {
+        "schema": "i1-memory-causality-317/v1",
+        "proposals_with_verified_current_capture": evaluated_proposals,
+        "proposals_to_unseen_sites": unseen_candidates,
+        "proposed_unseen_multihop_options": remote_candidates,
+        "max_unseen_accumulation_over_threshold": unseen_ratio,
+        "assessments_with_prior_published_td": learned_assessments_with_td,
+        "physically_applied_unseen_multihop_first_hops": remote_memory_actions,
+        "physically_arrived_from_outside_current_perception": arrival_from_outside_capture,
+        "physically_applied_memory_actions_using_prior_td": actions_after_td,
+        "examples": confirmed,
+        "interpretation": (
+            "Remote proposal is not movement. Only prior #314-certified physical "
+            "action with an independently preceding first-person capture counts. "
+            "An earlier published TD update and a later learned assessment "
+            "prove value re-use, not the causal usefulness of an entity."
         ),
     }
 
