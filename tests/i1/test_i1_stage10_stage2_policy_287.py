@@ -38,7 +38,7 @@ journal=HashChainedJournal()
 journal.append(event_id="bad",causal_event={"kind":"auto_segment_commit",
     "emitter":"journal","t_monde":1,"attempt_ref":"a",
     "event_refs":[],"filter_version":"unknown-policy"})
-views=JournalViews(journal)
+views=JournalViews(journal=journal)
 try:
     views.autobiographical(policies={STAGE2_AUTOBIOGRAPHICAL_POLICY.version:STAGE2_AUTOBIOGRAPHICAL_POLICY})
 except ValueError as error:
