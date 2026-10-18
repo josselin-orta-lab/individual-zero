@@ -725,7 +725,7 @@ class Stage11Runtime(Stage9Runtime):
         previous_plan = hooks[1]["planning"]
 
         def plan_only_informational_targets(ctx):
-            nonlocal frozen_geo_targets, frozen_transit_target, excluded_geo
+            nonlocal frozen_geo_targets, frozen_transit_target, frozen_water_target, excluded_geo
             self._stage11_geographic_proposals_this_cycle = ()
             self._stage11_frozen_water_target = None
             emitted = self._causal_test_targets_this_cycle
