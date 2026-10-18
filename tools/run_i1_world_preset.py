@@ -255,6 +255,9 @@ def _wal_life(*, birth, params, life_id, path, steps, observe_owner_digests=Fals
         raise RuntimeError("durable journal differs from live journal")
     return {
         "lifecycle": life.stage3.substrate.mortal_status.value,
+        "effective_sleep_fatigue_weight": life._stage10_config.sleep.fatigue_weight,
+        "effective_sleep_fatigue_gain": life._stage10_config.sleep.fatigue_gain,
+        "effective_sleep_consolidation_weight": life._stage10_config.sleep.consolidation_weight,
         "steps": trajectory,
         "journal_head": life.journal.head_hash,
         "durable_entries": audit["verified_entries"],
@@ -301,7 +304,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
 
 
 def execute(*, preset_name, seed, steps, lives, custody, output_dir,
-            observe_owner_digests=False):
+            observe_owner_digests=False, experimental_fatigue_weight=None):
     if (type(seed) is not int or not 0 <= seed <= 2**32 - 1
             or type(steps) is not int or not 1 <= steps <= MAX_STEPS
             or type(lives) is not int or not 1 <= lives <= MAX_LIVES
@@ -309,6 +312,11 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
         raise ValueError("out-of-bounds seed, steps, lives or custody")
     if observe_owner_digests and custody != "wal":
         raise ValueError("owner observer is only implemented for immutable WAL")
+    if (experimental_fatigue_weight is not None
+            and (type(experimental_fatigue_weight) is not float
+                 or experimental_fatigue_weight not in (0.0, 0.1, 0.2, 0.3)
+                 or custody != "wal")):
+        raise ValueError("isolated scientific fatigue arms require WAL and exact registered weights")
     preset, digest = load_preset(preset_name)
     output_dir = Path(output_dir).resolve()
     if output_dir.exists():
@@ -323,7 +331,8 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
         "run": {"seed": seed, "requested_steps": steps,
                 "requested_lives": lives, "custody": custody,
                 "git_head": None,
-                "observe_owner_digests": bool(observe_owner_digests)},
+                "observe_owner_digests": bool(observe_owner_digests),
+                "experimental_fatigue_weight": experimental_fatigue_weight},
         "scientific_gate": "NOT_EVALUATED",
         "old_cohorts_used_as_oracles": False,
         "lives": [],
@@ -344,6 +353,12 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
             generate(build)
             sys.path.insert(0, str(build))
             from i1lab.i1_birth import birth_i1, birth_i1_m11
+            if experimental_fatigue_weight is not None:
+                # Research-only in-memory override, before any birth and in
+                # a separate process per arm. Never modify canonical source.
+                import i1lab.i1_natural_sleep as sleep_policy
+                sleep_policy.FATIGUE_WEIGHT = experimental_fatigue_weight
+                sleep_policy.POLICY += "-experimental-wf-" + str(experimental_fatigue_weight).replace(".", "p")
 
             params, initial_local = _birth_parameters(preset)
             report["environment"] = {
@@ -398,6 +413,9 @@ def main():
                         help="maximum steps per mortal life, default preset recommendation")
     parser.add_argument("--lives", type=int, default=1)
     parser.add_argument("--custody", choices=("wal", "m11"), default="wal")
+    parser.add_argument("--experimental-fatigue-weight", type=float,
+                        choices=(0.0, 0.1, 0.2, 0.3), default=None,
+                        help="research-only WAL arm; birth-only in-memory weight override")
     parser.add_argument(
         "--observe-owner-digests", action="store_true",
         help="operator-only before/after owner state hashes, WAL only; no motor feedback",
@@ -434,6 +452,7 @@ def main():
             lives=args.lives, custody=args.custody,
             output_dir=args.output_dir,
             observe_owner_digests=args.observe_owner_digests,
+            experimental_fatigue_weight=args.experimental_fatigue_weight,
         )
         print(json.dumps({
             "status": report["status"],
