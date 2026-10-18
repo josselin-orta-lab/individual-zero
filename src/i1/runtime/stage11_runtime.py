@@ -766,11 +766,11 @@ class Stage11Runtime(Stage9Runtime):
                     world_step=row["world_step"],
                     free_neighbors=tuple(tuple(p) for p in row["free_neighbors"]),
                 ) for row in frozen_geography["surveys"])
-                from i1.modules.place_memory_navigation import WaterPlace
+                from i1.modules.spatial_memory import PlaceMemory
                 remembered = tuple(PlaceMemory(**{
                     **row, "position": tuple(row["position"]),
                     "observed_from": tuple(row["observed_from"]),
-                }) for row in frozen_geography.get("place_memories", ()))
+                }) for row in frozen_geography.get("entity_places", ()))
                 remembered = tuple(
                     site for site in remembered if site.observer_id == getattr(self, "_i1_personal_id", self.individual_id)
                 )
