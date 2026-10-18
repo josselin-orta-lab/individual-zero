@@ -47,12 +47,51 @@ _ABLATION_SETTINGS = frozenset({
 })
 
 
+# I1-only birth calibration. Historical values remain opt-in for matched
+# laboratory counterfactuals; birth_i1 never exposes the research selector.
+_I1_GOAL_POLICIES = {
+    "natural-004": (0.04, 0.35),
+    "historical-010": (0.10, 0.90),
+}
+_GOAL_POLICY_VERSION = "i1-natural-goal-pressure-v1"
+
+
+def _configure_birth_goal_policy(config, policy):
+    """Freeze one GoalManager owner policy in the actual Stage11 Stage4 tree."""
+    if policy not in _I1_GOAL_POLICIES:
+        raise ValueError("unregistered I1 natural goal arbitration policy")
+    hysteresis, critical = _I1_GOAL_POLICIES[policy]
+    s9 = config.stage9
+    s8 = s9.stage8
+    s7 = s8.stage7
+    s6 = s7.stage6
+    s4 = s6.stage4
+    tag = "+" + _GOAL_POLICY_VERSION + ":" + policy
+    goals = replace(
+        s4.goals, version=s4.goals.version + tag,
+        replacement_hysteresis=hysteresis, critical_pressure=critical,
+    )
+    s4 = replace(s4, version=s4.version + tag, goals=goals)
+    s6 = replace(s6, version=s6.version + tag, stage4=s4)
+    s7 = replace(s7, version=s7.version + tag, stage6=s6)
+    s8 = replace(s8, version=s8.version + tag, stage7=s7)
+    s9 = replace(s9, version=s9.version + tag, stage8=s8)
+    configured = replace(config, version=config.version + tag, stage9=s9)
+    configured.validate()
+    return configured
+
+
 class I1Runtime(I1WaterPrudentRuntime):
     """Default I1 actor. H1/H2 are not part of its inheritance graph."""
 
     individual_id = "i1-natural-default-v1"
 
     def __init__(self, **kwargs):
+        # This selector is research-only. The canonical birth_i1 entry point
+        # always uses natural-004 and cannot override it.
+        goal_policy = kwargs.pop("i1_goal_policy", "natural-004")
+        if goal_policy not in _I1_GOAL_POLICIES:
+            raise ValueError("unregistered I1 natural goal arbitration policy")
         # Version the prospective I1 configuration instead of modifying the
         # canonical reference fixture or copying A2.38 researcher switches.
         cfg = kwargs.get("stage11_config")
@@ -125,6 +164,9 @@ class I1Runtime(I1WaterPrudentRuntime):
         )
         life_id = kwargs.get("birth_life_id")
         cfg = configure_birth_temperament(cfg, life_id=life_id)
+        # The immutable goal subtree is installed before any owner or body is
+        # created. No action, learned value, world fact or survival rule changes.
+        cfg = _configure_birth_goal_policy(cfg, goal_policy)
         kwargs["stage11_config"] = cfg
         # Both integrated stages must agree on the identical frozen Stage9
         # substrate after temperament projection, before creating the body.
@@ -132,7 +174,8 @@ class I1Runtime(I1WaterPrudentRuntime):
         if sleep_cfg is None:
             raise ValueError("natural I1 birth requires Stage10 configuration")
         kwargs["stage10_config"] = replace(
-            sleep_cfg, version=sleep_cfg.version + "+i1-birth-temperament-v1",
+            sleep_cfg, version=(sleep_cfg.version + "+i1-birth-temperament-v1"
+                                + "+" + _GOAL_POLICY_VERSION + ":" + goal_policy),
             stage9=cfg.stage9,
         )
         # First-person proximal action agency, never a claim that a distal
