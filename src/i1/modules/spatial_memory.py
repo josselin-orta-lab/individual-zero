@@ -208,10 +208,22 @@ def find_spatial_returns(
             if nxt in visits and nxt in known and nxt not in seen:
                 seen.add(nxt)
                 queue.append((nxt, candidate_path))
-    return tuple(sorted(options, key=lambda target: (
+    # Competing *entities*, not three different ways to the same entity.
+    # Otherwise a single well-connected place can monopolize the small
+    # deliberation capacity before Competition sees another known site.
+    selected = []
+    already_seen_entities = set()
+    for target in sorted(options, key=lambda target: (
         -target.confidence, len(target.visited_path),
         target.entity_type, target.entity_id, target.direction,
-    ))[:max_candidates])
+    )):
+        if target.entity_id in already_seen_entities:
+            continue
+        already_seen_entities.add(target.entity_id)
+        selected.append(target)
+        if len(selected) >= max_candidates:
+            break
+    return tuple(selected)
 
 
 def find_spatial_return(
