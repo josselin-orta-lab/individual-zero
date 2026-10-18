@@ -4,6 +4,7 @@ on:
     branches: [science/i1-post314-natural-population-20261018]
     paths:
       - 'tools/run_i1_post314_population.py'
+      - 'tools/analyze_i1_post314_population.py'
       - 'tools/audit_i1_birth_capabilities.py'
       - 'tests/i1/test_i1_post314_population.py'
       - '.github/workflows/i1-post314-population.yml'
@@ -46,3 +47,33 @@ jobs:
           path: reports/
           if-no-files-found: warn
           retention-days: 30
+  rank:
+    needs: paired-lives
+    if: ${{ needs.paired-lives.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: i1-post314-*
+          path: paired/
+      - name: Require all 36 real post-314 lives
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          mkdir -p ranking
+          python tools/analyze_i1_post314_population.py \
+            --root paired --sha "$SOURCE_SHA" --out ranking/scoreboard.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-post314-population-scoreboard
+          path: ranking/
+          retention-days: 30
+          if-no-files-found: warn
