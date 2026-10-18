@@ -774,6 +774,37 @@ def _approved_natural_goal_birth(before: bytes, after: bytes) -> bool:
     return candidate == source
 
 
+def _approved_natural_toxic_berry_birth(before: bytes, after: bytes) -> bool:
+    """Accept only the reviewed natural-I1 berry delta, no broader parity skip."""
+    source, candidate = before.decode("utf-8"), after.decode("utf-8")
+    addition = '''TOXIC_BERRY_POLICY = "i1-natural-toxic-berry-integrity-minus-10-v1"
+DEFAULT_TOXIC_BERRY_INTEGRITY_DELTA = -10.0
+'''
+    if candidate.count(addition) != 1:
+        return False
+    candidate = candidate.replace(addition, "", 1)
+    marker = '''    upgraded.validate()
+    return upgraded'''
+    patch = '''    # Natural I1 physics only. Keep the historical software-reference
+    # fixture untouched, including its original -100 toxic-berry effect.
+    # The fruit is still unknown to the newborn; no behavior is imposed.
+    from i1lab.world import BerryEffect
+    effects = dict(upgraded.berry_effects)
+    toxic = effects["berry_b"]
+    if toxic.integrity_delta == -100.0:
+        effects["berry_b"] = BerryEffect(
+            toxic.food_gain, DEFAULT_TOXIC_BERRY_INTEGRITY_DELTA)
+        upgraded = replace(
+            upgraded, version=upgraded.version + "+" + TOXIC_BERRY_POLICY,
+            berry_effects=effects,
+        )
+'''
+    if candidate.count(patch + marker) != 1:
+        return False
+    candidate = candidate.replace(patch + marker, marker, 1)
+    return candidate == source
+
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -789,6 +820,10 @@ def verify(reference_root: Path) -> None:
             rel for rel in old.keys() & new.keys()
             if old[rel] != new[rel] and not (
                 False  # Stage10 is handled by the stacked exact approval below
+                or (rel == "i1lab/i1_natural_sleep.py"
+                    and _approved_natural_toxic_berry_birth(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
                 or (rel == "i1lab/i1_natural_runtime.py"
                     and _approved_natural_goal_birth(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
