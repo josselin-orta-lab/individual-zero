@@ -371,6 +371,24 @@ def _reference_food_empty_arm(before: bytes) -> bytes:
     return content.replace(old, new, 1).encode("utf-8")
 
 
+def _reference_agency_projection_stream(before: bytes) -> bytes:
+    """Rebuild the reviewed #275 source optimization."""
+    old = "        agency_projection_refs = [\n            event[\"event_id\"] for event in closed_events\n            if event[\"event_id\"] in agency_source_refs\n        ]\n        if len(agency_projection_refs) != len(set(agency_projection_refs)):\n            raise ValueError(\"duplicate closed Memory agency event projection\")"
+    new = "        # Detect projection aliases without allocating a second list\n        # and then a second set of the same closed Memory identifiers.\n        seen_agency_projections: set[str] = set()\n        for event in closed_events:\n            ref = event[\"event_id\"]\n            if ref not in agency_source_refs:\n                continue\n            if ref in seen_agency_projections:\n                raise ValueError(\"duplicate closed Memory agency event projection\")\n            seen_agency_projections.add(ref)"
+    data = before.decode("utf-8")
+    if data.count(old) != 1:
+        raise ValueError("agency projection reference drift")
+    return data.replace(old, new, 1).encode("utf-8")
+
+
+def _approved_numeric_witness_no_concat(before: bytes, after: bytes) -> bool:
+    """Admit only non-materializing ordered witness duplicate validation."""
+    old = "                    for old in (\n                        *self._numeric_witnesses.values(),\n                        *self._pending_numeric_witnesses,\n                    )"
+    new = "                    for rows in (\n                        self._numeric_witnesses.values(),\n                        self._pending_numeric_witnesses,\n                    )\n                    for old in rows"
+    original, candidate = before.decode("utf-8"), after.decode("utf-8")
+    return original.count(old) == 1 and candidate.count(new) == 1 and original.replace(old, new, 1) == candidate
+
+
 def _approved_stream_agency_projection_check(before: bytes, after: bytes) -> bool:
     """Only permit a one-pass alias detector for closed Memory IDs."""
     old = "        agency_projection_refs = [\n            event[\"event_id\"] for event in closed_events\n            if event[\"event_id\"] in agency_source_refs\n        ]\n        if len(agency_projection_refs) != len(set(agency_projection_refs)):\n            raise ValueError(\"duplicate closed Memory agency event projection\")"
@@ -628,25 +646,27 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/causal_model.py"
-                    and _approved_stream_agency_projection_check(
-                        _reference_food_empty_arm(
-                            _reference_hydration_empty_arm(
-                                _reference_hydration_classification(
-                                    _reference_deferred_single_scan(
-                                        _reference_approved_physical_prior_buckets(
-                                            _reference_approved_revision_contexts(
-                                                _reference_approved_stream_noncanonical_pairs(
-                                                    _reference_lived_review_dispatch(
-                                                        _reference_approved_confirmed_count(
-                                                            _reference_approved_physical_alias(
-                                                                _reference_approved_active_context_cache(
-                                                                    _reference_hydration_control_lookup(
-                                                                        _reference_food_control_sort(
-                                                                            _reference_causal_minimum(
-                                                                                _reference_approved_numeric_index(
-                                                                                    _reference_numeric_publication(
-                                                                                        _reference_agency_index(
-                                                                                            (old_root / rel).read_bytes()
+                    and _approved_numeric_witness_no_concat(
+                        _reference_agency_projection_stream(
+                            _reference_food_empty_arm(
+                                _reference_hydration_empty_arm(
+                                    _reference_hydration_classification(
+                                        _reference_deferred_single_scan(
+                                            _reference_approved_physical_prior_buckets(
+                                                _reference_approved_revision_contexts(
+                                                    _reference_approved_stream_noncanonical_pairs(
+                                                        _reference_lived_review_dispatch(
+                                                            _reference_approved_confirmed_count(
+                                                                _reference_approved_physical_alias(
+                                                                    _reference_approved_active_context_cache(
+                                                                        _reference_hydration_control_lookup(
+                                                                            _reference_food_control_sort(
+                                                                                _reference_causal_minimum(
+                                                                                    _reference_approved_numeric_index(
+                                                                                        _reference_numeric_publication(
+                                                                                            _reference_agency_index(
+                                                                                                (old_root / rel).read_bytes()
+                                                                                            )
                                                                                         )
                                                                                     )
                                                                                 )
