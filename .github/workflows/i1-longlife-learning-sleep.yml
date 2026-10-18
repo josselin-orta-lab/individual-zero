@@ -5,6 +5,7 @@ on:
     paths:
       - 'tools/run_i1_longlife_science.py'
       - 'tools/analyze_i1_longlife_science.py'
+      - 'src/i1/lab/world_presets/longlife-garden.json'
       - '.github/workflows/i1-longlife-learning-sleep.yml'
   workflow_dispatch:
     inputs:
@@ -29,7 +30,7 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        world: [oasis, foraging, dry-valley, blocked-route]
+        world: [oasis, foraging, dry-valley, blocked-route, longlife-garden]
         weight: ['0.0', '0.1', '0.2', '0.65']
     steps:
       - uses: actions/checkout@v4
