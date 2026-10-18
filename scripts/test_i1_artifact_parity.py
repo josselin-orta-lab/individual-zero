@@ -315,6 +315,30 @@ def _reference_approved_revision_contexts(before: bytes) -> bytes:
     return source.encode("utf-8")
 
 
+def _reference_approved_physical_prior_buckets(before: bytes) -> bytes:
+    """Rebuild the exact reviewed #270 optimization."""
+    old_a = "            prior_uses = tuple(chain(\n                prior_by_physical.get(trial.observation_ref, ()),\n                prior_by_comparator.get(\n                    (trial.contingency_ref, trial.comparator_ref), ()\n                ),\n                prior_by_emitted.get(\n                    (trial.contingency_ref, trial.emitted_step), ()\n                ),\n                prior_by_observed.get(\n                    (trial.contingency_ref, trial.observed_step), ()\n                ),\n            ))"
+    new_a = "            # Keep the four existing buckets by reference, not a tuple\n            # materializing their concatenation (which may repeat a trial).\n            prior_use_buckets = (\n                prior_by_physical.get(trial.observation_ref, ()),\n                prior_by_comparator.get(\n                    (trial.contingency_ref, trial.comparator_ref), ()\n                ),\n                prior_by_emitted.get(\n                    (trial.contingency_ref, trial.emitted_step), ()\n                ),\n                prior_by_observed.get(\n                    (trial.contingency_ref, trial.observed_step), ()\n                ),\n            )"
+    old_b = "                for other in prior_uses\n            ):"
+    new_b = "                for bucket in prior_use_buckets\n                for other in bucket\n            ):"
+    old_c = "            if key in credits or prior_uses:\n                continue"
+    new_c = "            if key in credits or any(prior_use_buckets):\n                continue"
+    text = before.decode("utf-8")
+    for old, new in ((old_a,new_a), (old_b,new_b), (old_c,new_c)):
+        if text.count(old) != 1:
+            raise ValueError("prior intervention source drift")
+        text = text.replace(old, new, 1)
+    return text.encode("utf-8")
+
+
+def _approved_deferred_single_scan(before: bytes, after: bytes) -> bool:
+    """Allow only single-pass positive history witness selection."""
+    old = "            successful = [\n                item for item in positive_by_ref.get(ref, ())\n                if item.observed_step > boundary\n            ]\n            if len({item.context_signature for item in successful}) < self.config.n2:\n                continue\n            current = published[ref]\n            # The previous sorted(...)[-1] chose the greatest observed\n            # (world-step, identifier) pair. Select the same witness without\n            # sorting every historical success of this contingency.\n            witness = max(\n                successful, key=lambda item: (item.observed_step, item.identifier)\n            )"
+    new = "            # Accumulate independent contexts and the same maximal physical\n            # witness in one scan, without retaining another history list.\n            contexts: set[str] = set()\n            witness = None\n            for item in positive_by_ref.get(ref, ()):\n                if item.observed_step <= boundary:\n                    continue\n                contexts.add(item.context_signature)\n                if witness is None or (\n                    item.observed_step, item.identifier\n                ) > (witness.observed_step, witness.identifier):\n                    witness = item\n            if len(contexts) < self.config.n2:\n                continue\n            current = published[ref]"
+    original, candidate = before.decode("utf-8"), after.decode("utf-8")
+    return original.count(old) == 1 and candidate.count(new) == 1 and original.replace(old, new, 1) == candidate
+
+
 def _approved_physical_prior_buckets(before: bytes, after: bytes) -> bool:
     """Allow only grouping existing physical-index lists by reference."""
     old_a = "            prior_uses = tuple(chain(\n                prior_by_physical.get(trial.observation_ref, ()),\n                prior_by_comparator.get(\n                    (trial.contingency_ref, trial.comparator_ref), ()\n                ),\n                prior_by_emitted.get(\n                    (trial.contingency_ref, trial.emitted_step), ()\n                ),\n                prior_by_observed.get(\n                    (trial.contingency_ref, trial.observed_step), ()\n                ),\n            ))"
@@ -532,8 +556,9 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/causal_model.py"
-                    and _approved_physical_prior_buckets(
-                        _reference_approved_revision_contexts(
+                    and _approved_deferred_single_scan(
+                        _reference_approved_physical_prior_buckets(
+                            _reference_approved_revision_contexts(
                             _reference_approved_stream_noncanonical_pairs(
                                 _reference_lived_review_dispatch(
                                     _reference_approved_confirmed_count(
@@ -557,6 +582,7 @@ def verify(reference_root: Path) -> None:
                                     )
                                 )
                             )
+                        )
                         ),
                         (new_root / rel).read_bytes()
                     ))
