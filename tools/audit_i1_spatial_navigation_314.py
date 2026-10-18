@@ -10,14 +10,30 @@ import argparse
 from collections import Counter
 import json
 from pathlib import Path
+import sys
+from tempfile import TemporaryDirectory
 
 
 def audit(path: Path) -> dict:
     if not path.is_file() or path.is_symlink():
         raise ValueError("WAL must be a regular existing file")
     # Cryptographically audit the *complete* journal before interpreting it.
-    from i1lab.journal import HashChainedJournal
-    attestation = HashChainedJournal.audit_durable_wal(str(path.resolve()))
+    root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(root / "src"))
+    sys.path.insert(0, str(root / "scripts"))
+    from build_i1_fork import generate
+    # Native I1 sources are generated into a disposable, separate namespace.
+    # The auditor cannot instantiate the life or access WorldBody state.
+    with TemporaryDirectory(prefix="i1-spatial-wal-audit-") as folder:
+        build = Path(folder) / "generated"
+        generate(build)
+        sys.path.insert(0, str(build))
+        try:
+            from i1lab.journal import HashChainedJournal
+            attestation = HashChainedJournal.audit_durable_wal(
+                str(path.resolve()))
+        finally:
+            sys.path.remove(str(build))
     entries = []
     with path.open("rb") as stream:
         for raw in stream:
