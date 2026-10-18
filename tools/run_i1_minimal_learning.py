@@ -183,6 +183,29 @@ def _birth_parameters(preset):
     return params, local
 
 
+ELIGIBILITY_RESEARCH_ARMS = (0.0, 0.8, 0.95, 1.0)
+ELIGIBILITY_RESEARCH_POLICY = "i1-lab-instrumental-credit-lambda-v1"
+
+def _experimental_td_eligibility_birth(params, eligibility_lambda):
+    """Only change Stage8's eligibility trace, synchronously at I1 birth."""
+    if type(eligibility_lambda) is not float or eligibility_lambda not in ELIGIBILITY_RESEARCH_ARMS:
+        raise ValueError("unregistered eligibility lambda arm")
+    s11, s10 = params["stage11_config"], params["stage10_config"]
+    old = s11.stage9.stage8.td
+    if old.lambda_e != 0.8 or s10.stage9.stage8.td.lambda_e != old.lambda_e:
+        raise AssertionError("unexpected canonical TD fixture at birth")
+    suffix = "+" + ELIGIBILITY_RESEARCH_POLICY + "-" + str(eligibility_lambda).replace(".", "p")
+    stage8 = replace(s11.stage9.stage8,
+        version=s11.stage9.stage8.version + suffix,
+        td=replace(old, version=old.version + suffix, lambda_e=eligibility_lambda))
+    stage9 = replace(s11.stage9, version=s11.stage9.version + suffix, stage8=stage8)
+    stage11 = replace(s11, version=s11.version + suffix, stage9=stage9)
+    stage10 = replace(s10, version=s10.version + suffix, stage9=stage9)
+    stage11.validate()
+    stage10.validate()
+    return {**params, "stage11_config": stage11, "stage10_config": stage10}
+
+
 def _observer_owner_hashes(life):
     """Operator-only hashes of existing published owner state; no writes."""
     from i1lab.determinism import canonical_causal_bytes, sha256_hex
@@ -255,6 +278,8 @@ def _wal_life(*, birth, params, life_id, path, steps, observe_owner_digests=Fals
         raise RuntimeError("durable journal differs from live journal")
     return {
         "lifecycle": life.stage3.substrate.mortal_status.value,
+        "effective_td_eligibility_lambda": life._stage8_config.td.lambda_e,
+        "effective_td_policy": life._stage8_config.td.version,
         "effective_sleep_coefficients": {
             "fatigue": life._stage10_config.sleep.fatigue_weight,
             "consolidation": life._stage10_config.sleep.consolidation_weight,
@@ -307,7 +332,8 @@ def _m11_life(*, birth, params, life_id, path, steps):
 
 def execute(*, preset_name, seed, steps, lives, custody, output_dir,
             observe_owner_digests=False, learning_read_ablation=False,
-            food_role='a', food_gain=None, quiet_cognitive_sleep=False):
+            food_role='a', food_gain=None, quiet_cognitive_sleep=False,
+            eligibility_lambda=None):
     if (type(seed) is not int or not 0 <= seed <= 2**32 - 1
             or type(steps) is not int or not 1 <= steps <= MAX_STEPS
             or type(lives) is not int or not 1 <= lives <= MAX_LIVES
@@ -319,6 +345,11 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
         raise ValueError('invalid preregistered learning arm')
     if preset_name not in ('learning-cell', 'learning-cell-one') or custody != 'wal' or lives != 1:
         raise ValueError('minimal learning study requires a registered WAL mortal world')
+    if eligibility_lambda is not None and (type(eligibility_lambda) is not float
+            or eligibility_lambda not in ELIGIBILITY_RESEARCH_ARMS):
+        raise ValueError('unknown TD eligibility research coefficient')
+    if eligibility_lambda is not None and preset_name != 'learning-cell-one':
+        raise ValueError('eligibility intervention requires one-resource learning world')
     if type(quiet_cognitive_sleep) is not bool:
         raise ValueError('quiet cognitive sleep must be explicitly boolean')
     if preset_name == 'learning-cell-one':
@@ -345,7 +376,10 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                 "learning_read_ablation": learning_read_ablation,
                 "food_role": food_role,
                 "food_gain": food_gain,
-                "quiet_cognitive_sleep": quiet_cognitive_sleep},
+                "quiet_cognitive_sleep": quiet_cognitive_sleep,
+                 "eligibility_lambda": eligibility_lambda,
+                 "eligibility_research_policy": (ELIGIBILITY_RESEARCH_POLICY
+                    if eligibility_lambda is not None else None)},
         "scientific_gate": "NOT_EVALUATED",
         "old_cohorts_used_as_oracles": False,
         "lives": [],
@@ -368,6 +402,8 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
             from i1lab.i1_birth import birth_i1, birth_i1_m11
 
             params, initial_local = _birth_parameters(preset)
+            if eligibility_lambda is not None:
+                params = _experimental_td_eligibility_birth(params, eligibility_lambda)
             from i1lab.world import BerryEffect
             physics = params["world_config"]
             effects = dict(physics.berry_effects)
@@ -441,6 +477,11 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                         birth=birth_i1_m11, params=params, life_id=life_id,
                         path=path, steps=steps,
                     )
+                if eligibility_lambda is not None and (
+                    life["effective_td_eligibility_lambda"] != eligibility_lambda
+                    or ELIGIBILITY_RESEARCH_POLICY not in life["effective_td_policy"]
+                ):
+                    raise AssertionError("effective newborn TD eligibility arm mismatch")
                 if preset_name == "learning-cell-one":
                     actual = life["effective_sleep_coefficients"]
                     if actual != {"fatigue": 0.0, "consolidation": 0.0, "night": 0.0}:
@@ -475,6 +516,9 @@ def main():
     parser.add_argument("--learning-read-ablation", action="store_true")
     parser.add_argument("--food-role", choices=("a","b"), default="a")
     parser.add_argument("--food-gain", type=float, choices=(0.0,10.0))
+    parser.add_argument("--eligibility-lambda", type=float,
+                        choices=ELIGIBILITY_RESEARCH_ARMS, default=None,
+                        help="registered prebirth TD eligibility research arm")
     parser.add_argument("--quiet-cognitive-sleep", action="store_true")
     parser.add_argument(
         "--observe-owner-digests", action="store_true",
@@ -516,6 +560,7 @@ def main():
             food_role=args.food_role,
             food_gain=args.food_gain,
             quiet_cognitive_sleep=args.quiet_cognitive_sleep,
+            eligibility_lambda=args.eligibility_lambda,
         )
         print(json.dumps({
             "status": report["status"],
