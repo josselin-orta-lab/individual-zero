@@ -1,0 +1,58 @@
+name: I1 S1 after #287 six-world pilot
+on:
+  push:
+    branches: [science/i1-s1-six-world-after-287-20261018]
+    paths:
+      - '.github/workflows/i1-s1-corrected-pilot.yml'
+      - 'tools/analyze_i1_s1_corrected_pilot.py'
+      - 'docs/research/i1-s1-corrected-pilot-prereg.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: i1-s1-after-287
+  cancel-in-progress: false
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: observer
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: f90e7bc38c9a371ba8aec651ef391c9549754ef8
+          path: frozen
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify frozen subject and install only frozen engine
+        run: |
+          test "$(git -C frozen rev-parse HEAD)" = f90e7bc38c9a371ba8aec651ef391c9549754ef8
+          git -C frozen diff --exit-code
+          python -m pip install -e frozen
+          python frozen/tools/run_i1_world_preset.py --list
+      - name: Newborn natural mortal cohorts, fresh WAL per identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          for preset in oasis foraging dry-valley empty-land hazard-edge blocked-route; do
+            python frozen/tools/run_i1_world_preset.py \
+              --preset "$preset" --seed 246 --steps 60 --lives 3 \
+              --custody wal --output-dir "$PWD/reports/s1/$preset"
+          done
+      - name: Post-run operator-only analysis
+        if: success()
+        run: |
+          python observer/tools/analyze_i1_s1_corrected_pilot.py --root reports/s1 --output-dir reports/s1-analysis
+      - name: Preserve partial and complete evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-s1-corrected-pilot-${{ github.run_id }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
