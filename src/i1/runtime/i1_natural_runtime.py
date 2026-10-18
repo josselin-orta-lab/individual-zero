@@ -115,6 +115,7 @@ class I1Runtime(I1WaterPrudentRuntime):
                 novelty_weight=0.15, max_distinct_sites=1024,
                 max_targets_per_cycle=1,
                 observe_routes=True, refresh_surveys=True, remember_entities=True,
+                max_place_candidates=3,
             )
             cfg = replace(
                 cfg, version=cfg.version + "+i1-firstperson-frontier-v1",
