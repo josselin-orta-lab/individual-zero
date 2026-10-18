@@ -367,34 +367,10 @@ def _install_trusted_current_on_fresh(
     if hasattr(runtime, "_stage11_modulation_signals"):
         runtime._stage11_modulation_signals = dict(
             local["stage11_modulation_signals"])
-    rebuilt = _runtime_image(runtime, individual_id=image["individual_id"])
-    if canonical_causal_bytes(rebuilt) != canonical_causal_bytes(image):
-        # No bypass: identify only divergent owner names so CI can diagnose
-        # a broken strict M11 restoration without disclosing causal values.
-        owners_expected = image.get("owners", {})
-        owners_actual = rebuilt.get("owners", {})
-        divergent = sorted(k for k in set(owners_expected) | set(owners_actual)
-                           if canonical_causal_bytes(owners_expected.get(k))
-                           != canonical_causal_bytes(owners_actual.get(k)))
-        sections = sorted(k for k in set(image) | set(rebuilt)
-                          if k != "owners"
-                          and canonical_causal_bytes(image.get(k))
-                          != canonical_causal_bytes(rebuilt.get(k)))
-        exploration_keys = []
-        if "exploration" in divergent:
-            left, right = owners_expected.get("exploration", {}), owners_actual.get("exploration", {})
-            if isinstance(left, dict) and isinstance(right, dict):
-                exploration_keys = sorted(key for key in set(left) | set(right)
-                    if canonical_causal_bytes(left.get(key)) != canonical_causal_bytes(right.get(key)))
-        geography_keys = []
-        if "geography" in exploration_keys:
-            old = owners_expected["exploration"].get("geography", {})
-            new = owners_actual["exploration"].get("geography", {})
-            if isinstance(old, dict) and isinstance(new, dict):
-                geography_keys = sorted(k for k in set(old) | set(new)
-                    if canonical_causal_bytes(old.get(k)) != canonical_causal_bytes(new.get(k)))
-        raise RecoveryBlocked("cold reconstructed world/owners do not match committed state"
-                              f" (owners={divergent}, sections={sections}, exploration_keys={exploration_keys}, geography_keys={geography_keys})")
+    if canonical_causal_bytes(_runtime_image(
+        runtime, individual_id=image["individual_id"]
+    )) != canonical_causal_bytes(image):
+        raise RecoveryBlocked("cold reconstructed world/owners do not match committed state")
 
 
 @dataclass(frozen=True, slots=True)
