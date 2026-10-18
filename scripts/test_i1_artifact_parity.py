@@ -381,6 +381,24 @@ def _reference_agency_projection_stream(before: bytes) -> bytes:
     return data.replace(old, new, 1).encode("utf-8")
 
 
+def _reference_numeric_no_concat(before: bytes) -> bytes:
+    """Rebuild reviewed #276 source change."""
+    old = "                    for old in (\n                        *self._numeric_witnesses.values(),\n                        *self._pending_numeric_witnesses,\n                    )"
+    new = "                    for rows in (\n                        self._numeric_witnesses.values(),\n                        self._pending_numeric_witnesses,\n                    )\n                    for old in rows"
+    text = before.decode("utf-8")
+    if text.count(old) != 1:
+        raise ValueError("numeric preflight reference drift")
+    return text.replace(old, new, 1).encode("utf-8")
+
+
+def _approved_published_agency_sorted_items(before: bytes, after: bytes) -> bool:
+    """Only remove redundant dictionary lookup after sorting keys."""
+    old = "        return tuple(self._agency_evidence[key] for key in sorted(self._agency_evidence))"
+    new = "        return tuple(value for _, value in sorted(self._agency_evidence.items()))"
+    source, candidate = before.decode("utf-8"), after.decode("utf-8")
+    return source.count(old) == 1 and candidate.count(new) == 1 and source.replace(old, new, 1) == candidate
+
+
 def _approved_numeric_witness_no_concat(before: bytes, after: bytes) -> bool:
     """Admit only non-materializing ordered witness duplicate validation."""
     old = "                    for old in (\n                        *self._numeric_witnesses.values(),\n                        *self._pending_numeric_witnesses,\n                    )"
@@ -646,26 +664,28 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/causal_model.py"
-                    and _approved_numeric_witness_no_concat(
-                        _reference_agency_projection_stream(
-                            _reference_food_empty_arm(
-                                _reference_hydration_empty_arm(
-                                    _reference_hydration_classification(
-                                        _reference_deferred_single_scan(
-                                            _reference_approved_physical_prior_buckets(
-                                                _reference_approved_revision_contexts(
-                                                    _reference_approved_stream_noncanonical_pairs(
-                                                        _reference_lived_review_dispatch(
-                                                            _reference_approved_confirmed_count(
-                                                                _reference_approved_physical_alias(
-                                                                    _reference_approved_active_context_cache(
-                                                                        _reference_hydration_control_lookup(
-                                                                            _reference_food_control_sort(
-                                                                                _reference_causal_minimum(
-                                                                                    _reference_approved_numeric_index(
-                                                                                        _reference_numeric_publication(
-                                                                                            _reference_agency_index(
-                                                                                                (old_root / rel).read_bytes()
+                    and _approved_published_agency_sorted_items(
+                        _reference_numeric_no_concat(
+                            _reference_agency_projection_stream(
+                                _reference_food_empty_arm(
+                                    _reference_hydration_empty_arm(
+                                        _reference_hydration_classification(
+                                            _reference_deferred_single_scan(
+                                                _reference_approved_physical_prior_buckets(
+                                                    _reference_approved_revision_contexts(
+                                                        _reference_approved_stream_noncanonical_pairs(
+                                                            _reference_lived_review_dispatch(
+                                                                _reference_approved_confirmed_count(
+                                                                    _reference_approved_physical_alias(
+                                                                        _reference_approved_active_context_cache(
+                                                                            _reference_hydration_control_lookup(
+                                                                                _reference_food_control_sort(
+                                                                                    _reference_causal_minimum(
+                                                                                        _reference_approved_numeric_index(
+                                                                                            _reference_numeric_publication(
+                                                                                                _reference_agency_index(
+                                                                                                    (old_root / rel).read_bytes()
+                                                                                                )
                                                                                             )
                                                                                         )
                                                                                     )

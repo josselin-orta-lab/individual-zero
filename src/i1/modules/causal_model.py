@@ -1694,7 +1694,7 @@ class CausalModel:
 
     def published_agency_evidence(self) -> tuple[AgencyEvidence, ...]:
         """Only phase-5-published descriptive comparisons, never interventions."""
-        return tuple(self._agency_evidence[key] for key in sorted(self._agency_evidence))
+        return tuple(value for _, value in sorted(self._agency_evidence.items()))
 
     def ingest_closed_agency_comparisons(
         self, *, episode_ref: str, event_refs: Sequence[str],
