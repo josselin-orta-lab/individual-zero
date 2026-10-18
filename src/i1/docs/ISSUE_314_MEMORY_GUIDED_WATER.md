@@ -40,3 +40,10 @@ A missing OptionProposal plan is rejected before dereferencing its ID in the spa
 ## Physical trace attestation v2
 
 `tools/audit_i1_spatial_navigation_314.py` now matches the same WAL attempt and chronological order across a prior perceived site, Planning proposal, Competition registration/crossing, Action Control admission, sent command digest, single physical world transition and committed step closure. A step is marked as a witnessed return only when the physically observed next position matches the proposed hop and the site was seen **before** the action step. An arrival at the remembered site is a separate, stricter conclusion. Unit tests use synthetic event sequences to prove false-positive resistance; those tests are *not* a lived physical demonstration. TD/cause learning and survival gains remain independent scientific questions.
+
+## Code-audit optimizations (2026-10-18)
+
+- Phase-3 Exploration's frozen offers are now reconciled after actual Competition registration, UC payment and registry capacity enforcement: proposals only deemed admissible, or evicted/not charged, cannot remain in the active owner offer set.
+- Constructing the one physical SimulationState for several remembered-site candidates is deduplicated per Planning cycle. Each candidate still receives its individual preflight and UC charge.
+- The external WAL auditor takes one byte snapshot, verifies the cryptographic chain of a sealed copy, and classifies exactly those bytes. This eliminates a verification-to-re-read race on a live journal; no cognitive/physical state is modified.
+- Learned utility remains scientifically NO-GO and long-term survival INCONCLUSIVE pending matched physical WAL cohorts.
