@@ -25,7 +25,7 @@ def execute(*, world, seed, reward, steps, output_dir):
     if not 1 <= steps <= 300:
         raise ValueError("unregistered step horizon")
     preset, digest = load_preset(world)
-    output = Path(output_dir)
+    output = Path(output_dir).resolve()
     output.mkdir(parents=True, exist_ok=False)
     report = {
         "status": "TECHNICAL_FAILURE", "scientific_gate": "NOT_EVALUATED",
