@@ -42,7 +42,7 @@ jobs:
             python tools/run_i1_minimal_learning.py \
               --preset learning-cell-one --food-gain "$GAIN" \
               --quiet-cognitive-sleep --eligibility-lambda 0.8 \
-              --reward-model "$REWARD" --seed "$seed" \
+              --reward-model "$REWARD" --goal-arbitration-arm baseline --seed "$seed" \
               --steps 300 --lives 1 --custody wal --output-dir "$folder"
           done
       - name: Preserve all lived WAL
