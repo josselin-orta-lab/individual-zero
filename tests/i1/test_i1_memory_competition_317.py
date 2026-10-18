@@ -196,7 +196,7 @@ assert c.continue_engaged_memory(
     prior_ref=a.option.id,next_ref=b.option.id,t_monde=21)
 assert not c.is_engaged(b.option.id)
 assert c.interrupted_intention_id == b.option.id
-assert c.fallback_candidates()[0].option.id != b.option.id
+assert all(item.option.id != b.option.id for item in c.fallback_candidates())
 assert c.accumulator_for(b.option.id) > 0
 assert c.accumulator_for(b.option.id) < c._config.base_threshold
 assert c.accumulator_for(b.option.id) <= c._config.base_threshold*c._config.residual
@@ -235,7 +235,7 @@ assert c.register(sleep,active_goal_id=None,t_monde=21)
 c.close_deliberation(sleep)
 assert c.interrupted_intention_id == b.option.id
 assert abs(c.accumulator_for(b.option.id)-initial)<1e-10
-assert c.fallback_candidates()[0].option.id != b.option.id
+assert all(item.option.id != b.option.id for item in c.fallback_candidates())
 saved=c.export_causal_state()
 fresh=competition()
 fresh.restore_causal_state(saved)
