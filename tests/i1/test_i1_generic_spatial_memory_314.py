@@ -54,6 +54,7 @@ def owner():
         version="test-entity-general", novelty_weight=0.15,
         max_distinct_sites=64, max_targets_per_cycle=1,
         observe_routes=True, refresh_surveys=True, remember_entities=True,
+        max_place_candidates=3,
     ))
 
 
@@ -161,6 +162,31 @@ class GenericSpatialMemoryTests(unittest.TestCase):
         )
         self.assertEqual({t.entity_type for t in found}, {"water_source", "berry_a"})
         self.assertEqual(len(found), 2)
+
+    def test_owner_can_freeze_two_real_spatial_alternatives(self):
+        geo = owner()
+        observed = capture(1, 0, 0, (
+            ("berry_a:1:0", "berry_a", 1, 0),
+            ("water_source:0", "water_source", 0, 1),
+        ))
+        geo.observe_capture(observed)
+        geo.observe_entities(observed, observer_id="i1:sample")
+        second = capture(2, 0, 0, (
+            ("berry_a:1:0", "berry_a", 1, 0),
+            ("water_source:0", "water_source", 0, 1),
+        ))
+        geo.observe_capture(second)
+        candidates = find_spatial_returns(
+            origin=(0, 0), visits=frozenset(((0, 0),)),
+            surveys=(), places=geo.place_memories,
+            current_free_neighbors=frozenset(((1, 0), (0, 1))),
+            current_world_step=2, max_candidates=3)
+        self.assertEqual(len(candidates), 2)
+        geo.freeze_places(candidates)
+        self.assertEqual(len(geo._place_offered), 2)
+        cold = owner()
+        cold.restore_causal_state(geo.export_causal_state())
+        self.assertEqual(cold._place_offered, geo._place_offered)
 
     def test_stale_offer_contradiction_is_withdrawn_without_exception(self):
         geo = owner()
