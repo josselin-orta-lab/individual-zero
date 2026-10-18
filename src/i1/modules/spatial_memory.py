@@ -113,17 +113,18 @@ class SpatialReturnTarget:
             raise ValueError("noncanonical entity-place target")
 
 
-def find_spatial_return(
+def find_spatial_returns(
     *, origin: tuple[int, int], visits: frozenset[tuple[int, int]],
     surveys: tuple[ObservedSurvey, ...],
     places: tuple[PlaceMemory, ...],
     current_free_neighbors: frozenset[tuple[int, int]],
-    current_world_step: int, max_hops: int = 8,
-) -> SpatialReturnTarget | None:
-    """Search only witnessed edges through visited sites (plus one final edge).
+    current_world_step: int, max_hops: int = 8, max_candidates: int = 32,
+) -> tuple[SpatialReturnTarget, ...]:
+    """Return bounded *alternatives*, never preselect one cognitive winner.
 
-    A historical cell label never grants permission to cross a current obstacle.
-    The returned option is revalidated against current local Perception.
+    All edges originate from witnessed local surveys and the first movement
+    must be passable in today's actual Perception. This only ranks retrieval
+    by confidence/path length. Stage8/Competition decides their usefulness.
     """
     if (not _point(origin) or not isinstance(visits, frozenset)
         or origin not in visits or len(visits) > 1024
@@ -134,7 +135,8 @@ def find_spatial_return(
         or any(not _point(p) or not _adjacent(origin, p)
                for p in current_free_neighbors)
         or type(current_world_step) is not int or current_world_step < 1
-        or type(max_hops) is not int or not 1 <= max_hops <= 8):
+        or type(max_hops) is not int or not 1 <= max_hops <= 8
+        or type(max_candidates) is not int or not 1 <= max_candidates <= 32):
         raise ValueError("invalid first-person route context")
     known = {}
     for survey in surveys:
@@ -206,9 +208,24 @@ def find_spatial_return(
             if nxt in visits and nxt in known and nxt not in seen:
                 seen.add(nxt)
                 queue.append((nxt, candidate_path))
-    if not options:
-        return None
-    return min(options, key=lambda target: (
+    return tuple(sorted(options, key=lambda target: (
         -target.confidence, len(target.visited_path),
         target.entity_type, target.entity_id, target.direction,
-    ))
+    ))[:max_candidates])
+
+
+def find_spatial_return(
+    *, origin: tuple[int, int], visits: frozenset[tuple[int, int]],
+    surveys: tuple[ObservedSurvey, ...],
+    places: tuple[PlaceMemory, ...],
+    current_free_neighbors: frozenset[tuple[int, int]],
+    current_world_step: int, max_hops: int = 8,
+) -> SpatialReturnTarget | None:
+    """Compatibility adapter for the original one-target scientific tests."""
+    candidates = find_spatial_returns(
+        origin=origin, visits=visits, surveys=surveys, places=places,
+        current_free_neighbors=current_free_neighbors,
+        current_world_step=current_world_step, max_hops=max_hops,
+        max_candidates=1,
+    )
+    return candidates[0] if candidates else None
