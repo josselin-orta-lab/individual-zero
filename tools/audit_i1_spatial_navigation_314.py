@@ -227,6 +227,183 @@ def classify_events(events):
     }
 
 
+def certify_multihop_return_317(
+    events, physically_certified, capture_before,
+):
+    """Certify *complete* returns begun beyond perception, including sleep.
+
+    A last-step-only outside-visibility test is insufficient: for a genuine
+    multi-hop return the destination naturally becomes visible on the last
+    hop. Start with an independently certified, formerly unseen first hop;
+    require an explicit first-person Stage11 continuation and a complete,
+    uninterrupted chain of physically committed same-entity memory hops.
+    Physiological stationary actions (including sleep) may intervene, but
+    a competing movement, contradicting observation, missing WAL step, or
+    unverifiable motor command breaks the chain. Read-only; no motor oracle.
+    """
+    from collections import defaultdict
+
+    commands = defaultdict(list)
+    transitions = defaultdict(list)
+    closures = defaultdict(list)
+    admissions = defaultdict(list)
+    continuations = defaultdict(list)
+    contradictory_sightings = defaultdict(list)
+    for idx, row in enumerate(events):
+        t, attempt = row.get("t_monde"), row.get("attempt_ref")
+        if type(t) is not int or not isinstance(attempt, str):
+            continue
+        key = (t, attempt)
+        kind = row.get("kind")
+        if kind == "command_experienced":
+            commands[t].append((idx, key, row))
+        elif kind == "world_transition_experienced":
+            transitions[t].append((idx, key, row))
+        elif kind == "step_closed":
+            closures[t].append((idx, key, _data(row)))
+        elif kind == "command_admitted":
+            admissions[t].append((idx, key, _data(row)))
+        elif kind == "i1_place_memory_intention_continued":
+            continuations[t].append((idx, key, _data(row)))
+        elif kind == "i1_entity_place_observed":
+            data = _data(row)
+            if isinstance(data.get("entity_id"), str):
+                contradictory_sightings[t].append((data["entity_id"],
+                    _position(data.get("position"))))
+
+    def committed(t):
+        # Reject ambiguous attempts, mixed attempt IDs, uncommitted events,
+        # non-Action-Control sends, incorrect admission lineage and positions.
+        c = commands.get(t, ())
+        w = transitions.get(t, ())
+        x = closures.get(t, ())
+        if len(c) != 1 or len(w) != 1 or len(x) != 1:
+            return None
+        (ci, ck, ce), (wi, wk, we), (xi, xk, xd) = c[0], w[0], x[0]
+        if (ck != wk or wk != xk or not ci < wi < xi
+            or ce.get("emitter") != "action_control"
+            or we.get("emitter") != "world_and_body"
+            or xd.get("outcome") not in ("normal", "dead")
+            or xd.get("applied_command_count") != 1
+            or xd.get("world_advance_count") != 1):
+            return None
+        admitted = [(i, d) for i, k, d in admissions.get(t, ())
+                    if k == ck and i < ci
+                    and d.get("command_hash") == ce.get("command_hash")
+                    and d.get("primitive") == ce.get("primitive")]
+        after = _position(we.get("position_after"))
+        if len(admitted) != 1 or after is None:
+            return None
+        return ck, ce.get("primitive"), after
+
+    moves = defaultdict(list)
+    for attempt, option_ref, p_idx, proposal, after in physically_certified:
+        moves[attempt[0]].append(
+            (attempt, option_ref, p_idx, proposal, after)
+        )
+
+    arrivals = []
+    seen_starts = set()
+    for attempt, initial_ref, p_idx, proposed, first_after in physically_certified:
+        target = _position(proposed.get("target"))
+        first_next = _position(proposed.get("next"))
+        initial_capture = capture_before(attempt, p_idx)
+        entity_id = proposed.get("entity_id")
+        if (initial_capture is None or target is None
+            or first_next is None or first_next == target
+            or target in initial_capture[1] or first_after != first_next
+            or not isinstance(entity_id, str)
+            or (attempt[0], initial_ref) in seen_starts):
+            continue
+        seen_starts.add((attempt[0], initial_ref))
+        latest_position = first_after
+        previous_ref = initial_ref
+        expected_ref = None
+        actions = [(attempt[0], initial_ref)]
+        sleep_steps = 0
+        stationary_steps = 0
+        for t in range(attempt[0] + 1, max(commands.keys(), default=0) + 1):
+            step = committed(t)
+            if step is None:
+                break
+            step_attempt, primitive, after = step
+            if any(
+                eid == entity_id and observed is not None
+                and observed != target
+                for eid, observed in contradictory_sightings.get(t, ())
+            ):
+                break
+            if expected_ref is None:
+                # The continuation MUST be published in the next world step
+                # after the preceding real movement, never conjured later.
+                matches = [
+                    data for _, key, data in continuations.get(t, ())
+                    if key == step_attempt
+                    and data.get("previous_option_ref") == previous_ref
+                    and data.get("source")
+                        == "previous_applied_command_and_current_perception"
+                    and data.get("forced_motor_selection") is False
+                    and _position(data.get("confirmed_position"))
+                        == latest_position
+                    and isinstance(data.get("next_option_ref"), str)
+                    and data["next_option_ref"].startswith("option:place-memory:")
+                ]
+                if len(matches) != 1:
+                    break
+                expected_ref = matches[0]["next_option_ref"]
+            if after == latest_position:
+                if primitive == "se_deplacer":
+                    break
+                stationary_steps += 1
+                sleep_steps += int(primitive == "dormir")
+                continue
+            if primitive != "se_deplacer":
+                break
+            matched = [
+                (a, opt, idx, proposal, dest)
+                for a, opt, idx, proposal, dest in moves.get(t, ())
+                if a == step_attempt and opt == expected_ref
+                and proposal.get("entity_id") == entity_id
+                and _position(proposal.get("target")) == target
+                and _position(proposal.get("next")) == after
+                and dest == after
+                and (lambda capture:
+                    capture is not None and capture[0] == latest_position
+                )(capture_before(a, idx))
+            ]
+            if len(matched) != 1 or len(actions) >= 8:
+                break
+            _, next_ref, _, _, _ = matched[0]
+            actions.append((t, next_ref))
+            if after == target:
+                if len(arrivals) < 32:
+                    arrivals.append({
+                        "start_world_step": attempt[0],
+                        "arrival_world_step": t,
+                        "entity_id": entity_id,
+                        "initially_unseen_target": list(target),
+                        "initial_position": list(initial_capture[0]),
+                        "physical_memory_hops": len(actions),
+                        "stationary_interruption_steps": stationary_steps,
+                        "physically_applied_sleep_steps": sleep_steps,
+                        "motor_option_refs": [ref for _, ref in actions],
+                        "motor_world_steps": [step for step, _ in actions],
+                    })
+                break
+            # A newly observed intermediate physical position must validate a
+            # *new* per-hop motor option on the immediate following step.
+            previous_ref = next_ref
+            expected_ref = None
+            latest_position = after
+    return {
+        "completed_remote_multihop_returns": len(arrivals),
+        "completed_remote_returns_after_sleep": sum(
+            row["physically_applied_sleep_steps"] > 0 for row in arrivals
+        ),
+        "completed_remote_return_examples": arrivals[:12],
+    }
+
+
 def classify_memory_causality_317(events, proposals, physically_certified):
     """Separate remote, locally visible and genuinely learned memory evidence.
 
@@ -375,8 +552,12 @@ def classify_memory_causality_317(events, proposals, physically_certified):
                     "previous_td_used_in_evaluation": learned,
                 })
 
+    journeys = certify_multihop_return_317(
+        events, physically_certified, capture_before,
+    )
     return {
-        "schema": "i1-memory-causality-317/v1",
+        "schema": "i1-memory-causality-317/v2",
+        **journeys,
         "proposals_with_verified_current_capture": evaluated_proposals,
         "proposals_to_unseen_sites": unseen_candidates,
         "proposed_unseen_multihop_options": remote_candidates,
@@ -389,8 +570,10 @@ def classify_memory_causality_317(events, proposals, physically_certified):
         "interpretation": (
             "Remote proposal is not movement. Only prior #314-certified physical "
             "action with an independently preceding first-person capture counts. "
-            "An earlier published TD update and a later learned assessment "
-            "prove value re-use, not the causal usefulness of an entity."
+            "Remote *completion* is certified across only personally observed "
+            "and physically committed same-entity memory hops, including a "
+            "legitimate stationary sleep interruption; it is not a guarantee "
+            "of resource utility. TD evaluation shows value re-use only."
         ),
     }
 
