@@ -193,7 +193,9 @@ assert not Stage11Runtime._grounded_memory_continuation(
 assert c.register(b, active_goal_id="goal:changed", t_monde=21)
 assert c.continue_engaged_memory(
     prior_ref=a.option.id,next_ref=b.option.id,t_monde=21)
-assert c.is_engaged(b.option.id)
+assert not c.is_engaged(b.option.id)
+assert c.interrupted_intention_id == b.option.id
+assert c.fallback_candidates()[0].option.id != b.option.id
 assert c.accumulator_for(b.option.id) > 0
 assert c.accumulator_for(b.option.id) < c._config.base_threshold
 assert c.accumulator_for(b.option.id) <= c._config.base_threshold*c._config.residual
@@ -203,6 +205,54 @@ assert c.evaluate(cycle=1,t_monde=21,evidence_inputs={
     b.option.id:evidence(b,-1.0,1,21),
     a.option.id:evidence(a,0.0,1,21)}).winner is None
 assert c.accumulator_for(b.option.id)==0.0
+# A genuine sleep interruption is allowed to win, but must not grant
+# an involuntary motor action on the next awake cycle.
+c = competition()
+a = proposal(20, entity="stone")
+target, b = follow_on(21,"stone")
+assert c.register(a, active_goal_id=None, t_monde=20)
+c.open_deliberation(active_goal_id=None, t_monde=20)
+for cy in range(1, 6):
+    result=c.evaluate(cycle=cy,t_monde=20,evidence_inputs={
+        a.option.id:evidence(a,0.14,cy,20)})
+    if result.winner is not None:break
+assert result.winner is not None
+c.close_deliberation(result.winner)
+assert c.register(b,active_goal_id=None,t_monde=21)
+assert c.continue_engaged_memory(
+    prior_ref=a.option.id,next_ref=b.option.id,t_monde=21)
+initial=c.accumulator_for(b.option.id)
+c.ensure_wait(t_monde=21,st_version="test")
+sleep=replace(b,
+    option=replace(b.option,id="option:sleep",plan_ref="plan:sleep",
+        provenance="goal",learning_signature="primitive:dormir",
+        motive_ref=replace(b.option.motive_ref,type="active_goal",id="sleep")),
+    plan=replace(b.plan,id="plan:sleep",option_ref="option:sleep",
+        steps=(replace(b.plan.steps[0],command=PrimitiveCommand("dormir")),)),
+)
+assert c.register(sleep,active_goal_id=None,t_monde=21)
+c.close_deliberation(sleep)
+assert c.interrupted_intention_id == b.option.id
+assert abs(c.accumulator_for(b.option.id)-initial)<1e-10
+assert c.fallback_candidates()[0].option.id != b.option.id
+saved=c.export_causal_state()
+fresh=competition()
+fresh.restore_causal_state(saved)
+assert fresh.export_causal_state()==saved
+fresh.open_deliberation(active_goal_id="goal:changed",t_monde=28)
+assert fresh.interrupted_intention_id==b.option.id
+assert fresh.register(replace(b,option=replace(
+    b.option,expires_at_step=48)),active_goal_id="goal:changed",t_monde=28)
+assert fresh.accumulator_for(b.option.id)==initial
+fresh.close_deliberation(sleep)
+assert fresh.interrupted_intention_id==b.option.id
+fresh.invalidate_candidate(b.option.id)
+assert fresh.interrupted_intention_id is None
+# A competing non-sleep winner legitimately closes the tentative intention.
+c.close_deliberation(sleep)
+c.close_deliberation(c.proposal_for("permanent:attendre"))
+assert c.interrupted_intention_id is None
+
 # Neither time gaps, other targets, nor unengaged options transfer evidence.
 c = competition()
 a = proposal(20, entity="stone")
