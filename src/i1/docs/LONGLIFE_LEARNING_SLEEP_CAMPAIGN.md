@@ -29,3 +29,20 @@ Pilote par monde/bras : `python tools/run_i1_longlife_science.py --preset oasis 
 Audit : `python tools/analyze_i1_longlife_science.py --input reports/oasis/v1/w01 --output reports/oasis/v1/w01/science-summary.json`.
 
 Workflow GitHub `i1-longlife-learning-sleep.yml`. Paramétrage de 800 ou 1600 pas et répétitions uniquement à la demande. Les sorties `TECHNICAL_FAILURE` et les runs incomplets **ne sont pas des décès**. Aucun résultat ni verdict d'apprentissage ne peut être revendiqué sans les artefacts du SHA précis.
+
+
+## Premier lot observé et amendement prospectif A1 (2026-10-18)
+
+**SHA du premier lot :** `3938913fea8e600aead19f25b38bd39063481a58`, [Actions #39112506390](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39112506390). La CI logicielle du commit de protocole `08059828` est [verte](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39112553248). Les simulations du premier lot se terminent indépendamment, et les résultats partiels ne sont pas un verdict comparatif.
+
+Premier bloc de vie Oasis, variante physique 1, graine 773001, **une vie par bras**, horizon 300 :
+- poids 0.0 : morte au pas 295, 94 `dormir` (31,9 %), eau nulle durant 108 pas ;
+- poids 0.1 : morte au pas 297, 104 `dormir` (35,0 %), eau nulle durant 110 pas ;
+- poids 0.2 : morte au pas 299, 122 `dormir` (40,8 %), eau nulle durant 112 pas ;
+- poids 0.65 : active, *censurée au pas 300*, 240 `dormir` (80 %), eau nulle durant 113 pas, intégrité physique seulement 9,4.
+
+Ces chiffres proviennent de l'inspection des quatre rapports et journaux WAL téléchargés depuis [les artefacts du lot](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39112506390). Aucun coefficient ne peut être déclaré supérieur avec une seule paire de cartes, une forte mortalité de déshydratation et une censure à 300. Malgré la présence de sources dans la carte opérateur, **aucun individu ne se trouvait à une source d'eau au moment où son hydratation était critique**; ne jamais remplacer ce fait par l'hypothèse qu'il connaissait la source.
+
+**Amendement préanalytique distinct pour la suite, pas rétroactif** : nouveau preset `longlife-garden` avec 49 positions hydriques réparties, nourriture stationnaire abondante, zéro piège létal, aucun mécanisme de ravitaillement forcé. Son SHA de layout varie avant chaque naissance sous la même règle `i1-longlife-layout-v1`. Ce monde sert de témoin favorable au maintien d'une vie longue, **pas** de preuve de l'apprentissage spatial dans un monde rare. Il possède sa propre strate analytique : ne jamais regrouper naïvement avec la première série. Les mondes et physiques antérieurs sont conservés tels quels.
+
+Ce complément ne rend ni l'absence de recul mnésique ni un apprentissage non observé démontrés. Les résultats restent `NOT_ESTABLISHED` jusqu'au traçage contenu -> récupération -> décision -> résultat physique différé.
