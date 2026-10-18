@@ -326,3 +326,13 @@ leurs allocations. Les gardes de provenance, P-35 et les situations où
 les deux bras existent restent inchangées. Aucun test ajouté ou lancé
 manuellement conformément à la consigne. Parité source strictement
 limitée au bloc révisé ; fusion soumise à la CI existante.
+
+## PR #275 : contrôle en un parcours des alias DC-09 fermés
+
+L'ingestion des comparaisons Agency issues d'un épisode autobiographique
+fermé matérialisait une liste de références puis un second ensemble pour
+détecter les doublons. Le même contrôle d'unicité s'effectue maintenant
+au fil des références fermées, sans liste intermédiaire. La sélection
+`agency_source_refs` et l'ordre de la vérification préalable à tout
+décodage et admission restent inchangés. Aucun nouveau test ni campagne
+manuelle selon la consigne; parité source exacte avant fusion.

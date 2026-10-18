@@ -1722,12 +1722,16 @@ class CausalModel:
             event["event_id"] for event in closed_events
             if event.get("kind") == "agency_comparison"
         }
-        agency_projection_refs = [
-            event["event_id"] for event in closed_events
-            if event["event_id"] in agency_source_refs
-        ]
-        if len(agency_projection_refs) != len(set(agency_projection_refs)):
-            raise ValueError("duplicate closed Memory agency event projection")
+        # Detect projection aliases without allocating a second list
+        # and then a second set of the same closed Memory identifiers.
+        seen_agency_projections: set[str] = set()
+        for event in closed_events:
+            ref = event["event_id"]
+            if ref not in agency_source_refs:
+                continue
+            if ref in seen_agency_projections:
+                raise ValueError("duplicate closed Memory agency event projection")
+            seen_agency_projections.add(ref)
         admitted: list[AgencyEvidence] = []
         for event in closed_events:
             report = agency_evidence_from_autobiography(
