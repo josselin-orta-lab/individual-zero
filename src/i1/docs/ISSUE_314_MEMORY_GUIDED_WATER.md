@@ -1,19 +1,19 @@
-# I1 issue #314: lived water-place navigation, provisional design
+# I1 #314: generic first-person spatial memory, draft proof protocol
 
-Source control baseline: `main` at `2161b834e4a584c28bcbb663e8d6d04e41c7e70b`.
+The cognitive mechanism is no longer water-specific. The sole Stage11 Exploration geographic owner records bounded `PlaceMemory` entries keyed by a personally perceived `entity_id`, with type, last observed location, observation origin, birth/life identity, time, confidence, arrival and contradictions. Perception's `visible_entities` is the only entry point. Observation and route history are part of the owner's ordinary causal export and M11 custody; I0 remains unchanged.
 
-The I1-only Exploration geographic owner stores finite first-person `WaterPlace` records and uses the existing visited-site ledger and paid `ObservedSurvey` topology. Records are not operator-map facts and carry site coordinates, original observation coordinates, first and latest perceptual sightings, observation provenance, optional physical arrival, confidence and contradictions. A site no longer visible from the current local capture is not classified as absent. Fresh local non-water observations decrease its confidence without deleting it.
+An entity's last observed location is **not** a promise of present occupancy or usefulness. If an entity moves while visible, its latest perceived position replaces the old one. If its prior position is currently perceived and the entity is absent, confidence decreases without deleting the historical observation. Remote nonvisibility never proves absence.
 
-When the living Stage4 goal is `drink`, Phase-0 freezes geographic owner data. A charged Stage11 Planning route read walks only recorded visited edges; the first hop also has to be locally perceived passable in the current capture. A destination without a complete observed-edge return path produces no candidate. At most one bounded water-return option is created; normal Stage8/Competition and Stage3 Action Control retain full authority. The memory evaluation bonus is capped at 0.35, scales with water deficit and confidence, and is not a Q reward, a forced action, or a learned hydration claim.
+For any actual active Stage4 goal, Phase0 freezes prior recorded observations. A priced Stage11 Planning read can build one `SpatialReturnTarget` across edges already surveyed from personally visited sites. The current first hop must also be currently visible and passable. No operator map or full planned motor sequence is ever supplied; each new step requires replanning. Stage3 Action Control and Stage8 Competition retain final authority. The memory's informational score is capped at 0.12, and the preexisting Stage8 TD evaluation supplies any evidence of consequences. No entity type is declared food, safe, dangerous or physiologically effective by this feature.
 
-Each code SHA must be experimentally compared with the unmodified `main` control at identical world, seed and temperament. Required outcome states remain separate: recall, proposal, threshold crossing, action admitted, actual physical step, successful drink and attributed later physiological change.
+The new unit scenarios include resources, water, creatures and an unknown type, as well as spatial contradiction, future-memory rejection, no path, duplicate identity and cold owner restore.
 
-## Caveats / blocking gates
+## Scientific limitations
 
-- The dedicated branch enables `observe_routes`, `refresh_surveys` and `geographic_route_enabled` on natural I1 to permit physically observed return routes. This modifies route-observation CPU/UC demand and also activates preexisting frontier-transit behavior. Do not attribute outcomes solely to water-place recall until ablations control these changes.
-- This initial implementation has no verified `used_step` attribution after an actual `boire`; it must not claim that a seen place is proven physiologically useful. Eventual cause-specific positive hydration confidence remains unproven.
-- The actor-class `individual_id` field is not sufficient to independently certify per-birth identity; verify the authenticated life_id capture/WAL ownership before GO.
-- Full integration, UC, M11 restart tests and actual 300/1000 step paired populations have not run in this session. CI is mandatory before converting the draft to ready.
-- A memory-influenced proposal is not proof of selection or action. A drink action is not proof of causal learning. Increased survival requires separate physical evidence.
+- The current path offers a place as a potentially informative destination whenever a natural goal exists; usefulness to **that** goal must still be learned from individual interaction. The generic informational interest is not evidence of a positive physiological consequence.
+- Interaction milestones (`used` and attributable effects) are still owned by the canonical causal learning path, not by spatial memory. Do not interpret a place reached as an act learned or a need satisfied.
+- Detailed UC and Stage11 concurrent candidate behaviour needs physical evaluation. A route survey is now active in the experimental natural configuration. Its independent impact must be controlled.
+- Exact generated-source parity against a pre-change migration reference will reject intentional additions and must be made capable of explicitly documented I1-only development without weakening immutable I0 parity.
+- Before scientific GO: pass CI, verify M11 cold recovery, inspect WAL for proposal, crossing, admitted action and physical destination arrival. Run matched 300- and 1000-step lives on untouched main and experimental commit. The independent scientific PR #311 must not be changed.
 
-**Scientific status: NO-GO pending CI, physical WALs and paired population evidence.**
+**Current verdict: implementation experimental, end-to-end learning and survival NO-GO / INCONCLUSIVE.**
