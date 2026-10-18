@@ -786,7 +786,7 @@ class Stage11Runtime(Stage9Runtime):
                         (cell.x, cell.y) for cell in capture.adjacent
                         if cell.passable is True and cell.creature is False
                     ), current_world_step=capture.t_monde,
-                    max_candidates=self.exploration.geographic.config.max_targets_per_cycle,
+                    max_candidates=self.exploration.geographic.config.max_place_candidates,
                 )
                 self._write(kind="i1_place_memory_recalled", cycle=cycle,
                             data={"candidates": [t.ref for t in frozen_place_targets],
