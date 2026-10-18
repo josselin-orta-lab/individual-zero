@@ -365,22 +365,13 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
             # An observer-only ablation removes access to learned TD values,
             # never learning updates, physical reward, or intrinsic priorities.
             if learning_read_ablation:
-                import i1lab.i1_active_runtime as active
-                original = active.I1ActiveRuntime._consider_uncertain_affordance
-                # Mask only the lookup read, within the existing proposal
-                # and restore it immediately; no learned outcome is injected.
-                from i1.modules.td_values import LearnedValue
-                def masked(self, **kwargs):
-                    real = self.q_active.learned_value
-                    def neutral(state, signature):
-                        return LearnedValue(signature=signature,status="unlearned",
-                            value=None,evidence=None,update_count=0)
-                    self.q_active.learned_value = neutral
-                    try:
-                        return original(self, **kwargs)
-                    finally:
-                        self.q_active.learned_value = real
-                active.I1ActiveRuntime._consider_uncertain_affordance = masked
+                from i1.modules.td_values import LinearTDValues, LearnedValue
+                original_lookup = LinearTDValues.learned_value
+                def masked_read(self, state, signature):
+                    return LearnedValue(signature=signature, status="unlearned",
+                        value=None, evidence=None, update_count=0)
+                LinearTDValues.learned_value = masked_read
+
             report["environment"] = {
                 "spawn": preset["spawn"],
                 "initial_body": preset["initial_body"],
