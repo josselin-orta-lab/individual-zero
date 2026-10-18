@@ -457,3 +457,9 @@ La campagne scientifique S1 sur le SHA précédent reste bloquée et ses
 résultats ne sont pas requalifiés ; une future campagne prospective
 nécessitera un nouveau SHA de moteur validé. La correction est suivie
 par l'[issue #283](https://github.com/josselin-orta-lab/individual-zero/issues/283).
+
+## 2026-10-18: prospective f_cog 0.20 experiment (PR #295)
+
+The canonical I1 natural-birth sleep coefficient w_F is proposed as 0.20 (old 0.65), while dynamic cognitive fatigue gain=0.7, per-sleep-step recovery=0.3, consolidation weight=0.25, physical needs, irreversible death, I0 and M11 remain unchanged. Versioned birth configuration, actual-birth regression, explicit source parity exception, and read-only WAL research arms 0/0.1/0.2/0.3 are proposed. See [FCOG_020_PROSPECTIVE.md](FCOG_020_PROSPECTIVE.md). New paired pilot CI workflow is [i1-fcog-020-science.yml](../../../.github/workflows/i1-fcog-020-science.yml).
+
+Science is **NOT_ESTABLISHED** until exact-SHA CI is green, new independent individual WAL cohort artifacts are collected and verified, semantic Stage10 content and decision usage are causally traced, learning curves and survival CIs are computed, and at least eight credible scenario families are covered. The earlier S1 observations and PR #294 are diagnostic hypothesis inputs only, not counterfactual controls. Open issues #292/#293 remain open. No historical broken experimental cohort is a validity oracle.
