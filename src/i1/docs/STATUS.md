@@ -402,3 +402,38 @@ Avec zéro, un ou deux témoins, le contrôle précédent par parcours
 ordonné est conservé, ainsi que l'ordre de validation et le court-circuit
 d'identifiant. Ce n'est pas un nouveau test et n'autorise aucune preuve
 nouvelle. Nouveau SHA et CI existante obligatoires avant fusion.
+
+## Clôture formelle de la campagne d'optimisation I1 (18 octobre 2026)
+
+**Décision : CLÔTURÉE (périmètre logiciel), sans validation scientifique.**
+
+- Les 21 Pull Requests d'optimisation **#260 à #280** ont été fusionnées
+  individuellement dans `main`, de la plus ancienne à la plus récente.
+  Lors du contrôle de clôture, l'API GitHub ne signalait **aucune PR ouverte**.
+- Point de référence avant l'inscription de cette clôture :
+  `main = a9c448d613e148cfc469fc567d3861aed63fcfc6` (fusion de #280).
+  Le dernier commit de code I1 a passé les **quatre jobs** de la CI existante
+  Python 3.11 et 3.12 :
+  [exécution #39088561949](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39088561949).
+- Travaux réalisés : suppression de parcours, tris, copies et recherches
+  répétés dans les traitements de provenance, publication causale,
+  revues vécues alimentaires/hydriques, preuves Agency DC-09 et témoins
+  physiques numériques ; index transitoires bornés aux requêtes et aux
+  révisions, sans introduire de nouvel état cognitif.
+- Contraintes préservées par les modifications : I0 de référence figé,
+  séparation génération/Lab, M11 et mortalité irréversible, et
+  admission causale fondée sur les observations réellement vécues.
+  Les contrôles existants de non-régression ont réussi ; cela ne
+  constitue pas une preuve scientifique du comportement de I1.
+- Aucun nouveau test n'a été ajouté et aucune campagne de tests manuelle
+  n'a été lancée pendant les dernières tranches, conformément à la
+  demande. Les validations automatiques préexistantes ont été conservées.
+- **Limites de clôture** : les gains cumulés de performance ne sont pas
+  quantifiés par un benchmark avant/après, et aucun statut scientifique
+  GO n'est déclaré. L'[issue #255](https://github.com/josselin-orta-lab/individual-zero/issues/255)
+  reste **ouverte**, hors périmètre de cette clôture ; son éventuelle
+  résolution doit conserver sa propre preuve de correction et validation.
+- Les nouvelles mesures de performance, expériences scientifiques ou
+  évolutions comportementales nécessitent une campagne distincte et
+  une décision explicite. Aucune nouvelle tranche d'optimisation n'est
+  ouverte au titre de cette campagne clôturée.
