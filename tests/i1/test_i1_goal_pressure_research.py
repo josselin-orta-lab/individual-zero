@@ -20,7 +20,7 @@ generate(Path(_ISOLATED_I1.name))
 sys.path.insert(0, _ISOLATED_I1.name)
 from i1.contracts import GoalProposal
 from i1.modules.goal_manager import GoalManager, GoalManagerConfig
-from run_i1_minimal_learning import GOAL_ARBITRATION_ARMS
+from run_i1_minimal_learning import GOAL_ARBITRATION_ARMS, DEFAULT_GOAL_ARBITRATION_ARM, MAX_STEPS
 
 
 def proposal(kind, pressure, *, t=1, cycle=1):
@@ -52,6 +52,12 @@ class GoalPressureResearchTests(unittest.TestCase):
             "calibrated-004": (.04,.35),
             "responsive-002": (.02,.25),
         })
+
+    def test_lab_default_and_long_horizon(self):
+        self.assertEqual(DEFAULT_GOAL_ARBITRATION_ARM, "calibrated-004")
+        self.assertEqual(GOAL_ARBITRATION_ARMS[DEFAULT_GOAL_ARBITRATION_ARM], (.04, .35))
+        self.assertGreaterEqual(MAX_STEPS, 1000)
+        self.assertEqual(GOAL_ARBITRATION_ARMS["baseline"], (.10, .90))
 
     def test_critical_thirst_can_replace_existing_energy_goal(self):
         # Birth temperament example: integrity weight 1.3956016, so the
