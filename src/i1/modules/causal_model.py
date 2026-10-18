@@ -2164,6 +2164,10 @@ class CausalModel:
         prior_by_emitted = defaultdict(list)
         prior_by_observed = defaultdict(list)
         positive_by_ref = defaultdict(list)
+        # One transient context set per contingency/revision, enabled only
+        # for larger batches. Refutation invalidates every pre-boundary count.
+        reuse_positive_contexts = len(self._pending_causal_interventions) >= 3
+        positive_contexts_by_ref: dict[str, tuple[int, set[str]]] = {}
 
         def index_admitted_trial(item: CausalIntervention) -> None:
             prior_by_physical[item.observation_ref].append(item)
@@ -2178,6 +2182,12 @@ class CausalModel:
             ].append(item)
             if item.observed_effect and item.attribution == "self_compatible":
                 positive_by_ref[item.contingency_ref].append(item)
+                # Only already admitted physical evidence may extend an
+                # existing context view, and only beyond its revision bound.
+                if reuse_positive_contexts:
+                    cached = positive_contexts_by_ref.get(item.contingency_ref)
+                    if cached is not None and item.observed_step > cached[0]:
+                        cached[1].add(item.context_signature)
 
         for item in interventions.values():
             index_admitted_trial(item)
@@ -2268,6 +2278,9 @@ class CausalModel:
                 previous_boundary = revisions.get(old.ref, (-1, ""))[0]
                 if trial.observed_step > previous_boundary:
                     revisions[old.ref] = (trial.observed_step, trial.identifier)
+                    # Old positive contexts can no longer establish the claim.
+                    if reuse_positive_contexts:
+                        positive_contexts_by_ref.pop(old.ref, None)
                 # An earlier successful trial in this *same* phase-5 batch
                 # can have established the claim. A later real counterexample
                 # must revoke that status, even if the batch's frozen input
@@ -2282,10 +2295,21 @@ class CausalModel:
                 boundary = revisions.get(old.ref, (-1, ""))[0]
                 # Check only positive, self-compatible interventions of
                 # this contingency, including earlier accepted batch rows.
-                contexts = {
-                    x.context_signature for x in positive_by_ref.get(old.ref, ())
-                    if x.observed_step > boundary
-                }
+                # The source list stays authoritative. Cached context sets
+                # are local to this publication and this exact revision.
+                cached = (
+                    positive_contexts_by_ref.get(old.ref)
+                    if reuse_positive_contexts else None
+                )
+                if cached is None or cached[0] != boundary:
+                    contexts = {
+                        x.context_signature for x in positive_by_ref.get(old.ref, ())
+                        if x.observed_step > boundary
+                    }
+                    if reuse_positive_contexts:
+                        positive_contexts_by_ref[old.ref] = (boundary, contexts)
+                else:
+                    contexts = cached[1]
                 if trial.observed_effect and old.causal_status == "hypothese_causale":
                     next_status = "testee_par_intervention"
                 elif trial.observed_effect and old.causal_status == "testee_par_intervention" and len(contexts) >= self.config.n2:

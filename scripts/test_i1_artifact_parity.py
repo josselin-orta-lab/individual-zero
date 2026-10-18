@@ -282,6 +282,39 @@ def _reference_lived_review_dispatch(before: bytes) -> bytes:
     return text.replace(old, new, 1).encode("utf-8")
 
 
+def _reference_approved_stream_noncanonical_pairs(before: bytes) -> bytes:
+    """Reconstruct the approved #268 exact causal-control projection."""
+    old = "                matched = [\n                    (x, y) for x in exposed for y in control\n                    if x.observation_context == y.observation_context\n                    and x.controlled_variables == y.controlled_variables\n                ]\n                if not matched:\n                    continue\n                e = {x.identifier: x for x, _ in matched}\n                b = {y.identifier: y for _, y in matched}"
+    new = "                e = {}\n                b = {}\n                for x in exposed:\n                    for y in control:\n                        if (\n                            x.observation_context == y.observation_context\n                            and x.controlled_variables == y.controlled_variables\n                        ):\n                            e[x.identifier] = x\n                            b[y.identifier] = y\n                if not e:\n                    continue"
+    content = before.decode("utf-8")
+    if content.count(old) != 1:
+        raise ValueError("previous P-35 noncanonical source drift")
+    return content.replace(old, new, 1).encode("utf-8")
+
+
+def _approved_revision_bounded_context_cache(before: bytes, after: bytes) -> bool:
+    """Allow only this query-local revision-scoped context-set change."""
+    old_a = "        positive_by_ref = defaultdict(list)\n\n        def index_admitted_trial(item: CausalIntervention) -> None:"
+    new_a = "        positive_by_ref = defaultdict(list)\n        # One transient context set per contingency/revision, enabled only\n        # for larger batches. Refutation invalidates every pre-boundary count.\n        reuse_positive_contexts = len(self._pending_causal_interventions) >= 3\n        positive_contexts_by_ref: dict[str, tuple[int, set[str]]] = {}\n\n        def index_admitted_trial(item: CausalIntervention) -> None:"
+    old_b = "            if item.observed_effect and item.attribution == \"self_compatible\":\n                positive_by_ref[item.contingency_ref].append(item)"
+    new_b = "            if item.observed_effect and item.attribution == \"self_compatible\":\n                positive_by_ref[item.contingency_ref].append(item)\n                # Only already admitted physical evidence may extend an\n                # existing context view, and only beyond its revision bound.\n                if reuse_positive_contexts:\n                    cached = positive_contexts_by_ref.get(item.contingency_ref)\n                    if cached is not None and item.observed_step > cached[0]:\n                        cached[1].add(item.context_signature)"
+    old_c = "                if trial.observed_step > previous_boundary:\n                    revisions[old.ref] = (trial.observed_step, trial.identifier)"
+    new_c = "                if trial.observed_step > previous_boundary:\n                    revisions[old.ref] = (trial.observed_step, trial.identifier)\n                    # Old positive contexts can no longer establish the claim.\n                    if reuse_positive_contexts:\n                        positive_contexts_by_ref.pop(old.ref, None)"
+    old_d = "                # Check only positive, self-compatible interventions of\n                # this contingency, including earlier accepted batch rows.\n                contexts = {\n                    x.context_signature for x in positive_by_ref.get(old.ref, ())\n                    if x.observed_step > boundary\n                }"
+    new_d = "                # Check only positive, self-compatible interventions of\n                # this contingency, including earlier accepted batch rows.\n                # The source list stays authoritative. Cached context sets\n                # are local to this publication and this exact revision.\n                cached = (\n                    positive_contexts_by_ref.get(old.ref)\n                    if reuse_positive_contexts else None\n                )\n                if cached is None or cached[0] != boundary:\n                    contexts = {\n                        x.context_signature for x in positive_by_ref.get(old.ref, ())\n                        if x.observed_step > boundary\n                    }\n                    if reuse_positive_contexts:\n                        positive_contexts_by_ref[old.ref] = (boundary, contexts)\n                else:\n                    contexts = cached[1]"
+    expected, candidate = before.decode("utf-8"), after.decode("utf-8")
+    for old, new in (
+        (old_a, new_a),
+        (old_b, new_b),
+        (old_c, new_c),
+        (old_d, new_d),
+    ):
+        if expected.count(old) != 1 or candidate.count(new) != 1:
+            return False
+        expected = expected.replace(old, new, 1)
+    return expected == candidate
+
+
 def _approved_stream_noncanonical_pairs(before: bytes, after: bytes) -> bool:
     """Only replace list materialization with ordered matching projections."""
     old = "                matched = [\n                    (x, y) for x in exposed for y in control\n                    if x.observation_context == y.observation_context\n                    and x.controlled_variables == y.controlled_variables\n                ]\n                if not matched:\n                    continue\n                e = {x.identifier: x for x, _ in matched}\n                b = {y.identifier: y for _, y in matched}"
@@ -456,18 +489,22 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or (rel == "i1/modules/causal_model.py"
-                    and _approved_stream_noncanonical_pairs(
-                        _reference_lived_review_dispatch(
-                            _reference_approved_confirmed_count(
-                            _reference_approved_physical_alias(
-                            _reference_approved_active_context_cache(
-                                _reference_hydration_control_lookup(
-                                    _reference_food_control_sort(
-                                        _reference_causal_minimum(
-                                            _reference_approved_numeric_index(
-                                                _reference_numeric_publication(
-                                                    _reference_agency_index(
-                                                        (old_root / rel).read_bytes()
+                    and _approved_revision_bounded_context_cache(
+                        _reference_approved_stream_noncanonical_pairs(
+                            _reference_lived_review_dispatch(
+                                _reference_approved_confirmed_count(
+                                    _reference_approved_physical_alias(
+                                        _reference_approved_active_context_cache(
+                                            _reference_hydration_control_lookup(
+                                                _reference_food_control_sort(
+                                                    _reference_causal_minimum(
+                                                        _reference_approved_numeric_index(
+                                                            _reference_numeric_publication(
+                                                                _reference_agency_index(
+                                                                    (old_root / rel).read_bytes()
+                                                                )
+                                                            )
+                                                        )
                                                     )
                                                 )
                                             )
@@ -475,8 +512,6 @@ def verify(reference_root: Path) -> None:
                                     )
                                 )
                             )
-                        )
-                        )
                         ),
                         (new_root / rel).read_bytes()
                     ))

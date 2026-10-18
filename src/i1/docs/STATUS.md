@@ -250,3 +250,21 @@ Les tests, contrats, ordre d'insertion et résultats cognitifs restent
 conceptuellement inchangés. Aucun nouveau test n'est ajouté à la demande
 de l'utilisateur. Un contrôle de parité source contraint le seul bloc
 modifié. Aucun GO scientifique ou gain CPU mesuré n'est revendiqué.
+
+## PR #269 : réutilisation révisable des contextes d'intervention (2026-10-18)
+
+La publication de plusieurs interventions positives reconstruisait, pour
+chaque admission, l'ensemble des contextes indépendants de tous les
+témoins positifs d'une même contingence. La tranche #269 conserve le
+parcours original pour les petits lots (moins de trois interventions en
+attente) ; pour les autres, elle conserve uniquement pendant l'appel
+un ensemble par référence de contingence et borne de réfutation.
+Seuls les témoins physiques admis, positifs et `self_compatible`
+enrichissent cet ensemble, lorsque leur pas observé est postérieur à
+la borne. Une réfutation qui avance la borne invalide immédiatement
+l'ensemble. L'historique admis reste l'unique source de vérité ;
+la promotion finale différée conserve son calcul historique.
+Le contrôle de parité du code généré autorise exactement quatre blocs.
+Aucun nouveau test n'est ajouté ni lancé manuellement, conformément
+à la consigne. Aucune validation scientifique ni accélération mesurée
+n'est revendiquée avant les contrôles habituels du dépôt.
