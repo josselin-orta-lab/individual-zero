@@ -206,6 +206,51 @@ def _experimental_td_eligibility_birth(params, eligibility_lambda):
     return {**params, "stage11_config": stage11, "stage10_config": stage10}
 
 
+GOAL_ARBITRATION_RESEARCH_POLICY = "i1-goal-pressure-scale-sensitivity-v1"
+GOAL_ARBITRATION_ARMS = {
+    "baseline": (0.10, 0.90),
+    "calibrated-004": (0.04, 0.35),
+    "responsive-002": (0.02, 0.25),
+}
+
+
+def _experimental_goal_arbitration_birth(params, arm):
+    """Change only the I1 GoalManager threshold config prior to fresh birth.
+
+    The thresholds operate on first-person need pressure, not world data,
+    action primitives, innate food knowledge or reflex execution.
+    """
+    if arm not in GOAL_ARBITRATION_ARMS:
+        raise ValueError("unknown registered goal threshold intervention")
+    s11, s10 = params["stage11_config"], params["stage10_config"]
+    old9 = s11.stage9
+    old8 = old9.stage8
+    old7 = old8.stage7
+    old6 = old7.stage6
+    old4 = old6.stage4
+    goals = old4.goals
+    if (goals.replacement_hysteresis != 0.1 or goals.critical_pressure != 0.9
+            or s10.stage9.stage8.stage7.stage6.stage4.goals != goals):
+        raise AssertionError("unexpected I1 reference goal policy")
+    if arm == "baseline":
+        return params
+    hysteresis, critical = GOAL_ARBITRATION_ARMS[arm]
+    tag = "+" + GOAL_ARBITRATION_RESEARCH_POLICY + ":" + arm
+    stage4 = replace(old4, version=old4.version+tag,
+                     goals=replace(goals, version=goals.version+tag,
+                                   replacement_hysteresis=hysteresis,
+                                   critical_pressure=critical))
+    stage6 = replace(old6, version=old6.version+tag, stage4=stage4)
+    stage7 = replace(old7, version=old7.version+tag, stage6=stage6)
+    stage8 = replace(old8, version=old8.version+tag, stage7=stage7)
+    stage9 = replace(old9, version=old9.version+tag, stage8=stage8)
+    stage11 = replace(s11, version=s11.version+tag, stage9=stage9)
+    stage10 = replace(s10, version=s10.version+tag, stage9=stage9)
+    stage11.validate()
+    stage10.validate()
+    return {**params, "stage11_config":stage11, "stage10_config":stage10}
+
+
 def _observer_owner_hashes(life):
     """Operator-only hashes of existing published owner state; no writes."""
     from i1lab.determinism import canonical_causal_bytes, sha256_hex
@@ -278,6 +323,13 @@ def _wal_life(*, birth, params, life_id, path, steps, observe_owner_digests=Fals
         raise RuntimeError("durable journal differs from live journal")
     return {
         "lifecycle": life.stage3.substrate.mortal_status.value,
+        "effective_goal_arbitration": {
+            "version": life.goal_manager._config.version,
+            "replacement_hysteresis": life.goal_manager._config.replacement_hysteresis,
+            "critical_pressure": life.goal_manager._config.critical_pressure,
+            "refractory_steps": life.goal_manager._config.refractory_steps,
+            "p_min": life.goal_manager._config.p_min,
+        },
         "effective_td_eligibility_lambda": life._stage8_config.td.lambda_e,
         "effective_td_policy": life._stage8_config.td.version,
         "effective_sleep_coefficients": {
@@ -333,7 +385,8 @@ def _m11_life(*, birth, params, life_id, path, steps):
 def execute(*, preset_name, seed, steps, lives, custody, output_dir,
             observe_owner_digests=False, learning_read_ablation=False,
             food_role='a', food_gain=None, quiet_cognitive_sleep=False,
-            eligibility_lambda=None, reward_model='absolute'):
+            eligibility_lambda=None, reward_model='absolute',
+            goal_arbitration_arm='baseline'):
     if (type(seed) is not int or not 0 <= seed <= 2**32 - 1
             or type(steps) is not int or not 1 <= steps <= MAX_STEPS
             or type(lives) is not int or not 1 <= lives <= MAX_LIVES
@@ -345,6 +398,10 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
         raise ValueError('invalid preregistered learning arm')
     if preset_name not in ('learning-cell', 'learning-cell-one') or custody != 'wal' or lives != 1:
         raise ValueError('minimal learning study requires a registered WAL mortal world')
+    if goal_arbitration_arm not in GOAL_ARBITRATION_ARMS:
+        raise ValueError('unregistered goal arbitration arm')
+    if goal_arbitration_arm != 'baseline' and preset_name != 'learning-cell-one':
+        raise ValueError('goal threshold research only in safe one-cell world')
     if reward_model not in ('absolute', 'deficit-only-v1'):
         raise ValueError('unknown preregistered reward model')
     if reward_model != 'absolute' and preset_name != 'learning-cell-one':
@@ -382,6 +439,8 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                 "food_gain": food_gain,
                 "quiet_cognitive_sleep": quiet_cognitive_sleep,
                  "reward_model": reward_model,
+                 "goal_arbitration_arm": goal_arbitration_arm,
+                 "goal_arbitration_policy": GOAL_ARBITRATION_RESEARCH_POLICY,
                  "eligibility_lambda": eligibility_lambda,
                  "eligibility_research_policy": (ELIGIBILITY_RESEARCH_POLICY
                     if eligibility_lambda is not None else None)},
@@ -407,6 +466,7 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
             from i1lab.i1_birth import birth_i1, birth_i1_m11
 
             params, initial_local = _birth_parameters(preset)
+            params = _experimental_goal_arbitration_birth(params, goal_arbitration_arm)
             if eligibility_lambda is not None:
                 params = _experimental_td_eligibility_birth(params, eligibility_lambda)
             if reward_model == "deficit-only-v1":
@@ -490,6 +550,13 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                         birth=birth_i1_m11, params=params, life_id=life_id,
                         path=path, steps=steps,
                     )
+                expected_h, expected_c = GOAL_ARBITRATION_ARMS[goal_arbitration_arm]
+                if (life["effective_goal_arbitration"]["replacement_hysteresis"] != expected_h
+                        or life["effective_goal_arbitration"]["critical_pressure"] != expected_c):
+                    raise AssertionError("newborn did not receive declared goal thresholds")
+                if goal_arbitration_arm != "baseline" and (
+                        GOAL_ARBITRATION_RESEARCH_POLICY not in life["effective_goal_arbitration"]["version"]):
+                    raise AssertionError("experiment goal contract not born")
                 if eligibility_lambda is not None and (
                     life["effective_td_eligibility_lambda"] != eligibility_lambda
                     or ELIGIBILITY_RESEARCH_POLICY not in life["effective_td_policy"]
@@ -530,6 +597,9 @@ def main():
     parser.add_argument("--food-role", choices=("a","b"), default="a")
     parser.add_argument("--food-gain", type=float, choices=(0.0,10.0))
     parser.add_argument("--reward-model", choices=("absolute", "deficit-only-v1"), default="absolute")
+    parser.add_argument("--goal-arbitration-arm",
+                        choices=tuple(GOAL_ARBITRATION_ARMS), default="baseline",
+                        help="I1-only prebirth hysteresis / critical pressure research")
     parser.add_argument("--eligibility-lambda", type=float,
                         choices=ELIGIBILITY_RESEARCH_ARMS, default=None,
                         help="registered prebirth TD eligibility research arm")
@@ -576,6 +646,7 @@ def main():
             quiet_cognitive_sleep=args.quiet_cognitive_sleep,
             eligibility_lambda=args.eligibility_lambda,
             reward_model=args.reward_model,
+            goal_arbitration_arm=args.goal_arbitration_arm,
         )
         print(json.dumps({
             "status": report["status"],
