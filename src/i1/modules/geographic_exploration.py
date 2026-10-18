@@ -671,7 +671,7 @@ class GeographicExploration:
             raw_offered = state.get("place_offered")
             if not isinstance(raw_offered, list) or len(raw_offered) > 1:
                 raise ValueError("invalid offered entity-place snapshot")
-            offered = []
+            place_targets = []
             for row in raw_offered:
                 if (not isinstance(row, Mapping)
                     or set(row) != set(SpatialReturnTarget.__dataclass_fields__)):
@@ -694,8 +694,8 @@ class GeographicExploration:
                     or any(point not in visited for point in
                            target.visited_path[:-1])):
                     raise ValueError("stale entity-place snapshot target")
-                offered.append(target)
-            place_offered = tuple(offered)
+                place_targets.append(target)
+            place_offered = tuple(place_targets)
         elif any(key in state for key in
                  ("entity_places", "place_offered", "place_observer_id")):
             raise ValueError("unexpected place memory in legacy snapshot")
