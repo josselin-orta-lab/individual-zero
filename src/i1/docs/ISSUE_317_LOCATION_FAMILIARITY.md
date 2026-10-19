@@ -617,3 +617,36 @@ retains the stopped WAL's SHA, admitted primitive, motive type, option,
 sleep session and mortal status, never rolls back or repeats the action.
 Trial rerun `39292705542` is pending. Neither I0 nor production I1
 was changed. Global `NO-GO` remains.
+
+## 19 October: physically confirmed motive/admission mismatch and bounded fix
+
+Independent archived experiment reports from Actions run `39292705542`
+(`oasis/9791`, homeostatic, world step **51**; `foraging/9791`,
+circadian, world step **95**) identify the immediate failure:
+`last_applied_decision.motive_type=active_goal`, goal `recover_energy`,
+`prepared_source=decision`, `admission_ok=true`, primitive `dormir`.
+The same physically archived event sequences record an actual Competition
+threshold crossing, the ordinary `command_admitted` receipt and a
+`step_closed` with one physical command and one world advance.
+`SleepSession` nevertheless rejected the entry solely because its older
+gate required the motive type `sleep_pressure`. It is not a rogue action.
+
+The narrowly scoped correction removes **only** motive identity as an
+independent sleep-admission criterion. Stage4 must still select the option
+through Competition, obtain Action Control admission and physically execute
+the exact command. Stage10 checks the applied decision option, prepared
+reference and selected plan agree; SleepSession retains chronological,
+non-reentrant, admitted-primitive and `execution_status=applied` checks.
+Synthetic tests reject reflex/fallback, unadmitted, mismatched, non-dormir
+and non-applied candidates. The real I1 CI and fresh 24-life matched
+experiment must establish the *actual* effect. No weights, rewards,
+physiology, thresholds, wake rules, I0 or M11 rules are modified.
+
+The previous two stopped individuals remain definitively technically
+halted. Their WAL bytes and world steps must **never** be replayed or
+extended. Subsequent CI launches independently born individuals under a
+new source SHA with separate immutable WAL, not a resurrection of either
+stopped life. Six previously completed triplets under the old SHA must
+not be mixed with future, newly born results. Global verdict remains
+**NO-GO** pending prospective authentic WAL validation, survival and
+consolidation/UC comparison.
