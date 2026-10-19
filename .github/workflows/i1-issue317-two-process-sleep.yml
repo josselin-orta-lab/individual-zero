@@ -1,0 +1,55 @@
+name: I1 issue317 human-inspired two-process sleep cohorts
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/run_i1_317_two_process_sleep.py'
+      - 'tests/i1/test_i1_317_two_process_sleep.py'
+      - '.github/workflows/i1-issue317-two-process-sleep.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  births:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [oasis, foraging, dry-valley, memory-corridor]
+        seed: [9761, 9791]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install I1
+        run: python -m pip install -e .
+      - name: Ensure calibrated sleep variants do not script behavior
+        run: python -m unittest discover -s tests/i1 -p test_i1_317_two_process_sleep.py -v
+      - name: Birth three separate I1 mortal lives under identical world
+        env:
+          PRESET: ${{ matrix.preset }}
+          SEED: ${{ matrix.seed }}
+        run: |
+          python tools/run_i1_317_two_process_sleep.py --preset "$PRESET" --seed "$SEED" --output-dir "results/$PRESET/$SEED"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads((Path('results')/os.environ['PRESET']/os.environ['SEED']/'report.json').read_text())
+          assert d['status']=='COMPLETE_PAIRED_PHYSICAL_DIAGNOSTIC'
+          assert set(d['arms'])=={'canonical','homeostatic','circadian'}
+          assert d['no_sleep_or_motor_forcing'] is True
+          assert d['ordinary_wake_thresholds_unchanged'] is True
+          assert d['scientific_verdict']=='NO-GO'
+          print("THREE_PHYSICAL_LIVES_VERIFIED")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-two-process-${{ matrix.preset }}-${{ matrix.seed }}
+          path: results/
+          retention-days: 30
+          if-no-files-found: warn
