@@ -874,7 +874,7 @@ _EXPERIENCED_318_BLOBS = {
          "0f6d683e9d1488250037aafcda06f276ab946157"),
     "i1lab/m11_transactional_mortal.py":
         ("src/i1/runtime/m11_transactional_mortal.py",
-         "7a44788cc81810f54f7abe7ceae3ccaeeaf00694"),
+         "cda4011f4209d74ee26f46028a5ad8ddada6a2ed"),
 }
 
 
