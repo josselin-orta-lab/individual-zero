@@ -1250,3 +1250,53 @@ run `39324485459` launches the 16 matched new pairs.
 This remains a laboratory intervention, not an M11 native
 persistent owner: **NO-GO** and PR #318 **draft** pending
 held-out attestation and native cold-restore contract.
+
+## 19 October: completed held-out 32-life birth reports, dissociated water/berry site
+
+The new preregistered held-out run
+[39324485459](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39324485459)
+completed all **16** matched job groups successfully, yielding
+**32 independent mortal WAL** at exact experiment source
+`4536cd2dda53e470ef577aa14ea98ab9ec05fc50`.
+Aggregates from the 16 original **birth reports** (pending independent
+original WAL verification, no promotion):
+
+| Arm (16 lives) | Deaths | Lived steps | `boire` | Moves | Actual consolidated objects | Accepted UC |
+|---|---:|---:|---:|---:|---:|---:|
+| Matched guarded-control | 9 | 4209 | 17 | 514 | 1047 | 192226 |
+| Same retrieval + lived-site relevance | 9 | 4209 | 21 | 518 | 1182 | 183022 |
+
+**Held-out positive result in the separated-water-and-berry corridor**:
+seeds 16127 and 16249 show **1 to 3 physically reported `boire`
+commands** per life, **81 to 150** and **84 to 150** actual
+consolidated objects, respectively, with water at (8,8)
+and berries only at (10,8). The former berry-colocation
+confound cannot alone account for these paired effects.
+However, held-out seeds **16381** and **16513** die without
+a single positive first-person water-source experience, so
+neither variant has a learned association to apply. Six other
+non-corridor-world pairs with no intervention effect likewise
+remain largely equal. Survival overall stays 7/16 in both
+groups. The benefit is conditional, not population survival GO.
+
+All motor-choice claims must be verified by the **actual** winning
+Action Control `option_ref`, not inferred from simultaneous
+Competition threshold crossings. Independent source verification:
+`tools/audit_i1_317_experiential_place_heldout.py`,
+`tests/i1/test_i1_317_experiential_place_heldout_audit.py`,
+`.github/workflows/i1-issue317-experiential-place-heldout-audit.yml`.
+The first audit workflow was launched before all original artifacts
+were present and failed closed on a missing archive; this did
+**not** indicate invalid physical birth and no original life was
+restarted. Updated workflow waits for original run completion
+before retrieving all 16 sealed pairs.
+
+CI correctness: the new fixed world preset was initially absent
+from the strict expected preset set in `test_world_presets.py`,
+and `main` I1 smoke CI correctly failed. Commit `e5154f12`
+registered the new world in the test inventory without altering
+the world or any cognitive engine. General CI must pass afresh.
+
+No coma, forced resource visit, motor override, source-type
+oracle, I0 change, cold-recovery promise, sleep-policy
+retune or mortal replay. **PR draft / scientific NO-GO maintained**.
