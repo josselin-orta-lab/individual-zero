@@ -4,6 +4,7 @@ on:
     branches: [fix/i1-memory-competition-317]
     paths:
       - 'tests/i1/test_i1_317_experiential_native_lived_m11.py'
+      - 'src/i1/runtime/m11_transactional_mortal.py'
       - '.github/workflows/i1-issue317-native-lived-water-m11.yml'
   workflow_dispatch:
 permissions:
