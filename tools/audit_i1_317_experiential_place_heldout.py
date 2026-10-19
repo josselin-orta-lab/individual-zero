@@ -265,6 +265,30 @@ def paired_effect(control, treated):
     }
 
 
+
+def motor_admission(wal, step):
+    """Match real Action Control receipt to the physically applied motor."""
+    commands=[]; admissions=[]
+    with wal.open(encoding="utf-8") as stream:
+        for line in stream:
+            e=json.loads(line)["causal_event"]
+            if e.get("t_monde")!=step:continue
+            if e["kind"]=="command_experienced":commands.append(e)
+            if e["kind"]=="command_admitted":admissions.append(e)
+    require(len(commands)==1 and commands[0].get("emitter")=="action_control",
+            "ambiguous actual motor")
+    c=commands[0]
+    matched=[a["data"] for a in admissions
+             if a.get("attempt_ref")==c.get("attempt_ref")
+             and a["data"].get("command_hash")==c.get("command_hash")
+             and a["data"].get("primitive")==c.get("primitive")]
+    require(len(matched)==1, "ambiguous physically matched admission")
+    return {
+        "option_ref": matched[0].get("option_ref"),
+        "source": matched[0].get("source"),
+        "primitive": c["primitive"],
+    }
+
 def certify(root):
     require(root.is_dir() and not root.is_symlink(),
             "missing original 18-life evidence")
@@ -365,6 +389,18 @@ def certify(root):
             arms["guard_control"]["wal_evidence"],
             arms["guard_experiential"]["wal_evidence"],
         )
+        first = comparison["first_physical_motor_divergence"]
+        if first is not None:
+            receipt=motor_admission(root/world/str(seed)/"guard_experiential"/"life-01.wal",first)
+            comparison["physically_admitted_first_motor"] = receipt
+            comparison["water_site_option_won"] = (
+                "sighting:water_source:" in (receipt["option_ref"] or ""))
+            comparison["berry_site_option_won"] = (
+                "sighting:berry_" in (receipt["option_ref"] or ""))
+        else:
+            comparison["physically_admitted_first_motor"]=None
+            comparison["water_site_option_won"]=False
+            comparison["berry_site_option_won"]=False
         pairs.append({
             "world": world, "seed": seed,
             "physical_control": {
@@ -382,6 +418,27 @@ def certify(root):
     require(len(pairs) == 16 and
             all(aggregates[a]["lives"] == 16 for a in ARMS),
             "not all original mortal lives authenticated")
+    by_world={}
+    for world in WORLDS:
+        group=[p for p in pairs if p["world"]==world]
+        require(len(group)==4,"missing paired birth world")
+        by_world[world]={
+            "pairs":len(group),
+            "pairs_with_control_applied_boire":sum(
+                p["physical_control"]["actions"].get("boire",0)>0 for p in group),
+            "pairs_with_treatment_applied_boire":sum(
+                p["physical_experimental"]["actions"].get("boire",0)>0 for p in group),
+            "first_motor_divergences":sum(
+                p["pair_comparison"]["first_physical_motor_divergence"] is not None
+                for p in group),
+            "first_motor_water_option_won":sum(
+                p["pair_comparison"]["water_site_option_won"] for p in group),
+            "first_motor_berry_option_won":sum(
+                p["pair_comparison"]["berry_site_option_won"] for p in group),
+            "additional_applied_boire":sum(
+                p["physical_experimental"]["actions"].get("boire",0)-
+                p["physical_control"]["actions"].get("boire",0) for p in group),
+        }
     return {
         "schema": SCHEMA,
         "status": "THIRTY_TWO_HELDOUT_MORTAL_WAL_AUDITED_NO_GLOBAL_GO",
@@ -395,6 +452,8 @@ def certify(root):
         "scientific_verdict": "NO-GO",
         "by_arm": {arm: dict(counts) for arm, counts in aggregates.items()},
         "sixteen_heldout_mortal_pairs": pairs,
+        "world_stratified_first_person_results": by_world,
+        "first_actual_motor_option_attested": True,
     }
 
 
