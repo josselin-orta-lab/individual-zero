@@ -186,6 +186,14 @@ def _runtime_contract(runtime: Any) -> str:
     if getattr(runtime, "_i1_water_contract", None) is not None:
         configuration = (*configuration,
             ("i1-water-firstperson-birth-v1", runtime._i1_water_contract))
+    # Historical births retain byte-identical M11 birth fingerprints.
+    # Opted-in births MUST pin the additional causal evaluation contract.
+    if getattr(runtime, "_i1_experienced_place_enabled", False):
+        from i1.modules.experienced_place_relevance import (
+            CONTRACT, MAX_RELEVANCE, RELEVANCE_WATER_GATE)
+        configuration = (*configuration, (
+            CONTRACT, True, MAX_RELEVANCE, RELEVANCE_WATER_GATE,
+        ))
     return sha256_hex(canonical_causal_bytes(_contract_value(configuration)))
 
 
