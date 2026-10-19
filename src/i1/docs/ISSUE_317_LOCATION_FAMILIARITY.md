@@ -215,3 +215,50 @@ physiological causality and not a cognitive improvement. The next
 intervention must provide a separately identified, genuinely
 experienced consequence and demonstrate its role in a later choice.
 **NO-GO** remains the global verdict.
+
+
+## 19 October: authenticated lived TD-to-memory decision bridge (sub-capability GO)
+
+CI run `39213944546` at engine commit `e6644be17cba94479503572badb2eebb3964cd99` **PASS**.
+It independently downloaded the *unchanged* foraging/1141 WAL originally
+executed by `370f4e99`, authenticated its entire hash chain and classified
+the exact sealed bytes (SHA-256
+`0894b2a1420513e3a78d4b7b9692342fc1818343548ef8e3b9e0f16df399c22b`,
+journal head `b31aa6c9c6aa7209ee9341510238d6b6c4c223bc1e777ce83f32109786aa0677`).
+The archived classifier report is `i1-317-lived-td-memory-decision-proof`,
+artifact ID `12169010479`. The new read-only
+`certify_experience_to_memory_decision` has separately matched ordered
+Action Control admissions, command hashes, physical World/Body transitions,
+normal committed step closures, earlier entity-place sightings, option
+registrations, evaluations and Competition crossing traces.
+
+It certified **one** complete action-credit-and-decision bridge:
+
+- Step 35: physical memory-guided arrival at (10,8), currently known
+  `sighting:water_source:10:8`; the option was still unlearned.
+- Step 36: physically applied drink, effect `drank=true`, water **+39.6**.
+  The TD publication on this step (`return_g=+1.4`) credits the *previous
+  memory movement*, not drinking.
+- Step 37: TD publication of the previously applied drink
+  (`return_g=+24.7`) lists the memory-return signature among updated
+  eligibility traces. Other unrelated signatures also receive updates.
+- Step 64: the *same* memory-return signature is evaluated with learned
+  Q **+2.686204**, simulated evidence unavailable, intrinsic novelty **0**,
+  option evidence **+0.241546**. Competition's recorded accumulator is
+  **0.287576 -> 0.529123** against threshold **0.5**. Without this
+  cycle's positive contribution, the recorded accumulator would not cross
+  that threshold. The actual option wins, Action Control admits the command
+  and World/Body confirms a movement into (10,8).
+
+This is a **behaviorally certified TD action-value reuse** (local
+crossing-dependence), not a policy-level randomized counterfactual and
+**not** a proof that the entity itself was beneficial. The reward reached
+the spatial option via TD eligibility traces; the causal contribution of
+the source versus context remains unseparated. The destination is
+adjacent/currently perceptible in the final action, so it does not prove
+generalized *remote* returns. This is a **GO only for this narrow
+sub-capability** and **NO-GO globally**, especially given the observed
+frontier-continuity survival regression. The archive can be replayed
+through `.github/workflows/i1-issue317-lived-td-bridge.yml` without
+touching original WAL or a living individual. Independent held-out seeds,
+counterfactual learning influence and multiple geographies remain open.
