@@ -1032,3 +1032,51 @@ and a demonstrated survival/learning benefit.
 Original 24 WAL remain sealed; no restart, rollback, resurrection,
 new motor authority, innate resource value, forced consumption
 or coma. **Global NO-GO.**
+
+## 19 October: 12 new mortal no-op guard lives, physical result
+
+The matched fresh-birth run [39315789674](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39315789674)
+completed **six SUCCESS jobs**, all 12 birth reports. Reports:
+both arms have **four survivors of six**, **1,656 physical world
+steps**, **seven `boire` commands** and **382 objects consolidated**.
+Native accepted 91,940 logical UC; guarded recall 92,083, an
+increase of 143. The lab wrapper reports 331 avoided searches,
+215 potentially useful extra searches and 215 ranking changes
+(all 215 in `memory-corridor/14107`). Such wrapper counters
+are not original WAL-proven and do not establish a better action.
+
+Direct independent inspection of the two original
+`memory-corridor/14107` WAL: the guarded individual physically
+proposed a known water-place route **215 times across 95 world
+steps** that baseline omitted. All 215 Competition evaluations had
+**evidence exactly zero**, **accumulator exactly zero** and
+**threshold exactly 0.5**; *none crossed*. Applied physical commands,
+water consumption, survival and consolidation remained identical,
+even though UC usage and internal recalled candidates changed.
+In other cohorts the guard was behaviorally identical to native.
+
+This separates memory access and motor decision much more precisely:
+the same individually learned water-positive destination can be
+retrieved and offered, but Stage8 remains at zero intrinsic value for
+an entity-place already personally reached. Normal Stage8 Q/TD
+evidence here did not overcome that zero. It would be scientifically
+wrong to "fix" this by forcing return to a resource label or
+making the option a Competition winner.
+
+The new independent audit
+`tools/audit_i1_317_noop_guard_cohort.py`, negative tests
+`tests/i1/test_i1_317_noop_guard_cohort.py`, and workflow
+`.github/workflows/i1-issue317-noop-guard-cohort-audit.yml`
+read, verify and compare original 12 WAL before trusting any
+life outcome. Original records remain unaltered; no retries in place.
+Next hypothesis is an *entirely experiential* Stage8 location
+relevance signal based solely on admitted positive `boire` followup
+and active thirst goal. Such a signal cannot be an oracle, a
+guaranteed benefit, a bypass of Competition/Action Control, or a
+free UC calculation. It must be isolated from paid-retrieval
+confounds and validated with fresh paired mortal lives before
+production consideration. Current research wrapper is not
+cold-restorable through M11.
+
+**Scientific NO-GO maintained.** No I0, canonical I1 owner,
+physical simulation, thresholds, food-first reflex or coma is changed.
