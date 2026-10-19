@@ -219,18 +219,18 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
                 initial_state=initial_state, cycle=cycle, t_monde=t_monde,
                 remaining_plan_index=remaining_plan_index,
             )
-            # Novelty of the *location* is not benefit from the entity.
-            # Only the first-person physical visit ledger knows whether I1
-            # has reached that location. Once visited, location curiosity
-            # is exhausted: repeated sightings/confidence must not pay a
-            # new positive intrinsic bonus on every A-B-A return.
-            #
-            # Stage8's actual learned/simulated evidence is untouched and
-            # can still motivate revisits to personally useful places.
-            # This is generic for any entity, not a water/food affordance.
-            visited_location = geo.has_recorded_site(target.observed_position)
+            # Physical arrival after first sighting, not earlier familiarity
+            # with the coordinates, exhausts this entity-place encounter's
+            # spatial novelty. No interaction or physiological benefit is
+            # implied. An entity found on an already visited cell may still
+            # be unfamiliar until the individual subsequently reaches it.
+            # Stage8's actual learned/simulated action value is unchanged.
+            reached_since_sighting = geo.entity_site_reached(target)
+            if reached_since_sighting is None:
+                return self._unscored_geographic(
+                    proposal, cycle=cycle, t_monde=t_monde)
             value = (
-                0.0 if visited_location
+                0.0 if reached_since_sighting
                 else min(0.12, self._intrinsic_weight * 0.12 * target.confidence)
             )
             ext = 0.0 if original.evidence is None else original.evidence
@@ -239,9 +239,9 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
                 intrinsic_status="applicable", intrinsic_value=value,
                 signal_ids=tuple(original.evaluation.signal_ids) + (
                     f"place-memory:{target.entity_id}:seen-t{target.observed_step}",
-                    ("place-memory:physically_visited_location"
-                     if visited_location else
-                     "place-memory:location_not_yet_visited"),
+                    ("place-memory:entity_place_reached_since_sighting"
+                     if reached_since_sighting else
+                     "place-memory:entity_place_not_yet_reached"),
                 ),
                 producers=tuple(dict.fromkeys(
                     original.evaluation.producers + ("exploration:entity_place_recall",)

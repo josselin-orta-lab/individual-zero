@@ -365,9 +365,13 @@ try:
         )
         target.validate()
         visits=set()
+        reached=set()
         geography=SimpleNamespace(
             place_for=lambda opt: target if opt.id==option.option.id else None,
             has_recorded_site=lambda position: position in visits,
+            entity_site_reached=lambda proposed: (
+                (0,0) in reached if proposed.entity_id==entity_id else None
+            ),
         )
         evaluator=Stage11OptionEvaluator.__new__(Stage11OptionEvaluator)
         evaluator._exploration=SimpleNamespace(geographic=geography)
@@ -379,18 +383,46 @@ try:
         first=score()
         assert abs(first.evidence-0.35*0.12*0.65)<1e-12,kind
         assert first.evaluation.learned_value_status=="unlearned"
-        assert "place-memory:location_not_yet_visited" in first.evaluation.signal_ids
-        visits.add((0,0)) # physically witnessed visit, not an entity oracle
+        assert "place-memory:entity_place_not_yet_reached" in first.evaluation.signal_ids
+        # Previously visited coordinates, then a NEW sighting: the entity has
+        # never been encountered at that position since it was noticed.
+        visits.add((0,0))
+        before_encounter=score()
+        assert before_encounter.evidence == first.evidence, kind
+        # Only first-person physical arrival AFTER sighting consumes novelty.
+        reached.add((0,0))
         again=score()
         assert again.evidence == 0.0, (kind,again)
         assert again.evaluation.intrinsic_value == 0.0
-        assert "place-memory:physically_visited_location" in again.evaluation.signal_ids
+        assert "place-memory:entity_place_reached_since_sighting" in again.evaluation.signal_ids
         learned_evidence_holder[0]=0.24
         learned=score()
         assert abs(learned.evidence-0.24)<1e-12,(kind,learned)
         assert learned.evaluation.learned_value_status=="learned"
         assert learned.evaluation.intrinsic_value==0.0
         learned_evidence_holder[0]=None
+
+
+# The production GeographicExploration owner rejects stale/replaced spatial
+# sightings; a recycled low-level perceptual label cannot provide a visited
+# assertion for a different entity-place.
+from i1.modules.geographic_exploration import GeographicExploration
+from i1.modules.spatial_memory import PlaceMemory
+geo_owner = GeographicExploration.__new__(GeographicExploration)
+geo_owner._place_observer_id="living-person"
+g_target=replace(target,observed_step=7)
+g_memory=PlaceMemory(
+    observer_id="living-person", entity_id=entity_id, entity_type=kind,
+    position=(0,0),observed_from=(1,0),first_seen_step=7,
+    last_seen_step=10,reached_step=None,contradiction_step=None,
+    contradictions=0,confidence=0.65)
+geo_owner._places={entity_id:g_memory}
+assert geo_owner.entity_site_reached(g_target) is False
+geo_owner._places[entity_id]=replace(g_memory,reached_step=9)
+assert geo_owner.entity_site_reached(g_target) is True
+assert geo_owner.entity_site_reached(replace(g_target,observed_step=6)) is None
+assert geo_owner.entity_site_reached(replace(g_target,entity_id="sighting:other:0:0")) is None
+
 finally:
     Stage8OptionEvaluator.evaluate=saved_stage8_evaluate
 

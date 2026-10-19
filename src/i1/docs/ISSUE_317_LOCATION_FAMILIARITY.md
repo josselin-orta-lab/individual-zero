@@ -46,3 +46,24 @@ The Stage8 runtime reads the **actual** before/after physiology following the ap
 The current `memory_place_return:<entity_id>` signature follows the remembered entity-place, yet the reward is on the movement action and eligibility traces. It must not be reinterpreted as learned water, food, toxicity or other object-specific affordance. Before changing TD or Stage11 again, design controlled counterfactual experiences to distinguish contextual homeostasis, neutral movement, genuine interaction effects and delayed utility, then measure whether the *resulting learned value* causally changes a later memory-guided choice. Preserve Stage8's normal online TD, deaths, Competition, Action Control, M11 and I0 while doing so.
 
 Do not merge PR #318 or close #317 based on the reduced A-B-A count. Independent reserved seeds, certified useful returns, survival/UC guardrails, M11 cold restore and CI remain required.
+
+
+## 19 October: first-person encounter chronology correction (pending physical GO)
+
+Source audit found a distinct potential defect in the 19 October familiarity
+change: a cell can have been visited **before** an entity is first seen there.
+A location-visited flag alone then zeroes informational novelty even though
+I1 has never revisited that newly sighted entity-place. The owner already
+holds `PlaceMemory.first_seen_step` and `reached_step`, each born from real
+Perception; the Stage11 evaluator now consults this existing owner record.
+Only a physical arrival after that first sighting exhausts *encounter-site*
+novelty. An inconsistent or stale memory is unscored, never granted a new bonus.
+This distinction neither creates a causal experience nor increases novelty
+for previously reached entities; TD/simulation values stay unchanged. No
+new M11 state, owner, world fact, sensory prior or tuned threshold was added.
+
+This is a **software counterexample**, not a proven explanation for the
+observed oscillations: in the twelve previously inspected development WALs,
+none of the first entity sightings had an older recorded visit at the same
+site. A new physical counterexample and matched holdout population are still
+required before scientific GO.

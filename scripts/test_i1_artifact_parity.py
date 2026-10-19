@@ -823,9 +823,9 @@ _ISSUE_314_PINNED_BLOBS = {
 # hashes of exactly the reviewed source, not mutable path exemptions.
 _ISSUE_317_PINNED_BLOBS = {
     "i1/modules/competition.py": "e0aab4aa4e21d30165fb39f3fc03e9700ef948bd",
-    "i1/modules/geographic_exploration.py": "391fc2abaef4da1468879eacd31eb186c14759d7",
+    "i1/modules/geographic_exploration.py": "4cf6bd2883506e33d82a2544666d573960c76e0a",
     "i1/modules/geographic_planning.py": "8aa71effe4cf55827a27a21af4e52d09938e34d6",
-    "i1/modules/stage11_evaluator.py": "9b69a0b9c64df9b6565c8f9d1ac3eaad21e400f1",
+    "i1/modules/stage11_evaluator.py": "437da5726798dd3e173675c9108e2fec3e01b22f",
     "i1lab/stage11_runtime.py": "15295d162d21b56e24c07d1dd8835a104f2bea6f",
     "i1lab/stage4_runtime.py": "80a7504009205f3481f936251cddcaa2e2df8393",
 }

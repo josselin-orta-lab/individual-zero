@@ -312,6 +312,27 @@ class GeographicExploration:
             raise ValueError("observed geographic coordinates must be integers")
         return position in self._visits
 
+    def entity_site_reached(self, target: SpatialReturnTarget) -> bool | None:
+        """Whether this observed entity-place was physically reached AFTER sighting.
+
+        An old geographic visit before the entity appeared does not exhaust
+        curiosity about the newly witnessed entity. This is only an epistemic
+        visit, not evidence of interaction, benefit, harm, or persistent
+        instance identity. None means current owner evidence is inconsistent,
+        and the evaluator must fail closed rather than grant curiosity.
+        """
+        if not isinstance(target, SpatialReturnTarget):
+            return None
+        memory = self._places.get(target.entity_id)
+        if (memory is None
+            or memory.observer_id != self._place_observer_id
+            or memory.entity_type != target.entity_type
+            or memory.position != target.observed_position
+            or memory.first_seen_step != target.observed_step):
+            return None
+        return (memory.reached_step is not None
+                and memory.reached_step >= memory.first_seen_step)
+
     @property
     def visit_count(self) -> int:
         return sum(self._visits.values())
