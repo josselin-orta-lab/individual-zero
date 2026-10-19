@@ -1,0 +1,53 @@
+name: I1 issue317 independent TD credit specificity
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_317_td_credit_specificity.py'
+      - 'tests/i1/test_i1_td_credit_specificity_317.py'
+      - '.github/workflows/i1-issue317-td-credit-specificity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test missing and false-positive TD specificity
+        run: python -m unittest discover -s tests/i1 -p test_i1_td_credit_specificity_317.py -v
+      - name: Retrieve previously sealed paired physical WAL
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p evidence result
+          gh run download 39231424425 --repo "$GITHUB_REPOSITORY" --pattern 'i1-317-mortal-td-credit-ablation' --dir evidence
+          test -f evidence/report.json
+      - name: Independently authenticate WAL and distinguish learned Q from competition evidence
+        run: |
+          python tools/audit_i1_317_td_credit_specificity.py --input-dir evidence --output result/td-specificity.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('result/td-specificity.json').read_text())
+          assert d['first_physical_divergence_step']==64
+          assert d['specificity']['first_target_q_difference_step']==58
+          assert d['specificity']['non_target_q_differences']==[]
+          assert d['specificity']['non_target_learned_q_compared']>0
+          assert d['scientific_verdict']=='NO-GO_GLOBAL'
+          print('INDEPENDENT_TD_SPECIFICITY_PROOF_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-td-specificity-independent-audit
+          path: result/
+          retention-days: 30
+          if-no-files-found: warn
