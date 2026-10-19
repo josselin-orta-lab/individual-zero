@@ -117,6 +117,9 @@ def compare(
     old: dict[int, dict], new: dict[int, dict],
     *, seeds: tuple[int, ...] = KEYS,
 ) -> dict:
+    if (not seeds or len(set(seeds)) != len(seeds)
+        or set(old) != set(seeds) or set(new) != set(seeds)):
+        raise ValueError("paired cohort must contain exactly the requested unique seeds")
     pairs = []
     for seed in seeds:
         p, q = old[seed], new[seed]
@@ -149,15 +152,18 @@ def compare(
     return {
         "schema":"individual-zero-i1-317-remote-journey-pairs/v1",
         "status":"WAL_AUTHENTICATED_ALL_LIVES",
-        "baseline_engine_sha":old[KEYS[0]]["sha"],
-        "interruption_engine_sha":new[KEYS[0]]["sha"],
+        "baseline_engine_sha":old[seeds[0]]["sha"],
+        "interruption_engine_sha":new[seeds[0]]["sha"],
+        "validation_cohort": "diagnostic" if seeds == KEYS else "seed-held-out",
         "summary":summary,"pairs":pairs,
         "scientific_verdict":"NO-GO",
         "limitations":[
-            "A few events in a diagnostic corridor do not establish robustness.",
+            "One diagnostic world topology does not establish environmental robustness.",
             "Sleep interruption and remote completion must not bypass motor admission.",
             "Reaching wood or stone does not prove its physiological utility.",
-            "The diagnostic seeds were used to discover this mechanism, not held out.",
+            ("The diagnostic seeds were used to discover the mechanism, not held out."
+             if seeds == KEYS else
+             "These seeds were held out, but the corridor geography was not."),
         ]
     }
 
