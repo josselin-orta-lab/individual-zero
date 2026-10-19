@@ -26,7 +26,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from run_i1_317_two_process_sleep import summarize_life
 
 PRESETS = ("memory-corridor", "water-isolated-corridor")
-SEEDS = (17123, 17257, 17383, 17491)
+SEEDS = (18121, 18233, 18367, 18481)
 HORIZON = 300
 ARMS = ("guard_control", "guard_experiential")
 MAX_LIVED_ADVISORY = 0.10
@@ -147,6 +147,7 @@ def _run_births(preset, seed, out):
         "prior_source_algorithm_sha": "43e1fa82e8034c20708d9edf380b41a5bf30502b",
         "heldout_validation_not_promotion": True,
         "native_experiential_stage8_opt_in": True,
+        "excluded_prebirth_constructor_failure_seeds": [17123,17257,17383,17491],
         "water_berry_colocation_ablated_in_isolated_corridor": True,
         "relevance_maximum": MAX_ASSOCIATIVE_RELEVANCE,
         "relevance_water_gate": CRITICAL_WATER_FOR_ASSOCIATION,
@@ -187,6 +188,8 @@ def _run_births(preset, seed, out):
                         birth_life_id=kwargs.pop("life_id"),
                         autonomous_mortal=True,
                         i1_experienced_place_enabled=do_value,
+                        diagnostic_sample_cost_uc=1,
+                        module_occupancy_cost_uc=1,
                         **kwargs,
                     )
                     born.append(actor)
