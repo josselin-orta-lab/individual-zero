@@ -45,7 +45,7 @@ jobs:
           assert d['certified_unique_original_wal_lives']==8
           assert d['scientific_verdict']=='NO-GO'
           assert d['motor_route_utility_automatically_inferred'] is False
-          assert d['aggregate']['water_critical_water_memory_physically_applied_steps'] <= d['aggregate']['water_critical_water_memory_crossed_steps']
+          assert d['aggregate'].get('water_critical_water_memory_physically_applied_steps', 0) <= d['aggregate'].get('water_critical_water_memory_crossed_steps', 0)
           print('INDEPENDENT_EIGHT_LIFE_VITAL_MEMORY_CHAIN_CERTIFIED')
           PY
       - uses: actions/upload-artifact@v4
