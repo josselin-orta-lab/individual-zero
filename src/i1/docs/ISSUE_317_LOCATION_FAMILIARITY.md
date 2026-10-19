@@ -1426,3 +1426,56 @@ has so far been tested for two initial steps, not a truly learned,
 multi-step first-person water state after a cold restart.
 Global **NO-GO**, no canonical I1 enablement, no I0 changes,
 no forced drinking or movements, no coma or life rollback.
+
+## 19 October: first real learned-water M11 cold recovery, typed-body fix
+
+The new independent M11 software test
+`tests/i1/test_i1_317_experiential_native_lived_m11.py`
+creates **two new opt-in M11 mortal lives** from identical birth
+parameters in a contained thirsty `water-isolated-corridor`:
+body water 20 on the first-person visible source at (8,8).
+It NEVER sets a command, overrides Stage8, injects learned
+examples, imports a prior world or rewinds a historical generation.
+Both actors physically run until their own real `boire`
+is followed by a paid, positively observed next-capture
+`i1_water_lived_outcome_admitted`, then attest exact
+owner state in both SQLite current generations. A separate
+continuous individual proceeds normally while the other process
+is closed and cold-restored by authentic current-state M11.
+Next five genuine physical steps must match exact journal heads,
+step identities, life states and living water-owner evidence.
+
+The initial run [39329416260](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39329416260)
+correctly **FAILED** closed, notwithstanding a valid
+already authenticated I1 water-owner state. Read-only diagnostic
+runs isolated the mismatch to **WorldBody.body.integrity**:
+the original SQLite physically committed generation contained
+integer `85` while WorldBody's generic historical fixture
+restore converted it to float `85.0`. Those values compare equal
+arithmetically but differ under strict M11 canonical causal bytes.
+No real physics or first-person association differed.
+
+Commit `8105bcad` repairs only the **unexecuted detached
+M11 cold staging**: after validating source WorldBody snapshot,
+rebuild `BodyState` with exactly the authenticated int/float
+types, validate physiological bounds, then require exact
+canonical full-world bytes BEFORE publishing. Live WorldBody
+restore remains prohibited and final M11 bitwise world+owners
+gate remains intact. The source parity approval for M11 is
+re-pinned exactly at reviewed Git blob SHA in `d01cafe0`.
+The dedicated [actual learned-water M11 workflow
+39329829122](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39329829122)
+is **SUCCESS**, after genuine positive first-person experience.
+This is cold recovery of a current, active generation, NOT
+resurrection or continuation from an earlier chosen generation.
+
+The separate 16-life native physical prospective campaign
+[39328430028](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39328430028)
+has eight independently born matched pairs and its dedicated
+[original WAL independent auditor
+39328630695](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39328630695)
+returned **SUCCESS**. Any reported population efficacy must
+be read from that auditor's certified figures, not inferred
+from software parity alone. No canonical activation, no I0
+change or compulsory water reflex. **Global NO-GO** pending
+population survival benefit and final I1 full CI.
