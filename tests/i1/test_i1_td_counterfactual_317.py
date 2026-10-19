@@ -5,6 +5,19 @@ import unittest
 
 
 class TDCounterfactualSchemaTests(unittest.TestCase):
+    def test_diagnostic_observation_may_target_a_distinct_memory_signature(self):
+        root = Path(__file__).resolve().parents[2]
+        module = ast.parse(
+            (root / "tools/run_i1_317_td_counterfactual.py").read_text())
+        functions = {node.name: node for node in module.body
+                     if isinstance(node, ast.FunctionDef)}
+        self.assertIn("inspect_signature", [x.arg for x in
+                      functions["run"].args.kwonlyargs])
+        self.assertIn("--inspect-signature",
+                      (root / "tools/run_i1_317_td_counterfactual.py").read_text())
+        self.assertIn('else inspect_signature',
+                      (root / "tools/run_i1_317_td_counterfactual.py").read_text())
+
     def test_trajectory_comparison_keys_exist_in_canonical_mortal_runner(self):
         root = Path(__file__).resolve().parents[2]
         runner = ast.parse((root / "tools/run_i1_world_preset.py").read_text())
