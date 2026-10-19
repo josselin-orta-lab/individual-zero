@@ -62,6 +62,12 @@ def inspect_wal(wal, expected_arm, world_steps):
     captures, admitted_personal, proposals = {}, {}, {}
     scores, traces, signals, command_by_step, admits = {}, {}, [], {}, {}
     uc_by_step = Counter()
+    # GoalManager may legitimately change the active goal AFTER Planning
+    # captured its old goal label, but BEFORE Stage8 evaluates the candidate.
+    # WAL event order, not the earlier proposal annotation, is the authority.
+    current_live_goal = None
+    goal_transitions = set()
+    goal_at_signal = {}
     with wal.open(encoding="utf-8") as stream:
         for line in stream:
             event = json.loads(line)["causal_event"]
@@ -69,7 +75,25 @@ def inspect_wal(wal, expected_arm, world_steps):
                 event["kind"], event.get("t_monde"),
                 event.get("cycle"), event.get("data", {}),
             )
-            if kind == "perceptual_capture":
+            if kind == "active_goal_changed":
+                before, after = data.get("before"), data.get("after")
+                require(before is None or
+                        (type(before) is dict and
+                         type(before.get("id")) is str and
+                         type(before.get("goal_type")) is str),
+                        "malformed previous GoalManager owner state")
+                require(after is None or
+                        (type(after) is dict and
+                         type(after.get("id")) is str and
+                         type(after.get("goal_type")) is str),
+                        "malformed new GoalManager owner state")
+                if current_live_goal is not None and before is not None:
+                    require(before["id"] == current_live_goal["id"],
+                            "GoalManager change breaks first-person chronology")
+                current_live_goal = after
+                if after is not None:
+                    goal_transitions.add((step, cycle, after["id"]))
+            elif kind == "perceptual_capture":
                 require(type(step) is int and step not in captures,
                         "duplicate first-person capture")
                 require(point((data.get("position", {}).get("x"),
@@ -128,6 +152,13 @@ def inspect_wal(wal, expected_arm, world_steps):
                 require(active_signals[0] ==
                         f"{EXPERIENTIAL_SIGNAL}{site[0]}:{site[1]}",
                         "borrowed or mislocated first-person water signal")
+                require(type(current_live_goal) is dict
+                        and current_live_goal.get("goal_type") == "drink"
+                        and current_live_goal.get("id", "").startswith("goal:drink:"),
+                        "experimental relevance without live drink goal at Stage8")
+                require(key not in goal_at_signal,
+                        "duplicate same-cycle experiential signal")
+                goal_at_signal[key] = dict(current_live_goal)
                 signals.append(key)
             elif kind == "competition_cycle":
                 for trace in data.get("traces", ()):
@@ -177,10 +208,13 @@ def inspect_wal(wal, expected_arm, world_steps):
                 "relevance before admitted first-person benefit")
         capture = captures.get(step)
         require(capture is not None and
-                0 <= capture["water"] <= MAX_WATER
-                and candidate["goal"] is not None
-                and candidate["goal"].startswith("goal:drink:"),
-                "association with no current perceived thirst and drink goal")
+                0 <= capture["water"] <= MAX_WATER,
+                "experimental relevance without currently perceived thirst")
+        live_goal = goal_at_signal[key]
+        stale_planning_goal = candidate["goal"] != live_goal["id"]
+        if stale_planning_goal:
+            require((step, cycle, live_goal["id"]) in goal_transitions,
+                    "Stage8 relevance used stale goal without witnessed transition")
         score, trace = scores.get(key), traces.get(key)
         require(score is not None and trace is not None
                 and trace["score"] is not None
@@ -199,6 +233,9 @@ def inspect_wal(wal, expected_arm, world_steps):
             "step": step, "cycle": cycle, "option_ref": option_ref,
             "site": list(site), "entity_type": candidate["entity_type"],
             "observed_water": capture["water"],
+            "goal_at_planning": candidate["goal"],
+            "goal_at_stage8": live_goal["id"],
+            "goal_changed_after_planning_same_cycle": stale_planning_goal,
             "evidence": score, "threshold": trace["threshold"],
             "crossed": trace["crossed"],
             "option_physically_admitted": accepted_choice,
@@ -208,6 +245,8 @@ def inspect_wal(wal, expected_arm, world_steps):
     return {
         "signal_count_attested_in_wal": len(acknowledged),
         "signal_crossings": sum(x["crossed"] for x in acknowledged),
+        "stage8_live_goal_transitions_verified": sum(
+            x["goal_changed_after_planning_same_cycle"] for x in acknowledged),
         "signal_options_physically_admitted": sum(
             x["option_physically_admitted"] for x in acknowledged),
         "authenticated_relevance_events": acknowledged,
@@ -384,6 +423,8 @@ def certify(root):
             totals["WAL_verified_relevance_signals"] += (
                 evidence["signal_count_attested_in_wal"])
             totals["WAL_verified_relevance_crossings"] += evidence["signal_crossings"]
+            totals["WAL_verified_goal_switch_during_planning"] += (
+                evidence["stage8_live_goal_transitions_verified"])
             arms[arm] = {"physical": actual, "wal_evidence": evidence}
         comparison = paired_effect(
             arms["guard_control"]["wal_evidence"],
