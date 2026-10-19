@@ -403,25 +403,25 @@ try:
         learned_evidence_holder[0]=None
 
 
-# The production GeographicExploration owner rejects stale/replaced spatial
-# sightings; a recycled low-level perceptual label cannot provide a visited
-# assertion for a different entity-place.
-from i1.modules.geographic_exploration import GeographicExploration
-from i1.modules.spatial_memory import PlaceMemory
-geo_owner = GeographicExploration.__new__(GeographicExploration)
-geo_owner._place_observer_id="living-person"
-g_target=replace(target,observed_step=7)
-g_memory=PlaceMemory(
-    observer_id="living-person", entity_id=entity_id, entity_type=kind,
-    position=(0,0),observed_from=(1,0),first_seen_step=7,
-    last_seen_step=10,reached_step=None,contradiction_step=None,
-    contradictions=0,confidence=0.65)
-geo_owner._places={entity_id:g_memory}
-assert geo_owner.entity_site_reached(g_target) is False
-geo_owner._places[entity_id]=replace(g_memory,reached_step=9)
-assert geo_owner.entity_site_reached(g_target) is True
-assert geo_owner.entity_site_reached(replace(g_target,observed_step=6)) is None
-assert geo_owner.entity_site_reached(replace(g_target,entity_id="sighting:other:0:0")) is None
+    # The production GeographicExploration owner rejects stale/replaced spatial
+    # sightings; a recycled low-level perceptual label cannot provide a visited
+    # assertion for a different entity-place.
+    from i1.modules.geographic_exploration import GeographicExploration
+    from i1.modules.spatial_memory import PlaceMemory
+    geo_owner = GeographicExploration.__new__(GeographicExploration)
+    geo_owner._place_observer_id="living-person"
+    g_target=replace(target,observed_step=7)
+    g_memory=PlaceMemory(
+        observer_id="living-person", entity_id=entity_id, entity_type=kind,
+        position=(0,0),observed_from=(1,0),first_seen_step=7,
+        last_seen_step=10,reached_step=None,contradiction_step=None,
+        contradictions=0,confidence=0.65)
+    geo_owner._places={entity_id:g_memory}
+    assert geo_owner.entity_site_reached(g_target) is False
+    geo_owner._places[entity_id]=replace(g_memory,reached_step=9)
+    assert geo_owner.entity_site_reached(g_target) is True
+    assert geo_owner.entity_site_reached(replace(g_target,observed_step=6)) is None
+    assert geo_owner.entity_site_reached(replace(g_target,entity_id="sighting:other:0:0")) is None
 
 finally:
     Stage8OptionEvaluator.evaluate=saved_stage8_evaluate
