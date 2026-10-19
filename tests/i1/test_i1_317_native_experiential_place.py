@@ -6,7 +6,13 @@ import importlib.util
 import sys
 import unittest
 ROOT=Path(__file__).resolve().parents[2]
-sys.path.insert(0,str(ROOT/"src"))
+# Verify in the actual disposable I1 build namespace (not raw src/i1,
+# whose runtime overlay is intentionally generated as i1lab).
+sys.path.insert(0,str(ROOT/"scripts"))
+from build_i1_fork import generate
+_TEST_BUILD=TemporaryDirectory(prefix="i1-317-native-stage8-")
+generate(Path(_TEST_BUILD.name)/"generated")
+sys.path.insert(0,str(Path(_TEST_BUILD.name)/"generated"))
 from i1.experimental.lived_water import I1LivedWaterOwner
 from i1.modules.experienced_place_relevance import (
     experienced_site_relevance, personally_supported_site_gain,
