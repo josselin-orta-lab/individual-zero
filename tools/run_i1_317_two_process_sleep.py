@@ -267,10 +267,31 @@ def run(preset, seed, output):
                 actual=dict(actor._stage10_config.critical_body_thresholds)
                 if any(actual.get(k,0)<v for k,v in native_wake.items()):
                     raise RuntimeError("weakened first-person vital wake")
-                if (label != "canonical"
-                    and not actor._stage10_config.version.endswith(
-                        "+i1-317-two-process-"+label)):
-                    raise RuntimeError("experimental birth calibration lost")
+                if label != "canonical":
+                    configured = actor._stage10_config
+                    declared = PROFILES[label]
+                    observed = {
+                        "fatigue_gain": configured.sleep.fatigue_gain,
+                        "sleep_fatigue_recovery":
+                            configured.sleep.sleep_fatigue_recovery,
+                        "fatigue_weight": configured.sleep.fatigue_weight,
+                        "consolidation_weight":
+                            configured.sleep.consolidation_weight,
+                        "night_weight": configured.sleep.night_weight,
+                        "unconsolidated_episode_reference":
+                            configured.sleep.unconsolidated_episode_reference,
+                        "memory_saturation_reference":
+                            configured.sleep.memory_saturation_reference,
+                        "intrinsic_weight": configured.intrinsic_weight,
+                        "max_consecutive_sleep_steps":
+                            configured.sleep.max_consecutive_sleep_steps,
+                    }
+                    if observed != declared:
+                        raise RuntimeError(
+                            "experimental birth values not frozen: "
+                            +json.dumps({"expected":declared,"actual":observed,
+                                         "version":configured.version},
+                                        sort_keys=True))
                 proof=audit_wal(wal)
                 if (proof["independent_hash_chain_verified"] is not True
                     or proof["journal_head"] != life["journal_head"]
