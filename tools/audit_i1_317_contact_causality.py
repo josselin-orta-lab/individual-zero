@@ -9,8 +9,10 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
+from hashlib import sha256
 import json
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from audit_i1_spatial_navigation_314 import audit as verify_wal, _position
 
@@ -32,6 +34,7 @@ def classify(events):
     """Synthetic-safe classifier; only audit() authenticates physical evidence."""
     attempts = defaultdict(list)
     evaluations = defaultdict(list)
+    updates = defaultdict(list)
     for i, e in enumerate(events):
         t, attempt = e.get("t_monde"), e.get("attempt_ref")
         if type(t) is int and isinstance(attempt, str):
@@ -44,6 +47,14 @@ def classify(events):
                 and d.get("learned_value_status") == "learned"
                 and d.get("learned_value") is not None):
                 evaluations[d["learning_signature"]].append((t, i))
+        if e.get("kind") == "td_update_published":
+            d = e.get("data")
+            if type(t) is int and isinstance(d, dict):
+                signed = d.get("updated_signatures")
+                if isinstance(signed, list):
+                    for signature in signed:
+                        if isinstance(signature, str):
+                            updates[signature].append((t, i))
     totals = Counter()
     examples = []
     for (t, attempt), rows in sorted(attempts.items()):
@@ -158,6 +169,22 @@ def classify(events):
                        if step > t)
         if later:
             totals["contacts_with_later_learned_memory_evaluation"] += 1
+        # A later learned Q read may reflect an update which took place
+        # BEFORE this contact. A new post-contact TD update still credits an
+        # *action* or eligibility trace, not a destination's utility.
+        fresh_td = sorted(
+            (step, ref) for ref in visible
+            for step, _ in updates.get("memory_place_return:" + ref, ())
+            if step > t
+        )
+        prior_td = any(
+            step < t for ref in visible
+            for step, _ in updates.get("memory_place_return:" + ref, ())
+        )
+        if fresh_td:
+            totals["contacts_followed_by_memory_td_update"] += 1
+        if prior_td and later:
+            totals["contacts_with_preexisting_memory_td_and_later_read"] += 1
         if direct and any(
             step > t for entity in direct for step, _ in
             evaluations.get("memory_place_return:" + entity, ())
@@ -176,10 +203,12 @@ def classify(events):
                 "direct_target_witnesses": direct,
                 "association_status": association,
                 "later_learned_memory_evaluation": bool(later),
+                "post_contact_td_action_update": bool(fresh_td),
+                "preexisting_td_action_update": prior_td,
                 "entity_causal_benefit": "not_established",
             })
     return {
-        "schema": "i1-317-physical-contact-association-v2",
+        "schema": "i1-317-physical-contact-association-v3",
         "counters": {key: totals[key] for key in (
             "possible_contact_commands", "unverifiable_contacts",
             "physically_certified_contacts", "no_colocated_sighting",
@@ -190,7 +219,9 @@ def classify(events):
             "environmental_drink_without_entity_id",
             "collection_with_unique_witnessed_type",
             "collection_without_unique_witnessed_type",
-            "witnessed_collection_with_later_learned_memory_evaluation")},
+            "witnessed_collection_with_later_learned_memory_evaluation",
+            "contacts_followed_by_memory_td_update",
+            "contacts_with_preexisting_memory_td_and_later_read")},
         "examples": examples,
         "entity_causal_learning_proven": False,
         "limitation": "Authenticated co-location, physical benefit and later TD "
@@ -199,14 +230,30 @@ def classify(events):
 
 
 def audit(path: Path):
-    proof = verify_wal(path)
-    if proof["independent_hash_chain_verified"] is not True:
+    """Certify and interpret precisely the same immutable evidence bytes.
+
+    An original WAL may be extended or replaced by a running birth. Never
+    authenticate one file snapshot and classify a second read of its path.
+    The #314 auditor authenticates its own identical sealed snapshot.
+    """
+    if not path.is_file() or path.is_symlink():
+        raise ValueError("WAL must be a regular existing file")
+    raw = path.read_bytes()
+    digest = sha256(raw).hexdigest()
+    with TemporaryDirectory(prefix="i1-317-contact-seal-") as folder:
+        sealed = Path(folder) / "sealed-evidence.wal"
+        sealed.write_bytes(raw)
+        proof = verify_wal(sealed)
+    if (proof["independent_hash_chain_verified"] is not True
+        or not isinstance(proof.get("journal_head"), str)):
         raise ValueError("unauthenticated WAL")
-    with path.open(encoding="utf-8") as stream:
-        events = [json.loads(line)["causal_event"] for line in stream]
+    events = [json.loads(line)["causal_event"] for line in raw.splitlines()]
+    if len(events) != proof["journal_entries"]:
+        raise ValueError("authenticated WAL event count mismatch")
     result = classify(events)
     result.update({"journal_head": proof["journal_head"],
                    "journal_entries": proof["journal_entries"],
+                   "source_sha256": digest,
                    "independent_hash_chain_verified": True})
     return result
 
