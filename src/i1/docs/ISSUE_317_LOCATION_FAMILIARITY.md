@@ -1333,3 +1333,56 @@ assumption. Both were **auditor failures**, not new birth failures.
 Rerun of the independent verifier and general I1 CI is required
 before declaring the 32-life evidence fully certified.
 Global NO-GO and non-promotion remain in place.
+
+## 19 October: native stateless Stage8 relevance, opt-in M11 contract prototype
+
+The held-out 32-life certification succeeded in
+[Actions 39326459271](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39326459271).
+The original 32 archived WAL are authenticated and the Phase-1/Stage8
+GoalManager switch is reconstructed from actual ordered WAL events.
+No birth was replayed. Global scientific result remains **NO-GO**:
+7 survivors/16 per arm, despite extra hydration and consolidations.
+
+The next software architecture is now **implemented but not promoted**:
+`src/i1/modules/experienced_place_relevance.py` is a pure
+first-person, goal-conditioned, Stage8 evidence evaluator with no
+mutable state owner of its own. It derives relevant place evidence from
+the existing `I1LivedWaterOwner` owner, which M11 already includes
+in the current committed owner graph and installs only using the
+authentic cold-owner capability. The same site must be associated with
+a previously applied `boire` and an admitted, physically observed
+positive followup at the same coordinates. The current need, site
+confidence and route length bound its contribution to 0.45.
+It never infers effects from a resource-type label, predicts water
+gain from movement, raises the Competition threshold, changes TD/Q,
+chooses a motor, or supplies WorldBody state not in Perception.
+
+The candidate is only installed when constructing an explicit research
+`I1Runtime(..., i1_experienced_place_enabled=True)` on a separate
+mortal birth. Both public ordinary entrypoints `birth_i1` and
+`birth_i1_m11` have no such parameter and remain **OFF**.
+In M11, the *opted-in* contract, relevance ceiling and water threshold
+enter the birth constructor SHA; same-identity cold recovery with a
+different opt-in setting is refused. Historical OFF fingerprints are
+unchanged. The dedicated CI
+`.github/workflows/i1-issue317-experiential-native-m11.yml` runs
+pure guard tests, a fresh opt-in current-generation M11 cold-recovery
+two-step journal parity test and the pre-existing natural M11 test.
+These certify software integration for current generation, **not**
+full observational parity after an arbitrary learned water-history
+checkpoint, nor a proven long-horizon behavioral gain from this new
+native implementation.
+
+A full promotion still requires: a matched physical validation
+using the native opt-in instead of the laboratory monkeypatch, real
+water-effect histories surviving a cold restart and producing the
+same Stage8 scores, full original WAL/UC certification, no systemic
+survival regression, and transparent first-person effect attribution.
+The software parity gate currently approves this opt-in source
+diff **only through exact pinned Git blob SHA1**, not by granting
+an open path exemption. After any source change the pins must be
+explicitly re-reviewed.
+
+No I0 change, no involuntary `boire`/`manger`, no coma, no
+historical restore, no default policy change. PR #318 remains draft;
+scientific **NO-GO** remains valid.
