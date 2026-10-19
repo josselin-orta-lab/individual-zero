@@ -1,0 +1,44 @@
+name: I1 issue317 authenticated remote journey pairs
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_317_remote_journey_cohort.py'
+      - '.github/workflows/i1-issue317-remote-paired.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  paired:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download original WAL cohorts by immutable run ID
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p evidence/baseline evidence/interrupted
+          gh run download 39169736198 --repo "$GITHUB_REPOSITORY" --pattern 'i1-317-corridor-*' --dir evidence/baseline
+          gh run download 39170762411 --repo "$GITHUB_REPOSITORY" --pattern 'i1-317-corridor-*' --dir evidence/interrupted
+      - name: Authenticate and compare the 8 paired physical lives
+        run: |
+          python tools/audit_i1_317_remote_journey_cohort.py \
+            --baseline evidence/baseline \
+            --interruption-aware evidence/interrupted \
+            --baseline-sha 1446a78a54c95b289e1f5654313d84849f5383df \
+            --interruption-sha eef98704569e44e0c026aebbeeb2eae2396911d8 \
+            --output evidence/issue317-remote-journeys.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue317-remote-journey-certificate
+          path: evidence/issue317-remote-journeys.json
+          if-no-files-found: warn
+          retention-days: 30
