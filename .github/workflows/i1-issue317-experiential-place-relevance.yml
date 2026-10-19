@@ -1,0 +1,53 @@
+name: I1 issue317 experiential site relevance matched lives
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/run_i1_317_experiential_place_relevance.py'
+      - 'tests/i1/test_i1_317_experiential_place_relevance.py'
+      - '.github/workflows/i1-issue317-experiential-place-relevance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independent-mortal-pairs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [oasis, foraging, memory-corridor]
+        seed: [15121, 15173, 15313]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - run: python -m unittest discover -s tests/i1 -p test_i1_317_experiential_place_relevance.py -v
+      - name: Two separate mortal births with exactly matched retrieval
+        env:
+          PRESET: ${{ matrix.preset }}
+          SEED: ${{ matrix.seed }}
+        run: |
+          python tools/run_i1_317_experiential_place_relevance.py --preset "$PRESET" --seed "$SEED" --output-dir "result/$PRESET/$SEED"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path("result")/os.environ["PRESET"]/os.environ["SEED"]/"report.json").read_text())
+          assert r["schema"]=="i1-317-experiential-place-relevance-mortal/v1"
+          assert r["status"]=="COMPLETE_PAIRED_PHYSICAL_DIAGNOSTIC"
+          assert set(r["arms"])=={"guard_control","guard_experiential"}
+          assert r["both_arms_same_guarded_retrieval"] is True
+          assert r["scientific_verdict"]=="NO-GO"
+          print("EXPERIENTIAL_RELEVANCE_NEW_MORTAL_PAIR_COMPLETE")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-experiential-place-${{ matrix.preset }}-${{ matrix.seed }}
+          path: result/
+          retention-days: 30
+          if-no-files-found: warn
