@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         preset: [memory-corridor, water-isolated-corridor]
-        seed: [17123, 17257, 17383, 17491]
+        seed: [18121, 18233, 18367, 18481]
     steps:
       - uses: actions/checkout@v4
         with:
