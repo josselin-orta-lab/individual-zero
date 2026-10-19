@@ -768,3 +768,65 @@ resource-location oracle or a compulsory vital reflex. Longer memory
 consolidation must remain genuine, atomic and UC-paid, and coma remains
 unimplemented. Global `NO-GO` remains until reproducible independent
 causal evidence and safety guardrails are satisfied.
+
+## 19 October: decision-chain explanation from eight canonical sealed lives
+
+The previously launched factorial has now been independently certified:
+[Actions 39304778688](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39304778688)
+SUCCESS, **32 unique original physical WAL**, with no revived births and
+no fabricated proof for the unjournaled recovery-pressure scalar.
+The canonical I1 and physical memory workflows on commit `03371be9`
+are also green. The scientific verdict remains `NO-GO`.
+
+A new read-only scan of the **eight canonical lives** in that exact
+cohort, using their original archived WAL and no engine interventions,
+isolated **1,201 physically witnessed waking captures** with current
+water at or below the native 15% wake alert. In 902, the active goal
+remained `drink`; 741 had at least one previously personally sighted
+water-source place, but only 162 critical captures had a currently
+proposed water-place return. On those 162 occurrences, none of the
+registered water-place candidates physically crossed Competition's
+threshold. These are *per-step* counts, not 1,201 independent deaths
+or causal trials; the same observations may persist over many steps.
+
+Architecture review distinguishes at least three causes:
+1. The active goal `drink` does not install an effect prediction or
+   a water location oracle. Water-probe options require first-person
+   local source visibility or previously experienced positive water
+   change and a currently passable, perceived adjacent source.
+2. Spatial place memory is goal-neutral: even a genuinely sighted
+   `water_source` yields only a revisitable place option and at most
+   a small entity-familiarity intrinsic signal. It does **not** infer
+   thirst relief. Stage8/Competition must still value and choose its
+   one-hop action under actual personal evidence.
+3. No proposed location is guaranteed to be locally traversable,
+   within the bounded witnessed eight-hop route graph, still valid,
+   or already known from a successful water interaction. Distinguish
+   these limitations from loss of learned physiological effect.
+
+The previous 32-life factorial leaves survival unchanged even when
+awake decisions increase. Adding an innate emergency action or making
+every water-memory proposal an automatic winner would falsify the
+epistemic architecture. The correct next study is a causal funnel
+audit: *fresh captured need → already witnessed place → personally
+observed bodily effect (if any) → genuine route proposal → funded
+Competition registration → actual threshold crossing → Action Control
+admission → physical movement and outcome*. Include negative cases,
+out-of-view resources, post-death locks and false-success exclusion.
+
+New executable external evidence work:
+`tools/audit_i1_317_vital_memory_decision_chain.py`,
+`tests/i1/test_i1_317_vital_memory_decision_chain.py` and
+`.github/workflows/i1-issue317-vital-memory-decision-chain.yml`.
+The verifier requires exactly eight preregistered canonical independent
+source WAL, original SHA and world digests; independently verifies each
+real applied step and journal before interpreting retrospective event
+chains. It rejects unobserved water-source return targets, crossing
+without registration, application without Competition crossing and
+nonphysical progress. Its output is **diagnostic only**, not promotion,
+and does not equate a sighted source with known water usefulness.
+
+No canonical I1 weights/thresholds, food-first contracts, action
+enforcement, I0, world physics, TD or consolidation owners are changed.
+No coma introduced. Maintain draft PR and `NO-GO` until reliable
+interventional, held-out evidence justifies any architecture change.
