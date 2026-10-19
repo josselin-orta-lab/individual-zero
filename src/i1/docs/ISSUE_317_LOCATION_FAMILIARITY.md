@@ -715,3 +715,56 @@ Every run must pass isolated adversarial tests, independent mortal WAL
 authentication, and the exact frozen native-birth parameter checks.
 **Global NO-GO maintained** until all 32 physical lives complete
 and an independent population audit validates any prospective effects.
+
+## 19 October: 32-life recovery-aware natural wake factorial, complete birth reports
+
+All eight source run `39302574668` jobs completed successfully at the
+locked `9f19100e276a16edaefd17e26a1092ef98391c38`; each includes four
+separate physical WAL and a fully filled birth report. Four independent
+treatments were **not** promoted to production. The following counts have
+been calculated from all eight original archived reports and should
+be interpreted as *provisional* until the second verifier certifies each
+original WAL:
+
+| Birth arm (8 each) | Deaths | Lived steps | `dormir` | Consolidated objects | Accepted logical UC | Natural ends |
+|---|---:|---:|---:|---:|---:|---:|
+| Native I1 | 6 | 1921 | 1685 | 314 | 84625 | 1 |
+| Recomputed real fatigue only | 6 | 1919 | 1642 | 314 | 86246 | 21 |
+| Natural threshold 0.35 only | 6 | 1914 | 1606 | 303 | 90618 | 32 |
+| Recovery and threshold together | 6 | 1914 | 1584 | 307 | 94498 | 115 |
+
+The recovery-only arm creates 41 more awake actions and 20 more
+natural-end events, but **no extra `boire` or `manger`** and two fewer
+physical steps survived in total. Across each four-arm cohort, exactly
+3 `boire` actions and 8 `manger` actions occurred, despite greatly
+different wake dynamics. At eight matched pairs, no evidence supports
+claiming an improvement in survival or food/water agency. The greater
+natural-end count is *not* itself a fitness improvement. The combined
+arm adds 9,873 logical UC versus native, yields 7 fewer consolidated
+objects, and gains no survivors. Treat the apparent trade-off as an
+observation, not an optimized solution.
+
+Independent, fail-closed second verification has been implemented at
+`tools/audit_i1_317_wake_recovery_cohort.py`, adversarial tests at
+`tests/i1/test_i1_317_wake_recovery_cohort.py`, and GitHub workflow
+`.github/workflows/i1-issue317-wake-recovery-cohort-audit.yml`.
+It enforces exactly eight preregistered groups, original exact engine
+SHA, 32 unique WAL hashes, fully authenticated event chains, real
+body transitions and death boundaries, verified wake reasons, charged
+UC, exact atomic consolidation and vital wake policy. It deliberately
+reports `experimental_recovery_scalar_itself_WAL_proven=false`:
+the experimental research-only wrapper never wrote the recomputed
+pressure scalar into its WAL, so causal interpretation must not
+pretend this magnitude is independently authenticated.
+No technically halted life can be revived or retried in place.
+
+**Next architectural hypothesis:** native I1 already attempts to wake
+under bodily alerts; additional voluntary wake opportunities do not
+by themselves generate enough *first-person* effective survival actions.
+The next valid experiment must examine per-step goal selection,
+registered choices, learned value and Action Control evidence for
+`boire`/`manger` versus `dormir`, without installing an innate
+resource-location oracle or a compulsory vital reflex. Longer memory
+consolidation must remain genuine, atomic and UC-paid, and coma remains
+unimplemented. Global `NO-GO` remains until reproducible independent
+causal evidence and safety guardrails are satisfied.
