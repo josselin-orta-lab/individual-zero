@@ -362,3 +362,38 @@ ablated; no decision or model state is changed by that diagnostic input.
 This is groundwork for negative controls, not evidence that such
 controls have yet been experimentally validated.
 Global #317 scientific verdict remains **NO-GO**.
+
+## Independent sealed TD-specificity negative control (19 October 2026)
+
+The separate CI workflow [#39234321213](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39234321213)
+is **SUCCESS**. It independently reauthenticated both existing paired
+mortal WALs from physical run `39231424425` using the #314 cryptographic
+verifier, compared their immutable SHA-256 and journal heads to the
+paired source report, certified 300 physically applied/closed world
+steps per arm and reproduced the first physical divergence at step **64**
+(control moved, ablation slept). New reusable read-only
+`tools/audit_i1_317_td_credit_specificity.py` and five adversarial tests
+`tests/i1/test_i1_td_credit_specificity_317.py` enforce the evidence
+boundary: an absent or invalid Q is never converted to zero, mismatched
+pre-decision evaluation counts fail, and unrelated Q contamination is
+reported. The archival CI report is artifact `12177573671`.
+
+Before and including the first divergent physical world step the
+auditor compared **383 non-target learned-Q observations** matched
+across the two WALs, finding **zero different values**. The targeted
+`memory_place_return:sighting:water_source:10:8` learned-Q differs
+already at step **58**, again at **64**, but no physical divergence occurs
+before step **64**. At that step the control crossed Competition and
+physically moved; the ablation did not cross and physically slept.
+Differences in option-level normalized Competition evidence and number
+of evaluations after a divergent decision must be distinguished from
+changes to Q weights or benefits attributed to other entities.
+The audit thus supports a targeted **learned-action-credit effect**
+on this one deterministic life, not an object-affordance map or a
+population estimate.
+
+Scientific scope: **GO for the narrow within-life intervention-specific
+effect and negative-control Q isolation; NO-GO globally**.
+Do not merge/close #318/#317 before held-out seeds, several geographies,
+survival/cost guardrails, and a separately justified causal interpretation
+of entity interaction consequences.
