@@ -830,3 +830,57 @@ No canonical I1 weights/thresholds, food-first contracts, action
 enforcement, I0, world physics, TD or consolidation owners are changed.
 No coma introduced. Maintain draft PR and `NO-GO` until reliable
 interventional, held-out evidence justifies any architecture change.
+
+## 19 October: experimental first-person learned site value, 2x2 design
+
+The sealed, independent vital-decision funnel run `39306632481`
+completed **PASS** at engine SHA `4d1f001f`. For eight original
+canonical lives, 1,201 waking captures with water at/below 15 were
+authenticated; 902 had a `drink` goal, 741 had an earlier personally
+witnessed water-source location, 419 were after an *admitted observed
+positive* `boire` outcome and 162 offered a valid water-site memory
+proposal, which never crossed the normal Competition threshold.
+Counts are repeated steps, not independent births.
+
+A further important mechanism was found in the archived
+`memory-corridor/11239` WAL: personal water at (8,8) physically rose
+after `boire` at step 1 and the subsequent first-person followup at
+step 2. I1 moved through the corridor. By step 20, the
+`i1_place_memory_recalled` candidate list retained stone/wood/berry
+locations but excluded that personally useful water position. Spatial
+memory itself was not erased: limited generic candidate selection and
+valuation of goal-neutral place returns must be tested independently.
+Being a `water_source` merely seen does not prove useful, permanent,
+safe or reachable.
+
+Research-only, pre-registered `tools/run_i1_317_lived_place_factorial.py`
+crosses two small interventions: (i) paid expanded spatial candidate
+retrieval *only during a genuine active drink goal* when the subject
+already has an admitted positive first-person `boire` followed by
+observed water rise at that exact source coordinate; (ii) a bounded
+0.10 maximum advisory on the same source-place option through the
+normal Stage8 evaluation API. Neither creates a primitive nor
+alters motor admission, Competition threshold, innate knowledge,
+TD/Q, physiology, food/drink reflex or source-map truth. The
+existing spatial route search must still find actually surveyed
+passable hops; no extra unreadable geometry is supplied.
+
+Four arms: **canonical, recall_only, value_only,
+recall_and_value**, across new seeds **13127,13219** and
+`oasis`, `foraging`, `memory-corridor`, for **24 separate
+irreversible births**, horizon 300 each. The original world, need
+policy, sleep and consolidation parameters are unchanged.
+A second `geographic_route_search` is explicitly charged to
+Planning when the expanded candidate search is used; rejected
+credit cancels that path. This operator-only adapter is NOT an
+M11 cold-restorable cognitive owner, so even a positive physical
+outcome would not justify deploying it unchanged. Worldstep/WAL
+certification, a first motor divergence, mortal survival, water
+actions, true consolidation and UC must all be examined on
+independent fresh lives before any promotion.
+
+Adversarial unit tests reject type-only utility, absent/negative
+`boire` effects and invalid candidates. Workflow:
+`.github/workflows/i1-issue317-lived-place-factorial.yml`,
+run `39308197811`. The eight previous historical WAL remain sealed,
+not re-executed. **Global NO-GO, PR draft**, no I0 change.
