@@ -397,3 +397,54 @@ effect and negative-control Q isolation; NO-GO globally**.
 Do not merge/close #318/#317 before held-out seeds, several geographies,
 survival/cost guardrails, and a separately justified causal interpretation
 of entity interaction consequences.
+
+## 19 October: independent twenty-life population, physiological wake recursion
+
+The pre-registered population on unchanged canonical I1 engine
+`28dfa62d6cf05ebecd1d2767769aa6ae53224616` has completed
+successfully: [run #39243776617](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39243776617),
+report artifact `12182895902`. All 20 original mortal WAL chains, fixed
+birth identities, exact preset/physics digest and matching Git SHA were
+independently authenticated by the aggregate job. This was an
+*observation-only* study, not paired with an alternate cognitive engine.
+
+Results: **15 deaths among 20 births**, 4,658 lived steps, 4,058
+physically executed sleep actions (**87.1189%**), 284 movements, 8 drinks,
+20 eating actions, 230 consolidation commits and 199,452 accepted UC.
+By world, deaths: blocked-route 4/4, dry-valley 4/4, foraging 4/4,
+memory-corridor 2/4, oasis 1/4. Across 3,729 registered memory-place
+proposals only six crossed Competition; four yielded genuinely applied
+memory-guided movements, all in a single oasis life. A single first
+out-of-perception multihop motor step was proven, but **zero completed
+remote returns**. 48 physical consumption/collection contacts were
+certified, none established a complete strict lived-benefit → TD-memory
+→ later physical decision bridge in this cohort. The narrow positive
+intervention on old diagnostic seed 1141 cannot be extrapolated.
+
+A further operator-only scan of all twenty WALs exposed a recurrent
+specific failure mode in Stage10 wake/Competition, also relevant to
+open issue #292: **1,391 wake events marked `alert`**, of which
+**1,357** were followed by an *ordinary newly chosen* physical `dormir`
+action in the same world step; **1,340** also physically slept on the
+next step, according to the source WAL action tables. **2,100 sleep
+actions occurred with water zero**, and **3,755 while energy was at least
+99**. Reduced capture reports physiological critical channels, wakes
+are real, and fresh normal cognition can voluntarily return to sleep,
+as opposed to staying in a blocked sleep state. Thus an existing
+alert does not guarantee competition against an alternative action.
+
+The permanent regression tool
+`tools/audit_i1_317_vital_wake_recursion.py`, synthetic adversarial tests
+and `.github/workflows/i1-issue317-vital-wake-recursion.yml` now
+independently reauthenticate all twenty original WAL files and distinguish
+an actual alarm, resulting competition threshold crossing and committed
+physical action. The dedicated audit's GO gate is **not** assumed before
+the run succeeds. No sleep refractory rule, compulsory food/water
+command, sleep-weight retuning, World modification or I0 edit has been
+made. Research next must isolate *why* Stage10 reports repeated alarm
+and whether free Competition can find any physically experienced
+vital-need action under critical conditions, using matched birth
+variants and risk controls. A waking alert is a physiological
+observation, **not** world-map knowledge or an instruction to act.
+
+**Scientific verdict: NO-GO globally**, PR draft and issue open.
