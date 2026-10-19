@@ -5,11 +5,16 @@ Synthetic events do NOT constitute experimental or physical evidence.
 import importlib.util
 from pathlib import Path
 import unittest
+import sys
 
 MODULE = Path(__file__).resolve().parents[2] / "tools/audit_i1_spatial_navigation_314.py"
 SPEC = importlib.util.spec_from_file_location("_audit314", MODULE)
 audit314 = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(audit314)
+sys.path.insert(0, str(MODULE.parent))
+TD_SPEC = importlib.util.spec_from_file_location("_audit317", MODULE.parent / "audit_i1_317_loop_diagnostic.py")
+audit317 = importlib.util.module_from_spec(TD_SPEC)
+TD_SPEC.loader.exec_module(audit317)
 
 
 def event(kind, data, *, step=4, attempt="attempt:4", **fields):
@@ -198,6 +203,98 @@ class SpatialWalAuditTests(unittest.TestCase):
         report = audit314.classify_events(rows)
         self.assertEqual(report["stages"]["physically_applied"], 0)
 
+
+
+class MemoryTDCredit317Tests(unittest.TestCase):
+    """Synthetic adversarial checks, not physical scientific evidence."""
+
+    @staticmethod
+    def sample():
+        entity = "sighting:wood:3:3"
+        signature = "memory_place_return:" + entity
+        option = "option:place-memory:place:" + entity + ":at:3:3:from:2:3:via:3:3"
+        common = dict(t_monde=2, attempt_ref="a")
+        events = [
+            dict(common, kind="command_admitted", data={
+                "option_ref": option, "primitive": "se_deplacer", "command_hash": "hash"}),
+            dict(common, kind="command_experienced",
+                 primitive="se_deplacer", command_hash="hash"),
+            dict(common, kind="world_transition_experienced",
+                 position_after={"x": 3, "y": 3},
+                 body_after={"energy": 68, "food": 39.8, "water": 39.6, "integrity": 80},
+                 effects={"movement": "moved"}),
+            dict(common, kind="step_closed", data={
+                "outcome": "normal", "applied_command_count": 1,
+                "world_advance_count": 1}),
+            dict(t_monde=3, attempt_ref="b", kind="td_update_published", data={
+                "previous_signature": signature,
+                "return_g": {"$f64": float(1.4).hex()}, "segment_length": 1,
+                "updated_signatures": [signature, "primitive:dormir"]}),
+        ]
+        before = {"energy": 70, "food": 40, "water": 40, "integrity": 80}
+        trajectory = [
+            {"world_step": 1, "execution": "applied", "action_primitive": "attendre",
+             "body": before, "position": {"x": 2, "y": 3}},
+            {"world_step": 2, "execution": "applied", "action_primitive": "se_deplacer",
+             "body": {"energy": 68, "food": 39.8, "water": 39.6, "integrity": 80},
+             "position": {"x": 3, "y": 3}},
+            {"world_step": 3, "execution": "applied", "action_primitive": "dormir",
+             "body": {"energy": 69, "food": 39.6, "water": 39.2, "integrity": 80.2},
+             "position": {"x": 3, "y": 3}},
+        ]
+        return events, trajectory, before
+
+    @staticmethod
+    def audit(events, trajectory, initial):
+        return audit317.audit_memory_td_credit(events, trajectory, initial)
+
+    def test_positive_movement_td_does_not_prove_entity_utility(self):
+        events, steps, initial = self.sample()
+        result = self.audit(events, steps, initial)
+        self.assertEqual(result["physically_attributed_memory_td_updates"], 1)
+        self.assertEqual(result["positive_one_step_movement_only_td"], 1)
+        self.assertEqual(result["positive_without_increased_body_variable"], 1)
+        self.assertEqual(result["non_memory_trace_updates"], 1)
+        self.assertIn("not_entity_causality", result["certification"])
+
+    def test_missing_closure_is_not_physical_proof(self):
+        events, steps, initial = self.sample()
+        events = [e for e in events if e["kind"] != "step_closed"]
+        result = self.audit(events, steps, initial)
+        self.assertEqual(result["positive_memory_td_updates"], 1)
+        self.assertEqual(result["unattributable_memory_td_updates"], 1)
+        self.assertEqual(result["positive_one_step_movement_only_td"], 0)
+
+    def test_mismatched_entity_signature_cannot_be_credited(self):
+        events, steps, initial = self.sample()
+        events[-1]["data"]["previous_signature"] = (
+            "memory_place_return:sighting:water:9:9")
+        result = self.audit(events, steps, initial)
+        self.assertEqual(result["unattributable_memory_td_updates"], 1)
+
+    def test_negative_td_stays_negative(self):
+        events, steps, initial = self.sample()
+        events[-1]["data"]["return_g"] = {"$f64": float(-1).hex()}
+        result = self.audit(events, steps, initial)
+        self.assertEqual(result["positive_one_step_movement_only_td"], 0)
+        self.assertEqual(result["physically_attributed_memory_td_updates"], 1)
+
+    def test_bad_canonical_number_is_not_a_fabricated_zero(self):
+        events, steps, initial = self.sample()
+        events[-1]["data"]["return_g"] = {"$f64": "nan"}
+        with self.assertRaises(ValueError):
+            self.audit(events, steps, initial)
+
+    def test_causal_order_inversion_is_rejected(self):
+        events, steps, initial = self.sample()
+        events.insert(0, events.pop(3))
+        self.assertEqual(
+            self.audit(events, steps, initial)["unattributable_memory_td_updates"], 1)
+
+    def test_duplicate_world_step_is_rejected(self):
+        events, steps, initial = self.sample()
+        with self.assertRaises(ValueError):
+            self.audit(events, steps + [steps[1]], initial)
 
 if __name__ == "__main__":
     unittest.main()
