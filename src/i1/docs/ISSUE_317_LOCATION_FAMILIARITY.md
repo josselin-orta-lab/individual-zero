@@ -534,3 +534,65 @@ must show actual positive consolidation throughput while unconscious,
 real reversible wake at or before the critical body state, and an
 acceptable survival/consolidation/UC trade-off in matched mortal
 worlds. Until then, the global issue remains **NO-GO**.
+
+## 19 October: human-inspired two-process sleep calibration, matched physical protocol
+
+The user's scientific priority is now a **human-inspired balance**, not a
+fixed forced sleep percentage: homeostatic fatigue rises with real waking
+work and drops with actual sleep; the physically observed night phase
+modulates sleep desire; personally experienced TD values remain relevant;
+semantic consolidation remains real, priced work during admitted sleep,
+not a perpetual demand for more sleep. This is an engineering analogy to
+two-process sleep regulation, **not** a claim of human biological timing.
+
+A six-pair diagnostic ablation on the existing engine (critical sleep
+intrinsic suppression at body <=10; original native earlier warnings
+preserved) has now delivered complete physical reports for all six
+world/seed pairs. Canonical control versus ablated: **3/6 vs 4/6
+deaths**, 1,330 vs 647 sleep actions, 357 vs 23 alert-wake-to-sleep
+decisions, **105 vs 105 consolidation commits**, and 63,635 vs 109,055
+accepted cognitive UC. The ablation altered behavior strongly but
+**did not improve survival or consolidation**. One oasis control survives
+to horizon 300 while the ablated life dies at step 299. Therefore do
+not merge the abrupt suppression as a production sleep feature.
+
+The next experiment is now predeclared in
+`tools/run_i1_317_two_process_sleep.py`, tests
+`tests/i1/test_i1_317_two_process_sleep.py` and workflow
+`.github/workflows/i1-issue317-two-process-sleep.yml`. It runs
+**8 independently matched world/seed triplets** (24 mortal births),
+four presets `oasis`, `foraging`, `dry-valley`,
+`memory-corridor` × two new seeds 9761/9791. Native I1 is compared
+with two frozen, operator-only Stage10 birth configurations:
+
+| Dimension | Native | Homeostatic | Circadian |
+|---|---:|---:|---:|
+| awake fatigue gain | 0.70 | 0.20 | 0.12 |
+| fatigue recovery per real sleep | 0.30 | 0.36 | 0.34 |
+| fatigue weight | 0.65 | 0.62 | 0.58 |
+| consolidation pressure weight | 0.25 | 0.05 | 0.03 |
+| night contribution | 0.20 | 0.27 | 0.42 |
+| intrinsic sleep evidence weight | 0.90 | 0.82 | 0.85 |
+| pending-episode normalization | 8 | 32 | 32 |
+| memory occupancy normalization | 2 | 4 | 4 |
+
+None change body needs, world resources, sleep energy gain, learned
+TD action value, Action Control, Competition thresholds, awake goal
+arbitration, semantic algorithm, expensive consolidation budgets, wake
+alerts (food <=10, water <=15, integrity <=25, energy <=10), death
+irreversibility, I0 or previously sealed WAL. The designs are research
+candidates, **not yet selected calibration**. Separate hash-authenticated
+WAL and observer records include actual day/night asleep fractions,
+bout durations, physical movement, resource intake, consolidation
+objects and backlog, deaths, alert re-sleep and accepted UC.
+
+The older capacity shadow audit initially failed because its verifier
+incorrectly rejected a final *physically applied* mortal world step
+with `step_closed.outcome=dead`. This is not rollback; death is a
+valid final outcome. A precise correction and synthetic regression
+test preserve this event and forbid post-death continuation, with
+rerun pending. A safe consolidation coma remains unimplemented and
+its value cannot be inferred from backlog threshold crossings.
+
+Scientific verdict **NO-GO** pending completed and audited living
+experiments. Never equate less sleeping with better surviving.
