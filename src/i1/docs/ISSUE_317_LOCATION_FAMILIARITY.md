@@ -190,3 +190,28 @@ actual motor admission, then replicate with fresh held-out seeds.
 The non-scripted individual must remain free to choose or decline
 an entity return; losses of hydration and one extra death after frontier
 continuity remain unacceptable to ignore.
+
+## Independent contact audit v3: temporal Q evidence and WAL snapshot
+
+After the completed PASS of the full CI on `87e19c55` and eight successful
+physical world jobs (runs `39211034260`, `39211029367`), an independent
+review found two methodological risks in the passive contact auditor:
+
+1. A learned memory Q evaluation **after** a contact does not prove that
+   the associated TD value was learned **after** the contact. It could have
+   been updated during an earlier movement. The v3 audit separately
+   reports prior memory-signature TD updates and TD updates following a
+   physically certified contact; neither is automatically credited to
+   the entity's utility. The tests include both adversarial temporal cases.
+2. A WAL might change between its cryptographic verification and later
+   classification. The audit now reads original bytes once, seals a
+   temporary immutable copy, authenticates that exact snapshot with
+   the existing #314 verifier, then parses only the saved bytes. It
+   reports the immutable source SHA-256 and checked journal head. Any
+   count mismatch fails rather than inventing zeros.
+
+This is **read-only instrumentation and test work**, not a new model of
+physiological causality and not a cognitive improvement. The next
+intervention must provide a separately identified, genuinely
+experienced consequence and demonstrate its role in a later choice.
+**NO-GO** remains the global verdict.
