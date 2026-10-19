@@ -1,0 +1,59 @@
+name: I1 issue317 certify 18 experiential mortal WAL
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_317_experiential_place_cohort.py'
+      - 'tests/i1/test_i1_317_experiential_place_cohort.py'
+      - '.github/workflows/i1-issue317-experiential-place-cohort-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Reject forged WAL and misleading motor effects
+        run: python -m unittest discover -s tests/i1 -p test_i1_317_experiential_place_cohort.py -v
+      - name: Download nine immutable original mortal-birth pairs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p sealed result
+          for world in oasis foraging memory-corridor; do
+            for seed in 15121 15173 15313; do
+              gh run download 39322396991 --repo "$GITHUB_REPOSITORY" --name "i1-317-experiential-place-$world-$seed" --dir sealed
+              test -f "sealed/$world/$seed/report.json"
+              test -f "sealed/$world/$seed/guard_control/life-01.wal"
+              test -f "sealed/$world/$seed/guard_experiential/life-01.wal"
+            done
+          done
+      - name: Attest original physical stages, lived effects, and motor divergence
+        run: |
+          python tools/audit_i1_317_experiential_place_cohort.py --root sealed --output result/independent-experiential.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("result/independent-experiential.json").read_text())
+          assert d["certified_original_mortal_WAL_paths"]==18
+          assert d["scientific_verdict"]=="NO-GO"
+          assert d["research_adapter_M11_cold_recovery_proven"] is False
+          assert d["by_arm"]["guard_control"]["lives"]==9
+          assert d["by_arm"]["guard_experiential"]["lives"]==9
+          print("EIGHTEEN_INDEPENDENT_MORTAL_WAL_ATTESTED")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-independent-experiential-18-life-certificate
+          path: result/
+          retention-days: 30
+          if-no-files-found: warn
