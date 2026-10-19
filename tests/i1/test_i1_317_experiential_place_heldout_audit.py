@@ -12,6 +12,25 @@ class HeldoutEvidence(unittest.TestCase):
  def test_incomplete_cohort(self):
   with TemporaryDirectory() as d:
    with self.assertRaises(ValueError):m.certify(Path(d))
+ def test_goal_switch_must_be_authenticated_at_stage8(self):
+  from tempfile import TemporaryDirectory
+  from json import dumps
+  with TemporaryDirectory() as d:
+   wal=Path(d)/"life.wal"
+   rows=[
+    {"kind":"active_goal_changed","t_monde":1,"cycle":1,"data":{
+      "before":None,"after":{"goal_type":"eat","id":"goal:eat:x"}}},
+    {"kind":"i1_place_memory_option_proposed","t_monde":1,"cycle":1,"data":{
+      "option_ref":"option:place-memory:x","target":[8,8],
+      "active_goal":"goal:eat:x","next":[9,8]}},
+    {"kind":"stage11_intrinsic_evaluation","t_monde":1,"cycle":1,"data":{
+      "option_ref":"option:place-memory:x",
+      "signal_ids":["i1:personally-relieved-water:8:8"],
+      "intrinsic_producers":["i1:conditional-lived-site-relevance"]}},
+   ]
+   wal.write_text("".join(dumps({"causal_event":row})+"\n" for row in rows))
+   with self.assertRaisesRegex(ValueError,"without live drink goal"):
+    m.inspect_wal(wal,"guard_experiential",1)
  def test_no_unnatural_motor_credit(self):
   with self.assertRaises(ValueError):m.require(False,"no forged credit")
 if __name__=="__main__":unittest.main()
