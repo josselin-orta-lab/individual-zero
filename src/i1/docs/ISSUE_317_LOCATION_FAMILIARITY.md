@@ -1188,3 +1188,65 @@ The experiment's mutable lab wrapper lacks M11 cold
 restoration; a native persistent owner and independent
 held-out population validation would be required for promotion.
 **Global scientific verdict NO-GO; PR remains draft.**
+
+## 19 October: 18 original mortal WAL certified, independent held-out replication
+
+[Independent 18-life WAL certification #39323693952](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39323693952)
+is SUCCESS. Its sealed `independent-experiential.json` attests
+all **18** original WAL paths, **30** genuine Stage8 experiential
+signals, **15** threshold crossings, and **three of nine** matched
+pairs with a real first motor divergence under equal accepted UC
+before that divergence. All three were in the original
+`memory-corridor` and moved west towards a site (8,8) containing
+**both** a personally beneficial water source and berry_a.
+Normal Competition selected a motor candidate which could be
+the berry place option rather than the water place option.
+Every paired life in oasis or foraging was unchanged.
+Deaths remain **4/9** in both experimental arms: no survival gain.
+The per-arm authentic WAL aggregates were: control 2446 physical
+steps, 9 `boire`, 572 objects consolidated, 103579 UC;
+treated 2446 steps, 15 `boire`, 787 objects consolidated,
+94314 UC. These results prove a narrow first-person,
+motor-mediated capability but not general survival improvement
+or a standalone water-driven motor choice.
+
+Prospective validation is frozen before observing new outcomes:
+- Research algorithm exactly as in
+  `tools/run_i1_317_experiential_place_relevance.py`
+  and historical source `43e1fa82`; copied to
+  `tools/run_i1_317_experiential_place_heldout.py`
+  without changing confidence discount, water<=30,
+  maximum learned evidence 0.45, Competition, Action Control,
+  physiology, Q/TD, or paid retrieval.
+- Four world presets: `oasis`, `foraging`,
+  `memory-corridor` and the new fixed
+  `water-isolated-corridor`. The fourth duplicates the
+  original corridor's birth, needs, water at (8,8),
+  surveyable passable corridor, obstacles and all other
+  resource counts but places berry_a at **(10,8)** instead
+  of **(8,8)**. Berry and water locations are disjoint.
+  No actor is given this mapping; it remains Lab world truth.
+- Four entirely new seeds: **16127, 16249, 16381, 16513**;
+  two independently born mortal arms `guard_control` and
+  `guard_experiential` per world/seed. Thus **32 new
+  independent mortal lives**, max 300 physical steps each,
+  with separate immutable WAL. No past seed or life is
+  retried, rolled back, or resurrected.
+- Negative unit tests ensure no unearned value from an entity
+  label, bad personally observed delta, unseen future resource,
+  or changed site co-location.
+- Outcome GO criteria require physically authenticated new WAL,
+  repeated first-person conditional Stage8 value evidence,
+  unchanged score thresholds and UC before motor divergence,
+  an **actual admitted decision option** with the learned
+  water site's referent (not just same-cell berry), then
+  actual movement, subsequent `boire` and observed water
+  change, without unacceptable losses in survival,
+  consolidation or compute cost. If mixed, report NO-GO.
+
+Workflow:
+`.github/workflows/i1-issue317-experiential-place-heldout.yml`
+run `39324485459` launches the 16 matched new pairs.
+This remains a laboratory intervention, not an M11 native
+persistent owner: **NO-GO** and PR #318 **draft** pending
+held-out attestation and native cold-restore contract.
