@@ -214,10 +214,6 @@ def analyse(root, expected_sha=EXACT_ENGINE_SHA, verifier=audit_wal):
             "physical_awake_actions": steps - actions["dormir"],
             "physical_actions": dict(actions),
             "wake_reasons": dict(wakes),
-            "alert_wakes_followed_by_sleep": sum(
-                # independently from the existing physical recorder
-                # via checked physical source per arm:
-                0 for _ in ()),
             "physically_consolidated_objects": sum(
                 x["actual_consolidated_objects"] for x in items),
             "closed_episode_objects": sum(x["episode_objects_closed"] for x in items),
