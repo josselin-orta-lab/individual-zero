@@ -24,7 +24,8 @@ def sample():
             "position": {"x": 5, "y": 5},
             "dual_scope_visible_body": body}),
         e("i1_entity_place_observed", {
-            "entity_id": "sighting:artifact:5:5", "source": "perceptual_capture",
+            "entity_id": "sighting:artifact:5:5", "entity_type": "artifact",
+            "source": "perceptual_capture",
             "position": [5, 5]}),
         e("command_admitted", {"command_hash": "command:4",
                                 "primitive": "boire", "option_ref": "option:4"}),
@@ -86,7 +87,7 @@ class ContactCausality317Tests(unittest.TestCase):
     def test_multiple_entities_remain_ambiguous(self):
         events = sample()
         other = dict(events[1], data=dict(events[1]["data"],
-                   entity_id="sighting:other:5:5"))
+                   entity_id="sighting:other:5:5", entity_type="other"))
         events.insert(2, other)
         counts = module.classify(events)["counters"]
         self.assertEqual(counts["multiple_colocated_sightings"], 1)
