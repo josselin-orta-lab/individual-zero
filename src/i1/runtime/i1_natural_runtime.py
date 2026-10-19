@@ -90,6 +90,11 @@ class I1Runtime(I1WaterPrudentRuntime):
         # This selector is research-only. The canonical birth_i1 entry point
         # always uses natural-004 and cannot override it.
         goal_policy = kwargs.pop("i1_goal_policy", "natural-004")
+        # Research-only birth selector; absent on both canonical birth APIs.
+        self._i1_experienced_place_enabled = kwargs.pop(
+            "i1_experienced_place_enabled", False)
+        if type(self._i1_experienced_place_enabled) is not bool:
+            raise ValueError("experiential place selector must be a boolean")
         if goal_policy not in _I1_GOAL_POLICIES:
             raise ValueError("unregistered I1 natural goal arbitration policy")
         # Version the prospective I1 configuration instead of modifying the
@@ -211,6 +216,10 @@ class I1Runtime(I1WaterPrudentRuntime):
         self._i1_personal_id = life_id
         self._i1_last_nonplannable_observation = None
         super().__init__(**kwargs)
+        if self._i1_experienced_place_enabled:
+            from i1.modules.experienced_place_relevance import I1ExperiencedPlaceStage8
+            self.stage8_option_evaluator = I1ExperiencedPlaceStage8(
+                underlying=self.stage8_option_evaluator, actor=self)
         self._i1_active_owner_views = {
             "causal_model": ActiveConsolidatedOwner(
                 self.causal_model, "causal_model",
