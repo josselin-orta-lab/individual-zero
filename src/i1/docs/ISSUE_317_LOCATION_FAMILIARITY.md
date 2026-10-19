@@ -1080,3 +1080,45 @@ cold-restorable through M11.
 
 **Scientific NO-GO maintained.** No I0, canonical I1 owner,
 physical simulation, thresholds, food-first reflex or coma is changed.
+
+## 19 October: fresh matched experiential goal relevance, stage-8-only research
+
+[Independent original 12-life verification `39318131046`](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39318131046)
+is green, along with I1 and physical-memory CI at `667cce96`.
+The 215 personally observed, fully offered water-site candidates in
+`memory-corridor/14107` scored zero evidence against threshold 0.5,
+without a single command change. Neither extra retrieval nor source
+type as a label establishes a useful motor.
+
+To isolate the next mechanism, new, preregistered
+`tools/run_i1_317_experiential_place_relevance.py` and
+`tests/i1/test_i1_317_experiential_place_relevance.py` run
+**two physically independent mortal arms** in **three worlds**
+(`oasis`, `foraging`, `memory-corridor`) × **three previously
+unused seeds** (15121, 15173, 15313), **18 separate lives** at up to
+300 steps each. Both arms use the *same already tested guarded spatial
+retrieval* and equal ordinary Stage8/Planning charges. The only
+difference is a bounded Stage8 extra *association-based relevance*
+for a genuine currently offered, observed-and-visited site where
+that individual performed a physically admitted `boire`, then
+personally observed an increase in their bodily water. The present
+first-person frozen water reading must be <=30%; the Stage6/Stage8
+motor prediction is untouched. Relevance is capped at 0.45 and
+discounted by memory confidence and witnessed route length. This
+is neither a model of future water gain nor a site-type oracle.
+
+No changes to native physiology, sleep, world physics,
+Competition thresholds, TD/Q memory, Action Control,
+M11 owner state, or I0. The experimental wrapper is not yet
+cold-restorable and **cannot be promoted unchanged**.
+Competition still requires its normal accumulator crossing and
+Action Control still admits the single real motor. A favorable
+result must be defended by authentic WAL, true executed return,
+subsequent drinking, consolidation, survival and matched UC.
+
+Workflow:
+`.github/workflows/i1-issue317-experiential-place-relevance.yml`,
+run `39322396991`; at the time of this entry the nine
+fresh independent birth groups were beginning, with no
+survival outcome available. Prior 12 and 24-life WAL remain
+sealed. Global **NO-GO**, PR #318 stays draft.
