@@ -1,0 +1,57 @@
+name: I1 issue317 independent mortal TD credit ablation
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/run_i1_317_td_counterfactual.py'
+      - '.github/workflows/i1-issue317-td-credit-ablation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ablation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install current canonical I1
+        run: python -m pip install -e .
+      - name: Run two independent mortal births and one isolated TD credit ablation
+        run: |
+          python tools/run_i1_317_td_counterfactual.py \
+            --preset foraging --seed 1141 --steps 300 \
+            --output-dir experiment/paired \
+            --credit-step 37 \
+            --memory-signature memory_place_return:sighting:water_source:10:8 \
+            --previous-signature i1_water_probe:boire \
+            --next-signature primitive:dormir \
+            --check-step 64 \
+            --expected-control-head b31aa6c9c6aa7209ee9341510238d6b6c4c223bc1e777ce83f32109786aa0677
+      - name: Require technically valid isolated experiment
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('experiment/paired/report.json')
+          d=json.loads(p.read_text())
+          assert d['status']=='COMPLETED_DIAGNOSTIC_NO_GLOBAL_GO',d
+          assert d['identical_world_steps_before_credit']==36
+          assert d['arms']['control']['journal_head']=='b31aa6c9c6aa7209ee9341510238d6b6c4c223bc1e777ce83f32109786aa0677'
+          assert d['arms']['control']['td_at_credit_step']['return_g']==d['arms']['memory-credit-ablated']['td_at_credit_step']['return_g']
+          assert d['arms']['control']['td_at_credit_step']['delta']==d['arms']['memory-credit-ablated']['td_at_credit_step']['delta']
+          assert d['population_go'] is False
+          assert d['entity_causality_proven'] is False
+          print('PAIRED_TD_CREDIT_ABLATION_CERTIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-mortal-td-credit-ablation
+          path: experiment/paired/
+          retention-days: 30
+          if-no-files-found: warn
