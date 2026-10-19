@@ -84,6 +84,31 @@ class ContactCausality317Tests(unittest.TestCase):
         self.assertEqual(module.classify(events)["examples"][0][
             "entity_causal_benefit"], "not_established")
 
+    def test_preexisting_td_is_not_new_entity_learning(self):
+        events = sample()
+        entity = "memory_place_return:sighting:artifact:5:5"
+        events.insert(0, dict(
+            kind="td_update_published", t_monde=2, attempt_ref="before",
+            data={"updated_signatures": [entity]}))
+        result = module.classify(events)
+        counts = result["counters"]
+        self.assertEqual(
+            counts["contacts_with_preexisting_memory_td_and_later_read"], 1)
+        self.assertEqual(counts["contacts_followed_by_memory_td_update"], 0)
+        self.assertFalse(result["entity_causal_learning_proven"])
+
+    def test_later_td_trace_is_not_entity_effect(self):
+        events = sample()
+        events.append(dict(
+            kind="td_update_published", t_monde=6, attempt_ref="after",
+            data={"updated_signatures": [
+                "memory_place_return:sighting:artifact:5:5"]}))
+        result = module.classify(events)
+        self.assertEqual(
+            result["counters"]["contacts_followed_by_memory_td_update"], 1)
+        self.assertTrue(result["examples"][0]["post_contact_td_action_update"])
+        self.assertFalse(result["entity_causal_learning_proven"])
+
     def test_multiple_entities_remain_ambiguous(self):
         events = sample()
         other = dict(events[1], data=dict(events[1]["data"],
