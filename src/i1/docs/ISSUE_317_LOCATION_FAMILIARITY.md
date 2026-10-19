@@ -650,3 +650,68 @@ stopped life. Six previously completed triplets under the old SHA must
 not be mixed with future, newly born results. Global verdict remains
 **NO-GO** pending prospective authentic WAL validation, survival and
 consolidation/UC comparison.
+
+## 19 October: preregistered recovery-sensitive natural awakening, 2×2 factorial
+
+Reinspection of the 24 independently verified WAL from the successful
+two-process cohort (run `39297909539`, independent verifier
+`39299436471`) gives a more precise diagnosis. Native I1 froze
+`p_cons=1` at **626/659 physical sleep entries**. The eight native
+lives recorded **587 alert wakes, 71 maximum-duration wakes and only
+one natural-end wake**. Recovery-reduced variants still suffered frequent
+alert wakes, with no population survival benefit and substantially fewer
+physically committed memory objects. These are observations, **not**
+proof that recalculation is better.
+
+**Architectural distinction:** `SleepSession` currently passes the
+last *waking-step-frozen* `sleep_pressure` to DC-13 on every sleeping
+step. `SleepHealth` decreases fatigue only after physically applied
+`dormir`, but the natural-end test never incorporates that recovery
+within the same bout. Frozen memory pressure and the DC-13 alert,
+reflex, dated-intention, maximum-duration precedence remain legitimate;
+the scalar used only for natural end may be physiologically stale.
+
+New research-only candidate
+`tools/run_i1_317_wake_recovery_factorial.py` uses **two independent
+factorial dimensions** at fresh birth:
+
+- Actual fatigue-recovery-aware natural-end pressure: keep frozen prior
+  consolidation demand and prior day/night phase, replace only the
+  accumulated decrease in the already-owned F_cog within a sleep bout.
+  A pure, monotone, bounded validator rejects nonphysical fatigue and
+  contradictory pressure. First sleeping step preserves native pressure.
+  It never reads privileged WorldBody state, new Memory episodes or TD,
+  and never sends a motor command.
+- Higher natural-end threshold only: 0.10 native versus 0.35 research
+  candidate. Neither water/food/integrity/energy alert threshold nor the
+  maximal 6 sleeping steps is modified.
+
+The four independent arms are **canonical**, **recovered_fatigue**,
+**natural_threshold**, **recovered_and_threshold**. Fixed preregistration:
+four worlds `oasis`, `foraging`, `dry-valley`,
+`memory-corridor` × new seeds **11117, 11239**, each a separate
+mortal physical life with native 300-step limit and its own WAL.
+Exactly **32** lives required. All retain the native frozen
+`fatigue_gain=0.7`, `sleep_fatigue_recovery=0.3`,
+`w_F=0.65`, `w_C=0.25`, `w_N=0.20`,
+`intrinsic_weight=0.9`, and genuine charged consolidation. No coma
+or forced vital action is introduced.
+
+The experiment is deliberately **diagnostic**, not a candidate for
+automatic model promotion. A safe replacement would also require a
+state-owning and cold-restorable causal implementation, independent
+WAL/UC attestation, and beneficial survival-plus-consolidation outcomes
+across previously unseen births. Recovery pressure is recalculated in a
+non-persistent research adapter attached at the individual's birth;
+**no I1 production sleep owner or M11 restore contract is changed**.
+Changing natural-end pressure is an intervention, not a direct assertion
+of natural human sleep. Also, an alarm wake can legitimately be followed
+by an independent ordinary decision to sleep again, and no priority
+override is allowed. Death is irreversible; technical stops are
+excluded from survival comparisons, never retried in place.
+
+Workflow: `.github/workflows/i1-issue317-wake-recovery-factorial.yml`.
+Every run must pass isolated adversarial tests, independent mortal WAL
+authentication, and the exact frozen native-birth parameter checks.
+**Global NO-GO maintained** until all 32 physical lives complete
+and an independent population audit validates any prospective effects.
