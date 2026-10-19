@@ -153,3 +153,40 @@ attribution particularly ambiguous. Require independent controls,
 contradictions, and a later decision comparison before declaring
 learning-based remote return. The frontier continuity code remains
 provisionally useful but global scientific verdict is **NO-GO**.
+
+## 19 October follow-up: causal-contact audit v2, no cognitive intervention
+
+The full I1 CI on `ea229356` and the eight diagnostic world jobs were
+successful (runs `39209718974` and `39209714587`). No physical engine
+change is made in this follow-up.
+
+The 12 paired physical WALs (`2dc4aca7` vs `370f4e99`) were re-read
+against each world's authenticated spatial audit. The operator-side
+read-only contact scan found 52 vs 47 physically certified `boire`,
+`manger`, or `collecter` actions. Only 5 vs 11 actions had a single
+co-located first-person sighting. Another 47 vs 36 actions had multiple
+sightings at the interaction site. Benefit in physical telemetry was
+observed for 14 vs 11 water increases, and 19 vs 18 food increases.
+A learned later memory evaluation for one of the co-located entities was
+observed for 5 vs 6 contacts. These are *associations*, not object-specific
+causal learning. The populations are diagnostic and unequal mortal horizons.
+
+The first version of `audit_i1_317_contact_causality.py` could be
+misread as attributing a benefit to an entity merely co-located with an
+action. Its reviewed v2 classification is more discriminating: `manger`
+consumes carried inventory rather than an entity necessarily present
+on the current cell; `boire` has no entity ID in the physical
+command and remains environmental context evidence; `collecter`
+has a recorded kind/quantity, which can be matched to a **unique
+physically sighted entity type** but does not prove physiological utility.
+Every candidate remains `entity_causal_benefit=not_established`.
+Two additional adversarial tests now reject false direct credit from
+ingestion and from a kind mismatch. No learned entity-value table or
+specialized thirst/food navigation rule has been introduced.
+
+For a future scientific GO, compare otherwise matched cohorts with and
+without *real lived interaction evidence*, check later decisions and
+actual motor admission, then replicate with fresh held-out seeds.
+The non-scripted individual must remain free to choose or decline
+an entity return; losses of hydration and one extra death after frontier
+continuity remain unacceptable to ignore.
