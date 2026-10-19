@@ -328,6 +328,72 @@ assert c.register(revision,active_goal_id="goal-1",t_monde=11)
 assert c.accumulator_for(p.option.id)==0.0, (
     "materially changed plan must erase previous evidence")
 
+
+# Stage11's first-person spatial novelty is distinct from learned site value.
+# Merely seeing a known entity again must not continuously create a reward
+# for two-cell oscillations. Genuine Stage8 evidence remains authoritative.
+from i1.modules.stage11_evaluator import Stage11OptionEvaluator
+from i1.modules.stage8_evaluator import Stage8OptionEvaluator
+saved_stage8_evaluate = Stage8OptionEvaluator.evaluate
+learned_evidence_holder = [None]
+def stage8_test_read(self, *, proposal, cycle, t_monde, **kwargs):
+    ext = learned_evidence_holder[0]
+    response = EvaluationOption(
+        option_ref=proposal.option.id, option_version=proposal.option.version,
+        cycle=cycle, t_monde=t_monde,
+        status="not_evaluated" if ext is None else "evaluated",
+        learned_value_status="unlearned" if ext is None else "learned",
+        learned_value=None if ext is None else ext,
+        simulated_value_status="unavailable", simulated_value=None,
+        intrinsic_status="not_applicable", intrinsic_value=None,
+        risk_status="unknown", risk=None, safety_uncertainty=0,
+        protection=False, signal_ids=(), producers=("test:stage8",),
+    )
+    return OptionEvidenceInput(evaluation=response, evidence=ext)
+Stage8OptionEvaluator.evaluate = stage8_test_read
+try:
+    for kind in ("water_source","berry_a","wood","unknown_artifact"):
+        t=10
+        option = proposal(t,entity=kind)
+        entity_id = f"sighting:{kind}:0:0"
+        target = SpatialReturnTarget(
+            ref=option.option.motive_ref.id,
+            source_t_monde=t,origin=(2,0),destination=(1,0),
+            direction="west",entity_id=entity_id,entity_type=kind,
+            observed_position=(0,0),visited_path=((2,0),(1,0),(0,0)),
+            observed_step=1,confidence=0.65,
+        )
+        target.validate()
+        visits=set()
+        geography=SimpleNamespace(
+            place_for=lambda opt: target if opt.id==option.option.id else None,
+            has_recorded_site=lambda position: position in visits,
+        )
+        evaluator=Stage11OptionEvaluator.__new__(Stage11OptionEvaluator)
+        evaluator._exploration=SimpleNamespace(geographic=geography)
+        evaluator._intrinsic_weight=0.35
+        def score():
+            return evaluator.evaluate(
+                proposal=option,evaluation_state=None,
+                initial_state=None,cycle=1,t_monde=t)
+        first=score()
+        assert abs(first.evidence-0.35*0.12*0.65)<1e-12,kind
+        assert first.evaluation.learned_value_status=="unlearned"
+        assert "place-memory:location_not_yet_visited" in first.evaluation.signal_ids
+        visits.add((0,0)) # physically witnessed visit, not an entity oracle
+        again=score()
+        assert again.evidence == 0.0, (kind,again)
+        assert again.evaluation.intrinsic_value == 0.0
+        assert "place-memory:physically_visited_location" in again.evaluation.signal_ids
+        learned_evidence_holder[0]=0.24
+        learned=score()
+        assert abs(learned.evidence-0.24)<1e-12,(kind,learned)
+        assert learned.evaluation.learned_value_status=="learned"
+        assert learned.evaluation.intrinsic_value==0.0
+        learned_evidence_holder[0]=None
+finally:
+    Stage8OptionEvaluator.evaluate=saved_stage8_evaluate
+
 print("ISSUE317_COMPETITION_SEMANTIC_INTENT_TESTS_OK")
 """
             env = dict(os.environ)

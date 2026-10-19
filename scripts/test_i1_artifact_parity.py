@@ -825,7 +825,7 @@ _ISSUE_317_PINNED_BLOBS = {
     "i1/modules/competition.py": "e0aab4aa4e21d30165fb39f3fc03e9700ef948bd",
     "i1/modules/geographic_exploration.py": "391fc2abaef4da1468879eacd31eb186c14759d7",
     "i1/modules/geographic_planning.py": "8aa71effe4cf55827a27a21af4e52d09938e34d6",
-    "i1/modules/stage11_evaluator.py": "4f22b6a8d3dfc2b5b6bc098a88b85f6023e67824",
+    "i1/modules/stage11_evaluator.py": "9b69a0b9c64df9b6565c8f9d1ac3eaad21e400f1",
     "i1lab/stage11_runtime.py": "15295d162d21b56e24c07d1dd8835a104f2bea6f",
     "i1lab/stage4_runtime.py": "80a7504009205f3481f936251cddcaa2e2df8393",
 }

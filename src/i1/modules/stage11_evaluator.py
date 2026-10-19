@@ -219,18 +219,29 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
                 initial_state=initial_state, cycle=cycle, t_monde=t_monde,
                 remaining_plan_index=remaining_plan_index,
             )
-            # This is confidence in a remembered destination, NOT a claim
-            # about physiology or an artificially learned Q value.
-            # Existing goal pressure is supplied by Stage4's real need owner.
-            # No built-in entity-usefulness relation: even a remembered berry
-            # has no prelearned nutritional value. Stage8 TD stays authoritative.
-            value = min(0.12, self._intrinsic_weight * 0.12 * target.confidence)
+            # Novelty of the *location* is not benefit from the entity.
+            # Only the first-person physical visit ledger knows whether I1
+            # has reached that location. Once visited, location curiosity
+            # is exhausted: repeated sightings/confidence must not pay a
+            # new positive intrinsic bonus on every A-B-A return.
+            #
+            # Stage8's actual learned/simulated evidence is untouched and
+            # can still motivate revisits to personally useful places.
+            # This is generic for any entity, not a water/food affordance.
+            visited_location = geo.has_recorded_site(target.observed_position)
+            value = (
+                0.0 if visited_location
+                else min(0.12, self._intrinsic_weight * 0.12 * target.confidence)
+            )
             ext = 0.0 if original.evidence is None else original.evidence
             assessment = replace(
                 original.evaluation, status="evaluated",
                 intrinsic_status="applicable", intrinsic_value=value,
                 signal_ids=tuple(original.evaluation.signal_ids) + (
                     f"place-memory:{target.entity_id}:seen-t{target.observed_step}",
+                    ("place-memory:physically_visited_location"
+                     if visited_location else
+                     "place-memory:location_not_yet_visited"),
                 ),
                 producers=tuple(dict.fromkeys(
                     original.evaluation.producers + ("exploration:entity_place_recall",)
