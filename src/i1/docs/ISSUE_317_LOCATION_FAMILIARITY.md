@@ -596,3 +596,24 @@ its value cannot be inferred from backlog threshold crossings.
 
 Scientific verdict **NO-GO** pending completed and audited living
 experiments. Never equate less sleeping with better surviving.
+
+## 19 October: two-process trial stop investigation
+
+The first full two-process trial (run `39288096522`) produced six technically
+completed triplets and failed two (`oasis/9791`, `foraging/9791`) with
+`ValueError: sleep entry requires actually applied ordinary admitted dormir`.
+This is a **mortal session/admission contract failure**, not a death and not
+evidence of improved or worsened physiology. Do not include stopped arms
+in mortality comparisons or silently retry a stopped birth.
+
+In Stage10, `_run_step_with_mortal_guard` records entry to sleeping mode
+after a physically applied `dormir` decision, and the
+`sleep_session.record_applied_sleep_decision` gate verifies ordinary
+Action Control provenance and motive `sleep_pressure`. With alternative
+sleep coefficients, the failing case needs exact real admission/option and
+session state before any contract change. Read-only enhanced capture in
+`tools/run_i1_317_two_process_sleep.py` (commit `ff427796`)
+retains the stopped WAL's SHA, admitted primitive, motive type, option,
+sleep session and mortal status, never rolls back or repeats the action.
+Trial rerun `39292705542` is pending. Neither I0 nor production I1
+was changed. Global `NO-GO` remains.
