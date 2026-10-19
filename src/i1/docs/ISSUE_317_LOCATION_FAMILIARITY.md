@@ -331,3 +331,34 @@ and CI gate `9a5ad318` rerun the complete physical experiment and require
 the independent proof chain. Until green, treat these findings as
 **physical WAL observations, not a complete passing CI experiment**.
 The global scientific verdict remains **NO-GO**.
+
+## 19 October: independently completed TD-credit counterfactual
+
+The corrected CI [run 39227788084](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39227788084)
+is **SUCCESS** and emitted artifact `12175187205`, containing the independent
+control and ablation mortal WAL plus `report.json`. Code pinned to
+`9a5ad3184e872ee2c6ec9d15e6876ec16eeb6ced`.
+Both WAL custody chains authenticated independently, control head
+`b31aa6c9c6aa7209ee9341510238d6b6c4c223bc1e777ce83f32109786aa0677`,
+ablation head `f1ceb098f3afebde764b2542cb0d7fc3ab4c55c5715873d1939451f8a5e5362b`,
+each 300 physically lived steps and both alive at horizon.
+The same credited TD reward (+24.7) and delta (+22.484721705494092)
+were preserved on step 37 while only the designated memory action's
+eligibility update was withheld. The first physical divergence was step
+64: control Q=2.686204, evidence=0.241546, Competition crossed and its
+admitted memory command physically applied; ablated Q=0.242937,
+evidence=0.022364, no crossing, physical sleep. Both lives consumed
+water 3 times and ate 4 times, but moved 16 versus 6 times and slept
+252 versus 271 steps.
+
+This supports a **single-world, single-seed intervention-specific
+influence of past experienced TD credit on a future physical decision**.
+It does not demonstrate causal affordance of the water entity, nor that
+either motor policy is healthier, nor generality. The existing independent
+held-out cohort is not an independent validation of this intervention.
+New optional `--inspect-signature` in the researcher-only comparison tool
+lets an observer read a *different* memory signature than the one
+ablated; no decision or model state is changed by that diagnostic input.
+This is groundwork for negative controls, not evidence that such
+controls have yet been experimentally validated.
+Global #317 scientific verdict remains **NO-GO**.
