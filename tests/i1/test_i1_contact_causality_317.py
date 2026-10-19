@@ -53,6 +53,36 @@ class ContactCausality317Tests(unittest.TestCase):
         self.assertEqual(result["examples"][0]["entity_causal_benefit"],
                          "not_established")
 
+    def test_carried_food_cannot_credit_colocated_site(self):
+        events = sample()
+        events[3]["primitive"] = "manger"
+        events[3]["parameters"] = {"target": "berry_a"}
+        events[2]["data"]["primitive"] = "manger"
+        events[4]["effects"] = {"ate": "berry_a"}
+        events[4]["body_after"] = {
+            "energy": 69.5, "food": 51.8,
+            "water": 27.6, "integrity": 80.0}
+        counts = module.classify(events)["counters"]
+        self.assertEqual(counts["inventory_mediated_ingestions"], 1)
+        self.assertEqual(counts["collection_with_unique_witnessed_type"], 0)
+        self.assertEqual(module.classify(events)["examples"][0][
+            "direct_target_witnesses"], [])
+
+    def test_collected_type_must_match_perceived_entity(self):
+        events = sample()
+        events[3]["primitive"] = "collecter"
+        events[3]["parameters"] = {"target": "berry_a"}
+        events[2]["data"]["primitive"] = "collecter"
+        events[4]["effects"] = {
+            "collected": {"kind": "berry_a", "quantity": 1}}
+        counts = module.classify(events)["counters"]
+        self.assertEqual(counts["collection_without_unique_witnessed_type"], 1)
+        events[1]["data"]["entity_type"] = "berry_a"
+        counts = module.classify(events)["counters"]
+        self.assertEqual(counts["collection_with_unique_witnessed_type"], 1)
+        self.assertEqual(module.classify(events)["examples"][0][
+            "entity_causal_benefit"], "not_established")
+
     def test_multiple_entities_remain_ambiguous(self):
         events = sample()
         other = dict(events[1], data=dict(events[1]["data"],
