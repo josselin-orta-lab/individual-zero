@@ -216,6 +216,7 @@ def physical_memory_decision(events, step, option):
 
 def run(*, output_dir, preset, seed, steps, credit_step, signature,
         previous, following, check_step, expected_control_head=None):
+    output_dir = output_dir.resolve()
     if (output_dir.exists()
         or type(seed) is not int or not 0 <= seed <= 2**32 - 1
         or type(steps) is not int or not 2 <= steps <= 300
