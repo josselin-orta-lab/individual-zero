@@ -109,6 +109,16 @@ class ContactCausality317Tests(unittest.TestCase):
         self.assertTrue(result["examples"][0]["post_contact_td_action_update"])
         self.assertFalse(result["entity_causal_learning_proven"])
 
+    def test_incomplete_wal_cannot_create_td_decision_bridge(self):
+        self.assertEqual(
+            module.certify_experience_to_memory_decision(sample())[
+                "physically_certified_reuses"], 0)
+        altered = sample()
+        altered[2]["data"]["command_hash"] = "mismatch"
+        self.assertEqual(
+            module.certify_experience_to_memory_decision(altered)[
+                "physically_certified_reuses"], 0)
+
     def test_multiple_entities_remain_ambiguous(self):
         events = sample()
         other = dict(events[1], data=dict(events[1]["data"],
