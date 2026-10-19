@@ -67,3 +67,12 @@ observed oscillations: in the twelve previously inspected development WALs,
 none of the first entity sightings had an older recorded visit at the same
 site. A new physical counterexample and matched holdout population are still
 required before scientific GO.
+
+
+## Issue #317: observed frontier identity reset, 19 October 2026
+
+In a sealed, physical dry-valley life (seed 1141, engine `2dc4aca7`), the same perceptually admissible frontier (8,7), from origin (8,8), was evaluated in 162 distinct world steps with **162 different Competition option IDs**. The evidence remained low but positive (~0.0207) and no exploration move crossed Competition. The original option ID included `:t<world_step>`, so the candidate accumulated no evidence across unchanged physical contexts. The tracked accumulator of each ephemeral frontier remained below threshold. This is a software continuity defect of the same class as the memory target defect fixed earlier in #317, now independently identified for generic new geographic sites.
+
+Correction: `geographic_frontier` candidates use a stable key from the witnessed destination and current origin (`target.ref`) without an epoch. The fresh `source_t_monde` still validates the current Perception/Phase-1 target at the owner and Stage11 evaluator, and expiry remains real; after a different origin or physical visit the old option is invalidated, not granted an automatic command. Unchanged plans can retain evidence during non-adjudicated fallback. Any material plan change resets evidence through existing Competition, real winners retain residual effects, sleep may still win and Action Control retains final authority. TD, physics, I0, thresholds, exploration coefficients and original WAL are untouched.
+
+Native generated-I1 regression `test_i1_frontier_continuity_317.py` exercises identical first-person frontier across steps, rejection of stale/visited targets, and persistent Competition evidence. An exact source-blob parity lock prevents unauthorized drift. New physical WAL and separate population survival/UC comparisons are required; software success is **not** population GO. The issue #317 verdict remains **NO-GO** until causal benefits of actual entity interactions influence subsequent decisions and held-out physical validation passes.

@@ -97,9 +97,7 @@ def propose_geographic_frontier(
     command = PrimitiveCommand(
         "se_deplacer", {"direction": target.direction},
     )
-    option_id = (
-        f"option:geographic:{target.ref}:t{target.source_t_monde}"
-    )
+    option_id = f"option:geographic:{target.ref}"
     plan_id = f"plan:{option_id}:v1"
     plan = Plan(
         id=plan_id, option_ref=option_id, version="1",

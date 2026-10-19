@@ -813,7 +813,7 @@ DEFAULT_TOXIC_BERRY_INTEGRITY_DELTA = -10.0
 _ISSUE_314_PINNED_BLOBS = {
     "i1/modules/spatial_memory.py": "f3f9f7f517309cb2f83112c7e268496f5b46eb23",
     "i1/modules/geographic_exploration.py": "6e3f6807cb63406c7dbfbc6d5ebbdf573f2aed9b",
-    "i1/modules/geographic_planning.py": "eb0201fb608e95164df5b2f35477c3496182a391",
+    "i1/modules/geographic_planning.py": "855f6b1cf53d559fdbb427586841ccc41bea3728",
     "i1/modules/stage11_evaluator.py": "ee40ddbedee554525bf9f4565b03d4bba3654d65",
     "i1lab/i1_natural_runtime.py": "f4f6f35e3b3d323256845602253e90d7212b2ae5",
     "i1lab/stage11_runtime.py": "e67aaca4a923a13619c6ca66d79c3beb30ce290c",
@@ -823,9 +823,9 @@ _ISSUE_314_PINNED_BLOBS = {
 # hashes of exactly the reviewed source, not mutable path exemptions.
 _ISSUE_317_PINNED_BLOBS = {
     "i1/modules/competition.py": "e0aab4aa4e21d30165fb39f3fc03e9700ef948bd",
-    "i1/modules/geographic_exploration.py": "4cf6bd2883506e33d82a2544666d573960c76e0a",
+    "i1/modules/geographic_exploration.py": "1cc34bf4db27f73b48d1b39236e4f04b5f749b67",
     "i1/modules/geographic_planning.py": "8aa71effe4cf55827a27a21af4e52d09938e34d6",
-    "i1/modules/stage11_evaluator.py": "437da5726798dd3e173675c9108e2fec3e01b22f",
+    "i1/modules/stage11_evaluator.py": "31ada691ea607bdcfb1900f3b421e33ba6f20754",
     "i1lab/stage11_runtime.py": "15295d162d21b56e24c07d1dd8835a104f2bea6f",
     "i1lab/stage4_runtime.py": "80a7504009205f3481f936251cddcaa2e2df8393",
 }
