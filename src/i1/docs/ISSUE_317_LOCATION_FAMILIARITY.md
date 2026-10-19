@@ -483,3 +483,54 @@ batches and accepted UC. Runs on this experimental code **are not a
 production safety certification or implementation of coma**. No global
 GO or causal-entity utility follows merely from fewer sleep actions.
 Require actual CI and paired biological outcomes first; keep #317 open.
+
+## 19 October evening: real paired 10% protection outcomes and coma capacity gate
+
+From the GitHub Actions artifacts of the six-pair experimental design,
+four **complete paired mortal-life reports** are available: oasis/9601,
+foraging/9601, foraging/9631 and memory-corridor/9631. All are technical
+reports from real generated I1 births with separate WAL (not a claim that
+the entire workflow has passed). The first operator-only removal of the
+intrinsic sleep bonus at directly observed <=10% vital channels happens
+at step 164 for oasis/9601, and step 82 for the other three observed
+pairs, precisely when the first motor divergence occurs.
+
+Across these four pairs, canonical vs critical-intrinsic-guard:
+
+| Birth | Canonical horizon/status | Guard horizon/status | Sleep actions | Guard sleep actions | Canonical/guard consolidated batches |
+| --- | --- | --- | ---: | ---: | --- |
+| oasis/9601 | 300 / active | 299 / dead | 216 | 96 | 17 / 17 |
+| foraging/9601 | 228 / dead | 203 / dead | 208 | 61 | 8 / 8 |
+| foraging/9631 | 230 / dead | 225 / dead | 215 | 66 | 10 / 10 |
+| memory-corridor/9631 | 228 / dead | 228 / dead | 207 | 60 | 9 / 9 |
+
+Thus lower sleep preference demonstrably changes the actor's choices,
+but **does not establish a survival improvement**. It frequently increases
+movement or waking `attendre` and costs more UC, while consolidation
+batch count stays unchanged in the four reported pairs. In oasis/9601
+the native control survives 300 steps but the altered actor dies at 299.
+Two pairs and the final aggregate workflow status have not been declared
+successful at this writing. The original canonical I1 sleep thresholds
+remain water <=15, food <=10, integrity <=25; the experimental >=critical
+condition is **a separate wake-deliberation scoring ablation**, not a
+reduction of early warnings and not an implemented coma.
+
+To evaluate the proposed *maximum pending consolidation objects* without
+inventing protection, `tools/audit_i1_317_consolidation_capacity.py` now
+reads each of the 20 original, pre-registered, independently authenticated
+mortal WALs. It counts actually closed autobiographical episode IDs and
+only those episode IDs listed in fully matched atomic Stage10 consolidation
+publications. It tests capacities 16/32/64/128 with a half-capacity
+recovery observation, carrying actual first-crossing water, food,
+integrity and energy. Synthetic adversarial tests reject missing
+physical closure, fabricated objects, duplicate batch references and
+false coma claims. The matching workflow
+`.github/workflows/i1-issue317-consolidation-capacity.yml` has been
+triggered; **its results are not yet established**.
+
+This capacity audit does **not** simulate a coma or allow a shortcut
+around a stalled/alert-interrupted Stage10 consolidator. A future coma
+must show actual positive consolidation throughput while unconscious,
+real reversible wake at or before the critical body state, and an
+acceptable survival/consolidation/UC trade-off in matched mortal
+worlds. Until then, the global issue remains **NO-GO**.
