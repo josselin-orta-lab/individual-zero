@@ -215,7 +215,8 @@ def physical_memory_decision(events, step, option):
 
 
 def run(*, output_dir, preset, seed, steps, credit_step, signature,
-        previous, following, check_step, expected_control_head=None):
+        previous, following, check_step, expected_control_head=None,
+        inspect_signature=None):
     output_dir = output_dir.resolve()
     if (output_dir.exists()
         or type(seed) is not int or not 0 <= seed <= 2**32 - 1
@@ -223,6 +224,10 @@ def run(*, output_dir, preset, seed, steps, credit_step, signature,
         or type(credit_step) is not int or not 2 <= credit_step < steps
         or type(check_step) is not int or not credit_step < check_step <= steps):
         raise ValueError("unsafe or overwriting experiment parameters")
+    inspect_signature = (signature if inspect_signature is None
+                         else inspect_signature)
+    if not inspect_signature.startswith("memory_place_return:"):
+        raise ValueError("decision inspection must target a memory signature")
     preset_data, digest = load_preset(preset)
     sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT,
                          capture_output=True, text=True, check=True).stdout.strip()
@@ -230,7 +235,9 @@ def run(*, output_dir, preset, seed, steps, credit_step, signature,
         "schema": "i1-317-operator-td-counterfactual-v1",
         "code_sha": sha, "preset": preset, "preset_sha256": digest,
         "seed": seed, "horizon": steps,
-        "memory_signature": signature, "targeted_td_step": credit_step,
+        "memory_signature": signature,
+        "decision_inspected_signature": inspect_signature,
+        "targeted_td_step": credit_step,
         "later_decision_step": check_step,
         "only_intervention": "one prior memory-action eligibility credit",
         "canonical_engine_modules_modified": False,
@@ -346,8 +353,10 @@ def run(*, output_dir, preset, seed, steps, credit_step, signature,
                    for key in ("position", "body", "action_primitive",
                                "execution", "action_source", "fallback_used"))
         ), None)
-        ev_a = memory_evaluation(control["events"], check_step, signature)
-        ev_b = memory_evaluation(ablated["events"], check_step, signature)
+        ev_a = memory_evaluation(
+            control["events"], check_step, inspect_signature)
+        ev_b = memory_evaluation(
+            ablated["events"], check_step, inspect_signature)
         if ev_a is None:
             raise RuntimeError("pinned baseline memory Q evaluation missing")
         comparison = {
@@ -400,12 +409,16 @@ def main():
     parser.add_argument("--next-signature", required=True)
     parser.add_argument("--check-step", type=int, required=True)
     parser.add_argument("--expected-control-head")
+    parser.add_argument("--inspect-signature", help=(
+        "Optional separate memory signature for later-decision negative control; "
+        "defaults to the ablated signature. This never affects the birth."))
     args = parser.parse_args()
     run(output_dir=args.output_dir, preset=args.preset, seed=args.seed,
         steps=args.steps, credit_step=args.credit_step,
         signature=args.memory_signature, previous=args.previous_signature,
         following=args.next_signature, check_step=args.check_step,
-        expected_control_head=args.expected_control_head)
+        expected_control_head=args.expected_control_head,
+        inspect_signature=args.inspect_signature)
 
 
 if __name__ == "__main__":
