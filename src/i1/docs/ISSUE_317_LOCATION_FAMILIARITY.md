@@ -25,3 +25,24 @@ The existing paid memory evaluation already has access to Exploration's owner; n
 - If useful learned returns disappear, any vital need degrades or oscillations persist from apparently positive TD, audit temporal credit attribution rather than forcing coefficients or lowering the Competition threshold.
 
 No merge or issue closure until scientific robustness is demonstrated; I0 and PR #316 remain untouched.
+
+
+## 19 October 2026: independent WAL comparison and TD-credit diagnosis
+
+**Scientific verdict: NO-GO globally.** Matched births, same 300-step requested horizon (mortal lives stop on death), old code `b56b4c053a2d` in the four standard worlds and `eef98704569e` in memory-corridor versus `a657a2542935`. The different baseline SHAs reflect the pre-familiarity code lineage, not a claim that one code SHA covered all worlds. Provenance in the sealed per-life report, WAL journal head, and verified hash chains. Compare only the identical world/seed/birth pair. The old 1141/1142/2027/2028 seeds are development diagnostics, not final held-out validation.
+
+Across the twelve paired lives (3,087 lived steps on each side): movement actions 174 -> 148; A-B-A reversals among successive movement actions 34 -> 13; physically certified memory moves 31 -> 12; remote first hops 4 -> 2; sleep steps 2,661 -> 2,738; drinks 16 -> 14; eats 24 -> 19; deaths 5 -> 5. In corridor seed 1142, the prior revision had three physically certified full remote journeys after sleep; the new revision produced zero. This is a **loss of demonstrated capability on this diagnostic cohort** despite lower local reversal count. A-B-A is not inherently pathological, and fewer moves is not itself better cognition.
+
+Charged UC across all twelve lives: 94,413 -> 102,475 accepted (+8.5%), with zero rejected in both sets. Planning: 28,454 -> 33,108; Competition: 28,908 -> 31,447. No blanket resource efficiency improvement can be claimed.
+
+### Learning interpretation, not an innate object-affordance map
+
+The Stage8 runtime reads the **actual** before/after physiology following the applied action and computes `ValueAndNeeds.reward_between` as reduction in weighted distance from physiological setpoints. Hence a negative change in a body variable *can* have positive value if the variable was above its setpoint. In the twelve current physically certified memory movements, twelve next-decision TD publications carry a positive one-step return `G` between +1.4 and +2.2. The underlying authenticated `World/Body` transitions are all **movement only**, with a common immediate physical delta (energy -2.0, food -0.2, water -0.4, integrity 0). No water consumption, food consumption, entity interaction, or directly beneficial destination effect occurred *in those movement steps*. These TD values are not invented and can validly encode contextual homeostatic action value; **they do not establish causal usefulness of the remembered entity**. Across the twelve publications, 72 non-memory signatures were also listed as updated in the eligibility-trace fields. TD trace propagation therefore requires separate assessment from direct entity credit.
+
+`tools/audit_i1_317_loop_diagnostic.py` now has read-only `audit_memory_td_credit`, invoked *after* independent WAL authentication, and reports a separate classification of physical action credit vs unproven entity affordance. It verifies the memory signature, admitted Action Control command/hash, ordered physically committed transition and closure, observed position and body, decision spacing, and reward publication. It rejects ambiguous, missing or out-of-order proofs and never fabricates unavailable metrics or changes any cognitive state. Synthetic adversarial regression tests in `tests/i1/test_i1_spatial_wal_audit_314.py` check false positives.
+
+### Architectural consequence and next falsification gate
+
+The current `memory_place_return:<entity_id>` signature follows the remembered entity-place, yet the reward is on the movement action and eligibility traces. It must not be reinterpreted as learned water, food, toxicity or other object-specific affordance. Before changing TD or Stage11 again, design controlled counterfactual experiences to distinguish contextual homeostasis, neutral movement, genuine interaction effects and delayed utility, then measure whether the *resulting learned value* causally changes a later memory-guided choice. Preserve Stage8's normal online TD, deaths, Competition, Action Control, M11 and I0 while doing so.
+
+Do not merge PR #318 or close #317 based on the reduced A-B-A count. Independent reserved seeds, certified useful returns, survival/UC guardrails, M11 cold restore and CI remain required.
