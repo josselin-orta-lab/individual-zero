@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
+from math import isfinite
 import json
 from pathlib import Path
 
@@ -136,6 +137,161 @@ def remembered_options(events):
     }
 
 
+
+def _wal_numeric(value):
+    """Decode one journal canonical numeric value without inventing zeros."""
+    if type(value) in (float, int):
+        result = float(value)
+    elif (type(value) is dict and set(value) == {"$f64"}
+          and type(value["$f64"]) is str):
+        result = float.fromhex(value["$f64"])
+    else:
+        raise ValueError("unreadable WAL TD or body value")
+    if not isfinite(result):
+        raise ValueError("non-finite WAL TD or body value")
+    return result
+
+
+def audit_memory_td_credit(events, trajectory, initial_body):
+    """Certify TD *action* credit, never infer entity affordances.
+
+    The calling cohort reader authenticates the sealed WAL first. The
+    additional checks here match a committed Action Control command, a
+    World/Body transition, and scheduler closure to the passive physical
+    trajectory. A TD update alone cannot certify an entity was useful.
+    """
+    seen_steps = {}
+    for row in trajectory:
+        step = row.get("world_step")
+        if type(step) is not int or step < 1 or step in seen_steps:
+            raise ValueError("invalid passive world-step sequence")
+        seen_steps[step] = row
+    if sorted(seen_steps) != list(range(1, len(seen_steps) + 1)):
+        raise ValueError("incomplete passive world-step sequence")
+    if (type(initial_body) is not dict
+            or set(("energy", "food", "water", "integrity")) - set(initial_body)):
+        raise ValueError("missing witnessed starting physiology")
+
+    by_step_attempt = defaultdict(list)
+    updates = []
+    for index, event in enumerate(events):
+        step, attempt = event.get("t_monde"), event.get("attempt_ref")
+        if type(step) is not int or not isinstance(attempt, str):
+            continue
+        by_step_attempt[(step, attempt)].append((index, event))
+        data = event.get("data")
+        if (event.get("kind") == "td_update_published"
+                and type(data) is dict
+                and isinstance(data.get("previous_signature"), str)
+                and data["previous_signature"].startswith("memory_place_return:")):
+            updates.append((index, step, data))
+
+    totals = Counter()
+    examples = []
+    for publication_index, published_step, data in updates:
+        totals["memory_td_updates"] += 1
+        length = data.get("segment_length")
+        signature = data["previous_signature"]
+        if type(length) is not int or length < 1:
+            totals["unattributable_memory_td_updates"] += 1
+            continue
+        start = published_step - length
+        positive = _wal_numeric(data.get("return_g")) > 0
+        if positive:
+            totals["positive_memory_td_updates"] += 1
+        if length > 1:
+            totals["multistep_td_segments"] += 1
+        entity = signature[len("memory_place_return:"):]
+        matches = []
+        for (step, attempt), rows in by_step_attempt.items():
+            if step != start:
+                continue
+            admissions = [(i, e) for i, e in rows
+                          if e.get("kind") == "command_admitted"
+                          and type(e.get("data")) is dict
+                          and e["data"].get("primitive") == "se_deplacer"
+                          and isinstance(e["data"].get("option_ref"), str)
+                          and e["data"]["option_ref"].startswith(
+                              "option:place-memory:place:" + entity + ":at:")]
+            if len(admissions) != 1:
+                continue
+            admitted_index, admitted = admissions[0]
+            command_hash = admitted["data"].get("command_hash")
+            commands = [(i, e) for i, e in rows
+                        if e.get("kind") == "command_experienced"
+                        and e.get("primitive") == "se_deplacer"
+                        and e.get("command_hash") == command_hash]
+            transitions = [(i, e) for i, e in rows
+                           if e.get("kind") == "world_transition_experienced"]
+            closures = [(i, e) for i, e in rows
+                        if e.get("kind") == "step_closed"
+                        and type(e.get("data")) is dict
+                        and e["data"].get("outcome") == "normal"
+                        and e["data"].get("applied_command_count") == 1
+                        and e["data"].get("world_advance_count") == 1]
+            if (len(commands) == len(transitions) == len(closures) == 1
+                    and admitted_index < commands[0][0] < transitions[0][0]
+                    < closures[0][0] < publication_index):
+                matches.append(transitions[0][1])
+
+        row = seen_steps.get(start)
+        before = initial_body if start == 1 else seen_steps.get(start-1, {}).get("body")
+        if len(matches) != 1 or row is None or before is None:
+            totals["unattributable_memory_td_updates"] += 1
+            continue
+        transition = matches[0]
+        after = row.get("body")
+        position = row.get("position")
+        physical_position = transition.get("position_after")
+        physical_body = transition.get("body_after")
+        if (row.get("execution") != "applied"
+                or row.get("action_primitive") != "se_deplacer"
+                or type(after) is not dict or type(before) is not dict
+                or type(physical_body) is not dict
+                or type(position) is not dict or type(physical_position) is not dict
+                or any(position.get(k) != physical_position.get(k) for k in ("x", "y"))
+                or any(k not in after or k not in before or k not in physical_body
+                       or abs(_wal_numeric(after[k]) - _wal_numeric(physical_body[k])) > 1e-8
+                       for k in ("energy", "food", "water", "integrity"))):
+            totals["unattributable_memory_td_updates"] += 1
+            continue
+
+        totals["physically_attributed_memory_td_updates"] += 1
+        effects = transition.get("effects")
+        movement_only = (length == 1 and effects == {"movement": "moved"})
+        if positive and movement_only:
+            totals["positive_one_step_movement_only_td"] += 1
+            if all(_wal_numeric(after[k]) <= _wal_numeric(before[k])
+                   for k in ("energy", "food", "water", "integrity")):
+                totals["positive_without_increased_body_variable"] += 1
+        updated = data.get("updated_signatures")
+        if isinstance(updated, list):
+            totals["non_memory_trace_updates"] += sum(
+                isinstance(s, str) and not s.startswith("memory_place_return:")
+                for s in updated)
+        if len(examples) < 12:
+            examples.append({
+                "executed_step": start, "published_step": published_step,
+                "signature": signature, "segment_length": length,
+                "return_g": _wal_numeric(data["return_g"]),
+                "physical_effects": effects,
+                "body_delta": {
+                    k: round(_wal_numeric(after[k]) - _wal_numeric(before[k]), 8)
+                    for k in ("energy", "food", "water", "integrity")
+                },
+                "entity_causality": "not_established_from_td_action_credit",
+            })
+    return {
+        **{key: totals[key] for key in (
+            "memory_td_updates", "physically_attributed_memory_td_updates",
+            "unattributable_memory_td_updates", "positive_memory_td_updates",
+            "positive_one_step_movement_only_td",
+            "positive_without_increased_body_variable",
+            "multistep_td_segments", "non_memory_trace_updates")},
+        "certification": "physical_action_credit_only_not_entity_causality",
+        "examples": examples,
+    }
+
 def read_cohort(root, exact_sha):
     results={}
     for path in sorted(Path(root).rglob("report.json")):
@@ -181,6 +337,7 @@ def read_cohort(root, exact_sha):
             "world_steps":len(steps),
             "physical":motor_cycles(steps,report["environment"]["spawn"]),
             "memory":remembered_options(events),
+            "td_credit":audit_memory_td_credit(events,steps,report["environment"]["initial_body"]),
             "certified_memory_steps":proof["stages"]["physically_applied"],
             "certified_unseen_multihop_first_hops":proof[
                 "memory_causality_317"]["physically_applied_unseen_multihop_first_hops"],
@@ -216,6 +373,11 @@ def compare(a,b):
             "unseen_multihop_crossed":total("memory","unseen_multihop_crossed"),
             "unseen_multihop_learned":total("memory","unseen_multihop_learned"),
             "physical_memory_actions":sum(x["certified_memory_steps"] for x in rows),
+            "memory_td_updates":total("td_credit","memory_td_updates"),
+            "memory_td_physically_attributed":total("td_credit","physically_attributed_memory_td_updates"),
+            "memory_td_unattributable":total("td_credit","unattributable_memory_td_updates"),
+            "memory_td_positive_movement_only":total("td_credit","positive_one_step_movement_only_td"),
+            "memory_td_positive_without_increased_body_variable":total("td_credit","positive_without_increased_body_variable"),
             "remote_first_hops":sum(x["certified_unseen_multihop_first_hops"] for x in rows),
             "completed_remote_returns":sum(x["certified_completed_remote_returns"] for x in rows),
         }
