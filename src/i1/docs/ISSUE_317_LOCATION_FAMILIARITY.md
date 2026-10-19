@@ -262,3 +262,29 @@ frontier-continuity survival regression. The archive can be replayed
 through `.github/workflows/i1-issue317-lived-td-bridge.yml` without
 touching original WAL or a living individual. Independent held-out seeds,
 counterfactual learning influence and multiple geographies remain open.
+
+## Controlled TD eligibility ablation: pre-registered diagnostic
+
+The laboratory-only script `tools/run_i1_317_td_counterfactual.py`
+and workflow `.github/workflows/i1-issue317-td-credit-ablation.yml`
+perform two separate mortal canonical I1 births under the same
+`foraging/1141` world, physical rules, initial body, engine SHA, horizon,
+and first-person observations. The reference life is checked against
+historical journal head
+`b31aa6c9c6aa7209ee9341510238d6b6c4c223bc1e777ce83f32109786aa0677`.
+The experimental arm alters only one operator-side *eligibility-trace weight
+update*, at step 37 for
+`memory_place_return:sighting:water_source:10:8`, when the TD
+transition is `i1_water_probe:boire -> primitive:dormir`.
+The prior 36 physical world steps, published return G and TD delta,
+remaining updated signatures and the natural trace decay must match
+exactly. Each independent birth has its own authenticated WAL, source SHA,
+final body, survival status and action distribution. The decision at step 64
+is observed but never imposed, and there is no motor rollback, no copied
+internal causal state and no oracle.
+This is a *diagnostic* on a previously inspected seed, not held-out
+population evidence. A difference may isolate the influence of a single
+action-value credit; it cannot prove that a remembered entity caused the
+drink's physiological benefit. Missing or contradictory observations fail
+the experiment instead of publishing a false success. The global
+scientific verdict stays **NO-GO**.
