@@ -22,6 +22,10 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m unittest discover -s tests/i1 -p test_i1_317_experiential_place_heldout_audit.py -v
+      - name: Wait for entire original birth cohort to seal before retrieval
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run watch 39324485459 --repo "$GITHUB_REPOSITORY" --exit-status
       - name: Retrieve all sixteen locked original mortal paired archives
         env:
           GH_TOKEN: ${{ github.token }}
