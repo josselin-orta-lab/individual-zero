@@ -4,6 +4,7 @@ on:
     branches: [fix/i1-memory-competition-317]
     paths:
       - '.github/workflows/i1-issue317-remote-heldout.yml'
+      - 'tools/audit_i1_317_remote_journey_cohort.py'
   workflow_dispatch:
 permissions:
   contents: read
