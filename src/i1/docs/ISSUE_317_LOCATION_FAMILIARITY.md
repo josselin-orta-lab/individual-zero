@@ -1386,3 +1386,43 @@ explicitly re-reviewed.
 No I0 change, no involuntary `boire`/`manger`, no coma, no
 historical restore, no default policy change. PR #318 remains draft;
 scientific **NO-GO** remains valid.
+
+## 19 October: native opt-in physical replication with independent births
+
+Native-source integration reached a software-only milestone:
+[dedicated M11 workflow `39327980676`](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39327980676)
+**SUCCESS**. The native no-new-owner Stage8 evaluator is instantiated
+only at an explicitly separate experimental birth. Cold recovery of a
+two-step current-generation native opt-in I1 produced the same canonical
+journal head as uninterrupted execution, while changing the opt-in
+at cold-birth failed the immutable M11 constructor fingerprint.
+
+Next prospective physical experiment:
+`tools/run_i1_317_native_experiential_cohort.py` compares two
+new mortal arms, `guard_control` and `guard_experiential`,
+across `memory-corridor` and `water-isolated-corridor`,
+with new seeds **18121, 18233, 18367, 18481**. Exactly **16**
+separate, never-before-run I1 lives, 300 steps each, with original
+WAL. Both arms have the same tested guarded place-retrieval
+research routine and charges. The second activates **native**
+`I1Runtime(i1_experienced_place_enabled=True)` and the first
+keeps it false. There is **no old laboratory Stage8 value
+wrapper** in the new script; real Competition and Action Control
+retain every action decision.
+
+Initial attempts with seeds 17123/17257/17383/17491 aborted at
+construction because calling I1Runtime directly omitted the ordinary
+Stage12 diagnostic/occupancy UC constructor defaults supplied by
+`birth_i1`. None produced a physically executed born life;
+the new seeds above prevent ambiguity or reused identities.
+New workflow:
+`.github/workflows/i1-issue317-native-experiential-births.yml`,
+run `39328430028`. Report-only comparisons require a second
+independent original-WAL audit before any scientific inference.
+
+Even if new lives improve, this does **not** establish natural
+human sleep or population survival. More importantly, cold parity
+has so far been tested for two initial steps, not a truly learned,
+multi-step first-person water state after a cold restart.
+Global **NO-GO**, no canonical I1 enablement, no I0 changes,
+no forced drinking or movements, no coma or life rollback.
