@@ -92,18 +92,58 @@ def classify(events):
             continue
         change = {k: _number(after[k]) - _number(before[k])
                   for k in ("energy", "food", "water", "integrity")}
-        visible = sorted({
-            e["data"]["entity_id"]
-            for i, e in kinds["i1_entity_place_observed"]
-            if i < cmd_idx and isinstance(e.get("data"), dict)
-            and e["data"].get("source") == "perceptual_capture"
-            and _position(e["data"].get("position")) == position
-            and isinstance(e["data"].get("entity_id"), str)
-        })
+        # A site may contain several visible entities. These are first-person
+        # observations, not action beneficiaries. Retain the entity *type*
+        # for generic target matching, never an innate nutrition lookup.
+        local_types = {}
+        for i, row in kinds["i1_entity_place_observed"]:
+            data = row.get("data")
+            if (i >= cmd_idx or not isinstance(data, dict)
+                or data.get("source") != "perceptual_capture"
+                or _position(data.get("position")) != position
+                or not isinstance(data.get("entity_id"), str)
+                or not isinstance(data.get("entity_type"), str)):
+                continue
+            eid, kind = data["entity_id"], data["entity_type"]
+            if eid in local_types and local_types[eid] != kind:
+                raise ValueError("contradictory entity type in one physical capture")
+            local_types[eid] = kind
+        visible = sorted(local_types)
         effects = transition.get("effects")
         if not isinstance(effects, dict):
             totals["unverifiable_contacts"] += 1
             continue
+        # A consumption of carried inventory is NOT contact with an entity
+        # co-located at the eating position. A successful collection has a
+        # directly witnessed resource type, but does not prove it nourishes
+        # the body. A drink observes environmental action without a unique
+        # entity reference in the physical command. No branch assigns value.
+        action_kind = cmd["primitive"]
+        direct = []
+        association = "colocation_only"
+        if action_kind == "manger":
+            totals["inventory_mediated_ingestions"] += 1
+            association = "carried_inventory_not_site_cause"
+        elif action_kind == "boire":
+            totals["environmental_drink_without_entity_id"] += 1
+            association = "environmental_action_no_entity_id"
+        elif action_kind == "collecter":
+            collected = effects.get("collected")
+            target = cmd.get("parameters", {}).get("target")
+            if (isinstance(collected, dict)
+                and isinstance(collected.get("kind"), str)
+                and collected.get("kind") == target
+                and type(collected.get("quantity")) is int
+                and collected["quantity"] > 0):
+                direct = sorted(
+                    eid for eid, kind in local_types.items()
+                    if kind == collected["kind"])
+            if len(direct) == 1:
+                totals["collection_with_unique_witnessed_type"] += 1
+                association = "collected_type_witnessed_no_benefit_inference"
+            else:
+                totals["collection_without_unique_witnessed_type"] += 1
+                association = "collected_target_ambiguous_or_unwitnessed"
         totals["physically_certified_contacts"] += 1
         if not visible:
             totals["no_colocated_sighting"] += 1
@@ -118,6 +158,11 @@ def classify(events):
                        if step > t)
         if later:
             totals["contacts_with_later_learned_memory_evaluation"] += 1
+        if direct and any(
+            step > t for entity in direct for step, _ in
+            evaluations.get("memory_place_return:" + entity, ())
+        ):
+            totals["witnessed_collection_with_later_learned_memory_evaluation"] += 1
         if change["water"] > 0:
             totals["positive_water_delta"] += 1
         if change["food"] > 0:
@@ -128,17 +173,24 @@ def classify(events):
                 "position": list(position), "colocated_entities": visible,
                 "physical_effects": effects,
                 "observed_body_delta": {k: round(v, 8) for k, v in change.items()},
+                "direct_target_witnesses": direct,
+                "association_status": association,
                 "later_learned_memory_evaluation": bool(later),
                 "entity_causal_benefit": "not_established",
             })
     return {
-        "schema": "i1-317-physical-contact-association-v1",
+        "schema": "i1-317-physical-contact-association-v2",
         "counters": {key: totals[key] for key in (
             "possible_contact_commands", "unverifiable_contacts",
             "physically_certified_contacts", "no_colocated_sighting",
             "one_colocated_sighting", "multiple_colocated_sightings",
             "contacts_with_later_learned_memory_evaluation",
-            "positive_water_delta", "positive_food_delta")},
+            "positive_water_delta", "positive_food_delta",
+            "inventory_mediated_ingestions",
+            "environmental_drink_without_entity_id",
+            "collection_with_unique_witnessed_type",
+            "collection_without_unique_witnessed_type",
+            "witnessed_collection_with_later_learned_memory_evaluation")},
         "examples": examples,
         "entity_causal_learning_proven": False,
         "limitation": "Authenticated co-location, physical benefit and later TD "
