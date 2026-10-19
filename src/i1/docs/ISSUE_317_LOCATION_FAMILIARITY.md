@@ -1300,3 +1300,36 @@ the world or any cognitive engine. General CI must pass afresh.
 No coma, forced resource visit, motor override, source-type
 oracle, I0 change, cold-recovery promise, sleep-policy
 retune or mortal replay. **PR draft / scientific NO-GO maintained**.
+
+## 19 October: independent audit reconciles Phase-1 proposal and later goal
+
+The held-out 32-life independent audit initially failed closed at
+`association with no current perceived thirst and drink goal`. The
+source WAL in `water-isolated-corridor/16249`, step 134, cycle 1,
+revealed a time-order distinction, **not** a forged motor:
+the place proposal was stamped with `goal:eat:food:128:2`
+from the frozen planning snapshot, while the logged
+`active_goal_changed` had ALREADY switched the genuinely active
+GoalManager owner to `goal:drink:water:134:1` before the subsequent
+Stage8 experiential evaluation. The first-person observed water was
+28.8, within the <=30 research gate. The original experimental
+wrapper used the contemporaneous GoalManager, not the earlier
+planning label.
+
+The independent verifier is corrected in `1cb8c5b8` to follow the
+*ordered original WAL GoalManager transitions* and certify
+the active `drink` goal at the **actual Stage8 signal event**,
+while retaining the earlier Planning label as explicit provenance.
+Any mismatch must be backed by the exact same-step, same-cycle
+`active_goal_changed` receipt; absent, malformed or mismatched
+GoalManager transitions still fail closed. Adversarial negative test
+`d02ecbb2` rejects relevance evaluated while live goal remains
+`eat`. The physical original WAL have NOT been modified or replayed.
+
+The first population verifier failure (`39325349276`) was due to
+missing artifacts before the 16th birth finished; the next
+(`39325485619`) was this overly strict earlier Planning goal
+assumption. Both were **auditor failures**, not new birth failures.
+Rerun of the independent verifier and general I1 CI is required
+before declaring the 32-life evidence fully certified.
+Global NO-GO and non-promotion remain in place.
