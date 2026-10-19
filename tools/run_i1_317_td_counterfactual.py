@@ -318,7 +318,7 @@ def run(*, output_dir, preset, seed, steps, credit_step, signature,
             a, b = control["trajectory"][t], ablated["trajectory"][t]
             if any(a[k] != b[k] for k in (
                 "journal_head", "position", "body", "action_primitive",
-                "execution", "source", "fallback_used")):
+                "execution", "action_source", "fallback_used")):
                 raise RuntimeError(f"births diverged before target TD step {t+1}")
         report["identical_world_steps_before_credit"] = credit_step-1
         report["identical_precredit_journal_head"] = (
@@ -344,7 +344,7 @@ def run(*, output_dir, preset, seed, steps, credit_step, signature,
             t+1 for t in range(tmax)
             if any(control["trajectory"][t][key] != ablated["trajectory"][t][key]
                    for key in ("position", "body", "action_primitive",
-                               "execution", "source", "fallback_used"))
+                               "execution", "action_source", "fallback_used"))
         ), None)
         ev_a = memory_evaluation(control["events"], check_step, signature)
         ev_b = memory_evaluation(ablated["events"], check_step, signature)
