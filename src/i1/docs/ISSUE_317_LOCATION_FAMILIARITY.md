@@ -448,3 +448,38 @@ variants and risk controls. A waking alert is a physiological
 observation, **not** world-map knowledge or an instruction to act.
 
 **Scientific verdict: NO-GO globally**, PR draft and issue open.
+
+## 19 October: 10%-critical biological wake proposal, paired operator-side falsification
+
+User-approved design: water, food and integrity **at or below 10 out of 100**
+must be able to interrupt ordinary sleep, and eventually any **future**
+consolidation-coma. This is **not** an instruction to infer where a resource is
+or force an action. Canonical I1 already uses real reduced perception and
+alerts before 10 for water and integrity (`water <=15`,
+`integrity <=25`, `food <=10`), but in the sealed 20-life cohort often
+selects `dormir` again after waking. Lowering those canonical wake thresholds
+to 10 would actually *weaken* protection, so they are preserved.
+
+The **research-only** experiment
+`tools/run_i1_317_critical_wake_guard.py` is explicitly bounded to three
+worlds (oasis, foraging, memory-corridor) times two fresh seeds
+(9601, 9631), with two independently mortal, WAL-custodied births for
+each pair. It suppresses only the Stage10 intrinsic sleep **contribution**
+during *ordinary waking evaluation* when the actual fresh first-person
+`capture.body` reports **water, food or integrity <=10**.
+It leaves Q(dormir), all learned values, intrinsic fatigue/cognitive
+state, consolidation, Competition thresholds and registration, Action
+Control, wake rules, physical energy/needs decay, irreversibility and I0
+unchanged; an individual can still freely choose `dormir` on TD evidence.
+No food/water command or destination is supplied. Before the first guarded
+step, paired physical action, body and journal custody must agree; each arm
+has independently verifiable WAL.
+
+Workflow `.github/workflows/i1-issue317-critical-wake-10pct.yml` and
+adversarial threshold tests
+`tests/i1/test_i1_317_critical_wake_guard.py` collect re-sleep,
+physically accepted movements, hydration, meals, deaths, consolidated
+batches and accepted UC. Runs on this experimental code **are not a
+production safety certification or implementation of coma**. No global
+GO or causal-entity utility follows merely from fewer sleep actions.
+Require actual CI and paired biological outcomes first; keep #317 open.
