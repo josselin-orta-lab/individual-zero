@@ -933,3 +933,53 @@ the expanded paid call, and whether a small learned advisory
 can approach Competition's physical threshold on actual
 critical-needs steps. No I0, canonical engine, M11 cold
 restoration, TD or first-person requirement changed.
+
+## 19 October: proven value effect is not proven motor effect
+
+The 24 original WAL from the matched experienced-place factorial were
+independently authenticated by [Actions 39311156884](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39311156884):
+all 24 existing physical paths and their irreversible death/UC/consolidation
+boundaries passed. The six arms grouped by treatment have exactly 4
+survivors/6 and 13 `boire` commands each. The two paid expanded-recall
+arms add 95 accepted UC on aggregate and one movement, with no
+independently attested ranking change.
+
+A closer candidate-aligned, read-only comparison of the original
+WAL across matched steps/cycles/options shows the advisory value
+intervention changed only **three** first-person learned water-place
+evaluation records (two in `oasis/13219`, one in
+`foraging/13219`). It did not produce a new threshold-crossing
+outcome or a new physical drink command. Two recall-only groups have
+distinct *first physical action divergences*, `oasis/13127` at
+world step **110** (`se_deplacer` vs `dormir`) and
+`memory-corridor/13127` at **203** (`attendre` vs `dormir`).
+The research-only `rank_changes` counters remain zero.
+These findings must not be interpreted as successful beneficial
+recall: spending UC alone can alter the future cognitive budget
+and so the action, without changing the intended candidates.
+
+A prospective-independent verifier is now provided in
+`tools/audit_i1_317_place_competition_margins.py`, negative tests
+`tests/i1/test_i1_317_place_competition_margins.py` and workflow
+`.github/workflows/i1-issue317-place-competition-margins.yml`.
+It reauthenticates the 24 already-lived WAL first; then aligns
+identical site-specific options by worldstep, cycle, option-ref,
+scores actual Competition evidence and threshold fractions,
+and compares applied motor streams. Nonjournaled experimental
+invocation counters are *not* promoted to independent physical proof.
+
+The observed problem now decomposes into:
+- A location can be personally observed and physically associated
+  with the individual's measured improvement, yet not be returned
+  by the bounded current survey graph or offered candidate list.
+- When a candidate is emitted, it may have small/zero legitimate
+  Stage8/TD evidence and remain below Competition's actual threshold.
+- A change in UC budget can cause an unrelated motor difference
+  without proving either memory relevance or learned agency.
+
+Scientific status remains **NO-GO**. Avoid a further weight-boost
+sweep or source-type oracle. First establish that an intervention
+actually changes eligible, personally grounded candidate availability
+at the correct read boundary *and* is affordable with no confound,
+before any new birth calibration. No canonical I1, I0, world physics,
+mortal custody or M11 change is endorsed.
