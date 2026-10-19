@@ -983,3 +983,52 @@ actually changes eligible, personally grounded candidate availability
 at the correct read boundary *and* is affordable with no confound,
 before any new birth calibration. No canonical I1, I0, world physics,
 mortal custody or M11 change is endorsed.
+
+## 19 October: cap-exhaustion falsification and preregistered no-op guard
+
+[Certified sealed Competition margin audit 39312722073](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39312722073)
+completed PASS, with physically identical candidate comparisons.
+Across the 24 original mortal WAL, learned-place value changed two
+exact same-candidate score records (oasis/13219 and foraging/13219)
+without any changed threshold crossing. Paid expanded recall
+introduced 26 step-level motor differences in two matched lives,
+but **zero candidate-only opportunities** and no water/survival gain.
+
+Direct inspection of the six canonical source WAL counted 130
+post-personal-positive-water `i1_place_memory_recalled` events that
+actually saturated the original **three-candidate** limit. In **all
+130** the positive site was either already the individual's current
+cell or was present among the three offered candidates. Therefore
+these physical observations **falsify** the initial conjecture that
+the limit itself excluded a personally useful *offsite* water source
+in this cohort. Do not confuse being on an experienced water cell
+with needing a navigational return to that same cell. This is not a
+claim about unsurveyed or future locations.
+
+The previous expanded search spent an extra genuine Planning UC on
+numerous calls where the outcome provably could not change. To test
+that cost effect separately, the new research-only two-arm study
+`tools/run_i1_317_place_noop_guard.py` uses:
+(1) native canonical I1 unchanged and (2) previously explored
+expanded recall but with an admissible **no-op gate** before the
+SECOND paid spatial search. The second call is skipped if the
+first, already-paid search has fewer than its capacity; or if the
+full prefix contains all personally supported nonlocal water
+sites and already ranks them first. Only a positive personally
+observed `boire` followup from the private owner can qualify;
+a visually labeled `water_source` alone never qualifies.
+
+This is tested prospectively in **12 fresh irreversible lives**
+over `oasis`, `foraging`, `memory-corridor` and locked new
+seeds **14083**, **14107**, at 300 world steps max, with
+normal budgets, physics, TD, consolidation, Competition,
+Action Control and mortal custody. Test/workflow:
+`tests/i1/test_i1_317_place_noop_guard.py`,
+`.github/workflows/i1-issue317-place-noop-guard.yml`.
+It is a transient laboratory wrapper, not an M11-compatible owner
+and not eligible for integration without authenticated new WAL
+and a demonstrated survival/learning benefit.
+
+Original 24 WAL remain sealed; no restart, rollback, resurrection,
+new motor authority, innate resource value, forced consumption
+or coma. **Global NO-GO.**
