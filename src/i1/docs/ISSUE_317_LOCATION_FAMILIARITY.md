@@ -288,3 +288,46 @@ action-value credit; it cannot prove that a remembered entity caused the
 drink's physiological benefit. Missing or contradictory observations fail
 the experiment instead of publishing a false success. The global
 scientific verdict stays **NO-GO**.
+
+## 19 October: paired physical TD-action credit ablation, diagnostic seed 1141
+
+Independent physical evidence was recovered from the failed CI workflow
+`39221582215`, artifact `12172506274`. The failure was in the
+**operator-side comparison code**, after two 300-step lives ran: it
+referenced non-existent trajectory key `source`, whereas the canonical
+observer emits `action_source`. The two real WALs were preserved.
+
+The control WAL contains 31,245 causal entries, SHA-256
+`0894b2a1420513e3a78d4b7b9692342fc1818343548ef8e3b9e0f16df399c22b`
+and final journal head
+`b31aa6c9c6aa7209ee9341510238d6b6c4c223bc1e777ce83f32109786aa0677`,
+identical to the prior pinned normal-life evidence. The ablated WAL has
+24,390 entries, SHA-256
+`5bc90b5d795c4f461aae8ec681f705c1dd6b40e8a9ee3d4783fedee92befca71`
+and final recorded event hash
+`f1ceb098f3afebde764b2542cb0d7fc3ab4c55c5715873d1939451f8a5e5362b`.
+Both outputs deserve the completed independent WAL verification gate in
+the repaired CI before being classified as finalized experimental reports.
+
+A passive side-by-side scan shows identical motor/body trajectories until
+step 63. At step 37, original and ablated TD publication both retain
+`return_g=+24.7` and the same TD delta (+22.4847); only the
+`memory_place_return:sighting:water_source:10:8` signature is excluded
+from the ablated update. At step 64 the control evaluates Q=2.686204,
+intrinsic novelty=0, option evidence=0.241546, crossing Competition
+0.287576->0.529123 against threshold 0.5, then physically moves.
+The experimental arm evaluates Q=0.242937, intrinsic novelty=0,
+option evidence=0.022364; it does not cross Competition and physically
+sleeps. **The first physical divergence is exactly world step 64.**
+
+At horizon 300: both individuals survive; movement counts 16 vs 6,
+sleep steps 252 vs 271, drinking actions 3 vs 3 and eating actions 4 vs 4;
+accepted UC are 10,093 vs 6,740. The ablation makes a large behavioral
+difference on this *already explored diagnostic seed*, but does not establish
+population-level health improvements or any entity-specific causal affordance.
+
+The schema fix `a34dcfa1`, adversarial schema regression `b742c163`,
+and CI gate `9a5ad318` rerun the complete physical experiment and require
+the independent proof chain. Until green, treat these findings as
+**physical WAL observations, not a complete passing CI experiment**.
+The global scientific verdict remains **NO-GO**.
