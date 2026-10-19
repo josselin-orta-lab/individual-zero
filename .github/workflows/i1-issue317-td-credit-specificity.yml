@@ -29,10 +29,10 @@ jobs:
         run: |
           mkdir -p evidence result
           gh run download 39231424425 --repo "$GITHUB_REPOSITORY" --pattern 'i1-317-mortal-td-credit-ablation' --dir evidence
-          test -f evidence/report.json
+          test -f evidence/i1-317-mortal-td-credit-ablation/report.json
       - name: Independently authenticate WAL and distinguish learned Q from competition evidence
         run: |
-          python tools/audit_i1_317_td_credit_specificity.py --input-dir evidence --output result/td-specificity.json
+          python tools/audit_i1_317_td_credit_specificity.py --input-dir evidence/i1-317-mortal-td-credit-ablation --output result/td-specificity.json
           python - <<'PY'
           import json
           from pathlib import Path
