@@ -15,7 +15,8 @@ class WorldPresetsTests(unittest.TestCase):
         worlds = available()
         self.assertEqual({p["id"] for p, _ in worlds},
                          {"oasis", "foraging", "dry-valley", "empty-land",
-                          "hazard-edge", "blocked-route", "memory-corridor"})
+                          "hazard-edge", "blocked-route", "memory-corridor",
+                          "water-isolated-corridor"})
         self.assertEqual(len({digest for _p, digest in worlds}), len(worlds))
         for p, digest in worlds:
             with self.subTest(world=p["id"]):
