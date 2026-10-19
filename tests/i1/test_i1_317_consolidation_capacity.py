@@ -44,6 +44,17 @@ class CapacityTests(unittest.TestCase):
         x=minimal()
         x[4]["data"]["consolidation_id"]="wrong"
         with self.assertRaises(ValueError):m.classify(x,2)
+    def test_final_irreversible_death_is_still_a_lived_world_step(self):
+        x=minimal()
+        x[-1]["data"]["outcome"]="dead"
+        result=m.classify(x,2)
+        self.assertEqual(result["episode_objects_consolidated"],1)
+        self.assertEqual(result["final_pending"],0)
+        x=minimal()
+        x[2]["data"]["outcome"]="dead"
+        with self.assertRaises(ValueError):
+            m.classify(x,2)
+
     def test_missing_physical_step_not_counted(self):
         x=minimal()
         x.pop()
