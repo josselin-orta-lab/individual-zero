@@ -1,0 +1,60 @@
+name: I1 issue317 24-life place-effect independent WAL audit
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_317_lived_place_cohort.py'
+      - 'tests/i1/test_i1_317_lived_place_cohort.py'
+      - '.github/workflows/i1-issue317-lived-place-cohort-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fail-closed adversarial tests
+        run: python -m unittest discover -s tests/i1 -p test_i1_317_lived_place_cohort.py -v
+      - name: Download six original matched-birth immutable WAL archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p sealed result
+          for world in oasis foraging memory-corridor; do
+            for seed in 13127 13219; do
+              gh run download 39308197811 --repo "$GITHUB_REPOSITORY" --name "i1-317-lived-place-$world-$seed" --dir sealed
+              test -f "sealed/$world/$seed/report.json"
+              for arm in canonical recall_only value_only recall_and_value; do
+                test -f "sealed/$world/$seed/$arm/life-01.wal"
+              done
+            done
+          done
+      - name: Authenticate and count physical learning, decisions and costs
+        run: |
+          python tools/audit_i1_317_lived_place_cohort.py --root sealed --output result/lived-place-24-life-certificate.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("result/lived-place-24-life-certificate.json").read_text())
+          assert d["certified_original_wal_paths"]==24
+          assert d["scientific_verdict"]=="NO-GO"
+          assert d["intervention_strength_independently_proven"] is False
+          assert all(d["by_arm"][a]["certified_existing_wal_files"]==6 for a in
+              ("canonical","recall_only","value_only","recall_and_value"))
+          print("TWENTY_FOUR_ORIGINAL_MORTAL_PLACE_WAL_CERTIFIED")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-independent-place-factorial-audit
+          path: result/
+          retention-days: 30
+          if-no-files-found: warn
