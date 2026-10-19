@@ -861,6 +861,38 @@ def _approved_issue317_blob(root: Path, rel: str) -> bool:
 
 
 
+
+# #318 exact opt-in native candidate review. These are Git blob SHA1 pins,
+# not wildcard file exceptions; any subsequent code change fails closed.
+# Canonical birth flags stay false and are separately covered by I1/M11 tests.
+_EXPERIENCED_318_BLOBS = {
+    "i1/modules/experienced_place_relevance.py":
+        ("src/i1/modules/experienced_place_relevance.py",
+         "5579f0b9854e324a03510a86a532a4027fc4a1e9"),
+    "i1lab/i1_natural_runtime.py":
+        ("src/i1/runtime/i1_natural_runtime.py",
+         "0f6d683e9d1488250037aafcda06f276ab946157"),
+    "i1lab/m11_transactional_mortal.py":
+        ("src/i1/runtime/m11_transactional_mortal.py",
+         "7a44788cc81810f54f7abe7ceae3ccaeeaf00694"),
+}
+
+
+def _approved_experienced_318_blob(root: Path, rel: str) -> bool:
+    registered = _EXPERIENCED_318_BLOBS.get(rel)
+    if registered is None:
+        return False
+    source_path, pinned_sha1 = registered
+    original = (ROOT / source_path).read_bytes()
+    actual = sha1(
+        b"blob " + str(len(original)).encode("ascii") + b"\0" + original
+    ).hexdigest()
+    if actual != pinned_sha1:
+        return False
+    # The builder manifest separately verifies the generated output bytes.
+    return (root / rel).is_file()
+
+
 def _approved_issue314_blob(root: Path, rel: str) -> bool:
     expected = _ISSUE_314_PINNED_BLOBS.get(rel)
     if expected is None:
@@ -898,10 +930,10 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not (_approved_issue314_blob(new_root, rel) or _approved_issue317_blob(new_root, rel)))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_issue317_blob(new_root, rel) or _approved_experienced_318_blob(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_issue317_blob(new_root, rel)) and not (
+            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_issue317_blob(new_root, rel) or _approved_experienced_318_blob(new_root, rel)) and not (
                 False  # Stage10 is handled by the stacked exact approval below
                 or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_natural_toxic_berry_birth(
