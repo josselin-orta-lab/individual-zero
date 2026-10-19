@@ -255,10 +255,42 @@ def run(preset, seed, output):
                     born.append(actor)
                     return actor
 
-                life=_wal_life(
-                    birth=birth, params=parameters,
-                    life_id=f"i1:preset:{preset}:{seed}:0",
-                    path=wal, steps=HORIZON)
+                try:
+                    life=_wal_life(
+                        birth=birth, params=parameters,
+                        life_id=f"i1:preset:{preset}:{seed}:0",
+                        path=wal, steps=HORIZON)
+                except Exception as exc:
+                    # Preserve provenance of a genuinely stopped mortal life.
+                    # Never rewind or retry a step that may have dispatched.
+                    actor = born[0] if len(born) == 1 else None
+                    last = (None if actor is None else
+                            getattr(actor, "_last_applied_decision", None))
+                    session = (None if actor is None else
+                               actor.sleep_session.export_causal_state())
+                    report.setdefault("stopped_births", []).append({
+                        "arm": label,
+                        "error": type(exc).__name__ + ": " + str(exc),
+                        "mortal_status": (
+                            None if actor is None else
+                            str(actor.stage3.substrate.mortal_status)),
+                        "sleep_session": session,
+                        "last_applied_decision": (
+                            None if last is None else {
+                                "motive_type":last[2].option.motive_ref.type,
+                                "option_ref":last[2].option.id,
+                                "prepared_source":last[1].source,
+                                "prepared_primitive":last[1].command.primitive,
+                                "admission_ok":last[0].ok,
+                                "admitted_primitive":last[0].command.primitive,
+                            }),
+                        "wal_relative_path":str(Path(label)/wal.name),
+                        "wal_sha256":(
+                            sha256(wal.read_bytes()).hexdigest()
+                            if wal.is_file() else None),
+                        "no_retry_or_rollback":True,
+                    })
+                    raise
                 if len(born)!=1:
                     raise RuntimeError("non-unique lab mortal actor")
                 actor=born[0]
