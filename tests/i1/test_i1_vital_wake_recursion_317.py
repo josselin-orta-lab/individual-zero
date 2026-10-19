@@ -22,11 +22,21 @@ def sample():
         row("stage10_sleep_woke",data={"reason":"alert"}),
         row("stage10_sleep_pressure_frozen",data={
             "sleep_pressure":{"$f64":"0x1.ccccccccccccdp-1"}}),
+        row("stage8_option_evaluation",data={
+            "status":"evaluated","option_ref":"option:geographic:frontier:8:7:from:8:8",
+            "learning_signature":"geographic_frontier:8:7",
+            "evidence":{"$f64":"0x1.0p-7"}}),
+        row("stage8_option_evaluation",data={
+            "status":"evaluated","option_ref":"option:sleep-pressure:test",
+            "learning_signature":"primitive:dormir",
+            "learned_value_status":"learned",
+            "intrinsic_value":{"$f64":"0x1.0p-2"},
+            "evidence":{"$f64":"0x1.0p-1"}}),
         row("competition_cycle",data={"traces":[
-            {"option_ref":"sleep:test","crossed":True}]}),
+            {"option_ref":"option:sleep-pressure:test","crossed":True}]}),
         row("command_admitted",data={
             "command_hash":"hash:a","primitive":"dormir",
-            "option_ref":"sleep:test"}),
+            "option_ref":"option:sleep-pressure:test"}),
         row("command_experienced",primitive="dormir",command_hash="hash:a"),
         row("world_transition_experienced",body_after=body,effects={
             "rest":"dormir"}),
@@ -43,6 +53,18 @@ class AlertWake317Tests(unittest.TestCase):
         self.assertEqual(ct["alert_wakes_reselecting_sleep_same_step"],1)
         self.assertEqual(ct["alert_resleep_with_verified_competition_crossing"],1)
         self.assertEqual(ct["sleep_at_zero_water"],1)
+        self.assertEqual(ct["resleep_with_positive_other_option"],1)
+        self.assertEqual(ct["resleep_sleep_evidence_above_positive_alternatives"],1)
+        self.assertEqual(ct["resleep_with_learned_sleep_q"],1)
+
+    def test_nonpositive_alternative_does_not_count_as_viable(self):
+        events=sample()
+        for event in events:
+            if (event["kind"]=="stage8_option_evaluation" and
+                event["data"]["option_ref"].startswith("option:geographic:")):
+                event["data"]["evidence"]={"$f64":"-0x1.0p-7"}
+        counts=m.classify(events,1)["counters"]
+        self.assertEqual(counts["resleep_without_positive_other_option"],1)
 
     def test_broken_command_hash_is_not_lived_action(self):
         events=sample()
