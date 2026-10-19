@@ -3,9 +3,11 @@ import importlib.util
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import sys
 import unittest
 
 ROOT=Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "tools"))
 spec=importlib.util.spec_from_file_location("audit_sleep317",ROOT/"tools/audit_i1_317_two_process_cohort.py")
 mod=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
