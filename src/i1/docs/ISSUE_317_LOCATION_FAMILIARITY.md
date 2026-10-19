@@ -884,3 +884,52 @@ Adversarial unit tests reject type-only utility, absent/negative
 `.github/workflows/i1-issue317-lived-place-factorial.yml`,
 run `39308197811`. The eight previous historical WAL remain sealed,
 not re-executed. **Global NO-GO, PR draft**, no I0 change.
+
+## 19 October: all 24 first-person water-place factorial births complete
+
+The prospective run `39308197811` has **six successful birth groups**
+(3 worlds × 2 fresh seeds × 4 independent mortal arms), frozen
+source `5ce9604893a83615d3b84e8506709732286939c7`.
+All 24 archived original reports are technically complete. These
+report-only totals precede an independent physical WAL re-verification:
+
+| Arm | Dead / 6 | Lived steps | `boire` | Moves | Consolidated objects | Accepted UC |
+|---|---:|---:|---:|---:|---:|---:|
+| Canonical | 2 | 1706 | 13 | 111 | 688 | 50501 |
+| Re-rank only | 2 | 1706 | 13 | 112 | 689 | 50596 |
+| Small learned-value advisory only | 2 | 1706 | 13 | 111 | 688 | 50501 |
+| Both | 2 | 1706 | 13 | 112 | 689 | 50596 |
+
+The research-only report counters were zero for effective rank changes
+across all 24 lives; the optional value adapter was invoked five times,
+but did not improve drinking or survival. Small physical differences
+for the retrieval arms can arise from **extra charged Planning UC**
+even when the candidate list does not change. Treat them as a
+cognitive-cost confound, not evidence of improved place recall.
+
+Additional analysis of archived WAL found genuinely identical physical
+and journal trajectories for multiple paired arms. This is possible
+for independently born deterministic individuals under matching inputs
+and **must not be falsely described as shared identities or replayed
+life**. Per-arm WAL provenance must be certified individually; unique
+WAL file paths, not necessarily unique content hashes, are required.
+
+Independent fail-closed verifier
+`tools/audit_i1_317_lived_place_cohort.py` plus negative tests
+`tests/i1/test_i1_317_lived_place_cohort.py` and Actions
+`.github/workflows/i1-issue317-lived-place-cohort-audit.yml`
+have been committed. They reauthenticate original WAL chain, real
+physical actions, post-death boundaries, personal positive `boire`
+followups, Stage8/Competition scores and actual memory-route crossings.
+The adapter's unjournaled counter `rank_changes` **cannot**
+independently certify that an intervention took effect; verifier
+does not use it to certify a benefit or claim GO.
+
+**Scientific decision: NO-GO.** The present experiment has not
+established a route-recovery benefit, a drinking benefit or a
+survival benefit. Before further changes, isolate whether
+`find_spatial_returns` yields the same three candidates after
+the expanded paid call, and whether a small learned advisory
+can approach Competition's physical threshold on actual
+critical-needs steps. No I0, canonical engine, M11 cold
+restoration, TD or first-person requirement changed.
