@@ -6,6 +6,8 @@ on:
       - 'src/i1/**'
       - 'tests/i1/test_i1_memory_competition_317.py'
       - 'tests/i1/test_i1_frontier_continuity_317.py'
+      - 'tests/i1/test_i1_contact_causality_317.py'
+      - 'tools/audit_i1_317_contact_causality.py'
       - 'tests/i1/test_i1_spatial_wal_audit_314.py'
       - 'tools/audit_i1_spatial_navigation_314.py'
       - '.github/workflows/i1-issue317-physical.yml'
@@ -37,6 +39,8 @@ jobs:
         run: python -m unittest discover -s tests/i1 -p test_i1_frontier_continuity_317.py -v
       - name: Read-only remote-memory and TD false-positive regression tests
         run: python -m unittest discover -s tests/i1 -p test_i1_spatial_wal_audit_314.py -v
+      - name: Causal-contact attribution falsification tests
+        run: python -m unittest discover -s tests/i1 -p test_i1_contact_causality_317.py -v
       - name: Independent mortal life with authentic WAL
         env:
           WORLD: ${{ matrix.world }}
