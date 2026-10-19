@@ -294,7 +294,7 @@ def certify_multihop_return_317(
         after = _position(we.get("position_after"))
         if len(admitted) != 1 or after is None:
             return None
-        return ck, ce.get("primitive"), after
+        return ck, ce.get("primitive"), after, ci
 
     moves = defaultdict(list)
     for attempt, option_ref, p_idx, proposal, after in physically_certified:
@@ -303,6 +303,9 @@ def certify_multihop_return_317(
         )
 
     arrivals = []
+    completed_total = 0
+    completed_with_sleep = 0
+    last_command_step = max(commands.keys(), default=0)
     seen_starts = set()
     for attempt, initial_ref, p_idx, proposed, first_after in physically_certified:
         target = _position(proposed.get("target"))
@@ -322,11 +325,11 @@ def certify_multihop_return_317(
         actions = [(attempt[0], initial_ref)]
         sleep_steps = 0
         stationary_steps = 0
-        for t in range(attempt[0] + 1, max(commands.keys(), default=0) + 1):
+        for t in range(attempt[0] + 1, last_command_step + 1):
             step = committed(t)
             if step is None:
                 break
-            step_attempt, primitive, after = step
+            step_attempt, primitive, after, command_index = step
             if any(
                 eid == entity_id and observed is not None
                 and observed != target
@@ -337,8 +340,8 @@ def certify_multihop_return_317(
                 # The continuation MUST be published in the next world step
                 # after the preceding real movement, never conjured later.
                 matches = [
-                    data for _, key, data in continuations.get(t, ())
-                    if key == step_attempt
+                    data for idx, key, data in continuations.get(t, ())
+                    if idx < command_index and key == step_attempt
                     and data.get("previous_option_ref") == previous_ref
                     and data.get("source")
                         == "previous_applied_command_and_current_perception"
@@ -376,6 +379,8 @@ def certify_multihop_return_317(
             _, next_ref, _, _, _ = matched[0]
             actions.append((t, next_ref))
             if after == target:
+                completed_total += 1
+                completed_with_sleep += int(sleep_steps > 0)
                 if len(arrivals) < 32:
                     arrivals.append({
                         "start_world_step": attempt[0],
@@ -396,10 +401,8 @@ def certify_multihop_return_317(
             expected_ref = None
             latest_position = after
     return {
-        "completed_remote_multihop_returns": len(arrivals),
-        "completed_remote_returns_after_sleep": sum(
-            row["physically_applied_sleep_steps"] > 0 for row in arrivals
-        ),
+        "completed_remote_multihop_returns": completed_total,
+        "completed_remote_returns_after_sleep": completed_with_sleep,
         "completed_remote_return_examples": arrivals[:12],
     }
 

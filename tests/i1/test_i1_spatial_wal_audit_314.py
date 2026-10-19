@@ -150,6 +150,25 @@ class SpatialWalAuditTests(unittest.TestCase):
                  "i1_place_memory_intention_continued"]
         self.assertEqual(audit314.classify_events(damaged)[
             "memory_causality_317"]["completed_remote_multihop_returns"],0)
+        # A continuation published only AFTER its purported physical send
+        # is a retrospective narrative, not a causal input to the action.
+        late = list(rows)
+        item = next(row for row in late if
+                    row["kind"] == "i1_place_memory_intention_continued")
+        late.remove(item)
+        command_index = next(i for i, row in enumerate(late) if
+                             row["t_monde"] == 5
+                             and row["kind"] == "command_experienced")
+        late.insert(command_index + 1, item)
+        self.assertEqual(audit314.classify_events(late)[
+            "memory_causality_317"]["completed_remote_multihop_returns"],0)
+        # Every pause must also be physically committed. Missing even one
+        # World & Body transition breaks cross-step certification.
+        absent_transition = [row for row in rows if not (
+            row["t_monde"] == 6
+            and row["kind"] == "world_transition_experienced")]
+        self.assertEqual(audit314.classify_events(absent_transition)[
+            "memory_causality_317"]["completed_remote_multihop_returns"],0)
 
     def test_proposal_without_action_cannot_prove_return(self):
         report = audit314.classify_events(self.example()[:4])
