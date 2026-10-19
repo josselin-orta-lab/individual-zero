@@ -828,6 +828,10 @@ _ISSUE_317_PINNED_BLOBS = {
     "i1/modules/stage11_evaluator.py": "31ada691ea607bdcfb1900f3b421e33ba6f20754",
     "i1lab/stage11_runtime.py": "15295d162d21b56e24c07d1dd8835a104f2bea6f",
     "i1lab/stage4_runtime.py": "80a7504009205f3481f936251cddcaa2e2df8393",
+    # #317: reviewed ordinary sleep-admission correction. These pins are
+    # immutable source Git blob hashes; no wildcard or mutable path waiver.
+    "i1/modules/sleep_session.py": "13854904ad3f924d0caa6ea0e37d7bb4da44ca07",
+    "i1lab/stage10_runtime.py": "eea70a7ac37e43873c742da0625ae0cf56e171c6",
 }
 _ISSUE_317_NATIVE_SOURCES = {
     "i1/modules/competition.py": "src/i1/modules/competition.py",
@@ -836,6 +840,8 @@ _ISSUE_317_NATIVE_SOURCES = {
     "i1/modules/stage11_evaluator.py": "src/i1/modules/stage11_evaluator.py",
     "i1lab/stage11_runtime.py": "src/i1/runtime/stage11_runtime.py",
     "i1lab/stage4_runtime.py": "src/i1/runtime/stage4_runtime.py",
+    "i1/modules/sleep_session.py": "src/i1/modules/sleep_session.py",
+    "i1lab/stage10_runtime.py": "src/i1/runtime/stage10_runtime.py",
 }
 
 
