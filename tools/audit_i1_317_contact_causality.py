@@ -229,6 +229,289 @@ def classify(events):
     }
 
 
+
+
+def certify_experience_to_memory_decision(events):
+    """Witness real action-credit reuse, never entity-specific causal utility.
+
+    Physical actions are certified from the same WAL, independently of option
+    proposals. No replay, invented reward, oracle or intervention on the life.
+    This strict test detects a *subset* of valid pathways, not every possible
+    delayed TD reuse. An absent witness does not mean the capacity is absent.
+    """
+    from math import isclose
+
+    steps = defaultdict(list)
+    for index, event in enumerate(events):
+        t, attempt = event.get("t_monde"), event.get("attempt_ref")
+        if type(t) is int and t >= 1 and isinstance(attempt, str):
+            steps[(t, attempt)].append((index, event))
+
+    def data(event):
+        raw = event.get("data", {})
+        return raw if isinstance(raw, dict) else {}
+
+    def witness_action(rows):
+        by_kind = defaultdict(list)
+        for i, row in rows:
+            by_kind[row.get("kind")].append((i, row))
+        names = ("perceptual_capture", "command_admitted",
+                 "command_experienced", "world_transition_experienced",
+                 "step_closed")
+        if any(len(by_kind[name]) != 1 for name in names):
+            return None
+        (pi, perception), (ai, admitted), (ci, command), (
+            wi, physical), (si, closed) = (
+                by_kind[name][0] for name in names)
+        admission = data(admitted)
+        closure = data(closed)
+        if (not pi < ai < ci < wi < si
+            or not isinstance(admission.get("option_ref"), str)
+            or admission.get("primitive") != command.get("primitive")
+            or command.get("emitter") != "action_control"
+            or not isinstance(admission.get("command_hash"), str)
+            or admission["command_hash"] != command.get("command_hash")
+            or closure.get("outcome") != "normal"
+            or closure.get("applied_command_count") != 1
+            or closure.get("world_advance_count") != 1):
+            return None
+        start = _position(data(perception).get("position"))
+        finish = _position(physical.get("position_after"))
+        before, after = (
+            data(perception).get("dual_scope_visible_body"),
+            physical.get("body_after"),
+        )
+        if (start is None or finish is None
+            or not isinstance(before, dict) or not isinstance(after, dict)
+            or not isinstance(physical.get("effects"), dict)):
+            return None
+        try:
+            changes = {
+                k: _number(after[k]) - _number(before[k])
+                for k in ("energy", "food", "water", "integrity")
+            }
+        except (KeyError, ValueError, TypeError, OverflowError):
+            return None
+        return {
+            "rows": rows, "by_kind": by_kind, "start": start,
+            "finish": finish, "change": changes,
+            "command": command, "option": admission["option_ref"],
+            "effects": physical["effects"], "step_closed_index": si,
+            "command_hash": admission["command_hash"],
+        }
+
+    actions = defaultdict(list)
+    for (t, attempt), rows in steps.items():
+        certified = witness_action(rows)
+        if certified is not None:
+            actions[t].append(certified)
+
+    def unique_action(t):
+        choices = actions.get(t, ())
+        return choices[0] if len(choices) == 1 else None
+
+    def td_publication(action, *, signature=None):
+        rows = action["by_kind"]["td_update_published"]
+        if len(rows) != 1 or rows[0][0] <= action["step_closed_index"]:
+            return None
+        record = data(rows[0][1])
+        if (signature is not None
+            and record.get("previous_signature") != signature):
+            return None
+        return record
+
+    def sighting_before(option, action, *, entity, target):
+        b = action["by_kind"]
+        if not any(
+            i < min(
+                (j for j, row in b["command_admitted"]), default=-1
+            ) and data(row).get("entity_id") == entity
+            and data(row).get("source") == "perceptual_capture"
+            and _position(data(row).get("position")) == target
+            and type(data(row).get("first_seen_step")) is int
+            and data(row)["first_seen_step"] < row["t_monde"]
+            for i, row in b["i1_entity_place_observed"]
+        ):
+            return False
+        return any(
+            i < action["step_closed_index"]
+            and data(row).get("option_ref") == option
+            and data(row).get("entity_id") == entity
+            and _position(data(row).get("target")) == target
+            for i, row in b["i1_place_memory_option_proposed"]
+        )
+
+    def certified_selection(action, *, entity, target, learned_required):
+        """One observed step: proposal, registration, eval, crossing and motor."""
+        option = action["option"]
+        if (not option.startswith("option:place-memory:")
+            or action["command"].get("primitive") != "se_deplacer"
+            or action["effects"] != {"movement": "moved"}
+            or action["finish"] != target
+            or not sighting_before(option, action, entity=entity, target=target)):
+            return None
+        events_by_kind = action["by_kind"]
+        admission_index = events_by_kind["command_admitted"][0][0]
+        candidates = []
+        for i, evaluation in events_by_kind["stage8_option_evaluation"]:
+            ev = data(evaluation)
+            if (i >= admission_index
+                or ev.get("option_ref") != option
+                or ev.get("learning_signature") !=
+                    "memory_place_return:" + entity
+                or ev.get("status") != "evaluated"):
+                continue
+            registration = [
+                j for j, row in events_by_kind[
+                    "i1_place_memory_option_registration"]
+                if j < i and data(row).get("registered") is True
+                and data(row).get("option_ref") == option
+            ]
+            if not registration:
+                continue
+            for j, cycle in events_by_kind["competition_cycle"]:
+                if (j <= i or j >= admission_index
+                    or cycle.get("cycle") != evaluation.get("cycle")):
+                    continue
+                matching = [
+                    trace for trace in data(cycle).get("traces", ())
+                    if isinstance(trace, dict)
+                    and trace.get("option_ref") == option
+                    and trace.get("crossed") is True
+                ]
+                if len(matching) == 1:
+                    candidates.append((i, ev, matching[0]))
+        if not candidates:
+            return None
+        # The final admitted candidate needs at least one certified crossing,
+        # not every redundant deliberation cycle in that same world step.
+        _, evaluation, trace = candidates[-1]
+        if not learned_required:
+            return {"evaluation": evaluation, "trace": trace, "option": option}
+        if (evaluation.get("learned_value_status") != "learned"
+            or evaluation.get("simulated_value_status") != "unavailable"):
+            return None
+        try:
+            q = _number(evaluation["learned_value"])
+            intrinsic = _number(evaluation["intrinsic_value"])
+            score = _number(evaluation["evidence"])
+            previous = _number(trace["accumulator_before"])
+            after = _number(trace["accumulator_after"])
+            threshold = _number(trace["threshold"])
+            actual_evidence = _number(trace["evidence"])
+        except (KeyError, ValueError, TypeError, OverflowError):
+            return None
+        if (q <= 0 or intrinsic != 0 or score <= 0
+            or not isclose(score, actual_evidence, rel_tol=1e-10, abs_tol=1e-10)
+            or not isclose(after - previous, score,
+                           rel_tol=1e-9, abs_tol=1e-9)
+            or not previous < threshold <= after):
+            return None
+        return {
+            "option": option, "learned_q": q,
+            "evidence": score, "accumulator_before": previous,
+            "accumulator_after": after, "threshold": threshold,
+            "local_crossing_depends_on_evidence": True,
+            "intrinsic_value": intrinsic,
+        }
+
+    witnesses = []
+    eligible_credited_actions = 0
+    for t in sorted(actions):
+        contact = unique_action(t)
+        prior = unique_action(t - 1)
+        subsequent = unique_action(t + 1)
+        if (contact is None or prior is None or subsequent is None
+            or contact["command"].get("primitive") not in (
+                "boire", "manger", "collecter")
+            or contact["start"] != prior["finish"]
+            or prior["command"].get("primitive") != "se_deplacer"
+            or not prior["option"].startswith("option:place-memory:")):
+            continue
+        previous = td_publication(contact)
+        if previous is None or not isinstance(previous.get("previous_signature"), str):
+            continue
+        sig = previous["previous_signature"]
+        if not sig.startswith("memory_place_return:"):
+            continue
+        entity = sig[len("memory_place_return:"):]
+        past = certified_selection(
+            prior, entity=entity, target=contact["start"],
+            learned_required=False)
+        if past is None or past["option"] != prior["option"]:
+            continue
+        # The very next publication for this actually applied contact must
+        # be the reward whose eligibility trace names the past memory action.
+        td = td_publication(subsequent)
+        if (td is None or td.get("previous_signature") !=
+                previous.get("next_signature")
+            or td.get("segment_length") != 1
+            or not isinstance(td.get("updated_signatures"), list)
+            or sig not in td["updated_signatures"]):
+            continue
+        try:
+            reward = _number(td["return_g"])
+        except (KeyError, ValueError, TypeError, OverflowError):
+            continue
+        if (reward <= 0
+            or not any(delta > 0 for delta in contact["change"].values())):
+            continue
+        eligible_credited_actions += 1
+        for later_t in sorted(k for k in actions if k > t + 1):
+            later = unique_action(later_t)
+            if later is None:
+                continue
+            latest = certified_selection(
+                later, entity=entity, target=contact["start"],
+                learned_required=True)
+            if latest is None:
+                continue
+            witnesses.append({
+                "entity_id": entity,
+                "learning_signature": sig,
+                "experience": {
+                    "prior_memory_move_step": t - 1,
+                    "contact_step": t,
+                    "contact_primitive": contact["command"]["primitive"],
+                    "body_delta": {
+                        k: round(v, 8) for k, v in contact["change"].items()
+                    },
+                    "physical_effects": contact["effects"],
+                    "credited_td_step": t + 1,
+                    "credited_td_return_g": reward,
+                },
+                "reuse": {
+                    "world_step": later_t,
+                    "arrived_at_witnessed_site": list(later["finish"]),
+                    **{k: v for k, v in latest.items() if k != "option"},
+                    "option_ref": latest["option"],
+                },
+                "physical_action_certified": True,
+                "entity_causality_proven": False,
+                "population_generalization_proven": False,
+                "interpretation": (
+                    "positive lived-action reward reached eligibility trace "
+                    "of a previous memory move; later learned-only evidence "
+                    "was locally necessary for a real Competition crossing. "
+                    "This is NOT an entity-specific affordance or whole-life "
+                    "counterfactual."
+                ),
+            })
+            break
+
+    return {
+        "schema": "i1-317-lived-credit-and-decision-bridge/v1",
+        "physically_certified_eligible_action_credits": eligible_credited_actions,
+        "physically_certified_reuses": len(witnesses),
+        "examples": witnesses[:16],
+        "entity_causality_proven": False,
+        "heldout_population_go": False,
+        "limitation": "Single observed-cycle necessity is not a replayed "
+                      "counterfactual policy, nor evidence that the entity "
+                      "rather than its context caused the experienced reward.",
+    }
+
+
 def audit(path: Path):
     """Certify and interpret precisely the same immutable evidence bytes.
 
@@ -251,6 +534,7 @@ def audit(path: Path):
     if len(events) != proof["journal_entries"]:
         raise ValueError("authenticated WAL event count mismatch")
     result = classify(events)
+    result["td_decision_bridge"] = certify_experience_to_memory_decision(events)
     result.update({"journal_head": proof["journal_head"],
                    "journal_entries": proof["journal_entries"],
                    "source_sha256": digest,
