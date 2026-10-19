@@ -64,7 +64,8 @@ def classify(events, steps):
         if len(closed) != 1 or len(transitions) != 1:
             raise ValueError("missing/duplicate physically completed world step")
         closure = info(closed[0])
-        if (closure.get("outcome") != "normal"
+        if (closure.get("outcome") not in ("normal", "dead")
+            or (closure.get("outcome") == "dead" and t != steps)
             or closure.get("world_advance_count") != 1
             or closure.get("applied_command_count") != 1):
             raise ValueError("unapplied/unsafe physical action")
