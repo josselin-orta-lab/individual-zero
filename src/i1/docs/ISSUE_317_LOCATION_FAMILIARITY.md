@@ -1122,3 +1122,69 @@ run `39322396991`; at the time of this entry the nine
 fresh independent birth groups were beginning, with no
 survival outcome available. Prior 12 and 24-life WAL remain
 sealed. Global **NO-GO**, PR #318 stays draft.
+
+## 19 October: complete 18-life experiential-site result and independent authentication
+
+All nine preregistered matched-birth jobs in Actions run `39322396991`
+completed SUCCESS under exact source `43e1fa82e8034c20708d9edf380b41a5bf30502b`.
+The **18 original birth reports** (three worlds × seeds 15121/15173/15313
+× two independently mortal arms) give this *provisional* comparison
+pending the new independent 18-WAL audit:
+
+| Arm (9 lives) | Deaths | 300-step survivors | Lived steps | `boire` | Moves | Consolidated objects | Accepted UC |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Same guarded recall, control | 4 | 5 | 2446 | 9 | 265 | 572 | 103579 |
+| Same recall + Stage8 positive lived-site relevance | 4 | 5 | 2446 | 15 | 277 | 787 | 94314 |
+
+Exactly **three** independent `memory-corridor` births changed behavior.
+All 3 changed from one `boire` to three, from four movements to
+eight, and had more genuine memory objects consolidated, with lower
+UC cost. The other six pairs remained identical. Population
+survival did **not** improve, and n=9 is not sufficient for promotion.
+
+A precise event-chain example: `memory-corridor/15173` at
+world step 132 both arms propose a first-person remembered
+water source at (8,8). Control returns evidence 0 and ultimately
+applies `attendre`. Experimental Stage8 uses a previous
+physically admitted `boire` at (8,8) followed by a measured bodily
+water increase, frozen present water, current drink goal, confidence
+and route length. This raises Competition evidence from zero to
+approximately 0.213; the option crosses the **unchanged** 0.5
+threshold during cycle 3. At this crossing, a different concurrently
+offered site on the **same destination cell** (`berry_a`) has
+exactly the same motor hop and is the option actually admitted by
+Action Control. I1 physically moves west from (12,8) to (8,8)
+over world steps 132-135 and then physically executes `boire` on
+step 136, with `drank=True`. Never attribute the crossing to a
+specific winning option unless its actual admission ref matches.
+The observed useful return is a real motor outcome, not a forced
+navigation order, but the attribution is partially shared because
+multiple remembered entities occupy the destination cell.
+
+An important qualification: original owner `stage11_runtime.py`
+already exposes the private `_stage11_prospective_capture`
+with frozen water and position before Phase1. The lab adapter
+uses that first-person capture, not unseen world truth. Original
+per-step accepted UC are equal before first motor divergence in
+the `memory-corridor/15173` pair. Fewer future UC can result
+from the changed subsequent physical trajectory and planning
+load, and must NOT be credited as an isolated computational
+optimization.
+
+The next verifier, `tools/audit_i1_317_experiential_place_cohort.py`,
+`tests/i1/test_i1_317_experiential_place_cohort.py` and
+`.github/workflows/i1-issue317-experiential-place-cohort-audit.yml`,
+checks each sealed WAL, journal hash chain, physical attempts,
+first-person learned positive sites, Stage8 WAL-visible signals,
+competition score and threshold, exact admission option and
+matched first-motor divergence. Research-only counters are never
+used as the sole proof. Until successful independent audit,
+this is a **report-based preliminary benefit** only.
+
+No forced eating/drinking/navigation, no resource-type oracle,
+no change to Action Control, TD/Q or motor thresholds, no
+I0 or canonical I1 implementation changes, and no coma.
+The experiment's mutable lab wrapper lacks M11 cold
+restoration; a native persistent owner and independent
+held-out population validation would be required for promotion.
+**Global scientific verdict NO-GO; PR remains draft.**
