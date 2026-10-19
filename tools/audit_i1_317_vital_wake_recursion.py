@@ -39,6 +39,39 @@ def data(event):
     return value if isinstance(value, dict) else {}
 
 
+def _evaluated_waking_alternatives(rows, *, wake_index, admission_index,
+                                   attempt):
+    """Evaluate only actually witnessed post-alert option evidence.
+
+    Positive evidence does not imply motor admission, safe navigation or
+    physiological utility. Deduplicate repeated cognitive cycles by option
+    identity; retain the largest *observed* score for each distinct option.
+    """
+    alternatives, sleep = {}, {}
+    for index, event in rows:
+        if (not wake_index < index < admission_index
+            or event.get("attempt_ref") != attempt
+            or event.get("kind") != "stage8_option_evaluation"):
+            continue
+        record = data(event)
+        option_ref = record.get("option_ref")
+        if not isinstance(option_ref, str) or not option_ref:
+            raise ValueError("unidentified waking evaluated candidate")
+        if record.get("status") != "evaluated" or record.get("evidence") is None:
+            continue
+        score = number(record["evidence"])
+        if not -1.0 <= score <= 1.0:
+            raise ValueError("unbounded witnessed waking evidence")
+        if option_ref.startswith("option:sleep-pressure:"):
+            if record.get("learning_signature") != "primitive:dormir":
+                raise ValueError("inconsistent sleep learning signature")
+            sleep[option_ref] = (score, record)
+        else:
+            alternatives[option_ref] = max(
+                score, alternatives.get(option_ref, float("-inf")))
+    return alternatives, sleep
+
+
 def _physical(events, expected_steps):
     """A witnessed command + world transition + closure, not a proposal."""
     groups = defaultdict(lambda: defaultdict(list))
@@ -136,6 +169,35 @@ def classify(events, expected_steps):
             totals["alert_wakes_with_post_action_energy_99"] += 1
         if action["primitive"] == "dormir":
             totals["alert_wakes_reselecting_sleep_same_step"] += 1
+            alternatives, sleep_values = _evaluated_waking_alternatives(
+                by_kind["stage8_option_evaluation"],
+                wake_index=wi, admission_index=action["admission_index"],
+                attempt=action["attempt"],
+            )
+            positives = {ref: score for ref, score in alternatives.items()
+                         if score > 0}
+            if positives:
+                totals["resleep_with_positive_other_option"] += 1
+                if any(ref.startswith("option:geographic:")
+                       for ref in positives):
+                    totals["resleep_with_positive_frontier"] += 1
+                if any(ref.startswith("option:place-memory:")
+                       for ref in positives):
+                    totals["resleep_with_positive_place_memory"] += 1
+                if any("affordance" in ref for ref in positives):
+                    totals["resleep_with_positive_uncertain_action"] += 1
+            else:
+                totals["resleep_without_positive_other_option"] += 1
+            sleep_vote = sleep_values.get(action["option_ref"])
+            if sleep_vote is None:
+                raise ValueError("resleep lacks evaluated same-option Stage8 score")
+            if positives and sleep_vote[0] > max(positives.values()):
+                totals["resleep_sleep_evidence_above_positive_alternatives"] += 1
+            if sleep_vote[1].get("learned_value_status") == "learned":
+                totals["resleep_with_learned_sleep_q"] += 1
+            if (sleep_vote[1].get("intrinsic_value") is not None
+                and number(sleep_vote[1]["intrinsic_value"]) > 0):
+                totals["resleep_with_positive_intrinsic_sleep"] += 1
             ref = action["option_ref"]
             traces = [trace for i, row in by_kind["competition_cycle"]
                       if wi < i < action["admission_index"]
@@ -183,6 +245,14 @@ def classify(events, expected_steps):
             "alert_resleep_without_visible_crossing",
             "alert_wakes_followed_by_sleep_next_step",
             "alert_wakes_followed_by_three_sleep_steps",
+            "resleep_with_positive_other_option",
+            "resleep_without_positive_other_option",
+            "resleep_with_positive_frontier",
+            "resleep_with_positive_place_memory",
+            "resleep_with_positive_uncertain_action",
+            "resleep_sleep_evidence_above_positive_alternatives",
+            "resleep_with_learned_sleep_q",
+            "resleep_with_positive_intrinsic_sleep",
         )},
         "observed_alert_channels": dict(sorted(alarm_channels.items())),
         "mean_intrinsic_sleep_pressure_on_alert_resleep": (
@@ -263,6 +333,9 @@ def analyse(root, population_report, *, expected_sha):
         raise ValueError("whole-cohort action checksum failed")
     if (total["alert_wakes_reselecting_sleep_same_step"] >
         total["critical_alert_wakes"] or
+        total["resleep_with_positive_other_option"]
+        + total["resleep_without_positive_other_option"]
+        != total["alert_wakes_reselecting_sleep_same_step"] or
         total["alert_resleep_with_verified_competition_crossing"]
         + total["alert_resleep_without_visible_crossing"]
         != total["alert_wakes_reselecting_sleep_same_step"]):
