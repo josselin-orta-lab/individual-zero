@@ -76,3 +76,80 @@ In a sealed, physical dry-valley life (seed 1141, engine `2dc4aca7`), the same p
 Correction: `geographic_frontier` candidates use a stable key from the witnessed destination and current origin (`target.ref`) without an epoch. The fresh `source_t_monde` still validates the current Perception/Phase-1 target at the owner and Stage11 evaluator, and expiry remains real; after a different origin or physical visit the old option is invalidated, not granted an automatic command. Unchanged plans can retain evidence during non-adjudicated fallback. Any material plan change resets evidence through existing Competition, real winners retain residual effects, sleep may still win and Action Control retains final authority. TD, physics, I0, thresholds, exploration coefficients and original WAL are untouched.
 
 Native generated-I1 regression `test_i1_frontier_continuity_317.py` exercises identical first-person frontier across steps, rejection of stale/visited targets, and persistent Competition evidence. An exact source-blob parity lock prevents unauthorized drift. New physical WAL and separate population survival/UC comparisons are required; software success is **not** population GO. The issue #317 verdict remains **NO-GO** until causal benefits of actual entity interactions influence subsequent decisions and held-out physical validation passes.
+
+
+## Matched physical frontier-continuity result (19 October 2026)
+
+**Exact latest engine** `370f4e99b3f80b931a0513b2bacae8f775163e1b` against
+`2dc4aca73a1cabe0e01b23d5f3e3eef76d47b729` (the engine immediately
+before frontier continuity). The CI runs completed successfully:
+`39207102880` (full and structural), `39207099336` (eight standard-world
+lives), `39207099289` (four corridor lives). Compare only paired births
+with exactly matching preset, seed, individual ID, initial physiology, and
+physics digest. All twelve independently recorded spatial audits report valid
+WAL hash custody. Existing diagnostic seeds `1141/1142/2027/2028` are not
+independent held-out proof.
+
+Across these twelve *unequally completed* lives:
+
+| Physical outcome | Before | Frontier-continuity revision |
+|---|---:|---:|
+| Actual lived steps | 3,087 | 3,012 |
+| Deaths | 5 | 6 |
+| Movement actions | 148 | 191 |
+| Memory-guided physically applied movements | 12 | 9 |
+| Out-of-sight multihop first steps | 2 | 0 |
+| Full remote returns | 0 | 0 |
+| Sleep steps | 2,738 | 2,641 |
+| Drink actions | 14 | 11 |
+| Eat actions | 19 | 18 |
+
+Important **adverse pair** `memory-corridor/2028`: baseline returned from
+`(9,8)` to `(8,8)` at step 25 and actually collected, ate, and drank
+at steps 26-28, then survived to the horizon of 300. With stable frontier
+identity, four *Competition-selected*, *Action-Control-admitted* exploration
+moves occur at steps 10, 18, 26, 35, reaching `(12,8)`. Physical water and
+food never increase; the individual dies at step 228 due to deprivation.
+Memory proposals to previously sighted entities at `(8,8)` remain visible
+in the WAL, but have no sufficient positive evidence to win. This is an
+observed competing-capability regression, **not** proof that all geographic
+exploration is harmful. In `dry-valley` and `blocked-route`, the same
+fix unlocks movements previously never selected. The death difference
+on only twelve seeds is a warning, not a population effect estimate.
+
+### Narrow causal-temporal finding from lived entity interactions
+
+The existing engine has a first-person water association pathway and
+canonical Causal Model contracts; neither currently establishes a generic
+entity-specific destination payoff in Stage11. Stage11 reads the TD
+`memory_place_return:<sighting>` learned-action value, while Stage8's
+return is from physically experienced *movement* after/before the next
+decision. This is not a direct learned water/food/poison effect of the
+destination.
+
+An independent illustrative chain is present in the authenticated
+`foraging/1141` WAL on `370f4e99`: step 18 physically collects
+`berry_a` at `(9,8)`; step 19 eats, increasing observed food by
+`9.8` after per-step metabolism; step 36 drinks at `(10,8)` and
+observed water increases by `39.6`. A first-person lived water
+outcome is published on step 37. Physical memory return commands to
+`(10,8)` later occur at 64, 87, 103, 170 and 186. **This is evidence
+of temporal coexistence, not demonstration that the earlier drinking
+benefit caused those returns.** Crucially the `td_update_published`
+for `memory_place_return:sighting:water_source:10:8` at step 36
+contains `return_g=+1.4` for the *preceding* step-35 movement; it
+cannot include the step-36 drinking benefit (Stage8 appends the
+current action's reward afterward). Do not treat its positive value
+as a learned entity affordance, and do not force an innate
+`if thirsty: go to water` path.
+
+**Next hypothesis to falsify:** a generic, provenance-checked link
+between a physically encountered entity and a subsequent
+independently witnessed interaction is needed before location
+memory can safely represent utility, as distinct from TD value of
+the motor action. An entity merely co-located with positive
+physiology may not have caused it; simultaneous entities make
+attribution particularly ambiguous. Require independent controls,
+contradictions, and a later decision comparison before declaring
+learning-based remote return. The frontier continuity code remains
+provisionally useful but global scientific verdict is **NO-GO**.
