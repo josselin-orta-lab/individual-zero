@@ -1,0 +1,63 @@
+name: I1 issue317 independent 24-life sleep cohort audit
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_317_two_process_cohort.py'
+      - 'tests/i1/test_i1_317_two_process_cohort.py'
+      - '.github/workflows/i1-issue317-two-process-cohort-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fail closed on nonphysical and incomplete evidence
+        run: python -m unittest discover -s tests/i1 -p test_i1_317_two_process_cohort.py -v
+      - name: Retrieve eight completed immutable triplet archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p sealed result
+          for world in oasis foraging dry-valley memory-corridor; do
+            for seed in 9761 9791; do
+              gh run download 39297909539 --repo "$GITHUB_REPOSITORY" --name "i1-317-two-process-$world-$seed" --dir "sealed"
+              test -f "sealed/$world/$seed/report.json"
+              for arm in canonical homeostatic circadian; do
+                test -f "sealed/$world/$seed/$arm/life-01.wal"
+              done
+            done
+          done
+      - name: Authenticate physical provenance and 24-life prospective comparison
+        run: |
+          python tools/audit_i1_317_two_process_cohort.py \
+            --root sealed \
+            --expected-sha 36b13ed39a5c1a6b3c0c44e18ee3d91399c58825 \
+            --output result/sleep-cohort.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('result/sleep-cohort.json').read_text())
+          assert r['exact_births']==24
+          assert r['scientific_verdict']=='NO-GO'
+          assert r['coma_tested'] is False
+          assert r['circadian_effect_isolated'] is False
+          assert all(r['summary'][arm]['lives']==8 for arm in ('canonical','homeostatic','circadian'))
+          print('TWENTY_FOUR_INDEPENDENT_MORTAL_SLEEP_WAL_CERTIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-sealed-24-life-sleep-cohort-audit
+          path: result/
+          retention-days: 30
+          if-no-files-found: warn
