@@ -1,0 +1,24 @@
+name: I1 issue317 actual lived-water M11 cold parity
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tests/i1/test_i1_317_experiential_native_lived_m11.py'
+      - '.github/workflows/i1-issue317-native-lived-water-m11.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  actual-learning:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - name: No state injection - require real embodied boire followed by water gain
+        run: python -m unittest discover -s tests/i1 -p test_i1_317_experiential_native_lived_m11.py -v
