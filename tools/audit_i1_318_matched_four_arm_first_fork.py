@@ -191,10 +191,7 @@ def comparisons(first_fork_trace, histories):
         if first is not None and first <= max_common:
             cx = x[2].get(first)
             cy = y[2].get(first)
-            visible_agree = (cx is not None and cy is not None and all(
-                cx == cy
-                for _ in (0,)
-            ))
+            visible_agree = (cx is not None and cy is not None and cx == cy)
             trace = first_fork_trace if first == first_fork_trace else None
         result[label] = {
             "first_motor_difference": first,
