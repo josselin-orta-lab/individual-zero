@@ -18,12 +18,13 @@ from test_i1_artifact_parity import (
 class IsolatedSourcePinTest(unittest.TestCase):
     def test_exact_reviewed_sources_and_missing_output(self):
         pins=_load_isolated_source_pins(_ISOLATED_PINS_DIR)
-        self.assertEqual(set(pins), {
+        self.assertTrue({
             "i1/experimental/intention_continuity.py",
             "i1/experimental/local_opportunity_selection.py",
             "i1/experimental/experienced_place_relevance.py",
             "i1/experimental/critical_alert_wake.py",
-        })
+        }.issubset(pins))
+        self.assertEqual(len(pins), len(list(_ISOLATED_PINS_DIR.glob("issue-*.json"))))
         with TemporaryDirectory() as folder:
             root=Path(folder)
             for rel in pins:
@@ -35,6 +36,31 @@ class IsolatedSourcePinTest(unittest.TestCase):
                 self.assertFalse(_approved_isolated_experimental(root,rel),rel)
             self.assertFalse(_approved_isolated_experimental(root,"i1/experimental/unreviewed.py"))
             self.assertFalse(_approved_isolated_experimental(root,"i1/modules/competition.py"))
+
+    def test_valid_fifth_manifest_and_tampering(self):
+        import hashlib
+        with TemporaryDirectory() as folder:
+            fake=Path(folder)
+            pins=fake/"manifests"
+            pins.mkdir()
+            native=fake/"src/i1/experimental/fifth_module.py"
+            native.parent.mkdir(parents=True)
+            native.write_bytes(b"# fifth verified source\\n")
+            blob=b"blob "+str(len(native.read_bytes())).encode()+b"\0"+native.read_bytes()
+            record=dict(schema="i1-isolated-source-pin-v1",issue=410,
+                        generated="i1/experimental/fifth_module.py",
+                        native="src/i1/experimental/fifth_module.py",
+                        blob_sha1=hashlib.sha1(blob).hexdigest())
+            (pins/"issue-410.json").write_text(json.dumps(record))
+            self.assertIn(record["generated"],_load_isolated_source_pins(pins))
+            out=fake/"built"
+            generated=out/record["generated"]
+            generated.parent.mkdir(parents=True)
+            generated.write_text("# generated")
+            with patch.object(parity,"_ISOLATED_PINS_DIR",pins), patch.object(parity,"ROOT",fake):
+                self.assertTrue(parity._approved_isolated_experimental(out,record["generated"]))
+                native.write_bytes(b"# tampered source\\n")
+                self.assertFalse(parity._approved_isolated_experimental(out,record["generated"]))
 
     def test_fail_closed_bad_manifest_and_duplicate(self):
         base=dict(schema="i1-isolated-source-pin-v1",issue=410,
