@@ -18,7 +18,7 @@
 | Stable personally observed local place-option IDs | #317 / PR #324 | ACTIVE software fix | Distinguish new hop from persistent intention | NOT_ESTABLISHED |
 | Stable observed geographical frontier/transit option IDs | #330 / PR #335 | ACTIVE software fix | No change required to existing identities | NOT_ESTABLISHED |
 | Bounded cross-hop remembered-place intention | #326, #351 / PR #331, #347, #350, **#352** | **ACTIVE in canonical I1 once #352 merged** | Competition owns an applied-intention descriptor; Stage11 verifies arrival and re-registers a newly paid, subthreshold motor candidate. No motor replay, Action Control still decides. Technical two-step M11 recovery and owner-state tests; a naturally selected multi-hop episode has not been independently observed. | NOT_ESTABLISHED |
-| Goal-independent first-person local option consideration | #327 / PR #332, #342; activation PR pending | L2 candidate in review, dormant on main until merger | Canonical I1 proposes via distinct Phase-1 Planning and registers with paid Competition UC; dedup and same Q/TD Stage8 adapter. M11 and full CI required. | NOT_ESTABLISHED |
+| Goal-independent first-person local option consideration | #327 / PR #332, #342, #353 | ACTIVE in natural birth after #353 merge | Separate Phase-1 producer and charged Competition registration; actual canonical M11 1-step candidate publication and cold recovery; existing goal producer preserved, bounded learned Q. | NOT_ESTABLISHED |
 | Experienced-place relevance from personally observed bodily effects | #328 / PR #333, #343 | DORMANT | Handle adverse and contradictory site samples and generic owner-backed outcomes, Stage8 integration | NOT_ESTABLISHED |
 | Alert-on-wake bodily diagnostic | #329 / PR #334 | DORMANT | Decide if ordinary needs/Competition suffice before any sleep option suppression | NOT_ESTABLISHED |
 | Broad research source #318 | #317 / PR #318 | RESEARCH, do not merge en bloc | Trace each retained fragment to a targeted issue | INCONCLUSIVE / NO_GO not promoted |
@@ -51,4 +51,4 @@ Each opportunity is separately paid for by Planning, then by the ordinary Compet
 
 `tests/i1/test_i1_issue_327_natural_activation.py` is a generated-I1 technical test covering actual canonical `birth_i1_m11`, perception of available interaction candidates, Planning/Competition publication, no forced motor, M11 two-step cold recovery and negative filter/source checks.
 
-This is an **L2 integration candidate until CI green and merge**. Actual statistical behavioral or survival benefit is separate and **NOT_ESTABLISHED**. No population or behavior campaign is authorized for this stage.
+This is **L2 ACTIVE only after PR #353 has passed exact-head CI and merged**. Actual statistical behavioral or survival benefit is separate and **NOT_ESTABLISHED**. No population or behavior campaign is authorized for this stage.
