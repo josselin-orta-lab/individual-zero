@@ -161,7 +161,8 @@ params=dict(world_config=base.world.config,layout=base.world._layout,
     safety_facts=base._canonical_safety._innate,
     protected_integrity_threshold=base.stage3.control._config.protected_integrity_threshold,
     stage11_config=base._stage11_config,stage10_config=stage10,
-    equipment=base.equipment,detector_policy=det)
+    equipment=base.equipment,detector_policy=det,
+    diagnostic_sample_cost_uc=1,module_occupancy_cost_uc=1)
 def factory():
     return I1Runtime(birth_life_id=identity,autonomous_mortal=True,
          m11_sqlite_custody=True,wal_path=None,**params)
