@@ -205,6 +205,7 @@ def _runtime_contract(runtime: Any) -> str:
         configuration = (*configuration, (
             I1_OPPORTUNISTIC_POLICY, True,
             tuple(sorted(I1_OPPORTUNISTIC_ACTIONS)),
+            getattr(runtime, "_i1_local_q_exposure", "learned"),
         ))
     return sha256_hex(canonical_causal_bytes(_contract_value(configuration)))
 
