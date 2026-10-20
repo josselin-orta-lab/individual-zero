@@ -826,7 +826,7 @@ _OPTION_360_PINS = {
     "i1/modules/memory.py": ("src/i1/modules/memory.py",
         "2d9d4e7748a55d3b09aff194e446f8327bf4bef2"),
     "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py",
-        "087ad493b8631027079965513920610525e39d27"),
+        "cdbd72d1aac9ca2d02f626651cb63ed866cb3d93"),
 }
 
 
