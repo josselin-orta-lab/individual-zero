@@ -63,6 +63,27 @@ assert "not admission.ok" in method
 assert "remember_prospect_before_motor" in method
 assert "reconcile_option_intentions" in inspect.getsource(
  I1Runtime._propose_independent_local)
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from i1lab.i1_birth import birth_i1_m11,recover_i1_m11
+from run_i1_world_preset import load_preset,_birth_parameters
+preset,_=load_preset("oasis")
+params,_=_birth_parameters(preset)
+params=dict(params,diagnostic_sample_cost_uc=1,module_occupancy_cost_uc=1)
+life_id="i1:361:technical-prospect"
+def factory():
+ return I1Runtime(birth_life_id=life_id,wal_path=None,
+  autonomous_mortal=True,m11_sqlite_custody=True,**params)
+with TemporaryDirectory() as location:
+ db=str(Path(location)/"life.sqlite")
+ with birth_i1_m11(db_path=db,life_id=life_id,**params) as actor:
+  first=actor.run_step()
+  assert first.status=="active"
+  image=actor._runtime.memory.export_causal_state()
+ with recover_i1_m11(db_path=db,life_id=life_id,runtime_factory=factory) as cold:
+  assert cold._runtime.memory.export_causal_state()==image
+  second=cold.run_step()
+  assert second.status=="active" and second.generation==first.generation+1
 print("I1_361_PROSPECTIVE_M11_OK")
 """
             env=dict(os.environ,PYTHONPATH=os.pathsep.join((str(built),str(ROOT/"src"))),PYTHONDONTWRITEBYTECODE="1")
