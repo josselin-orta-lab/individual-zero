@@ -7,6 +7,7 @@ on:
       - 'src/i1/runtime/i1_natural_runtime.py'
       - 'tests/i1/test_i1_318_local_q_factorial.py'
       - 'tests/i1/test_i1_318_matched_temperament.py'
+      - 'tests/i1/test_i1_318_matched_projection_causality.py'
       - 'src/i1/runtime/i1_birth_temperament.py'
       - 'src/i1/runtime/m11_transactional_mortal.py'
       - '.github/workflows/i1-issue318-local-q-factorial.yml'
@@ -28,3 +29,4 @@ jobs:
       - run: python -m unittest discover -s tests/i1 -p test_i1_318_local_q_factorial.py -v
       - run: python -m unittest discover -s tests/i1 -p test_i1_318_local_q_ablation.py -v
       - run: python -m unittest discover -s tests/i1 -p test_i1_318_matched_temperament.py -v
+      - run: python -m unittest discover -s tests/i1 -p test_i1_318_matched_projection_causality.py -v
