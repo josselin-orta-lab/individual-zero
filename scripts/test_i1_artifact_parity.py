@@ -820,6 +820,20 @@ _ISSUE_314_PINNED_BLOBS = {
 }
 
 
+# Exact reviewed M11 cold body type fix; no broad waiver.
+_M11_BODY_TYPE_BLOB = "6dbe4362b75e54252dfa46ed43f466393ccb91bd"
+
+
+def _approved_m11_body_type(root: Path, rel: str) -> bool:
+    if rel != "i1lab/m11_transactional_mortal.py":
+        return False
+    data = (ROOT / "src/i1/runtime/m11_transactional_mortal.py").read_bytes()
+    actual = sha1(
+        b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+    ).hexdigest()
+    return actual == _M11_BODY_TYPE_BLOB and (root / rel).is_file()
+
+
 def _approved_issue314_blob(root: Path, rel: str) -> bool:
     expected = _ISSUE_314_PINNED_BLOBS.get(rel)
     if expected is None:
@@ -857,10 +871,10 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not _approved_issue314_blob(new_root, rel))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not _approved_issue314_blob(new_root, rel) and not (
+            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel)) and not (
                 False  # Stage10 is handled by the stacked exact approval below
                 or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_natural_toxic_berry_birth(
