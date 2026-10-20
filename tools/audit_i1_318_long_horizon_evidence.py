@@ -132,7 +132,7 @@ def audit(root):
                     "arms":verified})
     _check(len(out)==12 and all(overall[a]["lives"]==12 for a in ARMS),
            "not twenty-four independent authenticated mortal WALs")
-    return {"schema":SCHEMA,"status":"ORIGINAL_32_WAL_AUTHENTICATED",
+    return {"schema":SCHEMA,"status":"ORIGINAL_24_WAL_AUTHENTICATED",
             "scientific_verdict":"INCONCLUSIVE","source_sha":SOURCE_SHA,
             "birth_run_id":SOURCE_RUN,"verified_WAL_count":24,
             "original_WAL_untouched":True,"no_replay_resurrection":True,
