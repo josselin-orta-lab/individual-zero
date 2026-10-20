@@ -866,6 +866,11 @@ def _approved_issue317_blob(root: Path, rel: str) -> bool:
 # not wildcard file exceptions; any subsequent code change fails closed.
 # Canonical birth flags stay false and are separately covered by I1/M11 tests.
 _EXPERIENCED_318_BLOBS = {
+    # Strictly reviewed I1-only source, not an exemption from manifest parity.
+    # Paired *research* tau is optional; canonical births still derive from ID.
+    "i1lab/i1_birth_temperament.py":
+        ("src/i1/runtime/i1_birth_temperament.py",
+         "e88bedd1f89eb1409e8d6f6524e906718a1e8654"),
     "i1lab/i1_active_runtime.py":
         ("src/i1/runtime/i1_active_runtime.py",
          "6c74bd5ea7f5cdaa960bf7aa5a1cd7735a8bde30"),
