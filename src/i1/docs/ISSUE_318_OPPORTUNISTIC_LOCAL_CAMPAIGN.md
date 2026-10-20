@@ -77,3 +77,16 @@ Remaining proof obligations: source-level correct attribution between goal-linke
 
 ### Attribution safeguard following the first temporal audit
 An additional ambiguity was detected before using the first chronology counts: a later TD update with the same generic action signature can belong to an **intervening independent decision**. A distant matching update does not necessarily originate from an earlier physical action. Commit `c9b1e5ee` requires the **first** subsequent eligible TD update to cite the earlier signature; otherwise the evidence is conservatively classified as not demonstrated. A new audit [#39392412693](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39392412693) was queued on this stricter implementation. Any earlier chronology counts are superseded for scientific inference. Neither physical life nor original certified report is modified.
+
+
+### Strict original-WAL local learning chain: completed
+
+The strict temporal chronology workflow [#39392412693](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39392412693) **SUCCESS** with 16 originally authenticated mortal WALs, no rebirth/replay. Its audit report is generated as a separate artifact and never replaces source journals. Results in experimental arm:
+
+- 87 original independent local physically applied commands, all with a first-person body capture and a single world transition.
+- 87 with a first subsequent TD update referencing their action signature; 60 did not have a prior update of that signature, while 27 did. These are signature-level TD attributions, **not 87 causal behavioural changes**.
+- 49 of the 87 original actions had a later assessment of the same signature carrying learned Q; 27 had a later physically selected candidate after such an evaluation. Repeated signatures can create overlapping re-use records and should not be interpreted as 27 independent abilities.
+- Same-step body changes: water increased in 10 local actions, decreased in 75; food increased in 19, decreased in 68; energy declined in all 87. Because baseline metabolic drift also contributes, these are changes **observed after** a motor command, not action-specific gain estimates or proof of nutritional safety.
+- The 16-WAL source SHA is `8b5b731aa80eb4803d6dbb9e5c1ef82bc7ded230`; original scientific status remains NO-GO for canonical promotion. The new chronology is `TEMPORAL_ASSOCIATION_ONLY` / `INCONCLUSIVE` regarding causality.
+
+Next research priority is a fresh, pre-registered contrast that can test whether learned Q alters preference for the same locally accessible interaction. Preserve body dynamics, risk ignorance, no forced command and the same active goal context. Investigate sleep/consolidation opportunity cost and M11 cold recovery separately before considering promotion.
