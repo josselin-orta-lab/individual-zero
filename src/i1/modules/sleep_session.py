@@ -90,16 +90,15 @@ class SleepSession:
 
     def record_applied_sleep_decision(
         self, *, world_step: int, admission: object, prepared: object,
-        motive_type: str, execution_status: str,
+        execution_status: str,
     ) -> None:
-        """Call AFTER the nonlethal step and Action Control send (never at proposal)."""
+        """Arm sleep after a real applied ordinary Competition decision, regardless of motive."""
         if (type(world_step) is not int or world_step < 1
                 or world_step != self._last_world_step
                 or self._mode != "awake"
                 or self._admitted_sleep_step is not None
                 or self._pending_result is not None
                 or execution_status != "applied"
-                or motive_type != "sleep_pressure"
                 or not self._applied_admission(
                     admission=admission, prepared=prepared,
                     expected_primitive="dormir", expected_source="decision")):
