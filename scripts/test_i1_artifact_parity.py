@@ -870,7 +870,7 @@ def _approved_memory_identity(root: Path, rel: str) -> bool:
         return False
     source_path, expected = entry
     data = (ROOT / source_path).read_bytes()
-    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
     return digest == expected and (root / rel).is_file()
 
 
