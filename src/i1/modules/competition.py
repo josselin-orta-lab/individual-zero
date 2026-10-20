@@ -9,7 +9,7 @@ Spec: 8.3-8.8, DC-01, DC-02, DC-10, 20.4 Stage 4.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from math import exp, isfinite
 from typing import Callable, Mapping, Sequence
 
@@ -120,6 +120,7 @@ class AppliedMemoryIntention:
     expires_at_step: int
     evidence: float
     reconsidered_step: int | None = None
+    confirmed_step: int | None = None  # ONLY the next authentic Perception
 
     def validate(self) -> None:
         def point(value):
@@ -140,7 +141,11 @@ class AppliedMemoryIntention:
             or (self.reconsidered_step is not None and
                 (type(self.reconsidered_step) is not int
                  or not self.applied_step < self.reconsidered_step
-                        < self.expires_at_step))):
+                        < self.expires_at_step))
+            or (self.confirmed_step is not None and (
+                type(self.confirmed_step) is not int
+                or self.confirmed_step != self.applied_step + 1
+                or self.confirmed_step >= self.expires_at_step))):
             raise ValueError("invalid first-person applied memory intention")
 
 
@@ -320,7 +325,15 @@ class Competition:
             if observed_position != intent.expected_position:
                 self._applied_memory_intent = None
                 return "contradicted"
+            if intent.confirmed_step is None:
+                # Confirm the physically expected arrival in the owner only
+                # AFTER the next actual first-person Perception.
+                self._applied_memory_intent = replace(
+                    intent, confirmed_step=world_step,
+                )
             return "reconsider"
+        # A late capture is NOT retroactive arrival confirmation. Without
+        # a confirmed next-step observation, suspended intent is inert.
         return "suspended"
 
     def drop_memory_intention(self) -> None:
@@ -382,6 +395,52 @@ class Competition:
             expires_at_step=intent.expires_at_step,
             evidence=intent.evidence,
             reconsidered_step=t_monde,
+            confirmed_step=intent.confirmed_step,
+        )
+        return True
+
+    def reconsider_confirmed_intention(
+        self, *, option_ref: str, t_monde: int,
+        observed_site: tuple[int, int], active_goal_id: str | None,
+    ) -> bool:
+        """Resume considering a semantic place AFTER an interruption.
+
+        Only a newly registered, paid, independently evaluated option may be
+        reconsidered. No prior accumulator, engagement, Q, UC or motor permit
+        is transferred; the ordinary evaluator alone establishes its value.
+        """
+        if (type(option_ref) is not str or not option_ref
+            or type(t_monde) is not int or t_monde < 2
+            or type(observed_site) is not tuple or len(observed_site) != 2
+            or any(type(x) is not int for x in observed_site)
+            or (active_goal_id is not None
+                and type(active_goal_id) is not str)):
+            raise ValueError("invalid semantic intention reconsideration")
+        intent = self._applied_memory_intent
+        candidate = self._registry.get(option_ref)
+        if (intent is None or intent.confirmed_step != intent.applied_step + 1
+            or t_monde <= intent.confirmed_step
+            or t_monde >= intent.expires_at_step
+            or intent.reconsidered_step == t_monde
+            or intent.goal_ref != active_goal_id
+            or intent.observed_site != observed_site
+            or candidate is None or candidate.last_proposal_t != t_monde
+            or self._engaged_option_id == option_ref):
+            return False
+        option, plan = candidate.proposal.option, candidate.proposal.plan
+        if (option.id == intent.source_option_ref
+            or option.provenance != "memory"
+            or option.motive_ref.type != "place_memory"
+            or option.id != f"option:place-memory:{option.motive_ref.id}"
+            or option.learning_signature != intent.semantic_ref
+            or option.goal_ref != intent.goal_ref
+            or plan is None or plan.goal_ref != intent.goal_ref
+            or len(plan.steps) != 1
+            or plan.steps[0].command.primitive != "se_deplacer"):
+            return False
+        # Crucially, do NOT change candidate.accumulator or last_threshold.
+        self._applied_memory_intent = replace(
+            intent, reconsidered_step=t_monde,
         )
         return True
 
@@ -767,6 +826,8 @@ class Competition:
                 "expires_at_step": intent.expires_at_step,
                 "evidence": intent.evidence,
                 "reconsidered_step": intent.reconsidered_step,
+                **({"confirmed_step": intent.confirmed_step}
+                   if intent.confirmed_step is not None else {}),
             }
         return state
 
@@ -807,7 +868,7 @@ class Competition:
                 "expires_at_step", "evidence", "reconsidered_step",
             }
             if (not isinstance(raw_intent, Mapping)
-                or set(raw_intent) != required
+                or set(raw_intent) not in (required, required | {"confirmed_step"})
                 or any(type(raw_intent[k]) is not str
                        for k in ("semantic_ref", "source_option_ref", "goal_ref"))
                 or any(not isinstance(raw_intent[k], (tuple, list))
@@ -824,8 +885,12 @@ class Competition:
                 expires_at_step=raw_intent["expires_at_step"],
                 evidence=raw_intent["evidence"],
                 reconsidered_step=raw_intent["reconsidered_step"],
+                confirmed_step=raw_intent.get("confirmed_step"),
             )
             intention.validate()
+            if ("confirmed_step" in raw_intent
+                and intention.confirmed_step is None):
+                raise ValueError("invalid explicit arrival-confirmation receipt")
         self._cycle = cycle
         self._engaged_option_id = engaged
         self._registry = registry
