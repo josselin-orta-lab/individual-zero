@@ -218,7 +218,7 @@ def propose_spatial_return(
     )
     if effects is None:
         return None
-    option_id = f"option:place-memory:{target.ref}:t{t_monde}"
+    option_id = f"option:place-memory:{target.ref}"
     plan_id = f"plan:{option_id}:v1"
     plan = Plan(
         id=plan_id, option_ref=option_id, version="1",
