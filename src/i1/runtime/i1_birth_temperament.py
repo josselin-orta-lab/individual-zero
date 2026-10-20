@@ -36,8 +36,25 @@ def temperament_for_life(life_id: str) -> Temperament:
     return temperament
 
 
-def configure_birth_temperament(stage11_config, *, life_id: str):
-    """Replace only actual Stage11 projected temperament before first birth."""
+def configure_birth_temperament(
+    stage11_config, *, life_id: str,
+    temperament_source_id: str | None = None,
+):
+    """Project one frozen temperament, preserving the actor's distinct identity.
+
+    Canonical births derive temperament from life_id. For preregistered I1
+    twin comparisons only, the same independent research source can seed
+    innate temperament while each mortal actor keeps its own life_id.
+    No copy of a living state, memory or experience occurs here.
+    """
+    if (type(life_id) is not str or not life_id.startswith("i1:")
+            or not 1 <= len(life_id) <= 128):
+        raise ValueError("I1 temperament requires a distinct bounded life id")
+    if (temperament_source_id is not None
+            and (type(temperament_source_id) is not str
+                 or not temperament_source_id.startswith("i1:research-twin:")
+                 or not 1 <= len(temperament_source_id) <= 128)):
+        raise ValueError("research twin temperament source must be preregistered")
     if not type(stage11_config).__module__.startswith("i1lab."):
         raise TypeError("generated isolated I1 Stage11 config required")
     if VERSION in stage11_config.version:
@@ -78,7 +95,11 @@ def configure_birth_temperament(stage11_config, *, life_id: str):
         discount_beta=None,
     )
     mapping.validate()
-    tau = temperament_for_life(life_id)
+    # Only the pure birth-trait draw is paired. Projection identity, mortal
+    # journal, first-person experience and Q/TD state stay actor-specific.
+    tau = temperament_for_life(
+        life_id if temperament_source_id is None else temperament_source_id
+    )
     params = TemperamentProjection(
         temperament=tau, mapping=mapping, individual_id=life_id,
     ).parameters
