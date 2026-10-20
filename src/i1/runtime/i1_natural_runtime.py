@@ -424,6 +424,12 @@ class I1Runtime(I1WaterPrudentRuntime):
                 data={"reason": "insufficient_uc"},
             )
             return None
+        # Charge before any durable Memory intent recall. A matching
+        # intention is a historical first-person choice, not learned Q
+        # evidence, causal reward or extra motor admission.
+        intention_paid = self._charge(
+            module="planning", operation=_OPTION_INTENTION_OPERATION,
+        )
         lived = self._evaluation_state(capture)
         selected = None
         count = len(choices)
@@ -433,7 +439,11 @@ class I1Runtime(I1WaterPrudentRuntime):
             ) or "here"
             signature = f"i1:affordance:{command.primitive}:{suffix}"
             learned = self.q_active.learned_value(lived, signature)
+            remembered = (self.memory.recalled_applied_option(
+                signature=signature, world_step=capture.t_monde,
+            ) if intention_paid else False)
             rank = (-float(learned.evidence or 0.0),
+                    -int(remembered),
                     (capture.t_monde + index) % count)
             if selected is None or rank < selected[0]:
                 selected = (rank, command, suffix, signature, learned)
@@ -480,19 +490,9 @@ class I1Runtime(I1WaterPrudentRuntime):
             preliminary_admissibility="indeterminate",
         )
         proposal.validate()
-        # Pay once for a bounded candidate-memory check and potential
-        # encoding before any motor action. A denied charge disables
-        # intention formation only, never cancels the original proposal.
-        intention_paid = self._charge(
-            module="planning", operation=_OPTION_INTENTION_OPERATION,
-        )
-        previous = (self.memory.recalled_applied_option(
-            signature=signature, world_step=capture.t_monde,
-        ) if intention_paid else False)
-        self._i1_option_intention_paid = (
-            identity if intention_paid else None
-        )
-        self._i1_option_intention_recalled = previous
+        # The first-person Memory hint only breaks equal-Q ties; it is
+        # not a second utility system and never exempts Competition UC.
+        self._i1_option_intention_paid = identity if intention_paid else None
         self._i1_pending["local_opportunity_evidence"] = {
             "option_ref": identity, "world_step": capture.t_monde,
             "affordance": True, "prior_evidence": prior,
