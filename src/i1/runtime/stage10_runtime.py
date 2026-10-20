@@ -936,12 +936,27 @@ class Stage10Runtime(Stage9Runtime):
             if result.execution_status == "applied":
                 if self._last_applied_decision is None:
                     raise RuntimeError("waking command has no Action Control evidence")
-                admission,prepared,_ = self._last_applied_decision
+                admission,prepared,proposal = self._last_applied_decision
+                if prepared.command.primitive == "dormir":
+                    # A voluntary, independently admitted new sleep decision
+                    # may follow an alert wake. Never prohibit it or infer it.
+                    self._verify_ordinary_sleep_provenance(
+                        result=result, prepared=prepared, proposal=proposal,
+                    )
                 self.sleep_session.finish_sleep_step(
                     decision=outcome,admission=admission,prepared=prepared,
                     command_sent=True,world_advanced=True,
                     consolidation_interrupted=active,
                 )
+                if prepared.command.primitive == "dormir":
+                    # SleepSession is now awake with no pending wake receipt.
+                    # Re-arm only the actually applied choice for the NEXT
+                    # world step, not this already committed physical step.
+                    self.sleep_session.record_applied_sleep_decision(
+                        world_step=self.scheduler.t_monde,
+                        admission=admission, prepared=prepared,
+                        execution_status=result.execution_status,
+                    )
             return result
         # This step was admitted as sleep by the reduced wake rule. All
         # semantic work remains private until its scheduler-owned commit.
