@@ -834,6 +834,24 @@ def _approved_m11_body_type(root: Path, rel: str) -> bool:
     return actual == _M11_BODY_TYPE_BLOB and (root / rel).is_file()
 
 
+_COMPETITION_FALLBACK_PINS = {
+    "i1/modules/competition.py":
+        ("src/i1/modules/competition.py", "ca1532e1875cc963725afb3b814406b86cb4485c"),
+    "i1lab/stage4_runtime.py":
+        ("src/i1/runtime/stage4_runtime.py", "80a7504009205f3481f936251cddcaa2e2df8393"),
+}
+
+
+def _approved_competition_fallback(root: Path, rel: str) -> bool:
+    entry = _COMPETITION_FALLBACK_PINS.get(rel)
+    if entry is None:
+        return False
+    source_path, expected = entry
+    data = (ROOT / source_path).read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == expected and (root / rel).is_file()
+
+
 def _approved_issue314_blob(root: Path, rel: str) -> bool:
     expected = _ISSUE_314_PINNED_BLOBS.get(rel)
     if expected is None:
@@ -871,10 +889,10 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel)))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel)) and not (
+            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel)) and not (
                 False  # Stage10 is handled by the stacked exact approval below
                 or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_natural_toxic_berry_birth(
