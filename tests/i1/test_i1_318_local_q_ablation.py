@@ -16,7 +16,6 @@ class LocalQ318(unittest.TestCase):
    self.assertIn('selected_evidence = learned if q_exposure == "learned" else None',s)
    self.assertIn('"q_exposure": q_exposure',s)
    self.assertNotIn('self.q_active._weights.clear()',s)
-  from pathlib import Path
   m=(ROOT/"src/i1/runtime/m11_transactional_mortal.py").read_text()
   self.assertIn('getattr(runtime, "_i1_local_q_exposure", "learned")',m)
  def test_config_requires_optin(self):
