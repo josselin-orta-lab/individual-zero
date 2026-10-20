@@ -23,13 +23,13 @@ class LabTwinTests(unittest.TestCase):
                     fixture,life_id=f"i1:test:independent:{arm}",
                     world="test-world",seed=24103)
                 s4=conf.stage9.stage8.stage7.stage6.stage4
-                twins.append((conf.temperament_parameters.temperament,
+                twins.append((conf.temperament_parameters.as_dict(),
                     dict(s4.gatekeeper.weights),dict(s4.value_needs.weights),
                     s4.competition.inertia,conf.stage9.stage8.evaluation.extrinsic_gain))
             self.assertEqual(twins,[twins[0]]*4)
             independent=configure_birth_temperament(
                 fixture,life_id="i1:test:independent:neutral")
-            self.assertNotEqual(independent.temperament_parameters.temperament,
+            self.assertNotEqual(independent.temperament_parameters.as_dict(),
                                 twins[0][0])
             with self.assertRaises(ValueError):
                 matched_temperament_configuration(fixture,life_id="i1:test",
