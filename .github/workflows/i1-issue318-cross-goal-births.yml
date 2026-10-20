@@ -1,0 +1,53 @@
+name: I1 issue318 cross-goal local 16 new mortal births
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/run_i1_318_cross_goal_local_cohort.py'
+      - 'tests/i1/test_i1_318_cross_goal_cohort.py'
+      - '.github/workflows/i1-issue318-cross-goal-births.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independently-mortal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [memory-corridor, water-isolated-corridor]
+        seed: [20123, 20233, 20357, 20477]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - run: python -m unittest discover -s tests/i1 -p test_i1_318_cross_goal_cohort.py -v
+      - name: Physically execute both mortal arms without life replay
+        env:
+          PRESET: ${{ matrix.preset }}
+          SEED: ${{ matrix.seed }}
+        run: |
+          python tools/run_i1_318_cross_goal_local_cohort.py --preset "$PRESET" --seed "$SEED" --output-dir "results/$PRESET/$SEED"
+          python - <<'PY'
+          from pathlib import Path
+          import os,json
+          r=json.loads((Path("results")/os.environ["PRESET"]/os.environ["SEED"]/"report.json").read_text())
+          assert r["schema"]=="i1-318-cross-goal-local-mortal/v1"
+          assert r["status"]=="COMPLETE_PAIRED_PHYSICAL_DIAGNOSTIC"
+          assert r["preregistered_arms"]==["baseline","cross_goal_local"]
+          assert r["only_local_candidate_scope_changed"] is True
+          assert r["scientific_verdict"]=="NO-GO"
+          print("CROSS_GOAL_LOCAL_MORTAL_PAIR_COMPLETE")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-318-cross-goal-${{ matrix.preset }}-${{ matrix.seed }}
+          path: results/
+          retention-days: 30
+          if-no-files-found: warn
