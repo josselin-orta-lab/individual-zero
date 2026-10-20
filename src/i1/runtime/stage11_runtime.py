@@ -239,6 +239,8 @@ class Stage11Runtime(Stage9Runtime):
             config=config.stage9.stage8.evaluation,
             stage6=self.option_evaluator, q_values=self.q_active,
             exploration=self.exploration, intrinsic_weight=config.intrinsic_weight,
+            site_needs_config=(self.value_needs.config if config.geographic is not None
+                               and config.geographic.experienced_site_effects else None),
             instrumental_planning=(self.planning if config.instrumental_geographic_value else None),
         )
 
@@ -268,6 +270,26 @@ class Stage11Runtime(Stage9Runtime):
         geo = self.exploration.geographic
         if geo is None:
             return
+        # Match a previously APPLIED local interaction against the next
+        # unique physical Perception, never a simulator or a future map.
+        if geo.config.experienced_site_effects:
+            witnessed = geo.observe_lived_site_followup(
+                world_step=capture.t_monde, position=(capture.x, capture.y),
+                body_after=capture.body,
+            )
+            if witnessed is not None:
+                self._write(
+                    kind="i1_lived_site_effect_observed", cycle=1,
+                    data={
+                        "site": list(witnessed.position),
+                        "observed_step": witnessed.last_observed_step,
+                        "samples": witnessed.samples,
+                        "favorable": list(witnessed.favorable),
+                        "adverse": list(witnessed.adverse),
+                        "scope": "first_person_contextual_association_only",
+                        "causality_proven": False,
+                    },
+                )
         # An externally imposed WorldBody arrival can exceed the bounded
         # *information ledger*. The world is authoritative; do not roll its
         # physical position back, credit a fabricated visit or block reflexes.
@@ -1392,6 +1414,24 @@ class Stage11Runtime(Stage9Runtime):
             proposal=proposal, prepared=prepared, admission=admission,
             cycle=cycle, sent_t_monde=sent_t_monde,
         )
+        # Record a real nonmovement interaction in the existing Exploration
+        # owner. Its BODY effect remains UNKNOWN until the next fresh capture.
+        geo = self.exploration.geographic
+        prior = self.stage3._capture
+        if (geo is not None and geo.config.experienced_site_effects
+            and execution.status == "applied"
+            and not self._fallback_used_this_cycle
+            and prior is not None
+            and prior.t_monde == sent_t_monde):
+            # Command has already committed/closed the physical step.
+            # Record only in the M11-owned Exploration state here; a journal
+            # event after Action Control dispatch would violate step custody.
+            # The NEXT authentic Perception logs its observed followup.
+            geo.note_applied_local_action(
+                world_step=sent_t_monde, position=(prior.x, prior.y),
+                body_before=prior.body, primitive=prepared.command.primitive,
+                option_ref=proposal.option.id,
+            )
         # A *separately* admitted, paid, physically applied spatial choice
         # can leave an informational intention in Competition's owner state.
         # No inferred arrival yet: the next Perception capture must confirm it.

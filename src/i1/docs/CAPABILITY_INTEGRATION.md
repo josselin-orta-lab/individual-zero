@@ -19,7 +19,7 @@
 | Stable observed geographical frontier/transit option IDs | #330 / PR #335 | ACTIVE software fix | No change required to existing identities | NOT_ESTABLISHED |
 | Bounded cross-hop remembered-place intention | #326, #351 / PR #331, #347, #350, **#352** | **ACTIVE in canonical I1 once #352 merged** | Competition owns an applied-intention descriptor; Stage11 verifies arrival and re-registers a newly paid, subthreshold motor candidate. No motor replay, Action Control still decides. Technical two-step M11 recovery and owner-state tests; a naturally selected multi-hop episode has not been independently observed. | NOT_ESTABLISHED |
 | Goal-independent first-person local option consideration | #327 / PR #332, #342, #353 | ACTIVE in natural birth after #353 merge | Separate Phase-1 producer and charged Competition registration; actual canonical M11 1-step candidate publication and cold recovery; existing goal producer preserved, bounded learned Q. | NOT_ESTABLISHED |
-| Experienced-place relevance from personally observed bodily effects | #328 / PR #333, #343 | DORMANT | Handle adverse and contradictory site samples and generic owner-backed outcomes, Stage8 integration | NOT_ESTABLISHED |
+| Experienced-place relevance from personally observed bodily effects | #328 / PR #333, #343; canonical integration PR | ACTIVE only after accepted L2 PR merge | Current-life Exploration site effects from genuinely applied local actions and next physical capture, plus positive/negative/contradictory body outcomes; Stage8 uses generic need pressures and confidence. No resource-type utility. | NOT_ESTABLISHED |
 | Alert-on-wake bodily diagnostic | #329 / PR #334 | DORMANT | Decide if ordinary needs/Competition suffice before any sleep option suppression | NOT_ESTABLISHED |
 | Broad research source #318 | #317 / PR #318 | RESEARCH, do not merge en bloc | Trace each retained fragment to a targeted issue | INCONCLUSIVE / NO_GO not promoted |
 
@@ -52,3 +52,13 @@ Each opportunity is separately paid for by Planning, then by the ordinary Compet
 `tests/i1/test_i1_issue_327_natural_activation.py` is a generated-I1 technical test covering actual canonical `birth_i1_m11`, perception of available interaction candidates, Planning/Competition publication, no forced motor, M11 two-step cold recovery and negative filter/source checks.
 
 This is **L2 ACTIVE only after PR #353 has passed exact-head CI and merged**. Actual statistical behavioral or survival benefit is separate and **NOT_ESTABLISHED**. No population or behavior campaign is authorized for this stage.
+
+## Issue #328: generic personally witnessed place consequences
+
+The natural I1 birth explicitly enables `experienced_site_effects` in its existing `GeographicExploration` owner. Historical/standalone Stage11 defaults remain disabled. When ordinary Action Control has **actually applied** a local nonmovement interaction, Stage11 records the witnessed before-body and site only. A subsequent distinct physical Perception capture supplies the after-body. The Exploration owner retains a bounded running favorable **and adverse** four-variable association at that personally visited coordinate, including contradictory observations and recency. An action that never applied, a proposed plan, a changed position, absent next capture and source labels themselves supply no evidence.
+
+The existing Stage11/Stage8 evaluator may consider only a previously experienced site's association, weighted by *current real physiological pressures* (energy, food, water and integrity), place confidence, route length, observation age and sample count. Negative associations penalize. This is **not** a prediction of future replenishment or causal attribution, not learned Q/TD, and never a command or motor priority override. Source owner site snapshots, including pending witnesses, are versioned, bounded and validated before restoration under ordinary M11 custody.
+
+Generated engine contracts in `tests/i1/test_i1_issue_328_natural_lived_sites.py` cover favorable/adverse and contradictory site outcomes, nonexistent/malformed/future evidence, snapshot atomicity, no source-type generalization, and canonical natural M11 cold recovery over two real physical steps. These are technical tests, not survival cohorts.
+
+**L2 status:** only once this PR passes exact-head CI and merges. **L3 status:** NOT_ESTABLISHED. No behavioral benefit is claimed.

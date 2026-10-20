@@ -117,18 +117,32 @@ class I1Runtime(I1WaterPrudentRuntime):
         )
         if cfg.geographic is None:
             geographic = GeographicExplorationConfig(
-                version="i1-firstperson-frontier-v1",
+                version="i1-firstperson-frontier-v1+lived-sites-v1",
                 novelty_weight=0.15, max_distinct_sites=1024,
                 max_targets_per_cycle=1,
                 observe_routes=True, refresh_surveys=True, remember_entities=True,
-                max_place_candidates=3,
+                max_place_candidates=3, experienced_site_effects=True,
             )
             cfg = replace(
-                cfg, version=cfg.version + "+i1-firstperson-frontier-v1",
+                cfg, version=cfg.version + "+i1-firstperson-frontier-v1+lived-sites-v1",
                 geographic=geographic, intrinsic_weight=min(cfg.intrinsic_weight, 0.35),
                 local_threat_alerts=True,
                 geographic_capacity_guard_enabled=True,
                 geographic_route_enabled=True,
+            )
+        # Existing geographic owner, newly enabled current-life site effects.
+        # A reference Stage11 with this optional contract disabled remains
+        # untouched; the natural birth uses the already mortal owner for M11.
+        if (cfg.geographic is not None
+            and cfg.geographic.remember_entities
+            and not cfg.geographic.experienced_site_effects):
+            cfg = replace(
+                cfg, version=cfg.version + "+i1-lived-sites-v1",
+                geographic=replace(
+                    cfg.geographic,
+                    version=cfg.geographic.version + "+i1-lived-sites-v1",
+                    experienced_site_effects=True,
+                ),
             )
         # Ordinary I1 identifies each charged cognitive cycle by the
         # actual Scheduler world-step/attempt/cycle tuple. This prevents a
