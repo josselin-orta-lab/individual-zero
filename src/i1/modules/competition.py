@@ -188,6 +188,10 @@ class Competition:
         state = self._registry.get(option_ref)
         return None if state is None else state.accumulator
 
+    def last_proposed_step_for(self, option_ref: str) -> int | None:
+        state = self._registry.get(option_ref)
+        return None if state is None else state.last_proposal_t
+
     def retain_bounded_intention_evidence(
         self, *, option_ref: str, t_monde: int, evidence: float,
     ) -> bool:
@@ -212,8 +216,8 @@ class Competition:
             or option.provenance != "memory"
             or option.motive_ref.type != "place_memory"
             or option.id != f"option:place-memory:{option.motive_ref.id}"
-            or option.learning_signature !=
-               f"memory_place_return:{option.motive_ref.id.split(':at:', 1)[0].removeprefix('place:')}"
+            or not option.learning_signature.startswith("memory_place_return:")
+            or not option.motive_ref.id.startswith("place:")
             or option.goal_ref is None or plan is None
             or plan.goal_ref != option.goal_ref
             or len(plan.steps) != 1
