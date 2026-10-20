@@ -1,15 +1,14 @@
 name: 'I1 #318 certify 32 original factorial WAL'
 on:
-  push:
-    branches: [fix/i1-memory-competition-317]
-    paths:
-      - 'tools/audit_i1_318_local_q_factorial_cohort.py'
-      - '.github/workflows/i1-issue318-local-q-factorial-audit.yml'
+  workflow_run:
+    workflows: ['I1 #318 four-arm factorial 32 unique mortal births']
+    types: [completed]
 permissions:
   contents: read
   actions: read
 jobs:
   authenticate:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_sha == '0b727273ff748c7919cebb8420dc99a39f2580f6' }}
     runs-on: ubuntu-latest
     timeout-minutes: 65
     steps:
