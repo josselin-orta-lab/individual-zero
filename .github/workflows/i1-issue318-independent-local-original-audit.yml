@@ -1,0 +1,55 @@
+name: I1 #318 independently certify 16 original local WALs
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_318_independent_local_cohort.py'
+      - 'tests/i1/test_i1_318_independent_local_original_audit.py'
+      - '.github/workflows/i1-issue318-independent-local-original-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  authenticate-originals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - run: python -m unittest discover -s tests/i1 -p test_i1_318_independent_local_original_audit.py -v
+      - name: Retrieve immutable 16 original WAL, no rebirth
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 39385691970
+          github-token: ${{ github.token }}
+          pattern: i1-318-independent-local-*
+          path: original
+          merge-multiple: true
+      - name: Authenticate journals, physical transitions and Competition
+        run: |
+          python tools/audit_i1_318_independent_local_cohort.py \
+            --root original --output original-wal-certificate.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path("original-wal-certificate.json").read_text())
+          assert report["authenticated_wal_count"]==16
+          assert report["exact_birth_sha"]=="8b5b731aa80eb4803d6dbb9e5c1ef82bc7ded230"
+          assert report["original_WAL_untouched"] is True
+          assert report["reported_contract_stale"] is True
+          assert report["scientific_verdict"]=="NO-GO"
+          print("I1_318_ORIGINAL_WAL_CAUSAL_CERTIFICATE_READY")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-318-independent-local-16-original-WAL-certificate
+          path: original-wal-certificate.json
+          retention-days: 30
+          if-no-files-found: warn
