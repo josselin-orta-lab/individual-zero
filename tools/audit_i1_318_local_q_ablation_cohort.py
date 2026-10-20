@@ -60,10 +60,13 @@ def physical_history(events):
             admissions[t].append((idx, data))
         elif k == "td_update_published":
             updates.append((idx, t, data))
+    # Stage10 may continue physically real sleep without opening a fresh
+    # symbolic capture. Never invent a perceptual observation for sleep.
     _check(set(motors) == set(transitions)
-           and set(motors) == set(captures)
-           and set(motors) == set(range(1, len(motors) + 1)),
-           "missing first-person/motor/physical step")
+           and set(captures).issubset(set(motors))
+           and set(motors) == set(range(1, len(motors) + 1))
+           and all(t in captures for t in local),
+           "missing original physical step or local first-person capture")
     return motors, transitions, captures, local, admissions, updates
 
 
@@ -150,11 +153,12 @@ def compare_pair(neutral, learned):
         motor_first = limit + 1
     at_fork = {}
     if motor_first is not None and motor_first <= limit:
-        n = neutral["captures"][motor_first]
-        l = learned["captures"][motor_first]
+        n = neutral["captures"].get(motor_first)
+        l = learned["captures"].get(motor_first)
         visible = ("position", "dual_scope_visible_body",
                    "agency_visible_inventory", "agency_visible_adjacent")
-        same_capture = all(n.get(k) == l.get(k) for k in visible)
+        same_capture = (n is not None and l is not None and
+                        all(n.get(k) == l.get(k) for k in visible))
         local_q_prior = learned["first_learned_Q_local_proposal_step"]
         at_fork = {
             "step": motor_first,
