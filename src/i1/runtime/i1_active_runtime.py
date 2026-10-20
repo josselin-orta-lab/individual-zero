@@ -44,6 +44,24 @@ I1_OPPORTUNISTIC_ACTIONS = frozenset(("boire", "manger", "collecter", "poser_une
 I1_OPPORTUNISTIC_POLICY = "i1-local-interaction-goal-independent-v2"
 
 
+
+def _local_q_visibility(exposure: str) -> tuple[bool, bool]:
+    """Research-only factorial Q access: (candidate rank, Competition evidence).
+
+    Q/TD learning itself is ALWAYS active. No action gain, species, risk,
+    hydration expectation or motor privilege is introduced by this selector.
+    """
+    policies = {
+        "neutral": (False, False),
+        "rank_only": (True, False),
+        "evidence_only": (False, True),
+        "learned": (True, True),
+    }
+    if type(exposure) is not str or exposure not in policies:
+        raise ValueError("invalid I1 independent-local Q exposure")
+    return policies[exposure]
+
+
 def _local_interaction_choices(available, *, enabled):
     """Only executable local actions, never a map or anticipated need relief.
 
@@ -453,8 +471,7 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
             return None
         context = self._evaluation_state(capture)
         q_exposure = getattr(self, "_i1_local_q_exposure", "learned")
-        if q_exposure not in ("learned", "neutral"):
-            raise ValueError("invalid independent-local Q exposure")
+        expose_rank, expose_evidence = _local_q_visibility(q_exposure)
         selected = None
         for index, command in enumerate(choices):
             suffix = ":".join(
@@ -466,14 +483,14 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
             # suppress exposure only for this independent local candidate.
             learned = self.q_active.learned_value(context, signature)
             rank = (-(float(learned.evidence or 0.0)
-                      if q_exposure == "learned" else 0.0),
+                      if expose_rank else 0.0),
                     (capture.t_monde + index) % len(choices))
             if selected is None or rank < selected[0]:
                 selected = (rank, command, signature, learned, suffix)
         _, command, signature, learned, suffix = selected
         # Q is still learned from real experience by Stage8; the neutral
         # research arm blinds only its exposure to Competition.
-        selected_evidence = learned if q_exposure == "learned" else None
+        selected_evidence = learned if expose_evidence else None
         exploration = float(self.temperament_parameters.exploration_coefficient)
         uncertainty = float(self.temperament_parameters.uncertainty_penalty_scale)
         prior = max(0.0, min(1.0, I1_SCORE
@@ -542,6 +559,8 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
                             None if selected_evidence is None
                             else selected_evidence.value),
                         "q_exposure": q_exposure,
+                        "q_used_for_candidate_rank": expose_rank,
+                        "q_used_for_competition_evidence": expose_evidence,
                         "physical_outcome_known": False, "forced_motor": False,
                     })
         return proposed
