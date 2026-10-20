@@ -140,12 +140,13 @@ def observe(events, *, treatment):
         already_learned = bool(prior_updates)
         later_updates = [
             (i, d) for i, previous_t, d in td_updates
-            if i > ai and previous_t == t
+            if i > ai and previous_t > t
             and d.get("previous_signature") == sig
             and sig in d["updated_signatures"]
         ]
-        _check(len(later_updates) <= 1,
-               "more than one TD segment assigned to one physical action")
+        # TD is emitted at the *next* cognitive decision, not retroactively
+        # at the prior motor time. A later TD update can be a continuation
+        # of the same signature; retain the first grounded update only.
         update_idx = None if not later_updates else later_updates[0][0]
         later_evals = [] if update_idx is None else [
             (i, et, ea, d) for i, et, ea, d in assessments
