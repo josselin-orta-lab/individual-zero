@@ -1071,7 +1071,9 @@ class Stage4Runtime:
                 continue
 
             if execution.status == "applied":
-                self.competition.close_deliberation(proposal)
+                self.competition.close_deliberation(
+                    proposal, adjudicated=not self._fallback_used_this_cycle,
+                )
             self.stage3._capture = None
             return Stage4StepResult(
                 source=(
