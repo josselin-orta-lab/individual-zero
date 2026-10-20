@@ -116,6 +116,8 @@ class Intention:
             raise ValueError("invalid intention state")
         if self.deadline_step is not None and self.deadline_step < 0:
             raise ValueError("intention deadline must be non-negative")
+        if self.state == "suspended" and self.trigger_type != "option":
+            raise ValueError("only cognitive option intentions may suspend")
         if self.trigger_type == "option":
             # Memory of a personally chosen and applied non-spatial option.
             # Not a new goal, wake deadline, Q update or motor commitment.
@@ -147,7 +149,8 @@ class Intention:
                 or self.base_pressure != 0.0
                 or self.wake_authorized is not False
                 or self.candidacy_active is not False
-                or self.state not in {"pending", "suspended", "abandoned", "done"}):
+                or self.state not in {"pending", "suspended", "abandoned", "done"}
+                or (self.state == "done" and phase_key != "applied_step")):
                 raise ValueError("invalid first-person option intention")
 
 
@@ -437,9 +440,9 @@ class EpisodicMemory:
             and record.trigger_type == "option"
             and record.state in ("pending", "done")
             and record.deadline_step is not None
-            and (record.trigger_value.get("applied_step",
-                 record.trigger_value.get("considered_step")) < world_step)
-            <= record.deadline_step
+            and record.trigger_value.get(
+                "applied_step", record.trigger_value.get("considered_step")
+            ) < world_step <= record.deadline_step
         )
 
     def complete_intention(self, intention_ref: str) -> None:
