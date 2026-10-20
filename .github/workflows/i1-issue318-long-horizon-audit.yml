@@ -36,7 +36,7 @@ jobs:
           from pathlib import Path
           a=json.loads(Path("original-24-ecology-certificate.json").read_text())
           assert a["verified_WAL_count"]==24
-          assert a["status"]=="ORIGINAL_32_WAL_AUTHENTICATED"
+          assert a["status"]=="ORIGINAL_24_WAL_AUTHENTICATED"
           assert a["scientific_verdict"]=="INCONCLUSIVE"
           print("I1_318_24_ECOLOGY_WAL_CERTIFIED")
           PY
