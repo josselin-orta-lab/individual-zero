@@ -27,3 +27,13 @@
 5. No GO, promotion, merge, I0 edits, forced drinking, coma, rollback, replay of dead lives, or fixed survival enhancement may be claimed.
 
 **Scientific decision:** INCONCLUSIVE for this newly committed producer, NO-GO for canonical promotion. Next step: independently auditable physical cohort on a pinned new source commit, then M11 and population hold-out.
+
+
+## 2026-10-20 continuation: independent UC custody and prospective validation
+
+- Identified under-reservation: the independent producer can add a second Planning charge plus its own Competition registration and additional per-candidate Competition evaluation, while the old configuration reserved only the maximum charge of two *alternative* goal-linked paths. An unfunded cycle may degrade unrelated cognition, so a comparative survival change cannot be attributed solely to adding opportunities until independent UC is budgeted.
+- Commit `ff76a24d` reserves separately charged Planning UC and Competition registration/evaluation UC **only for opted-in local exploration**; canonical disabled births retain their own original cost envelope. This is capacity for actual charged work, not free cognitive work.
+- Commit `d8f1944a` re-pins the exact reviewed generated I1 active runtime blob in the migration byte-parity validator. The validator still rejects unrelated unreviewed changes.
+- Fresh preselected seeds: `21121, 21227, 21341, 21467`, two worlds (`memory-corridor`, `water-isolated-corridor`), two arms (`baseline`, `cross_goal_local`), 300-step horizon, **new births only**. Scripts `tools/run_i1_318_independent_local_cohort.py` and `tests/i1/test_i1_318_independent_local_cohort.py`. Birth workflow [#39385691970](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39385691970), initially RUNNING. Source SHA `8b5b731aa80eb4803d6dbb9e5c1ef82bc7ded230`.
+- This campaign cannot yet establish a causal effect. Its two arms preserve the original common paid memory ranking; no water/food action is ordered by the intervention. Classifying first-person perception, distinct registration, Competition crossings, physical effects and future learning from the **original** WAL remains required. A successful workflow execution does not alone satisfy the scientific GO gate.
+- Current-model CI on the same commit [#39385699558](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39385699558): pending at the checkpoint. Canonical goal-calibration [#39385699442](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39385699442) SUCCESS. Do not conflate pipeline statuses.
