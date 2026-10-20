@@ -50,3 +50,31 @@ def bounded_continuation(prior: IntentEvidence, *, intended_ref: str,
             or prior.observed_destination != observed_origin):
         return None
     return min(float(prior.accumulated), float(ceiling) * float(residual))
+
+def intention_reentry(prior: IntentEvidence, *, intended_ref: str,
+                      now_step: int, observed_origin: tuple[int, int],
+                      ceiling: float, residual: float, applied: bool,
+                      active_goal_unchanged: bool, observed_route_valid: bool,
+                      urgent_need: bool, sleeping: bool) -> tuple[str, float | None]:
+    """Advisory lifecycle only: no command, score publication or motor admission.
+
+    An interruption suspends the *intention*, never entitles it to future action.
+    Changed semantic goal or contradicted route invalidates continuation.
+    Source evidence must still pass the same physical-hop checks.
+    """
+    for flag in (active_goal_unchanged, observed_route_valid, urgent_need, sleeping):
+        if type(flag) is not bool:
+            raise ValueError("intention lifecycle requires boolean observations")
+    # Validate numeric, temporal and personal provenance even if interrupted.
+    evidence = bounded_continuation(
+        prior, intended_ref=intended_ref, now_step=now_step,
+        observed_origin=observed_origin, ceiling=ceiling,
+        residual=residual, applied=applied,
+    )
+    if intended_ref != prior.semantic_ref or not active_goal_unchanged or not observed_route_valid:
+        return ("invalidated", None)
+    if sleeping or urgent_need:
+        return ("suspended", None)
+    if evidence is None:
+        return ("unconfirmed", None)
+    return ("reconsider", evidence)
