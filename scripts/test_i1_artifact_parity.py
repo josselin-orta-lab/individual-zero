@@ -852,6 +852,28 @@ def _approved_competition_fallback(root: Path, rel: str) -> bool:
     return digest == expected and (root / rel).is_file()
 
 
+# Issue #317 staged memory identity. Exact reviewed native blobs only.
+# Generated sources may rewrite imports; the fixed native blobs are authoritative.
+_MEMORY_IDENTITY_PINS = {
+    "i1/modules/geographic_exploration.py":
+        ("src/i1/modules/geographic_exploration.py", "391fc2abaef4da1468879eacd31eb186c14759d7"),
+    "i1/modules/geographic_planning.py":
+        ("src/i1/modules/geographic_planning.py", "0077e33541111f39bce5088a3f04a79a748e4ce7"),
+    "i1lab/stage11_runtime.py":
+        ("src/i1/runtime/stage11_runtime.py", "15295d162d21b56e24c07d1dd8835a104f2bea6f"),
+}
+
+
+def _approved_memory_identity(root: Path, rel: str) -> bool:
+    entry = _MEMORY_IDENTITY_PINS.get(rel)
+    if entry is None:
+        return False
+    source_path, expected = entry
+    data = (ROOT / source_path).read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest()
+    return digest == expected and (root / rel).is_file()
+
+
 # Strictly scoped Lab-only matched temperament review. No broad exceptions.
 _MATCHED_TAU_PINS = {
     "i1lab/i1_birth_temperament.py":
@@ -928,10 +950,10 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel)))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel)) and not (
+            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel)) and not (
                 False  # Stage10 is handled by the stacked exact approval below
                 or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_natural_toxic_berry_birth(

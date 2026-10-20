@@ -293,7 +293,7 @@ class GeographicExploration:
         for target in self._place_offered:
             if (motive.id == target.ref
                 and option.id ==
-                    f"option:place-memory:{target.ref}:t{target.source_t_monde}"):
+                    f"option:place-memory:{target.ref}"):
                 return target
         return None
 

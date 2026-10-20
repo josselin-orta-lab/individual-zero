@@ -1187,7 +1187,7 @@ class Stage11Runtime(Stage9Runtime):
             approved = set()
             if geo is not None:
                 approved = {
-                    f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                    f"option:place-memory:{target.ref}"
                     for target in geo.place_offered
                 }
             for old in self.competition.candidate_proposals:
@@ -1222,14 +1222,14 @@ class Stage11Runtime(Stage9Runtime):
                 geo.freeze_places(tuple(
                     target for target in geo.place_offered
                     if not self._cycle_degraded
-                    and f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                    and f"option:place-memory:{target.ref}"
                        in funded_refs
                     and self.competition.proposal_for(
-                        f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                        f"option:place-memory:{target.ref}"
                     ) is not None
                 ))
                 now_funded = {
-                    f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                    f"option:place-memory:{target.ref}"
                     for target in geo.place_offered
                 }
                 for old in self.competition.candidate_proposals:
