@@ -27,6 +27,7 @@ class GeographicExplorationConfig:
     refresh_surveys: bool = False
     remember_entities: bool = False
     max_place_candidates: int = 1
+    experienced_site_effects: bool = False
 
     def validate(self) -> None:
         if not isinstance(self.version, str) or not self.version:
@@ -44,6 +45,9 @@ class GeographicExplorationConfig:
             raise ValueError("invalid bounded place candidate count")
         if type(self.remember_entities) is not bool:
             raise ValueError("entity-place flag must be boolean")
+        if (type(self.experienced_site_effects) is not bool
+            or (self.experienced_site_effects and not self.remember_entities)):
+            raise ValueError("lived site evidence needs first-person place memory")
         if self.remember_entities and not self.observe_routes:
             raise ValueError("entity-place recall requires paid route observations")
         if self.refresh_surveys and not self.observe_routes:
@@ -79,6 +83,34 @@ class GeographicTarget:
             raise ValueError("invalid canonical geographic target reference")
 
 
+_BODY_SITE_VARIABLES = ("energy", "food", "water", "integrity")
+_SITE_SAMPLE_CAP = 16
+
+
+@dataclass(frozen=True, slots=True)
+class LivedSiteEffect:
+    """Bounded association with a personally lived LOCAL action, not causality."""
+    position: tuple[int, int]
+    last_observed_step: int
+    samples: int
+    favorable: tuple[float, float, float, float]
+    adverse: tuple[float, float, float, float]
+
+    def validate(self) -> None:
+        if (type(self.position) is not tuple or len(self.position) != 2
+            or any(type(x) is not int for x in self.position)
+            or type(self.last_observed_step) is not int
+            or self.last_observed_step < 2
+            or type(self.samples) is not int
+            or not 1 <= self.samples <= _SITE_SAMPLE_CAP):
+            raise ValueError("invalid lived site identity")
+        for row in (self.favorable, self.adverse):
+            if (type(row) is not tuple or len(row) != 4
+                or any(type(x) not in (int, float) or not isfinite(x)
+                       or not 0 <= x <= 100 for x in row)):
+                raise ValueError("invalid personally observed site effects")
+
+
 class GeographicExploration:
     """Private state of the canonical Exploration owner, not a second owner."""
 
@@ -95,8 +127,14 @@ class GeographicExploration:
         self._place_offered: tuple[SpatialReturnTarget, ...] = ()
         self._motion: dict[str, EntityMotionDiagnosis] = {}
         self._motion_updates: tuple[EntityMotionDiagnosis, ...] = ()
+        # Bounded association, within THIS Exploration owner and current life.
+        # Never inferred from entity names, operator's map or future outcomes.
+        self._site_effects: dict[tuple[int, int], LivedSiteEffect] = {}
+        self._site_pending: dict[str, object] | None = None
 
     def _snapshot_schema(self) -> str:
+        if self.config.experienced_site_effects:
+            return "geographic-exploration-v6-lived-sites"
         if self.config.remember_entities:
             return "geographic-exploration-v5-entity-motion"
         if self.config.refresh_surveys:
@@ -104,6 +142,104 @@ class GeographicExploration:
         if self.config.observe_routes:
             return "geographic-exploration-v2-survey"
         return "geographic-exploration-v1"
+
+    @property
+    def lived_site_effects(self) -> tuple[LivedSiteEffect, ...]:
+        """Owner-backed summaries, never a classified resource-type utility."""
+        return tuple(self._site_effects[k] for k in sorted(self._site_effects))
+
+    def site_effect_for(self, position: tuple[int, int]) -> LivedSiteEffect | None:
+        if (type(position) is not tuple or len(position) != 2
+            or any(type(x) is not int for x in position)):
+            raise ValueError("invalid personally visited site")
+        return self._site_effects.get(position)
+
+    def note_applied_local_action(
+        self, *, world_step: int, position: tuple[int, int],
+        body_before: Mapping[str, float], primitive: str, option_ref: str,
+    ) -> bool:
+        """Remember an ACTUALLY applied contextual interaction until next capture.
+
+        Stage11 is the only dispatch caller. It supplies Action Control's
+        applied receipt plus the same prior first-person Perception capture.
+        Movement, waiting and sleeping cannot be treated as site interactions.
+        """
+        if not self.config.experienced_site_effects:
+            return False
+        if (type(world_step) is not int or world_step < 1
+            or type(position) is not tuple or len(position) != 2
+            or any(type(x) is not int for x in position)
+            or not isinstance(body_before, Mapping)
+            or any(type(body_before.get(k)) not in (int, float)
+                   or not isfinite(body_before[k])
+                   or not 0 <= body_before[k] <= 100
+                   for k in _BODY_SITE_VARIABLES)
+            or type(primitive) is not str or not primitive
+            or type(option_ref) is not str or not option_ref):
+            raise ValueError("invalid applied first-person site action")
+        if (primitive in {"se_deplacer", "attendre", "dormir"}
+            or self._last_capture != (world_step, *position)
+            or position not in self._visits):
+            return False
+        self._site_pending = {
+            "step": world_step, "position": position,
+            "before": tuple(float(body_before[k]) for k in _BODY_SITE_VARIABLES),
+            "primitive": primitive, "option_ref": option_ref,
+        }
+        return True
+
+    def observe_lived_site_followup(
+        self, *, world_step: int, position: tuple[int, int],
+        body_after: Mapping[str, float],
+    ) -> LivedSiteEffect | None:
+        """Consume next physical Perception, including adverse observations.
+
+        No WorldBody, effect prediction, causal attribution or Q update.
+        Failed/late/far-away followups are discarded, never fabricated.
+        """
+        if not self.config.experienced_site_effects:
+            return None
+        if (type(world_step) is not int or world_step < 1
+            or type(position) is not tuple or len(position) != 2
+            or any(type(x) is not int for x in position)
+            or not isinstance(body_after, Mapping)
+            or any(type(body_after.get(k)) not in (float, int)
+                   or not isfinite(body_after[k])
+                   or not 0 <= body_after[k] <= 100
+                   for k in _BODY_SITE_VARIABLES)):
+            raise ValueError("invalid first-person site followup")
+        pending = self._site_pending
+        if pending is None or world_step <= pending["step"]:
+            return None
+        self._site_pending = None
+        if (world_step != pending["step"] + 1
+            or position != pending["position"]):
+            return None
+        before = pending["before"]
+        delta = tuple(float(body_after[k]) - before[i]
+                      for i, k in enumerate(_BODY_SITE_VARIABLES))
+        old = self._site_effects.get(position)
+        if old is None and len(self._site_effects) >= self.config.max_distinct_sites:
+            return None
+        count = 1 if old is None else min(_SITE_SAMPLE_CAP, old.samples + 1)
+        weight = 1.0 / count
+        good = tuple(
+            max(0.0, value) if old is None else
+            old.favorable[i] * (1.0 - weight) + max(0.0, value) * weight
+            for i, value in enumerate(delta)
+        )
+        bad = tuple(
+            max(0.0, -value) if old is None else
+            old.adverse[i] * (1.0 - weight) + max(0.0, -value) * weight
+            for i, value in enumerate(delta)
+        )
+        recorded = LivedSiteEffect(
+            position=position, last_observed_step=world_step,
+            samples=count, favorable=good, adverse=bad,
+        )
+        recorded.validate()
+        self._site_effects[position] = recorded
+        return recorded
 
     @property
     def place_memories(self) -> tuple[PlaceMemory, ...]:
@@ -597,6 +733,15 @@ class GeographicExploration:
                 else list(self._last_capture)
             ),
             "offered": [asdict(t) for t in self._offered],
+            **({
+                "lived_site_effects": [asdict(x) for x in self.lived_site_effects],
+                "pending_site_action": (
+                    None if self._site_pending is None
+                    else {**self._site_pending,
+                          "position": list(self._site_pending["position"]),
+                          "before": list(self._site_pending["before"])}
+                ),
+            } if self.config.experienced_site_effects else {}),
             **({"entity_places": [asdict(x) for x in self.place_memories],
                 "place_observer_id": self._place_observer_id,
                 "place_offered": [asdict(x) for x in self._place_offered],
@@ -801,6 +946,64 @@ class GeographicExploration:
                 restored_motion[record.entity_type] = record
         elif "motion_diagnoses" in state:
             raise ValueError("unexpected motion diagnosis")
+        # Stage11 canonical lived site association is strictly opt-in and
+        # restored atomically with the geographic owner. Reject forged future,
+        # alien/unobserved sites, malformed deltas and invalid pending effects.
+        site_effects = {}
+        site_pending = None
+        if self.config.experienced_site_effects:
+            raw_effects = state.get("lived_site_effects")
+            raw_pending = state.get("pending_site_action")
+            if (not isinstance(raw_effects, list)
+                or len(raw_effects) > self.config.max_distinct_sites):
+                raise ValueError("corrupt site association snapshot")
+            for row in raw_effects:
+                if (not isinstance(row, Mapping)
+                    or set(row) != set(LivedSiteEffect.__dataclass_fields__)):
+                    raise ValueError("invalid lived site association fields")
+                item = LivedSiteEffect(
+                    position=tuple(row["position"]),
+                    last_observed_step=row["last_observed_step"],
+                    samples=row["samples"],
+                    favorable=tuple(row["favorable"]),
+                    adverse=tuple(row["adverse"]),
+                )
+                item.validate()
+                if (item.position in site_effects
+                    or item.position not in visited
+                    or last is None
+                    or item.last_observed_step > last[0]):
+                    raise ValueError("future or unvisited site association")
+                site_effects[item.position] = item
+            if raw_pending is not None:
+                if (not isinstance(raw_pending, Mapping)
+                    or set(raw_pending) != {
+                        "step", "position", "before", "primitive", "option_ref",
+                    }):
+                    raise ValueError("invalid pending lived site receipt")
+                point = tuple(raw_pending["position"])
+                before = tuple(raw_pending["before"])
+                if (last is None or point not in visited
+                    or (last[0], *point) != last
+                    or type(raw_pending["step"]) is not int
+                    or raw_pending["step"] != last[0]
+                    or len(before) != 4
+                    or any(type(x) not in (int, float)
+                           or not isfinite(x) or not 0 <= x <= 100 for x in before)
+                    or type(raw_pending["primitive"]) is not str
+                    or raw_pending["primitive"] in ("se_deplacer", "attendre", "dormir")
+                    or not raw_pending["primitive"]
+                    or type(raw_pending["option_ref"]) is not str
+                    or not raw_pending["option_ref"]):
+                    raise ValueError("invalid authentic pending site action")
+                site_pending = {
+                    "step": raw_pending["step"], "position": point,
+                    "before": before, "primitive": raw_pending["primitive"],
+                    "option_ref": raw_pending["option_ref"],
+                }
+        elif ("lived_site_effects" in state or "pending_site_action" in state):
+            raise ValueError("site evidence in disabled geographic owner")
+
         self._motion = restored_motion
         self._motion_updates = ()
         self._places = places
@@ -811,3 +1014,5 @@ class GeographicExploration:
         self._offered = tuple(offered)
         self._surveys = restored_surveys
         self._transit_offered = restored_transits
+        self._site_effects = site_effects
+        self._site_pending = site_pending
