@@ -57,8 +57,9 @@ class IndependentLocalOriginalWAL(unittest.TestCase):
     def test_unregistered_not_selected(self):
         rows = [r for r in trace() if r["kind"] !=
                 "i1_local_opportunity_registration"]
-        with self.assertRaises(ValueError):
-            module.classify(rows, treatment=True)
+        result = module.classify(rows, treatment=True)
+        self.assertEqual(result["funnel"]["registered"], 0)
+        self.assertEqual(result["funnel"]["proposed_unregistered"], 1)
 
     def test_false_physical_match_never_certified(self):
         rows = trace()
