@@ -194,6 +194,12 @@ def _runtime_contract(runtime: Any) -> str:
         configuration = (*configuration, (
             CONTRACT, True, MAX_RELEVANCE, RELEVANCE_WATER_GATE,
         ))
+    if getattr(runtime, "_i1_critical_alert_reentry_guard", False):
+        from .i1_natural_runtime import _CRITICAL_ALERT_SLEEP_GUARD
+        configuration = (*configuration, (
+            _CRITICAL_ALERT_SLEEP_GUARD, True,
+            tuple(sorted(runtime._stage10_config.critical_body_thresholds.items())),
+        ))
     return sha256_hex(canonical_causal_bytes(_contract_value(configuration)))
 
 
