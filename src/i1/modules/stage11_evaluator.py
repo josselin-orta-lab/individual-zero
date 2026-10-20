@@ -9,13 +9,66 @@ from .stage8_evaluator import Stage8OptionEvaluator
 
 
 class Stage11OptionEvaluator(Stage9OptionEvaluator):
-    def __init__(self, *, exploration, intrinsic_weight, instrumental_planning=None, **kwargs):
+    def __init__(self, *, exploration, intrinsic_weight, instrumental_planning=None,
+                 site_needs_config=None, **kwargs):
         super().__init__(**kwargs)
         if not isfinite(intrinsic_weight) or intrinsic_weight < 0:
             raise ValueError("P-15 intrinsic weight must be finite and nonnegative")
+        if site_needs_config is not None:
+            site_needs_config.validate()
         self._exploration = exploration
         self._intrinsic_weight = intrinsic_weight
         self._instrumental_planning = instrumental_planning
+        self._site_needs_config = site_needs_config
+
+    def _experienced_site_context(self, *, target, body, t_monde):
+        """Bounded valence from one's OWN observed bodily effects at a site.
+
+        Generic four need variables, personally witnessed action and followup
+        only, with negative/contradictory effects and recency. A past
+        association is NOT a predicted utility or action-specific causality.
+        """
+        cfg = self._site_needs_config
+        geo = self._exploration.geographic
+        if cfg is None or geo is None or not geo.config.experienced_site_effects:
+            return 0.0, None
+        owner = geo.site_effect_for(tuple(target.observed_position))
+        if owner is None or owner.last_observed_step >= t_monde:
+            return 0.0, None
+        variables = ("energy", "food", "water", "integrity")
+        total_weight = max(cfg.weights.values(), default=0.0)
+        if total_weight <= 0:
+            return 0.0, None
+        favorable = adverse = 0.0
+        for i, name in enumerate(variables):
+            current = float(body[name])
+            if not isfinite(current) or not 0 <= current <= 100:
+                raise ValueError("invalid first-person body for lived place")
+            deficit = max(0.0, min(1.0,
+                (cfg.setpoints[name] - current) / cfg.normalization_scales[name]
+            ))
+            pressure = deficit * cfg.weights[name] / total_weight
+            favorable += pressure * owner.favorable[i] / 100.0
+            # A personally witnessed adverse effect stays worth considering,
+            # even when its related homeostatic need is not yet urgent.
+            adverse += max(0.15, pressure) * owner.adverse[i] / 100.0
+        net = favorable - adverse
+        if net == 0:
+            return 0.0, None
+        age = t_monde - owner.last_observed_step
+        hops = len(target.visited_path) - 1
+        relevance = max(-0.25, min(0.25,
+            0.5 * net * target.confidence
+            * min(1.0, owner.samples / 2.0)
+            / (1.0 + age / 120.0)
+            / (1.0 + 0.1 * (hops - 1))
+        ))
+        if relevance == 0:
+            return 0.0, None
+        return relevance, (
+            f"lived-site:{owner.position[0]}:{owner.position[1]}"
+            f":observed-t{owner.last_observed_step}"
+        )
 
     @staticmethod
     def _safe_causal_test_shape(proposal):
@@ -226,17 +279,27 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             # has no prelearned nutritional value. Stage8 TD stays authoritative.
             value = min(0.12, self._intrinsic_weight * 0.12 * target.confidence)
             ext = 0.0 if original.evidence is None else original.evidence
+            context, context_ref = self._experienced_site_context(
+                target=target, body=evaluation_state.body, t_monde=t_monde,
+            )
+            signals = tuple(original.evaluation.signal_ids) + (
+                f"place-memory:{target.entity_id}:seen-t{target.observed_step}",
+            )
+            producers = original.evaluation.producers + ("exploration:entity_place_recall",)
+            if context_ref is not None:
+                if context_ref in signals:
+                    raise ValueError("duplicate personally experienced site evidence")
+                signals += (context_ref,)
+                producers += ("exploration:lived_site_context_not_causal",)
             assessment = replace(
                 original.evaluation, status="evaluated",
                 intrinsic_status="applicable", intrinsic_value=value,
-                signal_ids=tuple(original.evaluation.signal_ids) + (
-                    f"place-memory:{target.entity_id}:seen-t{target.observed_step}",
-                ),
-                producers=tuple(dict.fromkeys(
-                    original.evaluation.producers + ("exploration:entity_place_recall",)
-                )),
+                signal_ids=signals,
+                producers=tuple(dict.fromkeys(producers)),
             )
-            scored = OptionEvidenceInput(assessment, max(-1.0, min(1.0, ext + value)))
+            scored = OptionEvidenceInput(
+                assessment, max(-1.0, min(1.0, ext + value + context)),
+            )
             scored.validate()
             return scored
         if proposal.option.motive_ref.type == "cible_exploration":
