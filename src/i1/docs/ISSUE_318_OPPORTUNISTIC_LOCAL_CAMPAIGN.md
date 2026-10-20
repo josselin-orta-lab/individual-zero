@@ -37,3 +37,29 @@
 - Fresh preselected seeds: `21121, 21227, 21341, 21467`, two worlds (`memory-corridor`, `water-isolated-corridor`), two arms (`baseline`, `cross_goal_local`), 300-step horizon, **new births only**. Scripts `tools/run_i1_318_independent_local_cohort.py` and `tests/i1/test_i1_318_independent_local_cohort.py`. Birth workflow [#39385691970](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39385691970), initially RUNNING. Source SHA `8b5b731aa80eb4803d6dbb9e5c1ef82bc7ded230`.
 - This campaign cannot yet establish a causal effect. Its two arms preserve the original common paid memory ranking; no water/food action is ordered by the intervention. Classifying first-person perception, distinct registration, Competition crossings, physical effects and future learning from the **original** WAL remains required. A successful workflow execution does not alone satisfy the scientific GO gate.
 - Current-model CI on the same commit [#39385699558](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39385699558): pending at the checkpoint. Canonical goal-calibration [#39385699442](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39385699442) SUCCESS. Do not conflate pipeline statuses.
+
+
+## Independent original-WAL certification: completed
+
+The [read-only independent audit #39388388663](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39388388663) finished SUCCESS. All 16 original mortal WALs were authenticated without a single life replay. The original source is `8b5b731aa80eb4803d6dbb9e5c1ef82bc7ded230`; the reports' two stale protocol labels are retained and explicitly flagged.
+
+Independent physical totals:
+
+| Original physical measure | Baseline (8 lives) | Independent local (8 lives) |
+| --- | ---: | ---: |
+| Dead by 300-step horizon | 1 | 0 |
+| Physically lived steps | 2389 | 2400 |
+| Physically accepted `boire` | 14 | 21 |
+| Physically accepted `collecter` | 22 | 56 |
+| `manger` | 22 | 26 |
+| Physical `se_deplacer` | 26 | 129 |
+| Physical `dormir` | 2135 | 1766 |
+| Consolidated objects | 859 | 768 |
+| Accepted cognitive UC | 91413 | 95916 |
+| Positive first-person water follow-ups | 14 | 19 |
+
+For the experimental arm alone, `i1_local_opportunity_perceived` occurred in 2587 paid cognitive cycles; 597 goal-neutral local candidates were proposed, 597 registered and evaluated, 113 crossed Competition and **87 physically acted** after Action Control. Another 26 crossed but were not proven physically admitted. The evaluator marked 529 local candidate evaluations with Q previously learned in its context; this count is **not** 529 independent learned abilities or a proof of TD causality. There were 1420 TD updates involving the broad `i1:affordance:` family, including goal-bound proposals; do not attribute them all to this independent local producer.
+
+**Interpretation:** a local opportunity can now really reach Competition and result in physical action independently of the currently active goal. More drinking, collection and movement occurred in this small matched cohort, while aggregate consolidation decreased and cognitive UC increased. Correlation is not a controlled mediation proof: 8 matched pairs, only one differential death, shared learned-place ranking intervention, no long-run population and no cold M11 parity of the newly active producer. Therefore **NO-GO for canonical promotion**, not an endorsed configuration.
+
+Certified audit code `tools/audit_i1_318_independent_local_cohort.py`, adversarial tests `tests/i1/test_i1_318_independent_local_original_audit.py`; run workflow `.github/workflows/i1-issue318-independent-local-original-audit.yml`. Current priority: determine whether independently added local candidates can perturb a legitimate goal option due to duplicate cognitive demand; add a simultaneous-options integration test and M11 same-generation cold recovery before evaluating generalization.
