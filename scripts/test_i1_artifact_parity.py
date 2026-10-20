@@ -871,10 +871,10 @@ _EXPERIENCED_318_BLOBS = {
          "5579f0b9854e324a03510a86a532a4027fc4a1e9"),
     "i1lab/i1_natural_runtime.py":
         ("src/i1/runtime/i1_natural_runtime.py",
-         "0f6d683e9d1488250037aafcda06f276ab946157"),
+         "e2430cc315d4c5c8d42fd098ccaac14ebda89ea9"),
     "i1lab/m11_transactional_mortal.py":
         ("src/i1/runtime/m11_transactional_mortal.py",
-         "cda4011f4209d74ee26f46028a5ad8ddada6a2ed"),
+         "943c0c1752b877f80fc8da39e91180d6836debee"),
 }
 
 
