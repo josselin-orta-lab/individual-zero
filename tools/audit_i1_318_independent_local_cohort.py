@@ -185,9 +185,6 @@ def classify(events, *, treatment):
         _check(key in proposed, "local Stage8 score without a proposal")
     for key in traces:
         _check(key in proposed, "local Competition trace without a proposal")
-    for key, entries in proposed.items():
-        _check(any(e[0] < entries[0] for e in [] ) is False,
-               "internal ordering check")
     _check(stages["physically_applied"] <= stages["crossed"] <=
            stages["evaluated"] <= stages["registered"] <= stages["proposed"],
            "inconsistent local funnel")
