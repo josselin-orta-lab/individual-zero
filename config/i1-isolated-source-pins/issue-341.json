@@ -1,0 +1,7 @@
+{
+  "schema": "i1-isolated-source-pin-v1",
+  "issue": 341,
+  "generated": "i1/experimental/witnessed_site_samples.py",
+  "native": "src/i1/experimental/witnessed_site_samples.py",
+  "blob_sha1": "d5ee9684d7996dcc2e1f1c0609a860bbb68e5a44"
+}
