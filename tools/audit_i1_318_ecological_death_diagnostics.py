@@ -10,7 +10,7 @@ from collections import Counter
 import json
 from pathlib import Path
 
-from audit_i1_317_two_process_cohort import _check
+from audit_i1_317_two_process_cohort import _check, _number
 from audit_i1_318_long_horizon_evidence import (
     ARMS, PRESETS, SEEDS, SOURCE_SHA, audit as certify,
 )
@@ -44,9 +44,7 @@ def analyse(root):
                 last=physical[-1].get("body_after")
                 _check(type(last) is dict and all(field in last for field in FIELDS),
                        "last witnessed body is unavailable")
-                terminal={field:last[field] for field in FIELDS}
-                _check(all(type(v) in (float,int) for v in terminal.values()),
-                       "invalid observed physiological state")
+                terminal={field:_number(last[field]) for field in FIELDS}
                 counts=Counter(e.get("primitive") for e in commands)
                 first_local=min((e.get("t_monde") for e in receptions),default=None)
                 record={
