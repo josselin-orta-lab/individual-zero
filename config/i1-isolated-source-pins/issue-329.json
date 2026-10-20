@@ -1,0 +1,7 @@
+{
+  "schema": "i1-isolated-source-pin-v1",
+  "issue": 329,
+  "generated": "i1/experimental/critical_alert_wake.py",
+  "native": "src/i1/experimental/critical_alert_wake.py",
+  "blob_sha1": "595c672d03b414a36c7a8dcc988c9100cd429663"
+}

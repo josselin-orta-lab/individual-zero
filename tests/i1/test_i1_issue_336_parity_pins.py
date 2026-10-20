@@ -7,6 +7,8 @@ import unittest
 
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/"scripts"))
+import test_i1_artifact_parity as parity
+from unittest.mock import patch
 from test_i1_artifact_parity import (
     _ISOLATED_PINS_DIR, _approved_isolated_experimental,
     _load_isolated_source_pins,
@@ -20,6 +22,7 @@ class IsolatedSourcePinTest(unittest.TestCase):
             "i1/experimental/intention_continuity.py",
             "i1/experimental/local_opportunity_selection.py",
             "i1/experimental/experienced_place_relevance.py",
+            "i1/experimental/critical_alert_wake.py",
         })
         with TemporaryDirectory() as folder:
             root=Path(folder)
@@ -60,6 +63,30 @@ class IsolatedSourcePinTest(unittest.TestCase):
                 _load_isolated_source_pins(root)
         with self.assertRaises(ValueError):
             _load_isolated_source_pins(Path("/missing-i1-source-pins-336"))
+
+
+    def test_stale_but_well_formed_blob_and_absent_native_source(self):
+        with TemporaryDirectory() as folder:
+            root=Path(folder)
+            record=json.loads((_ISOLATED_PINS_DIR/"issue-326.json").read_text())
+            rel=record["generated"]
+            output=root/"generated"
+            artifact=output/rel
+            artifact.parent.mkdir(parents=True,exist_ok=True)
+            artifact.write_bytes(b"exists-but-not-an-attestation")
+            manifest=root/"issue-326.json"
+            record["blob_sha1"]="0"*40
+            manifest.write_text(json.dumps(record),encoding="utf-8")
+            with patch.object(parity,"_ISOLATED_PINS_DIR",root):
+                self.assertFalse(parity._approved_isolated_experimental(output,rel))
+            record["generated"]="i1/experimental/unknown_future_module.py"
+            record["native"]="src/"+record["generated"]
+            manifest.write_text(json.dumps(record),encoding="utf-8")
+            future=output/record["generated"]
+            future.write_bytes(b"not-in-native-tree")
+            with patch.object(parity,"_ISOLATED_PINS_DIR",root):
+                self.assertFalse(parity._approved_isolated_experimental(
+                    output,record["generated"]))
 
 
 if __name__=="__main__":

@@ -1,6 +1,6 @@
 # #336: exact per-issue attestations for dormant I1 experiments
 
-The old inline `_approved_experimental_326/327/328` functions in
+The old inline `_approved_experimental_326/327/328/329` functions in
 `scripts/test_i1_artifact_parity.py` are replaced with exact source-pin
 manifests in `config/i1-isolated-source-pins/issue-<number>.json`.
 
