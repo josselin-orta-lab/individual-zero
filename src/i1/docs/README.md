@@ -22,6 +22,8 @@
 - [STAGES_AND_INTERFACES.md](STAGES_AND_INTERFACES.md): executable Stage ownership, multiple inheritance, data handoffs and intervention map
 - [UC_AND_SCHEDULING.md](UC_AND_SCHEDULING.md): two independent logical UC ledgers, actual charge points, failure diagnosis
 - [EXPERIMENT_PROTOCOL.md](EXPERIMENT_PROTOCOL.md): independent mortal lives, controls, traces and limits of scientific inference
+- [ISSUE_317_STAGED_INTEGRATION.md](ISSUE_317_STAGED_INTEGRATION.md): stable personally grounded memory option ID and gated retention across steps
+- [STATUS.md](STATUS.md): verified staged #318 integration ledger and remaining review boundaries
 
 ## Authority
 
