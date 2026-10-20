@@ -206,8 +206,12 @@ def _runtime_contract(runtime: Any) -> str:
             I1_OPPORTUNISTIC_POLICY, True,
             tuple(sorted(I1_OPPORTUNISTIC_ACTIONS)),
             getattr(runtime, "_i1_local_q_exposure", "learned"),
-            getattr(runtime, "_i1_research_temperament_source_id", None),
         ))
+        research_twin = getattr(runtime, "_i1_research_temperament_source_id", None)
+        if research_twin is not None:
+            configuration = (*configuration, (
+                "i1-research-twin-temperament-source-v1", research_twin,
+            ))
     return sha256_hex(canonical_causal_bytes(_contract_value(configuration)))
 
 
