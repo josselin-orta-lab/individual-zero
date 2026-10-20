@@ -24,6 +24,12 @@
 - [EXPERIMENT_PROTOCOL.md](EXPERIMENT_PROTOCOL.md): independent mortal lives, controls, traces and limits of scientific inference
 - [ISSUE_317_STAGED_INTEGRATION.md](ISSUE_317_STAGED_INTEGRATION.md): stable personally grounded memory option ID and gated retention across steps
 - [STATUS.md](STATUS.md): verified staged #318 integration ledger and remaining review boundaries
+- [ISSUE_330_STABLE_GEOGRAPHIC_IDENTITY.md](ISSUE_330_STABLE_GEOGRAPHIC_IDENTITY.md): exact local frontier/transit identity from fresh observations
+- [ISSUE_326_IMPLEMENTATION.md](ISSUE_326_IMPLEMENTATION.md): dormant and bounded intention-continuation prototype, issue #326
+- [ISSUE_327_IMPLEMENTATION.md](ISSUE_327_IMPLEMENTATION.md): dormant local-opportunity and Q exposure selectors, issue #327
+- [ISSUE_328_IMPLEMENTATION.md](ISSUE_328_IMPLEMENTATION.md): dormant personally experienced place-relevance adapter, issue #328
+- [ISSUE_329_IMPLEMENTATION.md](ISSUE_329_IMPLEMENTATION.md): dormant read-only bodily alert classifier, issue #329
+- [ISSUE_336_PARITY_REGISTRY.md](ISSUE_336_PARITY_REGISTRY.md): exact per-issue source pin manifests for inactive I1 modules
 
 ## Authority
 
