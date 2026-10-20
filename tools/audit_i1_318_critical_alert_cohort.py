@@ -62,6 +62,10 @@ def inspect_wal(wal, expected_arm, world_steps):
     captures, admitted_personal, proposals = {}, {}, {}
     scores, traces, signals, command_by_step, admits = {}, {}, [], {}, {}
     uc_by_step = Counter()
+    alerted_wake_steps = set()
+    withheld = {}
+    registered_sleep = {}
+    competition_sleep_keys = set()
     # GoalManager may legitimately change the active goal AFTER Planning
     # captured its old goal label, but BEFORE Stage8 evaluates the candidate.
     # WAL event order, not the earlier proposal annotation, is the authority.
@@ -75,7 +79,36 @@ def inspect_wal(wal, expected_arm, world_steps):
                 event["kind"], event.get("t_monde"),
                 event.get("cycle"), event.get("data", {}),
             )
-            if kind == "active_goal_changed":
+            if kind == "stage10_sleep_woke":
+                if data.get("reason") == "alert":
+                    require(type(step) is int and step not in alerted_wake_steps,
+                            "duplicated alert wake event")
+                    alerted_wake_steps.add(step)
+            elif kind == "i1_critical_alert_sleep_option_withheld":
+                ref = data.get("option_ref")
+                key = (step, cycle, ref)
+                require(
+                    expected_arm == "critical_alert_gate"
+                    and type(step) is int and type(cycle) is int
+                    and type(ref) is str and ref.startswith("option:sleep-pressure:")
+                    and key not in withheld
+                    and data.get("world_step") == step
+                    and data.get("policy") ==
+                        "i1-critical-bodily-alert-awake-opportunity-v1"
+                    and data.get("duration") == "this_awake_step_only"
+                    and data.get("wake_reason") == "alert"
+                    and data.get("already_charged") is True
+                    and type(data.get("critical_body_channels")) is list
+                    and bool(data["critical_body_channels"]),
+                    "experimental sleep exclusion lacks owned wake evidence")
+                withheld[key] = tuple(data["critical_body_channels"])
+            elif kind == "stage10_sleep_option_registered":
+                key = (step, cycle, data.get("option_ref"))
+                require(key not in registered_sleep
+                        and type(data.get("accepted")) is bool,
+                        "duplicated or invalid sleep registration receipt")
+                registered_sleep[key] = data["accepted"]
+            elif kind == "active_goal_changed":
                 before, after = data.get("before"), data.get("after")
                 require(before is None or
                         (type(before) is dict and
@@ -104,6 +137,12 @@ def inspect_wal(wal, expected_arm, world_steps):
                         data["position"]["x"], data["position"]["y"]),
                     "water": number(
                         data.get("dual_scope_visible_body", {}).get("water")),
+                    "food": number(
+                        data.get("dual_scope_visible_body", {}).get("food")),
+                    "integrity": number(
+                        data.get("dual_scope_visible_body", {}).get("integrity")),
+                    "energy": number(
+                        data.get("dual_scope_visible_body", {}).get("energy")),
                 }
             elif kind == "i1_water_lived_outcome_admitted":
                 site = data.get("source_position")
@@ -163,6 +202,9 @@ def inspect_wal(wal, expected_arm, world_steps):
             elif kind == "competition_cycle":
                 for trace in data.get("traces", ()):
                     key = (step, cycle, trace.get("option_ref"))
+                    if type(key[2]) is str and key[2].startswith(
+                            "option:sleep-pressure:"):
+                        competition_sleep_keys.add(key)
                     if key not in proposals:
                         continue
                     require(key not in traces, "duplicate place Competition trace")
@@ -198,6 +240,26 @@ def inspect_wal(wal, expected_arm, world_steps):
 
     require(set(command_by_step) == set(range(1, world_steps + 1)),
             "world steps not physically executed exactly once")
+    distinct_withheld_steps = set()
+    for (step, cycle, ref), channels in withheld.items():
+        require(step in alerted_wake_steps and step in captures,
+                "sleep withheld without real bodily alert and full re-perception")
+        body = captures[step]
+        required = tuple(k for k, cutoff in (
+            ("water", 15.0), ("food", 10.0), ("integrity", 25.0))
+            if body[k] <= cutoff)
+        require(body["energy"] > 10 and bool(required)
+                and channels == required,
+                "withheld sleep has invented, omitted or stale bodily urgency")
+        key = (step, cycle, ref)
+        require(registered_sleep.get(key) is False
+                and key not in competition_sleep_keys,
+                "sleep withholding leaked into the Competition candidates")
+        require(command_by_step[step][0] != "dormir",
+                "critical alert gate failed at physical Action Control")
+        distinct_withheld_steps.add(step)
+    require(expected_arm != "baseline" or not withheld,
+            "control arm was not treatment-free")
     acknowledged = []
     for key in signals:
         step, cycle, option_ref = key
@@ -240,9 +302,11 @@ def inspect_wal(wal, expected_arm, world_steps):
             "crossed": trace["crossed"],
             "option_physically_admitted": accepted_choice,
         })
-    require(expected_arm != "baseline" or not signals,
-            "control arm must never add experiential signal")
+    require(not signals,
+            "both alert-study arms must leave experiential Stage8 OFF")
     return {
+        "original_sleep_candidate_exclusions": len(withheld),
+        "physical_alert_wake_steps_protected": len(distinct_withheld_steps),
         "signal_count_attested_in_wal": len(acknowledged),
         "signal_crossings": sum(x["crossed"] for x in acknowledged),
         "stage8_live_goal_transitions_verified": sum(
@@ -266,8 +330,9 @@ def paired_effect(control, treated):
                       if step < before)
     experimental_uc = sum(n for step, n in treated["accepted_uc_by_step"].items()
                           if step < before)
-    require(baseline_uc == experimental_uc,
-            "cognitive budget differs before first executed motor divergence")
+    # Unlike Stage8-only studies, withdrawing a sleep candidate deliberately
+    # removes its later competition evaluation/accumulation costs BEFORE
+    # any motor divergence. Do not assert equality or infer an efficiency win.
     changed = []
     for key, extra in treated["competition_traces"].items():
         original = control["competition_traces"].get(key)
@@ -294,8 +359,10 @@ def paired_effect(control, treated):
         "first_physical_motor_divergence": first,
         "control_motor": None if first is None else a[first],
         "treatment_motor": None if first is None else b[first],
-        "accepted_uc_equal_before_first_divergence": True,
-        "charged_uc_until_first_divergence_exclusive": baseline_uc,
+        "accepted_uc_equal_before_first_divergence": baseline_uc == experimental_uc,
+        "control_uc_before_first_divergence": baseline_uc,
+        "treatment_uc_before_first_divergence": experimental_uc,
+        "treatment_minus_control_uc_before_first_divergence": experimental_uc - baseline_uc,
         "comparable_place_score_increases": len(changed),
         "new_matched_place_threshold_crossings": len(relevant_crossings),
         "new_crossing_at_first_motor_change": bool(at_first),
@@ -420,6 +487,12 @@ def certify(root):
             totals["physical_moves"] += actual["actions"].get("se_deplacer", 0)
             totals["objects_consolidated"] += actual["objects_consolidated"]
             totals["accepted_uc"] += actual["accepted_cognitive_uc"]
+            totals["physical_dormir"] += actual["actions"].get("dormir", 0)
+            totals["physical_attendre"] += actual["actions"].get("attendre", 0)
+            totals["physical_alert_wake_steps_protected"] += (
+                evidence["physical_alert_wake_steps_protected"])
+            totals["sleep_candidate_exclusions_WAL_certified"] += (
+                evidence["original_sleep_candidate_exclusions"])
             totals["lived_beneficial_sites"] += (
                 lived["positive_sites_physically_supported"])
             totals["WAL_verified_relevance_signals"] += (
@@ -487,9 +560,11 @@ def certify(root):
         "status": "SIXTEEN_NATIVE_MORTAL_WAL_AUDITED_NO_GLOBAL_GO",
         "source_run": EXACT_RUN, "exact_source_sha": EXACT_SHA,
         "certified_original_mortal_WAL_paths": 16,
-        "same_initial_search_cost_tested_by_step": True,
+        "same_initial_recall_algorithm_not_equal_actual_uc": True,
+        "uc_equality_before_motor_divergence_not_assumed": True,
         "no_new_lives_born_by_audit": True,
         "research_intervention_WAL_visible": True,
+        "not_a_survival_improvement_claim": True,
         "research_adapter_M11_cold_recovery_proven": False,
         "human_equivalence_proven": False,
         "scientific_verdict": "NO-GO",
