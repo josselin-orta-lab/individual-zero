@@ -151,9 +151,9 @@ class I1Runtime(I1WaterPrudentRuntime):
         # when this exact opt-in is selected. No public birth exposes it.
         self._i1_local_q_exposure = kwargs.pop(
             "i1_local_q_exposure", "learned")
-        if self._i1_local_q_exposure not in ("learned", "neutral"):
+        if self._i1_local_q_exposure not in ("learned", "neutral", "rank_only", "evidence_only"):
             raise ValueError("invalid I1 independent-local Q exposure")
-        if (self._i1_local_q_exposure == "neutral"
+        if (self._i1_local_q_exposure != "learned"
                 and not self._i1_cross_goal_local_opportunities):
             raise ValueError("neutral local Q requires independent local options")
         if goal_policy not in _I1_GOAL_POLICIES:
