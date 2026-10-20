@@ -1,10 +1,6 @@
 name: 'I1 #318 prospective local Q ablation 16 births'
+# Historical paired seeds are sealed; no automatic reruns.
 on:
-  push:
-    branches: [fix/i1-memory-competition-317]
-    paths:
-      - 'tools/run_i1_318_local_q_ablation_cohort.py'
-      - '.github/workflows/i1-issue318-local-q-ablation.yml'
   workflow_dispatch:
 permissions:
   contents: read
