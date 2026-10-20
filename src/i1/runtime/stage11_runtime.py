@@ -1211,6 +1211,8 @@ class Stage11Runtime(Stage9Runtime):
                 and prior.plan.steps[0].command.primitive == "se_deplacer"
                 and control_ref == prior.option.id
                 and applied_steps == 1
+                and self.competition.last_proposed_step_for(prior.option.id)
+                    == capture.t_monde - 1
                 and prior.option.expires_at_step > capture.t_monde - 1):
                 for target in geo.place_offered:
                     prior_semantic = prior.option.learning_signature
@@ -1263,9 +1265,6 @@ class Stage11Runtime(Stage9Runtime):
                     IntentEvidence, bounded_continuation,
                 )
                 # Personal arrival corroborates the last applied step.
-                prior_target = prior.option.motive_ref.id
-                from_part = prior_target.split(":from:", 1)[1].split(":via:", 1)[0]
-                coords = tuple(int(x) for x in from_part.split(":"))
                 prior_evidence = IntentEvidence(
                     semantic_ref=prior.option.learning_signature,
                     last_applied_step=capture.t_monde - 1,
