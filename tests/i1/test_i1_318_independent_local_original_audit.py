@@ -58,14 +58,14 @@ class IndependentLocalOriginalWAL(unittest.TestCase):
         rows = [r for r in trace() if r["kind"] !=
                 "i1_local_opportunity_registration"]
         result = module.classify(rows, treatment=True)
-        self.assertEqual(result["funnel"]["registered"], 0)
+        self.assertEqual(result["funnel"].get("registered", 0), 0)
         self.assertEqual(result["funnel"]["proposed_unregistered"], 1)
 
     def test_false_physical_match_never_certified(self):
         rows = trace()
         rows[-1]["command_hash"] = "unrelated"
         result = module.classify(rows, treatment=True)
-        self.assertEqual(result["funnel"]["physically_applied"], 0)
+        self.assertEqual(result["funnel"].get("physically_applied", 0), 0)
         self.assertEqual(
             result["funnel"]["crossed_without_physically_admitted_command"], 1)
 
@@ -79,7 +79,7 @@ class IndependentLocalOriginalWAL(unittest.TestCase):
         rows = trace()
         rows[4]["data"]["traces"][0]["crossed"] = False
         result = module.classify(rows, treatment=True)
-        self.assertEqual(result["funnel"]["crossed"], 0)
+        self.assertEqual(result["funnel"].get("crossed", 0), 0)
 
 
 if __name__ == "__main__":
