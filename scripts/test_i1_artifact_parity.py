@@ -868,7 +868,7 @@ def _approved_issue317_blob(root: Path, rel: str) -> bool:
 _EXPERIENCED_318_BLOBS = {
     "i1lab/i1_active_runtime.py":
         ("src/i1/runtime/i1_active_runtime.py",
-         "1d1bc78e06c7e062f54cdb4aca49512d3372b759"),
+         "cbc96f7c13507344b5c52eaa2938a51821185111"),
     "i1/modules/experienced_place_relevance.py":
         ("src/i1/modules/experienced_place_relevance.py",
          "5579f0b9854e324a03510a86a532a4027fc4a1e9"),
