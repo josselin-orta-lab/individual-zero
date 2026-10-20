@@ -16,7 +16,7 @@ class LocalCuriosity318(unittest.TestCase):
  def test_perceived_executable_commands_only(self):
   def command(name):
    return SimpleNamespace(primitive=name,parameters={})
-  offered=[command(p) for p in ("attendre","boire","manger","collecter","se_deplacer","dormir")]
+  offered=[command(p) for p in ("attendre","boire","manger","collecter","poser_une_pierre","fabriquer_outil","se_deplacer","dormir")]
   self.assertEqual(tuple(c.primitive for c in _local_interaction_choices(offered,enabled=True)),
                    ("boire","manger","collecter","poser_une_pierre","fabriquer_outil"))
   self.assertEqual(_local_interaction_choices(offered,enabled=False),())
