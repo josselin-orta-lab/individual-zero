@@ -2,6 +2,23 @@
 
 A change is acceptable only if it preserves autonomous, UC-priced, mortal and first-person cognition. Never write a target behavior and retroactively call it emergent.
 
+
+## Capability-first integration policy (campaign #348, 2026-10-20)
+
+Technical correctness, natural-engine activation, and scientific efficacy are **separate decisions**. Do not require an ecological survival advantage merely to merge a tested technical correction or to activate a safely integrated, architecture-consistent capability. Conversely, isolated research code in `main` is not an active capability.
+
+**L1 SOFTWARE:** A targeted correction may merge after exact-HEAD CI, source/generated parity and relevant positive/negative tests, without survival claims. Record whether the code executes or remains dormant.
+
+**L2 NATURAL CAPABILITY:** Activation needs a real `birth_i1` integration contract, observable full route from first-person input through evaluation, Competition, Action Control and applied effects (when applicable), UC accounting, M11 cold recovery or stateless reconstruction, invalidation/interruption and regression tests against existing goal options. Scientific benefit may remain `NOT_ESTABLISHED`; an unsafe or nonfunctional activation is BLOCKED. Avoid artificial action priorities, hardcoded food/water mappings or fabricated rewards.
+
+**L3 SCIENCE:** Learning benefit, survival advantage and generalization remain independent empirical questions for prospective research. Record `GO`, `NO_GO`, `INCONCLUSIVE`, or `NOT_OBSERVED` without silently converting an L1/L2 pass into scientific proof. Previously defective-model cohorts are not acceptance oracles.
+
+**Merge decision:** merge a passing L1-only improvement explicitly as *dormant*, or a passing L2 capability as *active*. A dormant component must have a follow-up activation issue and a disposition (activate/refactor/remove), never count as delivered cognition. A structural invariant failure blocks merge. Check exact-commit Python 3.11/3.12 CI; no need for new population/behavioral cohorts in integration-only PRs.
+
+**Concurrency and ownership:** prioritize two new active development PRs at most; retain research branches as provenance instead of merging them wholesale. Each issue owns one scope, one PR, explicit dependencies, negative tests and a closing decision. Rebase onto latest `main` and avoid stacking unrelated runtime changes. Document owner, configuration/birth activation, software evidence, scientific uncertainty and remaining blockers in [CAPABILITY_INTEGRATION.md](CAPABILITY_INTEGRATION.md).
+
+**Operating order:** #317/#326 intention continuity and revisitable choices; #327 independently considered local options; #328 lived place consequence relevance; #329 wake/needs/sleep arbitration. Every new motor step requires ordinary fresh arbitration even if the individual retains an intention.
+
 ## Before editing
 
 1. Fetch current `main`, PR #251 → #252 → #253 → #254 dependencies, target HEAD and GitHub CI. Identify the active engine via `config/engine-registry.json`.
