@@ -29,6 +29,8 @@ from i1.experimental.local_opportunity_selection import local_interaction_choice
 _PRIVATE_RECALL_VERSION = "i1-private-procedure-advisory-v1"
 _PRIVATE_RECALL_OPERATION = "i1_private_procedure_recall"
 _PRIVATE_RECALL_COST_UC = 1
+_OPTION_INTENTION_COST_UC = 1
+_OPTION_INTENTION_OPERATION = "i1_applied_option_intention"
 _PRIVATE_OBSERVED_FIELDS = {
     "boire": "drank",
     "collecter": "collected",
@@ -274,17 +276,20 @@ class I1Runtime(I1WaterPrudentRuntime):
             version=(original.version + "+" + _PRIVATE_RECALL_VERSION
                      + "+i1-goal-independent-local-v1"),
             cycle_ceiling=(original.cycle_ceiling + _PRIVATE_RECALL_COST_UC
-                           + local_planning + local_registration + local_evaluation),
+                           + local_planning + local_registration + local_evaluation
+                           + _OPTION_INTENTION_COST_UC),
             module_envelopes={
                 **original.module_envelopes,
                 "planning": (original.module_envelopes["planning"]
-                             + _PRIVATE_RECALL_COST_UC + local_planning),
+                             + _PRIVATE_RECALL_COST_UC + local_planning
+                             + _OPTION_INTENTION_COST_UC),
                 "competition": (original.module_envelopes["competition"]
                                 + local_registration + local_evaluation),
             },
             operation_costs={
                 **original.operation_costs,
                 _PRIVATE_RECALL_OPERATION: _PRIVATE_RECALL_COST_UC,
+                _OPTION_INTENTION_OPERATION: _OPTION_INTENTION_COST_UC,
             },
         )
         return replace(
@@ -475,6 +480,19 @@ class I1Runtime(I1WaterPrudentRuntime):
             preliminary_admissibility="indeterminate",
         )
         proposal.validate()
+        # Pay once for a bounded candidate-memory check and potential
+        # encoding before any motor action. A denied charge disables
+        # intention formation only, never cancels the original proposal.
+        intention_paid = self._charge(
+            module="planning", operation=_OPTION_INTENTION_OPERATION,
+        )
+        previous = (self.memory.recalled_applied_option(
+            signature=signature, world_step=capture.t_monde,
+        ) if intention_paid else False)
+        self._i1_option_intention_paid = (
+            identity if intention_paid else None
+        )
+        self._i1_option_intention_recalled = previous
         self._i1_pending["local_opportunity_evidence"] = {
             "option_ref": identity, "world_step": capture.t_monde,
             "affordance": True, "prior_evidence": prior,
@@ -492,6 +510,30 @@ class I1Runtime(I1WaterPrudentRuntime):
                   "predicted_result": None},
         )
         return proposal
+
+    def _dispatch_decision(self, *, proposal, prepared, admission,
+                           cycle, sent_t_monde):
+        execution = super()._dispatch_decision(
+            proposal=proposal, prepared=prepared, admission=admission,
+            cycle=cycle, sent_t_monde=sent_t_monde,
+        )
+        # No late WAL write. The M11 outer transaction exports owner state
+        # after the full natural run_step; Action Control already committed.
+        if (execution.status == "applied"
+            and not self._fallback_used_this_cycle
+            and getattr(self, "_i1_option_intention_paid", None)
+                == proposal.option.id
+            and proposal.option.provenance == "i1_unknown_affordance"
+            and proposal.option.motive_ref.type == "local_opportunity"
+            and proposal.plan is not None
+            and self.stage3.control.current_step[0] == proposal.option.id):
+            self.memory.remember_applied_option(
+                signature=proposal.option.learning_signature,
+                source_option_ref=proposal.option.id,
+                applied_step=sent_t_monde,
+                cost_uc=_OPTION_INTENTION_COST_UC,
+            )
+        return execution
 
     def _consider_uncertain_affordance(
         self, *, capture, goal, st_version, cycle, exact,
