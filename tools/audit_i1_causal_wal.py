@@ -50,7 +50,7 @@ def classify(events):
         elif kind=="i1_local_opportunity_proposed":
             d=e.get("data",{})
             opt=d.get("option_ref")
-            if not isinstance(opt,str) or not opt.startswith("option:i1-local:"):
+            if not isinstance(opt,str) or not opt.startswith("option:i1:local:"):
                 _fail("malformed local candidate")
             k=(t,opt)
             if k in proposals:
