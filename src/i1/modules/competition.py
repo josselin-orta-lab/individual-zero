@@ -502,7 +502,16 @@ class Competition:
         if self._engaged_option_id == option_ref:
             self._engaged_option_id = None
 
-    def close_deliberation(self, winner: OptionProposal | None) -> None:
+    def close_deliberation(
+        self, winner: OptionProposal | None, *, adjudicated: bool = True,
+    ) -> None:
+        # A physically applied fallback is not an adjudicated Competition win.
+        # It must not erode the evidence of unrelated still-viable options.
+        # Existing validity checks, expiry and capacity constraints remain.
+        if type(adjudicated) is not bool:
+            raise ValueError("Competition adjudication flag must be boolean")
+        if not adjudicated:
+            return
         winner_id = None if winner is None else winner.option.id
         for option_id, state in self._registry.items():
             if option_id == winner_id:
