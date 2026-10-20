@@ -86,7 +86,7 @@ with TemporaryDirectory() as location:
   assert second.status=="active" and second.generation==first.generation+1
 print("I1_361_PROSPECTIVE_M11_OK")
 """
-            env=dict(os.environ,PYTHONPATH=os.pathsep.join((str(built),str(ROOT/"src"))),PYTHONDONTWRITEBYTECODE="1")
+            env=dict(os.environ,PYTHONPATH=os.pathsep.join((str(built),str(ROOT/"src"),str(ROOT/"tools"))),PYTHONDONTWRITEBYTECODE="1")
             result=subprocess.run([sys.executable,"-B","-c",code],
                 cwd=ROOT,env=env,text=True,capture_output=True)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
