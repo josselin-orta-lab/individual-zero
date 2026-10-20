@@ -10,10 +10,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from heapq import nsmallest
+from math import isfinite
 from typing import Iterator, Mapping, Sequence
 
 from i0.contracts import Contribution, GoalProposal, STVersion
 from i0.requests import Request, Response
+
+_INTENTION_BODY_KEYS = frozenset({"energy", "food", "water", "integrity"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,7 +115,7 @@ class Intention:
             raise ValueError("invalid intention monitoring mode")
         if self.cost_uc < 0:
             raise ValueError("intention cost must be non-negative")
-        if self.state not in {"pending", "triggered", "done", "abandoned", "suspended"}:
+        if self.state not in {"pending", "triggered", "done", "abandoned", "suspended", "awaiting_observation"}:
             raise ValueError("invalid intention state")
         if self.deadline_step is not None and self.deadline_step < 0:
             raise ValueError("intention deadline must be non-negative")
@@ -126,13 +129,19 @@ class Intention:
                 "applied_step" if isinstance(witnessed, Mapping)
                 and "applied_step" in witnessed else "considered_step"
             )
+            extras = set()
+            if isinstance(witnessed, Mapping) and phase_key == "applied_step":
+                if "body_before" in witnessed:
+                    extras.add("body_before")
+                if "observed_step" in witnessed or "body_delta" in witnessed:
+                    extras.update({"observed_step", "body_delta"})
             if (self.goal_type != "option_reconsideration"
                 or type(self.target) is not str
                 or not self.target.startswith("i1:affordance:")
                 or len(self.target) > 256
                 or self.id != "intention:i1:option:" + self.target
                 or not isinstance(witnessed, Mapping)
-                or set(witnessed) != {phase_key, "source_option_ref"}
+                or set(witnessed) != {phase_key, "source_option_ref"} | extras
                 or type(witnessed[phase_key]) is not int
                 or witnessed[phase_key] < 1
                 or type(witnessed["source_option_ref"]) is not str
@@ -149,9 +158,35 @@ class Intention:
                 or self.base_pressure != 0.0
                 or self.wake_authorized is not False
                 or self.candidacy_active is not False
-                or self.state not in {"pending", "suspended", "abandoned", "done"}
-                or (self.state == "done" and phase_key != "applied_step")):
+                or self.state not in {
+                    "pending", "suspended", "abandoned", "done",
+                    "awaiting_observation",
+                }
+                or (self.state == "done" and phase_key != "applied_step")
+                or (self.state == "awaiting_observation"
+                    and extras != {"body_before"})
+                or (extras and phase_key != "applied_step")
+                or "body_before" in extras
+                   and self.state != "awaiting_observation"
+                or "observed_step" in extras
+                   and (self.state not in {"pending", "suspended", "abandoned"}
+                        or "body_before" in extras
+                        or type(witnessed.get("observed_step")) is not int
+                        or witnessed["observed_step"] != witnessed["applied_step"] + 1)):
                 raise ValueError("invalid first-person option intention")
+            for field, lo, hi in (
+                ("body_before", 0.0, 100.0),
+                ("body_delta", -100.0, 100.0),
+            ):
+                if field not in extras:
+                    continue
+                body = witnessed.get(field)
+                if (not isinstance(body, Mapping)
+                    or set(body) != _INTENTION_BODY_KEYS
+                    or any(type(v) not in (int, float)
+                           or not isfinite(v) or not lo <= v <= hi
+                           for v in body.values())):
+                    raise ValueError("invalid authenticated first-person bodily witness")
 
 
 
@@ -333,7 +368,7 @@ class EpisodicMemory:
         for ref, record in self._intentions.items():
             if record.trigger_type != "option":
                 continue
-            if record.state in ("done", "abandoned"):
+            if record.state in ("done", "abandoned", "awaiting_observation"):
                 continue
             if record.deadline_step is not None and world_step > record.deadline_step:
                 target = "abandoned"
@@ -358,6 +393,7 @@ class EpisodicMemory:
     def remember_applied_option(
         self, *, signature: str, source_option_ref: str,
         applied_step: int, cost_uc: int,
+        body_before: Mapping[str, float] | None = None,
     ) -> bool:
         """Record a semantic possibility after a CHOSEN, APPLIED local action.
 
@@ -378,6 +414,13 @@ class EpisodicMemory:
                 f"option:i1:local:t{applied_step}:")
             or type(cost_uc) is not int or cost_uc < 1):
             raise ValueError("invalid physically witnessed option intention")
+        if body_before is not None:
+            if (not isinstance(body_before, Mapping)
+                or set(body_before) != _INTENTION_BODY_KEYS
+                or any(type(v) not in (int, float)
+                       or not isfinite(v) or not 0 <= v <= 100
+                       for v in body_before.values())):
+                raise ValueError("invalid pre-application first-person body")
         key = "intention:i1:option:" + signature
         existing = self._intentions.get(key)
         if existing is not None and existing.trigger_type != "option":
@@ -404,17 +447,19 @@ class EpisodicMemory:
             trigger_value={
                 "applied_step": applied_step,
                 "source_option_ref": source_option_ref,
+                **({"body_before": {
+                    k: float(body_before[k]) for k in sorted(_INTENTION_BODY_KEYS)
+                }} if body_before is not None else {}),
             },
             deadline_step=applied_step + min(64, max(
                 2, 2 * self._config.max_episode_steps,
             )),
             base_pressure=0.0, monitoring="spontaneous", cost_uc=cost_uc,
             wake_authorized=False,
-            # If a prospect was formed earlier in this step, this real
-            # physical application completes it; legacy applied memories
-            # without a prospect remain pending for read-only recall.
-            state=("done" if existing is not None
-                   and "considered_step" in existing.trigger_value
+            # Application is NEVER proof that an outcome was achieved.
+            # A fresh capture must resolve the pre-body witness; old callers
+            # without a capture retain only an unconfirmed historical trace.
+            state=("awaiting_observation" if body_before is not None
                    else "pending"),
             candidacy_active=False,
         )
@@ -422,6 +467,60 @@ class EpisodicMemory:
         remaining[key] = new
         self._intentions = remaining
         return True
+
+    def observe_applied_option_followups(
+        self, *, world_step: int, body_after: Mapping[str, float],
+    ) -> tuple[tuple[str, str, Mapping[str, float] | None], ...]:
+        """Resolve prior applied-option witnesses from ONE new Perception.
+
+        Observed body change is a contextual association, NOT a demonstrated
+        action effect, Q reward, achieved goal, or permission to repeat.
+        Missing the immediate following real capture loses attribution.
+        Memory alone owns this finite lived intention record under M11.
+        """
+        if (type(world_step) is not int or world_step < 1
+            or not isinstance(body_after, Mapping)
+            or set(body_after) != _INTENTION_BODY_KEYS
+            or any(type(v) not in (int, float)
+                   or not isfinite(v) or not 0 <= v <= 100
+                   for v in body_after.values())):
+            raise ValueError("invalid real bodily followup")
+        changed = {}
+        events = []
+        for ref, intent in self._intentions.items():
+            if (intent.trigger_type != "option"
+                or intent.state != "awaiting_observation"):
+                continue
+            applied = intent.trigger_value["applied_step"]
+            if world_step <= applied:
+                continue
+            original = intent.trigger_value
+            witness = {
+                "applied_step": applied,
+                "source_option_ref": original["source_option_ref"],
+            }
+            if world_step == applied + 1:
+                delta = {
+                    k: float(body_after[k]) - original["body_before"][k]
+                    for k in sorted(_INTENTION_BODY_KEYS)
+                }
+                witness["observed_step"] = world_step
+                witness["body_delta"] = delta
+                status = "observed_not_causal"
+                state = "pending"
+                evidence = delta
+            else:
+                # A missing first-person step cannot be retroactively filled.
+                status = "not_observed_in_next_step"
+                state = "suspended"
+                evidence = None
+            updated = replace(intent, trigger_value=witness, state=state)
+            updated.validate()
+            changed[ref] = updated
+            events.append((ref, status, evidence))
+        if changed:
+            self._intentions = {**self._intentions, **changed}
+        return tuple(events)
 
     def recalled_applied_option(
         self, *, signature: str, world_step: int,
@@ -439,6 +538,7 @@ class EpisodicMemory:
             record is not None
             and record.trigger_type == "option"
             and record.state in ("pending", "done")
+            and "observed_step" not in record.trigger_value
             and record.deadline_step is not None
             and record.trigger_value.get(
                 "applied_step", record.trigger_value.get("considered_step")
