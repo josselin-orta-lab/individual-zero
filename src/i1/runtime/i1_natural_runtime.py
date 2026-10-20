@@ -19,6 +19,12 @@ from i1.modules.geographic_exploration import GeographicExplorationConfig
 from .i1_birth_temperament import configure_birth_temperament
 from .i1_natural_sleep import enable_natural_sleep_birth
 from .i1_cognitive_publication import ActiveConsolidatedOwner
+from .i1_active_runtime import (
+    I1_AFFORDANCE_POLICY, I1_AFFORDANCE_OPERATION, I1_SCORE,
+)
+from i1.contracts import MotiveRef, Option, OptionProposal, Plan, PlanStep
+from i1.modules.simulator import state_from_capture
+from i1.experimental.local_opportunity_selection import local_interaction_choices
 
 _PRIVATE_RECALL_VERSION = "i1-private-procedure-advisory-v1"
 _PRIVATE_RECALL_OPERATION = "i1_private_procedure_recall"
@@ -243,14 +249,24 @@ class I1Runtime(I1WaterPrudentRuntime):
         original = stage4.compute_budget
         if _PRIVATE_RECALL_OPERATION in original.operation_costs:
             raise ValueError("I1 private recall operation already registered")
+        # A second independent Planning producer may coexist with the
+        # existing goal candidate. Reserve its actual paid Planning,
+        # Competition register and per-option evaluation costs separately.
+        local_planning = original.operation_costs[I1_AFFORDANCE_OPERATION]
+        local_registration = original.operation_costs["competition_register"]
+        local_evaluation = original.operation_costs["competition_evaluate"]
         budget = replace(
             original,
-            version=original.version + "+" + _PRIVATE_RECALL_VERSION,
-            cycle_ceiling=original.cycle_ceiling + _PRIVATE_RECALL_COST_UC,
+            version=(original.version + "+" + _PRIVATE_RECALL_VERSION
+                     + "+i1-goal-independent-local-v1"),
+            cycle_ceiling=(original.cycle_ceiling + _PRIVATE_RECALL_COST_UC
+                           + local_planning + local_registration + local_evaluation),
             module_envelopes={
                 **original.module_envelopes,
-                "planning": original.module_envelopes["planning"]
-                + _PRIVATE_RECALL_COST_UC,
+                "planning": (original.module_envelopes["planning"]
+                             + _PRIVATE_RECALL_COST_UC + local_planning),
+                "competition": (original.module_envelopes["competition"]
+                                + local_registration + local_evaluation),
             },
             operation_costs={
                 **original.operation_costs,
@@ -271,6 +287,197 @@ class I1Runtime(I1WaterPrudentRuntime):
                 ),
             ),
         )
+
+    def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
+        """Add a second normal Phase-1 producer, not a replacement GoalManager.
+
+        The existing Planning and Stage11 geographic producers run first.
+        Any local option gets its own paid Competition admission path in Phase
+        3, with the same Stage8 and Action Control used by other options.
+        """
+        hooks = super()._phase_hooks(
+            cycle=cycle, capture=capture,
+            goal_for_planning=goal_for_planning,
+            st_before_cycle=st_before_cycle,
+        )
+        normal_plan = hooks[1]["planning"]
+        normal_register = hooks[3]["competition"]
+
+        def plan_independent_local(ctx):
+            normal_plan(ctx)
+            self._i1_local_proposal_this_cycle = None
+            if self._cycle_degraded or st_before_cycle is None:
+                return
+            proposal = self._propose_independent_local(
+                capture=capture, cycle=cycle,
+                st_version=st_before_cycle.version,
+            )
+            if proposal is None:
+                return
+            self._i1_local_proposal_this_cycle = proposal
+            self._publish_contribution(
+                self._planning_contribution(
+                    proposal, t_monde=capture.t_monde, cycle=cycle,
+                )
+            )
+
+        def register_independent_local(ctx):
+            normal_register(ctx)
+            proposal = self._i1_local_proposal_this_cycle
+            if proposal is None or self._cycle_degraded:
+                return
+            if not self._charge(
+                module="competition", operation="competition_register",
+            ):
+                self._write(
+                    kind="i1_local_opportunity_registration", cycle=cycle,
+                    data={"option_ref": proposal.option.id,
+                          "registered": False, "reason": "insufficient_uc"},
+                )
+                return
+            accepted = self._register_option_proposal(
+                proposal=proposal,
+                active_goal_id=(
+                    None if self.goal_manager.active_goal is None
+                    else self.goal_manager.active_goal.id
+                ), t_monde=capture.t_monde, cycle=cycle,
+            )
+            self._write(
+                kind="i1_local_opportunity_registration", cycle=cycle,
+                data={"option_ref": proposal.option.id, "registered": accepted,
+                      "goal_neutral": proposal.option.goal_ref is None},
+            )
+            if not accepted:
+                self._i1_pending.pop("local_opportunity_evidence", None)
+
+        hooks[1]["planning"] = plan_independent_local
+        hooks[3]["competition"] = register_independent_local
+        return hooks
+
+    def _propose_independent_local(self, *, capture, cycle, st_version):
+        """Consider ONE personally accessible interaction, never its result.
+
+        No fixed food or water priority: action availability originates from
+        the normal Planning candidate_commands over Perception's current
+        SimulationState. The same personally learned Q owner ranks choices;
+        absent learned Q, temperament supplies modest exploratory interest.
+        """
+        state = state_from_capture(
+            capture=capture, is_night=self.world.is_night(capture.t_monde),
+        )
+        available = tuple(self.planning.candidate_commands(state))
+        if len(available) > 128:
+            self._write(
+                kind="i1_local_opportunity_unavailable", cycle=cycle,
+                data={"reason": "unbounded_local_candidates"},
+            )
+            return None
+        interactions = local_interaction_choices(available, enabled=True)
+
+        def key(command):
+            return (command.primitive, tuple(
+                (k, str(command.parameters[k]))
+                for k in sorted(command.parameters)
+            ))
+
+        already = set()
+        if (self._proposal_this_cycle is not None
+            and self._proposal_this_cycle.plan is not None):
+            already.add(key(self._proposal_this_cycle.plan.steps[0].command))
+        for candidate in self.competition.candidate_proposals:
+            if (candidate.option.expires_at_step > capture.t_monde
+                and candidate.plan is not None and candidate.plan.steps):
+                already.add(key(candidate.plan.steps[0].command))
+        choices = tuple(c for c in interactions if key(c) not in already)
+        self._write(
+            kind="i1_local_opportunity_perceived", cycle=cycle,
+            data={"accessible_count": len(interactions),
+                  "unique_unregistered_count": len(choices),
+                  "goal_relevance_filter": False,
+                  "goal_option_preserved": self._proposal_this_cycle is not None},
+        )
+        if not choices:
+            return None
+        if not self._charge(module="planning",
+                            operation=I1_AFFORDANCE_OPERATION):
+            self._write(
+                kind="i1_local_opportunity_unavailable", cycle=cycle,
+                data={"reason": "insufficient_uc"},
+            )
+            return None
+        lived = self._evaluation_state(capture)
+        selected = None
+        count = len(choices)
+        for index, command in enumerate(choices):
+            suffix = ":".join(
+                f"{k}={command.parameters[k]}" for k in sorted(command.parameters)
+            ) or "here"
+            signature = f"i1:affordance:{command.primitive}:{suffix}"
+            learned = self.q_active.learned_value(lived, signature)
+            rank = (-float(learned.evidence or 0.0),
+                    (capture.t_monde + index) % count)
+            if selected is None or rank < selected[0]:
+                selected = (rank, command, suffix, signature, learned)
+        _, command, suffix, signature, learned = selected
+        exploration = float(self.temperament_parameters.exploration_coefficient)
+        uncertainty = float(self.temperament_parameters.uncertainty_penalty_scale)
+        prior = max(0.0, min(1.0, I1_SCORE *
+                            (1.0 + .25 * exploration) /
+                            (1.0 + .25 * uncertainty)))
+        identity = (f"option:i1:local:t{capture.t_monde}:"
+                    f"{command.primitive}:{suffix}")
+        plan_id = "plan:" + identity + ":v1"
+        policy = I1_AFFORDANCE_POLICY + "+goal-independent-v1"
+        plan = Plan(
+            id=plan_id, option_ref=identity, version=policy,
+            steps=(PlanStep(
+                index=0, command=command, preconditions=(),
+                predicted_consequences=(), observation_window_steps=1,
+            ),), goal_ref=None, budget_used_uc=self._i1_unknown_action_cost_uc,
+            status="valid", st_version=st_version,
+        )
+        retained = (set() if self.s_t.current is None else {
+            item.contribution_ref for item in self.s_t.current.competitive
+        })
+        grounded = tuple(sorted(
+            ref for ref in self.stage3.perception.observation_ref_by_entity.values()
+            if ref in retained
+        ))
+        option = Option(
+            id=identity, version=policy, type="primitive",
+            learning_signature=signature,
+            preconditions=(), success_condition="step_completed",
+            failure_condition="outcome_unconfirmed",
+            invalidation_condition="new_real_capture",
+            motive_ref=MotiveRef(type="local_opportunity", id=identity),
+            founding_st_version=st_version,
+            expires_at_step=capture.t_monde + 1,
+            provenance="i1_unknown_affordance",
+            grounding_contribution_refs=grounded,
+            goal_ref=None, plan_ref=plan_id,
+        )
+        proposal = OptionProposal(
+            option=option, plan=plan,
+            preliminary_admissibility="indeterminate",
+        )
+        proposal.validate()
+        self._i1_pending["local_opportunity_evidence"] = {
+            "option_ref": identity, "world_step": capture.t_monde,
+            "affordance": True, "prior_evidence": prior,
+            "learned_evidence": learned.evidence,
+            "learned_value": learned.value, "learned_status": learned.status,
+        }
+        self._write(
+            kind="i1_local_opportunity_proposed", cycle=cycle,
+            data={"option_ref": identity, "goal_ref": None,
+                  "learning_signature": signature,
+                  "command": command.as_dict(),
+                  "learned_value_status": learned.status,
+                  "prior_evidence": prior,
+                  "motor_command_forced": False,
+                  "predicted_result": None},
+        )
+        return proposal
 
     def _consider_uncertain_affordance(
         self, *, capture, goal, st_version, cycle, exact,
