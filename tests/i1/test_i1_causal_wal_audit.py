@@ -2,8 +2,10 @@
 import importlib.util
 from pathlib import Path
 import unittest
+import sys
 
 PATH=Path(__file__).resolve().parents[2]/"tools/audit_i1_causal_wal.py"
+sys.path.insert(0,str(PATH.parent))
 SPEC=importlib.util.spec_from_file_location("i1_audit_causal",PATH)
 audit=importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(audit)
