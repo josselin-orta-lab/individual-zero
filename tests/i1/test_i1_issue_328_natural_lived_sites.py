@@ -147,7 +147,8 @@ with TemporaryDirectory() as tmp:
         assert geo.site_effect_for((8,8)) is None
         before=life.run_step()
         assert before.status=="active"
-        observed=geo.export_causal_state()
+        # M11 commits a private copied runtime; pre-run owner references are stale.
+        observed=life._runtime.exploration.geographic.export_causal_state()
         assert observed["schema"]=="geographic-exploration-v6-lived-sites"
         assert isinstance(observed["lived_site_effects"],list)
     with recover_i1_m11(db_path=db,life_id=life_id,runtime_factory=fresh) as recovered:
