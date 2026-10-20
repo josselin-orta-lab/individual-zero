@@ -1,5 +1,10 @@
 name: 'I1 #318 certify matched-temperament 32 original WAL'
 on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_318_matched_temperament_q_factorial.py'
+      - '.github/workflows/i1-issue318-matched-temperament-q-audit.yml'
   workflow_dispatch:
 permissions:
   contents: read
