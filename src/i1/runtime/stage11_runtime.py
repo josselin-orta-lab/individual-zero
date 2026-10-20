@@ -1190,9 +1190,49 @@ class Stage11Runtime(Stage9Runtime):
                     f"option:place-memory:{target.ref}"
                     for target in geo.place_offered
                 }
+            # Recover only the LAST applied one-hop option. Merely
+            # proposing or engaging a route never supplies this evidence.
+            continuation = None
+            prior_ref = self.competition.engaged_option_id
+            prior = (None if prior_ref is None
+                     else self.competition.proposal_for(prior_ref))
+            control_ref, _control_plan, applied_steps = (
+                self.stage3.control.current_step)
+            current_goal = self.goal_manager.active_goal
+            if (not self._cycle_degraded and geo is not None
+                and prior is not None and prior.plan is not None
+                and prior.option.provenance == "memory"
+                and prior.option.motive_ref.type == "place_memory"
+                and prior.option.goal_ref is not None
+                and current_goal is not None
+                and prior.option.goal_ref == current_goal.id
+                and prior.plan.goal_ref == current_goal.id
+                and len(prior.plan.steps) == 1
+                and prior.plan.steps[0].command.primitive == "se_deplacer"
+                and control_ref == prior.option.id
+                and applied_steps == 1
+                and prior.option.expires_at_step > capture.t_monde - 1):
+                for target in geo.place_offered:
+                    prior_semantic = prior.option.learning_signature
+                    if (prior_semantic == f"memory_place_return:{target.entity_id}"
+                        and target.origin == (capture.x, capture.y)
+                        and target.ref != prior.option.motive_ref.id
+                        and prior.option.motive_ref.id.startswith(
+                            f"place:{target.entity_id}:at:"
+                            f"{target.observed_position[0]}:"
+                            f"{target.observed_position[1]}:from:")
+                        and prior.option.motive_ref.id.endswith(
+                            f":via:{capture.x}:{capture.y}")):
+                        continuation = (
+                            prior.option.id,
+                            f"option:place-memory:{target.ref}",
+                            self.competition.accumulator_for(prior.option.id),
+                        )
+                        break
             for old in self.competition.candidate_proposals:
                 if (old.option.motive_ref.type == "place_memory"
-                    and old.option.id not in approved):
+                    and old.option.id not in approved
+                    and (continuation is None or old.option.id != continuation[0])):
                     self.competition.invalidate_candidate(old.option.id)
                     self.stage3.control.clear_option_step(old.option.id)
             funded_refs = set()
@@ -1215,6 +1255,46 @@ class Stage11Runtime(Stage9Runtime):
                                 cycle=cycle,
                                 data={"option_ref": proposal.option.id,
                                       "registered": accepted})
+            if (continuation is not None
+                and continuation[1] in funded_refs
+                and continuation[2] is not None
+                and continuation[2] > 0):
+                from i1.experimental.intention_continuity import (
+                    IntentEvidence, bounded_continuation,
+                )
+                # Personal arrival corroborates the last applied step.
+                prior_target = prior.option.motive_ref.id
+                from_part = prior_target.split(":from:", 1)[1].split(":via:", 1)[0]
+                coords = tuple(int(x) for x in from_part.split(":"))
+                prior_evidence = IntentEvidence(
+                    semantic_ref=prior.option.learning_signature,
+                    last_applied_step=capture.t_monde - 1,
+                    observed_destination=(capture.x, capture.y),
+                    accumulated=min(1.0, float(continuation[2])),
+                )
+                carried = bounded_continuation(
+                    prior_evidence,
+                    intended_ref=prior.option.learning_signature,
+                    now_step=capture.t_monde,
+                    observed_origin=(capture.x, capture.y),
+                    ceiling=min(1.0, self._stage11_config.stage9.stage8.stage7.stage6.stage4.competition.base_threshold),
+                    residual=self._stage11_config.stage9.stage8.stage7.stage6.stage4.competition.residual,
+                    applied=True,
+                )
+                if carried is not None and self.competition.retain_bounded_intention_evidence(
+                    option_ref=continuation[1], t_monde=capture.t_monde,
+                    evidence=carried,
+                ):
+                    self.competition.invalidate_candidate(continuation[0])
+                    self.stage3.control.clear_option_step(continuation[0])
+                    self._write(
+                        kind="i1_place_memory_intention_reconsidered", cycle=cycle,
+                        data={"previous_option_ref": continuation[0],
+                              "next_option_ref": continuation[1],
+                              "physical_arrival": [capture.x, capture.y],
+                              "carried_evidence": carried,
+                              "motor_admission_inherited": False},
+                    )
             if geo is not None and geo.config.remember_entities:
                 # Only charged and *retained* Competition candidates may
                 # remain published. An eligible but unfunded target cannot
