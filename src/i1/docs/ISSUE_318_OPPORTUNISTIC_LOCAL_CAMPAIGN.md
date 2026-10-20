@@ -192,3 +192,23 @@ Canonical I1 goal calibration [#39405237327](https://github.com/josselin-orta-la
 - Because no GitHub workflow-dispatch action was available, `b5eb84e3` added a narrowly scoped push trigger to the **read-only** post-birth certification workflow. It then launched [audit #39409595177](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39409595177), consuming the eight original archived ZIPs. It was still RUNNING at the checkpoint and therefore **no certificate or 32-life biological outcome totals are declared** here.
 - The audit verifies original report/WAL SHA, immutable hash-chain and physiological transition counters; it checks the registered four-arm selector, common declared `temperament_source` for each world/seed, distinct original WAL for each actor and first divergent physical motors. A **reported** common source is not on its own a cryptographic proof of identical born temperament values; direct born-parameter comparison remains a next scientific obligation. Crucially, no replay, forced command, recollection override, M11 resurrection, or hidden-body oracle is permitted.
 - Canonical model remains default-local-off, I0 unchanged, PR #318 draft and not merged. Until the independent audit has exited SUCCESS and its limitations are addressed, effect of ranking versus Competition evidence is **INCONCLUSIVE** and promotion **NO-GO**.
+
+
+## 2026-10-20: factorized Q mechanism with sealed matched-temperament 32-WAL physical results
+
+[Independent original-WAL certification #39409595177](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39409595177) completed SUCCESS, with all 32 original, never-replayed mortal WALs verified at source SHA `64e9deb6a544e2266d6ab43b49306a0acf1bacd8`. It verifies original birth selectors and WAL physical custody. Each arm: 8/8 active at the 300-step horizon. Certified totals:
+
+| Factor | neutral | rank_only | evidence_only | learned |
+| --- | ---: | ---: | ---: | ---: |
+| Actual boire actions | 1505 | 1536 | 21 | 18 |
+| Actual dormir actions | 887 | 844 | 1765 | 1866 |
+| Consolidated objects | 354 | 388 | 738 | 703 |
+| Accepted cognitive UC | 115529 | 111292 | 98456 | 98547 |
+| Local proposals | 2039 | 2003 | 734 | 579 |
+| Lives at horizon | 8 | 8 | 8 | 8 |
+
+The *Competition-evidence* axis is associated with a very large difference in repeated drinking and time sleeping. The *rank* axis alone is not. These are **fixed-horizon behavioural contrasts**, not survival or long-term adaptive benefit estimates, and neither hidden utility nor forceful reflexes were introduced.
+
+**Next source-level control now executed**: `tests/i1/test_i1_318_matched_projection_causality.py` (`b81f2413`) constructs the exact generated Stage11 reference config without birthing another mortal, applies the same source projection to each of the 32 distinct life identities and verifies equality within each four-arm block of: raw tau, derived temperament parameters, installed Gatekeeper weights, bodily weights, Competition inertia and Stage8 extrinsic gain; unique defaults still vary across individuals. Targeted CI [#39414269001](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39414269001) SUCCESS. This is **deterministic effective-configuration equivalence**, not an independent born-state observation extracted directly from original WAL. Do not overstate the latter.
+
+Remaining proof obligations: independent first-fork perceptual/physical match across all four arms and a direct audit of online TD updates, evidence ownership and Competition crossing, distinguishing rank effects from evidence effects. Follow with long held-out lives and M11 cold consistency before any promotion. Scientific status remains INCONCLUSIVE for population generalization, NO-GO canonical promotion.
