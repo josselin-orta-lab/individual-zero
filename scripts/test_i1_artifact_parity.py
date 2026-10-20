@@ -873,6 +873,24 @@ def _approved_matched_tau_lab(root: Path, rel: str) -> bool:
     )
 
 
+_SLEEP_APPLIED_PINS = {
+    "i1/modules/sleep_session.py":
+        ("src/i1/modules/sleep_session.py", "edfd4a58431eb3e98b7a5a813fbbc1136cb03f6e"),
+    "i1lab/stage10_runtime.py":
+        ("src/i1/runtime/stage10_runtime.py", "6ae421e53e3755fa2897b59dd35f650a1e363ba4"),
+}
+
+
+def _approved_applied_sleep(root: Path, rel: str) -> bool:
+    entry = _SLEEP_APPLIED_PINS.get(rel)
+    if entry is None:
+        return False
+    path, expected = entry
+    data = (ROOT / path).read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == expected and (root / rel).is_file()
+
+
 def _approved_issue314_blob(root: Path, rel: str) -> bool:
     expected = _ISSUE_314_PINNED_BLOBS.get(rel)
     if expected is None:
@@ -910,10 +928,10 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel)))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel)) and not (
+            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel)) and not (
                 False  # Stage10 is handled by the stacked exact approval below
                 or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_natural_toxic_berry_birth(

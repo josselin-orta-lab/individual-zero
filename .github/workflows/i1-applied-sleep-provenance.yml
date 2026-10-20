@@ -1,0 +1,22 @@
+name: I1 applied ordinary sleep provenance
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/i1/modules/sleep_session.py'
+      - 'src/i1/runtime/stage10_runtime.py'
+      - 'tests/i1/test_i1_applied_sleep_provenance.py'
+      - '.github/workflows/i1-applied-sleep-provenance.yml'
+permissions:
+  contents: read
+jobs:
+  provenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - run: python -m unittest discover -s tests/i1 -p test_i1_applied_sleep_provenance.py -v
