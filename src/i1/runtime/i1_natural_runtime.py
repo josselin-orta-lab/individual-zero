@@ -117,14 +117,14 @@ class I1Runtime(I1WaterPrudentRuntime):
         )
         if cfg.geographic is None:
             geographic = GeographicExplorationConfig(
-                version="i1-firstperson-frontier-v1",
+                version="i1-firstperson-frontier-v1+lived-sites-v1",
                 novelty_weight=0.15, max_distinct_sites=1024,
                 max_targets_per_cycle=1,
                 observe_routes=True, refresh_surveys=True, remember_entities=True,
                 max_place_candidates=3, experienced_site_effects=True,
             )
             cfg = replace(
-                cfg, version=cfg.version + "+i1-firstperson-frontier-v1",
+                cfg, version=cfg.version + "+i1-firstperson-frontier-v1+lived-sites-v1",
                 geographic=geographic, intrinsic_weight=min(cfg.intrinsic_weight, 0.35),
                 local_threat_alerts=True,
                 geographic_capacity_guard_enabled=True,
