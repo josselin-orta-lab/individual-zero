@@ -58,8 +58,9 @@ assert restored.check_intentions(st=None,t_monde=4,cycle=1,
 method=inspect.getsource(I1Runtime._phase_hooks)
 assert "remember_considered_option" in method
 assert "original_control(ctx)" in method
-assert "self._admitted_decision" in method
-assert "not admission.ok" in method
+assert "trace.evidence > 0.0" in method
+assert "assessment.status == \"evaluated\"" in method
+assert method.index("remember_considered_option") < method.index("original_control(ctx)")
 assert "remember_prospect_before_motor" in method
 assert "reconcile_option_intentions" in inspect.getsource(
  I1Runtime._propose_independent_local)

@@ -374,26 +374,59 @@ class I1Runtime(I1WaterPrudentRuntime):
         original_control = hooks[4]["action_control"]
 
         def remember_prospect_before_motor(ctx):
+            # A genuine Stage8-evaluated candidate is a cognitive possibility,
+            # even when no option crosses Competition's motor threshold.
+            # Do NOT make remembering contingent on Action Control admitting
+            # or applying an action: the intention is NOT a motor command.
+            candidate = self._i1_local_proposal_this_cycle
+            results = self._cycle_result
+            if (candidate is not None and results is not None
+                and not self._cycle_degraded
+                and self._i1_option_intention_paid == candidate.option.id
+                and candidate.option.provenance == "i1_unknown_affordance"
+                and candidate.option.motive_ref.type == "local_opportunity"
+                and candidate.option.expires_at_step > capture.t_monde):
+                option_ref = candidate.option.id
+                trace = next((
+                    trace for trace in results.traces
+                    if trace.option_ref == option_ref
+                ), None)
+                assessment = next((
+                    evaluation for evaluation in results.evaluations
+                    if evaluation.option_ref == option_ref
+                    and evaluation.t_monde == capture.t_monde
+                    and evaluation.cycle == cycle
+                ), None)
+                if (trace is not None and assessment is not None
+                    and assessment.status == "evaluated"
+                    and trace.evidence is not None
+                    and trace.evidence > 0.0
+                    and trace.accumulator_after > trace.accumulator_before):
+                    created = self.memory.remember_considered_option(
+                        signature=candidate.option.learning_signature,
+                        source_option_ref=option_ref,
+                        considered_step=capture.t_monde,
+                        cost_uc=_OPTION_INTENTION_COST_UC,
+                    )
+                    if created:
+                        # Write BEFORE the physical dispatch and WAL close.
+                        # This is an auditable, paid cognitive occurrence,
+                        # not a claim of action admission or accomplishment.
+                        self._write(
+                            kind="i1_nonspatial_intention_prospected",
+                            cycle=cycle,
+                            data={
+                                "option_ref": option_ref,
+                                "signature": candidate.option.learning_signature,
+                                "world_step": capture.t_monde,
+                                "stage8_evaluated": True,
+                                "competition_crossed": trace.crossed,
+                                "paid_operation": _OPTION_INTENTION_OPERATION,
+                                "motor_admission_inherited": False,
+                                "action_applied": False,
+                            },
+                        )
             original_control(ctx)
-            decision = self._admitted_decision
-            if (decision is None or self._fallback_used_this_cycle
-                or getattr(self, "_i1_option_intention_paid", None) is None):
-                return
-            candidate, _prepared, admission = decision
-            if (not admission.ok
-                or candidate.option.id != self._i1_option_intention_paid
-                or candidate.option.provenance != "i1_unknown_affordance"
-                or candidate.option.motive_ref.type != "local_opportunity"):
-                return
-            # The option has cleared Stage8, Competition and ActionControl.
-            # This is prospective cognition BEFORE physical application,
-            # not a carried motor admission or Q/TD evidence.
-            self.memory.remember_considered_option(
-                signature=candidate.option.learning_signature,
-                source_option_ref=candidate.option.id,
-                considered_step=capture.t_monde,
-                cost_uc=_OPTION_INTENTION_COST_UC,
-            )
 
         hooks[1]["planning"] = plan_independent_local
         hooks[3]["competition"] = register_independent_local
