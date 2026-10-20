@@ -30,6 +30,7 @@ from i1lab.stage11_runtime import Stage11Runtime
 from i1.experimental.intention_continuity import IntentEvidence, bounded_continuation
 assert "record_applied_memory_intention" in inspect.getsource(Stage11Runtime._dispatch_decision)
 assert "retain_bounded_intention_evidence" in inspect.getsource(Stage11Runtime._phase_hooks)
+assert "observe_memory_intention" in inspect.getsource(Stage11Runtime._phase_hooks)
 cfg = CompetitionConfig(
     version="l2-intention-test", c_max=2, urgency_max=1.0,
     urgency_scale_cycles=1.0, leak=0.0, noise_sigma=0.0, gain=1.0,
@@ -85,6 +86,25 @@ assert authenticated["applied_memory_intention"]["semantic_ref"]=="memory_place_
 cold=Competition(cfg)
 cold.restore_causal_state(authenticated)
 assert cold.export_causal_state()==authenticated
+assert cold.observe_memory_intention(world_step=2,observed_position=(1,0))=="reconsider"
+contradicted=Competition(cfg)
+contradicted.restore_causal_state(authenticated)
+assert contradicted.observe_memory_intention(world_step=2,observed_position=(0,1))=="contradicted"
+assert contradicted.applied_memory_intention is None
+suspended=Competition(cfg)
+suspended.restore_causal_state(authenticated)
+assert suspended.observe_memory_intention(world_step=3,observed_position=(1,0))=="suspended"
+assert suspended.applied_memory_intention is not None
+expired=Competition(cfg)
+expired.restore_causal_state(authenticated)
+assert expired.observe_memory_intention(world_step=6,observed_position=(1,0))=="expired"
+assert expired.applied_memory_intention is None
+for wrong in (None, 2.5, True):
+    try:
+        cold.observe_memory_intention(world_step=wrong,observed_position=(1,0))
+        raise AssertionError("invalid physical step accepted")
+    except ValueError:
+        pass
 cold.open_deliberation(active_goal_id="goal:test",t_monde=2)
 assert cold.accumulator_for(first.option.id)==0.0, "normal motor engagement must reset"
 assert cold.applied_memory_intention.evidence>=0.5, "semantic evidence must survive"
