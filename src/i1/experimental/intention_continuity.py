@@ -1,6 +1,13 @@
-"""Isolated, non-activated review prototype for #326; no motor authority."""
+"""Isolated, inactive bounded continuation evidence for issue #326 / #346.
+
+Never creates an option, registers a Competition candidate or grants motor
+authority. Every new action still needs independent arbitration.
+"""
 from __future__ import annotations
+
 from dataclasses import dataclass
+from math import isfinite
+
 
 @dataclass(frozen=True)
 class IntentEvidence:
@@ -9,33 +16,37 @@ class IntentEvidence:
     observed_destination: tuple[int, int]
     accumulated: float
 
+
+def _coordinate(value):
+    return (type(value) is tuple and len(value) == 2
+            and all(type(item) is int for item in value))
+
+
+def _unit(value):
+    return (type(value) in (int, float) and isfinite(value)
+            and 0 < value <= 1)
+
+
 def bounded_continuation(prior: IntentEvidence, *, intended_ref: str,
                          now_step: int, observed_origin: tuple[int, int],
                          ceiling: float, residual: float, applied: bool) -> float | None:
-    """Transfer only information after independently verified motor application.
-
-    No motor decision, Competition registration, or memory owner is created.
-    """
-    if not isinstance(prior, IntentEvidence):
+    """Bound evidence only when the previous hop was personally applied."""
+    if type(prior) is not IntentEvidence:
         raise TypeError("invalid previous intention")
     if (type(now_step) is not int or now_step < 2
-        or type(prior.last_applied_step) is not int
-        or type(prior.semantic_ref) is not str
-        or type(intended_ref) is not str
-        or not isinstance(observed_origin, tuple)
-        or len(observed_origin) != 2
-        or any(type(v) is not int for v in observed_origin)
-        or type(prior.observed_destination) is not tuple
-        or any(type(v) is not int for v in prior.observed_destination)
-        or type(applied) is not bool
-        or type(ceiling) not in (int, float)
-        or type(residual) not in (int, float)
-        or type(prior.accumulated) not in (int, float)
-        or not 0 < residual < 1 or not 0 < ceiling <= 1
-        or not 0 < prior.accumulated <= 1):
-        raise ValueError("invalid bounded continuation input")
+            or type(prior.last_applied_step) is not int
+            or prior.last_applied_step < 1
+            or type(prior.semantic_ref) is not str or not prior.semantic_ref
+            or type(intended_ref) is not str or not intended_ref
+            or not _coordinate(observed_origin)
+            or not _coordinate(prior.observed_destination)
+            or type(applied) is not bool
+            or not _unit(ceiling) or not _unit(residual)
+            or residual >= 1
+            or not _unit(prior.accumulated)):
+        raise ValueError("invalid bounded continuation evidence")
     if (not applied or now_step != prior.last_applied_step + 1
-        or prior.semantic_ref != intended_ref
-        or prior.observed_destination != observed_origin):
+            or prior.semantic_ref != intended_ref
+            or prior.observed_destination != observed_origin):
         return None
     return min(float(prior.accumulated), float(ceiling) * float(residual))
