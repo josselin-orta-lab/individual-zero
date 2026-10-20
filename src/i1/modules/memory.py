@@ -104,7 +104,7 @@ class Intention:
     def validate(self) -> None:
         if not self.id or not self.goal_type or not self.target:
             raise ValueError("intention identity and goal fields are required")
-        if self.trigger_type not in {"event", "time", "context"}:
+        if self.trigger_type not in {"event", "time", "context", "option"}:
             raise ValueError("invalid intention trigger type")
         if not 0.0 <= self.base_pressure <= 1.0:
             raise ValueError("intention base pressure must be in [0,1]")
@@ -116,6 +116,34 @@ class Intention:
             raise ValueError("invalid intention state")
         if self.deadline_step is not None and self.deadline_step < 0:
             raise ValueError("intention deadline must be non-negative")
+        if self.trigger_type == "option":
+            # Memory of a personally chosen and applied non-spatial option.
+            # Not a new goal, wake deadline, Q update or motor commitment.
+            witnessed = self.trigger_value
+            if (self.goal_type != "option_reconsideration"
+                or type(self.target) is not str
+                or not self.target.startswith("i1:affordance:")
+                or len(self.target) > 256
+                or self.id != "intention:i1:option:" + self.target
+                or not isinstance(witnessed, Mapping)
+                or set(witnessed) != {"applied_step", "source_option_ref"}
+                or type(witnessed["applied_step"]) is not int
+                or witnessed["applied_step"] < 1
+                or type(witnessed["source_option_ref"]) is not str
+                or not witnessed["source_option_ref"].startswith(
+                    f"option:i1:local:t{witnessed['applied_step']}:")
+                or self.deadline_step is None
+                or not witnessed["applied_step"] < self.deadline_step
+                or self.deadline_step - witnessed["applied_step"] > 64
+                or self.monitoring != "spontaneous"
+                or self.cost_uc < 1 or type(self.cost_uc) is not int
+                or type(self.base_pressure) not in (float, int)
+                or self.base_pressure != 0.0
+                or self.wake_authorized is not False
+                or self.candidacy_active is not False
+                or self.state not in {"pending", "abandoned", "done"}):
+                raise ValueError("invalid first-person option intention")
+
 
 
 @dataclass(frozen=True, slots=True)
@@ -215,6 +243,93 @@ class EpisodicMemory:
             raise ValueError("intention id already exists")
         self._intentions[intention.id] = intention
 
+    @property
+    def applied_option_intention_count(self) -> int:
+        """O(1) estimate of active records? Reads bounded owner entries only."""
+        return sum(1 for x in self._intentions.values()
+                   if x.trigger_type == "option" and x.state == "pending")
+
+    def remember_applied_option(
+        self, *, signature: str, source_option_ref: str,
+        applied_step: int, cost_uc: int,
+    ) -> bool:
+        """Record a semantic possibility after a CHOSEN, APPLIED local action.
+
+        The caller verifies Action Control and pays cognitive encoding UC
+        BEFORE committing the physical action. This owner stores neither a
+        command nor a predicted consequence; M11 exports the same intention
+        map as other prospective records. I0/reference Stages cannot opt in.
+        """
+        if not self._atomic_world_step_length_boundary:
+            return False
+        if (type(signature) is not str
+            or not signature.startswith("i1:affordance:")
+            or len(signature) > 256
+            or type(source_option_ref) is not str
+            or type(applied_step) is not int
+            or applied_step < 1
+            or not source_option_ref.startswith(
+                f"option:i1:local:t{applied_step}:")
+            or type(cost_uc) is not int or cost_uc < 1):
+            raise ValueError("invalid physically witnessed option intention")
+        key = "intention:i1:option:" + signature
+        existing = self._intentions.get(key)
+        if existing is not None and existing.trigger_type != "option":
+            raise ValueError("intention identity collision")
+        if (existing is not None
+            and existing.trigger_value["applied_step"] >= applied_step):
+            return False  # no repeated benefit from the same applied hop
+        # Bounded current-life records; expired/superseded option memories
+        # are discarded only on a successful, paid new recording.
+        remaining = {
+            k: v for k, v in self._intentions.items()
+            if (v.trigger_type != "option" or v.state != "pending"
+                or v.deadline_step is None or v.deadline_step > applied_step)
+        }
+        active = sum(1 for v in remaining.values()
+                     if v.trigger_type == "option" and v.state == "pending")
+        if key not in remaining and active >= 16:
+            return False
+        new = Intention(
+            id=key, goal_type="option_reconsideration", target=signature,
+            trigger_type="option",
+            trigger_value={
+                "applied_step": applied_step,
+                "source_option_ref": source_option_ref,
+            },
+            deadline_step=applied_step + min(64, max(
+                2, 2 * self._config.max_episode_steps,
+            )),
+            base_pressure=0.0, monitoring="spontaneous", cost_uc=cost_uc,
+            wake_authorized=False, state="pending",
+            candidacy_active=False,
+        )
+        new.validate()
+        remaining[key] = new
+        self._intentions = remaining
+        return True
+
+    def recalled_applied_option(
+        self, *, signature: str, world_step: int,
+    ) -> bool:
+        """Passive, paid-by-caller memory lookup of a currently offered option.
+
+        Reading a preference creates no GoalProposal, Option, UC exemption or
+        motor right. The Planning caller independently verifies affordance.
+        """
+        if (type(signature) is not str or not signature
+            or type(world_step) is not int or world_step < 1):
+            raise ValueError("invalid option recall query")
+        record = self._intentions.get("intention:i1:option:" + signature)
+        return bool(
+            record is not None
+            and record.trigger_type == "option"
+            and record.state == "pending"
+            and record.deadline_step is not None
+            and record.trigger_value["applied_step"] < world_step
+            <= record.deadline_step
+        )
+
     def complete_intention(self, intention_ref: str) -> None:
         current = self._intentions.get(intention_ref)
         if current is None:
@@ -268,6 +383,12 @@ class EpisodicMemory:
     ) -> tuple[IntentionTriggerResult, ...]:
         results: list[IntentionTriggerResult] = []
         for item in self.intentions:
+            # Option memories are semantic recollections, NOT autonomous
+            # goal proposals or authorized waking intentions. Their only
+            # consumers are currently afforded, separately paid Planning
+            # candidates in natural I1.
+            if item.trigger_type == "option":
+                continue
             if item.state not in {"pending", "triggered"}:
                 continue
             matches = self._trigger_matches(item, st=st, t_monde=t_monde)
