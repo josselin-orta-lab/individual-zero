@@ -1423,18 +1423,15 @@ class Stage11Runtime(Stage9Runtime):
             and not self._fallback_used_this_cycle
             and prior is not None
             and prior.t_monde == sent_t_monde):
-            if geo.note_applied_local_action(
+            # Command has already committed/closed the physical step.
+            # Record only in the M11-owned Exploration state here; a journal
+            # event after Action Control dispatch would violate step custody.
+            # The NEXT authentic Perception logs its observed followup.
+            geo.note_applied_local_action(
                 world_step=sent_t_monde, position=(prior.x, prior.y),
                 body_before=prior.body, primitive=prepared.command.primitive,
                 option_ref=proposal.option.id,
-            ):
-                self._write(
-                    kind="i1_lived_site_effect_pending", cycle=cycle,
-                    data={"site": [prior.x, prior.y],
-                          "applied_option_ref": proposal.option.id,
-                          "applied_world_step": sent_t_monde,
-                          "outcome_known": False, "causality_proven": False},
-                )
+            )
         # A *separately* admitted, paid, physically applied spatial choice
         # can leave an informational intention in Competition's owner state.
         # No inferred arrival yet: the next Perception capture must confirm it.
