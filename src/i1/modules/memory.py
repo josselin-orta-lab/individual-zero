@@ -538,7 +538,6 @@ class EpisodicMemory:
             record is not None
             and record.trigger_type == "option"
             and record.state in ("pending", "done")
-            and "observed_step" not in record.trigger_value
             and record.deadline_step is not None
             and record.trigger_value.get(
                 "applied_step", record.trigger_value.get("considered_step")
