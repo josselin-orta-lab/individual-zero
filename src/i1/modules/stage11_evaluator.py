@@ -64,7 +64,7 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             option.motive_ref.type != "cible_exploration"
             or option.motive_ref.id != target.ref
             or option.id != (
-                f"option:geographic:{target.ref}:t{target.source_t_monde}"
+                f"option:geographic:{target.ref}"
             )
             or option.provenance != "exploration"
             or option.type != "primitive"
@@ -129,7 +129,7 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
         if (
             option.motive_ref.type != "cible_exploration"
             or option.motive_ref.id != target.ref
-            or option.id != f"option:geographic:{target.ref}:t{target.source_t_monde}"
+            or option.id != f"option:geographic:{target.ref}"
             or option.provenance != "exploration"
             or option.type != "primitive"
             or option.goal_ref is not None
