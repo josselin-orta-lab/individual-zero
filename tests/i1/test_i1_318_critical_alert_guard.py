@@ -1,6 +1,15 @@
 """#318 bodily alert wake one-step sleep eligibility, no motor directives."""
 import unittest
 from types import SimpleNamespace
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import sys
+ROOT=Path(__file__).resolve().parents[2]
+sys.path.insert(0,str(ROOT/"scripts"))
+from build_i1_fork import generate
+_GENERATED=TemporaryDirectory(prefix="i1-318-sleep-")
+generate(Path(_GENERATED.name)/"generated")
+sys.path.insert(0,str(Path(_GENERATED.name)/"generated"))
 from i1lab.i1_natural_runtime import _critical_alert_reentry_channels
 
 def observation(water=7,food=60,integrity=80,energy=100):
