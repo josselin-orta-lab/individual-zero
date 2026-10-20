@@ -1190,6 +1190,20 @@ class Stage11Runtime(Stage9Runtime):
                     f"option:place-memory:{target.ref}"
                     for target in geo.place_offered
                 }
+            # The Competition owner compares its existing applied trace with
+            # this step's real Perception; no motor authority is inherited.
+            intent_status = self.competition.observe_memory_intention(
+                world_step=capture.t_monde,
+                observed_position=(capture.x, capture.y),
+            )
+            intent = self.competition.applied_memory_intention
+            if intent_status in ("expired", "contradicted", "suspended"):
+                self._write(
+                    kind="i1_place_memory_intention_observation", cycle=cycle,
+                    data={"status": intent_status,
+                          "observed_position": [capture.x, capture.y],
+                          "motor_admission_inherited": False},
+                )
             for old in self.competition.candidate_proposals:
                 if (old.option.motive_ref.type == "place_memory"
                     and old.option.id not in approved):
@@ -1215,6 +1229,50 @@ class Stage11Runtime(Stage9Runtime):
                                 cycle=cycle,
                                 data={"option_ref": proposal.option.id,
                                       "registered": accepted})
+            if (intent is not None and intent_status == "reconsider"
+                and funded_refs and intent.reconsidered_step is None
+                and capture.t_monde == intent.applied_step + 1
+                and (capture.x, capture.y) == intent.expected_position
+                and self.goal_manager.active_goal is not None
+                and self.goal_manager.active_goal.id == intent.goal_ref):
+                from i1.experimental.intention_continuity import (
+                    IntentEvidence, bounded_continuation,
+                )
+                prior = IntentEvidence(
+                    semantic_ref=intent.semantic_ref,
+                    last_applied_step=intent.applied_step,
+                    observed_destination=intent.expected_position,
+                    accumulated=intent.evidence,
+                )
+                carried = bounded_continuation(
+                    prior, intended_ref=intent.semantic_ref,
+                    now_step=capture.t_monde,
+                    observed_origin=(capture.x, capture.y),
+                    ceiling=min(1.0, self._config.competition.base_threshold),
+                    residual=self._config.competition.residual,
+                    applied=True,
+                )
+                for target in geo.place_offered:
+                    next_ref = f"option:place-memory:{target.ref}"
+                    if (next_ref not in funded_refs
+                        or target.observed_position != intent.observed_site
+                        or f"memory_place_return:{target.entity_id}" != intent.semantic_ref):
+                        continue
+                    if carried is not None and self.competition.retain_bounded_intention_evidence(
+                        option_ref=next_ref, t_monde=capture.t_monde,
+                        observed_origin=(capture.x, capture.y), evidence=carried,
+                    ):
+                        self._write(
+                            kind="i1_place_memory_intention_reconsidered",
+                            cycle=cycle,
+                            data={"source_option_ref": intent.source_option_ref,
+                                  "semantic_ref": intent.semantic_ref,
+                                  "next_option_ref": next_ref,
+                                  "observed_arrival": [capture.x, capture.y],
+                                  "carried_evidence": carried,
+                                  "forced_motor_selection": False},
+                        )
+                        break
             if geo is not None and geo.config.remember_entities:
                 # Only charged and *retained* Competition candidates may
                 # remain published. An eligible but unfunded target cannot
@@ -1334,6 +1392,30 @@ class Stage11Runtime(Stage9Runtime):
             proposal=proposal, prepared=prepared, admission=admission,
             cycle=cycle, sent_t_monde=sent_t_monde,
         )
+        # A *separately* admitted, paid, physically applied spatial choice
+        # can leave an informational intention in Competition's owner state.
+        # No inferred arrival yet: the next Perception capture must confirm it.
+        geo = self.exploration.geographic
+        if (geo is not None and execution.status == "applied"
+            and prepared.command.primitive == "se_deplacer"
+            and not self._fallback_used_this_cycle):
+            target = geo.place_for(proposal.option)
+            if target is not None and self.competition.record_applied_memory_intention(
+                option_ref=proposal.option.id,
+                verified_control_step=self.stage3.control.current_step,
+                applied_step=sent_t_monde, expected_position=target.destination,
+                observed_site=target.observed_position,
+                fallback_used=self._fallback_used_this_cycle,
+            ):
+                self._write(
+                    kind="i1_place_memory_intention_applied",
+                    cycle=cycle,
+                    data={"option_ref": proposal.option.id,
+                          "semantic_ref": proposal.option.learning_signature,
+                          "expected_arrival": list(target.destination),
+                          "source": "action_control_applied_then_first_person_check",
+                          "motor_admission_inherited": False},
+                )
         if (
             execution.status == "applied"
             and prepared.command.primitive == "boire"
