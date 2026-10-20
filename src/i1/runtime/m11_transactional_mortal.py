@@ -323,6 +323,23 @@ def _install_trusted_current_on_fresh(
     staging.restore_causal_state(image["world"])
     if staging.export_causal_state() != image["world"]:
         raise RecoveryBlocked("cold physical image differs from current SQL state")
+    # The detached WorldBody legacy importer normalizes numeric fields to
+    # float. SQLite can legitimately contain unchanged integers (85 versus
+    # 85.0): those have DIFFERENT canonical M11 causal bytes. Preserve the
+    # exact, independently authenticated current-generation body types on
+    # this never-published staging world only. No living-world rollback.
+    from .world import BodyState
+    raw_body = image["world"]["body"]
+    if (type(raw_body) is not dict
+            or set(raw_body) != {"energy", "food", "water", "integrity"}
+            or any(type(v) not in (int, float) for v in raw_body.values())):
+        raise RecoveryBlocked("noncanonical current-generation body fields")
+    exact_body = BodyState(**raw_body)
+    exact_body.validate()
+    staging._body = exact_body
+    if (canonical_causal_bytes(staging.export_causal_state())
+            != canonical_causal_bytes(image["world"])):
+        raise RecoveryBlocked("cold body type fidelity differs from SQLite image")
     current = dict(runtime.world.__dict__)
     for name in _PHYSICAL_MUTABLE:
         current[name] = deepcopy(getattr(staging, name))
