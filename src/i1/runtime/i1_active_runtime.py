@@ -40,8 +40,8 @@ I1_SCORE = 0.35  # fixed *instrumental preference*, NOT predicted E_sim
 I1_EXPERIMENTAL_OPERATION = "i1_partial_model_forecast"
 I1_AFFORDANCE_POLICY = "i1-unknown-action-affordance-v2-general-local"
 I1_AFFORDANCE_OPERATION = "i1_unknown_action_consider"
-I1_OPPORTUNISTIC_ACTIONS = frozenset(("boire", "manger", "collecter"))
-I1_OPPORTUNISTIC_POLICY = "i1-local-interaction-goal-independent-v1"
+I1_OPPORTUNISTIC_ACTIONS = frozenset(("boire", "manger", "collecter", "poser_une_pierre", "fabriquer_outil"))
+I1_OPPORTUNISTIC_POLICY = "i1-local-interaction-goal-independent-v2"
 
 
 def _local_interaction_choices(available, *, enabled):
@@ -81,25 +81,31 @@ class I1PartialEvidenceAdapter:
 
     def evaluate(self, *, proposal, **kwargs):
         provenance = proposal.option.provenance
-        if (proposal.option.id != self._pending.get("option_ref")
+        pending = self._pending
+        local = pending.get("local_opportunity_evidence")
+        if (provenance == "i1_unknown_affordance"
+                and isinstance(local, dict)
+                and proposal.option.id == local.get("option_ref")):
+            pending = local
+        if (proposal.option.id != pending.get("option_ref")
                 or proposal.plan is None
                 or len(proposal.plan.steps) != 1
                 or provenance not in ("i1_partial_experiment",
                                       "i1_unknown_affordance")
-                or kwargs.get("t_monde") != self._pending.get("world_step")):
+                or kwargs.get("t_monde") != pending.get("world_step")):
             return self._underlying.evaluate(proposal=proposal, **kwargs)
 
         if provenance == "i1_unknown_affordance":
             # Only a previously UC-paid, first-person-grounded candidate may
             # receive exploratory evidence. Unknown effects stay unknown.
-            if self._pending.get("affordance") is not True:
+            if pending.get("affordance") is not True:
                 return self._underlying.evaluate(proposal=proposal, **kwargs)
-            prior = float(self._pending["prior_evidence"])
-            learned_evidence = self._pending.get("learned_evidence")
+            prior = float(pending["prior_evidence"])
+            learned_evidence = pending.get("learned_evidence")
             evidence = (prior if learned_evidence is None else
                         max(-1.0, min(1.0, 0.25 * prior
                                        + 0.75 * float(learned_evidence))))
-            learned = self._pending.get("learned_status") == "learned"
+            learned = pending.get("learned_status") == "learned"
             e = EvaluationOption(
                 option_ref=proposal.option.id,
                 option_version=proposal.option.version,
@@ -107,7 +113,7 @@ class I1PartialEvidenceAdapter:
                 status="evaluated",
                 learned_value_status="learned" if learned else "unlearned",
                 learned_value=(
-                    float(self._pending["learned_value"]) if learned else None
+                    float(pending["learned_value"]) if learned else None
                 ),
                 simulated_value_status="unavailable", simulated_value=None,
                 intrinsic_status="not_applicable", intrinsic_value=None,
@@ -367,21 +373,8 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
             "recover_energy": {"dormir"},
             "restore_integrity": {"attendre"},
         }.get(goal.goal_type, set())
-        # Research-only: permit already-executable, locally witnessed
-        # interactions to be CONSIDERED while any bodily goal is active.
-        # Their effects remain unknown and they receive the same ordinary
-        # rank, UC debit and Competition scoring, not a survival bonus.
-        local_interactions = _local_interaction_choices(
-            available,
-            enabled=getattr(self, "_i1_cross_goal_local_opportunities", False),
-        )
-        local_signatures = {
-            (c.primitive, tuple(sorted(c.parameters.items())))
-            for c in local_interactions
-        }
-        previous_goal_direct = frozenset(direct)
-        if local_interactions:
-            direct = direct | I1_OPPORTUNISTIC_ACTIONS
+        # The opt-in cross-goal producer owns an independent Planning and
+        # Competition slot; it must never rewrite these goal-linked choices.
 
         def relevant(candidate):
             primitive = candidate.primitive
@@ -443,11 +436,7 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
             if winner is None or rank < winner[0]:
                 winner = (rank, command, signature, learned, suffix)
         _, command, signature, learned, suffix = winner
-        cross_goal_local = (
-            command.primitive not in previous_goal_direct
-            and (command.primitive,
-                 tuple(sorted(command.parameters.items()))) in local_signatures
-        )
+        cross_goal_local = False  # goal-linked producer
         pressure = max(0.0, min(1.0, float(goal.current_pressure)))
         exploration = float(self.temperament_parameters.exploration_coefficient)
         uncertainty_penalty = float(
@@ -517,10 +506,7 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
                         "candidate_count": len(choices),
                         "candidate_primitives": [c.primitive for c in choices],
                         "cross_goal_local_interaction": cross_goal_local,
-                        "candidate_expansion_policy": (
-                            I1_OPPORTUNISTIC_POLICY
-                            if local_interactions else None
-                        ),
+                        "candidate_expansion_policy": None,
                         "ordinary_q_ranking_unchanged": True,
                         "no_interaction_result_assumed": True,
                         "visible_input_sha256": sha256_hex(
