@@ -74,17 +74,19 @@ class IsolatedSourcePinTest(unittest.TestCase):
             artifact=output/rel
             artifact.parent.mkdir(parents=True,exist_ok=True)
             artifact.write_bytes(b"exists-but-not-an-attestation")
-            manifest=root/"issue-326.json"
+            pins=root/"reviewed-pins"
+            pins.mkdir()
+            manifest=pins/"issue-326.json"
             record["blob_sha1"]="0"*40
             manifest.write_text(json.dumps(record),encoding="utf-8")
-            with patch.object(parity,"_ISOLATED_PINS_DIR",root):
+            with patch.object(parity,"_ISOLATED_PINS_DIR",pins):
                 self.assertFalse(parity._approved_isolated_experimental(output,rel))
             record["generated"]="i1/experimental/unknown_future_module.py"
             record["native"]="src/"+record["generated"]
             manifest.write_text(json.dumps(record),encoding="utf-8")
             future=output/record["generated"]
             future.write_bytes(b"not-in-native-tree")
-            with patch.object(parity,"_ISOLATED_PINS_DIR",root):
+            with patch.object(parity,"_ISOLATED_PINS_DIR",pins):
                 self.assertFalse(parity._approved_isolated_experimental(
                     output,record["generated"]))
 
