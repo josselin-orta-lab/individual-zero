@@ -15,7 +15,7 @@ from hashlib import sha256
 import json
 from pathlib import Path
 
-from audit_i1_317_two_process_cohort import _verify_arm, _check, _hex
+from audit_i1_317_two_process_cohort import _verify_arm, _check, _hex, _number
 from audit_i1_spatial_navigation_314 import audit as audit_wal
 
 SCHEMA = "i1-318-local-q-ablation-independent-certificate/v1"
@@ -75,6 +75,7 @@ def classify_arm(events, *, q_exposure):
     totals = Counter()
     local_motor = {}
     first_learned_q = None
+    longest_drink_streak = current_drink_streak = 0
     last_q_update_by_signature = {}
     update_cursor = 0
     for step in sorted(motors):
@@ -107,6 +108,25 @@ def classify_arm(events, *, q_exposure):
                 if first_learned_q is None:
                     first_learned_q = step
         motor = motors[step]
+        if motor["primitive"] == "boire":
+            current_drink_streak += 1
+            longest_drink_streak = max(longest_drink_streak, current_drink_streak)
+            capture = captures.get(step)
+            body_after = transitions[step].get("body_after")
+            if (capture is not None
+                    and type(capture.get("dual_scope_visible_body")) is dict
+                    and type(body_after) is dict
+                    and "water" in capture["dual_scope_visible_body"]
+                    and "water" in body_after):
+                before = _number(capture["dual_scope_visible_body"]["water"])
+                after = _number(body_after["water"])
+                totals["boire_with_observed_before_after_water"] += 1
+                totals["boire_net_water_increase"] += int(after > before)
+                totals["boire_no_net_water_increase"] += int(after <= before)
+            else:
+                totals["boire_without_verifiable_before_after_water"] += 1
+        else:
+            current_drink_streak = 0
         matched = [
             (i, d) for i, d in admissions.get(step, ())
             if (i < motor["index"] and d.get("source") == "decision"
@@ -121,6 +141,7 @@ def classify_arm(events, *, q_exposure):
     return {
         "physical_steps": len(motors),
         "first_learned_Q_local_proposal_step": first_learned_q,
+        "longest_consecutive_boire": longest_drink_streak,
         "counts": dict(totals),
         "local_motor": local_motor,
         "motor": motors,
@@ -160,6 +181,12 @@ def compare_pair(neutral, learned):
         same_capture = (n is not None and l is not None and
                         all(n.get(k) == l.get(k) for k in visible))
         local_q_prior = learned["first_learned_Q_local_proposal_step"]
+        local_n = [
+            row for _, row in neutral["proposals"].get(motor_first, ())
+        ]
+        local_l = [
+            row for _, row in learned["proposals"].get(motor_first, ())
+        ]
         at_fork = {
             "step": motor_first,
             "same_first_person_capture": same_capture,
@@ -177,6 +204,17 @@ def compare_pair(neutral, learned):
             "learned_local_motor_selected": motor_first in learned["local_motor"],
             "neutral_command": na[motor_first]["primitive"],
             "learned_command": lb[motor_first]["primitive"],
+            "neutral_local_candidate_signatures": [
+                row.get("learning_signature") for row in local_n
+            ],
+            "learned_local_candidates": [
+                {
+                    "signature": row.get("learning_signature"),
+                    "q_status": row.get("learned_value_status"),
+                    "q_value": row.get("learned_value"),
+                }
+                for row in local_l
+            ],
         }
     return {
         "first_motor_divergence": motor_first,
@@ -251,6 +289,10 @@ def analyse(root: Path):
                 totals["motor_"+action] += n
             for key, n in chain["counts"].items():
                 totals[key] += n
+            totals["max_consecutive_boire_across_lives"] = max(
+                totals["max_consecutive_boire_across_lives"],
+                chain["longest_consecutive_boire"],
+            )
         pair = compare_pair(arms[ARMS[0]]["chain"], arms[ARMS[1]]["chain"])
         pairs.append({
             "world": world, "seed": seed,
@@ -279,6 +321,12 @@ def analyse(root: Path):
         "causal_treatment_effect_on_future_survival_proven": False,
         "summary": summary,
         "first_motor_divergences": {
+            "pairs_with_same_first_person_capture_at_fork": sum(
+                p["comparison"]["fork"].get(
+                    "same_first_person_capture") is True for p in pairs),
+            "pairs_with_learned_local_candidate_at_fork": sum(
+                p["comparison"]["fork"].get(
+                    "learned_local_candidate_at_fork") is True for p in pairs),
             "pairs_with_divergent_motor": sum(
                 p["comparison"]["first_motor_divergence"] is not None for p in pairs),
             "pairs_with_identical_physical_history_before_fork": sum(
@@ -301,9 +349,18 @@ def main():
     _check(not args.output.exists(), "certificate must not overwrite original artifact")
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     print(json.dumps({
-        k: report[k] for k in ("status", "scientific_verdict",
-                             "authenticated_WAL_count", "summary",
-                             "first_motor_divergences")
+        **{k: report[k] for k in (
+            "status", "scientific_verdict", "authenticated_WAL_count",
+            "summary", "first_motor_divergences")},
+        "pairwise_first_physical_forks": [
+            {
+                "world": p["world"], "seed": p["seed"],
+                "first_motor_step": p["comparison"]["first_motor_divergence"],
+                "first_physical_effect_step":
+                    p["comparison"]["first_physical_transition_divergence"],
+                "fork": p["comparison"]["fork"],
+            } for p in report["pairs"]
+        ],
     }, sort_keys=True, indent=2))
 
 
