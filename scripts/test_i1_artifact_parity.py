@@ -833,7 +833,7 @@ _SITE_328_PINS = {
     ),
     "i1lab/stage11_runtime.py": (
         "src/i1/runtime/stage11_runtime.py",
-        "be0c272bda03223bdab994997314cf36ba460eaf",
+        "03c24be9c1bdb28d78839c7de64bc002037a7e1c",
     ),
     "i1/modules/stage11_evaluator.py": (
         "src/i1/modules/stage11_evaluator.py",
