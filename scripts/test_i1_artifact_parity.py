@@ -829,7 +829,7 @@ _SITE_328_PINS = {
     ),
     "i1lab/i1_natural_runtime.py": (
         "src/i1/runtime/i1_natural_runtime.py",
-        "2b62be191164db285180a603a15076a5653be3a5",
+        "99e30a4b5fdfc1f6820c3a98ede0d39647151bd2",
     ),
     "i1lab/stage11_runtime.py": (
         "src/i1/runtime/stage11_runtime.py",
