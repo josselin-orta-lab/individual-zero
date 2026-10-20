@@ -1567,3 +1567,51 @@ At `memory-corridor/19237` world step 69, the original WAL attests a genuine bod
 The first independent cohort verifier [39373835353](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39373835353) failed **closed due to an invalid transferred equality-of-UC assumption**: unlike the previous Stage8-only comparison, withholding a candidate changes cognitive processing before the first physical motor difference. The auditor was corrected in `7d585d85` to report, not require, UC equality and verify original wake receipt, fresh bodily capture, matching critical channels, absent sleep candidate in Competition and genuinely admitted non-sleep motor. A fresh auditor run [39374688781](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39374688781) is running. No original WAL was altered or replayed.
 
 **Decision:** keep critical-alert gate experimental OFF, no merge or promotion. Preserve natural sleep/consolidation and physiological wake. Next science should diagnose why learned or explored alternatives have insufficient Competition evidence under a real drink goal and how the first actually observed beneficial interaction becomes discoverable, without hardwired food/water motor rules. PR draft, global NO-GO.
+
+## 20 October: opportunity availability is not learned efficacy (#318)
+
+The previous critical-alert research treatment was independently WAL
+certified by [39374688781](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39374688781)
+and rejected for promotion: suppressing 489 `dormir` actions
+replaced them with 489 `attendre`, did not change hydration or
+survival, and increased accepted cognitive UC.
+
+A new architectural diagnosis isolated `_consider_uncertain_affordance`
+inside `i1_active_runtime.py`: canonical I1 filters Planning's
+**physically executable, first-person local action candidates** by the
+single currently active bodily GoalManager goal. For
+`restore_integrity` this selection often leaves only `attendre`
+even if `boire` is locally executable. The frozen original cohort
+suggests (not yet establishes causally) that initial goal selection can
+prevent first interaction with a perceived water source.
+
+New explicitly OFF-by-default research selector
+`i1_cross_goal_local_opportunities` widens only the local candidate
+set **after** ordinary Planning's `candidate_commands` has
+already determined physical executability. Eligible added candidate
+primitives are `boire`, `manger` and `collecter`, strictly when
+the environment permits them locally, without inspecting global
+resource identities, predicting hydration/satiety, or assigning
+any new learned reward. The unchanged deterministic learned-Q
+candidate ranking, physiological goal-pressure term, uncertainty
+penalty, ordinary 2-UC consideration, ordinary Competition and
+Action Control still determine if an action is chosen. A candidate
+is not a command. No alternate survival reflex is introduced.
+An opt-in contract with exact version and candidate primitives is
+sealed in M11; existing OFF births and I0 remain unchanged. The
+I1 parity gate approves only explicit reviewed blob SHA pins.
+
+The dedicated [pure guard workflow 39382022852](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39382022852)
+completed SUCCESS. New preregistered physical comparison
+[39382123672](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39382123672)
+runs two corridor worlds x four new seeds
+**20123, 20233, 20357, 20477** x two independently mortal arms
+(`baseline`, `cross_goal_local`) = **16 original never-replayed lives**.
+Only the opt-in candidate scope differs; both arms disable native
+learned-place Stage8 and critical-alert sleep exclusion to isolate
+the hypothesis. Measure first water probe, actual consumption,
+later learned-body association, movement, sleeping, `attendre`,
+consolidation, survival and UC; independently authenticate
+each original WAL before any GO. Preliminary CI status must not
+be confused with behavioral efficacy.
+**PR draft, scientific NO-GO, no promotion.**
