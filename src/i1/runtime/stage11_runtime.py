@@ -1190,22 +1190,20 @@ class Stage11Runtime(Stage9Runtime):
                     f"option:place-memory:{target.ref}"
                     for target in geo.place_offered
                 }
-            # Separately authenticated, previously applied semantic intention.
-            # Competition's motor accumulator was reset at step opening; it
-            # must NEVER be mistaken for durable first-person intention state.
+            # The Competition owner compares its existing applied trace with
+            # this step's real Perception; no motor authority is inherited.
+            intent_status = self.competition.observe_memory_intention(
+                world_step=capture.t_monde,
+                observed_position=(capture.x, capture.y),
+            )
             intent = self.competition.applied_memory_intention
-            if intent is not None and (
-                capture.t_monde >= intent.expires_at_step
-                or (capture.t_monde == intent.applied_step + 1
-                    and (capture.x, capture.y) != intent.expected_position)
-            ):
-                self.competition.drop_memory_intention()
+            if intent_status in ("expired", "contradicted", "suspended"):
                 self._write(
-                    kind="i1_place_memory_intention_invalidated", cycle=cycle,
-                    data={"reason": "expired_or_arrival_contradicted",
-                          "world_step": capture.t_monde},
+                    kind="i1_place_memory_intention_observation", cycle=cycle,
+                    data={"status": intent_status,
+                          "observed_position": [capture.x, capture.y],
+                          "motor_admission_inherited": False},
                 )
-                intent = None
             for old in self.competition.candidate_proposals:
                 if (old.option.motive_ref.type == "place_memory"
                     and old.option.id not in approved):
@@ -1231,8 +1229,8 @@ class Stage11Runtime(Stage9Runtime):
                                 cycle=cycle,
                                 data={"option_ref": proposal.option.id,
                                       "registered": accepted})
-            if (intent is not None and funded_refs
-                and intent.reconsidered_step is None
+            if (intent is not None and intent_status == "reconsider"
+                and funded_refs and intent.reconsidered_step is None
                 and capture.t_monde == intent.applied_step + 1
                 and (capture.x, capture.y) == intent.expected_position
                 and self.goal_manager.active_goal is not None
