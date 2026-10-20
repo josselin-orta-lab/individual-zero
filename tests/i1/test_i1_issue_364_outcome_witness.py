@@ -44,6 +44,7 @@ observed=cold.observe_applied_option_followups(world_step=3,body_after=after)
 assert len(observed)==1 and observed[0][1]=="observed_not_causal"
 assert observed[0][2]["water"]==8. and observed[0][2]["integrity"]==-8.
 assert cold.intentions[0].state=="pending"
+assert cold.recalled_applied_option(signature=sig,world_step=3)
 assert "observed_step" in cold.intentions[0].trigger_value
 assert cold.observe_applied_option_followups(world_step=3,body_after=after)==()
 st=cold.export_causal_state()
