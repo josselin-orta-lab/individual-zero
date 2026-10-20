@@ -995,6 +995,47 @@ class EpisodicMemory:
             raise ValueError("invalid Memory recall threshold snapshot")
         restored_above = set(raw_above)
 
+        # Intention records are causal M11 state. Decode all of them before
+        # mutating ANY Memory owner field. Reject duplicate IDs and coercions
+        # that could fabricate wake authorization or active candidacy.
+        raw_intentions = state.get("intentions", [])
+        if not isinstance(raw_intentions, list):
+            raise ValueError("Memory intentions must be a list")
+        validated_intentions: dict[str, Intention] = {}
+        for raw in raw_intentions:
+            if not isinstance(raw, Mapping):
+                raise ValueError("invalid intention state")
+            required = {
+                "id", "goal_type", "target", "trigger_type", "trigger_value",
+                "deadline_step", "base_pressure", "monitoring", "cost_uc",
+                "wake_authorized", "state", "candidacy_active",
+            }
+            if (set(raw) != required
+                or any(type(raw[k]) is not str or not raw[k]
+                       for k in ("id", "goal_type", "target", "trigger_type",
+                                 "monitoring", "state"))
+                or type(raw["wake_authorized"]) is not bool
+                or type(raw["candidacy_active"]) is not bool
+                or type(raw["cost_uc"]) is not int
+                or type(raw["base_pressure"]) not in (int, float)
+                or (raw["deadline_step"] is not None
+                    and type(raw["deadline_step"]) is not int)):
+                raise ValueError("malformed persisted intention")
+            item = Intention(
+                id=raw["id"], goal_type=raw["goal_type"],
+                target=raw["target"], trigger_type=raw["trigger_type"],
+                trigger_value=raw["trigger_value"],
+                deadline_step=raw["deadline_step"],
+                base_pressure=raw["base_pressure"],
+                monitoring=raw["monitoring"], cost_uc=raw["cost_uc"],
+                wake_authorized=raw["wake_authorized"],
+                state=raw["state"], candidacy_active=raw["candidacy_active"],
+            )
+            item.validate()
+            if item.id in validated_intentions:
+                raise ValueError("duplicate persisted intention identity")
+            validated_intentions[item.id] = item
+
         # Re-derive the lookup mode from the complete authenticated imported
         # history. Do not trust a persisted flag or select an older snapshot.
         restored_dense = all(
@@ -1032,30 +1073,4 @@ class EpisodicMemory:
             None if raw_recalled is None else str(raw_recalled)
         )
 
-        raw_intentions = state.get("intentions", [])
-        if not isinstance(raw_intentions, list):
-            raise ValueError("Memory intentions must be a list")
-        self._intentions = {}
-        for raw in raw_intentions:
-            if not isinstance(raw, Mapping):
-                raise ValueError("invalid intention state")
-            item = Intention(
-                id=str(raw["id"]),
-                goal_type=str(raw["goal_type"]),
-                target=str(raw["target"]),
-                trigger_type=str(raw["trigger_type"]),
-                trigger_value=raw.get("trigger_value"),
-                deadline_step=(
-                    None
-                    if raw.get("deadline_step") is None
-                    else int(raw["deadline_step"])
-                ),
-                base_pressure=float(raw["base_pressure"]),
-                monitoring=str(raw["monitoring"]),
-                cost_uc=int(raw["cost_uc"]),
-                wake_authorized=bool(raw["wake_authorized"]),
-                state=str(raw["state"]),
-                candidacy_active=bool(raw["candidacy_active"]),
-            )
-            item.validate()
-            self._intentions[item.id] = item
+        self._intentions = validated_intentions
