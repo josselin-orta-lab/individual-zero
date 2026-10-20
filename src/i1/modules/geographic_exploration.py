@@ -565,7 +565,7 @@ class GeographicExploration:
         for target in self._transit_offered:
             if (motive.id == target.ref
                 and option.id == (
-                    f"option:geographic:{target.ref}:t{target.source_t_monde}"
+                    f"option:geographic:{target.ref}"
                 )
                 and target.observed_frontier not in self._visits
                 and target.destination in self._visits):
@@ -580,7 +580,7 @@ class GeographicExploration:
             return None
         for target in self._offered:
             if (motive.id == target.ref and option.id == (
-                f"option:geographic:{target.ref}:t{target.source_t_monde}"
+                f"option:geographic:{target.ref}"
             ) and target.destination not in self._visits):
                 return target
         return None
