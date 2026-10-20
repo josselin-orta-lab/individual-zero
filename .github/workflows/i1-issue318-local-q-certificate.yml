@@ -1,0 +1,54 @@
+name: 'I1 #318 certify physical Q ablation'
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_318_local_q_ablation_cohort.py'
+      - 'tests/i1/test_i1_318_q_ablation_audit.py'
+      - 'tests/i1/test_i1_318_first_fork_competition.py'
+      - '.github/workflows/i1-issue318-local-q-certificate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - run: python -m py_compile tools/audit_i1_318_local_q_ablation_cohort.py
+      - run: python -m unittest discover -s tests/i1 -p test_i1_318_q_ablation_audit.py -v
+      - run: python -m unittest discover -s tests/i1 -p test_i1_318_first_fork_competition.py -v
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39396212562
+          github-token: ${{ github.token }}
+          pattern: i1-318-q-*
+          path: original
+          merge-multiple: true
+      - name: Verify sixteen original WAL and paired motor forks
+        run: |
+          python tools/audit_i1_318_local_q_ablation_cohort.py --root original --output q-ablation-certificate.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path("q-ablation-certificate.json").read_text())
+          assert report["authenticated_WAL_count"] == 16
+          assert report["original_WAL_untouched"] is True
+          assert report["scientific_verdict"] == "INCONCLUSIVE"
+          print("I1_318_Q_ABLATION_CERTIFIED")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-318-q-ablation-16-original-WAL-certificate
+          path: q-ablation-certificate.json
+          retention-days: 30
+          if-no-files-found: warn

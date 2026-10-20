@@ -186,6 +186,32 @@ def _runtime_contract(runtime: Any) -> str:
     if getattr(runtime, "_i1_water_contract", None) is not None:
         configuration = (*configuration,
             ("i1-water-firstperson-birth-v1", runtime._i1_water_contract))
+    # Historical births retain byte-identical M11 birth fingerprints.
+    # Opted-in births MUST pin the additional causal evaluation contract.
+    if getattr(runtime, "_i1_experienced_place_enabled", False):
+        from i1.modules.experienced_place_relevance import (
+            CONTRACT, MAX_RELEVANCE, RELEVANCE_WATER_GATE)
+        configuration = (*configuration, (
+            CONTRACT, True, MAX_RELEVANCE, RELEVANCE_WATER_GATE,
+        ))
+    if getattr(runtime, "_i1_critical_alert_reentry_guard", False):
+        from .i1_natural_runtime import _CRITICAL_ALERT_SLEEP_GUARD
+        configuration = (*configuration, (
+            _CRITICAL_ALERT_SLEEP_GUARD, True,
+            tuple(sorted(runtime._stage10_config.critical_body_thresholds.items())),
+        ))
+    if getattr(runtime, "_i1_cross_goal_local_opportunities", False):
+        from .i1_active_runtime import I1_OPPORTUNISTIC_POLICY, I1_OPPORTUNISTIC_ACTIONS
+        configuration = (*configuration, (
+            I1_OPPORTUNISTIC_POLICY, True,
+            tuple(sorted(I1_OPPORTUNISTIC_ACTIONS)),
+            getattr(runtime, "_i1_local_q_exposure", "learned"),
+        ))
+        research_twin = getattr(runtime, "_i1_research_temperament_source_id", None)
+        if research_twin is not None:
+            configuration = (*configuration, (
+                "i1-research-twin-temperament-source-v1", research_twin,
+            ))
     return sha256_hex(canonical_causal_bytes(_contract_value(configuration)))
 
 
@@ -323,6 +349,24 @@ def _install_trusted_current_on_fresh(
     staging.restore_causal_state(image["world"])
     if staging.export_causal_state() != image["world"]:
         raise RecoveryBlocked("cold physical image differs from current SQL state")
+    # WorldBody's legacy fixture importer normalizes all body numbers to
+    # float. The current SQLite generation may legitimately carry an int
+    # (e.g. unchanged integrity=85). Preserve the EXACT validated canonical
+    # number type on this never-executed detached cold candidate only:
+    # int 85 and float 85.0 have different causal bytes under M11.
+    # Do not relax the bitwise final owner/world comparison or permit a
+    # live WorldBody historical restore.
+    from .world import BodyState
+    raw_body = image["world"]["body"]
+    if (type(raw_body) is not dict
+            or set(raw_body) != {"energy", "food", "water", "integrity"}
+            or any(type(v) not in (int, float) for v in raw_body.values())):
+        raise RecoveryBlocked("noncanonical current-generation body fields")
+    exact_body = BodyState(**raw_body)
+    exact_body.validate()
+    staging._body = exact_body
+    if canonical_causal_bytes(staging.export_causal_state()) != canonical_causal_bytes(image["world"]):
+        raise RecoveryBlocked("cold body type fidelity differs from SQLite image")
     current = dict(runtime.world.__dict__)
     for name in _PHYSICAL_MUTABLE:
         current[name] = deepcopy(getattr(staging, name))

@@ -63,9 +63,7 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
         if (
             option.motive_ref.type != "cible_exploration"
             or option.motive_ref.id != target.ref
-            or option.id != (
-                f"option:geographic:{target.ref}:t{target.source_t_monde}"
-            )
+            or option.id != f"option:geographic:{target.ref}"
             or option.provenance != "exploration"
             or option.type != "primitive"
             or option.goal_ref is not None
@@ -194,7 +192,7 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             geo = self._exploration.geographic
             target = None if geo is None else geo.place_for(proposal.option)
             valid = (target is not None and target.source_t_monde == t_monde
-                     and proposal.option.goal_ref is not None
+                     and proposal.option.goal_ref is None
                      and proposal.option.provenance == "memory"
                      and proposal.plan is not None
                      and proposal.option.plan_ref == proposal.plan.id
@@ -219,18 +217,29 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
                 initial_state=initial_state, cycle=cycle, t_monde=t_monde,
                 remaining_plan_index=remaining_plan_index,
             )
-            # This is confidence in a remembered destination, NOT a claim
-            # about physiology or an artificially learned Q value.
-            # Existing goal pressure is supplied by Stage4's real need owner.
-            # No built-in entity-usefulness relation: even a remembered berry
-            # has no prelearned nutritional value. Stage8 TD stays authoritative.
-            value = min(0.12, self._intrinsic_weight * 0.12 * target.confidence)
+            # Physical arrival after first sighting, not earlier familiarity
+            # with the coordinates, exhausts this entity-place encounter's
+            # spatial novelty. No interaction or physiological benefit is
+            # implied. An entity found on an already visited cell may still
+            # be unfamiliar until the individual subsequently reaches it.
+            # Stage8's actual learned/simulated action value is unchanged.
+            reached_since_sighting = geo.entity_site_reached(target)
+            if reached_since_sighting is None:
+                return self._unscored_geographic(
+                    proposal, cycle=cycle, t_monde=t_monde)
+            value = (
+                0.0 if reached_since_sighting
+                else min(0.12, self._intrinsic_weight * 0.12 * target.confidence)
+            )
             ext = 0.0 if original.evidence is None else original.evidence
             assessment = replace(
                 original.evaluation, status="evaluated",
                 intrinsic_status="applicable", intrinsic_value=value,
                 signal_ids=tuple(original.evaluation.signal_ids) + (
                     f"place-memory:{target.entity_id}:seen-t{target.observed_step}",
+                    ("place-memory:entity_place_reached_since_sighting"
+                     if reached_since_sighting else
+                     "place-memory:entity_place_not_yet_reached"),
                 ),
                 producers=tuple(dict.fromkeys(
                     original.evaluation.producers + ("exploration:entity_place_recall",)

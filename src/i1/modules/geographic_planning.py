@@ -97,9 +97,7 @@ def propose_geographic_frontier(
     command = PrimitiveCommand(
         "se_deplacer", {"direction": target.direction},
     )
-    option_id = (
-        f"option:geographic:{target.ref}:t{target.source_t_monde}"
-    )
+    option_id = f"option:geographic:{target.ref}"
     plan_id = f"plan:{option_id}:v1"
     plan = Plan(
         id=plan_id, option_ref=option_id, version="1",
@@ -203,12 +201,16 @@ def propose_geographic_transit(
 def propose_spatial_return(
     *, target: SpatialReturnTarget, initial_state: SimulationState,
     simulator: Simulator, st_version: str, t_monde: int, ttl_steps: int,
-    goal_ref: str,
 ) -> OptionProposal | None:
-    """A single validated hop toward a remembered place, not a compulsory act."""
+    """A goal-neutral information option: the active goal cannot make a place useful.
+
+    A memory stores a *witnessed location*, not food/water/energy efficacy.
+    Genuine TD learning is evaluated separately by Stage8 in the CURRENT
+    need state; Competition and Action Control alone decide motor execution.
+    """
     target.validate()
     initial_state.validate()
-    if (not goal_ref or not st_version or type(t_monde) is not int
+    if (not st_version or type(t_monde) is not int
         or t_monde < 1 or type(ttl_steps) is not int or ttl_steps < 1
         or target.source_t_monde != t_monde
         or target.origin != (initial_state.x, initial_state.y)):
@@ -218,7 +220,10 @@ def propose_spatial_return(
     )
     if effects is None:
         return None
-    option_id = f"option:place-memory:{target.ref}:t{t_monde}"
+    # A remembered destination and witnessed first hop are one revisitable
+    # deliberative intention across world steps; epoch remains checked by
+    # SpatialReturnTarget and evaluator, not baked into candidate identity.
+    option_id = f"option:place-memory:{target.ref}"
     plan_id = f"plan:{option_id}:v1"
     plan = Plan(
         id=plan_id, option_ref=option_id, version="1",
@@ -227,7 +232,7 @@ def propose_spatial_return(
             preconditions=("adjacent_passable",),
             predicted_consequences=effects,
             observation_window_steps=1),),
-        goal_ref=goal_ref, budget_used_uc=1, status="valid",
+        goal_ref=None, budget_used_uc=1, status="valid",
         st_version=st_version,
     )
     option = Option(
@@ -240,7 +245,7 @@ def propose_spatial_return(
         motive_ref=MotiveRef(type="place_memory", id=target.ref),
         founding_st_version=st_version,
         expires_at_step=t_monde + ttl_steps,
-        provenance="memory", goal_ref=goal_ref, plan_ref=plan_id,
+        provenance="memory", goal_ref=None, plan_ref=plan_id,
         state="proposed",
     )
     proposal = OptionProposal(

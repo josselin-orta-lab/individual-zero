@@ -1,0 +1,61 @@
+name: I1 issue317 lived TD memory decision bridge
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_317_contact_causality.py'
+      - 'tests/i1/test_i1_contact_causality_317.py'
+      - '.github/workflows/i1-issue317-lived-td-bridge.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Audit adversarial false positives
+        run: python -m unittest discover -s tests/i1 -p test_i1_contact_causality_317.py -v
+      - name: Retrieve frozen unmodified physically witnessed foraging life
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p bridge/evidence bridge/result
+          gh run download 39207099336 --repo "$GITHUB_REPOSITORY" --pattern 'i1-317-foraging-1141' --dir bridge/evidence
+          test -f bridge/evidence/i1-317-foraging-1141/foraging/1141/life-01.wal
+      - name: Authenticate entire WAL and certify experienced reward to later physical decision
+        run: |
+          python tools/audit_i1_317_contact_causality.py bridge/evidence/i1-317-foraging-1141/foraging/1141/life-01.wal --output bridge/result/verified.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('bridge/result/verified.json').read_text())
+          assert data["independent_hash_chain_verified"] is True
+          bridge=data["td_decision_bridge"]
+          assert bridge["physically_certified_reuses"] >= 1, bridge
+          assert any(
+              x["experience"]["prior_memory_move_step"] == 35
+              and x["experience"]["contact_step"] == 36
+              and x["experience"]["credited_td_step"] == 37
+              and x["reuse"]["world_step"] == 64
+              and x["reuse"]["local_crossing_depends_on_evidence"]
+              and x["reuse"]["intrinsic_value"] == 0.0
+              for x in bridge["examples"]), bridge
+          assert bridge["entity_causality_proven"] is False
+          assert bridge["heldout_population_go"] is False
+          print('CERTIFIED_LIVED_TD_MEMORY_DECISION_NO_ENTITY_CAUSALITY',bridge["physically_certified_reuses"])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-lived-td-memory-decision-proof
+          path: bridge/result/verified.json
+          if-no-files-found: warn
+          retention-days: 30

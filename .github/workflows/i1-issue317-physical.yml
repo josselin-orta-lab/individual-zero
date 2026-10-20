@@ -1,0 +1,58 @@
+name: I1 issue 317 physical memory evidence
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'src/i1/**'
+      - 'tests/i1/test_i1_memory_competition_317.py'
+      - 'tests/i1/test_i1_frontier_continuity_317.py'
+      - 'tests/i1/test_i1_contact_causality_317.py'
+      - 'tools/audit_i1_317_contact_causality.py'
+      - 'tests/i1/test_i1_spatial_wal_audit_314.py'
+      - 'tools/audit_i1_spatial_navigation_314.py'
+      - '.github/workflows/i1-issue317-physical.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  memory-world:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        world: [oasis, foraging, dry-valley, blocked-route]
+        seed: [1141, 1142]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install exact branch engine
+        run: python -m pip install -e .
+      - name: Regression tests for memory accumulation
+        run: python -m unittest discover -s tests/i1 -p test_i1_memory_competition_317.py -v
+      - name: Frontier candidate semantic continuity regression
+        run: python -m unittest discover -s tests/i1 -p test_i1_frontier_continuity_317.py -v
+      - name: Read-only remote-memory and TD false-positive regression tests
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_wal_audit_314.py -v
+      - name: Causal-contact attribution falsification tests
+        run: python -m unittest discover -s tests/i1 -p test_i1_contact_causality_317.py -v
+      - name: Independent mortal life with authentic WAL
+        env:
+          WORLD: ${{ matrix.world }}
+          SEED: ${{ matrix.seed }}
+        run: |
+          python tools/run_i1_world_preset.py --preset "$WORLD" --seed "$SEED" --steps 300 --lives 1 --custody wal --output-dir "reports/$WORLD/$SEED"
+          python tools/audit_i1_spatial_navigation_314.py "reports/$WORLD/$SEED/life-01.wal" --output "reports/$WORLD/$SEED/memory-audit.json"
+      - name: Preserve all physical evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-317-${{ matrix.world }}-${{ matrix.seed }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn

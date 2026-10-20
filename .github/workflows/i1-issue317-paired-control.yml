@@ -1,0 +1,220 @@
+name: I1 issue 317 paired native-main control and artifact audit
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - '.github/workflows/i1-issue317-paired-control.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        world: [oasis, foraging, dry-valley, blocked-route]
+        seed: [1141, 1142]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 9ad819f2ae61df9de3408d68defbff66525513ee
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - name: Execute identical newborn control without actor intervention
+        env:
+          WORLD: ${{ matrix.world }}
+          SEED: ${{ matrix.seed }}
+        run: |
+          python tools/run_i1_world_preset.py --preset "$WORLD" --seed "$SEED" --steps 300 --lives 1 --custody wal --output-dir "reports/$WORLD/$SEED"
+          python tools/audit_i1_spatial_navigation_314.py "reports/$WORLD/$SEED/life-01.wal" --output "reports/$WORLD/$SEED/memory-audit.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-control-${{ matrix.world }}-${{ matrix.seed }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: error
+
+  compare:
+    needs: control
+    if: ${{ needs.control.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: i1-317-control-*
+          path: controls
+      - name: Retrieve sealed fixed-SHA treatment artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p treatments
+          gh run download 39163777292 --repo "$GITHUB_REPOSITORY" --pattern 'i1-317-*' --dir treatments
+      - name: Audit all paired lives and summarize decision effects
+        run: |
+          python - <<'PY'
+          from collections import Counter
+          from pathlib import Path
+          import json
+          SOURCE={"control":"9ad819f2ae61df9de3408d68defbff66525513ee",
+                  "treatment":"c775281862c177ed35d87331bd97fad35c0d326e"}
+          WORLDS=("oasis","foraging","dry-valley","blocked-route")
+          EXPECTED={(w,s) for w in WORLDS for s in (1141,1142)}
+          def parse(root,arm):
+              found={}
+              for audit_path in sorted(Path(root).rglob("memory-audit.json")):
+                  base=audit_path.parent
+                  report=json.loads((base/"report.json").read_text())
+                  audit=json.loads(audit_path.read_text())
+                  assert report["status"]=="COMPLETED_WITHOUT_SCIENTIFIC_VERDICT"
+                  assert report["run"]["git_head"]==SOURCE[arm], (arm,base,report["run"]["git_head"])
+                  assert report["run"]["custody"]=="wal" and report["run"]["requested_steps"]==300
+                  assert report["run"]["requested_lives"]==1
+                  assert report["engine"]=="I1" and report["old_cohorts_used_as_oracles"] is False
+                  assert len(report["lives"])==1
+                  life=report["lives"][0]
+                  key=(report["source"]["preset"],report["run"]["seed"])
+                  assert key in EXPECTED and key not in found,(arm,key)
+                  assert life["individual_id"]==f"i1:preset:{key[0]}:{key[1]}:0"
+                  assert life["custody_file"]=="life-01.wal"
+                  assert audit["independent_hash_chain_verified"] is True
+                  assert audit["journal_head"]==life["journal_head"]
+                  assert audit["journal_entries"]==life["durable_entries"]
+                  trajectory=life["steps"]
+                  assert 1<=len(trajectory)<=300
+                  assert trajectory[-1]["journal_head"]==life["journal_head"]
+                  assert life["lifecycle"] in ("active","dead")
+                  assert (life["lifecycle"]=="dead") or len(trajectory)==300
+                  counts=Counter(row["action_primitive"] for row in trajectory)
+                  uc=Counter()
+                  kinds=Counter()
+                  max_memory_ratio=0.0
+                  memory_eval_count=0
+                  memory_crossing_traces=0
+                  learned_memory_evaluations=0
+                  def wal_float(v):
+                      if type(v) in (float,int):
+                          return float(v)
+                      if (isinstance(v,dict) and set(v)=={"$f64"}
+                              and isinstance(v["$f64"],str)):
+                          return float.fromhex(v["$f64"])
+                      raise ValueError("unexpected canonical WAL float encoding")
+                  wal_path=base/"life-01.wal"
+                  with wal_path.open(encoding="utf-8") as f:
+                      for line in f:
+                          e=json.loads(line)["causal_event"]
+                          kind=e.get("kind")
+                          kinds[kind]+=1
+                          data=e.get("data",{})
+                          if not isinstance(data,dict):
+                              continue
+                          if kind=="compute_charge" and data.get("accepted"):
+                              amount=data.get("requested_uc",0)
+                              assert type(amount) is int and amount>=0
+                              uc[data.get("operation","?")]+=amount
+                          elif kind=="competition_cycle":
+                              for trace in data.get("traces",[]):
+                                  if isinstance(trace,dict) and str(trace.get("option_ref","")).startswith("option:place-memory:"):
+                                      memory_eval_count+=1
+                                      threshold=wal_float(trace["threshold"])
+                                      accumulator=wal_float(trace["accumulator_after"])
+                                      assert threshold>0 and accumulator>=0
+                                      max_memory_ratio=max(max_memory_ratio,accumulator/threshold)
+                                      memory_crossing_traces+=int(trace["crossed"])
+                          elif kind=="stage8_option_evaluation" and str(data.get("option_ref","")).startswith("option:place-memory:"):
+                              learned_memory_evaluations+=int(data.get("learned_value_status")=="learned")
+                  found[key]=dict(
+                      world=key[0],seed=key[1],sha=SOURCE[arm],life_id=life["individual_id"],
+                      world_digest=report["source"]["sha256"],
+                      physics=report["environment"]["world_physics_digest"],
+                      birth_body=report["environment"]["initial_body"],
+                      steps=len(trajectory),lifecycle=life["lifecycle"],
+                      actions=dict(counts),final_body=trajectory[-1]["body"],
+                      final_position=trajectory[-1]["position"],
+                      fallback_steps=sum(bool(s.get("fallback_used")) for s in trajectory),
+                      mean_cycles=sum(s["cycles_used"] for s in trajectory)/len(trajectory),
+                      max_memory_accumulation_over_threshold=max_memory_ratio,
+                      memory_evaluations=memory_eval_count,
+                      learned_memory_evaluations=learned_memory_evaluations,
+                      memory_crossing_traces=memory_crossing_traces,
+                      memory=dict(audit["stages"]),
+                      memory_crossings_consistent=(memory_crossing_traces==audit["stages"].get("crossed",0)),
+                      recalled=audit["recalls_with_candidates"],
+                      journal_entries=audit["journal_entries"],
+                      journal_head=audit["journal_head"],
+                      applied_memory=audit["proven_memory_action_applied"],
+                      return_arrival=audit["proven_return_arrival"],
+                      uc_total=sum(uc.values()),
+                      memory_retrieval_uc=sum(v for k,v in uc.items() if k.startswith("geographic_")),
+                      uc_by_operation=dict(uc),
+                      consolidation_commits=kinds["stage10_consolidation_committed"],
+                      td_event_kinds={k:v for k,v in kinds.items() if "td" in str(k).lower()},
+                  )
+              assert set(found)==EXPECTED,(arm,sorted(set(found)),sorted(EXPECTED-set(found)))
+              return found
+          controls=parse("controls","control")
+          changes=parse("treatments","treatment")
+          assert all(z["memory_crossings_consistent"] for z in [*controls.values(),*changes.values()])
+          pairs=[]
+          for key in sorted(EXPECTED):
+              control,treatment=controls[key],changes[key]
+              assert control["life_id"]==treatment["life_id"]
+              for tag in ("world_digest","physics","birth_body"):
+                  assert control[tag]==treatment[tag],(key,tag)
+              pairs.append(dict(world=key[0],seed=key[1],control=control,treatment=treatment))
+          def total(rows,field):
+              return sum(r[field] for r in rows)
+          aggregates={}
+          for arm,records in (("control",list(controls.values())),("treatment",list(changes.values()))):
+              actions=sum((Counter(x["actions"]) for x in records),Counter())
+              stages=sum((Counter(x["memory"]) for x in records),Counter())
+              aggregates[arm]=dict(
+                  deaths=sum(x["lifecycle"]=="dead" for x in records),
+                  mean_observed_steps=total(records,"steps")/len(records),
+                  actions=dict(actions),
+                  memory_stages=dict(stages),
+                  memory_evaluations=total(records,"memory_evaluations"),
+                  max_accumulation_over_threshold=max(x["max_memory_accumulation_over_threshold"] for x in records),
+                  recovered_sites=sum(x["return_arrival"] for x in records),
+                  memory_action_lives=sum(x["applied_memory"] for x in records),
+                  uc_total=total(records,"uc_total"),
+                  consolidation_commits=total(records,"consolidation_commits"),
+              )
+          verdict="NO-GO"
+          result=dict(
+              schema="individual-zero-i1-issue317-paired-audit/v1",
+              status="COMPLETE_PAIRWISE_AUTHENTICATED",
+              treatment_run=39163777292,
+              baseline_main=SOURCE["control"],
+              corrected_software=SOURCE["treatment"],
+              pairs=pairs,aggregate=aggregates,
+              scientific_verdict=verdict,
+              note="No scientific GO without physically applied useful memory, learned subsequent behaviour, retained vital arbitration, held-out replication. Synthetic unit crossings are not physical evidence.",
+          )
+          dest=Path("reports/issue317-paired-audit.json")
+          dest.parent.mkdir(exist_ok=True)
+          dest.write_text(json.dumps(result,sort_keys=True,indent=2)+"\n")
+          print("ISSUE317_PAIRED_VERIFIED")
+          print(json.dumps(aggregates,indent=2,sort_keys=True))
+          for p in pairs:
+              c,t=p["control"],p["treatment"]
+              print(f"{p['world']} {p['seed']}: steps {c['steps']}->{t['steps']} moved {c['actions'].get('se_deplacer',0)}->{t['actions'].get('se_deplacer',0)} memory crossing {c['memory'].get('crossed',0)}->{t['memory'].get('crossed',0)} applied {c['memory'].get('physically_applied',0)}->{t['memory'].get('physically_applied',0)} site returns {c['memory'].get('arrived_at_previously_seen_site',0)}->{t['memory'].get('arrived_at_previously_seen_site',0)}")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-paired-summary
+          path: reports/issue317-paired-audit.json
+          retention-days: 30
+          if-no-files-found: warn

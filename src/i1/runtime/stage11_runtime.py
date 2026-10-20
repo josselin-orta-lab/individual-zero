@@ -831,7 +831,6 @@ class Stage11Runtime(Stage9Runtime):
                     simulator=self.simulator,
                     st_version=st_before_cycle.version, t_monde=capture.t_monde,
                     ttl_steps=self._stage6_config.planning.option_ttl_steps,
-                    goal_ref=goal_for_planning.id,
                 )
                 if proposal is None or (
                     self.stage3.control.verifier_plan_connu(proposal)
@@ -1187,12 +1186,39 @@ class Stage11Runtime(Stage9Runtime):
             approved = set()
             if geo is not None:
                 approved = {
-                    f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                    f"option:place-memory:{target.ref}"
                     for target in geo.place_offered
                 }
+            # Preserve a prior, physically applied intention only until
+            # the freshly observed next hop has actually been registered.
+            # A changed/unobserved entity-place or a failed motor step cannot
+            # obtain a continuity transfer.
+            continuation = None
+            if not self._cycle_degraded and geo is not None:
+                prior_ref = self.competition.engaged_option_id
+                prior = (
+                    None if prior_ref is None
+                    else self.competition.proposal_for(prior_ref)
+                )
+                offered_refs = {
+                    proposal.option.id
+                    for proposal in self._stage11_place_proposals_this_cycle
+                }
+                for target in geo.place_offered:
+                    next_ref = f"option:place-memory:{target.ref}"
+                    if (next_ref in offered_refs
+                        and prior_ref is not None
+                        and self._grounded_memory_continuation(
+                            previous=prior, target=target, capture=capture,
+                            control_step=self.stage3.control.current_step,
+                        )):
+                        continuation = (prior_ref, next_ref)
+                        break
             for old in self.competition.candidate_proposals:
                 if (old.option.motive_ref.type == "place_memory"
-                    and old.option.id not in approved):
+                    and old.option.id not in approved
+                    and (continuation is None
+                         or old.option.id != continuation[0])):
                     self.competition.invalidate_candidate(old.option.id)
                     self.stage3.control.clear_option_step(old.option.id)
             funded_refs = set()
@@ -1215,6 +1241,28 @@ class Stage11Runtime(Stage9Runtime):
                                 cycle=cycle,
                                 data={"option_ref": proposal.option.id,
                                       "registered": accepted})
+            if continuation is not None and continuation[1] in funded_refs:
+                # Competition may carry only its configured residual; its
+                # new per-hop motor candidate still needs a fresh evaluation,
+                # threshold crossing and Action Control admission.
+                continued = self.competition.continue_engaged_memory(
+                    prior_ref=continuation[0], next_ref=continuation[1],
+                    t_monde=capture.t_monde,
+                )
+                if continued:
+                    self._write(
+                        kind="i1_place_memory_intention_continued", cycle=cycle,
+                        data={
+                            "previous_option_ref": continuation[0],
+                            "next_option_ref": continuation[1],
+                            "confirmed_position": [capture.x, capture.y],
+                            "carried_accumulator": self.competition.accumulator_for(
+                                continuation[1]
+                            ),
+                            "source": "previous_applied_command_and_current_perception",
+                            "forced_motor_selection": False,
+                        },
+                    )
             if geo is not None and geo.config.remember_entities:
                 # Only charged and *retained* Competition candidates may
                 # remain published. An eligible but unfunded target cannot
@@ -1222,14 +1270,14 @@ class Stage11Runtime(Stage9Runtime):
                 geo.freeze_places(tuple(
                     target for target in geo.place_offered
                     if not self._cycle_degraded
-                    and f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                    and f"option:place-memory:{target.ref}"
                        in funded_refs
                     and self.competition.proposal_for(
-                        f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                        f"option:place-memory:{target.ref}"
                     ) is not None
                 ))
                 now_funded = {
-                    f"option:place-memory:{target.ref}:t{target.source_t_monde}"
+                    f"option:place-memory:{target.ref}"
                     for target in geo.place_offered
                 }
                 for old in self.competition.candidate_proposals:
@@ -1274,6 +1322,43 @@ class Stage11Runtime(Stage9Runtime):
                 )
         hooks[3]["competition"] = register_geographic_targets
         return hooks
+
+    @staticmethod
+    def _grounded_memory_continuation(*, previous, target, capture, control_step):
+        """No oracle: require a SENT previous step and observed expected hop.
+
+        The previous one-hop motor plan was admitted and physically applied
+        (Action Control advanced its step). The next target is a separate,
+        freshly preflighted one-hop plan, grounded by today's first-person
+        Perception and the Exploration owner's witnessed path.
+        """
+        if (previous is None or previous.plan is None
+            or previous.option.provenance != "memory"
+            or previous.option.motive_ref.type != "place_memory"
+            or previous.option.goal_ref is not None
+            or previous.plan.goal_ref is not None
+            or len(previous.plan.steps) != 1
+            or previous.plan.steps[0].command.primitive != "se_deplacer"
+            or previous.option.learning_signature !=
+                f"memory_place_return:{target.entity_id}"
+            or target.origin != (capture.x, capture.y)
+            or control_step[0] != previous.option.id
+            or control_step[2] != 1):
+            return False
+        prior_ref = previous.option.motive_ref.id
+        if previous.option.id != f"option:place-memory:{prior_ref}":
+            return False
+        prefix = (
+            f"place:{target.entity_id}:at:"
+            f"{target.observed_position[0]}:{target.observed_position[1]}:from:"
+        )
+        return (
+            prior_ref.startswith(prefix)
+            and prior_ref.endswith(
+                f":via:{capture.x}:{capture.y}"
+            )
+            and prior_ref != target.ref
+        )
 
     def _dispatch_decision(
         self, *, proposal, prepared, admission, cycle, sent_t_monde,

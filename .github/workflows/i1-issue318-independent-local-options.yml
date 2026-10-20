@@ -1,0 +1,27 @@
+name: I1 issue318 independent goal-neutral local options
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'src/i1/runtime/i1_active_runtime.py'
+      - 'tests/i1/test_i1_318_cross_goal_local_opportunities.py'
+      - '.github/workflows/i1-issue318-independent-local-options.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  local-option-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - run: python -m py_compile src/i1/runtime/i1_active_runtime.py
+      - run: python -m unittest discover -s tests/i1 -p test_i1_318_cross_goal_local_opportunities.py -v
+      - run: python -m unittest discover -s tests/i1 -p test_i1_318_cross_goal_cohort.py -v
+      - run: python -m unittest discover -s tests/i1 -p test_i1_318_critical_alert_guard.py -v

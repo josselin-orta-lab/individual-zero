@@ -1048,6 +1048,32 @@ class Stage10Runtime(Stage9Runtime):
                 substrate._mortal_boundary.halt(failed_step=failure_step)
             raise
 
+    @staticmethod
+    def _verify_ordinary_sleep_provenance(*, result, prepared, proposal) -> None:
+        """Cross-check the actually dispatched Competition choice with its plan.
+
+        Stage4 dispatches ordinary decisions only after Competition crossing
+        and Action Control admission. Its applied result must refer to the
+        same option and prepared plan step. This is not an extra motive gate.
+        """
+        option = getattr(proposal, "option", None)
+        plan = getattr(proposal, "plan", None)
+        if (result.execution_status != "applied"
+                or result.source != "decision"
+                or result.fallback_used is not False
+                or result.command_primitive != "dormir"
+                or not result.option_ref
+                or option is None or plan is None
+                or result.option_ref != getattr(option, "id", None)
+                or result.option_ref != getattr(prepared, "option_ref", None)
+                or getattr(option, "plan_ref", None) != getattr(plan, "id", None)
+                or getattr(plan, "option_ref", None) != result.option_ref
+                or not any(
+                    getattr(step, "command", None) == getattr(prepared, "command", None)
+                    for step in getattr(plan, "steps", ())
+                )):
+            raise RuntimeError("sleep command does not match applied ordinary option plan")
+
     def _run_step_with_mortal_guard(self):
         if (self.sleep_session.mode == "sleeping"
                 or self.sleep_session.export_causal_state()["admitted_sleep_step"] is not None):
@@ -1060,11 +1086,13 @@ class Stage10Runtime(Stage9Runtime):
             if self._last_applied_decision is None:
                 raise RuntimeError("applied sleep has no matching admission")
             admission,prepared,proposal = self._last_applied_decision
+            self._verify_ordinary_sleep_provenance(
+                result=result,prepared=prepared,proposal=proposal,
+            )
             self.sleep_session.record_applied_sleep_decision(
                 world_step=self.scheduler.t_monde,
                 admission=admission,prepared=prepared,
-                motive_type=proposal.option.motive_ref.type,
-                execution_status="applied",
+                execution_status=result.execution_status,
             )
             # The next physical step, not this one, enters sleeping mode.
         return result

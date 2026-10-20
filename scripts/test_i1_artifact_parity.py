@@ -813,11 +813,92 @@ DEFAULT_TOXIC_BERRY_INTEGRITY_DELTA = -10.0
 _ISSUE_314_PINNED_BLOBS = {
     "i1/modules/spatial_memory.py": "f3f9f7f517309cb2f83112c7e268496f5b46eb23",
     "i1/modules/geographic_exploration.py": "6e3f6807cb63406c7dbfbc6d5ebbdf573f2aed9b",
-    "i1/modules/geographic_planning.py": "340fe53c2ee1d1cd1cd9025b929fc157a5ea2e31",
+    "i1/modules/geographic_planning.py": "855f6b1cf53d559fdbb427586841ccc41bea3728",
     "i1/modules/stage11_evaluator.py": "ee40ddbedee554525bf9f4565b03d4bba3654d65",
     "i1lab/i1_natural_runtime.py": "f4f6f35e3b3d323256845602253e90d7212b2ae5",
-    "i1lab/stage11_runtime.py": "76a161dec8c0e0b99e0f18fd81aa10ac9e34731b",
+    "i1lab/stage11_runtime.py": "e67aaca4a923a13619c6ca66d79c3beb30ce290c",
 }
+
+# Review-locked #317 I1-only source changes. Values are complete Git blob
+# hashes of exactly the reviewed source, not mutable path exemptions.
+_ISSUE_317_PINNED_BLOBS = {
+    "i1/modules/competition.py": "e0aab4aa4e21d30165fb39f3fc03e9700ef948bd",
+    "i1/modules/geographic_exploration.py": "1cc34bf4db27f73b48d1b39236e4f04b5f749b67",
+    "i1/modules/geographic_planning.py": "8aa71effe4cf55827a27a21af4e52d09938e34d6",
+    "i1/modules/stage11_evaluator.py": "31ada691ea607bdcfb1900f3b421e33ba6f20754",
+    "i1lab/stage11_runtime.py": "15295d162d21b56e24c07d1dd8835a104f2bea6f",
+    "i1lab/stage4_runtime.py": "80a7504009205f3481f936251cddcaa2e2df8393",
+    # #317: reviewed ordinary sleep-admission correction. These pins are
+    # immutable source Git blob hashes; no wildcard or mutable path waiver.
+    "i1/modules/sleep_session.py": "13854904ad3f924d0caa6ea0e37d7bb4da44ca07",
+    "i1lab/stage10_runtime.py": "eea70a7ac37e43873c742da0625ae0cf56e171c6",
+}
+_ISSUE_317_NATIVE_SOURCES = {
+    "i1/modules/competition.py": "src/i1/modules/competition.py",
+    "i1/modules/geographic_exploration.py": "src/i1/modules/geographic_exploration.py",
+    "i1/modules/geographic_planning.py": "src/i1/modules/geographic_planning.py",
+    "i1/modules/stage11_evaluator.py": "src/i1/modules/stage11_evaluator.py",
+    "i1lab/stage11_runtime.py": "src/i1/runtime/stage11_runtime.py",
+    "i1lab/stage4_runtime.py": "src/i1/runtime/stage4_runtime.py",
+    "i1/modules/sleep_session.py": "src/i1/modules/sleep_session.py",
+    "i1lab/stage10_runtime.py": "src/i1/runtime/stage10_runtime.py",
+}
+
+
+def _approved_issue317_blob(root: Path, rel: str) -> bool:
+    expected = _ISSUE_317_PINNED_BLOBS.get(rel)
+    if expected is None:
+        return False
+    source = (ROOT / _ISSUE_317_NATIVE_SOURCES[rel]).read_bytes()
+    source_digest = sha1(
+        b"blob " + str(len(source)).encode("ascii") + b"\0" + source
+    ).hexdigest()
+    if source_digest != expected:
+        return False
+    # Generated source parity to the current checked-in source is independently
+    # enforced by the builder manifest in _build; never admit arbitrary changes.
+    return (root / rel).is_file()
+
+
+
+
+# #318 exact opt-in native candidate review. These are Git blob SHA1 pins,
+# not wildcard file exceptions; any subsequent code change fails closed.
+# Canonical birth flags stay false and are separately covered by I1/M11 tests.
+_EXPERIENCED_318_BLOBS = {
+    # Strictly reviewed I1-only source, not an exemption from manifest parity.
+    # Paired *research* tau is optional; canonical births still derive from ID.
+    "i1lab/i1_birth_temperament.py":
+        ("src/i1/runtime/i1_birth_temperament.py",
+         "e88bedd1f89eb1409e8d6f6524e906718a1e8654"),
+    "i1lab/i1_active_runtime.py":
+        ("src/i1/runtime/i1_active_runtime.py",
+         "6c74bd5ea7f5cdaa960bf7aa5a1cd7735a8bde30"),
+    "i1/modules/experienced_place_relevance.py":
+        ("src/i1/modules/experienced_place_relevance.py",
+         "5579f0b9854e324a03510a86a532a4027fc4a1e9"),
+    "i1lab/i1_natural_runtime.py":
+        ("src/i1/runtime/i1_natural_runtime.py",
+         "26095a7af81412dfe5587c7553014d481bad9deb"),
+    "i1lab/m11_transactional_mortal.py":
+        ("src/i1/runtime/m11_transactional_mortal.py",
+         "3ea9bbd6f076957e7e21613e7ef81ebd63b7a69d"),
+}
+
+
+def _approved_experienced_318_blob(root: Path, rel: str) -> bool:
+    registered = _EXPERIENCED_318_BLOBS.get(rel)
+    if registered is None:
+        return False
+    source_path, pinned_sha1 = registered
+    original = (ROOT / source_path).read_bytes()
+    actual = sha1(
+        b"blob " + str(len(original)).encode("ascii") + b"\0" + original
+    ).hexdigest()
+    if actual != pinned_sha1:
+        return False
+    # The builder manifest separately verifies the generated output bytes.
+    return (root / rel).is_file()
 
 
 def _approved_issue314_blob(root: Path, rel: str) -> bool:
@@ -857,10 +938,10 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not _approved_issue314_blob(new_root, rel))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_issue317_blob(new_root, rel) or _approved_experienced_318_blob(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not _approved_issue314_blob(new_root, rel) and not (
+            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_issue317_blob(new_root, rel) or _approved_experienced_318_blob(new_root, rel)) and not (
                 False  # Stage10 is handled by the stacked exact approval below
                 or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_natural_toxic_berry_birth(

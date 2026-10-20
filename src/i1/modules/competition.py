@@ -120,11 +120,19 @@ class Competition:
         self._noise_draw = noise_draw
         self._registry: dict[str, CandidateState] = {}
         self._engaged_option_id: str | None = None
+        # A re-grounded, previously *applied* multi-hop intent is not an
+        # engaged motor candidate. It may be suspended by genuine sleep,
+        # without turning into a fallback command or a physiological oracle.
+        self._interruptible_intention_id: str | None = None
         self._cycle = 0
 
     @property
     def engaged_option_id(self) -> str | None:
         return self._engaged_option_id
+
+    @property
+    def interrupted_intention_id(self) -> str | None:
+        return self._interruptible_intention_id
 
     @property
     def registry_size(self) -> int:
@@ -188,6 +196,53 @@ class Competition:
         state = self._registry.get(option_ref)
         return None if state is None else state.accumulator
 
+    def continue_engaged_memory(
+        self, *, prior_ref: str, next_ref: str, t_monde: int,
+    ) -> bool:
+        """Carry bounded commitment, never motor evidence or invented TD.
+
+        Only Stage11 may invoke this after verifying a truly executed,
+        personally observed route hop and re-grounding a new step in today's
+        Perception. A different option ID always receives a fresh motor plan
+        and must be evaluated/admitted again.
+        """
+        if (type(t_monde) is not int or t_monde < 2
+            or prior_ref == next_ref or self._engaged_option_id != prior_ref):
+            return False
+        old = self._registry.get(prior_ref)
+        new = self._registry.get(next_ref)
+        if old is None or new is None:
+            return False
+        p, q = old.proposal.option, new.proposal.option
+        if (old.last_proposal_t != t_monde - 1
+            or new.last_proposal_t != t_monde
+            or p.provenance != "memory" or q.provenance != "memory"
+            or p.motive_ref.type != "place_memory"
+            or q.motive_ref.type != "place_memory"
+            or p.goal_ref is not None or q.goal_ref is not None
+            or p.learning_signature != q.learning_signature
+            or old.proposal.plan is None or new.proposal.plan is None
+            or old.proposal.plan.goal_ref is not None
+            or new.proposal.plan.goal_ref is not None
+            or len(old.proposal.plan.steps) != 1
+            or len(new.proposal.plan.steps) != 1
+            or old.proposal.plan.steps[0].command.primitive != "se_deplacer"
+            or new.proposal.plan.steps[0].command.primitive != "se_deplacer"
+            or new.accumulator != 0.0 or old.accumulator <= 0.0):
+            return False
+        # The old, already evaluated target may support the semantic
+        # intention, but cannot by itself cross the NEW motor threshold.
+        new.accumulator = min(
+            old.accumulator, new.last_threshold * self._config.residual,
+        )
+        # Preserve ONLY an informational intention. An unselected new motor
+        # plan must NEVER become the engaged fallback simply by being
+        # proposed after a previously applied, verified hop.
+        self._interruptible_intention_id = next_ref
+        self._engaged_option_id = None
+        self._registry.pop(prior_ref, None)
+        return True
+
     def is_engaged(self, option_ref: str) -> bool:
         return self._engaged_option_id == option_ref
 
@@ -216,6 +271,8 @@ class Competition:
                 # a non-engaged option never transfers to the revised plan.
                 existing.accumulator = 0.0
                 existing.last_threshold = self._config.base_threshold
+                if self._interruptible_intention_id == option.id:
+                    self._interruptible_intention_id = None
             existing.proposal = proposal
             existing.last_proposal_t = t_monde
             return True
@@ -310,7 +367,7 @@ class Competition:
             if option_id == "permanent:attendre":
                 continue
             if option_id not in keep_ids:
-                self._registry.pop(option_id, None)
+                self.invalidate_candidate(option_id)
 
     def open_deliberation(
         self,
@@ -330,12 +387,19 @@ class Competition:
                 )
             )
             if invalid:
-                self._registry.pop(option_id, None)
-                if self._engaged_option_id == option_id:
-                    self._engaged_option_id = None
+                self.invalidate_candidate(option_id)
                 continue
             if option_id == self._engaged_option_id:
-                state.accumulator = 0.0
+                if (option.provenance == "memory"
+                    and option.motive_ref.type == "place_memory"):
+                    # A physically admitted memory winner can remain an
+                    # intention, not an automatic next motor command. Carry
+                    # at most the existing configured residual of its proof.
+                    state.accumulator = min(
+                        state.accumulator, state.last_threshold,
+                    ) * self._config.residual
+                else:
+                    state.accumulator = 0.0
 
     def urgency(self, cycle: int) -> float:
         return 1.0 + (self._config.urgency_max - 1.0) * (
@@ -421,7 +485,10 @@ class Competition:
                 self._config.base_threshold
                 - (
                     self._config.inertia
-                    if option_id == self._engaged_option_id
+                    if option_id in (
+                        self._engaged_option_id,
+                        self._interruptible_intention_id,
+                    )
                     else 0.0
                 ),
             )
@@ -439,6 +506,10 @@ class Competition:
             )
             state.accumulator = after
             state.last_threshold = threshold
+            # A genuine negative lived evaluation terminates the suspended
+            # intention; it cannot survive contradictory learned evidence.
+            if evidence < 0 and option_id == self._interruptible_intention_id:
+                self._interruptible_intention_id = None
             did_cross = after >= threshold
             traces.append(
                 CompetitionTrace(
@@ -501,15 +572,42 @@ class Competition:
         self._registry.pop(option_ref, None)
         if self._engaged_option_id == option_ref:
             self._engaged_option_id = None
+        if self._interruptible_intention_id == option_ref:
+            self._interruptible_intention_id = None
 
-    def close_deliberation(self, winner: OptionProposal | None) -> None:
+    def close_deliberation(
+        self, winner: OptionProposal | None, *, adjudicated: bool = True,
+    ) -> None:
+        # A fallback is not a Competition victory. No candidate was judged
+        # sufficient, so do not erase accumulated evidence for viable plans
+        # merely because the body had to perform a default safe action.
+        # Old candidates still expire, lose their goal, change material plans,
+        # or face normal capacity limits. No threshold or TD is altered.
+        if not adjudicated:
+            return
         winner_id = None if winner is None else winner.option.id
+        # One continuation can be suspended by an actually *applied* sleep:
+        # sleep is a physiological interruption, not contrary evidence that
+        # the personally witnessed destination has disappeared. The
+        # candidate gains NO evidence and remains below its threshold;
+        # neither motor engagement nor fallback admission is inherited.
+        sleepy = winner is not None and self._primitive_for(winner) == "dormir"
+        suspended_id = (
+            self._interruptible_intention_id if sleepy else None
+        )
+        if suspended_id is not None:
+            pending = self._registry.get(suspended_id)
+            if (pending is None
+                or pending.accumulator >= pending.last_threshold):
+                suspended_id = None
         for option_id, state in self._registry.items():
-            if option_id == winner_id:
+            if option_id == winner_id or option_id == suspended_id:
                 continue
             state.accumulator *= self._config.residual
         if winner_id is not None:
             self._engaged_option_id = winner_id
+        if not sleepy or suspended_id is None:
+            self._interruptible_intention_id = None
 
     def fallback_candidates(self) -> tuple[OptionProposal, ...]:
         candidates: list[OptionProposal] = []
@@ -531,7 +629,7 @@ class Competition:
         return candidates[0]
 
     def export_causal_state(self) -> object:
-        return {
+        state = {
             "config_version": self._config.version,
             "cycle": self._cycle,
             "engaged_option_id": self._engaged_option_id,
@@ -545,6 +643,11 @@ class Competition:
                 for _, state in sorted(self._registry.items())
             ],
         }
+        # Leave legacy snapshots byte-for-byte identical without a suspended
+        # intent. Only a personally verified continuation adds causal state.
+        if self._interruptible_intention_id is not None:
+            state["interrupted_intention_id"] = self._interruptible_intention_id
+        return state
 
     def restore_causal_state(self, state: object) -> None:
         if not isinstance(state, Mapping):
@@ -574,6 +677,23 @@ class Competition:
                 last_threshold=float(row["last_threshold"]),
                 last_proposal_t=int(row["last_proposal_t"]),
             )
+        suspended = state.get("interrupted_intention_id")
+        if suspended is not None:
+            from math import isfinite
+            candidate = registry.get(suspended)
+            if (not isinstance(suspended, str)
+                or candidate is None or suspended == engaged
+                or candidate.proposal.option.provenance != "memory"
+                or candidate.proposal.option.motive_ref.type != "place_memory"
+                or candidate.proposal.option.goal_ref is not None
+                or candidate.proposal.plan is None
+                or candidate.proposal.plan.goal_ref is not None
+                or len(candidate.proposal.plan.steps) != 1
+                or candidate.proposal.plan.steps[0].command.primitive != "se_deplacer"
+                or not isfinite(candidate.accumulator)
+                or candidate.accumulator < 0):
+                raise ValueError("invalid interrupted first-person memory intention")
         self._cycle = cycle
         self._engaged_option_id = engaged
+        self._interruptible_intention_id = suspended
         self._registry = registry

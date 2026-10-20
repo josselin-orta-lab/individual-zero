@@ -1,0 +1,44 @@
+name: I1 issue317 independent loop diagnosis
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_317_loop_diagnostic.py'
+      - '.github/workflows/i1-issue317-loop-diagnostic.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Retrieve immutable held-out WAL archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p evidence/baseline evidence/interrupted
+          gh run download 39198827810 --repo "$GITHUB_REPOSITORY" --pattern 'i1-317-remote-heldout-baseline-*' --dir evidence/baseline
+          gh run download 39198827810 --repo "$GITHUB_REPOSITORY" --pattern 'i1-317-remote-heldout-interrupted-*' --dir evidence/interrupted
+      - name: Authenticate and classify all eight paired lives
+        run: |
+          python tools/audit_i1_317_loop_diagnostic.py \
+            --baseline evidence/baseline \
+            --interrupted evidence/interrupted \
+            --baseline-sha 1446a78a54c95b289e1f5654313d84849f5383df \
+            --interrupted-sha eef98704569e44e0c026aebbeeb2eae2396911d8 \
+            --output evidence/issue317-loop-diagnostic.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-loop-diagnostic
+          path: evidence/issue317-loop-diagnostic.json
+          if-no-files-found: warn
+          retention-days: 30

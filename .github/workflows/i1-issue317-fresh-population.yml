@@ -1,0 +1,91 @@
+name: I1 issue317 fresh independent 20-life population
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_317_fresh_population.py'
+      - 'tests/i1/test_i1_fresh_population_317.py'
+      - '.github/workflows/i1-issue317-fresh-population.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  birth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        preset: [oasis, foraging, dry-valley, blocked-route, memory-corridor]
+        seed: [8411, 8431, 8467, 8497]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install canonical I1
+        run: python -m pip install -e .
+      - name: Produce one unforced mortal birth
+        env:
+          PRESET: ${{ matrix.preset }}
+          SEED: ${{ matrix.seed }}
+        run: |
+          python tools/run_i1_world_preset.py --preset "$PRESET" --seed "$SEED" --steps 300 --lives 1 --custody wal --output-dir "lives/$PRESET/$SEED"
+          python tools/audit_i1_spatial_navigation_314.py "lives/$PRESET/$SEED/life-01.wal" --output "lives/$PRESET/$SEED/spatial-audit.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-fresh-${{ matrix.preset }}-${{ matrix.seed }}
+          path: lives/
+          retention-days: 30
+          if-no-files-found: warn
+  aggregate:
+    needs: [birth]
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Lock fresh population design with adversarial tests
+        run: python -m unittest discover -s tests/i1 -p test_i1_fresh_population_317.py -v
+      - name: Download twenty sealed birth artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p fresh/lives fresh/report
+          for world in oasis foraging dry-valley blocked-route memory-corridor; do
+            for seed in 8411 8431 8467 8497; do
+              gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "i1-317-fresh-$world-$seed" --dir "fresh/temp-$world-$seed"
+              mkdir -p "fresh/lives/$world/$seed"
+              cp "fresh/temp-$world-$seed/$world/$seed/"* "fresh/lives/$world/$seed/"
+            done
+          done
+          test "$(find fresh/lives -name life-01.wal | wc -l)" -eq 20
+      - name: Independent WAL chain, physiology, TD, UC and survival audit
+        run: |
+          python tools/audit_i1_317_fresh_population.py --root fresh/lives --expected-sha "$GITHUB_SHA" --output fresh/report/fresh-population.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('fresh/report/fresh-population.json').read_text())
+          assert len(d['individuals'])==20
+          assert d['summary']['lives']==20
+          assert d['scientific_verdict']=='NO-GO'
+          assert d['entity_specific_causality_proven'] is False
+          print('I1_317_FRESH_20_BIRTHS_AUTHENTICATED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-fresh-population-20-life-scientific-report
+          path: fresh/report/
+          retention-days: 30
+          if-no-files-found: warn

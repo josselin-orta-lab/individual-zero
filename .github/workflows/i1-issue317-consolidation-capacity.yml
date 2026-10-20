@@ -1,0 +1,59 @@
+name: I1 issue317 sealed consolidation capacity shadow
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_317_consolidation_capacity.py'
+      - 'tests/i1/test_i1_317_consolidation_capacity.py'
+      - '.github/workflows/i1-issue317-consolidation-capacity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test fraudulent episode and coma evidence
+        run: python -m unittest discover -s tests/i1 -p test_i1_317_consolidation_capacity.py -v
+      - name: Retrieve immutable 20-life cohort
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input/births input/report result
+          gh run download 39243776617 --repo "$GITHUB_REPOSITORY" --name i1-317-fresh-population-20-life-scientific-report --dir input/report
+          for world in oasis foraging dry-valley blocked-route memory-corridor; do
+            for seed in 8411 8431 8467 8497; do
+              gh run download 39243776617 --repo "$GITHUB_REPOSITORY" --name "i1-317-fresh-$world-$seed" --dir "input/zip-$world-$seed"
+              mkdir -p "input/births/$world/$seed"
+              cp "input/zip-$world-$seed/$world/$seed/life-01.wal" "input/births/$world/$seed/"
+            done
+          done
+      - name: Authenticate actual consolidation throughput and shadow threshold
+        run: |
+          python tools/audit_i1_317_consolidation_capacity.py --root input/births --population-report input/report/fresh-population.json --output result/capacity.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('result/capacity.json').read_text())
+          assert d['births']==20
+          assert d['deaths']==15
+          assert d['total_episodes_closed']>=d['total_consolidated']>0
+          assert d['coma_physically_tested'] is False
+          assert d['scientific_verdict']=='NO-GO'
+          print('SEALED_CONSOLIDATION_CAPACITY_ONLY_NOT_COMA')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-consolidation-capacity-shadow-report
+          path: result/
+          retention-days: 30
+          if-no-files-found: warn

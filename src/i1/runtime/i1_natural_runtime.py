@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from .i1_d2_runtime import I1WaterPrudentRuntime
 from dataclasses import replace
+from collections.abc import Mapping
+from math import isfinite
 from .determinism import canonical_causal_bytes, sha256_hex
 from i1.modules.geographic_exploration import GeographicExplorationConfig
 from .i1_birth_temperament import configure_birth_temperament
@@ -54,6 +56,45 @@ _I1_GOAL_POLICIES = {
     "historical-010": (0.10, 0.90),
 }
 _GOAL_POLICY_VERSION = "i1-natural-goal-pressure-v1"
+_CRITICAL_ALERT_SLEEP_GUARD = "i1-critical-bodily-alert-awake-opportunity-v1"
+
+
+def _critical_alert_reentry_channels(
+    *, pending, sleep_mode, world_step, capture, thresholds,
+):
+    """Only a REAL same-step alert wake can exclude another sleep candidate.
+
+    The first-person body must show food/water/integrity deprivation while
+    energy is above its *own* critical threshold. No type of food/water
+    resource is consulted; no action, urgency score, or reward is invented.
+    Outside that single newly awakened world step, sleep is fully available.
+    """
+    if (pending is None or pending.woke is not True
+            or pending.reason != "alert" or sleep_mode != "awake"
+            or pending.world_step != world_step):
+        return ()
+    if (capture is None or capture.t_monde != world_step
+            or not isinstance(capture.body, Mapping)
+            or not isinstance(thresholds, Mapping)):
+        raise RuntimeError("alert wake has no authenticated full bodily capture")
+    observed = capture.body
+    names = ("energy", "food", "water", "integrity")
+    if (any(name not in observed or name not in thresholds
+            for name in names)
+            or any(type(observed[name]) not in (int, float)
+                   or not isfinite(observed[name])
+                   or not 0 <= observed[name] <= 100
+                   or type(thresholds[name]) not in (int, float)
+                   or not isfinite(thresholds[name])
+                   or not 0 <= thresholds[name] <= 100
+                   for name in names)):
+        raise RuntimeError("nonphysical critical alert evidence")
+    # If energy itself is critical, normal sleep may be protective. This gate
+    # cannot suppress that physiological possibility.
+    if observed["energy"] <= thresholds["energy"]:
+        return ()
+    return tuple(name for name in ("water", "food", "integrity")
+                 if observed[name] <= thresholds[name])
 
 
 def _configure_birth_goal_policy(config, policy):
@@ -90,6 +131,31 @@ class I1Runtime(I1WaterPrudentRuntime):
         # This selector is research-only. The canonical birth_i1 entry point
         # always uses natural-004 and cannot override it.
         goal_policy = kwargs.pop("i1_goal_policy", "natural-004")
+        # Research-only birth selector; absent on both canonical birth APIs.
+        self._i1_experienced_place_enabled = kwargs.pop(
+            "i1_experienced_place_enabled", False)
+        if type(self._i1_experienced_place_enabled) is not bool:
+            raise ValueError("experiential place selector must be a boolean")
+        # Paired research only. The public birth functions do not expose
+        # this flag; the canonical motor/Competition path stays unchanged.
+        self._i1_critical_alert_reentry_guard = kwargs.pop(
+            "i1_critical_alert_reentry_guard", False)
+        if type(self._i1_critical_alert_reentry_guard) is not bool:
+            raise ValueError("critical alert sleep guard selector must be boolean")
+        self._i1_cross_goal_local_opportunities = kwargs.pop(
+            "i1_cross_goal_local_opportunities", False)
+        if type(self._i1_cross_goal_local_opportunities) is not bool:
+            raise ValueError("cross-goal local interaction selector must be boolean")
+        # Research-only decision ablation. TD learning remains fully active:
+        # only the independent LOCAL producer cannot read its learned Q
+        # when this exact opt-in is selected. No public birth exposes it.
+        self._i1_local_q_exposure = kwargs.pop(
+            "i1_local_q_exposure", "learned")
+        if self._i1_local_q_exposure not in ("learned", "neutral", "rank_only", "evidence_only"):
+            raise ValueError("invalid I1 independent-local Q exposure")
+        if (self._i1_local_q_exposure != "learned"
+                and not self._i1_cross_goal_local_opportunities):
+            raise ValueError("neutral local Q requires independent local options")
         if goal_policy not in _I1_GOAL_POLICIES:
             raise ValueError("unregistered I1 natural goal arbitration policy")
         # Version the prospective I1 configuration instead of modifying the
@@ -165,7 +231,15 @@ class I1Runtime(I1WaterPrudentRuntime):
             ),
         )
         life_id = kwargs.get("birth_life_id")
-        cfg = configure_birth_temperament(cfg, life_id=life_id)
+        # Experimental twin-source only: same innate temperament, distinct
+        # live identities and memories. Public birth APIs never expose it.
+        temperament_source = kwargs.pop("i1_research_temperament_source_id", None)
+        if temperament_source is not None and not self._i1_cross_goal_local_opportunities:
+            raise ValueError("twin temperament pairing requires I1 local research opt-in")
+        self._i1_research_temperament_source_id = temperament_source
+        cfg = configure_birth_temperament(
+            cfg, life_id=life_id, temperament_source_id=temperament_source,
+        )
         # The immutable goal subtree is installed before any owner or body is
         # created. No action, learned value, world fact or survival rule changes.
         cfg = _configure_birth_goal_policy(cfg, goal_policy)
@@ -211,6 +285,10 @@ class I1Runtime(I1WaterPrudentRuntime):
         self._i1_personal_id = life_id
         self._i1_last_nonplannable_observation = None
         super().__init__(**kwargs)
+        if self._i1_experienced_place_enabled:
+            from i1.modules.experienced_place_relevance import I1ExperiencedPlaceStage8
+            self.stage8_option_evaluator = I1ExperiencedPlaceStage8(
+                underlying=self.stage8_option_evaluator, actor=self)
         self._i1_active_owner_views = {
             "causal_model": ActiveConsolidatedOwner(
                 self.causal_model, "causal_model",
@@ -231,6 +309,47 @@ class I1Runtime(I1WaterPrudentRuntime):
             return owners
         return tuple(views.get(owner.owner_id, owner) for owner in owners)
 
+
+    def _register_option_proposal(
+        self, *, proposal, active_goal_id, t_monde, cycle,
+    ):
+        """Research-only omission of repeated sleep after real bodily alert.
+
+        Stage10 ALREADY paid for creating and registering the sleep proposal,
+        so this preserves that initial logical-UC debit. It never removes a
+        candidate retrospectively, never inserts an alternative, and never
+        sends a physical command. Other goal options follow normal Competition.
+        """
+        if (self._i1_critical_alert_reentry_guard
+                and proposal.option.motive_ref.type == "sleep_pressure"):
+            channels = _critical_alert_reentry_channels(
+                pending=self.sleep_session._pending_result,
+                sleep_mode=self.sleep_session.mode,
+                world_step=t_monde,
+                capture=self.stage3._capture,
+                thresholds=self._stage10_config.critical_body_thresholds,
+            )
+            if channels:
+                self._write(
+                    kind="i1_critical_alert_sleep_option_withheld",
+                    cycle=cycle,
+                    data={
+                        "policy": _CRITICAL_ALERT_SLEEP_GUARD,
+                        "option_ref": proposal.option.id,
+                        "critical_body_channels": list(channels),
+                        "wake_reason": "alert",
+                        "world_step": t_monde,
+                        "duration": "this_awake_step_only",
+                        "already_charged": True,
+                    },
+                )
+                return False
+        return super()._register_option_proposal(
+            proposal=proposal,
+            active_goal_id=active_goal_id,
+            t_monde=t_monde,
+            cycle=cycle,
+        )
 
     def _parent_runtime_config(self, config):
         """Reserve a real P-43 allowance for optional private lived recall."""

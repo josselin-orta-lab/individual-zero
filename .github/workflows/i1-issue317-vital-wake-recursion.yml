@@ -1,0 +1,66 @@
+name: I1 issue317 independent vital wake recursion audit
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_317_vital_wake_recursion.py'
+      - 'tests/i1/test_i1_vital_wake_recursion_317.py'
+      - '.github/workflows/i1-issue317-vital-wake-recursion.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fail-closed wake-to-sleep adversarial regressions
+        run: python -m unittest discover -s tests/i1 -p test_i1_vital_wake_recursion_317.py -v
+      - name: Retrieve all 20 original WAL and final population report without re-running births
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input/births input/report result
+          gh run download 39243776617 --repo "$GITHUB_REPOSITORY" --name i1-317-fresh-population-20-life-scientific-report --dir input/report
+          for world in oasis foraging dry-valley blocked-route memory-corridor; do
+            for seed in 8411 8431 8467 8497; do
+              gh run download 39243776617 --repo "$GITHUB_REPOSITORY" --name "i1-317-fresh-$world-$seed" --dir "input/zip-$world-$seed"
+              mkdir -p "input/births/$world/$seed"
+              cp "input/zip-$world-$seed/$world/$seed/life-01.wal" "input/births/$world/$seed/"
+            done
+          done
+          test "$(find input/births -name life-01.wal | wc -l)" -eq 20
+          test -f input/report/fresh-population.json
+      - name: Independently certify alarm wakes, subsequent decisions and physical sleep
+        run: |
+          python tools/audit_i1_317_vital_wake_recursion.py \
+            --root input/births \
+            --population-report input/report/fresh-population.json \
+            --expected-sha 28dfa62d6cf05ebecd1d2767769aa6ae53224616 \
+            --output result/wake-recursion.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("result/wake-recursion.json").read_text())
+          assert d["births"]==20
+          assert d["aggregate_counters"]["sleep_actions"]==4058
+          assert d["aggregate_counters"]["critical_alert_wakes"]==1391
+          assert d["aggregate_counters"]["alert_wakes_reselecting_sleep_same_step"]==1357
+          assert d["any_causal_sleep_repair_proven"] is False
+          assert d["scientific_verdict"]=="NO-GO"
+          print("INDEPENDENT_SLEEP_ALERT_REENTRY_AUDIT_PASS")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-vital-wake-recursion-20-life-report
+          path: result/
+          retention-days: 30
+          if-no-files-found: warn

@@ -1,0 +1,92 @@
+name: I1 issue317 held-out remote memory journeys
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - '.github/workflows/i1-issue317-remote-heldout.yml'
+      - 'tools/audit_i1_317_remote_journey_cohort.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  natural-life:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        arm: [baseline, interrupted]
+        seed: [3011, 3023, 3041, 3067, 3083, 3109, 3121, 3137]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.arm == 'baseline' && '1446a78a54c95b289e1f5654313d84849f5383df' || 'eef98704569e44e0c026aebbeeb2eae2396911d8' }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install exact selected I1 engine
+        run: python -m pip install -e .
+      - name: Execute untouched preregistered held-out life
+        env:
+          SEED: ${{ matrix.seed }}
+          ARM: ${{ matrix.arm }}
+        run: |
+          set -eu
+          if [ "$ARM" = "baseline" ]; then
+            expected=1446a78a54c95b289e1f5654313d84849f5383df
+          else
+            expected=eef98704569e44e0c026aebbeeb2eae2396911d8
+          fi
+          test "$(git rev-parse HEAD)" = "$expected"
+          python tools/run_i1_world_preset.py --preset memory-corridor --seed "$SEED" --steps 300 --lives 1 --custody wal --output-dir "reports/$SEED"
+          python tools/audit_i1_spatial_navigation_314.py "reports/$SEED/life-01.wal" --output "reports/$SEED/memory-audit.json"
+      - name: Keep sealed WAL even if one science check fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-317-remote-heldout-${{ matrix.arm }}-${{ matrix.seed }}
+          path: reports/
+          retention-days: 30
+          if-no-files-found: warn
+  compare:
+    needs: natural-life
+    if: ${{ needs.natural-life.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fail-closed audit software regression checks
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_wal_audit_314.py -v
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: i1-317-remote-heldout-baseline-*
+          path: heldout/baseline
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: i1-317-remote-heldout-interrupted-*
+          path: heldout/interrupted
+      - name: Authenticate complete paired cohorts using current read-only decoder
+        run: |
+          python tools/audit_i1_317_remote_journey_cohort.py \
+            --baseline heldout/baseline \
+            --interruption-aware heldout/interrupted \
+            --baseline-sha 1446a78a54c95b289e1f5654313d84849f5383df \
+            --interruption-sha eef98704569e44e0c026aebbeeb2eae2396911d8 \
+            --seeds 3011 3023 3041 3067 3083 3109 3121 3137 \
+            --output heldout/issue317-remote-heldout-comparison.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-remote-heldout-summary
+          path: heldout/issue317-remote-heldout-comparison.json
+          retention-days: 30
+          if-no-files-found: warn

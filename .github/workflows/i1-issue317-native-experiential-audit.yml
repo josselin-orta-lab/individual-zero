@@ -1,0 +1,63 @@
+name: I1 issue317 independently certify native 16 WAL
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_317_native_experiential_cohort.py'
+      - 'tests/i1/test_i1_317_native_experiential_cohort_audit.py'
+      - '.github/workflows/i1-issue317-native-experiential-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fail closed on off-design native WAL evidence
+        run: python -m unittest discover -s tests/i1 -p test_i1_317_native_experiential_cohort_audit.py -v
+      - name: Wait until original native births finish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run watch 39328430028 --repo "$GITHUB_REPOSITORY" --exit-status
+      - name: Retrieve eight original mortal pair artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p sealed result
+          for world in memory-corridor water-isolated-corridor; do
+            for seed in 18121 18233 18367 18481; do
+              gh run download 39328430028 --repo "$GITHUB_REPOSITORY" --name "i1-317-native-mortal-$world-$seed" --dir sealed
+              test -f "sealed/$world/$seed/report.json"
+              test -f "sealed/$world/$seed/guard_control/life-01.wal"
+              test -f "sealed/$world/$seed/guard_experiential/life-01.wal"
+            done
+          done
+      - name: Independently verify 16 lives and actual native Stage8 decisions
+        run: |
+          python tools/audit_i1_317_native_experiential_cohort.py --root sealed --output result/native-16-original-certificate.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('result/native-16-original-certificate.json').read_text())
+          assert d['certified_original_mortal_WAL_paths']==16
+          assert d['scientific_verdict']=='NO-GO'
+          assert d['first_actual_motor_option_attested'] is True
+          assert d['by_arm']['guard_control']['lives']==8
+          assert d['by_arm']['guard_experiential']['lives']==8
+          print('NATIVE_SIXTEEN_MORTAL_WAL_CERTIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-native-16-original-WAL-certificate
+          path: result/
+          retention-days: 30
+          if-no-files-found: warn

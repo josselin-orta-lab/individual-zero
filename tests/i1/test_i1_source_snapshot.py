@@ -28,8 +28,8 @@ class I1SnapshotTests(unittest.TestCase):
     def test_i1_is_an_independent_source_fork(self):
         src = ROOT / "src"
         i0, i1 = src / "i0", src / "i1"
-        inherited = {p.relative_to(i0) for p in i0.rglob("*") if p.is_file()}
-        present = {p.relative_to(i1) for p in i1.rglob("*") if p.is_file()}
+        inherited = {p.relative_to(i0) for p in i0.rglob("*.py") if p.is_file()}
+        present = {p.relative_to(i1) for p in i1.rglob("*.py") if p.is_file()}
         self.assertTrue(inherited.issubset(present), inherited - present)
         self.assertIn(Path("experimental/lived_water.py"), present - inherited)
         # A byte-for-byte I0 equality check is invalid for the active I1

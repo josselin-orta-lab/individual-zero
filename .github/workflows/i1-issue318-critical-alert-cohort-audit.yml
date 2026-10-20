@@ -1,0 +1,60 @@
+name: I1 issue318 certify 16 original alert guard lives
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_318_critical_alert_cohort.py'
+      - 'tests/i1/test_i1_318_critical_alert_cohort_audit.py'
+      - '.github/workflows/i1-issue318-critical-alert-cohort-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest discover -s tests/i1 -p test_i1_318_critical_alert_cohort_audit.py -v
+      - name: Await original births before verifying sealed original WAL
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run watch 39373722353 --repo "$GITHUB_REPOSITORY" --exit-status
+      - name: Download 16 original irrevocable WAL
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p sealed result
+          for world in memory-corridor water-isolated-corridor; do
+            for seed in 19121 19237 19373 19489; do
+              gh run download 39373722353 --repo "$GITHUB_REPOSITORY" --name "i1-318-alert-gate-$world-$seed" --dir sealed
+              test -f "sealed/$world/$seed/report.json"
+              test -f "sealed/$world/$seed/baseline/life-01.wal"
+              test -f "sealed/$world/$seed/critical_alert_gate/life-01.wal"
+            done
+          done
+      - run: |
+          python tools/audit_i1_318_critical_alert_cohort.py --root sealed --output result/critical-alert-native-16-original.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('result/critical-alert-native-16-original.json').read_text())
+          assert r['certified_original_mortal_WAL_paths']==16
+          assert r['scientific_verdict']=='NO-GO'
+          assert r['by_arm']['baseline']['lives']==8
+          assert r['by_arm']['critical_alert_gate']['lives']==8
+          print('CRITICAL_ALERT_SIXTEEN_ORIGINAL_MORTAL_WAL_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-318-critical-alert-16-original-certificate
+          path: result/
+          retention-days: 30
+          if-no-files-found: warn

@@ -1,0 +1,51 @@
+name: 'I1 #318 certify matched-temperament 32 original WAL'
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_318_matched_temperament_q_factorial.py'
+      - '.github/workflows/i1-issue318-matched-temperament-q-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - run: python -m py_compile tools/audit_i1_318_matched_temperament_q_factorial.py
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39407509122
+          github-token: ${{ github.token }}
+          pattern: i1-318-matched-twin-*
+          path: original
+          merge-multiple: true
+      - name: Independent read-only 32 WAL verification
+        run: |
+          python tools/audit_i1_318_matched_temperament_q_factorial.py --root original --output matched-factorial-certificate.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("matched-factorial-certificate.json").read_text())
+          assert j["verified_WAL_count"]==32
+          assert j["status"]=="ORIGINAL_32_WAL_AUTHENTICATED"
+          assert j["scientific_verdict"]=="INCONCLUSIVE"
+          assert j["original_WAL_untouched"] is True
+          print("I1_318_MATCHED_TEMPERAMENT_ORIGINAL_WAL_AUDITED")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-318-matched-temperament-independent-certificate
+          path: matched-factorial-certificate.json
+          retention-days: 30
+          if-no-files-found: warn

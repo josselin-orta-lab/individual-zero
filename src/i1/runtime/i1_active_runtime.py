@@ -40,6 +40,42 @@ I1_SCORE = 0.35  # fixed *instrumental preference*, NOT predicted E_sim
 I1_EXPERIMENTAL_OPERATION = "i1_partial_model_forecast"
 I1_AFFORDANCE_POLICY = "i1-unknown-action-affordance-v2-general-local"
 I1_AFFORDANCE_OPERATION = "i1_unknown_action_consider"
+I1_OPPORTUNISTIC_ACTIONS = frozenset(("boire", "manger", "collecter", "poser_une_pierre", "fabriquer_outil"))
+I1_OPPORTUNISTIC_POLICY = "i1-local-interaction-goal-independent-v2"
+
+
+
+def _local_q_visibility(exposure: str) -> tuple[bool, bool]:
+    """Research-only factorial Q access: (candidate rank, Competition evidence).
+
+    Q/TD learning itself is ALWAYS active. No action gain, species, risk,
+    hydration expectation or motor privilege is introduced by this selector.
+    """
+    policies = {
+        "neutral": (False, False),
+        "rank_only": (True, False),
+        "evidence_only": (False, True),
+        "learned": (True, True),
+    }
+    if type(exposure) is not str or exposure not in policies:
+        raise ValueError("invalid I1 independent-local Q exposure")
+    return policies[exposure]
+
+
+def _local_interaction_choices(available, *, enabled):
+    """Only executable local actions, never a map or anticipated need relief.
+
+    Planning's canonical candidate_commands has already established physical
+    executability from this individual's local Perception state. This helper
+    never inspects an entity type, guesses nutritional value, or chooses a
+    motor. It is an opt-in *candidate expansion* only.
+    """
+    if type(enabled) is not bool:
+        raise ValueError("local interaction research flag must be boolean")
+    if not enabled:
+        return ()
+    return tuple(command for command in available
+                 if command.primitive in I1_OPPORTUNISTIC_ACTIONS)
 
 
 class I1PartialEvidenceAdapter:
@@ -63,25 +99,31 @@ class I1PartialEvidenceAdapter:
 
     def evaluate(self, *, proposal, **kwargs):
         provenance = proposal.option.provenance
-        if (proposal.option.id != self._pending.get("option_ref")
+        pending = self._pending
+        local = pending.get("local_opportunity_evidence")
+        if (provenance == "i1_unknown_affordance"
+                and isinstance(local, dict)
+                and proposal.option.id == local.get("option_ref")):
+            pending = local
+        if (proposal.option.id != pending.get("option_ref")
                 or proposal.plan is None
                 or len(proposal.plan.steps) != 1
                 or provenance not in ("i1_partial_experiment",
                                       "i1_unknown_affordance")
-                or kwargs.get("t_monde") != self._pending.get("world_step")):
+                or kwargs.get("t_monde") != pending.get("world_step")):
             return self._underlying.evaluate(proposal=proposal, **kwargs)
 
         if provenance == "i1_unknown_affordance":
             # Only a previously UC-paid, first-person-grounded candidate may
             # receive exploratory evidence. Unknown effects stay unknown.
-            if self._pending.get("affordance") is not True:
+            if pending.get("affordance") is not True:
                 return self._underlying.evaluate(proposal=proposal, **kwargs)
-            prior = float(self._pending["prior_evidence"])
-            learned_evidence = self._pending.get("learned_evidence")
+            prior = float(pending["prior_evidence"])
+            learned_evidence = pending.get("learned_evidence")
             evidence = (prior if learned_evidence is None else
                         max(-1.0, min(1.0, 0.25 * prior
                                        + 0.75 * float(learned_evidence))))
-            learned = self._pending.get("learned_status") == "learned"
+            learned = pending.get("learned_status") == "learned"
             e = EvaluationOption(
                 option_ref=proposal.option.id,
                 option_version=proposal.option.version,
@@ -89,7 +131,7 @@ class I1PartialEvidenceAdapter:
                 status="evaluated",
                 learned_value_status="learned" if learned else "unlearned",
                 learned_value=(
-                    float(self._pending["learned_value"]) if learned else None
+                    float(pending["learned_value"]) if learned else None
                 ),
                 simulated_value_status="unavailable", simulated_value=None,
                 intrinsic_status="not_applicable", intrinsic_value=None,
@@ -230,22 +272,36 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         forecast_cost = self._i1_forecast_cost_uc if self._i1_enabled else 0
         affordance_cost = (self._i1_unknown_action_cost_uc
                            if self._i1_unknown_action_enabled else 0)
-        # Alternative paths never issue two additional planning charges in
-        # one cycle. Reserve the largest, not their sum; each actual attempt
-        # is still charged by the canonical UC owner.
+        # Original goal-linked alternatives share one Planning charge.
+        # The independently registered local proposal is an ADDITIONAL,
+        # separately paid candidate, not a free duplicate. Reserve its
+        # preparation, registration and evaluation only for opted-in births.
         reserve = max(forecast_cost, affordance_cost)
+        local_enabled = getattr(self, "_i1_cross_goal_local_opportunities", False)
+        local_plan_cost = affordance_cost if local_enabled else 0
+        local_register_cost = (
+            original.operation_costs["competition_register"] if local_enabled else 0
+        )
+        local_evaluate_cost = (
+            original.operation_costs["competition_evaluate"] if local_enabled else 0
+        )
         extra = self._i1_recall_cost_uc if self._i1_lived_recall_enabled else 0
         budget = replace(
             original,
             version=(original.version
                      + ("+" + I1_POLICY if self._i1_enabled else "")
                      + ("+" + I1_AFFORDANCE_POLICY
-                        if self._i1_unknown_action_enabled else "")),
-            cycle_ceiling=original.cycle_ceiling + reserve + extra,
+                        if self._i1_unknown_action_enabled else "")
+                     + ("+" + I1_OPPORTUNISTIC_POLICY if local_enabled else "")),
+            cycle_ceiling=(original.cycle_ceiling + reserve + extra
+                           + local_plan_cost + local_register_cost
+                           + local_evaluate_cost),
             module_envelopes={
                 **original.module_envelopes,
-                "planning": original.module_envelopes["planning"] + reserve,
-                "competition": original.module_envelopes["competition"] + extra,
+                "planning": (original.module_envelopes["planning"]
+                             + reserve + local_plan_cost),
+                "competition": (original.module_envelopes["competition"] + extra
+                                + local_register_cost + local_evaluate_cost),
             },
             operation_costs={
                 **original.operation_costs,
@@ -316,6 +372,199 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         return super()._on_open_step_capture(capture)
 
 
+    def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
+        hooks = super()._phase_hooks(
+            cycle=cycle, capture=capture,
+            goal_for_planning=goal_for_planning,
+            st_before_cycle=st_before_cycle,
+        )
+        if not getattr(self, "_i1_cross_goal_local_opportunities", False):
+            return hooks
+        normal_plan = hooks[1]["planning"]
+        normal_register = hooks[3]["competition"]
+
+        def plan_local(ctx):
+            normal_plan(ctx)
+            self._i1_local_proposal_this_cycle = None
+            if self._cycle_degraded or st_before_cycle is None:
+                return
+            prior = self._i1_pending.get("local_option_ref")
+            if prior is not None and self.competition.proposal_for(prior) is not None:
+                return
+            self._i1_pending.pop("local_option_ref", None)
+            self._i1_pending.pop("local_opportunity_evidence", None)
+            proposal = self._propose_cross_goal_local(
+                capture=capture, cycle=cycle, st_version=st_before_cycle.version,
+            )
+            if proposal is None:
+                return
+            self._i1_local_proposal_this_cycle = proposal
+            self._publish_contribution(self._planning_contribution(
+                proposal, t_monde=capture.t_monde, cycle=cycle,
+            ))
+
+        def register_local(ctx):
+            normal_register(ctx)
+            proposal = self._i1_local_proposal_this_cycle
+            if proposal is None or self._cycle_degraded:
+                return
+            if not self._charge(module="competition", operation="competition_register"):
+                self._write(kind="i1_local_opportunity_registration",
+                            cycle=cycle, data={
+                                "option_ref": proposal.option.id,
+                                "registered": False, "reason": "insufficient_uc",
+                            })
+                return
+            registered = self._register_option_proposal(
+                proposal=proposal,
+                active_goal_id=(None if self.goal_manager.active_goal is None
+                                else self.goal_manager.active_goal.id),
+                t_monde=capture.t_monde, cycle=cycle,
+            )
+            self._write(kind="i1_local_opportunity_registration",
+                        cycle=cycle, data={
+                            "option_ref": proposal.option.id,
+                            "registered": registered,
+                            "goal_neutral": proposal.option.goal_ref is None,
+                        })
+            if not registered:
+                self._i1_pending.pop("local_option_ref", None)
+                self._i1_pending.pop("local_opportunity_evidence", None)
+
+        hooks[1]["planning"] = plan_local
+        hooks[3]["competition"] = register_local
+        return hooks
+
+    def _propose_cross_goal_local(self, *, capture, cycle, st_version):
+        """Bounded, first-person local candidate, not a motor command."""
+        if not getattr(self, "_i1_cross_goal_local_opportunities", False):
+            return None
+        state = state_from_capture(
+            capture=capture, is_night=self.world.is_night(capture.t_monde),
+        )
+        available = _local_interaction_choices(
+            self.planning.candidate_commands(state), enabled=True,
+        )
+        def key(command):
+            return (command.primitive, tuple(sorted(command.parameters.items())))
+        already = set()
+        ordinary = self._proposal_this_cycle
+        if ordinary is not None and ordinary.plan is not None:
+            already.add(key(ordinary.plan.steps[0].command))
+        for previous in self.competition.candidate_proposals:
+            if (previous.option.expires_at_step > capture.t_monde
+                    and previous.plan is not None and previous.plan.steps):
+                already.add(key(previous.plan.steps[0].command))
+        choices = tuple(c for c in available if key(c) not in already)
+        self._write(kind="i1_local_opportunity_perceived", cycle=cycle,
+                    data={
+                        "policy": I1_OPPORTUNISTIC_POLICY,
+                        "accessible_count": len(available),
+                        "not_already_proposed": len(choices),
+                        "goal_filter_applied": False,
+                    })
+        if not choices:
+            return None
+        if not self._charge(module="planning", operation=I1_AFFORDANCE_OPERATION):
+            self._write(kind="i1_local_opportunity_unavailable",
+                        cycle=cycle, data={"reason": "insufficient_uc"})
+            return None
+        context = self._evaluation_state(capture)
+        q_exposure = getattr(self, "_i1_local_q_exposure", "learned")
+        expose_rank, expose_evidence = _local_q_visibility(q_exposure)
+        selected = None
+        for index, command in enumerate(choices):
+            suffix = ":".join(
+                str(k) + "=" + str(command.parameters[k])
+                for k in sorted(command.parameters)
+            ) or "here"
+            signature = "i1:affordance:" + command.primitive + ":" + suffix
+            # Charge and update the exact same TD/Q owner in both arms;
+            # suppress exposure only for this independent local candidate.
+            learned = self.q_active.learned_value(context, signature)
+            rank = (-(float(learned.evidence or 0.0)
+                      if expose_rank else 0.0),
+                    (capture.t_monde + index) % len(choices))
+            if selected is None or rank < selected[0]:
+                selected = (rank, command, signature, learned, suffix)
+        _, command, signature, learned, suffix = selected
+        # Q is still learned from real experience by Stage8; the neutral
+        # research arm blinds only its exposure to Competition.
+        selected_evidence = learned if expose_evidence else None
+        exploration = float(self.temperament_parameters.exploration_coefficient)
+        uncertainty = float(self.temperament_parameters.uncertainty_penalty_scale)
+        prior = max(0.0, min(1.0, I1_SCORE
+            * (1.0 + 0.25 * exploration) / (1.0 + 0.25 * uncertainty)))
+        option_id = (f"option:i1:local:t{capture.t_monde}:"
+                     f"{command.primitive}:{suffix}")
+        plan_id = "plan:" + option_id + ":v1"
+        plan = Plan(
+            id=plan_id, option_ref=option_id, version=I1_OPPORTUNISTIC_POLICY,
+            steps=(PlanStep(index=0, command=command, preconditions=(),
+                            predicted_consequences=(), observation_window_steps=1),),
+            goal_ref=None, budget_used_uc=self._i1_unknown_action_cost_uc,
+            status="valid", st_version=st_version,
+        )
+        st = self.s_t.current
+        retained = set() if st is None else {
+            item.contribution_ref for item in st.competitive
+        }
+        grounded = tuple(sorted(
+            ref for ref in self.stage3.perception.observation_ref_by_entity.values()
+            if ref in retained
+        ))
+        option = Option(
+            id=option_id, version=I1_OPPORTUNISTIC_POLICY,
+            type="primitive", learning_signature=signature,
+            preconditions=(), success_condition="step_completed",
+            failure_condition="outcome_unconfirmed",
+            invalidation_condition="new_real_capture",
+            motive_ref=MotiveRef(type="local_opportunity",
+                                 id=I1_OPPORTUNISTIC_POLICY),
+            founding_st_version=st_version,
+            expires_at_step=capture.t_monde + 1,
+            provenance="i1_unknown_affordance",
+            grounding_contribution_refs=grounded,
+            goal_ref=None, plan_ref=plan_id,
+        )
+        proposed = OptionProposal(
+            option=option, plan=plan, preliminary_admissibility="indeterminate",
+        )
+        proposed.validate()
+        self._i1_pending["local_option_ref"] = option_id
+        self._i1_pending["local_opportunity_evidence"] = {
+            "option_ref": option_id, "world_step": capture.t_monde,
+            "affordance": True, "prior_evidence": prior,
+            "learned_evidence": (
+                None if selected_evidence is None else selected_evidence.evidence),
+            "learned_value": (
+                None if selected_evidence is None else selected_evidence.value),
+            "learned_status": (
+                "unlearned" if selected_evidence is None else selected_evidence.status),
+        }
+        self._write(kind="i1_local_opportunity_proposed", cycle=cycle,
+                    data={
+                        "policy": I1_OPPORTUNISTIC_POLICY,
+                        "option_ref": option_id, "command": command.as_dict(),
+                        "learning_signature": signature, "goal_ref": None,
+                        "ordinary_candidate_preserved": ordinary is not None,
+                        "visible_input_sha256": sha256_hex(
+                            canonical_causal_bytes(state.as_dict())
+                        ),
+                        "prior_evidence": prior,
+                        "learned_value_status": (
+                            "unlearned" if selected_evidence is None
+                            else selected_evidence.status),
+                        "learned_value": (
+                            None if selected_evidence is None
+                            else selected_evidence.value),
+                        "q_exposure": q_exposure,
+                        "q_used_for_candidate_rank": expose_rank,
+                        "q_used_for_competition_evidence": expose_evidence,
+                        "physical_outcome_known": False, "forced_motor": False,
+                    })
+        return proposed
+
     def _consider_uncertain_affordance(
         self, *, capture, goal, st_version, cycle, exact,
     ):
@@ -349,6 +598,8 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
             "recover_energy": {"dormir"},
             "restore_integrity": {"attendre"},
         }.get(goal.goal_type, set())
+        # The opt-in cross-goal producer owns an independent Planning and
+        # Competition slot; it must never rewrite these goal-linked choices.
 
         def relevant(candidate):
             primitive = candidate.primitive
@@ -410,6 +661,7 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
             if winner is None or rank < winner[0]:
                 winner = (rank, command, signature, learned, suffix)
         _, command, signature, learned, suffix = winner
+        cross_goal_local = False  # goal-linked producer
         pressure = max(0.0, min(1.0, float(goal.current_pressure)))
         exploration = float(self.temperament_parameters.exploration_coefficient)
         uncertainty_penalty = float(
@@ -478,6 +730,10 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
                         "accessible_inventory": dict(state.inventory),
                         "candidate_count": len(choices),
                         "candidate_primitives": [c.primitive for c in choices],
+                        "cross_goal_local_interaction": cross_goal_local,
+                        "candidate_expansion_policy": None,
+                        "ordinary_q_ranking_unchanged": True,
+                        "no_interaction_result_assumed": True,
                         "visible_input_sha256": sha256_hex(
                             canonical_causal_bytes(state.as_dict())
                         ),

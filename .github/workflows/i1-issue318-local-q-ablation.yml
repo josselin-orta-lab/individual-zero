@@ -1,0 +1,48 @@
+name: 'I1 #318 prospective local Q ablation 16 births'
+# Historical paired seeds are sealed; no automatic reruns.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mortal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [memory-corridor, water-isolated-corridor]
+        seed: [22111, 22229, 22343, 22453]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - run: python -m unittest discover -s tests/i1 -p test_i1_318_local_q_ablation.py -v
+      - name: Execute two new mortal I1 without replay
+        env:
+          PRESET: ${{ matrix.preset }}
+          SEED: ${{ matrix.seed }}
+        run: |
+          python tools/run_i1_318_local_q_ablation_cohort.py --preset "$PRESET" --seed "$SEED" --output-dir "results/$PRESET/$SEED"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path("results")/os.environ["PRESET"]/os.environ["SEED"]/"report.json").read_text())
+          assert r["schema"]=="i1-318-local-Q-ablation-mortal/v1"
+          assert r["status"]=="COMPLETE_PAIRED_PHYSICAL_DIAGNOSTIC"
+          assert r["preregistered_arms"]==["local_q_neutral","local_q_learned"]
+          assert r["only_local_Q_exposure_changed"] is True
+          assert r["scientific_verdict"]=="NO-GO"
+          print("I1_318_LOCAL_Q_ABLATION_PAIR_COMPLETE")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-318-q-${{ matrix.preset }}-${{ matrix.seed }}
+          path: results/
+          retention-days: 30
+          if-no-files-found: warn

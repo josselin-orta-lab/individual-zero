@@ -1,0 +1,63 @@
+name: I1 issue317 independently certify held-out 32 WAL
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_317_experiential_place_heldout.py'
+      - 'tests/i1/test_i1_317_experiential_place_heldout_audit.py'
+      - '.github/workflows/i1-issue317-experiential-place-heldout-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest discover -s tests/i1 -p test_i1_317_experiential_place_heldout_audit.py -v
+      - name: Wait for entire original birth cohort to seal before retrieval
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run watch 39324485459 --repo "$GITHUB_REPOSITORY" --exit-status
+      - name: Retrieve all sixteen locked original mortal paired archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p sealed result
+          for world in oasis foraging memory-corridor water-isolated-corridor; do
+            for seed in 16127 16249 16381 16513; do
+              gh run download 39324485459 --repo "$GITHUB_REPOSITORY" --name "i1-317-heldout-$world-$seed" --dir sealed
+              test -f "sealed/$world/$seed/report.json"
+              for arm in guard_control guard_experiential; do
+                test -f "sealed/$world/$seed/$arm/life-01.wal"
+              done
+            done
+          done
+      - name: Authenticate all WAL, admitted water or berry option and first divergence
+        run: |
+          python tools/audit_i1_317_experiential_place_heldout.py --root sealed --output result/heldout-32-certificate.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('result/heldout-32-certificate.json').read_text())
+          assert d['certified_original_mortal_WAL_paths']==32
+          assert d['scientific_verdict']=='NO-GO'
+          assert d['first_actual_motor_option_attested'] is True
+          assert d['research_adapter_M11_cold_recovery_proven'] is False
+          assert all(d['by_arm'][x]['lives']==16 for x in ['guard_control','guard_experiential'])
+          print('THIRTY_TWO_ORIGINAL_HELDOUT_MORTAL_WAL_CERTIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-heldout-32-original-WAL-independent-certificate
+          path: result/
+          retention-days: 30
+          if-no-files-found: warn

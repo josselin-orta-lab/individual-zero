@@ -5,11 +5,16 @@ Synthetic events do NOT constitute experimental or physical evidence.
 import importlib.util
 from pathlib import Path
 import unittest
+import sys
 
 MODULE = Path(__file__).resolve().parents[2] / "tools/audit_i1_spatial_navigation_314.py"
 SPEC = importlib.util.spec_from_file_location("_audit314", MODULE)
 audit314 = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(audit314)
+sys.path.insert(0, str(MODULE.parent))
+TD_SPEC = importlib.util.spec_from_file_location("_audit317", MODULE.parent / "audit_i1_317_loop_diagnostic.py")
+audit317 = importlib.util.module_from_spec(TD_SPEC)
+TD_SPEC.loader.exec_module(audit317)
 
 
 def event(kind, data, *, step=4, attempt="attempt:4", **fields):
@@ -49,6 +54,127 @@ class SpatialWalAuditTests(unittest.TestCase):
         self.assertTrue(report["proven_return_arrival"])
         self.assertFalse(report["causal_learning_proven"])
 
+    def test_317_local_sighting_is_not_remote_navigation(self):
+        rows = self.example()
+        rows.insert(1, event("perceptual_capture", {
+            "capture_t_monde": 4, "position": {"x": 1, "y": 1},
+            "agency_visible_adjacent": [
+                {"x": 2, "y": 1, "direction": "east", "passable": True},
+            ],
+        }))
+        report = audit314.classify_events(rows)
+        self.assertTrue(report["proven_return_arrival"])
+        metrics = report["memory_causality_317"]
+        self.assertEqual(metrics["proposals_to_unseen_sites"], 0)
+        self.assertEqual(metrics["physically_applied_unseen_multihop_first_hops"], 0)
+        self.assertEqual(metrics["physically_arrived_from_outside_current_perception"], 0)
+        self.assertFalse(metrics["examples"][0]["target_outside_perception"])
+
+    def test_317_remote_intention_is_not_physical_result(self):
+        rows = self.example()[:3]
+        rows.insert(1, event("perceptual_capture", {
+            "capture_t_monde": 4, "position": {"x": 0, "y": 1},
+            "agency_visible_adjacent": [
+                {"x": 1, "y": 1, "direction": "east", "passable": True},
+            ],
+        }))
+        for row in rows:
+            if row["kind"] == "i1_place_memory_option_proposed":
+                row["data"]["next"] = [1, 1]
+        metrics = audit314.classify_events(rows)["memory_causality_317"]
+        self.assertEqual(metrics["proposed_unseen_multihop_options"], 1)
+        self.assertEqual(metrics["physically_applied_unseen_multihop_first_hops"], 0)
+        self.assertEqual(metrics["physically_applied_memory_actions_using_prior_td"], 0)
+
+    def test_317_late_unrelated_td_is_not_learned_memory(self):
+        rows = self.example()
+        rows.insert(1, event("perceptual_capture", {
+            "capture_t_monde": 4, "position": {"x": 1, "y": 1},
+            "agency_visible_adjacent": [{"x": 2, "y": 1}],
+        }))
+        rows.append(event("td_update_published", {
+            "updated_signatures": ["memory_place_return:sighting:water_source:2:1"],
+        }, step=5, attempt="attempt:5"))
+        metrics = audit314.classify_events(rows)["memory_causality_317"]
+        self.assertEqual(metrics["physically_applied_memory_actions_using_prior_td"], 0)
+        self.assertEqual(metrics["assessments_with_prior_published_td"], 0)
+
+    def test_317_remote_multihop_arrival_across_sleep_is_certified(self):
+        entity = "sighting:wood:9:8"
+        old = "option:place-memory:place:sighting:wood:9:8:at:9:8:from:11:8:via:10:8"
+        new = "option:place-memory:place:sighting:wood:9:8:at:9:8:from:10:8:via:9:8"
+        rows = [event("i1_entity_place_observed", dict(
+            entity_id=entity, position=[9,8], first_seen_step=1,
+            source="perceptual_capture"),step=1,attempt="a1")]
+        def add_step(t, start, finish, option, *, sleep=False):
+            attempt = "a"+str(t)
+            if not sleep:
+                rows.append(event("perceptual_capture", dict(
+                    capture_t_monde=t, position={"x":start[0],"y":start[1]},
+                    agency_visible_adjacent=[
+                        {"x": start[0]-1, "y":start[1]}],
+                ),step=t,attempt=attempt))
+                rows.append(event("i1_place_memory_option_proposed",dict(
+                    option_ref=option,entity_id=entity,target=[9,8],
+                    next=list(finish)),step=t,attempt=attempt))
+                rows.append(event("i1_place_memory_option_registration",
+                    dict(option_ref=option,registered=True),step=t,attempt=attempt))
+                rows.append(event("competition_cycle", {"traces":[dict(
+                    option_ref=option,crossed=True)]},step=t,attempt=attempt))
+            primitive="dormir" if sleep else "se_deplacer"
+            ref="option:sleep" if sleep else option
+            h="hash"+str(t)
+            rows.extend([
+                event("command_admitted",dict(option_ref=ref,
+                    primitive=primitive,command_hash=h),step=t,attempt=attempt),
+                event("command_experienced",{},step=t,attempt=attempt,
+                    emitter="action_control",primitive=primitive,command_hash=h),
+                event("world_transition_experienced",{},step=t,attempt=attempt,
+                    emitter="world_and_body",
+                    position_after={"x":finish[0],"y":finish[1]}),
+                event("step_closed",dict(outcome="normal",
+                    applied_command_count=1,world_advance_count=1),
+                    step=t,attempt=attempt)])
+        add_step(4,(11,8),(10,8),old)
+        rows.append(event("i1_place_memory_intention_continued",dict(
+            previous_option_ref=old,next_option_ref=new,
+            confirmed_position=[10,8],
+            source="previous_applied_command_and_current_perception",
+            forced_motor_selection=False),step=5,attempt="a5"))
+        add_step(5,(10,8),(10,8),None,sleep=True)
+        add_step(6,(10,8),(10,8),None,sleep=True)
+        add_step(7,(10,8),(9,8),new)
+        answer=audit314.classify_events(rows)["memory_causality_317"]
+        self.assertEqual(answer["completed_remote_multihop_returns"],1)
+        self.assertEqual(answer["completed_remote_returns_after_sleep"],1)
+        self.assertEqual(answer["completed_remote_return_examples"][0][
+            "motor_world_steps"],[4,7])
+        # No physical completion without the intermediate explicit cognitive
+        # continuation event, irrespective of a later matching physical hop.
+        damaged=[e for e in rows if e["kind"] !=
+                 "i1_place_memory_intention_continued"]
+        self.assertEqual(audit314.classify_events(damaged)[
+            "memory_causality_317"]["completed_remote_multihop_returns"],0)
+        # A continuation published only AFTER its purported physical send
+        # is a retrospective narrative, not a causal input to the action.
+        late = list(rows)
+        item = next(row for row in late if
+                    row["kind"] == "i1_place_memory_intention_continued")
+        late.remove(item)
+        command_index = next(i for i, row in enumerate(late) if
+                             row["t_monde"] == 5
+                             and row["kind"] == "command_experienced")
+        late.insert(command_index + 1, item)
+        self.assertEqual(audit314.classify_events(late)[
+            "memory_causality_317"]["completed_remote_multihop_returns"],0)
+        # Every pause must also be physically committed. Missing even one
+        # World & Body transition breaks cross-step certification.
+        absent_transition = [row for row in rows if not (
+            row["t_monde"] == 6
+            and row["kind"] == "world_transition_experienced")]
+        self.assertEqual(audit314.classify_events(absent_transition)[
+            "memory_causality_317"]["completed_remote_multihop_returns"],0)
+
     def test_proposal_without_action_cannot_prove_return(self):
         report = audit314.classify_events(self.example()[:4])
         self.assertFalse(report["proven_memory_action_applied"])
@@ -77,6 +203,98 @@ class SpatialWalAuditTests(unittest.TestCase):
         report = audit314.classify_events(rows)
         self.assertEqual(report["stages"]["physically_applied"], 0)
 
+
+
+class MemoryTDCredit317Tests(unittest.TestCase):
+    """Synthetic adversarial checks, not physical scientific evidence."""
+
+    @staticmethod
+    def sample():
+        entity = "sighting:wood:3:3"
+        signature = "memory_place_return:" + entity
+        option = "option:place-memory:place:" + entity + ":at:3:3:from:2:3:via:3:3"
+        common = dict(t_monde=2, attempt_ref="a")
+        events = [
+            dict(common, kind="command_admitted", data={
+                "option_ref": option, "primitive": "se_deplacer", "command_hash": "hash"}),
+            dict(common, kind="command_experienced",
+                 primitive="se_deplacer", command_hash="hash"),
+            dict(common, kind="world_transition_experienced",
+                 position_after={"x": 3, "y": 3},
+                 body_after={"energy": 68, "food": 39.8, "water": 39.6, "integrity": 80},
+                 effects={"movement": "moved"}),
+            dict(common, kind="step_closed", data={
+                "outcome": "normal", "applied_command_count": 1,
+                "world_advance_count": 1}),
+            dict(t_monde=3, attempt_ref="b", kind="td_update_published", data={
+                "previous_signature": signature,
+                "return_g": {"$f64": float(1.4).hex()}, "segment_length": 1,
+                "updated_signatures": [signature, "primitive:dormir"]}),
+        ]
+        before = {"energy": 70, "food": 40, "water": 40, "integrity": 80}
+        trajectory = [
+            {"world_step": 1, "execution": "applied", "action_primitive": "attendre",
+             "body": before, "position": {"x": 2, "y": 3}},
+            {"world_step": 2, "execution": "applied", "action_primitive": "se_deplacer",
+             "body": {"energy": 68, "food": 39.8, "water": 39.6, "integrity": 80},
+             "position": {"x": 3, "y": 3}},
+            {"world_step": 3, "execution": "applied", "action_primitive": "dormir",
+             "body": {"energy": 69, "food": 39.6, "water": 39.2, "integrity": 80.2},
+             "position": {"x": 3, "y": 3}},
+        ]
+        return events, trajectory, before
+
+    @staticmethod
+    def audit(events, trajectory, initial):
+        return audit317.audit_memory_td_credit(events, trajectory, initial)
+
+    def test_positive_movement_td_does_not_prove_entity_utility(self):
+        events, steps, initial = self.sample()
+        result = self.audit(events, steps, initial)
+        self.assertEqual(result["physically_attributed_memory_td_updates"], 1)
+        self.assertEqual(result["positive_one_step_movement_only_td"], 1)
+        self.assertEqual(result["positive_without_increased_body_variable"], 1)
+        self.assertEqual(result["non_memory_trace_updates"], 1)
+        self.assertIn("not_entity_causality", result["certification"])
+
+    def test_missing_closure_is_not_physical_proof(self):
+        events, steps, initial = self.sample()
+        events = [e for e in events if e["kind"] != "step_closed"]
+        result = self.audit(events, steps, initial)
+        self.assertEqual(result["positive_memory_td_updates"], 1)
+        self.assertEqual(result["unattributable_memory_td_updates"], 1)
+        self.assertEqual(result["positive_one_step_movement_only_td"], 0)
+
+    def test_mismatched_entity_signature_cannot_be_credited(self):
+        events, steps, initial = self.sample()
+        events[-1]["data"]["previous_signature"] = (
+            "memory_place_return:sighting:water:9:9")
+        result = self.audit(events, steps, initial)
+        self.assertEqual(result["unattributable_memory_td_updates"], 1)
+
+    def test_negative_td_stays_negative(self):
+        events, steps, initial = self.sample()
+        events[-1]["data"]["return_g"] = {"$f64": float(-1).hex()}
+        result = self.audit(events, steps, initial)
+        self.assertEqual(result["positive_one_step_movement_only_td"], 0)
+        self.assertEqual(result["physically_attributed_memory_td_updates"], 1)
+
+    def test_bad_canonical_number_is_not_a_fabricated_zero(self):
+        events, steps, initial = self.sample()
+        events[-1]["data"]["return_g"] = {"$f64": "nan"}
+        with self.assertRaises(ValueError):
+            self.audit(events, steps, initial)
+
+    def test_causal_order_inversion_is_rejected(self):
+        events, steps, initial = self.sample()
+        events.insert(0, events.pop(3))
+        self.assertEqual(
+            self.audit(events, steps, initial)["unattributable_memory_td_updates"], 1)
+
+    def test_duplicate_world_step_is_rejected(self):
+        events, steps, initial = self.sample()
+        with self.assertRaises(ValueError):
+            self.audit(events, steps + [steps[1]], initial)
 
 if __name__ == "__main__":
     unittest.main()

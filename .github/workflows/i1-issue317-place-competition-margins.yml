@@ -1,0 +1,53 @@
+name: I1 issue317 sealed Competition margin and motor audit
+on:
+  push:
+    branches: [fix/i1-memory-competition-317]
+    paths:
+      - 'tools/audit_i1_317_place_competition_margins.py'
+      - 'tests/i1/test_i1_317_place_competition_margins.py'
+      - '.github/workflows/i1-issue317-place-competition-margins.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest discover -s tests/i1 -p test_i1_317_place_competition_margins.py -v
+      - name: Retrieve original, already-completed 24 mortal WAL
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p sealed result
+          for world in oasis foraging memory-corridor; do
+            for seed in 13127 13219; do
+              gh run download 39308197811 --repo "$GITHUB_REPOSITORY" --name "i1-317-lived-place-$world-$seed" --dir sealed
+            done
+          done
+      - name: Independently attest and compare identical candidates and applied motors
+        run: |
+          python tools/audit_i1_317_place_competition_margins.py --root sealed --output result/place-margins.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('result/place-margins.json').read_text())
+          assert d['certified_original_wal_paths']==24
+          assert d['scientific_verdict']=='NO-GO'
+          assert d['research_adapter_invocation_count_is_WAL_proven'] is False
+          print('MORTAL_PLACE_COMPETITION_MARGINS_AUDITED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i1-317-sealed-place-competition-margins
+          path: result/
+          retention-days: 30
+          if-no-files-found: warn
