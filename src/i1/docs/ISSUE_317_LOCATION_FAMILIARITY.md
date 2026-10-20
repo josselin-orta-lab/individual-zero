@@ -1479,3 +1479,64 @@ be read from that auditor's certified figures, not inferred
 from software parity alone. No canonical activation, no I0
 change or compulsory water reflex. **Global NO-GO** pending
 population survival benefit and final I1 full CI.
+
+## 20 October: native population attestation and sleep-alert reentry investigation
+
+The native research cohort's original 16 WAL are independently certified
+by [workflow 39328630695](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39328630695)
+under physical experiment source `22560d09dbe242b722f07c151781cf261faaccef`.
+Certified totals over eight independent matched births per arm:
+
+| Arm | Survive / 8 | Applied boire | Consolidated objects | Accepted UC | Personally earned Stage8 signals |
+|---|---:|---:|---:|---:|---:|
+| Guarded control | 5 | 12 | 648 | 92435 | 0 |
+| Guarded retrieval + native learned relevance | 5 | 14 | 716 | 88906 | 5 |
+
+Four real threshold crossings occurred in the experimental arm.
+The learned water-site `option_ref` was actually accepted by Action
+Control on world step **133** in `water-isolated-corridor/18367`
+after the baseline would have waited. The six other non-divergent
+birth pairs provide no evidence of a universal survival effect.
+Keep the global NO-GO.
+
+A new problem independent of learned spatial route relevance has emerged
+from the **same already-sealed** control WAL. In
+`memory-corridor/18233`, I1 died after 228 steps without any
+physically experienced `boire`; water reached zero while actual
+physical decisions continued choosing `dormir`. Detailed original
+WAL inspection found **79 distinct wake events with reason
+`alert` that were followed in the SAME WORLD STEP by another
+ordinary Competition/Action Control decision `dormir`**.
+These are *not* 79 uninterrupted sleep steps or 79 forced wakes.
+They are newly deliberated actions, mostly under full 100% energy,
+low water and a frozen intrinsic sleep pressure of about 0.9.
+`memory-corridor/18367` shows a similar phenomenon.
+
+The reduced perception bodily alert truly WAKES I1, but waking
+does not automatically reduce actual F_cog nor the prior
+consolidation backlog. Subsequent ordinary Competition can again
+select sleep with high pressure and no immediate fatigue recovery.
+This is a candidate explanation for failure to obtain the very first
+beneficial water observation. It is *not* evidence I1 knew where
+the missing water was or that drinking should be hardwired.
+
+New research-only read-only auditor
+`tools/audit_i1_318_alert_sleep_reentry.py`,
+adversarial tests
+`tests/i1/test_i1_318_alert_sleep_reentry.py`, and workflow
+`.github/workflows/i1-issue318-alert-sleep-audit.yml`
+independently certify the original 16 WAL before counting
+newly admitted sleep after alert, frozen P40 pressure, the
+actually observed body and competing active GoalManager.
+No original birth is rerun; no M11, canonical sleep coefficient,
+consolidation pressure, default wake policy, I0 or Action Control
+has been changed.
+
+Next controlled hypothesis: make an alert wake an explicit
+**temporary eligibility restriction of the sleep candidate only**
+while the same personally sensed serious physiological alert
+persists. Such a restriction must remain within Competition, preserve
+the other alternatives, avoid motor forcing, require a versioned
+opt-in born contract and current-generation M11 continuity, and
+be measured in NEW mortal lives against matched control. No GO
+until the audit verifies the original physical failure mode.
