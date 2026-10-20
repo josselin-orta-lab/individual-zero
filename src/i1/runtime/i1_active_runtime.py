@@ -254,22 +254,36 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         forecast_cost = self._i1_forecast_cost_uc if self._i1_enabled else 0
         affordance_cost = (self._i1_unknown_action_cost_uc
                            if self._i1_unknown_action_enabled else 0)
-        # Alternative paths never issue two additional planning charges in
-        # one cycle. Reserve the largest, not their sum; each actual attempt
-        # is still charged by the canonical UC owner.
+        # Original goal-linked alternatives share one Planning charge.
+        # The independently registered local proposal is an ADDITIONAL,
+        # separately paid candidate, not a free duplicate. Reserve its
+        # preparation, registration and evaluation only for opted-in births.
         reserve = max(forecast_cost, affordance_cost)
+        local_enabled = getattr(self, "_i1_cross_goal_local_opportunities", False)
+        local_plan_cost = affordance_cost if local_enabled else 0
+        local_register_cost = (
+            original.operation_costs["competition_register"] if local_enabled else 0
+        )
+        local_evaluate_cost = (
+            original.operation_costs["competition_evaluate"] if local_enabled else 0
+        )
         extra = self._i1_recall_cost_uc if self._i1_lived_recall_enabled else 0
         budget = replace(
             original,
             version=(original.version
                      + ("+" + I1_POLICY if self._i1_enabled else "")
                      + ("+" + I1_AFFORDANCE_POLICY
-                        if self._i1_unknown_action_enabled else "")),
-            cycle_ceiling=original.cycle_ceiling + reserve + extra,
+                        if self._i1_unknown_action_enabled else "")
+                     + ("+" + I1_OPPORTUNISTIC_POLICY if local_enabled else "")),
+            cycle_ceiling=(original.cycle_ceiling + reserve + extra
+                           + local_plan_cost + local_register_cost
+                           + local_evaluate_cost),
             module_envelopes={
                 **original.module_envelopes,
-                "planning": original.module_envelopes["planning"] + reserve,
-                "competition": original.module_envelopes["competition"] + extra,
+                "planning": (original.module_envelopes["planning"]
+                             + reserve + local_plan_cost),
+                "competition": (original.module_envelopes["competition"] + extra
+                                + local_register_cost + local_evaluate_cost),
             },
             operation_costs={
                 **original.operation_costs,
