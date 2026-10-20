@@ -231,7 +231,15 @@ class I1Runtime(I1WaterPrudentRuntime):
             ),
         )
         life_id = kwargs.get("birth_life_id")
-        cfg = configure_birth_temperament(cfg, life_id=life_id)
+        # Experimental twin-source only: same innate temperament, distinct
+        # live identities and memories. Public birth APIs never expose it.
+        temperament_source = kwargs.pop("i1_research_temperament_source_id", None)
+        if temperament_source is not None and not self._i1_cross_goal_local_opportunities:
+            raise ValueError("twin temperament pairing requires I1 local research opt-in")
+        self._i1_research_temperament_source_id = temperament_source
+        cfg = configure_birth_temperament(
+            cfg, life_id=life_id, temperament_source_id=temperament_source,
+        )
         # The immutable goal subtree is installed before any owner or body is
         # created. No action, learned value, world fact or survival rule changes.
         cfg = _configure_birth_goal_policy(cfg, goal_policy)
