@@ -112,7 +112,7 @@ class Intention:
             raise ValueError("invalid intention monitoring mode")
         if self.cost_uc < 0:
             raise ValueError("intention cost must be non-negative")
-        if self.state not in {"pending", "triggered", "done", "abandoned"}:
+        if self.state not in {"pending", "triggered", "done", "abandoned", "suspended"}:
             raise ValueError("invalid intention state")
         if self.deadline_step is not None and self.deadline_step < 0:
             raise ValueError("intention deadline must be non-negative")
@@ -120,28 +120,34 @@ class Intention:
             # Memory of a personally chosen and applied non-spatial option.
             # Not a new goal, wake deadline, Q update or motor commitment.
             witnessed = self.trigger_value
+            phase_key = (
+                "applied_step" if isinstance(witnessed, Mapping)
+                and "applied_step" in witnessed else "considered_step"
+            )
             if (self.goal_type != "option_reconsideration"
                 or type(self.target) is not str
                 or not self.target.startswith("i1:affordance:")
                 or len(self.target) > 256
                 or self.id != "intention:i1:option:" + self.target
                 or not isinstance(witnessed, Mapping)
-                or set(witnessed) != {"applied_step", "source_option_ref"}
-                or type(witnessed["applied_step"]) is not int
-                or witnessed["applied_step"] < 1
+                or set(witnessed) != {phase_key, "source_option_ref"}
+                or type(witnessed[phase_key]) is not int
+                or witnessed[phase_key] < 1
                 or type(witnessed["source_option_ref"]) is not str
-                or not witnessed["source_option_ref"].startswith(
-                    f"option:i1:local:t{witnessed['applied_step']}:")
+                or witnessed["source_option_ref"] != (
+                    f"option:i1:local:t{witnessed[phase_key]}:"
+                    + self.target.removeprefix("i1:affordance:")
+                )
                 or self.deadline_step is None
-                or not witnessed["applied_step"] < self.deadline_step
-                or self.deadline_step - witnessed["applied_step"] > 64
+                or not witnessed[phase_key] < self.deadline_step
+                or self.deadline_step - witnessed[phase_key] > 64
                 or self.monitoring != "spontaneous"
                 or self.cost_uc < 1 or type(self.cost_uc) is not int
                 or type(self.base_pressure) not in (float, int)
                 or self.base_pressure != 0.0
                 or self.wake_authorized is not False
                 or self.candidacy_active is not False
-                or self.state not in {"pending", "abandoned", "done"}):
+                or self.state not in {"pending", "suspended", "abandoned", "done"}):
                 raise ValueError("invalid first-person option intention")
 
 
@@ -243,11 +249,108 @@ class EpisodicMemory:
             raise ValueError("intention id already exists")
         self._intentions[intention.id] = intention
 
+    def remember_considered_option(
+        self, *, signature: str, source_option_ref: str,
+        considered_step: int, cost_uc: int,
+    ) -> bool:
+        """Keep a genuinely evaluated, threshold-crossing option BEFORE action.
+
+        Caller owns Stage8/Competition proof and a prior UC charge. This
+        records only the semantic signature, never a command, reward, goal,
+        admission or belief that the physical effect already happened.
+        """
+        if not self._atomic_world_step_length_boundary:
+            return False
+        if (type(considered_step) is not int or considered_step < 1
+            or type(cost_uc) is not int or cost_uc < 1
+            or type(signature) is not str
+            or not signature.startswith("i1:affordance:")
+            or len(signature) > 256
+            or type(source_option_ref) is not str
+            or source_option_ref != (
+                f"option:i1:local:t{considered_step}:"
+                + signature.removeprefix("i1:affordance:")
+            )):
+            raise ValueError("invalid personally considered option provenance")
+        key = "intention:i1:option:" + signature
+        existing = self._intentions.get(key)
+        if existing is not None:
+            if existing.trigger_type != "option":
+                raise ValueError("semantic intention identity collision")
+            # Never replace personally applied evidence with a proposal, nor
+            # refresh an intention's TTL merely by repeatedly considering it.
+            return False
+        remaining = {
+            k: v for k, v in self._intentions.items()
+            if v.trigger_type != "option" or (
+                v.deadline_step is not None
+                and v.deadline_step >= considered_step
+            )
+        }
+        if sum(v.trigger_type == "option"
+               for v in remaining.values()) >= 16:
+            return False
+        intent = Intention(
+            id=key, goal_type="option_reconsideration", target=signature,
+            trigger_type="option",
+            trigger_value={
+                "considered_step": considered_step,
+                "source_option_ref": source_option_ref,
+            },
+            deadline_step=considered_step + min(
+                64, max(2, 2 * self._config.max_episode_steps),
+            ),
+            base_pressure=0.0, monitoring="spontaneous", cost_uc=cost_uc,
+            wake_authorized=False, state="pending",
+            candidacy_active=False,
+        )
+        intent.validate()
+        remaining[key] = intent
+        self._intentions = remaining
+        return True
+
+    def reconcile_option_intentions(
+        self, *, available_signatures: frozenset[str], world_step: int,
+    ) -> tuple[str, ...]:
+        """Suspend absent prospects; reconsider only freshly afforded ones.
+
+        Natural Planning must charge UC BEFORE invoking this Memory scan.
+        Does not generate an option, action, goal or competition evidence.
+        Expiry makes the prospective commitment terminal, even after M11.
+        """
+        if (type(world_step) is not int or world_step < 1
+            or type(available_signatures) is not frozenset
+            or any(type(ref) is not str or not ref.startswith("i1:affordance:")
+                   for ref in available_signatures)
+            or len(available_signatures) > 128):
+            raise ValueError("invalid first-person availability set")
+        changed = []
+        # Construct a new immutable mapping, then publish atomically.
+        updated = dict(self._intentions)
+        for ref, record in self._intentions.items():
+            if record.trigger_type != "option":
+                continue
+            if record.state in ("done", "abandoned"):
+                continue
+            if record.deadline_step is not None and world_step > record.deadline_step:
+                target = "abandoned"
+            elif record.target in available_signatures:
+                target = "pending"
+            else:
+                target = "suspended"
+            if target != record.state:
+                updated[ref] = replace(record, state=target)
+                updated[ref].validate()
+                changed.append(ref)
+        self._intentions = updated
+        return tuple(changed)
+
     @property
     def applied_option_intention_count(self) -> int:
-        """O(1) estimate of active records? Reads bounded owner entries only."""
+        """Metadata only; no intentions or causal values exported."""
         return sum(1 for x in self._intentions.values()
-                   if x.trigger_type == "option" and x.state == "pending")
+                   if x.trigger_type == "option"
+                   and x.state in ("pending", "suspended"))
 
     def remember_applied_option(
         self, *, signature: str, source_option_ref: str,
@@ -277,17 +380,19 @@ class EpisodicMemory:
         if existing is not None and existing.trigger_type != "option":
             raise ValueError("intention identity collision")
         if (existing is not None
+            and "applied_step" in existing.trigger_value
             and existing.trigger_value["applied_step"] >= applied_step):
             return False  # no repeated benefit from the same applied hop
         # Bounded current-life records; expired/superseded option memories
         # are discarded only on a successful, paid new recording.
         remaining = {
             k: v for k, v in self._intentions.items()
-            if (v.trigger_type != "option" or v.state != "pending"
-                or v.deadline_step is None or v.deadline_step > applied_step)
+            if (v.trigger_type != "option"
+                or (v.deadline_step is not None
+                    and v.deadline_step >= applied_step))
         }
         active = sum(1 for v in remaining.values()
-                     if v.trigger_type == "option" and v.state == "pending")
+                     if v.trigger_type == "option")
         if key not in remaining and active >= 16:
             return False
         new = Intention(
@@ -301,7 +406,13 @@ class EpisodicMemory:
                 2, 2 * self._config.max_episode_steps,
             )),
             base_pressure=0.0, monitoring="spontaneous", cost_uc=cost_uc,
-            wake_authorized=False, state="pending",
+            wake_authorized=False,
+            # If a prospect was formed earlier in this step, this real
+            # physical application completes it; legacy applied memories
+            # without a prospect remain pending for read-only recall.
+            state=("done" if existing is not None
+                   and "considered_step" in existing.trigger_value
+                   else "pending"),
             candidacy_active=False,
         )
         new.validate()
@@ -324,9 +435,10 @@ class EpisodicMemory:
         return bool(
             record is not None
             and record.trigger_type == "option"
-            and record.state == "pending"
+            and record.state in ("pending", "done")
             and record.deadline_step is not None
-            and record.trigger_value["applied_step"] < world_step
+            and (record.trigger_value.get("applied_step",
+                 record.trigger_value.get("considered_step")) < world_step)
             <= record.deadline_step
         )
 
