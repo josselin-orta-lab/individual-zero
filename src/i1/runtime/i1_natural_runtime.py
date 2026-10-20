@@ -323,6 +323,8 @@ class I1Runtime(I1WaterPrudentRuntime):
         normal_register = hooks[3]["competition"]
 
         def plan_independent_local(ctx):
+            # A new deliberation has no inherited paid admission/prospect.
+            self._i1_option_intention_paid = None
             normal_plan(ctx)
             self._i1_local_proposal_this_cycle = None
             if self._cycle_degraded or st_before_cycle is None:
@@ -441,6 +443,25 @@ class I1Runtime(I1WaterPrudentRuntime):
                   "goal_option_preserved": self._proposal_this_cycle is not None},
         )
         if not choices:
+            # A memory may need suspension even if no NEW local option can
+            # be produced (none visible or all already represented by the
+            # GoalManager / Competition). Observed accessibility, not
+            # independent candidature, decides whether it stays available.
+            if (self.memory.applied_option_intention_count
+                and self._charge(
+                    module="planning", operation=_OPTION_INTENTION_OPERATION,
+                )):
+                signatures = frozenset(
+                    "i1:affordance:" + c.primitive + ":" +
+                    (":".join(
+                        f"{k}={c.parameters[k]}" for k in sorted(c.parameters)
+                    ) or "here")
+                    for c in interactions
+                )
+                self.memory.reconcile_option_intentions(
+                    available_signatures=signatures,
+                    world_step=capture.t_monde,
+                )
             return None
         if not self._charge(module="planning",
                             operation=I1_AFFORDANCE_OPERATION):
