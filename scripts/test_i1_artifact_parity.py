@@ -858,7 +858,7 @@ def _approved_intention_351(root: Path, rel: str) -> bool:
         return False
     path, expected = entry
     data = (ROOT / path).read_bytes()
-    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest() == expected
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == expected
 
 
 def _approved_competition_fallback(root: Path, rel: str) -> bool:
