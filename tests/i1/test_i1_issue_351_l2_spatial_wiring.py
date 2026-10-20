@@ -18,7 +18,7 @@ class SpatialIntentionL2Tests(unittest.TestCase):
             generate(output)
             code = '''
 from i1.modules.competition import Competition, CompetitionConfig
-from i1.runtime.stage11_runtime import Stage11Runtime
+from i1lab.stage11_runtime import Stage11Runtime
 from i1.experimental.intention_continuity import IntentEvidence, bounded_continuation
 assert hasattr(Stage11Runtime, "_phase_hooks")
 assert "i1_place_memory_intention_reconsidered" in Stage11Runtime._phase_hooks.__code__.co_consts or any(
