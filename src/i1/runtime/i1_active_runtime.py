@@ -63,25 +63,32 @@ class I1PartialEvidenceAdapter:
 
     def evaluate(self, *, proposal, **kwargs):
         provenance = proposal.option.provenance
-        if (proposal.option.id != self._pending.get("option_ref")
+        pending = self._pending
+        local = pending.get("local_opportunity_evidence")
+        if (provenance == "i1_unknown_affordance"
+            and isinstance(local, dict)
+            and local.get("option_ref") == proposal.option.id):
+            # Same Stage8 path, separate independently charged producer.
+            pending = local
+        if (proposal.option.id != pending.get("option_ref")
                 or proposal.plan is None
                 or len(proposal.plan.steps) != 1
                 or provenance not in ("i1_partial_experiment",
                                       "i1_unknown_affordance")
-                or kwargs.get("t_monde") != self._pending.get("world_step")):
+                or kwargs.get("t_monde") != pending.get("world_step")):
             return self._underlying.evaluate(proposal=proposal, **kwargs)
 
         if provenance == "i1_unknown_affordance":
             # Only a previously UC-paid, first-person-grounded candidate may
             # receive exploratory evidence. Unknown effects stay unknown.
-            if self._pending.get("affordance") is not True:
+            if pending.get("affordance") is not True:
                 return self._underlying.evaluate(proposal=proposal, **kwargs)
-            prior = float(self._pending["prior_evidence"])
-            learned_evidence = self._pending.get("learned_evidence")
+            prior = float(pending["prior_evidence"])
+            learned_evidence = pending.get("learned_evidence")
             evidence = (prior if learned_evidence is None else
                         max(-1.0, min(1.0, 0.25 * prior
                                        + 0.75 * float(learned_evidence))))
-            learned = self._pending.get("learned_status") == "learned"
+            learned = pending.get("learned_status") == "learned"
             e = EvaluationOption(
                 option_ref=proposal.option.id,
                 option_version=proposal.option.version,
@@ -89,7 +96,7 @@ class I1PartialEvidenceAdapter:
                 status="evaluated",
                 learned_value_status="learned" if learned else "unlearned",
                 learned_value=(
-                    float(self._pending["learned_value"]) if learned else None
+                    float(pending["learned_value"]) if learned else None
                 ),
                 simulated_value_status="unavailable", simulated_value=None,
                 intrinsic_status="not_applicable", intrinsic_value=None,
@@ -102,10 +109,10 @@ class I1PartialEvidenceAdapter:
             result.validate()
             return result
 
-        receipt = self._pending.get("receipt")
+        receipt = pending.get("receipt")
         if receipt is None:
             return self._underlying.evaluate(proposal=proposal, **kwargs)
-        sources = tuple(self._pending.get("lived_sources", ()))
+        sources = tuple(pending.get("lived_sources", ()))
         evidence = 0.45 if sources else I1_SCORE
         e = EvaluationOption(
             option_ref=proposal.option.id,

@@ -821,6 +821,29 @@ _ISSUE_314_PINNED_BLOBS = {
 }
 
 
+# Canonical #327: exact-blob review for two native local-opportunity wiring files.
+# Never accepts unrelated generated drift, nor changes in I0.
+_LOCAL_327_PINS = {
+    "i1lab/i1_active_runtime.py": (
+        "src/i1/runtime/i1_active_runtime.py",
+        "0bd8655f5631e08dd0b26107d16fbe9e5d5d00c5",
+    ),
+    "i1lab/i1_natural_runtime.py": (
+        "src/i1/runtime/i1_natural_runtime.py",
+        "9b4b6f6e9da0fa20b2ebd2a42dcac3460f6b3edf",
+    ),
+}
+
+
+def _approved_local_327(root: Path, rel: str) -> bool:
+    entry = _LOCAL_327_PINS.get(rel)
+    if entry is None or not (root / rel).is_file():
+        return False
+    path, expected = entry
+    data = (ROOT / path).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == expected
+
+
 # Exact reviewed M11 cold body type fix; no broad waiver.
 _M11_BODY_TYPE_BLOB = "6dbe4362b75e54252dfa46ed43f466393ccb91bd"
 
@@ -1041,10 +1064,10 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel)))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel)) and not (
+            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel)) and not (
                 False  # Stage10 is handled by the stacked exact approval below
                 or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_natural_toxic_berry_birth(

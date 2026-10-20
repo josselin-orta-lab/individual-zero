@@ -18,7 +18,7 @@
 | Stable personally observed local place-option IDs | #317 / PR #324 | ACTIVE software fix | Distinguish new hop from persistent intention | NOT_ESTABLISHED |
 | Stable observed geographical frontier/transit option IDs | #330 / PR #335 | ACTIVE software fix | No change required to existing identities | NOT_ESTABLISHED |
 | Bounded cross-hop remembered-place intention | #326, #351 / PR #331, #347, #350, **#352** | **ACTIVE in canonical I1 once #352 merged** | Competition owns an applied-intention descriptor; Stage11 verifies arrival and re-registers a newly paid, subthreshold motor candidate. No motor replay, Action Control still decides. Technical two-step M11 recovery and owner-state tests; a naturally selected multi-hop episode has not been independently observed. | NOT_ESTABLISHED |
-| Goal-independent first-person local option consideration | #327 / PR #332, #342 | DORMANT | Connect distinct producer, preserve goal proposals, dedup + budget + learned Q without invented effect | NOT_ESTABLISHED |
+| Goal-independent first-person local option consideration | #327 / PR #332, #342, #353 | ACTIVE in natural birth after #353 merge | Separate Phase-1 producer and charged Competition registration; actual canonical M11 1-step candidate publication and cold recovery; existing goal producer preserved, bounded learned Q. | NOT_ESTABLISHED |
 | Experienced-place relevance from personally observed bodily effects | #328 / PR #333, #343 | DORMANT | Handle adverse and contradictory site samples and generic owner-backed outcomes, Stage8 integration | NOT_ESTABLISHED |
 | Alert-on-wake bodily diagnostic | #329 / PR #334 | DORMANT | Decide if ordinary needs/Competition suffice before any sleep option suppression | NOT_ESTABLISHED |
 | Broad research source #318 | #317 / PR #318 | RESEARCH, do not merge en bloc | Trace each retained fragment to a targeted issue | INCONCLUSIVE / NO_GO not promoted |
@@ -42,3 +42,13 @@ Source integrations in `src/i1/runtime/stage11_runtime.py` and `src/i1/modules/c
 **Technical tests:** `tests/i1/test_i1_issue_351_l2_spatial_wiring.py` verifies owner creation/negative cases, physical arrival contradictions, expiry/suspension, one-time transfer, the absence of new motor authority, state export/restore and two real canonical M11 steps with cold recovery. The exact-head CI additionally checks generated source parity and both Python 3.11/3.12.
 
 **Limits:** The owner-level positive test drives contract fixtures; the canonical M11 smoke runs naturally without forcing a remembered-place winner. The test suite does **not** establish that a naturally born individual has completed a two-hop remembered route, nor any gain in survival or learning. Scientific status stays `NOT_ESTABLISHED`. Future scientific work may examine naturally occurring multi-hop episodes without changing L1/L2 technical acceptance.
+
+## Issue #327: independent perceived local options (integration PR)
+
+The natural `I1Runtime` now has a dedicated Planning Phase-1 proposal in addition to the existing GoalManager-connected proposal. It uses only `candidate_commands` from the current personally observed `SimulationState`, a bounded local-action filter, physical command deduplication and the already owned `q_active.learned_value`. There is no inferred physical outcome, innate resource benefit, prescribed drinking/eating or override of an existing active goal.
+
+Each opportunity is separately paid for by Planning, then by the ordinary Competition registration, and its extra Competition evaluation receives a matching cycle/envelope reserve. The existing `I1PartialEvidenceAdapter` supplies its ordinary first-person exploratory/learned-Q evidence for the independently proposed option; Stage8, Competition and Action Control retain all motor authority and UC rules.
+
+`tests/i1/test_i1_issue_327_natural_activation.py` is a generated-I1 technical test covering actual canonical `birth_i1_m11`, perception of available interaction candidates, Planning/Competition publication, no forced motor, M11 two-step cold recovery and negative filter/source checks.
+
+This is **L2 ACTIVE only after PR #353 has passed exact-head CI and merged**. Actual statistical behavioral or survival benefit is separate and **NOT_ESTABLISHED**. No population or behavior campaign is authorized for this stage.
