@@ -3,6 +3,7 @@ on:
   workflow_run:
     workflows: ['I1 #318 four-arm factorial 32 unique mortal births']
     types: [completed]
+  workflow_dispatch:
 permissions:
   contents: read
   actions: read
