@@ -1,0 +1,26 @@
+name: I1 isolated source pin integrity
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/test_i1_artifact_parity.py'
+      - 'config/i1-isolated-source-pins/**'
+      - 'tests/i1/test_i1_issue_336_parity_pins.py'
+      - '.github/workflows/i1-336-parity-technical.yml'
+permissions:
+  contents: read
+jobs:
+  exact-pins:
+    name: I1 exact source pins (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify exact pins, collisions and absent artifacts
+        run: python -m unittest discover -s tests/i1 -p test_i1_issue_336_parity_pins.py -v
