@@ -10,7 +10,7 @@ Spec: 8.3-8.8, DC-01, DC-02, DC-10, 20.4 Stage 4.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import exp
+from math import exp, isfinite
 from typing import Callable, Mapping, Sequence
 
 from i0.contracts import EvaluationOption, Option, OptionProposal, canonical_option_order
@@ -187,6 +187,44 @@ class Competition:
     def accumulator_for(self, option_ref: str) -> float | None:
         state = self._registry.get(option_ref)
         return None if state is None else state.accumulator
+
+    def retain_bounded_intention_evidence(
+        self, *, option_ref: str, t_monde: int, evidence: float,
+    ) -> bool:
+        """Only seed a newly registered *candidate*, never a motor admission.
+
+        The caller must first pay the normal Competition registration UC and
+        verify an applied preceding hop against today's first-person capture.
+        No Q/TD update, engaged fallback or threshold exemption is created.
+        """
+        if (type(option_ref) is not str or not option_ref
+            or type(t_monde) is not int or t_monde < 2
+            or type(evidence) not in (float, int) or not isfinite(evidence)
+            or not 0.0 < evidence <= 1.0):
+            raise ValueError("invalid bounded intention evidence")
+        candidate = self._registry.get(option_ref)
+        if candidate is None or candidate.last_proposal_t != t_monde:
+            return False
+        proposal = candidate.proposal
+        option, plan = proposal.option, proposal.plan
+        if (self._engaged_option_id == option_ref
+            or candidate.accumulator != 0.0
+            or option.provenance != "memory"
+            or option.motive_ref.type != "place_memory"
+            or option.id != f"option:place-memory:{option.motive_ref.id}"
+            or option.learning_signature !=
+               f"memory_place_return:{option.motive_ref.id.split(':at:', 1)[0].removeprefix('place:')}"
+            or option.goal_ref is None or plan is None
+            or plan.goal_ref != option.goal_ref
+            or len(plan.steps) != 1
+            or plan.steps[0].command.primitive != "se_deplacer"):
+            return False
+        retained = min(float(evidence),
+                       candidate.last_threshold * self._config.residual)
+        if not 0.0 < retained < candidate.last_threshold:
+            return False
+        candidate.accumulator = retained
+        return True
 
     def is_engaged(self, option_ref: str) -> bool:
         return self._engaged_option_id == option_ref
