@@ -852,6 +852,27 @@ def _approved_competition_fallback(root: Path, rel: str) -> bool:
     return digest == expected and (root / rel).is_file()
 
 
+# Strictly scoped Lab-only matched temperament review. No broad exceptions.
+_MATCHED_TAU_PINS = {
+    "i1lab/i1_birth_temperament.py":
+        ("src/i1/runtime/i1_birth_temperament.py", "e88bedd1f89eb1409e8d6f6524e906718a1e8654"),
+    "i1lab/matched_temperament_research.py":
+        ("src/i1/lab/matched_temperament_research.py", "b0bd7682186042122c05cacf17b4ca4ebc06b957"),
+}
+
+
+def _approved_matched_tau_lab(root: Path, rel: str) -> bool:
+    record = _MATCHED_TAU_PINS.get(rel)
+    if record is None:
+        return False
+    path, expected = record
+    data = (ROOT / path).read_bytes()
+    return (
+        sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == expected
+        and (root / rel).is_file()
+    )
+
+
 def _approved_issue314_blob(root: Path, rel: str) -> bool:
     expected = _ISSUE_314_PINNED_BLOBS.get(rel)
     if expected is None:
@@ -889,10 +910,10 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel)))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel)) and not (
+            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel)) and not (
                 False  # Stage10 is handled by the stacked exact approval below
                 or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_natural_toxic_berry_birth(
