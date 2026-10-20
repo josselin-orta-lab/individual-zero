@@ -291,6 +291,38 @@ class Competition:
         self._applied_memory_intent = record
         return True
 
+    def observe_memory_intention(
+        self, *, world_step: int, observed_position: tuple[int, int],
+    ) -> str:
+        """Compare the trusted last applied intention to fresh Perception.
+
+        This does not observe WorldBody or dispatch an action. An intervening
+        step never fabricates fresh continuity; it may leave the semantic
+        interest suspended until expiry. GoalManager still owns which goal
+        is active and Stage8/Competition still arbitrate every new command.
+        """
+        if (type(world_step) is not int or world_step < 1
+            or type(observed_position) is not tuple
+            or len(observed_position) != 2
+            or any(type(n) is not int for n in observed_position)):
+            raise ValueError("invalid first-person intention observation")
+        intent = self._applied_memory_intent
+        if intent is None:
+            return "absent"
+        if world_step < intent.applied_step:
+            raise ValueError("memory intention cannot precede applied step")
+        if world_step >= intent.expires_at_step:
+            self._applied_memory_intent = None
+            return "expired"
+        if world_step == intent.applied_step:
+            return "awaiting_new_capture"
+        if world_step == intent.applied_step + 1:
+            if observed_position != intent.expected_position:
+                self._applied_memory_intent = None
+                return "contradicted"
+            return "reconsider"
+        return "suspended"
+
     def drop_memory_intention(self) -> None:
         """Forget contradicting/expired evidence without moving the body."""
         self._applied_memory_intent = None
