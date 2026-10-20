@@ -9,7 +9,8 @@
 3. [EVIDENCE_MATRIX.md](EVIDENCE_MATRIX.md): implementation vs verified behavior vs science
 4. [OBSERVABILITY.md](OBSERVABILITY.md): read-only reports and epistemic limitations
 5. [DEVELOPMENT_PLAYBOOK.md](DEVELOPMENT_PLAYBOOK.md): disciplined interventions and CI
-6. [ARCHITECTURE.md](ARCHITECTURE.md), [TEST_PLAN.md](TEST_PLAN.md), [STATUS.md](STATUS.md), [WORLD_PRESETS.md](WORLD_PRESETS.md): active engineering reference
+6. [CAPABILITY_INTEGRATION.md](CAPABILITY_INTEGRATION.md): actual birth activation separate from scientific evidence
+7. [ARCHITECTURE.md](ARCHITECTURE.md), [TEST_PLAN.md](TEST_PLAN.md), [STATUS.md](STATUS.md), [WORLD_PRESETS.md](WORLD_PRESETS.md): active engineering reference
 
 ## Deep technical guides
 
