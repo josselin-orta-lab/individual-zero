@@ -142,6 +142,10 @@ class I1Runtime(I1WaterPrudentRuntime):
             "i1_critical_alert_reentry_guard", False)
         if type(self._i1_critical_alert_reentry_guard) is not bool:
             raise ValueError("critical alert sleep guard selector must be boolean")
+        self._i1_cross_goal_local_opportunities = kwargs.pop(
+            "i1_cross_goal_local_opportunities", False)
+        if type(self._i1_cross_goal_local_opportunities) is not bool:
+            raise ValueError("cross-goal local interaction selector must be boolean")
         if goal_policy not in _I1_GOAL_POLICIES:
             raise ValueError("unregistered I1 natural goal arbitration policy")
         # Version the prospective I1 configuration instead of modifying the
