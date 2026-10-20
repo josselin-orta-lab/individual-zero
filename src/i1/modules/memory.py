@@ -8,7 +8,7 @@ Spec: 10.1-10.4, 20.3 Stage 7, P-34, DC-09, INV-02, INV-27.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from heapq import nsmallest
 from typing import Iterator, Mapping, Sequence
 
