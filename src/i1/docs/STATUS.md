@@ -457,3 +457,20 @@ La campagne scientifique S1 sur le SHA précédent reste bloquée et ses
 résultats ne sont pas requalifiés ; une future campagne prospective
 nécessitera un nouveau SHA de moteur validé. La correction est suivie
 par l'[issue #283](https://github.com/josselin-orta-lab/individual-zero/issues/283).
+
+## Intégration sélective issue #317 / recherche PR #318 (2026-10-20)
+
+État vérifié sur `main` après la fusion de [#324](https://github.com/josselin-orta-lab/individual-zero/pull/324), commit `38fea576087b79813ee88e743a0be8318a382cb6`. Les lots validés et fusionnés sont :
+
+- [#319](https://github.com/josselin-orta-lab/individual-zero/pull/319) : restauration M11, fidélité des types du corps ;
+- [#320](https://github.com/josselin-orta-lab/individual-zero/pull/320) : absence de décote de Competition lors du fallback sans arbitrage ;
+- [#321](https://github.com/josselin-orta-lab/individual-zero/pull/321) : audit Lab indépendant, en lecture seule, de la preuve causale WAL ;
+- [#322](https://github.com/josselin-orta-lab/individual-zero/pull/322) : projection de tempérament apparié limitée au laboratoire ;
+- [#323](https://github.com/josselin-orta-lab/individual-zero/pull/323) : provenance des décisions ordinaires de sommeil effectivement appliquées ;
+- [#324](https://github.com/josselin-orta-lab/individual-zero/pull/324) : identité locale stable de mémoire spatiale à route inchangée.
+
+Pour #324, les six validations du commit `45765cd476249129b66041ba52f09ffe87a95515` ont réussi : structure et SMOKE/FULL I1 sur Python 3.11/3.12, puis test ciblé d'identité sur les deux versions. Cette validation est **logicielle**, non une nouvelle campagne comportementale ou un GO scientifique. Les anciennes campagnes fondées sur des moteurs défectueux ne constituent pas des références.
+
+La [PR #318](https://github.com/josselin-orta-lab/individual-zero/pull/318) reste une **branche de recherche non fusionnable en bloc** ; elle diverge de main et contient des outils scientifiques, cohortes, extensions opt-in et changements cognitifs plus larges. Leurs présences dans cette PR ne valent pas validation de promotion. Les changements restant à examiner séparément concernent les transitions multi-sauts, l'accès à des opportunités locales, le signal de pertinence des lieux appris, les alertes physiologiques et le sommeil. Toute modification de l'arbitrage, du Q/TD ou des mécanismes de sommeil impose une revue propre ; aucune campagne populationnelle supplémentaire n'est autorisée dans cette intégration.
+
+Les PR de recherche autonomes (#316, #311, #308, #310, #303, #302, #300, #297) ne sont pas des dépendances d'intégration par défaut. Les PR fusionnées ne doivent pas être rejouées. Chaque nouvelle tranche : diff main réel, sources natives I1 + build généré, parité SHA, tests contractuels, CI exacte puis squash merge. I0, mort irréversible et provenance de première personne restent intangibles.
