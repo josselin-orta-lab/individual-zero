@@ -51,7 +51,7 @@ def bounded_continuation(prior: IntentEvidence, *, intended_ref: str,
         return None
     return min(float(prior.accumulated), float(ceiling) * float(residual))
 
-\n\ndef intention_reentry(prior: IntentEvidence, *, intended_ref: str,
+def intention_reentry(prior: IntentEvidence, *, intended_ref: str,
                       now_step: int, observed_origin: tuple[int, int],
                       ceiling: float, residual: float, applied: bool,
                       active_goal_unchanged: bool, observed_route_valid: bool,
