@@ -42,7 +42,7 @@ assert restored.intentions[0].state=="pending"
 assert restored.remember_applied_option(signature=signature,
  source_option_ref="option:i1:local:t4:collecter:target=x",
  applied_step=4,cost_uc=1)
-assert restored.intentions[0].state=="done"
+assert restored.intentions[0].state=="pending"  # applied without observed result
 assert not restored.remember_applied_option(signature=signature,
  source_option_ref="option:i1:local:t4:collecter:target=x",
  applied_step=4,cost_uc=1)
