@@ -137,3 +137,20 @@ Physically observed before/after water within the step: neutral `boire` had 115 
 A further independent *read-only* audit extension (`85d39ffb`) extracts the first-fork chain: locally proposed signature, registration receipt, Stage8 evidence, Competition crossing, whether the local option actually owns the motor, and divergence pathway (different selected local signatures vs equal signature with different Q evidence). This does not prove that the learned option must win, nor does it infer unknown physical risk. Negative tests (`46ab0f28`) and CI gate (`76966672`) reject unregistered, absent, or synthetic claims. Original WALs remain immutable. Workflow [#39403917678](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39403917678) was executing at this checkpoint, so **the new lineage counts must not be claimed until its exit status is SUCCESS**.
 
 Investigation priority after the first-fork chain: explain why neutral exposure allows recurrent drinking attempts and how learned negative Q evidence is balanced against vital pressure, without imposing a rule specifically against drinking. Assess sleep and consolidation and repeat over longer held-out newborn lives before canonical promotion. No I0 edits, no merge, no rollback, no forced drink and no resurrection. Scientific classification remains INCONCLUSIVE for ecological utility, NO-GO for promotion.
+
+
+## 2026-10-20 : 2x2 factorial intervention to separate Q pathways
+
+The original 16-WAL first-fork Competition audit [#39404028900](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39404028900) completed SUCCESS. Its descriptive classification at the eight physical forks: **three** pairs showed a changed independent local candidate signature; **five** offered the same independent local signature but changed learned-Q evidence. These classifications are NOT a factorial estimate because both pathways were changed together in the prior treatment.
+
+Implemented a dedicated **research-only** 2x2 local-Q exposure map in I1:
+- `neutral` = neither candidate ranking nor Competition evidence reads learned Q
+- `rank_only` = learned-Q ranking, neutral candidate evidence
+- `evidence_only` = neutral ranking, learned-Q evidence
+- `learned` = both learned-Q ranking and Competition evidence
+
+The same `q_active` owner continues to learn with TD in every arm. No survival heuristic, forced action, resuscitation, primitive-specific penalty, modified physiology, or new authority is introduced. Canonical births remain independent-local-off. The explicit choice is included in the existing M11 I1 birth fingerprint. Commit `cc9c16e0` changes only the research local producer; `40fa5411` registers the two additional opt-in modes; `c1765240` updates exact byte parity pins; `092a33db` adds selector unit tests; `078e39be` introduces CI; `14edcc0a` updates an older assertion.
+
+The implementation itself is **not** proof of efficacy. The next scientific experiment should use fully fresh seeds and physically separate mortal births for all four arms with locked first-person traces, then authenticate original WAL and first motor differences. Existing original births MUST NOT be replayed, reclassified as newly born, or compared as if prior Q-neutral/Q-learned data constituted the missing factorial arms.
+
+**Scientific status:** first-fork Q exposure dependence is supported in original 8 pairs; independent effect of candidate ranking versus evidence is **INCONCLUSIVE** pending new controlled experiment; canonical promotion **NO-GO**. I0 and main unchanged.
