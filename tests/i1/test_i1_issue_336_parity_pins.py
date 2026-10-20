@@ -46,7 +46,7 @@ class IsolatedSourcePinTest(unittest.TestCase):
             native=fake/"src/i1/experimental/fifth_module.py"
             native.parent.mkdir(parents=True)
             native.write_bytes(b"# fifth verified source\\n")
-            blob=b"blob "+str(len(native.read_bytes())).encode()+b"\\0"+native.read_bytes()
+            blob=b"blob "+str(len(native.read_bytes())).encode()+b"\0"+native.read_bytes()
             record=dict(schema="i1-isolated-source-pin-v1",issue=410,
                         generated="i1/experimental/fifth_module.py",
                         native="src/i1/experimental/fifth_module.py",
