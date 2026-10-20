@@ -40,6 +40,24 @@ I1_SCORE = 0.35  # fixed *instrumental preference*, NOT predicted E_sim
 I1_EXPERIMENTAL_OPERATION = "i1_partial_model_forecast"
 I1_AFFORDANCE_POLICY = "i1-unknown-action-affordance-v2-general-local"
 I1_AFFORDANCE_OPERATION = "i1_unknown_action_consider"
+I1_OPPORTUNISTIC_ACTIONS = frozenset(("boire", "manger", "collecter"))
+I1_OPPORTUNISTIC_POLICY = "i1-local-interaction-goal-independent-v1"
+
+
+def _local_interaction_choices(available, *, enabled):
+    """Only executable local actions, never a map or anticipated need relief.
+
+    Planning's canonical candidate_commands has already established physical
+    executability from this individual's local Perception state. This helper
+    never inspects an entity type, guesses nutritional value, or chooses a
+    motor. It is an opt-in *candidate expansion* only.
+    """
+    if type(enabled) is not bool:
+        raise ValueError("local interaction research flag must be boolean")
+    if not enabled:
+        return ()
+    return tuple(command for command in available
+                 if command.primitive in I1_OPPORTUNISTIC_ACTIONS)
 
 
 class I1PartialEvidenceAdapter:
@@ -349,6 +367,21 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
             "recover_energy": {"dormir"},
             "restore_integrity": {"attendre"},
         }.get(goal.goal_type, set())
+        # Research-only: permit already-executable, locally witnessed
+        # interactions to be CONSIDERED while any bodily goal is active.
+        # Their effects remain unknown and they receive the same ordinary
+        # rank, UC debit and Competition scoring, not a survival bonus.
+        local_interactions = _local_interaction_choices(
+            available,
+            enabled=getattr(self, "_i1_cross_goal_local_opportunities", False),
+        )
+        local_signatures = {
+            (c.primitive, tuple(sorted(c.parameters.items())))
+            for c in local_interactions
+        }
+        previous_goal_direct = frozenset(direct)
+        if local_interactions:
+            direct = direct | I1_OPPORTUNISTIC_ACTIONS
 
         def relevant(candidate):
             primitive = candidate.primitive
@@ -410,6 +443,11 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
             if winner is None or rank < winner[0]:
                 winner = (rank, command, signature, learned, suffix)
         _, command, signature, learned, suffix = winner
+        cross_goal_local = (
+            command.primitive not in previous_goal_direct
+            and (command.primitive,
+                 tuple(sorted(command.parameters.items()))) in local_signatures
+        )
         pressure = max(0.0, min(1.0, float(goal.current_pressure)))
         exploration = float(self.temperament_parameters.exploration_coefficient)
         uncertainty_penalty = float(
@@ -478,6 +516,13 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
                         "accessible_inventory": dict(state.inventory),
                         "candidate_count": len(choices),
                         "candidate_primitives": [c.primitive for c in choices],
+                        "cross_goal_local_interaction": cross_goal_local,
+                        "candidate_expansion_policy": (
+                            I1_OPPORTUNISTIC_POLICY
+                            if local_interactions else None
+                        ),
+                        "ordinary_q_ranking_unchanged": True,
+                        "no_interaction_result_assumed": True,
                         "visible_input_sha256": sha256_hex(
                             canonical_causal_bytes(state.as_dict())
                         ),
