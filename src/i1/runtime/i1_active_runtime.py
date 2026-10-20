@@ -452,6 +452,9 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
                         cycle=cycle, data={"reason": "insufficient_uc"})
             return None
         context = self._evaluation_state(capture)
+        q_exposure = getattr(self, "_i1_local_q_exposure", "learned")
+        if q_exposure not in ("learned", "neutral"):
+            raise ValueError("invalid independent-local Q exposure")
         selected = None
         for index, command in enumerate(choices):
             suffix = ":".join(
@@ -459,12 +462,18 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
                 for k in sorted(command.parameters)
             ) or "here"
             signature = "i1:affordance:" + command.primitive + ":" + suffix
+            # Charge and update the exact same TD/Q owner in both arms;
+            # suppress exposure only for this independent local candidate.
             learned = self.q_active.learned_value(context, signature)
-            rank = (-float(learned.evidence or 0.0),
+            rank = (-(float(learned.evidence or 0.0)
+                      if q_exposure == "learned" else 0.0),
                     (capture.t_monde + index) % len(choices))
             if selected is None or rank < selected[0]:
                 selected = (rank, command, signature, learned, suffix)
         _, command, signature, learned, suffix = selected
+        # Q is still learned from real experience by Stage8; the neutral
+        # research arm blinds only its exposure to Competition.
+        selected_evidence = learned if q_exposure == "learned" else None
         exploration = float(self.temperament_parameters.exploration_coefficient)
         uncertainty = float(self.temperament_parameters.uncertainty_penalty_scale)
         prior = max(0.0, min(1.0, I1_SCORE
@@ -509,8 +518,12 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
         self._i1_pending["local_opportunity_evidence"] = {
             "option_ref": option_id, "world_step": capture.t_monde,
             "affordance": True, "prior_evidence": prior,
-            "learned_evidence": learned.evidence,
-            "learned_value": learned.value, "learned_status": learned.status,
+            "learned_evidence": (
+                None if selected_evidence is None else selected_evidence.evidence),
+            "learned_value": (
+                None if selected_evidence is None else selected_evidence.value),
+            "learned_status": (
+                "unlearned" if selected_evidence is None else selected_evidence.status),
         }
         self._write(kind="i1_local_opportunity_proposed", cycle=cycle,
                     data={
@@ -522,8 +535,13 @@ class ExperimentalI1Stage12Runtime(Stage12Runtime):
                             canonical_causal_bytes(state.as_dict())
                         ),
                         "prior_evidence": prior,
-                        "learned_value_status": learned.status,
-                        "learned_value": learned.value,
+                        "learned_value_status": (
+                            "unlearned" if selected_evidence is None
+                            else selected_evidence.status),
+                        "learned_value": (
+                            None if selected_evidence is None
+                            else selected_evidence.value),
+                        "q_exposure": q_exposure,
                         "physical_outcome_known": False, "forced_motor": False,
                     })
         return proposed
