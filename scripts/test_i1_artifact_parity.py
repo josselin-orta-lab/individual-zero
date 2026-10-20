@@ -866,15 +866,18 @@ def _approved_issue317_blob(root: Path, rel: str) -> bool:
 # not wildcard file exceptions; any subsequent code change fails closed.
 # Canonical birth flags stay false and are separately covered by I1/M11 tests.
 _EXPERIENCED_318_BLOBS = {
+    "i1lab/i1_active_runtime.py":
+        ("src/i1/runtime/i1_active_runtime.py",
+         "1d1bc78e06c7e062f54cdb4aca49512d3372b759"),
     "i1/modules/experienced_place_relevance.py":
         ("src/i1/modules/experienced_place_relevance.py",
          "5579f0b9854e324a03510a86a532a4027fc4a1e9"),
     "i1lab/i1_natural_runtime.py":
         ("src/i1/runtime/i1_natural_runtime.py",
-         "e2430cc315d4c5c8d42fd098ccaac14ebda89ea9"),
+         "61b1235b3997eb64af2aad6a5e7ef1ac8cd6318f"),
     "i1lab/m11_transactional_mortal.py":
         ("src/i1/runtime/m11_transactional_mortal.py",
-         "943c0c1752b877f80fc8da39e91180d6836debee"),
+         "2a58376bbd1e0ec98d831a9c0b07b3ed08cfa262"),
 }
 
 
