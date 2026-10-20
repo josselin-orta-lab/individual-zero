@@ -5,7 +5,12 @@ from tempfile import TemporaryDirectory
 import sys
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/"src"))
-from i1.runtime.i1_birth_temperament import temperament_for_life, configure_birth_temperament
+import importlib.util
+spec=importlib.util.spec_from_file_location("i1researchtemperament", ROOT/"src/i1/runtime/i1_birth_temperament.py")
+module=importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+temperament_for_life=module.temperament_for_life
+configure_birth_temperament=module.configure_birth_temperament
 
 class TwinTemperament(unittest.TestCase):
     def test_original_factorial_had_confounded_birth_temperaments(self):
