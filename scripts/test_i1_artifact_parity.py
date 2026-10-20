@@ -917,7 +917,7 @@ _INTENTION_351_PINS = {
     "i1/modules/competition.py":
         ("src/i1/modules/competition.py", "17c2f650ce653b854dacd938977ea2ea90c2b0c0"),
     "i1lab/stage11_runtime.py":
-        ("src/i1/runtime/stage11_runtime.py", "f38f2bf3ea56260746a468bc4cafedcfafba8e75"),
+        ("src/i1/runtime/stage11_runtime.py", "c2980b65176b07edb5d04532134478f182739e77"),
 }
 
 

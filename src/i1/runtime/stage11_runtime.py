@@ -1447,15 +1447,11 @@ class Stage11Runtime(Stage9Runtime):
                 observed_site=target.observed_position,
                 fallback_used=self._fallback_used_this_cycle,
             ):
-                self._write(
-                    kind="i1_place_memory_intention_applied",
-                    cycle=cycle,
-                    data={"option_ref": proposal.option.id,
-                          "semantic_ref": proposal.option.learning_signature,
-                          "expected_arrival": list(target.destination),
-                          "source": "action_control_applied_then_first_person_check",
-                          "motor_admission_inherited": False},
-                )
+                # Action Control already closed the physical scheduler step.
+                # Competition is an M11 causal owner; retain the descriptor
+                # in its committed image, but do not append a late WAL entry.
+                # The next ordinary Perception can journal confirmation.
+                pass
         if (
             execution.status == "applied"
             and prepared.command.primitive == "boire"
