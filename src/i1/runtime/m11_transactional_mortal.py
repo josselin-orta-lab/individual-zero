@@ -200,6 +200,12 @@ def _runtime_contract(runtime: Any) -> str:
             _CRITICAL_ALERT_SLEEP_GUARD, True,
             tuple(sorted(runtime._stage10_config.critical_body_thresholds.items())),
         ))
+    if getattr(runtime, "_i1_cross_goal_local_opportunities", False):
+        from .i1_active_runtime import I1_OPPORTUNISTIC_POLICY, I1_OPPORTUNISTIC_ACTIONS
+        configuration = (*configuration, (
+            I1_OPPORTUNISTIC_POLICY, True,
+            tuple(sorted(I1_OPPORTUNISTIC_ACTIONS)),
+        ))
     return sha256_hex(canonical_causal_bytes(_contract_value(configuration)))
 
 
