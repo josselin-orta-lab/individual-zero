@@ -18,7 +18,7 @@ class LocalCuriosity318(unittest.TestCase):
    return SimpleNamespace(primitive=name,parameters={})
   offered=[command(p) for p in ("attendre","boire","manger","collecter","se_deplacer","dormir")]
   self.assertEqual(tuple(c.primitive for c in _local_interaction_choices(offered,enabled=True)),
-                   ("boire","manger","collecter"))
+                   ("boire","manger","collecter","poser_une_pierre","fabriquer_outil"))
   self.assertEqual(_local_interaction_choices(offered,enabled=False),())
   # A visible resource is NOT authority to propose an unavailable command.
   self.assertEqual(_local_interaction_choices([command("attendre")],enabled=True),())
