@@ -4,7 +4,6 @@ on:
     branches: [fix/i1-memory-competition-317]
     paths:
       - 'tools/run_i1_318_local_q_ablation_cohort.py'
-      - 'tests/i1/test_i1_318_local_q_ablation.py'
       - '.github/workflows/i1-issue318-local-q-ablation.yml'
   workflow_dispatch:
 permissions:
