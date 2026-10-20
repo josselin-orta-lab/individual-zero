@@ -843,6 +843,24 @@ _COMPETITION_FALLBACK_PINS = {
 }
 
 
+# Issue #351: reviewed L2 candidate, locked to two exact native source blobs.
+_INTENTION_351_PINS = {
+    "i1/modules/competition.py":
+        ("src/i1/modules/competition.py", "7ab1aaf5ddb2caaa784c29c9976c4ae1c0399c1a"),
+    "i1lab/stage11_runtime.py":
+        ("src/i1/runtime/stage11_runtime.py", "0bae4115fac93a9da5ffe0a46aeadf4702193c91"),
+}
+
+
+def _approved_intention_351(root: Path, rel: str) -> bool:
+    entry = _INTENTION_351_PINS.get(rel)
+    if entry is None or not (root / rel).is_file():
+        return False
+    path, expected = entry
+    data = (ROOT / path).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest() == expected
+
+
 def _approved_competition_fallback(root: Path, rel: str) -> bool:
     entry = _COMPETITION_FALLBACK_PINS.get(rel)
     if entry is None:
@@ -1023,10 +1041,10 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel)))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel)) and not (
+            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel)) and not (
                 False  # Stage10 is handled by the stacked exact approval below
                 or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_natural_toxic_berry_birth(
