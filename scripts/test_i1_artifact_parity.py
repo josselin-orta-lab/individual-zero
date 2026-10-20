@@ -13,6 +13,7 @@ import argparse
 import difflib
 from hashlib import sha1, sha256
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -894,37 +895,56 @@ def _approved_geographic_identity(root: Path, rel: str) -> bool:
             and (root / rel).is_file())
 
 
-# #326 disabled experimental I1 extraction; exact blob only.
-_EXPERIMENTAL_326_SOURCE = ("i1/experimental/intention_continuity.py", "src/i1/experimental/intention_continuity.py", "ab57876c4364f067f088a49d5e1e1cd4e3d02b23")
+# Explicit, one-file-per-issue source attestations for disabled experiments.
+# Manifests never authorize arbitrary packages, globs or generated output.
+_ISOLATED_PINS_DIR = ROOT / "config" / "i1-isolated-source-pins"
 
-def _approved_experimental_326(root: Path, rel: str) -> bool:
-    generated, native, expected = _EXPERIMENTAL_326_SOURCE
-    if rel != generated or not (root / rel).is_file():
+
+def _load_isolated_source_pins(directory: Path) -> dict[str, tuple[str, str]]:
+    """Fail closed on malformed, duplicate or non-exact review manifests."""
+    if not directory.is_dir():
+        raise ValueError("missing isolated I1 source attestation directory")
+    files = sorted(directory.iterdir())
+    if not files or len(files) > 32:
+        raise ValueError("missing or unbounded I1 source attestations")
+    pins: dict[str, tuple[str, str]] = {}
+    for manifest in files:
+        match = re.fullmatch(r"issue-([1-9][0-9]*)[.]json", manifest.name)
+        if not manifest.is_file() or match is None:
+            raise ValueError("unreviewed I1 source pin manifest")
+        record = json.loads(manifest.read_text(encoding="utf-8"))
+        if (type(record) is not dict
+            or set(record) != {"schema", "issue", "generated", "native", "blob_sha1"}
+            or record["schema"] != "i1-isolated-source-pin-v1"
+            or type(record["issue"]) is not int
+            or record["issue"] != int(match.group(1))
+            or type(record["generated"]) is not str
+            or re.fullmatch(r"i1/experimental/[a-z][a-z0-9_]*[.]py",
+                            record["generated"]) is None
+            or record["native"] != "src/" + record["generated"]
+            or type(record["blob_sha1"]) is not str
+            or re.fullmatch(r"[0-9a-f]{40}", record["blob_sha1"]) is None):
+            raise ValueError("invalid or non-exact I1 source attestation")
+        if record["generated"] in pins:
+            raise ValueError("duplicate I1 source attestation")
+        pins[record["generated"]] = (record["native"], record["blob_sha1"])
+    return pins
+
+
+def _approved_isolated_experimental(root: Path, rel: str) -> bool:
+    """Exact SHA of current native source, with a named generated artifact."""
+    if not rel.startswith("i1/experimental/"):
         return False
-    payload = (ROOT / native).read_bytes()
-    return sha1(b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload).hexdigest() == expected
-
-
-# #327 disabled experimental I1 extraction; exact blob only.
-_EXPERIMENTAL_327_SOURCE = ("i1/experimental/local_opportunity_selection.py", "src/i1/experimental/local_opportunity_selection.py", "a830e062c68fd00c0c0563e38670499a2a9d8293")
-
-def _approved_experimental_327(root: Path, rel: str) -> bool:
-    generated, native, expected = _EXPERIMENTAL_327_SOURCE
-    if rel != generated or not (root / rel).is_file():
+    entry = _load_isolated_source_pins(_ISOLATED_PINS_DIR).get(rel)
+    if entry is None:
         return False
-    payload = (ROOT / native).read_bytes()
-    return sha1(b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload).hexdigest() == expected
-
-
-# #328 disabled experimental I1 extraction; exact blob only.
-_EXPERIMENTAL_328_SOURCE = ("i1/experimental/experienced_place_relevance.py", "src/i1/experimental/experienced_place_relevance.py", "5579f0b9854e324a03510a86a532a4027fc4a1e9")
-
-def _approved_experimental_328(root: Path, rel: str) -> bool:
-    generated, native, expected = _EXPERIMENTAL_328_SOURCE
-    if rel != generated or not (root / rel).is_file():
+    source, expected = entry
+    path = ROOT / source
+    if not path.is_file() or not (root / rel).is_file():
         return False
-    payload = (ROOT / native).read_bytes()
-    return sha1(b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload).hexdigest() == expected
+    data = path.read_bytes()
+    actual = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return actual == expected
 
 
 # Strictly scoped Lab-only matched temperament review. No broad exceptions.
@@ -1003,10 +1023,10 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_experimental_326(new_root, rel) or _approved_experimental_327(new_root, rel) or _approved_experimental_328(new_root, rel)))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_experimental_326(new_root, rel) or _approved_experimental_327(new_root, rel) or _approved_experimental_328(new_root, rel)) and not (
+            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel)) and not (
                 False  # Stage10 is handled by the stacked exact approval below
                 or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_natural_toxic_berry_birth(
