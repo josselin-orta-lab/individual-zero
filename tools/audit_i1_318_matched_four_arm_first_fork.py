@@ -22,8 +22,11 @@ from audit_i1_318_local_q_ablation_cohort import (
 )
 
 SCHEMA = "i1-318-matched-Q-four-arm-first-fork/v1"
-CAPTURE_FIELDS = (
-    "position", "dual_scope_visible_body", "agency_visible_inventory",
+# Compare the *complete* first-person Stage3 receipt, including creature
+# count and schema. A handpicked subset can hide an important difference.
+REQUIRED_CAPTURE_FIELDS = (
+    "capture_t_monde", "position", "adjacent_creature_count",
+    "dual_scope_visible_body", "agency_visible_inventory",
     "agency_visible_adjacent",
 )
 EFFECT_FIELDS = ("body_after", "position_after", "effects")
@@ -79,6 +82,19 @@ def first_fork(histories):
     }
 
 
+def q_signature_is_prior_lived(event_rows, *, proposal_index, signature):
+    """Trace current Q back to a prior in-life TD publication, never World."""
+    if type(proposal_index) is not int or proposal_index < 0:
+        raise ValueError("invalid index for Q provenance")
+    if type(signature) is not str or not signature.startswith("i1:affordance:"):
+        return False
+    return any(
+        item.get("kind") == "td_update_published"
+        and signature in item.get("data", {}).get("updated_signatures", ())
+        for item in event_rows[:proposal_index]
+    )
+
+
 def inspect_fork(events_by_arm, *, fork):
     _check(type(fork) is int and fork >= 1, "invalid fork for Q trace inspection")
     result = {}
@@ -89,6 +105,10 @@ def inspect_fork(events_by_arm, *, fork):
         histories[arm] = (motors, transitions, captures)
         _check(fork in motors, "four-arm fork occurs after one physical death")
         captured = captures.get(fork)
+        if captured is not None:
+            _check(type(captured) is dict
+                   and all(key in captured for key in REQUIRED_CAPTURE_FIELDS),
+                   "missing canonical first-person fields at observed fork")
         local = local_competition_at_fork(events, step=fork)
         expected_rank, expected_evidence = Q_MODES[arm]
         for candidate in local["local_candidates"]:
@@ -101,6 +121,22 @@ def inspect_fork(events_by_arm, *, fork):
             ]
             _check(len(matching) == 1, "ambiguous local Q provenance")
             proposal = matching[0]
+            proposal_rows = [
+                idx for idx, event in enumerate(events)
+                if event.get("t_monde") == fork
+                and event.get("kind") == "i1_local_opportunity_proposed"
+                and event.get("data", {}).get("option_ref") == option_ref
+            ]
+            _check(len(proposal_rows) == 1,
+                   "duplicate in-life candidate proof at first fork")
+            prior_td = q_signature_is_prior_lived(
+                events, proposal_index=proposal_rows[0],
+                signature=proposal.get("learning_signature"),
+            )
+            candidate["prior_lived_td_for_signature"] = prior_td
+            if candidate["q_status_at_proposal"] == "learned":
+                _check(prior_td,
+                       "learned local Q lacks an earlier first-person TD update")
             _check(proposal.get("q_exposure") == arm.removeprefix("local_q_")
                    and proposal.get("q_used_for_candidate_rank") is expected_rank
                    and proposal.get("q_used_for_competition_evidence") is expected_evidence
@@ -111,9 +147,7 @@ def inspect_fork(events_by_arm, *, fork):
             "motor": motors[fork]["primitive"],
             "parameters": motors[fork]["parameters"],
             "perception_recorded": captured is not None,
-            "visible": (None if captured is None else {
-                field: captured.get(field) for field in CAPTURE_FIELDS
-            }),
+            "visible": captured,
             "local_competition": local,
         }
     observations = [result[a]["visible"] for a in ARMS]
@@ -158,7 +192,8 @@ def comparisons(first_fork_trace, histories):
             cx = x[2].get(first)
             cy = y[2].get(first)
             visible_agree = (cx is not None and cy is not None and all(
-                cx.get(k) == cy.get(k) for k in CAPTURE_FIELDS
+                cx == cy
+                for _ in (0,)
             ))
             trace = first_fork_trace if first == first_fork_trace else None
         result[label] = {
