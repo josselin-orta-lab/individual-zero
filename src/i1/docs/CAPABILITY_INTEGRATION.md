@@ -20,7 +20,7 @@
 | Bounded cross-hop remembered-place intention | #326, #351 / PR #331, #347, #350, **#352** | **ACTIVE in canonical I1 once #352 merged** | Competition owns an applied-intention descriptor; Stage11 verifies arrival and re-registers a newly paid, subthreshold motor candidate. No motor replay, Action Control still decides. Technical two-step M11 recovery and owner-state tests; a naturally selected multi-hop episode has not been independently observed. | NOT_ESTABLISHED |
 | Goal-independent first-person local option consideration | #327 / PR #332, #342, #353 | ACTIVE in natural birth after #353 merge | Separate Phase-1 producer and charged Competition registration; actual canonical M11 1-step candidate publication and cold recovery; existing goal producer preserved, bounded learned Q. | NOT_ESTABLISHED |
 | Experienced-place relevance from personally observed bodily effects | #328 / PR #333, #343; canonical integration PR | ACTIVE only after accepted L2 PR merge | Current-life Exploration site effects from genuinely applied local actions and next physical capture, plus positive/negative/contradictory body outcomes; Stage8 uses generic need pressures and confidence. No resource-type utility. | NOT_ESTABLISHED |
-| Alert-on-wake bodily diagnostic | #329 / PR #334 | DORMANT | Decide if ordinary needs/Competition suffice before any sleep option suppression | NOT_ESTABLISHED |
+| Wake on first-person physiological alerts and free return to Competition | #329 / PR #334 (dormant diagnostics), PR #355 | **ACTIVE after #355 merge** | Stage10 uses authentic reduced bodily Perception for wake; GoalManager/Competition reconsider fresh needs; a genuinely applied choice to sleep again must re-arm SleepSession at the next step. No motor lock. | NOT_ESTABLISHED |
 | Broad research source #318 | #317 / PR #318 | RESEARCH, do not merge en bloc | Trace each retained fragment to a targeted issue | INCONCLUSIVE / NO_GO not promoted |
 
 ## Merge policy
@@ -62,3 +62,9 @@ The existing Stage11/Stage8 evaluator may consider only a previously experienced
 Generated engine contracts in `tests/i1/test_i1_issue_328_natural_lived_sites.py` cover favorable/adverse and contradictory site outcomes, nonexistent/malformed/future evidence, snapshot atomicity, no source-type generalization, and canonical natural M11 cold recovery over two real physical steps. These are technical tests, not survival cohorts.
 
 **L2 status:** only once this PR passes exact-head CI and merges. **L3 status:** NOT_ESTABLISHED. No behavioral benefit is claimed.
+
+## Issue #329: ordinary wake/needs reentry and freely chosen subsequent sleep
+
+Canonical Stage10 already performs a bounded sleep-only reduced Perception, scores genuine bodily or nearby threat alerts, interrupts consolidation before wake and resumes the existing GoalManager/Stage8/Competition/Action Control path. The research guard that *forbids sleeping again* is deliberately **not activated**. A genuine shortcoming remained: after a waking step physically executed an independently selected `dormir`, SleepSession was not re-armed. PR #355 corrects this only when `_verify_ordinary_sleep_provenance` and the actual applied Action Control receipt succeed, after the wake-state close. The next step is free to enter sleep under the existing owner; no additional priority, automatic eating or forced waking.
+
+`tests/i1/test_i1_issue_329_wake_reentry.py` exercises authentic owner chronology, refusal, false applied receipt, no suppression and two physically real canonical M11 steps with cold recovery. L2 only after exact-head CI and merge. Scientific benefit is NOT_ESTABLISHED; the pure #334 diagnostic stays dormant and unnecessary for motor behavior.
