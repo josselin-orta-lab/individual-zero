@@ -13,7 +13,7 @@ class LocalQ318(unittest.TestCase):
    generate(Path(d)/"generated")
    s=(Path(d)/"generated"/"i1lab"/"i1_active_runtime.py").read_text()
    self.assertIn('q_exposure = getattr(self, "_i1_local_q_exposure", "learned")',s)
-   self.assertIn('selected_evidence = learned if q_exposure == "learned" else None',s)
+   self.assertIn('selected_evidence = learned if expose_evidence else None',s)
    self.assertIn('"q_exposure": q_exposure',s)
    self.assertNotIn('self.q_active._weights.clear()',s)
   m=(ROOT/"src/i1/runtime/m11_transactional_mortal.py").read_text()
