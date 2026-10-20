@@ -225,6 +225,127 @@ def compare_pair(neutral, learned):
     }
 
 
+
+def local_competition_at_fork(events, *, step):
+    """Observe local candidate admission and evidence at the first motor fork.
+
+    This is read-only analysis *after* independent original WAL custody. It
+    cannot itself prove that one individual would have chosen differently
+    without Q, or that a positive value predicts real-world usefulness.
+    """
+    _check(type(step) is int and 1 <= step <= HORIZON,
+           "invalid physical decision-fork step")
+    proposed, receipts, evaluated, traced, admissions = [], [], [], [], []
+    motors = []
+    for i, event in enumerate(events):
+        if event.get("t_monde") != step:
+            continue
+        kind, data = event.get("kind"), event.get("data", {})
+        if kind == "i1_local_opportunity_proposed":
+            _check(type(data) is dict and type(data.get("option_ref")) is str
+                   and data["option_ref"].startswith(LOCAL),
+                   "malformed local fork proposal")
+            proposed.append((i, data))
+        elif kind == "i1_local_opportunity_registration":
+            receipts.append((i, data))
+        elif kind == "stage8_option_evaluation":
+            evaluated.append((i, data))
+        elif kind == "competition_cycle":
+            for trace in data.get("traces", ()):
+                if type(trace) is dict and type(trace.get("option_ref")) is str:
+                    traced.append((i, trace))
+        elif kind == "command_admitted":
+            admissions.append((i, data))
+        elif kind == "command_experienced":
+            _check(event.get("emitter") == "action_control",
+                   "motor was not admitted through Action Control")
+            motors.append((i, event))
+    _check(len(motors) == 1, "ambiguous actual first-fork motor")
+    motor_idx, motor = motors[0]
+    owners = [
+        (i, d) for i, d in admissions
+        if i < motor_idx and d.get("source") == "decision"
+        and d.get("command_hash") == motor.get("command_hash")
+        and d.get("primitive") == motor.get("primitive")
+    ]
+    _check(len(owners) <= 1, "multiple decision owners of one motor")
+    owner = owners[0][1] if owners else None
+    results = []
+    for proposed_idx, p in proposed:
+        option = p["option_ref"]
+        reg = [(idx, d) for idx, d in receipts
+               if idx > proposed_idx and d.get("option_ref") == option
+               and d.get("registered") is True]
+        first_registration = reg[0][0] if reg else None
+        ev = [] if first_registration is None else [
+            (idx, d) for idx, d in evaluated
+            if idx > first_registration and d.get("option_ref") == option
+        ]
+        first_evaluation = ev[0][0] if ev else None
+        crossing = [] if first_evaluation is None else [
+            (idx, d) for idx, d in traced
+            if idx > first_evaluation and d.get("option_ref") == option
+        ]
+        # Some subsequent deliberation cycles can evaluate again; use the
+        # actual earliest newly registered option and never invent an outcome.
+        chosen = (owner is not None and
+                  owner.get("option_ref") == option)
+        if chosen:
+            _check(first_registration is not None and bool(ev)
+                   and any(idx < motor_idx and d.get("crossed") is True
+                           for idx, d in crossing),
+                   "local physical owner was not verifiably crossed")
+        value = p.get("learned_value")
+        evaluated_evidence = ev[0][1].get("evidence") if ev else None
+        _check(value is None or isinstance(value, dict) or
+               type(value) in (int, float),
+               "invalid first-fork learned value")
+        results.append({
+            "option_ref": option,
+            "learning_signature": p.get("learning_signature"),
+            "q_status_at_proposal": p.get("learned_value_status"),
+            "q_exposure": p.get("q_exposure"),
+            "q_value_at_proposal": value,
+            "registered": bool(reg),
+            "evaluated": bool(ev),
+            "stage8_evidence": evaluated_evidence,
+            "competition_evaluated": bool(crossing),
+            "competition_crossed": any(d.get("crossed") is True
+                                       for _, d in crossing),
+            "motor_owned_by_this_local_option": chosen,
+        })
+    return {
+        "physical_motor": motor.get("primitive"),
+        "physical_motor_owned_by_local_producer": any(
+            row["motor_owned_by_this_local_option"] for row in results),
+        "local_candidates": results,
+        "physical_motor_owner_ref": (
+            None if owner is None else owner.get("option_ref")),
+        "physical_motor_owner_observed": owner is not None,
+    }
+
+
+def classify_first_fork_pathway(neutral_path, learned_path):
+    """Classify mechanism without claiming separate pathwise causal effects."""
+    old = neutral_path["local_candidates"]
+    new = learned_path["local_candidates"]
+    old_signatures = [x["learning_signature"] for x in old]
+    new_signatures = [x["learning_signature"] for x in new]
+    if (not old or not new
+            or not all(x["registered"] and x["evaluated"]
+                       and x["competition_evaluated"] for x in old + new)):
+        return "insufficient_local_Competition_evidence"
+    if old_signatures != new_signatures:
+        return "local_candidate_rank_changed"
+    if (any(x["q_status_at_proposal"] == "learned"
+            for x in new)
+            and all(x["q_status_at_proposal"] == "unlearned"
+                    for x in old)):
+        return "same_local_signature_different_Q_evidence"
+    return "no_isolated_Q_pathway"
+
+
+
 def analyse(root: Path):
     _check(root.is_dir() and not root.is_symlink(), "original artifact directory required")
     expected = {(world, seed) for world in PRESETS for seed in SEEDS}
@@ -276,7 +397,8 @@ def analyse(root: Path):
             chain = classify_arm(events, q_exposure=expected_exposure)
             _check(verified["lived_steps"] == chain["physical_steps"],
                    "physical timeline inconsistent with certified summary")
-            arms[name] = {"verified": verified, "chain": chain}
+            arms[name] = {"verified": verified, "chain": chain,
+                          "original_events": events}
             totals = aggregated[name]
             totals["lives"] += 1
             totals["deaths"] += int(verified["lifecycle"] == "dead")
@@ -294,6 +416,20 @@ def analyse(root: Path):
                 chain["longest_consecutive_boire"],
             )
         pair = compare_pair(arms[ARMS[0]]["chain"], arms[ARMS[1]]["chain"])
+        first_fork = pair["first_motor_divergence"]
+        if first_fork is not None and first_fork <= HORIZON:
+            neutral_path = local_competition_at_fork(
+                arms["local_q_neutral"]["original_events"],
+                step=first_fork)
+            learned_path = local_competition_at_fork(
+                arms["local_q_learned"]["original_events"],
+                step=first_fork)
+            pair["fork"]["Competition_provenance"] = {
+                "local_q_neutral": neutral_path,
+                "local_q_learned": learned_path,
+                "observed_Q_pathway": classify_first_fork_pathway(
+                    neutral_path, learned_path),
+            }
         pairs.append({
             "world": world, "seed": seed,
             "comparison": pair,
@@ -321,6 +457,10 @@ def analyse(root: Path):
         "causal_treatment_effect_on_future_survival_proven": False,
         "summary": summary,
         "first_motor_divergences": {
+            "local_Q_pathway_counts": dict(Counter(
+                p["comparison"]["fork"].get("Competition_provenance", {}).get(
+                    "observed_Q_pathway", "no_physical_fork")
+                for p in pairs)),
             "pairs_with_same_first_person_capture_at_fork": sum(
                 p["comparison"]["fork"].get(
                     "same_first_person_capture") is True for p in pairs),
