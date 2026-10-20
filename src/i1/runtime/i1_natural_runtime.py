@@ -323,6 +323,8 @@ class I1Runtime(I1WaterPrudentRuntime):
         normal_register = hooks[3]["competition"]
 
         def plan_independent_local(ctx):
+            # A new deliberation has no inherited paid admission/prospect.
+            self._i1_option_intention_paid = None
             normal_plan(ctx)
             self._i1_local_proposal_this_cycle = None
             if self._cycle_degraded or st_before_cycle is None:
@@ -369,8 +371,33 @@ class I1Runtime(I1WaterPrudentRuntime):
             if not accepted:
                 self._i1_pending.pop("local_opportunity_evidence", None)
 
+        original_control = hooks[4]["action_control"]
+
+        def remember_prospect_before_motor(ctx):
+            original_control(ctx)
+            decision = self._admitted_decision
+            if (decision is None or self._fallback_used_this_cycle
+                or getattr(self, "_i1_option_intention_paid", None) is None):
+                return
+            candidate, _prepared, admission = decision
+            if (not admission.ok
+                or candidate.option.id != self._i1_option_intention_paid
+                or candidate.option.provenance != "i1_unknown_affordance"
+                or candidate.option.motive_ref.type != "local_opportunity"):
+                return
+            # The option has cleared Stage8, Competition and ActionControl.
+            # This is prospective cognition BEFORE physical application,
+            # not a carried motor admission or Q/TD evidence.
+            self.memory.remember_considered_option(
+                signature=candidate.option.learning_signature,
+                source_option_ref=candidate.option.id,
+                considered_step=capture.t_monde,
+                cost_uc=_OPTION_INTENTION_COST_UC,
+            )
+
         hooks[1]["planning"] = plan_independent_local
         hooks[3]["competition"] = register_independent_local
+        hooks[4]["action_control"] = remember_prospect_before_motor
         return hooks
 
     def _propose_independent_local(self, *, capture, cycle, st_version):
@@ -416,6 +443,25 @@ class I1Runtime(I1WaterPrudentRuntime):
                   "goal_option_preserved": self._proposal_this_cycle is not None},
         )
         if not choices:
+            # A memory may need suspension even if no NEW local option can
+            # be produced (none visible or all already represented by the
+            # GoalManager / Competition). Observed accessibility, not
+            # independent candidature, decides whether it stays available.
+            if (self.memory.applied_option_intention_count
+                and self._charge(
+                    module="planning", operation=_OPTION_INTENTION_OPERATION,
+                )):
+                signatures = frozenset(
+                    "i1:affordance:" + c.primitive + ":" +
+                    (":".join(
+                        f"{k}={c.parameters[k]}" for k in sorted(c.parameters)
+                    ) or "here")
+                    for c in interactions
+                )
+                self.memory.reconcile_option_intentions(
+                    available_signatures=signatures,
+                    world_step=capture.t_monde,
+                )
             return None
         if not self._charge(module="planning",
                             operation=I1_AFFORDANCE_OPERATION):
@@ -430,6 +476,16 @@ class I1Runtime(I1WaterPrudentRuntime):
         intention_paid = self._charge(
             module="planning", operation=_OPTION_INTENTION_OPERATION,
         )
+        if intention_paid:
+            signatures = frozenset(
+                "i1:affordance:" + c.primitive + ":" +
+                (":".join(f"{k}={c.parameters[k]}" for k in sorted(c.parameters))
+                 or "here")
+                for c in interactions
+            )
+            self.memory.reconcile_option_intentions(
+                available_signatures=signatures, world_step=capture.t_monde,
+            )
         lived = self._evaluation_state(capture)
         selected = None
         count = len(choices)
