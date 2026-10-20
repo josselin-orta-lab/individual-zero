@@ -868,13 +868,13 @@ def _approved_issue317_blob(root: Path, rel: str) -> bool:
 _EXPERIENCED_318_BLOBS = {
     "i1lab/i1_active_runtime.py":
         ("src/i1/runtime/i1_active_runtime.py",
-         "f20d8e016d4b9757207a90378d640772b3946653"),
+         "6c74bd5ea7f5cdaa960bf7aa5a1cd7735a8bde30"),
     "i1/modules/experienced_place_relevance.py":
         ("src/i1/modules/experienced_place_relevance.py",
          "5579f0b9854e324a03510a86a532a4027fc4a1e9"),
     "i1lab/i1_natural_runtime.py":
         ("src/i1/runtime/i1_natural_runtime.py",
-         "d794c7cf615e6c22c374a82456f7459aed963abb"),
+         "bd599764f8c5284428e320985731c138bf970b94"),
     "i1lab/m11_transactional_mortal.py":
         ("src/i1/runtime/m11_transactional_mortal.py",
          "83300a513ce42423e3452c31a5a6fa09f4677b19"),
