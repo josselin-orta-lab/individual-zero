@@ -42,6 +42,41 @@ assert cold.applied_memory_intention.confirmed_step==3
 assert not cold.reconsider_confirmed_intention(option_ref='absent',t_monde=6,
  observed_site=(3,0),active_goal_id='goal:test')
 assert cold.accumulator_for('absent') is None
+# Fresh funded candidate, same personally known site; never inherit old motor evidence.
+from i0.contracts import Option, OptionProposal, Plan, PlanStep, MotiveRef
+from i0.interfaces import PrimitiveCommand
+ref="place:stone:at:3:0:from:1:0:via:2:0"
+oid="option:place-memory:"+ref
+plan=Plan(id="plan:"+oid,option_ref=oid,version="1",
+ steps=(PlanStep(index=0,command=PrimitiveCommand("se_deplacer",{"direction":"east"}),
+  preconditions=("adjacent_passable",)),),
+ goal_ref="goal:test",budget_used_uc=1,status="valid",st_version="st:2")
+option=Option(id=oid,version="1",type="primitive",
+ learning_signature="memory_place_return:stone",
+ preconditions=("adjacent_passable",),
+ success_condition="target_position_observed",
+ failure_condition="target_position_not_observed",
+ invalidation_condition="observed_entity_place_or_goal_changed",
+ motive_ref=MotiveRef(type="place_memory",id=ref),
+ founding_st_version="st:2",expires_at_step=12,
+ provenance="memory",goal_ref="goal:test",plan_ref=plan.id,state="proposed")
+proposal=OptionProposal(option=option,plan=plan)
+proposal.validate()
+cold.open_deliberation(active_goal_id="goal:test",t_monde=6)
+assert cold.register(proposal,active_goal_id="goal:test",t_monde=6)
+before=cold.accumulator_for(oid)
+assert before==0
+assert not cold.reconsider_confirmed_intention(option_ref=oid,t_monde=6,
+ observed_site=(3,0),active_goal_id="goal:other")
+assert cold.reconsider_confirmed_intention(option_ref=oid,t_monde=6,
+ observed_site=(3,0),active_goal_id="goal:test")
+assert cold.accumulator_for(oid)==before, "resumption must not create motor credit"
+assert not cold.reconsider_confirmed_intention(option_ref=oid,t_monde=6,
+ observed_site=(3,0),active_goal_id="goal:test"),"one consideration per step"
+persisted=cold.export_causal_state()
+rewarmed=Competition(cfg)
+rewarmed.restore_causal_state(persisted)
+assert rewarmed.export_causal_state()==persisted
 contradicted=Competition(cfg)
 contradicted._applied_memory_intent=intent
 assert contradicted.observe_memory_intention(world_step=3,observed_position=(0,0))=='contradicted'
