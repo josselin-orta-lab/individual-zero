@@ -600,6 +600,14 @@ class I1Runtime(I1WaterPrudentRuntime):
         )
         return proposal
 
+    def _on_open_step_capture(self, capture) -> None:
+        super()._on_open_step_capture(capture)
+        # Only the next authentic physical capture can resolve a previously
+        # applied option. No causal claim or Q reward is generated.
+        self.memory.observe_applied_option_followups(
+            world_step=capture.t_monde, body_after=capture.body,
+        )
+
     def _dispatch_decision(self, *, proposal, prepared, admission,
                            cycle, sent_t_monde):
         execution = super()._dispatch_decision(
@@ -621,6 +629,12 @@ class I1Runtime(I1WaterPrudentRuntime):
                 source_option_ref=proposal.option.id,
                 applied_step=sent_t_monde,
                 cost_uc=_OPTION_INTENTION_COST_UC,
+                body_before=(
+                    self.stage3._capture.body
+                    if self.stage3._capture is not None
+                    and self.stage3._capture.t_monde == sent_t_monde
+                    else None
+                ),
             )
         return execution
 
