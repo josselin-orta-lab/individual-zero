@@ -874,6 +874,26 @@ def _approved_memory_identity(root: Path, rel: str) -> bool:
     return digest == expected and (root / rel).is_file()
 
 
+# #330: exact review pins for unchanged-context frontier/transit identity.
+_GEOGRAPHIC_IDENTITY_PINS = {
+    "i1/modules/geographic_planning.py":
+        ("src/i1/modules/geographic_planning.py", "cdc115229fc4a0105d06623f17c4c252ca4c6254"),
+    "i1/modules/geographic_exploration.py":
+        ("src/i1/modules/geographic_exploration.py", "c92de862bb9e7f7036ea1afbe8632ff6aeb5ccb3"),
+    "i1/modules/stage11_evaluator.py":
+        ("src/i1/modules/stage11_evaluator.py", "f436f00f3cb622c20bae97bf7dc9a425a017220e"),
+}
+
+def _approved_geographic_identity(root: Path, rel: str) -> bool:
+    entry = _GEOGRAPHIC_IDENTITY_PINS.get(rel)
+    if entry is None:
+        return False
+    path, expected = entry
+    content = (ROOT / path).read_bytes()
+    return (sha1(b"blob " + str(len(content)).encode("ascii") + b"\0" + content).hexdigest() == expected
+            and (root / rel).is_file())
+
+
 # Strictly scoped Lab-only matched temperament review. No broad exceptions.
 _MATCHED_TAU_PINS = {
     "i1lab/i1_birth_temperament.py":
@@ -950,10 +970,10 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel)))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel)) and not (
+            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel)) and not (
                 False  # Stage10 is handled by the stacked exact approval below
                 or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_natural_toxic_berry_birth(
