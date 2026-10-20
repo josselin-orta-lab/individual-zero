@@ -1,4 +1,4 @@
-name: I1 #318 independently certify 16 original local WALs
+name: 'I1 #318 independently certify 16 original local WALs'
 on:
   push:
     branches: [fix/i1-memory-competition-317]
