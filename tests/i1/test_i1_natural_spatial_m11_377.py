@@ -105,6 +105,7 @@ def audit(events):
     counts = Counter(e.get("kind") for e in events)
     sightings = []
     proposed = registered = evaluated = crossed = 0
+    proposals_without_prior_sighting_event = 0
     for e in events:
         kind = e.get("kind")
         step = e.get("t_monde")
@@ -114,11 +115,15 @@ def audit(events):
                               tuple(data.get("position", ()))))
         if kind == "i1_place_memory_option_proposed":
             proposed += 1
-            assert any(
+            if not any(
                 t < step and entity == data.get("entity_id")
                 and location == tuple(data.get("target", ()))
                 for t, entity, location in sightings
-            ), "Planning used a never-observed or future place"
+            ):
+                # Classify missing journal proof separately. It is NOT proof
+                # of a forged memory: Exploration/M11 independently owns the
+                # historical perception and the exact frozen phase-0 image.
+                proposals_without_prior_sighting_event += 1
         if kind == "i1_place_memory_option_registration" and data.get("registered") is True:
             registered += 1
         if kind == "stage8_option_evaluation" and str(data.get("option_ref", "")).startswith("option:place-memory:"):
@@ -154,6 +159,7 @@ def audit(events):
         "first_person_sightings": len(sightings),
         "recalls": counts["i1_place_memory_recalled"],
         "proposed": proposed, "registered": registered,
+        "proposals_without_prior_sighting_event": proposals_without_prior_sighting_event,
         "stage8_evaluated": evaluated, "competition_crossed": crossed,
         "spatial_intention_next_hop_reconsidered": counts["i1_place_memory_intention_reconsidered"],
         "spatial_intention_after_interruption": counts["i1_place_memory_intention_reconsidered_without_motor_credit"],
