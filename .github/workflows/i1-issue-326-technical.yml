@@ -18,6 +18,7 @@ on:
       - 'tests/i1/test_i1_natural_local_site_m11_380.py'
       - 'tests/i1/test_i1_natural_lived_site_stage8_381.py'
       - 'tests/i1/test_i1_bodily_site_entity_gap_382.py'
+      - 'tests/i1/test_i1_lived_site_route_planning_383.py'
       - '.github/workflows/i1-issue-326-technical.yml'
 permissions:
   contents: read
@@ -99,3 +100,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests/i1 -p test_i1_bodily_site_entity_gap_382.py -v
+
+      - name: First-person lived-site route primitives in generated I1
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_lived_site_route_planning_383.py -v

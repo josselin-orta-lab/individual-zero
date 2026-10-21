@@ -174,6 +174,115 @@ class SpatialReturnTarget:
             raise ValueError("noncanonical entity-place target")
 
 
+
+@dataclass(frozen=True, slots=True)
+class LivedSiteReturnTarget:
+    """A previously visited bodily-association site, never a sensed entity."""
+    ref: str
+    source_t_monde: int
+    origin: tuple[int, int]
+    destination: tuple[int, int]
+    direction: str
+    observed_position: tuple[int, int]
+    visited_path: tuple[tuple[int, int], ...]
+    observed_step: int
+
+    def validate(self):
+        if (type(self.source_t_monde) is not int
+            or type(self.observed_step) is not int
+            or not 2 <= self.observed_step < self.source_t_monde
+            or not _point(self.origin) or not _point(self.destination)
+            or not _point(self.observed_position)
+            or not isinstance(self.visited_path, tuple)
+            or not 2 <= len(self.visited_path) <= 9
+            or self.visited_path[0] != self.origin
+            or self.visited_path[1] != self.destination
+            or self.visited_path[-1] != self.observed_position
+            or len(set(self.visited_path)) != len(self.visited_path)
+            or any(not _point(p) for p in self.visited_path)
+            or any(not _adjacent(a, b) for a, b in
+                   zip(self.visited_path, self.visited_path[1:]))
+            or DIRECTION_BY_OFFSET.get((
+                self.destination[0]-self.origin[0],
+                self.destination[1]-self.origin[1])) != self.direction
+            or self.ref != (
+                f"lived-site:{self.observed_position[0]}:{self.observed_position[1]}"
+                f":observed-t{self.observed_step}:from:{self.origin[0]}:"
+                f"{self.origin[1]}:via:{self.destination[0]}:{self.destination[1]}")):
+            raise ValueError("invalid first-person lived-site route")
+
+
+def find_lived_site_returns(
+    *, origin: tuple[int, int], visits: frozenset[tuple[int, int]],
+    surveys: tuple[ObservedSurvey, ...],
+    lived_sites: tuple[tuple[tuple[int, int], int], ...],
+    current_free_neighbors: frozenset[tuple[int, int]],
+    current_world_step: int, max_hops: int = 8, max_candidates: int = 4,
+) -> tuple[LivedSiteReturnTarget, ...]:
+    """Propose reachable lived sites without inventing entities or motor authority."""
+    if (not _point(origin) or origin not in visits or len(visits) > 1024
+        or any(not _point(p) for p in visits)
+        or not isinstance(surveys, tuple) or len(surveys) > 1024
+        or not isinstance(lived_sites, tuple) or len(lived_sites) > 1024
+        or not isinstance(current_free_neighbors, frozenset)
+        or any(not _point(p) or not _adjacent(origin, p)
+               for p in current_free_neighbors)
+        or type(current_world_step) is not int or current_world_step < 1
+        or type(max_hops) is not int or not 1 <= max_hops <= 8
+        or type(max_candidates) is not int or not 1 <= max_candidates <= 4):
+        raise ValueError("invalid visited-site routing input")
+    seen_sites = set()
+    for position, step in lived_sites:
+        if (not _point(position) or position not in visits
+            or position in seen_sites or type(step) is not int
+            or not 2 <= step < current_world_step):
+            raise ValueError("unwitnessed, future or duplicate lived site")
+        seen_sites.add(position)
+    known = {}
+    for survey in surveys:
+        if not isinstance(survey, ObservedSurvey):
+            raise ValueError("invalid route survey")
+        survey.validate()
+        if (survey.position not in visits or survey.position in known
+            or survey.world_step > current_world_step):
+            raise ValueError("unowned, duplicate or future survey")
+        known[survey.position] = survey
+    targets = dict(lived_sites)
+    queue = deque([(origin, (origin,))])
+    visited_routes = {origin}
+    found = []
+    while queue:
+        node, path = queue.popleft()
+        if len(path)-1 >= max_hops:
+            continue
+        edges = (current_free_neighbors if node == origin
+                 else frozenset(known[node].free_neighbors)
+                 if node in known else frozenset())
+        for nxt in sorted(edges):
+            if nxt not in visits or not _adjacent(node, nxt) or nxt in path:
+                continue
+            next_path = path + (nxt,)
+            if nxt in targets and nxt != origin:
+                direction = DIRECTION_BY_OFFSET[(
+                    next_path[1][0]-origin[0], next_path[1][1]-origin[1])]
+                step = targets[nxt]
+                target = LivedSiteReturnTarget(
+                    ref=(f"lived-site:{nxt[0]}:{nxt[1]}:observed-t{step}"
+                         f":from:{origin[0]}:{origin[1]}:via:"
+                         f"{next_path[1][0]}:{next_path[1][1]}"),
+                    source_t_monde=current_world_step, origin=origin,
+                    destination=next_path[1], direction=direction,
+                    observed_position=nxt, visited_path=next_path,
+                    observed_step=step)
+                target.validate()
+                found.append(target)
+            if nxt not in visited_routes and nxt in known:
+                visited_routes.add(nxt)
+                queue.append((nxt, next_path))
+    return tuple(sorted(found, key=lambda t: (
+        len(t.visited_path), t.observed_step, t.ref))[:max_candidates])
+
+
 def find_spatial_returns(
     *, origin: tuple[int, int], visits: frozenset[tuple[int, int]],
     surveys: tuple[ObservedSurvey, ...],
