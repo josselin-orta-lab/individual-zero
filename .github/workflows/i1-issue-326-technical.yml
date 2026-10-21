@@ -11,6 +11,7 @@ on:
       - 'tests/i1/test_i1_option_success_contract_370.py'
       - 'tests/i1/test_i1_option_success_canonical_m11_371.py'
       - 'tests/i1/test_i1_spatial_confirmation_guard_372.py'
+      - 'tests/i1/test_i1_spatial_intent_premise_374.py'
       - '.github/workflows/i1-issue-326-technical.yml'
 permissions:
   contents: read
@@ -57,3 +58,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests/i1 -p test_i1_spatial_confirmation_guard_372.py -v
+
+      - name: Invalidated personally contradicted spatial intention
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_intent_premise_374.py -v

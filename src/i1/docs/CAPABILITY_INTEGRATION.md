@@ -115,6 +115,10 @@ A two-step genuine `birth_i1_m11` / `recover_i1_m11` integration regression chec
 
 Competition's residual intention evidence now requires `confirmed_step == t_monde` from its own next-step Perception observer. Reconsidered state cannot be imported in M11 without that confirmation. This closes a direct owner API gap without changing Q, thresholds, Action Control or normal source-side Stage11 sequence. Generated I1 owner negative tests, full 3.11/3.12 and exact source parity gate L1/L2; L3 NOT_ESTABLISHED.
 
-## #317/#326: contradicted spatial premise (PR #373, integration conditional)
+## #317/#326: contradicted spatial premise (PR #373, merged)
 
 A personally and locally observed absence at a previously seen entity-place invalidates that place as a current return premise until a later positive observation at that site. The historic PlaceMemory and contradiction count persist in Exploration/M11; only the live Planning candidate and a stale Phase-0 offer are withheld. Remote absence is not contradiction. No assumptions about entity identity, resource utility or goal satisfaction, no motor priority or Q reward. Generated natural-I1 owner/proposal regression and exact-head Python 3.11/3.12 CI are required; L3 NOT_ESTABLISHED.
+
+## #326: interrupted spatial intention contradicted during paid perception (PR #374, conditional)
+
+Stage11's genuinely UC-paid Exploration capture already records first-person place absences. An observation with a fresh site-specific `contradiction_step` now invalidates the matching Competition-owned semantic spatial intention before next registration, including after interrupted steps. Other intentions are untouched, no previous Q/TD or motor credit is retained, and historical Exploration records remain. Cold owner recovery and negative provenance cases are tested; full 3.11/3.12 CI and exact pins required. L3 NOT_ESTABLISHED.

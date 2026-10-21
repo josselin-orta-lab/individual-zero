@@ -649,6 +649,26 @@ class Stage11Runtime(Stage9Runtime):
                                       "confidence": memory.confidence,
                                       "contradictions": memory.contradictions,
                                       "source": memory.provenance})
+                # A PAID present-world Exploration observation may refute an
+                # earlier semantic destination. Competition owns the intent,
+                # not the place history. Never infer absence from a remote site.
+                for memory in geo.place_memories:
+                    if (memory.contradiction_step == capture.t_monde
+                        and memory.last_seen_step < capture.t_monde
+                        and memory.observer_id == getattr(
+                            self, "_i1_personal_id", self.individual_id)
+                        and self.competition.invalidate_contradicted_place_intention(
+                            semantic_ref=f"memory_place_return:{memory.entity_id}",
+                            observed_site=memory.position,
+                            contradiction_step=capture.t_monde,
+                        )):
+                        self._write(
+                            kind="i1_place_memory_intention_premise_contradicted",
+                            cycle=cycle,
+                            data={"semantic_ref": f"memory_place_return:{memory.entity_id}",
+                                  "world_step": capture.t_monde,
+                                  "motor_admission_inherited": False},
+                        )
                 for motion in geo.motion_updates:
                     self._write(kind="i1_entity_motion_diagnosed", cycle=cycle,
                                 data={"entity_type": motion.entity_type,
