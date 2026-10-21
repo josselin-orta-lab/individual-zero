@@ -126,6 +126,27 @@ class AppliedMemoryIntention:
         def point(value):
             return (type(value) is tuple and len(value) == 2
                     and all(type(n) is int for n in value))
+        # The applied option is an immutable first-person causal reference.
+        # Its canonical place, entity and first hop must agree with the
+        # semantic intention and observed control result, also after M11.
+        canonical = None
+        if type(self.source_option_ref) is str:
+            import re
+            canonical = re.fullmatch(
+                r"option:place-memory:place:(.+):at:(-?(?:0|[1-9][0-9]*)):"
+                r"(-?(?:0|[1-9][0-9]*)):from:(-?(?:0|[1-9][0-9]*)):"
+                r"(-?(?:0|[1-9][0-9]*)):via:(-?(?:0|[1-9][0-9]*)):"
+                r"(-?(?:0|[1-9][0-9]*))",
+                self.source_option_ref,
+            )
+        if (canonical is None
+            or canonical.group(1) != self.semantic_ref.removeprefix("memory_place_return:")
+            or tuple(map(int, canonical.group(2, 3))) != self.observed_site
+            or tuple(map(int, canonical.group(6, 7))) != self.expected_position
+            or sum(abs(a-b) for a,b in zip(
+                map(int, canonical.group(4,5)),
+                map(int, canonical.group(6,7)))) != 1):
+            raise ValueError("spatial intention provenance is inconsistent")
         if (type(self.semantic_ref) is not str
             or not self.semantic_ref.startswith("memory_place_return:")
             or len(self.semantic_ref) <= len("memory_place_return:")
@@ -297,7 +318,11 @@ class Competition:
             expires_at_step=opt.expires_at_step,
             evidence=min(1.0, current.accumulator),
         )
-        record.validate()
+        try:
+            record.validate()
+        except ValueError:
+            # A mismatched current proposal/physical result is not an intent.
+            return False
         self._applied_memory_intent = record
         return True
 
