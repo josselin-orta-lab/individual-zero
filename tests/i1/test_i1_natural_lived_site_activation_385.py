@@ -109,6 +109,17 @@ with TemporaryDirectory() as d:
   "site_followup_events":counts["i1_lived_site_effect_observed"],
   "site_effect_rows":effects,
   "site_effect_samples":sum(x["samples"] for x in actual_site.get("lived_site_effects",[])),
+  "last_capture":actual_site.get("last_capture"),
+  "site_positions":[x["position"] for x in actual_site.get("lived_site_effects",[])],
+  "site_last_observed":[x["last_observed_step"] for x in actual_site.get("lived_site_effects",[])],
+  "recorded_visits":len(actual_site.get("visits",[])),
+  "survey_count":len(actual_site.get("surveys",[])),
+  "eligible_noncurrent_lived_sites":sum(
+    tuple(x["position"])!=tuple(actual_site["last_capture"][1:])
+    for x in actual_site.get("lived_site_effects",[])
+    if x["last_observed_step"] < actual_site["last_capture"][0]),
+  "physical_moves":sum(e.get("kind")=="command_experienced"
+                        and e.get("primitive")=="se_deplacer" for e in log),
   "lived_site_return_proposals":len(lived_proposals),
   "lived_site_return_registered":sum(e["data"].get("registered") is True for e in lived_registrations),
   "lived_site_return_evaluated":len(lived_intrinsic),
