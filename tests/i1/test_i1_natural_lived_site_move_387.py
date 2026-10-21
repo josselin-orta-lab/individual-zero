@@ -62,7 +62,7 @@ def committed_steps(actor, n):
             "older_remote_lived_sites": tuple(sorted(
                 tuple(site["position"]) for site in image["lived_site_effects"]
                 if (site["last_observed_step"] < capture[0]
-                    and tuple(site["position"]) != tuple(capture[1:]))),
+                    and tuple(site["position"]) != tuple(capture[1:])))),
         })
     return receipts, locations
 
