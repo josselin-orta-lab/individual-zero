@@ -889,7 +889,7 @@ def _approved_wake_329(root: Path, rel: str) -> bool:
 _SITE_328_PINS = {
     "i1/modules/geographic_exploration.py": (
         "src/i1/modules/geographic_exploration.py",
-        "b4d30f6c56fc3c0b7e0822b5fb7b854cba8b8e76",
+        "2dc81aafa31ac265fe0115d16e3a5a3100082da7",
     ),
     "i1lab/i1_natural_runtime.py": (
         "src/i1/runtime/i1_natural_runtime.py",
@@ -897,11 +897,11 @@ _SITE_328_PINS = {
     ),
     "i1lab/stage11_runtime.py": (
         "src/i1/runtime/stage11_runtime.py",
-        "03c24be9c1bdb28d78839c7de64bc002037a7e1c",
+        "d9f5637cfbe7c4975499c9b6937b98145745929c",
     ),
     "i1/modules/stage11_evaluator.py": (
         "src/i1/modules/stage11_evaluator.py",
-        "6fad67004b7de93da94b2ebaade075c24d2bc023",
+        "db6d99fecae1467b7cde6375eab3b18f565bd80d",
     ),
 }
 
@@ -965,7 +965,7 @@ _INTENTION_351_PINS = {
     "i1/modules/competition.py":
         ("src/i1/modules/competition.py", "4807f0e18612a239008167a6424fe0ae9515334b"),
     "i1lab/stage11_runtime.py":
-        ("src/i1/runtime/stage11_runtime.py", "95810be8a8b76c4a9fd24d28012edef2fe907dd1"),
+        ("src/i1/runtime/stage11_runtime.py", "d9f5637cfbe7c4975499c9b6937b98145745929c"),
 }
 
 
@@ -992,11 +992,11 @@ def _approved_competition_fallback(root: Path, rel: str) -> bool:
 # Generated sources may rewrite imports; the fixed native blobs are authoritative.
 _MEMORY_IDENTITY_PINS = {
     "i1/modules/geographic_exploration.py":
-        ("src/i1/modules/geographic_exploration.py", "391fc2abaef4da1468879eacd31eb186c14759d7"),
+        ("src/i1/modules/geographic_exploration.py", "2dc81aafa31ac265fe0115d16e3a5a3100082da7"),
     "i1/modules/geographic_planning.py":
-        ("src/i1/modules/geographic_planning.py", "0077e33541111f39bce5088a3f04a79a748e4ce7"),
+        ("src/i1/modules/geographic_planning.py", "d83aef41d40682e947f3802d9f67cd785b0bd5b0"),
     "i1lab/stage11_runtime.py":
-        ("src/i1/runtime/stage11_runtime.py", "15295d162d21b56e24c07d1dd8835a104f2bea6f"),
+        ("src/i1/runtime/stage11_runtime.py", "d9f5637cfbe7c4975499c9b6937b98145745929c"),
 }
 
 
@@ -1013,11 +1013,11 @@ def _approved_memory_identity(root: Path, rel: str) -> bool:
 # #330: exact review pins for unchanged-context frontier/transit identity.
 _GEOGRAPHIC_IDENTITY_PINS = {
     "i1/modules/geographic_planning.py":
-        ("src/i1/modules/geographic_planning.py", "cdc115229fc4a0105d06623f17c4c252ca4c6254"),
+        ("src/i1/modules/geographic_planning.py", "d83aef41d40682e947f3802d9f67cd785b0bd5b0"),
     "i1/modules/geographic_exploration.py":
-        ("src/i1/modules/geographic_exploration.py", "c92de862bb9e7f7036ea1afbe8632ff6aeb5ccb3"),
+        ("src/i1/modules/geographic_exploration.py", "2dc81aafa31ac265fe0115d16e3a5a3100082da7"),
     "i1/modules/stage11_evaluator.py":
-        ("src/i1/modules/stage11_evaluator.py", "f436f00f3cb622c20bae97bf7dc9a425a017220e"),
+        ("src/i1/modules/stage11_evaluator.py", "db6d99fecae1467b7cde6375eab3b18f565bd80d"),
 }
 
 def _approved_geographic_identity(root: Path, rel: str) -> bool:
