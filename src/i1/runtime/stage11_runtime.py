@@ -1309,6 +1309,10 @@ class Stage11Runtime(Stage9Runtime):
                     self._stage11_frozen_place_targets
                     if not self._cycle_degraded else ()
                 )
+            if geo is not None and geo.config.experienced_site_effects:
+                geo.freeze_lived_sites(
+                    self._stage11_frozen_lived_targets
+                    if not self._cycle_degraded else ())
             previous_register(ctx)
             approved = set()
             if geo is not None:
@@ -1335,6 +1339,41 @@ class Stage11Runtime(Stage9Runtime):
                     and old.option.id not in approved):
                     self.competition.invalidate_candidate(old.option.id)
                     self.stage3.control.clear_option_step(old.option.id)
+            lived_approved = set()
+            if geo is not None:
+                lived_approved = {
+                    f"option:lived-site:{t.ref}" for t in geo.lived_offered
+                }
+            for old in self.competition.candidate_proposals:
+                if (old.option.motive_ref.type == "lived_site"
+                    and old.option.id not in lived_approved):
+                    self.competition.invalidate_candidate(old.option.id)
+                    self.stage3.control.clear_option_step(old.option.id)
+            lived_funded = set()
+            if not self._cycle_degraded:
+                for proposal in self._stage11_lived_proposals_this_cycle:
+                    if proposal.option.id not in lived_approved:
+                        continue
+                    if not self._charge(
+                        module="competition", operation="competition_register"):
+                        break
+                    accepted = self._register_option_proposal(
+                        proposal=proposal, active_goal_id=(
+                            None if self.goal_manager.active_goal is None
+                            else self.goal_manager.active_goal.id),
+                        t_monde=capture.t_monde, cycle=cycle)
+                    if accepted:
+                        lived_funded.add(proposal.option.id)
+                    self._write(kind="i1_lived_site_option_registration",
+                                cycle=cycle, data={
+                                    "option_ref": proposal.option.id,
+                                    "registered": accepted})
+            if geo is not None and geo.config.experienced_site_effects:
+                geo.freeze_lived_sites(tuple(
+                    t for t in geo.lived_offered
+                    if f"option:lived-site:{t.ref}" in lived_funded
+                    and self.competition.proposal_for(
+                        f"option:lived-site:{t.ref}") is not None))
             funded_refs = set()
             if not self._cycle_degraded:
                 for proposal in self._stage11_place_proposals_this_cycle:
