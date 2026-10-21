@@ -12,11 +12,12 @@ from i1.interfaces import PrimitiveCommand
 from i1.modules.geographic_exploration import GeographicExplorationConfig
 from i1.modules.geographic_planning import (
     propose_geographic_frontier, propose_geographic_transit, propose_spatial_return,
+    propose_lived_site_return,
 )
 from i1.modules.observed_frontier_routing import (
     find_observed_frontier_route, GeographicTransitTarget,
 )
-from i1.modules.spatial_memory import find_spatial_return, PlaceMemory
+from i1.modules.spatial_memory import find_spatial_return, PlaceMemory, find_lived_site_returns
 from i1.modules.action_control import Admissibility, PreparedCommand
 from i1.modules.simulator import state_from_capture
 from i1.modules.global_modulation import GlobalModulation, ModulationConfig
@@ -229,6 +230,8 @@ class Stage11Runtime(Stage9Runtime):
         self._stage11_geographic_proposals_this_cycle = ()
         self._stage11_unregistered_physical_step = None
         self._stage11_place_proposals_this_cycle = ()
+        self._stage11_lived_proposals_this_cycle = ()
+        self._stage11_frozen_lived_targets = ()
         self._stage11_frozen_place_targets = ()
 
         self.modulation = GlobalModulation(config.modulation)
@@ -448,6 +451,8 @@ class Stage11Runtime(Stage9Runtime):
         frozen_transit_target = None
         frozen_place_targets = ()
         self._stage11_place_proposals_this_cycle = ()
+        self._stage11_lived_proposals_this_cycle = ()
+        self._stage11_frozen_lived_targets = ()
         # Copy only already-owned pre-Phase-1 state; current Phase-1 surveys
         # cannot become same-phase Planning knowledge (INV-08).
         # Phase-0 must freeze route data before Phase-1 observations, but
@@ -459,6 +464,11 @@ class Stage11Runtime(Stage9Runtime):
             and self._stage11_config.geographic_preflight_requires_frontier
             and not raw_geo_targets
         )
+        want_lived_route = (
+            self.exploration.geographic is not None
+            and self.exploration.geographic.config.experienced_site_effects
+            and bool(self.exploration.geographic.lived_site_effects)
+        )
         want_place_route = (
             self.exploration.geographic is not None
             and self.exploration.geographic.config.remember_entities
@@ -469,7 +479,7 @@ class Stage11Runtime(Stage9Runtime):
             self.exploration.geographic.export_causal_state()
             if ((demand_skip_geo_preflight
                  and self._stage11_config.geographic_route_enabled)
-                or want_place_route)
+                or want_place_route or want_lived_route)
             else None
         )
         excluded_geo = ()
@@ -813,6 +823,8 @@ class Stage11Runtime(Stage9Runtime):
                 return
             place_proposals = []
             place_targets = []
+            lived_proposals = []
+            lived_targets = []
             if want_place_route:
                 if not self._charge(module="planning", operation="geographic_route_search"):
                     defer_geo_once("geographic_route_search")
