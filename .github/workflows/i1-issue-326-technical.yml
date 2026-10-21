@@ -21,6 +21,7 @@ on:
       - 'tests/i1/test_i1_lived_site_route_planning_383.py'
       - 'tests/i1/test_i1_lived_site_natural_wiring_384.py'
       - 'tests/i1/test_i1_natural_lived_site_activation_385.py'
+      - 'tests/i1/test_i1_lived_site_offer_expiration_386.py'
       - '.github/workflows/i1-issue-326-technical.yml'
 permissions:
   contents: read
@@ -117,3 +118,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests/i1 -p test_i1_natural_lived_site_activation_385.py -v
+
+      - name: Expire lived-site offers at next physical capture
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_lived_site_offer_expiration_386.py -v
