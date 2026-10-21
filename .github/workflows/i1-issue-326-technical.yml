@@ -17,6 +17,7 @@ on:
       - 'tests/i1/test_i1_natural_spatial_m11_377.py'
       - 'tests/i1/test_i1_natural_local_site_m11_380.py'
       - 'tests/i1/test_i1_natural_lived_site_stage8_381.py'
+      - 'tests/i1/test_i1_bodily_site_entity_gap_382.py'
       - '.github/workflows/i1-issue-326-technical.yml'
 permissions:
   contents: read
@@ -93,3 +94,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests/i1 -p test_i1_natural_lived_site_stage8_381.py -v
+
+      - name: Lived site versus entity place separation in generated I1
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_bodily_site_entity_gap_382.py -v
