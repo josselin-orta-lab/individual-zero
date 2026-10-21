@@ -13,6 +13,7 @@ on:
       - 'tests/i1/test_i1_spatial_confirmation_guard_372.py'
       - 'tests/i1/test_i1_spatial_intent_premise_374.py'
       - 'tests/i1/test_i1_spatial_intent_source_375.py'
+      - 'tests/i1/test_i1_spatial_resumption_site_376.py'
       - '.github/workflows/i1-issue-326-technical.yml'
 permissions:
   contents: read
@@ -69,3 +70,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests/i1 -p test_i1_spatial_intent_source_375.py -v
+
+      - name: Spatial intention resumption must match remembered site
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_resumption_site_376.py -v
