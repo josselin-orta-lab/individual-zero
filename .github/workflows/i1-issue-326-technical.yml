@@ -28,6 +28,7 @@ on:
       - 'tests/i1/test_i1_reconsider_evaluated_390.py'
       - 'tests/i1/test_i1_paid_continuation_391.py'
       - 'tests/i1/test_i1_competition_m11_image_392.py'
+      - 'tests/i1/test_i1_sleep_intention_expiry_393.py'
       - '.github/workflows/i1-issue-326-technical.yml'
 permissions:
   contents: read
@@ -159,3 +160,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests/i1 -p test_i1_competition_m11_image_392.py -v
+
+      - name: Sleep-clock spatial intention expiry without false perception
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_sleep_intention_expiry_393.py -v
