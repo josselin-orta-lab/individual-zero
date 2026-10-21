@@ -270,6 +270,29 @@ class Stage11Runtime(Stage9Runtime):
         cognitive cycles therefore cannot hide an actually visited site.
         """
         super()._on_open_step_capture(capture)
+        # Confirm/contradict a previously applied place intention at the
+        # single authentic FULL physical Perception boundary. A reflex can
+        # close this step before any Competition phase, and reduced sleep
+        # captures never enter this hook. Neither path may invent continuity.
+        prior_intent = self.competition.applied_memory_intention
+        intent_status = self.competition.observe_memory_intention(
+            world_step=capture.t_monde,
+            observed_position=(capture.x, capture.y),
+        )
+        if intent_status in ("reconsider", "expired", "contradicted", "suspended"):
+            self._write(
+                kind="i1_place_memory_intention_observation", cycle=1,
+                data={
+                    "status": intent_status,
+                    "semantic_ref": (
+                        None if prior_intent is None else prior_intent.semantic_ref
+                    ),
+                    "observed_position": [capture.x, capture.y],
+                    "source": "full_physical_perception_before_reflex",
+                    "confirmed_arrival": intent_status == "reconsider",
+                    "motor_admission_inherited": False,
+                },
+            )
         geo = self.exploration.geographic
         if geo is None:
             return
@@ -1322,20 +1345,12 @@ class Stage11Runtime(Stage9Runtime):
                     f"option:place-memory:{target.ref}"
                     for target in geo.place_offered
                 }
-            # The Competition owner compares its existing applied trace with
-            # this step's real Perception; no motor authority is inherited.
-            intent_status = self.competition.observe_memory_intention(
-                world_step=capture.t_monde,
-                observed_position=(capture.x, capture.y),
-            )
+            # The existing Competition owner was already updated from
+            # exactly one full Perception at step opening, including paths
+            # subsequently interrupted by a reflex. Phase 3 may only read
+            # its authenticated confirmation, never observe the same world
+            # step a second time or create continuity from a reduced capture.
             intent = self.competition.applied_memory_intention
-            if intent_status in ("expired", "contradicted", "suspended"):
-                self._write(
-                    kind="i1_place_memory_intention_observation", cycle=cycle,
-                    data={"status": intent_status,
-                          "observed_position": [capture.x, capture.y],
-                          "motor_admission_inherited": False},
-                )
             for old in self.competition.candidate_proposals:
                 if (old.option.motive_ref.type == "place_memory"
                     and old.option.id not in approved):
@@ -1396,7 +1411,7 @@ class Stage11Runtime(Stage9Runtime):
                                 cycle=cycle,
                                 data={"option_ref": proposal.option.id,
                                       "registered": accepted})
-            if (intent is not None and intent_status == "reconsider"
+            if (intent is not None and intent.confirmed_step == capture.t_monde
                 and funded_refs and intent.reconsidered_step is None
                 and capture.t_monde == intent.applied_step + 1
                 and (capture.x, capture.y) == intent.expected_position
