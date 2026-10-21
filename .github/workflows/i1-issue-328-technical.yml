@@ -6,6 +6,7 @@ on:
       - 'src/i1/experimental/**'
       - 'scripts/test_i1_artifact_parity.py'
       - 'tests/i1/test_i1_issue_328_isolated.py'
+      - 'tests/i1/test_i1_spatial_contradiction_373.py'
       - '.github/workflows/i1-issue-328-technical.yml'
 permissions:
   contents: read
@@ -28,3 +29,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests/i1 -p test_i1_issue_328_isolated.py -v
+
+      - name: Personally contradicted place cannot remain a return option
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_contradiction_373.py -v

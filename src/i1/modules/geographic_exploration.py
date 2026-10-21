@@ -403,7 +403,9 @@ class GeographicExploration:
                        for a, b in zip(
                            target.visited_path[1:-1],
                            target.visited_path[2:]))
-                or target.confidence > memory.confidence):
+                or target.confidence > memory.confidence
+                or (memory.contradiction_step is not None
+                    and memory.contradiction_step > memory.last_seen_step)):
                 # A new perception can contradict the Phase-0 frozen memory.
                 # Discard this proposal, never crash the living individual.
                 continue
