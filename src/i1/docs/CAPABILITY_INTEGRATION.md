@@ -123,6 +123,10 @@ A personally and locally observed absence at a previously seen entity-place inva
 
 Stage11's genuinely UC-paid Exploration capture already records first-person place absences. An observation with a fresh site-specific `contradiction_step` now invalidates the matching Competition-owned semantic spatial intention before next registration, including after interrupted steps. Other intentions are untouched, no previous Q/TD or motor credit is retained, and historical Exploration records remain. Cold owner recovery and negative provenance cases are tested; full 3.11/3.12 CI and exact pins required. L3 NOT_ESTABLISHED.
 
-## #326: verified spatial option causal identity (PR #375, conditional)
+## #326: verified spatial option causal identity (PR #375, merged)
 
 Competition verifies that the source option's canonical entity, observed destination and first movement hop match the persisted applied spatial intention. Misaligned physical-result provenance cannot create an intention; malformed M11 images are rejected before mutation. Tests also perform real canonical I1 M11 birth, two short steps and cold recovery without claiming a spontaneous spatial success. No motor privilege, Q/TD mutation, or I0 change; L3 NOT_ESTABLISHED.
+
+## #326: spatial intention resumption matches lived site (PR #376, conditional)
+
+After an intervening goal/sleep/need interruption, Competition admits semantic reconsideration only for a freshly registered, separately evaluated option targeting the exact personally observed site of the original applied intention. The same check prevents bounded next-hop residual evidence being carried to another site. The record stays bounded in M11, with no inherited motor decision or Q/TD value. Python 3.11/3.12 exact-head tests required; L3 NOT_ESTABLISHED.
