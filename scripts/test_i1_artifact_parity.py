@@ -963,7 +963,7 @@ _COMPETITION_FALLBACK_PINS = {
 # Issue #351: reviewed L2 candidate, locked to two exact native source blobs.
 _INTENTION_351_PINS = {
     "i1/modules/competition.py":
-        ("src/i1/modules/competition.py", "a6a9fd876ca6eea40dbec46daf3f969d0228f918"),
+        ("src/i1/modules/competition.py", "4807f0e18612a239008167a6424fe0ae9515334b"),
     "i1lab/stage11_runtime.py":
         ("src/i1/runtime/stage11_runtime.py", "95810be8a8b76c4a9fd24d28012edef2fe907dd1"),
 }
