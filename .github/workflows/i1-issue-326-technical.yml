@@ -25,6 +25,7 @@ on:
       - 'tests/i1/test_i1_natural_lived_site_move_387.py'
       - 'tests/i1/test_i1_natural_lived_site_evidence_388.py'
       - 'tests/i1/test_i1_spatial_capture_boundary_389.py'
+      - 'tests/i1/test_i1_reconsider_evaluated_390.py'
       - '.github/workflows/i1-issue-326-technical.yml'
 permissions:
   contents: read
@@ -141,3 +142,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests/i1 -p test_i1_spatial_capture_boundary_389.py -v
+
+      - name: Reconsider only after paid Stage8 evaluation
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_reconsider_evaluated_390.py -v
