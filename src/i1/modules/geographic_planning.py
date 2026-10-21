@@ -12,7 +12,7 @@ from i0.interfaces import PrimitiveCommand
 
 from .geographic_exploration import GeographicTarget
 from .observed_frontier_routing import GeographicTransitTarget
-from .spatial_memory import SpatialReturnTarget
+from .spatial_memory import SpatialReturnTarget, LivedSiteReturnTarget
 from .simulator import Simulator
 from .stage6_planning import SimulatorPlanner
 
@@ -241,6 +241,63 @@ def propose_spatial_return(
         founding_st_version=st_version,
         expires_at_step=t_monde + ttl_steps,
         provenance="memory", goal_ref=goal_ref, plan_ref=plan_id,
+        state="proposed",
+    )
+    proposal = OptionProposal(
+        option=option, plan=plan,
+        preliminary_admissibility=("indeterminate" if not effects else None),
+    )
+    proposal.validate()
+    return proposal
+
+def propose_lived_site_return(
+    *, target: LivedSiteReturnTarget, initial_state: SimulationState,
+    simulator: Simulator, st_version: str, t_monde: int, ttl_steps: int,
+) -> OptionProposal | None:
+    """One ordinary option toward a personally experienced site, never an entity.
+
+    A bodily association is contextual, not a predicted benefit or a command.
+    Stage8 reads the separately authenticated Exploration owner to assess its
+    relevance. GoalManager is not bypassed by an artificial objective.
+    """
+    target.validate()
+    initial_state.validate()
+    if (not st_version or type(t_monde) is not int or t_monde < 1
+        or type(ttl_steps) is not int or ttl_steps < 1
+        or target.source_t_monde != t_monde
+        or target.origin != (initial_state.x, initial_state.y)):
+        return None
+    effects = _perceptually_grounded_step(
+        target=target, initial_state=initial_state, simulator=simulator,
+    )
+    if effects is None:
+        return None
+    option_id = f"option:lived-site:{target.ref}"
+    plan_id = f"plan:{option_id}:v1"
+    plan = Plan(
+        id=plan_id, option_ref=option_id, version="1",
+        steps=(PlanStep(
+            index=0, command=PrimitiveCommand(
+                "se_deplacer", {"direction": target.direction}),
+            preconditions=("adjacent_passable",),
+            predicted_consequences=effects, observation_window_steps=1,
+        ),),
+        goal_ref=None, budget_used_uc=1, status="valid",
+        st_version=st_version,
+    )
+    option = Option(
+        id=option_id, version="1", type="primitive",
+        learning_signature=(
+            f"lived_site_return:{target.observed_position[0]}:"
+            f"{target.observed_position[1]}"
+        ),
+        preconditions=("adjacent_passable",),
+        success_condition="target_position_observed",
+        failure_condition="target_position_not_observed",
+        invalidation_condition="lived_site_or_context_changed",
+        motive_ref=MotiveRef(type="lived_site", id=target.ref),
+        founding_st_version=st_version, expires_at_step=t_monde+ttl_steps,
+        provenance="memory", goal_ref=None, plan_ref=plan_id,
         state="proposed",
     )
     proposal = OptionProposal(

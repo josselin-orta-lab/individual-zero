@@ -10,7 +10,7 @@ from math import isfinite
 from typing import Mapping
 
 from .observed_frontier_routing import ObservedSurvey, GeographicTransitTarget
-from .spatial_memory import PlaceMemory, SpatialReturnTarget, EntityMotionDiagnosis
+from .spatial_memory import PlaceMemory, SpatialReturnTarget, EntityMotionDiagnosis, LivedSiteReturnTarget
 
 DIRECTION_DELTAS = {"north": (0, -1), "east": (1, 0),
                     "south": (0, 1), "west": (-1, 0)}
@@ -125,6 +125,7 @@ class GeographicExploration:
         self._places: dict[str, PlaceMemory] = {}
         self._place_observer_id: str | None = None
         self._place_offered: tuple[SpatialReturnTarget, ...] = ()
+        self._lived_offered: tuple[LivedSiteReturnTarget, ...] = ()
         self._motion: dict[str, EntityMotionDiagnosis] = {}
         self._motion_updates: tuple[EntityMotionDiagnosis, ...] = ()
         # Bounded association, within THIS Exploration owner and current life.
@@ -380,6 +381,42 @@ class GeographicExploration:
             self._places[key] = memory
             updates.append(memory)
         return tuple(updates)
+
+    def freeze_lived_sites(self, targets: tuple[LivedSiteReturnTarget, ...]) -> None:
+        """Approve only still-owned, personally experienced destinations."""
+        if (not isinstance(targets, tuple)
+            or len(targets) > self.config.max_place_candidates):
+            raise ValueError("invalid lived site offers")
+        accepted = []
+        for target in targets:
+            target.validate()
+            effect = self._site_effects.get(target.observed_position)
+            if (not self.config.experienced_site_effects or effect is None
+                or effect.last_observed_step != target.observed_step
+                or self._last_capture != (target.source_t_monde, *target.origin)
+                or any(p not in self._visits for p in target.visited_path)
+                or any(a not in self._surveys
+                       or nxt not in self._surveys[a].free_neighbors
+                       for a,nxt in zip(target.visited_path[1:-1],
+                                        target.visited_path[2:]))):
+                continue
+            accepted.append(target)
+        if len({t.ref for t in accepted}) != len(accepted):
+            raise ValueError("duplicate lived site offer")
+        self._lived_offered = tuple(accepted)
+
+    @property
+    def lived_offered(self) -> tuple[LivedSiteReturnTarget, ...]:
+        return self._lived_offered
+
+    def lived_for(self, option) -> LivedSiteReturnTarget | None:
+        motive = getattr(option, "motive_ref", None)
+        if (getattr(motive, "type", None) != "lived_site"
+            or getattr(option, "provenance", None) != "memory"):
+            return None
+        return next((target for target in self._lived_offered
+                     if motive.id == target.ref
+                     and option.id == f"option:lived-site:{target.ref}"), None)
 
     def freeze_places(self, targets: tuple[SpatialReturnTarget, ...]) -> None:
         """Only unchanged, physically grounded candidates survive Phase-1."""
@@ -737,6 +774,7 @@ class GeographicExploration:
             "offered": [asdict(t) for t in self._offered],
             **({
                 "lived_site_effects": [asdict(x) for x in self.lived_site_effects],
+                "lived_offered": [asdict(x) for x in self._lived_offered],
                 "pending_site_action": (
                     None if self._site_pending is None
                     else {**self._site_pending,
@@ -1006,6 +1044,38 @@ class GeographicExploration:
         elif ("lived_site_effects" in state or "pending_site_action" in state):
             raise ValueError("site evidence in disabled geographic owner")
 
+        lived_offered = ()
+        if self.config.experienced_site_effects:
+            raw_lived = state.get("lived_offered")
+            if (not isinstance(raw_lived, list)
+                or len(raw_lived) > self.config.max_place_candidates):
+                raise ValueError("malformed lived site offers")
+            trial = GeographicExploration(self.config)
+            trial._visits = visited
+            trial._last_capture = last
+            trial._surveys = restored_surveys
+            trial._site_effects = site_effects
+            offers = []
+            for row in raw_lived:
+                if (not isinstance(row, Mapping)
+                    or set(row) != set(LivedSiteReturnTarget.__dataclass_fields__)):
+                    raise ValueError("invalid lived-site offer fields")
+                target = LivedSiteReturnTarget(**{
+                    **row, "origin": tuple(row["origin"]),
+                    "destination": tuple(row["destination"]),
+                    "observed_position": tuple(row["observed_position"]),
+                    "visited_path": tuple(tuple(p) for p in row["visited_path"]),
+                })
+                target.validate()
+                offers.append(target)
+            trial.freeze_lived_sites(tuple(offers))
+            if len(trial.lived_offered) != len(offers):
+                raise ValueError("stale lived site offer")
+            lived_offered = trial.lived_offered
+        elif "lived_offered" in state:
+            raise ValueError("lived site offer in disabled owner")
+
+        self._lived_offered = lived_offered
         self._motion = restored_motion
         self._motion_updates = ()
         self._places = places

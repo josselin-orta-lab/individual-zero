@@ -12,11 +12,12 @@ from i1.interfaces import PrimitiveCommand
 from i1.modules.geographic_exploration import GeographicExplorationConfig
 from i1.modules.geographic_planning import (
     propose_geographic_frontier, propose_geographic_transit, propose_spatial_return,
+    propose_lived_site_return,
 )
 from i1.modules.observed_frontier_routing import (
     find_observed_frontier_route, GeographicTransitTarget,
 )
-from i1.modules.spatial_memory import find_spatial_return, PlaceMemory
+from i1.modules.spatial_memory import find_spatial_return, PlaceMemory, find_lived_site_returns
 from i1.modules.action_control import Admissibility, PreparedCommand
 from i1.modules.simulator import state_from_capture
 from i1.modules.global_modulation import GlobalModulation, ModulationConfig
@@ -229,6 +230,8 @@ class Stage11Runtime(Stage9Runtime):
         self._stage11_geographic_proposals_this_cycle = ()
         self._stage11_unregistered_physical_step = None
         self._stage11_place_proposals_this_cycle = ()
+        self._stage11_lived_proposals_this_cycle = ()
+        self._stage11_frozen_lived_targets = ()
         self._stage11_frozen_place_targets = ()
 
         self.modulation = GlobalModulation(config.modulation)
@@ -448,6 +451,8 @@ class Stage11Runtime(Stage9Runtime):
         frozen_transit_target = None
         frozen_place_targets = ()
         self._stage11_place_proposals_this_cycle = ()
+        self._stage11_lived_proposals_this_cycle = ()
+        self._stage11_frozen_lived_targets = ()
         # Copy only already-owned pre-Phase-1 state; current Phase-1 surveys
         # cannot become same-phase Planning knowledge (INV-08).
         # Phase-0 must freeze route data before Phase-1 observations, but
@@ -459,6 +464,12 @@ class Stage11Runtime(Stage9Runtime):
             and self._stage11_config.geographic_preflight_requires_frontier
             and not raw_geo_targets
         )
+        want_lived_route = (
+            self.exploration.geographic is not None
+            and self.exploration.geographic.config.experienced_site_effects
+            and any(site.last_observed_step < capture.t_monde
+                    for site in self.exploration.geographic.lived_site_effects)
+        )
         want_place_route = (
             self.exploration.geographic is not None
             and self.exploration.geographic.config.remember_entities
@@ -469,7 +480,7 @@ class Stage11Runtime(Stage9Runtime):
             self.exploration.geographic.export_causal_state()
             if ((demand_skip_geo_preflight
                  and self._stage11_config.geographic_route_enabled)
-                or want_place_route)
+                or want_place_route or want_lived_route)
             else None
         )
         excluded_geo = ()
@@ -813,6 +824,8 @@ class Stage11Runtime(Stage9Runtime):
                 return
             place_proposals = []
             place_targets = []
+            lived_proposals = []
+            lived_targets = []
             if want_place_route:
                 if not self._charge(module="planning", operation="geographic_route_search"):
                     defer_geo_once("geographic_route_search")
@@ -892,6 +905,79 @@ class Stage11Runtime(Stage9Runtime):
                                   "next": list(target.destination),
                                   "confidence": target.confidence,
                                   "active_goal": goal_for_planning.id})
+            if want_lived_route:
+                # The same paid Planning search, across the frozen old
+                # Exploration owner, not current Phase-1's new observations.
+                if not want_place_route and not self._charge(
+                    module="planning", operation="geographic_route_search"
+                ):
+                    defer_geo_once("geographic_route_search")
+                    return
+                from i1.modules.observed_frontier_routing import ObservedSurvey
+                prior_surveys = tuple(ObservedSurvey(
+                    position=tuple(row["position"]),
+                    world_step=row["world_step"],
+                    free_neighbors=tuple(tuple(p) for p in row["free_neighbors"]),
+                ) for row in frozen_geography["surveys"])
+                lived = tuple(
+                    (tuple(row["position"]), row["last_observed_step"])
+                    for row in frozen_geography.get("lived_site_effects", ())
+                    if row["last_observed_step"] < capture.t_monde
+                )
+                candidates = find_lived_site_returns(
+                    origin=(capture.x, capture.y),
+                    visits=frozenset(tuple(row[:2]) for row in frozen_geography["visits"]),
+                    surveys=prior_surveys, lived_sites=lived,
+                    current_free_neighbors=frozenset(
+                        (cell.x, cell.y) for cell in capture.adjacent
+                        if cell.passable is True and cell.creature is False),
+                    current_world_step=capture.t_monde,
+                    max_candidates=self.exploration.geographic.config.max_place_candidates,
+                )
+                self._write(kind="i1_lived_site_recalled", cycle=cycle,
+                            data={"candidates": [t.ref for t in candidates],
+                                  "source": "prior_paid_first_person_site_effects"})
+                for target in candidates:
+                    if not self._charge(
+                        module="planning", operation="geographic_admissibility_preflight"
+                    ):
+                        defer_geo_once("geographic_admissibility_preflight")
+                        break
+                    if self.stage3.control.verifier_admissibilite(
+                        capture=capture, prepared=PreparedCommand(
+                            command=PrimitiveCommand("se_deplacer",
+                                {"direction": target.direction}),
+                            source="decision")) is Admissibility.INADMISSIBLE:
+                        continue
+                    if not self._charge(module="planning", operation="planning_build"):
+                        defer_geo_once("planning_build")
+                        break
+                    if memory_initial_state is None:
+                        memory_initial_state = state_from_capture(
+                            capture=capture,
+                            is_night=self.world.is_night(capture.t_monde))
+                    proposal = propose_lived_site_return(
+                        target=target, initial_state=memory_initial_state,
+                        simulator=self.simulator,
+                        st_version=st_before_cycle.version,
+                        t_monde=capture.t_monde,
+                        ttl_steps=self._stage6_config.planning.option_ttl_steps)
+                    if (proposal is None or
+                        self.stage3.control.verifier_plan_connu(proposal)
+                            is Admissibility.INADMISSIBLE):
+                        continue
+                    self._publish_contribution(self._planning_contribution(
+                        proposal, t_monde=capture.t_monde, cycle=cycle))
+                    lived_proposals.append(proposal)
+                    lived_targets.append(target)
+                    self._write(kind="i1_lived_site_option_proposed", cycle=cycle,
+                                data={"option_ref": proposal.option.id,
+                                      "target": list(target.observed_position),
+                                      "next": list(target.destination),
+                                      "observation_step": target.observed_step,
+                                      "goal_ref": None, "forced_motor_selection": False})
+            self._stage11_lived_proposals_this_cycle = tuple(lived_proposals)
+            self._stage11_frozen_lived_targets = tuple(lived_targets)
             self._stage11_place_proposals_this_cycle = tuple(place_proposals)
             self._stage11_frozen_place_targets = tuple(place_targets)
             # The 1-UC Planning charge and the canonical read-only safety
@@ -1225,6 +1311,10 @@ class Stage11Runtime(Stage9Runtime):
                     self._stage11_frozen_place_targets
                     if not self._cycle_degraded else ()
                 )
+            if geo is not None and geo.config.experienced_site_effects:
+                geo.freeze_lived_sites(
+                    self._stage11_frozen_lived_targets
+                    if not self._cycle_degraded else ())
             previous_register(ctx)
             approved = set()
             if geo is not None:
@@ -1251,6 +1341,41 @@ class Stage11Runtime(Stage9Runtime):
                     and old.option.id not in approved):
                     self.competition.invalidate_candidate(old.option.id)
                     self.stage3.control.clear_option_step(old.option.id)
+            lived_approved = set()
+            if geo is not None:
+                lived_approved = {
+                    f"option:lived-site:{t.ref}" for t in geo.lived_offered
+                }
+            for old in self.competition.candidate_proposals:
+                if (old.option.motive_ref.type == "lived_site"
+                    and old.option.id not in lived_approved):
+                    self.competition.invalidate_candidate(old.option.id)
+                    self.stage3.control.clear_option_step(old.option.id)
+            lived_funded = set()
+            if not self._cycle_degraded:
+                for proposal in self._stage11_lived_proposals_this_cycle:
+                    if proposal.option.id not in lived_approved:
+                        continue
+                    if not self._charge(
+                        module="competition", operation="competition_register"):
+                        break
+                    accepted = self._register_option_proposal(
+                        proposal=proposal, active_goal_id=(
+                            None if self.goal_manager.active_goal is None
+                            else self.goal_manager.active_goal.id),
+                        t_monde=capture.t_monde, cycle=cycle)
+                    if accepted:
+                        lived_funded.add(proposal.option.id)
+                    self._write(kind="i1_lived_site_option_registration",
+                                cycle=cycle, data={
+                                    "option_ref": proposal.option.id,
+                                    "registered": accepted})
+            if geo is not None and geo.config.experienced_site_effects:
+                geo.freeze_lived_sites(tuple(
+                    t for t in geo.lived_offered
+                    if f"option:lived-site:{t.ref}" in lived_funded
+                    and self.competition.proposal_for(
+                        f"option:lived-site:{t.ref}") is not None))
             funded_refs = set()
             if not self._cycle_degraded:
                 for proposal in self._stage11_place_proposals_this_cycle:
