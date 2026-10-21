@@ -329,6 +329,24 @@ class Competition:
         self._applied_memory_intent = record
         return True
 
+    def expire_memory_intention(self, *, world_step: int) -> bool:
+        """Expire a semantic commitment by physical time, without Perception.
+
+        Sleep never confirms a position, changes Q or grants motor admission.
+        Only Competition owns this time-bound causal descriptor.
+        """
+        if type(world_step) is not int or world_step < 1:
+            raise ValueError("invalid intention expiration clock")
+        intent = self._applied_memory_intent
+        if intent is None:
+            return False
+        if world_step < intent.applied_step:
+            raise ValueError("intention clock predates application")
+        if world_step < intent.expires_at_step:
+            return False
+        self._applied_memory_intent = None
+        return True
+
     def observe_memory_intention(
         self, *, world_step: int, observed_position: tuple[int, int],
     ) -> str:
