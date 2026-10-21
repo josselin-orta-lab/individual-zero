@@ -145,7 +145,12 @@ class AppliedMemoryIntention:
             or (self.confirmed_step is not None and (
                 type(self.confirmed_step) is not int
                 or self.confirmed_step != self.applied_step + 1
-                or self.confirmed_step >= self.expires_at_step))):
+                or self.confirmed_step >= self.expires_at_step))
+            # No M11 image may claim that an intention was reconsidered
+            # before its arrival was confirmed by the next Perception.
+            or (self.reconsidered_step is not None
+                and (self.confirmed_step is None
+                     or self.reconsidered_step < self.confirmed_step))):
             raise ValueError("invalid first-person applied memory intention")
 
 
@@ -361,6 +366,12 @@ class Competition:
         intent = self._applied_memory_intent
         candidate = self._registry.get(option_ref)
         if (intent is None or candidate is None
+            # Retention is evidence about a CONFIRMED lived hop, never
+            # an inherited priority from Action Control's application.
+            # Requiring the owner-side Perception confirmation closes a
+            # direct API bypass even if the natural runtime calls observe
+            # before retention.
+            or intent.confirmed_step != t_monde
             or t_monde != intent.applied_step + 1
             or t_monde >= intent.expires_at_step
             or intent.reconsidered_step is not None
