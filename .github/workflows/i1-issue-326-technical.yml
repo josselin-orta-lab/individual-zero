@@ -24,6 +24,7 @@ on:
       - 'tests/i1/test_i1_lived_site_offer_expiration_386.py'
       - 'tests/i1/test_i1_natural_lived_site_move_387.py'
       - 'tests/i1/test_i1_natural_lived_site_evidence_388.py'
+      - 'tests/i1/test_i1_spatial_capture_boundary_389.py'
       - '.github/workflows/i1-issue-326-technical.yml'
 permissions:
   contents: read
@@ -135,3 +136,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests/i1 -p test_i1_natural_lived_site_evidence_388.py -v
+
+      - name: Spatial intention full-capture before reflex and M11 owner restoration
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_capture_boundary_389.py -v
