@@ -872,7 +872,7 @@ def _approved_memory_359(root: Path, rel: str) -> bool:
 # Issue #329: exact pinned wake-to-voluntary-sleep source, not a parity waiver.
 _WAKE_329_PINS = {"i1lab/stage10_runtime.py": (
     "src/i1/runtime/stage10_runtime.py",
-    "8fcc8b8f7b2e196f8e0f2a69a44eb1d6f8bb3cab",
+    "b5057aed857840b3c787a70152188470d906e7fe",
 )}
 
 
@@ -963,7 +963,7 @@ _COMPETITION_FALLBACK_PINS = {
 # Issue #351: reviewed L2 candidate, locked to two exact native source blobs.
 _INTENTION_351_PINS = {
     "i1/modules/competition.py":
-        ("src/i1/modules/competition.py", "60fbf6d92d306b06482fb17d760e89195ad6f0f0"),
+        ("src/i1/modules/competition.py", "0cb11b281092ddd5968ca3047f25b508b2d1652a"),
     "i1lab/stage11_runtime.py":
         ("src/i1/runtime/stage11_runtime.py", "7cfeb44d6efabceda3632e641e9569c5d55eb8d0"),
 }
