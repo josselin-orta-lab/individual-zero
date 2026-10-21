@@ -87,7 +87,11 @@ import inspect
 source=inspect.getsource(Stage11Runtime._phase_hooks)
 assert "observe_memory_intention(" not in source, (
     "Competition phase must not reobserve an already captured step")
-assert "intent.confirmed_step == capture.t_monde" in source
+# The arrival witness stays in full Perception; the paid evidence seam
+# (not phase-3 registration) now consumes its authenticated timestamp.
+assert "intent.confirmed_step == capture.t_monde" not in source
+assert "intent.confirmed_step != capture.t_monde" in inspect.getsource(
+    Stage11Runtime._before_competition_accumulation)
 print("I1_389_FULL_CAPTURE_SPATIAL_INTENTION_OK")
 """
             env=dict(os.environ, PYTHONPATH=os.pathsep.join((

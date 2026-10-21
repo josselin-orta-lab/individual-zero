@@ -378,6 +378,15 @@ class Stage10Runtime(Stage9Runtime):
         hooks[5]["metacognition_health"] = close_fatigue
         return hooks
 
+    def _before_competition_accumulation(self, *, capture, cycle, evidence_inputs):
+        """Stage-11 extension after real Stage8 evidence and paid Competition UC.
+
+        Invoked only through Stage4's charged competition_decision_hook, before
+        the existing Competition owner accumulates this cycle. Stage10 itself
+        does not supply extra evidence or mutate the registered candidates.
+        """
+        return None
+
     def _evaluate_competition_cycle(self, *, capture, cycle):
         initial = state_from_capture(
             capture=capture,is_night=self.world.is_night(capture.t_monde),
@@ -420,6 +429,11 @@ class Stage10Runtime(Stage9Runtime):
                 "equipment_version":self.equipment.version,
                 "q_version":self._stage8_config.td.version,
             })
+        # Stage8 has now determined which options were actually evaluated.
+        # Stage4 already paid for this Competition cycle before entry here.
+        self._before_competition_accumulation(
+            capture=capture, cycle=cycle, evidence_inputs=evidence,
+        )
         return self.competition.evaluate(
             cycle=cycle,t_monde=capture.t_monde,evidence_inputs=evidence,
         )

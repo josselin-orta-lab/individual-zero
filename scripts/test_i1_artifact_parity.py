@@ -872,7 +872,7 @@ def _approved_memory_359(root: Path, rel: str) -> bool:
 # Issue #329: exact pinned wake-to-voluntary-sleep source, not a parity waiver.
 _WAKE_329_PINS = {"i1lab/stage10_runtime.py": (
     "src/i1/runtime/stage10_runtime.py",
-    "2e6faab673f3d98e256ea939fa665d44f3b93f65",
+    "8fcc8b8f7b2e196f8e0f2a69a44eb1d6f8bb3cab",
 )}
 
 
@@ -897,7 +897,7 @@ _SITE_328_PINS = {
     ),
     "i1lab/stage11_runtime.py": (
         "src/i1/runtime/stage11_runtime.py",
-        "337d8c6233a1ea9a8700ee1a21f8dd91af2dde05",
+        "7cfeb44d6efabceda3632e641e9569c5d55eb8d0",
     ),
     "i1/modules/stage11_evaluator.py": (
         "src/i1/modules/stage11_evaluator.py",
@@ -965,7 +965,7 @@ _INTENTION_351_PINS = {
     "i1/modules/competition.py":
         ("src/i1/modules/competition.py", "4807f0e18612a239008167a6424fe0ae9515334b"),
     "i1lab/stage11_runtime.py":
-        ("src/i1/runtime/stage11_runtime.py", "337d8c6233a1ea9a8700ee1a21f8dd91af2dde05"),
+        ("src/i1/runtime/stage11_runtime.py", "7cfeb44d6efabceda3632e641e9569c5d55eb8d0"),
 }
 
 
@@ -996,7 +996,7 @@ _MEMORY_IDENTITY_PINS = {
     "i1/modules/geographic_planning.py":
         ("src/i1/modules/geographic_planning.py", "d83aef41d40682e947f3802d9f67cd785b0bd5b0"),
     "i1lab/stage11_runtime.py":
-        ("src/i1/runtime/stage11_runtime.py", "337d8c6233a1ea9a8700ee1a21f8dd91af2dde05"),
+        ("src/i1/runtime/stage11_runtime.py", "7cfeb44d6efabceda3632e641e9569c5d55eb8d0"),
 }
 
 

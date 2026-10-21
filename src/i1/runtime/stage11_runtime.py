@@ -1411,50 +1411,6 @@ class Stage11Runtime(Stage9Runtime):
                                 cycle=cycle,
                                 data={"option_ref": proposal.option.id,
                                       "registered": accepted})
-            if (intent is not None and intent.confirmed_step == capture.t_monde
-                and funded_refs and intent.reconsidered_step is None
-                and capture.t_monde == intent.applied_step + 1
-                and (capture.x, capture.y) == intent.expected_position
-                and self.goal_manager.active_goal is not None
-                and self.goal_manager.active_goal.id == intent.goal_ref):
-                from i1.experimental.intention_continuity import (
-                    IntentEvidence, bounded_continuation,
-                )
-                prior = IntentEvidence(
-                    semantic_ref=intent.semantic_ref,
-                    last_applied_step=intent.applied_step,
-                    observed_destination=intent.expected_position,
-                    accumulated=intent.evidence,
-                )
-                carried = bounded_continuation(
-                    prior, intended_ref=intent.semantic_ref,
-                    now_step=capture.t_monde,
-                    observed_origin=(capture.x, capture.y),
-                    ceiling=min(1.0, self._config.competition.base_threshold),
-                    residual=self._config.competition.residual,
-                    applied=True,
-                )
-                for target in geo.place_offered:
-                    next_ref = f"option:place-memory:{target.ref}"
-                    if (next_ref not in funded_refs
-                        or target.observed_position != intent.observed_site
-                        or f"memory_place_return:{target.entity_id}" != intent.semantic_ref):
-                        continue
-                    if carried is not None and self.competition.retain_bounded_intention_evidence(
-                        option_ref=next_ref, t_monde=capture.t_monde,
-                        observed_origin=(capture.x, capture.y), evidence=carried,
-                    ):
-                        self._write(
-                            kind="i1_place_memory_intention_reconsidered",
-                            cycle=cycle,
-                            data={"source_option_ref": intent.source_option_ref,
-                                  "semantic_ref": intent.semantic_ref,
-                                  "next_option_ref": next_ref,
-                                  "observed_arrival": [capture.x, capture.y],
-                                  "carried_evidence": carried,
-                                  "forced_motor_selection": False},
-                        )
-                        break
             # Only mark a resumed intention after the paid Stage8/Competition
             # evaluation, not merely because Phase-3 registration succeeded.
             # Candidate registration alone is not a cognitive re-evaluation.
@@ -1624,6 +1580,64 @@ class Stage11Runtime(Stage9Runtime):
                 option=proposal.option, sent_step=sent_t_monde,
             )
         return execution
+
+    def _before_competition_accumulation(self, *, capture, cycle, evidence_inputs):
+        super()._before_competition_accumulation(
+            capture=capture, cycle=cycle, evidence_inputs=evidence_inputs,
+        )
+        intent = self.competition.applied_memory_intention
+        geo = self.exploration.geographic
+        goal = self.goal_manager.active_goal
+        if (intent is None or geo is None or goal is None
+            or intent.confirmed_step != capture.t_monde
+            or intent.reconsidered_step is not None
+            or capture.t_monde != intent.applied_step + 1
+            or (capture.x, capture.y) != intent.expected_position
+            or capture.t_monde >= intent.expires_at_step
+            or goal.id != intent.goal_ref):
+            return
+        from i1.experimental.intention_continuity import (
+            IntentEvidence, bounded_continuation,
+        )
+        prior = IntentEvidence(
+            semantic_ref=intent.semantic_ref,
+            last_applied_step=intent.applied_step,
+            observed_destination=intent.expected_position,
+            accumulated=intent.evidence,
+        )
+        carried = bounded_continuation(
+            prior, intended_ref=intent.semantic_ref,
+            now_step=capture.t_monde,
+            observed_origin=(capture.x, capture.y),
+            ceiling=min(1.0, self._config.competition.base_threshold),
+            residual=self._config.competition.residual,
+            applied=True,
+        )
+        if carried is None:
+            return
+        for target in geo.place_offered:
+            ref = f"option:place-memory:{target.ref}"
+            supplied = evidence_inputs.get(ref)
+            if (supplied is None or supplied.evaluation.status != "evaluated"
+                or target.observed_position != intent.observed_site
+                or f"memory_place_return:{target.entity_id}" != intent.semantic_ref):
+                continue
+            if self.competition.retain_bounded_intention_evidence(
+                option_ref=ref, t_monde=capture.t_monde,
+                observed_origin=(capture.x, capture.y), evidence=carried,
+            ):
+                self._write(
+                    kind="i1_place_memory_intention_reconsidered",
+                    cycle=cycle,
+                    data={"source_option_ref": intent.source_option_ref,
+                          "semantic_ref": intent.semantic_ref,
+                          "next_option_ref": ref,
+                          "observed_arrival": [capture.x, capture.y],
+                          "carried_evidence": carried,
+                          "forced_motor_selection": False,
+                          "evaluation_status": "evaluated"},
+                )
+                break
 
     def _evaluate_competition_cycle(self, *, capture, cycle):
         result = super()._evaluate_competition_cycle(capture=capture, cycle=cycle)
