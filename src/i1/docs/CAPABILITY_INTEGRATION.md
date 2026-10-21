@@ -119,6 +119,10 @@ Competition's residual intention evidence now requires `confirmed_step == t_mond
 
 A personally and locally observed absence at a previously seen entity-place invalidates that place as a current return premise until a later positive observation at that site. The historic PlaceMemory and contradiction count persist in Exploration/M11; only the live Planning candidate and a stale Phase-0 offer are withheld. Remote absence is not contradiction. No assumptions about entity identity, resource utility or goal satisfaction, no motor priority or Q reward. Generated natural-I1 owner/proposal regression and exact-head Python 3.11/3.12 CI are required; L3 NOT_ESTABLISHED.
 
-## #326: interrupted spatial intention contradicted during paid perception (PR #374, conditional)
+## #326: interrupted spatial intention contradicted during paid perception (PR #374, merged)
 
 Stage11's genuinely UC-paid Exploration capture already records first-person place absences. An observation with a fresh site-specific `contradiction_step` now invalidates the matching Competition-owned semantic spatial intention before next registration, including after interrupted steps. Other intentions are untouched, no previous Q/TD or motor credit is retained, and historical Exploration records remain. Cold owner recovery and negative provenance cases are tested; full 3.11/3.12 CI and exact pins required. L3 NOT_ESTABLISHED.
+
+## #326: verified spatial option causal identity (PR #375, conditional)
+
+Competition verifies that the source option's canonical entity, observed destination and first movement hop match the persisted applied spatial intention. Misaligned physical-result provenance cannot create an intention; malformed M11 images are rejected before mutation. Tests also perform real canonical I1 M11 birth, two short steps and cold recovery without claiming a spontaneous spatial success. No motor privilege, Q/TD mutation, or I0 change; L3 NOT_ESTABLISHED.
