@@ -140,6 +140,9 @@ class AppliedMemoryIntention:
                 self.source_option_ref,
             )
         if (canonical is None
+            or type(self.semantic_ref) is not str
+            or not point(self.observed_site)
+            or not point(self.expected_position)
             or canonical.group(1) != self.semantic_ref.removeprefix("memory_place_return:")
             or tuple(map(int, canonical.group(2, 3))) != self.observed_site
             or tuple(map(int, canonical.group(6, 7))) != self.expected_position
