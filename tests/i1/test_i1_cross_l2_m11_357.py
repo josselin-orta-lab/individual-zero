@@ -43,7 +43,8 @@ assert "record_applied_memory_intention" in inspect.getsource(Stage11Runtime._di
 # committed spatial arrival must not depend on a later cognitive cycle.
 assert "observe_memory_intention" in inspect.getsource(Stage11Runtime._on_open_step_capture)
 assert "observe_memory_intention" not in inspect.getsource(Stage11Runtime._phase_hooks)
-assert "intent.confirmed_step == capture.t_monde" in inspect.getsource(Stage11Runtime._phase_hooks)
+assert "intent.confirmed_step == capture.t_monde" not in inspect.getsource(Stage11Runtime._phase_hooks)
+assert "intent.confirmed_step != capture.t_monde" in inspect.getsource(Stage11Runtime._before_competition_accumulation)
 assert "note_applied_local_action" in inspect.getsource(Stage11Runtime._dispatch_decision)
 assert "observe_lived_site_followup" in inspect.getsource(Stage11Runtime._on_open_step_capture)
 assert "record_applied_sleep_decision" in inspect.getsource(Stage10Runtime._sleep_step)
