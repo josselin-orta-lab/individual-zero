@@ -847,6 +847,12 @@ class Stage10Runtime(Stage9Runtime):
             critical_thresholds=self._stage10_config.critical_body_thresholds,
         )
         before = self.sleep_session.mode
+        # Reduced sleep capture has no spatial observation. Expiry is purely
+        # chronological and must precede the physical sleep checkpoint.
+        if self.competition.expire_memory_intention(world_step=t):
+            self._write(kind="i1_place_memory_intention_sleep_expired",
+                        data={"world_step": t, "spatial_confirmation": False,
+                              "motor_admission_inherited": False})
         if self.sleep_session.open_world_step(t) != "sleeping":
             raise ValueError("unadmitted sleep entry")
         if before == "awake":
