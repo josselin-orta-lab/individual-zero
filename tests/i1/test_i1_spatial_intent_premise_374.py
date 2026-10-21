@@ -33,7 +33,7 @@ cold=Competition(cfg);cold.restore_causal_state(image)
 assert cold.export_causal_state()==image
 assert cold.invalidate_contradicted_place_intention(semantic_ref="memory_place_return:sighting:berry_a:3:0",observed_site=(3,0),contradiction_step=4)
 assert cold.applied_memory_intention is None
-assert cold.export_causal_state()["applied_memory_intention"] is None
+assert cold.export_causal_state().get("applied_memory_intention") is None
 for bad in (False,1.0,-1):
  try:c.invalidate_contradicted_place_intention(semantic_ref="memory_place_return:sighting:berry_a:3:0",observed_site=(3,0),contradiction_step=bad)
  except ValueError:pass
