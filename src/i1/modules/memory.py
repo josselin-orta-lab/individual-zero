@@ -135,6 +135,8 @@ class Intention:
                     extras.add("body_before")
                 if "observed_step" in witnessed or "body_delta" in witnessed:
                     extras.update({"observed_step", "body_delta"})
+                if "observations" in witnessed:
+                    extras.add("observations")
             if (self.goal_type != "option_reconsideration"
                 or type(self.target) is not str
                 or not self.target.startswith("i1:affordance:")
@@ -164,7 +166,7 @@ class Intention:
                 }
                 or (self.state == "done" and phase_key != "applied_step")
                 or (self.state == "awaiting_observation"
-                    and extras != {"body_before"})
+                    and extras - {"observations"} != {"body_before"})
                 or (extras and phase_key != "applied_step")
                 or "body_before" in extras
                    and self.state != "awaiting_observation"
@@ -187,6 +189,37 @@ class Intention:
                            or not isfinite(v) or not lo <= v <= hi
                            for v in body.values())):
                     raise ValueError("invalid authenticated first-person bodily witness")
+            # Bounded first-person history in THIS Memory owner. No new Q or
+            # inferred action-to-outcome causality; snapshots cannot forge a
+            # witness, reorder events, or duplicate the same physical step.
+            if "observations" in extras:
+                rows = witnessed["observations"]
+                if type(rows) is not list or not 1 <= len(rows) <= 8:
+                    raise ValueError("invalid bounded observed option history")
+                previous_step = 0
+                for row in rows:
+                    if type(row) is not dict or set(row) != {
+                        "applied_step", "source_option_ref", "observed_step",
+                        "body_delta",
+                    }:
+                        raise ValueError("invalid historical witness structure")
+                    step = row["applied_step"]
+                    observed = row["observed_step"]
+                    if (type(step) is not int or type(observed) is not int
+                        or step <= previous_step or step >= witnessed[phase_key]
+                        or observed != step + 1
+                        or type(row["source_option_ref"]) is not str
+                        or row["source_option_ref"] != (
+                            f"option:i1:local:t{step}:"
+                            + self.target.removeprefix("i1:affordance:")
+                        )
+                        or type(row["body_delta"]) is not dict
+                        or set(row["body_delta"]) != _INTENTION_BODY_KEYS
+                        or any(type(value) not in (int, float)
+                               or not isfinite(value) or not -100 <= value <= 100
+                               for value in row["body_delta"].values())):
+                        raise ValueError("invalid authenticated historical witness")
+                    previous_step = step
 
 
 
@@ -441,6 +474,23 @@ class EpisodicMemory:
                      if v.trigger_type == "option")
         if key not in remaining and active >= 16:
             return False
+        if existing is not None and existing.state == "awaiting_observation":
+            # A missing next capture cannot be overwritten with a new
+            # commanded effect or retroactive evidence.
+            return False
+        prior_witnesses = (
+            list(existing.trigger_value.get("observations", ()))
+            if existing is not None else []
+        )
+        if existing is not None and "observed_step" in existing.trigger_value:
+            witness = existing.trigger_value
+            prior_witnesses.append({
+                "applied_step": witness["applied_step"],
+                "source_option_ref": witness["source_option_ref"],
+                "observed_step": witness["observed_step"],
+                "body_delta": dict(witness["body_delta"]),
+            })
+        prior_witnesses = prior_witnesses[-8:]
         new = Intention(
             id=key, goal_type="option_reconsideration", target=signature,
             trigger_type="option",
@@ -450,6 +500,8 @@ class EpisodicMemory:
                 **({"body_before": {
                     k: float(body_before[k]) for k in sorted(_INTENTION_BODY_KEYS)
                 }} if body_before is not None else {}),
+                **({"observations": prior_witnesses}
+                   if prior_witnesses else {}),
             },
             deadline_step=applied_step + min(64, max(
                 2, 2 * self._config.max_episode_steps,
@@ -498,6 +550,10 @@ class EpisodicMemory:
             witness = {
                 "applied_step": applied,
                 "source_option_ref": original["source_option_ref"],
+                **({"observations": [
+                    {**entry, "body_delta": dict(entry["body_delta"])}
+                    for entry in original["observations"]
+                ]} if "observations" in original else {}),
             }
             if world_step == applied + 1:
                 delta = {
@@ -521,6 +577,38 @@ class EpisodicMemory:
         if changed:
             self._intentions = {**self._intentions, **changed}
         return tuple(events)
+
+    def observed_option_witnesses(
+        self, *, signature: str, world_step: int,
+    ) -> tuple[dict[str, object], ...]:
+        """Paid-by-Planning query of contextual observations, not new Q.
+
+        Returns copies, not M11-owner mutable references; caller checks the
+        current first-person affordance and charges its cognitive UC first.
+        """
+        if (type(signature) is not str or not signature
+            or type(world_step) is not int or world_step < 1):
+            raise ValueError("invalid episodic option witness query")
+        record = self._intentions.get("intention:i1:option:" + signature)
+        if (record is None or record.trigger_type != "option"
+            or record.state not in ("pending", "done")
+            or record.deadline_step is None or world_step > record.deadline_step):
+            return ()
+        value = record.trigger_value
+        rows = list(value.get("observations", ()))
+        if "observed_step" in value:
+            rows.append({
+                "applied_step": value["applied_step"],
+                "source_option_ref": value["source_option_ref"],
+                "observed_step": value["observed_step"],
+                "body_delta": value["body_delta"],
+            })
+        return tuple({
+            "applied_step": row["applied_step"],
+            "source_option_ref": row["source_option_ref"],
+            "observed_step": row["observed_step"],
+            "body_delta": dict(row["body_delta"]),
+        } for row in rows)
 
     def recalled_applied_option(
         self, *, signature: str, world_step: int,
