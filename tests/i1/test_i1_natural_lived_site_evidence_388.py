@@ -17,7 +17,7 @@ from build_i1_fork import generate
 
 class NaturalLivedSiteEvidence(unittest.TestCase):
     def test_short_dry_valley_perception_and_cold_m11(self):
-        with TemporaryDirectory(prefix="i1-387-") as directory:
+        with TemporaryDirectory(prefix="i1-388-") as directory:
             generated = Path(directory) / "generated"
             generate(generated)
             program = r"""
@@ -66,7 +66,7 @@ def committed_steps(actor, n):
         })
     return receipts, locations
 
-with TemporaryDirectory(prefix="i1-387-cold-") as directory:
+with TemporaryDirectory(prefix="i1-388-cold-") as directory:
     uninterrupted = str(Path(directory) / "uninterrupted.sqlite")
     recovered = str(Path(directory) / "recovered.sqlite")
     with birth_i1_m11(db_path=uninterrupted, life_id=identity, **params) as actor:
@@ -130,6 +130,25 @@ for event in all_events:
                 row["accumulator_after"] >= row["threshold"])
         live_traces.append((event["t_monde"], event["cycle"], row))
 scored = [entry for entry in live_traces if entry[2]["evidence"] is not None]
+# A zero-activity test must not pass merely because every count is zero.
+# These are observations of the unforced, deterministically seeded canonical life,
+# not a command to select a remembered route or an imposed outcome.
+assert bodily_events and physical_actions["se_deplacer"] > 0, (
+    "canonical life never experienced a bodily site and a real movement"
+)
+assert any(location["older_remote_lived_sites"] for location in all_locations), (
+    "no personally lived remote site became available after movement"
+)
+assert route_offers, "natural Planning did not propose a witnessed lived site"
+assert len(route_registrations) == len(route_offers) and all(
+    event["data"].get("registered") is True for event in route_registrations
+), "a lived-site offer bypassed or failed ordinary Competition registration"
+assert route_evaluations and len(contextual) == len(route_evaluations), (
+    "lived-site evidence never reached contextual Stage8 evaluation"
+)
+assert any(row["evidence"] > 0 for _, _, row in scored), (
+    "lived-site experience produced no positive Competition evidence"
+)
 assert len(scored) == len(route_evaluations), (
     "Competition evidence traces do not match Stage8 lived-site evaluations"
 )
