@@ -341,6 +341,30 @@ class Competition:
         # a confirmed next-step observation, suspended intent is inert.
         return "suspended"
 
+    def invalidate_contradicted_place_intention(
+        self, *, semantic_ref: str, observed_site: tuple[int, int],
+        contradiction_step: int,
+    ) -> bool:
+        """Forget an intent only when its personally observed site is disproved.
+
+        Exploration owns the perception and its paid observation. This owner
+        only invalidates the matching applied semantic commitment; it never
+        erases the historical place memory, Q or a physical control command.
+        """
+        if (type(semantic_ref) is not str
+            or not semantic_ref.startswith("memory_place_return:")
+            or type(observed_site) is not tuple or len(observed_site) != 2
+            or any(type(v) is not int for v in observed_site)
+            or type(contradiction_step) is not int or contradiction_step < 1):
+            raise ValueError("invalid first-person place contradiction")
+        intent = self._applied_memory_intent
+        if (intent is None or intent.semantic_ref != semantic_ref
+            or intent.observed_site != observed_site
+            or contradiction_step <= intent.applied_step):
+            return False
+        self._applied_memory_intent = None
+        return True
+
     def drop_memory_intention(self) -> None:
         """Forget contradicting/expired evidence without moving the body."""
         self._applied_memory_intent = None
