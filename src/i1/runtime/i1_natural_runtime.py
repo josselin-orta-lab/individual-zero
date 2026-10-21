@@ -531,8 +531,20 @@ class I1Runtime(I1WaterPrudentRuntime):
             remembered = (self.memory.recalled_applied_option(
                 signature=signature, world_step=capture.t_monde,
             ) if intention_paid else False)
+            # Only already UC-funded, currently afforded recollections may be
+            # consulted. Contradictory witnessed body changes reduce the
+            # confidence of the *memory tie-break*, never learned Q or motor
+            # admissibility. This is epistemic uncertainty, not reward.
+            witnesses = (self.memory.observed_option_witnesses(
+                signature=signature, world_step=capture.t_monde,
+            ) if intention_paid and remembered else ())
+            conflict = any(
+                earlier["body_delta"][name] * later["body_delta"][name] < 0
+                for earlier, later in zip(witnesses, witnesses[1:])
+                for name in ("energy", "food", "water", "integrity")
+            )
             rank = (-float(learned.evidence or 0.0),
-                    -int(remembered),
+                    -int(remembered and not conflict),
                     (capture.t_monde + index) % count)
             if selected is None or rank < selected[0]:
                 selected = (rank, command, suffix, signature, learned)
