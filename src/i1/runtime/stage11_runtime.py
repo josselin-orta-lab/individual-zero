@@ -904,6 +904,78 @@ class Stage11Runtime(Stage9Runtime):
                                   "next": list(target.destination),
                                   "confidence": target.confidence,
                                   "active_goal": goal_for_planning.id})
+            if want_lived_route:
+                # The same paid Planning search, across the frozen old
+                # Exploration owner, not current Phase-1's new observations.
+                if not want_place_route and not self._charge(
+                    module="planning", operation="geographic_route_search"
+                ):
+                    defer_geo_once("geographic_route_search")
+                    return
+                from i1.modules.observed_frontier_routing import ObservedSurvey
+                prior_surveys = tuple(ObservedSurvey(
+                    position=tuple(row["position"]),
+                    world_step=row["world_step"],
+                    free_neighbors=tuple(tuple(p) for p in row["free_neighbors"]),
+                ) for row in frozen_geography["surveys"])
+                lived = tuple(
+                    (tuple(row["position"]), row["last_observed_step"])
+                    for row in frozen_geography.get("lived_site_effects", ())
+                )
+                candidates = find_lived_site_returns(
+                    origin=(capture.x, capture.y),
+                    visits=frozenset(tuple(row[:2]) for row in frozen_geography["visits"]),
+                    surveys=prior_surveys, lived_sites=lived,
+                    current_free_neighbors=frozenset(
+                        (cell.x, cell.y) for cell in capture.adjacent
+                        if cell.passable is True and cell.creature is False),
+                    current_world_step=capture.t_monde,
+                    max_candidates=self.exploration.geographic.config.max_place_candidates,
+                )
+                self._write(kind="i1_lived_site_recalled", cycle=cycle,
+                            data={"candidates": [t.ref for t in candidates],
+                                  "source": "prior_paid_first_person_site_effects"})
+                for target in candidates:
+                    if not self._charge(
+                        module="planning", operation="geographic_admissibility_preflight"
+                    ):
+                        defer_geo_once("geographic_admissibility_preflight")
+                        break
+                    if self.stage3.control.verifier_admissibilite(
+                        capture=capture, prepared=PreparedCommand(
+                            command=PrimitiveCommand("se_deplacer",
+                                {"direction": target.direction}),
+                            source="decision")) is Admissibility.INADMISSIBLE:
+                        continue
+                    if not self._charge(module="planning", operation="planning_build"):
+                        defer_geo_once("planning_build")
+                        break
+                    if memory_initial_state is None:
+                        memory_initial_state = state_from_capture(
+                            capture=capture,
+                            is_night=self.world.is_night(capture.t_monde))
+                    proposal = propose_lived_site_return(
+                        target=target, initial_state=memory_initial_state,
+                        simulator=self.simulator,
+                        st_version=st_before_cycle.version,
+                        t_monde=capture.t_monde,
+                        ttl_steps=self._stage6_config.planning.option_ttl_steps)
+                    if (proposal is None or
+                        self.stage3.control.verifier_plan_connu(proposal)
+                            is Admissibility.INADMISSIBLE):
+                        continue
+                    self._publish_contribution(self._planning_contribution(
+                        proposal, t_monde=capture.t_monde, cycle=cycle))
+                    lived_proposals.append(proposal)
+                    lived_targets.append(target)
+                    self._write(kind="i1_lived_site_option_proposed", cycle=cycle,
+                                data={"option_ref": proposal.option.id,
+                                      "target": list(target.observed_position),
+                                      "next": list(target.destination),
+                                      "observation_step": target.observed_step,
+                                      "goal_ref": None, "forced_motor_selection": False})
+            self._stage11_lived_proposals_this_cycle = tuple(lived_proposals)
+            self._stage11_frozen_lived_targets = tuple(lived_targets)
             self._stage11_place_proposals_this_cycle = tuple(place_proposals)
             self._stage11_frozen_place_targets = tuple(place_targets)
             # The 1-UC Planning charge and the canonical read-only safety
