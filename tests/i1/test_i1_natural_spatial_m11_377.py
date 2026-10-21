@@ -22,7 +22,8 @@ class CanonicalSpatialM11Audit(unittest.TestCase):
             generated = Path(temp) / "generated"
             generate(generated)
             script = r"""
-from collections import Counter
+from collections import Counter, defaultdict
+from math import isfinite
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import json
@@ -106,6 +107,9 @@ def audit(events):
     sightings = []
     proposed = registered = evaluated = crossed = 0
     proposals_without_prior_sighting_event = 0
+    spatial_traces = []
+    spatial_intrinsic = []
+    spatial_stage8 = []
     for e in events:
         kind = e.get("kind")
         step = e.get("t_monde")
@@ -128,12 +132,31 @@ def audit(events):
             registered += 1
         if kind == "stage8_option_evaluation" and str(data.get("option_ref", "")).startswith("option:place-memory:"):
             evaluated += 1
+            spatial_stage8.append(data)
+        if kind == "stage11_intrinsic_evaluation" and str(data.get("option_ref", "")).startswith("option:place-memory:"):
+            spatial_intrinsic.append(data)
         if kind == "competition_cycle":
-            crossed += sum(
-                bool(t.get("crossed"))
-                for t in data.get("traces", ())
-                if str(t.get("option_ref", "")).startswith("option:place-memory:")
-            )
+            for trace in data.get("traces", ()):
+                if not str(trace.get("option_ref", "")).startswith("option:place-memory:"):
+                    continue
+                crossed += bool(trace.get("crossed"))
+                assert all(isfinite(float(trace[field])) for field in (
+                    "accumulator_before", "accumulator_after", "threshold"))
+                assert float(trace["threshold"]) > 0
+                if trace.get("evidence") is not None:
+                    assert isfinite(float(trace["evidence"]))
+                    assert bool(trace["crossed"]) == (
+                        float(trace["accumulator_after"]) >= float(trace["threshold"]))
+                spatial_traces.append({
+                    "option_ref": trace["option_ref"],
+                    "world_step": step,
+                    "cycle": e.get("cycle"),
+                    "before": trace["accumulator_before"],
+                    "after": trace["accumulator_after"],
+                    "evidence": trace.get("evidence"),
+                    "threshold": trace["threshold"],
+                    "crossed": bool(trace.get("crossed")),
+                })
         if kind == "i1_place_memory_intention_reconsidered_without_motor_credit":
             assert data.get("credited_evidence") == 0.0
             assert data.get("motor_admission_inherited") is False
@@ -154,7 +177,53 @@ def audit(events):
         stage = "crossed"
     if counts["i1_place_memory_intention_reconsidered"]:
         stage = "reconsidered"
+    scored_traces = [x for x in spatial_traces if x["evidence"] is not None]
+    refs_by_step = defaultdict(set)
+    for trace in spatial_traces:
+        refs_by_step[trace["option_ref"]].add(trace["world_step"])
+    max_evidence = max((r["evidence"] for r in scored_traces), default=None)
+    min_evidence = min((r["evidence"] for r in scored_traces), default=None)
+    max_accum_ratio = max(
+        (r["after"] / r["threshold"] for r in scored_traces), default=None)
+    trace_diagnosis = {
+        "traces": len(spatial_traces),
+        "with_evidence": len(scored_traces),
+        "not_evaluated": len(spatial_traces)-len(scored_traces),
+        "positive_evidence": sum(r["evidence"] > 0 for r in scored_traces),
+        "zero_evidence": sum(r["evidence"] == 0 for r in scored_traces),
+        "negative_evidence": sum(r["evidence"] < 0 for r in scored_traces),
+        "max_evidence": max_evidence,
+        "min_evidence": min_evidence,
+        "max_accumulator_to_threshold": max_accum_ratio,
+        "max_accumulator": max((r["after"] for r in spatial_traces),default=None),
+        "min_threshold": min((r["threshold"] for r in spatial_traces),default=None),
+        "accumulator_reset_or_flat": sum(
+            r["after"] <= r["before"] for r in scored_traces),
+        "candidate_refs": len(refs_by_step),
+        "candidate_refs_seen_across_multiple_world_steps": sum(
+            len(steps)>1 for steps in refs_by_step.values()),
+        "stage11_intrinsic_records": len(spatial_intrinsic),
+        "intrinsic_values": sorted({
+            float(row["intrinsic_value"]) for row in spatial_intrinsic
+            if row.get("intrinsic_value") is not None
+        }),
+        "stage8_records": len(spatial_stage8),
+        "stage8_statuses": dict(sorted(Counter(
+            str(row.get("status")) for row in spatial_stage8).items())),
+        "stage8_learned_statuses": dict(sorted(Counter(
+            str(row.get("learned_value_status"))
+            for row in spatial_stage8).items())),
+        "stage8_simulated_statuses": dict(sorted(Counter(
+            str(row.get("simulated_value_status"))
+            for row in spatial_stage8).items())),
+        "examples": [
+            {k: v for k,v in row.items() if k != "option_ref"}
+            for row in spatial_traces[:4]
+        ],
+    }
+    assert len(spatial_traces) >= evaluated, "Stage8 evaluated options without Competition traces"
     return {
+        "spatial_competition_traces": trace_diagnosis,
         "stage_reached": stage,
         "first_person_sightings": len(sightings),
         "recalls": counts["i1_place_memory_recalled"],
