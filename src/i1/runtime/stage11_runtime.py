@@ -467,7 +467,8 @@ class Stage11Runtime(Stage9Runtime):
         want_lived_route = (
             self.exploration.geographic is not None
             and self.exploration.geographic.config.experienced_site_effects
-            and bool(self.exploration.geographic.lived_site_effects)
+            and any(site.last_observed_step < capture.t_monde
+                    for site in self.exploration.geographic.lived_site_effects)
         )
         want_place_route = (
             self.exploration.geographic is not None
@@ -921,6 +922,7 @@ class Stage11Runtime(Stage9Runtime):
                 lived = tuple(
                     (tuple(row["position"]), row["last_observed_step"])
                     for row in frozen_geography.get("lived_site_effects", ())
+                    if row["last_observed_step"] < capture.t_monde
                 )
                 candidates = find_lived_site_returns(
                     origin=(capture.x, capture.y),
