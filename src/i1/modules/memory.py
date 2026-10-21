@@ -324,7 +324,7 @@ class EpisodicMemory:
         self, *, signature: str, source_option_ref: str,
         considered_step: int, cost_uc: int,
     ) -> bool:
-        """Keep a genuinely evaluated, threshold-crossing option BEFORE action.
+        """Keep a genuinely evaluated option BEFORE any physical action.
 
         Caller owns Stage8/Competition proof and a prior UC charge. This
         records only the semantic signature, never a command, reward, goal,
@@ -348,9 +348,14 @@ class EpisodicMemory:
         if existing is not None:
             if existing.trigger_type != "option":
                 raise ValueError("semantic intention identity collision")
-            # Never replace personally applied evidence with a proposal, nor
-            # refresh an intention's TTL merely by repeatedly considering it.
-            return False
+            # A fresh, UC-paid Stage8 evaluation may form a *new* prospect
+            # after the old, never-applied prospect expired. An unexpired
+            # prospect cannot be refreshed, and a mere consideration must
+            # never replace personally APPLIED evidence, even after expiry.
+            if ("applied_step" in existing.trigger_value
+                or existing.deadline_step is None
+                or considered_step <= existing.deadline_step):
+                return False
         remaining = {
             k: v for k, v in self._intentions.items()
             if v.trigger_type != "option" or (
@@ -478,12 +483,16 @@ class EpisodicMemory:
             # A missing next capture cannot be overwritten with a new
             # commanded effect or retroactive evidence.
             return False
+        # Use only witnesses still inside Memory's own causal TTL.
+        # Otherwise a newly applied action would quietly resurrect past
+        # observations that Planning was already forbidden to recall.
+        retained = remaining.get(key)
         prior_witnesses = (
-            list(existing.trigger_value.get("observations", ()))
-            if existing is not None else []
+            list(retained.trigger_value.get("observations", ()))
+            if retained is not None else []
         )
-        if existing is not None and "observed_step" in existing.trigger_value:
-            witness = existing.trigger_value
+        if retained is not None and "observed_step" in retained.trigger_value:
+            witness = retained.trigger_value
             prior_witnesses.append({
                 "applied_step": witness["applied_step"],
                 "source_option_ref": witness["source_option_ref"],
