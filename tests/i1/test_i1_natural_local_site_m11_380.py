@@ -37,6 +37,7 @@ with TemporaryDirectory() as d:
  a=str(Path(d)/"control.sqlite");b=str(Path(d)/"cold.sqlite")
  with birth_i1_m11(db_path=a,life_id=life_id,**params) as actor:
   control=drive(actor,TOTAL);end=owners(actor._runtime);log=events(actor._runtime)
+  actual_site=actor._runtime.exploration.geographic.export_causal_state()
  with birth_i1_m11(db_path=b,life_id=life_id,**params) as actor:
   first=drive(actor,SPLIT);initial=owners(actor._runtime)
  audit=SQLiteLifeLedger.audit_read_only(path=b,expected_individual_id=life_id)
@@ -46,16 +47,14 @@ with TemporaryDirectory() as d:
   rest=drive(cold,TOTAL-SPLIT)
   assert first+rest==control
   assert owners(cold._runtime)==end and events(cold._runtime)==log
+  assert cold._runtime.exploration.geographic.export_causal_state()==actual_site
  audit=SQLiteLifeLedger.audit_read_only(path=b,expected_individual_id=life_id)
  assert audit.may_recover and audit.generation==TOTAL and not audit.pending_intent
  counts=Counter(e.get("kind") for e in log)
  proposals=[e for e in log if e.get("kind")=="i1_local_opportunity_proposed"]
  registrations=[e for e in log if e.get("kind")=="i1_local_opportunity_registration"]
  interactions=[e for e in log if e.get("kind")=="command_experienced" and e.get("primitive") in ("collecter","manger","boire","fabriquer_outil","poser_une_pierre")]
- site=end["exploration"]["geographic"] if "geographic" in end.get("exploration",{}) else None
- # The actual canonical Exploration owner is a separate causal-owner image.
- snapshots=[v for v in end.values() if isinstance(v,dict) and "lived_site_effects" in v]
- effects=sum(len(v["lived_site_effects"]) for v in snapshots)
+ effects=len(actual_site.get("lived_site_effects",[]))
  for e in proposals:
   assert e["data"]["goal_ref"] is None
   assert e["data"]["motor_command_forced"] is False
@@ -68,6 +67,7 @@ with TemporaryDirectory() as d:
   "local_applied_primitives":dict(Counter(e["primitive"] for e in interactions)),
   "site_followup_events":counts["i1_lived_site_effect_observed"],
   "site_effect_rows":effects,
+  "site_effect_samples":sum(x["samples"] for x in actual_site.get("lived_site_effects",[])),
   "full_cold_parity":True,
   "L3":"NOT_ESTABLISHED"},sort_keys=True))
  assert proposals and registrations
