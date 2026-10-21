@@ -18,8 +18,9 @@ from i1.modules.competition import Competition,CompetitionConfig
 from i1lab.stage11_runtime import Stage11Runtime
 import inspect
 from tests.i1.test_i1_issue_351_l2_spatial_wiring import SpatialIntentionL2Tests
-assert 'reconsider_confirmed_intention' in inspect.getsource(Stage11Runtime._phase_hooks)
-assert 'motor_admission_inherited' in inspect.getsource(Stage11Runtime._phase_hooks)
+assert 'reconsider_confirmed_intention' in inspect.getsource(Stage11Runtime._evaluate_competition_cycle)
+assert 'reconsider_confirmed_intention' not in inspect.getsource(Stage11Runtime._phase_hooks)
+assert 'motor_admission_inherited' in inspect.getsource(Stage11Runtime._evaluate_competition_cycle)
 cfg=CompetitionConfig(version='326',c_max=2,urgency_max=1.,urgency_scale_cycles=1.,
  leak=0.,noise_sigma=0.,gain=1.,base_threshold=.5,threshold_floor=.1,
  inertia=0.,residual=.5,options_max=4,substitution_evidence={})
