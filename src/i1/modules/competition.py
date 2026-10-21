@@ -438,6 +438,7 @@ class Competition:
             or option.motive_ref.type != "place_memory"
             or option.id != f"option:place-memory:{option.motive_ref.id}"
             or option.learning_signature != intent.semantic_ref
+            or not self._matches_remembered_place(option, intent)
             or option.goal_ref != intent.goal_ref
             or plan is None or plan.goal_ref != intent.goal_ref
             or len(plan.steps) != 1
@@ -461,6 +462,25 @@ class Competition:
             confirmed_step=intent.confirmed_step,
         )
         return True
+
+    @staticmethod
+    def _matches_remembered_place(option: Option, intent: AppliedMemoryIntention) -> bool:
+        """The actual newly registered option must target the same lived site."""
+        import re
+        ref = option.motive_ref.id
+        match = re.fullmatch(
+            r"place:(.+):at:(-?(?:0|[1-9][0-9]*)):"
+            r"(-?(?:0|[1-9][0-9]*)):from:(-?(?:0|[1-9][0-9]*)):"
+            r"(-?(?:0|[1-9][0-9]*)):via:(-?(?:0|[1-9][0-9]*)):"
+            r"(-?(?:0|[1-9][0-9]*))", ref,
+        ) if type(ref) is str else None
+        return bool(
+            match is not None
+            and match.group(1) == intent.semantic_ref.removeprefix("memory_place_return:")
+            and tuple(map(int, match.group(2, 3))) == intent.observed_site
+            and sum(abs(a-b) for a,b in zip(
+                map(int,match.group(4,5)),map(int,match.group(6,7)))) == 1
+        )
 
     def reconsider_confirmed_intention(
         self, *, option_ref: str, t_monde: int,
@@ -496,6 +516,7 @@ class Competition:
             or option.motive_ref.type != "place_memory"
             or option.id != f"option:place-memory:{option.motive_ref.id}"
             or option.learning_signature != intent.semantic_ref
+            or not self._matches_remembered_place(option, intent)
             or option.goal_ref != intent.goal_ref
             or plan is None or plan.goal_ref != intent.goal_ref
             or len(plan.steps) != 1
