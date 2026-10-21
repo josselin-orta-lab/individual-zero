@@ -38,6 +38,29 @@ _PRIVATE_OBSERVED_FIELDS = {
     "poser_une_pierre": "stone_placed",
 }
 
+def _rank_current_local_opportunity(
+    *, learned_evidence: float | None, remembered: bool,
+    witnesses: tuple[dict[str, object], ...], rotation: int,
+) -> tuple[float, int, int]:
+    """Order currently afforded alternatives; no new Q or motor authority.
+
+    Contradiction is a pair of opposite signed, genuinely witnessed bodily
+    changes for ANY one channel in the bounded Memory history. A zero-delta
+    observation between them is neutral, not a reason to erase uncertainty.
+    Memory is only a tie-break after the existing learned Q/TD evidence.
+    """
+    conflict = any(
+        any(row["body_delta"][channel] > 0 for row in witnesses)
+        and any(row["body_delta"][channel] < 0 for row in witnesses)
+        for channel in ("energy", "food", "water", "integrity")
+    )
+    return (
+        -float(learned_evidence or 0.0),
+        -int(remembered and not conflict),
+        rotation,
+    )
+
+
 # Historical arms remain available explicitly from the independent
 # I1A238ExperimentalRuntime / I1A239ExperimentalRuntime classes. They are
 # intentionally not accepted by the canonical runtime's constructor.
@@ -538,14 +561,11 @@ class I1Runtime(I1WaterPrudentRuntime):
             witnesses = (self.memory.observed_option_witnesses(
                 signature=signature, world_step=capture.t_monde,
             ) if intention_paid and remembered else ())
-            conflict = any(
-                earlier["body_delta"][name] * later["body_delta"][name] < 0
-                for earlier, later in zip(witnesses, witnesses[1:])
-                for name in ("energy", "food", "water", "integrity")
+            rank = _rank_current_local_opportunity(
+                learned_evidence=learned.evidence,
+                remembered=remembered, witnesses=witnesses,
+                rotation=(capture.t_monde + index) % count,
             )
-            rank = (-float(learned.evidence or 0.0),
-                    -int(remembered and not conflict),
-                    (capture.t_monde + index) % count)
             if selected is None or rank < selected[0]:
                 selected = (rank, command, suffix, signature, learned)
         _, command, suffix, signature, learned = selected
