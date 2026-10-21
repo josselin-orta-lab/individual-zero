@@ -226,7 +226,9 @@ def find_spatial_returns(
     # Avoid a compulsory "return" when the individual already stands there.
     destinations = {}
     for place in remembered.values():
-        if place.position != origin and place.confidence > 0:
+        if (place.position != origin and place.confidence > 0
+                and (place.contradiction_step is None
+                     or place.last_seen_step >= place.contradiction_step)):
             destinations.setdefault(place.position, []).append(place)
 
     queue = deque([(origin, (origin,))])
