@@ -20,6 +20,7 @@ on:
       - 'tests/i1/test_i1_bodily_site_entity_gap_382.py'
       - 'tests/i1/test_i1_lived_site_route_planning_383.py'
       - 'tests/i1/test_i1_lived_site_natural_wiring_384.py'
+      - 'tests/i1/test_i1_natural_lived_site_activation_385.py'
       - '.github/workflows/i1-issue-326-technical.yml'
 permissions:
   contents: read
@@ -111,3 +112,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests/i1 -p test_i1_lived_site_natural_wiring_384.py -v
+
+      - name: Genuine lived-site natural opportunity and M11 activation trace
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_lived_site_activation_385.py -v
