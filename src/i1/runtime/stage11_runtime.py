@@ -1455,35 +1455,9 @@ class Stage11Runtime(Stage9Runtime):
                                   "forced_motor_selection": False},
                         )
                         break
-            # A once-perceived, authentically confirmed semantic destination
-            # can be reconsidered after intervening sleep/need/opportunity
-            # steps. No evidence, authority or motor admission is inherited.
-            intent = self.competition.applied_memory_intention
-            if (intent is not None and intent.confirmed_step is not None
-                and capture.t_monde > intent.confirmed_step
-                and intent.reconsidered_step != capture.t_monde
-                and funded_refs and not self._cycle_degraded
-                and self.goal_manager.active_goal is not None
-                and self.goal_manager.active_goal.id == intent.goal_ref):
-                for target in geo.place_offered:
-                    ref = f"option:place-memory:{target.ref}"
-                    if (ref in funded_refs
-                        and target.observed_position == intent.observed_site
-                        and f"memory_place_return:{target.entity_id}" == intent.semantic_ref
-                        and self.competition.reconsider_confirmed_intention(
-                            option_ref=ref, t_monde=capture.t_monde,
-                            observed_site=target.observed_position,
-                            active_goal_id=self.goal_manager.active_goal.id,
-                        )):
-                        self._write(
-                            kind="i1_place_memory_intention_reconsidered_without_motor_credit",
-                            cycle=cycle,
-                            data={"option_ref": ref,
-                                  "semantic_ref": intent.semantic_ref,
-                                  "credited_evidence": 0.0,
-                                  "motor_admission_inherited": False},
-                        )
-                        break
+            # Only mark a resumed intention after the paid Stage8/Competition
+            # evaluation, not merely because Phase-3 registration succeeded.
+            # Candidate registration alone is not a cognitive re-evaluation.
             if geo is not None and geo.config.remember_entities:
                 # Only charged and *retained* Competition candidates may
                 # remain published. An eligible but unfunded target cannot
@@ -1653,6 +1627,37 @@ class Stage11Runtime(Stage9Runtime):
 
     def _evaluate_competition_cycle(self, *, capture, cycle):
         result = super()._evaluate_competition_cycle(capture=capture, cycle=cycle)
+        intent = self.competition.applied_memory_intention
+        geo = self.exploration.geographic
+        goal = self.goal_manager.active_goal
+        if (intent is not None and intent.confirmed_step is not None
+            and capture.t_monde > intent.confirmed_step
+            and intent.reconsidered_step != capture.t_monde
+            and capture.t_monde < intent.expires_at_step
+            and goal is not None and goal.id == intent.goal_ref
+            and geo is not None and not self._cycle_degraded):
+            evaluated = {row.option_ref for row in result.evaluations
+                         if row.status == "evaluated"}
+            for target in geo.place_offered:
+                ref = f"option:place-memory:{target.ref}"
+                if (ref not in evaluated
+                    or target.observed_position != intent.observed_site
+                    or f"memory_place_return:{target.entity_id}" != intent.semantic_ref):
+                    continue
+                if self.competition.reconsider_confirmed_intention(
+                    option_ref=ref, t_monde=capture.t_monde,
+                    observed_site=target.observed_position,
+                    active_goal_id=goal.id,
+                ):
+                    self._write(
+                        kind="i1_place_memory_intention_reconsidered_without_motor_credit",
+                        cycle=cycle,
+                        data={"option_ref": ref, "semantic_ref": intent.semantic_ref,
+                              "credited_evidence": 0.0,
+                              "motor_admission_inherited": False,
+                              "evaluation_status": "evaluated"},
+                    )
+                    break
         for assessment in result.evaluations:
             if assessment.intrinsic_status == "applicable":
                 self._write(
