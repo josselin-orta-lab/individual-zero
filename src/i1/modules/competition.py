@@ -920,29 +920,59 @@ class Competition:
             raise ValueError("Competition state must be a mapping")
         if state.get("config_version") != self._config.version:
             raise ValueError("Competition config version mismatch")
+        required = {"config_version", "cycle", "engaged_option_id", "registry"}
+        if set(state) not in (required, required | {"applied_memory_intention"}):
+            raise ValueError("invalid Competition owner-image fields")
         cycle = state.get("cycle")
-        if not isinstance(cycle, int) or cycle < 0:
+        if type(cycle) is not int or cycle < 0:
             raise ValueError("invalid Competition cycle")
         engaged = state.get("engaged_option_id")
-        if engaged is not None and not isinstance(engaged, str):
+        if engaged is not None and (type(engaged) is not str or not engaged):
             raise ValueError("invalid engaged option id")
         raw_registry = state.get("registry")
         if not isinstance(raw_registry, list):
             raise ValueError("invalid Competition registry")
         registry: dict[str, CandidateState] = {}
         for row in raw_registry:
-            if not isinstance(row, Mapping):
-                raise ValueError("invalid Competition candidate")
-            proposal_raw = row.get("proposal")
+            if (not isinstance(row, Mapping)
+                or set(row) != {"proposal", "accumulator",
+                                "last_threshold", "last_proposal_t"}):
+                raise ValueError("invalid Competition candidate fields")
+            proposal_raw = row["proposal"]
             if not isinstance(proposal_raw, Mapping):
                 raise ValueError("invalid Competition proposal")
             proposal = decode_proposal(proposal_raw)
-            registry[proposal.option.id] = CandidateState(
-                proposal=proposal,
-                accumulator=float(row["accumulator"]),
-                last_threshold=float(row["last_threshold"]),
-                last_proposal_t=int(row["last_proposal_t"]),
+            proposal.validate()
+            option_id = proposal.option.id
+            if option_id in registry:
+                # No duplicate causal candidate may silently replace another.
+                raise ValueError("duplicate Competition candidate identity")
+            raw_accumulator = row["accumulator"]
+            raw_threshold = row["last_threshold"]
+            proposal_step = row["last_proposal_t"]
+            if (type(raw_accumulator) not in (int, float)
+                or type(raw_threshold) not in (int, float)
+                or type(proposal_step) is not int
+                or proposal_step < 1
+                or proposal_step >= proposal.option.expires_at_step):
+                raise ValueError("invalid Competition candidate numeric provenance")
+            try:
+                accumulator = float(raw_accumulator)
+                threshold = float(raw_threshold)
+            except (OverflowError, ValueError) as error:
+                raise ValueError("invalid Competition candidate numeric range") from error
+            if (not isfinite(accumulator) or accumulator < 0.0
+                or not isfinite(threshold)
+                or not self._config.threshold_floor <= threshold <= self._config.base_threshold):
+                raise ValueError("invalid Competition candidate accumulation or threshold")
+            registry[option_id] = CandidateState(
+                proposal=proposal, accumulator=accumulator,
+                last_threshold=threshold, last_proposal_t=proposal_step,
             )
+        if engaged is not None and engaged not in registry:
+            raise ValueError("orphan Competition motor engagement")
+        if sum(ident != "permanent:attendre" for ident in registry) > self._config.options_max:
+            raise ValueError("Competition image exceeds the candidate capacity")
         raw_intent = state.get("applied_memory_intention")
         intention = None
         if raw_intent is not None:
