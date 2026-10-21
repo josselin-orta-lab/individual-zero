@@ -889,7 +889,7 @@ def _approved_wake_329(root: Path, rel: str) -> bool:
 _SITE_328_PINS = {
     "i1/modules/geographic_exploration.py": (
         "src/i1/modules/geographic_exploration.py",
-        "2dc81aafa31ac265fe0115d16e3a5a3100082da7",
+        "c25635f5170506073670c1584b046ed50de93e48",
     ),
     "i1lab/i1_natural_runtime.py": (
         "src/i1/runtime/i1_natural_runtime.py",
@@ -992,7 +992,7 @@ def _approved_competition_fallback(root: Path, rel: str) -> bool:
 # Generated sources may rewrite imports; the fixed native blobs are authoritative.
 _MEMORY_IDENTITY_PINS = {
     "i1/modules/geographic_exploration.py":
-        ("src/i1/modules/geographic_exploration.py", "2dc81aafa31ac265fe0115d16e3a5a3100082da7"),
+        ("src/i1/modules/geographic_exploration.py", "c25635f5170506073670c1584b046ed50de93e48"),
     "i1/modules/geographic_planning.py":
         ("src/i1/modules/geographic_planning.py", "d83aef41d40682e947f3802d9f67cd785b0bd5b0"),
     "i1lab/stage11_runtime.py":
@@ -1015,7 +1015,7 @@ _GEOGRAPHIC_IDENTITY_PINS = {
     "i1/modules/geographic_planning.py":
         ("src/i1/modules/geographic_planning.py", "d83aef41d40682e947f3802d9f67cd785b0bd5b0"),
     "i1/modules/geographic_exploration.py":
-        ("src/i1/modules/geographic_exploration.py", "2dc81aafa31ac265fe0115d16e3a5a3100082da7"),
+        ("src/i1/modules/geographic_exploration.py", "c25635f5170506073670c1584b046ed50de93e48"),
     "i1/modules/stage11_evaluator.py":
         ("src/i1/modules/stage11_evaluator.py", "0a5f3a43a5015c5ebf4e12d58fa3ceeafc2ee3ac"),
 }
