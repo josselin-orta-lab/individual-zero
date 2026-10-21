@@ -47,16 +47,30 @@ def _rank_current_local_opportunity(
     Contradiction is a pair of opposite signed, genuinely witnessed bodily
     changes for ANY one channel in the bounded Memory history. A zero-delta
     observation between them is neutral, not a reason to erase uncertainty.
-    Memory is only a tie-break after the existing learned Q/TD evidence.
+    An exclusively adverse contextual history also removes that tie-break.
+    Memory remains subordinate to already learned Q/TD evidence.
     """
+    channels = ("energy", "food", "water", "integrity")
     conflict = any(
         any(row["body_delta"][channel] > 0 for row in witnesses)
         and any(row["body_delta"][channel] < 0 for row in witnesses)
-        for channel in ("energy", "food", "water", "integrity")
+        for channel in channels
     )
+    favorable = any(
+        row["body_delta"][channel] > 0
+        for row in witnesses for channel in channels
+    )
+    adverse = any(
+        row["body_delta"][channel] < 0
+        for row in witnesses for channel in channels
+    )
+    # An exclusively adverse *contextual* history cannot reinforce the
+    # memory tie-break merely because this option was once considered.
+    # Mixed observations remain uncertain; no causality or Q is inferred.
+    unconvincing = conflict or (adverse and not favorable)
     return (
         -float(learned_evidence or 0.0),
-        -int(remembered and not conflict),
+        -int(remembered and not unconvincing),
         rotation,
     )
 
