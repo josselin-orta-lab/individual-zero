@@ -901,7 +901,7 @@ _SITE_328_PINS = {
     ),
     "i1/modules/stage11_evaluator.py": (
         "src/i1/modules/stage11_evaluator.py",
-        "db6d99fecae1467b7cde6375eab3b18f565bd80d",
+        "0a5f3a43a5015c5ebf4e12d58fa3ceeafc2ee3ac",
     ),
 }
 
@@ -1017,7 +1017,7 @@ _GEOGRAPHIC_IDENTITY_PINS = {
     "i1/modules/geographic_exploration.py":
         ("src/i1/modules/geographic_exploration.py", "2dc81aafa31ac265fe0115d16e3a5a3100082da7"),
     "i1/modules/stage11_evaluator.py":
-        ("src/i1/modules/stage11_evaluator.py", "db6d99fecae1467b7cde6375eab3b18f565bd80d"),
+        ("src/i1/modules/stage11_evaluator.py", "0a5f3a43a5015c5ebf4e12d58fa3ceeafc2ee3ac"),
 }
 
 def _approved_geographic_identity(root: Path, rel: str) -> bool:
