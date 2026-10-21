@@ -58,7 +58,7 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
         age = t_monde - owner.last_observed_step
         hops = len(target.visited_path) - 1
         relevance = max(-0.25, min(0.25,
-            0.5 * net * target.confidence
+            0.5 * net * (target.confidence if hasattr(target, "confidence") else 1.0)
             * min(1.0, owner.samples / 2.0)
             / (1.0 + age / 120.0)
             / (1.0 + 0.1 * (hops - 1))
