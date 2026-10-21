@@ -34,7 +34,7 @@ from run_i1_world_preset import load_preset, _birth_parameters
 preset, _ = load_preset("dry-valley")
 params, _ = _birth_parameters(preset)
 params = dict(params, diagnostic_sample_cost_uc=1, module_occupancy_cost_uc=1)
-identity = "i1:388:dry-valley-lived-site"
+identity = "i1:387:dry-valley-lived-site"
 TOTAL, SPLIT = 12, 6
 
 def factory():
