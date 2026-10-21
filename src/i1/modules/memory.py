@@ -160,11 +160,13 @@ class Intention:
                 or self.base_pressure != 0.0
                 or self.wake_authorized is not False
                 or self.candidacy_active is not False
+                # Semantic option intentions have no authenticated
+                # result-success contract. An applied action or contextual
+                # body change is not proof that this intention was fulfilled.
                 or self.state not in {
-                    "pending", "suspended", "abandoned", "done",
+                    "pending", "suspended", "abandoned",
                     "awaiting_observation",
                 }
-                or (self.state == "done" and phase_key != "applied_step")
                 or (self.state == "awaiting_observation"
                     and extras - {"observations"} != {"body_before"})
                 or (extras and phase_key != "applied_step")
@@ -645,6 +647,12 @@ class EpisodicMemory:
         current = self._intentions.get(intention_ref)
         if current is None:
             raise KeyError(f"unknown intention: {intention_ref}")
+        # Legacy time/context/event intentions may finish through their
+        # existing trigger contract. Nonspatial option intentions have no
+        # independently witnessed semantic success predicate yet; merely
+        # applying their command MUST NOT create an achievement assertion.
+        if current.trigger_type == "option":
+            raise ValueError("option intention has no verified success contract")
         self._intentions[intention_ref] = Intention(
             id=current.id,
             goal_type=current.goal_type,
