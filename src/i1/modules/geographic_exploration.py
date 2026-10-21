@@ -1044,6 +1044,38 @@ class GeographicExploration:
         elif ("lived_site_effects" in state or "pending_site_action" in state):
             raise ValueError("site evidence in disabled geographic owner")
 
+        lived_offered = ()
+        if self.config.experienced_site_effects:
+            raw_lived = state.get("lived_offered")
+            if (not isinstance(raw_lived, list)
+                or len(raw_lived) > self.config.max_place_candidates):
+                raise ValueError("malformed lived site offers")
+            trial = GeographicExploration(self.config)
+            trial._visits = visited
+            trial._last_capture = last
+            trial._surveys = restored_surveys
+            trial._site_effects = site_effects
+            offers = []
+            for row in raw_lived:
+                if (not isinstance(row, Mapping)
+                    or set(row) != set(LivedSiteReturnTarget.__dataclass_fields__)):
+                    raise ValueError("invalid lived-site offer fields")
+                target = LivedSiteReturnTarget(**{
+                    **row, "origin": tuple(row["origin"]),
+                    "destination": tuple(row["destination"]),
+                    "observed_position": tuple(row["observed_position"]),
+                    "visited_path": tuple(tuple(p) for p in row["visited_path"]),
+                })
+                target.validate()
+                offers.append(target)
+            trial.freeze_lived_sites(tuple(offers))
+            if len(trial.lived_offered) != len(offers):
+                raise ValueError("stale lived site offer")
+            lived_offered = trial.lived_offered
+        elif "lived_offered" in state:
+            raise ValueError("lived site offer in disabled owner")
+
+        self._lived_offered = lived_offered
         self._motion = restored_motion
         self._motion_updates = ()
         self._places = places
