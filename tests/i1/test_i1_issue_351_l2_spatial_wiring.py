@@ -35,7 +35,8 @@ assert "retain_bounded_intention_evidence" not in inspect.getsource(Stage11Runti
 # phase-3 registration; phase 3 only consumes the confirmed owner receipt.
 assert "observe_memory_intention" in inspect.getsource(Stage11Runtime._on_open_step_capture)
 assert "observe_memory_intention" not in inspect.getsource(Stage11Runtime._phase_hooks)
-assert "intent.confirmed_step == capture.t_monde" in inspect.getsource(Stage11Runtime._phase_hooks)
+assert "intent.confirmed_step == capture.t_monde" not in inspect.getsource(Stage11Runtime._phase_hooks)
+assert "intent.confirmed_step != capture.t_monde" in inspect.getsource(Stage11Runtime._before_competition_accumulation)
 cfg = CompetitionConfig(
     version="l2-intention-test", c_max=2, urgency_max=1.0,
     urgency_scale_cycles=1.0, leak=0.0, noise_sigma=0.0, gain=1.0,
