@@ -107,6 +107,10 @@ A prospective nonspatial option may be formed before dispatch and remains a cogn
 
 **L2 scope:** first-person, UC-funded evidence can change the *ranking of an actually available local possibility* in canonical Planning without displacing Q/TD, Stage8, Competition or Action Control. Memory retains interruptible bounded prospective records but does not yet prove semantic achievement. The current technical tests must not be described as ecological or statistical proof of learning. **L3: NOT_ESTABLISHED.**
 
-## Issue #326: canonical M11 false-success guard (PR #371, conditional on merge)
+## Issue #326: canonical M11 false-success guard (PR #371, merged)
 
 A two-step genuine `birth_i1_m11` / `recover_i1_m11` integration regression checks prospective natural option formation, transactional owner-image equality across cold recovery and the absence of any inferred `done` after another physical step. The owner also refuses explicit option completion without an authenticated semantic outcome predicate. Unlike standalone owner tests, this checks canonical M11 custody without manufacturing an applied winner. No changed motor policy, Q/TD weight or I0 state; L3 NOT_ESTABLISHED.
+
+## Issue #317/#326: first-person confirmation before spatial evidence (PR #372)
+
+Competition's residual intention evidence now requires `confirmed_step == t_monde` from its own next-step Perception observer. Reconsidered state cannot be imported in M11 without that confirmation. This closes a direct owner API gap without changing Q, thresholds, Action Control or normal source-side Stage11 sequence. Generated I1 owner negative tests, full 3.11/3.12 and exact source parity gate L1/L2; L3 NOT_ESTABLISHED.
