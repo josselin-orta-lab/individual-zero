@@ -29,7 +29,8 @@ from i1.modules.competition import Competition, CompetitionConfig
 from i1lab.stage11_runtime import Stage11Runtime
 from i1.experimental.intention_continuity import IntentEvidence, bounded_continuation
 assert "record_applied_memory_intention" in inspect.getsource(Stage11Runtime._dispatch_decision)
-assert "retain_bounded_intention_evidence" in inspect.getsource(Stage11Runtime._phase_hooks)
+assert "retain_bounded_intention_evidence" in inspect.getsource(Stage11Runtime._before_competition_accumulation)
+assert "retain_bounded_intention_evidence" not in inspect.getsource(Stage11Runtime._phase_hooks)
 # The same capture confirms a prior lived hop even if a reflex later skips
 # phase-3 registration; phase 3 only consumes the confirmed owner receipt.
 assert "observe_memory_intention" in inspect.getsource(Stage11Runtime._on_open_step_capture)
