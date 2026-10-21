@@ -58,7 +58,7 @@ cold.restore_causal_state(image)
 assert cold.export_causal_state() == image
 assert rank(True, cold.observed_option_witnesses(signature=signature, world_step=8)) == neutral
 assert memory.observed_option_witnesses(signature=signature, world_step=100) == ()
-assert rank(True, (), rotation=1) > rank(False, (), rotation=0)
+assert rank(False, (), rotation=1) > rank(False, (), rotation=0)
 # The natural producer, not a standalone utility, calls this function after
 # a paid Memory lookup. No new Stage8, Q/TD, or physical command owner.
 source = inspect.getsource(I1Runtime._propose_independent_local)
