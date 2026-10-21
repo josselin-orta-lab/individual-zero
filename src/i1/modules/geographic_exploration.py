@@ -514,6 +514,7 @@ class GeographicExploration:
             if t > old_t:
                 self._transit_offered = ()
                 self._place_offered = ()
+                self._lived_offered = ()
             if t == old_t or (x, y) == (old_x, old_y):
                 self._last_capture = (t, x, y)
                 return False
