@@ -102,6 +102,49 @@ def drive(life, count):
                          receipt.status, receipt.outcome))
     return receipts
 
+def learning_sources(rt, events):
+    # Read the actual owner images, not inferred values from event names.
+    td = rt.q_active.export_causal_state()
+    geographic = rt.exploration.geographic.export_causal_state()
+    updates = td["update_counts"]
+    sites = geographic.get("lived_site_effects", [])
+    site_events = [e for e in events if e.get("kind") ==
+                   "i1_lived_site_effect_observed"]
+    spatial_applied = [e for e in events if
+                       e.get("kind") == "command_admitted"
+                       and str(e.get("data", {}).get("option_ref", "")).startswith(
+                           "option:place-memory:")]
+    learned_place = {
+        k: v for k, v in updates.items()
+        if k.startswith("memory_place_return:") and v > 0
+    }
+    # A spatial signature is learned only following its own real applied
+    # decision. Never treat a berry sighting or some other primitive as Q.
+    if learned_place and not spatial_applied:
+        raise AssertionError("spatial Q appeared with no real spatial admission")
+    if sites and not site_events:
+        raise AssertionError("unlogged personally observed contextual site effect")
+    return {
+        "td_updated_signature_count": sum(v > 0 for v in updates.values()),
+        "td_updated_signatures": sorted(
+            [{"signature": k, "updates": v} for k,v in updates.items()
+             if v > 0], key=lambda row: row["signature"]),
+        "td_spatial_updated_signature_count": len(learned_place),
+        "td_pending_segment": (None if td["pending"] is None else {
+            "signature": td["pending"]["signature"],
+            "decision_world_step": td["pending"]["decision_t_monde"],
+            "reward_count": len(td["pending"]["rewards"]),
+        }),
+        "spatial_options_physically_admitted": len(spatial_applied),
+        "physical_primitive_counts": dict(sorted(Counter(
+            str(e.get("primitive")) for e in events
+            if e.get("kind") == "command_experienced").items())),
+        "personally_observed_site_effect_count": len(sites),
+        "site_effect_samples": sum(row["samples"] for row in sites),
+        "site_effect_journal_events": len(site_events),
+        "site_effect_positions": [row["position"] for row in sites],
+    }
+
 def audit(events):
     counts = Counter(e.get("kind") for e in events)
     sightings = []
@@ -203,6 +246,10 @@ def audit(events):
         "candidate_refs_seen_across_multiple_world_steps": sum(
             len(steps)>1 for steps in refs_by_step.values()),
         "stage11_intrinsic_records": len(spatial_intrinsic),
+        "contextual_site_contributions": sum(
+            "exploration:lived_site_context_not_causal" in
+            row.get("intrinsic_producers", ())
+            for row in spatial_intrinsic),
         "intrinsic_values": sorted({
             float(row["intrinsic_value"]) for row in spatial_intrinsic
             if row.get("intrinsic_value") is not None
@@ -249,6 +296,7 @@ with TemporaryDirectory(prefix="i1-377-ledger-") as home:
         control_receipts = drive(life, TOTAL)
         final_continuous = image(life._runtime)
         events = journal(life._runtime)
+        learned_sources = learning_sources(life._runtime, events)
 
     with birth_i1_m11(db_path=restored, life_id=individual, **params) as life:
         before_receipts = drive(life, SPLIT)
@@ -278,6 +326,7 @@ with TemporaryDirectory(prefix="i1-377-ledger-") as home:
     assert final_audit.journal_head == control_receipts[-1][3]
 
     report = audit(events)
+    report["personally_learned_sources"] = learned_sources
     print("I1_377_CANONICAL_M11_SPATIAL_DIAGNOSTIC "
           + json.dumps(report, sort_keys=True), flush=True)
     assert report["first_person_sightings"] > 0, (
