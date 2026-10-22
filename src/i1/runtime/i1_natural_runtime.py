@@ -391,6 +391,50 @@ class I1Runtime(I1WaterPrudentRuntime):
             )
         return ordered
 
+    def _order_considered_lived_targets(self, targets, *, capture, cycle):
+        """Pay for an optional Memory read, not a lived-site motor advantage.
+
+        The natural route search owns the candidate list. Recollection is
+        metadata only and cannot re-rank evidence or prescribe movement.
+        """
+        if not self.memory.lived_site_option_prospect_count:
+            return targets
+        if not self._charge(
+            module="planning", operation=_OPTION_INTENTION_OPERATION,
+        ):
+            return targets
+        available = frozenset(
+            f"lived_site_return:{target.observed_position[0]}:"
+            f"{target.observed_position[1]}" for target in targets
+        )
+        self.memory.reconcile_option_intentions(
+            available_signatures=available, world_step=capture.t_monde,
+            namespace="lived_site_return:",
+        )
+        self._i1_lived_reconciled_cycle = (capture.t_monde, cycle)
+        if not targets or not self._charge(
+            module="planning", operation=_OPTION_INTENTION_OPERATION,
+        ):
+            return targets
+        count = sum(
+            self.memory.recalled_applied_option(
+                signature=(f"lived_site_return:{target.observed_position[0]}:"
+                           f"{target.observed_position[1]}"),
+                world_step=capture.t_monde,
+            )
+            for target in targets
+        )
+        if count:
+            self._write(
+                kind="i1_lived_site_prospect_consulted", cycle=cycle,
+                data={"available_count": len(targets),
+                      "remembered_count": count,
+                      "consideration_order_changed": False,
+                      "charged_operation": _OPTION_INTENTION_OPERATION,
+                      "motor_admission_inherited": False},
+            )
+        return targets
+
     def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
         """Add a second normal Phase-1 producer, not a replacement GoalManager.
 
@@ -431,6 +475,22 @@ class I1Runtime(I1WaterPrudentRuntime):
                         world_step=capture.t_monde,
                         namespace="memory_place_return:",
                     )
+            if (self.memory.lived_site_option_prospect_count
+                and getattr(self, "_stage11_lived_search_completed_cycle", None)
+                    == (capture.t_monde, cycle)
+                and getattr(self, "_i1_lived_reconciled_cycle", None)
+                    != (capture.t_monde, cycle)
+                and self._charge(
+                    module="planning", operation=_OPTION_INTENTION_OPERATION,
+                )):
+                self.memory.reconcile_option_intentions(
+                    available_signatures=frozenset(
+                        f"lived_site_return:{target.observed_position[0]}:"
+                        f"{target.observed_position[1]}"
+                        for target in self._stage11_frozen_lived_targets
+                    ),
+                    world_step=capture.t_monde, namespace="lived_site_return:",
+                )
             self._i1_local_proposal_this_cycle = None
             if self._cycle_degraded or st_before_cycle is None:
                 return
@@ -574,6 +634,47 @@ class I1Runtime(I1WaterPrudentRuntime):
                             data={"option_ref": ref,
                                   "semantic_ref": proposal.option.learning_signature,
                                   "stage8_evaluated": True,
+                                  "motor_admission_inherited": False,
+                                  "action_applied": False},
+                        )
+                    break
+                # A previously experienced coordinate is a semantic Memory
+                # prospect only after a paid Stage8 evaluation and a positive
+                # contribution that actually reached Competition.
+                for target in geo.lived_offered:
+                    ref = f"option:lived-site:{target.ref}"
+                    row = evaluated.get(ref)
+                    trace = next((
+                        tr for tr in results.traces if tr.option_ref == ref
+                    ), None)
+                    if (row is None or trace is None
+                        or trace.evidence is None or trace.evidence <= 0
+                        or trace.accumulator_after <= trace.accumulator_before):
+                        continue
+                    proposal = self.competition.proposal_for(ref)
+                    signature = (
+                        f"lived_site_return:{target.observed_position[0]}:"
+                        f"{target.observed_position[1]}"
+                    )
+                    if (proposal is None
+                        or proposal.option.learning_signature != signature
+                        or proposal.option.motive_ref.type != "lived_site"):
+                        continue
+                    if not self._charge(
+                        module="planning", operation=_OPTION_INTENTION_OPERATION,
+                    ):
+                        break
+                    created = self.memory.remember_considered_option(
+                        signature=signature, source_option_ref=ref,
+                        considered_step=capture.t_monde,
+                        cost_uc=_OPTION_INTENTION_COST_UC,
+                    )
+                    if created:
+                        self._write(
+                            kind="i1_lived_site_option_prospected", cycle=cycle,
+                            data={"option_ref": ref, "semantic_ref": signature,
+                                  "stage8_evaluated": True,
+                                  "charged_operation": _OPTION_INTENTION_OPERATION,
                                   "motor_admission_inherited": False,
                                   "action_applied": False},
                         )
