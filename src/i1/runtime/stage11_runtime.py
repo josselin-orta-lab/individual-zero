@@ -462,6 +462,9 @@ class Stage11Runtime(Stage9Runtime):
         """Reference runtime preserves first-person route-search order."""
         return targets
 
+    def _order_considered_spatial_targets(self, targets, *, capture, cycle):
+        return targets
+
     def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
         # Frozen input precedes all producers of phase 1 (INV-08).
         frozen = self.causal_model.export_causal_state()
@@ -888,6 +891,11 @@ class Stage11Runtime(Stage9Runtime):
                             data={"candidates": [t.ref for t in frozen_place_targets],
                                   "sites": len(remembered),
                                   "source": "prior_frozen_geographic_owner"})
+            # A derived I1 actor may reorder already witnessed candidates,
+            # but cannot introduce an unobserved route or motor admission.
+            frozen_place_targets = self._order_considered_spatial_targets(
+                frozen_place_targets, capture=capture, cycle=cycle,
+            )
             memory_initial_state = None
             for target in frozen_place_targets:
                 if not self._charge(module="planning",
