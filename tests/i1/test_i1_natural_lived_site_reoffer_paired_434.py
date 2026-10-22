@@ -728,6 +728,81 @@ overlap_diagnostic = {
     "scientific_l3": "NOT_ESTABLISHED",
 }
 
+
+# #438 follow-up: ranking margins come from the SAME actual paid cycle.
+# Changes in Q alone do not imply that a different candidate could win.
+margin_rows = []
+for row in changed:
+    k = (row["step"],)
+    for treatment, life in (("neutral", neutral), ("nourishing", nourishing)):
+        matches = [
+            (cycle, ref, tr) for (step, cycle, ref), tr
+            in life["paid_competition"].items()
+            if step == row["step"] and ref == row["option_ref"]
+        ]
+        for cycle, ref, tr in matches:
+            same = life["paid_frames"][(row["step"], cycle)]
+            competitors = [
+                (ref2, tr2) for ref2, tr2 in same.items()
+                if ref2 != ref and tr2["evidence"] is not None
+            ]
+            if not competitors:
+                margin_rows.append({
+                    "arm": treatment, "step": row["step"],
+                    "cycle": cycle, "option_ref": ref,
+                    "category": "no_paid_rival",
+                })
+                continue
+            best_ref, best = max(
+                competitors, key=lambda item: (
+                    item[1]["ratio"], item[0]))
+            margin = tr["ratio"] - best["ratio"]
+            margin_rows.append({
+                "arm": treatment, "step": row["step"],
+                "cycle": cycle, "option_ref": ref,
+                "best_rival": best_ref,
+                "rank_margin": margin,
+                "own_ratio": tr["ratio"],
+                "rival_ratio": best["ratio"],
+                "own_crossed": tr["crossed"],
+                "rival_crossed": best["crossed"],
+                "category": ("ahead" if margin > 1e-12
+                             else "tied" if abs(margin) <= 1e-12
+                             else "behind"),
+            })
+assert margin_rows
+# Deduplicate the Q-changed exact observations, rather than treating each
+# candidate's previous/future presence as an independent TD update.
+seen_margin = set()
+unique_margins = []
+for row in margin_rows:
+    key = (row["arm"], row["step"], row["cycle"], row["option_ref"])
+    if key not in seen_margin:
+        seen_margin.add(key)
+        unique_margins.append(row)
+margin_audit = {
+    "actual_paid_candidate_arm_observations": len(unique_margins),
+    "with_rival": sum(r["category"] != "no_paid_rival"
+                      for r in unique_margins),
+    "ahead": sum(r["category"] == "ahead" for r in unique_margins),
+    "behind": sum(r["category"] == "behind" for r in unique_margins),
+    "tied": sum(r["category"] == "tied" for r in unique_margins),
+    "no_paid_rival": sum(r["category"] == "no_paid_rival"
+                        for r in unique_margins),
+    "behind_despite_own_crossing": sum(
+        r["category"] == "behind" and r["own_crossed"]
+        for r in unique_margins),
+    "max_observed_deficit": max(
+        (-r["rank_margin"] for r in unique_margins
+         if r["category"] == "behind"), default=0.0),
+    "smallest_positive_deficit": min(
+        (-r["rank_margin"] for r in unique_margins
+         if r["category"] == "behind"), default=None),
+    "first_observations": unique_margins[:24],
+    "physical_admissibility_of_rivals": "NOT_ESTABLISHED",
+    "learned_td_caused_motor_choice": "NOT_ESTABLISHED",
+}
+
 adjudication = {
     "matched_paid_learned_options": len(joined),
     "changed_q_through_competition": len(changed),
@@ -794,6 +869,7 @@ report = {
     "paired_td_custody": td_custody,
     "paired_td_competition_adjudication": adjudication,
     "paired_learned_contender_overlap": overlap_diagnostic,
+    "paid_learned_competitor_margins": margin_audit,
     "paired_candidate_identities_match": (
         [r["ref"] for r in neutral["observed_candidate_windows"]["windows"]]
         == [r["ref"] for r in
