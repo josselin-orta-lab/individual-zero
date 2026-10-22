@@ -639,6 +639,95 @@ def nearest(rows):
     scored = [(row["ratio"], ref) for ref, row in rows.items()
               if row["evidence"] is not None]
     return max(scored)[1] if scored else None
+
+# #438: identify genuine same-cycle contender sets, not hypothetical choices.
+# A Q-bearing alternative exists only if its own paid Stage8 and Competition
+# records agree at the exact physical step / cognitive cycle.
+def contender_audit(life):
+    counters = Counter()
+    rows = []
+    for (step, cycle), traces in sorted(life["paid_frames"].items()):
+        paid = []
+        for ref, tr in sorted(traces.items()):
+            read = life["paid_stage8"].get((step, cycle, ref))
+            if (read is None or read["status"] != "evaluated"
+                or tr["evidence"] is None):
+                continue
+            assert abs(read["evidence"] - tr["evidence"]) < 1e-12
+            paid.append((ref, tr, read))
+        learned = [(ref, tr, read) for ref, tr, read in paid
+                   if read["learned_status"] == "learned"
+                   and read["learned_value"] is not None]
+        positive = [(ref, tr, read) for ref, tr, read in paid
+                    if tr["evidence"] > 0]
+        crossed = [(ref, tr, read) for ref, tr, read in paid
+                   if tr["crossed"]]
+        counters["cycles"] += 1
+        counters["with_paid_candidates"] += bool(paid)
+        counters["with_multiple_paid_candidates"] += len(paid) >= 2
+        counters["with_any_learned"] += bool(learned)
+        counters["with_two_learned"] += len(learned) >= 2
+        counters["with_learned_and_positive_rival"] += (
+            bool(learned) and any(ref not in {x[0] for x in learned}
+                                  for ref, _, _ in positive))
+        counters["with_learning_and_crossed_rival"] += (
+            bool(learned) and any(ref not in {x[0] for x in learned}
+                                  for ref, _, _ in crossed))
+        rows.append({
+            "step": step, "cycle": cycle,
+            "paid_options": len(paid), "learned": len(learned),
+            "positive": len(positive), "crossed": len(crossed),
+            "learned_signatures": tuple(sorted({
+                read["signature"] for _, _, read in learned})),
+            "crossed_option_refs": tuple(sorted(x[0] for x in crossed)),
+        })
+    return dict(sorted(counters.items())), rows
+
+neutral_overlap, neutral_rows = contender_audit(neutral)
+nutritious_overlap, nutritious_rows = contender_audit(nourishing)
+changed_cycles = sorted({(x["step"], cycle) for x in changed
+                         for (step, cycle, ref) in neutral["paid_competition"]
+                         if step == x["step"] and ref == x["option_ref"]
+                         and (step, cycle, ref) in nourishing["paid_competition"]
+                         and (step, cycle, ref) in neutral["paid_stage8"]
+                         and (step, cycle, ref) in nourishing["paid_stage8"]
+                         and abs(neutral["paid_stage8"][(step,cycle,ref)]["learned_value"]
+                                 - nourishing["paid_stage8"][(step,cycle,ref)]["learned_value"]) > 1e-12
+                         })
+assert changed_cycles
+affected_contexts = []
+for step, cycle in changed_cycles:
+    n = next(x for x in neutral_rows
+             if x["step"] == step and x["cycle"] == cycle)
+    f = next(x for x in nutritious_rows
+             if x["step"] == step and x["cycle"] == cycle)
+    affected_contexts.append({
+        "step": step, "cycle": cycle,
+        "neutral_learned_options": n["learned"],
+        "nourishing_learned_options": f["learned"],
+        "neutral_paid_options": n["paid_options"],
+        "nourishing_paid_options": f["paid_options"],
+        "neutral_crossed": n["crossed"],
+        "nourishing_crossed": f["crossed"],
+    })
+overlap_diagnostic = {
+    "neutral": neutral_overlap,
+    "nourishing": nutritious_overlap,
+    "changed_q_cycle_count": len(changed_cycles),
+    "changed_q_cycles_with_two_learned": sum(
+        x["neutral_learned_options"] >= 2
+        and x["nourishing_learned_options"] >= 2
+        for x in affected_contexts),
+    "changed_q_cycles_with_at_least_two_paid": sum(
+        x["neutral_paid_options"] >= 2
+        and x["nourishing_paid_options"] >= 2
+        for x in affected_contexts),
+    "changed_q_cycle_context_first": affected_contexts[:20],
+    "physical_admissibility_of_every_competitor": "NOT_ESTABLISHED",
+    "independent_effect_of_q_on_motor_choice": "NOT_ESTABLISHED",
+    "scientific_l3": "NOT_ESTABLISHED",
+}
+
 adjudication = {
     "matched_paid_learned_options": len(joined),
     "changed_q_through_competition": len(changed),
@@ -704,6 +793,7 @@ report = {
     "postexperience_motor_trajectories_differ": future_motor_divergence,
     "paired_td_custody": td_custody,
     "paired_td_competition_adjudication": adjudication,
+    "paired_learned_contender_overlap": overlap_diagnostic,
     "paired_candidate_identities_match": (
         [r["ref"] for r in neutral["observed_candidate_windows"]["windows"]]
         == [r["ref"] for r in
