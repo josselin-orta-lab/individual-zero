@@ -74,6 +74,13 @@ with TemporaryDirectory(prefix="i1-388-cold-") as directory:
         final_owners = causal(actor._runtime)
         final_geo = actor._runtime.exploration.geographic.export_causal_state()
         all_events = journal(actor._runtime)
+        # Immutable born Competition constants, read only by the external Lab.
+        comp = actor._runtime.competition._config
+        competition_policy = {
+            key: getattr(comp, key) for key in (
+                "base_threshold", "leak", "gain", "noise_sigma",
+                "urgency_max", "urgency_scale_cycles")
+        }
     with birth_i1_m11(db_path=recovered, life_id=identity, **params) as actor:
         first_receipts, first_locations = committed_steps(actor, SPLIT)
         checkpoint_owners = causal(actor._runtime)
@@ -112,7 +119,7 @@ contextual = [event for event in route_evaluations
               if "exploration:lived_site_context_not_causal" in
                  event.get("data", {}).get("intrinsic_producers", ())]
 from collections import defaultdict
-from math import isfinite
+from math import exp, isfinite
 
 live_traces = []
 for event in all_events:
@@ -172,8 +179,148 @@ for event in contextual:
     assert all(int(src.rsplit("observed-t", 1)[1]) < event["t_monde"]
                for src in sources), "Stage8 used nonhistorical site observation"
 
+# Read-only three-way audit: personally witnessed source -> paid Stage8
+# -> ordinary Competition. No alternative action, Q value, or score is injected.
+owner_events = {}
+for event in bodily_events:
+    key = (tuple(event["data"]["site"]), event["data"]["observed_step"])
+    assert key not in owner_events, "duplicate first-person site witness"
+    assert event["t_monde"] == key[1]
+    assert event["data"]["causality_proven"] is False
+    assert any(
+        previous["t_monde"] == key[1] - 1
+        and previous.get("kind") == "command_experienced"
+        and previous.get("emitter") == "action_control"
+        and previous.get("primitive") not in (
+            "se_deplacer", "attendre", "dormir")
+        for previous in all_events
+    ), "site body effect without preceding applied local action"
+    owner_events[key] = event
+
+def event_key(event):
+    return (event["t_monde"], event["cycle"],
+            event["data"]["option_ref"])
+
+paid_stage8 = {}
+intrinsic_evaluations = {}
+competition_evidence = {}
+for event in all_events:
+    kind = event.get("kind")
+    if kind in ("stage8_option_evaluation", "stage11_intrinsic_evaluation"):
+        ref = str(event.get("data", {}).get("option_ref", ""))
+        if not ref.startswith("option:lived-site:"):
+            continue
+        store = (paid_stage8 if kind == "stage8_option_evaluation"
+                 else intrinsic_evaluations)
+        key = event_key(event)
+        assert key not in store, "ambiguous per-cycle lived-site evaluation"
+        store[key] = event["data"]
+    if kind == "competition_cycle":
+        for trace in event.get("data", {}).get("traces", ()):
+            if not str(trace.get("option_ref", "")).startswith("option:lived-site:"):
+                continue
+            key = (event["t_monde"], event["cycle"], trace["option_ref"])
+            assert key not in competition_evidence, "ambiguous paid Competition trace"
+            competition_evidence[key] = trace
+assert set(paid_stage8) == set(intrinsic_evaluations) == set(competition_evidence)
+assert len(paid_stage8) == len(scored), "authentic score join lost an observation"
+
+context_only = []
+mixed_or_other = []
+for key in sorted(paid_stage8):
+    step, cycle, option_ref = key
+    assessed = paid_stage8[key]
+    intrinsic = intrinsic_evaluations[key]
+    trace = competition_evidence[key]
+    assert assessed["status"] == intrinsic["status"] == "evaluated"
+    assert intrinsic["intrinsic_value"] == 0.0
+    assert assessed["intrinsic_value"] == 0.0
+    assert assessed["intrinsic_status"] == "applicable"
+    assert trace["evidence"] is not None
+    assert abs(float(assessed["evidence"]) - float(trace["evidence"])) < 1e-12
+    assert bool(trace["crossed"]) == (
+        trace["accumulator_after"] >= trace["threshold"])
+    refs = tuple(x for x in intrinsic["signal_ids"]
+                 if str(x).startswith("lived-site:"))
+    assert refs, "lived-site Stage8 score lacks a first-person source"
+    for source in refs:
+        prefix, divider, observed = source.partition(":observed-t")
+        parts = prefix.split(":")
+        assert divider and len(parts) == 3 and parts[0] == "lived-site"
+        observed_step = int(observed)
+        witnessed_site = (int(parts[1]), int(parts[2]))
+        assert observed_step < step, "future personal memory reached evaluation"
+        assert (witnessed_site, observed_step) in owner_events, (
+            "unwitnessed contextual score reached Competition")
+    has_other_value = (
+        assessed["learned_value_status"] == "learned"
+        or assessed["simulated_value_status"] == "computed"
+    )
+    item = {"step": step, "cycle": cycle,
+            "evidence": float(trace["evidence"]),
+            "before": float(trace["accumulator_before"]),
+            "after": float(trace["accumulator_after"]),
+            "threshold": float(trace["threshold"]),
+            "witnessed_site_sources": len(refs)}
+    if has_other_value:
+        # The combined evidence cannot be assigned wholly to site experience.
+        mixed_or_other.append(item)
+    else:
+        assert assessed["learned_value"] is None
+        assert assessed["simulated_value"] is None
+        # Stage11's lived-site branch adds context to Stage8's unavailable
+        # learned/simulated base. Thus this score is exclusively contextual.
+        context_only.append(item)
+
+# Independently replay the born Competition arithmetic for this single cycle
+# with the REAL incoming accumulator; it is not a multi-step intervention.
+# If a future canonical birth adds noise, leave that part NOT_OBSERVED.
+noise_free = competition_policy["noise_sigma"] == 0.0
+if noise_free:
+    for item in context_only:
+        urgency = (1.0 + (competition_policy["urgency_max"] - 1.0) *
+            (1.0 - exp(-(item["cycle"] - 1) /
+                         competition_policy["urgency_scale_cycles"])))
+        without_this_cycle = max(
+            0.0, (1.0 - competition_policy["leak"]) * item["before"])
+        with_context = max(
+            0.0, (1.0 - competition_policy["leak"]) * item["before"]
+            + urgency * competition_policy["gain"] * item["evidence"])
+        assert abs(item["after"] - with_context) < 1e-10, (
+            "actual Competition arithmetic differs from observed Stage8 context")
+        item["same_cycle_marginal"] = item["after"] - without_this_cycle
+assert context_only, "no authentically witnessed context-only evaluation"
+context_attribution = {
+    "authentic_observed_site_witnesses": len(owner_events),
+    "joined_paid_evaluations": len(paid_stage8),
+    "context_only_evaluations": len(context_only),
+    "mixed_or_other_value_evaluations": len(mixed_or_other),
+    "context_only_positive": sum(item["evidence"] > 0
+                                 for item in context_only),
+    "context_only_negative": sum(item["evidence"] < 0
+                                 for item in context_only),
+    "context_only_neutral": sum(item["evidence"] == 0
+                                for item in context_only),
+    "context_only_max_evidence": max(
+        (item["evidence"] for item in context_only), default=None),
+    "context_only_max_threshold_ratio": max(
+        (item["after"] / item["threshold"] for item in context_only),
+        default=None),
+    "born_competition_policy": competition_policy,
+    "same_cycle_arithmetic_verified": noise_free,
+    "context_only_max_single_cycle_increment": (
+        max(item["same_cycle_marginal"] for item in context_only)
+        if noise_free else None),
+    "context_only_threshold_crossings": sum(
+        item["after"] >= item["threshold"] for item in context_only),
+    "causal_action_effect_proven": False,
+    "improved_spatial_choice_proven": False,
+    "scientific_l3": "NOT_ESTABLISHED",
+}
+
 print("I1_388_NATURAL_LIVED_SITE_MOVE_DIAGNOSTIC " + json.dumps({
     "preset": "dry-valley",
+    "context_attribution": context_attribution,
     "physical_moves": physical_actions["se_deplacer"],
     "physical_primitives": dict(sorted(physical_actions.items())),
     "bodily_site_events": len(bodily_events),
