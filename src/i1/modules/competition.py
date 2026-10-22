@@ -565,6 +565,10 @@ class Competition:
 
         existing = self._registry.get(option.id)
         if existing is not None:
+            # A later callback cannot rewrite a candidate's already
+            # authenticated proposal clock into an earlier deliberation.
+            if t_monde < existing.last_proposal_t:
+                return False
             material_change = self.material_plan_change(
                 existing.proposal,
                 proposal,
