@@ -363,6 +363,21 @@ class I1Runtime(I1WaterPrudentRuntime):
             # A new deliberation has no inherited paid admission/prospect.
             self._i1_option_intention_paid = None
             normal_plan(ctx)
+            # A paid scan can suspend a spatial prospect when the
+            # first-person route is no longer genuinely offered.
+            if self.memory.spatial_option_prospect_count:
+                available = frozenset(
+                    f"memory_place_return:{target.entity_id}"
+                    for target in self._stage11_frozen_place_targets
+                )
+                if self._charge(
+                    module="planning", operation=_OPTION_INTENTION_OPERATION,
+                ):
+                    self.memory.reconcile_option_intentions(
+                        available_signatures=available,
+                        world_step=capture.t_monde,
+                        namespace="memory_place_return:",
+                    )
             self._i1_local_proposal_this_cycle = None
             if self._cycle_degraded or st_before_cycle is None:
                 return
