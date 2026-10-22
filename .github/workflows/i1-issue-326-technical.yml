@@ -29,6 +29,7 @@ on:
       - 'tests/i1/test_i1_paid_continuation_391.py'
       - 'tests/i1/test_i1_competition_m11_image_392.py'
       - 'tests/i1/test_i1_sleep_intention_expiry_393.py'
+      - 'tests/i1/test_i1_spatial_prospect_read_395.py'
       - '.github/workflows/i1-issue-326-technical.yml'
 permissions:
   contents: read
@@ -165,3 +166,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests/i1 -p test_i1_sleep_intention_expiry_393.py -v
+
+      - name: Paid spatial prospective Memory read changes only consideration order
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_prospect_read_395.py -v

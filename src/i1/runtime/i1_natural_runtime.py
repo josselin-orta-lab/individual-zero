@@ -344,6 +344,39 @@ class I1Runtime(I1WaterPrudentRuntime):
             ),
         )
 
+    def _order_considered_spatial_targets(self, targets, *, capture, cycle):
+        """A charged, first-person Memory tie-break for offered spatial routes.
+
+        No route, evidence, Q value, action or motor threshold is created.
+        Only options from the ordinary observed Planning search can move.
+        """
+        if not targets or not self.memory.spatial_option_prospect_count:
+            return targets
+        if not self._charge(module="planning", operation=_OPTION_INTENTION_OPERATION):
+            return targets
+        preferred = set()
+        for target in targets:
+            signature = f"memory_place_return:{target.entity_id}"
+            if self.memory.recalled_applied_option(
+                signature=signature, world_step=capture.t_monde,
+            ):
+                preferred.add(signature)
+        ordered = tuple(sorted(
+            targets, key=lambda target: (
+                f"memory_place_return:{target.entity_id}" not in preferred,
+            ),
+        ))
+        if preferred:
+            self._write(
+                kind="i1_spatial_prospect_consulted", cycle=cycle,
+                data={"available_count": len(targets),
+                      "remembered_count": len(preferred),
+                      "consideration_order_changed": ordered != tuple(targets),
+                      "charged_operation": _OPTION_INTENTION_OPERATION,
+                      "motor_admission_inherited": False},
+            )
+        return ordered
+
     def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
         """Add a second normal Phase-1 producer, not a replacement GoalManager.
 
