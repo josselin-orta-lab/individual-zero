@@ -65,8 +65,11 @@ def experiment(food_gain, db_path):
         # This is an operator comparison, not an input to the decision owner.
         assert "food_gain" not in json.dumps(first_local)
         for _ in range(TOTAL):
-            before = dict(rt.world.body.as_dict())
+            # M11 publishes a NEW runtime only after the SQLite commit.
+            # Never retain the genesis owner across physical generations.
+            before = dict(actor._runtime.world.body.as_dict())
             receipt = actor.run_step()
+            rt = actor._runtime
             assert receipt.status in ("active", "dead"), receipt
             bodies.append({
                 "step": receipt.world_step, "before": before,
