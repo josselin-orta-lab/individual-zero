@@ -16,6 +16,10 @@ from i1lab.i1_natural_runtime import I1Runtime
 calls=[]
 class Memory:
  spatial_option_prospect_count=1
+ def reconcile_option_intentions(self,*,available_signatures,world_step,namespace):
+  calls.append(("reconcile",available_signatures,world_step,namespace))
+  assert namespace=="memory_place_return:"
+  return ()
  def recalled_applied_option(self,*,signature,world_step):
   calls.append(("read",signature,world_step))
   return signature=="memory_place_return:remembered"
@@ -32,7 +36,9 @@ capture=SimpleNamespace(t_monde=3)
 reader=I1Runtime._order_considered_spatial_targets
 a=Actor(True)
 assert reader(a,(first,old),capture=capture,cycle=1)==(old,first)
-assert calls[0][0]=="charge" and all(x[0]=="read" for x in calls[1:])
+assert [x[0] for x in calls[:3]]==["charge","reconcile","charge"]
+assert all(x[0]=="read" for x in calls[3:])
+assert a._i1_spatial_reconciled_cycle==(3,1)
 assert a.writes[0]["data"]["consideration_order_changed"] is True
 assert a.writes[0]["data"]["motor_admission_inherited"] is False
 calls.clear()
