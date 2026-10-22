@@ -147,6 +147,24 @@ def experiment(food_gain, db_path):
             "simulated": result["simulated_value_status"],
         })
     local_effects = state["lived_site_effects"]
+    route_offers = [e for e in events
+                    if e.get("kind") == "i1_lived_site_option_proposed"]
+    route_registrations = [e for e in events
+                           if e.get("kind") == "i1_lived_site_option_registration"]
+    route_competition = [
+        (e["t_monde"], e["cycle"], tr)
+        for e in events if e.get("kind") == "competition_cycle"
+        for tr in e.get("data", {}).get("traces", ())
+        if str(tr.get("option_ref", "")).startswith("option:lived-site:")
+    ]
+    for event in route_offers:
+        assert event["data"]["forced_motor_selection"] is False
+        assert any(
+            witness["t_monde"] < event["t_monde"]
+            and tuple(witness["data"]["site"]) == tuple(event["data"]["target"])
+            for witness in events if witness.get("kind")
+                == "i1_lived_site_effect_observed"
+        ), "return route without a first-person past site"
     witnessed = [e for e in events
                  if e.get("kind") == "i1_lived_site_effect_observed"]
     return {
@@ -162,6 +180,16 @@ def experiment(food_gain, db_path):
         "witnessed_site_changes": len(witnessed),
         "contextual_values": contextual,
         "spatial_eval_count": len(evaluations),
+        "lived_site_route_offers": len(route_offers),
+        "lived_site_route_registrations": len(route_registrations),
+        "lived_site_competition_exposures": len(route_competition),
+        "lived_site_threshold_crossings": sum(
+            bool(row["crossed"]) for _, _, row in route_competition),
+        "lived_site_motor_admissions": sum(
+            e.get("kind") == "command_admitted"
+            and str(e.get("data", {}).get("option_ref", "")).startswith(
+                "option:lived-site:")
+            for e in events),
         "td_update_counts": td_updates,
         "ledger_status": ledger.status,
         "m11_generation": ledger.generation,
