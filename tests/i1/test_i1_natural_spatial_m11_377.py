@@ -579,6 +579,43 @@ with TemporaryDirectory(prefix="i1-377-ledger-") as home:
         e["data"].get("consideration_order_changed") is True
         for e in spatial_reads
     )
+    # Cold intrinsic-return envelope: actual born Competition and Stage11
+    # constants, not fitted to the observed failure or a hypothetical Q.
+    from math import exp
+    cfg = life_config = factory().competition._config
+    # The new runtime above is unstepped: no learning or reward injection.
+    intrinsic_weight = factory()._stage11_config.intrinsic_weight
+    intrinsic_cap = min(0.12, intrinsic_weight * 0.12)
+    theoretical_gain = sum(
+        (1.0 + (cfg.urgency_max - 1.0) *
+         (1.0 - exp(-(cycle - 1) / cfg.urgency_scale_cycles)))
+        * cfg.gain
+        for cycle in range(1, cfg.c_max + 1)
+    )
+    # No noise and no preexisting candidate accumulation: this is explicitly
+    # a first-deliberation bound, not a claim about persistent old options.
+    zero_initial_bound = intrinsic_cap * theoretical_gain
+    report["cold_spatial_intrinsic_envelope"] = {
+        "intrinsic_cap": intrinsic_cap,
+        "urgency_gain_sum": theoretical_gain,
+        "zero_initial_max_after_cmax_without_leak": zero_initial_bound,
+        "born_base_threshold": cfg.base_threshold,
+        "cold_intrinsic_alone_cannot_cross": (
+            cfg.noise_sigma == 0 and zero_initial_bound < cfg.base_threshold
+        ),
+        "measured_max_evidence": report["spatial_competition_traces"]["max_evidence"],
+        "measured_max_threshold_ratio":
+            report["spatial_competition_traces"]["max_accumulator_to_threshold"],
+        "first_deliberation_only": True,
+        "retained_candidate_future_crossing": "NOT_ESTABLISHED",
+        "td_or_simulation_added": False,
+        "scientific_l3": "NOT_ESTABLISHED",
+    }
+    assert cfg.noise_sigma == 0
+    assert 0 <= cfg.leak < 1
+    assert intrinsic_cap >= max(
+        report["spatial_competition_traces"]["intrinsic_values"])
+    assert report["cold_spatial_intrinsic_envelope"]["cold_intrinsic_alone_cannot_cross"]
     report["personally_learned_sources"] = learned_sources
     report["experienced_td_readback"] = learned_readback(
         events, control_boundaries)
