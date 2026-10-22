@@ -16,9 +16,9 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from build_i1_fork import generate
 
 
-class NaturalSitePhysiologyReversal(unittest.TestCase):
+class NaturalSiteReofferPhysiologyPair(unittest.TestCase):
     def test_first_person_effect_and_later_spatial_evaluation(self):
-        with TemporaryDirectory(prefix="i1-432-paired-") as directory:
+        with TemporaryDirectory(prefix="i1-434-paired-") as directory:
             generated = Path(directory) / "generated"
             generate(generated)
             script = r"""
@@ -196,7 +196,7 @@ def experiment(food_gain, db_path):
         "head_verified": True,
     }
 
-with TemporaryDirectory(prefix="i1-432-m11-") as directory:
+with TemporaryDirectory(prefix="i1-434-m11-") as directory:
     # Two independent, never recovered lives with identical born individual
     # temperament. The physical intervention is hidden from the individual's
     # first-person capture until a genuine ingestion produces its consequence.
@@ -276,10 +276,10 @@ report = {
     "spatially_useful_decision": "NOT_ESTABLISHED",
     "scientific_l3": "NOT_ESTABLISHED",
 }
-print("I1_432_NATURAL_M11_PHYSIOLOGY_REVERSAL "
+print("I1_434_NATURAL_M11_SITE_REOFFER_MATCHED "
       + json.dumps(report, sort_keys=True), flush=True)
 assert neutral["head_verified"] and nourishing["head_verified"]
-print("I1_432_INDEPENDENT_MORTAL_WAL_OK", flush=True)
+print("I1_434_INDEPENDENT_MORTAL_WAL_OK", flush=True)
 """
             env = dict(os.environ, PYTHONPATH=os.pathsep.join((
                 str(generated), str(ROOT / "src"), str(ROOT / "tools"))),
@@ -291,7 +291,7 @@ print("I1_432_INDEPENDENT_MORTAL_WAL_OK", flush=True)
             if outcome.returncode:
                 print(outcome.stderr, flush=True)
             self.assertEqual(outcome.returncode, 0, outcome.stderr)
-            self.assertIn("I1_432_INDEPENDENT_MORTAL_WAL_OK", outcome.stdout)
+            self.assertIn("I1_434_INDEPENDENT_MORTAL_WAL_OK", outcome.stdout)
 
 
 if __name__ == "__main__":
