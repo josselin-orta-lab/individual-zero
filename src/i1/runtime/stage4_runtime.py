@@ -724,11 +724,9 @@ class Stage4Runtime:
                 t_monde=capture.t_monde,
                 st_version=current.version,
             )
-            if not self._charge(
-                module="competition",
-                operation="competition_register",
-            ):
-                return
+            # Validity is owned by Competition, not a paid proposal refresh.
+            # A changed goal must invalidate old evidence even when no UC
+            # remains for registering new proposals in this deliberation.
             self.competition.prune_invalid(
                 active_goal_id=(
                     None
@@ -737,6 +735,11 @@ class Stage4Runtime:
                 ),
                 t_monde=capture.t_monde,
             )
+            if not self._charge(
+                module="competition",
+                operation="competition_register",
+            ):
+                return
             if self._proposal_this_cycle is not None:
                 registered = self._register_option_proposal(
                     proposal=self._proposal_this_cycle,
