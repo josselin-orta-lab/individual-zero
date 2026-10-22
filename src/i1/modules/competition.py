@@ -582,15 +582,16 @@ class Competition:
                 or old_option.motive_ref != option.motive_ref
                 or old_option.goal_ref != option.goal_ref
             )
-            if semantic_change and option.id == self._engaged_option_id:
-                # A currently engaged motor decision may not silently become
-                # a different cognitive possibility under the same option ID.
-                return False
             material_change = self.material_plan_change(
                 existing.proposal,
                 proposal,
             )
-            if (material_change or semantic_change) and option.id != self._engaged_option_id:
+            if ((semantic_change or material_change)
+                and option.id == self._engaged_option_id):
+                # Engagement belongs to the evaluated motor realization.
+                # A different plan must compete anew, not inherit its credit.
+                return False
+            if material_change or semantic_change:
                 # DC-17: evidence accumulated for a different realization of
                 # a non-engaged option never transfers to the revised plan.
                 existing.accumulator = 0.0
