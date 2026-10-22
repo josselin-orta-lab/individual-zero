@@ -53,6 +53,31 @@ try: restored.restore_causal_state(bad);raise AssertionError("forged wake")
 except ValueError: pass
 assert restored.export_causal_state()==state
 assert not restored.recalled_applied_option(signature=signature,world_step=1000)
+spatial="memory_place_return:observed-entity"
+source="option:place-memory:place:observed-entity:at:4:0:from:1:0:via:2:0"
+assert m.remember_considered_option(signature=spatial,
+ source_option_ref=source,considered_step=2,cost_uc=1)
+assert m.recalled_applied_option(signature=spatial,world_step=3)
+spatial_image=m.export_causal_state()
+spatial_cold=type(m)(m._config,atomic_world_step_length_boundary=True)
+spatial_cold.restore_causal_state(spatial_image)
+assert spatial_cold.export_causal_state()==spatial_image
+assert spatial_cold.reconcile_option_intentions(
+ available_signatures=frozenset(),world_step=3,
+ namespace="memory_place_return:")
+assert not spatial_cold.recalled_applied_option(signature=spatial,world_step=3)
+assert spatial_cold.reconcile_option_intentions(
+ available_signatures=frozenset({spatial}),world_step=4,
+ namespace="memory_place_return:")
+assert spatial_cold.recalled_applied_option(signature=spatial,world_step=4)
+corrupt=deepcopy(spatial_image)
+target=next(x for x in corrupt["intentions"] if x["target"]==spatial)
+target["trigger_value"]["source_option_ref"]=source.replace(
+ "observed-entity","forged-entity")
+good=spatial_cold.export_causal_state()
+try: spatial_cold.restore_causal_state(corrupt);raise AssertionError("forged site")
+except ValueError: pass
+assert spatial_cold.export_causal_state()==good
 assert restored.check_intentions(st=None,t_monde=4,cycle=1,
  pressure_fn=lambda **kwargs: .5)==()
 method=inspect.getsource(I1Runtime._phase_hooks)
