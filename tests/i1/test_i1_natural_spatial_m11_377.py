@@ -101,9 +101,13 @@ def owner_boundary(rt):
                 "goal": option["goal_ref"],
                 "expires": option["expires_at_step"],
                 "accumulator": row["accumulator"],
+                "motive": option["motive_ref"]["id"],
             }
+    geo = rt.exploration.geographic.export_causal_state()
+    physical = geo["last_capture"]
     active = rt.goal_manager.active_goal
-    return {"spatial": spatial, "goal": None if active is None else active.id}
+    return {"spatial": spatial, "goal": None if active is None else active.id,
+            "capture": physical}
 
 def drive(life, count):
     receipts = []
@@ -413,6 +417,48 @@ with TemporaryDirectory(prefix="i1-377-ledger-") as home:
                 old[k]["signature"] for k in removed
             } & {new[k]["signature"] for k in added}),
         })
+    # Candidate IDs are canonical physical route descriptions. Compare
+    # the witnessed positions and action-control WAL, not semantic memory
+    # as if it were a motor privilege.
+    physical_commands_by_step = defaultdict(list)
+    for event in events:
+        if event.get("kind") == "command_experienced":
+            physical_commands_by_step[event.get("t_monde")].append(
+                event.get("primitive"))
+    geometry = []
+    for step, (prior, later) in enumerate(
+        zip(control_boundaries, control_boundaries[1:]), start=2
+    ):
+        removed = prior["spatial"].keys() - later["spatial"].keys()
+        added = later["spatial"].keys() - prior["spatial"].keys()
+        for missing in sorted(removed):
+            for appearing in sorted(added):
+                before = prior["spatial"][missing]
+                after = later["spatial"][appearing]
+                if before["signature"] != after["signature"]:
+                    continue
+                def route(ref):
+                    # Stored ID: option:place-memory:place:<entity>:at:x:y:
+                    # from:x:y:via:x:y. Parse only trusted canonical delimiters.
+                    tail = ref.split(":from:", 1)[1]
+                    origin, hop = tail.split(":via:", 1)
+                    return (tuple(map(int, origin.split(":"))),
+                            tuple(map(int, hop.split(":"))))
+                old_origin, old_hop = route(missing)
+                new_origin, new_hop = route(appearing)
+                captured = later["capture"]
+                fresh = captured is not None and captured[0] == step
+                if fresh:
+                    assert tuple(captured[1:]) == new_origin, (
+                        "new spatial motor origin differs from lived capture")
+                geometry.append({
+                    "physical_step": step,
+                    "origin_changed": old_origin != new_origin,
+                    "next_hop_changed": old_hop != new_hop,
+                    "fresh_paid_capture": fresh,
+                    "preceding_experienced_primitives":
+                        physical_commands_by_step.get(step - 1, []),
+                })
     report["owner_candidate_boundaries"] = {
         "snapshots": len(control_boundaries),
         "lost_between_steps": sum(t["lost"] for t in transitions),
@@ -424,6 +470,16 @@ with TemporaryDirectory(prefix="i1-377-ledger-") as home:
         "same_signature_new_motor_id": sum(
             t["same_signature_new_motor_id"] for t in transitions),
         "exact_m11_boundary_parity": True,
+        "route_geometry": {
+            "paired_same_signature_changes": len(geometry),
+            "origin_changes": sum(g["origin_changed"] for g in geometry),
+            "next_hop_changes": sum(g["next_hop_changed"] for g in geometry),
+            "fresh_capture_pairs": sum(g["fresh_paid_capture"] for g in geometry),
+            "observed_preceding_commands": dict(sorted(Counter(
+                primitive for g in geometry
+                for primitive in g["preceding_experienced_primitives"]).items())),
+            "transitions": geometry,
+        },
     }
     # Negative results matter: a paid reader may never encounter a pending
     # personally remembered site in this particular bounded natural life.
