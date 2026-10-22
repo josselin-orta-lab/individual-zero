@@ -213,6 +213,69 @@ for forged in (
  else:
   raise AssertionError("forged prospective spatial source accepted")
 assert memory.export_causal_state()==snapshot
+# Interruptibility: a denied UC charge cannot fabricate a negative search.
+# Reconciliation is permitted only after a genuinely completed, paid route search.
+from types import SimpleNamespace as NS
+from i1lab.i1_natural_runtime import I1Runtime
+class SiteReader:
+ def __init__(self, owner, budget):
+  self.memory=owner
+  self.budget=list(budget)
+  self.charges=[]
+  self.events=[]
+ def _charge(self, *, module, operation):
+  self.charges.append((module,operation))
+  return self.budget.pop(0)
+ def _write(self, **event):
+  self.events.append(event)
+target=NS(observed_position=(3,4))
+capture=NS(t_monde=6)
+reader=I1Runtime._order_considered_lived_targets
+owner=EpisodicMemory(memory._config,atomic_world_step_length_boundary=True)
+owner.restore_causal_state(snapshot)
+before=owner.export_causal_state()
+denied=SiteReader(owner,[False])
+assert reader(denied,(target,),capture=capture,cycle=1)==(target,)
+assert owner.export_causal_state()==before
+assert denied.charges==[("planning","i1_applied_option_intention")]
+assert not denied.events
+# A fully paid and genuinely empty search may suspend the prospect.
+empty=SiteReader(owner,[True])
+assert reader(empty,(),capture=capture,cycle=2)==()
+assert owner.intentions[0].state=="suspended"
+assert not owner.recalled_applied_option(signature=signature,world_step=6)
+assert not empty.events
+# An observed route can reactivate the same intention at a later step;
+# its semantic value, source and deadline remain unchanged.
+again=SiteReader(owner,[True,True])
+assert reader(again,(target,),capture=NS(t_monde=7),cycle=1)==(target,)
+assert owner.intentions[0].state=="pending"
+assert owner.recalled_applied_option(signature=signature,world_step=7)
+assert again.events[0]["kind"]=="i1_lived_site_prospect_consulted"
+assert again.events[0]["data"]["motor_admission_inherited"] is False
+assert again.events[0]["data"]["consideration_order_changed"] is False
+assert owner.intentions[0].trigger_value==memory.intentions[0].trigger_value
+deadline=owner.intentions[0].deadline_step
+owner_image=owner.export_causal_state()
+cold=EpisodicMemory(memory._config,atomic_world_step_length_boundary=True)
+cold.restore_causal_state(owner_image)
+assert cold.export_causal_state()==owner_image
+assert not cold.expire_option_intentions(world_step=deadline)
+assert cold.expire_option_intentions(world_step=deadline+1)
+assert cold.intentions[0].state=="abandoned"
+assert cold.lived_site_option_prospect_count==0
+assert not cold.recalled_applied_option(signature=signature,world_step=deadline+1)
+after_expiry=cold.export_causal_state()
+# Neither a new affordance nor a fresh availability assertion resurrects it.
+terminal=SiteReader(cold,[])
+assert reader(terminal,(target,),capture=NS(t_monde=deadline+1),cycle=1)==(target,)
+assert cold.export_causal_state()==after_expiry
+assert not terminal.charges and not terminal.events
+assert not cold.reconcile_option_intentions(
+ available_signatures=frozenset({signature}),
+ world_step=deadline+1,namespace="lived_site_return:")
+assert cold.export_causal_state()==after_expiry
+print("I1_328_LIVED_SITE_INTERRUPTION_CONTRACT_OK")
 print("I1_328_LIVED_SITE_PROSPECT_CONTRACT_OK")
 print("I1_328_SIGNED_NEED_DEPENDENT_CONTEXT_OK")
 print("I1_328_GENERIC_OWNER_OK")
