@@ -290,10 +290,30 @@ if noise_free:
             "actual Competition arithmetic differs from observed Stage8 context")
         item["same_cycle_marginal"] = item["after"] - without_this_cycle
 assert context_only, "no authentically witnessed context-only evaluation"
+# Prospection is formed only from an actually paid evaluation in the
+# individual's own canonical 12-step M11 life, never an injected choice.
+prospects = [event for event in all_events
+             if event.get("kind") == "i1_lived_site_option_prospected"]
+assert prospects, "lived-site prospective memory remains dormant at natural birth"
+for prospect in prospects:
+    key = (prospect["t_monde"], prospect["cycle"],
+           prospect["data"]["option_ref"])
+    assert key in paid_stage8 and key in competition_evidence
+    assessment = paid_stage8[key]
+    trace = competition_evidence[key]
+    assert assessment["status"] == "evaluated"
+    assert trace["evidence"] is not None and trace["evidence"] > 0
+    assert trace["accumulator_after"] > trace["accumulator_before"]
+    assert prospect["data"]["motor_admission_inherited"] is False
+    assert prospect["data"]["action_applied"] is False
+    assert prospect["data"]["semantic_ref"].startswith("lived_site_return:")
+# First-person Memory state and its prospective identities are included in
+# the already asserted identical continuous/cold owner images and WAL.
 context_attribution = {
     "authentic_observed_site_witnesses": len(owner_events),
     "joined_paid_evaluations": len(paid_stage8),
     "context_only_evaluations": len(context_only),
+    "naturally_formed_lived_site_prospects": len(prospects),
     "mixed_or_other_value_evaluations": len(mixed_or_other),
     "context_only_positive": sum(item["evidence"] > 0
                                  for item in context_only),
