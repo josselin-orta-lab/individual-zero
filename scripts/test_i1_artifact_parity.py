@@ -824,7 +824,7 @@ _ISSUE_314_PINNED_BLOBS = {
 # #360: exact reviewed native M11 memory and natural birth code.
 _PROSPECT_361_PINS = {
     "i1/modules/memory.py": ("src/i1/modules/memory.py", "5a7006da7aaa0e21e7316d4b87752dd3177ce25b"),
-    "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py", "3602a32b71179cc9186ec065501c1c9834f4adce"),
+    "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py", "4c05e74ca724789f7360253f9fdc0b3dfaea9519"),
 }
 
 def _approved_prospect_361(root: Path, rel: str) -> bool:
@@ -897,7 +897,7 @@ _SITE_328_PINS = {
     ),
     "i1lab/stage11_runtime.py": (
         "src/i1/runtime/stage11_runtime.py",
-        "7cfeb44d6efabceda3632e641e9569c5d55eb8d0",
+        "24c48fd035fc369b46f13ebfa61390b11efb2df3",
     ),
     "i1/modules/stage11_evaluator.py": (
         "src/i1/modules/stage11_evaluator.py",
@@ -965,7 +965,7 @@ _INTENTION_351_PINS = {
     "i1/modules/competition.py":
         ("src/i1/modules/competition.py", "0cb11b281092ddd5968ca3047f25b508b2d1652a"),
     "i1lab/stage11_runtime.py":
-        ("src/i1/runtime/stage11_runtime.py", "7cfeb44d6efabceda3632e641e9569c5d55eb8d0"),
+        ("src/i1/runtime/stage11_runtime.py", "24c48fd035fc369b46f13ebfa61390b11efb2df3"),
 }
 
 
@@ -996,7 +996,7 @@ _MEMORY_IDENTITY_PINS = {
     "i1/modules/geographic_planning.py":
         ("src/i1/modules/geographic_planning.py", "d83aef41d40682e947f3802d9f67cd785b0bd5b0"),
     "i1lab/stage11_runtime.py":
-        ("src/i1/runtime/stage11_runtime.py", "7cfeb44d6efabceda3632e641e9569c5d55eb8d0"),
+        ("src/i1/runtime/stage11_runtime.py", "24c48fd035fc369b46f13ebfa61390b11efb2df3"),
 }
 
 
