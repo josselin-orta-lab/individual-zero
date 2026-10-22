@@ -572,6 +572,12 @@ class Competition:
             old_option = existing.proposal.option
             semantic_change = (
                 old_option.learning_signature != option.learning_signature
+                or old_option.version != option.version
+                or old_option.type != option.type
+                or old_option.preconditions != option.preconditions
+                or old_option.success_condition != option.success_condition
+                or old_option.failure_condition != option.failure_condition
+                or old_option.invalidation_condition != option.invalidation_condition
                 or old_option.provenance != option.provenance
                 or old_option.motive_ref != option.motive_ref
                 or old_option.goal_ref != option.goal_ref
