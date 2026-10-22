@@ -911,6 +911,11 @@ class Competition:
         if not adjudicated:
             return
         winner_id = None if winner is None else winner.option.id
+        if winner is not None:
+            winner.validate()
+            current = self._registry.get(winner_id)
+            if current is None or current.proposal != winner:
+                raise ValueError("Competition winner must be the registered candidate")
         for option_id, state in self._registry.items():
             if option_id == winner_id:
                 continue
