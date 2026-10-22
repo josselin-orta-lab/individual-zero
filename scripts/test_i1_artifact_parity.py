@@ -901,7 +901,7 @@ def _approved_lived_prospect_427(root: Path, rel: str) -> bool:
         return False
     source, expected = entry
     data = (ROOT / source).read_bytes()
-    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest() == expected
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == expected
 
 
 # Issue #329: exact pinned wake-to-voluntary-sleep source, not a parity waiver.
