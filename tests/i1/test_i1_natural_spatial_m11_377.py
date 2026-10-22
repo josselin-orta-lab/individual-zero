@@ -224,6 +224,22 @@ def audit(events):
     refs_by_step = defaultdict(set)
     for trace in spatial_traces:
         refs_by_step[trace["option_ref"]].add(trace["world_step"])
+    # Classify *observed* opportunities for a persistent candidate, not a
+    # hypothetical uninterrupted accumulator or a fabricated selected route.
+    by_candidate = defaultdict(list)
+    for record in spatial_traces:
+        by_candidate[record["option_ref"]].append(record)
+    exposure = []
+    for records in by_candidate.values():
+        steps = {r["world_step"] for r in records}
+        scored = [r for r in records if r["evidence"] is not None]
+        exposure.append({
+            "evaluations": len(scored),
+            "distinct_steps": len(steps),
+            "positive_evaluations": sum(r["evidence"] > 0 for r in scored),
+            "max_ratio": max((r["after"] / r["threshold"] for r in scored),
+                             default=None),
+        })
     max_evidence = max((r["evidence"] for r in scored_traces), default=None)
     min_evidence = min((r["evidence"] for r in scored_traces), default=None)
     max_accum_ratio = max(
@@ -242,6 +258,19 @@ def audit(events):
         "min_threshold": min((r["threshold"] for r in spatial_traces),default=None),
         "accumulator_reset_or_flat": sum(
             r["after"] <= r["before"] for r in scored_traces),
+        "candidate_exposure": {
+            "maximum_evaluations_per_ref": max(
+                (v["evaluations"] for v in exposure), default=0),
+            "maximum_distinct_physical_steps_per_ref": max(
+                (v["distinct_steps"] for v in exposure), default=0),
+            "refs_with_positive_evidence": sum(
+                v["positive_evaluations"] > 0 for v in exposure),
+            "refs_with_no_paid_evaluation": sum(
+                v["evaluations"] == 0 for v in exposure),
+            "closest_threshold_shortfall": min(
+                (max(0.0, r["threshold"] - r["after"])
+                 for r in scored_traces if not r["crossed"]), default=None),
+        },
         "candidate_refs": len(refs_by_step),
         "candidate_refs_seen_across_multiple_world_steps": sum(
             len(steps)>1 for steps in refs_by_step.values()),
