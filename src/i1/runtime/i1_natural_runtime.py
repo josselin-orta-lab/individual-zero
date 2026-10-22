@@ -413,6 +413,8 @@ class I1Runtime(I1WaterPrudentRuntime):
             # A paid scan can suspend a spatial prospect when the
             # first-person route is no longer genuinely offered.
             if (self.memory.spatial_option_prospect_count
+                and getattr(self, "_stage11_place_search_completed_cycle", None)
+                    == (capture.t_monde, cycle)
                 and getattr(self, "_i1_spatial_reconciled_cycle", None)
                     != (capture.t_monde, cycle)):
                 # Fallback for a skipped/empty geographic producer. Never

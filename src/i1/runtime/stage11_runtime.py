@@ -232,6 +232,7 @@ class Stage11Runtime(Stage9Runtime):
         self._stage11_place_proposals_this_cycle = ()
         self._stage11_lived_proposals_this_cycle = ()
         self._stage11_frozen_lived_targets = ()
+        self._stage11_place_search_completed_cycle = None
         self._stage11_frozen_place_targets = ()
 
         self.modulation = GlobalModulation(config.modulation)
@@ -462,6 +463,8 @@ class Stage11Runtime(Stage9Runtime):
         return targets
 
     def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
+        # Reset this ephemeral search witness at every deliberation.
+        self._stage11_place_search_completed_cycle = None
         # Frozen input precedes all producers of phase 1 (INV-08).
         frozen = self.causal_model.export_causal_state()
         # Read-only frontier inputs are frozen BEFORE phase-1. No Planning
@@ -880,6 +883,8 @@ class Stage11Runtime(Stage9Runtime):
                     ), current_world_step=capture.t_monde,
                     max_candidates=self.exploration.geographic.config.max_place_candidates,
                 )
+                # Only a completed, paid search can provide negative availability.
+                self._stage11_place_search_completed_cycle = (capture.t_monde, cycle)
                 self._write(kind="i1_place_memory_recalled", cycle=cycle,
                             data={"candidates": [t.ref for t in frozen_place_targets],
                                   "sites": len(remembered),
