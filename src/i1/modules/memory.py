@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from heapq import nsmallest
 from math import isfinite
+from re import fullmatch
 from typing import Iterator, Mapping, Sequence
 
 from i0.contracts import Contribution, GoalProposal, STVersion
@@ -89,6 +90,51 @@ class Episode:
         }
 
 
+
+def _authentic_considered_option_source(
+    signature: str, source_option_ref: str, step: int,
+) -> bool:
+    """Validate a prior considered option's bounded, first-person identity.
+
+    The runtime still proves actual Stage8 evaluation and UC expenditure.
+    This structural check prevents restored Memory images from changing the
+    remembered entity/route or masquerading as an applied motor command.
+    """
+    if (type(signature) is not str or not signature
+        or len(signature) > 256
+        or type(source_option_ref) is not str
+        or len(source_option_ref) > 1024
+        or type(step) is not int or step < 1):
+        return False
+    if signature.startswith("i1:affordance:"):
+        return source_option_ref == (
+            f"option:i1:local:t{step}:"
+            + signature.removeprefix("i1:affordance:")
+        )
+    if not signature.startswith("memory_place_return:"):
+        return False
+    entity_id = signature.removeprefix("memory_place_return:")
+    if not entity_id:
+        return False
+    coord = r"(-?(?:0|[1-9][0-9]*))"
+    found = fullmatch(
+        r"option:place-memory:place:(.+):at:" + coord + ":" + coord
+        + r":from:" + coord + ":" + coord
+        + r":via:" + coord + ":" + coord,
+        source_option_ref,
+    )
+    if found is None or found.group(1) != entity_id:
+        return False
+    numbers = tuple(int(x) for x in found.groups()[1:])
+    if (abs(numbers[2] - numbers[4]) +
+        abs(numbers[3] - numbers[5]) != 1):
+        return False
+    return source_option_ref == (
+        f"option:place-memory:place:{entity_id}:at:{numbers[0]}:{numbers[1]}"
+        f":from:{numbers[2]}:{numbers[3]}:via:{numbers[4]}:{numbers[5]}"
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class Intention:
     id: str
@@ -139,18 +185,18 @@ class Intention:
                     extras.add("observations")
             if (self.goal_type != "option_reconsideration"
                 or type(self.target) is not str
-                or not self.target.startswith("i1:affordance:")
                 or len(self.target) > 256
                 or self.id != "intention:i1:option:" + self.target
                 or not isinstance(witnessed, Mapping)
                 or set(witnessed) != {phase_key, "source_option_ref"} | extras
                 or type(witnessed[phase_key]) is not int
                 or witnessed[phase_key] < 1
-                or type(witnessed["source_option_ref"]) is not str
-                or witnessed["source_option_ref"] != (
-                    f"option:i1:local:t{witnessed[phase_key]}:"
-                    + self.target.removeprefix("i1:affordance:")
+                or not _authentic_considered_option_source(
+                    self.target, witnessed["source_option_ref"],
+                    witnessed[phase_key],
                 )
+                or (phase_key == "applied_step"
+                    and not self.target.startswith("i1:affordance:"))
                 or self.deadline_step is None
                 or not witnessed[phase_key] < self.deadline_step
                 or self.deadline_step - witnessed[phase_key] > 64
@@ -326,23 +372,19 @@ class EpisodicMemory:
         self, *, signature: str, source_option_ref: str,
         considered_step: int, cost_uc: int,
     ) -> bool:
-        """Keep a genuinely evaluated option BEFORE any physical action.
+        """Remember a genuine local or spatial option BEFORE physical action.
 
-        Caller owns Stage8/Competition proof and a prior UC charge. This
-        records only the semantic signature, never a command, reward, goal,
-        admission or belief that the physical effect already happened.
+        Caller verifies Stage8 evidence, personal spatial ownership and real
+        UC payment. Memory retains a semantic prospect, not a command,
+        reward, goal, observed arrival or motor authorization.
         """
         if not self._atomic_world_step_length_boundary:
             return False
         if (type(considered_step) is not int or considered_step < 1
             or type(cost_uc) is not int or cost_uc < 1
             or type(signature) is not str
-            or not signature.startswith("i1:affordance:")
-            or len(signature) > 256
-            or type(source_option_ref) is not str
-            or source_option_ref != (
-                f"option:i1:local:t{considered_step}:"
-                + signature.removeprefix("i1:affordance:")
+            or not _authentic_considered_option_source(
+                signature, source_option_ref, considered_step,
             )):
             raise ValueError("invalid personally considered option provenance")
         key = "intention:i1:option:" + signature
@@ -389,6 +431,7 @@ class EpisodicMemory:
 
     def reconcile_option_intentions(
         self, *, available_signatures: frozenset[str], world_step: int,
+        namespace: str = "i1:affordance:",
     ) -> tuple[str, ...]:
         """Suspend absent prospects; reconsider only freshly afforded ones.
 
@@ -397,8 +440,9 @@ class EpisodicMemory:
         Expiry makes the prospective commitment terminal, even after M11.
         """
         if (type(world_step) is not int or world_step < 1
+            or namespace not in ("i1:affordance:", "memory_place_return:")
             or type(available_signatures) is not frozenset
-            or any(type(ref) is not str or not ref.startswith("i1:affordance:")
+            or any(type(ref) is not str or not ref.startswith(namespace)
                    for ref in available_signatures)
             or len(available_signatures) > 128):
             raise ValueError("invalid first-person availability set")
@@ -406,7 +450,8 @@ class EpisodicMemory:
         # Construct a new immutable mapping, then publish atomically.
         updated = dict(self._intentions)
         for ref, record in self._intentions.items():
-            if record.trigger_type != "option":
+            if (record.trigger_type != "option"
+                or not record.target.startswith(namespace)):
                 continue
             if record.state in ("done", "abandoned", "awaiting_observation"):
                 continue
@@ -428,6 +473,15 @@ class EpisodicMemory:
         """Metadata only; no intentions or causal values exported."""
         return sum(1 for x in self._intentions.values()
                    if x.trigger_type == "option"
+                   and x.target.startswith("i1:affordance:")
+                   and x.state in ("pending", "suspended"))
+
+    @property
+    def spatial_option_prospect_count(self) -> int:
+        """Only owner metadata; the caller pays UC for any actual recall."""
+        return sum(1 for x in self._intentions.values()
+                   if x.trigger_type == "option"
+                   and x.target.startswith("memory_place_return:")
                    and x.state in ("pending", "suspended"))
 
     def remember_applied_option(

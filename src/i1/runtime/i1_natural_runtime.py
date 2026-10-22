@@ -363,6 +363,21 @@ class I1Runtime(I1WaterPrudentRuntime):
             # A new deliberation has no inherited paid admission/prospect.
             self._i1_option_intention_paid = None
             normal_plan(ctx)
+            # A paid scan can suspend a spatial prospect when the
+            # first-person route is no longer genuinely offered.
+            if self.memory.spatial_option_prospect_count:
+                available = frozenset(
+                    f"memory_place_return:{target.entity_id}"
+                    for target in self._stage11_frozen_place_targets
+                )
+                if self._charge(
+                    module="planning", operation=_OPTION_INTENTION_OPERATION,
+                ):
+                    self.memory.reconcile_option_intentions(
+                        available_signatures=available,
+                        world_step=capture.t_monde,
+                        namespace="memory_place_return:",
+                    )
             self._i1_local_proposal_this_cycle = None
             if self._cycle_degraded or st_before_cycle is None:
                 return
@@ -463,6 +478,53 @@ class I1Runtime(I1WaterPrudentRuntime):
                                 "action_applied": False,
                             },
                         )
+            # Spatial prospect: the same paid Memory owner, but no command
+            # admission is required or inherited. This runs after Stage8.
+            geo = self.exploration.geographic
+            results = self._cycle_result
+            if (geo is not None and results is not None
+                and not self._cycle_degraded):
+                evaluated = {
+                    row.option_ref: row for row in results.evaluations
+                    if row.status == "evaluated"
+                    and row.t_monde == capture.t_monde
+                    and row.cycle == cycle
+                }
+                for target in geo.place_offered:
+                    ref = f"option:place-memory:{target.ref}"
+                    row = evaluated.get(ref)
+                    trace = next((
+                        tr for tr in results.traces if tr.option_ref == ref
+                    ), None)
+                    if (row is None or trace is None
+                        or trace.evidence is None or trace.evidence <= 0
+                        or trace.accumulator_after <= trace.accumulator_before):
+                        continue
+                    proposal = self.competition.proposal_for(ref)
+                    if (proposal is None
+                        or proposal.option.learning_signature !=
+                           f"memory_place_return:{target.entity_id}"):
+                        continue
+                    if not self._charge(
+                        module="planning", operation=_OPTION_INTENTION_OPERATION,
+                    ):
+                        break
+                    created = self.memory.remember_considered_option(
+                        signature=proposal.option.learning_signature,
+                        source_option_ref=ref,
+                        considered_step=capture.t_monde,
+                        cost_uc=_OPTION_INTENTION_COST_UC,
+                    )
+                    if created:
+                        self._write(
+                            kind="i1_spatial_option_prospected", cycle=cycle,
+                            data={"option_ref": ref,
+                                  "semantic_ref": proposal.option.learning_signature,
+                                  "stage8_evaluated": True,
+                                  "motor_admission_inherited": False,
+                                  "action_applied": False},
+                        )
+                    break
             original_control(ctx)
 
         hooks[1]["planning"] = plan_independent_local

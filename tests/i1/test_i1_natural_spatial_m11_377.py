@@ -325,6 +325,20 @@ with TemporaryDirectory(prefix="i1-377-ledger-") as home:
     assert not final_audit.pending_intent
     assert final_audit.journal_head == control_receipts[-1][3]
 
+    # The earliest spatial cognition gap: a Stage8-evaluated route may be
+    # remembered as a prospective option without ever winning a movement.
+    # No seed search, synthetic spatial record, or Q modification.
+    prospects = [e for e in events
+                 if e.get("kind") == "i1_spatial_option_prospected"]
+    assert prospects, "canonical Stage8 route did not reach prospective Memory"
+    assert any(row["target"].startswith("memory_place_return:")
+               and "considered_step" in row["trigger_value"]
+               for row in final_continuous["memory"]["intentions"]), (
+        "genuinely paid spatial prospect never survived M11"
+    )
+    assert all(e["data"]["stage8_evaluated"] is True
+               and e["data"]["motor_admission_inherited"] is False
+               and e["data"]["action_applied"] is False for e in prospects)
     report = audit(events)
     report["personally_learned_sources"] = learned_sources
     print("I1_377_CANONICAL_M11_SPATIAL_DIAGNOSTIC "
