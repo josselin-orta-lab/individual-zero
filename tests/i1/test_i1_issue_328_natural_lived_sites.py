@@ -176,6 +176,44 @@ evaluation._exploration=SimpleNamespace(geographic=unwitnessed)
 v_unseen,ref_unseen=evaluation._experienced_site_context(
     target=target,body=hungry_and_thirsty,t_monde=3)
 assert v_unseen==0 and ref_unseen is None
+# A genuinely sourced lived-site route may be retained as a cognitive
+# prospect, but must not create motor authority or learned reward.
+from i1.modules.memory import Memory, MemoryConfig
+from i1lab.stage11_reference_fixture import build_stage11_reference_runtime
+memory=build_stage11_reference_runtime(autonomous_mortal=True).memory
+signature="lived_site_return:3:4"
+offered="option:lived-site:lived-site:3:4:observed-t2:from:5:4:via:4:4"
+assert memory.remember_considered_option(
+ signature=signature,source_option_ref=offered,considered_step=5,cost_uc=1)
+assert memory.lived_site_option_prospect_count==1
+assert memory.recalled_applied_option(signature=signature,world_step=6)
+snapshot=memory.export_causal_state()
+restored=type(memory)(memory._config,atomic_world_step_length_boundary=True)
+restored.restore_causal_state(snapshot)
+assert restored.export_causal_state()==snapshot
+assert restored.reconcile_option_intentions(
+ available_signatures=frozenset(),world_step=6,namespace="lived_site_return:")
+assert not restored.recalled_applied_option(signature=signature,world_step=6)
+assert restored.reconcile_option_intentions(
+ available_signatures=frozenset({signature}),world_step=7,
+ namespace="lived_site_return:")
+assert restored.recalled_applied_option(signature=signature,world_step=7)
+for forged in (
+ "option:lived-site:lived-site:3:4:observed-t8:from:5:4:via:4:4",
+ "option:lived-site:lived-site:4:3:observed-t2:from:5:4:via:4:4",
+ "option:lived-site:lived-site:3:4:observed-t2:from:5:4:via:3:4",
+ "option:lived-site:lived-site:3:4:observed-t2:from:5:4:via:2:4",
+):
+ try:
+  memory.remember_considered_option(
+   signature="lived_site_return:3:4",
+   source_option_ref=forged,considered_step=5,cost_uc=1)
+ except ValueError:
+  pass
+ else:
+  raise AssertionError("forged prospective spatial source accepted")
+assert memory.export_causal_state()==snapshot
+print("I1_328_LIVED_SITE_PROSPECT_CONTRACT_OK")
 print("I1_328_SIGNED_NEED_DEPENDENT_CONTEXT_OK")
 print("I1_328_GENERIC_OWNER_OK")
 '''))
