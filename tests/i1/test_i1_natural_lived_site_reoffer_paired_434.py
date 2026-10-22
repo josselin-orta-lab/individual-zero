@@ -62,7 +62,7 @@ def experiment(food_gain, db_path):
         raw_params, world_config=physics,
         diagnostic_sample_cost_uc=1, module_occupancy_cost_uc=1,
     )
-    receipts, bodies, boundaries = [], [], []
+    receipts, bodies, boundaries, td_snapshots = [], [], [], []
     with birth_i1_m11(db_path=str(db_path), life_id=life_id, **params) as actor:
         rt = actor._runtime
         first_local = rt.world.capture_local(t_monde=1).as_dict()
@@ -98,6 +98,21 @@ def experiment(food_gain, db_path):
                     if entry["proposal"]["option"]["id"].startswith(
                         "option:lived-site:")
                 },
+            })
+            # Read only the M11-committed Q owner. Never query a fabricated
+            # evaluation state or promote a physical effect to motor evidence.
+            td_image = rt.q_active.export_causal_state()
+            td_snapshots.append({
+                "step": receipt.world_step,
+                "weights": {name: tuple(vector) for name, vector
+                            in td_image["weights"].items()},
+                "update_counts": dict(td_image["update_counts"]),
+                "pending_signature": (
+                    None if td_image["pending"] is None else
+                    td_image["pending"]["signature"]),
+                "pending_reward_count": (
+                    0 if td_image["pending"] is None else
+                    len(td_image["pending"]["rewards"])),
             })
             if receipt.status == "dead":
                 break
@@ -161,6 +176,38 @@ def experiment(food_gain, db_path):
             "learned": result["learned_value_status"],
             "simulated": result["simulated_value_status"],
         })
+    # The TD event is emitted only after a real next cognitive decision.
+    # Equal update counts do not mean equal learned values; inspect both.
+    td_events = []
+    paid_stage8 = {}
+    for e in events:
+        d = e.get("data", {})
+        if e.get("kind") == "td_update_published":
+            assert d["segment_length"] >= 1
+            td_events.append({
+                "decision_step": e["t_monde"],
+                "previous_signature": d["previous_signature"],
+                "next_signature": d["next_signature"],
+                "segment_length": d["segment_length"],
+                "return_g": float(d["return_g"]),
+                "delta": float(d["delta"]),
+                "updated_signatures": tuple(d["updated_signatures"]),
+            })
+        elif e.get("kind") == "stage8_option_evaluation":
+            key = (e["t_monde"], e["cycle"], d["option_ref"])
+            assert key not in paid_stage8
+            paid_stage8[key] = {
+                "signature": d["learning_signature"],
+                "status": d["status"],
+                "learned_status": d["learned_value_status"],
+                "learned_value": d["learned_value"],
+                "evidence": d["evidence"],
+            }
+    assert td_events, "no TD publication despite ordinary natural decisions"
+    for earlier, later in zip(td_snapshots, td_snapshots[1:]):
+        for signature, count in earlier["update_counts"].items():
+            assert later["update_counts"].get(signature, 0) >= count, (
+                "TD owner lost a real update across M11 custody")
     local_effects = state["lived_site_effects"]
     route_offers = [e for e in events
                     if e.get("kind") == "i1_lived_site_option_proposed"]
@@ -325,6 +372,9 @@ def experiment(food_gain, db_path):
                 "option:lived-site:")
             for e in events),
         "td_update_counts": td_updates,
+        "td_snapshots": td_snapshots,
+        "td_events": td_events,
+        "paid_stage8": paid_stage8,
         "ledger_status": ledger.status,
         "m11_generation": ledger.generation,
         "head_verified": True,
@@ -387,6 +437,100 @@ future_motor_divergence = (
 )
 # A difference in bodily effect is not automatically a causal attribution to
 # the action by I1, a preference for better food, or a return to a known site.
+
+# Report the actual TD response to the genuinely ingested food. The Q owner
+# is inspected at real postcommit world boundaries, not scored on a fictional
+# later input. Unoffered follow-up options remain NOT_EXPOSED.
+def divergent_owner_steps(a, b):
+    differences = []
+    assert len(a) == len(b)
+    for left, right in zip(a, b):
+        assert left["step"] == right["step"]
+        weights_a, weights_b = left["weights"], right["weights"]
+        names = set(weights_a) | set(weights_b)
+        mismatched = []
+        for name in names:
+            va, vb = weights_a.get(name), weights_b.get(name)
+            if va is None or vb is None:
+                mismatched.append(name)
+                continue
+            assert len(va) == len(vb)
+            if any(abs(x - y) > 1e-12 for x, y in zip(va, vb)):
+                mismatched.append(name)
+        if mismatched:
+            differences.append({
+                "step": left["step"],
+                "different_learned_signatures": len(mismatched),
+                "manger_signature_different": any(
+                    ":manger:" in sig for sig in mismatched),
+            })
+    return differences
+
+td_owner_differences = divergent_owner_steps(
+    neutral["td_snapshots"], nourishing["td_snapshots"])
+assert not any(
+    row["step"] < first for row in td_owner_differences
+) if authenticated_exposure else True, (
+    "TD owner changed before experience of hidden nutritional difference")
+def td_by_decision(row):
+    return {(u["decision_step"], u["previous_signature"],
+             u["next_signature"], u["segment_length"]): u
+            for u in row["td_events"]}
+normal_td, nutritious_td = (
+    td_by_decision(neutral), td_by_decision(nourishing))
+common_td = []
+for key in sorted(set(normal_td) & set(nutritious_td)):
+    left, right = normal_td[key], nutritious_td[key]
+    common_td.append({
+        "decision_step": key[0],
+        "previous_signature": key[1],
+        "reward_return_delta": right["return_g"] - left["return_g"],
+        "td_delta_difference": right["delta"] - left["delta"],
+    })
+assert all(isfinite(value) for row in common_td
+           for value in (row["reward_return_delta"],
+                         row["td_delta_difference"]))
+def stage8_learned(row):
+    return {(t, cycle, result["signature"]): result
+            for (t, cycle, ref), result in row["paid_stage8"].items()
+            if result["status"] == "evaluated"
+            and result["learned_status"] == "learned"
+            and result["learned_value"] is not None}
+normal_reads, nutritious_reads = (
+    stage8_learned(neutral), stage8_learned(nourishing))
+paired_learned_reads = []
+for key in sorted(set(normal_reads) & set(nutritious_reads)):
+    x, y = normal_reads[key], nutritious_reads[key]
+    paired_learned_reads.append({
+        "step": key[0], "cycle": key[1], "signature": key[2],
+        "learned_q_delta": y["learned_value"] - x["learned_value"],
+        "evidence_delta": y["evidence"] - x["evidence"],
+    })
+# Only truly paid readbacks count. The same options may have had different
+# learned weights without ever being proposed in subsequent lived time.
+td_custody = {
+    "actual_td_update_count_by_arm": (
+        len(neutral["td_events"]), len(nourishing["td_events"])),
+    "common_td_published_updates": len(common_td),
+    "paired_reward_return_shift": any(
+        abs(x["reward_return_delta"]) > 1e-12 for x in common_td
+        if (not authenticated_exposure or
+            x["decision_step"] > first)),
+    "first_td_weight_divergence_step": (
+        None if not td_owner_differences else
+        td_owner_differences[0]["step"]),
+    "different_q_signatures_at_boundaries": td_owner_differences[:12],
+    "common_paid_learned_readbacks": len(paired_learned_reads),
+    "paid_q_readback_shift": any(
+        abs(x["learned_q_delta"]) > 1e-12 for x in paired_learned_reads),
+    "paid_readbacks_first": paired_learned_reads[:8],
+    "first_common_td_updates": common_td[:8],
+    "physical_commands_unchanged": (
+        neutral["physical_commands"] == nourishing["physical_commands"]),
+    "learned_action_goal_outcome": "NOT_ESTABLISHED",
+    "motor_learning_effect": "NOT_ESTABLISHED",
+}
+
 report = {
     "preset": "dry-valley",
     "preset_sha256": preset_digest,
@@ -396,9 +540,11 @@ report = {
     "authentic_same_step_ingestion": authenticated_exposure,
     "first_ingestion_step": first if authenticated_exposure else None,
     "neutral": {k:v for k,v in neutral.items()
-                if k not in ("first_local", "steps", "contextual_values")},
+                if k not in ("first_local", "steps", "contextual_values",
+                             "td_snapshots", "td_events", "paid_stage8")},
     "nourishing": {k:v for k,v in nourishing.items()
-                  if k not in ("first_local", "steps", "contextual_values")},
+                  if k not in ("first_local", "steps", "contextual_values",
+                               "td_snapshots", "td_events", "paid_stage8")},
     "common_postexperience_context_evaluations": len(paired_contexts),
     "paired_context_deltas": paired_contexts[:12],
     "context_shift_observed": any(
@@ -406,6 +552,7 @@ report = {
         for item in paired_contexts if (
             item["both_unlearned"] and item["both_unsimulated"])),
     "postexperience_motor_trajectories_differ": future_motor_divergence,
+    "paired_td_custody": td_custody,
     "paired_candidate_identities_match": (
         [r["ref"] for r in neutral["observed_candidate_windows"]["windows"]]
         == [r["ref"] for r in
