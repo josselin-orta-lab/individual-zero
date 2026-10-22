@@ -171,12 +171,9 @@ def learning_sources(rt, events):
     }
 
 def learned_readback(events, boundaries):
-    """Audit genuinely learned Stage8 values entering paid Competition.
-
-    This reads a naturally born individual's immutable causal WAL and the
-    real TD owner after each physically committed step. A learned Q read is
-    not a demonstration that the option won or that its outcome was useful.
-    """
+    # Audit learned Stage8 readbacks without mutating any causal owner.
+    # This reads the authentic WAL and real TD owner after each physical step.
+    # A learned Q read alone does not demonstrate selection or usefulness.
     evaluation = {}
     for event in events:
         if event.get("kind") != "stage8_option_evaluation":
