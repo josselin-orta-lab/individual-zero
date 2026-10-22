@@ -343,7 +343,7 @@ with TemporaryDirectory(prefix="i1-377-ledger-") as home:
     # This asserts the *wired reader*, not yet spontaneous future selection.
     from i1lab.i1_natural_runtime import I1Runtime
     import inspect
-    reader = inspect.getsource(I1Runtime._order_personally_remembered_places)
+    reader = inspect.getsource(I1Runtime._order_considered_spatial_targets)
     assert "self.memory.recalled_applied_option(" in reader
     assert "self._charge(" in reader
     assert '"motor_admission_inherited": False' in reader
