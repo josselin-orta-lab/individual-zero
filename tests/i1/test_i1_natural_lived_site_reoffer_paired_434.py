@@ -245,13 +245,24 @@ def experiment(food_gain, db_path):
     for t, (ref, primitive) in admissions.items():
         prior = [(cycle, rows) for (step, cycle), rows in frames.items()
                  if step == t]
-        assert prior
+        if not prior:
+            # Physical reflex pathway is permitted to bypass cognitive
+            # deliberation. It is a real motor command, not a Competition
+            # crossing or deliberative fallback.
+            decisions[t] = {
+                "option_ref": ref, "primitive": primitive,
+                "admitted_crossed": False,
+                "fallback_consistent": False,
+                "no_competition_cycle": True,
+            }
+            continue
         final_cycle, rows = max(prior, key=lambda x: x[0])
         decisions[t] = {
             "option_ref": ref, "primitive": primitive,
             "admitted_crossed": bool(ref in rows and rows[ref]["crossed"]),
             "fallback_consistent": (final_cycle == rt.competition._config.c_max
                                    and not any(x["crossed"] for x in rows.values())),
+            "no_competition_cycle": False,
         }
     assert td_events, "no TD publication despite ordinary natural decisions"
     for earlier, later in zip(td_snapshots, td_snapshots[1:]):
@@ -649,6 +660,10 @@ adjudication = {
         nearest(nourishing["paid_frames"][k]) for k in frames),
     "admitted_option_id_changed_after_exposure": sum(
         a[t]["option_ref"] != b[t]["option_ref"] for t in a if t > first),
+    "neutral_reflex_or_no_competition_steps": sum(
+        d["no_competition_cycle"] for d in a.values()),
+    "nourishing_reflex_or_no_competition_steps": sum(
+        d["no_competition_cycle"] for d in b.values()),
     "neutral_adjudicated_admissions": sum(
         d["admitted_crossed"] for d in a.values()),
     "nourishing_adjudicated_admissions": sum(
