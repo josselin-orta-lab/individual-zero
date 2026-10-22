@@ -462,9 +462,13 @@ class Stage11Runtime(Stage9Runtime):
     def _order_considered_spatial_targets(self, targets, *, capture, cycle):
         return targets
 
+    def _order_considered_lived_targets(self, targets, *, capture, cycle):
+        return targets
+
     def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
         # Reset this ephemeral search witness at every deliberation.
         self._stage11_place_search_completed_cycle = None
+        self._stage11_lived_search_completed_cycle = None
         # Frozen input precedes all producers of phase 1 (INV-08).
         frozen = self.causal_model.export_causal_state()
         # Read-only frontier inputs are frozen BEFORE phase-1. No Planning
@@ -970,9 +974,14 @@ class Stage11Runtime(Stage9Runtime):
                     current_world_step=capture.t_monde,
                     max_candidates=self.exploration.geographic.config.max_place_candidates,
                 )
+                self._stage11_lived_search_completed_cycle = (
+                    capture.t_monde, cycle)
                 self._write(kind="i1_lived_site_recalled", cycle=cycle,
                             data={"candidates": [t.ref for t in candidates],
                                   "source": "prior_paid_first_person_site_effects"})
+                candidates = self._order_considered_lived_targets(
+                    candidates, capture=capture, cycle=cycle,
+                )
                 for target in candidates:
                     if not self._charge(
                         module="planning", operation="geographic_admissibility_preflight"
