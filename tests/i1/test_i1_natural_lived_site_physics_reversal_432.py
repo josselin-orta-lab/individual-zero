@@ -48,11 +48,13 @@ def experiment(food_gain, db_path):
     baseline = raw_params["world_config"]
     berry = dict(baseline.berry_effects)
     berry["berry_a"] = replace(berry["berry_a"], food_gain=float(food_gain))
-    physics = replace(
-        baseline,
-        version=baseline.version + "+i1-432-hidden-food-" + str(food_gain),
-        berry_effects=berry,
-    )
+    # Hold physics identity and every other rule fixed. Only the actual
+    # nutrition of berry_a changes. The previous probe also changed version,
+    # which is an unnecessary second treatment and could confound results.
+    physics = replace(baseline, berry_effects=berry)
+    assert physics.version == baseline.version
+    assert replace(physics, berry_effects=baseline.berry_effects) == baseline, (
+        "non-nutritional world physics changed between study arms")
     physics.validate()
     params = dict(
         raw_params, world_config=physics,
@@ -148,6 +150,8 @@ def experiment(food_gain, db_path):
                  if e.get("kind") == "i1_lived_site_effect_observed"]
     return {
         "food_gain": food_gain,
+        "world_physics_version": physics.version,
+        "only_food_gain_intervened": True,
         "first_local": first_local,
         "steps": bodies,
         "physical_commands": [applied[t] for t in sorted(applied)],
@@ -172,6 +176,9 @@ with TemporaryDirectory(prefix="i1-432-m11-") as directory:
 
 assert neutral["first_local"] == nourishing["first_local"], (
     "hidden food assignment leaked into a first-person birth capture")
+assert neutral["world_physics_version"] == nourishing["world_physics_version"]
+assert neutral["only_food_gain_intervened"] and nourishing[
+    "only_food_gain_intervened"]
 assert neutral["m11_generation"] and nourishing["m11_generation"]
 first = neutral["first_manger_step"]
 other = nourishing["first_manger_step"]
@@ -221,6 +228,7 @@ report = {
     "preset": "dry-valley",
     "preset_sha256": preset_digest,
     "physical_intervention": "berry_a_food_gain_only",
+    "identical_physics_version": True,
     "same_first_person_birth_perception": True,
     "authentic_same_step_ingestion": authenticated_exposure,
     "first_ingestion_step": first if authenticated_exposure else None,
