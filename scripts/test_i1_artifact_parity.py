@@ -823,7 +823,7 @@ _ISSUE_314_PINNED_BLOBS = {
 
 # #360: exact reviewed native M11 memory and natural birth code.
 _PROSPECT_361_PINS = {
-    "i1/modules/memory.py": ("src/i1/modules/memory.py", "5a7006da7aaa0e21e7316d4b87752dd3177ce25b"),
+    "i1/modules/memory.py": ("src/i1/modules/memory.py", "c62865986b7ecd15f52f33c84c27a7c84cde691b"),
     "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py", "d630c5805d6324da6a094cc96c72ceda424bcf1a"),
 }
 
@@ -872,7 +872,7 @@ def _approved_memory_359(root: Path, rel: str) -> bool:
 # Issue #329: exact pinned wake-to-voluntary-sleep source, not a parity waiver.
 _WAKE_329_PINS = {"i1lab/stage10_runtime.py": (
     "src/i1/runtime/stage10_runtime.py",
-    "b5057aed857840b3c787a70152188470d906e7fe",
+    "c35161d45a9329f30ddeeac5048634df28862d2c",
 )}
 
 

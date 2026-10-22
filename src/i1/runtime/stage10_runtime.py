@@ -853,6 +853,14 @@ class Stage10Runtime(Stage9Runtime):
             self._write(kind="i1_place_memory_intention_sleep_expired",
                         data={"world_step": t, "spatial_confirmation": False,
                               "motor_admission_inherited": False})
+        # Memory's prospective options also age during reduced sleep.
+        # This transition supplies no affordance, observation, or wake right.
+        expired_prospects = self.memory.expire_option_intentions(world_step=t)
+        if expired_prospects:
+            self._write(kind="i1_prospective_memory_sleep_expired",
+                        data={"world_step": t, "expired_count": len(expired_prospects),
+                              "full_cognitive_perception": False,
+                              "motor_admission_inherited": False})
         if self.sleep_session.open_world_step(t) != "sleeping":
             raise ValueError("unadmitted sleep entry")
         if before == "awake":

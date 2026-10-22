@@ -468,6 +468,29 @@ class EpisodicMemory:
         self._intentions = updated
         return tuple(changed)
 
+    def expire_option_intentions(self, *, world_step: int) -> tuple[str, ...]:
+        """Chronological expiry without an invented Perception or motor event.
+
+        Reduced sleep has no fresh local affordance or spatial observation.
+        It can only end overdue prospective availability, not confirm or
+        suspend an option on perceptual grounds. Pending applied-action
+        followups remain awaiting real next-capture resolution.
+        """
+        if type(world_step) is not int or world_step < 1:
+            raise ValueError("invalid prospective expiration clock")
+        changed = {}
+        for ref, record in self._intentions.items():
+            if (record.trigger_type == "option"
+                and record.state in ("pending", "suspended")
+                and record.deadline_step is not None
+                and world_step > record.deadline_step):
+                updated = replace(record, state="abandoned")
+                updated.validate()
+                changed[ref] = updated
+        if changed:
+            self._intentions = {**self._intentions, **changed}
+        return tuple(sorted(changed))
+
     @property
     def applied_option_intention_count(self) -> int:
         """Metadata only; no intentions or causal values exported."""
