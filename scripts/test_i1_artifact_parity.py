@@ -956,7 +956,7 @@ _COMPETITION_FALLBACK_PINS = {
     "i1/modules/competition.py":
         ("src/i1/modules/competition.py", "ca1532e1875cc963725afb3b814406b86cb4485c"),
     "i1lab/stage4_runtime.py":
-        ("src/i1/runtime/stage4_runtime.py", "80a7504009205f3481f936251cddcaa2e2df8393"),
+        ("src/i1/runtime/stage4_runtime.py", "29e20ec17bc35def9f16b490d9f45bff2641f1de"),
 }
 
 
