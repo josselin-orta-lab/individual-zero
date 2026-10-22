@@ -90,17 +90,34 @@ def verify_intention(rt):
         for e in events
     ), "spatial intention without step closure"
 
+def owner_boundary(rt):
+    owner = rt.competition.export_causal_state()
+    spatial = {}
+    for row in owner["registry"]:
+        option = row["proposal"]["option"]
+        if option["id"].startswith("option:place-memory:"):
+            spatial[option["id"]] = {
+                "signature": option["learning_signature"],
+                "goal": option["goal_ref"],
+                "expires": option["expires_at_step"],
+                "accumulator": row["accumulator"],
+            }
+    active = rt.goal_manager.active_goal
+    return {"spatial": spatial, "goal": None if active is None else active.id}
+
 def drive(life, count):
     receipts = []
+    boundaries = []
     for _ in range(count):
         receipt = life.run_step()
         assert receipt.status == "active", receipt
         assert receipt.generation == len(receipts) + 1 or receipt.generation > 1
         verify_intention(life._runtime)
+        boundaries.append(owner_boundary(life._runtime))
         receipts.append((receipt.generation, receipt.world_step,
                          receipt.journal_count, receipt.journal_head,
                          receipt.status, receipt.outcome))
-    return receipts
+    return receipts, boundaries
 
 def learning_sources(rt, events):
     # Read the actual owner images, not inferred values from event names.
@@ -322,13 +339,13 @@ with TemporaryDirectory(prefix="i1-377-ledger-") as home:
 
     with birth_i1_m11(db_path=uninterrupted, life_id=individual, **params) as life:
         assert life._runtime.exploration.geographic.config.remember_entities
-        control_receipts = drive(life, TOTAL)
+        control_receipts, control_boundaries = drive(life, TOTAL)
         final_continuous = image(life._runtime)
         events = journal(life._runtime)
         learned_sources = learning_sources(life._runtime, events)
 
     with birth_i1_m11(db_path=restored, life_id=individual, **params) as life:
-        before_receipts = drive(life, SPLIT)
+        before_receipts, before_boundaries = drive(life, SPLIT)
         assert before_receipts == control_receipts[:SPLIT]
         before_owners = image(life._runtime)
         pre_head = life._runtime.journal.head_hash
@@ -343,8 +360,9 @@ with TemporaryDirectory(prefix="i1-377-ledger-") as home:
     ) as cold:
         assert image(cold._runtime) == before_owners
         assert cold._runtime.journal.head_hash == pre_head
-        after_receipts = drive(cold, TOTAL - SPLIT)
+        after_receipts, after_boundaries = drive(cold, TOTAL - SPLIT)
         assert before_receipts + after_receipts == control_receipts
+        assert before_boundaries + after_boundaries == control_boundaries
         assert image(cold._runtime) == final_continuous
         assert journal(cold._runtime) == events
 
@@ -377,6 +395,36 @@ with TemporaryDirectory(prefix="i1-377-ledger-") as home:
     assert "self._charge(" in reader
     assert '"motor_admission_inherited": False' in reader
     report = audit(events)
+    transitions = []
+    for step, (prior, later) in enumerate(
+        zip(control_boundaries, control_boundaries[1:]), start=2
+    ):
+        old, new = prior["spatial"], later["spatial"]
+        removed = set(old) - set(new)
+        added = set(new) - set(old)
+        transitions.append({
+            "retained": len(set(old) & set(new)),
+            "lost": len(removed),
+            "new": len(added),
+            "deadline_reached": sum(old[k]["expires"] <= step for k in removed),
+            "goal_mismatch": sum(old[k]["goal"] is not None
+                and old[k]["goal"] != later["goal"] for k in removed),
+            "same_signature_new_motor_id": len({
+                old[k]["signature"] for k in removed
+            } & {new[k]["signature"] for k in added}),
+        })
+    report["owner_candidate_boundaries"] = {
+        "snapshots": len(control_boundaries),
+        "lost_between_steps": sum(t["lost"] for t in transitions),
+        "new_between_steps": sum(t["new"] for t in transitions),
+        "retained_between_steps": sum(t["retained"] for t in transitions),
+        "deadline_reached_indicators": sum(
+            t["deadline_reached"] for t in transitions),
+        "goal_mismatch_indicators": sum(t["goal_mismatch"] for t in transitions),
+        "same_signature_new_motor_id": sum(
+            t["same_signature_new_motor_id"] for t in transitions),
+        "exact_m11_boundary_parity": True,
+    }
     # Negative results matter: a paid reader may never encounter a pending
     # personally remembered site in this particular bounded natural life.
     spatial_reads = [e for e in events
