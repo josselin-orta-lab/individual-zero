@@ -203,6 +203,67 @@ def experiment(food_gain, db_path):
                 "learned_value": d["learned_value"],
                 "evidence": d["evidence"],
             }
+    # Real paid Competition trace, not inferred from any Stage8 value.
+    paid_competition, frames, admissions = {}, {}, {}
+    for event in events:
+        kind, t, d = (event.get("kind"), event["t_monde"],
+                      event.get("data", {}))
+        if kind == "competition_cycle":
+            k = (t, event["cycle"])
+            assert k not in frames
+            rows = {}
+            for tr in d["traces"]:
+                assert tr["option_ref"] not in rows and tr["threshold"] > 0
+                assert all(isfinite(float(tr[x])) for x in (
+                    "accumulator_before", "accumulator_after", "threshold"))
+                if tr["evidence"] is not None:
+                    assert isfinite(float(tr["evidence"]))
+                    assert bool(tr["crossed"]) == (
+                        tr["accumulator_after"] >= tr["threshold"])
+                row = {
+                    "evidence": tr["evidence"],
+                    "ratio": tr["accumulator_after"] / tr["threshold"],
+                    "crossed": bool(tr["crossed"]),
+                }
+                rows[tr["option_ref"]] = row
+                joined = (t, event["cycle"], tr["option_ref"])
+                assert joined not in paid_competition
+                paid_competition[joined] = row
+            frames[k] = rows
+        elif kind == "command_admitted":
+            assert t not in admissions
+            admissions[t] = (d.get("option_ref"), d.get("primitive"))
+    assert len(admissions) == len(applied)
+    assert all(admissions[t][1] == applied[t] for t in applied)
+    assert all(key in paid_competition
+               for key, d in paid_stage8.items()
+               if d["status"] == "evaluated"
+               and d["learned_status"] == "learned"), (
+        "paid learned Stage8 evaluation absent from Competition")
+    # Presence of a command alone cannot be called an adjudicated win.
+    decisions = {}
+    for t, (ref, primitive) in admissions.items():
+        prior = [(cycle, rows) for (step, cycle), rows in frames.items()
+                 if step == t]
+        if not prior:
+            # Physical reflex pathway is permitted to bypass cognitive
+            # deliberation. It is a real motor command, not a Competition
+            # crossing or deliberative fallback.
+            decisions[t] = {
+                "option_ref": ref, "primitive": primitive,
+                "admitted_crossed": False,
+                "fallback_consistent": False,
+                "no_competition_cycle": True,
+            }
+            continue
+        final_cycle, rows = max(prior, key=lambda x: x[0])
+        decisions[t] = {
+            "option_ref": ref, "primitive": primitive,
+            "admitted_crossed": bool(ref in rows and rows[ref]["crossed"]),
+            "fallback_consistent": (final_cycle == rt.competition._config.c_max
+                                   and not any(x["crossed"] for x in rows.values())),
+            "no_competition_cycle": False,
+        }
     assert td_events, "no TD publication despite ordinary natural decisions"
     for earlier, later in zip(td_snapshots, td_snapshots[1:]):
         for signature, count in earlier["update_counts"].items():
@@ -375,6 +436,9 @@ def experiment(food_gain, db_path):
         "td_snapshots": td_snapshots,
         "td_events": td_events,
         "paid_stage8": paid_stage8,
+        "paid_competition": paid_competition,
+        "paid_frames": frames,
+        "physical_decisions": decisions,
         "ledger_status": ledger.status,
         "m11_generation": ledger.generation,
         "head_verified": True,
@@ -531,6 +595,88 @@ td_custody = {
     "motor_learning_effect": "NOT_ESTABLISHED",
 }
 
+
+# Follow identical Stage8 option IDs through the ACTUAL paid Competition
+# cycle and authenticated Action Control outcome. No options are replayed.
+joined = []
+for key in sorted(set(neutral["paid_stage8"]) &
+                  set(nourishing["paid_stage8"]) &
+                  set(neutral["paid_competition"]) &
+                  set(nourishing["paid_competition"])):
+    l, n = neutral["paid_stage8"][key], nourishing["paid_stage8"][key]
+    cl = neutral["paid_competition"][key]
+    cn = nourishing["paid_competition"][key]
+    if (l["status"] != n["status"] or l["status"] != "evaluated"
+        or l["learned_status"] != n["learned_status"]
+        or l["learned_status"] != "learned"
+        or l["signature"] != n["signature"]
+        or l["learned_value"] is None or n["learned_value"] is None
+        or l["evidence"] is None or n["evidence"] is None
+        or cl["evidence"] is None or cn["evidence"] is None):
+        continue
+    joined.append({
+        "step": key[0], "option_ref": key[2],
+        "signature": l["signature"],
+        "delta_q": n["learned_value"] - l["learned_value"],
+        "delta_competition": cn["evidence"] - cl["evidence"],
+        "delta_threshold_ratio": cn["ratio"] - cl["ratio"],
+        "max_threshold_ratio": max(cl["ratio"], cn["ratio"]),
+        "same_stage8_competition": (
+            abs(l["evidence"] - cl["evidence"]) < 1e-12
+            and abs(n["evidence"] - cn["evidence"]) < 1e-12),
+        "crossing_changed": cl["crossed"] != cn["crossed"],
+    })
+changed = [row for row in joined if abs(row["delta_q"]) > 1e-12]
+assert authenticated_exposure and changed
+assert all(row["step"] > first for row in changed)
+assert all(row["same_stage8_competition"] for row in changed), (
+    "changed learned Q did not retain identity into Competition")
+a = neutral["physical_decisions"]
+b = nourishing["physical_decisions"]
+assert set(a) == set(b)
+frames = set(neutral["paid_frames"]) & set(nourishing["paid_frames"])
+def nearest(rows):
+    scored = [(row["ratio"], ref) for ref, row in rows.items()
+              if row["evidence"] is not None]
+    return max(scored)[1] if scored else None
+adjudication = {
+    "matched_paid_learned_options": len(joined),
+    "changed_q_through_competition": len(changed),
+    "distinct_affected_option_ids": len(set(
+        row["option_ref"] for row in changed)),
+    "changed_signatures": dict(sorted(Counter(
+        row["signature"] for row in changed).items())),
+    "max_delta_competition_evidence": max(
+        abs(row["delta_competition"]) for row in changed),
+    "max_delta_threshold_ratio": max(
+        abs(row["delta_threshold_ratio"]) for row in changed),
+    "highest_actual_threshold_ratio_affected": max(
+        row["max_threshold_ratio"] for row in changed),
+    "affected_crossing_changes": sum(
+        row["crossing_changed"] for row in changed),
+    "matched_paid_cycles": len(frames),
+    "threshold_proximity_leader_changed": sum(
+        nearest(neutral["paid_frames"][k]) !=
+        nearest(nourishing["paid_frames"][k]) for k in frames),
+    "admitted_option_id_changed_after_exposure": sum(
+        a[t]["option_ref"] != b[t]["option_ref"] for t in a if t > first),
+    "neutral_reflex_or_no_competition_steps": sum(
+        d["no_competition_cycle"] for d in a.values()),
+    "nourishing_reflex_or_no_competition_steps": sum(
+        d["no_competition_cycle"] for d in b.values()),
+    "neutral_adjudicated_admissions": sum(
+        d["admitted_crossed"] for d in a.values()),
+    "nourishing_adjudicated_admissions": sum(
+        d["admitted_crossed"] for d in b.values()),
+    "neutral_fallback_consistent_steps": sum(
+        d["fallback_consistent"] for d in a.values()),
+    "nourishing_fallback_consistent_steps": sum(
+        d["fallback_consistent"] for d in b.values()),
+    "no_motor_intervention": True,
+    "motor_learning_improvement": "NOT_ESTABLISHED",
+    "scientific_l3": "NOT_ESTABLISHED",
+}
+
 report = {
     "preset": "dry-valley",
     "preset_sha256": preset_digest,
@@ -541,10 +687,14 @@ report = {
     "first_ingestion_step": first if authenticated_exposure else None,
     "neutral": {k:v for k,v in neutral.items()
                 if k not in ("first_local", "steps", "contextual_values",
-                             "td_snapshots", "td_events", "paid_stage8")},
+                             "td_snapshots", "td_events", "paid_stage8",
+                             "paid_competition", "paid_frames",
+                             "physical_decisions")},
     "nourishing": {k:v for k,v in nourishing.items()
                   if k not in ("first_local", "steps", "contextual_values",
-                               "td_snapshots", "td_events", "paid_stage8")},
+                               "td_snapshots", "td_events", "paid_stage8",
+                               "paid_competition", "paid_frames",
+                               "physical_decisions")},
     "common_postexperience_context_evaluations": len(paired_contexts),
     "paired_context_deltas": paired_contexts[:12],
     "context_shift_observed": any(
@@ -553,6 +703,7 @@ report = {
             item["both_unlearned"] and item["both_unsimulated"])),
     "postexperience_motor_trajectories_differ": future_motor_divergence,
     "paired_td_custody": td_custody,
+    "paired_td_competition_adjudication": adjudication,
     "paired_candidate_identities_match": (
         [r["ref"] for r in neutral["observed_candidate_windows"]["windows"]]
         == [r["ref"] for r in
