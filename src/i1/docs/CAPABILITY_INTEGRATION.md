@@ -244,3 +244,7 @@ The Competition owner already discarded evidence for material changes of an unen
 ## #317/#412: Competition evidence also bound to outcome contract
 
 The #410 semantic identity protection now covers the same-ID option version, type, preconditions, success/failure and invalidation conditions. A changed non-engaged identity restarts from zero evidence/standard threshold; an engaged changed identity is rejected. A semantically stable refresh retains the existing accumulation contract. This prevents an unchanged motor plan from masking a changed meaning or outcome obligation. Generated I1 owner/M11 test and exact-head Python 3.11/3.12 source-parity CI gate technical L1. Natural spatial motor selection and L3 remain NOT_ESTABLISHED. I0 is unchanged.
+
+## #317/#414: registered winner integrity before Competition engagement
+
+Competition now checks that an adjudicated winner is *exactly* the current registered OptionProposal before changing residual accumulators or storing engaged option identity. Foreign and stale winners fail without mutation. The ordinary non-adjudicated physical fallback path does not become a Competition victory or confer motor rights. Generated I1 test covers exact, stale, absent and nonadjudicated cases plus M11 cold owner restore. Exact-head 3.11/3.12 CI and pins gate L1; L2 spatial return and scientific L3 remain NOT_ESTABLISHED, no I0 change.
