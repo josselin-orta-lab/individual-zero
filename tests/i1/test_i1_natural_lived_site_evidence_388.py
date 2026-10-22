@@ -79,7 +79,7 @@ with TemporaryDirectory(prefix="i1-388-cold-") as directory:
         competition_policy = {
             key: getattr(comp, key) for key in (
                 "base_threshold", "leak", "gain", "noise_sigma",
-                "urgency_max", "urgency_scale_cycles")
+                "urgency_max", "urgency_scale_cycles", "c_max")
         }
     with birth_i1_m11(db_path=recovered, life_id=identity, **params) as actor:
         first_receipts, first_locations = committed_steps(actor, SPLIT)
@@ -318,9 +318,147 @@ context_attribution = {
     "scientific_l3": "NOT_ESTABLISHED",
 }
 
+# Record what ELSE competed in every actually evaluated lived-site cycle.
+# The other candidate's threshold crossing must not be inferred from the
+# motor command: a nonadjudicated fallback may execute with no crossing.
+all_competition_cycles = {}
+for event in all_events:
+    if event.get("kind") != "competition_cycle":
+        continue
+    key = (event["t_monde"], event["cycle"])
+    assert key not in all_competition_cycles, "duplicate paid Competition cycle"
+    refs = {}
+    for trace in event["data"]["traces"]:
+        ref = trace["option_ref"]
+        assert ref not in refs, "duplicate candidate in one Competition cycle"
+        assert isfinite(float(trace["accumulator_after"]))
+        assert isfinite(float(trace["threshold"])) and trace["threshold"] > 0
+        refs[ref] = trace
+    all_competition_cycles[key] = refs
+
+examined_cycles = set((item["step"], item["cycle"])
+                      for item in context_only + mixed_or_other)
+assert examined_cycles, "no spontaneous lived-site candidate evaluation"
+rival_cycles = []
+for step, cycle in sorted(examined_cycles):
+    traces = all_competition_cycles[(step, cycle)]
+    remembered = [row for ref, row in traces.items()
+                  if ref.startswith("option:lived-site:")]
+    others = [row for ref, row in traces.items()
+              if not ref.startswith("option:lived-site:")]
+    assert remembered, "paid contextual evaluation absent from Competition"
+    assert all(not row["crossed"] or
+               row["accumulator_after"] >= row["threshold"]
+               for row in traces.values()), "invalid crossed trace"
+    rival_crossings = [row["option_ref"] for row in others if row["crossed"]]
+    rival_cycles.append({
+        "step": step, "cycle": cycle,
+        "lived_candidates": len(remembered),
+        "other_candidates": len(others),
+        "rival_crossed": tuple(sorted(rival_crossings)),
+        "best_other_threshold_ratio": max((
+            row["accumulator_after"] / row["threshold"] for row in others),
+            default=None),
+        "best_lived_threshold_ratio": max((
+            row["accumulator_after"] / row["threshold"] for row in remembered),
+            default=None),
+    })
+
+# A Stage3 successful admission occurs AFTER the last Competition cycle
+# for that physical step; journal event order distinguishes an adjudicated
+# crossing from an ordinary fallback without modifying the decision.
+relevant_steps = sorted({step for step, _ in examined_cycles})
+last_paid_cycle = {}
+admissions = defaultdict(list)
+for event in all_events:
+    step = event["t_monde"]
+    if event.get("kind") == "competition_cycle":
+        last_paid_cycle[step] = (event["cycle"],
+                                 all_competition_cycles[(step, event["cycle"])])
+    elif event.get("kind") == "command_admitted" and step in relevant_steps:
+        active = last_paid_cycle.get(step)
+        ref = event["data"].get("option_ref")
+        admissions[step].append({
+            "primitive": event["data"].get("primitive"),
+            "option_ref": ref,
+            "cycle": None if active is None else active[0],
+            "crossed_same_cycle": (False if active is None else
+                ref in active[1] and bool(active[1][ref]["crossed"])),
+            "crossed_refs": (() if active is None else tuple(sorted(
+                name for name, trace in active[1].items()
+                if trace["crossed"]))),
+        })
+
+physical_by_step = defaultdict(list)
+for event in all_events:
+    if (event.get("kind") == "command_experienced"
+        and event.get("emitter") == "action_control"):
+        physical_by_step[event["t_monde"]].append(event["primitive"])
+
+step_dispositions = []
+for step in relevant_steps:
+    admitted = admissions[step]
+    physically_experienced = physical_by_step[step]
+    # A normal committed step has exactly one admitted and experienced
+    # command; never infer its outcome from a proposed action alone.
+    assert len(admitted) == len(physically_experienced) == 1, (
+        "lived-site step lacks unique admitted and experienced physical action")
+    actual = admitted[0]
+    assert actual["primitive"] == physically_experienced[0], (
+        "admitted action differs from actual experience")
+    assert actual["cycle"] is not None, (
+        "lived-site decision has no prior paid Competition evaluation")
+    if actual["crossed_same_cycle"]:
+        disposition = "crossed_candidate_admitted"
+    elif (actual["cycle"] == competition_policy["c_max"]
+          and not actual["crossed_refs"]):
+        disposition = "noncrossed_fallback_consistent"
+    elif actual["crossed_refs"]:
+        disposition = "noncrossed_admitted_with_crossed_rival"
+    else:
+        disposition = "noncrossed_other"
+    step_dispositions.append({
+        "step": step,
+        "decision_cycle": actual["cycle"],
+        "primitive": actual["primitive"],
+        "option_ref": actual["option_ref"],
+        "classification": disposition,
+        "crossed_refs_in_decision_cycle": actual["crossed_refs"],
+        "context_cycles": sum(x["step"] == step for x in rival_cycles),
+        "context_cycle_rival_crossings": sum(
+            bool(x["rival_crossed"]) for x in rival_cycles
+            if x["step"] == step),
+    })
+assert sum(row["context_cycles"] for row in step_dispositions) == len(examined_cycles)
+rival_disposition = {
+    "physical_steps_with_lived_site_evaluation": len(relevant_steps),
+    "paid_cycles_with_lived_site_evaluation": len(examined_cycles),
+    "cycles_with_other_candidate_crossing": sum(
+        bool(x["rival_crossed"]) for x in rival_cycles),
+    "cycles_with_no_other_candidate_crossing": sum(
+        not x["rival_crossed"] for x in rival_cycles),
+    "cycles_where_other_candidate_is_closer_to_threshold": sum(
+        x["best_other_threshold_ratio"] is not None
+        and x["best_other_threshold_ratio"] > x["best_lived_threshold_ratio"]
+        for x in rival_cycles),
+    "largest_other_threshold_ratio": max((
+        x["best_other_threshold_ratio"] for x in rival_cycles
+        if x["best_other_threshold_ratio"] is not None), default=None),
+    "applied_crossed_candidate_steps": sum(
+        row["classification"] == "crossed_candidate_admitted"
+        for row in step_dispositions),
+    "applied_noncrossed_fallback_consistent_steps": sum(
+        row["classification"] == "noncrossed_fallback_consistent"
+        for row in step_dispositions),
+    "physical_step_dispositions": step_dispositions,
+    "no_competitor_selection_inferred_from_command_alone": True,
+    "scientific_l3": "NOT_ESTABLISHED",
+}
+
 print("I1_388_NATURAL_LIVED_SITE_MOVE_DIAGNOSTIC " + json.dumps({
     "preset": "dry-valley",
     "context_attribution": context_attribution,
+    "rival_disposition": rival_disposition,
     "physical_moves": physical_actions["se_deplacer"],
     "physical_primitives": dict(sorted(physical_actions.items())),
     "bodily_site_events": len(bodily_events),
