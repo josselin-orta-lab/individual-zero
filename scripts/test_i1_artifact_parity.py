@@ -878,7 +878,7 @@ def _approved_memory_426(root: Path, rel: str) -> bool:
         return False
     data = (ROOT / "src/i1/modules/memory.py").read_bytes()
     actual = sha1(
-        b"blob " + str(len(data)).encode("ascii") + b"\\0" + data
+        b"blob " + str(len(data)).encode("ascii") + b"\0" + data
     ).hexdigest()
     return actual == _MEMORY_426_NATIVE_BLOB
 
