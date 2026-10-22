@@ -107,7 +107,11 @@ def owner_boundary(rt):
     physical = geo["last_capture"]
     active = rt.goal_manager.active_goal
     return {"spatial": spatial, "goal": None if active is None else active.id,
-            "capture": physical}
+            "capture": physical,
+            # Genuine post-physical-step TD owner count, including in M11.
+            # Never assign read evidence from a later step to an earlier one.
+            "td_update_counts": dict(sorted(
+                rt.q_active.export_causal_state()["update_counts"].items()))}
 
 def drive(life, count):
     receipts = []
@@ -164,6 +168,94 @@ def learning_sources(rt, events):
         "site_effect_samples": sum(row["samples"] for row in sites),
         "site_effect_journal_events": len(site_events),
         "site_effect_positions": [row["position"] for row in sites],
+    }
+
+def learned_readback(events, boundaries):
+    """Audit genuinely learned Stage8 values entering paid Competition.
+
+    This reads a naturally born individual's immutable causal WAL and the
+    real TD owner after each physically committed step. A learned Q read is
+    not a demonstration that the option won or that its outcome was useful.
+    """
+    evaluation = {}
+    for event in events:
+        if event.get("kind") != "stage8_option_evaluation":
+            continue
+        data = event.get("data", {})
+        key = (event["t_monde"], event["cycle"], data["option_ref"])
+        assert key not in evaluation, "ambiguous paid Stage8 source"
+        evaluation[key] = data
+    traces = {}
+    for event in events:
+        if event.get("kind") != "competition_cycle":
+            continue
+        for trace in event.get("data", {}).get("traces", ()):
+            key = (event["t_monde"], event["cycle"], trace["option_ref"])
+            assert key not in traces, "ambiguous Competition cycle trace"
+            traces[key] = trace
+
+    admitted = {(e["t_monde"], e.get("data", {}).get("option_ref"))
+                for e in events if e.get("kind") == "command_admitted"}
+    experienced_steps = {e["t_monde"] for e in events
+                         if e.get("kind") == "command_experienced"
+                         and e.get("emitter") == "action_control"}
+    paid_applied = {
+        (step, data["learning_signature"])
+        for (step, cycle, ref), data in evaluation.items()
+        if (step, ref) in admitted and step in experienced_steps
+    }
+    # The actual owner count at the previous physical boundary is strictly
+    # prior evidence. Changes first observed at this step are not backdated.
+    seen = []
+    for (step, cycle, ref), data in sorted(evaluation.items()):
+        if data.get("status") != "evaluated":
+            continue
+        signature = data["learning_signature"]
+        if data.get("learned_value_status") != "learned":
+            continue
+        assert type(step) is int and 1 <= step <= len(boundaries)
+        value = data.get("learned_value")
+        assert value is not None and isfinite(float(value))
+        assert data.get("evidence") is not None
+        now_count = boundaries[step - 1]["td_update_counts"].get(signature, 0)
+        assert now_count > 0, "learned Stage8 value absent from real TD owner"
+        prior_count = (boundaries[step - 2]["td_update_counts"].get(signature, 0)
+                       if step > 1 else 0)
+        trace = traces.get((step, cycle, ref))
+        assert trace is not None and trace["evidence"] is not None, (
+            "paid learned Stage8 value never entered Competition")
+        assert abs(float(trace["evidence"]) - float(data["evidence"])) < 1e-12, (
+            "Competition evidence differs from the evaluated learned option")
+        previously_applied = any(
+            prior_step < step and previous_signature == signature
+            for prior_step, previous_signature in paid_applied
+        )
+        seen.append({
+            "signature": signature,
+            "world_step": step,
+            "owner_updated_before_this_step": prior_count > 0,
+            "previously_physically_applied_same_signature": previously_applied,
+            "evidence": trace["evidence"],
+            "crossed": bool(trace["crossed"]),
+            "admitted": (step, ref) in admitted,
+        })
+    # Repeated Stage8 evaluations are counted as evaluations, never
+    # represented as independent physical experiences or TD updates.
+    return {
+        "paid_stage8_evaluations": len(evaluation),
+        "learned_stage8_reaches_competition": len(seen),
+        "learned_read_after_prior_td_boundary": sum(
+            row["owner_updated_before_this_step"] for row in seen),
+        "learned_read_with_prior_applied_same_signature": sum(
+            row["previously_physically_applied_same_signature"] for row in seen),
+        "learned_competition_crossings": sum(row["crossed"] for row in seen),
+        "learned_motor_admissions": sum(row["admitted"] for row in seen),
+        "learned_spatial_stage8": sum(
+            row["signature"].startswith("memory_place_return:")
+            for row in seen),
+        "signatures": dict(sorted(Counter(row["signature"] for row in seen).items())),
+        "first_readbacks": seen[:6],
+        "physical_decision_improvement": "NOT_ESTABLISHED",
     }
 
 def audit(events):
@@ -491,6 +583,8 @@ with TemporaryDirectory(prefix="i1-377-ledger-") as home:
         for e in spatial_reads
     )
     report["personally_learned_sources"] = learned_sources
+    report["experienced_td_readback"] = learned_readback(
+        events, control_boundaries)
     print("I1_377_CANONICAL_M11_SPATIAL_DIAGNOSTIC "
           + json.dumps(report, sort_keys=True), flush=True)
     assert report["first_person_sightings"] > 0, (
