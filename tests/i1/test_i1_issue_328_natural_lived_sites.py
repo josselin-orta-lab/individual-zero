@@ -121,6 +121,62 @@ nothing,_=evaluation._experienced_site_context(
     target=other,body=body1,t_monde=4,
 )
 assert nothing==0, "same resource kind at another site has no borrowed knowledge"
+# Independent replay of the same personally witnessed site under changing
+# CURRENT bodily needs. No physical effect, Q, policy or reward is injected.
+# Observed site retains both favorable and adverse signs in the same owner.
+hungry_and_thirsty=dict(energy=70.,food=55.,water=20.,integrity=80.)
+needs_satisfied=dict(energy=80.,food=70.,water=70.,integrity=90.)
+v_needy,ref_needy=evaluation._experienced_site_context(
+    target=target,body=hungry_and_thirsty,t_monde=4)
+v_full,ref_full=evaluation._experienced_site_context(
+    target=target,body=needs_satisfied,t_monde=4)
+assert ref_needy==ref_full==source
+assert v_needy>0 and v_full<0, (
+    "same mixed lived site must be positive for an actual deficit and "
+    "adverse after needs are satisfied")
+# A fully favorable historical site must not have an artificial positive
+# utility if no relevant need exists; no synthetic need or causal prediction.
+positive=GeographicExploration(cfg)
+assert positive.observe_capture(SimpleNamespace(t_monde=1,x=3,y=4))
+assert positive.note_applied_local_action(
+    world_step=1,position=site,body_before=body1,
+    primitive="collecter",option_ref="witnessed-favorable")
+good=positive.observe_lived_site_followup(
+    world_step=2,position=site,
+    body_after=dict(body1,water=45.))
+assert good and good.favorable[2]>0 and all(x==0 for x in good.adverse)
+evaluation._exploration=SimpleNamespace(geographic=positive)
+v_good,ref_good=evaluation._experienced_site_context(
+    target=target,body=hungry_and_thirsty,t_monde=3)
+v_good_full,ref_good_full=evaluation._experienced_site_context(
+    target=target,body=needs_satisfied,t_monde=3)
+assert v_good>0 and ref_good is not None
+assert v_good_full==0 and ref_good_full is None, (
+    "unneeded favorable history cannot acquire an automatic positive score")
+# Negative witnesses remain negative even when their associated channel
+# has no current deficit. Risk is neither erased nor turned into reward.
+adverse=GeographicExploration(cfg)
+assert adverse.observe_capture(SimpleNamespace(t_monde=1,x=3,y=4))
+assert adverse.note_applied_local_action(
+    world_step=1,position=site,body_before=body2,
+    primitive="manger",option_ref="witnessed-adverse")
+bad=adverse.observe_lived_site_followup(
+    world_step=2,position=site,
+    body_after=dict(body2,water=15.))
+assert bad and bad.adverse[2]>0 and all(x==0 for x in bad.favorable)
+evaluation._exploration=SimpleNamespace(geographic=adverse)
+v_bad,ref_bad=evaluation._experienced_site_context(
+    target=target,body=hungry_and_thirsty,t_monde=3)
+v_bad_full,ref_bad_full=evaluation._experienced_site_context(
+    target=target,body=needs_satisfied,t_monde=3)
+assert v_bad<0 and v_bad_full<0 and ref_bad and ref_bad_full
+# Absence of previously witnessed data is not a new motivational source.
+unwitnessed=GeographicExploration(cfg)
+evaluation._exploration=SimpleNamespace(geographic=unwitnessed)
+v_unseen,ref_unseen=evaluation._experienced_site_context(
+    target=target,body=hungry_and_thirsty,t_monde=3)
+assert v_unseen==0 and ref_unseen is None
+print("I1_328_SIGNED_NEED_DEPENDENT_CONTEXT_OK")
 print("I1_328_GENERIC_OWNER_OK")
 '''))
 
