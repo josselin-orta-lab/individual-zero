@@ -348,6 +348,15 @@ with TemporaryDirectory(prefix="i1-377-ledger-") as home:
     assert "self._charge(" in reader
     assert '"motor_admission_inherited": False' in reader
     report = audit(events)
+    # Negative results matter: a paid reader may never encounter a pending
+    # personally remembered site in this particular bounded natural life.
+    spatial_reads = [e for e in events
+                     if e.get("kind") == "i1_spatial_prospect_consulted"]
+    report["spatial_prospect_consulted_count"] = len(spatial_reads)
+    report["spatial_prospect_reordered_count"] = sum(
+        e["data"].get("consideration_order_changed") is True
+        for e in spatial_reads
+    )
     report["personally_learned_sources"] = learned_sources
     print("I1_377_CANONICAL_M11_SPATIAL_DIAGNOSTIC "
           + json.dumps(report, sort_keys=True), flush=True)
