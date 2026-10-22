@@ -178,7 +178,7 @@ v_unseen,ref_unseen=evaluation._experienced_site_context(
 assert v_unseen==0 and ref_unseen is None
 # A genuinely sourced lived-site route may be retained as a cognitive
 # prospect, but must not create motor authority or learned reward.
-from i1.modules.memory import Memory, MemoryConfig
+from i1.modules.memory import EpisodicMemory
 from i1lab.stage11_reference_fixture import build_stage11_reference_runtime
 memory=build_stage11_reference_runtime(autonomous_mortal=True).memory
 signature="lived_site_return:3:4"
