@@ -344,6 +344,46 @@ class I1Runtime(I1WaterPrudentRuntime):
             ),
         )
 
+    def _order_personally_remembered_places(self, *, targets, capture, cycle):
+        """Read a paid personal prospect before choosing which route to build.
+
+        A recalled possibility changes consideration order only, never
+        Competition evidence, TD, motor permission or route admissibility.
+        """
+        targets = super()._order_personally_remembered_places(
+            targets=targets, capture=capture, cycle=cycle,
+        )
+        if not targets or not self.memory.spatial_option_prospect_count:
+            return targets
+        if not self._charge(
+            module="planning", operation=_OPTION_INTENTION_OPERATION,
+        ):
+            return targets
+        recalled = frozenset(
+            target.entity_id for target in targets
+            if self.memory.recalled_applied_option(
+                signature=f"memory_place_return:{target.entity_id}",
+                world_step=capture.t_monde,
+            )
+        )
+        if not recalled:
+            return targets
+        ordered = tuple(sorted(
+            targets, key=lambda target: (
+                target.entity_id not in recalled,
+            ),
+        ))
+        self._write(
+            kind="i1_spatial_prospect_recalled_for_consideration", cycle=cycle,
+            data={"world_step": capture.t_monde,
+                  "recalled_entity_ids": sorted(recalled),
+                  "candidate_count": len(targets),
+                  "reordered": ordered != targets,
+                  "charged_operation": _OPTION_INTENTION_OPERATION,
+                  "motor_admission_inherited": False},
+        )
+        return ordered
+
     def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
         """Add a second normal Phase-1 producer, not a replacement GoalManager.
 
