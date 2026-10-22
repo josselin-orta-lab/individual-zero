@@ -240,3 +240,7 @@ A previous I1-only fallback could interpret an empty offered-target list as a ne
 ## #317/#410: Competition candidate semantic evidence integrity
 
 The Competition owner already discarded evidence for material changes of an unengaged plan. #410 closes the distinct same-option-ID case where the option learning signature, provenance, motive or goal changes while the motor plan is byte-for-byte unchanged. In that case an unengaged candidate restarts at zero evidence/standard threshold; an already motor-engaged candidate refuses the changed identity before any state mutation. A semantically identical proposal still follows the existing continuation contract. Generated I1 owner/cold M11 regression, exact-head Python 3.11/3.12 technical CI and source parity gate L1. No change to Q/TD values, goal pressure, thresholds, motor admission, or I0; spontaneous spatial selection and L3 NOT_ESTABLISHED.
+
+## #317/#412: Competition evidence also bound to outcome contract
+
+The #410 semantic identity protection now covers the same-ID option version, type, preconditions, success/failure and invalidation conditions. A changed non-engaged identity restarts from zero evidence/standard threshold; an engaged changed identity is rejected. A semantically stable refresh retains the existing accumulation contract. This prevents an unchanged motor plan from masking a changed meaning or outcome obligation. Generated I1 owner/M11 test and exact-head Python 3.11/3.12 source-parity CI gate technical L1. Natural spatial motor selection and L3 remain NOT_ESTABLISHED. I0 is unchanged.
