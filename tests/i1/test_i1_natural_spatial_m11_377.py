@@ -339,6 +339,14 @@ with TemporaryDirectory(prefix="i1-377-ledger-") as home:
     assert all(e["data"]["stage8_evaluated"] is True
                and e["data"]["motor_admission_inherited"] is False
                and e["data"]["action_applied"] is False for e in prospects)
+    # A future route may be read as context but receives no motor credit.
+    # This asserts the *wired reader*, not yet spontaneous future selection.
+    from i1lab.i1_natural_runtime import I1Runtime
+    import inspect
+    reader = inspect.getsource(I1Runtime._order_personally_remembered_places)
+    assert "self.memory.recalled_applied_option(" in reader
+    assert "self._charge(" in reader
+    assert '"motor_admission_inherited": False' in reader
     report = audit(events)
     report["personally_learned_sources"] = learned_sources
     print("I1_377_CANONICAL_M11_SPATIAL_DIAGNOSTIC "
