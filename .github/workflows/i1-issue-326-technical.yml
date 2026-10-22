@@ -36,6 +36,7 @@ on:
       - 'tests/i1/test_i1_competition_evidence_identity_402.py'
       - 'tests/i1/test_i1_goal_prune_before_uc_406.py'
       - 'tests/i1/test_i1_spatial_negative_search_408.py'
+      - 'tests/i1/test_i1_competition_semantic_candidate_410.py'
       - '.github/workflows/i1-issue-326-technical.yml'
 permissions:
   contents: read
@@ -207,3 +208,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests/i1 -p test_i1_spatial_negative_search_408.py -v
+
+      - name: Competition evidence requires stable option semantics
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_competition_semantic_candidate_410.py -v
