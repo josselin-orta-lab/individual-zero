@@ -436,6 +436,8 @@ with TemporaryDirectory(prefix="i1-377-ledger-") as home:
         final_continuous = image(life._runtime)
         events = journal(life._runtime)
         learned_sources = learning_sources(life._runtime, events)
+        born_competition_cfg = life._runtime.competition._config
+        born_intrinsic_weight = life._runtime._stage11_config.intrinsic_weight
 
     with birth_i1_m11(db_path=restored, life_id=individual, **params) as life:
         before_receipts, before_boundaries = drive(life, SPLIT)
@@ -582,9 +584,8 @@ with TemporaryDirectory(prefix="i1-377-ledger-") as home:
     # Cold intrinsic-return envelope: actual born Competition and Stage11
     # constants, not fitted to the observed failure or a hypothetical Q.
     from math import exp
-    cfg = life_config = factory().competition._config
-    # The new runtime above is unstepped: no learning or reward injection.
-    intrinsic_weight = factory()._stage11_config.intrinsic_weight
+    cfg = born_competition_cfg
+    intrinsic_weight = born_intrinsic_weight
     intrinsic_cap = min(0.12, intrinsic_weight * 0.12)
     theoretical_gain = sum(
         (1.0 + (cfg.urgency_max - 1.0) *
