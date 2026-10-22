@@ -463,6 +463,8 @@ class Stage11Runtime(Stage9Runtime):
         return targets
 
     def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
+        # Reset this ephemeral search witness at every deliberation.
+        self._stage11_place_search_completed_cycle = None
         # Frozen input precedes all producers of phase 1 (INV-08).
         frozen = self.causal_model.export_causal_state()
         # Read-only frontier inputs are frozen BEFORE phase-1. No Planning
