@@ -352,6 +352,20 @@ class I1Runtime(I1WaterPrudentRuntime):
         """
         if not targets or not self.memory.spatial_option_prospect_count:
             return targets
+        # Current first-person route availability must be reconciled BEFORE
+        # reading pending semantic prospects, not after this Planning producer.
+        # This consumes the existing (not an extra) reconciliation charge.
+        if not self._charge(module="planning", operation=_OPTION_INTENTION_OPERATION):
+            return targets
+        available = frozenset(
+            f"memory_place_return:{target.entity_id}" for target in targets
+        )
+        self.memory.reconcile_option_intentions(
+            available_signatures=available, world_step=capture.t_monde,
+            namespace="memory_place_return:",
+        )
+        self._i1_spatial_reconciled_cycle = (capture.t_monde, cycle)
+        # A second independent UC charge gates the actual Memory read.
         if not self._charge(module="planning", operation=_OPTION_INTENTION_OPERATION):
             return targets
         preferred = set()
@@ -398,7 +412,11 @@ class I1Runtime(I1WaterPrudentRuntime):
             normal_plan(ctx)
             # A paid scan can suspend a spatial prospect when the
             # first-person route is no longer genuinely offered.
-            if self.memory.spatial_option_prospect_count:
+            if (self.memory.spatial_option_prospect_count
+                and getattr(self, "_i1_spatial_reconciled_cycle", None)
+                    != (capture.t_monde, cycle)):
+                # Fallback for a skipped/empty geographic producer. Never
+                # charge twice when a route was already reconciled above.
                 available = frozenset(
                     f"memory_place_return:{target.entity_id}"
                     for target in self._stage11_frozen_place_targets
