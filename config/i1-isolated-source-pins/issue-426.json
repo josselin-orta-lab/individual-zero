@@ -1,7 +1,0 @@
-{
-  "schema": "i1-isolated-source-pin-v1",
-  "issue": 426,
-  "generated": "i1/modules/memory.py",
-  "native": "src/i1/modules/memory.py",
-  "blob_sha1": "225dc8164ae198599345ea5dd20e437b7b0f01f9"
-}
