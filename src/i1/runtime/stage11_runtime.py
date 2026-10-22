@@ -458,10 +458,6 @@ class Stage11Runtime(Stage9Runtime):
         )[:self.exploration.geographic.config.max_targets_per_cycle]
         return targets, tuple(sorted(forbidden))
 
-    def _order_personally_remembered_places(self, *, targets, capture, cycle):
-        """Reference runtime preserves first-person route-search order."""
-        return targets
-
     def _order_considered_spatial_targets(self, targets, *, capture, cycle):
         return targets
 
@@ -883,9 +879,6 @@ class Stage11Runtime(Stage9Runtime):
                         if cell.passable is True and cell.creature is False
                     ), current_world_step=capture.t_monde,
                     max_candidates=self.exploration.geographic.config.max_place_candidates,
-                )
-                frozen_place_targets = self._order_personally_remembered_places(
-                    targets=frozen_place_targets, capture=capture, cycle=cycle,
                 )
                 self._write(kind="i1_place_memory_recalled", cycle=cycle,
                             data={"candidates": [t.ref for t in frozen_place_targets],
