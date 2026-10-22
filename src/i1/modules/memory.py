@@ -111,6 +111,33 @@ def _authentic_considered_option_source(
             f"option:i1:local:t{step}:"
             + signature.removeprefix("i1:affordance:")
         )
+    if signature.startswith("lived_site_return:"):
+        # Site consequences are memories of bodily observations, not learned
+        # utility of a resource type. The source must encode an older,
+        # personally offered one-hop route with a physically adjacent hop.
+        coord = r"(-?(?:0|[1-9][0-9]*))"
+        semantic = fullmatch(
+            r"lived_site_return:" + coord + ":" + coord, signature,
+        )
+        route = fullmatch(
+            r"option:lived-site:lived-site:" + coord + ":" + coord
+            + r":observed-t([1-9][0-9]*):from:" + coord + ":" + coord
+            + r":via:" + coord + ":" + coord,
+            source_option_ref,
+        )
+        if semantic is None or route is None:
+            return False
+        numbers = tuple(int(value) for value in route.groups())
+        x, y, observed, origin_x, origin_y, via_x, via_y = numbers
+        return bool(
+            tuple(int(value) for value in semantic.groups()) == (x, y)
+            and 2 <= observed < step
+            and abs(origin_x - via_x) + abs(origin_y - via_y) == 1
+            and source_option_ref == (
+                f"option:lived-site:lived-site:{x}:{y}:observed-t{observed}"
+                f":from:{origin_x}:{origin_y}:via:{via_x}:{via_y}"
+            )
+        )
     if not signature.startswith("memory_place_return:"):
         return False
     entity_id = signature.removeprefix("memory_place_return:")
@@ -440,7 +467,9 @@ class EpisodicMemory:
         Expiry makes the prospective commitment terminal, even after M11.
         """
         if (type(world_step) is not int or world_step < 1
-            or namespace not in ("i1:affordance:", "memory_place_return:")
+            or namespace not in (
+                "i1:affordance:", "memory_place_return:", "lived_site_return:",
+            )
             or type(available_signatures) is not frozenset
             or any(type(ref) is not str or not ref.startswith(namespace)
                    for ref in available_signatures)
@@ -505,6 +534,14 @@ class EpisodicMemory:
         return sum(1 for x in self._intentions.values()
                    if x.trigger_type == "option"
                    and x.target.startswith("memory_place_return:")
+                   and x.state in ("pending", "suspended"))
+
+    @property
+    def lived_site_option_prospect_count(self) -> int:
+        """Bounded, nonmotor interest in sites personally experienced."""
+        return sum(1 for x in self._intentions.values()
+                   if x.trigger_type == "option"
+                   and x.target.startswith("lived_site_return:")
                    and x.state in ("pending", "suspended"))
 
     def remember_applied_option(
