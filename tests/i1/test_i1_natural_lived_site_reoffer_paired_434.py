@@ -24,6 +24,7 @@ class NaturalSiteReofferPhysiologyPair(unittest.TestCase):
             script = r"""
 from collections import Counter
 from dataclasses import replace
+from math import exp, isfinite
 import json
 from pathlib import Path
 from re import search
@@ -61,7 +62,7 @@ def experiment(food_gain, db_path):
         raw_params, world_config=physics,
         diagnostic_sample_cost_uc=1, module_occupancy_cost_uc=1,
     )
-    receipts, bodies = [], []
+    receipts, bodies, boundaries = [], [], []
     with birth_i1_m11(db_path=str(db_path), life_id=life_id, **params) as actor:
         rt = actor._runtime
         first_local = rt.world.capture_local(t_monde=1).as_dict()
@@ -83,6 +84,20 @@ def experiment(food_gain, db_path):
                 "generation": receipt.generation,
                 "status": receipt.status,
                 "journal_head": receipt.journal_head,
+            })
+            # Real post-commit Competition custody, including sleeping steps.
+            registry = rt.competition.export_causal_state()["registry"]
+            boundaries.append({
+                "step": receipt.world_step,
+                "ids": {
+                    entry["proposal"]["option"]["id"]: {
+                        "expires": entry["proposal"]["option"]["expires_at_step"],
+                        "accumulator": entry["accumulator"],
+                    }
+                    for entry in registry
+                    if entry["proposal"]["option"]["id"].startswith(
+                        "option:lived-site:")
+                },
             })
             if receipt.status == "dead":
                 break
@@ -157,6 +172,123 @@ def experiment(food_gain, db_path):
         for tr in e.get("data", {}).get("traces", ())
         if str(tr.get("option_ref", "")).startswith("option:lived-site:")
     ]
+
+    # Observed candidate-window upper bound, using ONLY paid, actual cycles.
+    # Ignore leakage/reset/residual to make a conservative ceiling; do not add
+    # fictional extra deliberations, rewards or Q. This is external analysis.
+    cfg = rt.competition._config
+    assert cfg.noise_sigma == 0.0, "arithmetic replay assumes noiseless birth"
+    windows = {}
+    traced_keys = set()
+    for step, cycle, trace in route_competition:
+        key = (step, cycle, trace["option_ref"])
+        assert key not in traced_keys and key in evaluations
+        traced_keys.add(key)
+        assessed = evaluations[key]
+        assert assessed["status"] == "evaluated"
+        assert assessed["learned_value_status"] == "unlearned"
+        assert assessed["simulated_value_status"] != "computed"
+        assert float(assessed["intrinsic_value"]) == 0.0
+        evidence = trace["evidence"]
+        assert evidence is not None and isfinite(float(evidence))
+        assert abs(float(assessed["evidence"]) - evidence) < 1e-12
+        assert all(isfinite(float(trace[name])) for name in (
+            "accumulator_before", "accumulator_after", "threshold"))
+        assert trace["threshold"] > 0
+        assert type(cycle) is int and 1 <= cycle <= cfg.c_max
+        urgency = (1.0 + (cfg.urgency_max - 1.0) *
+                   (1.0 - exp(-(cycle - 1) / cfg.urgency_scale_cycles)))
+        # Confirm that each observed physical trace obeys the actual,
+        # untouched Competition recurrence. No candidate is re-evaluated here.
+        expected = max(0.0, (1.0 - cfg.leak) *
+                       trace["accumulator_before"] +
+                       cfg.gain * urgency * evidence)
+        assert abs(expected - trace["accumulator_after"]) < 1e-10
+        assert bool(trace["crossed"]) == (
+            trace["accumulator_after"] >= trace["threshold"])
+        window = windows.setdefault(trace["option_ref"], {
+            "paid_cycles": 0, "steps": set(),
+            "first_before": float(trace["accumulator_before"]),
+            "no_leak_positive_evidence_ceiling": 0.0,
+            "min_paid_threshold": float("inf"),
+            "peak_actual_threshold_ratio": 0.0,
+        })
+        window["paid_cycles"] += 1
+        window["steps"].add(step)
+        window["no_leak_positive_evidence_ceiling"] += (
+            cfg.gain * urgency * max(0.0, float(evidence)))
+        window["min_paid_threshold"] = min(
+            window["min_paid_threshold"], float(trace["threshold"]))
+        window["peak_actual_threshold_ratio"] = max(
+            window["peak_actual_threshold_ratio"],
+            float(trace["accumulator_after"] / trace["threshold"]))
+    assert traced_keys == set(evaluations), (
+        "spatial Stage8 and paid Competition windows do not match")
+    assert windows, "no authentic spatial option exposure to study"
+    candidate_windows = [
+        {
+            "ref": ref,
+            "paid_cycles": window["paid_cycles"],
+            "physical_steps": len(window["steps"]),
+            "first_accumulator_zero": abs(window["first_before"]) < 1e-12,
+            "positive_no_leak_ceiling_ratio": (
+                window["no_leak_positive_evidence_ceiling"] /
+                window["min_paid_threshold"]),
+            "actual_peak_threshold_ratio": window["peak_actual_threshold_ratio"],
+        }
+        for ref, window in sorted(windows.items())
+    ]
+    bound_applicable = all(
+        row["first_accumulator_zero"] for row in candidate_windows)
+    # This is limited to the identities and opportunities already witnessed.
+    # It says nothing about a future reoffer or a learned-Q-enabled route.
+    exposure_limit = {
+        "first_seen_from_zero": bound_applicable,
+        "exact_noiseless_competition_arithmetic": True,
+        "candidate_identities": len(candidate_windows),
+        "paid_evaluations": sum(row["paid_cycles"] for row in candidate_windows),
+        "max_paid_cycles_one_id": max(
+            row["paid_cycles"] for row in candidate_windows),
+        "max_physical_steps_one_id": max(
+            row["physical_steps"] for row in candidate_windows),
+        "max_actual_threshold_ratio": max(
+            row["actual_peak_threshold_ratio"] for row in candidate_windows),
+        "max_no_leak_positive_evidence_ratio": max(
+            row["positive_no_leak_ceiling_ratio"] for row in candidate_windows),
+        "recorded_cycles_insufficient_even_without_leak": (
+            bound_applicable and all(
+                row["positive_no_leak_ceiling_ratio"] < 1.0
+                for row in candidate_windows)),
+        "windows": candidate_windows,
+        "future_unobserved_cycles": "NOT_ESTABLISHED",
+    }
+    # Distinguish candidate absence from low evidence in actual M11 owner
+    # checkpoints. Neither missing candidate nor sleep implies why it left.
+    transitions = []
+    for before, after in zip(boundaries, boundaries[1:]):
+        prior_ids, next_ids = set(before["ids"]), set(after["ids"])
+        lost = prior_ids - next_ids
+        transitions.append({
+            "step": after["step"],
+            "lost": len(lost),
+            "new": len(next_ids - prior_ids),
+            "retained": len(prior_ids & next_ids),
+            "deadline_reached_indicator": sum(
+                before["ids"][ref]["expires"] <= after["step"]
+                for ref in lost),
+        })
+    owner_boundaries = {
+        "physical_snapshots": len(boundaries),
+        "snapshots_with_lived_candidate": sum(
+            bool(boundary["ids"]) for boundary in boundaries),
+        "lost_between_physical_steps": sum(t["lost"] for t in transitions),
+        "new_between_physical_steps": sum(t["new"] for t in transitions),
+        "retained_between_physical_steps": sum(
+            t["retained"] for t in transitions),
+        "deadline_reached_indicators": sum(
+            t["deadline_reached_indicator"] for t in transitions),
+        "no_absence_cause_inferred": True,
+    }
     for event in route_offers:
         assert event["data"]["forced_motor_selection"] is False
         assert any(
@@ -183,6 +315,8 @@ def experiment(food_gain, db_path):
         "lived_site_route_offers": len(route_offers),
         "lived_site_route_registrations": len(route_registrations),
         "lived_site_competition_exposures": len(route_competition),
+        "observed_candidate_windows": exposure_limit,
+        "physical_owner_boundaries": owner_boundaries,
         "lived_site_threshold_crossings": sum(
             bool(row["crossed"]) for _, _, row in route_competition),
         "lived_site_motor_admissions": sum(
@@ -272,6 +406,10 @@ report = {
         for item in paired_contexts if (
             item["both_unlearned"] and item["both_unsimulated"])),
     "postexperience_motor_trajectories_differ": future_motor_divergence,
+    "paired_candidate_identities_match": (
+        [r["ref"] for r in neutral["observed_candidate_windows"]["windows"]]
+        == [r["ref"] for r in
+            nourishing["observed_candidate_windows"]["windows"]]),
     "causal_action_attribution": "NOT_ESTABLISHED",
     "spatially_useful_decision": "NOT_ESTABLISHED",
     "scientific_l3": "NOT_ESTABLISHED",
