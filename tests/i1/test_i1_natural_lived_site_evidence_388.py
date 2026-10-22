@@ -59,6 +59,15 @@ def committed_steps(actor, n):
         capture = image["last_capture"]
         locations.append({
             "world_step": capture[0], "position": tuple(capture[1:]),
+            # Read-only postphysical Memory view. The previous boundary is
+            # the ONLY valid source for a later-step learned prospect.
+            "lived_prospects": tuple(sorted(
+                (record.target, record.state,
+                 record.trigger_value["considered_step"], record.deadline_step)
+                for record in actor._runtime.memory.intentions
+                if record.trigger_type == "option"
+                and record.target.startswith("lived_site_return:")
+            )),
             "older_remote_lived_sites": tuple(sorted(
                 tuple(site["position"]) for site in image["lived_site_effects"]
                 if (site["last_observed_step"] < capture[0]
@@ -307,8 +316,96 @@ for prospect in prospects:
     assert prospect["data"]["motor_admission_inherited"] is False
     assert prospect["data"]["action_applied"] is False
     assert prospect["data"]["semantic_ref"].startswith("lived_site_return:")
-# First-person Memory state and its prospective identities are included in
-# the already asserted identical continuous/cold owner images and WAL.
+# Later-read audit of this unforced natural birth. Neither a route offer
+# nor an intention record is itself a paid consultation, and a failed
+# consultation MUST NOT be reclassified as "Memory never learned".
+from re import fullmatch
+available_searches = {}
+for row in all_events:
+    if row.get("kind") != "i1_lived_site_recalled":
+        continue
+    key = (row["t_monde"], row["cycle"])
+    assert key not in available_searches, "duplicate lived-site route search"
+    sources = row["data"]["candidates"]
+    assert type(sources) is list and len(sources) <= 4
+    signatures = []
+    for source in sources:
+        match = fullmatch(
+            r"lived-site:(-?\d+):(-?\d+):observed-t([1-9]\d*):"
+            r"from:-?\d+:-?\d+:via:-?\d+:-?\d+", source)
+        assert match, "noncanonical route in the personal search receipt"
+        assert int(match.group(3)) < row["t_monde"]
+        signatures.append(
+            f"lived_site_return:{int(match.group(1))}:"
+            f"{int(match.group(2))}"
+        )
+    assert len(signatures) == len(set(signatures))
+    available_searches[key] = frozenset(signatures)
+
+before_step = {
+    point["world_step"] + 1: point["lived_prospects"]
+    for point in all_locations
+}
+consulted_events = [entry for entry in all_events
+                    if entry.get("kind") == "i1_lived_site_prospect_consulted"]
+readbacks = []
+for entry in consulted_events:
+    step, cycle = entry["t_monde"], entry["cycle"]
+    key = step, cycle
+    assert step > 1 and key in available_searches, (
+        "consultation without an earlier real physical state and paid search")
+    offered = available_searches[key]
+    previous = {
+        signature for signature, state, considered, expiry
+        in before_step.get(step, ())
+        if considered < step <= expiry and state in ("pending", "suspended")
+    }
+    # The consulted count comes from the real Memory owner after its paid
+    # fresh-availability reconciliation, NEVER from this audit.
+    grounded = offered & previous
+    meta = entry["data"]
+    assert meta["available_count"] == len(offered)
+    assert 0 < meta["remembered_count"] <= len(grounded)
+    assert meta["charged_operation"] == "i1_applied_option_intention"
+    assert meta["motor_admission_inherited"] is False
+    assert meta["consideration_order_changed"] is False
+    assert any(
+        prospect["t_monde"] < step
+        and prospect["data"]["semantic_ref"] in grounded
+        for prospect in prospects
+    ), "past first-person prospection was not authenticated"
+    readbacks.append({"step": step, "cycle": cycle,
+                      "remembered": meta["remembered_count"],
+                      "eligible_preexisting": len(grounded)})
+offered_after_prospect = []
+for (step, cycle), offered in sorted(available_searches.items()):
+    if step < 2:
+        continue
+    previous = {
+        signature for signature, state, considered, expiry
+        in before_step.get(step, ())
+        if considered < step <= expiry and state in ("pending", "suspended")
+    }
+    if previous & offered:
+        offered_after_prospect.append((step, cycle))
+consulted_cycles = {(row["step"], row["cycle"]) for row in readbacks}
+prospect_reuse = {
+    "natural_prospects_formed": len(prospects),
+    "postformation_route_available_cycles": len(offered_after_prospect),
+    "actual_paid_consultation_events": len(readbacks),
+    "actual_recalled_prospects": sum(row["remembered"] for row in readbacks),
+    "available_without_observed_consultation": sum(
+        candidate not in consulted_cycles
+        for candidate in offered_after_prospect),
+    "first_consultations": readbacks[:6],
+    "no_motor_authority_inherited": True,
+    "later_motor_benefit": "NOT_ESTABLISHED",
+    "unobserved_consultation": (
+        "NOT_OBSERVED" if not readbacks else None
+    ),
+}
+# All cold replay state snapshots and journal entries have already been
+# compared byte-for-byte against uninterrupted, independently born I1.
 context_attribution = {
     "authentic_observed_site_witnesses": len(owner_events),
     "joined_paid_evaluations": len(paid_stage8),
@@ -478,6 +575,7 @@ rival_disposition = {
 print("I1_388_NATURAL_LIVED_SITE_MOVE_DIAGNOSTIC " + json.dumps({
     "preset": "dry-valley",
     "context_attribution": context_attribution,
+    "prospect_reuse": prospect_reuse,
     "rival_disposition": rival_disposition,
     "physical_moves": physical_actions["se_deplacer"],
     "physical_primitives": dict(sorted(physical_actions.items())),
