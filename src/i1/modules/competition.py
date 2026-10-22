@@ -716,6 +716,22 @@ class Competition:
     ) -> CompetitionCycleResult:
         if cycle < 1:
             raise ValueError("competition cycle must be >= 1")
+        # Validate the complete Stage8 batch before mutating ANY candidate.
+        # Dictionary indexing alone is not proof of evaluator provenance.
+        if evidence_inputs is not None:
+            for option_id, state in self._registry.items():
+                supplied = evidence_inputs.get(option_id)
+                if supplied is None:
+                    raise ValueError(
+                        f"missing Stage-6 evidence input for option {option_id}"
+                    )
+                supplied.validate()
+                evaluation = supplied.evaluation
+                if (evaluation.option_ref != option_id
+                    or evaluation.option_version != state.proposal.option.version
+                    or evaluation.cycle != cycle
+                    or evaluation.t_monde != t_monde):
+                    raise ValueError("Stage8 evidence does not match current candidate")
         self._cycle = cycle
 
         evaluations: list[EvaluationOption] = []
