@@ -823,8 +823,8 @@ _ISSUE_314_PINNED_BLOBS = {
 
 # #360: exact reviewed native M11 memory and natural birth code.
 _PROSPECT_361_PINS = {
-    "i1/modules/memory.py": ("src/i1/modules/memory.py", "7e3b150ac838da84328d5a84e99f1e978d511a26"),
-    "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py", "38234e35b385ec80d14136c5a76689d64769dcb6"),
+    "i1/modules/memory.py": ("src/i1/modules/memory.py", "5a7006da7aaa0e21e7316d4b87752dd3177ce25b"),
+    "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py", "3602a32b71179cc9186ec065501c1c9834f4adce"),
 }
 
 def _approved_prospect_361(root: Path, rel: str) -> bool:
