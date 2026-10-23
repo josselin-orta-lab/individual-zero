@@ -1293,6 +1293,18 @@ for label, arm in (("neutral", neutral), ("nourishing", nourishing)):
             (clock, goal) for clock, goal in owner_changes.items()
             if clock <= (step, cycle))
         active = None if not history else history[-1][1]
+        last_activation_clock = None if not history else history[-1][0]
+        # Planning can genuinely release an unavailable goal AFTER the
+        # GoalManager phase, without a second active_goal_changed event.
+        # The same-step observer must honor that owner-published release.
+        for released_step, released_cycle, released_ref, released in arm[
+                "goal_unavailable_events"]:
+            if (released and (released_step, released_cycle) <= (step, cycle)
+                and (last_activation_clock is None
+                     or (released_step, released_cycle) >=
+                        last_activation_clock)
+                and active is not None and released_ref == active["id"]):
+                active = None
         if active is not None:
             assert active["state"] == "active"
         exact_producer = [
