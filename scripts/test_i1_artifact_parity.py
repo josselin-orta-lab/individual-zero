@@ -974,7 +974,7 @@ def _approved_local_327(root: Path, rel: str) -> bool:
 
 
 # Exact reviewed M11 cold body type fix; no broad waiver.
-_M11_BODY_TYPE_BLOB = "6dbe4362b75e54252dfa46ed43f466393ccb91bd"
+_M11_BODY_TYPE_BLOB = "4be8c04fc5bb4d58991317586c7ce4759fbc9131"
 
 
 def _approved_m11_body_type(root: Path, rel: str) -> bool:

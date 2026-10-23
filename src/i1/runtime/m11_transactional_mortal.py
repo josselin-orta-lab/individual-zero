@@ -186,6 +186,22 @@ def _runtime_contract(runtime: Any) -> str:
     if getattr(runtime, "_i1_water_contract", None) is not None:
         configuration = (*configuration,
             ("i1-water-firstperson-birth-v1", runtime._i1_water_contract))
+    # I1 natural M11 must not cold-recover with a different birth-time
+    # Action Control prohibition policy. Learned facts remain owned by the
+    # restored Causal Model; only the immutable innate policy is pinned here.
+    from .i1_natural_runtime import I1Runtime
+    if type(runtime) is I1Runtime:
+        from i1.modules.action_control import StaticSafetyFacts
+        canonical = runtime._canonical_safety
+        innate = canonical._innate
+        if type(innate) is not StaticSafetyFacts:
+            raise RecoveryBlocked("canonical I1 requires frozen innate safety facts")
+        configuration = (*configuration, (
+            "i1-m11-action-control-birth-safety-v1",
+            innate,
+            runtime.stage3.control._config,
+            runtime.stage3.substrate.safety._config,
+        ))
     return sha256_hex(canonical_causal_bytes(_contract_value(configuration)))
 
 
