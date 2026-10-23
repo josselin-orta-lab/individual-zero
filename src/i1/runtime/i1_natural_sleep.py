@@ -35,13 +35,18 @@ CONSOLIDATION_PERIOD_UC = 2560
 
 # Ordinary birth metabolism, explicitly versioned and physically observable.
 # These are provisional simulation units rather than biological constants.
-LIVING_PHYSIOLOGY_POLICY = "i1-living-physical-defaults-v3-zero-reserve-lethal"
+LIVING_PHYSIOLOGY_POLICY = "i1-living-physical-defaults-v4-metabolic-coupling"
 TOXIC_BERRY_POLICY = "i1-natural-toxic-berry-integrity-minus-10-v1"
 DEFAULT_TOXIC_BERRY_INTEGRITY_DELTA = -10.0
 DEFAULT_STARVATION_DAMAGE = 0.5
 DEFAULT_DEHYDRATION_DAMAGE = 1.0
 DEFAULT_FOOD_DECAY = 0.20
 DEFAULT_WATER_DECAY = 0.40
+# Metabolic substrate cost per physical recovery point. These small,
+# explicitly frozen simulation quantities are not human calorie units.
+METABOLIC_COST_PER_ENERGY = 0.05
+METABOLIC_COST_PER_INTEGRITY = 0.10
+METABOLIC_MINIMUM_WATER = 0.05
 DEFAULT_REST_INTEGRITY_GAIN = 0.20
 DEFAULT_ACTION_ENERGY_COSTS = {
     "se_deplacer": 2.0,
@@ -85,6 +90,9 @@ def enable_living_physiology_birth(world_config):
         starvation_integrity_damage_per_step=0.0,
         dehydration_integrity_damage_per_step=0.0,
         zero_reserve_lethal=True,
+        metabolic_recovery_cost_per_energy=METABOLIC_COST_PER_ENERGY,
+        metabolic_repair_cost_per_integrity=METABOLIC_COST_PER_INTEGRITY,
+        metabolic_minimum_water=METABOLIC_MINIMUM_WATER,
         food_decay_per_step=(
             DEFAULT_FOOD_DECAY if world_config.food_decay_per_step == 0.0
             else world_config.food_decay_per_step
