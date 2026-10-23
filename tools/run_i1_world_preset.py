@@ -274,6 +274,9 @@ def _m11_life(*, birth, params, life_id, path, steps):
     from i1lab.sqlite_life_store import SQLiteLifeLedger
 
     trajectory = []
+    # Observational custody only, never visible to the cognitive agent.
+    first_autobiographical_commit = {}
+    first_memory_ingestion = {}
     with birth(db_path=str(path), life_id=life_id, **params) as life:
         effective = {
             "version": life._runtime.world.config.version,
@@ -440,6 +443,13 @@ def _m11_life(*, birth, params, life_id, path, steps):
             memory_image = memory_owner.export_causal_state()
             newly_closed = memory_image["episodes"][episodes_before:]
             memory_seen = set(memory_image["seen_event_refs"])
+            for committed in owned_commits:
+                for source_ref in committed["event_refs"]:
+                    first_autobiographical_commit.setdefault(
+                        source_ref, receipt.world_step)
+            for source_ref in memory_seen:
+                first_memory_ingestion.setdefault(
+                    source_ref, receipt.world_step)
             pending_td = life._runtime.q_active.pending_segment
             custody = {
                 "auto_commit_count": len(owned_commits),
@@ -447,6 +457,14 @@ def _m11_life(*, birth, params, life_id, path, steps):
                     [] if not owned_commits
                     else list(owned_commits[0]["event_refs"])),
                 "physical_source_refs": physical_refs,
+                "physical_autobiographical_commit_steps": {
+                    ref: first_autobiographical_commit.get(ref)
+                    for ref in physical_refs
+                },
+                "physical_memory_ingestion_steps": {
+                    ref: first_memory_ingestion.get(ref)
+                    for ref in physical_refs
+                },
                 "physical_refs_seen_by_memory_after_commit": sum(
                     ref in memory_seen for ref in physical_refs),
                 "memory_seen_before": seen_before,
@@ -517,6 +535,21 @@ def _m11_life(*, birth, params, life_id, path, steps):
         "may_recover": audit.may_recover,
         "custody_file": path.name,
         "effective_birth_physics": effective,
+        "physical_memory_custody_469": [
+            {
+                "step": row["world_step"],
+                "primitive": (
+                    None if row["physical_journal_observation"] is None
+                    else row["physical_journal_observation"]["primitive"]),
+                "source_ref": ref,
+                "autobiographical_commit_step":
+                    first_autobiographical_commit.get(ref),
+                "memory_ingestion_step": first_memory_ingestion.get(ref),
+            }
+            for row in trajectory
+            for ref in row["autobiographical_sleep_custody_467"][
+                "physical_source_refs"]
+        ],
     }
 
 
