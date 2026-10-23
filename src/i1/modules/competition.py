@@ -306,6 +306,9 @@ class Competition:
             or verified_control_step != (opt.id, plan.id, 1)
             or len(plan.steps) != 1
             or plan.steps[0].command.primitive != "se_deplacer"
+            or not self._matches_applied_memory_motor_geometry(
+                opt.motive_ref.id, plan.steps[0].command.parameters,
+                expected_position)
             or current.last_proposal_t != applied_step
             or current.accumulator < current.last_threshold
             or not isfinite(current.accumulator)
@@ -328,6 +331,34 @@ class Competition:
             return False
         self._applied_memory_intent = record
         return True
+
+    @staticmethod
+    def _matches_applied_memory_motor_geometry(
+        route_ref: str, parameters: Mapping[str, object],
+        expected_position: tuple[int, int],
+    ) -> bool:
+        """Cross-check the admitted first motor hop with its claimed route."""
+        import re
+        match = re.fullmatch(
+            r"place:(.+):at:(-?(?:0|[1-9][0-9]*)):"
+            r"(-?(?:0|[1-9][0-9]*)):from:(-?(?:0|[1-9][0-9]*)):"
+            r"(-?(?:0|[1-9][0-9]*)):via:(-?(?:0|[1-9][0-9]*)):"
+            r"(-?(?:0|[1-9][0-9]*))", route_ref,
+        ) if type(route_ref) is str else None
+        if match is None or not isinstance(parameters, Mapping):
+            return False
+        origin = tuple(map(int, match.group(4, 5)))
+        destination = tuple(map(int, match.group(6, 7)))
+        delta = tuple(a-b for a,b in zip(destination, origin))
+        directions = {
+            (0, -1): "north", (1, 0): "east",
+            (0, 1): "south", (-1, 0): "west",
+        }
+        return (
+            destination == expected_position
+            and len(parameters) == 1
+            and parameters.get("direction") == directions.get(delta)
+        )
 
     def expire_memory_intention(self, *, world_step: int) -> bool:
         """Expire a semantic commitment by physical time, without Perception.

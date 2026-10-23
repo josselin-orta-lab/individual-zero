@@ -74,6 +74,23 @@ for expected,site in (((0,1),(2,1)),((1,0),(5,5))):
         applied_step=1,expected_position=expected,
         observed_site=site,fallback_used=False)
     assert c.export_causal_state()==before
+# Same canonical route and crossed evidence do not authenticate a different
+# motor command or an unrelated expected physical arrival.
+for direction in ("north", "west"):
+    bad_command = PrimitiveCommand("se_deplacer", {"direction":direction})
+    bad_plan = replace(plan,steps=(replace(plan.steps[0],command=bad_command),))
+    malformed = OptionProposal(option=option,plan=bad_plan)
+    malformed.validate()
+    assert c.register(malformed,active_goal_id="goal:food",t_monde=1)
+    assert c.evaluate(cycle=1,t_monde=1).winner is not None
+    baseline=c.export_causal_state()
+    assert not c.record_applied_memory_intention(
+        option_ref=oid,verified_control_step=source,applied_step=1,
+        expected_position=(1,0),observed_site=(2,1),fallback_used=False)
+    assert c.export_causal_state()==baseline
+# Restore authentic first-hop motor realization for the positive contract.
+assert c.register(proposal,active_goal_id="goal:food",t_monde=1)
+assert c.evaluate(cycle=1,t_monde=1).winner is not None
 assert c.record_applied_memory_intention(
     option_ref=oid,verified_control_step=source,
     applied_step=1,expected_position=(1,0),
