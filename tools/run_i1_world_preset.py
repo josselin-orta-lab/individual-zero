@@ -288,8 +288,16 @@ def _m11_life(*, birth, params, life_id, path, steps):
             # #467: owner snapshots around the same authentic, paid M11
             # generation. No Memory/TD/History method below writes a state.
             episodes_before = life._runtime.memory.episode_count
-            seen_before = len(life._runtime.memory.export_causal_state()[
-                "seen_event_refs"])
+            memory_before = life._runtime.memory.export_causal_state()
+            seen_before = len(memory_before["seen_event_refs"])
+            # Operator-only pre-step ownership snapshot: a source learned in
+            # this world step is not admissible evidence for earlier recall.
+            preclosed_occurrences = {}
+            for episode in memory_before["episodes"]:
+                for ref in episode["event_refs"]:
+                    preclosed_occurrences[ref] = (
+                        preclosed_occurrences.get(ref, 0) + 1)
+            position_before = life._runtime.world.position.as_dict()
             pre_body = dict(life._runtime.world.telemetry())
             mode_before = life._runtime.sleep_session.mode
             prior_frozen = life._runtime.sleep_health.frozen
@@ -450,6 +458,61 @@ def _m11_life(*, birth, params, life_id, path, steps):
             for source_ref in memory_seen:
                 first_memory_ingestion.setdefault(
                     source_ref, receipt.world_step)
+            # #467: independent post-commit audit of the *paid cognitive*
+            # sleep-site recall, not a replacement for first-person Memory.
+            # Verify against the pre-step closed Memory image, never against
+            # records written later in this physical step.
+            recalls = events_of("i1_sleep_site_recall_consulted")
+            recall_charges = [
+                e for e in events_of("compute_charge")
+                if e["data"].get("operation") == "i1_closed_sleep_recall"
+            ]
+            if len(recalls) > 1 or len(recall_charges) > 1:
+                raise RuntimeError("multiple sleep recalls in one physical step")
+            if recalls:
+                observation = recalls[0]
+                info = observation["data"]
+                valid_charges = [
+                    row for row in recall_charges
+                    if row.get("cycle") == observation.get("cycle")
+                    and row["data"].get("module") == "planning"
+                    and row["data"].get("requested_uc") == 1
+                    and row["data"].get("accepted") is True
+                ]
+                if len(valid_charges) != 1:
+                    raise RuntimeError("unpaid first-person sleep-site recall")
+                if (observation["t_monde"] != receipt.world_step
+                    or info.get("site") != [
+                        position_before["x"], position_before["y"]]
+                    or info.get("charged_operation")
+                        != "i1_closed_sleep_recall"
+                    or info.get("evidence_applied") is not False
+                    or type(info.get("witness_count")) is not int
+                    or info["witness_count"] < 0
+                    or type(info.get("event_refs")) is not list
+                    or len(info["event_refs"]) != 2 * info["witness_count"]
+                    or len(set(info["event_refs"])) != len(info["event_refs"])):
+                    raise RuntimeError("inconsistent personal sleep recall receipt")
+                for ref in info["event_refs"]:
+                    if (preclosed_occurrences.get(ref) != 1
+                        or first_autobiographical_commit.get(ref) is None
+                        or first_autobiographical_commit[ref]
+                            >= receipt.world_step):
+                        raise RuntimeError(
+                            "sleep recall referenced uncommitted or open source")
+            recall_audit = {
+                "paid_uc": sum(
+                    row["data"]["requested_uc"] for row in recall_charges
+                    if row["data"]["accepted"]),
+                "read_count": len(recalls),
+                "witness_count": (
+                    0 if not recalls else recalls[0]["data"]["witness_count"]),
+                "source_event_refs": (
+                    [] if not recalls else list(recalls[0]["data"]["event_refs"])),
+                "observed_site": (
+                    None if not recalls else list(recalls[0]["data"]["site"])),
+                "published_evidence": False,
+            }
             pending_td = life._runtime.q_active.pending_segment
             custody = {
                 "auto_commit_count": len(owned_commits),
@@ -503,6 +566,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 "physical_journal_observation": actual,
                 "sleep_custody_observation": sleep_custody,
                 "autobiographical_sleep_custody_467": custody,
+                "sleep_site_recall_custody_467": recall_audit,
                 "lifecycle": receipt.status,
                 "execution": receipt.outcome,
                 "journal_count": receipt.journal_count,
