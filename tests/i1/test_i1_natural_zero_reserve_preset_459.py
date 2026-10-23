@@ -108,6 +108,34 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
     latest_h = memory_rows[-1][1]["slow_history_version"]
     assert physically_committed > 0
     assert sleep_without_memory_ingestion >= 0
+    # #469: compare real first-person physical source custody without
+    # assuming an immediate Memory ingestion or a future replay.
+    ref_rows = life["physical_memory_custody_469"]
+    assert len(ref_rows) == 2 * len(physical)
+    assert len({x["source_ref"] for x in ref_rows}) == len(ref_rows)
+    sleep_refs = [x for x in ref_rows if x["primitive"] == "dormir"]
+    assert len(sleep_refs) == 2 * sleep_count
+    assert all(x["memory_ingestion_step"] is None
+               or x["memory_ingestion_step"] >= x["step"]
+               for x in ref_rows)
+    assert all(x["autobiographical_commit_step"] is None
+               or x["autobiographical_commit_step"] >= x["step"]
+               for x in ref_rows)
+    assert all(x["memory_ingestion_step"] is None
+               or x["autobiographical_commit_step"] is not None
+               for x in ref_rows)
+    missing_commit = sum(x["autobiographical_commit_step"] is None
+                         for x in sleep_refs)
+    missing_ingestion = sum(x["memory_ingestion_step"] is None
+                            for x in sleep_refs)
+    lagged = [x["memory_ingestion_step"] - x["step"]
+              for x in sleep_refs if x["memory_ingestion_step"] is not None]
+    print("I1_469_SLEEP_MEMORY_LAG",
+          "source_refs", len(sleep_refs),
+          "without_commit", missing_commit,
+          "without_ingestion_by_death", missing_ingestion,
+          "ingestion_delays", sorted(set(lagged)),
+          "max_delay", max(lagged, default=None))
     print("I1_467_SLEEP_MEMORY_CUSTODY",
           "physical_autobiographical_commits", physically_committed,
           "reduced_autobiographical_commits", reduced_with_autobio,
