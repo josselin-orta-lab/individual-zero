@@ -94,5 +94,84 @@ print("I1_ZERO_RESERVE_PHYSICS_OK")
             self.assertIn("I1_ZERO_RESERVE_PHYSICS_OK", proc.stdout)
 
 
+    def test_m11_terminal_death_and_no_cold_revival(self):
+        with TemporaryDirectory(prefix="i1-457-m11-") as tmp:
+            generated = Path(tmp) / "generated"
+            generate(generated)
+            script = r"""
+from dataclasses import replace
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from i1lab.i1_birth import birth_i1_m11, recover_i1_m11
+from i1lab.i1_natural_runtime import I1Runtime
+from i1lab.stage11_reference_fixture import build_stage11_reference_runtime
+from i1lab.stage10_reference_fixture import build_stage10_reference_runtime
+from i1lab.sqlite_life_store import SQLiteLifeLedger, RecoveryBlocked
+from i1lab.world import BodyState, WorldLayout
+from i1.modules.stage12_detectors import Stage12DetectionPolicy
+
+base = build_stage11_reference_runtime(autonomous_mortal=True)
+sleep = build_stage10_reference_runtime(autonomous_mortal=True)
+stage10 = replace(sleep._stage10_config, stage9=base._stage11_config.stage9)
+detector = Stage12DetectionPolicy(
+    version="i1-457-m11-death-v1", window=12,
+    stagnation_steps=3, stagnation_tolerance=.05,
+    loop_repetitions=2, loop_max_period=2,
+    entropy_min_samples=3, entropy_warning_fraction=.25,
+    bias_min_outcomes_each=2, attribution_bias_threshold=.75,
+)
+for channel in ("food", "water"):
+    body = BodyState(energy=70.0, food=0.0 if channel == "food" else 40.0,
+                     water=0.0 if channel == "water" else 40.0,
+                     integrity=85.0)
+    params = dict(
+        world_config=replace(base.world.config, initial_body=body),
+        layout=WorldLayout(),
+        safety_config=base.stage3.substrate.safety._config,
+        safety_facts=base._canonical_safety._innate,
+        protected_integrity_threshold=base.stage3.control._config.protected_integrity_threshold,
+        stage11_config=base._stage11_config, stage10_config=stage10,
+        equipment=base.equipment, detector_policy=detector,
+        diagnostic_sample_cost_uc=1, module_occupancy_cost_uc=1,
+    )
+    life_id = "i1:457:mortal:" + channel
+    with TemporaryDirectory() as folder:
+        db = str(Path(folder) / "terminal.sqlite")
+        with birth_i1_m11(db_path=db, life_id=life_id, **params) as individual:
+            assert individual._runtime.world.config.zero_reserve_lethal
+            last = individual.run_step()
+            assert last.status == "dead", last
+            assert individual._runtime.world.body.integrity > 0.0
+            try:
+                individual.run_step()
+            except RecoveryBlocked:
+                pass
+            else:
+                raise AssertionError("terminal individual advanced")
+        ledger = SQLiteLifeLedger.audit_read_only(
+            path=db, expected_individual_id=life_id)
+        assert ledger.status == "dead" and not ledger.may_recover
+        try:
+            with recover_i1_m11(
+                db_path=db, life_id=life_id,
+                runtime_factory=lambda: I1Runtime(
+                    birth_life_id=life_id, autonomous_mortal=True,
+                    m11_sqlite_custody=True, wal_path=None, **params)):
+                pass
+        except RecoveryBlocked:
+            pass
+        else:
+            raise AssertionError("terminal M11 identity was resurrected")
+print("I1_ZERO_RESERVE_M11_FINALITY_OK")
+"""
+            proc = subprocess.run(
+                [sys.executable, "-B", "-c", script],
+                cwd=ROOT, capture_output=True, text=True,
+                env={"PYTHONPATH": str(generated) + ":" + str(ROOT / "src")},
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("I1_ZERO_RESERVE_M11_FINALITY_OK", proc.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
