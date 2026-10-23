@@ -528,6 +528,62 @@ def _m11_life(*, birth, params, life_id, path, steps):
         raise RuntimeError("M11 read-only audit disagrees with committed life")
     if audit.status == "dead" and audit.may_recover:
         raise RuntimeError("terminal identity unexpectedly recoverable")
+    # #471: operator-only proof of which real sleeping source references
+    # are present in *closed* Memory episodes, not merely a technical
+    # journal, an open episode, or a paid-but-unrelated h publication.
+    final_memory = life._runtime.memory.export_causal_state()
+    indexed_refs = {}
+    for episode in final_memory["episodes"]:
+        for ref in episode["event_refs"]:
+            indexed_refs.setdefault(ref, []).append(episode["id"])
+    sleep_runs = []
+    current_run = []
+    for row in trajectory:
+        is_sleep = (row["physical_journal_observation"] is not None
+                    and row["physical_journal_observation"]["primitive"] == "dormir")
+        if not is_sleep and current_run:
+            sleep_runs.append(current_run)
+            current_run = []
+        if is_sleep:
+            current_run.append(row)
+    if current_run:
+        sleep_runs.append(current_run)
+    sleep_experience = []
+    for run in sleep_runs:
+        refs = [ref for row in run
+                for ref in row["autobiographical_sleep_custody_467"][
+                    "physical_source_refs"]]
+        first = run[0]["physical_journal_observation"]["body_before"]
+        last = run[-1]["physical_journal_observation"]["body_after"]
+        closed_matches = {ref: indexed_refs.get(ref, []) for ref in refs}
+        if any(len(matches) > 1 for matches in closed_matches.values()):
+            raise RuntimeError("one lived source assigned to multiple closed episodes")
+        published = {
+            ref for row in run
+            for ref in row["autobiographical_sleep_custody_467"][
+                "physical_source_refs"]
+            if first_autobiographical_commit.get(ref) is not None
+        }
+        if any(ref not in published for ref in closed_matches
+               if closed_matches[ref]):
+            raise RuntimeError("non-autobiographical event in closed sleep episode")
+        encountered = sorted({e for xs in closed_matches.values() for e in xs})
+        sleep_experience.append({
+            "start_step": run[0]["world_step"],
+            "end_step": run[-1]["world_step"],
+            "steps": len(run),
+            "body_before": dict(first),
+            "body_after": dict(last),
+            "body_delta": {k: last[k] - first[k] for k in first},
+            "source_count": len(refs),
+            "sources_seen_by_memory": sum(
+                ref in first_memory_ingestion for ref in refs),
+            "sources_in_closed_episodes": sum(bool(x) for x in closed_matches.values()),
+            "distinct_closed_episode_refs": encountered,
+            "fully_closed": all(bool(x) for x in closed_matches.values()),
+            "final_life_terminal": (
+                run[-1]["lifecycle"] == "dead"),
+        })
     return {
         "lifecycle": audit.status, "steps": trajectory,
         "journal_head": audit.journal_head,
@@ -535,6 +591,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
         "may_recover": audit.may_recover,
         "custody_file": path.name,
         "effective_birth_physics": effective,
+        "sleep_episode_link_audit_471": sleep_experience,
         "physical_memory_custody_469": [
             {
                 "step": row["world_step"],
