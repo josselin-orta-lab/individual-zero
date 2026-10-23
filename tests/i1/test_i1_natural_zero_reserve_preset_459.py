@@ -143,16 +143,24 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
     assert all(x["body_delta"] ==
                {k: x["body_after"][k] - x["body_before"][k]
                 for k in x["body_before"]} for x in runs)
-    assert all(x["fully_closed"] ==
+    assert all(x["all_sources_in_closed_episodes"] ==
                (x["sources_in_closed_episodes"] == x["source_count"])
                for x in runs)
+    expected_provenance = {"ordinary_awake_admission": 3,
+                           "readmitted_after_wake": 31,
+                           "reduced_sleep_continuation": 9}
+    assert {kind: sum(x["provenance_counts"][kind] for x in runs)
+            for kind in expected_provenance} == expected_provenance
+    assert [x["provenance_counts"]["readmitted_after_wake"] for x in runs] == [0, 0, 31]
     assert len(runs) <= sleep_count
     print("I1_471_SLEEP_EPISODE_LINK",
           "runs", len(runs),
           "lengths", [x["steps"] for x in runs],
           "closed_episode_counts", [len(x["distinct_closed_episode_refs"])
                                     for x in runs],
-          "complete_runs", sum(x["fully_closed"] for x in runs),
+          "runs_with_all_sources_closed", sum(
+              x["all_sources_in_closed_episodes"] for x in runs),
+          "provenance", [x["provenance_counts"] for x in runs],
           "sources_in_closed_episodes",
           sum(x["sources_in_closed_episodes"] for x in runs),
           "total_sources", sum(x["source_count"] for x in runs))
