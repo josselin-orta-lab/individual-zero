@@ -76,6 +76,33 @@ with TemporaryDirectory() as temp:
         pass
     else:
         raise AssertionError("changed detector birth contract accepted")
+    # A different prebirth prohibition or Action Control guard must never
+    # silently change the recovered living individual's motor admission.
+    from i1.modules.action_control import StaticSafetyFacts
+    changed_births = (
+        {**params, "safety_facts": StaticSafetyFacts(
+            known_toxic_resources=frozenset({"berry_a"}))},
+        {**params, "safety_facts": StaticSafetyFacts(
+            known_lethal_positions=frozenset({(2, 2)}))},
+        {**params, "protected_integrity_threshold":
+            params["protected_integrity_threshold"] + 1.0},
+        {**params, "safety_config": replace(
+            params["safety_config"], version="different-safety-protocol")},
+    )
+    for changed_params in changed_births:
+        try:
+            with recover_i1_m11(
+                db_path=cold, life_id=life_id,
+                runtime_factory=lambda p=changed_params: I1Runtime(
+                    birth_life_id=life_id, autonomous_mortal=True,
+                    m11_sqlite_custody=True, wal_path=None, **p)):
+                pass
+        except RecoveryBlocked:
+            pass
+        else:
+            raise AssertionError("different Action Control birth safety recovered")
+    assert SQLiteLifeLedger.audit_read_only(
+        path=cold, expected_individual_id=life_id).generation == 1
     with recover_i1_m11(
         db_path=cold, life_id=life_id, runtime_factory=factory) as resumed:
         second = resumed.run_step()
