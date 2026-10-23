@@ -115,6 +115,33 @@ cold.open_deliberation(active_goal_id="goal:test",t_monde=2)
 assert cold.accumulator_for(first.option.id)==0.0, "normal motor engagement must reset"
 assert cold.applied_memory_intention.evidence>=0.5, "semantic evidence must survive"
 assert cold.register(second,active_goal_id="goal:test",t_monde=2)
+# Newly registered motor geometry must match first-person arrival.
+# Same remembered site alone cannot authorize a remote or wrong-way hop.
+from i0.contracts import MotiveRef
+for label,route,direction in (
+    ("remote","place:personally-seen-object:at:2:1:from:7:8:via:8:8","east"),
+    ("wrong-direction","place:personally-seen-object:at:2:1:from:1:0:via:2:0","north"),
+):
+    foreign_id="option:place-memory:"+route
+    foreign_option=replace(second.option,id=foreign_id,
+        motive_ref=MotiveRef(type="place_memory",id=route),
+        plan_ref="plan:"+foreign_id)
+    foreign_plan=replace(second.plan,id="plan:"+foreign_id,
+        option_ref=foreign_id,
+        steps=(replace(second.plan.steps[0],
+            command=PrimitiveCommand("se_deplacer",{"direction":direction})),))
+    foreign=OptionProposal(option=foreign_option,plan=foreign_plan)
+    foreign.validate()
+    fresh=Competition(cfg)
+    fresh.restore_causal_state(cold.export_causal_state())
+    assert fresh.register(foreign,active_goal_id="goal:test",t_monde=2)
+    unchanged=fresh.export_causal_state()
+    assert not fresh.retain_bounded_intention_evidence(
+        option_ref=foreign_id,t_monde=2,observed_origin=(1,0),evidence=.25)
+    assert fresh.export_causal_state()==unchanged
+    cold_foreign=Competition(cfg)
+    cold_foreign.restore_causal_state(unchanged)
+    assert cold_foreign.export_causal_state()==unchanged
 kw=dict(option_ref=second.option.id,t_monde=2,observed_origin=(1,0),evidence=0.25)
 for bad in (float("nan"),float("inf"),-0.1,True):
     try:
