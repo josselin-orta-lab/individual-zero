@@ -369,6 +369,84 @@ class EpisodicMemory:
             raise ValueError("invalid closed episode range")
         return tuple(self._episodes[start:stop])
 
+    def closed_sleep_site_witnesses(
+        self, *, autobiography: Sequence[Mapping[str, object]],
+        site: tuple[int, int], now: int,
+    ) -> tuple[dict[str, object], ...]:
+        """Read-only, first-person sleep outcomes from already CLOSED episodes.
+
+        Caller must pay UC and pass only a DC-09 JournalViews projection.
+        Paired events are observations, not full sleep sessions, a prediction,
+        or an inferred reward. Unknown pre-action body stays unknown.
+        """
+        if (type(now) is not int or now < 1 or type(site) is not tuple
+                or len(site) != 2 or any(type(v) is not int for v in site)):
+            raise ValueError("invalid personal sleep recall context")
+        custody: dict[str, str | None] = {}
+        for episode in self._episodes[-32:]:
+            for ref in episode.event_refs:
+                if type(ref) is not str or ref not in self._seen_event_refs:
+                    continue
+                custody[ref] = None if ref in custody else episode.id
+        per_step: dict[int, dict[str, list[Mapping[str, object]]]] = {}
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for event in autobiography:
+            if not isinstance(event, Mapping):
+                continue
+            ref, kind, step = (event.get("event_id"), event.get("kind"),
+                               event.get("t_monde"))
+            if (type(ref) is not str or custody.get(ref) is None
+                    or type(step) is not int or not 1 <= step < now
+                    or kind not in {"command_experienced",
+                                    "world_transition_experienced"}):
+                continue
+            if ref in seen:
+                duplicates.add(ref)
+            seen.add(ref)
+            per_step.setdefault(step, {"command": [], "transition": []})[
+                "command" if kind == "command_experienced" else "transition"
+            ].append(event)
+        found = []
+        for step in sorted(per_step):
+            pair = per_step[step]
+            if len(pair["command"]) != 1 or len(pair["transition"]) != 1:
+                continue
+            command, transition = pair["command"][0], pair["transition"][0]
+            refs = (command["event_id"], transition["event_id"])
+            if (any(ref in duplicates for ref in refs)
+                    or set(command) != {"event_id", "kind", "t_monde",
+                                       "primitive", "parameters"}
+                    or command["primitive"] != "dormir"
+                    or command["parameters"] != {}
+                    or set(transition) != {"event_id", "kind", "t_monde",
+                                           "position_after", "body_after",
+                                           "effects"}):
+                continue
+            position, body = (transition["position_after"],
+                              transition["body_after"])
+            if (not isinstance(position, Mapping)
+                    or set(position) != {"x", "y"}
+                    or any(type(position[k]) is not int for k in ("x", "y"))
+                    or (position["x"], position["y"]) != site
+                    or not isinstance(body, Mapping)
+                    or set(body) != _INTENTION_BODY_KEYS
+                    or any(type(body[k]) not in (int, float)
+                           or not isfinite(body[k]) or not 0 <= body[k] <= 100
+                           for k in _INTENTION_BODY_KEYS)):
+                continue
+            found.append({
+                "step": step,
+                "site_ref": f"sleep-site:{site[0]}:{site[1]}",
+                "source_event_refs": refs,
+                "source_episode_refs": tuple(dict.fromkeys(custody[r] for r in refs)),
+                "body_after": {k: float(body[k]) for k in
+                               ("energy", "food", "water", "integrity")},
+                "body_before": None,
+                "continuous_sleep_session": None,
+            })
+        return tuple(found[-16:])
+
     @property
     def last_recalled_ref(self) -> str | None:
         return self._last_recalled_ref
