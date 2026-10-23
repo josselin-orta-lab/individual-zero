@@ -264,6 +264,96 @@ def experiment(food_gain, db_path):
                                    and not any(x["crossed"] for x in rows.values())),
             "no_competition_cycle": False,
         }
+    # #438: replay only WAL ATTEMPT ORDER, not fabricated admissibility.
+    # Stage3 admission events have no cognitive cycle; the most recent
+    # authentic Competition cycle in this world step is their only anchor.
+    control_steps = {}
+    for ev in events:
+        t, kind, d = ev["t_monde"], ev.get("kind"), ev.get("data", {})
+        if kind == "competition_cycle":
+            current = control_steps.setdefault(t, {
+                "cycles": [], "attempts": [], "experienced": []})
+            current["cycles"].append(ev["cycle"])
+        elif kind in ("command_admitted", "command_vetoed"):
+            current = control_steps.setdefault(t, {
+                "cycles": [], "attempts": [], "experienced": []})
+            current["attempts"].append({
+                "cycle": current["cycles"][-1] if current["cycles"] else None,
+                "ok": kind == "command_admitted",
+                "source": d["source"],
+                "option_ref": d.get("option_ref"),
+                "primitive": d["primitive"],
+                "scope": d.get("scope"),
+                "reason": d.get("reason"),
+            })
+        elif kind == "command_experienced":
+            control_steps.setdefault(t, {
+                "cycles": [], "attempts": [], "experienced": []}
+            )["experienced"].append(ev["primitive"])
+    assert set(control_steps) == set(applied)
+    custody = Counter()
+    examples = []
+    for step, row in sorted(control_steps.items()):
+        attempts = row["attempts"]
+        assert len(row["experienced"]) == 1
+        accepted = [x for x in attempts if x["ok"]]
+        assert len(accepted) == 1
+        assert accepted[0] == attempts[-1]
+        assert accepted[0]["primitive"] == row["experienced"][0]
+        assert all(not x["ok"] for x in attempts[:-1])
+        assert all(x["source"] in ("reflex", "decision", "sleep")
+                   for x in attempts)
+        if not row["cycles"]:
+            # Stage10's already-committed sleep session admits each reduced
+            # physical sleep step through Action Control WITHOUT reentering
+            # Competition. This is not an unpriced reflex or a fallback.
+            assert len(attempts) == 1
+            assert attempts[0]["option_ref"] is None
+            if attempts[0]["source"] == "sleep":
+                assert attempts[0]["primitive"] == "dormir"
+                assert any(e.get("kind") == "stage10_sleep_entered"
+                           and e["t_monde"] <= step for e in events)
+                custody["committed_sleep_steps"] += 1
+            else:
+                assert attempts[0]["source"] == "reflex"
+                custody["reflex_applied_steps"] += 1
+            continue
+        assert len(row["cycles"]) == len(set(row["cycles"]))
+        assert all(x["source"] == "decision" for x in attempts)
+        assert accepted[0]["cycle"] == row["cycles"][-1]
+        assert accepted[0]["option_ref"] == decisions[step]["option_ref"]
+        final = frames[(step, row["cycles"][-1])]
+        crossed = sorted(
+            (ref for ref, tr in final.items() if tr["crossed"]),
+            key=lambda ref: (- (final[ref]["ratio"] - 1.0), ref))
+        # With no tie, lexical order is irrelevant. We inspect observed
+        # vetoes and do not claim physical admissibility for untried options.
+        if len({final[ref]["ratio"] for ref in crossed}) == len(crossed):
+            attempted_crossed = [
+                x["option_ref"] for x in attempts
+                if x["option_ref"] in crossed]
+            assert attempted_crossed == crossed[:len(attempted_crossed)]
+        if accepted[0]["option_ref"] in crossed:
+            custody["crossed_admitted_steps"] += 1
+            custody["crossed_vetoes"] += sum(
+                not x["ok"] and x["option_ref"] in crossed for x in attempts)
+            custody["lower_ranked_admissions_after_veto"] += (
+                accepted[0]["option_ref"] != crossed[0])
+        else:
+            assert row["cycles"][-1] == rt.competition._config.c_max
+            custody["fallback_applied_steps"] += 1
+        custody["total_vetoes"] += len(attempts) - 1
+        examples.append({
+            "step": step, "attempts": attempts,
+            "crossed_count": len(crossed),
+            "admitted_ref": accepted[0]["option_ref"],
+            "top_crossed_ref": crossed[0] if crossed else None,
+        })
+    assert (custody["reflex_applied_steps"] +
+            custody["committed_sleep_steps"] +
+            custody["crossed_admitted_steps"] +
+            custody["fallback_applied_steps"] == len(applied))
+
     assert td_events, "no TD publication despite ordinary natural decisions"
     for earlier, later in zip(td_snapshots, td_snapshots[1:]):
         for signature, count in earlier["update_counts"].items():
@@ -439,6 +529,8 @@ def experiment(food_gain, db_path):
         "paid_competition": paid_competition,
         "paid_frames": frames,
         "physical_decisions": decisions,
+        "action_control_custody": dict(custody),
+        "action_control_examples": examples[:12],
         "ledger_status": ledger.status,
         "m11_generation": ledger.generation,
         "head_verified": True,
@@ -889,6 +981,14 @@ report = {
     "postexperience_motor_trajectories_differ": future_motor_divergence,
     "paired_td_custody": td_custody,
     "paired_td_competition_adjudication": adjudication,
+    "paired_action_control_custody": {
+        "neutral": neutral["action_control_custody"],
+        "nourishing": nourishing["action_control_custody"],
+        "neutral_observed_attempts": neutral["action_control_examples"],
+        "nourishing_observed_attempts": nourishing["action_control_examples"],
+        "unattempted_rival_admissibility": "NOT_ESTABLISHED",
+        "learning_caused_motor_choice": "NOT_ESTABLISHED",
+    },
     "paired_learned_contender_overlap": overlap_diagnostic,
     "paid_learned_competitor_margins": margin_audit,
     "paired_candidate_identities_match": (
