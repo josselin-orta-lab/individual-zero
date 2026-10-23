@@ -51,7 +51,9 @@ for water in (0.1, 50):
     actual = w.apply(PrimitiveCommand("dormir", {}), t_monde=1)
     assert actual.body_after.energy == 25
     assert actual.body_after.integrity == 40
-    assert actual.lethal_reasons == ("zero_food",)
+    assert actual.lethal_reasons == (
+        ("zero_food", "zero_water") if water == 0.1 else ("zero_food",)
+    )
 # Positive substrate + water pays for recovery and repair; no free energy.
 config = replace(born, initial_body=BodyState(
     energy=25, food=50, water=50, integrity=40))
