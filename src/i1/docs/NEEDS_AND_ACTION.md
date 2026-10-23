@@ -10,6 +10,24 @@
 - **Goal and options:** `modules/goal_manager.py`, `modules/stage6_planning.py`, `modules/exploration.py` generate and arbitrate hypotheses about possible goals and acts.
 - **Decision and execution:** `modules/gatekeeper.py`, `modules/competition.py`, `modules/action_control.py` and `runtime/stage4_runtime.py` establish admission and dispatch; the world determines actual effects.
 
+## Current natural I1 mortality contract (#457)
+
+Natural I1 births with living physiology v3 treat **food at zero** and **water
+at zero** as independent terminal physical causes, `zero_food` and
+`zero_water`. There is no starvation/dehydration integrity drain.
+Food/water above zero remain continuous first-person need values without
+an innate food/eating or drinking action. A successful physical eating or
+drinking action at the end of the same step can rescue the matching reserve
+after ordinary decay; an unavailable/failed action cannot. A real sleep step
+may restore energy or integrity but cannot compensate for zero food/water.
+Hazards, toxic food, and integrity death remain independent causes.
+
+The physical version is frozen before an individual's birth, included in
+the causal world digest, and must match across M11 cold recovery. Old
+reference physics remains an explicitly different contract. These are
+world consequences, **not commands**, priors about edible resources, or
+proof of improved survival.
+
 ## Diagnostic cases
 
 | External symptom | What to measure | What it does NOT establish |
