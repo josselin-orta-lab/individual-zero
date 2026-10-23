@@ -66,6 +66,9 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
             )
             self.assertEqual(process.returncode, 0, process.stderr)
             self.assertIn("I1_459_M11_OBSERVED", process.stdout)
+            # The real observed status is surfaced in CI instead of hidden
+            # inside the subprocess. This cannot influence the living agent.
+            print(process.stdout.strip(), flush=True)
 
 
 if __name__ == "__main__":
