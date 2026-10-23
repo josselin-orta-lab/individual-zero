@@ -26,7 +26,7 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
     assert report["environment"]["world_physics_digest_kind"] == "input_prebirth_config"
     life = report["lives"][0]
     assert life["effective_birth_physics"]["zero_reserve_lethal"] is True
-    assert "v3-zero-reserve-lethal" in life["effective_birth_physics"]["version"]
+    assert "v4-metabolic-coupling" in life["effective_birth_physics"]["version"]
     assert life["effective_birth_physics"]["digest"] != report["environment"]["world_physics_digest"]
     assert life["steps"]
     assert len(life["steps"]) <= 55
