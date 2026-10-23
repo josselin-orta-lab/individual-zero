@@ -63,6 +63,7 @@ def experiment(food_gain, db_path):
         diagnostic_sample_cost_uc=1, module_occupancy_cost_uc=1,
     )
     receipts, bodies, boundaries, td_snapshots = [], [], [], []
+    goal_owner_snapshots = []
     with birth_i1_m11(db_path=str(db_path), life_id=life_id, **params) as actor:
         rt = actor._runtime
         first_local = rt.world.capture_local(t_monde=1).as_dict()
@@ -82,6 +83,27 @@ def experiment(food_gain, db_path):
                 # Existing world-step temporal condition, no new perception
                 # or additional owner update.
                 "is_night_at_step": bool(rt.world.is_night(receipt.world_step)),
+            })
+            # Each snapshot belongs to the new, durable M11 generation,
+            # AFTER the physical step, never the pre-cycle arbitration.
+            owner_state = rt.goal_manager.export_causal_state()
+            goal_owner_snapshots.append({
+                "step": receipt.world_step,
+                "generation": receipt.generation,
+                "active": owner_state["active"],
+                "latest_pressure": owner_state["latest_pressure"],
+                "visible_proposals": owner_state["visible_proposals"],
+                "next_proposals": owner_state["next_proposals"],
+                "refractory_until": owner_state["refractory_until"],
+                "impossible_failures": owner_state["impossible_failures"],
+                "born_goal_config": {
+                    "critical_pressure": rt.goal_manager._config.critical_pressure,
+                    "replacement_hysteresis": rt.goal_manager._config.replacement_hysteresis,
+                    "p_min": rt.goal_manager._config.p_min,
+                    "impossible_failures_required":
+                        rt.goal_manager._config.impossible_failures_required,
+                    "refractory_steps": rt.goal_manager._config.refractory_steps,
+                },
             })
             receipts.append({
                 "generation": receipt.generation,
@@ -574,6 +596,7 @@ def experiment(food_gain, db_path):
             for e in events),
         "td_update_counts": td_updates,
         "td_snapshots": td_snapshots,
+        "goal_owner_snapshots": goal_owner_snapshots,
         "td_events": td_events,
         "paid_stage8": paid_stage8,
         "paid_intrinsic": paid_intrinsic,
@@ -1390,6 +1413,81 @@ motive_custody_audit = {
     "scientific_l3": "NOT_ESTABLISHED",
 }
 
+# #455: GoalManager owner AFTER each durable M11 generation, not replayed
+# pre-cycle action authority. No goal is recomputed or fabricated.
+goal_owner_rows = []
+for label, arm in (("neutral", neutral), ("nourishing", nourishing)):
+    snapshots = arm["goal_owner_snapshots"]
+    assert len(snapshots) == len(arm["steps"]) == arm["m11_generation"]
+    config = snapshots[0]["born_goal_config"]
+    assert all(row["born_goal_config"] == config for row in snapshots)
+    for snap in snapshots:
+        step = snap["step"]
+        pressure = real_need_pressures(arm, step)
+        latest = {
+            (goal, target): val
+            for goal, target, val in snap["latest_pressure"]
+        }
+        refractory = {
+            (goal, target): until
+            for goal, target, until in snap["refractory_until"]
+        }
+        active = snap["active"]
+        goal_owner_rows.append({
+            "arm": label, "step": step,
+            "generation": snap["generation"],
+            "active_goal": None if active is None else active["goal_type"],
+            "active_target": None if active is None else active["target"],
+            "top_body_pressure_channel": max(pressure, key=pressure.get),
+            "body_water_pressure": pressure["water"],
+            "owner_last_drink_pressure": latest.get(("drink", "water")),
+            "drink_refractory_until": refractory.get(("drink", "water")),
+            "drink_refractory_at_next_step": (
+                refractory.get(("drink", "water")) is not None
+                and (step + 1) < refractory[("drink", "water")]
+                and pressure["water"] < config["critical_pressure"]),
+            "critical_pressure": config["critical_pressure"],
+            "hysteresis": config["replacement_hysteresis"],
+            "visible_drink_proposals": [
+                [p["t_monde"], p["cycle"], p["current_pressure"]]
+                for p in snap["visible_proposals"]
+                if p["goal_type"] == "drink"],
+            "deferred_drink_proposals": [
+                [p["t_monde"], p["cycle"], p["current_pressure"]]
+                for p in snap["next_proposals"]
+                if p["goal_type"] == "drink"],
+            "nonplannable_goal_failures": [
+                [g, target, count]
+                for g, target, _, count in snap["impossible_failures"]],
+            "reconsiderations_this_step": [
+                [cycle, ref, released]
+                for t, cycle, ref, released in arm["goal_unavailable_events"]
+                if t == step],
+            "owner_goal_changed_this_step": [
+                [cycle, None if goal is None else goal["goal_type"]]
+                for (t, cycle), goal in sorted(arm["owner_goal_events"].items())
+                if t == step],
+        })
+assert len(goal_owner_rows) == sum(
+    len(arm["steps"]) for arm in (neutral, nourishing))
+assert all(x["body_water_pressure"] < x["critical_pressure"]
+           for x in goal_owner_rows), (
+    "These natural lives unexpectedly reached the emergency threshold; "
+    "separate such exposure, do not assume it is absent")
+goal_owner_audit = {
+    "postcommit_owner_steps": len(goal_owner_rows),
+    "water_critical_exposures": sum(
+        x["body_water_pressure"] >= x["critical_pressure"]
+        for x in goal_owner_rows),
+    "drink_refractory_next_step": sum(
+        x["drink_refractory_at_next_step"] for x in goal_owner_rows),
+    "observed_steps_8_to_12": [
+        x for x in goal_owner_rows if 8 <= x["step"] <= 12],
+    "owner_snapshots_are_postcommit": True,
+    "goal_manager_contract_bug": "NOT_ESTABLISHED",
+    "scientific_l3": "NOT_ESTABLISHED",
+}
+
 adjudication = {
     "matched_paid_learned_options": len(joined),
     "changed_q_through_competition": len(changed),
@@ -1438,12 +1536,12 @@ report = {
     "first_ingestion_step": first if authenticated_exposure else None,
     "neutral": {k:v for k,v in neutral.items()
                 if k not in ("owner_goal_events", "producer_events", "goal_unavailable_events", "paid_intrinsic", "frozen_sleep_by_step", "frozen_sleep_components", "first_local", "steps", "contextual_values",
-                             "td_snapshots", "td_events", "paid_stage8",
+                             "goal_owner_snapshots", "td_snapshots", "td_events", "paid_stage8",
                              "paid_competition", "paid_frames",
                              "physical_decisions")},
     "nourishing": {k:v for k,v in nourishing.items()
                   if k not in ("owner_goal_events", "producer_events", "goal_unavailable_events", "paid_intrinsic", "frozen_sleep_by_step", "frozen_sleep_components", "first_local", "steps", "contextual_values",
-                               "td_snapshots", "td_events", "paid_stage8",
+                               "goal_owner_snapshots", "td_snapshots", "td_events", "paid_stage8",
                                "paid_competition", "paid_frames",
                                "physical_decisions")},
     "common_postexperience_context_evaluations": len(paired_contexts),
@@ -1458,6 +1556,7 @@ report = {
     "paired_sleep_intrinsic_decomposition": sleep_input_audit,
     "observed_sleep_needs_competition_451": sleep_need_audit,
     "owner_motive_custody_453": motive_custody_audit,
+    "goal_owner_chronology_455": goal_owner_audit,
     "paired_td_competition_adjudication": adjudication,
     "paired_action_control_custody": {
         "neutral": neutral["action_control_custody"],
