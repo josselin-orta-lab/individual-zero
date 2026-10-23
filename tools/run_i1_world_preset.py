@@ -205,6 +205,9 @@ def _wal_life(*, birth, params, life_id, path, steps, observe_owner_digests=Fals
 
     life = birth(life_id=life_id, wal_path=str(path), **params)
     trajectory = []
+    effective = {"version": life.world.config.version,
+                 "digest": life.world.config.digest(),
+                 "zero_reserve_lethal": life.world.config.zero_reserve_lethal}
     for _ in range(steps):
         # Read-only observer, strictly outside the cognitive world step.
         before = _observer_owner_hashes(life) if observe_owner_digests else None
@@ -227,6 +230,10 @@ def _wal_life(*, birth, params, life_id, path, steps, observe_owner_digests=Fals
             "position": life.world.position.as_dict(),
             "inventory": dict(life.world.inventory()),
             "journal_head": life.journal.head_hash,
+            "terminal_reasons": (
+                [] if life.stage3.substrate._mortal_boundary.terminal_death is None
+                else list(life.stage3.substrate._mortal_boundary.terminal_death.reasons)
+            ),
         })
         if observe_owner_digests:
             committed_refs = [
@@ -259,6 +266,7 @@ def _wal_life(*, birth, params, life_id, path, steps, observe_owner_digests=Fals
         "journal_head": life.journal.head_hash,
         "durable_entries": audit["verified_entries"],
         "custody_file": path.name,
+        "effective_birth_physics": effective,
     }
 
 
@@ -267,6 +275,11 @@ def _m11_life(*, birth, params, life_id, path, steps):
 
     trajectory = []
     with birth(db_path=str(path), life_id=life_id, **params) as life:
+        effective = {
+            "version": life._runtime.world.config.version,
+            "digest": life._runtime.world.config.digest(),
+            "zero_reserve_lethal": life._runtime.world.config.zero_reserve_lethal,
+        }
         for _ in range(steps):
             receipt = life.run_step()
             if receipt.status not in ("active", "dead"):
@@ -278,6 +291,14 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 "execution": receipt.outcome,
                 "journal_count": receipt.journal_count,
                 "journal_head": receipt.journal_head,
+                # Published ONLY after the committed M11 generation, no
+                # private staging mutation or extra physical/cognitive step.
+                "body_after": dict(life._runtime.world.telemetry()),
+                "position_after": life._runtime.world.position.as_dict(),
+                "terminal_reasons": (
+                    [] if life._runtime.stage3.substrate._mortal_boundary.terminal_death is None
+                    else list(life._runtime.stage3.substrate._mortal_boundary.terminal_death.reasons)
+                ),
             })
             if receipt.status == "dead":
                 break
@@ -297,6 +318,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
         "durable_entries": audit.journal_count,
         "may_recover": audit.may_recover,
         "custody_file": path.name,
+        "effective_birth_physics": effective,
     }
 
 
@@ -351,6 +373,7 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                 "initial_body": preset["initial_body"],
                 "layout": preset["layout"],  # External operator ONLY.
                 "world_physics_digest": params["world_config"].digest(),
+                "world_physics_digest_kind": "input_prebirth_config",
                 "initial_local_perception": initial_local,
                 "privileged_environment_not_given_to_policy": True,
             }
