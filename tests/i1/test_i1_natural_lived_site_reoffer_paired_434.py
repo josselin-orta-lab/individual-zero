@@ -201,6 +201,8 @@ def experiment(food_gain, db_path):
                 "status": d["status"],
                 "learned_status": d["learned_value_status"],
                 "learned_value": d["learned_value"],
+                "simulated_status": d["simulated_value_status"],
+                "simulated_value": d["simulated_value"],
                 "evidence": d["evidence"],
             }
     # Real paid Competition trace, not inferred from any Stage8 value.
@@ -723,6 +725,84 @@ assert authenticated_exposure and changed
 assert all(row["step"] > first for row in changed)
 assert all(row["same_stage8_competition"] for row in changed), (
     "changed learned Q did not retain identity into Competition")
+
+# #438: observed paired Stage8 values have TWO potentially moving owners:
+# learned TD/Q and Stage6 simulation on a body changed by the real ingestion.
+# Retain both already-journaled ingredients at the exact paid option cycle.
+# This is read-only attribution, NOT a forged evaluation or Q-only ablation.
+paired_evidence_inputs = []
+for item in changed:
+    step, cycle, ref = item["step"], item["cycle"], item["option_ref"]
+    key = (step, cycle, ref)
+    left, right = neutral["paid_stage8"][key], nourishing["paid_stage8"][key]
+    assert left["status"] == right["status"] == "evaluated"
+    assert left["learned_status"] == right["learned_status"] == "learned"
+    assert left["learned_value"] is not None
+    assert right["learned_value"] is not None
+    simulation_in_both = (
+        left["simulated_status"] == right["simulated_status"] == "computed"
+        and left["simulated_value"] is not None
+        and right["simulated_value"] is not None
+    )
+    sim_delta = (
+        float(right["simulated_value"]) - float(left["simulated_value"])
+        if simulation_in_both else None
+    )
+    q_delta, evidence_delta = item["delta_q"], item["delta_competition"]
+    signs_opposed = (
+        abs(q_delta) > 1e-12 and abs(evidence_delta) > 1e-12
+        and (q_delta > 0) != (evidence_delta > 0)
+    )
+    # Operator observations remain OUTSIDE first-person cognition.
+    before_a = neutral["steps"][step - 1]["before"]
+    before_b = nourishing["steps"][step - 1]["before"]
+    body_delta = {
+        name: float(before_b[name]) - float(before_a[name])
+        for name in ("energy", "food", "water", "integrity")
+    }
+    paired_evidence_inputs.append({
+        "step": step, "cycle": cycle, "option_ref": ref,
+        "learning_signature": item["signature"],
+        "delta_q": q_delta, "delta_competition": evidence_delta,
+        "q_and_evidence_signs_opposed": signs_opposed,
+        "simulated_status_neutral": left["simulated_status"],
+        "simulated_status_nourishing": right["simulated_status"],
+        "delta_simulated_value": sim_delta,
+        "prestep_body_delta": body_delta,
+        "physiology_differs": any(abs(x) > 1e-12
+                                  for x in body_delta.values()),
+    })
+assert len(paired_evidence_inputs) == len(changed)
+stage8_input_audit = {
+    "exact_paid_q_changed_cases": len(paired_evidence_inputs),
+    "q_and_competition_signs_opposed": sum(
+        x["q_and_evidence_signs_opposed"] for x in paired_evidence_inputs),
+    "simulation_computed_in_both": sum(
+        x["delta_simulated_value"] is not None
+        for x in paired_evidence_inputs),
+    "simulated_values_changed": sum(
+        x["delta_simulated_value"] is not None
+        and abs(x["delta_simulated_value"]) > 1e-12
+        for x in paired_evidence_inputs),
+    "opposed_sign_with_simulation_shift": sum(
+        x["q_and_evidence_signs_opposed"]
+        and x["delta_simulated_value"] is not None
+        and abs(x["delta_simulated_value"]) > 1e-12
+        for x in paired_evidence_inputs),
+    "cases_with_different_preaction_physiology": sum(
+        x["physiology_differs"] for x in paired_evidence_inputs),
+    "opposing_sign_examples": [
+        x for x in paired_evidence_inputs
+        if x["q_and_evidence_signs_opposed"]
+    ][:6],
+    "actual_decision_cycle_examples": [
+        x for x in paired_evidence_inputs
+        if (x["step"], x["cycle"]) in ((3, 4), (11, 3), (12, 3))
+    ][:6],
+    "isolated_q_only_motor_effect": "NOT_ESTABLISHED",
+    "causal_owner_mutation": False,
+}
+
 a = neutral["physical_decisions"]
 b = nourishing["physical_decisions"]
 assert set(a) == set(b)
@@ -980,6 +1060,7 @@ report = {
             item["both_unlearned"] and item["both_unsimulated"])),
     "postexperience_motor_trajectories_differ": future_motor_divergence,
     "paired_td_custody": td_custody,
+    "paired_stage8_mixed_input_audit": stage8_input_audit,
     "paired_td_competition_adjudication": adjudication,
     "paired_action_control_custody": {
         "neutral": neutral["action_control_custody"],
