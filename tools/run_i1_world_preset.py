@@ -548,7 +548,9 @@ def _m11_life(*, birth, params, life_id, path, steps):
             current_run.append(row)
     if current_run:
         sleep_runs.append(current_run)
-    sleep_experience = []
+    # Contiguous physical commands are not necessarily uninterrupted sleep:
+    # wake plus a new paid admission may occur between adjacent commands.
+    sleep_run_audits = []
     for run in sleep_runs:
         refs = [ref for row in run
                 for ref in row["autobiographical_sleep_custody_467"][
@@ -568,7 +570,14 @@ def _m11_life(*, birth, params, life_id, path, steps):
                if closed_matches[ref]):
             raise RuntimeError("non-autobiographical event in closed sleep episode")
         encountered = sorted({e for xs in closed_matches.values() for e in xs})
-        sleep_experience.append({
+        provenance_counts = {
+            kind: sum(row["sleep_custody_observation"]["provenance"] == kind
+                      for row in run)
+            for kind in ("ordinary_awake_admission", "readmitted_after_wake",
+                         "reduced_sleep_continuation")
+        }
+        sleep_run_audits.append({
+            "provenance_counts": provenance_counts,
             "start_step": run[0]["world_step"],
             "end_step": run[-1]["world_step"],
             "steps": len(run),
@@ -580,7 +589,8 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 ref in first_memory_ingestion for ref in refs),
             "sources_in_closed_episodes": sum(bool(x) for x in closed_matches.values()),
             "distinct_closed_episode_refs": encountered,
-            "fully_closed": all(bool(x) for x in closed_matches.values()),
+            "all_sources_in_closed_episodes": all(
+                bool(x) for x in closed_matches.values()),
             "final_life_terminal": (
                 run[-1]["lifecycle"] == "dead"),
         })
@@ -591,7 +601,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
         "may_recover": audit.may_recover,
         "custody_file": path.name,
         "effective_birth_physics": effective,
-        "sleep_episode_link_audit_471": sleep_experience,
+        "sleep_episode_link_audit_471": sleep_run_audits,
         "physical_memory_custody_469": [
             {
                 "step": row["world_step"],
