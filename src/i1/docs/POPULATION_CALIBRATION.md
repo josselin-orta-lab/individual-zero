@@ -1,0 +1,66 @@
+# I1 natural population calibration: baseline-first optimization
+
+Started 2026-10-18 on main `75762dc`; **restarted entirely from updated main `c82552c88c3b72384be7c14ce17b7dd6442dc30e`** after the explicit model integration of merged #309 and #312. No experimental research branch was copied. The native GoalManager control is now `0.04 / 0.35`; natural berry_b integrity damage is `-10`, frozen before birth in the native runtime. All pre-rebase cohorts and results are invalidated for this calibration. Use only new post-rebase cohorts and their SHA as evidence.
+
+## Research question
+
+Does a *population-level* choice of frozen, prebirth numerical owner parameters improve mean and worst-case bodily survival across independent natural I1 lives, while retaining subjective choice, native ValueNeeds, TD, Competition, body physics, sleep and death? **Parameter optimization is not in-life learning.**
+
+## Isolation
+
+No changes to `src/i1`, `src/i0`, body physics, sleep, motor selection or TD learning. The evaluator calls `birth_i1` exactly once per life. Candidate zero forwards unchanged current-main reference configurations. Calibrated GoalManager is native, not searched. Every other candidate uses `dataclasses.replace` exclusively before birth on **frozen GoalManager and Competition numeric configuration**, threaded through matching Stage11/Stage10 Stage9 owner trees. Natural birth still projects individual temperament and sleep rules. Same `life_id` for matched world+seed in separate independent processes retains temperament; unique separate WAL paths prevent shared history.
+
+Initial search dimensions: Competition base threshold [0.30,0.65] and gain [0.75,1.25]. GoalManager remains exactly `0.04/0.35`, with no override or experimental selector. Other variables, especially ValueNeeds weights (later transformed by temperament), TD, sleep, reward and physics, are **fixed**. Search candidates are reproducibly drawn by external seed 20261018, not chosen using previous scientific results. This first batch is a bounded random-search matrix, NOT CMA-ES or a trained model.
+
+## Stage 1: prospective screen
+
+6 configurations, including native baseline, 2 worlds `oasis` and `foraging`, paired seeds 901/902, 120 maximum physical steps per life: 24 independent mortal lives. No forced actions or cheat information. Outputs: full WAL audited by canonical HashChainedJournal auditor; effective born config, SHA, world digest, actions, bodily trace, zero-needs time, deaths, TD version and learning coefficient. Score is external only: 0.8 survival fraction + 0.2 fraction of needs above zero; no TD reward is influenced. Rank primarily by worst-case candidate score, then mean; report deaths separately. The ranking does not declare a scientific GO.
+
+## Gates
+
+- Any changed source outside tools/tests/CI/docs is a NO-GO.
+- Refuse mismatched physical config or TD owner, changing configs during a life, dishonest WAL, mixed SHA, mismatched candidate/world/seed cohorts or missing lives.
+- A 120-step pass is screening only. Later rounds must allocate longer horizons with fresh independent seeds and held-out worlds, compare against the untouched native baseline, and measure robust vital dynamics, learning, consolidation, premature death and full lifespan before promoting a single parameter set.
+- No automatic promotion or merge. I0 remains unchanged, all mortal deaths final.
+
+Scientific status: `NOT_EVALUATED` until full paired cohort and held-out replication.
+
+
+## Follow-up after first completed screen (2026-10-18)
+
+The post-berry, post-hysteresis natural cohort [Actions #39140561923](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39140561923), SHA `1f96e78b`, completed 24/24 trials successfully. Every candidate scored exactly 1.0 in oasis and 0.991666667 in foraging at 120 steps; all 24 survived to censoring. The score was saturated, so it **cannot rank the six parameter sets**. No finalist was selected from these data.
+
+PR #313 (read-only birth capability audit and strict toxic-berry parity) has since been merged to main at `2161b834`; this research branch is rebuilt on that main. A new prospective batch uses independent paired seeds 911/912, both worlds, 6 candidates, 300-step maximum. Each real I1 birth is independently validated with the same passive Stage4–12 audit as merged main. Every candidate retains natural GoalManager `0.04/0.35`, toxic berry `-10`, TD reward, fatigue, consolidation and all normal active cognitive capacities.
+
+The external training score is now `0.7 * observed_steps/horizon + 0.3 * (1 - average normalized physical deficit)`, where each channel `water`, `food`, `energy`, `integrity` contributes the bounded shortage `(100 - clamp(body,0,100))/100`. This rewards lower shortage even when no channel reaches zero, but **does not modify the internal TD reward**. Report minimum integrity, death, drinks, food actions and physical history independently. This is still screening: no scientific GO or parameter promotion without held-out worlds/seeds and long survival.
+
+Software risk: the previous score saturating is an **experimental evaluation deficiency**, not evidence of a broken I1 engine. Previous full-I1 CI failure was caused by the historical toxic-berry parity approval and is repaired by #313 with all general CI checks passing. Any newly identified genuine causal bug must be isolated rather than silently compensated by optimized parameters.
+
+
+## Results of prospective 300-step batch, SHA 7839facc
+
+Actions [#39142541553](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39142541553) completed 24/24 lives and the native model general CI passed. Training set = oasis/foraging, seeds 911/912. All 12 oasis lives survived to right censoring 300; all 12 foraging lives died at steps 216–230. Competition tuning **did not rescue foraging**. Native candidate 0 (threshold 0.5, gain 1.0) is first under the preregistered worst-score ordering (mean 0.801017, worst 0.698138, 2/4 dead); candidate 3 (0.47581, 1.02251) is second (mean 0.799646, worst 0.695581, 2/4 dead). Lower thresholds ~0.32–0.34 shortened foraging lives to 216–220 instead of native 230 and degraded scores. No change should be promoted from these data.
+
+The repeated 216–230 death window despite otherwise different Competition configurations motivates a **causal diagnostic**, not an assumption that threshold alone governs resource search or TD value. New read-only analyser `tools/analyze_i1_population_cohort.py` checks matched SHA, individuality, native owner/physics equivalence, body traces and scoreboard provenance before describing drinking/eating/goal-switch distributions. No oracle corrections, imposed exploratory actions, death rollback, changed reward or altered resource access.
+
+## Held-out 500-step cohort and software checks
+
+Preregistered independent seeds 921/922, worlds `oasis`, `foraging`, **`dry-valley`** (registered but not used in training), candidates 0 (untouched control), 3 (near native), 4 (lower threshold negative control). 18 distinct mortal births × 500-step upper horizon; death ends each life, and every WAL remains durable. Comparison is strictly within this frozen cohort, not pooled with the 300-step training. Ranking or bug verdict waits for completed WAL analysis. The protocol limits treatment to the two prebirth Competition numbers and validates all Stage4–12 capabilities.
+
+A concrete laboratory software deficiency was found and corrected: the population runner rejected the previously registered held-out `dry-valley` world because its local allowlist only included training worlds. The allowlist has been widened without modifying the world, cognition or physics. The forensic analysis is strict about missing or mixed lives, not an automatic claim that I1's internals are defective. Any evidence of a genuine motor/TD/Competition disconnect is to be filed separately with a minimal lived WAL witness.
+
+
+## 18 October: heldout CI forensic gate repaired
+
+The first 500-step heldout run [#39143645672](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39143645672) failed **before any I1 life executed**, in all 18 jobs. The minimal forensic test passed an intentionally incomplete report; the analyzer raised an unhandled `KeyError('journal_head')` instead of the contractually required `ValueError`. This is a laboratory schema-validation defect, **not an I1 engine defect**. The analyzer now fails closed with a descriptive `ValueError`; no bad report is accepted. Separately, the population unit test still expected only two training worlds after `dry-valley` was added as a registered heldout, causing 24/24 training jobs to fail before birth in [#39143625828](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39143625828). Its expected registry is updated. The new CI runs must complete before any physical conclusion. No physics, cognition, learning, or individual behavior has been changed.
+
+
+## 18 October: geographic sweep, early forensic evidence and preregistered full-WAL gate
+
+Prospective [Actions #39145521250](https://github.com/josselin-orta-lab/individual-zero/actions/runs/39145521250) uses six prebirth P-48/P-15 configurations, worlds oasis/foraging/dry-valley, independently paired seeds 931/932, 400-step mortal horizon. The first run is still completing; results are NOT a selected optimum. The native untouched I1 arm is C0.
+
+Eight early reports from seed 931 show the nonmonotonic trade-off: dry-valley movement C0=12, C1=23, C2=52 but lifespan C0=173, C1=170, C2=163; foraging C0/C1/C2 each 1 movement and dies at step 230; oasis C0=49 steps of movement and dies at step 312, C1=69 movements and also dies at 312; oasis C2 reaches the horizon 400 with only 8 movements. These are preliminary, not held-out or generalizable.
+
+An independent operator-only review of the first-person WAL proves that geographic options can be proposed without reaching Competition (foraging C2: 532 geographically proposed options, 0 crossings, maximum accumulator/threshold ~0.6955); dry-valley C2 has 140 geographic threshold crossings, but the actor visits 53 positions and never physically reaches the distant actual water source. In that world the first autonomous frontier sequence follows an edge of the map rather than a water-directed route. The laboratory must NOT furnish the hidden water coordinates to I1 or optimize simple movement count. This corroborates open issues #299 and #301, but does not by itself prove a new software bug.
+
+New `tools/analyze_i1_geo_population.py` and the `forensic-audit` CI job will **reject missing or duplicate cohorts, mixed SHAs, altered physics/TD/sleep, mismatched born profiles, body/action inconsistencies, forged, re-ordered or truncated full WALs**, then report survival, water deficits, consumption, actual geographic threshold crossings, and *operator-only* distances between physically visited cells and true resource sites. Those operator labels never enter the runtime, learning or action choice. No model changes, rewards, sleep edits, birth resets or action injections are permitted. Even a strong training score remains NO-GO for promotion until fresh held-out seeds validate improvement without starving eating.
