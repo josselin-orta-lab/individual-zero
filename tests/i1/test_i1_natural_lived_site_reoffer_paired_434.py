@@ -1149,110 +1149,6 @@ margin_audit = {
     "learned_td_caused_motor_choice": "NOT_ESTABLISHED",
 }
 
-# #453: join only real owner-published GoalManager changes and real option
-# producer events. An awake motor primitive alone proves no vital motive.
-motive_custody_rows = []
-for label, arm in (("neutral", neutral), ("nourishing", nourishing)):
-    owner_changes = arm["owner_goal_events"]
-    producer_events = arm["producer_events"]
-    for step in sorted(arm["physical_decisions"]):
-        paid_cycles = sorted(c for t, c in arm["paid_frames"] if t == step)
-        if not paid_cycles:
-            continue
-        cycle = paid_cycles[-1]
-        decision = arm["physical_decisions"][step]
-        admitted_ref = decision["option_ref"]
-        # GoalManager runs earlier than ordinary Competition in every
-        # cognitive cycle; only prior owner changes may apply.
-        history = sorted(
-            (clock, goal) for clock, goal in owner_changes.items()
-            if clock <= (step, cycle))
-        active = None if not history else history[-1][1]
-        if active is not None:
-            assert active["state"] == "active"
-        exact_producer = [
-            (clock, data) for clock, data in producer_events.items()
-            if clock[0] == step and clock[2] == admitted_ref
-            and clock[1] <= cycle
-        ]
-        actual_producer = (
-            max(exact_producer, key=lambda x: x[0][1])[1]
-            if exact_producer else None)
-        matching_sleep = (
-            (step, cycle, admitted_ref) in arm["paid_stage8"]
-            and admitted_ref is not None
-            and admitted_ref.startswith("option:sleep-pressure:")
-            and arm["paid_stage8"][(step, cycle, admitted_ref)][
-                "signature"] == "primitive:dormir")
-        if matching_sleep:
-            motive = "owner_frozen_sleep"
-            assert decision["primitive"] == "dormir"
-        elif actual_producer is not None:
-            if actual_producer["event_kind"] == "i1_local_opportunity_proposed":
-                assert actual_producer["goal_ref"] is None
-                motive = "independent_local_opportunity"
-            else:
-                motive = ("goal_attached_affordance"
-                          if actual_producer["goal_ref"] is not None
-                          else "unaffiliated_affordance")
-        else:
-            motive = "not_attributed_by_these_producers"
-        needs = real_need_pressures(arm, step)
-        top = max(needs, key=needs.get)
-        owner_goal_type = None if active is None else active["goal_type"]
-        owner_target = None if active is None else active["target"]
-        producer_goal_ref = (
-            None if actual_producer is None
-            else actual_producer["goal_ref"])
-        # A producer goal reference is not an inherited command; for an
-        # attached option, verify exact identity where it is current.
-        if motive == "goal_attached_affordance":
-            assert producer_goal_ref is not None
-            assert active is not None
-            assert producer_goal_ref == active["id"]
-        motive_custody_rows.append({
-            "arm": label, "step": step, "cycle": cycle,
-            "admitted_option_ref": admitted_ref,
-            "primitive": decision["primitive"],
-            "owner_goal_type": owner_goal_type,
-            "owner_target": owner_target,
-            "largest_need_channel": top,
-            "largest_need_pressure": needs[top],
-            "active_goal_matches_largest_need": owner_target == top,
-            "motive_class": motive,
-            "producer_goal_ref": producer_goal_ref,
-            "admitted_crossed": decision["admitted_crossed"],
-        })
-assert len(motive_custody_rows) == sum(
-    any(t == step for t, _ in arm["paid_frames"])
-    for arm in (neutral, nourishing)
-    for step in arm["physical_decisions"])
-motive_custody_audit = {
-    "actual_waking_decisions": len(motive_custody_rows),
-    "with_owner_goal": sum(x["owner_goal_type"] is not None
-                           for x in motive_custody_rows),
-    "owner_goal_different_from_max_pressure": sum(
-        x["owner_goal_type"] is not None
-        and not x["active_goal_matches_largest_need"]
-        for x in motive_custody_rows),
-    "independent_local_opportunity_admissions": sum(
-        x["motive_class"] == "independent_local_opportunity"
-        for x in motive_custody_rows),
-    "goal_attached_affordance_admissions": sum(
-        x["motive_class"] == "goal_attached_affordance"
-        for x in motive_custody_rows),
-    "sleep_owner_admissions": sum(
-        x["motive_class"] == "owner_frozen_sleep"
-        for x in motive_custody_rows),
-    "not_attributed_admissions": sum(
-        x["motive_class"] == "not_attributed_by_these_producers"
-        for x in motive_custody_rows),
-    "examples": motive_custody_rows,
-    "goal_match_does_not_prove_need_was_satisfied": True,
-    "learned_q_caused_action": "NOT_ESTABLISHED",
-    "scientific_l3": "NOT_ESTABLISHED",
-}
-
 # #451: pre-existing natural cycles only. Sleep is an ordinary paid option
 # competing against other candidates, never a source of mandatory action.
 # Diagnostic body pressures are recalculated outside the agent from its
@@ -1375,6 +1271,110 @@ sleep_need_audit = {
         for x in paired_evidence_inputs),
     "matched_p40_q_only_motor_effect": "NOT_ESTABLISHED",
     "emergency_priority_in_all_possible_worlds": "NOT_ESTABLISHED",
+    "scientific_l3": "NOT_ESTABLISHED",
+}
+
+# #453: join only real owner-published GoalManager changes and real option
+# producer events. An awake motor primitive alone proves no vital motive.
+motive_custody_rows = []
+for label, arm in (("neutral", neutral), ("nourishing", nourishing)):
+    owner_changes = arm["owner_goal_events"]
+    producer_events = arm["producer_events"]
+    for step in sorted(arm["physical_decisions"]):
+        paid_cycles = sorted(c for t, c in arm["paid_frames"] if t == step)
+        if not paid_cycles:
+            continue
+        cycle = paid_cycles[-1]
+        decision = arm["physical_decisions"][step]
+        admitted_ref = decision["option_ref"]
+        # GoalManager runs earlier than ordinary Competition in every
+        # cognitive cycle; only prior owner changes may apply.
+        history = sorted(
+            (clock, goal) for clock, goal in owner_changes.items()
+            if clock <= (step, cycle))
+        active = None if not history else history[-1][1]
+        if active is not None:
+            assert active["state"] == "active"
+        exact_producer = [
+            (clock, data) for clock, data in producer_events.items()
+            if clock[0] == step and clock[2] == admitted_ref
+            and clock[1] <= cycle
+        ]
+        actual_producer = (
+            max(exact_producer, key=lambda x: x[0][1])[1]
+            if exact_producer else None)
+        matching_sleep = (
+            (step, cycle, admitted_ref) in arm["paid_stage8"]
+            and admitted_ref is not None
+            and admitted_ref.startswith("option:sleep-pressure:")
+            and arm["paid_stage8"][(step, cycle, admitted_ref)][
+                "signature"] == "primitive:dormir")
+        if matching_sleep:
+            motive = "owner_frozen_sleep"
+            assert decision["primitive"] == "dormir"
+        elif actual_producer is not None:
+            if actual_producer["event_kind"] == "i1_local_opportunity_proposed":
+                assert actual_producer["goal_ref"] is None
+                motive = "independent_local_opportunity"
+            else:
+                motive = ("goal_attached_affordance"
+                          if actual_producer["goal_ref"] is not None
+                          else "unaffiliated_affordance")
+        else:
+            motive = "not_attributed_by_these_producers"
+        needs = real_need_pressures(arm, step)
+        top = max(needs, key=needs.get)
+        owner_goal_type = None if active is None else active["goal_type"]
+        owner_target = None if active is None else active["target"]
+        producer_goal_ref = (
+            None if actual_producer is None
+            else actual_producer["goal_ref"])
+        # A producer goal reference is not an inherited command; for an
+        # attached option, verify exact identity where it is current.
+        if motive == "goal_attached_affordance":
+            assert producer_goal_ref is not None
+            assert active is not None
+            assert producer_goal_ref == active["id"]
+        motive_custody_rows.append({
+            "arm": label, "step": step, "cycle": cycle,
+            "admitted_option_ref": admitted_ref,
+            "primitive": decision["primitive"],
+            "owner_goal_type": owner_goal_type,
+            "owner_target": owner_target,
+            "largest_need_channel": top,
+            "largest_need_pressure": needs[top],
+            "active_goal_matches_largest_need": owner_target == top,
+            "motive_class": motive,
+            "producer_goal_ref": producer_goal_ref,
+            "admitted_crossed": decision["admitted_crossed"],
+        })
+assert len(motive_custody_rows) == sum(
+    any(t == step for t, _ in arm["paid_frames"])
+    for arm in (neutral, nourishing)
+    for step in arm["physical_decisions"])
+motive_custody_audit = {
+    "actual_waking_decisions": len(motive_custody_rows),
+    "with_owner_goal": sum(x["owner_goal_type"] is not None
+                           for x in motive_custody_rows),
+    "owner_goal_different_from_max_pressure": sum(
+        x["owner_goal_type"] is not None
+        and not x["active_goal_matches_largest_need"]
+        for x in motive_custody_rows),
+    "independent_local_opportunity_admissions": sum(
+        x["motive_class"] == "independent_local_opportunity"
+        for x in motive_custody_rows),
+    "goal_attached_affordance_admissions": sum(
+        x["motive_class"] == "goal_attached_affordance"
+        for x in motive_custody_rows),
+    "sleep_owner_admissions": sum(
+        x["motive_class"] == "owner_frozen_sleep"
+        for x in motive_custody_rows),
+    "not_attributed_admissions": sum(
+        x["motive_class"] == "not_attributed_by_these_producers"
+        for x in motive_custody_rows),
+    "examples": motive_custody_rows,
+    "goal_match_does_not_prove_need_was_satisfied": True,
+    "learned_q_caused_action": "NOT_ESTABLISHED",
     "scientific_l3": "NOT_ESTABLISHED",
 }
 
