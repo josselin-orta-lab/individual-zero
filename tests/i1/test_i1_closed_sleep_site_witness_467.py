@@ -34,6 +34,9 @@ memory._episodes = [
     episode(3, ("c3", "t3")),
 ]
 memory._seen_event_refs = set(("c1", "t1", "c2", "t2", "c3", "t3"))
+assert memory.closed_sleep_recall_source_refs() == frozenset({
+    "c1", "t1", "c2", "t2", "c3", "t3",
+})
 def command(ref, step):
     return dict(event_id=ref, kind="command_experienced",
                 t_monde=step, primitive="dormir", parameters={})
