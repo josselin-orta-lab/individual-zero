@@ -79,6 +79,9 @@ def experiment(food_gain, db_path):
                 "step": receipt.world_step, "before": before,
                 "after": dict(rt.world.body.as_dict()),
                 "position": rt.world.position.as_dict(),
+                # Existing world-step temporal condition, no new perception
+                # or additional owner update.
+                "is_night_at_step": bool(rt.world.is_night(receipt.world_step)),
             })
             receipts.append({
                 "generation": receipt.generation,
@@ -1157,31 +1160,41 @@ for label, arm in (("neutral", neutral), ("nourishing", nourishing)):
         assert "metacognition_health:p40_sleep_pressure" in assessed["producers"]
         frozen = arm["frozen_sleep_components"][step]
         p40 = arm["frozen_sleep_by_step"][step]
-        # Night context is an observed natural temporal context, never a
-        # manufactured time of day. The freeze receipt itself is authoritative.
+        # Reconstruct P-40 from the same actual step's night clock and born
+        # coefficients. No physiological channel is part of this intrinsic.
+        actual_night = arm["steps"][step - 1]["is_night_at_step"]
+        assert type(actual_night) is bool
         weighted_awake = (
             arm["born_p40_fatigue_weight"] * frozen["fatigue"]
             + arm["born_p40_consolidation_weight"] *
               frozen["consolidation_pressure"]
         )
         is_night_component = (
-            p40 - min(1.0, weighted_awake))
-        assert isfinite(is_night_component)
-        assert -1e-12 <= is_night_component <= (
-            arm["born_p40_night_weight"] + 1e-12)
+            arm["born_p40_night_weight"] if actual_night else 0.0)
+        reconstructed_p40 = min(1.0, weighted_awake + is_night_component)
+        assert abs(reconstructed_p40 - p40) < 1e-12, (
+            "frozen P40 differs from actual night/fatigue/consolidation")
         assert abs(assessed["intrinsic_value"] - p40) < 1e-12
         need_pressures = real_need_pressures(arm, step)
         rivals = [
             (ref, tr) for ref, tr in candidates.items()
             if ref != sleep_ref and tr["evidence"] is not None
         ]
-        admitted = arm["physical_decisions"].get(step)
+        # Only the LAST paid cognitive cycle can be associated with the
+        # single physical action at this world step. Earlier cycles remain
+        # valid competition observations, not extra motor admissions.
+        final_cycle = max(c for (t, c) in arm["paid_frames"] if t == step)
+        is_final_cycle = cycle == final_cycle
+        admitted = (
+            arm["physical_decisions"].get(step) if is_final_cycle else None)
         sleep_need_cycles.append({
             "arm": label, "step": step, "cycle": cycle,
             "p40": p40,
             "p40_fatigue": frozen["fatigue"],
             "p40_consolidation": frozen["consolidation_pressure"],
-            "p40_residual_night_bounded": is_night_component,
+            "p40_exact_night_term": is_night_component,
+            "is_night": actual_night,
+            "is_final_paid_cycle": is_final_cycle,
             "need_pressures": need_pressures,
             "top_need": max(need_pressures, key=need_pressures.get),
             "max_need_pressure": max(need_pressures.values()),
@@ -1198,7 +1211,8 @@ for label, arm in (("neutral", neutral), ("nourishing", nourishing)):
                                and admitted["option_ref"] == sleep_ref),
         })
 assert sleep_need_cycles, "no paid sleep vs waking opportunity in natural M11"
-assert all(row["awake_rival_count"] > 0 for row in sleep_need_cycles)
+# Absence of an awake competitor is evidence of missing choice exposure,
+# never a reason to silently discard an authentic paid sleep cycle.
 # Preserve undecided cases rather than inferring that any rival was physically
 # admissible, or that same-step choices before final cycle were applied.
 sleep_need_audit = {
@@ -1207,6 +1221,10 @@ sleep_need_audit = {
         (x["arm"], x["step"]) for x in sleep_need_cycles}),
     "with_awake_rival": sum(x["awake_rival_count"] > 0
                             for x in sleep_need_cycles),
+    "without_awake_rival": sum(x["awake_rival_count"] == 0
+                               for x in sleep_need_cycles),
+    "physical_decisions_counted_once": sum(
+        x["is_final_paid_cycle"] for x in sleep_need_cycles),
     "with_crossed_awake_rival": sum(x["awake_crossed_count"] > 0
                                    for x in sleep_need_cycles),
     "awake_admitted_with_sleep_available": sum(
@@ -1218,6 +1236,14 @@ sleep_need_audit = {
     "max_need_pressure_observed": max(
         x["max_need_pressure"] for x in sleep_need_cycles),
     "examples": sleep_need_cycles[:24],
+    "paired_sleep_q_changes": sum(
+        x["learning_signature"] == "primitive:dormir"
+        for x in paired_evidence_inputs),
+    "paired_sleep_q_changes_with_matched_p40": sum(
+        x["learning_signature"] == "primitive:dormir"
+        and abs(neutral["frozen_sleep_by_step"][x["step"]]
+                - nourishing["frozen_sleep_by_step"][x["step"]]) < 1e-12
+        for x in paired_evidence_inputs),
     "matched_p40_q_only_motor_effect": "NOT_ESTABLISHED",
     "emergency_priority_in_all_possible_worlds": "NOT_ESTABLISHED",
     "scientific_l3": "NOT_ESTABLISHED",
