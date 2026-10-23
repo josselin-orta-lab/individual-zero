@@ -84,6 +84,37 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
     critical_dormir = [step for step, v in sleep_rows
                        if v["reduced_critical_channels"] and "water" in
                        v["reduced_critical_channels"]]
+    # #467: prove which genuine physical steps became Memory-visible.
+    # An AutoSegmentCommit after dispatch is not retroactive ingestion
+    # during a reduced sleep step. Never count raw technical journal rows
+    # as recalled episodes or claimed consolidation.
+    memory_rows = [
+        (row["world_step"], row["autobiographical_sleep_custody_467"])
+        for row in life["steps"]
+    ]
+    physically_committed = sum(
+        bool(x["auto_commit_count"]) for _, x in memory_rows)
+    reduced_with_autobio = sum(
+        bool(x["auto_commit_count"])
+        for i, (_, x) in enumerate(memory_rows)
+        if life["steps"][i]["sleep_custody_observation"]["provenance"]
+        == "reduced_sleep_continuation")
+    sleep_without_memory_ingestion = sum(
+        x["physical_refs_seen_by_memory_after_commit"] == 0
+        for i, (_, x) in enumerate(memory_rows)
+        if physical[i]["primitive"] == "dormir")
+    closed_episodes = sum(len(x["episodes_closed_during_step"])
+                          for _, x in memory_rows)
+    latest_h = memory_rows[-1][1]["slow_history_version"]
+    assert physically_committed > 0
+    assert sleep_without_memory_ingestion >= 0
+    print("I1_467_SLEEP_MEMORY_CUSTODY",
+          "physical_autobiographical_commits", physically_committed,
+          "reduced_autobiographical_commits", reduced_with_autobio,
+          "sleep_steps_without_immediate_memory_ingestion",
+          sleep_without_memory_ingestion,
+          "closed_episodes", closed_episodes,
+          "last_h", latest_h)
     print("I1_465_SLEEP_PROVENANCE", classes,
           "at_energy_99", near_full, "without_energy_gain", no_recovery,
           "water_critical_reduced", critical_dormir,
