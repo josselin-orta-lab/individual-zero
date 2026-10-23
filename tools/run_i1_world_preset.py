@@ -435,10 +435,11 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 if owned_commits[0]["t_monde"] != receipt.world_step:
                     raise RuntimeError("autobiography from foreign physical step")
             memory_owner = life._runtime.memory
-            newly_closed = memory_owner.read_episodes_range(
-                episodes_before, memory_owner.episode_count)
-            memory_seen = set(memory_owner.export_causal_state()[
-                "seen_event_refs"])
+            # External observation uses the owner-exported *causal image*;
+            # never call the charged read_episodes_range API from Lab.
+            memory_image = memory_owner.export_causal_state()
+            newly_closed = memory_image["episodes"][episodes_before:]
+            memory_seen = set(memory_image["seen_event_refs"])
             pending_td = life._runtime.q_active.pending_segment
             custody = {
                 "auto_commit_count": len(owned_commits),
@@ -451,17 +452,15 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 "memory_seen_before": seen_before,
                 "memory_seen_after": len(memory_seen),
                 "episodes_closed_during_step": [
-                    {"id": e.id, "start": e.start_t_monde,
-                     "end": e.end_t_monde,
-                     "boundary_type": e.boundary_type,
-                     "body_start": None if e.body_start is None
-                     else dict(e.body_start),
-                     "body_end": None if e.body_end is None
-                     else dict(e.body_end)}
+                    {"id": e["id"], "start": e["start_t_monde"],
+                     "end": e["end_t_monde"],
+                     "boundary_type": e["boundary_type"],
+                     "body_start": e["body_start"],
+                     "body_end": e["body_end"]}
                     for e in newly_closed
                 ],
                 "memory_last_recalled_ref": (
-                    memory_owner.last_recalled_ref()),
+                    memory_owner.last_recalled_ref),
                 "memory_recall_events": len(
                     events_of("memory_recall_proposed")),
                 "td_pending": (
