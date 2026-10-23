@@ -15,7 +15,6 @@ class NaturalM11Depletion459(unittest.TestCase):
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from run_i1_world_preset import execute
-from i1lab.sqlite_life_store import SQLiteLifeLedger
 
 with TemporaryDirectory(prefix="i1-459-empty-") as d:
     output = Path(d) / "natural-m11"
@@ -36,6 +35,7 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
     assert all(row["body_after"]["integrity"] > 0 for row in life["steps"])
     assert all(row["terminal_reasons"] == [] for row in life["steps"][:-1])
     last = life["steps"][-1]
+    from i1lab.sqlite_life_store import SQLiteLifeLedger
     audit = SQLiteLifeLedger.audit_read_only(
         path=str(output / life["custody_file"]),
         expected_individual_id=life["individual_id"],
