@@ -28,6 +28,29 @@ reference physics remains an explicitly different contract. These are
 world consequences, **not commands**, priors about edible resources, or
 proof of improved survival.
 
+## Newborn living-v4 substrate-coupled rest and recovery (#461)
+
+For **new I1 births only**, functional `energy` and tissue `integrity`
+recovery while sleeping or resting are bounded by *actually available
+post-metabolism* `food` as metabolic substrate. The resource cost of
+restorative energy is 0.05 food unit per recovered energy unit. Healing
+costs 0.10 food unit per integrity unit. Both are frozen illustrative
+simulation coefficients, not measured physiological constants. Below
+0.05 water units after physical decay, neither restorative process occurs;
+water supports metabolism but contributes no calories. Actions have their
+existing costs; eating replenishes `food`, drinking replenishes `water`.
+Baseline food/water decay continues during sleep. Each actual recovery
+consumes food exactly once and is capped by both its original gain limit
+and the remaining reserve. There is no action policy or imperative added.
+
+This v4 contract preserves the separate #457 fatal boundary (food **or**
+water at zero in the **post-action state**). Damage to integrity from
+independent toxins or external hazards remains unchanged. These simplified
+states and immediate-death thresholds do **not** reproduce human
+metabolism literally, and the effect on autonomous survival L3 is
+`NOT_ESTABLISHED`. Historical born versions have their own frozen
+semantics; M11 refuses cross-version recovery.
+
 ## Diagnostic cases
 
 | External symptom | What to measure | What it does NOT establish |
