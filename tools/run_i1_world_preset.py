@@ -499,7 +499,11 @@ def _m11_life(*, birth, params, life_id, path, steps):
                         or first_autobiographical_commit[ref]
                             >= receipt.world_step):
                         raise RuntimeError(
-                            "sleep recall referenced uncommitted or open source")
+                            "sleep recall referenced uncommitted or open source: "
+                            f"step={receipt.world_step}, ref={ref}, "
+                            f"closed_occurrences={preclosed_occurrences.get(ref)}, "
+                            f"first_commit={first_autobiographical_commit.get(ref)}, "
+                            f"memory_seen_pre={ref in memory_before['seen_event_refs']}")
             recall_audit = {
                 "paid_uc": sum(
                     row["data"]["requested_uc"] for row in recall_charges
