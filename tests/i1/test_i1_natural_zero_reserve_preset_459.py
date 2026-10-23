@@ -35,6 +35,24 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
     assert all(row["body_after"]["integrity"] > 0 for row in life["steps"])
     assert all(row["terminal_reasons"] == [] for row in life["steps"][:-1])
     last = life["steps"][-1]
+    physical = [x["physical_journal_observation"] for x in life["steps"]]
+    assert all(x is not None for x in physical), (
+        "unadmitted physical step is not a metabolic observation")
+    assert all(x["body_after"] == life["steps"][i]["body_after"]
+               for i, x in enumerate(physical))
+    sleep_count = sum(x["primitive"] == "dormir" for x in physical)
+    energy_gain = sum(max(0.0, x["body_after"]["energy"] -
+                          x["body_before"]["energy"]) for x in physical)
+    food_consumed = sum(x["body_before"]["food"] -
+                        x["body_after"]["food"] for x in physical)
+    assert sleep_count > 0
+    assert food_consumed > 0
+    assert all(x["body_after"]["water"] <= x["body_before"]["water"]
+               for x in physical)
+    assert all(x["body_after"]["food"] <= x["body_before"]["food"]
+               for x in physical)
+    print("I1_463_M11_METABOLIC_FLOW", sleep_count, energy_gain,
+          food_consumed, "decisions", len(physical))
     from i1lab.sqlite_life_store import SQLiteLifeLedger
     audit = SQLiteLifeLedger.audit_read_only(
         path=str(output / life["custody_file"]),
