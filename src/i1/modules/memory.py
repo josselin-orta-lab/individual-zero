@@ -369,6 +369,32 @@ class EpisodicMemory:
             raise ValueError("invalid closed episode range")
         return tuple(self._episodes[start:stop])
 
+    def _closed_sleep_custody(self) -> dict[str, str | None]:
+        """Bound the existing closed-episode reference ownership, not memory."""
+        custody: dict[str, str | None] = {}
+        for episode in reversed(self._episodes[-32:]):
+            for ref in reversed(episode.event_refs):
+                if type(ref) is not str or ref not in self._seen_event_refs:
+                    continue
+                if ref in custody:
+                    custody[ref] = None  # Ambiguous ownership cannot be recalled.
+                elif len(custody) < 256:
+                    custody[ref] = episode.id
+                else:
+                    return custody
+        return custody
+
+    def closed_sleep_recall_source_refs(self) -> frozenset[str]:
+        """Bounded source selection; the runtime MUST pay before this read.
+
+        This is not a second autobiographical projection, a WAL read, or a
+        persistent index. Only unique references of CLOSED episodes qualify.
+        """
+        return frozenset(
+            ref for ref, owner in self._closed_sleep_custody().items()
+            if owner is not None
+        )
+
     def closed_sleep_site_witnesses(
         self, *, autobiography: Sequence[Mapping[str, object]],
         site: tuple[int, int], now: int,
@@ -382,12 +408,7 @@ class EpisodicMemory:
         if (type(now) is not int or now < 1 or type(site) is not tuple
                 or len(site) != 2 or any(type(v) is not int for v in site)):
             raise ValueError("invalid personal sleep recall context")
-        custody: dict[str, str | None] = {}
-        for episode in self._episodes[-32:]:
-            for ref in episode.event_refs:
-                if type(ref) is not str or ref not in self._seen_event_refs:
-                    continue
-                custody[ref] = None if ref in custody else episode.id
+        custody = self._closed_sleep_custody()
         per_step: dict[int, dict[str, list[Mapping[str, object]]]] = {}
         seen: set[str] = set()
         duplicates: set[str] = set()
