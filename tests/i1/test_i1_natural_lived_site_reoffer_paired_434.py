@@ -615,7 +615,7 @@ for key in sorted(set(neutral["paid_stage8"]) &
         or cl["evidence"] is None or cn["evidence"] is None):
         continue
     joined.append({
-        "step": key[0], "option_ref": key[2],
+        "step": key[0], "cycle": key[1], "option_ref": key[2],
         "signature": l["signature"],
         "delta_q": n["learned_value"] - l["learned_value"],
         "delta_competition": cn["evidence"] - cl["evidence"],
@@ -685,15 +685,7 @@ def contender_audit(life):
 
 neutral_overlap, neutral_rows = contender_audit(neutral)
 nutritious_overlap, nutritious_rows = contender_audit(nourishing)
-changed_cycles = sorted({(x["step"], cycle) for x in changed
-                         for (step, cycle, ref) in neutral["paid_competition"]
-                         if step == x["step"] and ref == x["option_ref"]
-                         and (step, cycle, ref) in nourishing["paid_competition"]
-                         and (step, cycle, ref) in neutral["paid_stage8"]
-                         and (step, cycle, ref) in nourishing["paid_stage8"]
-                         and abs(neutral["paid_stage8"][(step,cycle,ref)]["learned_value"]
-                                 - nourishing["paid_stage8"][(step,cycle,ref)]["learned_value"]) > 1e-12
-                         })
+changed_cycles = sorted({(row["step"], row["cycle"]) for row in changed})
 assert changed_cycles
 affected_contexts = []
 for step, cycle in changed_cycles:
@@ -726,6 +718,110 @@ overlap_diagnostic = {
     "physical_admissibility_of_every_competitor": "NOT_ESTABLISHED",
     "independent_effect_of_q_on_motor_choice": "NOT_ESTABLISHED",
     "scientific_l3": "NOT_ESTABLISHED",
+}
+
+
+# #438 follow-up: measure only the exact paid (step, cycle, option ID)
+# where BOTH actual Stage8 and Competition verified a changed Q readback.
+# Do not count a candidate's earlier/later cycles based on option-ID reuse.
+margin_rows = []
+margin_pairs = []
+for row in changed:
+    step, cycle, ref = row["step"], row["cycle"], row["option_ref"]
+    two_arms = []
+    for treatment, life in (("neutral", neutral), ("nourishing", nourishing)):
+        exact = (step, cycle, ref)
+        tr = life["paid_competition"][exact]
+        read = life["paid_stage8"][exact]
+        assert read["status"] == "evaluated"
+        assert read["learned_status"] == "learned"
+        assert read["learned_value"] is not None
+        same = life["paid_frames"][(step, cycle)]
+        assert same[ref] == tr
+        competitors = []
+        for rival_ref, rival in same.items():
+            if rival_ref == ref or rival["evidence"] is None:
+                continue
+            rival_read = life["paid_stage8"].get((step, cycle, rival_ref))
+            assert rival_read is not None and rival_read["status"] == "evaluated"
+            assert abs(rival_read["evidence"] - rival["evidence"]) < 1e-12
+            competitors.append((rival_ref, rival))
+        if not competitors:
+            measured = {
+                "arm": treatment, "step": step, "cycle": cycle,
+                "option_ref": ref, "category": "no_paid_rival",
+            }
+        else:
+            best_ref, best = max(
+                competitors, key=lambda item: (item[1]["ratio"], item[0]))
+            margin = tr["ratio"] - best["ratio"]
+            assert isfinite(margin)
+            measured = {
+                "arm": treatment, "step": step, "cycle": cycle,
+                "option_ref": ref, "best_rival": best_ref,
+                "rank_margin": margin, "own_ratio": tr["ratio"],
+                "rival_ratio": best["ratio"],
+                "own_crossed": tr["crossed"],
+                "rival_crossed": best["crossed"],
+                "category": ("ahead" if margin > 1e-12
+                             else "tied" if abs(margin) <= 1e-12
+                             else "behind"),
+            }
+        two_arms.append(measured)
+        margin_rows.append(measured)
+    neutral_row, nourishing_row = two_arms
+    if (neutral_row["category"] == "no_paid_rival"
+        or nourishing_row["category"] == "no_paid_rival"):
+        comparable = False
+    else:
+        comparable = True
+    margin_pairs.append({
+        "step": step, "cycle": cycle, "option_ref": ref,
+        "comparable": comparable,
+        "best_rival_changed": (
+            neutral_row.get("best_rival") != nourishing_row.get("best_rival")),
+        "margin_shift": (
+            nourishing_row["rank_margin"] - neutral_row["rank_margin"]
+            if comparable else None),
+        "position_changed": (
+            neutral_row["category"] != nourishing_row["category"]),
+    })
+# Each changed-Q value was genuinely paid once per arm at precisely its own
+# cycle; unrelated uses of the same option ID are forbidden by construction.
+assert len(margin_rows) == 2 * len(changed)
+assert len({(row["arm"], row["step"], row["cycle"], row["option_ref"])
+            for row in margin_rows}) == len(margin_rows)
+unique_margins = margin_rows
+
+margin_audit = {
+    "actual_paid_candidate_arm_observations": len(unique_margins),
+    "paired_exact_changed_q_evaluations": len(margin_pairs),
+    "paired_rank_position_changes": sum(row["position_changed"]
+                                        for row in margin_pairs),
+    "paired_best_rival_identity_changes": sum(row["best_rival_changed"]
+                                             for row in margin_pairs),
+    "max_absolute_paired_margin_shift": max(
+        (abs(row["margin_shift"]) for row in margin_pairs
+         if row["comparable"]), default=0.0),
+    "with_rival": sum(r["category"] != "no_paid_rival"
+                      for r in unique_margins),
+    "ahead": sum(r["category"] == "ahead" for r in unique_margins),
+    "behind": sum(r["category"] == "behind" for r in unique_margins),
+    "tied": sum(r["category"] == "tied" for r in unique_margins),
+    "no_paid_rival": sum(r["category"] == "no_paid_rival"
+                        for r in unique_margins),
+    "behind_despite_own_crossing": sum(
+        r["category"] == "behind" and r["own_crossed"]
+        for r in unique_margins),
+    "max_observed_deficit": max(
+        (-r["rank_margin"] for r in unique_margins
+         if r["category"] == "behind"), default=0.0),
+    "smallest_positive_deficit": min(
+        (-r["rank_margin"] for r in unique_margins
+         if r["category"] == "behind"), default=None),
+    "first_observations": unique_margins[:24],
+    "physical_admissibility_of_rivals": "NOT_ESTABLISHED",
+    "learned_td_caused_motor_choice": "NOT_ESTABLISHED",
 }
 
 adjudication = {
@@ -794,6 +890,7 @@ report = {
     "paired_td_custody": td_custody,
     "paired_td_competition_adjudication": adjudication,
     "paired_learned_contender_overlap": overlap_diagnostic,
+    "paid_learned_competitor_margins": margin_audit,
     "paired_candidate_identities_match": (
         [r["ref"] for r in neutral["observed_candidate_windows"]["windows"]]
         == [r["ref"] for r in
