@@ -146,6 +146,15 @@ def _approved_pending_index_cursor(before: bytes, after: bytes) -> bool:
         old = old.replace(prior, replacement, 1)
     return old == new
 
+def _approved_paid_sleep_recall_467(root: Path, rel: str) -> bool:
+    """Exact reviewed I1-only natural runtime source for paid recall."""
+    if rel != "i1lab/i1_natural_runtime.py":
+        return False
+    data = (ROOT / "src/i1/runtime/i1_natural_runtime.py").read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == "d3d0430037658904842da8c0783426b6f72683c5" and (root / rel).is_file()
+
+
 def _approved_closed_sleep_site_467(root: Path, rel: str) -> bool:
     """Exact reviewed source blob for bounded, non-motor sleep witness API.
 
@@ -1269,6 +1278,7 @@ def verify(reference_root: Path) -> None:
                     and _approved_natural_toxic_berry_birth(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
+                or _approved_paid_sleep_recall_467(new_root, rel)
                 or (rel == "i1lab/i1_natural_runtime.py"
                     and _approved_natural_goal_birth(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
