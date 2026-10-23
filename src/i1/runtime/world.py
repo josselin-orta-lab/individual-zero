@@ -146,6 +146,9 @@ class WorldPhysicsConfig:
     starvation_integrity_damage_per_step: float = 0.0
     dehydration_integrity_damage_per_step: float = 0.0
     zero_reserve_lethal: bool = False
+    metabolic_recovery_cost_per_energy: float = 0.0
+    metabolic_repair_cost_per_integrity: float = 0.0
+    metabolic_minimum_water: float = 0.0
 
     def validate(self) -> None:
         if not self.version:
@@ -186,6 +189,18 @@ class WorldPhysicsConfig:
             raise ValueError("zero reserve lethality must be boolean")
         if self.zero_reserve_lethal and (self.starvation_integrity_damage_per_step != 0.0 or self.dehydration_integrity_damage_per_step != 0.0):
             raise ValueError("zero reserve death cannot also damage integrity")
+        for rate in (self.metabolic_recovery_cost_per_energy,
+                     self.metabolic_repair_cost_per_integrity,
+                     self.metabolic_minimum_water):
+            if not 0.0 <= rate <= 100.0 or rate != rate:
+                raise ValueError("metabolic rates must be finite and in [0,100]")
+        if (bool(self.metabolic_recovery_cost_per_energy)
+            != bool(self.metabolic_repair_cost_per_integrity)):
+            raise ValueError("metabolic recovery and repair must be configured together")
+        if self.metabolic_recovery_cost_per_energy and not self.zero_reserve_lethal:
+            raise ValueError("versioned metabolic coupling requires terminal zero reserves")
+        if self.metabolic_minimum_water and not self.metabolic_recovery_cost_per_energy:
+            raise ValueError("metabolic water threshold without substrate coupling")
         self.tool_recipe.validate()
         if self.shelter_stones_required != 4:
             raise ValueError("normative MVP shelter is formed from exactly 4 stones")
@@ -227,6 +242,13 @@ class WorldPhysicsConfig:
             "starvation_integrity_damage_per_step": self.starvation_integrity_damage_per_step,
             "dehydration_integrity_damage_per_step": self.dehydration_integrity_damage_per_step,
             **({"zero_reserve_lethal": True} if self.zero_reserve_lethal else {}),
+            **({
+                "metabolic_recovery_cost_per_energy":
+                    self.metabolic_recovery_cost_per_energy,
+                "metabolic_repair_cost_per_integrity":
+                    self.metabolic_repair_cost_per_integrity,
+                "metabolic_minimum_water": self.metabolic_minimum_water,
+            } if self.metabolic_recovery_cost_per_energy else {}),
         }
 
     def digest(self) -> str:
@@ -932,19 +954,48 @@ class WorldBody:
         body: BodyState,
     ) -> BodyState:
         energy = body.energy
-        if command.primitive == "dormir":
-            energy += self._config.sleep_energy_gain
-        else:
-            energy -= self._config.action_energy_costs[command.primitive]
-
+        food = self._clamp(body.food - self._config.food_decay_per_step)
+        water = self._clamp(body.water - self._config.water_decay_per_step)
         integrity = body.integrity
-        if command.primitive in {"attendre", "dormir"}:
-            integrity += self._config.rest_integrity_gain
-
+        if not self._config.metabolic_recovery_cost_per_energy:
+            # Frozen historical reference contracts and I1 living-v3.
+            if command.primitive == "dormir":
+                energy += self._config.sleep_energy_gain
+            else:
+                energy -= self._config.action_energy_costs[command.primitive]
+            if command.primitive in {"attendre", "dormir"}:
+                integrity += self._config.rest_integrity_gain
+        else:
+            # Natural v4: food is metabolic substrate, energy is a
+            # recoverable functional capacity. Water is required for
+            # conversion, but is never credited as calories.
+            hydrated = water >= self._config.metabolic_minimum_water
+            if command.primitive == "dormir":
+                possible = min(
+                    self._config.sleep_energy_gain,
+                    max(0.0, 100.0 - energy),
+                )
+                gained = (
+                    min(possible,
+                        food / self._config.metabolic_recovery_cost_per_energy)
+                    if hydrated else 0.0
+                )
+                energy += gained
+                food -= gained * self._config.metabolic_recovery_cost_per_energy
+            else:
+                energy -= self._config.action_energy_costs[command.primitive]
+            if command.primitive in {"attendre", "dormir"} and hydrated:
+                repair = min(
+                    self._config.rest_integrity_gain,
+                    max(0.0, 100.0 - integrity),
+                    food / self._config.metabolic_repair_cost_per_integrity,
+                )
+                integrity += repair
+                food -= repair * self._config.metabolic_repair_cost_per_integrity
         return BodyState(
             energy=self._clamp(energy),
-            food=self._clamp(body.food - self._config.food_decay_per_step),
-            water=self._clamp(body.water - self._config.water_decay_per_step),
+            food=self._clamp(food),
+            water=water,
             integrity=self._clamp(integrity),
         )
 

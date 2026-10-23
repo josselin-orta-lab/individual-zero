@@ -59,14 +59,14 @@ def act(*, food, water, primitive="attendre", inventory=None, water_here=False,
 
 food = act(food=0.1, water=50)
 assert food.lethal and food.lethal_reasons == ("zero_food",)
-assert food.body_after.integrity == food.body_before.integrity + config.rest_integrity_gain
+assert food.body_after.integrity == food.body_before.integrity
 water = act(food=50, water=0.1)
 assert water.lethal and water.lethal_reasons == ("zero_water",)
-assert water.body_after.integrity == water.body_before.integrity + config.rest_integrity_gain
+assert water.body_after.integrity == water.body_before.integrity
 both = act(food=0.1, water=0.1, primitive="dormir")
 assert both.lethal and both.lethal_reasons == ("zero_food", "zero_water")
-assert both.body_after.energy > both.body_before.energy
-assert both.body_after.integrity > 0.0
+assert both.body_after.energy == both.body_before.energy
+assert both.body_after.integrity == both.body_before.integrity
 safe = act(food=0.21, water=0.41)
 assert not safe.lethal and safe.body_after.food > 0 and safe.body_after.water > 0
 saved_food = act(food=0.1, water=50, primitive="manger",
