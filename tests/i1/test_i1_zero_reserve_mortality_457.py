@@ -62,7 +62,7 @@ assert food.lethal and food.lethal_reasons == ("zero_food",)
 assert food.body_after.integrity == food.body_before.integrity
 water = act(food=50, water=0.1)
 assert water.lethal and water.lethal_reasons == ("zero_water",)
-assert water.body_after.integrity == water.body_before.integrity + config.rest_integrity_gain
+assert water.body_after.integrity == water.body_before.integrity
 both = act(food=0.1, water=0.1, primitive="dormir")
 assert both.lethal and both.lethal_reasons == ("zero_food", "zero_water")
 assert both.body_after.energy == both.body_before.energy
