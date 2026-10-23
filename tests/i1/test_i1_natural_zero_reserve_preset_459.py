@@ -53,6 +53,47 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
                for x in physical)
     print("I1_463_M11_METABOLIC_FLOW", sleep_count, energy_gain,
           food_consumed, "decisions", len(physical))
+    # #465: 43 physical dormir steps are not 43 choices. Verify strict
+    # provenance using already paid first-person journals and M11 receipts.
+    sleep_rows = [
+        (row["world_step"], row["sleep_custody_observation"])
+        for row in life["steps"] if row["physical_journal_observation"][
+            "primitive"] == "dormir"
+    ]
+    classes = {name: [step for step, val in sleep_rows
+                      if val["provenance"] == name]
+               for name in ("ordinary_awake_admission",
+                            "readmitted_after_wake",
+                            "reduced_sleep_continuation")}
+    assert sum(map(len, classes.values())) == sleep_count
+    assert all(life["steps"][step-1]["sleep_custody_observation"][
+               "paid_competition_cycles"] == 0
+               for step in classes["reduced_sleep_continuation"])
+    assert all(life["steps"][step-1]["sleep_custody_observation"][
+               "paid_competition_cycles"] > 0
+               for step in classes["ordinary_awake_admission"]
+               + classes["readmitted_after_wake"])
+    assert all(v["pressure"] is not None for _, v in sleep_rows)
+    assert all(v["wake_reason"] is not None for _, v in sleep_rows
+               if v["provenance"] == "readmitted_after_wake")
+    near_full = [step for step, _ in sleep_rows if physical[step - 1][
+        "body_before"]["energy"] >= 99.0]
+    no_recovery = [step for step, _ in sleep_rows if physical[step - 1][
+        "body_after"]["energy"] <= physical[step - 1][
+        "body_before"]["energy"]]
+    critical_dormir = [step for step, v in sleep_rows
+                       if v["reduced_critical_channels"] and "water" in
+                       v["reduced_critical_channels"]]
+    print("I1_465_SLEEP_PROVENANCE", classes,
+          "at_energy_99", near_full, "without_energy_gain", no_recovery,
+          "water_critical_reduced", critical_dormir,
+          "paid_consolidation_commits", sum(
+              x["sleep_custody_observation"]["consolidation_commits"]
+              for x in life["steps"]),
+          "paid_consolidation_passes", sum(
+              x["sleep_custody_observation"][
+                  "consolidation_pass_checkpoints"]
+              for x in life["steps"]))
     from i1lab.sqlite_life_store import SQLiteLifeLedger
     audit = SQLiteLifeLedger.audit_read_only(
         path=str(output / life["custody_file"]),
