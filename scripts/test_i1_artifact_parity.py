@@ -1088,7 +1088,7 @@ def _approved_zero_reserve_457(root: Path, rel: str) -> bool:
     path, expected = pinned
     data = (ROOT / path).read_bytes()
     digest = sha1(
-        b"blob " + str(len(data)).encode("ascii") + b"\\0" + data
+        b"blob " + str(len(data)).encode("ascii") + b"\0" + data
     ).hexdigest()
     return digest == expected
 
