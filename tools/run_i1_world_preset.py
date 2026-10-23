@@ -282,6 +282,11 @@ def _m11_life(*, birth, params, life_id, path, steps):
         }
         for _ in range(steps):
             pre_count = life._runtime.journal.entry_count
+            # #467: owner snapshots around the same authentic, paid M11
+            # generation. No Memory/TD/History method below writes a state.
+            episodes_before = life._runtime.memory.episode_count
+            seen_before = len(life._runtime.memory.export_causal_state()[
+                "seen_event_refs"])
             pre_body = dict(life._runtime.world.telemetry())
             mode_before = life._runtime.sleep_session.mode
             prior_frozen = life._runtime.sleep_health.frozen
@@ -411,11 +416,75 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 raise RuntimeError("ordinary admitted sleep lacks paid Competition")
             if sleep_provenance != "not_sleep" and pressure is None:
                 raise RuntimeError("applied dormir without previously frozen P-40")
+            # DC-09: a technical event is not autobiographical merely
+            # because it was journaled. Only actual AutoSegmentCommit source
+            # references make a physical sleep step accessible to Memory.
+            owned_commits = events_of("auto_segment_commit")
+            if len(owned_commits) > 1:
+                raise RuntimeError("duplicate autobiographical sleep commit")
+            physical_refs = [
+                e.event_id
+                for e in life._runtime.journal.entries_since(pre_count)
+                if e.causal_event.get("kind") in (
+                    "command_experienced", "world_transition_experienced")
+            ]
+            if owned_commits:
+                sources = owned_commits[0]["event_refs"]
+                if not all(ref in sources for ref in physical_refs):
+                    raise RuntimeError("missing first-person physical sources")
+                if owned_commits[0]["t_monde"] != receipt.world_step:
+                    raise RuntimeError("autobiography from foreign physical step")
+            memory_owner = life._runtime.memory
+            # External observation uses the owner-exported *causal image*;
+            # never call the charged read_episodes_range API from Lab.
+            memory_image = memory_owner.export_causal_state()
+            newly_closed = memory_image["episodes"][episodes_before:]
+            memory_seen = set(memory_image["seen_event_refs"])
+            pending_td = life._runtime.q_active.pending_segment
+            custody = {
+                "auto_commit_count": len(owned_commits),
+                "auto_commit_refs": (
+                    [] if not owned_commits
+                    else list(owned_commits[0]["event_refs"])),
+                "physical_source_refs": physical_refs,
+                "physical_refs_seen_by_memory_after_commit": sum(
+                    ref in memory_seen for ref in physical_refs),
+                "memory_seen_before": seen_before,
+                "memory_seen_after": len(memory_seen),
+                "episodes_closed_during_step": [
+                    {"id": e["id"], "start": e["start_t_monde"],
+                     "end": e["end_t_monde"],
+                     "boundary_type": e["boundary_type"],
+                     "body_start": e["body_start"],
+                     "body_end": e["body_end"]}
+                    for e in newly_closed
+                ],
+                "memory_last_recalled_ref": (
+                    memory_owner.last_recalled_ref),
+                "memory_recall_events": len(
+                    events_of("memory_recall_proposed")),
+                "td_pending": (
+                    None if pending_td is None else {
+                        "decision_step": pending_td.decision_t_monde,
+                        "learning_signature": pending_td.signature,
+                        "rewards_count": len(pending_td.rewards),
+                    }),
+                "td_published_updates": [
+                    {"previous_signature": e["data"]["previous_signature"],
+                     "segment_length": e["data"]["segment_length"]}
+                    for e in events_of("td_update_published")
+                ],
+                "slow_history_version": (
+                    life._runtime.slow_history.current_version),
+                "consolidated_episode_refs": list(
+                    life._runtime.slow_history.committed_episode_refs()),
+            }
             trajectory.append({
                 "world_step": receipt.world_step,
                 "generation": receipt.generation,
                 "physical_journal_observation": actual,
                 "sleep_custody_observation": sleep_custody,
+                "autobiographical_sleep_custody_467": custody,
                 "lifecycle": receipt.status,
                 "execution": receipt.outcome,
                 "journal_count": receipt.journal_count,
