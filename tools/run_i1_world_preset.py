@@ -281,12 +281,43 @@ def _m11_life(*, birth, params, life_id, path, steps):
             "zero_reserve_lethal": life._runtime.world.config.zero_reserve_lethal,
         }
         for _ in range(steps):
+            pre_count = life._runtime.journal.entry_count
+            pre_body = dict(life._runtime.world.telemetry())
             receipt = life.run_step()
             if receipt.status not in ("active", "dead"):
                 raise RuntimeError("uncertain M11 life status")
+            authentic = [
+                e.causal_event for e in
+                life._runtime.journal.entries_since(pre_count)
+                if e.causal_event.get("kind") in {
+                    "command_experienced", "world_transition_experienced"}
+            ]
+            commands = [e for e in authentic
+                        if e["kind"] == "command_experienced"]
+            transitions = [e for e in authentic
+                           if e["kind"] == "world_transition_experienced"]
+            if len(commands) != len(transitions) or len(commands) > 1:
+                raise RuntimeError("ambiguous M11 physical event provenance")
+            if transitions:
+                command, physical = commands[0], transitions[0]
+                if (command["t_monde"] != receipt.world_step
+                        or physical["t_monde"] != receipt.world_step
+                        or physical["body_after"] !=
+                        dict(life._runtime.world.telemetry())):
+                    raise RuntimeError("physical journal and committed body differ")
+                actual = {
+                    "primitive": command["primitive"],
+                    "parameters": command["parameters"],
+                    "body_before": pre_body,
+                    "body_after": physical["body_after"],
+                    "effects": physical["effects"],
+                }
+            else:
+                actual = None
             trajectory.append({
                 "world_step": receipt.world_step,
                 "generation": receipt.generation,
+                "physical_journal_observation": actual,
                 "lifecycle": receipt.status,
                 "execution": receipt.outcome,
                 "journal_count": receipt.journal_count,
