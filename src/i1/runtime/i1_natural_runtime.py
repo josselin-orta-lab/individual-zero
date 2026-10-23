@@ -458,6 +458,42 @@ class I1Runtime(I1WaterPrudentRuntime):
             # A new deliberation has no inherited paid admission/prospect.
             self._i1_option_intention_paid = None
             normal_plan(ctx)
+            # Paid waking recall of already closed, first-person sources only.
+            if (cycle == 1 and not self._cycle_degraded
+                    and self.memory.episode_count
+                    and self.compute_budget.quote_operations(
+                        module="planning",
+                        operations=(_SLEEP_RECALL_OPERATION,),
+                    ).affordable
+                    and self._charge(
+                        module="planning", operation=_SLEEP_RECALL_OPERATION,
+                    )):
+                refs = self.memory.closed_sleep_recall_source_refs()
+                if refs:
+                    from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY as P2
+                    from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY as P7
+                    projected = self.stage3.substrate.views.autobiographical(
+                        policies={P2.version: P2, P7.version: P7},
+                        selected_event_refs=refs,
+                    )
+                    rows = self.memory.closed_sleep_site_witnesses(
+                        autobiography=projected,
+                        site=(capture.x, capture.y),
+                        now=capture.t_monde,
+                    )
+                    self._write(
+                        kind="i1_sleep_site_recall_consulted", cycle=cycle,
+                        data={
+                            "site": [capture.x, capture.y],
+                            "witness_count": len(rows),
+                            "event_refs": sorted({
+                                ref for row in rows
+                                for ref in row["source_event_refs"]
+                            }),
+                            "charged_operation": _SLEEP_RECALL_OPERATION,
+                            "evidence_applied": False,
+                        },
+                    )
             # A paid scan can suspend a spatial prospect when the
             # first-person route is no longer genuinely offered.
             if (self.memory.spatial_option_prospect_count
