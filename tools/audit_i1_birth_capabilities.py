@@ -35,8 +35,11 @@ EXPECTED = {
     "stage11.global_modulation": "active",
     "stage11.geographic_exploration": "conditional",
     "stage11.local_threat_alerts": "active",
-    "stage11.geographic_route_search": "disabled",
-    "stage11.geographic_route_survey": "disabled",
+    "stage11.geographic_route_search": "active",
+    "stage11.geographic_route_survey": "active",
+    "stage11.first_person_place_memory": "conditional",
+    "stage11.observed_route_reuse": "conditional",
+    "stage11.entity_motion_diagnosis": "conditional",
     "stage11.instrumental_geographic_value": "disabled",
     "stage11.prospective_water_predictor": "disabled",
     "stage12.lived_diagnostics": "conditional",
@@ -169,6 +172,17 @@ def audit_birth(life, *, expected_competition=None):
         "stage11.geographic_route_search": _mode(s11.geographic_route_enabled),
         "stage11.geographic_route_survey": _mode(
             geo is not None and geo.observe_routes),
+        "stage11.first_person_place_memory": _mode(
+            geo is not None and geo.remember_entities
+            and life.exploration.geographic is not None, conditional=True),
+        "stage11.observed_route_reuse": _mode(
+            s11.geographic_route_enabled and geo is not None
+            and geo.observe_routes, conditional=True),
+        "stage11.entity_motion_diagnosis": _mode(
+            geo is not None and geo.remember_entities
+            and life.exploration.geographic is not None
+            and hasattr(life.exploration.geographic, "motion_diagnoses"),
+            conditional=True),
         "stage11.instrumental_geographic_value": _mode(
             s11.instrumental_geographic_value),
         "stage11.prospective_water_predictor": _mode(
