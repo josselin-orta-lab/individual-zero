@@ -145,6 +145,7 @@ class WorldPhysicsConfig:
     shelter_stones_required: int = 4
     starvation_integrity_damage_per_step: float = 0.0
     dehydration_integrity_damage_per_step: float = 0.0
+    zero_reserve_lethal: bool = False
 
     def validate(self) -> None:
         if not self.version:
@@ -181,6 +182,10 @@ class WorldPhysicsConfig:
                        self.dehydration_integrity_damage_per_step):
             if not 0.0 <= damage <= 100.0 or damage != damage:
                 raise ValueError('I1 deprivation rates must be finite in [0,100]')
+        if type(self.zero_reserve_lethal) is not bool:
+            raise ValueError("zero reserve lethality must be boolean")
+        if self.zero_reserve_lethal and (self.starvation_integrity_damage_per_step != 0.0 or self.dehydration_integrity_damage_per_step != 0.0):
+            raise ValueError("zero reserve death cannot also damage integrity")
         self.tool_recipe.validate()
         if self.shelter_stones_required != 4:
             raise ValueError("normative MVP shelter is formed from exactly 4 stones")
@@ -221,6 +226,7 @@ class WorldPhysicsConfig:
             "shelter_stones_required": self.shelter_stones_required,
             "starvation_integrity_damage_per_step": self.starvation_integrity_damage_per_step,
             "dehydration_integrity_damage_per_step": self.dehydration_integrity_damage_per_step,
+            **({"zero_reserve_lethal": True} if self.zero_reserve_lethal else {}),
         }
 
     def digest(self) -> str:
@@ -1094,6 +1100,9 @@ class WorldBody:
             )
             effects["danger_zone_damage"] = self._config.danger_zone_damage
 
+        # Legacy deprivation injury applies only to explicitly historical
+        # physics. New natural I1 instead treats an exhausted reserve as
+        # terminal after the actual action and metabolism have both applied.
         # #231: apply *after* the actual action. Successful eating or
         # drinking prevents same-step deprivation. Rest, a failed
         # action, and physical hazards do not suspend metabolism.
@@ -1112,6 +1121,11 @@ class WorldBody:
                 'actual_integrity_loss': integrity_before - body.integrity,
             }
         lethal_reasons: list[str] = []
+        if self._config.zero_reserve_lethal:
+            if body.food <= 0.0:
+                lethal_reasons.append("zero_food")
+            if body.water <= 0.0:
+                lethal_reasons.append("zero_water")
         if position in self._lethal_zones:
             lethal_reasons.append("lethal_zone")
         if body.integrity <= 0.0:
