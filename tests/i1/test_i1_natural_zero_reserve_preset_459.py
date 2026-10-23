@@ -130,6 +130,32 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
                             for x in sleep_refs)
     lagged = [x["memory_ingestion_step"] - x["step"]
               for x in sleep_refs if x["memory_ingestion_step"] is not None]
+    # #471: operator-side proof that chronologically adjacent real
+    # sleeping steps can span multiple closed autobiographical episodes.
+    runs = life["sleep_episode_link_audit_471"]
+    assert runs and sum(x["steps"] for x in runs) == sleep_count
+    assert all(x["source_count"] == 2 * x["steps"] for x in runs)
+    assert all(x["sources_in_closed_episodes"] <=
+               x["sources_seen_by_memory"] <= x["source_count"]
+               for x in runs)
+    assert all(x["end_step"] - x["start_step"] + 1 == x["steps"]
+               for x in runs)
+    assert all(x["body_delta"] ==
+               {k: x["body_after"][k] - x["body_before"][k]
+                for k in x["body_before"]} for x in runs)
+    assert all(x["fully_closed"] ==
+               (x["sources_in_closed_episodes"] == x["source_count"])
+               for x in runs)
+    assert len(runs) <= sleep_count
+    print("I1_471_SLEEP_EPISODE_LINK",
+          "runs", len(runs),
+          "lengths", [x["steps"] for x in runs],
+          "closed_episode_counts", [len(x["distinct_closed_episode_refs"])
+                                    for x in runs],
+          "complete_runs", sum(x["fully_closed"] for x in runs),
+          "sources_in_closed_episodes",
+          sum(x["sources_in_closed_episodes"] for x in runs),
+          "total_sources", sum(x["source_count"] for x in runs))
     print("I1_469_SLEEP_MEMORY_LAG",
           "source_refs", len(sleep_refs),
           "without_commit", missing_commit,
