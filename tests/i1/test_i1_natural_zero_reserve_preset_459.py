@@ -108,6 +108,23 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
     latest_h = memory_rows[-1][1]["slow_history_version"]
     assert physically_committed > 0
     assert sleep_without_memory_ingestion >= 0
+    # #474: actual cognitive access proof, not a manufactured sleep benefit.
+    # Only previously closed, committed sources may appear in a recalled row.
+    recall_rows = [row["sleep_site_recall_custody_467"]
+                   for row in life["steps"]]
+    paid = sum(row["paid_uc"] for row in recall_rows)
+    reads = sum(row["read_count"] for row in recall_rows)
+    witnesses = sum(row["witness_count"] for row in recall_rows)
+    assert paid >= reads
+    assert all(row["published_evidence"] is False for row in recall_rows)
+    assert all(len(row["source_event_refs"]) == 2 * row["witness_count"]
+               for row in recall_rows)
+    assert all(row["read_count"] in (0, 1) for row in recall_rows)
+    # The actual natural scenario must demonstrate nonempty charged recall;
+    # a green structural test alone does not establish runtime activation.
+    assert reads > 0 and witnesses > 0, (reads, witnesses, paid)
+    print("I1_474_PAID_SLEEP_RECALL", "reads", reads,
+          "uc", paid, "witnesses", witnesses)
     # #469: compare real first-person physical source custody without
     # assuming an immediate Memory ingestion or a future replay.
     ref_rows = life["physical_memory_custody_469"]
