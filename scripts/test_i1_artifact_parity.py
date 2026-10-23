@@ -1093,6 +1093,30 @@ def _approved_zero_reserve_457(root: Path, rel: str) -> bool:
     return digest == expected
 
 
+# #461: exact reviewed native blobs for separately born metabolic v4.
+# Historical I1 comparison remains enforced everywhere else.
+_METABOLIC_V4_461_PINS = {
+    "i1lab/world.py": (
+        "src/i1/runtime/world.py", "d4e9449bbbef3bd7c1b72e82f446830f7a74fc25",
+    ),
+    "i1lab/i1_natural_sleep.py": (
+        "src/i1/runtime/i1_natural_sleep.py", "5573e4ce1d9664c2ff0b15e88d0a5378a2c0f99d",
+    ),
+}
+
+
+def _approved_metabolic_v4_461(root: Path, rel: str) -> bool:
+    pinned = _METABOLIC_V4_461_PINS.get(rel)
+    if pinned is None or not (root / rel).is_file():
+        return False
+    source, expected = pinned
+    content = (ROOT / source).read_bytes()
+    digest = sha1(
+        b"blob " + str(len(content)).encode("ascii") + b"\0" + content
+    ).hexdigest()
+    return digest == expected
+
+
 # Explicit, one-file-per-issue source attestations for disabled experiments.
 # Manifests never authorize arbitrary packages, globs or generated output.
 _ISOLATED_PINS_DIR = ROOT / "config" / "i1-isolated-source-pins"
@@ -1221,10 +1245,10 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel) or _approved_site_328(new_root, rel) or _approved_wake_329(new_root, rel) or _approved_memory_359(new_root, rel) or _approved_option_360(new_root, rel) or _approved_prospect_361(new_root, rel) or _approved_memory_426(new_root, rel) or _approved_lived_prospect_427(new_root, rel) or _approved_zero_reserve_457(new_root, rel)))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel) or _approved_site_328(new_root, rel) or _approved_wake_329(new_root, rel) or _approved_memory_359(new_root, rel) or _approved_option_360(new_root, rel) or _approved_prospect_361(new_root, rel) or _approved_memory_426(new_root, rel) or _approved_lived_prospect_427(new_root, rel) or _approved_metabolic_v4_461(new_root, rel) or _approved_zero_reserve_457(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel) or _approved_site_328(new_root, rel) or _approved_wake_329(new_root, rel) or _approved_memory_359(new_root, rel) or _approved_option_360(new_root, rel) or _approved_prospect_361(new_root, rel) or _approved_memory_426(new_root, rel) or _approved_lived_prospect_427(new_root, rel) or _approved_zero_reserve_457(new_root, rel)) and not (
+            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel) or _approved_site_328(new_root, rel) or _approved_wake_329(new_root, rel) or _approved_memory_359(new_root, rel) or _approved_option_360(new_root, rel) or _approved_prospect_361(new_root, rel) or _approved_memory_426(new_root, rel) or _approved_lived_prospect_427(new_root, rel) or _approved_metabolic_v4_461(new_root, rel) or _approved_zero_reserve_457(new_root, rel)) and not (
                 False  # Stage10 is handled by the stacked exact approval below
                 or (rel == "i1lab/i1_natural_sleep.py"
                     and _approved_natural_toxic_berry_birth(
