@@ -24,7 +24,7 @@ class NaturalSiteReofferPhysiologyPair(unittest.TestCase):
             script = r"""
 from collections import Counter
 from dataclasses import replace
-from math import exp, isfinite
+from math import exp, isfinite, tanh
 import json
 from pathlib import Path
 from re import search
@@ -180,6 +180,9 @@ def experiment(food_gain, db_path):
     # Equal update counts do not mean equal learned values; inspect both.
     td_events = []
     paid_stage8 = {}
+    # Owner-published intrinsic assessment at each real paid cycle.
+    paid_intrinsic = {}
+    frozen_sleep_by_step = {}
     for e in events:
         d = e.get("data", {})
         if e.get("kind") == "td_update_published":
@@ -193,6 +196,21 @@ def experiment(food_gain, db_path):
                 "delta": float(d["delta"]),
                 "updated_signatures": tuple(d["updated_signatures"]),
             })
+        elif e.get("kind") == "stage10_sleep_pressure_frozen":
+            step = e["t_monde"]
+            assert step not in frozen_sleep_by_step, (
+                "P-40 was frozen more than once in a waking physical step")
+            assert d["world_step"] == step
+            frozen_sleep_by_step[step] = d["sleep_pressure"]
+        elif e.get("kind") == "stage11_intrinsic_evaluation":
+            key = (e["t_monde"], e["cycle"], d["option_ref"])
+            assert key not in paid_intrinsic
+            paid_intrinsic[key] = {
+                "status": d["status"],
+                "intrinsic_value": d["intrinsic_value"],
+                "producers": tuple(d["intrinsic_producers"]),
+                "intrinsic_weight": d["P15_intrinsic_weight"],
+            }
         elif e.get("kind") == "stage8_option_evaluation":
             key = (e["t_monde"], e["cycle"], d["option_ref"])
             assert key not in paid_stage8
@@ -528,6 +546,13 @@ def experiment(food_gain, db_path):
         "td_snapshots": td_snapshots,
         "td_events": td_events,
         "paid_stage8": paid_stage8,
+        "paid_intrinsic": paid_intrinsic,
+        "frozen_sleep_by_step": frozen_sleep_by_step,
+        # P-40 belongs to Stage10, not to Stage11 Exploration P-15.
+        "stage10_sleep_weight": rt._stage10_config.intrinsic_weight,
+        "stage11_exploration_weight": rt._stage11_config.intrinsic_weight,
+        "stage8_scale": rt.stage8_option_evaluator.config.evidence_scale,
+        "stage8_extrinsic_gain": rt.stage8_option_evaluator.config.extrinsic_gain,
         "paid_competition": paid_competition,
         "paid_frames": frames,
         "physical_decisions": decisions,
@@ -803,6 +828,94 @@ stage8_input_audit = {
     "causal_owner_mutation": False,
 }
 
+# #438: inspect the already-journaled P-40 owner output at the same paid
+# (step, cycle, option ID). This observer may CHECK arithmetic but may never
+# supply an evaluation, replay cognition, or change a living individual's Q.
+sleep_input_rows = []
+for observation in paired_evidence_inputs:
+    if observation["learning_signature"] != "primitive:dormir":
+        continue
+    key = (observation["step"], observation["cycle"],
+           observation["option_ref"])
+    both_arms = []
+    for label, arm in (("neutral", neutral), ("nourishing", nourishing)):
+        read = arm["paid_stage8"][key]
+        intrinsic = arm["paid_intrinsic"].get(key)
+        assert intrinsic is not None, "no real P-40 intrinsic record"
+        assert intrinsic["status"] == "evaluated"
+        assert intrinsic["intrinsic_value"] is not None
+        assert "metacognition_health:p40_sleep_pressure" in intrinsic["producers"]
+        assert abs(intrinsic["intrinsic_weight"] -
+                   arm["stage11_exploration_weight"]) < 1e-12
+        # The generic Stage11 event's P15 weight is for Exploration.
+        # Sleep itself is assembled by Stage10's separate born weight.
+        frozen_p40 = arm["frozen_sleep_by_step"].get(key[0])
+        assert frozen_p40 is not None, "missing actual frozen P-40 step receipt"
+        assert abs(intrinsic["intrinsic_value"] - frozen_p40) < 1e-12, (
+            "sleep intrinsic assessment differs from P-40 frozen value")
+        assert read["simulated_status"] == "unavailable"
+        assert read["learned_status"] == "learned"
+        assert read["learned_value"] is not None
+        assert read["signature"] == "primitive:dormir"
+        extrinsic = max(-1.0, min(1.0,
+            arm["stage8_extrinsic_gain"] *
+            tanh(read["learned_value"] / arm["stage8_scale"])))
+        p40_component = (
+            arm["stage10_sleep_weight"] * intrinsic["intrinsic_value"])
+        reconstructed = max(-1.0, min(1.0, extrinsic + p40_component))
+        actual = arm["paid_competition"][key]["evidence"]
+        assert actual is not None and isfinite(float(actual))
+        assert abs(actual - reconstructed) < 1e-10, (
+            f"paid sleep evidence mismatch step={key[0]} cycle={key[1]}"
+            f" arm={label} actual={actual} expected={reconstructed}"
+            f" Q_component={extrinsic} P40_component={p40_component}"
+            f" stage10_weight={arm['stage10_sleep_weight']}"
+            f" stage11_exploration_weight={intrinsic['intrinsic_weight']}")
+        both_arms.append({
+            "arm": label, "q_extrinsic": extrinsic,
+            "p40_intrinsic": p40_component, "competition_evidence": actual,
+        })
+    left, right = both_arms
+    delta_q_extrinsic = right["q_extrinsic"] - left["q_extrinsic"]
+    delta_p40 = right["p40_intrinsic"] - left["p40_intrinsic"]
+    delta_competition = (right["competition_evidence"] -
+                         left["competition_evidence"])
+    assert abs(delta_q_extrinsic + delta_p40 - delta_competition) < 1e-10
+    sleep_input_rows.append({
+        "step": key[0], "cycle": key[1], "option_ref": key[2],
+        "delta_q_extrinsic": delta_q_extrinsic,
+        "delta_p40_intrinsic": delta_p40,
+        "delta_competition_evidence": delta_competition,
+        "baseline_q_extrinsic": left["q_extrinsic"],
+        "baseline_p40_intrinsic": left["p40_intrinsic"],
+        "nourishing_q_extrinsic": right["q_extrinsic"],
+        "nourishing_p40_intrinsic": right["p40_intrinsic"],
+    })
+assert sleep_input_rows
+assert len(sleep_input_rows) == sum(
+    x["learning_signature"] == "primitive:dormir"
+    for x in paired_evidence_inputs)
+sleep_input_audit = {
+    "exact_paid_sleep_cases": len(sleep_input_rows),
+    "all_component_identities_verified": True,
+    "distinct_real_intrinsic_weights": {
+        "stage10_sleep": neutral["stage10_sleep_weight"],
+        "stage11_exploration": neutral["stage11_exploration_weight"],
+    },
+    "frozen_p40_step_receipts_verified": len(sleep_input_rows),
+    "opposing_q_and_p40_shifts": sum(
+        x["delta_q_extrinsic"] * x["delta_p40_intrinsic"] < 0
+        for x in sleep_input_rows),
+    "cases_with_competition_opposite_to_q_extrinsic": sum(
+        abs(x["delta_q_extrinsic"]) > 1e-12
+        and abs(x["delta_competition_evidence"]) > 1e-12
+        and ((x["delta_q_extrinsic"] > 0)
+             != (x["delta_competition_evidence"] > 0))
+        for x in sleep_input_rows),
+    "rows": sleep_input_rows,
+    "q_only_motor_effect": "NOT_ESTABLISHED",
+}
+
 a = neutral["physical_decisions"]
 b = nourishing["physical_decisions"]
 assert set(a) == set(b)
@@ -1043,12 +1156,12 @@ report = {
     "authentic_same_step_ingestion": authenticated_exposure,
     "first_ingestion_step": first if authenticated_exposure else None,
     "neutral": {k:v for k,v in neutral.items()
-                if k not in ("first_local", "steps", "contextual_values",
+                if k not in ("paid_intrinsic", "frozen_sleep_by_step", "first_local", "steps", "contextual_values",
                              "td_snapshots", "td_events", "paid_stage8",
                              "paid_competition", "paid_frames",
                              "physical_decisions")},
     "nourishing": {k:v for k,v in nourishing.items()
-                  if k not in ("first_local", "steps", "contextual_values",
+                  if k not in ("paid_intrinsic", "frozen_sleep_by_step", "first_local", "steps", "contextual_values",
                                "td_snapshots", "td_events", "paid_stage8",
                                "paid_competition", "paid_frames",
                                "physical_decisions")},
@@ -1061,6 +1174,7 @@ report = {
     "postexperience_motor_trajectories_differ": future_motor_divergence,
     "paired_td_custody": td_custody,
     "paired_stage8_mixed_input_audit": stage8_input_audit,
+    "paired_sleep_intrinsic_decomposition": sleep_input_audit,
     "paired_td_competition_adjudication": adjudication,
     "paired_action_control_custody": {
         "neutral": neutral["action_control_custody"],
