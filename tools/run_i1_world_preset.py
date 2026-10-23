@@ -283,13 +283,19 @@ def _m11_life(*, birth, params, life_id, path, steps):
         for _ in range(steps):
             pre_count = life._runtime.journal.entry_count
             pre_body = dict(life._runtime.world.telemetry())
+            mode_before = life._runtime.sleep_session.mode
+            prior_frozen = life._runtime.sleep_health.frozen
+            fatigue_before = life._runtime.sleep_health.fatigue
             receipt = life.run_step()
             if receipt.status not in ("active", "dead"):
                 raise RuntimeError("uncertain M11 life status")
+            step_events = [
+                dict(e.causal_event)
+                for e in life._runtime.journal.entries_since(pre_count)
+            ]
             authentic = [
-                e.causal_event for e in
-                life._runtime.journal.entries_since(pre_count)
-                if e.causal_event.get("kind") in {
+                e for e in step_events
+                if e.get("kind") in {
                     "command_experienced", "world_transition_experienced"}
             ]
             commands = [e for e in authentic
@@ -314,10 +320,102 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 }
             else:
                 actual = None
+            # #465: strictly external post-COMMIT sleep provenance. A
+            # physical dormir can be a first ordinary choice, a fresh
+            # voluntary choice after wake, or reduced-perception continuation.
+            # Never count every dormir as a new paid Competition decision.
+            def events_of(kind):
+                return [e for e in step_events if e.get("kind") == kind]
+
+            reduced = events_of("stage10_reduced_capture")
+            entered = events_of("stage10_sleep_entered")
+            wakes = events_of("stage10_sleep_woke")
+            frozen = events_of("stage10_sleep_pressure_frozen")
+            frames = events_of("competition_cycle")
+            assessments = events_of("stage8_option_evaluation")
+            if any(len(rows) > 1 for rows in (reduced, entered, wakes, frozen)):
+                raise RuntimeError("duplicate sleep owner receipt in one M11 step")
+            if any(e["t_monde"] != receipt.world_step for e in (
+                    reduced + entered + wakes + frozen + frames + assessments)):
+                raise RuntimeError("foreign-step sleep/competition occurrence")
+            primitive = None if actual is None else actual["primitive"]
+            if primitive != "dormir":
+                sleep_provenance = "not_sleep"
+            elif reduced and wakes:
+                sleep_provenance = "readmitted_after_wake"
+            elif reduced:
+                sleep_provenance = "reduced_sleep_continuation"
+            else:
+                sleep_provenance = "ordinary_awake_admission"
+            latest = max(frames, key=lambda e: e["cycle"]) if frames else None
+            evaluations = (
+                {e["data"]["option_ref"]: e["data"]["learning_signature"]
+                 for e in assessments if latest is not None
+                 and e["cycle"] == latest["cycle"]}
+            )
+            crossed = [] if latest is None else [
+                e for e in latest["data"]["traces"] if e["crossed"]
+            ]
+            sleep_crossed = sum(
+                evaluations.get(e["option_ref"]) == "primitive:dormir"
+                for e in crossed
+            )
+            awake_crossed = sum(
+                evaluations.get(e["option_ref"]) not in (
+                    None, "primitive:dormir")
+                for e in crossed
+            )
+            unattributed_crossed = (
+                len(crossed) - sleep_crossed - awake_crossed
+            )
+            pressure = (
+                frozen[0]["data"]["sleep_pressure"] if frozen
+                else None if prior_frozen is None
+                else prior_frozen.sleep_pressure
+            )
+            sleep_custody = {
+                "provenance": sleep_provenance,
+                "mode_before": mode_before,
+                "mode_after": life._runtime.sleep_session.mode,
+                "reduced_perception": bool(reduced),
+                "sleep_entered": bool(entered),
+                "woke": bool(wakes),
+                "wake_reason": None if not wakes else wakes[0]["data"]["reason"],
+                "reduced_critical_channels": (
+                    None if not reduced
+                    else list(reduced[0]["data"]["critical_body_channels"])),
+                "pressure": pressure,
+                "pressure_source": (
+                    "new_waking_freeze" if frozen else
+                    "previous_waking_freeze" if prior_frozen else "not_exposed"),
+                "fatigue_before": fatigue_before,
+                "fatigue_after": life._runtime.sleep_health.fatigue,
+                "is_night": life._runtime.world.is_night(receipt.world_step),
+                "paid_competition_cycles": len(frames),
+                "last_paid_sleep_crossed": sleep_crossed if latest else None,
+                "last_paid_awake_crossed": awake_crossed if latest else None,
+                "last_paid_unattributed_crossed": (
+                    unattributed_crossed if latest else None),
+                "consolidation_commits": len(
+                    events_of("stage10_consolidation_committed")),
+                "consolidation_pass_checkpoints": len(
+                    events_of("stage10_consolidation_pass_checkpointed")),
+                "consolidation_deferred_events": len(
+                    events_of("stage10_consolidation_work_deferred")),
+            }
+            if sleep_provenance == "reduced_sleep_continuation" and frames:
+                raise RuntimeError("undeliberated sleep continuation gained competition")
+            if sleep_provenance == "readmitted_after_wake" and not frames:
+                raise RuntimeError("re-admitted sleep has no ordinary Competition")
+            if sleep_provenance == "ordinary_awake_admission" and not frames:
+                raise RuntimeError("ordinary admitted sleep lacks paid Competition")
+            if sleep_provenance != "not_sleep" and pressure is None:
+                raise RuntimeError("applied dormir without previously frozen P-40")
             trajectory.append({
                 "world_step": receipt.world_step,
                 "generation": receipt.generation,
                 "physical_journal_observation": actual,
+                "sleep_custody_observation": sleep_custody,
                 "lifecycle": receipt.status,
                 "execution": receipt.outcome,
                 "journal_count": receipt.journal_count,
