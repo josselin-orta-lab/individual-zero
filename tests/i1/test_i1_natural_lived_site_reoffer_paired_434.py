@@ -79,6 +79,9 @@ def experiment(food_gain, db_path):
                 "step": receipt.world_step, "before": before,
                 "after": dict(rt.world.body.as_dict()),
                 "position": rt.world.position.as_dict(),
+                # Existing world-step temporal condition, no new perception
+                # or additional owner update.
+                "is_night_at_step": bool(rt.world.is_night(receipt.world_step)),
             })
             receipts.append({
                 "generation": receipt.generation,
@@ -183,6 +186,7 @@ def experiment(food_gain, db_path):
     # Owner-published intrinsic assessment at each real paid cycle.
     paid_intrinsic = {}
     frozen_sleep_by_step = {}
+    frozen_sleep_components = {}
     for e in events:
         d = e.get("data", {})
         if e.get("kind") == "td_update_published":
@@ -202,6 +206,10 @@ def experiment(food_gain, db_path):
                 "P-40 was frozen more than once in a waking physical step")
             assert d["world_step"] == step
             frozen_sleep_by_step[step] = d["sleep_pressure"]
+            frozen_sleep_components[step] = {
+                "fatigue": d["fatigue"],
+                "consolidation_pressure": d["consolidation_pressure"],
+            }
         elif e.get("kind") == "stage11_intrinsic_evaluation":
             key = (e["t_monde"], e["cycle"], d["option_ref"])
             assert key not in paid_intrinsic
@@ -548,11 +556,18 @@ def experiment(food_gain, db_path):
         "paid_stage8": paid_stage8,
         "paid_intrinsic": paid_intrinsic,
         "frozen_sleep_by_step": frozen_sleep_by_step,
+        "frozen_sleep_components": frozen_sleep_components,
         # P-40 belongs to Stage10, not to Stage11 Exploration P-15.
         "stage10_sleep_weight": rt._stage10_config.intrinsic_weight,
         "stage11_exploration_weight": rt._stage11_config.intrinsic_weight,
         "stage8_scale": rt.stage8_option_evaluator.config.evidence_scale,
         "stage8_extrinsic_gain": rt.stage8_option_evaluator.config.extrinsic_gain,
+        "born_p40_fatigue_weight": rt.sleep_health.rules.config.fatigue_weight,
+        "born_p40_consolidation_weight": rt.sleep_health.rules.config.consolidation_weight,
+        "born_p40_night_weight": rt.sleep_health.rules.config.night_weight,
+        "born_need_setpoints": dict(rt.value_needs.config.setpoints),
+        "born_need_scales": dict(rt.value_needs.config.normalization_scales),
+        "born_need_weights": dict(rt.value_needs.config.weights),
         "paid_competition": paid_competition,
         "paid_frames": frames,
         "physical_decisions": decisions,
@@ -1109,6 +1124,131 @@ margin_audit = {
     "learned_td_caused_motor_choice": "NOT_ESTABLISHED",
 }
 
+# #451: pre-existing natural cycles only. Sleep is an ordinary paid option
+# competing against other candidates, never a source of mandatory action.
+# Diagnostic body pressures are recalculated outside the agent from its
+# immutable, actually born Stage4 formula and pre-action body, not proposed
+# as a goal and never sent back to Competition.
+def real_need_pressures(arm, step):
+    before = arm["steps"][step - 1]["before"]
+    maximum = max(arm["born_need_weights"].values(), default=0.0)
+    return {
+        name: max(0.0, min(1.0,
+            (arm["born_need_weights"][name] / maximum if maximum > 0 else 0.0)
+            * max(0.0, min(1.0,
+                (float(before[name]) - arm["born_need_setpoints"][name])
+                / -arm["born_need_scales"][name]))))
+        for name in ("energy", "food", "water", "integrity")
+    }
+
+sleep_need_cycles = []
+for label, arm in (("neutral", neutral), ("nourishing", nourishing)):
+    for (step, cycle), candidates in sorted(arm["paid_frames"].items()):
+        sleep_refs = [
+            ref for ref in candidates
+            if arm["paid_stage8"].get((step, cycle, ref), {}).get(
+                "signature") == "primitive:dormir"
+            and ref.startswith("option:sleep-pressure:")
+        ]
+        if not sleep_refs:
+            continue
+        assert len(sleep_refs) == 1
+        sleep_ref = sleep_refs[0]
+        sleep_trace = candidates[sleep_ref]
+        assessed = arm["paid_intrinsic"].get((step, cycle, sleep_ref))
+        assert assessed is not None and assessed["status"] == "evaluated"
+        assert "metacognition_health:p40_sleep_pressure" in assessed["producers"]
+        frozen = arm["frozen_sleep_components"][step]
+        p40 = arm["frozen_sleep_by_step"][step]
+        # Reconstruct P-40 from the same actual step's night clock and born
+        # coefficients. No physiological channel is part of this intrinsic.
+        actual_night = arm["steps"][step - 1]["is_night_at_step"]
+        assert type(actual_night) is bool
+        weighted_awake = (
+            arm["born_p40_fatigue_weight"] * frozen["fatigue"]
+            + arm["born_p40_consolidation_weight"] *
+              frozen["consolidation_pressure"]
+        )
+        is_night_component = (
+            arm["born_p40_night_weight"] if actual_night else 0.0)
+        reconstructed_p40 = min(1.0, weighted_awake + is_night_component)
+        assert abs(reconstructed_p40 - p40) < 1e-12, (
+            "frozen P40 differs from actual night/fatigue/consolidation")
+        assert abs(assessed["intrinsic_value"] - p40) < 1e-12
+        need_pressures = real_need_pressures(arm, step)
+        rivals = [
+            (ref, tr) for ref, tr in candidates.items()
+            if ref != sleep_ref and tr["evidence"] is not None
+        ]
+        # Only the LAST paid cognitive cycle can be associated with the
+        # single physical action at this world step. Earlier cycles remain
+        # valid competition observations, not extra motor admissions.
+        final_cycle = max(c for (t, c) in arm["paid_frames"] if t == step)
+        is_final_cycle = cycle == final_cycle
+        admitted = (
+            arm["physical_decisions"].get(step) if is_final_cycle else None)
+        sleep_need_cycles.append({
+            "arm": label, "step": step, "cycle": cycle,
+            "p40": p40,
+            "p40_fatigue": frozen["fatigue"],
+            "p40_consolidation": frozen["consolidation_pressure"],
+            "p40_exact_night_term": is_night_component,
+            "is_night": actual_night,
+            "is_final_paid_cycle": is_final_cycle,
+            "need_pressures": need_pressures,
+            "top_need": max(need_pressures, key=need_pressures.get),
+            "max_need_pressure": max(need_pressures.values()),
+            "sleep_crossed": sleep_trace["crossed"],
+            "sleep_ratio": sleep_trace["ratio"],
+            "awake_rival_count": len(rivals),
+            "awake_crossed_count": sum(tr["crossed"] for _, tr in rivals),
+            "awake_top_ratio": max((tr["ratio"] for _, tr in rivals),
+                                    default=None),
+            "admitted_primitive": None if admitted is None else admitted["primitive"],
+            "admitted_from_competition": (
+                admitted is not None and admitted["admitted_crossed"]),
+            "sleep_admitted": (admitted is not None
+                               and admitted["option_ref"] == sleep_ref),
+        })
+assert sleep_need_cycles, "no paid sleep vs waking opportunity in natural M11"
+# Absence of an awake competitor is evidence of missing choice exposure,
+# never a reason to silently discard an authentic paid sleep cycle.
+# Preserve undecided cases rather than inferring that any rival was physically
+# admissible, or that same-step choices before final cycle were applied.
+sleep_need_audit = {
+    "actual_paid_sleep_cycles": len(sleep_need_cycles),
+    "distinct_awake_physical_steps": len({
+        (x["arm"], x["step"]) for x in sleep_need_cycles}),
+    "with_awake_rival": sum(x["awake_rival_count"] > 0
+                            for x in sleep_need_cycles),
+    "without_awake_rival": sum(x["awake_rival_count"] == 0
+                               for x in sleep_need_cycles),
+    "physical_decisions_counted_once": sum(
+        x["is_final_paid_cycle"] for x in sleep_need_cycles),
+    "with_crossed_awake_rival": sum(x["awake_crossed_count"] > 0
+                                   for x in sleep_need_cycles),
+    "awake_admitted_with_sleep_available": sum(
+        x["admitted_primitive"] not in (None, "dormir")
+        and x["admitted_from_competition"] for x in sleep_need_cycles),
+    "sleep_admitted_with_awake_rival": sum(
+        x["sleep_admitted"] and x["awake_rival_count"] > 0
+        for x in sleep_need_cycles),
+    "max_need_pressure_observed": max(
+        x["max_need_pressure"] for x in sleep_need_cycles),
+    "examples": sleep_need_cycles[:24],
+    "paired_sleep_q_changes": sum(
+        x["learning_signature"] == "primitive:dormir"
+        for x in paired_evidence_inputs),
+    "paired_sleep_q_changes_with_matched_p40": sum(
+        x["learning_signature"] == "primitive:dormir"
+        and abs(neutral["frozen_sleep_by_step"][x["step"]]
+                - nourishing["frozen_sleep_by_step"][x["step"]]) < 1e-12
+        for x in paired_evidence_inputs),
+    "matched_p40_q_only_motor_effect": "NOT_ESTABLISHED",
+    "emergency_priority_in_all_possible_worlds": "NOT_ESTABLISHED",
+    "scientific_l3": "NOT_ESTABLISHED",
+}
+
 adjudication = {
     "matched_paid_learned_options": len(joined),
     "changed_q_through_competition": len(changed),
@@ -1156,12 +1296,12 @@ report = {
     "authentic_same_step_ingestion": authenticated_exposure,
     "first_ingestion_step": first if authenticated_exposure else None,
     "neutral": {k:v for k,v in neutral.items()
-                if k not in ("paid_intrinsic", "frozen_sleep_by_step", "first_local", "steps", "contextual_values",
+                if k not in ("paid_intrinsic", "frozen_sleep_by_step", "frozen_sleep_components", "first_local", "steps", "contextual_values",
                              "td_snapshots", "td_events", "paid_stage8",
                              "paid_competition", "paid_frames",
                              "physical_decisions")},
     "nourishing": {k:v for k,v in nourishing.items()
-                  if k not in ("paid_intrinsic", "frozen_sleep_by_step", "first_local", "steps", "contextual_values",
+                  if k not in ("paid_intrinsic", "frozen_sleep_by_step", "frozen_sleep_components", "first_local", "steps", "contextual_values",
                                "td_snapshots", "td_events", "paid_stage8",
                                "paid_competition", "paid_frames",
                                "physical_decisions")},
@@ -1175,6 +1315,7 @@ report = {
     "paired_td_custody": td_custody,
     "paired_stage8_mixed_input_audit": stage8_input_audit,
     "paired_sleep_intrinsic_decomposition": sleep_input_audit,
+    "observed_sleep_needs_competition_451": sleep_need_audit,
     "paired_td_competition_adjudication": adjudication,
     "paired_action_control_custody": {
         "neutral": neutral["action_control_custody"],
