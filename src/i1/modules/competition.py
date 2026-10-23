@@ -456,7 +456,7 @@ class Competition:
             or option.motive_ref.type != "place_memory"
             or option.id != f"option:place-memory:{option.motive_ref.id}"
             or option.learning_signature != intent.semantic_ref
-            or not self._matches_remembered_place(option, intent)
+            or not self._matches_remembered_place(option, intent, observed_origin=observed_origin, verify_next_hop=True, plan=plan)
             or option.goal_ref != intent.goal_ref
             or plan is None or plan.goal_ref != intent.goal_ref
             or len(plan.steps) != 1
@@ -482,7 +482,7 @@ class Competition:
         return True
 
     @staticmethod
-    def _matches_remembered_place(option: Option, intent: AppliedMemoryIntention) -> bool:
+    def _matches_remembered_place(option: Option, intent: AppliedMemoryIntention, *, observed_origin: tuple[int, int] | None = None, verify_next_hop: bool = False, plan: object = None) -> bool:
         """The actual newly registered option must target the same lived site."""
         import re
         ref = option.motive_ref.id
@@ -498,6 +498,22 @@ class Competition:
             and tuple(map(int, match.group(2, 3))) == intent.observed_site
             and sum(abs(a-b) for a,b in zip(
                 map(int,match.group(4,5)),map(int,match.group(6,7)))) == 1
+            and (not verify_next_hop or (
+                observed_origin is not None
+                and tuple(map(int, match.group(4,5))) == observed_origin
+                and tuple(map(int, match.group(4,5))) == intent.expected_position
+                and plan is not None
+                and len(plan.steps) == 1
+                and plan.steps[0].command.primitive == "se_deplacer"
+                and plan.steps[0].command.parameters.get("direction") ==
+                    next((direction for direction, delta in (
+                        ("north", (0,-1)), ("east", (1,0)),
+                        ("south", (0,1)), ("west", (-1,0)))
+                        if delta == tuple(
+                            v-o for v,o in zip(
+                                map(int,match.group(6,7)),
+                                map(int,match.group(4,5))))), None)
+            ))
         )
 
     def reconsider_confirmed_intention(
