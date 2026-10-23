@@ -301,11 +301,22 @@ def experiment(food_gain, db_path):
         assert accepted[0] == attempts[-1]
         assert accepted[0]["primitive"] == row["experienced"][0]
         assert all(not x["ok"] for x in attempts[:-1])
-        assert all(x["source"] in ("reflex", "decision") for x in attempts)
+        assert all(x["source"] in ("reflex", "decision", "sleep")
+                   for x in attempts)
         if not row["cycles"]:
-            assert len(attempts) == 1 and attempts[0]["source"] == "reflex"
+            # Stage10's already-committed sleep session admits each reduced
+            # physical sleep step through Action Control WITHOUT reentering
+            # Competition. This is not an unpriced reflex or a fallback.
+            assert len(attempts) == 1
             assert attempts[0]["option_ref"] is None
-            custody["reflex_applied_steps"] += 1
+            if attempts[0]["source"] == "sleep":
+                assert attempts[0]["primitive"] == "dormir"
+                assert any(e.get("kind") == "stage10_sleep_entered"
+                           and e["t_monde"] <= step for e in events)
+                custody["committed_sleep_steps"] += 1
+            else:
+                assert attempts[0]["source"] == "reflex"
+                custody["reflex_applied_steps"] += 1
             continue
         assert len(row["cycles"]) == len(set(row["cycles"]))
         assert all(x["source"] == "decision" for x in attempts)
@@ -339,6 +350,7 @@ def experiment(food_gain, db_path):
             "top_crossed_ref": crossed[0] if crossed else None,
         })
     assert (custody["reflex_applied_steps"] +
+            custody["committed_sleep_steps"] +
             custody["crossed_admitted_steps"] +
             custody["fallback_applied_steps"] == len(applied))
 
