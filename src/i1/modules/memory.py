@@ -559,6 +559,11 @@ class EpisodicMemory:
         channels = ("energy", "food", "water", "integrity")
         counts = {name: {"increase": 0, "decrease": 0, "stable": 0,
                          "unknown": 0} for name in channels}
+        # Preserve historical adjacent after->after reports separately from
+        # the personally witnessed before->after delta of one applied step.
+        same_step_counts = {name: {"increase": 0, "decrease": 0,
+                                   "stable": 0, "unknown": 0}
+                            for name in channels}
         rows = []
         seen: set[tuple[str, str]] = set()
         for witness in witnesses:
@@ -592,17 +597,50 @@ class EpisodicMemory:
                 kinds = {k: "unknown" for k in channels}
             for k, kind in kinds.items():
                 counts[k][kind] += 1
+            same_delta = witness.get("same_step_body_delta")
+            before = witness.get("body_before")
+            after = witness.get("body_after")
+            same_valid = (
+                isinstance(same_delta, Mapping)
+                and isinstance(before, Mapping)
+                and isinstance(after, Mapping)
+                and set(same_delta) == set(channels)
+                and set(before) == set(channels)
+                and set(after) == set(channels)
+                and all(
+                    type(before[k]) in (int, float)
+                    and type(after[k]) in (int, float)
+                    and type(same_delta[k]) in (int, float)
+                    and isfinite(before[k]) and isfinite(after[k])
+                    and isfinite(same_delta[k])
+                    and 0 <= before[k] <= 100 and 0 <= after[k] <= 100
+                    and float(after[k]) - float(before[k])
+                        == float(same_delta[k])
+                    for k in channels
+                )
+            )
+            same_kinds = {
+                k: ("increase" if same_delta[k] > 0 else
+                    "decrease" if same_delta[k] < 0 else "stable")
+                if same_valid else "unknown"
+                for k in channels
+            }
+            for k, kind in same_kinds.items():
+                same_step_counts[k][kind] += 1
             rows.append({
                 "step": witness.get("step"),
                 "source_event_refs": refs,
                 "previous_step_after_ref": prior if valid else None,
                 "previous_step_after_episode_ref": source if valid else None,
                 "directions": kinds,
+                "same_step_directions": same_kinds,
+                "same_step_prebody_attested": same_valid,
             })
         return {
             "site_ref": f"sleep-site:{site[0]}:{site[1]}",
             "witness_count": len(rows),
             "channels": counts,
+            "same_step_channels": same_step_counts,
             "observations": tuple(rows),
             "causal_attribution": False,
             "continuous_sleep_session": None,
