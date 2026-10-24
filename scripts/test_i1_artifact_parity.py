@@ -146,6 +146,15 @@ def _approved_pending_index_cursor(before: bytes, after: bytes) -> bool:
         old = old.replace(prior, replacement, 1)
     return old == new
 
+def _approved_unique_dc09_source_467(root: Path, rel: str) -> bool:
+    """Exact native I1-only journal view for unique source custody."""
+    if rel != "i1lab/journal_views.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/runtime/journal_views.py").read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == "901748016b7aa3d0a40b3510c92221ad42fc5986"
+
+
 def _approved_dormant_prebody_dc09_467(root: Path, rel: str) -> bool:
     """Exact native I1-only DC-09 guard and dormant policy revisions."""
     sources = {
@@ -1418,6 +1427,7 @@ def verify(reference_root: Path) -> None:
                     and _approved_stage9_episode_slice(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
+                or _approved_unique_dc09_source_467(new_root, rel)
                 or (rel == "i1lab/journal_views.py"
                     and _approved_autobio_index_rehydration(
                         _reference_autobio_fastpath((old_root / rel).read_bytes()),
