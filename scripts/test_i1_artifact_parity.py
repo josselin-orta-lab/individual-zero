@@ -155,7 +155,7 @@ def _approved_native_prebody_activation_467(root: Path, rel: str) -> bool:
         ),
         "i1lab/i1_natural_runtime.py": (
             "src/i1/runtime/i1_natural_runtime.py",
-            "b869d5843caf362be1fb5b7d63b97e5895cf0758",
+            "451320d823a8e9a54e29716d6d4f3d05f04676b6",
         ),
         "i1lab/stage10_runtime.py": (
             "src/i1/runtime/stage10_runtime.py",
