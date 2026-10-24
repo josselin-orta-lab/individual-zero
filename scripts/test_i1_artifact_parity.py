@@ -185,7 +185,7 @@ def _approved_closed_sleep_site_467(root: Path, rel: str) -> bool:
     source = ROOT / "src/i1/modules/memory.py"
     data = source.read_bytes()
     digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
-    return (digest == "6fc4ef735bb4845b0a336a1390af070c138e806d"
+    return (digest == "1efbdcf01f5077555e9d02e9cb2f91dbf9c634b3"
             and (root / rel).is_file())
 
 

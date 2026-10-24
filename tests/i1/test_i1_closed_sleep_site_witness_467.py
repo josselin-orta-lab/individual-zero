@@ -58,6 +58,23 @@ assert [row["step"] for row in a] == [1, 3]
 assert [row["step"] for row in b] == [2]
 assert a[0]["site_ref"] == a[1]["site_ref"] != b[0]["site_ref"]
 assert len(b[0]["source_episode_refs"]) == 2
+assert a[0]["adjacent_after_state_delta"] is None
+assert b[0]["adjacent_after_state_delta"] is None  # site changed A -> B
+assert a[1]["adjacent_after_state_delta"] is None  # site changed B -> A
+assert a[0]["previous_step_after_ref"] is None
+assert all(row["body_before"] is None for row in a + b)
+# Witness of adjacent same-site states, not a causal before-body claim.
+events2 = [command("c1", 1), outcome("t1", 1, 2, 40),
+           command("c2", 2), outcome("t2", 2, 2, 45),
+           command("c3", 3), outcome("t3", 3, 2, 56)]
+same = memory.closed_sleep_site_witnesses(
+    autobiography=events2, site=(2, 4), now=5)
+assert same[1]["adjacent_after_state_delta"] == dict(
+    energy=5.0, food=0.0, water=0.0, integrity=0.0)
+assert same[1]["previous_step_after_ref"] == "t1"
+assert same[1]["previous_step_after_episode_ref"] == "episode:0"
+assert same[1]["body_before"] is None
+
 assert all(row["body_before"] is None
            and row["continuous_sleep_session"] is None for row in a + b)
 assert memory.closed_sleep_site_witnesses(
@@ -70,6 +87,23 @@ memory._episodes.append(episode(4, ("c3",)))
 assert [row["step"] for row in memory.closed_sleep_site_witnesses(
     autobiography=events, site=(2, 4), now=5)] == [1]
 memory._episodes.pop()
+# Older duplicate must invalidate a selected recent source even after
+# the 256-ref exposure cap. Excessive scanning fails closed entirely.
+memory._episodes = [episode(0, ("c1", "t1"))] + [
+    episode(i + 1, tuple(f"noise:{i}:{j}" for j in range(10)))
+    for i in range(28)
+] + [episode(30, ("c1", "c3", "t3"))]
+memory._seen_event_refs.update(
+    ref for ep in memory._episodes for ref in ep.event_refs)
+assert "c1" not in memory.closed_sleep_recall_source_refs()
+memory._episodes = [episode(0, ("c1", "t1", "c2", "t2", "c3", "t3"))]
+memory._episodes.append(episode(1, tuple(
+    f"many:{i}" for i in range(4097))))
+memory._seen_event_refs.update(f"many:{i}" for i in range(4097))
+assert not memory.closed_sleep_recall_source_refs()
+memory._episodes = [episode(0, ("c1", "t1")),
+                    episode(1, ("c2",)), episode(2, ("t2",)),
+                    episode(3, ("c3", "t3"))]
 memory._seen_event_refs.remove("c3")
 assert [row["step"] for row in memory.closed_sleep_site_witnesses(
     autobiography=events, site=(2, 4), now=5)] == [1]
