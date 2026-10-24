@@ -69,6 +69,7 @@ def policy_for_proven_prebody_transition(
     """
     from collections.abc import Mapping
     from .determinism import deterministic_id
+    from .world import Command, command_digest
 
     old = STAGE7_AUTOBIOGRAPHICAL_POLICY
     if (type(t_monde) is not int or t_monde < 1
@@ -97,6 +98,22 @@ def policy_for_proven_prebody_transition(
                 "journal-event-v1", "world", t_monde,
                 attempt_ref, digest, "transition",
             ) != physical_ref):
+        return old
+
+    # Receipt identity and its declared content must agree with the actual
+    # Stage2 Action Control serializer. A copied digest / primitive on a
+    # synthetic command event is not evidence of the emitted command.
+    parameters = c.get("parameters")
+    if (not isinstance(parameters, Mapping)
+            or deterministic_id(
+                "journal-event-v1", "action_control", t_monde,
+                attempt_ref, digest, "send",
+            ) != command_ref):
+        return old
+    try:
+        if command_digest(Command(primitive, dict(parameters))) != digest:
+            return old
+    except (TypeError, ValueError, KeyError):
         return old
 
     captures = []
