@@ -456,6 +456,46 @@ class EpisodicMemory:
                            or not isfinite(body[k]) or not 0 <= body[k] <= 100
                            for k in _INTENTION_BODY_KEYS)):
                 continue
+            # No technical WorldBody snapshot and no inferred same-step
+            # pre-action state. Only a UNIQUE previously CLOSED first-person
+            # after-transition at the IMMEDIATELY preceding world step can
+            # support a contextual between-step bodily change. This is not
+            # sleep-specific causality or proof of one uninterrupted admission.
+            previous_transition_ref = None
+            previous_episode_ref = None
+            adjacent_after_state_delta = None
+            previous_candidates = per_step.get(step - 1, {}).get(
+                "transition", [])
+            if len(previous_candidates) == 1:
+                previous = previous_candidates[0]
+                previous_ref = previous.get("event_id")
+                previous_site = previous.get("position_after")
+                previous_body = previous.get("body_after")
+                if (type(previous_ref) is str
+                        and previous_ref not in duplicates
+                        and custody.get(previous_ref) is not None
+                        and set(previous) == {
+                            "event_id", "kind", "t_monde",
+                            "position_after", "body_after", "effects",
+                        }
+                        and isinstance(previous_site, Mapping)
+                        and set(previous_site) == {"x", "y"}
+                        and all(type(previous_site[k]) is int
+                                for k in ("x", "y"))
+                        and (previous_site["x"], previous_site["y"]) == site
+                        and isinstance(previous_body, Mapping)
+                        and set(previous_body) == _INTENTION_BODY_KEYS
+                        and all(type(previous_body[k]) in (int, float)
+                                and isfinite(previous_body[k])
+                                and 0 <= previous_body[k] <= 100
+                                for k in _INTENTION_BODY_KEYS)
+                        and isinstance(previous.get("effects"), Mapping)):
+                    previous_transition_ref = previous_ref
+                    previous_episode_ref = custody[previous_ref]
+                    adjacent_after_state_delta = {
+                        k: float(body[k]) - float(previous_body[k])
+                        for k in ("energy", "food", "water", "integrity")
+                    }
             found.append({
                 "step": step,
                 "site_ref": f"sleep-site:{site[0]}:{site[1]}",
@@ -465,6 +505,9 @@ class EpisodicMemory:
                                ("energy", "food", "water", "integrity")},
                 "body_before": None,
                 "continuous_sleep_session": None,
+                "previous_step_after_ref": previous_transition_ref,
+                "previous_step_after_episode_ref": previous_episode_ref,
+                "adjacent_after_state_delta": adjacent_after_state_delta,
             })
         return tuple(found[-16:])
 
