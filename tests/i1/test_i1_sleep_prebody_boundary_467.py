@@ -26,12 +26,16 @@ assert "body_before" not in P2.allowed_fields_by_kind["world_transition_experien
 assert "body_before" not in P7.allowed_fields_by_kind["world_transition_experienced"]
 for policy in (P2, P7):
     policy.validate()
+# The global I1 guard now supports a NEW explicitly versioned policy.
+# Historical Stage2/Stage7 projections still do not grant this field.
+validate_lived_kind_fields("world_transition_experienced", ("body_before",))
 try:
-    validate_lived_kind_fields("world_transition_experienced", ("body_before",))
+    validate_lived_kind_fields("world_transition_experienced",
+                               ("oracle_ground_truth",))
 except ValueError:
     pass
 else:
-    raise AssertionError("unreviewed pre-body exposure through DC-09")
+    raise AssertionError("hidden truth passed the DC-09 boundary")
 print("I1_467_PREBODY_BOUNDARY_OK")
 """
             check = subprocess.run(
