@@ -373,6 +373,39 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 }
             else:
                 actual = None
+            # #467: operator-side concordance audit only. A physical
+            # transition before-state is not necessarily the waking body's
+            # last captured state, especially after an after_admission input
+            # or during reduced-perception sleep. Never feed this audit into
+            # the cognitive agent or a DC-09 policy commitment.
+            from i1lab.i1_natural_prebody_policy import (
+                captured_prebody_matches_transition,
+            )
+            capture = life._runtime.stage3._capture
+            same_step_capture = (
+                capture is not None
+                and capture.t_monde == receipt.world_step
+                and actual is not None
+            )
+            if actual is None:
+                prebody_status = "no_physical_transition"
+            elif not same_step_capture:
+                prebody_status = "no_current_waking_capture"
+            elif captured_prebody_matches_transition(
+                captured_body=capture.body,
+                physical_body_before=physical["body_before"],
+            ):
+                prebody_status = "capture_matches_physical_before"
+            else:
+                prebody_status = "capture_physical_divergence"
+            prebody_concordance = {
+                "status": prebody_status,
+                "current_waking_capture": bool(same_step_capture),
+                "physical_before_present": (
+                    actual is not None and "body_before" in physical),
+                "autobiographical_policy_activated": False,
+                "memory_wrote_prebody": False,
+            }
             # #465: strictly external post-COMMIT sleep provenance. A
             # physical dormir can be a first ordinary choice, a fresh
             # voluntary choice after wake, or reduced-perception continuation.
@@ -646,6 +679,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 "world_step": receipt.world_step,
                 "generation": receipt.generation,
                 "physical_journal_observation": actual,
+                "prebody_concordance_audit_467": prebody_concordance,
                 "sleep_custody_observation": sleep_custody,
                 "autobiographical_sleep_custody_467": custody,
                 "sleep_site_recall_custody_467": recall_audit,
