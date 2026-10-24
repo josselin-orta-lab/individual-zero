@@ -111,6 +111,24 @@ class JournalViews:
         if len(event_refs) != len(set(event_refs)):
             raise ValueError("AutoSegmentCommit event references must be unique")
 
+        # A physical source can have only one autobiographical owner.
+        # Check original committed refs, not just this new request or its
+        # policy version; later policies cannot retrofit an old event.
+        previously_committed: set[str] = set()
+        for commit_id in self._commit_event_ids:
+            prior = self._journal.get(commit_id)
+            if prior is None or prior.causal_event.get("kind") != "auto_segment_commit":
+                raise ValueError("invalid historic autobiography index")
+            refs = prior.causal_event.get("event_refs")
+            if (type(refs) is not list
+                    or any(type(ref) is not str or not ref for ref in refs)
+                    or len(refs) != len(set(refs))):
+                raise ValueError("invalid historic autobiography refs")
+            if any(ref in previously_committed for ref in refs):
+                raise ValueError("duplicate historical autobiography custody")
+            previously_committed.update(refs)
+        if any(ref in previously_committed for ref in event_refs):
+            raise ValueError("autobiographical event already committed")
         validated: list[str] = []
         for event_ref in event_refs:
             entry = self._journal.get(event_ref)
