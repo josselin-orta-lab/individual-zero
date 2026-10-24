@@ -584,6 +584,9 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 "read_count": len(recalls),
                 "witness_count": (
                     0 if not recalls else recalls[0]["data"]["witness_count"]),
+                "site_balance": (
+                    None if not recalls else
+                    recalls[0]["data"]["site_balance"]["channels"]),
                 "source_event_refs": (
                     [] if not recalls else list(recalls[0]["data"]["event_refs"])),
                 "observed_site": (
