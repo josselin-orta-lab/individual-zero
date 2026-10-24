@@ -17,12 +17,13 @@ class PrebodySelector467(unittest.TestCase):
             code=r"""
 from i1lab.journal import HashChainedJournal
 from i1lab.determinism import deterministic_id
+from i1lab.world import Command, command_digest
 from i1lab.i1_natural_prebody_policy import (
  policy_for_proven_prebody_transition as choose,LIVED_PREBODY_POLICY as NEW)
 from i1lab.stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY as OLD
-def check(*, body_delta=0, omit_capture=False, wrong_hash=False):
+def check(*, body_delta=0, omit_capture=False, wrong_hash=False, wrong_parameters=False):
  j=HashChainedJournal(); t=3; attempt="attempt:3"
- digest="a"*64
+ digest=command_digest(Command("dormir"))
  before=dict(energy=35.,food=60.,water=70.,integrity=99.)
  def write(ref,kind,emitter,**kw):
   j.append(event_id=ref,causal_event=dict(kind=kind,emitter=emitter,
@@ -33,22 +34,24 @@ def check(*, body_delta=0, omit_capture=False, wrong_hash=False):
     dual_scope_visible_body=before))
  write("admitted","command_admitted","stage3-runtime",
   data=dict(command_hash=digest if not wrong_hash else "b"*64,primitive="dormir"))
- write("cmd","command_experienced","action_control",
-  command_hash=digest,primitive="dormir")
+ command_ref=deterministic_id("journal-event-v1","action_control",t,attempt,digest,"send")
+ write(command_ref,"command_experienced","action_control",
+  command_hash=digest,primitive="dormir",parameters=({"direction":"north"} if wrong_parameters else {}))
  physical=deterministic_id("journal-event-v1","world",t,attempt,digest,"transition")
  new_before=dict(before);new_before["water"]+=body_delta
  write(physical,"world_transition_experienced","world_and_body",
   body_before=new_before,body_after=dict(before),
   position_after=dict(x=1,y=1),effects={})
  return choose(journal=j,t_monde=t,attempt_ref=attempt,
-  command_ref="cmd",physical_ref=physical)
+  command_ref=command_ref,physical_ref=physical)
 assert check() is NEW
 assert check(body_delta=1) is OLD
 assert check(omit_capture=True) is OLD
 assert check(wrong_hash=True) is OLD
+assert check(wrong_parameters=True) is OLD
 # A completed authentic prefix remains eligible after a long legitimate
 # technical tail; post-command entries are not provenance scan work.
-j=HashChainedJournal();t=5;attempt="attempt:5";digest="b"*64
+j=HashChainedJournal();t=5;attempt="attempt:5";digest=command_digest(Command("dormir"))
 body=dict(energy=35.,food=60.,water=70.,integrity=99.)
 def append(ref,kind,emitter,**data):
  j.append(event_id=ref,causal_event=dict(
@@ -59,15 +62,16 @@ append("capture5","perceptual_capture","stage3-runtime",
   dual_scope_visible_body=body))
 append("admit5","command_admitted","stage3-runtime",
  data=dict(command_hash=digest,primitive="dormir"))
-append("command5","command_experienced","action_control",
- command_hash=digest,primitive="dormir")
+command_ref=deterministic_id("journal-event-v1","action_control",t,attempt,digest,"send")
+append(command_ref,"command_experienced","action_control",
+ command_hash=digest,primitive="dormir",parameters={})
 physical=deterministic_id("journal-event-v1","world",t,attempt,digest,"transition")
 append(physical,"world_transition_experienced","world_and_body",
  body_before=body,body_after=body)
 for i in range(4097):
  append("later:"+str(i),"observer_event","operator",data=dict(i=i))
 assert choose(journal=j,t_monde=t,attempt_ref=attempt,
- command_ref="command5",physical_ref=physical) is NEW
+ command_ref=command_ref,physical_ref=physical) is NEW
 print("I1_467_PREBODY_PROVEN_SELECTOR_OK")
 """
             r=subprocess.run([sys.executable,"-c",code],
