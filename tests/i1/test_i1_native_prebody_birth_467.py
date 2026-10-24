@@ -94,6 +94,14 @@ with TemporaryDirectory() as directory:
                          runtime_factory=fresh) as cold:
         after = inspect(cold._runtime)
     assert before == after
+    # Every previously committed source remains owned after cold replay.
+    current = cold._runtime.stage3.substrate.views
+    historical = set()
+    for entry in cold._runtime.journal.entries:
+        if entry.causal_event.get("kind") == "auto_segment_commit":
+            historical.update(entry.causal_event["event_refs"])
+    assert historical == current._committed_source_refs
+    assert historical
 print("I1_467_NATURAL_PREBODY_SELECTABLE_M11_COLD_OK")
 """
             done = subprocess.run(
