@@ -206,6 +206,26 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
             for kind in expected_provenance} == expected_provenance
     assert [x["provenance_counts"]["readmitted_after_wake"] for x in runs] == [0, 0, 31]
     assert len(runs) <= sleep_count
+    decisions = life["sleep_decision_custody_audit_490"]
+    assert len(decisions) == 34, len(decisions)
+    assert sum(x["physical_command_count"] for x in decisions) == sleep_count
+    assert sum(x["source_count"] for x in decisions) == 2 * sleep_count
+    assert sum(x["admission_class"] == "readmitted_after_wake"
+               for x in decisions) == 31
+    assert sum(x["admission_class"] == "ordinary_awake_admission"
+               for x in decisions) == 3
+    assert any(x["physical_command_count"] > 1 for x in decisions)
+    assert all(x["physical_steps"][0] == x["decision_step"] for x in decisions)
+    assert all(x["sources_in_closed_episodes"] <= x["ingested_sources"]
+               <= x["committed_sources"] <= x["source_count"]
+               for x in decisions)
+    assert all(x["continuous_subjective_session_proven"] is False
+               and x["decision_influence_proven"] is False
+               for x in decisions)
+    print("I1_490_SLEEP_DECISION_CUSTODY",
+          "distinct_decisions", len(decisions),
+          "physical_sleep_steps", sleep_count,
+          "owned_sources", sum(x["sources_in_closed_episodes"] for x in decisions))
     print("I1_471_SLEEP_EPISODE_LINK",
           "runs", len(runs),
           "lengths", [x["steps"] for x in runs],

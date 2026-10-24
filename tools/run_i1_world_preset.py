@@ -812,6 +812,66 @@ def _m11_life(*, birth, params, life_id, path, steps):
             "final_life_terminal": (
                 run[-1]["lifecycle"] == "dead"),
         })
+    # #490: operator-only *decision* custody, never a new Memory owner.
+    # Contiguous dormir commands can cross wake + deliberate re-admission.
+    # Split only on the independently classified real applied admission,
+    # not on position, rest effects, or an inferred continuous session.
+    decision_groups = []
+    active_decision = None
+    for row in trajectory:
+        physical = row["physical_journal_observation"]
+        sleep = row["sleep_custody_observation"]
+        kind = sleep["provenance"]
+        if physical is None or physical["primitive"] != "dormir":
+            active_decision = None
+            continue
+        refs = row["autobiographical_sleep_custody_467"]["physical_source_refs"]
+        if kind in ("ordinary_awake_admission", "readmitted_after_wake"):
+            if (kind == "readmitted_after_wake"
+                    and (not sleep["woke"] or not sleep["reduced_perception"])):
+                raise RuntimeError("readmission lacks a real reduced wake")
+            if kind == "ordinary_awake_admission" and sleep["reduced_perception"]:
+                raise RuntimeError("ordinary decision cannot be reduced")
+            active_decision = {
+                "decision_step": row["world_step"],
+                "source": kind,
+                "steps": [],
+                "source_refs": [],
+            }
+            decision_groups.append(active_decision)
+        elif kind == "reduced_sleep_continuation":
+            if active_decision is None or sleep["woke"]:
+                raise RuntimeError("unowned or waking reduced sleep continuation")
+        else:
+            raise RuntimeError("unknown physical dormir admission classification")
+        active_decision["steps"].append(row["world_step"])
+        active_decision["source_refs"].extend(refs)
+    decision_audits = []
+    for group in decision_groups:
+        refs = group["source_refs"]
+        if len(refs) != 2 * len(group["steps"]) or len(refs) != len(set(refs)):
+            raise RuntimeError("ambiguous physical sleep decision source refs")
+        episodes = {ref: indexed_refs.get(ref, []) for ref in refs}
+        if any(len(matches) > 1 for matches in episodes.values()):
+            raise RuntimeError("duplicate closed episode ownership")
+        decision_audits.append({
+            "decision_step": group["decision_step"],
+            "admission_class": group["source"],
+            "physical_steps": list(group["steps"]),
+            "physical_command_count": len(group["steps"]),
+            "source_count": len(refs),
+            "committed_sources": sum(
+                ref in first_autobiographical_commit for ref in refs),
+            "ingested_sources": sum(
+                ref in first_memory_ingestion for ref in refs),
+            "sources_in_closed_episodes": sum(bool(episodes[ref])
+                                              for ref in refs),
+            "closed_episode_refs": sorted({
+                ep for matches in episodes.values() for ep in matches
+            }),
+            "continuous_subjective_session_proven": False,
+            "decision_influence_proven": False,
+        })
     return {
         "lifecycle": audit.status, "steps": trajectory,
         "journal_head": audit.journal_head,
@@ -820,6 +880,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
         "custody_file": path.name,
         "effective_birth_physics": effective,
         "sleep_episode_link_audit_471": sleep_run_audits,
+        "sleep_decision_custody_audit_490": decision_audits,
         "physical_memory_custody_469": [
             {
                 "step": row["world_step"],
