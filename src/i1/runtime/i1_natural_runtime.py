@@ -486,6 +486,9 @@ class I1Runtime(I1WaterPrudentRuntime):
                         site=(capture.x, capture.y),
                         now=capture.t_monde,
                     )
+                    balance = self.memory.describe_closed_sleep_site(
+                        witnesses=rows, site=(capture.x, capture.y),
+                    )
                     self._write(
                         kind="i1_sleep_site_recall_consulted", cycle=cycle,
                         data={
@@ -497,6 +500,12 @@ class I1Runtime(I1WaterPrudentRuntime):
                             }),
                             "charged_operation": _SLEEP_RECALL_OPERATION,
                             "evidence_applied": False,
+                            "site_balance": {
+                                "witness_count": balance["witness_count"],
+                                "channels": balance["channels"],
+                                "causal_attribution": False,
+                                "decision_evidence": False,
+                            },
                         },
                     )
             # A paid scan can suspend a spatial prospect when the
