@@ -388,10 +388,18 @@ def _install_trusted_current_on_fresh(
     runtime.stage3._event_sequence = local["stage3_event_sequence"]
     runtime._event_sequence = local["stage4_event_sequence"]
     runtime.bus._event_sequence = local["bus_event_sequence"]
-    runtime.stage3.substrate.views._commit_event_ids = [
-        row.event_id for row in runtime.journal.entries
-        if row.causal_event.get("kind") == "auto_segment_commit"
-    ]
+    # Rebuild BOTH the visible commit index and the #484 unique-source
+    # custody index after replaying the authenticated journal. The fresh
+    # JournalViews birth preceded cold journal installation; assigning only
+    # _commit_event_ids would silently forget historical source ownership.
+    try:
+        reindexed = JournalViews(journal=runtime.journal)
+    except ValueError as exc:
+        raise RecoveryBlocked("invalid cold DC-09 source custody") from exc
+    runtime.stage3.substrate.views._commit_event_ids = list(
+        reindexed._commit_event_ids)
+    runtime.stage3.substrate.views._committed_source_refs = set(
+        reindexed._committed_source_refs)
     runtime.stage3.substrate.views._commit_sequence = local[
         "autobiographical_commit_sequence"]
     if (runtime.stage3.substrate.views._commit_sequence !=
