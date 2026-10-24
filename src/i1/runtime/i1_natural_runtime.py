@@ -27,7 +27,9 @@ from i1.modules.simulator import state_from_capture
 from i1.experimental.local_opportunity_selection import local_interaction_choices
 
 _PRIVATE_RECALL_VERSION = "i1-private-procedure-advisory-v1"
+_SLEEP_RECALL_VERSION = "i1-lived-sleep-recall-v1"
 _SLEEP_RECALL_OPERATION = "i1_closed_sleep_recall"
+_SLEEP_RECALL_COST_UC = 1
 _PRIVATE_RECALL_OPERATION = "i1_private_procedure_recall"
 _PRIVATE_RECALL_COST_UC = 1
 _OPTION_INTENTION_COST_UC = 1
@@ -314,13 +316,16 @@ class I1Runtime(I1WaterPrudentRuntime):
         budget = replace(
             original,
             version=(original.version + "+" + _PRIVATE_RECALL_VERSION
+                     + "+" + _SLEEP_RECALL_VERSION
                      + "+i1-goal-independent-local-v1"),
-            cycle_ceiling=(original.cycle_ceiling + 1 + _PRIVATE_RECALL_COST_UC
+            cycle_ceiling=(original.cycle_ceiling + _SLEEP_RECALL_COST_UC
+                           + _PRIVATE_RECALL_COST_UC
                            + local_planning + local_registration + local_evaluation
                            + _OPTION_INTENTION_COST_UC),
             module_envelopes={
                 **original.module_envelopes,
                 "planning": (original.module_envelopes["planning"]
+                             + _SLEEP_RECALL_COST_UC
                              + _PRIVATE_RECALL_COST_UC + local_planning
                              + _OPTION_INTENTION_COST_UC),
                 "competition": (original.module_envelopes["competition"]
@@ -328,7 +333,7 @@ class I1Runtime(I1WaterPrudentRuntime):
             },
             operation_costs={
                 **original.operation_costs,
-                _SLEEP_RECALL_OPERATION: 1,
+                _SLEEP_RECALL_OPERATION: _SLEEP_RECALL_COST_UC,
                 _PRIVATE_RECALL_OPERATION: _PRIVATE_RECALL_COST_UC,
                 _OPTION_INTENTION_OPERATION: _OPTION_INTENTION_COST_UC,
             },
