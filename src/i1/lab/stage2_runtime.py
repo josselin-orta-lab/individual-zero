@@ -286,6 +286,11 @@ class ScriptedStage2Runtime:
                 "t_monde": attempt.t_monde,
                 "attempt_ref": attempt.attempt_ref,
                 "position_after": transition.position_after.as_dict(),
+                # This is the physical state immediately before the actually
+                # applied primitive, not an operator forecast. The v1 DC-09
+                # policy continues to exclude it; only the explicitly
+                # versioned native I1 policy may project it autobiographically.
+                "body_before": transition.body_before.as_dict(),
                 "body_after": transition.body_after.as_dict(),
                 "effects": dict(transition.effects),
             },
