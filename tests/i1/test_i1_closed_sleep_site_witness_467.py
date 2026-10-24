@@ -136,6 +136,30 @@ memory._episodes = [episode(0, ("c1", "t1")),
 memory._seen_event_refs.remove("c3")
 assert [row["step"] for row in memory.closed_sleep_site_witnesses(
     autobiography=events, site=(2, 4), now=5)] == [1]
+memory._episodes = [
+    episode(0, ("c1", "t1")), episode(1, ("c2",)),
+    episode(2, ("t2",)), episode(3, ("c3", "t3")),
+]
+memory._seen_event_refs = set(("c1", "t1", "c2", "t2", "c3", "t3"))
+# Authorized new DC-09 projection may preserve same-step pre-action
+# state, separately from adjacent after->after contextual observations.
+events_new = [dict(item) for item in events]
+events_new[1]["body_before"] = dict(energy=35,food=72,water=61,integrity=90)
+new = memory.closed_sleep_site_witnesses(
+    autobiography=events_new, site=(2,4), now=5)
+assert new[0]["body_before"] == dict(
+    energy=35.0,food=72.0,water=61.0,integrity=90.0)
+assert new[0]["same_step_body_delta"] == dict(
+    energy=5.0,food=-2.0,water=-1.0,integrity=0.0)
+assert all(item["same_step_body_delta"] is None for item in a + b)
+invalid_new = [dict(item) for item in events_new]
+invalid_new[1] = dict(events_new[1], body_before=dict(
+    energy=float("nan"),food=72,water=61,integrity=90))
+assert memory.closed_sleep_site_witnesses(
+    autobiography=invalid_new, site=(2,4), now=5) == (
+    memory.closed_sleep_site_witnesses(
+        autobiography=events, site=(2,4), now=5)[-1],
+)
 print("I1_467_CLOSED_SITE_CONTRACT_OK")
 """
             result = subprocess.run(

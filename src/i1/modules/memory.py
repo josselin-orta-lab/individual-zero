@@ -446,9 +446,11 @@ class EpisodicMemory:
                                        "primitive", "parameters"}
                     or command["primitive"] != "dormir"
                     or command["parameters"] != {}
-                    or set(transition) != {"event_id", "kind", "t_monde",
-                                           "position_after", "body_after",
-                                           "effects"}):
+                    or set(transition) not in (
+                        {"event_id", "kind", "t_monde", "position_after",
+                         "body_after", "effects"},
+                        {"event_id", "kind", "t_monde", "position_after",
+                         "body_before", "body_after", "effects"})):
                 continue
             position, body = (transition["position_after"],
                               transition["body_after"])
@@ -460,6 +462,18 @@ class EpisodicMemory:
                     or set(body) != _INTENTION_BODY_KEYS
                     or any(type(body[k]) not in (int, float)
                            or not isfinite(body[k]) or not 0 <= body[k] <= 100
+                           for k in _INTENTION_BODY_KEYS)):
+                continue
+            # Only a versioned, authorized DC-09 projection may carry a
+            # personally perceived same-step pre-action body. Never infer
+            # it from the physical journal or adjacent observations.
+            prebody = transition.get("body_before")
+            if prebody is not None and (
+                    not isinstance(prebody, Mapping)
+                    or set(prebody) != _INTENTION_BODY_KEYS
+                    or any(type(prebody[k]) not in (int, float)
+                           or not isfinite(prebody[k])
+                           or not 0 <= prebody[k] <= 100
                            for k in _INTENTION_BODY_KEYS)):
                 continue
             # No technical WorldBody snapshot and no inferred same-step
@@ -480,10 +494,13 @@ class EpisodicMemory:
                 if (type(previous_ref) is str
                         and previous_ref not in duplicates
                         and custody.get(previous_ref) is not None
-                        and set(previous) == {
-                            "event_id", "kind", "t_monde",
-                            "position_after", "body_after", "effects",
-                        }
+                        and set(previous) in (
+                            {"event_id", "kind", "t_monde",
+                             "position_after", "body_after", "effects"},
+                            {"event_id", "kind", "t_monde",
+                             "position_after", "body_before",
+                             "body_after", "effects"},
+                        )
                         and isinstance(previous_site, Mapping)
                         and set(previous_site) == {"x", "y"}
                         and all(type(previous_site[k]) is int
@@ -509,7 +526,16 @@ class EpisodicMemory:
                 "source_episode_refs": tuple(dict.fromkeys(custody[r] for r in refs)),
                 "body_after": {k: float(body[k]) for k in
                                ("energy", "food", "water", "integrity")},
-                "body_before": None,
+                "body_before": (
+                    None if prebody is None else
+                    {k: float(prebody[k]) for k in
+                     ("energy", "food", "water", "integrity")}
+                ),
+                "same_step_body_delta": (
+                    None if prebody is None else
+                    {k: float(body[k]) - float(prebody[k]) for k in
+                     ("energy", "food", "water", "integrity")}
+                ),
                 "continuous_sleep_session": None,
                 "previous_step_after_ref": previous_transition_ref,
                 "previous_step_after_episode_ref": previous_episode_ref,
