@@ -481,8 +481,9 @@ class I1Runtime(I1WaterPrudentRuntime):
                 if refs:
                     from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY as P2
                     from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY as P7
+                    from .i1_natural_prebody_policy import LIVED_PREBODY_POLICY as PNEW
                     projected = self.stage3.substrate.views.autobiographical(
-                        policies={P2.version: P2, P7.version: P7},
+                        policies={p.version: p for p in (P2, P7, PNEW)},
                         selected_event_refs=refs,
                     )
                     rows = self.memory.closed_sleep_site_witnesses(
