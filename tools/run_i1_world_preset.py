@@ -373,6 +373,59 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 }
             else:
                 actual = None
+            # #467: operator-side concordance audit only. A physical
+            # transition before-state is not necessarily the waking body's
+            # last captured state, especially after an after_admission input
+            # or during reduced-perception sleep. Never feed this audit into
+            # the cognitive agent or a DC-09 policy commitment.
+            from i1lab.i1_natural_prebody_policy import (
+                captured_prebody_matches_transition,
+            )
+            # Stage3 clears _capture after dispatch; only the immutable
+            # same-attempt perceptual_capture receipt, emitted BEFORE the
+            # physical command, can attest what was actually perceptible.
+            # Natural I1's dual-scope body cue is a first-person projection,
+            # not a postmortem WorldBody read or a reduced sleep observation.
+            captures = [
+                e for e in step_events
+                if (e.get("kind") == "perceptual_capture"
+                    and e.get("t_monde") == receipt.world_step
+                    and isinstance(e.get("data"), dict)
+                    and e["data"].get("capture_t_monde") == receipt.world_step
+                    and e["data"].get("dual_scope_capture_schema")
+                        == "stage12-dual-scope-body-cue-v1")
+            ]
+            capture_receipt = (
+                captures[0] if len(captures) == 1 else None
+            )
+            same_step_capture = (
+                capture_receipt is not None
+                and actual is not None
+                and step_events.index(capture_receipt) <
+                    step_events.index(command)
+                and capture_receipt.get("attempt_ref")
+                    == command.get("attempt_ref")
+            )
+            if actual is None:
+                prebody_status = "no_physical_transition"
+            elif not same_step_capture:
+                prebody_status = "no_current_waking_capture"
+            elif captured_prebody_matches_transition(
+                captured_body=capture_receipt["data"].get(
+                    "dual_scope_visible_body"),
+                physical_body_before=physical["body_before"],
+            ):
+                prebody_status = "capture_matches_physical_before"
+            else:
+                prebody_status = "capture_physical_divergence"
+            prebody_concordance = {
+                "status": prebody_status,
+                "current_waking_capture": bool(same_step_capture),
+                "physical_before_present": (
+                    actual is not None and "body_before" in physical),
+                "autobiographical_policy_activated": False,
+                "memory_wrote_prebody": False,
+            }
             # #465: strictly external post-COMMIT sleep provenance. A
             # physical dormir can be a first ordinary choice, a fresh
             # voluntary choice after wake, or reduced-perception continuation.
@@ -646,6 +699,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 "world_step": receipt.world_step,
                 "generation": receipt.generation,
                 "physical_journal_observation": actual,
+                "prebody_concordance_audit_467": prebody_concordance,
                 "sleep_custody_observation": sleep_custody,
                 "autobiographical_sleep_custody_467": custody,
                 "sleep_site_recall_custody_467": recall_audit,

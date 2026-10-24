@@ -139,6 +139,28 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
                for counts in row["site_balance"].values())
     print("I1_478_NATURAL_SLEEP_BALANCE", "known", known,
           "paid_reads", reads)
+    # #467: independent read-only concordance is a measurement, NOT a
+    # subjective memory. Reduced sleep has no fresh waking capture.
+    concordance = [step["prebody_concordance_audit_467"]
+                   for step in life["steps"]]
+    assert all(not row["autobiographical_policy_activated"]
+               and not row["memory_wrote_prebody"]
+               for row in concordance)
+    assert all(row["physical_before_present"]
+               for row in concordance
+               if row["status"] != "no_physical_transition")
+    assert any(row["status"] == "capture_matches_physical_before"
+               for row in concordance)
+    assert all(row["status"] in {
+        "capture_matches_physical_before",
+        "capture_physical_divergence",
+        "no_current_waking_capture",
+        "no_physical_transition",
+    } for row in concordance)
+    print("I1_467_M11_PREBODY_CONCORDANCE", {
+        status: sum(row["status"] == status for row in concordance)
+        for status in {row["status"] for row in concordance}
+    })
     # #469: compare real first-person physical source custody without
     # assuming an immediate Memory ingestion or a future replay.
     ref_rows = life["physical_memory_custody_469"]
