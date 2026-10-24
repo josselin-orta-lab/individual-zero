@@ -24,3 +24,32 @@ LIVED_PREBODY_POLICY = AutobiographicalPolicy(
     },
 )
 LIVED_PREBODY_POLICY.validate()
+
+def captured_prebody_matches_transition(
+    *, captured_body: object, physical_body_before: object,
+) -> bool:
+    """Fail closed when a physical pre-action state was not itself perceived.
+
+    This pure gate authorizes no journal read and never changes a motor
+    command. A scenario applied after admission may make the physical state
+    differ from the pre-decision capture: that state must NOT be described
+    as the body's earlier first-person perception.
+    """
+    from collections.abc import Mapping
+    from math import isfinite
+
+    keys = frozenset(("energy", "food", "water", "integrity"))
+    if (not isinstance(captured_body, Mapping)
+            or not isinstance(physical_body_before, Mapping)
+            or set(captured_body) != keys
+            or set(physical_body_before) != keys):
+        return False
+    for name in keys:
+        a = captured_body[name]
+        b = physical_body_before[name]
+        if (type(a) not in (int, float) or type(b) not in (int, float)
+                or not isfinite(a) or not isfinite(b)
+                or not 0 <= a <= 100 or not 0 <= b <= 100
+                or float(a) != float(b)):
+            return False
+    return True
