@@ -103,11 +103,15 @@ def policy_for_proven_prebody_transition(
     admissions = []
     # Bounded per-attempt reverse scan avoids an unpaid full journal read.
     # Any overflow denies only the new projection, never the physical action.
-    for inspected, entry in enumerate(journal.iter_entries_reversed(), 1):
-        if inspected > 4096:
-            return old
+    inspected = 0
+    for entry in journal.iter_entries_reversed():
+        # Post-command receipts are not part of this attempt's admission
+        # prefix. They must not exhaust the bounded provenance budget.
         if entry.index >= command.index:
             continue
+        inspected += 1
+        if inspected > 4096:
+            return old
         e = entry.causal_event
         step = e.get("t_monde")
         if type(step) is int and step < t_monde:
