@@ -381,18 +381,38 @@ def _m11_life(*, birth, params, life_id, path, steps):
             from i1lab.i1_natural_prebody_policy import (
                 captured_prebody_matches_transition,
             )
-            capture = life._runtime.stage3._capture
+            # Stage3 clears _capture after dispatch; only the immutable
+            # same-attempt perceptual_capture receipt, emitted BEFORE the
+            # physical command, can attest what was actually perceptible.
+            # Natural I1's dual-scope body cue is a first-person projection,
+            # not a postmortem WorldBody read or a reduced sleep observation.
+            captures = [
+                e for e in step_events
+                if (e.get("kind") == "perceptual_capture"
+                    and e.get("t_monde") == receipt.world_step
+                    and isinstance(e.get("data"), dict)
+                    and e["data"].get("capture_t_monde") == receipt.world_step
+                    and e["data"].get("dual_scope_capture_schema")
+                        == "stage12-dual-scope-body-cue-v1")
+            ]
+            capture_receipt = (
+                captures[0] if len(captures) == 1 else None
+            )
             same_step_capture = (
-                capture is not None
-                and capture.t_monde == receipt.world_step
+                capture_receipt is not None
                 and actual is not None
+                and step_events.index(capture_receipt) <
+                    step_events.index(command)
+                and capture_receipt.get("attempt_ref")
+                    == command.get("attempt_ref")
             )
             if actual is None:
                 prebody_status = "no_physical_transition"
             elif not same_step_capture:
                 prebody_status = "no_current_waking_capture"
             elif captured_prebody_matches_transition(
-                captured_body=capture.body,
+                captured_body=capture_receipt["data"].get(
+                    "dual_scope_visible_body"),
                 physical_body_before=physical["body_before"],
             ):
                 prebody_status = "capture_matches_physical_before"
