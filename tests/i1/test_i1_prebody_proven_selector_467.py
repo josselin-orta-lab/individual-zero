@@ -46,6 +46,28 @@ assert check() is NEW
 assert check(body_delta=1) is OLD
 assert check(omit_capture=True) is OLD
 assert check(wrong_hash=True) is OLD
+# A completed authentic prefix remains eligible after a long legitimate
+# technical tail; post-command entries are not provenance scan work.
+j=HashChainedJournal();t=5;attempt="attempt:5";digest="b"*64
+body=dict(energy=35.,food=60.,water=70.,integrity=99.)
+def append(ref,kind,emitter,**data):
+ j.append(event_id=ref,causal_event=dict(
+  kind=kind,emitter=emitter,t_monde=t,attempt_ref=attempt,**data))
+append("capture5","perceptual_capture","stage3-runtime",
+ data=dict(capture_t_monde=t,
+  dual_scope_capture_schema="stage12-dual-scope-body-cue-v1",
+  dual_scope_visible_body=body))
+append("admit5","command_admitted","stage3-runtime",
+ data=dict(command_hash=digest,primitive="dormir"))
+append("command5","command_experienced","action_control",
+ command_hash=digest,primitive="dormir")
+physical=deterministic_id("journal-event-v1","world",t,attempt,digest,"transition")
+append(physical,"world_transition_experienced","world_and_body",
+ body_before=body,body_after=body)
+for i in range(4097):
+ append("later:"+str(i),"observer_event","operator",data=dict(i=i))
+assert choose(journal=j,t_monde=t,attempt_ref=attempt,
+ command_ref="command5",physical_ref=physical) is NEW
 print("I1_467_PREBODY_PROVEN_SELECTOR_OK")
 """
             r=subprocess.run([sys.executable,"-c",code],
