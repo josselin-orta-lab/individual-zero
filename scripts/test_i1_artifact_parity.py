@@ -161,6 +161,10 @@ def _approved_native_prebody_activation_467(root: Path, rel: str) -> bool:
             "src/i1/runtime/stage10_runtime.py",
             "0104d83e892c160d224d275b69dde66cb612fb2e",
         ),
+        "i1lab/m11_transactional_mortal.py": (
+            "src/i1/runtime/m11_transactional_mortal.py",
+            "53331329e85f15cf624d59e909e23433babc6320",
+        ),
     }
     pair = pins.get(rel)
     if pair is None or not (root / rel).is_file():
