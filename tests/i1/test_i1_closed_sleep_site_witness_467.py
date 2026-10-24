@@ -74,6 +74,35 @@ assert same[1]["adjacent_after_state_delta"] == dict(
 assert same[1]["previous_step_after_ref"] == "t1"
 assert same[1]["previous_step_after_episode_ref"] == "episode:0"
 assert same[1]["body_before"] is None
+balance = memory.describe_closed_sleep_site(witnesses=same, site=(2, 4))
+assert balance["witness_count"] == 3
+assert balance["channels"]["energy"] == dict(
+    increase=2, decrease=0, stable=0, unknown=1)
+assert balance["channels"]["water"] == dict(
+    increase=0, decrease=0, stable=2, unknown=1)
+assert balance["decision_evidence"] is False
+assert balance["causal_attribution"] is False
+assert balance["continuous_sleep_session"] is None
+assert memory.describe_closed_sleep_site(
+    witnesses=same, site=(8, 4))["witness_count"] == 0
+assert memory.describe_closed_sleep_site(
+    witnesses=list(same) + [same[1]], site=(2, 4)
+)["witness_count"] == 3
+contradictory = [dict(same[1],
+    source_event_refs=("other:c", "other:t"),
+    adjacent_after_state_delta=dict(
+        energy=-3.0, food=-2.0, water=-1.0, integrity=-4.0))]
+mixed = memory.describe_closed_sleep_site(
+    witnesses=list(same) + contradictory, site=(2, 4))
+assert mixed["channels"]["energy"]["increase"] == 2
+assert mixed["channels"]["energy"]["decrease"] == 1
+invalid = [dict(same[1], source_event_refs=("bad:c", "bad:t"),
+    adjacent_after_state_delta=dict(energy=float("nan"),
+        food=1, water=1, integrity=1))]
+unknown = memory.describe_closed_sleep_site(
+    witnesses=invalid, site=(2, 4))
+assert all(unknown["channels"][k]["unknown"] == 1
+           for k in ("energy", "food", "water", "integrity"))
 
 assert all(row["body_before"] is None
            and row["continuous_sleep_session"] is None for row in a + b)

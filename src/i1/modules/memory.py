@@ -517,6 +517,72 @@ class EpisodicMemory:
             })
         return tuple(found[-16:])
 
+    def describe_closed_sleep_site(
+        self, *, witnesses: Sequence[Mapping[str, object]],
+        site: tuple[int, int],
+    ) -> dict[str, object]:
+        """Descriptive view of a caller's already PAID sleep-site witnesses.
+
+        No causal effect, session, safety, preference, expected utility,
+        learned Q, or motor evidence is inferred from adjacent after-states.
+        This method never consults a journal or creates persistent state.
+        """
+        if (type(site) is not tuple or len(site) != 2
+                or any(type(v) is not int for v in site)):
+            raise ValueError("invalid sleep-site summary coordinate")
+        channels = ("energy", "food", "water", "integrity")
+        counts = {name: {"increase": 0, "decrease": 0, "stable": 0,
+                         "unknown": 0} for name in channels}
+        rows = []
+        seen: set[tuple[str, str]] = set()
+        for witness in witnesses:
+            if not isinstance(witness, Mapping):
+                continue
+            refs = witness.get("source_event_refs")
+            position_ref = witness.get("site_ref")
+            if (position_ref != f"sleep-site:{site[0]}:{site[1]}"
+                    or not isinstance(refs, tuple) or len(refs) != 2
+                    or any(type(x) is not str or not x for x in refs)
+                    or refs[0] == refs[1] or refs in seen):
+                continue
+            seen.add(refs)
+            delta = witness.get("adjacent_after_state_delta")
+            prior = witness.get("previous_step_after_ref")
+            source = witness.get("previous_step_after_episode_ref")
+            valid = (
+                isinstance(delta, Mapping)
+                and set(delta) == set(channels)
+                and type(prior) is str and bool(prior)
+                and type(source) is str and bool(source)
+                and prior not in refs
+                and all(type(delta[k]) in (int, float)
+                        and isfinite(delta[k]) for k in channels)
+            )
+            if valid:
+                kinds = {k: ("increase" if delta[k] > 0 else
+                             "decrease" if delta[k] < 0 else "stable")
+                         for k in channels}
+            else:
+                kinds = {k: "unknown" for k in channels}
+            for k, kind in kinds.items():
+                counts[k][kind] += 1
+            rows.append({
+                "step": witness.get("step"),
+                "source_event_refs": refs,
+                "previous_step_after_ref": prior if valid else None,
+                "previous_step_after_episode_ref": source if valid else None,
+                "directions": kinds,
+            })
+        return {
+            "site_ref": f"sleep-site:{site[0]}:{site[1]}",
+            "witness_count": len(rows),
+            "channels": counts,
+            "observations": tuple(rows),
+            "causal_attribution": False,
+            "continuous_sleep_session": None,
+            "decision_evidence": False,
+        }
+
     @property
     def last_recalled_ref(self) -> str | None:
         return self._last_recalled_ref

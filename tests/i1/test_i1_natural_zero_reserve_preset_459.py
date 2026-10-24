@@ -125,6 +125,20 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
     assert reads > 0 and witnesses > 0, (reads, witnesses, paid)
     print("I1_474_PAID_SLEEP_RECALL", "reads", reads,
           "uc", paid, "witnesses", witnesses)
+    # #478: natural paid read must reveal at least one genuinely known
+    # adjacent after-state direction, not only unknown first-step deltas.
+    balances = [row["site_balance"] for row in recall_rows
+                if row["read_count"]]
+    known = sum(
+        counts["increase"] + counts["decrease"] + counts["stable"]
+        for balance in balances for counts in balance.values()
+    )
+    assert known > 0, (reads, witnesses, balances)
+    assert all(sum(counts.values()) == row["witness_count"]
+               for row in recall_rows if row["read_count"]
+               for counts in row["site_balance"].values())
+    print("I1_478_NATURAL_SLEEP_BALANCE", "known", known,
+          "paid_reads", reads)
     # #469: compare real first-person physical source custody without
     # assuming an immediate Memory ingestion or a future replay.
     ref_rows = life["physical_memory_custody_469"]
