@@ -136,6 +136,11 @@ memory._episodes = [episode(0, ("c1", "t1")),
 memory._seen_event_refs.remove("c3")
 assert [row["step"] for row in memory.closed_sleep_site_witnesses(
     autobiography=events, site=(2, 4), now=5)] == [1]
+memory._episodes = [
+    episode(0, ("c1", "t1")), episode(1, ("c2",)),
+    episode(2, ("t2",)), episode(3, ("c3", "t3")),
+]
+memory._seen_event_refs = set(("c1", "t1", "c2", "t2", "c3", "t3"))
 # Authorized new DC-09 projection may preserve same-step pre-action
 # state, separately from adjacent after->after contextual observations.
 events_new = [dict(item) for item in events]
