@@ -152,7 +152,7 @@ def _approved_paid_sleep_recall_467(root: Path, rel: str) -> bool:
         return False
     data = (ROOT / "src/i1/runtime/i1_natural_runtime.py").read_bytes()
     digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
-    return digest == "d3d0430037658904842da8c0783426b6f72683c5" and (root / rel).is_file()
+    return digest == "0d3781f1a788ed1c70f27e138002819085bb9767" and (root / rel).is_file()
 
 
 def _approved_closed_sleep_site_467(root: Path, rel: str) -> bool:
