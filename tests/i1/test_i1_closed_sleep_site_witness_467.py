@@ -87,6 +87,23 @@ memory._episodes.append(episode(4, ("c3",)))
 assert [row["step"] for row in memory.closed_sleep_site_witnesses(
     autobiography=events, site=(2, 4), now=5)] == [1]
 memory._episodes.pop()
+# Older duplicate must invalidate a selected recent source even after
+# the 256-ref exposure cap. Excessive scanning fails closed entirely.
+memory._episodes = [episode(0, ("c1", "t1"))] + [
+    episode(i + 1, tuple(f"noise:{i}:{j}" for j in range(10)))
+    for i in range(28)
+] + [episode(30, ("c1", "c3", "t3"))]
+memory._seen_event_refs.update(
+    ref for ep in memory._episodes for ref in ep.event_refs)
+assert "c1" not in memory.closed_sleep_recall_source_refs()
+memory._episodes = [episode(0, ("c1", "t1", "c2", "t2", "c3", "t3"))]
+memory._episodes.append(episode(1, tuple(
+    f"many:{i}" for i in range(4097))))
+memory._seen_event_refs.update(f"many:{i}" for i in range(4097))
+assert not memory.closed_sleep_recall_source_refs()
+memory._episodes = [episode(0, ("c1", "t1")),
+                    episode(1, ("c2",)), episode(2, ("t2",)),
+                    episode(3, ("c3", "t3"))]
 memory._seen_event_refs.remove("c3")
 assert [row["step"] for row in memory.closed_sleep_site_witnesses(
     autobiography=events, site=(2, 4), now=5)] == [1]
