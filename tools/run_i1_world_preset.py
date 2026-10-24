@@ -596,6 +596,21 @@ def _m11_life(*, birth, params, life_id, path, steps):
                             "energy", "food", "water", "integrity"
                         }):
                     raise RuntimeError("invalid paid sleep-site balance receipt")
+                same_step = balance.get("same_step_channels")
+                if (not isinstance(same_step, dict)
+                        or set(same_step) != {
+                            "energy", "food", "water", "integrity"
+                        }):
+                    raise RuntimeError("missing attested same-step sleep-site balance")
+                for counts in same_step.values():
+                    if (not isinstance(counts, dict)
+                            or set(counts) != {
+                                "increase", "decrease", "stable", "unknown"
+                            }
+                            or any(type(v) is not int or v < 0
+                                   for v in counts.values())
+                            or sum(counts.values()) != info["witness_count"]):
+                        raise RuntimeError("invalid same-step sleep-site channel counts")
                 for counts in balance["channels"].values():
                     if (not isinstance(counts, dict)
                             or set(counts) != {
@@ -640,6 +655,9 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 "site_balance": (
                     None if not recalls else
                     recalls[0]["data"]["site_balance"]["channels"]),
+                "same_step_site_balance": (
+                    None if not recalls else
+                    recalls[0]["data"]["site_balance"]["same_step_channels"]),
                 "source_event_refs": (
                     [] if not recalls else list(recalls[0]["data"]["event_refs"])),
                 "observed_site": (
