@@ -155,7 +155,7 @@ def _approved_dormant_prebody_dc09_467(root: Path, rel: str) -> bool:
         ),
         "i1lab/i1_natural_prebody_policy.py": (
             "src/i1/runtime/i1_natural_prebody_policy.py",
-            "3e0a0781981b0f9c274efcfe9029181a37410f2b",
+            "99469a27e2f6fcb3c908984887274b060818c3cb",
         ),
     }
     spec = sources.get(rel)
