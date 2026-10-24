@@ -80,6 +80,7 @@ class JournalViews:
 
     def __init__(self, *, journal: HashChainedJournal) -> None:
         self._journal = journal
+        self._i1_prebody_birth_enabled = False
         # Rehydrate in journal order without materializing the complete
         # technical history. The reverse iterator is read-only and covers
         # every original occurrence; only committed autobiographical IDs
@@ -102,6 +103,14 @@ class JournalViews:
                 raise ValueError("invalid or duplicated historical autobiography custody")
             self._committed_source_refs.update(refs)
 
+    def enable_i1_prebody_at_birth(self) -> None:
+        """Enable the canonical I1 DC-09 selection only on a pristine birth."""
+        if (self._i1_prebody_birth_enabled
+                or self._journal.entry_count != 0
+                or self._commit_sequence != 0):
+            raise RuntimeError("I1 prebody DC-09 requires one fresh birth")
+        self._i1_prebody_birth_enabled = True
+
     def technical(self) -> tuple[JournalEntry, ...]:
         return self._journal.entries
 
@@ -113,6 +122,21 @@ class JournalViews:
         event_refs: Sequence[str],
         policy: AutobiographicalPolicy,
     ) -> AutoSegmentCommit:
+        # The physical transition already exists in the append-only journal.
+        # Only the canonical born I1 enables this versioned post-action gate.
+        # A reduced sleep continuation has no full Stage3 bodily capture and
+        # therefore retains the historical projection automatically.
+        if (self._i1_prebody_birth_enabled
+                and policy.version == "stage7-autobio-v1"
+                and len(event_refs) >= 2):
+            from .i1_natural_prebody_policy import (
+                policy_for_proven_prebody_transition,
+            )
+            policy = policy_for_proven_prebody_transition(
+                journal=self._journal, t_monde=t_monde,
+                attempt_ref=attempt_ref, command_ref=event_refs[-2],
+                physical_ref=event_refs[-1],
+            )
         policy.validate()
         if t_monde < 0:
             raise ValueError("t_monde must be non-negative")
