@@ -508,6 +508,7 @@ class I1Runtime(I1WaterPrudentRuntime):
                             "site_balance": {
                                 "witness_count": balance["witness_count"],
                                 "channels": balance["channels"],
+                                "same_step_channels": balance["same_step_channels"],
                                 "causal_attribution": False,
                                 "decision_evidence": False,
                             },
