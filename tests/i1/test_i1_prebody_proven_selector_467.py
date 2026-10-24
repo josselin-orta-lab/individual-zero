@@ -80,7 +80,7 @@ print("I1_467_PREBODY_PROVEN_SELECTOR_OK")
             self.assertIn("I1_467_PREBODY_PROVEN_SELECTOR_OK",r.stdout)
 
     def test_real_natural_m11_receipts_and_cold_recovery(self):
-        """An unforced natural birth must emit verifiable receipts; no DC-09 activation."""
+        """Natural birth authenticates and versions live prebody source receipts."""
         with TemporaryDirectory() as temp:
             out = Path(temp) / "gen"
             build = subprocess.run(
@@ -141,10 +141,16 @@ def inspect(runtime):
         proved.append((physical.event_id, verdict is NEW))
     assert proved, "no natural applied physical command to examine"
     assert any(flag for _, flag in proved), ("natural awake receipts rejected", proved)
-    # This selector is still dormant; current births commit old projections.
+    # The activation tranche now registers NEW only on physically proven
+    # admissions; legacy Stage2/Stage7 projections retain old field sets.
     projected = runtime.stage3.substrate.views.autobiographical(
-        policies={P2.version: P2, P7.version: P7})
-    assert all("body_before" not in row for row in projected)
+        policies={P2.version: P2, P7.version: P7, NEW.version: NEW})
+    proved_refs = {ref for ref, ok in proved if ok}
+    assert any(row.get("event_id") in proved_refs
+               and "body_before" in row
+               for row in projected)
+    assert all("body_before" not in row
+               for row in projected if row.get("event_id") not in proved_refs)
     return proved
 with TemporaryDirectory() as directory:
     db = str(Path(directory) / "natural.sqlite")

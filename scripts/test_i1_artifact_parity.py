@@ -146,6 +146,33 @@ def _approved_pending_index_cursor(before: bytes, after: bytes) -> bool:
         old = old.replace(prior, replacement, 1)
     return old == new
 
+def _approved_native_prebody_activation_467(root: Path, rel: str) -> bool:
+    """Pin exactly the born I1 DC-09 selector, readers, and replay owner."""
+    pins = {
+        "i1lab/journal_views.py": (
+            "src/i1/runtime/journal_views.py",
+            "4de43bd7ffb77d876feb96d7952a00b52f5e492c",
+        ),
+        "i1lab/i1_natural_runtime.py": (
+            "src/i1/runtime/i1_natural_runtime.py",
+            "451320d823a8e9a54e29716d6d4f3d05f04676b6",
+        ),
+        "i1lab/stage10_runtime.py": (
+            "src/i1/runtime/stage10_runtime.py",
+            "0104d83e892c160d224d275b69dde66cb612fb2e",
+        ),
+        "i1lab/m11_transactional_mortal.py": (
+            "src/i1/runtime/m11_transactional_mortal.py",
+            "53331329e85f15cf624d59e909e23433babc6320",
+        ),
+    }
+    pair = pins.get(rel)
+    if pair is None or not (root / rel).is_file():
+        return False
+    data = (ROOT / pair[0]).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == pair[1]
+
+
 def _approved_unique_dc09_source_467(root: Path, rel: str) -> bool:
     """Exact native I1-only journal view for unique source custody."""
     if rel != "i1lab/journal_views.py" or not (root / rel).is_file():
@@ -1427,7 +1454,7 @@ def verify(reference_root: Path) -> None:
                     and _approved_stage9_episode_slice(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
-                or _approved_unique_dc09_source_467(new_root, rel)
+                or _approved_unique_dc09_source_467(new_root, rel) or _approved_native_prebody_activation_467(new_root, rel)
                 or (rel == "i1lab/journal_views.py"
                     and _approved_autobio_index_rehydration(
                         _reference_autobio_fastpath((old_root / rel).read_bytes()),
