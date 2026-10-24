@@ -531,6 +531,27 @@ def _m11_life(*, birth, params, life_id, path, steps):
                     or len(info["event_refs"]) != 2 * info["witness_count"]
                     or len(set(info["event_refs"])) != len(info["event_refs"])):
                     raise RuntimeError("inconsistent personal sleep recall receipt")
+                # #473: independent observation of the non-causal summary
+                # created INSIDE the already paid first-person read.
+                balance = info.get("site_balance")
+                if (not isinstance(balance, dict)
+                        or balance.get("witness_count") != info["witness_count"]
+                        or balance.get("causal_attribution") is not False
+                        or balance.get("decision_evidence") is not False
+                        or not isinstance(balance.get("channels"), dict)
+                        or set(balance["channels"]) != {
+                            "energy", "food", "water", "integrity"
+                        }):
+                    raise RuntimeError("invalid paid sleep-site balance receipt")
+                for counts in balance["channels"].values():
+                    if (not isinstance(counts, dict)
+                            or set(counts) != {
+                                "increase", "decrease", "stable", "unknown"
+                            }
+                            or any(type(v) is not int or v < 0
+                                   for v in counts.values())
+                            or sum(counts.values()) != info["witness_count"]):
+                        raise RuntimeError("sleep-site balance counts contradict witnesses")
                 authorized, same_step_closed = _closed_custody_at_sleep_recall(
                     preclosed_occurrences=preclosed_occurrences,
                     step_events=step_events,
