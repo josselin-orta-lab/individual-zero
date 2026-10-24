@@ -342,6 +342,7 @@ class Stage10Runtime(Stage9Runtime):
             proposal = create_sleep_proposal(
                 health=self.sleep_health,t_monde=capture.t_monde,
                 st_version=st.version,charged_preparation=charge,
+                site=(capture.x, capture.y),
             )
             if not self._charge(
                 module="competition",operation="competition_register",
@@ -412,6 +413,7 @@ class Stage10Runtime(Stage9Runtime):
                     proposal=proposal,base=supplied,health=self.sleep_health,
                     t_monde=capture.t_monde,cycle=cycle,
                     intrinsic_weight=self._stage10_config.intrinsic_weight,
+                    site=(capture.x, capture.y),
                 )
             evidence[proposal.option.id] = supplied
             ev = supplied.evaluation
