@@ -160,6 +160,30 @@ assert memory.closed_sleep_site_witnesses(
     memory.closed_sleep_site_witnesses(
         autobiography=events, site=(2,4), now=5)[-1],
 )
+balance_new = memory.describe_closed_sleep_site(witnesses=new, site=(2,4))
+assert balance_new["same_step_channels"]["energy"] == dict(
+    increase=1,decrease=0,stable=0,unknown=1)
+assert balance_new["same_step_channels"]["food"] == dict(
+    increase=0,decrease=1,stable=0,unknown=1)
+assert balance_new["same_step_channels"]["water"] == dict(
+    increase=0,decrease=1,stable=0,unknown=1)
+assert balance_new["same_step_channels"]["integrity"] == dict(
+    increase=0,decrease=0,stable=1,unknown=1)
+assert balance_new["channels"] == memory.describe_closed_sleep_site(
+    witnesses=a,site=(2,4))["channels"]
+assert balance_new["observations"][0]["same_step_prebody_attested"] is True
+assert balance_new["observations"][1]["same_step_prebody_attested"] is False
+assert balance_new["causal_attribution"] is False
+assert balance_new["decision_evidence"] is False
+forged = dict(new[0], same_step_body_delta=dict(
+    new[0]["same_step_body_delta"], water=9.0))
+forged_report = memory.describe_closed_sleep_site(
+    witnesses=[forged],site=(2,4))
+assert all(forged_report["same_step_channels"][channel]["unknown"] == 1
+           for channel in ("energy","food","water","integrity"))
+assert all(memory.describe_closed_sleep_site(
+    witnesses=a,site=(2,4))["same_step_channels"][channel]["unknown"] == 2
+           for channel in ("energy","food","water","integrity"))
 print("I1_467_CLOSED_SITE_CONTRACT_OK")
 """
             result = subprocess.run(
