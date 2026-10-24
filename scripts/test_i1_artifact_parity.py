@@ -166,7 +166,7 @@ def _approved_native_prebody_activation_467(root: Path, rel: str) -> bool:
     if pair is None or not (root / rel).is_file():
         return False
     data = (ROOT / pair[0]).read_bytes()
-    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest() == pair[1]
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == pair[1]
 
 
 def _approved_unique_dc09_source_467(root: Path, rel: str) -> bool:
