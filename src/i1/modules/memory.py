@@ -372,16 +372,22 @@ class EpisodicMemory:
     def _closed_sleep_custody(self) -> dict[str, str | None]:
         """Bound the existing closed-episode reference ownership, not memory."""
         custody: dict[str, str | None] = {}
+        scanned = 0
         for episode in reversed(self._episodes[-32:]):
             for ref in reversed(episode.event_refs):
+                scanned += 1
+                # No partial "unique custody" answer is safe when the
+                # verification window is exhausted. Reject the whole read.
+                if scanned > 4096:
+                    return {}
                 if type(ref) is not str or ref not in self._seen_event_refs:
                     continue
                 if ref in custody:
                     custody[ref] = None  # Ambiguous ownership cannot be recalled.
                 elif len(custody) < 256:
                     custody[ref] = episode.id
-                else:
-                    return custody
+                # Keep scanning after reaching 256 selected refs: an older
+                # duplicate must still invalidate a more recent selection.
         return custody
 
     def closed_sleep_recall_source_refs(self) -> frozenset[str]:
