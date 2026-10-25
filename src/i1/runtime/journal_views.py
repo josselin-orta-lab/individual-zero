@@ -341,7 +341,7 @@ class JournalViews:
                     raise ValueError("invalid touched first-person provenance")
                 if ref in selected_event_refs:
                     local.append((
-                        source.index,
+                        (entry.index, source.index),
                         policy._project_validated(source)
                         if type(policy) is AutobiographicalPolicy
                         else policy.project(source),
