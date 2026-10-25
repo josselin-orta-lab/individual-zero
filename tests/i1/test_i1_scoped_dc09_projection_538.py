@@ -88,13 +88,17 @@ for invalid in ("future", "wrong_attempt", "wrong_time"):
     if invalid=="wrong_attempt": bad_data["attempt_ref"]="other"
     if invalid=="wrong_time": bad_data["t_monde"]=step+1
     b=changed.append(event_id="pair:b",causal_event=bad_data)
-    commit=changed.append(event_id="pair:commit",causal_event=dict(
+    # The hash-chained journal is immutable: make a malformed historical
+    # commitment *before* the future event rather than mutating its receipt.
+    changed.append(event_id="pair:commit",causal_event=dict(
         kind="auto_segment_commit",filter_version=P.version,t_monde=step,
-        attempt_ref=attempted,event_refs=["pair:a","pair:b"]))
+        attempt_ref=attempted,
+        event_refs=["pair:a","future"] if invalid=="future"
+                   else ["pair:a","pair:b"]))
     if invalid=="future":
         changed.append(event_id="future",causal_event=dict(
-            kind="technical",t_monde=step))
-        commit.causal_event["event_refs"]=["pair:a","future"]
+            kind="command_experienced",t_monde=step,attempt_ref=attempted,
+            primitive="boire",parameters={"target":"water"}))
     v2=JournalViews(journal=changed)
     try: v2.selected_committed_autobiography(
         policies=policies,selected_event_refs=frozenset({"pair:a"}))
