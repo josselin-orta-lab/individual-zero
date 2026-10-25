@@ -87,6 +87,9 @@ def closed_action_fragments(witnesses, *, max_fragments=16, max_steps=16):
         groups.append(current)
     result = []
     for group in groups[-max_fragments:]:
+        # Use JSON-stable nested lists for WAL/M11 Python equality as well
+        # as canonical hashes. Cold recovery must not turn tuples into a
+        # different in-memory representation of the same observation.
         first, last = group[0], group[-1]
         # Without a first-person BEFORE value for the first transition, a
         # total difference is unknowable even when all later steps are closed.
@@ -99,9 +102,9 @@ def closed_action_fragments(witnesses, *, max_fragments=16, max_steps=16):
             "first_step": first["step"],
             "last_step": last["step"],
             "observed_steps": len(group),
-            "source_event_refs": tuple(ref for row in group
-                                       for ref in row["source_event_refs"]),
-            "source_episode_refs": tuple(dict.fromkeys(
+            "source_event_refs": [ref for row in group
+                                       for ref in row["source_event_refs"]],
+            "source_episode_refs": list(dict.fromkeys(
                 ref for row in group
                 for ref in row.get("source_episode_refs", ())
             )),
@@ -111,9 +114,9 @@ def closed_action_fragments(witnesses, *, max_fragments=16, max_steps=16):
                 None if before is None else
                 {key: after[key] - before[key] for key in CHANNELS}
             ),
-            "observed_effects_by_step": tuple(
+            "observed_effects_by_step": [
                 deepcopy(row.get("observed_effects")) for row in group
-            ),
+            ],
             "complete_subjective_session": False,
             "causal_attribution": False,
             "decision_evidence": False,
