@@ -115,6 +115,17 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
                           for x in postwake),
           "closed", sum(x["closed_episode_ref"] is not None
                         for x in postwake))
+    assert all(v["waking_dc09_committed"]
+               for _, v in sleep_rows
+               if v["provenance"] == "readmitted_after_wake")
+    assert all(not v["waking_dc09_committed"]
+               for _, v in sleep_rows
+               if v["provenance"] in (
+                   "ordinary_awake_admission",
+                   "reduced_sleep_continuation"))
+    print("I1_495_NATIVE_WAKING_DC09",
+          sum(v["waking_dc09_committed"] for _, v in sleep_rows),
+          "postwake committed cues")
     print("I1_495_NATURAL_DORMANT_WAKE_ELIGIBILITY",
           sum(v["dormant_wake_cue_eligible"]
               for _, v in sleep_rows),
