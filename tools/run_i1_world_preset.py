@@ -975,9 +975,15 @@ def _m11_life(*, birth, params, life_id, path, steps):
                           ["physical_source_refs"])
                     for row in physical_controls
                 }
-                for index in range(0, len(wait_refs), 2):
-                    if tuple(wait_refs[index:index + 2]) not in authentic_wait_pairs:
-                        raise RuntimeError("paid wait-control source is not a lived local wait")
+                recalled = set(wait_refs)
+                matched = {
+                    ref
+                    for pair in authentic_wait_pairs
+                    if len(pair) == 2 and set(pair) <= recalled
+                    for ref in pair
+                }
+                if matched != recalled:
+                    raise RuntimeError("paid wait-control source is not a lived local wait")
                 # #495: a paid autobiographical wake association must
                 # reference only unique, already-closed source ownership.
                 # This operator audit never supplies new facts to Memory.
