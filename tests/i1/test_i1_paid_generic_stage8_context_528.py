@@ -118,7 +118,7 @@ witness = dict(step=8, primitive="boire",
                body_before=None,
                body_after={"energy":40.0, "food":60.0,
                            "water":80.0, "integrity":90.0},
-               same_step_body_delta=None)
+               observed_effects={"drank": False}, same_step_body_delta=None)
 probe._i1_sleep_site_paid_context = paid.copy()
 probe._i1_generic_action_paid_context = dict(paid, witnesses=(witness,))
 out = []
@@ -138,6 +138,7 @@ with patch.object(I1WaterPrudentRuntime,
     assert len(rows) == 1
     assert rows[0][2]["stage8_evidence_unchanged"] == 0.23
     assert rows[0][2]["witnesses"][0]["source_event_refs"] == ["c8","t8"]
+    assert rows[0][2]["witnesses"][0]["observed_effects"] == {"drank": False}
     assert evidence.evidence == 0.23
     assert rows[0][2]["new_uc_debit"] is False
     # No in-cycle paid source or no current valid proposal: fail closed.
