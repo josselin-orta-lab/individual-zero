@@ -1262,6 +1262,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
         "sleep_episode_link_audit_471": sleep_run_audits,
         "sleep_decision_custody_audit_490": decision_audits,
         "waking_perception_transition_custody_495": wake_custody,
+        "distinct_paid_waking_links_audit_495": _audit_distinct_paid_waking_links(trajectory),
         "physical_memory_custody_469": [
             {
                 "step": row["world_step"],
