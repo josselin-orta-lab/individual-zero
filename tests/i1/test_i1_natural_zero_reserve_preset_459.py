@@ -93,6 +93,28 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
                if v["provenance"] in (
                    "ordinary_awake_admission",
                    "reduced_sleep_continuation"))
+    postwake = life["waking_perception_transition_custody_495"]
+    assert len(postwake) >= len(classes["readmitted_after_wake"])
+    assert {row["step"] for row in postwake} >= set(
+        classes["readmitted_after_wake"])
+    assert len({row["first_person_capture_ref"] for row in postwake}) == len(postwake)
+    assert len({row["applied_transition_ref"] for row in postwake}) == len(postwake)
+    for row in postwake:
+        assert row["first_person_capture_ref"] != row["applied_transition_ref"]
+        assert not row["capture_is_personal_memory"]
+        assert not row["subjective_waking_boundary_proven"]
+        assert not row["continuous_subjective_session_proven"]
+        if row["transition_ingested_step"] is not None:
+            assert row["transition_committed_step"] is not None
+            assert row["transition_committed_step"] <= row["transition_ingested_step"]
+    print("I1_495_NATURAL_WAKE_TRANSITION_CUSTODY",
+          "perceived", len(postwake),
+          "committed", sum(x["transition_committed_step"] is not None
+                           for x in postwake),
+          "ingested", sum(x["transition_ingested_step"] is not None
+                          for x in postwake),
+          "closed", sum(x["closed_episode_ref"] is not None
+                        for x in postwake))
     print("I1_495_NATURAL_DORMANT_WAKE_ELIGIBILITY",
           sum(v["dormant_wake_cue_eligible"]
               for _, v in sleep_rows),
