@@ -19,6 +19,36 @@ from i0.requests import Request, Response
 
 _INTENTION_BODY_KEYS = frozenset({"energy", "food", "water", "integrity"})
 
+def same_lived_command_parameters(
+    left: Mapping[str, object], right: Mapping[str, object],
+) -> bool:
+    """Match actual command parameters without Python bool/numeric aliasing.
+
+    DC-09 permits primitive scalars and one canonical float scalar wrapper.
+    Reject unreviewed nested structures rather than declaring them equal.
+    This is identity only, never a memory relevance/value score.
+    """
+    if not isinstance(left, Mapping) or not isinstance(right, Mapping):
+        return False
+    if (any(type(key) is not str for key in (*left, *right))
+            or left.keys() != right.keys()):
+        return False
+    for key in left:
+        a, b = left[key], right[key]
+        if type(a) is not type(b):
+            return False
+        if type(a) is dict:
+            if (set(a) != {"$f64"} or set(b) != {"$f64"}
+                    or type(a["$f64"]) is not str
+                    or a["$f64"] != b["$f64"]):
+                return False
+        elif type(a) not in (str, int, float, bool, type(None)):
+            return False
+        elif a != b:
+            return False
+    return True
+
+
 
 @dataclass(frozen=True, slots=True)
 class MemoryConfig:
@@ -404,6 +434,7 @@ class EpisodicMemory:
     def closed_applied_action_witnesses(
         self, *, autobiography: Sequence[Mapping[str, object]],
         now: int, primitive: str | None = None, limit: int = 16,
+        per_command_limit: int | None = None,
     ) -> tuple[dict[str, object], ...]:
         """Describe generic first-person applied actions from CLOSED DC-09 refs.
 
@@ -416,7 +447,10 @@ class EpisodicMemory:
         if (type(now) is not int or now < 1
                 or primitive is not None and (
                     type(primitive) is not str or not primitive)
-                or type(limit) is not int or not 1 <= limit <= 16):
+                or type(limit) is not int or not 1 <= limit <= 16
+                or per_command_limit is not None and (
+                    type(per_command_limit) is not int
+                    or not 1 <= per_command_limit <= limit)):
             raise ValueError("invalid bounded lived action recall query")
         custody = self._closed_sleep_custody()
         by_step: dict[int, dict[str, list[Mapping[str, object]]]] = {}
@@ -541,7 +575,29 @@ class EpisodicMemory:
                 "causal_attribution": False,
                 "decision_evidence": False,
             })
-        return tuple(witnesses[-limit:])
+        if per_command_limit is None:
+            return tuple(witnesses[-limit:])
+        # Exact primitive + parameters identity, without a privileged action.
+        # The already-bounded source scan is unchanged; the paid natural
+        # caller can retain rare commands without giving Memory a score.
+        selected = []
+        for row in reversed(witnesses):
+            # A first-person scalar can be an authorized canonical-float
+            # mapping. Compare exact parameter structures, not a hash key
+            # that would crash on an unhashable nested scalar. The selected
+            # set is always <= 16, so equality checks remain bounded.
+            already_selected = sum(
+                previous["primitive"] == row["primitive"]
+                and same_lived_command_parameters(
+                    previous["parameters"], row["parameters"])
+                for previous in selected
+            )
+            if already_selected >= per_command_limit:
+                continue
+            selected.append(row)
+            if len(selected) == limit:
+                break
+        return tuple(reversed(selected))
 
     def closed_sleep_site_witnesses(
         self, *, autobiography: Sequence[Mapping[str, object]],
