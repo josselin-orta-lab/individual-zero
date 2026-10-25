@@ -459,6 +459,78 @@ class I1Runtime(I1WaterPrudentRuntime):
             capture=capture, cycle=cycle, evidence_inputs=evidence_inputs,
         )
         context = getattr(self, "_i1_sleep_site_paid_context", None)
+        # #528: same UC-paid closed first-person source scan, across ALL
+        # ordinary current options. Merely report matched testimony; do not
+        # alter Stage8 evidence, learned Q, Competition or Action Control.
+        generic = getattr(self, "_i1_generic_action_paid_context", None)
+        if (generic is not None and not self._cycle_degraded
+                and generic["step"] == capture.t_monde
+                and generic["cycle"] == cycle
+                and generic["site"] == (capture.x, capture.y)
+                and generic["charged_operation"] == _SLEEP_RECALL_OPERATION):
+            # Follow Stage8's own resumed-plan cursor, not an obsolete
+            # step-0 command. Never borrow another option's engaged cursor.
+            control_option, control_plan, next_index = (
+                self.stage3.control.current_step
+            )
+            for proposal in self.competition.candidate_proposals:
+                plan = proposal.plan
+                if plan is None or not plan.steps:
+                    continue
+                cursor = (next_index if (
+                    control_option == proposal.option.id
+                    and control_plan == plan.id
+                    and self.competition.is_engaged(proposal.option.id)
+                    and 0 <= next_index < len(plan.steps)
+                ) else 0)
+                command = plan.steps[cursor].command
+                supplied = evidence_inputs.get(proposal.option.id)
+                if supplied is None:
+                    continue
+                ev = supplied.evaluation
+                if (ev.status != "evaluated"
+                        or proposal.option.expires_at_step <= capture.t_monde
+                        or ev.option_ref != proposal.option.id
+                        or ev.option_version != proposal.option.version
+                        or ev.t_monde != capture.t_monde
+                        or ev.cycle != cycle):
+                    continue
+                matches = tuple(row for row in generic["witnesses"]
+                                if row["primitive"] == command.primitive
+                                and row["parameters"] == dict(command.parameters))
+                if not matches:
+                    continue
+                self._write(
+                    kind="i1_generic_lived_action_stage8_context_observed",
+                    cycle=cycle, data={
+                        "option_ref": proposal.option.id,
+                        "primitive": command.primitive,
+                        "parameters": dict(command.parameters),
+                        "current_site": [capture.x, capture.y],
+                        "witness_count": len(matches),
+                        "witnesses": [
+                            {
+                                "step": row["step"],
+                                "position_after": row["position_after"],
+                                "source_event_refs": list(row["source_event_refs"]),
+                                "source_episode_refs": list(row["source_episode_refs"]),
+                                "body_before": row["body_before"],
+                                "body_after": row["body_after"],
+                                "same_step_body_delta": row["same_step_body_delta"],
+                            }
+                            for row in matches
+                        ],
+                        "stage8_status": ev.status,
+                        "stage8_evidence_unchanged": supplied.evidence,
+                        "charged_operation": _SLEEP_RECALL_OPERATION,
+                        "new_uc_debit": False,
+                        "context_score_applied": False,
+                        "causal_attribution": False,
+                        "motor_admission_inherited": False,
+                    },
+                )
+        # Historical sleep-site receipts remain independent of whether
+        # any generic candidate matched this paid memory consultation.
         if (context is None or self._cycle_degraded
                 or context["step"] != capture.t_monde
                 or context["cycle"] != cycle
@@ -516,6 +588,7 @@ class I1Runtime(I1WaterPrudentRuntime):
         """
         # Never carry a previous cycle's paid personal site consultation.
         self._i1_sleep_site_paid_context = None
+        self._i1_generic_action_paid_context = None
         hooks = super()._phase_hooks(
             cycle=cycle, capture=capture,
             goal_for_planning=goal_for_planning,
@@ -550,6 +623,16 @@ class I1Runtime(I1WaterPrudentRuntime):
                         policies={p.version: p for p in (P2, P7, PNEW, PWAKE)},
                         selected_event_refs=refs,
                     )
+                    self._i1_generic_action_paid_context = {
+                        "step": capture.t_monde,
+                        "cycle": cycle,
+                        "site": (capture.x, capture.y),
+                        "charged_operation": _SLEEP_RECALL_OPERATION,
+                        "witnesses": self.memory.closed_applied_action_witnesses(
+                            autobiography=projected,
+                            now=capture.t_monde,
+                        ),
+                    }
                     stationary = self.memory.closed_stationary_site_witnesses(
                         autobiography=projected,
                         site=(capture.x, capture.y),
