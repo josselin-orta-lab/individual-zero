@@ -233,7 +233,7 @@ class I1Runtime(I1WaterPrudentRuntime):
         cfg = _configure_birth_goal_policy(cfg, goal_policy)
         # A changed DC-09 birth contract must never reinterpret an older
         # M11 generation as if it possessed the newly perceived prebody.
-        cfg = replace(cfg, version=cfg.version + "+i1-prebody-dc09-birth-v1")
+        cfg = replace(cfg, version=cfg.version + "+i1-prebody-waking-dc09-birth-v1")
         kwargs["stage11_config"] = cfg
         # Both integrated stages must agree on the identical frozen Stage9
         # substrate after temperament projection, before creating the body.
@@ -481,9 +481,12 @@ class I1Runtime(I1WaterPrudentRuntime):
                 if refs:
                     from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY as P2
                     from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY as P7
-                    from .i1_natural_prebody_policy import LIVED_PREBODY_POLICY as PNEW
+                    from .i1_natural_prebody_policy import (
+                        LIVED_PREBODY_POLICY as PNEW,
+                        LIVED_WAKING_BODY_POLICY as PWAKE,
+                    )
                     projected = self.stage3.substrate.views.autobiographical(
-                        policies={p.version: p for p in (P2, P7, PNEW)},
+                        policies={p.version: p for p in (P2, P7, PNEW, PWAKE)},
                         selected_event_refs=refs,
                     )
                     rows = self.memory.closed_sleep_site_witnesses(
@@ -926,8 +929,11 @@ class I1Runtime(I1WaterPrudentRuntime):
         """Read only committed old/new DC-09 projections into canonical Memory."""
         from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY as P2
         from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY as P7
-        from .i1_natural_prebody_policy import LIVED_PREBODY_POLICY as PNEW
-        policies = {policy.version: policy for policy in (P2, P7, PNEW)}
+        from .i1_natural_prebody_policy import (
+            LIVED_PREBODY_POLICY as PNEW,
+            LIVED_WAKING_BODY_POLICY as PWAKE,
+        )
+        policies = {policy.version: policy for policy in (P2, P7, PNEW, PWAKE)}
         events = self.stage3.substrate.views.autobiographical(
             policies=policies,
         )
