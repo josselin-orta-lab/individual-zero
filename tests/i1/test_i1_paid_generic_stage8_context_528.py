@@ -79,5 +79,119 @@ with TemporaryDirectory() as tmp:
             self.assertIn("I1_528_PAID_GENERIC_STAGE8_OK", result.stdout)
 
 
+    def test_stage8_guard_rejects_stale_mismatched_unpaid_options(self):
+        """Isolate the observer-only hook; no forged signal can be scored."""
+        with TemporaryDirectory() as folder:
+            generated = Path(folder) / "generated"
+            build = subprocess.run(
+                [sys.executable, str(ROOT / "scripts/build_i1_fork.py"),
+                 "--output", str(generated)],
+                capture_output=True, text=True,
+            )
+            self.assertEqual(build.returncode, 0, build.stdout + build.stderr)
+            code = r"""
+from types import SimpleNamespace as S
+from unittest.mock import patch
+from i1lab.i1_natural_runtime import I1Runtime
+from i1lab.i1_d2_runtime import I1WaterPrudentRuntime
+
+probe = object.__new__(I1Runtime)
+probe._cycle_degraded = False
+capture = S(t_monde=10, x=3, y=4)
+option = S(id="option:ordinary", version="v1", expires_at_step=11,
+           motive_ref=S(type="local_opportunity"))
+command = S(primitive="boire", parameters={"target": "water"})
+proposal = S(option=option, plan=S(steps=(S(command=command),)))
+probe.competition = S(candidate_proposals=(proposal,))
+evaluation = S(option_ref=option.id, option_version="v1",
+               cycle=1, t_monde=10, status="evaluated")
+evidence = S(evaluation=evaluation, evidence=0.23)
+inputs = {option.id: evidence}
+paid = dict(step=10, cycle=1, site=(3,4),
+            charged_operation="i1_closed_sleep_recall")
+witness = dict(step=8, primitive="boire",
+               parameters={"target": "water"},
+               position_after={"x":3,"y":4},
+               source_event_refs=("c8","t8"),
+               source_episode_refs=("episode:8",),
+               body_before=None,
+               body_after={"energy":40.0, "food":60.0,
+                           "water":80.0, "integrity":90.0},
+               same_step_body_delta=None)
+probe._i1_sleep_site_paid_context = paid.copy()
+probe._i1_generic_action_paid_context = dict(paid, witnesses=(witness,))
+out = []
+def write(self, *, kind, cycle, data):
+    out.append((kind, cycle, data))
+def observe():
+    out.clear()
+    I1Runtime._before_competition_accumulation(
+        probe, capture=capture, cycle=1, evidence_inputs=inputs)
+    return [row for row in out
+            if row[0] == "i1_generic_lived_action_stage8_context_observed"]
+with patch.object(I1WaterPrudentRuntime,
+                  "_before_competition_accumulation",
+                  lambda self, **kwargs: None, create=True), \
+     patch.object(I1Runtime, "_write", write, create=True):
+    rows = observe()
+    assert len(rows) == 1
+    assert rows[0][2]["stage8_evidence_unchanged"] == 0.23
+    assert rows[0][2]["witnesses"][0]["source_event_refs"] == ["c8","t8"]
+    assert evidence.evidence == 0.23
+    assert rows[0][2]["new_uc_debit"] is False
+    # No in-cycle paid source or no current valid proposal: fail closed.
+    for altered in (
+        dict(paid, cycle=2),
+        dict(paid, step=9),
+        dict(paid, site=(9,9)),
+        dict(paid, charged_operation="unpaid"),
+    ):
+        probe._i1_generic_action_paid_context = dict(
+            altered, witnesses=(witness,))
+        assert observe() == []
+    probe._i1_generic_action_paid_context = None
+    assert observe() == []
+    probe._i1_generic_action_paid_context = dict(paid, witnesses=(witness,))
+    probe._cycle_degraded = True
+    assert observe() == []
+    probe._cycle_degraded = False
+    old = probe.competition.candidate_proposals
+    probe.competition.candidate_proposals = ()
+    assert observe() == []
+    probe.competition.candidate_proposals = old
+    old_input = inputs.pop(option.id)
+    assert observe() == []
+    inputs[option.id] = old_input
+    old_status = evaluation.status
+    evaluation.status = "not_evaluated"
+    assert observe() == []
+    evaluation.status = old_status
+    evaluation.option_version = "old"
+    assert observe() == []
+    evaluation.option_version = "v1"
+    evaluation.cycle = 2
+    assert observe() == []
+    evaluation.cycle = 1
+    option.expires_at_step = 10
+    assert observe() == []
+    option.expires_at_step = 11
+    command.primitive = "manger"
+    assert observe() == []
+    command.primitive = "boire"
+    command.parameters = {"target": "different"}
+    assert observe() == []
+    command.parameters = {"target": "water"}
+    assert len(observe()) == 1
+print("I1_528_STAGE8_GUARD_NEGATIVE_OK")
+"""
+            result = subprocess.run(
+                [sys.executable, "-c", code],
+                env={"PYTHONPATH": str(generated) + ":" + str(ROOT / "src")},
+                capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("I1_528_STAGE8_GUARD_NEGATIVE_OK", result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
