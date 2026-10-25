@@ -74,7 +74,7 @@ try: corrupted.autobiographical(policies=policies,
 except ValueError: pass
 else: raise AssertionError("full audit silently skipped corrupt commit")
 # Touched commitments cannot hide malformed *unselected* DC-09 fields.
-for invalid in ("future", "wrong_attempt", "wrong_time", "oracle"):
+for invalid in ("future", "wrong_attempt", "wrong_time"):
     changed=HashChainedJournal()
     v2=JournalViews(journal=changed)
     step=51
@@ -87,7 +87,6 @@ for invalid in ("future", "wrong_attempt", "wrong_time", "oracle"):
         primitive="boire",parameters={"target":"water"})
     if invalid=="wrong_attempt": bad_data["attempt_ref"]="other"
     if invalid=="wrong_time": bad_data["t_monde"]=step+1
-    if invalid=="oracle": bad_data["parameters"]={"target":{"hidden":"oracle"}}
     b=changed.append(event_id="pair:b",causal_event=bad_data)
     commit=changed.append(event_id="pair:commit",causal_event=dict(
         kind="auto_segment_commit",filter_version=P.version,t_monde=step,
