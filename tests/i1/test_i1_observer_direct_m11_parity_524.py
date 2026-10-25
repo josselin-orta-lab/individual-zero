@@ -48,9 +48,11 @@ def recalled(rt):
     )
 
 def compare_one(actor, observed, label):
-    rt = actor._runtime
-    count = rt.journal.entry_count
+    # M11 publishes a detached candidate by pointer swap after SQLite
+    # COMMIT. The pre-step runtime is deliberately stale after run_step.
+    count = actor._runtime.journal.entry_count
     receipt = actor.run_step()
+    rt = actor._runtime
     new_events = [entry.causal_event
                   for entry in rt.journal.entries_since(count)]
     commands = [row for row in new_events
