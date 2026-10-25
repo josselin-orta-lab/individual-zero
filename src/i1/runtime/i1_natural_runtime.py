@@ -465,12 +465,17 @@ class I1Runtime(I1WaterPrudentRuntime):
                 or context["site"] != (capture.x, capture.y)
                 or context["charged_operation"] != _SLEEP_RECALL_OPERATION):
             return
-        from i1.modules.sleep_competition import _sleep_site_ref
-        site_ref = _sleep_site_ref((capture.x, capture.y))
+        from i1.modules.sleep_competition import (
+            _sleep_site_ref, _valid_sleep_shape,
+        )
+        site = (capture.x, capture.y)
+        site_ref = _sleep_site_ref(site)
         for proposal in self.competition.candidate_proposals:
             if (proposal.option.motive_ref.type != "sleep_pressure"
-                    or site_ref not in proposal.option.id
-                    or proposal.option.learning_signature != "primitive:dormir"):
+                    or not _valid_sleep_shape(
+                        proposal, health=self.sleep_health,
+                        t_monde=capture.t_monde, site=site,
+                    )):
                 continue
             supplied = evidence_inputs.get(proposal.option.id)
             if supplied is None:
