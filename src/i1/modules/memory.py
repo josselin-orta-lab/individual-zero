@@ -405,9 +405,21 @@ class EpisodicMemory:
         self, *, autobiography: Sequence[Mapping[str, object]],
         site: tuple[int, int], now: int,
     ) -> tuple[dict[str, object], ...]:
-        """Read-only, first-person sleep outcomes from already CLOSED episodes.
+        """Preserve the historical sleep-only, already-paid witness contract."""
+        return self.closed_stationary_site_witnesses(
+            autobiography=autobiography, site=site, now=now,
+        )["dormir"]
+
+    def closed_stationary_site_witnesses(
+        self, *, autobiography: Sequence[Mapping[str, object]],
+        site: tuple[int, int], now: int,
+    ) -> dict[str, tuple[dict[str, object], ...]]:
+        """Read bounded sleep and awake-wait controls in ONE paid source scan.
 
         Caller must pay UC and pass only a DC-09 JournalViews projection.
+        Never consult WorldBody or technical journal sources here, nor create
+        inferred pre-action perception, site safety, or causal attribution.
+        The wait control is descriptive only, not a motor or value signal.
         Paired events are observations, not full sleep sessions, a prediction,
         or an inferred reward. A waking cue may be attached only to the
         immediately preceding sleep action when ALL three postwake sources
@@ -515,7 +527,9 @@ class EpisodicMemory:
                 "relation": "immediate_next_step_only",
             }
 
-        found = []
+        found: dict[str, list[dict[str, object]]] = {
+            "dormir": [], "attendre": [],
+        }
         for step in sorted(per_step):
             pair = per_step[step]
             if len(pair["command"]) != 1 or len(pair["transition"]) != 1:
@@ -525,7 +539,7 @@ class EpisodicMemory:
             if (any(ref in duplicates for ref in refs)
                     or set(command) != {"event_id", "kind", "t_monde",
                                        "primitive", "parameters"}
-                    or command["primitive"] != "dormir"
+                    or command["primitive"] not in ("dormir", "attendre")
                     or command["parameters"] != {}
                     or set(transition) not in (
                         {"event_id", "kind", "t_monde", "position_after",
@@ -600,7 +614,8 @@ class EpisodicMemory:
                         k: float(body[k]) - float(previous_body[k])
                         for k in ("energy", "food", "water", "integrity")
                     }
-            found.append({
+            primitive = command["primitive"]
+            found[primitive].append({
                 "step": step,
                 "site_ref": f"sleep-site:{site[0]}:{site[1]}",
                 "source_event_refs": refs,
@@ -620,12 +635,20 @@ class EpisodicMemory:
                 "continuous_sleep_session": None,
                 # One bounded autobiographical temporal relation, never a
                 # continuous session or proof of why I1 chose to sleep.
-                "next_step_waking": adjacent_waking_boundary(step),
+                "next_step_waking": (
+                    adjacent_waking_boundary(step)
+                    if primitive == "dormir" else None
+                ),
                 "previous_step_after_ref": previous_transition_ref,
                 "previous_step_after_episode_ref": previous_episode_ref,
                 "adjacent_after_state_delta": adjacent_after_state_delta,
             })
-        return tuple(found[-16:])
+        # Each activity remains separately bounded; no cross-activity
+        # mixing or rereading the journal/Memory for the same UC debit.
+        return {
+            primitive: tuple(rows[-16:])
+            for primitive, rows in found.items()
+        }
 
     def describe_closed_sleep_site(
         self, *, witnesses: Sequence[Mapping[str, object]],
