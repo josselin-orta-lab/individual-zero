@@ -248,6 +248,22 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
     assert distinct["decision_influence_proven"] is False
     assert distinct["distinct_source_links"] > 0, distinct
     print("I1_495_DISTINCT_WAKING_LINKS", distinct)
+    # #510: a naturally evaluated sleep candidate can see personally
+    # recalled context at the pre-Competition boundary without a second Q,
+    # Stage6, P-40 or Competition score.
+    contexts = [step["sleep_site_stage8_context_custody_510"]
+                for step in life["steps"]]
+    assert all(row["read_count"] in (0, 1) and
+               row["score_applied"] is False for row in contexts)
+    assert all(context["read_count"] <= recall["read_count"]
+               for context, recall in zip(contexts, recall_rows))
+    assert all(context["source_refs"] == recall["source_event_refs"]
+               for context, recall in zip(contexts, recall_rows)
+               if context["read_count"])
+    assert sum(row["read_count"] for row in contexts) > 0
+    print("I1_510_PAID_STAGE8_SLEEP_CONTEXT",
+          "observed", sum(row["read_count"] for row in contexts),
+          "paid_reads", reads)
     print("I1_495_PAID_WAKING_LINKS",
           "reads", reads,
           "links", sum(x["waking_link_count"] for x in recall_rows))
