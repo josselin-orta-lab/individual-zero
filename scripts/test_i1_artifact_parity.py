@@ -307,6 +307,13 @@ def _approved_paid_generic_stage8_528(root: Path, rel: str) -> bool:
     return digest == "9fc2b270ca4a3d170eaed1f35cfc4a6b0e276d6c"
 
 
+def _approved_recalled_episode_custody_535(root: Path, rel: str) -> bool:
+    if rel != "i1/modules/memory.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/modules/memory.py").read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == "9612623fcbef715a38b973ae91278c45bcaa2b7f"
+
+
 def _approved_diverse_action_recall_533(root: Path, rel: str) -> bool:
     pins = {
         "i1/modules/memory.py": ("src/i1/modules/memory.py",
@@ -1552,6 +1559,7 @@ def verify(reference_root: Path) -> None:
                 or _approved_closed_generic_action_526(new_root, rel)
                 or _approved_lived_action_effects_530(new_root, rel)
                 or _approved_diverse_action_recall_533(new_root, rel)
+                or _approved_recalled_episode_custody_535(new_root, rel)
                 or _approved_paid_generic_stage8_528(new_root, rel)
                 or (rel == "i1lab/journal_views.py"
                     and _approved_autobio_index_rehydration(
