@@ -404,6 +404,7 @@ class EpisodicMemory:
     def closed_applied_action_witnesses(
         self, *, autobiography: Sequence[Mapping[str, object]],
         now: int, primitive: str | None = None, limit: int = 16,
+        per_command_limit: int | None = None,
     ) -> tuple[dict[str, object], ...]:
         """Describe generic first-person applied actions from CLOSED DC-09 refs.
 
@@ -416,7 +417,10 @@ class EpisodicMemory:
         if (type(now) is not int or now < 1
                 or primitive is not None and (
                     type(primitive) is not str or not primitive)
-                or type(limit) is not int or not 1 <= limit <= 16):
+                or type(limit) is not int or not 1 <= limit <= 16
+                or per_command_limit is not None and (
+                    type(per_command_limit) is not int
+                    or not 1 <= per_command_limit <= limit)):
             raise ValueError("invalid bounded lived action recall query")
         custody = self._closed_sleep_custody()
         by_step: dict[int, dict[str, list[Mapping[str, object]]]] = {}
@@ -541,7 +545,25 @@ class EpisodicMemory:
                 "causal_attribution": False,
                 "decision_evidence": False,
             })
-        return tuple(witnesses[-limit:])
+        if per_command_limit is None:
+            return tuple(witnesses[-limit:])
+        # Exact primitive + parameters identity, without a privileged action.
+        # The already-bounded source scan is unchanged; the paid natural
+        # caller can retain rare commands without giving Memory a score.
+        counts = {}
+        selected = []
+        for row in reversed(witnesses):
+            identity = (
+                row["primitive"],
+                tuple(sorted(row["parameters"].items())),
+            )
+            if counts.get(identity, 0) >= per_command_limit:
+                continue
+            counts[identity] = counts.get(identity, 0) + 1
+            selected.append(row)
+            if len(selected) == limit:
+                break
+        return tuple(reversed(selected))
 
     def closed_sleep_site_witnesses(
         self, *, autobiography: Sequence[Mapping[str, object]],
