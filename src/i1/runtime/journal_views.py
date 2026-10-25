@@ -339,13 +339,16 @@ class JournalViews:
                         or source.causal_event.get("t_monde") != t_monde
                         or not policy.allows(source)):
                     raise ValueError("invalid touched first-person provenance")
+                # Check nested DC-09 projection on *every* source of a
+                # touched commitment, including unselected ones. This does
+                # not change the global-audit historical reader contract.
+                lived = (
+                    policy._project_validated(source)
+                    if type(policy) is AutobiographicalPolicy
+                    else policy.project(source)
+                )
                 if ref in selected_event_refs:
-                    local.append((
-                        (entry.index, source.index),
-                        policy._project_validated(source)
-                        if type(policy) is AutobiographicalPolicy
-                        else policy.project(source),
-                    ))
+                    local.append(((entry.index, source.index), lived))
             touched.extend(local)
         # Match the historical chronological commitment/source projection.
         touched.sort(key=lambda row: row[0])
