@@ -137,6 +137,41 @@ class JournalViews:
                 attempt_ref=attempt_ref, command_ref=event_refs[-2],
                 physical_ref=event_refs[-1],
             )
+        # Birth-gated I1-only post-physical sensory event. It is authored
+        # here, not by Memory, only if the one captured waking body matched
+        # the applied physical prebody AND same-attempt Stage10 wake receipts.
+        # A bare technical wake label is not an autobiographical source.
+        if (self._i1_prebody_birth_enabled
+                and policy.version == "i1-lived-body-before-v1"
+                and len(event_refs) >= 2):
+            from .i1_natural_prebody_policy import (
+                candidate_versioned_waking_perception,
+                LIVED_WAKING_BODY_POLICY,
+            )
+            cue = candidate_versioned_waking_perception(
+                journal=self._journal, t_monde=t_monde,
+                attempt_ref=attempt_ref, command_ref=event_refs[-2],
+                physical_ref=event_refs[-1],
+            )
+            if cue is not None:
+                cue_ref = deterministic_id(
+                    "journal-event-v1", "i1-first-person-wake",
+                    t_monde, attempt_ref,
+                    cue["source_event_ref"], event_refs[-1],
+                )
+                self._journal.append(
+                    event_id=cue_ref,
+                    causal_event={
+                        "kind": "waking_body_perceived",
+                        "emitter": "i1-first-person-wake",
+                        "t_monde": t_monde,
+                        "attempt_ref": attempt_ref,
+                        "position": dict(cue["position"]),
+                        "body_perceived": dict(cue["body_perceived"]),
+                    },
+                )
+                event_refs = tuple(event_refs) + (cue_ref,)
+                policy = LIVED_WAKING_BODY_POLICY
         policy.validate()
         if t_monde < 0:
             raise ValueError("t_monde must be non-negative")
