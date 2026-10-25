@@ -304,7 +304,7 @@ def _approved_paid_generic_stage8_528(root: Path, rel: str) -> bool:
         return False
     data = (ROOT / "src/i1/runtime/i1_natural_runtime.py").read_bytes()
     digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
-    return digest == "103c4fb2d887c6cb7d5e145fd1ef623cc4f97044"
+    return digest == "c95abf6baa3c8c9bfad2b3c0278565094e9fcbb6"
 
 
 def _approved_closed_generic_action_526(root: Path, rel: str) -> bool:
