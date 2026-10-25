@@ -304,3 +304,16 @@ def candidate_versioned_waking_perception(
         "position": {k: int(position[k]) for k in ("x", "y")},
         "body_perceived": {k: float(body[k]) for k in keys},
     }
+
+
+# DORMANT: not registered with JournalViews, Memory or natural I1 birth.
+# This policy describes only fields already present in the first-person
+# sensory capture. It intentionally does not authorize Stage10 wake labels.
+DORMANT_WAKING_BODY_POLICY = AutobiographicalPolicy(
+    version="i1-first-person-waking-body-v1",
+    allowed_fields_by_kind={
+        "waking_body_perceived": (
+            "t_monde", "position", "body_perceived",
+        ),
+    },
+)
