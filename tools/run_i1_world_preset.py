@@ -926,6 +926,58 @@ def _m11_life(*, birth, params, life_id, path, steps):
                             f"step={receipt.world_step}, ref={ref}, "
                             f"closed_at_recall={authorized.get(ref)}, "
                             f"first_commit={first_autobiographical_commit.get(ref)}")
+                # #519: same charged read may describe genuine CLOSED,
+                # first-person awake-wait controls at this very site.
+                # WorldBody telemetry is used only by this post-COMMIT
+                # observer to cross-check sources; never passed to Memory.
+                wait_refs = info.get("wait_event_refs")
+                wait_count = info.get("wait_witness_count")
+                wait_channels = info.get("wait_same_step_channels")
+                if (type(wait_count) is not int or wait_count < 0
+                        or wait_count > 16
+                        or type(wait_refs) is not list
+                        or len(wait_refs) != 2 * wait_count
+                        or len(set(wait_refs)) != len(wait_refs)
+                        or not isinstance(wait_channels, dict)
+                        or set(wait_channels) != {
+                            "energy", "food", "water", "integrity"
+                        }
+                        or info.get("wait_causal_attribution") is not False
+                        or info.get("wait_decision_evidence") is not False):
+                    raise RuntimeError("invalid paid wait-control receipt")
+                for counts in wait_channels.values():
+                    if (not isinstance(counts, dict)
+                            or set(counts) != {
+                                "increase", "decrease", "stable", "unknown"
+                            }
+                            or any(type(v) is not int or v < 0
+                                   for v in counts.values())
+                            or sum(counts.values()) != wait_count):
+                        raise RuntimeError("invalid personally observed wait directions")
+                for ref in wait_refs:
+                    if (ref in info["event_refs"]
+                            or authorized.get(ref) != 1
+                            or ref not in memory_seen
+                            or first_autobiographical_commit.get(ref) is None
+                            or first_autobiographical_commit[ref]
+                               >= receipt.world_step):
+                        raise RuntimeError("unclosed or cross-activity wait source")
+                physical_controls = [
+                    prior for prior in trajectory
+                    if prior["world_step"] < receipt.world_step
+                    and prior["physical_journal_observation"] is not None
+                    and prior["physical_journal_observation"]["primitive"]
+                       == "attendre"
+                    and prior["position_after"] == position_before
+                ]
+                authentic_wait_pairs = {
+                    tuple(row["autobiographical_sleep_custody_467"]
+                          ["physical_source_refs"])
+                    for row in physical_controls
+                }
+                for index in range(0, len(wait_refs), 2):
+                    if tuple(wait_refs[index:index + 2]) not in authentic_wait_pairs:
+                        raise RuntimeError("paid wait-control source is not a lived local wait")
                 # #495: a paid autobiographical wake association must
                 # reference only unique, already-closed source ownership.
                 # This operator audit never supplies new facts to Memory.
@@ -993,6 +1045,14 @@ def _m11_life(*, birth, params, life_id, path, steps):
                            recalls[0]["data"]["witness_count"]
                         or data.get("same_step_channels") !=
                            recalls[0]["data"]["site_balance"]["same_step_channels"]
+                        or data.get("wait_witness_count") !=
+                           recalls[0]["data"]["wait_witness_count"]
+                        or data.get("wait_source_event_refs") !=
+                           recalls[0]["data"]["wait_event_refs"]
+                        or data.get("wait_same_step_channels") !=
+                           recalls[0]["data"]["wait_same_step_channels"]
+                        or data.get("wait_causal_attribution") is not False
+                        or data.get("wait_decision_evidence") is not False
                         or data.get("site_ref") !=
                            "sleep-site:%d:%d" % (
                                position_before["x"], position_before["y"])
@@ -1045,6 +1105,14 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 "observed_site": (
                     None if not recalls else list(recalls[0]["data"]["site"])),
                 "published_evidence": False,
+                "wait_witness_count": (
+                    0 if not recalls else recalls[0]["data"]["wait_witness_count"]),
+                "wait_source_event_refs": (
+                    [] if not recalls else list(recalls[0]["data"]["wait_event_refs"])),
+                "wait_same_step_channels": (
+                    None if not recalls else
+                    recalls[0]["data"]["wait_same_step_channels"]),
+                "wait_context_score_applied": False,
                 "waking_link_count": (
                     0 if not recalls else recalls[0]["data"]["waking_link_count"]),
                 "waking_links": (
