@@ -304,7 +304,7 @@ def _approved_paid_generic_stage8_528(root: Path, rel: str) -> bool:
         return False
     data = (ROOT / "src/i1/runtime/i1_natural_runtime.py").read_bytes()
     digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
-    return digest == "bcf7ded28d422d2c199f6d0587af182e221dca7e"
+    return digest == "9fc2b270ca4a3d170eaed1f35cfc4a6b0e276d6c"
 
 
 def _approved_lived_action_effects_530(root: Path, rel: str) -> bool:
