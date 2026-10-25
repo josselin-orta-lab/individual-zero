@@ -307,6 +307,20 @@ def _approved_paid_generic_stage8_528(root: Path, rel: str) -> bool:
     return digest == "9fc2b270ca4a3d170eaed1f35cfc4a6b0e276d6c"
 
 
+def _approved_diverse_action_recall_533(root: Path, rel: str) -> bool:
+    pins = {
+        "i1/modules/memory.py": ("src/i1/modules/memory.py",
+            "0b282299e155a0117340f058178027ee00e3f09d"),
+        "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py",
+            "4e8b63d4a71defbaac6cfe110ba7c2cafa397736"),
+    }
+    spec = pins.get(rel)
+    if spec is None or not (root / rel).is_file():
+        return False
+    data = (ROOT / spec[0]).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == spec[1]
+
+
 def _approved_lived_action_effects_530(root: Path, rel: str) -> bool:
     """Exact I1-only Memory effect-projection revision, not a parity bypass."""
     if rel != "i1/modules/memory.py" or not (root / rel).is_file():
@@ -1537,6 +1551,7 @@ def verify(reference_root: Path) -> None:
                 or _approved_closed_stationary_controls_519(new_root, rel)
                 or _approved_closed_generic_action_526(new_root, rel)
                 or _approved_lived_action_effects_530(new_root, rel)
+                or _approved_diverse_action_recall_533(new_root, rel)
                 or _approved_paid_generic_stage8_528(new_root, rel)
                 or (rel == "i1lab/journal_views.py"
                     and _approved_autobio_index_rehydration(

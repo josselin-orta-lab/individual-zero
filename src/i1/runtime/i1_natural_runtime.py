@@ -495,9 +495,11 @@ class I1Runtime(I1WaterPrudentRuntime):
                         or ev.t_monde != capture.t_monde
                         or ev.cycle != cycle):
                     continue
+                from i1.modules.memory import same_lived_command_parameters
                 matches = tuple(row for row in generic["witnesses"]
                                 if row["primitive"] == command.primitive
-                                and row["parameters"] == dict(command.parameters))
+                                and same_lived_command_parameters(
+                                    row["parameters"], command.parameters))
                 if not matches:
                     continue
                 self._write(
@@ -632,6 +634,7 @@ class I1Runtime(I1WaterPrudentRuntime):
                         "witnesses": self.memory.closed_applied_action_witnesses(
                             autobiography=projected,
                             now=capture.t_monde,
+                            per_command_limit=3,
                         ),
                     }
                     stationary = self.memory.closed_stationary_site_witnesses(
