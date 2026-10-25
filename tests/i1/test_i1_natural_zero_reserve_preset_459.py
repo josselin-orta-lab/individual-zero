@@ -233,6 +233,20 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
     print("I1_519_NATURAL_WAIT_CONTROLS",
           "unique_reads", reads,
           "control_occurrences", sum(r["wait_witness_count"] for r in recall_rows))
+    contrast = life["matched_stationary_site_audit_521"]
+    assert contrast["paid_reads"] == reads
+    assert contrast["sleep_occurrences"] == witnesses
+    assert contrast["wait_occurrences"] == sum(
+        row["wait_witness_count"] for row in recall_rows)
+    assert contrast["sleep_distinct"] > 0
+    assert contrast["wait_distinct"] > 0
+    assert contrast["matched_paid_reads"] > 0, contrast
+    assert contrast["matched_site_count"] > 0, contrast
+    assert contrast["sleep_distinct"] <= witnesses
+    assert contrast["wait_distinct"] <= contrast["wait_occurrences"]
+    assert contrast["causal_attribution"] is False
+    assert contrast["decision_influence_proven"] is False
+    print("I1_521_NATURAL_MATCHED_STATIONARY_SOURCES", contrast)
 
     assert all(row["waking_link_count"] == len(row["waking_links"])
                for row in recall_rows)
