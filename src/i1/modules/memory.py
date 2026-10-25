@@ -550,16 +550,19 @@ class EpisodicMemory:
         # Exact primitive + parameters identity, without a privileged action.
         # The already-bounded source scan is unchanged; the paid natural
         # caller can retain rare commands without giving Memory a score.
-        counts = {}
         selected = []
         for row in reversed(witnesses):
-            identity = (
-                row["primitive"],
-                tuple(sorted(row["parameters"].items())),
+            # A first-person scalar can be an authorized canonical-float
+            # mapping. Compare exact parameter structures, not a hash key
+            # that would crash on an unhashable nested scalar. The selected
+            # set is always <= 16, so equality checks remain bounded.
+            already_selected = sum(
+                previous["primitive"] == row["primitive"]
+                and previous["parameters"] == row["parameters"]
+                for previous in selected
             )
-            if counts.get(identity, 0) >= per_command_limit:
+            if already_selected >= per_command_limit:
                 continue
-            counts[identity] = counts.get(identity, 0) + 1
             selected.append(row)
             if len(selected) == limit:
                 break
