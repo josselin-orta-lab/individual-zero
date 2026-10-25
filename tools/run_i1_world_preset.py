@@ -522,6 +522,47 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 sleep_provenance = "reduced_sleep_continuation"
             else:
                 sleep_provenance = "ordinary_awake_admission"
+            # #495: independent dormant first-person eligibility test on
+            # original event IDs. This is operator-only evidence; never
+            # publish its result to Memory or re-author a DC-09 commitment.
+            from i1lab.i1_natural_prebody_policy import (
+                attested_postwake_perceptual_body,
+            )
+            wake_cue_candidate = None
+            if actual is not None:
+                source_entries = tuple(
+                    life._runtime.journal.entries_since(pre_count)
+                )
+                command_sources = [
+                    e for e in source_entries
+                    if e.causal_event.get("kind") == "command_experienced"
+                ]
+                physical_sources = [
+                    e for e in source_entries
+                    if e.causal_event.get("kind") == "world_transition_experienced"
+                ]
+                if len(command_sources) != 1 or len(physical_sources) != 1:
+                    raise RuntimeError("ambiguous dormant wake-cue source IDs")
+                wake_cue_candidate = attested_postwake_perceptual_body(
+                    journal=life._runtime.journal,
+                    t_monde=receipt.world_step,
+                    attempt_ref=command.get("attempt_ref"),
+                    command_ref=command_sources[0].event_id,
+                    physical_ref=physical_sources[0].event_id,
+                )
+            if (wake_cue_candidate is not None
+                    and sleep_provenance in (
+                        "ordinary_awake_admission",
+                        "reduced_sleep_continuation",
+                    )):
+                raise RuntimeError("dormant wake cue crossed sleep classifications")
+            if sleep_provenance == "readmitted_after_wake":
+                if (wake_cue_candidate is None
+                        or wake_cue_candidate["source_event_ref"] not in {
+                            e.event_id for e in source_entries
+                            if e.causal_event.get("kind") == "perceptual_capture"
+                        }):
+                    raise RuntimeError("true waking readmission lacks authentic cue")
             # #490: A waking re-admission is not merely a technical wake
             # label. It must have a full, same-attempt, pre-command sensory
             # capture already observed by the waking Stage3 path. Never use
@@ -580,6 +621,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 "wake_capture_after_control_boundary": (
                     sleep_provenance == "readmitted_after_wake"
                     and bool(same_step_capture)),
+                "dormant_wake_cue_eligible": wake_cue_candidate is not None,
                 "sleep_entered": bool(entered),
                 "woke": bool(wakes),
                 "wake_reason": None if not wakes else wakes[0]["data"]["reason"],

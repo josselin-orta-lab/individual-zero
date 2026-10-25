@@ -83,6 +83,20 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
                and not v["wake_capture_after_control_boundary"]
                for _, v in sleep_rows
                if v["provenance"] == "reduced_sleep_continuation")
+    # #495: verify dormant selector on real M11 source identities,
+    # independent of the operator's wake label and with NO Memory write.
+    assert all(v["dormant_wake_cue_eligible"]
+               for _, v in sleep_rows
+               if v["provenance"] == "readmitted_after_wake")
+    assert all(not v["dormant_wake_cue_eligible"]
+               for _, v in sleep_rows
+               if v["provenance"] in (
+                   "ordinary_awake_admission",
+                   "reduced_sleep_continuation"))
+    print("I1_495_NATURAL_DORMANT_WAKE_ELIGIBILITY",
+          sum(v["dormant_wake_cue_eligible"]
+              for _, v in sleep_rows),
+          "true_postwake_readmissions")
     print("I1_490_AUTHENTIC_WAKING_PERCEPTION",
           sum(v["wake_capture_after_control_boundary"]
               for _, v in sleep_rows),
