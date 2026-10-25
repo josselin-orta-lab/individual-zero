@@ -30,7 +30,8 @@ life_id="i1:508:cold-waking-links"
 def factory():
     return I1Runtime(birth_life_id=life_id,
                      autonomous_mortal=True, m11_sqlite_custody=True,
-                     wal_path=None, **params)
+                     wal_path=None, diagnostic_sample_cost_uc=1,
+                     module_occupancy_cost_uc=1, **params)
 def witness(runtime):
     memory=runtime.memory.export_causal_state()
     commits={
