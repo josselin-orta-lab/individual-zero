@@ -333,8 +333,11 @@ def _split_applied_sleep_decisions(trajectory):
             }
             decision_groups.append(active_decision)
         elif kind == "reduced_sleep_continuation":
-            if active_decision is None or sleep["woke"]:
+            if (active_decision is None or sleep["woke"]
+                    or not sleep["reduced_perception"]):
                 raise RuntimeError("unowned or waking reduced sleep continuation")
+            if row["world_step"] != active_decision["steps"][-1] + 1:
+                raise RuntimeError("nonconsecutive reduced sleep continuation")
         else:
             raise RuntimeError("unknown physical dormir admission classification")
         active_decision["steps"].append(row["world_step"])
