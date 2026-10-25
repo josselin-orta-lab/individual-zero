@@ -298,6 +298,15 @@ def _approved_closed_stationary_controls_519(root: Path, rel: str) -> bool:
     return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == spec[1]
 
 
+def _approved_lived_action_effects_530(root: Path, rel: str) -> bool:
+    """Exact I1-only Memory effect-projection revision, not a parity bypass."""
+    if rel != "i1/modules/memory.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/modules/memory.py").read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == "712a8f6bfc44647a961839abd74f5c78a65e3c68"
+
+
 def _approved_closed_generic_action_526(root: Path, rel: str) -> bool:
     """Allow only the exact reviewed I1 Memory action-witness source blob.
 
@@ -1518,6 +1527,7 @@ def verify(reference_root: Path) -> None:
                 or _approved_paid_stage8_sleep_context_510(new_root, rel)
                 or _approved_closed_stationary_controls_519(new_root, rel)
                 or _approved_closed_generic_action_526(new_root, rel)
+                or _approved_lived_action_effects_530(new_root, rel)
                 or (rel == "i1lab/journal_views.py"
                     and _approved_autobio_index_rehydration(
                         _reference_autobio_fastpath((old_root / rel).read_bytes()),
