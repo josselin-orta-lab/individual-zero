@@ -18,8 +18,7 @@ class ClosedRecallBoundary535(unittest.TestCase):
                 capture_output=True, text=True)
             self.assertEqual(build.returncode, 0, build.stdout + build.stderr)
             program = r"""
-from i1.modules.memory import EpisodicMemory, Episode
-from types import SimpleNamespace
+from i1.modules.memory import EpisodicMemory, Episode, MemoryConfig
 def ep(i):
     return Episode(
         id=f"episode:{i}", start_t_monde=i+1, end_t_monde=i+1,
@@ -58,6 +57,42 @@ assert all(w["primitive"]=="dormir" for w in rows)
 # A direct projection injection cannot overcome owner-side closed custody.
 assert m.closed_applied_action_witnesses(
     autobiography=events[:2], now=35)==()
+# A full native Memory causal export/restore retains the old first-person
+# episode, although the short action projection still excludes its refs.
+config = MemoryConfig(
+    version="i1-535-contract", prediction_error_multiplier=1.0,
+    max_episode_steps=8, link_delta_steps=0, recall_threshold=0.0,
+    recall_weight_recency=1.0, recall_weight_importance=0.0,
+    recall_weight_relevance=0.0, recall_recency_scale_steps=8,
+    contribution_ttl_steps=2,
+)
+m._config = config
+m._atomic_world_step_length_boundary = True
+m._open_event_refs = []
+m._open_start_t = None
+m._open_goal_ref = None
+m._open_body_start = None
+m._open_body_end = None
+m._open_zone_ref = None
+m._open_reward = 0.0
+m._open_surprise = 0.0
+m._episode_sequence = 34
+m._last_recalled_ref = None
+m._recall_above_threshold = set()
+m._intentions = {}
+m._episode_ids_dense = True
+snapshot = m.export_causal_state()
+assert snapshot["boundary_semantics"] == "atomic-world-step-length-v1"
+assert snapshot["episodes"][0]["event_refs"] == ["cmd0", "trans0"]
+restored = EpisodicMemory(config, atomic_world_step_length_boundary=True)
+restored.restore_causal_state(snapshot)
+assert restored.export_causal_state() == snapshot
+assert restored.episodes[0].event_refs == ("cmd0", "trans0")
+assert restored._find_closed_episode("episode:0").event_refs == ("cmd0", "trans0")
+assert {"cmd0", "trans0"}.isdisjoint(
+    restored.closed_sleep_recall_source_refs())
+assert restored.closed_applied_action_witnesses(
+    autobiography=events[:2], now=35) == ()
 # An open or later episode cannot become testimony.
 m._episodes.append(ep(34))
 assert "cmd34" not in m.closed_sleep_recall_source_refs()
