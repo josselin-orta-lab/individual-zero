@@ -258,7 +258,7 @@ def _approved_closed_waking_adjacency_495(root: Path, rel: str) -> bool:
     if rel != "i1/modules/memory.py" or not (root / rel).is_file():
         return False
     data = (ROOT / "src/i1/modules/memory.py").read_bytes()
-    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
     return digest == "3c8118ae8bafc7afab2c058a5b63033a5cf54208"
 
 
