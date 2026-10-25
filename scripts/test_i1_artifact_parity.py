@@ -350,6 +350,23 @@ def _approved_closed_generic_action_526(root: Path, rel: str) -> bool:
     return digest == "30d766e08888107d5b2eead9dcd4923e41663d38"
 
 
+def _approved_action_fragments_541(root: Path, rel: str) -> bool:
+    """Only #541's exact source-owned generic fragments and paid bridge."""
+    pins = {
+        "i1/modules/action_fragments.py": (
+            "src/i1/modules/action_fragments.py", "c83f9dbdb7fca88a0829e487e987c0e1720bad87"),
+        "i1lab/i1_natural_runtime.py": (
+            "src/i1/runtime/i1_natural_runtime.py", "d3252a2683a432c785adbc2fd792a5a4f65f430c"),
+    }
+    row = pins.get(rel)
+    if row is None or not (root / rel).is_file():
+        return False
+    content = (ROOT / row[0]).read_bytes()
+    source_sha = sha1(b"blob " + str(len(content)).encode("ascii")
+                      + b"\\0" + content).hexdigest()
+    return source_sha == row[1]
+
+
 def _approved_memory_overlap(before: bytes, after: bytes) -> bool:
     """Allow only the reviewed Stage7 exact reference-overlap replacement."""
     original = before.decode("utf-8")
@@ -1449,7 +1466,7 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_closed_sleep_site_467(new_root, rel) or _approved_transition_prebody_467(new_root, rel) or _approved_dormant_prebody_dc09_467(new_root, rel) or _approved_situated_sleep_473(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel) or _approved_site_328(new_root, rel) or _approved_wake_329(new_root, rel) or _approved_memory_359(new_root, rel) or _approved_option_360(new_root, rel) or _approved_prospect_361(new_root, rel) or _approved_memory_426(new_root, rel) or _approved_lived_prospect_427(new_root, rel) or _approved_metabolic_v4_461(new_root, rel) or _approved_zero_reserve_457(new_root, rel)))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_closed_sleep_site_467(new_root, rel) or _approved_transition_prebody_467(new_root, rel) or _approved_dormant_prebody_dc09_467(new_root, rel) or _approved_situated_sleep_473(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel) or _approved_site_328(new_root, rel) or _approved_wake_329(new_root, rel) or _approved_memory_359(new_root, rel) or _approved_option_360(new_root, rel) or _approved_prospect_361(new_root, rel) or _approved_memory_426(new_root, rel) or _approved_lived_prospect_427(new_root, rel) or _approved_metabolic_v4_461(new_root, rel) or _approved_zero_reserve_457(new_root, rel) or _approved_action_fragments_541(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
             if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_closed_sleep_site_467(new_root, rel) or _approved_transition_prebody_467(new_root, rel) or _approved_dormant_prebody_dc09_467(new_root, rel) or _approved_situated_sleep_473(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel) or _approved_site_328(new_root, rel) or _approved_wake_329(new_root, rel) or _approved_memory_359(new_root, rel) or _approved_option_360(new_root, rel) or _approved_prospect_361(new_root, rel) or _approved_memory_426(new_root, rel) or _approved_lived_prospect_427(new_root, rel) or _approved_metabolic_v4_461(new_root, rel) or _approved_zero_reserve_457(new_root, rel)) and not (
@@ -1561,6 +1578,7 @@ def verify(reference_root: Path) -> None:
                 or _approved_diverse_action_recall_533(new_root, rel)
                 or _approved_recalled_episode_custody_535(new_root, rel)
                 or _approved_paid_generic_stage8_528(new_root, rel)
+                or _approved_action_fragments_541(new_root, rel)
                 or (rel == "i1lab/journal_views.py"
                     and _approved_autobio_index_rehydration(
                         _reference_autobio_fastpath((old_root / rel).read_bytes()),
