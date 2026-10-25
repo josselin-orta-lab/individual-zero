@@ -213,7 +213,33 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
     reads = sum(row["read_count"] for row in recall_rows)
     witnesses = sum(row["witness_count"] for row in recall_rows)
     assert paid >= reads
+    # #495: only links from already paid closed-source recall are reported.
+    # No link or waking cue is inferred from technical wake markers.
     assert all(row["published_evidence"] is False for row in recall_rows)
+    assert all(row["waking_link_count"] == len(row["waking_links"])
+               for row in recall_rows)
+    assert all(row["waking_link_count"] <= row["witness_count"]
+               for row in recall_rows)
+    assert all(row["waking_link_count"] == 0
+               for row in recall_rows if not row["read_count"])
+    for recall in recall_rows:
+        for link in recall["waking_links"]:
+            assert link["relation"] == "immediate_next_step_only"
+            assert link["waking_step"] == link["sleep_step"] + 1
+            assert len(link["sleep_source_refs"]) == 2
+            assert all(ref in recall["source_event_refs"]
+                       for ref in link["sleep_source_refs"])
+            assert all(type(link[k]) is str and link[k]
+                       for k in ("waking_cue_ref", "waking_cue_episode_ref",
+                                 "waking_applied_command_ref",
+                                 "waking_applied_transition_ref",
+                                 "waking_applied_primitive"))
+            assert len({link["waking_cue_ref"],
+                        link["waking_applied_command_ref"],
+                        link["waking_applied_transition_ref"]}) == 3
+    print("I1_495_PAID_WAKING_LINKS",
+          "reads", reads,
+          "links", sum(x["waking_link_count"] for x in recall_rows))
     assert all(len(row["source_event_refs"]) == 2 * row["witness_count"]
                for row in recall_rows)
     assert all(row["read_count"] in (0, 1) for row in recall_rows)
