@@ -107,6 +107,31 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
         if row["transition_ingested_step"] is not None:
             assert row["transition_committed_step"] is not None
             assert row["transition_committed_step"] <= row["transition_ingested_step"]
+    # #495 L2 custody: a personally permitted waking cue must not become
+    # Memory-visible before its exact-source DC-09 commitment. Absence from
+    # a closed episode is UNKNOWN, not fabricated continuous sleep memory.
+    assert all(
+        row["waking_autobiographical_ref"] is None
+        or (row["waking_autobiographical_ref"]
+            not in (row["first_person_capture_ref"],
+                    row["applied_transition_ref"])
+            and row["waking_commit_step"] is not None)
+        for row in postwake
+    )
+    assert any(row["waking_autobiographical_ref"] is not None
+               for row in postwake)
+    for row in postwake:
+        if row["waking_ingestion_step"] is not None:
+            assert row["waking_commit_step"] <= row["waking_ingestion_step"]
+        if row["waking_closed_episode_ref"] is not None:
+            assert row["waking_ingestion_step"] is not None
+    print("I1_495_WAKING_MEMORY_SOURCE_CUSTODY",
+          "committed", sum(x["waking_commit_step"] is not None
+                           for x in postwake),
+          "ingested", sum(x["waking_ingestion_step"] is not None
+                          for x in postwake),
+          "closed", sum(x["waking_closed_episode_ref"] is not None
+                        for x in postwake))
     print("I1_495_NATURAL_WAKE_TRANSITION_CUSTODY",
           "perceived", len(postwake),
           "committed", sum(x["transition_committed_step"] is not None

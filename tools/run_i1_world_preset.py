@@ -666,6 +666,9 @@ def _m11_life(*, birth, params, life_id, path, steps):
                     and bool(same_step_capture)),
                 "dormant_wake_cue_eligible": wake_cue_candidate is not None,
                 "waking_dc09_committed": bool(wake_commits),
+                "waking_dc09_source_ref": (
+                    None if not wake_commits else
+                    wake_commits[0]["event_refs"][-1]),
                 "waking_dc09_terminal_uncommitted": (
                     wake_cue_candidate is not None and receipt.status == "dead"
                     and not wake_commits and not wake_events),
@@ -1040,6 +1043,25 @@ def _m11_life(*, birth, params, life_id, path, steps):
             raise RuntimeError("unversioned wake capture promoted into Memory")
         if len(owners) > 1:
             raise RuntimeError("duplicate wake transition episode owner")
+        wake_ref = sleep["waking_dc09_source_ref"]
+        if wake_ref is not None:
+            if (not sleep["waking_dc09_committed"]
+                    or type(wake_ref) is not str or not wake_ref
+                    or wake_ref == physical_ref or wake_ref == capture_ref):
+                raise RuntimeError("ambiguous waking autobiographical source")
+            wake_owners = indexed_refs.get(wake_ref, [])
+            if len(wake_owners) > 1:
+                raise RuntimeError("duplicated waking memory episode ownership")
+            wake_commit_step = first_autobiographical_commit.get(wake_ref)
+            wake_ingest_step = first_memory_ingestion.get(wake_ref)
+            if (wake_commit_step is None
+                    or wake_ingest_step is not None
+                    and wake_ingest_step < wake_commit_step
+                    or wake_owners and wake_ingest_step is None):
+                raise RuntimeError("unowned or premature waking Memory source")
+        else:
+            wake_owners = []
+            wake_commit_step = wake_ingest_step = None
         commit_step = first_autobiographical_commit.get(physical_ref)
         ingest_step = first_memory_ingestion.get(physical_ref)
         if (ingest_step is not None
@@ -1051,6 +1073,11 @@ def _m11_life(*, birth, params, life_id, path, steps):
             "step": row["world_step"],
             "first_person_capture_ref": capture_ref,
             "applied_transition_ref": physical_ref,
+            "waking_autobiographical_ref": wake_ref,
+            "waking_commit_step": wake_commit_step,
+            "waking_ingestion_step": wake_ingest_step,
+            "waking_closed_episode_ref": (
+                None if not wake_owners else wake_owners[0]),
             "transition_committed_step": commit_step,
             "transition_ingested_step": ingest_step,
             "closed_episode_ref": None if not owners else owners[0],
