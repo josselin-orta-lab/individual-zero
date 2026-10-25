@@ -257,3 +257,50 @@ def attested_postwake_perceptual_body(
             for k in ("energy", "food", "water", "integrity")
         },
     }
+
+
+def candidate_versioned_waking_perception(
+    *, journal, t_monde: int, attempt_ref: str,
+    command_ref: str, physical_ref: str,
+) -> dict[str, object] | None:
+    """DORMANT: a versioned, strictly perceptual candidate; never DC-09 output.
+
+    A caller may inspect this only after an actual physical transition.
+    It does not publish an event, mutate an owner, or label the elapsed sleep
+    interval as remembered. Every returned field is either a stable source
+    reference or part of the authenticated first-person sensory capture.
+    """
+    from math import isfinite
+
+    candidate = attested_postwake_perceptual_body(
+        journal=journal, t_monde=t_monde, attempt_ref=attempt_ref,
+        command_ref=command_ref, physical_ref=physical_ref,
+    )
+    if candidate is None:
+        return None
+    if set(candidate) != {
+        "source_event_ref", "t_monde", "position", "body_perceived",
+    }:
+        return None
+    source = candidate["source_event_ref"]
+    position = candidate["position"]
+    body = candidate["body_perceived"]
+    keys = ("energy", "food", "water", "integrity")
+    if (type(source) is not str or not source
+            or type(candidate["t_monde"]) is not int
+            or candidate["t_monde"] != t_monde
+            or not isinstance(position, dict)
+            or set(position) != {"x", "y"}
+            or any(type(position[k]) is not int for k in ("x", "y"))
+            or not isinstance(body, dict) or set(body) != set(keys)
+            or any(type(body[k]) not in (int, float)
+                   or not isfinite(body[k]) or not 0 <= body[k] <= 100
+                   for k in keys)):
+        return None
+    return {
+        "schema": "i1-perceived-waking-body-candidate-v1",
+        "source_event_ref": source,
+        "t_monde": t_monde,
+        "position": {k: int(position[k]) for k in ("x", "y")},
+        "body_perceived": {k: float(body[k]) for k in keys},
+    }
