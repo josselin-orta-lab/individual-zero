@@ -497,6 +497,26 @@ class I1Runtime(I1WaterPrudentRuntime):
                     balance = self.memory.describe_closed_sleep_site(
                         witnesses=rows, site=(capture.x, capture.y),
                     )
+                    # #495: surface only source-owned, bounded temporal
+                    # associations from THIS already-paid Memory read. They
+                    # are observer evidence of what was recalled, not an
+                    # inferred session, Stage8 value or motor permission.
+                    waking_links = [
+                        {
+                            "sleep_step": row["step"],
+                            "sleep_source_refs": list(row["source_event_refs"]),
+                            "waking_step": link["step"],
+                            "waking_cue_ref": link["cue_event_ref"],
+                            "waking_cue_episode_ref": link["cue_episode_ref"],
+                            "waking_applied_command_ref": link["applied_command_ref"],
+                            "waking_applied_transition_ref": link["applied_transition_ref"],
+                            "waking_applied_primitive": link["applied_primitive"],
+                            "relation": link["relation"],
+                        }
+                        for row in rows
+                        for link in (row["next_step_waking"],)
+                        if link is not None
+                    ]
                     self._write(
                         kind="i1_sleep_site_recall_consulted", cycle=cycle,
                         data={
@@ -508,6 +528,9 @@ class I1Runtime(I1WaterPrudentRuntime):
                             }),
                             "charged_operation": _SLEEP_RECALL_OPERATION,
                             "evidence_applied": False,
+                            "waking_link_count": len(waking_links),
+                            "waking_links": waking_links,
+                            "continuous_subjective_session_proven": False,
                             "site_balance": {
                                 "witness_count": balance["witness_count"],
                                 "channels": balance["channels"],

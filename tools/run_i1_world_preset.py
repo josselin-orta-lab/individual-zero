@@ -836,6 +836,53 @@ def _m11_life(*, birth, params, life_id, path, steps):
                             f"step={receipt.world_step}, ref={ref}, "
                             f"closed_at_recall={authorized.get(ref)}, "
                             f"first_commit={first_autobiographical_commit.get(ref)}")
+                # #495: a paid autobiographical wake association must
+                # reference only unique, already-closed source ownership.
+                # This operator audit never supplies new facts to Memory.
+                links = info.get("waking_links")
+                if (type(info.get("waking_link_count")) is not int
+                        or not isinstance(links, list)
+                        or info["waking_link_count"] != len(links)
+                        or len(links) > info["witness_count"]
+                        or info.get("continuous_subjective_session_proven")
+                           is not False):
+                    raise RuntimeError("invalid paid waking-link receipt")
+                for link in links:
+                    if (type(link) is not dict
+                            or link.get("relation") != "immediate_next_step_only"
+                            or type(link.get("sleep_step")) is not int
+                            or type(link.get("waking_step")) is not int
+                            or link["waking_step"] != link["sleep_step"] + 1
+                            or not isinstance(link.get("sleep_source_refs"), list)
+                            or len(link["sleep_source_refs"]) != 2
+                            or any(ref not in info["event_refs"]
+                                   for ref in link["sleep_source_refs"])
+                            or any(type(link.get(k)) is not str or not link[k]
+                                   for k in (
+                                       "waking_cue_ref",
+                                       "waking_cue_episode_ref",
+                                       "waking_applied_command_ref",
+                                       "waking_applied_transition_ref",
+                                       "waking_applied_primitive",
+                                   ))):
+                        raise RuntimeError("malformed paid waking-link provenance")
+                    refs = (link["waking_cue_ref"],
+                            link["waking_applied_command_ref"],
+                            link["waking_applied_transition_ref"])
+                    if (len(set(refs)) != 3
+                            or any(authorized.get(ref) != 1
+                                   or ref not in memory_seen
+                                   or first_autobiographical_commit.get(ref)
+                                      is None
+                                   or first_autobiographical_commit[ref]
+                                      >= receipt.world_step
+                                   for ref in refs)
+                            or not any(link["waking_cue_ref"] in
+                                       episode["event_refs"]
+                                       and episode["id"] ==
+                                       link["waking_cue_episode_ref"]
+                                       for episode in memory_image["episodes"])):
+                        raise RuntimeError("unclosed paid waking-link source")
                 # Memory closure events are the only extra same-step source
                 # of ownership beyond the immutable pre-step causal image.
                 # This does not grant I1 access to operator-only state.
@@ -857,6 +904,10 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 "observed_site": (
                     None if not recalls else list(recalls[0]["data"]["site"])),
                 "published_evidence": False,
+                "waking_link_count": (
+                    0 if not recalls else recalls[0]["data"]["waking_link_count"]),
+                "waking_links": (
+                    [] if not recalls else list(recalls[0]["data"]["waking_links"])),
                 "mid_step_episodes_closed_before_read": (
                     0 if not recalls else same_step_closed),
             }
