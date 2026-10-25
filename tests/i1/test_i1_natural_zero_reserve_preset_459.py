@@ -261,6 +261,16 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
                for context, recall in zip(contexts, recall_rows)
                if context["read_count"])
     assert sum(row["read_count"] for row in contexts) > 0
+    # #512: natural Q is explicitly spatial, so old personal experience
+    # cannot be added a second time as an untested Memory site bonus.
+    assert all(row["q_spatial_features_present"] is True for row in contexts)
+    assert all({"x", "y", "energy", "food", "water", "integrity"}
+               <= set(row["q_feature_names"]) for row in contexts)
+    assert all(row["q_signature_general"] == "primitive:dormir"
+               and row["independent_context_value_established"] is False
+               for row in contexts)
+    print("I1_512_NATURAL_SLEEP_Q_SPATIAL_OVERLAP",
+          "observed", sum(x["read_count"] for x in contexts))
     print("I1_510_PAID_STAGE8_SLEEP_CONTEXT",
           "observed", sum(row["read_count"] for row in contexts),
           "paid_reads", reads)

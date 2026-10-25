@@ -1008,7 +1008,18 @@ def _m11_life(*, birth, params, life_id, path, steps):
                                    and e.get("cycle") == seen_context.get("cycle")
                                    for e in assessments)):
                     raise RuntimeError("paid sleep context was not identical to Stage8")
+            # #512: Q already represents spatial coordinates, bodily state,
+            # time and goals. Observer-only metadata cannot become a second
+            # source of value or alter the already evaluated Stage8 score.
+            td_features = tuple(life._runtime.q_active.config.features.feature_names)
+            if context_receipts and not {"x", "y"}.issubset(td_features):
+                raise RuntimeError("sleep context Q spatial overlap contract changed")
             context_audit = {
+                "q_spatial_features_present": (
+                    "x" in td_features and "y" in td_features),
+                "q_feature_names": list(td_features),
+                "q_signature_general": "primitive:dormir",
+                "independent_context_value_established": False,
                 "read_count": len(context_receipts),
                 "source_refs": ([] if not context_receipts else
                                 context_receipts[0]["data"]["source_event_refs"]),
