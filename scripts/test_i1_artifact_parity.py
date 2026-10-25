@@ -280,6 +280,24 @@ def _approved_paid_stage8_sleep_context_510(root: Path, rel: str) -> bool:
     return digest == "47e19dec543ede1a4fd5871326675de89689ae67"
 
 
+def _approved_closed_stationary_controls_519(root: Path, rel: str) -> bool:
+    pins = {
+        "i1/modules/memory.py": (
+            "src/i1/modules/memory.py",
+            "ada5979f60e0480b894e96cd4506b2268b280513",
+        ),
+        "i1lab/i1_natural_runtime.py": (
+            "src/i1/runtime/i1_natural_runtime.py",
+            "4b2a84db7fd055afd5fc1e054368078d5ab08c76",
+        ),
+    }
+    spec = pins.get(rel)
+    if spec is None or not (root / rel).is_file():
+        return False
+    data = (ROOT / spec[0]).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == spec[1]
+
+
 def _approved_memory_overlap(before: bytes, after: bytes) -> bool:
     """Allow only the reviewed Stage7 exact reference-overlap replacement."""
     original = before.decode("utf-8")
@@ -1485,6 +1503,7 @@ def verify(reference_root: Path) -> None:
                 or _approved_closed_waking_adjacency_495(new_root, rel)
                 or _approved_paid_waking_link_495(new_root, rel)
                 or _approved_paid_stage8_sleep_context_510(new_root, rel)
+                or _approved_closed_stationary_controls_519(new_root, rel)
                 or (rel == "i1lab/journal_views.py"
                     and _approved_autobio_index_rehydration(
                         _reference_autobio_fastpath((old_root / rel).read_bytes()),

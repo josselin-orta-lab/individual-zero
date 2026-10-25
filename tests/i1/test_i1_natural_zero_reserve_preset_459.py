@@ -216,6 +216,24 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
     # #495: only links from already paid closed-source recall are reported.
     # No link or waking cue is inferred from technical wake markers.
     assert all(row["published_evidence"] is False for row in recall_rows)
+    # #519: wake-control comparison shares the already charged read.
+    # An all-sleep natural life may supply zero wait witnesses; this is
+    # truthful absence, not an excuse to inject synthetic comparisons.
+    assert all(row["wait_context_score_applied"] is False for row in recall_rows)
+    for row in recall_rows:
+        assert row["wait_witness_count"] >= 0
+        assert len(row["wait_source_event_refs"]) == 2 * row["wait_witness_count"]
+        assert not set(row["wait_source_event_refs"]) & set(row["source_event_refs"])
+        if row["read_count"]:
+            assert all(sum(c.values()) == row["wait_witness_count"]
+                       for c in row["wait_same_step_channels"].values())
+        else:
+            assert row["wait_witness_count"] == 0
+            assert row["wait_same_step_channels"] is None
+    print("I1_519_NATURAL_WAIT_CONTROLS",
+          "unique_reads", reads,
+          "control_occurrences", sum(r["wait_witness_count"] for r in recall_rows))
+
     assert all(row["waking_link_count"] == len(row["waking_links"])
                for row in recall_rows)
     assert all(row["waking_link_count"] <= row["witness_count"]
