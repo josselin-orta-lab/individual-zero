@@ -115,14 +115,25 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
                           for x in postwake),
           "closed", sum(x["closed_episode_ref"] is not None
                         for x in postwake))
-    assert all(v["waking_dc09_committed"]
-               for _, v in sleep_rows
-               if v["provenance"] == "readmitted_after_wake")
+    # A terminal physical transition is perceptible before death, but the
+    # mortal boundary MUST NOT create a subsequent autobiographical commit.
+    assert all(
+        v["waking_dc09_committed"]
+        or (v["waking_dc09_terminal_uncommitted"]
+            and step == last["world_step"] and life["lifecycle"] == "dead")
+        for step, v in sleep_rows
+        if v["provenance"] == "readmitted_after_wake"
+    )
     assert all(not v["waking_dc09_committed"]
                for _, v in sleep_rows
                if v["provenance"] in (
                    "ordinary_awake_admission",
                    "reduced_sleep_continuation"))
+    assert sum(v["waking_dc09_terminal_uncommitted"]
+               for _, v in sleep_rows) <= 1
+    assert all(not v["waking_dc09_committed"]
+               for _, v in sleep_rows if v["waking_dc09_terminal_uncommitted"])
+
     print("I1_495_NATIVE_WAKING_DC09",
           sum(v["waking_dc09_committed"] for _, v in sleep_rows),
           "postwake committed cues")
