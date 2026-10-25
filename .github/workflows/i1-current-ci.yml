@@ -113,6 +113,10 @@ jobs:
         run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
       - name: Frozen I0 and versioned Lab source guard
         run: python -m unittest discover -s tests/i1 -p test_i1_source_snapshot.py -v
+      - name: Generic action fragment provenance and paid Stage8 regression
+        run: |
+          python -m unittest discover -s tests/i1 -p test_i1_closed_action_fragments_541.py -v
+          python -m unittest discover -s tests/i1 -p test_i1_paid_generic_stage8_context_528.py -v
       - name: Current I1 independent SMOKE/FULL
         run: python scripts/test_i1_ci.py --mode ${{ github.event.inputs.mode || 'smoke' }} --seed 246 --junit reports/i1-${{ matrix.python-version }}.xml
       - name: I1 local perception differential microbenchmark (informational)
