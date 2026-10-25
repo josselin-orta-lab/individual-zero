@@ -253,6 +253,15 @@ def _approved_closed_sleep_site_467(root: Path, rel: str) -> bool:
             and (root / rel).is_file())
 
 
+def _approved_closed_waking_adjacency_495(root: Path, rel: str) -> bool:
+    """Pin the exact closed-source, non-motor waking association on I1 only."""
+    if rel != "i1/modules/memory.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/modules/memory.py").read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest()
+    return digest == "3c8118ae8bafc7afab2c058a5b63033a5cf54208"
+
+
 def _approved_memory_overlap(before: bytes, after: bytes) -> bool:
     """Allow only the reviewed Stage7 exact reference-overlap replacement."""
     original = before.decode("utf-8")
@@ -1455,6 +1464,7 @@ def verify(reference_root: Path) -> None:
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
                 or _approved_unique_dc09_source_467(new_root, rel) or _approved_native_prebody_activation_467(new_root, rel)
+                or _approved_closed_waking_adjacency_495(new_root, rel)
                 or (rel == "i1lab/journal_views.py"
                     and _approved_autobio_index_rehydration(
                         _reference_autobio_fastpath((old_root / rel).read_bytes()),
