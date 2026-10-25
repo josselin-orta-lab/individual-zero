@@ -550,8 +550,12 @@ def _m11_life(*, birth, params, life_id, path, steps):
                     command_ref=command_sources[0].event_id,
                     physical_ref=physical_sources[0].event_id,
                 )
-            if wake_cue_candidate is not None and sleep_provenance != "readmitted_after_wake":
-                raise RuntimeError("dormant postwake evidence crossed sleep classifications")
+            if (wake_cue_candidate is not None
+                    and sleep_provenance in (
+                        "ordinary_awake_admission",
+                        "reduced_sleep_continuation",
+                    )):
+                raise RuntimeError("dormant wake cue crossed sleep classifications")
             if sleep_provenance == "readmitted_after_wake":
                 if (wake_cue_candidate is None
                         or wake_cue_candidate["source_event_ref"] not in {
