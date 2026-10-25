@@ -317,3 +317,15 @@ DORMANT_WAKING_BODY_POLICY = AutobiographicalPolicy(
         ),
     },
 )
+
+
+# Only a born I1 with an authenticated physically applied wake path may use
+# this composite DC-09 version. Historical filter versions remain readable.
+LIVED_WAKING_BODY_POLICY = AutobiographicalPolicy(
+    version="i1-lived-prebody-waking-body-v1",
+    allowed_fields_by_kind={
+        **LIVED_PREBODY_POLICY.allowed_fields_by_kind,
+        **DORMANT_WAKING_BODY_POLICY.allowed_fields_by_kind,
+    },
+)
+LIVED_WAKING_BODY_POLICY.validate()

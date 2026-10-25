@@ -563,6 +563,49 @@ def _m11_life(*, birth, params, life_id, path, steps):
                             if e.causal_event.get("kind") == "perceptual_capture"
                         }):
                     raise RuntimeError("true waking readmission lacks authentic cue")
+            # #495: independently verify native DC-09 custody of the new
+            # first-person waking event. The selector's output is not Memory;
+            # the actual AutoSegmentCommit must own the distinct new source.
+            wake_events = [
+                e for e in step_events
+                if e.get("kind") == "waking_body_perceived"
+            ]
+            wake_commits = [
+                e for e in step_events
+                if e.get("kind") == "auto_segment_commit"
+                and e.get("filter_version")
+                    == "i1-lived-prebody-waking-body-v1"
+            ]
+            # Mortal death is an intentionally uncommitted terminal transition.
+            # The first-person capture may be authentic, but no post-death
+            # DC-09 event or AutoSegmentCommit may be published.
+            expected_wake_commit = (
+                wake_cue_candidate is not None and receipt.status == "active"
+            )
+            if (bool(wake_events) != expected_wake_commit
+                    or bool(wake_commits) != expected_wake_commit
+                    or len(wake_events) > 1 or len(wake_commits) > 1):
+                raise RuntimeError(
+                    "waking DC-09 commitment and lived capture disagree: "
+                    f"step={receipt.world_step} source={sleep_provenance} "
+                    f"candidate={wake_cue_candidate is not None} "
+                    f"waking_events={len(wake_events)} "
+                    f"waking_commits={len(wake_commits)} "
+                    f"filters={[e.get('filter_version') for e in step_events if e.get('kind') == 'auto_segment_commit']} "
+                    f"step_status={receipt.status}"
+                )
+            if wake_events:
+                if (len(wake_commits) != 1
+                        or wake_events[0]["body_perceived"]
+                           != wake_cue_candidate["body_perceived"]
+                        or wake_events[0]["position"]
+                           != wake_cue_candidate["position"]):
+                    raise RuntimeError("native waking sensory payload mismatch")
+                cue_id = wake_commits[0]["event_refs"][-1]
+                if (len(wake_commits[0]["event_refs"]) < 3
+                        or life._runtime.journal.get(cue_id).causal_event
+                           != wake_events[0]):
+                    raise RuntimeError("waking cue not owned by its DC-09 commitment")
             # #490: A waking re-admission is not merely a technical wake
             # label. It must have a full, same-attempt, pre-command sensory
             # capture already observed by the waking Stage3 path. Never use
@@ -622,6 +665,10 @@ def _m11_life(*, birth, params, life_id, path, steps):
                     sleep_provenance == "readmitted_after_wake"
                     and bool(same_step_capture)),
                 "dormant_wake_cue_eligible": wake_cue_candidate is not None,
+                "waking_dc09_committed": bool(wake_commits),
+                "waking_dc09_terminal_uncommitted": (
+                    wake_cue_candidate is not None and receipt.status == "dead"
+                    and not wake_commits and not wake_events),
                 "dormant_wake_capture_ref": (
                     None if wake_cue_candidate is None else
                     wake_cue_candidate["source_event_ref"]),

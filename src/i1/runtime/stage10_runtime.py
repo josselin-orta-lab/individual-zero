@@ -46,7 +46,9 @@ from .determinism import deterministic_id
 from .stage4_runtime import Stage4StepResult
 from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY
 from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY
-from .i1_natural_prebody_policy import LIVED_PREBODY_POLICY
+from .i1_natural_prebody_policy import (
+    LIVED_PREBODY_POLICY, LIVED_WAKING_BODY_POLICY,
+)
 from .stage9_runtime import Stage9Config, Stage9Runtime
 
 
@@ -583,6 +585,8 @@ class Stage10Runtime(Stage9Runtime):
                         STAGE7_AUTOBIOGRAPHICAL_POLICY,
                     LIVED_PREBODY_POLICY.version:
                         LIVED_PREBODY_POLICY,
+                    LIVED_WAKING_BODY_POLICY.version:
+                        LIVED_WAKING_BODY_POLICY,
                 },
             )
             self.consolidation.begin(tx)
@@ -617,6 +621,8 @@ class Stage10Runtime(Stage9Runtime):
                     STAGE7_AUTOBIOGRAPHICAL_POLICY,
                 LIVED_PREBODY_POLICY.version:
                     LIVED_PREBODY_POLICY,
+                LIVED_WAKING_BODY_POLICY.version:
+                    LIVED_WAKING_BODY_POLICY,
             },
         )
         algorithm = LivedSixPassAlgorithm(

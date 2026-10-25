@@ -137,6 +137,41 @@ class JournalViews:
                 attempt_ref=attempt_ref, command_ref=event_refs[-2],
                 physical_ref=event_refs[-1],
             )
+        # Birth-gated I1-only post-physical sensory event. It is authored
+        # here, not by Memory, only if the one captured waking body matched
+        # the applied physical prebody AND same-attempt Stage10 wake receipts.
+        # A bare technical wake label is not an autobiographical source.
+        if (self._i1_prebody_birth_enabled
+                and policy.version == "i1-lived-body-before-v1"
+                and len(event_refs) >= 2):
+            from .i1_natural_prebody_policy import (
+                candidate_versioned_waking_perception,
+                LIVED_WAKING_BODY_POLICY,
+            )
+            cue = candidate_versioned_waking_perception(
+                journal=self._journal, t_monde=t_monde,
+                attempt_ref=attempt_ref, command_ref=event_refs[-2],
+                physical_ref=event_refs[-1],
+            )
+            if cue is not None:
+                cue_ref = deterministic_id(
+                    "journal-event-v1", "i1-first-person-wake",
+                    t_monde, attempt_ref,
+                    cue["source_event_ref"], event_refs[-1],
+                )
+                self._journal.append(
+                    event_id=cue_ref,
+                    causal_event={
+                        "kind": "waking_body_perceived",
+                        "emitter": "i1-first-person-wake",
+                        "t_monde": t_monde,
+                        "attempt_ref": attempt_ref,
+                        "position": dict(cue["position"]),
+                        "body_perceived": dict(cue["body_perceived"]),
+                    },
+                )
+                event_refs = tuple(event_refs) + (cue_ref,)
+                policy = LIVED_WAKING_BODY_POLICY
         policy.validate()
         if t_monde < 0:
             raise ValueError("t_monde must be non-negative")
@@ -162,6 +197,38 @@ class JournalViews:
                 )
             if entry.causal_event.get("t_monde") != t_monde:
                 raise ValueError("autobiographical source world step mismatch")
+            if entry.causal_event.get("kind") == "waking_body_perceived":
+                # Never let a custom policy commit a forged sensory event.
+                # Require the unique produced event as the final source,
+                # and independently re-check the capture and physical chain.
+                from .i1_natural_prebody_policy import (
+                    candidate_versioned_waking_perception,
+                    LIVED_WAKING_BODY_POLICY,
+                )
+                if (policy.version != LIVED_WAKING_BODY_POLICY.version
+                        or event_ref != event_refs[-1]
+                        or len(event_refs) < 3):
+                    raise ValueError("unproven waking cue commit")
+                original_command, original_physical = (
+                    event_refs[-3], event_refs[-2])
+                cue = candidate_versioned_waking_perception(
+                    journal=self._journal, t_monde=t_monde,
+                    attempt_ref=attempt_ref,
+                    command_ref=original_command,
+                    physical_ref=original_physical,
+                )
+                if (cue is None
+                        or event_ref != deterministic_id(
+                            "journal-event-v1", "i1-first-person-wake",
+                            t_monde, attempt_ref,
+                            cue["source_event_ref"], original_physical)
+                        or entry.causal_event.get("emitter")
+                           != "i1-first-person-wake"
+                        or entry.causal_event.get("position")
+                           != cue["position"]
+                        or entry.causal_event.get("body_perceived")
+                           != cue["body_perceived"]):
+                    raise ValueError("forged waking cue provenance")
             # Check the entire authorized nested projection before publishing
             # the append-only commitment, not only at the next Memory read.
             if type(policy) is AutobiographicalPolicy:

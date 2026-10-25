@@ -151,15 +151,15 @@ def _approved_native_prebody_activation_467(root: Path, rel: str) -> bool:
     pins = {
         "i1lab/journal_views.py": (
             "src/i1/runtime/journal_views.py",
-            "4de43bd7ffb77d876feb96d7952a00b52f5e492c",
+            "1e36a97f20443470a3d317bb1da62d9887c4f360",
         ),
         "i1lab/i1_natural_runtime.py": (
             "src/i1/runtime/i1_natural_runtime.py",
-            "68108bdd5df40f58f63afb87f13cfa7c90e528de",
+            "c8fbd15318f2ffb29a9ad2e2a7830b79b5a50153",
         ),
         "i1lab/stage10_runtime.py": (
             "src/i1/runtime/stage10_runtime.py",
-            "0104d83e892c160d224d275b69dde66cb612fb2e",
+            "08cd13ae3d4b72c5afedb1f446caac1aa3c8d4f4",
         ),
         "i1lab/m11_transactional_mortal.py": (
             "src/i1/runtime/m11_transactional_mortal.py",
@@ -191,7 +191,7 @@ def _approved_dormant_prebody_dc09_467(root: Path, rel: str) -> bool:
         ),
         "i1lab/i1_natural_prebody_policy.py": (
             "src/i1/runtime/i1_natural_prebody_policy.py",
-            "d98387d2ab983617c0393e9028b05679f9910e91",
+            "af80a2dff38559a63f68c5cafb767f661c9fac4a",
         ),
     }
     spec = sources.get(rel)
