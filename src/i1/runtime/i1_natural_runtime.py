@@ -483,7 +483,9 @@ class I1Runtime(I1WaterPrudentRuntime):
                 if supplied is None:
                     continue
                 ev = supplied.evaluation
-                if (ev.option_ref != proposal.option.id
+                if (ev.status != "evaluated"
+                        or proposal.option.expires_at_step <= capture.t_monde
+                        or ev.option_ref != proposal.option.id
                         or ev.option_version != proposal.option.version
                         or ev.t_monde != capture.t_monde
                         or ev.cycle != cycle):
