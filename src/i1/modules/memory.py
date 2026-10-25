@@ -409,7 +409,11 @@ class EpisodicMemory:
 
         Caller must pay UC and pass only a DC-09 JournalViews projection.
         Paired events are observations, not full sleep sessions, a prediction,
-        or an inferred reward. Unknown pre-action body stays unknown.
+        or an inferred reward. A waking cue may be attached only to the
+        immediately preceding sleep action when ALL three postwake sources
+        (cue, applied command, physical transition) are independently closed.
+        This is an observed temporal boundary, NOT proof of an uninterrupted
+        subjective sleep session. Unknown pre-action body stays unknown.
         """
         if (type(now) is not int or now < 1 or type(site) is not tuple
                 or len(site) != 2 or any(type(v) is not int for v in site)):
@@ -426,14 +430,91 @@ class EpisodicMemory:
             if (type(ref) is not str or custody.get(ref) is None
                     or type(step) is not int or not 1 <= step < now
                     or kind not in {"command_experienced",
-                                    "world_transition_experienced"}):
+                                    "world_transition_experienced",
+                                    "waking_body_perceived"}):
                 continue
             if ref in seen:
                 duplicates.add(ref)
             seen.add(ref)
-            per_step.setdefault(step, {"command": [], "transition": []})[
-                "command" if kind == "command_experienced" else "transition"
-            ].append(event)
+            per_step.setdefault(
+                step, {"command": [], "transition": [], "waking": []},
+            )[{
+                "command_experienced": "command",
+                "world_transition_experienced": "transition",
+                "waking_body_perceived": "waking",
+            }[kind]].append(event)
+
+        def adjacent_waking_boundary(sleep_step: int) -> dict[str, object] | None:
+            """Relate exactly one next-step personally perceived waking cue.
+
+            Trust only the caller's committed DC-09 projection AND Memory's
+            unique CLOSED ownership. Never inspect technical wake markers,
+            infer continuity across voluntary re-admissions, or synthesize
+            a cue from two adjacent bodily snapshots.
+            """
+            next_step = per_step.get(sleep_step + 1)
+            if (next_step is None
+                    or any(len(next_step[k]) != 1
+                           for k in ("waking", "command", "transition"))):
+                return None
+            wake = next_step["waking"][0]
+            command = next_step["command"][0]
+            transition = next_step["transition"][0]
+            refs = (wake["event_id"], command["event_id"],
+                    transition["event_id"])
+            if (len(set(refs)) != 3 or any(ref in duplicates for ref in refs)
+                    or set(wake) != {
+                        "event_id", "kind", "t_monde",
+                        "position", "body_perceived",
+                    }
+                    or set(command) != {
+                        "event_id", "kind", "t_monde",
+                        "primitive", "parameters",
+                    }
+                    or type(command["primitive"]) is not str
+                    or not command["primitive"]
+                    or not isinstance(command["parameters"], Mapping)
+                    or set(transition) != {
+                        "event_id", "kind", "t_monde", "position_after",
+                        "body_before", "body_after", "effects",
+                    }):
+                return None
+            position = wake["position"]
+            perceived = wake["body_perceived"]
+            physical_before = transition["body_before"]
+            if (not isinstance(position, Mapping)
+                    or set(position) != {"x", "y"}
+                    or any(type(position[k]) is not int for k in ("x", "y"))
+                    or (position["x"], position["y"]) != site
+                    or not isinstance(perceived, Mapping)
+                    or not isinstance(physical_before, Mapping)
+                    or set(perceived) != _INTENTION_BODY_KEYS
+                    or set(physical_before) != _INTENTION_BODY_KEYS
+                    or any(
+                        type(perceived[k]) not in (int, float)
+                        or type(physical_before[k]) not in (int, float)
+                        or not isfinite(perceived[k])
+                        or not isfinite(physical_before[k])
+                        or not 0 <= perceived[k] <= 100
+                        or not 0 <= physical_before[k] <= 100
+                        or float(perceived[k]) != float(physical_before[k])
+                        for k in _INTENTION_BODY_KEYS
+                    )):
+                return None
+            return {
+                "step": sleep_step + 1,
+                "cue_event_ref": wake["event_id"],
+                "cue_episode_ref": custody[wake["event_id"]],
+                "applied_command_ref": command["event_id"],
+                "applied_transition_ref": transition["event_id"],
+                "applied_primitive": command["primitive"],
+                "body_perceived": {
+                    k: float(perceived[k]) for k in
+                    ("energy", "food", "water", "integrity")
+                },
+                "relation": "immediate_next_step_only",
+            }
+
         found = []
         for step in sorted(per_step):
             pair = per_step[step]
@@ -537,6 +618,9 @@ class EpisodicMemory:
                      ("energy", "food", "water", "integrity")}
                 ),
                 "continuous_sleep_session": None,
+                # One bounded autobiographical temporal relation, never a
+                # continuous session or proof of why I1 chose to sleep.
+                "next_step_waking": adjacent_waking_boundary(step),
                 "previous_step_after_ref": previous_transition_ref,
                 "previous_step_after_episode_ref": previous_episode_ref,
                 "adjacent_after_state_delta": adjacent_after_state_delta,
