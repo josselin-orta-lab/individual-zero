@@ -80,6 +80,23 @@ class DecisionBoundaryNegative490(unittest.TestCase):
                 step(1, "ordinary_awake_admission", reduced=True)
             ])
 
+    def test_readmission_requires_preceding_contiguous_sleep(self):
+        with self.assertRaisesRegex(RuntimeError, "preceding sleep"):
+            _split_applied_sleep_decisions([
+                step(1, "readmitted_after_wake", wake=True, reduced=True)
+            ])
+        with self.assertRaisesRegex(RuntimeError, "preceding sleep"):
+            _split_applied_sleep_decisions([
+                step(1, "ordinary_awake_admission"),
+                step(3, "readmitted_after_wake", wake=True, reduced=True),
+            ])
+        with self.assertRaisesRegex(RuntimeError, "preceding sleep"):
+            _split_applied_sleep_decisions([
+                step(1, "ordinary_awake_admission"),
+                step(2, "not_sleep", primitive="boire"),
+                step(3, "readmitted_after_wake", wake=True, reduced=True),
+            ])
+
     def test_unknown_class_is_rejected(self):
         with self.assertRaisesRegex(RuntimeError, "unknown"):
             _split_applied_sleep_decisions([step(1, "fabricated")])
