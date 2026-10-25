@@ -363,7 +363,7 @@ def _approved_action_fragments_541(root: Path, rel: str) -> bool:
         return False
     content = (ROOT / row[0]).read_bytes()
     source_sha = sha1(b"blob " + str(len(content)).encode("ascii")
-                      + b"\\0" + content).hexdigest()
+                      + b"\0" + content).hexdigest()
     return source_sha == row[1]
 
 
