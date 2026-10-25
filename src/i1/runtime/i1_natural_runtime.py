@@ -504,7 +504,7 @@ class I1Runtime(I1WaterPrudentRuntime):
                     continue
                 from i1.modules.memory import same_lived_command_parameters
                 fragments = tuple(
-                    fragment for fragment in generic["fragments"]
+                    fragment for fragment in generic.get("fragments", ())
                     if fragment["primitive"] == command.primitive
                     and same_lived_command_parameters(
                         fragment["parameters"], command.parameters)
