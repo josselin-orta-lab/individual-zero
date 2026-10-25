@@ -364,6 +364,9 @@ class EpisodicMemory:
         # Derived lookup property, never exported as autobiographical state.
         # M11 cold restore recomputes it from the authenticated episodes.
         self._episode_ids_dense = True
+        # Derived closed-source ownership, never serialized as second Memory.
+        # Rebuilt from native episode custody on M11 cold recovery.
+        self._closed_ref_owners: dict[str, str | None] = {}
         self._seen_event_refs: set[str] = set()
         self._open_event_refs: list[str] = []
         self._open_start_t: int | None = None
@@ -398,6 +401,51 @@ class EpisodicMemory:
                 or not 0 <= start <= stop <= len(self._episodes)):
             raise ValueError("invalid closed episode range")
         return tuple(self._episodes[start:stop])
+
+    @staticmethod
+    def _claim_closed_refs(
+        owners: dict[str, str | None], episode: Episode,
+    ) -> None:
+        """Track all closed-source owners; duplicate ownership is ambiguous."""
+        for ref in episode.event_refs:
+            if type(ref) is not str or not ref:
+                continue
+            if ref in owners:
+                owners[ref] = None
+            else:
+                owners[ref] = episode.id
+
+    def closed_last_recalled_episode_source_refs(
+        self, *, now: int,
+    ) -> frozenset[str]:
+        """One previously recalled CLOSED episode, not a journal-wide query.
+
+        The episode identity must originate from Memory's prior recall.
+        Only native ordinal episodes are eligible for constant-time lookup.
+        Each source is checked against the full derived closed-custody index;
+        no open, future, duplicated or unauthenticated ref can pass.
+        The natural caller MUST pay UC before using these refs and before
+        reading any JournalViews projection. A read cannot select or score
+        an episode, acquire motor authority, or grant any future effects.
+        """
+        if type(now) is not int or now < 1:
+            raise ValueError("invalid recalled episode world time")
+        if (type(self._last_recalled_ref) is not str
+                or not self._episode_ids_dense):
+            return frozenset()
+        episode = self._find_closed_episode(self._last_recalled_ref)
+        if (episode is None or type(episode.end_t_monde) is not int
+                or episode.end_t_monde >= now
+                or not 1 <= len(episode.event_refs) <= 64):
+            return frozenset()
+        if any(
+            type(ref) is not str or not ref
+            or ref not in self._seen_event_refs
+            or self._closed_ref_owners.get(ref) != episode.id
+            for ref in episode.event_refs
+        ):
+            return frozenset()
+        return frozenset(episode.event_refs)
 
     def _closed_sleep_custody(self) -> dict[str, str | None]:
         """Bound the existing closed-episode reference ownership, not memory."""
@@ -1629,6 +1677,7 @@ class EpisodicMemory:
             and episode.id == f"episode:{len(self._episodes)}"
         )
         self._episodes.append(episode)
+        self._claim_closed_refs(self._closed_ref_owners, episode)
 
         self._open_event_refs = []
         self._open_start_t = None
@@ -2179,8 +2228,16 @@ class EpisodicMemory:
             episode.id == f"episode:{ordinal}"
             for ordinal, episode in enumerate(restored)
         )
+        # Derive the complete source index once on cold restoration, never
+        # from an unauthenticated serialized index or on each paid recall.
+        # Unusual imported episode orders remain supported by legacy APIs,
+        # but cannot use the constant-time new I1-only scoped reader.
+        closed_ref_owners: dict[str, str | None] = {}
+        for episode in restored:
+            self._claim_closed_refs(closed_ref_owners, episode)
         self._episodes = restored
         self._episode_ids_dense = restored_dense
+        self._closed_ref_owners = closed_ref_owners
         self._recall_above_threshold = restored_above
         self._seen_event_refs = {
             str(x) for x in state.get("seen_event_refs", [])
