@@ -187,11 +187,11 @@ def _approved_dormant_prebody_dc09_467(root: Path, rel: str) -> bool:
     sources = {
         "i1lab/epistemic_guard.py": (
             "src/i1/lab/epistemic_guard.py",
-            "ebad4d3437b5c9629178f5121b192bf3c661f1aa",
+            "4eb31c4c3879c496e0b13b5eaecaa4419692640f",
         ),
         "i1lab/i1_natural_prebody_policy.py": (
             "src/i1/runtime/i1_natural_prebody_policy.py",
-            "3b1a8be9df0f0a33477524812e12dbcf3c5eda79",
+            "d98387d2ab983617c0393e9028b05679f9910e91",
         ),
     }
     spec = sources.get(rel)
