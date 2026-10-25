@@ -984,6 +984,13 @@ def _m11_life(*, birth, params, life_id, path, steps):
         if physical_ref not in physical_refs:
             raise RuntimeError("wake candidate lacks same-step applied transition")
         owners = indexed_refs.get(physical_ref, [])
+        # A raw Stage3 capture has not been authorized for DC-09. Prove
+        # non-promotion from the actual commitment and Memory indices,
+        # rather than hardcoding a non-memory label in the report.
+        if (capture_ref in first_autobiographical_commit
+                or capture_ref in first_memory_ingestion
+                or capture_ref in indexed_refs):
+            raise RuntimeError("unversioned wake capture promoted into Memory")
         if len(owners) > 1:
             raise RuntimeError("duplicate wake transition episode owner")
         commit_step = first_autobiographical_commit.get(physical_ref)
@@ -991,6 +998,8 @@ def _m11_life(*, birth, params, life_id, path, steps):
         if (ingest_step is not None
                 and (commit_step is None or ingest_step < commit_step)):
             raise RuntimeError("Memory received uncommitted wake transition")
+        if owners and ingest_step is None:
+            raise RuntimeError("closed wake transition was never ingested")
         wake_custody.append({
             "step": row["world_step"],
             "first_person_capture_ref": capture_ref,
