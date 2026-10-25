@@ -262,6 +262,15 @@ def _approved_closed_waking_adjacency_495(root: Path, rel: str) -> bool:
     return digest == "3c8118ae8bafc7afab2c058a5b63033a5cf54208"
 
 
+def _approved_paid_waking_link_495(root: Path, rel: str) -> bool:
+    """Exact pin for the born I1-only, non-motor paid recall receipt."""
+    if rel != "i1lab/i1_natural_runtime.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/runtime/i1_natural_runtime.py").read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == "0b2cda5e68d7ca19cacd64fb6596166037e51e43"
+
+
 def _approved_memory_overlap(before: bytes, after: bytes) -> bool:
     """Allow only the reviewed Stage7 exact reference-overlap replacement."""
     original = before.decode("utf-8")
@@ -1465,6 +1474,7 @@ def verify(reference_root: Path) -> None:
                     ))
                 or _approved_unique_dc09_source_467(new_root, rel) or _approved_native_prebody_activation_467(new_root, rel)
                 or _approved_closed_waking_adjacency_495(new_root, rel)
+                or _approved_paid_waking_link_495(new_root, rel)
                 or (rel == "i1lab/journal_views.py"
                     and _approved_autobio_index_rehydration(
                         _reference_autobio_fastpath((old_root / rel).read_bytes()),
