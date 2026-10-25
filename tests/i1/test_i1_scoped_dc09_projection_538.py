@@ -73,6 +73,34 @@ try: corrupted.autobiographical(policies=policies,
                                  selected_event_refs=frozenset())
 except ValueError: pass
 else: raise AssertionError("full audit silently skipped corrupt commit")
+# Touched commitments cannot hide malformed *unselected* DC-09 fields.
+for invalid in ("future", "wrong_attempt", "wrong_time", "oracle"):
+    changed=HashChainedJournal()
+    v2=JournalViews(journal=changed)
+    step=51
+    attempted="attempt:51"
+    a=changed.append(event_id="pair:a",causal_event=dict(
+        kind="command_experienced",t_monde=step,attempt_ref=attempted,
+        primitive="boire",parameters={"target":"water"}))
+    bad_data=dict(kind="command_experienced",
+        t_monde=step,attempt_ref=attempted,
+        primitive="boire",parameters={"target":"water"})
+    if invalid=="wrong_attempt": bad_data["attempt_ref"]="other"
+    if invalid=="wrong_time": bad_data["t_monde"]=step+1
+    if invalid=="oracle": bad_data["parameters"]={"target":{"hidden":"oracle"}}
+    b=changed.append(event_id="pair:b",causal_event=bad_data)
+    commit=changed.append(event_id="pair:commit",causal_event=dict(
+        kind="auto_segment_commit",filter_version=P.version,t_monde=step,
+        attempt_ref=attempted,event_refs=["pair:a","pair:b"]))
+    if invalid=="future":
+        changed.append(event_id="future",causal_event=dict(
+            kind="technical",t_monde=step))
+        commit.causal_event["event_refs"]=["pair:a","future"]
+    v2=JournalViews(journal=changed)
+    try: v2.selected_committed_autobiography(
+        policies=policies,selected_event_refs=frozenset({"pair:a"}))
+    except ValueError: pass
+    else: raise AssertionError(("malformed touched commit",invalid))
 print("I1_538_SCOPED_DC09_CUSTODY_OK")
 """
             run=subprocess.run([sys.executable,"-c",code],
