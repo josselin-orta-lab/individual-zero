@@ -18,7 +18,10 @@ class WakeCueEligibility495(unittest.TestCase):
 from i1lab.journal import HashChainedJournal
 from i1lab.world import Command,command_digest
 from i1lab.determinism import deterministic_id
-from i1lab.i1_natural_prebody_policy import attested_postwake_perceptual_body as choose
+from i1lab.i1_natural_prebody_policy import (
+ attested_postwake_perceptual_body as choose,
+ candidate_versioned_waking_perception as versioned,
+)
 
 def check(*, omit=None, cross=False, corrupt=False, reverse=False):
  j=HashChainedJournal()
@@ -66,6 +69,41 @@ for kwargs in (dict(omit="reduced"),dict(omit="wake"),
                dict(corrupt=True),dict(reverse=True)):
  assert check(**kwargs) is None,kwargs
 assert not any(k in p for k in ("wake_reason","sleep_duration","attempt_ref","consolidation"))
+# Exact versioned candidate returns only the same first-person fields.
+# The old synthetic gate checks failure separately; use its authentic
+# fixture shape without exposing any Stage10 wake reason or sleep duration.
+from i1lab.journal import HashChainedJournal
+j=HashChainedJournal()
+body=dict(energy=40.,food=70.,water=60.,integrity=100.)
+t=4;attempt="attempt:4";digest=command_digest(Command("dormir"))
+def append(ref,kind,emitter,**fields):
+ j.append(event_id=ref,causal_event=dict(
+  kind=kind,emitter=emitter,t_monde=t,attempt_ref=attempt,**fields))
+append("reduced","stage10_reduced_capture","stage4-runtime",
+       data=dict(full_cognitive_perception=False))
+append("wake","stage10_sleep_woke","stage4-runtime",data=dict(reason="alert"))
+append("capture","perceptual_capture","stage3-runtime",
+       data=dict(capture_t_monde=t,
+                 dual_scope_capture_schema="stage12-dual-scope-body-cue-v1",
+                 dual_scope_visible_body=body,position=dict(x=2,y=3)))
+append("admission","command_admitted","stage3-runtime",
+       data=dict(command_hash=digest,primitive="dormir"))
+cr=deterministic_id("journal-event-v1","action_control",t,attempt,digest,"send")
+append(cr,"command_experienced","action_control",
+       command_hash=digest,primitive="dormir",parameters={})
+pr=deterministic_id("journal-event-v1","world",t,attempt,digest,"transition")
+append(pr,"world_transition_experienced","world_and_body",
+       body_before=body,body_after=body,position_after=dict(x=2,y=3),effects={})
+payload=versioned(journal=j,t_monde=t,attempt_ref=attempt,
+                  command_ref=cr,physical_ref=pr)
+assert payload==dict(schema="i1-perceived-waking-body-candidate-v1",
+ source_event_ref="capture",t_monde=4,position=dict(x=2,y=3),
+ body_perceived=body),payload
+assert versioned(journal=j,t_monde=t,attempt_ref="foreign",
+                 command_ref=cr,physical_ref=pr) is None
+assert not set(payload)&set(("reason","wake_reason","wake_policy",
+                             "sleep_duration","attempt_ref","restored_energy"))
+print("I1_495_VERSIONED_WAKE_CANDIDATE_OK")
 print("I1_495_DORMANT_WAKE_GATE_OK")
 """
             checked=subprocess.run([sys.executable,"-c",script],
