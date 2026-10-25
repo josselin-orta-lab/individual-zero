@@ -46,7 +46,12 @@ m._last_recalled_ref = None
 assert not m.closed_last_recalled_episode_source_refs(now=35)
 m._last_recalled_ref = "episode:0"
 assert not m.closed_last_recalled_episode_source_refs(now=1)
-try:\n    m.closed_last_recalled_episode_source_refs(now=0)\nexcept ValueError:\n    pass\nelse:\n    raise AssertionError("invalid time accepted")
+try:
+    m.closed_last_recalled_episode_source_refs(now=0)
+except ValueError:
+    pass
+else:
+    raise AssertionError("invalid time accepted")
 state = m.export_causal_state()
 cold = EpisodicMemory(config(), atomic_world_step_length_boundary=True)
 cold.restore_causal_state(state)
