@@ -310,7 +310,7 @@ def _approved_paid_generic_stage8_528(root: Path, rel: str) -> bool:
 def _approved_diverse_action_recall_533(root: Path, rel: str) -> bool:
     pins = {
         "i1/modules/memory.py": ("src/i1/modules/memory.py",
-            "ffd806fc06771d18e8c4ce8854631da018b76c48"),
+            "86f0b7594c9831dd34f477c9610d3f26bc25c5cd"),
         "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py",
             "0a2b6262608db5d00596313210d2b5286a8a21ef"),
     }
