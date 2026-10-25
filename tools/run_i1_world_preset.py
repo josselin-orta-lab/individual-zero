@@ -307,6 +307,34 @@ def _closed_custody_at_sleep_recall(
     raise RuntimeError("sleep recall receipt absent from physical step journal")
 
 
+def _same_attempt_waking_reentry(
+    *, events, reduced, woke, capture, command,
+):
+    """Operator-only four-receipt provenance; never a Memory wake claim."""
+    if (not all(isinstance(row, dict)
+                for row in (reduced, woke, capture, command))
+            or not isinstance(events, list)):
+        return False
+    attempt = command.get("attempt_ref")
+    step = command.get("t_monde")
+    if (type(attempt) is not str or not attempt
+            or type(step) is not int
+            or any(row.get("attempt_ref") != attempt
+                   or row.get("t_monde") != step
+                   for row in (reduced, woke, capture))):
+        return False
+    # The same original event occurrences must appear exactly once, in the
+    # authenticated step journal order. The test works on immutable copies;
+    # none of this information is provided to the cognitive individual.
+    indices = []
+    for row in (reduced, woke, capture, command):
+        matches = [i for i, event in enumerate(events) if event is row]
+        if len(matches) != 1:
+            return False
+        indices.append(matches[0])
+    return indices == sorted(set(indices)) and len(set(indices)) == 4
+
+
 def _split_applied_sleep_decisions(trajectory):
     """Operator-only grouping: each waking admission owns its reduced continuations."""
     decision_groups = []
@@ -510,9 +538,11 @@ def _m11_life(*, birth, params, life_id, path, steps):
                         "reduced continuation unexpectedly has full waking perception")
             if sleep_provenance == "readmitted_after_wake":
                 if (not wakes or len(reduced) != 1
-                        or not (step_events.index(wakes[0])
-                                < step_events.index(capture_receipt)
-                                < step_events.index(command))):
+                        or not _same_attempt_waking_reentry(
+                            events=step_events, reduced=reduced[0],
+                            woke=wakes[0], capture=capture_receipt,
+                            command=command,
+                        )):
                     raise RuntimeError(
                         "readmission lacks wake-before-perception-before-command")
             latest = max(frames, key=lambda e: e["cycle"]) if frames else None
