@@ -578,7 +578,15 @@ def _m11_life(*, birth, params, life_id, path, steps):
             ]
             if (bool(wake_events) != bool(wake_cue_candidate)
                     or len(wake_events) > 1 or len(wake_commits) > 1):
-                raise RuntimeError("waking DC-09 commitment and lived capture disagree")
+                raise RuntimeError(
+                    "waking DC-09 commitment and lived capture disagree: "
+                    f"step={receipt.world_step} source={sleep_provenance} "
+                    f"candidate={wake_cue_candidate is not None} "
+                    f"waking_events={len(wake_events)} "
+                    f"waking_commits={len(wake_commits)} "
+                    f"filters={[e.get('filter_version') for e in step_events if e.get('kind') == 'auto_segment_commit']} "
+                    f"step_status={receipt.status}"
+                )
             if wake_events:
                 if (len(wake_commits) != 1
                         or wake_events[0]["body_perceived"]
