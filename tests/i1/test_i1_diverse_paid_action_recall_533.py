@@ -59,7 +59,6 @@ assert len(rows) <= 16
 assert [w["step"] for w in read(limit=2, per_command_limit=1)] == [3, 23]
 assert [w["step"] for w in read(primitive="collecter",
       per_command_limit=2)] == [1, 2, 3]
-assert [w["step"] for w in read(now=24)] if False else True
 m._episodes.pop()
 assert [w["step"] for w in read(per_command_limit=3)] == [1,2,3,20,21,22]
 m._episodes.append(ep(23))
