@@ -459,12 +459,6 @@ class I1Runtime(I1WaterPrudentRuntime):
             capture=capture, cycle=cycle, evidence_inputs=evidence_inputs,
         )
         context = getattr(self, "_i1_sleep_site_paid_context", None)
-        if (context is None or self._cycle_degraded
-                or context["step"] != capture.t_monde
-                or context["cycle"] != cycle
-                or context["site"] != (capture.x, capture.y)
-                or context["charged_operation"] != _SLEEP_RECALL_OPERATION):
-            return
         # #528: same UC-paid closed first-person source scan, across ALL
         # ordinary current options. Merely report matched testimony; do not
         # alter Stage8 evidence, learned Q, Competition or Action Control.
@@ -474,11 +468,22 @@ class I1Runtime(I1WaterPrudentRuntime):
                 and generic["cycle"] == cycle
                 and generic["site"] == (capture.x, capture.y)
                 and generic["charged_operation"] == _SLEEP_RECALL_OPERATION):
+            # Follow Stage8's own resumed-plan cursor, not an obsolete
+            # step-0 command. Never borrow another option's engaged cursor.
+            control_option, control_plan, next_index = (
+                self.stage3.control.current_step
+            )
             for proposal in self.competition.candidate_proposals:
                 plan = proposal.plan
                 if plan is None or not plan.steps:
                     continue
-                command = plan.steps[0].command
+                cursor = (next_index if (
+                    control_option == proposal.option.id
+                    and control_plan == plan.id
+                    and self.competition.is_engaged(proposal.option.id)
+                    and 0 <= next_index < len(plan.steps)
+                ) else 0)
+                command = plan.steps[cursor].command
                 supplied = evidence_inputs.get(proposal.option.id)
                 if supplied is None:
                     continue
@@ -524,6 +529,14 @@ class I1Runtime(I1WaterPrudentRuntime):
                         "motor_admission_inherited": False,
                     },
                 )
+        # Historical sleep-site receipts remain independent of whether
+        # any generic candidate matched this paid memory consultation.
+        if (context is None or self._cycle_degraded
+                or context["step"] != capture.t_monde
+                or context["cycle"] != cycle
+                or context["site"] != (capture.x, capture.y)
+                or context["charged_operation"] != _SLEEP_RECALL_OPERATION):
+            return
         from i1.modules.sleep_competition import (
             _sleep_site_ref, _valid_sleep_shape,
         )
