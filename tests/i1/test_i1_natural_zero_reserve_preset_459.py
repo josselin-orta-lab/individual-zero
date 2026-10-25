@@ -73,6 +73,20 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
                "paid_competition_cycles"] > 0
                for step in classes["ordinary_awake_admission"]
                + classes["readmitted_after_wake"])
+    assert all(v["waking_capture_before_command"]
+               for _, v in sleep_rows if v["provenance"] in (
+                   "ordinary_awake_admission", "readmitted_after_wake"))
+    assert all(v["wake_capture_after_control_boundary"]
+               for _, v in sleep_rows
+               if v["provenance"] == "readmitted_after_wake")
+    assert all(not v["waking_capture_before_command"]
+               and not v["wake_capture_after_control_boundary"]
+               for _, v in sleep_rows
+               if v["provenance"] == "reduced_sleep_continuation")
+    print("I1_490_AUTHENTIC_WAKING_PERCEPTION",
+          sum(v["wake_capture_after_control_boundary"]
+              for _, v in sleep_rows),
+          "woken_readmissions")
     assert all(v["pressure"] is not None for _, v in sleep_rows)
     assert all(v["wake_reason"] is not None for _, v in sleep_rows
                if v["provenance"] == "readmitted_after_wake")
