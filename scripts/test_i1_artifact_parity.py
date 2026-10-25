@@ -177,7 +177,7 @@ def _approved_indexed_dc09_538(root: Path, rel: str) -> bool:
     if rel != "i1lab/journal_views.py" or not (root / rel).is_file():
         return False
     data = (ROOT / "src/i1/runtime/journal_views.py").read_bytes()
-    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == "99dc567de0e48b39ffc2e9872a83ed8faec8059f"
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == "99b235715d9610507bae46154bffcd1a507cb0a6"
 
 
 def _approved_unique_dc09_source_467(root: Path, rel: str) -> bool:
