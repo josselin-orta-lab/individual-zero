@@ -93,6 +93,7 @@ class JournalViews:
         self._commit_event_ids.reverse()
         self._commit_sequence = len(self._commit_event_ids)
         self._committed_source_refs: set[str] = set()
+        self._source_commit_id: dict[str, str] = {}
         for commit_id in self._commit_event_ids:
             entry = journal.get(commit_id)
             refs = None if entry is None else entry.causal_event.get("event_refs")
@@ -102,6 +103,8 @@ class JournalViews:
                     or any(ref in self._committed_source_refs for ref in refs)):
                 raise ValueError("invalid or duplicated historical autobiography custody")
             self._committed_source_refs.update(refs)
+            for ref in refs:
+                self._source_commit_id[ref] = commit_id
 
     def enable_i1_prebody_at_birth(self) -> None:
         """Enable the canonical I1 DC-09 selection only on a pristine birth."""
@@ -260,6 +263,8 @@ class JournalViews:
         self._commit_sequence += 1
         self._commit_event_ids.append(commit_event_id)
         self._committed_source_refs.update(validated)
+        for ref in validated:
+            self._source_commit_id[ref] = commit_event_id
         return AutoSegmentCommit(
             event_id=commit_event_id,
             t_monde=t_monde,
@@ -267,6 +272,84 @@ class JournalViews:
             event_refs=tuple(validated),
             filter_version=policy.version,
         )
+
+    def selected_committed_autobiography(
+        self, *, policies: Mapping[str, AutobiographicalPolicy],
+        selected_event_refs: frozenset[str],
+    ) -> tuple[dict[str, object], ...]:
+        """Bounded *scoped* DC-09 projection of committed source identities.
+
+        This validates every source in each touched commitment, but unlike
+        autobiographical() does NOT audit unrelated historical commitments.
+        The selecting Memory owner and its caller must pay UC separately;
+        possession of a source ref grants no cognitive or motor permission.
+        """
+        if (type(selected_event_refs) is not frozenset
+                or len(selected_event_refs) > 64
+                or any(type(ref) is not str or not ref
+                       for ref in selected_event_refs)):
+            raise ValueError("invalid bounded selected autobiographical refs")
+        if not selected_event_refs:
+            return ()
+        commit_ids = set()
+        for ref in selected_event_refs:
+            commit_id = self._source_commit_id.get(ref)
+            if commit_id is None:
+                raise ValueError("uncommitted autobiographical source")
+            commit_ids.add(commit_id)
+        if len(commit_ids) > 64:
+            raise ValueError("too many selected autobiographical commits")
+        projected = []
+        touched = []
+        validated_policies = set()
+        source_count = 0
+        for commit_id in commit_ids:
+            entry = self._journal.get(commit_id)
+            if entry is None:
+                raise ValueError("missing autobiographical commitment")
+            kind = entry.causal_event.get("kind")
+            version = entry.causal_event.get("filter_version")
+            refs = entry.causal_event.get("event_refs")
+            attempt = entry.causal_event.get("attempt_ref")
+            t_monde = entry.causal_event.get("t_monde")
+            if (kind != "auto_segment_commit"
+                    or type(version) is not str
+                    or type(attempt) is not str or not attempt
+                    or type(t_monde) is not int
+                    or type(refs) is not list
+                    or any(type(ref) is not str or not ref for ref in refs)
+                    or len(set(refs)) != len(refs)
+                    or len(refs) > 64):
+                raise ValueError("malformed touched autobiographical commitment")
+            policy = policies.get(version)
+            if policy is None:
+                raise ValueError("missing touched autobiographical policy")
+            if version not in validated_policies or type(policy) is not AutobiographicalPolicy:
+                policy.validate()
+                validated_policies.add(version)
+            source_count += len(refs)
+            if source_count > 4096:
+                raise ValueError("bounded autobiographical scan exhausted")
+            local = []
+            for ref in refs:
+                source = self._journal.get(ref)
+                if (self._source_commit_id.get(ref) != commit_id
+                        or source is None or source.index >= entry.index
+                        or source.causal_event.get("attempt_ref") != attempt
+                        or source.causal_event.get("t_monde") != t_monde
+                        or not policy.allows(source)):
+                    raise ValueError("invalid touched first-person provenance")
+                if ref in selected_event_refs:
+                    local.append((
+                        source.index,
+                        policy._project_validated(source)
+                        if type(policy) is AutobiographicalPolicy
+                        else policy.project(source),
+                    ))
+            touched.extend(local)
+        # Match the historical chronological commitment/source projection.
+        touched.sort(key=lambda row: row[0])
+        return tuple(row for _, row in touched)
 
     def autobiographical(
         self,
