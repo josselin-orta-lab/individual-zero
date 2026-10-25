@@ -516,6 +516,7 @@ class I1Runtime(I1WaterPrudentRuntime):
                                 "source_episode_refs": list(row["source_episode_refs"]),
                                 "body_before": row["body_before"],
                                 "body_after": row["body_after"],
+                                "observed_effects": row["observed_effects"],
                                 "same_step_body_delta": row["same_step_body_delta"],
                             }
                             for row in matches
