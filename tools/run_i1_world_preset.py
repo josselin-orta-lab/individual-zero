@@ -307,6 +307,41 @@ def _closed_custody_at_sleep_recall(
     raise RuntimeError("sleep recall receipt absent from physical step journal")
 
 
+def _split_applied_sleep_decisions(trajectory):
+    """Operator-only grouping: each waking admission owns its reduced continuations."""
+    decision_groups = []
+    active_decision = None
+    for row in trajectory:
+        physical = row["physical_journal_observation"]
+        sleep = row["sleep_custody_observation"]
+        kind = sleep["provenance"]
+        if physical is None or physical["primitive"] != "dormir":
+            active_decision = None
+            continue
+        refs = row["autobiographical_sleep_custody_467"]["physical_source_refs"]
+        if kind in ("ordinary_awake_admission", "readmitted_after_wake"):
+            if (kind == "readmitted_after_wake"
+                    and (not sleep["woke"] or not sleep["reduced_perception"])):
+                raise RuntimeError("readmission lacks a real reduced wake")
+            if kind == "ordinary_awake_admission" and sleep["reduced_perception"]:
+                raise RuntimeError("ordinary decision cannot be reduced")
+            active_decision = {
+                "decision_step": row["world_step"],
+                "source": kind,
+                "steps": [],
+                "source_refs": [],
+            }
+            decision_groups.append(active_decision)
+        elif kind == "reduced_sleep_continuation":
+            if active_decision is None or sleep["woke"]:
+                raise RuntimeError("unowned or waking reduced sleep continuation")
+        else:
+            raise RuntimeError("unknown physical dormir admission classification")
+        active_decision["steps"].append(row["world_step"])
+        active_decision["source_refs"].extend(refs)
+    return decision_groups
+
+
 def _m11_life(*, birth, params, life_id, path, steps):
     from i1lab.sqlite_life_store import SQLiteLifeLedger
 
@@ -816,36 +851,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
     # Contiguous dormir commands can cross wake + deliberate re-admission.
     # Split only on the independently classified real applied admission,
     # not on position, rest effects, or an inferred continuous session.
-    decision_groups = []
-    active_decision = None
-    for row in trajectory:
-        physical = row["physical_journal_observation"]
-        sleep = row["sleep_custody_observation"]
-        kind = sleep["provenance"]
-        if physical is None or physical["primitive"] != "dormir":
-            active_decision = None
-            continue
-        refs = row["autobiographical_sleep_custody_467"]["physical_source_refs"]
-        if kind in ("ordinary_awake_admission", "readmitted_after_wake"):
-            if (kind == "readmitted_after_wake"
-                    and (not sleep["woke"] or not sleep["reduced_perception"])):
-                raise RuntimeError("readmission lacks a real reduced wake")
-            if kind == "ordinary_awake_admission" and sleep["reduced_perception"]:
-                raise RuntimeError("ordinary decision cannot be reduced")
-            active_decision = {
-                "decision_step": row["world_step"],
-                "source": kind,
-                "steps": [],
-                "source_refs": [],
-            }
-            decision_groups.append(active_decision)
-        elif kind == "reduced_sleep_continuation":
-            if active_decision is None or sleep["woke"]:
-                raise RuntimeError("unowned or waking reduced sleep continuation")
-        else:
-            raise RuntimeError("unknown physical dormir admission classification")
-        active_decision["steps"].append(row["world_step"])
-        active_decision["source_refs"].extend(refs)
+    decision_groups = _split_applied_sleep_decisions(trajectory)
     decision_audits = []
     for group in decision_groups:
         refs = group["source_refs"]
