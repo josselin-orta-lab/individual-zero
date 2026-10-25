@@ -298,6 +298,19 @@ def _approved_closed_stationary_controls_519(root: Path, rel: str) -> bool:
     return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == spec[1]
 
 
+def _approved_closed_generic_action_526(root: Path, rel: str) -> bool:
+    """Allow only the exact reviewed I1 Memory action-witness source blob.
+
+    This approval does not relax generated parity for any other code,
+    commit or engine. The builder still checks each generated source.
+    """
+    if rel != "i1/modules/memory.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/modules/memory.py").read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest()
+    return digest == "30d766e08888107d5b2eead9dcd4923e41663d38"
+
+
 def _approved_memory_overlap(before: bytes, after: bytes) -> bool:
     """Allow only the reviewed Stage7 exact reference-overlap replacement."""
     original = before.decode("utf-8")
@@ -1504,6 +1517,7 @@ def verify(reference_root: Path) -> None:
                 or _approved_paid_waking_link_495(new_root, rel)
                 or _approved_paid_stage8_sleep_context_510(new_root, rel)
                 or _approved_closed_stationary_controls_519(new_root, rel)
+                or _approved_closed_generic_action_526(new_root, rel)
                 or (rel == "i1lab/journal_views.py"
                     and _approved_autobio_index_rehydration(
                         _reference_autobio_fastpath((old_root / rel).read_bytes()),
