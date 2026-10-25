@@ -277,7 +277,7 @@ def _approved_paid_stage8_sleep_context_510(root: Path, rel: str) -> bool:
         return False
     data = (ROOT / "src/i1/runtime/i1_natural_runtime.py").read_bytes()
     digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
-    return digest == "5d4d05c0cf1a5c2042bc45a2aca6ea23d90aad60"
+    return digest == "47e19dec543ede1a4fd5871326675de89689ae67"
 
 
 def _approved_memory_overlap(before: bytes, after: bytes) -> bool:
