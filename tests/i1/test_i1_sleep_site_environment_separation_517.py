@@ -21,7 +21,7 @@ class SleepSiteEnvironmentalSeparation517(unittest.TestCase):
             program = r"""
 from dataclasses import replace
 from i1lab.world import BodyState, Position, WorldBody, WorldLayout
-from i1lab.i1_natural_sleep import enable_living_physiology_birth
+from i1lab.i1_natural_sleep import enable_living_physiology_birth, SLEEP_ENERGY_GAIN
 from i1lab.stage11_reference_fixture import build_stage11_reference_runtime
 from i1.contracts import PrimitiveCommand
 
@@ -29,7 +29,8 @@ base = build_stage11_reference_runtime(autonomous_mortal=True)
 cfg = enable_living_physiology_birth(base.world.config)
 cfg = replace(cfg,
     initial_body=BodyState(energy=30.,food=50.,water=50.,integrity=90.),
-    danger_zone_damage=7.,creature_damage=5.)
+    danger_zone_damage=7.,creature_damage=5.,
+    sleep_energy_gain=SLEEP_ENERGY_GAIN)
 # Each physical world is isolated, with identical bodily starting state,
 # physics, time, and command. Sites are operator fixtures, not personal
 # evidence and not knowledge passed to the living individual.
