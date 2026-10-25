@@ -310,9 +310,9 @@ def _approved_paid_generic_stage8_528(root: Path, rel: str) -> bool:
 def _approved_diverse_action_recall_533(root: Path, rel: str) -> bool:
     pins = {
         "i1/modules/memory.py": ("src/i1/modules/memory.py",
-            "86f0b7594c9831dd34f477c9610d3f26bc25c5cd"),
+            "0b282299e155a0117340f058178027ee00e3f09d"),
         "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py",
-            "0a2b6262608db5d00596313210d2b5286a8a21ef"),
+            "4e8b63d4a71defbaac6cfe110ba7c2cafa397736"),
     }
     spec = pins.get(rel)
     if spec is None or not (root / rel).is_file():
