@@ -19,6 +19,36 @@ from i0.requests import Request, Response
 
 _INTENTION_BODY_KEYS = frozenset({"energy", "food", "water", "integrity"})
 
+def same_lived_command_parameters(
+    left: Mapping[str, object], right: Mapping[str, object],
+) -> bool:
+    """Match actual command parameters without Python bool/numeric aliasing.
+
+    DC-09 permits primitive scalars and one canonical float scalar wrapper.
+    Reject unreviewed nested structures rather than declaring them equal.
+    This is identity only, never a memory relevance/value score.
+    """
+    if not isinstance(left, Mapping) or not isinstance(right, Mapping):
+        return False
+    if (any(type(key) is not str for key in (*left, *right))
+            or left.keys() != right.keys()):
+        return False
+    for key in left:
+        a, b = left[key], right[key]
+        if type(a) is not type(b):
+            return False
+        if type(a) is dict:
+            if (set(a) != {"$f64"} or set(b) != {"$f64"}
+                    or type(a["$f64"]) is not str
+                    or a["$f64"] != b["$f64"]):
+                return False
+        elif type(a) not in (str, int, float, bool, type(None)):
+            return False
+        elif a != b:
+            return False
+    return True
+
+
 
 @dataclass(frozen=True, slots=True)
 class MemoryConfig:
@@ -558,7 +588,8 @@ class EpisodicMemory:
             # set is always <= 16, so equality checks remain bounded.
             already_selected = sum(
                 previous["primitive"] == row["primitive"]
-                and previous["parameters"] == row["parameters"]
+                and same_lived_command_parameters(
+                    previous["parameters"], row["parameters"])
                 for previous in selected
             )
             if already_selected >= per_command_limit:
