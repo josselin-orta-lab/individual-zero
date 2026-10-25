@@ -976,6 +976,46 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 # Memory closure events are the only extra same-step source
                 # of ownership beyond the immutable pre-step causal image.
                 # This does not grant I1 access to operator-only state.
+            # #510: independent post-COMMIT witness of the true Stage8
+            # boundary. Technical journal evidence stays outside I1 Memory.
+            context_receipts = events_of("i1_sleep_site_stage8_context_observed")
+            if len(context_receipts) > 1:
+                raise RuntimeError("duplicate same-cycle sleep context")
+            if context_receipts:
+                seen_context = context_receipts[0]
+                data = seen_context["data"]
+                if (not recalls or len(recalls) != 1
+                        or step_events.index(recalls[0])
+                           >= step_events.index(seen_context)
+                        or data.get("source_event_refs") !=
+                           recalls[0]["data"]["event_refs"]
+                        or data.get("witness_count") !=
+                           recalls[0]["data"]["witness_count"]
+                        or data.get("same_step_channels") !=
+                           recalls[0]["data"]["site_balance"]["same_step_channels"]
+                        or data.get("site_ref") !=
+                           "sleep-site:%d:%d" % (
+                               position_before["x"], position_before["y"])
+                        or data.get("charged_operation") != "i1_closed_sleep_recall"
+                        or any(data.get(name) is not False for name in (
+                            "context_score_applied", "q_or_p40_augmented",
+                            "competition_evidence_overridden"))
+                        or data.get("stage8_evidence_unchanged") not in
+                           [e["data"].get("evidence") for e in assessments
+                            if e["data"].get("option_ref") == data.get("option_ref")]
+                        or not any(e["data"].get("option_ref") ==
+                                   data.get("option_ref")
+                                   and e.get("cycle") == seen_context.get("cycle")
+                                   for e in assessments)):
+                    raise RuntimeError("paid sleep context was not identical to Stage8")
+            context_audit = {
+                "read_count": len(context_receipts),
+                "source_refs": ([] if not context_receipts else
+                                context_receipts[0]["data"]["source_event_refs"]),
+                "option_ref": (None if not context_receipts else
+                               context_receipts[0]["data"]["option_ref"]),
+                "score_applied": False,
+            }
             recall_audit = {
                 "paid_uc": sum(
                     row["data"]["requested_uc"] for row in recall_charges
@@ -1056,6 +1096,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 "sleep_custody_observation": sleep_custody,
                 "autobiographical_sleep_custody_467": custody,
                 "sleep_site_recall_custody_467": recall_audit,
+                "sleep_site_stage8_context_custody_510": context_audit,
                 "lifecycle": receipt.status,
                 "execution": receipt.outcome,
                 "journal_count": receipt.journal_count,

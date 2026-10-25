@@ -448,6 +448,60 @@ class I1Runtime(I1WaterPrudentRuntime):
             )
         return targets
 
+    def _before_competition_accumulation(self, *, capture, cycle, evidence_inputs):
+        """#510: observe the Stage8 sleep result against already-paid site memory.
+
+        Stage8 has independently evaluated Q/Stage6/P-40. This bridge makes
+        the paid Memory site context traceable at the real pre-Competition
+        boundary without adding a second score or rewriting any evidence.
+        """
+        super()._before_competition_accumulation(
+            capture=capture, cycle=cycle, evidence_inputs=evidence_inputs,
+        )
+        context = getattr(self, "_i1_sleep_site_paid_context", None)
+        if (context is None or self._cycle_degraded
+                or context["step"] != capture.t_monde
+                or context["cycle"] != cycle
+                or context["site"] != (capture.x, capture.y)
+                or context["charged_operation"] != _SLEEP_RECALL_OPERATION):
+            return
+        from i1.modules.sleep_competition import (
+            _sleep_site_ref, _valid_sleep_shape,
+        )
+        site = (capture.x, capture.y)
+        site_ref = _sleep_site_ref(site)
+        for proposal in self.competition.candidate_proposals:
+            if (proposal.option.motive_ref.type != "sleep_pressure"
+                    or not _valid_sleep_shape(
+                        proposal, health=self.sleep_health,
+                        t_monde=capture.t_monde, site=site,
+                    )):
+                continue
+            supplied = evidence_inputs.get(proposal.option.id)
+            if supplied is None:
+                continue
+            ev = supplied.evaluation
+            if (ev.option_ref != proposal.option.id
+                    or ev.t_monde != capture.t_monde or ev.cycle != cycle):
+                continue
+            self._write(kind="i1_sleep_site_stage8_context_observed",
+                        cycle=cycle, data={
+                "option_ref": proposal.option.id,
+                "site_ref": site_ref,
+                "source_event_refs": list(context["source_event_refs"]),
+                "witness_count": context["witness_count"],
+                "same_step_channels": context["same_step_channels"],
+                "stage8_status": ev.status,
+                "learned_value_status": ev.learned_value_status,
+                "simulated_value_status": ev.simulated_value_status,
+                "stage8_evidence_unchanged": supplied.evidence,
+                "charged_operation": _SLEEP_RECALL_OPERATION,
+                "context_score_applied": False,
+                "q_or_p40_augmented": False,
+                "competition_evidence_overridden": False,
+            })
+            break
+
     def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
         """Add a second normal Phase-1 producer, not a replacement GoalManager.
 
@@ -455,6 +509,8 @@ class I1Runtime(I1WaterPrudentRuntime):
         Any local option gets its own paid Competition admission path in Phase
         3, with the same Stage8 and Action Control used by other options.
         """
+        # Never carry a previous cycle's paid personal site consultation.
+        self._i1_sleep_site_paid_context = None
         hooks = super()._phase_hooks(
             cycle=cycle, capture=capture,
             goal_for_planning=goal_for_planning,
@@ -517,6 +573,17 @@ class I1Runtime(I1WaterPrudentRuntime):
                         for link in (row["next_step_waking"],)
                         if link is not None
                     ]
+                    self._i1_sleep_site_paid_context = {
+                        "step": capture.t_monde, "cycle": cycle,
+                        "site": (capture.x, capture.y),
+                        "source_event_refs": tuple(sorted({
+                            ref for row in rows
+                            for ref in row["source_event_refs"]
+                        })),
+                        "witness_count": len(rows),
+                        "same_step_channels": balance["same_step_channels"],
+                        "charged_operation": _SLEEP_RECALL_OPERATION,
+                    }
                     self._write(
                         kind="i1_sleep_site_recall_consulted", cycle=cycle,
                         data={
