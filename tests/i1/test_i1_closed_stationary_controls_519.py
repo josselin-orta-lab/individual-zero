@@ -56,13 +56,13 @@ assert balance["decision_evidence"] is False
 assert not read(site=(2,30))["attendre"]
 assert [row["step"] for row in read(now=3)["attendre"]]==[2]
 assert [row["step"] for row in read(
-    m=memory([("c1","t1"),("c2",),("c3","t3")]))["attendre"]==[3]
+    m=memory([("c1","t1"),("c2",),("c3","t3")]))["attendre"]]==[3]
 assert [row["step"] for row in read(ev=events+[events[2]])["attendre"]]==[3]
 assert [row["step"] for row in read(
-    ev=events[:3]+[outcome("t2",2,29,site=(8,3))]+events[4:])["attendre"]==[3]
+    ev=events[:3]+[outcome("t2",2,29,site=(8,3))]+events[4:])["attendre"]]==[3]
 assert [row["step"] for row in read(
     ev=events[:3]+[dict(events[3],body_before={"energy":float("nan"),
-      "food":60,"water":50,"integrity":85})]+events[4:])["attendre"]==[3]
+      "food":60,"water":50,"integrity":85})]+events[4:])["attendre"]]==[3]
 print("I1_519_CLOSED_STATIONARY_CONTROLS_OK")
 """
             result=subprocess.run([sys.executable,"-c",program],
