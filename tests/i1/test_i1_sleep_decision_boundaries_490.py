@@ -49,6 +49,18 @@ class DecisionBoundaryNegative490(unittest.TestCase):
                 step(1, "reduced_sleep_continuation", reduced=True)
             ])
 
+    def test_reduced_continuation_must_have_reduced_perception_and_no_gap(self):
+        with self.assertRaisesRegex(RuntimeError, "reduced"):
+            _split_applied_sleep_decisions([
+                step(1, "ordinary_awake_admission"),
+                step(2, "reduced_sleep_continuation", reduced=False),
+            ])
+        with self.assertRaisesRegex(RuntimeError, "nonconsecutive"):
+            _split_applied_sleep_decisions([
+                step(1, "ordinary_awake_admission"),
+                step(3, "reduced_sleep_continuation", reduced=True),
+            ])
+
     def test_waking_continuation_is_rejected(self):
         with self.assertRaisesRegex(RuntimeError, "waking"):
             _split_applied_sleep_decisions([
