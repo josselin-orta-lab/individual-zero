@@ -32,6 +32,14 @@
 - [ISSUE_329_IMPLEMENTATION.md](ISSUE_329_IMPLEMENTATION.md): dormant read-only bodily alert classifier, issue #329
 - [ISSUE_336_PARITY_REGISTRY.md](ISSUE_336_PARITY_REGISTRY.md): exact per-issue source pin manifests for inactive I1 modules
 
+## Bibliothèque scientifique externe (non normative)
+
+- [Références scientifiques](research/REFERENCES.md) : six architectures, sources inspectées et provenance.
+- [Étude comparative datée](research/COGNITIVE_ARCHITECTURES.md) : résultats rapportés, limites et inférences pour I1.
+- [Questions de recherche](research/RESEARCH_QUESTIONS.md) : expériences proposées et statuts non démontrés.
+
+L'index externe ne nourrit jamais la mémoire d'un I1 né naturellement et ne modifie ni l'architecture, ni les contrôles UC/M11, ni les critères de preuve.
+
 ## Authority
 
 `src/i1/engine.json` and current executable code decide **what runs**; theory states **why** mechanisms are candidates, not what an individual must choose. The current natural I1 is not the historic A2.38/A2.39/H1/H2 experimental actors. Frozen I0 is reference-only. The normative MVP files are versioned research contracts; do not silently activate an experimental clause from a former revision.
