@@ -401,6 +401,113 @@ class EpisodicMemory:
             if owner is not None
         )
 
+    def closed_applied_action_witnesses(
+        self, *, autobiography: Sequence[Mapping[str, object]],
+        now: int, primitive: str | None = None, limit: int = 16,
+    ) -> tuple[dict[str, object], ...]:
+        """Describe generic first-person applied actions from CLOSED DC-09 refs.
+
+        Only the caller's already-UC-paid, committed JournalViews projection
+        may be supplied. The owner does not read a journal, infer an action
+        outcome's cause, or grant a value/motor preference. The resulting
+        position is explicitly AFTER the action, never an invented origin.
+        A natural runtime caller must pay before obtaining these sources.
+        """
+        if (type(now) is not int or now < 1
+                or primitive is not None and (
+                    type(primitive) is not str or not primitive)
+                or type(limit) is not int or not 1 <= limit <= 16):
+            raise ValueError("invalid bounded lived action recall query")
+        custody = self._closed_sleep_custody()
+        by_step: dict[int, dict[str, list[Mapping[str, object]]]] = {}
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        # A source must belong to a uniquely closed, previously ingested
+        # episode; an unclosed, future or duplicate projection fails closed.
+        for event in autobiography:
+            if not isinstance(event, Mapping):
+                continue
+            ref = event.get("event_id")
+            step = event.get("t_monde")
+            kind = event.get("kind")
+            if (type(ref) is not str or custody.get(ref) is None
+                    or type(step) is not int or not 1 <= step < now
+                    or kind not in ("command_experienced",
+                                    "world_transition_experienced")):
+                continue
+            if ref in seen:
+                duplicates.add(ref)
+            seen.add(ref)
+            key = ("commands" if kind == "command_experienced"
+                   else "transitions")
+            by_step.setdefault(step, {"commands": [], "transitions": []})[
+                key
+            ].append(event)
+
+        channels = ("energy", "food", "water", "integrity")
+        def body_value(value):
+            if (not isinstance(value, Mapping)
+                    or set(value) != _INTENTION_BODY_KEYS
+                    or any(type(value[k]) not in (int, float)
+                           or not isfinite(value[k])
+                           or not 0 <= value[k] <= 100 for k in channels)):
+                return None
+            return {k: float(value[k]) for k in channels}
+
+        witnesses = []
+        for step in sorted(by_step):
+            pair = by_step[step]
+            if len(pair["commands"]) != 1 or len(pair["transitions"]) != 1:
+                continue
+            cmd, outcome = pair["commands"][0], pair["transitions"][0]
+            c_ref, t_ref = cmd["event_id"], outcome["event_id"]
+            if (c_ref == t_ref or c_ref in duplicates or t_ref in duplicates
+                    or set(cmd) != {"event_id", "kind", "t_monde",
+                                    "primitive", "parameters"}
+                    or set(outcome) not in (
+                        {"event_id", "kind", "t_monde", "position_after",
+                         "body_after", "effects"},
+                        {"event_id", "kind", "t_monde", "position_after",
+                         "body_before", "body_after", "effects"})
+                    or type(cmd["primitive"]) is not str
+                    or not cmd["primitive"]
+                    or primitive is not None and cmd["primitive"] != primitive
+                    or not isinstance(cmd["parameters"], Mapping)
+                    or not isinstance(outcome["effects"], Mapping)):
+                continue
+            position = outcome["position_after"]
+            if (not isinstance(position, Mapping)
+                    or set(position) != {"x", "y"}
+                    or any(type(position[k]) is not int for k in ("x", "y"))):
+                continue
+            after = body_value(outcome["body_after"])
+            if after is None:
+                continue
+            # A prebody is not required in older policies or reduced capture.
+            # A *present but malformed* prebody invalidates the whole pair.
+            before = (body_value(outcome["body_before"])
+                      if "body_before" in outcome else None)
+            if "body_before" in outcome and before is None:
+                continue
+            witnesses.append({
+                "step": step,
+                "primitive": cmd["primitive"],
+                "parameters": dict(cmd["parameters"]),
+                "position_after": {"x": position["x"], "y": position["y"]},
+                "source_event_refs": (c_ref, t_ref),
+                "source_episode_refs": tuple(dict.fromkeys(
+                    (custody[c_ref], custody[t_ref]))),
+                "body_before": before,
+                "body_after": after,
+                "same_step_body_delta": (
+                    None if before is None else {
+                        k: after[k] - before[k] for k in channels
+                    }),
+                "causal_attribution": False,
+                "decision_evidence": False,
+            })
+        return tuple(witnesses[-limit:])
+
     def closed_sleep_site_witnesses(
         self, *, autobiography: Sequence[Mapping[str, object]],
         site: tuple[int, int], now: int,
