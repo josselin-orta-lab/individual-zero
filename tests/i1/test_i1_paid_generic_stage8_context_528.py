@@ -102,7 +102,8 @@ option = S(id="option:ordinary", version="v1", expires_at_step=11,
            motive_ref=S(type="local_opportunity"))
 command = S(primitive="boire", parameters={"target": "water"})
 proposal = S(option=option, plan=S(steps=(S(command=command),)))
-probe.competition = S(candidate_proposals=(proposal,))
+probe.competition = S(candidate_proposals=(proposal,), is_engaged=lambda ref: ref == option.id)
+probe.stage3 = S(control=S(current_step=(None, None, 0)))
 evaluation = S(option_ref=option.id, option_version="v1",
                cycle=1, t_monde=10, status="evaluated")
 evidence = S(evaluation=evaluation, evidence=0.23)
@@ -181,6 +182,24 @@ with patch.object(I1WaterPrudentRuntime,
     command.parameters = {"target": "different"}
     assert observe() == []
     command.parameters = {"target": "water"}
+    assert len(observe()) == 1
+    # A resumed multi-step option must match the *next* command, not
+    # reuse its previously executed first step.
+    second = S(command=S(primitive="manger", parameters={"target": "berries"}))
+    proposal.plan.steps = (proposal.plan.steps[0], second)
+    proposal.plan.id = "plan:resumable"
+    probe.stage3.control.current_step = (option.id, "plan:resumable", 1)
+    assert observe() == []
+    probe._i1_generic_action_paid_context = dict(
+        paid, witnesses=(dict(witness, primitive="manger",
+                              parameters={"target": "berries"}),))
+    assert len(observe()) == 1
+    # Another motor option cannot inherit this continuation index.
+    probe.stage3.control.current_step = ("other-option", "plan:resumable", 1)
+    assert observe() == []
+    probe.stage3.control.current_step = (option.id, "other-plan", 1)
+    assert observe() == []
+    probe.stage3.control.current_step = (option.id, "plan:resumable", 1)
     assert len(observe()) == 1
 print("I1_528_STAGE8_GUARD_NEGATIVE_OK")
 """
