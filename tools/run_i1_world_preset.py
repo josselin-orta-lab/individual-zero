@@ -376,6 +376,96 @@ def _split_applied_sleep_decisions(trajectory):
     return decision_groups
 
 
+
+def _audit_distinct_paid_waking_links(trajectory):
+    """Post-COMMIT M11 observer: distinguish recalled occurrences from sources.
+
+    No Memory read, UC charge, technical truth or synthetic event is passed
+    to the living individual. Reject aliasing of a genuine waking cue across
+    distinct sleeping steps, duplicate results within a paid recall, and
+    retrospective links whose physical owners cannot be authenticated.
+    """
+    by_step = {row["world_step"]: row for row in trajectory}
+    if len(by_step) != len(trajectory):
+        raise RuntimeError("duplicate physical generations in waking-link audit")
+    distinct = {}
+    cue_owners = {}
+    total = 0
+    charged_reads = 0
+    first_consultation = None
+    for observed in trajectory:
+        recall = observed["sleep_site_recall_custody_467"]
+        links = recall["waking_links"]
+        if (type(recall["read_count"]) is not int
+                or recall["read_count"] not in (0, 1)
+                or type(recall["waking_link_count"]) is not int
+                or recall["waking_link_count"] != len(links)
+                or (links and not recall["read_count"])):
+            raise RuntimeError("unpaid or malformed waking link audit")
+        charged_reads += recall["read_count"]
+        in_read = set()
+        for link in links:
+            if (type(link.get("sleep_step")) is not int
+                    or type(link.get("waking_step")) is not int
+                    or link["waking_step"] != link["sleep_step"] + 1
+                    or link["waking_step"] >= observed["world_step"]
+                    or link.get("relation") != "immediate_next_step_only"):
+                raise RuntimeError("retroactive or nonadjacent waking link")
+            sleep = by_step.get(link["sleep_step"])
+            wake = by_step.get(link["waking_step"])
+            if sleep is None or wake is None:
+                raise RuntimeError("missing physical owner of waking link")
+            sleep_refs = sleep["autobiographical_sleep_custody_467"][
+                "physical_source_refs"]
+            wake_refs = wake["autobiographical_sleep_custody_467"][
+                "physical_source_refs"]
+            wake_custody = wake["sleep_custody_observation"]
+            wake_physical = wake["physical_journal_observation"]
+            if (sleep["physical_journal_observation"] is None
+                    or sleep["physical_journal_observation"]["primitive"]
+                       != "dormir"
+                    or list(link.get("sleep_source_refs", ())) != sleep_refs
+                    or wake_physical is None
+                    or not wake_custody["woke"]
+                    or not wake_custody["waking_dc09_committed"]
+                    or wake_custody["waking_dc09_source_ref"]
+                       != link.get("waking_cue_ref")
+                    or wake_physical["primitive"]
+                       != link.get("waking_applied_primitive")
+                    or wake_refs != [
+                        link.get("waking_applied_command_ref"),
+                        link.get("waking_applied_transition_ref"),
+                    ]):
+                raise RuntimeError("paid waking link contradicts physical sources")
+            key = (
+                tuple(link["sleep_source_refs"]),
+                link["waking_cue_ref"],
+                link["waking_applied_command_ref"],
+                link["waking_applied_transition_ref"],
+            )
+            if key in in_read:
+                raise RuntimeError("waking link repeated inside one paid read")
+            in_read.add(key)
+            owner = cue_owners.setdefault(link["waking_cue_ref"], key)
+            if owner != key:
+                raise RuntimeError("one autobiographical cue assigned to two sleeps")
+            if key in distinct and distinct[key] != link:
+                raise RuntimeError("recalled waking source mutated between reads")
+            distinct[key] = link
+            total += 1
+            if first_consultation is None:
+                first_consultation = observed["world_step"]
+    return {
+        "paid_read_count": charged_reads,
+        "consulted_occurrences": total,
+        "distinct_source_links": len(distinct),
+        "repeated_consultations": total - len(distinct),
+        "first_consultation_step": first_consultation,
+        "continuous_subjective_session_proven": False,
+        "decision_influence_proven": False,
+    }
+
+
 def _m11_life(*, birth, params, life_id, path, steps):
     from i1lab.sqlite_life_store import SQLiteLifeLedger
 
@@ -1172,6 +1262,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
         "sleep_episode_link_audit_471": sleep_run_audits,
         "sleep_decision_custody_audit_490": decision_audits,
         "waking_perception_transition_custody_495": wake_custody,
+        "distinct_paid_waking_links_audit_495": _audit_distinct_paid_waking_links(trajectory),
         "physical_memory_custody_469": [
             {
                 "step": row["world_step"],

@@ -237,6 +237,17 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
             assert len({link["waking_cue_ref"],
                         link["waking_applied_command_ref"],
                         link["waking_applied_transition_ref"]}) == 3
+    distinct = life["distinct_paid_waking_links_audit_495"]
+    assert distinct["paid_read_count"] == reads
+    assert distinct["consulted_occurrences"] == sum(
+        row["waking_link_count"] for row in recall_rows)
+    assert 0 <= distinct["distinct_source_links"] <= distinct["consulted_occurrences"]
+    assert distinct["repeated_consultations"] == (
+        distinct["consulted_occurrences"] - distinct["distinct_source_links"])
+    assert distinct["continuous_subjective_session_proven"] is False
+    assert distinct["decision_influence_proven"] is False
+    assert distinct["distinct_source_links"] > 0, distinct
+    print("I1_495_DISTINCT_WAKING_LINKS", distinct)
     print("I1_495_PAID_WAKING_LINKS",
           "reads", reads,
           "links", sum(x["waking_link_count"] for x in recall_rows))
