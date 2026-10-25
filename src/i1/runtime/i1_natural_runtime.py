@@ -491,6 +491,11 @@ class I1Runtime(I1WaterPrudentRuntime):
                 "source_event_refs": list(context["source_event_refs"]),
                 "witness_count": context["witness_count"],
                 "same_step_channels": context["same_step_channels"],
+                "wait_witness_count": context["wait_witness_count"],
+                "wait_source_event_refs": list(context["wait_source_event_refs"]),
+                "wait_same_step_channels": context["wait_same_step_channels"],
+                "wait_causal_attribution": False,
+                "wait_decision_evidence": False,
                 "stage8_status": ev.status,
                 "learned_value_status": ev.learned_value_status,
                 "simulated_value_status": ev.simulated_value_status,
@@ -545,14 +550,22 @@ class I1Runtime(I1WaterPrudentRuntime):
                         policies={p.version: p for p in (P2, P7, PNEW, PWAKE)},
                         selected_event_refs=refs,
                     )
-                    rows = self.memory.closed_sleep_site_witnesses(
+                    stationary = self.memory.closed_stationary_site_witnesses(
                         autobiography=projected,
                         site=(capture.x, capture.y),
                         now=capture.t_monde,
                     )
+                    rows = stationary["dormir"]
+                    wait_rows = stationary["attendre"]
                     balance = self.memory.describe_closed_sleep_site(
                         witnesses=rows, site=(capture.x, capture.y),
                     )
+                    wait_balance = self.memory.describe_closed_sleep_site(
+                        witnesses=wait_rows, site=(capture.x, capture.y),
+                    )
+                    wait_refs = sorted({
+                        ref for row in wait_rows for ref in row["source_event_refs"]
+                    })
                     # #495: surface only source-owned, bounded temporal
                     # associations from THIS already-paid Memory read. They
                     # are observer evidence of what was recalled, not an
@@ -582,6 +595,9 @@ class I1Runtime(I1WaterPrudentRuntime):
                         })),
                         "witness_count": len(rows),
                         "same_step_channels": balance["same_step_channels"],
+                        "wait_witness_count": len(wait_rows),
+                        "wait_source_event_refs": tuple(wait_refs),
+                        "wait_same_step_channels": wait_balance["same_step_channels"],
                         "charged_operation": _SLEEP_RECALL_OPERATION,
                     }
                     self._write(
@@ -589,6 +605,11 @@ class I1Runtime(I1WaterPrudentRuntime):
                         data={
                             "site": [capture.x, capture.y],
                             "witness_count": len(rows),
+                            "wait_witness_count": len(wait_rows),
+                            "wait_event_refs": wait_refs,
+                            "wait_same_step_channels": wait_balance["same_step_channels"],
+                            "wait_causal_attribution": False,
+                            "wait_decision_evidence": False,
                             "event_refs": sorted({
                                 ref for row in rows
                                 for ref in row["source_event_refs"]
