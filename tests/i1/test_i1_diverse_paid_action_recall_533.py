@@ -64,6 +64,14 @@ assert [w["step"] for w in read(per_command_limit=3)] == [1,2,3,20,21,22]
 m._episodes.append(ep(23))
 events.append(events[0])
 assert [w["step"] for w in read(per_command_limit=3)] == [2,3,21,22,23]
+# Structured, authorized first-person scalar parameters must compare
+# exactly without a hash-key crash (including canonical float wrappers).
+events.pop()  # remove duplicate c1 from the earlier adversarial test
+events[0]["parameters"] = {"target": {"$f64": "0x1.8000000000000p+0"}}
+m._seen_event_refs.add("c1")
+nested = read(per_command_limit=3)
+assert [w["step"] for w in nested] == [1, 2, 3, 21, 22, 23]
+assert nested[0]["parameters"] == {"target": {"$f64": "0x1.8000000000000p+0"}}
 for bad in (0, -1, True, 17, 1.0):
     try:
         read(per_command_limit=bad)
