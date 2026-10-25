@@ -510,7 +510,10 @@ def _m11_life(*, birth, params, life_id, path, steps):
                         "reduced continuation unexpectedly has full waking perception")
             if sleep_provenance == "readmitted_after_wake":
                 if (not wakes or len(reduced) != 1
-                        or not (step_events.index(wakes[0])
+                        or wakes[0].get("attempt_ref") != command.get("attempt_ref")
+                        or reduced[0].get("attempt_ref") != command.get("attempt_ref")
+                        or not (step_events.index(reduced[0])
+                                < step_events.index(wakes[0])
                                 < step_events.index(capture_receipt)
                                 < step_events.index(command))):
                     raise RuntimeError(
