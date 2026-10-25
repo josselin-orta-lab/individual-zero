@@ -45,7 +45,7 @@ assert [(r["primitive"], r["observed_steps"]) for r in fragments] == [
 sleep = fragments[0]
 assert sleep["observed_total_body_delta"]["energy"] == 7
 assert sleep["observed_total_body_delta"]["water"] == -2
-assert sleep["source_event_refs"] == ("c1", "t1", "c2", "t2")
+assert sleep["source_event_refs"] == ["c1", "t1", "c2", "t2"]
 assert not sleep["complete_subjective_session"]
 assert not sleep["decision_evidence"] and not sleep["causal_attribution"]
 assert fragments[1]["observed_total_body_delta"]["energy"] == 0
