@@ -193,5 +193,94 @@ print("I1_528_STAGE8_GUARD_NEGATIVE_OK")
             self.assertIn("I1_528_STAGE8_GUARD_NEGATIVE_OK", result.stdout)
 
 
+    def test_natural_cold_recovery_preserves_paid_generic_receipts(self):
+        """One real M11 life, uninterrupted versus step-28 cold recovery."""
+        with TemporaryDirectory() as folder:
+            generated = Path(folder) / "generated"
+            build = subprocess.run(
+                [sys.executable, str(ROOT / "scripts/build_i1_fork.py"),
+                 "--output", str(generated)],
+                capture_output=True, text=True,
+            )
+            self.assertEqual(build.returncode, 0, build.stdout + build.stderr)
+            code = r"""
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from run_i1_world_preset import load_preset, _birth_parameters
+from i1lab.i1_birth import birth_i1_m11, recover_i1_m11
+from i1lab.i1_natural_runtime import I1Runtime
+from i1lab.sqlite_life_store import SQLiteLifeLedger
+preset, _ = load_preset("empty-land")
+params, _ = _birth_parameters(preset)
+life_id = "i1:preset:empty-land:246:0"
+
+def factory():
+    return I1Runtime(
+        birth_life_id=life_id, autonomous_mortal=True,
+        m11_sqlite_custody=True, wal_path=None,
+        diagnostic_sample_cost_uc=1, module_occupancy_cost_uc=1,
+        **params,
+    )
+def snapshot(rt):
+    events = [row.causal_event for row in rt.journal.entries]
+    generic = tuple(
+        (row["t_monde"], row.get("cycle"), row["data"])
+        for row in events
+        if row.get("kind") == "i1_generic_lived_action_stage8_context_observed"
+    )
+    closed = {ref for ep in rt.memory.export_causal_state()["episodes"]
+              for ref in ep["event_refs"]}
+    commits = {ref for row in events if row.get("kind") == "auto_segment_commit"
+               for ref in row["event_refs"]}
+    assert closed <= commits
+    for _, _, receipt in generic:
+        for witness in receipt["witnesses"]:
+            assert set(witness["source_event_refs"]) <= closed
+    return (rt.journal.head_hash, rt.memory.export_causal_state(), generic)
+def step(actor, count, terminal=False):
+    for i in range(count):
+        receipt = actor.run_step()
+        expected = "dead" if terminal and i == count-1 else "active"
+        assert receipt.status == expected, (receipt.status, expected)
+
+with TemporaryDirectory() as tmp:
+    straight = str(Path(tmp)/"straight.sqlite")
+    cold = str(Path(tmp)/"cold.sqlite")
+    with birth_i1_m11(db_path=straight, life_id=life_id, **params) as actor:
+        step(actor, 28)
+        midpoint = snapshot(actor._runtime)
+        step(actor, 25, terminal=True)
+        baseline = snapshot(actor._runtime)
+    with birth_i1_m11(db_path=cold, life_id=life_id, **params) as actor:
+        step(actor, 28)
+        assert snapshot(actor._runtime) == midpoint
+    audit = SQLiteLifeLedger.audit_read_only(
+        path=cold, expected_individual_id=life_id,
+    )
+    assert audit.generation == 28 and audit.may_recover
+    with recover_i1_m11(db_path=cold, life_id=life_id,
+                         runtime_factory=factory) as actor:
+        assert snapshot(actor._runtime) == midpoint
+        step(actor, 25, terminal=True)
+        restored = snapshot(actor._runtime)
+    assert restored == baseline
+    assert baseline[2], "no naturally paid general Stage8 testimony"
+    final = SQLiteLifeLedger.audit_read_only(
+        path=cold, expected_individual_id=life_id,
+    )
+    assert final.generation == 53 and final.status == "dead"
+    assert not final.may_recover
+    assert final.journal_head == baseline[0]
+    print("I1_528_GENERIC_M11_COLD_PARITY_OK", len(baseline[2]))
+"""
+            result = subprocess.run(
+                [sys.executable, "-c", code],
+                env={"PYTHONPATH": str(generated) + ":" + str(ROOT / "tools")},
+                capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("I1_528_GENERIC_M11_COLD_PARITY_OK", result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
