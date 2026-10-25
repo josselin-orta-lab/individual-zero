@@ -307,7 +307,7 @@ def _approved_closed_generic_action_526(root: Path, rel: str) -> bool:
     if rel != "i1/modules/memory.py" or not (root / rel).is_file():
         return False
     data = (ROOT / "src/i1/modules/memory.py").read_bytes()
-    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
     return digest == "30d766e08888107d5b2eead9dcd4923e41663d38"
 
 
