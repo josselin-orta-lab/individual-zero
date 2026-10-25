@@ -80,16 +80,17 @@ def witness(runtime):
     }
     return (runtime.journal.head_hash, memory, tuple(observations),
             frozenset(ids),frozenset(sleep_ids),frozenset(wait_ids))
-def advance(actor, n):
-    for _ in range(n):
+def advance(actor, n, *, terminal=False):
+    for i in range(n):
         receipt=actor.run_step()
-        assert receipt.status=="active",receipt
+        expected="dead" if terminal and i==n-1 else "active"
+        assert receipt.status==expected,(receipt,expected)
 
 with TemporaryDirectory() as folder:
     straight=str(Path(folder)/"straight.sqlite")
     recovered=str(Path(folder)/"recovered.sqlite")
     with birth_i1_m11(db_path=straight,life_id=life_id,**params) as actor:
-        advance(actor,55)
+        advance(actor,53,terminal=True)
         baseline=witness(actor._runtime)
     with birth_i1_m11(db_path=recovered,life_id=life_id,**params) as actor:
         advance(actor,28)
@@ -100,17 +101,18 @@ with TemporaryDirectory() as folder:
     with recover_i1_m11(db_path=recovered,life_id=life_id,
                          runtime_factory=factory) as actor:
         assert witness(actor._runtime)==cut, "cold restore altered recalled sources"
-        advance(actor,27)
+        advance(actor,25,terminal=True)
         after=witness(actor._runtime)
     assert after==baseline, "recovered life diverged from uninterrupted life"
     assert after[2], "no natural paid Memory consult"
-    assert after[3], "no natural closed waking links after 55 steps"
+    assert after[3], "no natural closed waking links at terminal step"
     assert after[4], "no natural closed sleep sources"
     assert after[5], "no natural closed wait controls"
     assert any(d["wait_witness_count"] and d["witness_count"] for _,d in after[2]), "no matched paid first-person site contrast"
     audit=SQLiteLifeLedger.audit_read_only(
         path=recovered,expected_individual_id=life_id)
-    assert audit.generation==55 and audit.journal_head==baseline[0]
+    assert audit.generation==53 and audit.journal_head==baseline[0]
+    assert audit.status=="dead" and not audit.may_recover
     print("I1_521_COLD_STATIONARY_PARITY_OK",len(after[2]),len(after[4]),len(after[5]))
 """
             finished = subprocess.run(
