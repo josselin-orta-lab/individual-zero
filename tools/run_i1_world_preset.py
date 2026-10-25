@@ -494,6 +494,27 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 sleep_provenance = "reduced_sleep_continuation"
             else:
                 sleep_provenance = "ordinary_awake_admission"
+            # #490: A waking re-admission is not merely a technical wake
+            # label. It must have a full, same-attempt, pre-command sensory
+            # capture already observed by the waking Stage3 path. Never use
+            # this audit as a source of new Memory, a future prediction, or
+            # permission to issue a command.
+            if sleep_provenance in (
+                    "ordinary_awake_admission", "readmitted_after_wake"):
+                if not same_step_capture:
+                    raise RuntimeError(
+                        "awake sleep decision missing authentic pre-command perception")
+            elif sleep_provenance == "reduced_sleep_continuation":
+                if captures:
+                    raise RuntimeError(
+                        "reduced continuation unexpectedly has full waking perception")
+            if sleep_provenance == "readmitted_after_wake":
+                if (not wakes or len(reduced) != 1
+                        or not (step_events.index(wakes[0])
+                                < step_events.index(capture_receipt)
+                                < step_events.index(command))):
+                    raise RuntimeError(
+                        "readmission lacks wake-before-perception-before-command")
             latest = max(frames, key=lambda e: e["cycle"]) if frames else None
             evaluations = (
                 {e["data"]["option_ref"]: e["data"]["learning_signature"]
@@ -525,6 +546,10 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 "mode_before": mode_before,
                 "mode_after": life._runtime.sleep_session.mode,
                 "reduced_perception": bool(reduced),
+                "waking_capture_before_command": bool(same_step_capture),
+                "wake_capture_after_control_boundary": (
+                    sleep_provenance == "readmitted_after_wake"
+                    and bool(same_step_capture)),
                 "sleep_entered": bool(entered),
                 "woke": bool(wakes),
                 "wake_reason": None if not wakes else wakes[0]["data"]["reason"],
