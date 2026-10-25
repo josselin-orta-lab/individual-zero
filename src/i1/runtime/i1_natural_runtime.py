@@ -502,6 +502,13 @@ class I1Runtime(I1WaterPrudentRuntime):
                                     row["parameters"], command.parameters))
                 if not matches:
                     continue
+                from i1.modules.memory import same_lived_command_parameters
+                fragments = tuple(
+                    fragment for fragment in generic["fragments"]
+                    if fragment["primitive"] == command.primitive
+                    and same_lived_command_parameters(
+                        fragment["parameters"], command.parameters)
+                )
                 self._write(
                     kind="i1_generic_lived_action_stage8_context_observed",
                     cycle=cycle, data={
@@ -510,6 +517,10 @@ class I1Runtime(I1WaterPrudentRuntime):
                         "parameters": dict(command.parameters),
                         "current_site": [capture.x, capture.y],
                         "witness_count": len(matches),
+                        "observed_fragment_count": len(fragments),
+                        "observed_fragments": list(fragments),
+                        "fragments_causal_attribution": False,
+                        "fragments_decision_evidence": False,
                         "witnesses": [
                             {
                                 "step": row["step"],
@@ -626,16 +637,20 @@ class I1Runtime(I1WaterPrudentRuntime):
                         policies={p.version: p for p in (P2, P7, PNEW, PWAKE)},
                         selected_event_refs=refs,
                     )
+                    from i1.modules.action_fragments import closed_action_fragments
+                    action_witnesses = self.memory.closed_applied_action_witnesses(
+                        autobiography=projected,
+                        now=capture.t_monde,
+                        per_command_limit=3,
+                    )
                     self._i1_generic_action_paid_context = {
                         "step": capture.t_monde,
                         "cycle": cycle,
                         "site": (capture.x, capture.y),
                         "charged_operation": _SLEEP_RECALL_OPERATION,
-                        "witnesses": self.memory.closed_applied_action_witnesses(
-                            autobiography=projected,
-                            now=capture.t_monde,
-                            per_command_limit=3,
-                        ),
+                        "witnesses": action_witnesses,
+                        # Derived solely from the same already-paid witnesses.
+                        "fragments": closed_action_fragments(action_witnesses),
                     }
                     stationary = self.memory.closed_stationary_site_witnesses(
                         autobiography=projected,
