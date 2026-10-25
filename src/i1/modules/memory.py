@@ -454,6 +454,39 @@ class EpisodicMemory:
                 return None
             return {k: float(value[k]) for k in channels}
 
+        # Exact DC-09 first-person transition vocabulary. Do not retain
+        # arbitrary technical fields even if Memory is called directly.
+        def lived_effects(raw):
+            if not isinstance(raw, Mapping):
+                return None
+            scalar = {
+                "movement": str, "ate": str, "rest": str,
+                "drank": bool, "tool_crafted": bool,
+                "shelter_formed": bool, "placed_stone_count": int,
+            }
+            if any(type(k) is not str or k not in (*scalar, "collected")
+                   for k in raw):
+                return None
+            detached = {}
+            for key, value in raw.items():
+                if key == "collected":
+                    if (not isinstance(value, Mapping)
+                            or set(value) != {"kind", "quantity"}
+                            or type(value["kind"]) is not str
+                            or not value["kind"]
+                            or type(value["quantity"]) is not int
+                            or value["quantity"] < 0):
+                        return None
+                    detached[key] = {
+                        "kind": value["kind"], "quantity": value["quantity"],
+                    }
+                elif (type(value) is not scalar[key]
+                      or key == "placed_stone_count" and value < 0):
+                    return None
+                else:
+                    detached[key] = value
+            return detached
+
         witnesses = []
         for step in sorted(by_step):
             pair = by_step[step]
@@ -481,7 +514,8 @@ class EpisodicMemory:
                     or any(type(position[k]) is not int for k in ("x", "y"))):
                 continue
             after = body_value(outcome["body_after"])
-            if after is None:
+            effects = lived_effects(outcome["effects"])
+            if after is None or effects is None:
                 continue
             # A prebody is not required in older policies or reduced capture.
             # A *present but malformed* prebody invalidates the whole pair.
@@ -499,6 +533,7 @@ class EpisodicMemory:
                     (custody[c_ref], custody[t_ref]))),
                 "body_before": before,
                 "body_after": after,
+                "observed_effects": effects,
                 "same_step_body_delta": (
                     None if before is None else {
                         k: after[k] - before[k] for k in channels
