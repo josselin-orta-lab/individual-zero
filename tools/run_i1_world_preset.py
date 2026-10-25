@@ -576,7 +576,14 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 and e.get("filter_version")
                     == "i1-lived-prebody-waking-body-v1"
             ]
-            if (bool(wake_events) != bool(wake_cue_candidate)
+            # Mortal death is an intentionally uncommitted terminal transition.
+            # The first-person capture may be authentic, but no post-death
+            # DC-09 event or AutoSegmentCommit may be published.
+            expected_wake_commit = (
+                wake_cue_candidate is not None and receipt.status == "active"
+            )
+            if (bool(wake_events) != expected_wake_commit
+                    or bool(wake_commits) != expected_wake_commit
                     or len(wake_events) > 1 or len(wake_commits) > 1):
                 raise RuntimeError(
                     "waking DC-09 commitment and lived capture disagree: "
@@ -659,6 +666,9 @@ def _m11_life(*, birth, params, life_id, path, steps):
                     and bool(same_step_capture)),
                 "dormant_wake_cue_eligible": wake_cue_candidate is not None,
                 "waking_dc09_committed": bool(wake_commits),
+                "waking_dc09_terminal_uncommitted": (
+                    wake_cue_candidate is not None and receipt.status == "dead"
+                    and not wake_commits and not wake_events),
                 "dormant_wake_capture_ref": (
                     None if wake_cue_candidate is None else
                     wake_cue_candidate["source_event_ref"]),
