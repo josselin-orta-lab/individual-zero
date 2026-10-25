@@ -72,6 +72,13 @@ m._seen_event_refs.add("c1")
 nested = read(per_command_limit=3)
 assert [w["step"] for w in nested] == [1, 2, 3, 21, 22, 23]
 assert nested[0]["parameters"] == {"target": {"$f64": "0x1.8000000000000p+0"}}
+from i1.modules.memory import same_lived_command_parameters
+assert not same_lived_command_parameters({"target": True}, {"target": 1})
+assert not same_lived_command_parameters({"target": 1}, {"target": 1.0})
+assert same_lived_command_parameters({"target": {"$f64": "0x1.8000000000000p+0"}},
+                                    {"target": {"$f64": "0x1.8000000000000p+0"}})
+assert not same_lived_command_parameters({"target": {"$f64": "0x1.8000000000000p+0"}},
+                                        {"target": 1.5})
 for bad in (0, -1, True, 17, 1.0):
     try:
         read(per_command_limit=bad)
