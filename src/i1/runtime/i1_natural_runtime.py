@@ -632,6 +632,7 @@ class I1Runtime(I1WaterPrudentRuntime):
                         "witnesses": self.memory.closed_applied_action_witnesses(
                             autobiography=projected,
                             now=capture.t_monde,
+                            per_command_limit=3,
                         ),
                     }
                     stationary = self.memory.closed_stationary_site_witnesses(
