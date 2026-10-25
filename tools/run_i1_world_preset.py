@@ -622,6 +622,12 @@ def _m11_life(*, birth, params, life_id, path, steps):
                     sleep_provenance == "readmitted_after_wake"
                     and bool(same_step_capture)),
                 "dormant_wake_cue_eligible": wake_cue_candidate is not None,
+                "dormant_wake_capture_ref": (
+                    None if wake_cue_candidate is None else
+                    wake_cue_candidate["source_event_ref"]),
+                "dormant_wake_applied_transition_ref": (
+                    None if wake_cue_candidate is None else
+                    physical_sources[0].event_id),
                 "sleep_entered": bool(entered),
                 "woke": bool(wakes),
                 "wake_reason": None if not wakes else wakes[0]["data"]["reason"],
@@ -955,6 +961,47 @@ def _m11_life(*, birth, params, life_id, path, steps):
     # Split only on the independently classified real applied admission,
     # not on position, rest effects, or an inferred continuous session.
     decision_groups = _split_applied_sleep_decisions(trajectory)
+    # #495: distinguish a directly perceived postwake body from the
+    # *separate* physical transition that Memory could have received. The
+    # technical capture is never itself an autobiographical source. A
+    # qualifying cue does not imply that its applied transition was read,
+    # ingested, closed, or attached to a subjective sleep session.
+    wake_custody = []
+    for row in trajectory:
+        sleep = row["sleep_custody_observation"]
+        capture_ref = sleep["dormant_wake_capture_ref"]
+        physical_ref = sleep["dormant_wake_applied_transition_ref"]
+        if capture_ref is None:
+            if physical_ref is not None or sleep["dormant_wake_cue_eligible"]:
+                raise RuntimeError("orphan postwake candidate transition")
+            continue
+        if (not sleep["dormant_wake_cue_eligible"]
+                or type(capture_ref) is not str or not capture_ref
+                or type(physical_ref) is not str or not physical_ref):
+            raise RuntimeError("malformed first-person wake candidate custody")
+        physical_refs = row["autobiographical_sleep_custody_467"][
+            "physical_source_refs"]
+        if physical_ref not in physical_refs:
+            raise RuntimeError("wake candidate lacks same-step applied transition")
+        owners = indexed_refs.get(physical_ref, [])
+        if len(owners) > 1:
+            raise RuntimeError("duplicate wake transition episode owner")
+        commit_step = first_autobiographical_commit.get(physical_ref)
+        ingest_step = first_memory_ingestion.get(physical_ref)
+        if (ingest_step is not None
+                and (commit_step is None or ingest_step < commit_step)):
+            raise RuntimeError("Memory received uncommitted wake transition")
+        wake_custody.append({
+            "step": row["world_step"],
+            "first_person_capture_ref": capture_ref,
+            "applied_transition_ref": physical_ref,
+            "transition_committed_step": commit_step,
+            "transition_ingested_step": ingest_step,
+            "closed_episode_ref": None if not owners else owners[0],
+            "capture_is_personal_memory": False,
+            "subjective_waking_boundary_proven": False,
+            "continuous_subjective_session_proven": False,
+        })
     decision_audits = []
     for group in decision_groups:
         refs = group["source_refs"]
@@ -990,6 +1037,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
         "effective_birth_physics": effective,
         "sleep_episode_link_audit_471": sleep_run_audits,
         "sleep_decision_custody_audit_490": decision_audits,
+        "waking_perception_transition_custody_495": wake_custody,
         "physical_memory_custody_469": [
             {
                 "step": row["world_step"],
