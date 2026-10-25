@@ -356,7 +356,7 @@ def _approved_action_fragments_541(root: Path, rel: str) -> bool:
         "i1/modules/action_fragments.py": (
             "src/i1/modules/action_fragments.py", "e0616b41fdc2754918ed92dff42f173be2649cee"),
         "i1lab/i1_natural_runtime.py": (
-            "src/i1/runtime/i1_natural_runtime.py", "d3252a2683a432c785adbc2fd792a5a4f65f430c"),
+            "src/i1/runtime/i1_natural_runtime.py", "eca2411f80d4a97bc1366504dd2507e2caee05cf"),
     }
     row = pins.get(rel)
     if row is None or not (root / rel).is_file():
