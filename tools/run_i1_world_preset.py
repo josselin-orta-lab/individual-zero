@@ -466,6 +466,83 @@ def _audit_distinct_paid_waking_links(trajectory):
     }
 
 
+
+def _audit_paid_matched_stationary_sites(trajectory):
+    """Operator-only source-to-physical pairing of already paid memories.
+
+    Never calls Memory or adds a decision input. Counts repeated receipts
+    separately from distinct, authentically closed and matched steps.
+    """
+    physical = {}
+    for row in trajectory:
+        action = row["physical_journal_observation"]
+        refs = row["autobiographical_sleep_custody_467"]["physical_source_refs"]
+        if action is None:
+            continue
+        if len(refs) != 2 or len(set(refs)) != 2:
+            raise RuntimeError("ambiguous physical stationary source identity")
+        physical[frozenset(refs)] = (
+            row["world_step"], action["primitive"], tuple(row["position_after"])
+            if isinstance(row["position_after"], (list, tuple))
+            else (row["position_after"]["x"], row["position_after"]["y"]),
+        )
+    unique_sleep, unique_wait = set(), set()
+    matched_reads = 0
+    for row in trajectory:
+        recall = row["sleep_site_recall_custody_467"]
+        if not recall["read_count"]:
+            if recall["witness_count"] or recall["wait_witness_count"]:
+                raise RuntimeError("unpaid stationary site context")
+            continue
+        if recall["paid_uc"] != 1:
+            raise RuntimeError("stationary recall not charged exactly once")
+        site = tuple(recall["observed_site"])
+        if len(site) != 2:
+            raise RuntimeError("invalid personally recalled site")
+        owned = []
+        for primitive, refs, count, target in (
+            ("dormir", recall["source_event_refs"], recall["witness_count"],
+             unique_sleep),
+            ("attendre", recall["wait_source_event_refs"],
+             recall["wait_witness_count"], unique_wait),
+        ):
+            if len(refs) != count * 2 or len(refs) != len(set(refs)):
+                raise RuntimeError("malformed autobiographical stationary refs")
+            source_set = set(refs)
+            found = 0
+            for pair, (step, action, actual_site) in physical.items():
+                if pair <= source_set:
+                    if (action != primitive or actual_site != site
+                            or step >= row["world_step"]):
+                        raise RuntimeError("foreign or future stationary recall")
+                    target.add((site, step, tuple(sorted(pair))))
+                    owned.extend(pair)
+                    found += 1
+            if found != count:
+                raise RuntimeError("unmatched stationary witness ownership")
+        if len(owned) != len(set(owned)):
+            raise RuntimeError("sleep/wait control source overlap")
+        if recall["witness_count"] and recall["wait_witness_count"]:
+            matched_reads += 1
+    matched_sites = {site for site, *_ in unique_sleep} & {
+        site for site, *_ in unique_wait
+    }
+    return {
+        "paid_reads": sum(row["sleep_site_recall_custody_467"]["read_count"]
+                          for row in trajectory),
+        "sleep_distinct": len(unique_sleep),
+        "wait_distinct": len(unique_wait),
+        "matched_site_count": len(matched_sites),
+        "matched_paid_reads": matched_reads,
+        "sleep_occurrences": sum(row["sleep_site_recall_custody_467"]["witness_count"]
+                                  for row in trajectory),
+        "wait_occurrences": sum(row["sleep_site_recall_custody_467"]["wait_witness_count"]
+                                 for row in trajectory),
+        "causal_attribution": False,
+        "decision_influence_proven": False,
+    }
+
+
 def _m11_life(*, birth, params, life_id, path, steps):
     from i1lab.sqlite_life_store import SQLiteLifeLedger
 
@@ -1389,6 +1466,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
         "sleep_decision_custody_audit_490": decision_audits,
         "waking_perception_transition_custody_495": wake_custody,
         "distinct_paid_waking_links_audit_495": _audit_distinct_paid_waking_links(trajectory),
+        "matched_stationary_site_audit_521": _audit_paid_matched_stationary_sites(trajectory),
         "physical_memory_custody_469": [
             {
                 "step": row["world_step"],
