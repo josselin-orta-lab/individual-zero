@@ -320,9 +320,12 @@ def _split_applied_sleep_decisions(trajectory):
             continue
         refs = row["autobiographical_sleep_custody_467"]["physical_source_refs"]
         if kind in ("ordinary_awake_admission", "readmitted_after_wake"):
-            if (kind == "readmitted_after_wake"
-                    and (not sleep["woke"] or not sleep["reduced_perception"])):
-                raise RuntimeError("readmission lacks a real reduced wake")
+            if kind == "readmitted_after_wake":
+                if not sleep["woke"] or not sleep["reduced_perception"]:
+                    raise RuntimeError("readmission lacks a real reduced wake")
+                if (active_decision is None
+                        or row["world_step"] != active_decision["steps"][-1] + 1):
+                    raise RuntimeError("readmission lacks preceding sleep step")
             if kind == "ordinary_awake_admission" and sleep["reduced_perception"]:
                 raise RuntimeError("ordinary decision cannot be reduced")
             active_decision = {
