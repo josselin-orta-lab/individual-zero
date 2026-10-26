@@ -126,6 +126,8 @@ jobs:
         run: python -m unittest discover -s tests/i1 -p test_i1_general_situated_stage8_guard_553.py -v
       - name: General situated history wait and action identity
         run: python -m unittest discover -s tests/i1 -p test_i1_general_situated_h_553.py -v
+      - name: Natural I1 separately priced old recall negative M11 guard
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_old_recall_budget_557.py -v
       - name: Old recalled episode joined Memory and indexed DC-09 L1 custody
         run: python -m unittest discover -s tests/i1 -p test_i1_old_episode_joint_contract_557.py -v
       - name: Shared situated sleep and generic h core compatibility
