@@ -62,6 +62,17 @@ with TemporaryDirectory() as home:
             raise AssertionError("no naturally observed published-h consultation")
         initial_receipts=receipts(live)
         assert initial_receipts
+        paid_cycles = {
+            (entry.causal_event["t_monde"], entry.causal_event.get("cycle"))
+            for entry in live._runtime.journal.entries
+            if entry.causal_event["kind"] == "compute_charge"
+            and entry.causal_event["data"].get("module") == "planning"
+            and entry.causal_event["data"].get("operation") == "i1_published_action_recall"
+            and entry.causal_event["data"].get("requested_uc") == 1
+            and entry.causal_event["data"].get("accepted") is True
+        }
+        assert all((event["t_monde"], event.get("cycle")) in paid_cycles
+                   for event in initial_receipts), "unpaid published-h receipt"
         before_state=live._runtime.slow_history.export_causal_state()
         before_journal=live._runtime.journal.head_hash
         before_refs=live._runtime.slow_history.committed_episode_refs()
