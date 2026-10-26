@@ -384,6 +384,21 @@ def _approved_stage10_paid_fragments_543(root: Path, rel: str) -> bool:
     return blob == row[1]
 
 
+def _approved_general_situated_h_553(root: Path, rel: str) -> bool:
+    """Pinned I1-only generic situated observer without I0 changes."""
+    pins = {
+        "i1/modules/situated_action_history.py": ("src/i1/modules/situated_action_history.py", "66436661999d831e7f4ffa1b73eb7e51a2b489b3"),
+        "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py", "5cfbf7c6b0586c0d94a384990990f4427cc3b555"),
+    }
+    item = pins.get(rel)
+    if item is None:
+        return False
+    data = (ROOT / item[0]).read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii")
+                  + bytes([0]) + data).hexdigest()
+    return digest == item[1] and (root / rel).is_file()
+
+
 def _approved_situated_sleep_observer_473(root: Path, rel: str) -> bool:
     """Exact pinned I1 observer-only situated sleep projection."""
     pins = {
@@ -1516,7 +1531,7 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_closed_sleep_site_467(new_root, rel) or _approved_transition_prebody_467(new_root, rel) or _approved_dormant_prebody_dc09_467(new_root, rel) or _approved_situated_sleep_473(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel) or _approved_site_328(new_root, rel) or _approved_wake_329(new_root, rel) or _approved_memory_359(new_root, rel) or _approved_option_360(new_root, rel) or _approved_prospect_361(new_root, rel) or _approved_memory_426(new_root, rel) or _approved_lived_prospect_427(new_root, rel) or _approved_metabolic_v4_461(new_root, rel) or _approved_zero_reserve_457(new_root, rel) or _approved_action_fragments_541(new_root, rel) or _approved_stage10_paid_fragments_543(new_root, rel) or _approved_published_h_recall_549(new_root, rel) or _approved_situated_sleep_observer_473(new_root, rel)))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_closed_sleep_site_467(new_root, rel) or _approved_transition_prebody_467(new_root, rel) or _approved_dormant_prebody_dc09_467(new_root, rel) or _approved_situated_sleep_473(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel) or _approved_site_328(new_root, rel) or _approved_wake_329(new_root, rel) or _approved_memory_359(new_root, rel) or _approved_option_360(new_root, rel) or _approved_prospect_361(new_root, rel) or _approved_memory_426(new_root, rel) or _approved_lived_prospect_427(new_root, rel) or _approved_metabolic_v4_461(new_root, rel) or _approved_zero_reserve_457(new_root, rel) or _approved_action_fragments_541(new_root, rel) or _approved_stage10_paid_fragments_543(new_root, rel) or _approved_published_h_recall_549(new_root, rel) or _approved_situated_sleep_observer_473(new_root, rel) or _approved_general_situated_h_553(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
             if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_closed_sleep_site_467(new_root, rel) or _approved_transition_prebody_467(new_root, rel) or _approved_dormant_prebody_dc09_467(new_root, rel) or _approved_situated_sleep_473(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel) or _approved_site_328(new_root, rel) or _approved_wake_329(new_root, rel) or _approved_memory_359(new_root, rel) or _approved_option_360(new_root, rel) or _approved_prospect_361(new_root, rel) or _approved_memory_426(new_root, rel) or _approved_lived_prospect_427(new_root, rel) or _approved_metabolic_v4_461(new_root, rel) or _approved_zero_reserve_457(new_root, rel)) and not (
@@ -1632,6 +1647,7 @@ def verify(reference_root: Path) -> None:
                 or _approved_stage10_paid_fragments_543(new_root, rel)
                 or _approved_published_h_recall_549(new_root, rel)
                 or _approved_situated_sleep_observer_473(new_root, rel)
+                or _approved_general_situated_h_553(new_root, rel)
                 or (rel == "i1lab/journal_views.py"
                     and _approved_autobio_index_rehydration(
                         _reference_autobio_fastpath((old_root / rel).read_bytes()),

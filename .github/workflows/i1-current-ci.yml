@@ -120,6 +120,12 @@ jobs:
         run: python -m unittest discover -s tests/i1 -p test_i1_situated_sleep_stage8_guard_473.py -v
       - name: Natural situated sleep Stage8 receipt and M11 cold parity
         run: python -m unittest discover -s tests/i1 -p test_i1_natural_situated_sleep_m11_473.py -v
+      - name: Natural non-sleep situated Stage8 and M11 cold parity
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_general_situated_m11_553.py -v
+      - name: Generic situated Stage8 paid observer adversarial guard
+        run: python -m unittest discover -s tests/i1 -p test_i1_general_situated_stage8_guard_553.py -v
+      - name: General situated history wait and action identity
+        run: python -m unittest discover -s tests/i1 -p test_i1_general_situated_h_553.py -v
       - name: Situated first-person h sleep summary regression
         run: python -m unittest discover -s tests/i1 -p test_i1_situated_sleep_h_473.py -v
       - name: Stage8 paid published-h adversarial guard
