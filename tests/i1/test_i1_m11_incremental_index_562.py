@@ -40,6 +40,63 @@ class M11IncrementalClosedIndex562(unittest.TestCase):
             self.assertEqual(index.before_step(episode_count=len(closed)), after)
         self.assertEqual(index.inspected_refs, 6)
 
+    def test_same_natural_m11_life_has_identical_full_scan_report(self):
+        """The reference algorithm must produce the same complete life audit.
+
+        Two genuinely born, identically seeded lives are executed independently,
+        with only the operator-side indexing algorithm swapped. This is NOT a
+        benchmark and does not assert a particular chosen behavior.
+        """
+        from unittest.mock import patch
+        sys.path.insert(0, str(ROOT / "tools"))
+        import i1_m11_closed_index
+        import run_i1_world_preset as runner
+
+        class ReferenceFullScanIndex:
+            def __init__(self):
+                self.episodes = []
+
+            def before_step(self, *, episode_count):
+                if episode_count != len(self.episodes):
+                    raise RuntimeError("full scan reference count drift")
+                occurrences = {}
+                for episode in self.episodes:
+                    for ref in episode["event_refs"]:
+                        occurrences[ref] = occurrences.get(ref, 0) + 1
+                return occurrences
+
+            def extend_committed(self, newly_closed):
+                self.episodes.extend(newly_closed)
+
+        with TemporaryDirectory() as directory:
+            def natural_run(folder, reference=False):
+                out = Path(directory) / folder
+                if reference:
+                    with patch.object(
+                        i1_m11_closed_index, "ClosedSourceOccurrenceIndex",
+                        ReferenceFullScanIndex,
+                    ):
+                        report = runner.execute(
+                            preset_name="empty-land", seed=246, steps=3,
+                            lives=1, custody="m11", output_dir=out,
+                        )
+                else:
+                    report = runner.execute(
+                        preset_name="empty-land", seed=246, steps=3,
+                        lives=1, custody="m11", output_dir=out,
+                    )
+                self.assertEqual(report["status"],
+                                 "COMPLETED_WITHOUT_SCIENTIFIC_VERDICT")
+                self.assertEqual(len(report["lives"]), 1)
+                return report
+            old = natural_run("reference", reference=True)
+            new = natural_run("incremental")
+            self.assertEqual(
+                json.dumps(old, sort_keys=True, ensure_ascii=False),
+                json.dumps(new, sort_keys=True, ensure_ascii=False),
+                "incremental M11 changed a complete natural life report",
+            )
+
     def test_canonical_m11_life_with_incremental_observer_index(self):
         with TemporaryDirectory() as folder:
             output = Path(folder) / "report"
