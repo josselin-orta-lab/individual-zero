@@ -48,7 +48,10 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
                     or data.get("contribution_ref") !=
                        f"memory-recall:{episode_ref}:{world_step}:{cycle}"):
                 raise ValueError("unauthenticated Memory contribution identity")
-            proposals.append((index, event, closed_count))
+            # Preserve the number of closures already witnessed, not merely
+            # the final set of owners at the end of the physical step.
+            proposals.append((index, event, closed_count,
+                              len(closed_this_step)))
         if is_old_charge:
             if (data.get("module") != "planning"
                     or data.get("requested_uc") != 8
@@ -63,13 +66,19 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
         raise ValueError("duplicate old-memory charge or observation")
     def valid_old_proposals(before_index, cycle):
         matches = []
-        for index, event, count in proposals:
+        for index, event, count, closed_at_proposal in proposals:
             episode = event["data"]["episode_ref"]
             if (index >= before_index or event.get("cycle") != cycle
                     or not episode.startswith("episode:")
                     or not episode[8:].isascii() or not episode[8:].isdigit()
                     or str(int(episode[8:])) != episode[8:]
                     or int(episode[8:]) >= count - 32):
+                continue
+            # A closure later in the same cognitive step may not authorize
+            # a Memory proposal emitted before that closure.
+            if (not any(e["id"] == episode for e in preclosed)
+                    and not any(e["id"] == episode for e in
+                                closed_this_step[:closed_at_proposal])):
                 continue
             matches.append((index, event, count))
         return matches
@@ -154,8 +163,11 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
             and ref[8:].isdigit()
             and str(int(ref[8:])) == ref[8:]
             and int(ref[8:]) < count - 32
-            for index, event, count in proposals
+            for index, event, count, closed_at_proposal in proposals
             for ref in (event["data"]["episode_ref"],)
+            if (any(e["id"] == ref for e in preclosed)
+                or any(e["id"] == ref for e in
+                       closed_this_step[:closed_at_proposal]))
         ),
         "old_read_charges": len(paid),
         "accepted_old_read_charges": len(accepted),
