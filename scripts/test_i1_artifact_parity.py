@@ -386,12 +386,17 @@ def _approved_stage10_paid_fragments_543(root: Path, rel: str) -> bool:
 
 def _approved_general_situated_h_553(root: Path, rel: str) -> bool:
     """Pinned I1-only generic situated observer without I0 changes."""
-    if rel != "i1/modules/situated_action_history.py":
+    pins = {
+        "i1/modules/situated_action_history.py": ("src/i1/modules/situated_action_history.py", "66436661999d831e7f4ffa1b73eb7e51a2b489b3"),
+        "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py", "5cfbf7c6b0586c0d94a384990990f4427cc3b555"),
+    }
+    item = pins.get(rel)
+    if item is None:
         return False
-    data = (ROOT / "src/i1/modules/situated_action_history.py").read_bytes()
+    data = (ROOT / item[0]).read_bytes()
     digest = sha1(b"blob " + str(len(data)).encode("ascii")
                   + bytes([0]) + data).hexdigest()
-    return digest == "c9c147ea1b6db153262902443e52b4bb96060840" and (root / rel).is_file()
+    return digest == item[1] and (root / rel).is_file()
 
 
 def _approved_situated_sleep_observer_473(root: Path, rel: str) -> bool:
