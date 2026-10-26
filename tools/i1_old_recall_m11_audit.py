@@ -7,11 +7,11 @@ Synthetic event tests establish L1; only authentic M11 journals can establish L2
 def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
                           previous_commits):
     """Check the chronological Memory -> UC -> observed-source chain."""
-    owners = {}
-    for episode in preclosed:
-        for ref in episode["event_refs"]:
-            owners.setdefault(ref, []).append(episode["id"])
-    closed = list(preclosed)
+    # Do not rebuild the life-long source-owner index on every M11 step.
+    # Reconstruct only when an actual old consultation must be attested.
+    closed_count = len(preclosed)
+    newly_seen = set()
+    closed_this_step = []
     proposals, paid, observed = [], [], []
     accepted = []
     for index, event in enumerate(events):
@@ -26,15 +26,15 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
         if kind == "episode_closed":
             if not isinstance(data, dict) or data not in newly_closed:
                 raise ValueError("unowned same-step closed episode")
-            if any(e["id"] == data["id"] for e in closed):
+            if data["id"] in newly_seen:
                 raise ValueError("duplicate closed episode")
-            closed.append(data)
-            for ref in data["event_refs"]:
-                owners.setdefault(ref, []).append(data["id"])
+            newly_seen.add(data["id"])
+            closed_this_step.append(data)
+            closed_count += 1
         if kind == "memory_recall_proposed":
             if not isinstance(data, dict) or not isinstance(data.get("episode_ref"), str):
                 raise ValueError("invalid Memory recall proposal")
-            proposals.append((index, event, len(closed)))
+            proposals.append((index, event, closed_count))
         if is_old_charge:
             if (data.get("module") != "planning"
                     or data.get("requested_uc") != 8
@@ -100,9 +100,15 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
         ordinal = int(ref[8:])
         if ordinal >= count_at_proposal - 32:
             raise ValueError("recalled episode is not older than 32")
+        closed = list(preclosed) + closed_this_step
         matches = [e for e in closed if e["id"] == ref]
         if len(matches) != 1 or set(matches[0]["event_refs"]) != set(sources):
             raise ValueError("closed Memory source set mismatch")
+        owners = {source: [] for source in sources}
+        for episode in closed:
+            for source in episode["event_refs"]:
+                if source in owners:
+                    owners[source].append(episode["id"])
         if any(owners.get(x) != [ref] or previous_commits.get(x, world_step) >= world_step
                for x in sources):
             raise ValueError("source lacks unique old committed custody")
@@ -114,8 +120,14 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
         "schema": "i1-old-recall-natural-m11-audit-v1",
         "memory_recall_proposals": len(proposals),
         "old_memory_recall_proposals": sum(
-            any(x[0] == index for x in valid_old_proposals(index + 1, event.get("cycle")))
+            event.get("cycle") == 1
+            and ref.startswith("episode:")
+            and ref[8:].isascii()
+            and ref[8:].isdigit()
+            and str(int(ref[8:])) == ref[8:]
+            and int(ref[8:]) < count - 32
             for index, event, count in proposals
+            for ref in (event["data"]["episode_ref"],)
         ),
         "old_read_charges": len(paid),
         "accepted_old_read_charges": len(accepted),
