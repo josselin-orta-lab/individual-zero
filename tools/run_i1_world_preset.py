@@ -545,6 +545,7 @@ def _audit_paid_matched_stationary_sites(trajectory):
 
 def _m11_life(*, birth, params, life_id, path, steps):
     from i1lab.sqlite_life_store import SQLiteLifeLedger
+    from i1_old_recall_m11_audit import audit_old_recall_step
 
     trajectory = []
     # Observational custody only, never visible to the cognitive agent.
@@ -1250,6 +1251,12 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 "consolidated_episode_refs": list(
                     life._runtime.slow_history.committed_episode_refs()),
             }
+            old_recall_audit = audit_old_recall_step(
+                events=step_events, world_step=receipt.world_step,
+                preclosed=memory_before["episodes"],
+                newly_closed=newly_closed,
+                previous_commits=first_autobiographical_commit,
+            )
             trajectory.append({
                 "world_step": receipt.world_step,
                 "generation": receipt.generation,
@@ -1258,6 +1265,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 "sleep_custody_observation": sleep_custody,
                 "autobiographical_sleep_custody_467": custody,
                 "sleep_site_recall_custody_467": recall_audit,
+                "old_recall_m11_audit_560": old_recall_audit,
                 "sleep_site_stage8_context_custody_510": context_audit,
                 "lifecycle": receipt.status,
                 "execution": receipt.outcome,
@@ -1462,6 +1470,19 @@ def _m11_life(*, birth, params, life_id, path, steps):
         "may_recover": audit.may_recover,
         "custody_file": path.name,
         "effective_birth_physics": effective,
+        "old_recall_m11_summary_560": {
+            "schema": "i1-old-recall-natural-m11-summary-v1",
+            "authentic_old_consultations": sum(
+                step["old_recall_m11_audit_560"]["authentic_old_consultations"]
+                for step in trajectory),
+            "accepted_old_read_charges": sum(
+                step["old_recall_m11_audit_560"]["accepted_old_read_charges"]
+                for step in trajectory),
+            "l2_positive": ("OBSERVED" if any(
+                step["old_recall_m11_audit_560"]["authentic_old_consultations"]
+                for step in trajectory) else "NOT_OBSERVED"),
+            "l3_decision_influence": "NOT_ESTABLISHED",
+        },
         "sleep_episode_link_audit_471": sleep_run_audits,
         "sleep_decision_custody_audit_490": decision_audits,
         "waking_perception_transition_custody_495": wake_custody,
