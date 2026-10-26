@@ -105,6 +105,21 @@ class OldRecallM11Audit560(unittest.TestCase):
             self.assertTrue(all("old_recall_m11_audit_560" in row
                                 for row in life["steps"]))
 
+    def test_unpaired_debits_and_irrelevant_journal_steps(self):
+        from copy import deepcopy
+        with self.assertRaises(ValueError):
+            self.audit([self.charge])
+        recent = deepcopy(self.proposal)
+        recent["data"]["episode_ref"] = "episode:33"
+        with self.assertRaises(ValueError):
+            self.audit([recent, self.charge])
+        irrelevant = {"kind": "world_transition_experienced",
+                      "t_monde": 34, "cycle": None, "data": {}}
+        out = self.audit([irrelevant, self.proposal, self.charge])
+        self.assertEqual(out["accepted_old_read_charges"], 1)
+        self.assertEqual(out["authentic_old_consultations"], 0)
+        self.assertEqual(out["old_memory_recall_proposals"], 1)
+
     def test_recent_episode_cannot_count_as_old(self):
         from copy import deepcopy
         p = deepcopy(self.proposal)
