@@ -157,6 +157,34 @@ class OldRecallM11Audit560(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.audit([self.proposal, self.charge, observed])
 
+    def test_malformed_sources_fail_closed_not_python_type_errors(self):
+        from copy import deepcopy
+        malformed = [
+            ["cmd:1", {"not": "hashable"}],
+            ["cmd:1", ""],
+            ["cmd:1", "cmd:1"],
+        ]
+        for sources in malformed:
+            receipt = deepcopy(self.observed)
+            receipt["data"]["source_event_refs"] = sources
+            with self.subTest(sources=sources), self.assertRaises(ValueError):
+                self.audit([self.proposal, self.charge, receipt])
+        receipt = deepcopy(self.observed)
+        receipt["data"]["witnesses"] = [{
+            "step": 1, "source_event_refs": ["cmd:1", ["bad"]],
+            "source_episode_refs": ["episode:0"],
+            "causal_attribution": False, "decision_evidence": False,
+        }]
+        with self.assertRaises(ValueError):
+            self.audit([self.proposal, self.charge, receipt])
+        closing = {"kind": "episode_closed", "t_monde": 35, "cycle": 1,
+                   "data": {"id": "episode:34", "event_refs": [["bad"]]}}
+        with self.assertRaises(ValueError):
+            audit_old_recall_step(
+                events=[closing], world_step=35, preclosed=self.episodes,
+                newly_closed=[closing["data"]], previous_commits=self.commits,
+            )
+
     def test_recent_episode_cannot_count_as_old(self):
         from copy import deepcopy
         p = deepcopy(self.proposal)
