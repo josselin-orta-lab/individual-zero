@@ -58,14 +58,28 @@ with TemporaryDirectory() as home:
         "published_fragments": len(life.slow_history.read_committed().get(
             "lived_action_fragments", [])),
     }
-    paid = {
-        (row.causal_event["t_monde"], row.causal_event.get("cycle"))
-        for row in events
+    charges = [
+        row.causal_event for row in events
         if row.causal_event["kind"] == "compute_charge"
         and row.causal_event["data"].get("module") == "planning"
         and row.causal_event["data"].get("operation") == "i1_published_action_recall"
         and row.causal_event["data"].get("accepted") is True
         and row.causal_event["data"].get("requested_uc") == 1
+    ]
+    paid = {(row["t_monde"], row.get("cycle")) for row in charges}
+    # A single admitted 1-UC source projection may serve multiple evaluated
+    # options. Charging it twice within a physical step/cycle is forbidden.
+    assert len(paid) == len(charges), "repeated paid h projection in one cycle"
+    # No h read or charge may occur before the first actual h publication.
+    activations = {
+        row.causal_event["data"]["new_history_version"]: row.causal_event["t_monde"]
+        for row in events if row.causal_event["kind"] == kinds[1]
+    }
+    first_activation = min(activations.values())
+    assert all(row["t_monde"] >= first_activation for row in charges)
+    committed_sources = {
+        ref for row in events if row.causal_event["kind"] == "auto_segment_commit"
+        for ref in row.causal_event["event_refs"]
     }
     for row in observed:
         assert (row.causal_event["t_monde"], row.causal_event.get("cycle")) in paid, (
@@ -73,6 +87,7 @@ with TemporaryDirectory() as home:
         data = row.causal_event["data"]
         assert data["owner"] == "SlowHistory"
         assert data["history_version"] in activated
+        assert row.causal_event["t_monde"] >= activations[data["history_version"]]
         assert data["charged_operation"] == "i1_published_action_recall"
         assert data["option_ref"]
         assert data["primitive"] and isinstance(data["parameters"], dict)
@@ -90,6 +105,7 @@ with TemporaryDirectory() as home:
             assert item["last_step"] < item["consolidation_cut_step"]
             for ref in item["source_event_refs"]:
                 assert life.journal.get(ref) is not None
+                assert ref in committed_sources, "source not Memory-committed"
 print("I1_549_NATURAL_PAID_PUBLISHED_H_STAGE8_OK")
 """
             env = os.environ.copy()
