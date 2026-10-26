@@ -44,7 +44,7 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
             if data["accepted"]:
                 accepted.append((index, event))
         if kind == "i1_old_episode_paid_observation":
-            observed.append((index, event))
+            observed.append((index, event, len(closed_this_step)))
     if len(accepted) > 1 or len(observed) > 1 or len(paid) > 1:
         raise ValueError("duplicate old-memory charge or observation")
     def valid_old_proposals(before_index, cycle):
@@ -68,7 +68,7 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
             raise ValueError("old-memory charge without current old recall")
 
     success = []
-    for obs_index, event in observed:
+    for obs_index, event, closed_before_observation in observed:
         data = event.get("data")
         if not isinstance(data, dict):
             raise ValueError("invalid old-memory observation")
@@ -100,7 +100,7 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
         ordinal = int(ref[8:])
         if ordinal >= count_at_proposal - 32:
             raise ValueError("recalled episode is not older than 32")
-        closed = list(preclosed) + closed_this_step
+        closed = list(preclosed) + closed_this_step[:closed_before_observation]
         matches = [e for e in closed if e["id"] == ref]
         if len(matches) != 1 or set(matches[0]["event_refs"]) != set(sources):
             raise ValueError("closed Memory source set mismatch")
