@@ -37,29 +37,38 @@ from i1lab.i1_natural_runtime import (
 preset,_ = load_preset("empty-land")
 params,_ = _birth_parameters(preset)
 original_parent = I1WaterPrudentRuntime._parent_runtime_config
+original_i1 = I1Runtime._parent_runtime_config
 parents = []
+i1_profiles = []
 
 def witness_parent(self, config):
     parent = original_parent(self, config)
     parents.append(parent)
     return parent
 
+def witness_i1(self, config):
+    prepared = original_i1(self, config)
+    i1_profiles.append(prepared)
+    return prepared
+
 with patch.object(I1WaterPrudentRuntime, "_parent_runtime_config",
-                  witness_parent):
+                  witness_parent), patch.object(
+                      I1Runtime, "_parent_runtime_config", witness_i1):
     actor = I1Runtime(
         birth_life_id="i1:557:no-dormant-uc",
         autonomous_mortal=True, m11_sqlite_custody=True, wal_path=None,
         diagnostic_sample_cost_uc=1, module_occupancy_cost_uc=1,
         **params,
     )
-assert len(parents) == 1, len(parents)
+assert len(parents) == len(i1_profiles) == 1, (len(parents), len(i1_profiles))
 
 def budget_of(config):
     return config.stage9.stage8.stage7.stage6.stage4.compute_budget
 
 base = budget_of(parents[0])
+configured = budget_of(i1_profiles[0])
 actual = actor.compute_budget._config
-costs = actual.operation_costs
+costs = configured.operation_costs
 assert _OLD_RECALL_OPERATION not in base.operation_costs
 assert _OLD_RECALL_COST_UC == costs[_OLD_RECALL_OPERATION] == 8
 
@@ -72,18 +81,27 @@ other_planning = sum(costs[op] for op in (
 other_competition = sum(base.operation_costs[op] for op in (
     "competition_register", "competition_evaluate",
 ))
-assert actual.cycle_ceiling - base.cycle_ceiling == (
+assert configured.cycle_ceiling - base.cycle_ceiling == (
     other_planning + other_competition
-), (actual.cycle_ceiling, base.cycle_ceiling, other_planning,
+), (configured.cycle_ceiling, base.cycle_ceiling, other_planning,
     other_competition)
-assert (actual.module_envelopes["planning"]
+assert (configured.module_envelopes["planning"]
         - base.module_envelopes["planning"]) == other_planning
-assert (actual.module_envelopes["competition"]
+assert (configured.module_envelopes["competition"]
         - base.module_envelopes["competition"]) == other_competition
 for module in set(base.module_envelopes) - {"planning", "competition"}:
-    assert actual.module_envelopes[module] == base.module_envelopes[module]
-assert actual.protected_capacity == base.protected_capacity
-assert actual.protected_modules == base.protected_modules
+    assert configured.module_envelopes[module] == base.module_envelopes[module]
+assert configured.protected_capacity == base.protected_capacity
+assert configured.protected_modules == base.protected_modules
+# Stage10 independently installs the versioned sleep-option allowance after
+# the cooperative I1 configuration. Do not misattribute that real 2-UC
+# budget increase to the optional old-memory reader.
+assert actual.cycle_ceiling == (configured.cycle_ceiling
+    + actor._stage10_config.sleep_option_uc + 1)
+assert actual.module_envelopes["planning"] == configured.module_envelopes["planning"]
+assert actual.module_envelopes["competition"] == (configured.module_envelopes["competition"] + 1)
+assert actual.protected_capacity == configured.protected_capacity
+assert actual.operation_costs[_OLD_RECALL_OPERATION] == 8
 assert _OLD_RECALL_OPERATION not in (
     _SLEEP_RECALL_OPERATION, _H_RECALL_OPERATION,
     _PRIVATE_RECALL_OPERATION, _OPTION_INTENTION_OPERATION,
