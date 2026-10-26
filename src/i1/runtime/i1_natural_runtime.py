@@ -751,7 +751,7 @@ class I1Runtime(I1WaterPrudentRuntime):
             goal_for_planning=goal_for_planning,
             st_before_cycle=st_before_cycle,
         )
-        normal_memory = hooks[1]["memory"]
+        normal_memory = hooks[1].get("memory")
         normal_plan = hooks[1]["planning"]
 
         def authenticate_cycle_recall(ctx):
@@ -780,7 +780,10 @@ class I1Runtime(I1WaterPrudentRuntime):
                 return
             self._i1_current_old_recall = episode
 
-        hooks[1]["memory"] = authenticate_cycle_recall
+        # Historical isolated Planning fixtures may omit Memory entirely.
+        # Only the real canonical scheduler provides this owner hook.
+        if normal_memory is not None:
+            hooks[1]["memory"] = authenticate_cycle_recall
         normal_register = hooks[3]["competition"]
 
         def plan_independent_local(ctx):
