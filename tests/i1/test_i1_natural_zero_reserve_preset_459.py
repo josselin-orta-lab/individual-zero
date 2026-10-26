@@ -394,8 +394,14 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
     expected_provenance = {"ordinary_awake_admission": 3,
                            "readmitted_after_wake": 31,
                            "reduced_sleep_continuation": 9}
-    assert {kind: sum(x["provenance_counts"][kind] for x in runs)
-            for kind in expected_provenance} == expected_provenance
+    observed_provenance = {kind: sum(
+        x["provenance_counts"][kind] for x in runs
+    ) for kind in expected_provenance}
+    assert observed_provenance == expected_provenance, (
+        observed_provenance, expected_provenance,
+        [(x["start_step"], x["end_step"], x["provenance_counts"])
+         for x in runs],
+    )
     assert [x["provenance_counts"]["readmitted_after_wake"] for x in runs] == [0, 0, 31]
     assert len(runs) <= sleep_count
     decisions = life["sleep_decision_custody_audit_490"]
@@ -481,7 +487,7 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
                 env={"PYTHONPATH": str(ROOT / "tools") + ":" + str(ROOT / "src")},
                 cwd=ROOT, text=True, capture_output=True, check=False,
             )
-            self.assertEqual(process.returncode, 0, process.stderr)
+            self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
             self.assertIn("I1_459_M11_OBSERVED", process.stdout)
             # The real observed status is surfaced in CI instead of hidden
             # inside the subprocess. This cannot influence the living agent.
