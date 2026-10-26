@@ -30,6 +30,9 @@ _PRIVATE_RECALL_VERSION = "i1-private-procedure-advisory-v1"
 _SLEEP_RECALL_VERSION = "i1-lived-sleep-recall-v1"
 _SLEEP_RECALL_OPERATION = "i1_closed_sleep_recall"
 _SLEEP_RECALL_COST_UC = 1
+_H_RECALL_VERSION = "i1-published-action-recall-v1"
+_H_RECALL_OPERATION = "i1_published_action_recall"
+_H_RECALL_COST_UC = 1
 _PRIVATE_RECALL_OPERATION = "i1_private_procedure_recall"
 _PRIVATE_RECALL_COST_UC = 1
 _OPTION_INTENTION_COST_UC = 1
@@ -309,6 +312,8 @@ class I1Runtime(I1WaterPrudentRuntime):
         original = stage4.compute_budget
         if _SLEEP_RECALL_OPERATION in original.operation_costs:
             raise ValueError("duplicate I1 sleep recall charge")
+        if _H_RECALL_OPERATION in original.operation_costs:
+            raise ValueError("duplicate I1 published h recall charge")
         if _PRIVATE_RECALL_OPERATION in original.operation_costs:
             raise ValueError("I1 private recall operation already registered")
         # A second independent Planning producer may coexist with the
@@ -321,15 +326,17 @@ class I1Runtime(I1WaterPrudentRuntime):
             original,
             version=(original.version + "+" + _PRIVATE_RECALL_VERSION
                      + "+" + _SLEEP_RECALL_VERSION
+                     + "+" + _H_RECALL_VERSION
                      + "+i1-goal-independent-local-v1"),
-            cycle_ceiling=(original.cycle_ceiling + _SLEEP_RECALL_COST_UC
+            cycle_ceiling=(original.cycle_ceiling + _H_RECALL_COST_UC
+                           + _SLEEP_RECALL_COST_UC
                            + _PRIVATE_RECALL_COST_UC
                            + local_planning + local_registration + local_evaluation
                            + _OPTION_INTENTION_COST_UC),
             module_envelopes={
                 **original.module_envelopes,
                 "planning": (original.module_envelopes["planning"]
-                             + _SLEEP_RECALL_COST_UC
+                             + _SLEEP_RECALL_COST_UC + _H_RECALL_COST_UC
                              + _PRIVATE_RECALL_COST_UC + local_planning
                              + _OPTION_INTENTION_COST_UC),
                 "competition": (original.module_envelopes["competition"]
@@ -338,6 +345,7 @@ class I1Runtime(I1WaterPrudentRuntime):
             operation_costs={
                 **original.operation_costs,
                 _SLEEP_RECALL_OPERATION: _SLEEP_RECALL_COST_UC,
+                _H_RECALL_OPERATION: _H_RECALL_COST_UC,
                 _PRIVATE_RECALL_OPERATION: _PRIVATE_RECALL_COST_UC,
                 _OPTION_INTENTION_OPERATION: _OPTION_INTENTION_COST_UC,
             },
@@ -458,6 +466,130 @@ class I1Runtime(I1WaterPrudentRuntime):
         super()._before_competition_accumulation(
             capture=capture, cycle=cycle, evidence_inputs=evidence_inputs,
         )
+        h_context = getattr(self, "_i1_h_action_paid_context", None)
+        if (h_context is not None and not self._cycle_degraded
+                and h_context["step"] == capture.t_monde
+                and h_context["cycle"] == cycle
+                and h_context["site"] == (capture.x, capture.y)
+                and h_context["history_version"] == self.slow_history.current_version
+                and h_context["charged_operation"] == _H_RECALL_OPERATION):
+            from i1.modules.memory import same_lived_command_parameters
+            selected_option, selected_plan, step_index = self.stage3.control.current_step
+            for proposal in self.competition.candidate_proposals:
+                plan = proposal.plan
+                if plan is None or not plan.steps:
+                    continue
+                cursor = (step_index if (
+                    selected_option == proposal.option.id
+                    and selected_plan == plan.id
+                    and self.competition.is_engaged(proposal.option.id)
+                    and 0 <= step_index < len(plan.steps)
+                ) else 0)
+                command = plan.steps[cursor].command
+                supplied = evidence_inputs.get(proposal.option.id)
+                if supplied is None:
+                    continue
+                evaluation = supplied.evaluation
+                if (evaluation.status != "evaluated"
+                        or proposal.option.expires_at_step <= capture.t_monde
+                        or evaluation.option_ref != proposal.option.id
+                        or evaluation.option_version != proposal.option.version
+                        or evaluation.t_monde != capture.t_monde
+                        or evaluation.cycle != cycle):
+                    continue
+                matching = [
+                    row for row in h_context["fragments"]
+                    if row["primitive"] == command.primitive
+                    and same_lived_command_parameters(row["parameters"], command.parameters)
+                ]
+                if not matching:
+                    continue
+                if command.primitive == "dormir":
+                    from i1.modules.situated_sleep_history import (
+                        describe_situated_sleep_history,
+                    )
+                    situated = describe_situated_sleep_history(
+                        published_fragments=h_context["fragments"],
+                        current_site=(capture.x, capture.y),
+                        before_step=capture.t_monde,
+                    )
+                    self._write(
+                        kind="i1_situated_sleep_h_context_observed",
+                        cycle=cycle,
+                        data={
+                            "option_ref": proposal.option.id,
+                            "option_version": proposal.option.version,
+                            "history_version": h_context["history_version"],
+                            "charged_operation": _H_RECALL_OPERATION,
+                            "owner": "SlowHistory",
+                            "situated": situated,
+                            "stage8_evidence_unchanged": supplied.evidence,
+                            "q_or_p40_augmented": False,
+                            "motor_permission": False,
+                        },
+                    )
+                if command.primitive != "dormir":
+                    from i1.modules.situated_action_history import (
+                        describe_situated_action_history,
+                    )
+                    observed_action = describe_situated_action_history(
+                        published_fragments=h_context["fragments"],
+                        current_site=(capture.x, capture.y),
+                        before_step=capture.t_monde,
+                        primitive=command.primitive,
+                        parameters=dict(command.parameters),
+                    )
+                    if observed_action["historical_fragment_count"]:
+                        self._write(
+                            kind="i1_situated_action_h_context_observed",
+                            cycle=cycle,
+                            data={
+                                "option_ref": proposal.option.id,
+                                "option_version": proposal.option.version,
+                                "owner": "SlowHistory",
+                                "history_version": h_context["history_version"],
+                                "charged_operation": _H_RECALL_OPERATION,
+                                "new_uc_debit_at_stage8": False,
+                                "situated": observed_action,
+                                "stage8_evidence_unchanged": supplied.evidence,
+                                "decision_evidence": False,
+                                "causal_attribution": False,
+                                "q_or_p40_augmented": False,
+                                "motor_permission": False,
+                            },
+                        )
+                self._write(
+                    kind="i1_published_action_stage8_context_observed",
+                    cycle=cycle,
+                    data={
+                        "option_ref": proposal.option.id,
+                        "primitive": command.primitive,
+                        "parameters": dict(command.parameters),
+                        "current_site": [capture.x, capture.y],
+                        "owner": "SlowHistory",
+                        "history_version": h_context["history_version"],
+                        "fragment_count": len(matching),
+                        "historical_fragments": matching,
+                        "historical_fragment_ids": [row["id"] for row in matching],
+                        "source_event_refs": [ref for row in matching
+                                              for ref in row["source_event_refs"]],
+                        "source_episode_refs": list(dict.fromkeys(
+                            ref for row in matching
+                            for ref in row["source_episode_refs"]
+                        )),
+                        "historical_sites": [dict(row["site_after"])
+                                             for row in matching],
+                        "observed_body_deltas": [row["observed_total_body_delta"]
+                                                 for row in matching],
+                        "charged_operation": _H_RECALL_OPERATION,
+                        "new_uc_debit_at_stage8": False,
+                        "stage8_evidence_unchanged": supplied.evidence,
+                        "decision_evidence": False,
+                        "causal_attribution": False,
+                        "motor_permission": False,
+                        "q_or_p40_augmented": False,
+                    },
+                )
         context = getattr(self, "_i1_sleep_site_paid_context", None)
         # #528: same UC-paid closed first-person source scan, across ALL
         # ordinary current options. Merely report matched testimony; do not
@@ -502,6 +634,13 @@ class I1Runtime(I1WaterPrudentRuntime):
                                     row["parameters"], command.parameters))
                 if not matches:
                     continue
+                from i1.modules.memory import same_lived_command_parameters
+                fragments = tuple(
+                    fragment for fragment in generic.get("fragments", ())
+                    if fragment["primitive"] == command.primitive
+                    and same_lived_command_parameters(
+                        fragment["parameters"], command.parameters)
+                )
                 self._write(
                     kind="i1_generic_lived_action_stage8_context_observed",
                     cycle=cycle, data={
@@ -510,6 +649,10 @@ class I1Runtime(I1WaterPrudentRuntime):
                         "parameters": dict(command.parameters),
                         "current_site": [capture.x, capture.y],
                         "witness_count": len(matches),
+                        "observed_fragment_count": len(fragments),
+                        "observed_fragments": list(fragments),
+                        "fragments_causal_attribution": False,
+                        "fragments_decision_evidence": False,
                         "witnesses": [
                             {
                                 "step": row["step"],
@@ -592,6 +735,7 @@ class I1Runtime(I1WaterPrudentRuntime):
         # Never carry a previous cycle's paid personal site consultation.
         self._i1_sleep_site_paid_context = None
         self._i1_generic_action_paid_context = None
+        self._i1_h_action_paid_context = None
         hooks = super()._phase_hooks(
             cycle=cycle, capture=capture,
             goal_for_planning=goal_for_planning,
@@ -604,6 +748,25 @@ class I1Runtime(I1WaterPrudentRuntime):
             # A new deliberation has no inherited paid admission/prospect.
             self._i1_option_intention_paid = None
             normal_plan(ctx)
+            if (cycle == 1 and not self._cycle_degraded
+                    and not self.slow_history.current_version.startswith("h:birth:")
+                    and self.compute_budget.quote_operations(
+                        module="planning", operations=(_H_RECALL_OPERATION,),
+                    ).affordable
+                    and self._charge(
+                        module="planning", operation=_H_RECALL_OPERATION,
+                    )):
+                projection = self.slow_history.read_published_action_fragments(
+                    before_step=capture.t_monde,
+                )
+                self._i1_h_action_paid_context = {
+                    "step": capture.t_monde,
+                    "cycle": cycle,
+                    "site": (capture.x, capture.y),
+                    "history_version": projection["history_version"],
+                    "charged_operation": _H_RECALL_OPERATION,
+                    "fragments": projection["fragments"],
+                }
             # Paid waking recall of already closed, first-person sources only.
             if (cycle == 1 and not self._cycle_degraded
                     and self.memory.episode_count
@@ -626,16 +789,20 @@ class I1Runtime(I1WaterPrudentRuntime):
                         policies={p.version: p for p in (P2, P7, PNEW, PWAKE)},
                         selected_event_refs=refs,
                     )
+                    from i1.modules.action_fragments import closed_action_fragments
+                    action_witnesses = self.memory.closed_applied_action_witnesses(
+                        autobiography=projected,
+                        now=capture.t_monde,
+                        per_command_limit=3,
+                    )
                     self._i1_generic_action_paid_context = {
                         "step": capture.t_monde,
                         "cycle": cycle,
                         "site": (capture.x, capture.y),
                         "charged_operation": _SLEEP_RECALL_OPERATION,
-                        "witnesses": self.memory.closed_applied_action_witnesses(
-                            autobiography=projected,
-                            now=capture.t_monde,
-                            per_command_limit=3,
-                        ),
+                        "witnesses": action_witnesses,
+                        # Derived solely from the same already-paid witnesses.
+                        "fragments": closed_action_fragments(action_witnesses),
                     }
                     stationary = self.memory.closed_stationary_site_witnesses(
                         autobiography=projected,

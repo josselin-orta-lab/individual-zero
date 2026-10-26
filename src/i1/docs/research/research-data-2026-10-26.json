@@ -1,0 +1,1157 @@
+{
+  "title": "External cognitive architecture research for Individual Zero I1",
+  "compiled_date": "2026-10-26",
+  "language": "fr",
+  "i1_sha": "972aac6ca64a8517dbbee8604f7a1e5108474473",
+  "methods": [
+    "official paper",
+    "official project documentation",
+    "GitHub connected file inspection",
+    "source code paths at pinned SHA"
+  ],
+  "exclusions": [
+    "no git mutations",
+    "no benchmark execution",
+    "no hidden-world knowledge imported into I1",
+    "raw score gz files linked, not downloaded"
+  ],
+  "projects": [
+    {
+      "id": "soar",
+      "name": "Soar",
+      "repository": "SoarGroup/Soar",
+      "branch": "development",
+      "sha": "3fc337a1ab2d04b9e5183335c1496d7dcdc57c1c",
+      "license": "BSD, verified LICENSE.md",
+      "last_push": "2026-10-07",
+      "status": "public source and manual",
+      "strengths": [
+        "episodic cue retrieval and metadata",
+        "temporal RL reward propagation",
+        "explanation-based chunking"
+      ],
+      "risk": "productions and application-specific agent knowledge are not acquired from scratch by default",
+      "url": "https://github.com/SoarGroup/Soar",
+      "snapshot_url": "https://github.com/SoarGroup/Soar/tree/3fc337a1ab2d04b9e5183335c1496d7dcdc57c1c"
+    },
+    {
+      "id": "micropsi2",
+      "name": "MicroPsi2",
+      "repository": "joschabach/micropsi2",
+      "branch": "master",
+      "sha": "74a2642d20da9da1d64acc5e4c11aeabee192a27",
+      "license": "MIT, verified license.txt (unless marked otherwise)",
+      "last_push": "2022-06-21",
+      "status": "public source; older dependencies",
+      "strengths": [
+        "need intensity distinct from urgency",
+        "need-biased memory and perception",
+        "emotion modulators and hierarchical scripts"
+      ],
+      "risk": "published motivational theory exceeds the implementation and code base is old",
+      "url": "https://github.com/joschabach/micropsi2",
+      "snapshot_url": "https://github.com/joschabach/micropsi2/tree/74a2642d20da9da1d64acc5e4c11aeabee192a27"
+    },
+    {
+      "id": "hyperon",
+      "name": "OpenCog Hyperon",
+      "repository": "trueagi-io/hyperon-experimental",
+      "branch": "main",
+      "sha": "3f76dc460da6961f57f69f6c3e550c59c74ada83",
+      "license": "MIT, verified LICENSE",
+      "last_push": "2026-02-11",
+      "status": "public experimental pre-alpha core",
+      "strengths": [
+        "typed relational knowledge representation",
+        "pattern matching and inspectable relations",
+        "separate MeTTa examples"
+      ],
+      "risk": "not a drop-in working embodied autobiographical learner",
+      "url": "https://github.com/trueagi-io/hyperon-experimental",
+      "snapshot_url": "https://github.com/trueagi-io/hyperon-experimental/tree/3f76dc460da6961f57f69f6c3e550c59c74ada83"
+    },
+    {
+      "id": "dreamerv3",
+      "name": "DreamerV3",
+      "repository": "danijar/dreamerv3",
+      "branch": "main",
+      "sha": "e01491fad6434b2245a3b8ca201dd7faedcc458c",
+      "license": "MIT, GitHub repository metadata",
+      "last_push": "2026-10-04",
+      "status": "public JAX reimplementation with experiment scores",
+      "strengths": [
+        "learned action-conditioned world model",
+        "imagined trajectories and actor-critic",
+        "robust scale normalization, public benchmarks"
+      ],
+      "risk": "not an embodied personal identity architecture and needs real-world calibration",
+      "url": "https://github.com/danijar/dreamerv3",
+      "snapshot_url": "https://github.com/danijar/dreamerv3/tree/e01491fad6434b2245a3b8ca201dd7faedcc458c"
+    },
+    {
+      "id": "lida",
+      "name": "LIDA Framework",
+      "repository": "CognitiveComputingResearchGroup/lida-framework",
+      "branch": "master",
+      "sha": "26bc3b2b34bf7ccfe2c62e1f12314db27d9719ec",
+      "license": "LIDA Framework Non-Commercial License v1.0, source headers and license/",
+      "last_push": "2016-05-10",
+      "status": "public Java framework, not permissively licensed",
+      "strengths": [
+        "attention coalitions and global broadcast",
+        "context-indexed procedural schemes",
+        "episodic sparse distributed memory"
+      ],
+      "risk": "some learning methods are TODO in the public code",
+      "url": "https://github.com/CognitiveComputingResearchGroup/lida-framework",
+      "snapshot_url": "https://github.com/CognitiveComputingResearchGroup/lida-framework/tree/26bc3b2b34bf7ccfe2c62e1f12314db27d9719ec"
+    },
+    {
+      "id": "iseed",
+      "name": "iSEED",
+      "repository": null,
+      "branch": null,
+      "sha": null,
+      "license": "article CC BY; source license not verified",
+      "last_push": null,
+      "status": "open scientific article; no verified official public implementation",
+      "strengths": [
+        "event-boundary segmentation from perceptual deviation",
+        "daily unsupervised context clustering",
+        "temporal consistency evaluation"
+      ],
+      "risk": "action-decision loop not yet closed and raw data restricted",
+      "url": "https://doi.org/10.3389/fnbot.2026.1920808",
+      "snapshot_url": null
+    }
+  ],
+  "sources": [
+    {
+      "project": "Soar",
+      "kind": "source",
+      "path_or_url": "LICENSE.md",
+      "url": "https://github.com/SoarGroup/Soar/blob/3fc337a1ab2d04b9e5183335c1496d7dcdc57c1c/LICENSE.md",
+      "source_claim": "BSD terms",
+      "i1_relevance": "license and redistribution constraints"
+    },
+    {
+      "project": "Soar",
+      "kind": "manual",
+      "path_or_url": "https://soar.eecs.umich.edu/soar_manual/07_EpisodicMemory/",
+      "url": "https://soar.eecs.umich.edu/soar_manual/07_EpisodicMemory/",
+      "source_claim": "episode query, positive/negative cues, score/age, boundedness warning",
+      "i1_relevance": "I1 Memory index #535"
+    },
+    {
+      "project": "Soar",
+      "kind": "manual",
+      "path_or_url": "https://soar.eecs.umich.edu/soar_manual/05_ReinforcementLearning/",
+      "url": "https://soar.eecs.umich.edu/soar_manual/05_ReinforcementLearning/",
+      "source_claim": "temporal extension, discounted rewards across gaps",
+      "i1_relevance": "I1 TD #305"
+    },
+    {
+      "project": "Soar",
+      "kind": "manual",
+      "path_or_url": "https://soar.eecs.umich.edu/soar_manual/04_ProceduralKnowledgeLearning/",
+      "url": "https://soar.eecs.umich.edu/soar_manual/04_ProceduralKnowledgeLearning/",
+      "source_claim": "impasse-based chunking, backtracing, explainer, faulty generalization",
+      "i1_relevance": "I1 Stage10 procedures"
+    },
+    {
+      "project": "Soar",
+      "kind": "manual",
+      "path_or_url": "https://soar.eecs.umich.edu/soar_manual/06_SemanticMemory/",
+      "url": "https://soar.eecs.umich.edu/soar_manual/06_SemanticMemory/",
+      "source_claim": "semantic context independent of episode",
+      "i1_relevance": "I1 memory owner publication #293"
+    },
+    {
+      "project": "MicroPsi2",
+      "kind": "source",
+      "path_or_url": "license.txt",
+      "url": "https://github.com/joschabach/micropsi2/blob/74a2642d20da9da1d64acc5e4c11aeabee192a27/license.txt",
+      "source_claim": "MIT except files marked otherwise",
+      "i1_relevance": "license"
+    },
+    {
+      "project": "MicroPsi2",
+      "kind": "source",
+      "path_or_url": "micropsi_core/nodenet/stepoperators.py",
+      "url": "https://github.com/joschabach/micropsi2/blob/74a2642d20da9da1d64acc5e4c11aeabee192a27/micropsi_core/nodenet/stepoperators.py",
+      "source_claim": "DoernerianEmotionalModulators; urgency and expectedness",
+      "i1_relevance": "I1 needs/temperament"
+    },
+    {
+      "project": "MicroPsi2",
+      "kind": "source",
+      "path_or_url": "micropsi_core/nodenet/nodefunctions.py",
+      "url": "https://github.com/joschabach/micropsi2/blob/74a2642d20da9da1d64acc5e4c11aeabee192a27/micropsi_core/nodenet/nodefunctions.py",
+      "source_claim": "hierarchical script, inhibition, timeout and failure",
+      "i1_relevance": "I1 prospective intention #326"
+    },
+    {
+      "project": "MicroPsi2",
+      "kind": "source",
+      "path_or_url": "micropsi_core/nodenet/netapi.py",
+      "url": "https://github.com/joschabach/micropsi2/blob/74a2642d20da9da1d64acc5e4c11aeabee192a27/micropsi_core/nodenet/netapi.py",
+      "source_claim": "modulator API and runtime monitors",
+      "i1_relevance": "I1 metacognition instrumentation"
+    },
+    {
+      "project": "MicroPsi2",
+      "kind": "paper",
+      "path_or_url": "https://agi-conf.org/2015/wp-content/uploads/2015/07/agi15_bach.pdf",
+      "url": "https://agi-conf.org/2015/wp-content/uploads/2015/07/agi15_bach.pdf",
+      "source_claim": "Modeling Motivation in MicroPsi 2, 2015",
+      "i1_relevance": "need intensity vs urgency and goals"
+    },
+    {
+      "project": "MicroPsi2",
+      "kind": "paper",
+      "path_or_url": "https://agi-conf.org/2019/wp-content/uploads/2019/07/paper_30.pdf",
+      "url": "https://agi-conf.org/2019/wp-content/uploads/2019/07/paper_30.pdf",
+      "source_claim": "Extending MicroPsi Motivation and Emotion, 2019",
+      "i1_relevance": "expected/actual satisfaction and modulation"
+    },
+    {
+      "project": "LIDA",
+      "kind": "source",
+      "path_or_url": "src/edu/memphis/ccrg/lida/globalworkspace/GlobalWorkspaceImpl.java",
+      "url": "https://github.com/CognitiveComputingResearchGroup/lida-framework/blob/26bc3b2b34bf7ccfe2c62e1f12314db27d9719ec/src/edu/memphis/ccrg/lida/globalworkspace/GlobalWorkspaceImpl.java",
+      "source_claim": "coalition broadcast, decay, refractory period",
+      "i1_relevance": "I1 S_t and attention"
+    },
+    {
+      "project": "LIDA",
+      "kind": "source",
+      "path_or_url": "src/edu/memphis/ccrg/lida/attentioncodelets/BasicAttentionCodelet.java",
+      "url": "https://github.com/CognitiveComputingResearchGroup/lida-framework/blob/26bc3b2b34bf7ccfe2c62e1f12314db27d9719ec/src/edu/memphis/ccrg/lida/attentioncodelets/BasicAttentionCodelet.java",
+      "source_claim": "content matching; deprecated implementation",
+      "i1_relevance": "I1 salience"
+    },
+    {
+      "project": "LIDA",
+      "kind": "source",
+      "path_or_url": "src/edu/memphis/ccrg/lida/proceduralmemory/ProceduralMemoryImpl.java",
+      "url": "https://github.com/CognitiveComputingResearchGroup/lida-framework/blob/26bc3b2b34bf7ccfe2c62e1f12314db27d9719ec/src/edu/memphis/ccrg/lida/proceduralmemory/ProceduralMemoryImpl.java",
+      "source_claim": "context indexed schemes, decay",
+      "i1_relevance": "I1 procedural compilation"
+    },
+    {
+      "project": "LIDA",
+      "kind": "source",
+      "path_or_url": "src/edu/memphis/ccrg/lida/episodicmemory/EpisodicMemoryImpl.java",
+      "url": "https://github.com/CognitiveComputingResearchGroup/lida-framework/blob/26bc3b2b34bf7ccfe2c62e1f12314db27d9719ec/src/edu/memphis/ccrg/lida/episodicmemory/EpisodicMemoryImpl.java",
+      "source_claim": "sparse distributed memory; learn() TODO",
+      "i1_relevance": "I1 memory representation and caution"
+    },
+    {
+      "project": "LIDA",
+      "kind": "source",
+      "path_or_url": "src/edu/memphis/ccrg/lida/actionselection/BasicActionSelection.java",
+      "url": "https://github.com/CognitiveComputingResearchGroup/lida-framework/blob/26bc3b2b34bf7ccfe2c62e1f12314db27d9719ec/src/edu/memphis/ccrg/lida/actionselection/BasicActionSelection.java",
+      "source_claim": "activation threshold decays if no winner",
+      "i1_relevance": "I1 Competition threshold research"
+    },
+    {
+      "project": "LIDA",
+      "kind": "paper",
+      "path_or_url": "https://doi.org/10.1016/j.cogsys.2020.11.001",
+      "url": "https://doi.org/10.1016/j.cogsys.2020.11.001",
+      "source_claim": "Learning in LIDA (2021); conceptual/implementation gap",
+      "i1_relevance": "scientific maturity caution"
+    },
+    {
+      "project": "LIDA",
+      "kind": "paper",
+      "path_or_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9019476/",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9019476/",
+      "source_claim": "Embodied Intelligence: Smooth Coping in LIDA",
+      "i1_relevance": "broadcast architecture"
+    },
+    {
+      "project": "DreamerV3",
+      "kind": "source",
+      "path_or_url": "dreamerv3/agent.py",
+      "url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/dreamerv3/agent.py",
+      "source_claim": "world model, imagined actor-critic, reward/continuation heads",
+      "i1_relevance": "I1 learned anticipation"
+    },
+    {
+      "project": "DreamerV3",
+      "kind": "source",
+      "path_or_url": "dreamerv3/rssm.py",
+      "url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/dreamerv3/rssm.py",
+      "source_claim": "latent observe/imagine and balanced KL",
+      "i1_relevance": "I1 long term conceptual only"
+    },
+    {
+      "project": "DreamerV3",
+      "kind": "source",
+      "path_or_url": "dreamerv3/configs.yaml",
+      "url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/dreamerv3/configs.yaml",
+      "source_claim": "imag_length=15, horizon=333 as public defaults; normalization",
+      "i1_relevance": "I1 controlled research options"
+    },
+    {
+      "project": "DreamerV3",
+      "kind": "source",
+      "path_or_url": "scores/view.py",
+      "url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/view.py",
+      "source_claim": "enumerates run/seed/task coverage of public score files",
+      "i1_relevance": "experiment reproducibility"
+    },
+    {
+      "project": "DreamerV3",
+      "kind": "paper",
+      "path_or_url": "https://doi.org/10.1038/s41586-025-08744-2",
+      "url": "https://doi.org/10.1038/s41586-025-08744-2",
+      "source_claim": "Nature 2025, >150 tasks with one general algorithm config",
+      "i1_relevance": "future generalization methods"
+    },
+    {
+      "project": "Hyperon",
+      "kind": "source",
+      "path_or_url": "README.md",
+      "url": "https://github.com/trueagi-io/hyperon-experimental/blob/3f76dc460da6961f57f69f6c3e550c59c74ada83/README.md",
+      "source_claim": "pre-alpha, MeTTa language, Rust core, Python bindings",
+      "i1_relevance": "not a substitute for I1"
+    },
+    {
+      "project": "Hyperon",
+      "kind": "source",
+      "path_or_url": "lib/src/space/",
+      "url": "https://github.com/trueagi-io/hyperon-experimental/blob/3f76dc460da6961f57f69f6c3e550c59c74ada83/lib/src/space/",
+      "source_claim": "knowledge storage and matching source tree",
+      "i1_relevance": "I1 hypothesis schema"
+    },
+    {
+      "project": "Hyperon",
+      "kind": "source",
+      "path_or_url": "https://github.com/trueagi-io/metta-examples/tree/main/ecan",
+      "url": "https://github.com/trueagi-io/metta-examples/tree/main/ecan",
+      "source_claim": "attention allocation ECAN example, separate library",
+      "i1_relevance": "I1 attention budgeting (concept only)"
+    },
+    {
+      "project": "Hyperon",
+      "kind": "source",
+      "path_or_url": "https://github.com/trueagi-io/metta-examples/tree/main/strips",
+      "url": "https://github.com/trueagi-io/metta-examples/tree/main/strips",
+      "source_claim": "STRIPS/PDDL to MeTTa example",
+      "i1_relevance": "I1 plan representations (not environment truth)"
+    },
+    {
+      "project": "iSEED",
+      "kind": "paper",
+      "path_or_url": "https://doi.org/10.3389/fnbot.2026.1920808",
+      "url": "https://doi.org/10.3389/fnbot.2026.1920808",
+      "source_claim": "4 modules, 528-d embeddings, daily density clustering, temporal expectation",
+      "i1_relevance": "I1 episode segmentation and replay"
+    },
+    {
+      "project": "iSEED",
+      "kind": "raw-data",
+      "path_or_url": "https://www.frontiersin.org/journals/neurorobotics/articles/10.3389/fnbot.2026.1920808/full",
+      "url": "https://www.frontiersin.org/journals/neurorobotics/articles/10.3389/fnbot.2026.1920808/full",
+      "source_claim": "raw evidence promised in restricted Zenodo upon request",
+      "i1_relevance": "not downloaded"
+    },
+    {
+      "project": "I1",
+      "kind": "source",
+      "path_or_url": "src/i1/modules/value_needs.py",
+      "url": "https://github.com/josselin-orta-lab/individual-zero/blob/972aac6ca64a8517dbbee8604f7a1e5108474473/src/i1/modules/value_needs.py",
+      "source_claim": "reward_between absolute setpoint error",
+      "i1_relevance": "P0 harmful rewards issue #306"
+    },
+    {
+      "project": "I1",
+      "kind": "source",
+      "path_or_url": "src/i1/modules/td_values.py",
+      "url": "https://github.com/josselin-orta-lab/individual-zero/blob/972aac6ca64a8517dbbee8604f7a1e5108474473/src/i1/modules/td_values.py",
+      "source_claim": "segments and eligibility with delayed real reward",
+      "i1_relevance": "P0 action-chain credit #305"
+    },
+    {
+      "project": "I1",
+      "kind": "source",
+      "path_or_url": "src/i1/modules/memory.py",
+      "url": "https://github.com/josselin-orta-lab/individual-zero/blob/972aac6ca64a8517dbbee8604f7a1e5108474473/src/i1/modules/memory.py",
+      "source_claim": "closed applied action witnesses; eligible only 32 closed episodes",
+      "i1_relevance": "P1 long term recall #535"
+    },
+    {
+      "project": "I1",
+      "kind": "source",
+      "path_or_url": "src/i1/runtime/i1_natural_runtime.py",
+      "url": "https://github.com/josselin-orta-lab/individual-zero/blob/972aac6ca64a8517dbbee8604f7a1e5108474473/src/i1/runtime/i1_natural_runtime.py",
+      "source_claim": "generic Stage8 recalled context is no-score",
+      "i1_relevance": "P1 decision attribution #526"
+    },
+    {
+      "project": "I1",
+      "kind": "source",
+      "path_or_url": "src/i1/modules/consolidation_semantics.py",
+      "url": "https://github.com/josselin-orta-lab/individual-zero/blob/972aac6ca64a8517dbbee8604f7a1e5108474473/src/i1/modules/consolidation_semantics.py",
+      "source_claim": "six passes and private lived evidence",
+      "i1_relevance": "P1 consolidation #293"
+    },
+    {
+      "project": "I1",
+      "kind": "source",
+      "path_or_url": "src/i1/modules/lived_prediction.py",
+      "url": "https://github.com/josselin-orta-lab/individual-zero/blob/972aac6ca64a8517dbbee8604f7a1e5108474473/src/i1/modules/lived_prediction.py",
+      "source_claim": "water-only bounded owned first-person prediction",
+      "i1_relevance": "P1 general forecasts"
+    },
+    {
+      "project": "I1",
+      "kind": "source",
+      "path_or_url": "src/i1/docs/EVIDENCE_MATRIX.md",
+      "url": "https://github.com/josselin-orta-lab/individual-zero/blob/972aac6ca64a8517dbbee8604f7a1e5108474473/src/i1/docs/EVIDENCE_MATRIX.md",
+      "source_claim": "scientific claims require more than software tests",
+      "i1_relevance": "acceptance design"
+    }
+  ],
+  "facts": [
+    {
+      "project": "Soar",
+      "claim": "Automatic episodic recording, cue-based query with optional negative cue, source age and match score; query search and structural match can become expensive",
+      "type": "documented",
+      "url": "https://soar.eecs.umich.edu/soar_manual/07_EpisodicMemory/"
+    },
+    {
+      "project": "Soar",
+      "claim": "Chunking backtraces resolved substate reasoning into reusable productions; explains learned rules; documented over-generalization risks",
+      "type": "documented",
+      "url": "https://soar.eecs.umich.edu/soar_manual/04_ProceduralKnowledgeLearning/"
+    },
+    {
+      "project": "Soar",
+      "claim": "Temporal extension propagates discounted rewards over gaps before later RL operator selections",
+      "type": "documented",
+      "url": "https://soar.eecs.umich.edu/soar_manual/05_ReinforcementLearning/"
+    },
+    {
+      "project": "MicroPsi2",
+      "claim": "Motivational model derives goals from needs; need intensity and urgency distinguished; learning associates satisfaction with actions and preceding situations",
+      "type": "paper",
+      "url": "https://agi-conf.org/2015/wp-content/uploads/2015/07/agi15_bach.pdf"
+    },
+    {
+      "project": "MicroPsi2",
+      "claim": "Code includes affective modulators and hierarchical script states with timeouts and failure",
+      "type": "code",
+      "url": "https://github.com/joschabach/micropsi2/blob/74a2642d20da9da1d64acc5e4c11aeabee192a27/micropsi_core/nodenet/nodefunctions.py"
+    },
+    {
+      "project": "LIDA",
+      "claim": "Code implements coalitions, global broadcasts and context-indexed procedural schemes; public episodic memory learn method is TODO",
+      "type": "code",
+      "url": "https://github.com/CognitiveComputingResearchGroup/lida-framework/blob/26bc3b2b34bf7ccfe2c62e1f12314db27d9719ec/src/edu/memphis/ccrg/lida/episodicmemory/EpisodicMemoryImpl.java"
+    },
+    {
+      "project": "DreamerV3",
+      "claim": "Nature 2025 reports a single algorithm across >150 tasks and a learned model that improves action policies using imagined trajectories",
+      "type": "published experiment",
+      "url": "https://doi.org/10.1038/s41586-025-08744-2"
+    },
+    {
+      "project": "DreamerV3",
+      "claim": "Public reimplementation provides score files, RSSM model, training config and actor-critic code",
+      "type": "code",
+      "url": "https://github.com/danijar/dreamerv3"
+    },
+    {
+      "project": "Hyperon",
+      "claim": "MeTTa/Atomspace pre-alpha symbolic infrastructure for relation matching; a tool substrate, not measured autonomous cognition",
+      "type": "code readme",
+      "url": "https://github.com/trueagi-io/hyperon-experimental"
+    },
+    {
+      "project": "iSEED",
+      "claim": "Unsupervised daily cluster and temporal context recognition on 449 office and 2304 conference episodes; action-selection loop still future work",
+      "type": "published experiment",
+      "url": "https://doi.org/10.3389/fnbot.2026.1920808"
+    },
+    {
+      "project": "iSEED",
+      "claim": "Raw data are promised to restricted Zenodo upon request; no official public code was verified",
+      "type": "availability statement",
+      "url": "https://www.frontiersin.org/journals/neurorobotics/articles/10.3389/fnbot.2026.1920808/full"
+    },
+    {
+      "project": "I1",
+      "claim": "Absolute setpoint deviation reward can assign negative credit to useful hydration overshoot; live issue #306 with physical WAL",
+      "type": "verified repository issue and code",
+      "url": "https://github.com/josselin-orta-lab/individual-zero/issues/306"
+    },
+    {
+      "project": "I1",
+      "claim": "Closed autobiographical recall eligibility limited to last 32 episodes; older retained data inaccessible to current query",
+      "type": "verified code and issue",
+      "url": "https://github.com/josselin-orta-lab/individual-zero/issues/535"
+    },
+    {
+      "project": "I1",
+      "claim": "Generic Stage8 action witness bridge reports context but does not change decision evidence (as of pinned I1 SHA)",
+      "type": "verified code",
+      "url": "https://github.com/josselin-orta-lab/individual-zero/blob/972aac6ca64a8517dbbee8604f7a1e5108474473/src/i1/runtime/i1_natural_runtime.py"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "H01",
+      "priority": "P0",
+      "title": "Cohérence du signal de valeur homéostatique",
+      "hypothesis": "Une valeur sensible aux déficits évite de pénaliser une amélioration corporelle viable tout en conservant les coûts métaboliques réels",
+      "i1_owners": [
+        "ValueAndNeeds",
+        "LinearTDValues"
+      ],
+      "i1_code": [
+        "src/i1/modules/value_needs.py",
+        "src/i1/modules/td_values.py"
+      ],
+      "issues": [
+        306
+      ],
+      "external_basis": [
+        "MicroPsi2 : besoins et satisfaction",
+        "Soar : récompense retardée"
+      ],
+      "protocol": "Faire naître des I1 dans des mondes et graines appariés ; comparer uniquement la définition de la valeur par écart absolu et par déficit, avec dépassement de la consigne hydrique et collecte avant consommation.",
+      "negative_controls": [
+        "physique identique",
+        "Competition et ActionControl inchangés",
+        "contrôle sans lecture du signal appris"
+      ],
+      "pass_gate": "La valeur suit les améliorations corporelles viables sans dégrader les choix autonomes ni la survie mesurée ; les contre-exemples sont explicités"
+    },
+    {
+      "id": "H02",
+      "priority": "P0",
+      "title": "Attribution du crédit aux actions préparatoires",
+      "hypothesis": "Plusieurs actions volontaires peuvent recevoir une part pertinente du bénéfice physique ultérieur sans identité motrice forcée",
+      "i1_owners": [
+        "LinearTDValues",
+        "CausalModel",
+        "EpisodicMemory"
+      ],
+      "i1_code": [
+        "src/i1/modules/td_values.py",
+        "src/i1/modules/causal_model.py",
+        "src/i1/modules/memory.py"
+      ],
+      "issues": [
+        305,
+        304
+      ],
+      "external_basis": [
+        "Soar : extension temporelle du renforcement",
+        "MicroPsi2 : chaînes besoin-situation"
+      ],
+      "protocol": "Comparer des naissances appariées avec deux baies dont les propriétés nourrissantes cachées sont inversées selon le monde ; examiner segments TD, traces et séquences de collecte puis consommation, avec ablation de la lecture.",
+      "negative_controls": [
+        "aucune récompense synthétique",
+        "aucune consommation imposée",
+        "identité alimentaire cachée"
+      ],
+      "pass_gate": "Les actions futures sélectionnent plus souvent la chaîne réellement nourrissante dans les deux permutations, sans fausse attribution de succès"
+    },
+    {
+      "id": "H03",
+      "priority": "P0",
+      "title": "Publication sémantique durable et causalement utile",
+      "hypothesis": "Des expériences personnelles closes engendrent une connaissance durable non vide qui peut modifier une action future",
+      "i1_owners": [
+        "EpisodicMemory",
+        "Consolidation",
+        "CausalModel",
+        "ValueAndNeeds"
+      ],
+      "i1_code": [
+        "src/i1/modules/consolidation_semantics.py",
+        "src/i1/runtime/i1_cognitive_publication.py"
+      ],
+      "issues": [
+        293
+      ],
+      "external_basis": [
+        "Soar : distinction épisodique-sémantique",
+        "LIDA : procédures contextuelles",
+        "iSEED : stabilité après consolidation"
+      ],
+      "protocol": "Tracer les formes sémantiques de chaque propriétaire avant et après consolidation, les références vécues exactes, les UC, la reprise froide M11, le rappel et le choix ultérieur.",
+      "negative_controls": [
+        "lecture mémoire désactivée",
+        "consolidation sans source",
+        "mises à jour simultanées issues de la veille"
+      ],
+      "pass_gate": "Chaîne effectivement observée de la source à la connaissance, au choix et à son effet, non expliquée par Q ou la perception seules"
+    },
+    {
+      "id": "H04",
+      "priority": "P1",
+      "title": "Rappel ancien indexé et payé en UC",
+      "hypothesis": "Une recherche par indices donne accès à des souvenirs plus anciens que les 32 derniers épisodes sans parcours illimité",
+      "i1_owners": [
+        "EpisodicMemory"
+      ],
+      "i1_code": [
+        "src/i1/modules/memory.py"
+      ],
+      "issues": [
+        535
+      ],
+      "external_basis": [
+        "Soar : requêtes par indices, métadonnées de correspondance et risques de coût"
+      ],
+      "protocol": "Créer plus de 32 épisodes personnellement clos ; retenir une action ancienne rare ou contradictoire ; tester propriété et index de source, puis un unique rappel borné et payé.",
+      "negative_controls": [
+        "références en double",
+        "épisodes futurs ou non clos",
+        "vue M11 périmée",
+        "source inconnue"
+      ],
+      "pass_gate": "Une source ancienne authentique redevient accessible par indice pertinent avec un travail mesuré strictement borné et sans lecture gratuite"
+    },
+    {
+      "id": "H05",
+      "priority": "P1",
+      "title": "Prédiction générique des effets corporels",
+      "hypothesis": "Les transitions personnellement observées permettent d’estimer avec incertitude les effets physiques des actions et de s’abstenir face à l’inconnu",
+      "i1_owners": [
+        "CausalModel",
+        "ValueAndNeeds"
+      ],
+      "i1_code": [
+        "src/i1/modules/lived_prediction.py",
+        "src/i1/modules/causal_model.py"
+      ],
+      "issues": [
+        473,
+        526
+      ],
+      "external_basis": [
+        "DreamerV3 : prédictions conditionnées par l’action",
+        "LIDA : effets attendus associés aux schémas"
+      ],
+      "protocol": "Prédire des variations de variables corporelles déjà existantes pour les primitives ordinaires, à partir de preuves vécues indépendantes ; mesurer erreur, signe et calibration sur des épisodes non utilisés pour apprendre.",
+      "negative_controls": [
+        "aucun accès privilégié à WorldBody",
+        "abstention pour les contextes non observés",
+        "aucun bonus Stage8 automatique"
+      ],
+      "pass_gate": "Erreur de prédiction et incertitude mieux calibrées que les références de récence et de variation nulle"
+    },
+    {
+      "id": "H06",
+      "priority": "P1",
+      "title": "Influence non redondante des souvenirs sur Competition",
+      "hypothesis": "Un rappel peut apporter à Stage8 une information absente de Q et Stage6 et affecter naturellement certaines options",
+      "i1_owners": [
+        "Stage8",
+        "Competition",
+        "ActionControl"
+      ],
+      "i1_code": [
+        "src/i1/runtime/i1_natural_runtime.py",
+        "src/i1/modules/td_values.py"
+      ],
+      "issues": [
+        526,
+        317,
+        512
+      ],
+      "external_basis": [
+        "LIDA : comportements conditionnés par contexte",
+        "Soar : usage d’une connaissance rappelée pour choisir"
+      ],
+      "protocol": "Comparer des vies appariées avec ou sans la lecture mémoire pertinente, en conservant l’état physique, la valeur Q et la base Stage6 identiques.",
+      "negative_controls": [
+        "absence d’histoire",
+        "preuves contradictoires",
+        "concurrents éveillés",
+        "budget dégradé"
+      ],
+      "pass_gate": "Des choix changent pour un effet attendu justifié indépendamment, sans privilège moteur ni double comptage"
+    },
+    {
+      "id": "H07",
+      "priority": "P1",
+      "title": "Mémoire du sommeil entier et de ses bénéfices retardés",
+      "hypothesis": "La valeur du sommeil dépend des conséquences physiques et cognitives personnellement éprouvées, pas du nom de la commande",
+      "i1_owners": [
+        "EpisodicMemory",
+        "Consolidation",
+        "ValueAndNeeds"
+      ],
+      "i1_code": [
+        "src/i1/runtime/i1_natural_sleep.py",
+        "src/i1/runtime/stage10_runtime.py"
+      ],
+      "issues": [
+        467,
+        473,
+        465
+      ],
+      "external_basis": [
+        "iSEED : épisodes indexés dans le temps",
+        "MicroPsi2 : distinction besoin-urgence"
+      ],
+      "protocol": "Comparer des sommeil et attentes vécus au même endroit, l’état au réveil, les transitions corporelles complètes et les conséquences cognitives ultérieures ; aucune récompense accordée à la consolidation sans effet mesuré.",
+      "negative_controls": [
+        "dommage ambiant du lieu",
+        "énergie saturée",
+        "alerte hydrique de réveil",
+        "reprise M11"
+      ],
+      "pass_gate": "Prédictions correctes selon les situations et absence de domination apprise du sommeil lorsqu’une preuve contraire existe"
+    },
+    {
+      "id": "H08",
+      "priority": "P1",
+      "title": "Segmentation des expériences par surprise et stabilité",
+      "hypothesis": "Des changements imprévus de prédiction peuvent délimiter les épisodes mieux que des durées fixes seules",
+      "i1_owners": [
+        "EpisodicMemory",
+        "Perception"
+      ],
+      "i1_code": [
+        "src/i1/modules/memory.py",
+        "src/i1/modules/perception.py"
+      ],
+      "issues": [],
+      "external_basis": [
+        "iSEED : ruptures épisodiques par déviation et stabilité des contextes"
+      ],
+      "protocol": "Utiliser uniquement les signaux de corps, position, action et perception existants ; comparer les frontières, la conservation des événements rares, la stabilité des contextes et la prédiction future.",
+      "negative_controls": [
+        "aucun nouveau capteur social",
+        "aucune vision préentraînée",
+        "frontières existantes préservées"
+      ],
+      "pass_gate": "Moins de fusions entre expériences incompatibles et meilleur rappel tardif sans explosion des UC ou faux découpages"
+    },
+    {
+      "id": "H09",
+      "priority": "P2",
+      "title": "Compilation de procédures sur preuve personnelle",
+      "hypothesis": "Les réussites répétées peuvent devenir des procédures contextuelles moins coûteuses et réversibles lors des échecs",
+      "i1_owners": [
+        "Consolidation",
+        "ProceduralMemory",
+        "Competition"
+      ],
+      "i1_code": [
+        "src/i1/modules/consolidation_semantics.py",
+        "src/i1/runtime/i1_active_value_needs.py"
+      ],
+      "issues": [
+        326
+      ],
+      "external_basis": [
+        "Soar : compilation après résolution de blocage",
+        "LIDA : schémas conditionnels",
+        "MicroPsi2 : scripts hiérarchiques"
+      ],
+      "protocol": "Tester des séquences vécues répétées dans des contextes variés ; mesurer gain en UC, incertitude et retour à la délibération après échec.",
+      "negative_controls": [
+        "aucun script exécutable par défaut",
+        "interruption si les besoins changent",
+        "rejet du contexte inconnu"
+      ],
+      "pass_gate": "Moins de dépenses UC par succès répété sans perte de sécurité ni d’adaptation"
+    },
+    {
+      "id": "H10",
+      "priority": "P2",
+      "title": "Séparer intensité du besoin et urgence",
+      "hypothesis": "Le déficit, le délai prévu avant le danger et le coût des occasions manquées sont des signaux distincts",
+      "i1_owners": [
+        "ValueAndNeeds",
+        "GoalManager"
+      ],
+      "i1_code": [
+        "src/i1/modules/value_needs.py",
+        "src/i1/modules/goal_manager.py"
+      ],
+      "issues": [
+        307,
+        453
+      ],
+      "external_basis": [
+        "MicroPsi2 2015 et 2019 : pression d’un besoin et urgence"
+      ],
+      "protocol": "Mesurer intensité et horizon de risque inférés des dynamiques corporelles actuelles ; conserver les propositions de besoins et la compétition motrice indépendantes.",
+      "negative_controls": [
+        "aucune obligation programmée de boire ou manger",
+        "télémétrie physique intacte",
+        "aucun accès oracle au délai avant la mort"
+      ],
+      "pass_gate": "Meilleure calibration des urgences et changements de buts adaptés à l’approche des seuils critiques sans oscillation excessive"
+    },
+    {
+      "id": "H11",
+      "priority": "P2",
+      "title": "Fiabilité adaptative et changement de contexte",
+      "hypothesis": "Les preuves incertaines ou contradictoires doivent ajuster la confiance plutôt que produire un savoir catégorique faux",
+      "i1_owners": [
+        "CausalModel",
+        "MetacognitionHealth"
+      ],
+      "i1_code": [
+        "src/i1/modules/causal_model.py",
+        "src/i1/modules/memory.py"
+      ],
+      "issues": [
+        535
+      ],
+      "external_basis": [
+        "iSEED : stabilité contextuelle",
+        "Soar : score de correspondance et âge",
+        "DreamerV3 : stabilité aux échelles de récompense"
+      ],
+      "protocol": "Faire varier les effets d’une ressource entre conditions de monde isolées, puis comparer confiance, abstention et réapprentissage.",
+      "negative_controls": [
+        "aucun indicateur caché de changement",
+        "aucune suppression arbitraire de souvenirs"
+      ],
+      "pass_gate": "Incertitude calibrée et révision ultérieure des choix avec conservation des preuves contradictoires"
+    },
+    {
+      "id": "H12",
+      "priority": "P3",
+      "title": "Simulation interne courte et bornée",
+      "hypothesis": "Une fois les modèles d’effets fiables, de courtes projections internes peuvent améliorer le choix sans consulter la vérité du simulateur",
+      "i1_owners": [
+        "Planning",
+        "CausalModel",
+        "ValueAndNeeds"
+      ],
+      "i1_code": [
+        "src/i1/modules/stage6_planning.py",
+        "src/i1/modules/lived_prediction.py"
+      ],
+      "issues": [],
+      "external_basis": [
+        "DreamerV3 : trajectoires imaginées",
+        "Hyperon : relations symboliques explicites"
+      ],
+      "protocol": "Comparer des projections apprises sur un pas et sur deux ou trois pas, uniquement à partir des prédictions personnelles et avec référence Q seule ; mesurer les UC.",
+      "negative_controls": [
+        "aucun oracle WorldBody",
+        "abstention devant branches trop incertaines",
+        "UC réellement comptabilisées"
+      ],
+      "pass_gate": "Le bénéfice prédictif et décisionnel dépasse son coût de calcul et le risque d’erreur du modèle"
+    }
+  ],
+  "dreamerv3_benchmark_file_inventory": [
+    {
+      "file": "atari100k-dreamerv3.json.gz",
+      "size_bytes": 64096,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/atari100k-dreamerv3.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "atari100k-ppo_fixhp.json.gz",
+      "size_bytes": 86614,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/atari100k-ppo_fixhp.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "atari57-dreamerv3.json.gz",
+      "size_bytes": 616575,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/atari57-dreamerv3.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "atari57-muzero.json.gz",
+      "size_bytes": 27182,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/atari57-muzero.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "atari57-ppo_fixhp.json.gz",
+      "size_bytes": 666876,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/atari57-ppo_fixhp.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "dmc_proprio-d4pg.json.gz",
+      "size_bytes": 200341,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/dmc_proprio-d4pg.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "dmc_proprio-ddpg.json.gz",
+      "size_bytes": 207077,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/dmc_proprio-ddpg.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "dmc_proprio-dmpo.json.gz",
+      "size_bytes": 223933,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/dmc_proprio-dmpo.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "dmc_proprio-dreamerv3.json.gz",
+      "size_bytes": 21986,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/dmc_proprio-dreamerv3.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "dmc_proprio-mpo.json.gz",
+      "size_bytes": 215771,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/dmc_proprio-mpo.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "dmc_proprio-ppo_fixhp.json.gz",
+      "size_bytes": 105325,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/dmc_proprio-ppo_fixhp.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "dmc_vision-curl.json.gz",
+      "size_bytes": 53690,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/dmc_vision-curl.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "dmc_vision-dreamerv3.json.gz",
+      "size_bytes": 921415,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/dmc_vision-dreamerv3.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "dmc_vision-drqv2.json.gz",
+      "size_bytes": 51025,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/dmc_vision-drqv2.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "dmc_vision-ppo_fixhp.json.gz",
+      "size_bytes": 247609,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/dmc_vision-ppo_fixhp.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "dmc_vision-sac.json.gz",
+      "size_bytes": 50043,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/dmc_vision-sac.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "dmlab30-dreamerv3.json.gz",
+      "size_bytes": 67364,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/dmlab30-dreamerv3.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "dmlab30-impala_deep.json.gz",
+      "size_bytes": 83238,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/dmlab30-impala_deep.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "dmlab30-ppo_fixhp.json.gz",
+      "size_bytes": 207601,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/dmlab30-ppo_fixhp.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "minecraft_diamond-dreamerv3.json.gz",
+      "size_bytes": 512970,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/minecraft_diamond-dreamerv3.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "minecraft_diamond-impala.json.gz",
+      "size_bytes": 332532,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/minecraft_diamond-impala.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "minecraft_diamond-ppo_fixhp.json.gz",
+      "size_bytes": 666589,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/minecraft_diamond-ppo_fixhp.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "minecraft_diamond-r2d2.json.gz",
+      "size_bytes": 32302,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/minecraft_diamond-r2d2.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "minecraft_diamond-rainbow.json.gz",
+      "size_bytes": 412764,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/minecraft_diamond-rainbow.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "procgen-dreamerv3.json.gz",
+      "size_bytes": 11324,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/procgen-dreamerv3.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "procgen-ppg.json.gz",
+      "size_bytes": 109206,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/procgen-ppg.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    },
+    {
+      "file": "procgen-ppo_fixhp.json.gz",
+      "size_bytes": 79784,
+      "remote_url": "https://github.com/danijar/dreamerv3/blob/e01491fad6434b2245a3b8ca201dd7faedcc458c/scores/procgen-ppo_fixhp.json.gz",
+      "local_copy": false,
+      "availability": "public GitHub file"
+    }
+  ],
+  "iseed_published_metrics": [
+    {
+      "setting": "IIT open office",
+      "days": 4,
+      "observed_hours_total": 24,
+      "episodes_total": 449,
+      "daily_episodes": [
+        19,
+        217,
+        130,
+        83
+      ],
+      "episode_recognition_agreement": [
+        null,
+        0.23,
+        0.87,
+        0.93
+      ],
+      "temporal_stability": [
+        0.61,
+        0.76,
+        0.79,
+        null
+      ],
+      "expectation_consistency": [
+        null,
+        0.24,
+        0.95,
+        0.96
+      ],
+      "measure_kind": "published internal label consistency, not motor learning",
+      "source": "https://doi.org/10.3389/fnbot.2026.1920808"
+    },
+    {
+      "setting": "international conference demo",
+      "days": 3,
+      "observed_hours_total": 15,
+      "episodes_total": 2304,
+      "daily_episodes": [
+        476,
+        817,
+        1011
+      ],
+      "episode_recognition_agreement": [
+        null,
+        0.83,
+        0.73
+      ],
+      "temporal_stability": [
+        0.79,
+        0.77,
+        null
+      ],
+      "expectation_consistency": [
+        null,
+        0.26,
+        0.08
+      ],
+      "measure_kind": "published internal label consistency, not motor learning",
+      "source": "https://doi.org/10.3389/fnbot.2026.1920808"
+    }
+  ],
+  "mechanism_transfer_candidates": [
+    {
+      "mechanism": "cue-conditioned bounded episodic retrieval",
+      "external": "Soar episodic memory",
+      "I1_issue": 535,
+      "transfer": "design hypothesis and experimental protocol only; keep UC and Memory custody",
+      "priority": "P1"
+    },
+    {
+      "mechanism": "temporal reward propagation",
+      "external": "Soar RL temporal extension",
+      "I1_issue": 305,
+      "transfer": "test existing TD segments before new mechanism",
+      "priority": "P0"
+    },
+    {
+      "mechanism": "need pressure vs urgency",
+      "external": "MicroPsi2 motivational model",
+      "I1_issue": 307,
+      "transfer": "test risk horizon from existing body, no new physical variable",
+      "priority": "P2"
+    },
+    {
+      "mechanism": "context-conditioned procedures",
+      "external": "LIDA procedural schemes, Soar chunking",
+      "I1_issue": 293,
+      "transfer": "consolidate only authentic evidence, advisory until independently verified",
+      "priority": "P2"
+    },
+    {
+      "mechanism": "action-conditioned prediction",
+      "external": "DreamerV3 world model",
+      "I1_issue": 526,
+      "transfer": "first generalize personally learned bodily outcomes; no latent network required",
+      "priority": "P1"
+    },
+    {
+      "mechanism": "typed inspectable causal relations",
+      "external": "Hyperon MeTTa example schemas",
+      "I1_issue": 293,
+      "transfer": "retain existing CausalModel owner and source provenance",
+      "priority": "P2"
+    },
+    {
+      "mechanism": "event boundaries by prediction change",
+      "external": "iSEED segmentation",
+      "I1_issue": null,
+      "transfer": "test on existing action/body signals without pretrained sensing",
+      "priority": "P1"
+    }
+  ]
+}
