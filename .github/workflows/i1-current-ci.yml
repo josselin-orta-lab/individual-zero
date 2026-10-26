@@ -108,6 +108,8 @@ jobs:
           assert not data["survival_improvement_proven"]
           print("I1_SPATIAL_WAL_READ_ONLY_AUDIT_OK")
           PY
+      - name: Incremental closed M11 observer index canonical report custody
+        run: python -m unittest discover -s tests/i1 -p test_i1_m11_incremental_index_562.py -v
       - name: Real natural I1 preset M11 transactional smoke
         run: python tools/run_i1_world_preset.py --preset empty-land --seed 247 --steps 1 --lives 1 --custody m11 --output-dir reports/preset-empty-m11-ci
       - name: Static syntax
