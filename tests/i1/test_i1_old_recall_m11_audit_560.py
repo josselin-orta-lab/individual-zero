@@ -14,7 +14,9 @@ class OldRecallM11Audit560(unittest.TestCase):
         )} for i in range(34)]
         self.commits = {"cmd:1": 1, "transition:1": 1}
         self.proposal = {"kind": "memory_recall_proposed", "t_monde": 35,
-                         "cycle": 1, "data": {"episode_ref": "episode:0"}}
+                         "cycle": 1, "data": {"episode_ref": "episode:0",
+                         "subject_ref": "episode:episode:0",
+                         "contribution_ref": "memory-recall:episode:0:35:1"}}
         self.charge = {"kind": "compute_charge", "t_monde": 35,
                        "cycle": 1, "data": {
                            "module": "planning", "operation": "i1_bounded_old_episode_recall",
