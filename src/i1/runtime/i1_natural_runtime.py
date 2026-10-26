@@ -33,10 +33,10 @@ _SLEEP_RECALL_COST_UC = 1
 _H_RECALL_VERSION = "i1-published-action-recall-v1"
 _H_RECALL_OPERATION = "i1_published_action_recall"
 _H_RECALL_COST_UC = 1
-# Two selected refs can each touch one independent 64-source DC-09 commit.
-# Price the complete 2 * 64 upper bound, not just the returned rows.
+# Limit the sum of all touched DC-09 sources to 8, paid before selection.
+# A larger commitment is refused, not verified for a discounted price.
 _OLD_RECALL_OPERATION = "i1_bounded_old_episode_recall"
-_OLD_RECALL_COST_UC = 128
+_OLD_RECALL_COST_UC = 8
 _PRIVATE_RECALL_OPERATION = "i1_private_procedure_recall"
 _PRIVATE_RECALL_COST_UC = 1
 _OPTION_INTENTION_COST_UC = 1
@@ -823,8 +823,7 @@ class I1Runtime(I1WaterPrudentRuntime):
                 refs = self.memory.closed_last_recalled_episode_source_refs(
                     now=capture.t_monde,
                 )
-                # At most two selected refs, two 64-source touched commits.
-                # The fixed 128 UC covers the worst-case scoped verification.
+                # At most two selected refs; verify at most 8 sources in all touched commits.
                 if (1 <= len(refs) <= 2
                         and self.memory.last_recalled_ref == old_episode):
                     from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY as P2
@@ -836,6 +835,7 @@ class I1Runtime(I1WaterPrudentRuntime):
                     projected = self.stage3.substrate.views.selected_committed_autobiography(
                         policies={p.version: p for p in (P2, P7, PNEW, PWAKE)},
                         selected_event_refs=refs,
+                        max_verified_sources=_OLD_RECALL_COST_UC,
                     )
                     witnesses = self.memory.closed_applied_action_witnesses(
                         autobiography=projected, now=capture.t_monde,
