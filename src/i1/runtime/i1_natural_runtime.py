@@ -322,6 +322,11 @@ class I1Runtime(I1WaterPrudentRuntime):
             raise ValueError("duplicate I1 old episodic recall charge")
         if _PRIVATE_RECALL_OPERATION in original.operation_costs:
             raise ValueError("I1 private recall operation already registered")
+        # The optional old-episode observer must compete for ordinary UC
+        # already available to Planning. Register its 8-UC price, but mint
+        # neither an 8-UC cycle grant nor an 8-UC Planning envelope grant.
+        # Without a current qualifying recall this avoids a dormant budget
+        # subsidy affecting other decisions. An unaffordable recall is skipped.
         # A second independent Planning producer may coexist with the
         # existing goal candidate. Reserve its actual paid Planning,
         # Competition register and per-option evaluation costs separately.
@@ -335,7 +340,7 @@ class I1Runtime(I1WaterPrudentRuntime):
                      + "+" + _H_RECALL_VERSION
                      + "+i1-old-episode-paid-v1"
                      + "+i1-goal-independent-local-v1"),
-            cycle_ceiling=(original.cycle_ceiling + _OLD_RECALL_COST_UC + _H_RECALL_COST_UC
+            cycle_ceiling=(original.cycle_ceiling + _H_RECALL_COST_UC
                            + _SLEEP_RECALL_COST_UC
                            + _PRIVATE_RECALL_COST_UC
                            + local_planning + local_registration + local_evaluation
@@ -343,7 +348,6 @@ class I1Runtime(I1WaterPrudentRuntime):
             module_envelopes={
                 **original.module_envelopes,
                 "planning": (original.module_envelopes["planning"]
-                             + _OLD_RECALL_COST_UC
                              + _SLEEP_RECALL_COST_UC + _H_RECALL_COST_UC
                              + _PRIVATE_RECALL_COST_UC + local_planning
                              + _OPTION_INTENTION_COST_UC),
