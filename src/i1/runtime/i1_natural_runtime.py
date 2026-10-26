@@ -790,29 +790,7 @@ class I1Runtime(I1WaterPrudentRuntime):
             hooks[1]["memory"] = authenticate_cycle_recall
         normal_register = hooks[3]["competition"]
 
-        def plan_independent_local(ctx):
-            # A new deliberation has no inherited paid admission/prospect.
-            self._i1_option_intention_paid = None
-            normal_plan(ctx)
-            if (cycle == 1 and not self._cycle_degraded
-                    and not self.slow_history.current_version.startswith("h:birth:")
-                    and self.compute_budget.quote_operations(
-                        module="planning", operations=(_H_RECALL_OPERATION,),
-                    ).affordable
-                    and self._charge(
-                        module="planning", operation=_H_RECALL_OPERATION,
-                    )):
-                projection = self.slow_history.read_published_action_fragments(
-                    before_step=capture.t_monde,
-                )
-                self._i1_h_action_paid_context = {
-                    "step": capture.t_monde,
-                    "cycle": cycle,
-                    "site": (capture.x, capture.y),
-                    "history_version": projection["history_version"],
-                    "charged_operation": _H_RECALL_OPERATION,
-                    "fragments": projection["fragments"],
-                }
+        def consult_old_episode_after_ordinary_planning():
             # A separate priced, non-motor observation of ONE actually
             # recalled old closed episode. Do not reuse the recent-read debit.
             old_episode = self._i1_current_old_recall
@@ -867,6 +845,30 @@ class I1Runtime(I1WaterPrudentRuntime):
                                 "motor_permission": False,
                             },
                         )
+
+        def plan_independent_local(ctx):
+            # A new deliberation has no inherited paid admission/prospect.
+            self._i1_option_intention_paid = None
+            normal_plan(ctx)
+            if (cycle == 1 and not self._cycle_degraded
+                    and not self.slow_history.current_version.startswith("h:birth:")
+                    and self.compute_budget.quote_operations(
+                        module="planning", operations=(_H_RECALL_OPERATION,),
+                    ).affordable
+                    and self._charge(
+                        module="planning", operation=_H_RECALL_OPERATION,
+                    )):
+                projection = self.slow_history.read_published_action_fragments(
+                    before_step=capture.t_monde,
+                )
+                self._i1_h_action_paid_context = {
+                    "step": capture.t_monde,
+                    "cycle": cycle,
+                    "site": (capture.x, capture.y),
+                    "history_version": projection["history_version"],
+                    "charged_operation": _H_RECALL_OPERATION,
+                    "fragments": projection["fragments"],
+                }
             # Paid waking recall of already closed, first-person sources only.
             if (cycle == 1 and not self._cycle_degraded
                     and self.memory.episode_count
@@ -1020,20 +1022,21 @@ class I1Runtime(I1WaterPrudentRuntime):
                     world_step=capture.t_monde, namespace="lived_site_return:",
                 )
             self._i1_local_proposal_this_cycle = None
-            if self._cycle_degraded or st_before_cycle is None:
-                return
-            proposal = self._propose_independent_local(
-                capture=capture, cycle=cycle,
-                st_version=st_before_cycle.version,
-            )
-            if proposal is None:
-                return
-            self._i1_local_proposal_this_cycle = proposal
-            self._publish_contribution(
-                self._planning_contribution(
-                    proposal, t_monde=capture.t_monde, cycle=cycle,
+            if not self._cycle_degraded and st_before_cycle is not None:
+                proposal = self._propose_independent_local(
+                    capture=capture, cycle=cycle,
+                    st_version=st_before_cycle.version,
                 )
-            )
+                if proposal is not None:
+                    self._i1_local_proposal_this_cycle = proposal
+                    self._publish_contribution(
+                        self._planning_contribution(
+                            proposal, t_monde=capture.t_monde, cycle=cycle,
+                        )
+                    )
+            # Observer-only: do not steal UC from the already-established
+            # recent recall, intention reconciliation or local proposal.
+            consult_old_episode_after_ordinary_planning()
 
         def register_independent_local(ctx):
             normal_register(ctx)
