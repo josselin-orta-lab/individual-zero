@@ -120,6 +120,22 @@ class OldRecallM11Audit560(unittest.TestCase):
         self.assertEqual(out["authentic_old_consultations"], 0)
         self.assertEqual(out["old_memory_recall_proposals"], 1)
 
+    def test_future_same_step_closure_cannot_authorize_observation(self):
+        from copy import deepcopy
+        previous = self.episodes
+        self.episodes = previous[1:]
+        closing = {"kind": "episode_closed", "t_monde": 35, "cycle": 1,
+                   "data": previous[0]}
+        try:
+            with self.assertRaises(ValueError):
+                audit_old_recall_step(
+                    events=[self.proposal, self.charge, self.observed, closing],
+                    world_step=35, preclosed=self.episodes,
+                    newly_closed=[previous[0]], previous_commits=self.commits,
+                )
+        finally:
+            self.episodes = previous
+
     def test_recent_episode_cannot_count_as_old(self):
         from copy import deepcopy
         p = deepcopy(self.proposal)
