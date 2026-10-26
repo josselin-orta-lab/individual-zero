@@ -39,7 +39,9 @@ identity = "i1:stage10:m11:real:543"
 def factory():
     return I1Runtime(
         birth_life_id=identity, autonomous_mortal=True,
-        m11_sqlite_custody=True, wal_path=None, **params,
+        m11_sqlite_custody=True, wal_path=None,
+        diagnostic_sample_cost_uc=1, module_occupancy_cost_uc=1,
+        **params,
     )
 with TemporaryDirectory() as home:
     continuous_path = str(Path(home) / "continuous.sqlite")
