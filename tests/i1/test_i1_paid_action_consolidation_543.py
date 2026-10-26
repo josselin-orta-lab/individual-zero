@@ -36,11 +36,17 @@ for step,sources in enumerate([s1,s2,s3],1):
         rows=record_paid_source(rows, episode_ref="e"+str(step),
             event_offset=offset,event=event,before_step=10)
 out=merge_paid_fragments(rows,[],cut_step=10)
-assert len(out)==3, out
-assert [x["primitive"] for x in out]==["dormir","dormir","attendre"]
-assert all(x["observed_steps"]==1 for x in out)
-assert out[0]["observed_total_body_delta"]["energy"]==4
+# Adjacent actions may span two separately authenticated Memory episodes.
+# The evidence is continuous across source episodes, not a sleep session.
+assert len(out)==2, out
+assert [x["primitive"] for x in out]==["dormir","attendre"]
+assert [x["observed_steps"] for x in out]==[2,1]
+assert out[0]["source_episode_refs"]==["e1","e2"]
+assert out[0]["observed_total_body_delta"]["energy"]==7
+assert out[0]["observed_total_body_delta"]["water"]==-2
 assert out[1]["observed_total_body_delta"]["water"]==-1
+assert all(x["complete_subjective_session"] is False for x in out)
+assert all(x["causal_attribution"] is False and x["decision_evidence"] is False for x in out)
 assert validate_published_fragments(out)
 assert merge_paid_fragments([],out,cut_step=12)==out
 try:
