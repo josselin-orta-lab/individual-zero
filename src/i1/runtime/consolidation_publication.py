@@ -60,6 +60,30 @@ class SlowHistory:
     def read_committed(self) -> object:
         return deepcopy(self._current_state)
 
+    def read_published_action_fragments(self, *, before_step: int):
+        """Project only authenticated, committed h fragments, never whole h.
+
+        Called by the living actor only after an admitted P-43 UC debit.
+        This detached, bounded projection is a read of observed evidence,
+        not an admission, inferred reward, causal rule, or Q feature.
+        """
+        if type(before_step) is not int or before_step < 1:
+            raise ValueError("published h recall requires a living world step")
+        from i1.modules.paid_action_consolidation import (
+            validate_published_fragments,
+        )
+        rows = self._current_state.get("lived_action_fragments", [])
+        if not validate_published_fragments(rows):
+            raise ValueError("invalid committed h action evidence")
+        return {
+            "history_version": self._current_version,
+            "fragments": [
+                deepcopy(row) for row in rows
+                if row["consolidation_cut_step"] <= before_step
+                and row["last_step"] < before_step
+            ],
+        }
+
     def export_causal_state(self) -> dict[str, object]:
         return {
             "schema": self.schema,

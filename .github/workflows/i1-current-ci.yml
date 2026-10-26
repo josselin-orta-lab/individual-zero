@@ -50,8 +50,7 @@ jobs:
   current-i1:
     name: I1 natural SMOKE + FULL (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    # Full structural + natural + M11 suites exceed the former 15-minute job window.
-    # Keep the entire current-model gate; do not skip or weaken tests.
+    # Match merged #544 natural/M11 full-suite window (no tests skipped).
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -115,6 +114,16 @@ jobs:
         run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
       - name: Frozen I0 and versioned Lab source guard
         run: python -m unittest discover -s tests/i1 -p test_i1_source_snapshot.py -v
+      - name: Published SlowHistory no-unpaid-read P43 budget guard
+        run: python -m unittest discover -s tests/i1 -p test_i1_published_h_budget_guard_549.py -v
+      - name: Stage8 paid published-h adversarial guard
+        run: python -m unittest discover -s tests/i1 -p test_i1_published_h_stage8_guard_549.py -v
+      - name: Natural post-recall M11 cold parity
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_h_recall_m11_549.py -v
+      - name: Natural paid Stage8 committed h recall contract
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_published_h_stage8_549.py -v
+      - name: Bounded published h recall ownership regression
+        run: python -m unittest discover -s tests/i1 -p test_i1_published_h_recall_549.py -v
       - name: Natural Stage10 postpublication M11 cold parity
         run: python -m unittest discover -s tests/i1 -p test_i1_natural_stage10_m11_fragments_543.py -v
       - name: Natural Stage10 nonempty SlowHistory publication contract
