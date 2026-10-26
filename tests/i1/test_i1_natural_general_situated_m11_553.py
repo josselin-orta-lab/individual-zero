@@ -28,9 +28,9 @@ from i1lab.i1_natural_runtime import I1Runtime
 from i1lab.sqlite_life_store import SQLiteLifeLedger
 from i1.modules.situated_action_history import SCHEMA
 
-preset,_=load_preset("empty-land")
+preset,_=load_preset("oasis")
 params,_=_birth_parameters(preset)
-identity="i1:generic:h:sites:natural:553"
+identity="i1:381:natural-oasis-followthrough"
 kind="i1_situated_action_h_context_observed"
 generic="i1_published_action_stage8_context_observed"
 
@@ -50,11 +50,38 @@ with TemporaryDirectory() as home:
     a=str(Path(home)/"a.sqlite")
     b=str(Path(home)/"b.sqlite")
     with birth_i1_m11(db_path=a,life_id=identity,**params) as life:
-        for _ in range(140):
+        for _ in range(220):
             last=life.run_step()
             receipts=seen(life,kind)
             if receipts or last.status=="dead":break
-        assert receipts,"no naturally evaluated generic action with published h witness"
+        if not receipts:
+            published=life._runtime.slow_history.read_committed().get(
+                "lived_action_fragments", [])
+            from collections import Counter
+            experienced=Counter(
+                item.get("primitive") for item in seen(life,"command_experienced")
+            )
+            historical=Counter(item["primitive"] for item in published)
+            stage8=Counter(
+                item["data"]["primitive"] for item in
+                seen(life,"i1_published_action_stage8_context_observed")
+            )
+            diagnostics={
+                "steps": last.world_step,
+                "status": last.status,
+                "experienced": dict(experienced),
+                "published": dict(historical),
+                "matched_stage8": dict(stage8),
+                "charged_recall": sum(
+                    item["data"].get("operation") == "i1_published_action_recall"
+                    and item["data"].get("accepted") is True
+                    for item in seen(life,"compute_charge")
+                ),
+            }
+            raise AssertionError(
+                "no naturally evaluated generic action with published h witness: "
+                + str(diagnostics)
+            )
         assert last.status=="active","natural I1 died before h generic witness"
         publications={
             item["data"]["new_history_version"]:item["t_monde"]
