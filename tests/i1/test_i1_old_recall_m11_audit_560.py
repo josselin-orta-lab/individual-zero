@@ -74,6 +74,37 @@ class OldRecallM11Audit560(unittest.TestCase):
             self.audit([self.proposal, self.charge, self.observed],
                        commits={"cmd:1": 35, "transition:1": 35})
 
+    def test_genuine_canonical_birth_m11_report_has_audited_absence(self):
+        # A natural two-step M11 birth, not synthetic Memory population.
+        from tempfile import TemporaryDirectory
+        from subprocess import run
+        from pathlib import Path
+        import json
+        import os
+        root = Path(__file__).resolve().parents[2]
+        with TemporaryDirectory() as scratch:
+            output = Path(scratch) / "life"
+            proc = run([
+                sys.executable, str(root / "tools/run_i1_world_preset.py"),
+                "--preset", "empty-land", "--custody", "m11",
+                "--steps", "2", "--lives", "1",
+                "--output-dir", str(output),
+            ], cwd=root, capture_output=True, text=True, timeout=150,
+               env=os.environ.copy())
+            self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+            report = json.loads((output / "report.json").read_text())
+            self.assertEqual(report["status"],
+                             "COMPLETED_WITHOUT_SCIENTIFIC_VERDICT")
+            self.assertEqual(len(report["lives"]), 1)
+            life = report["lives"][0]
+            observation = life["old_recall_m11_summary_560"]
+            self.assertEqual(observation["l2_positive"], "NOT_OBSERVED")
+            self.assertEqual(observation["authentic_old_consultations"], 0)
+            self.assertEqual(observation["accepted_old_read_charges"], 0)
+            self.assertTrue(life["steps"])
+            self.assertTrue(all("old_recall_m11_audit_560" in row
+                                for row in life["steps"]))
+
     def test_recent_episode_cannot_count_as_old(self):
         from copy import deepcopy
         p = deepcopy(self.proposal)
