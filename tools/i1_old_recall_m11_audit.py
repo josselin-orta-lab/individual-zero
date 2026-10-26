@@ -54,6 +54,8 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
                               len(closed_this_step)))
         if is_old_charge:
             if (data.get("module") != "planning"
+                    or type(data.get("count")) is not int
+                    or data["count"] != 1
                     or data.get("requested_uc") != 8
                     or type(data.get("accepted")) is not bool):
                 raise ValueError("invalid old-memory UC charge")
@@ -64,21 +66,35 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
             observed.append((index, event, len(closed_this_step)))
     if len(accepted) > 1 or len(observed) > 1 or len(paid) > 1:
         raise ValueError("duplicate old-memory charge or observation")
+    def chronological_old_episode(episode, count, closed_at_proposal):
+        # Native episode IDs are labels, not evidence of chronological order.
+        # Verify that the actual Memory owner occupying the ordinal slot
+        # already existed at the precise moment of the recall proposal.
+        if type(episode) is not str or not episode.startswith("episode:"):
+            return False
+        suffix = episode[8:]
+        if (not suffix or len(suffix) > 18 or not suffix.isascii()
+                or not suffix.isdigit() or str(int(suffix)) != suffix):
+            return False
+        ordinal = int(suffix)
+        if ordinal >= count - 32:
+            return False
+        if ordinal < len(preclosed):
+            owner = preclosed[ordinal]
+        else:
+            offset = ordinal - len(preclosed)
+            if offset >= closed_at_proposal:
+                return False
+            owner = closed_this_step[offset]
+        return isinstance(owner, dict) and owner.get("id") == episode
+
     def valid_old_proposals(before_index, cycle):
         matches = []
         for index, event, count, closed_at_proposal in proposals:
             episode = event["data"]["episode_ref"]
             if (index >= before_index or event.get("cycle") != cycle
-                    or not episode.startswith("episode:")
-                    or not episode[8:].isascii() or not episode[8:].isdigit()
-                    or str(int(episode[8:])) != episode[8:]
-                    or int(episode[8:]) >= count - 32):
-                continue
-            # A closure later in the same cognitive step may not authorize
-            # a Memory proposal emitted before that closure.
-            if (not any(e["id"] == episode for e in preclosed)
-                    and not any(e["id"] == episode for e in
-                                closed_this_step[:closed_at_proposal])):
+                    or not chronological_old_episode(
+                        episode, count, closed_at_proposal)):
                 continue
             matches.append((index, event, count))
         return matches
@@ -158,16 +174,9 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
         "memory_recall_proposals": len(proposals),
         "old_memory_recall_proposals": sum(
             event.get("cycle") == 1
-            and ref.startswith("episode:")
-            and ref[8:].isascii()
-            and ref[8:].isdigit()
-            and str(int(ref[8:])) == ref[8:]
-            and int(ref[8:]) < count - 32
+            and chronological_old_episode(
+                event["data"]["episode_ref"], count, closed_at_proposal)
             for index, event, count, closed_at_proposal in proposals
-            for ref in (event["data"]["episode_ref"],)
-            if (any(e["id"] == ref for e in preclosed)
-                or any(e["id"] == ref for e in
-                       closed_this_step[:closed_at_proposal]))
         ),
         "old_read_charges": len(paid),
         "accepted_old_read_charges": len(accepted),
