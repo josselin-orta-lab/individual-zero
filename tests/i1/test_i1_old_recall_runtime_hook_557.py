@@ -34,7 +34,7 @@ from i1lab.i1_natural_runtime import (
     _SLEEP_RECALL_OPERATION, _H_RECALL_OPERATION,
 )
 
-assert _OLD_RECALL_COST_UC == 128
+assert _OLD_RECALL_COST_UC == 8
 refs=frozenset({"cmd:1","transition:1"})
 projected=({"event_id":"cmd:1"}, {"event_id":"transition:1"})
 witness={"step":1,"primitive":"collecter","source_event_refs":tuple(sorted(refs)),
@@ -47,10 +47,11 @@ class Sources:
         self.owner=owner
         self.selected=selected
         self.reads=[]
-    def selected_committed_autobiography(self,*,policies,selected_event_refs):
-        assert self.owner.compute_budget.consumed_module_uc("planning")==128
+    def selected_committed_autobiography(self,*,policies,selected_event_refs,max_verified_sources):
+        assert self.owner.compute_budget.consumed_module_uc("planning")==8
         assert selected_event_refs==refs
         assert len(policies)==4
+        assert max_verified_sources==8
         self.reads.append("dc09")
         return projected
 
@@ -67,27 +68,27 @@ class Memory:
         return frozenset()
     def closed_last_recalled_episode_source_refs(self,*,now):
         assert now==35
-        assert self.owner.compute_budget.consumed_module_uc("planning")==128
+        assert self.owner.compute_budget.consumed_module_uc("planning")==8
         self.reads.append("memory")
         return self.selected
     def closed_applied_action_witnesses(self,*,autobiography,now,
                                         recalled_episode_refs):
         assert autobiography==projected and now==35
         assert recalled_episode_refs==refs
-        assert self.owner.compute_budget.consumed_module_uc("planning")==128
+        assert self.owner.compute_budget.consumed_module_uc("planning")==8
         self.reads.append("witness")
         return (witness,)
 
-def make(cycle=1,available=128,fresh=True,selected=refs):
+def make(cycle=1,available=8,fresh=True,selected=refs):
     actor=object.__new__(I1Runtime)
     cfg=ComputeBudgetConfig(
         version="test-557",cycle_ceiling=available,
         module_envelopes={"planning":available},protected_modules=frozenset(),
         protected_capacity=0,
         operation_costs={
-            _OLD_RECALL_OPERATION:128,
+            _OLD_RECALL_OPERATION:8,
             # Disable the independent recent read in this focused old-lane fixture.
-            _SLEEP_RECALL_OPERATION:129,
+            _SLEEP_RECALL_OPERATION:9,
             _H_RECALL_OPERATION:1,
         },
     )
@@ -135,15 +136,15 @@ paid,view,writes=make()
 charges=[d for k,d,c in writes if k=="compute_charge"]
 observed=[d for k,d,c in writes if k=="i1_old_episode_paid_observation"]
 assert len(charges)==1 and charges[0]["operation"]==_OLD_RECALL_OPERATION
-assert charges[0]["requested_uc"]==128 and charges[0]["accepted"] is True
+assert charges[0]["requested_uc"]==8 and charges[0]["accepted"] is True
 assert len(observed)==1 and observed[0]["episode_ref"]=="episode:0"
-assert observed[0]["charged_uc"]==128
+assert observed[0]["charged_uc"]==8
 assert observed[0]["witnesses"]==[witness]
 assert observed[0]["decision_evidence"] is False
 assert observed[0]["motor_permission"] is False
 assert observed[0]["q_or_p40_augmented"] is False
 assert paid.memory.reads==["memory","witness"] and view.reads==["dc09"]
-assert paid.compute_budget.consumed_module_uc("planning")==128
+assert paid.compute_budget.consumed_module_uc("planning")==8
 # A persisted last_recalled_ref without a same-cycle Memory contribution
 # cannot consult old evidence or even charge the old lane.
 stale,view,writes=make(fresh=False)
@@ -151,8 +152,8 @@ assert not writes and not stale.memory.reads and not view.reads
 # The second cognitive cycle does not reuse a first-cycle receipt.
 later,view,writes=make(cycle=2)
 assert not writes and not later.memory.reads and not view.reads
-# Refuse before reading old sources when 128 UC cannot be paid.
-denied,view,writes=make(available=127)
+# Refuse before reading old sources when 8 UC cannot be paid.
+denied,view,writes=make(available=7)
 assert not writes and not denied.memory.reads and not view.reads
 # A charge does not authorize 3 source references or any DC-09 lookup.
 wide,view,writes=make(selected=frozenset({"cmd:1","transition:1","extra"}))

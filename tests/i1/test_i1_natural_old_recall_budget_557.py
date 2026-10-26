@@ -37,7 +37,7 @@ from i1lab.sqlite_life_store import SQLiteLifeLedger
 preset,_=load_preset("empty-land")
 params,_=_birth_parameters(preset)
 identity="i1:557:negative-natural-old-recall"
-assert _OLD_RECALL_COST_UC == 128
+assert _OLD_RECALL_COST_UC == 8
 assert _OLD_RECALL_OPERATION != _SLEEP_RECALL_OPERATION
 
 def factory():
@@ -55,7 +55,7 @@ with TemporaryDirectory() as folder:
     with birth_i1_m11(db_path=path,life_id=identity,**params) as life:
         actor=life._runtime
         cost=actor.compute_budget._config.operation_costs
-        assert cost[_OLD_RECALL_OPERATION] == 128
+        assert cost[_OLD_RECALL_OPERATION] == 8
         assert cost[_SLEEP_RECALL_OPERATION] == 1
         assert actor.memory.episode_count < 32
         result=life.run_step()
