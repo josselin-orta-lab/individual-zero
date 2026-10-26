@@ -483,6 +483,7 @@ class EpisodicMemory:
         self, *, autobiography: Sequence[Mapping[str, object]],
         now: int, primitive: str | None = None, limit: int = 16,
         per_command_limit: int | None = None,
+        recalled_episode_refs: frozenset[str] | None = None,
     ) -> tuple[dict[str, object], ...]:
         """Describe generic first-person applied actions from CLOSED DC-09 refs.
 
@@ -500,7 +501,19 @@ class EpisodicMemory:
                     type(per_command_limit) is not int
                     or not 1 <= per_command_limit <= limit)):
             raise ValueError("invalid bounded lived action recall query")
-        custody = self._closed_sleep_custody()
+        if recalled_episode_refs is None:
+            custody = self._closed_sleep_custody()
+        else:
+            # Do not accept arbitrary JournalViews refs or invent an owner.
+            # The caller must pay before acquiring the source selection.
+            expected = self.closed_last_recalled_episode_source_refs(now=now)
+            if (type(recalled_episode_refs) is not frozenset
+                    or not expected or recalled_episode_refs != expected):
+                raise ValueError("unauthorized old episode source selection")
+            episode = self._find_closed_episode(self._last_recalled_ref)
+            if episode is None:
+                raise ValueError("missing recalled episode")
+            custody = {ref: episode.id for ref in expected}
         by_step: dict[int, dict[str, list[Mapping[str, object]]]] = {}
         seen: set[str] = set()
         duplicates: set[str] = set()
