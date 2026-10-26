@@ -7,16 +7,22 @@ from __future__ import annotations
 from copy import deepcopy
 from .memory import same_lived_command_parameters
 from .paid_action_consolidation import CHANNELS, validate_published_fragments
-from .sleep_competition import _sleep_site_ref
-
 SCHEMA = "i1-situated-observed-action-history-v1"
+
+
+def _observed_site_ref(site: tuple[int, int]) -> str:
+    """Neutral identity of a personally observed coordinate, not a risk score."""
+    if (type(site) is not tuple or len(site) != 2
+            or any(type(c) is not int or c < 0 for c in site)):
+        raise ValueError("action site must be two perceived coordinates")
+    return f"observed-site:{site[0]}:{site[1]}"
 
 def describe_situated_action_history(
     *, published_fragments: list[dict[str, object]],
     current_site: tuple[int, int], before_step: int,
     primitive: str, parameters: dict[str, object],
 ) -> dict[str, object]:
-    """Describe personally witnessed sleep here/elsewhere; never predict it.
+    """Describe matched personally witnessed actions here/elsewhere; never predict.
 
     'Not observed here' means only absent from the bounded, published h view.
     The signs count *fragments*, not distinct admissions, causal benefits,
@@ -26,7 +32,7 @@ def describe_situated_action_history(
         raise ValueError("invalid action identity")
     if not same_lived_command_parameters(parameters, parameters):
         raise ValueError("invalid action parameters")
-    current_ref = _sleep_site_ref(current_site)
+    current_ref = _observed_site_ref(current_site)
     if (type(before_step) is not int or before_step < 1
             or not validate_published_fragments(published_fragments)):
         raise ValueError("invalid situated h read or world step")
@@ -34,7 +40,7 @@ def describe_situated_action_history(
     # relative to this current option. That must never be read retroactively.
     if any(row["consolidation_cut_step"] > before_step
            or row["last_step"] >= before_step for row in published_fragments):
-        raise ValueError("situated sleep history crosses publication cut")
+        raise ValueError("situated action history crosses publication cut")
 
     groups: dict[tuple[int, int], list[dict[str, object]]] = {}
     for fragment in published_fragments:
@@ -44,7 +50,7 @@ def describe_situated_action_history(
                 )):
             continue
         site = (fragment["site_after"]["x"], fragment["site_after"]["y"])
-        _sleep_site_ref(site)  # Reject malformed physical site, do not repair.
+        _observed_site_ref(site)  # Reject malformed physical site, do not repair.
         groups.setdefault(site, []).append(fragment)
 
     sites = []
@@ -75,7 +81,7 @@ def describe_situated_action_history(
                 "verification_status": row["verification_status"],
             })
         sites.append({
-            "site_ref": _sleep_site_ref(site),
+            "site_ref": _observed_site_ref(site),
             "site": [site[0], site[1]],
             "is_current_site": site == current_site,
             "fragment_count": len(rows),
@@ -118,7 +124,7 @@ def describe_situated_action_history(
         "historical_site_count": len(sites),
         "historical_fragment_count": total,
         "site_observations": sites,
-        "complete_subjective_session_proven": False,
+        "independent_action_session_proven": False,
         "causal_attribution": False,
         "decision_evidence": False,
         "expected_consequence": None,
