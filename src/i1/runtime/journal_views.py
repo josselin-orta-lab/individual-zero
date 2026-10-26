@@ -276,6 +276,7 @@ class JournalViews:
     def selected_committed_autobiography(
         self, *, policies: Mapping[str, AutobiographicalPolicy],
         selected_event_refs: frozenset[str],
+        max_verified_sources: int = 4096,
     ) -> tuple[dict[str, object], ...]:
         """Bounded *scoped* DC-09 projection of committed source identities.
 
@@ -284,8 +285,11 @@ class JournalViews:
         The selecting Memory owner and its caller must pay UC separately;
         possession of a source ref grants no cognitive or motor permission.
         """
+        if (type(max_verified_sources) is not int
+                or not 1 <= max_verified_sources <= 4096):
+            raise ValueError("invalid scoped DC-09 source verification limit")
         if (type(selected_event_refs) is not frozenset
-                or len(selected_event_refs) > 64
+                or len(selected_event_refs) > min(64, max_verified_sources)
                 or any(type(ref) is not str or not ref
                        for ref in selected_event_refs)):
             raise ValueError("invalid bounded selected autobiographical refs")
@@ -328,7 +332,7 @@ class JournalViews:
                 policy.validate()
                 validated_policies.add(version)
             source_count += len(refs)
-            if source_count > 4096:
+            if source_count > max_verified_sources:
                 raise ValueError("bounded autobiographical scan exhausted")
             local = []
             for ref in refs:
