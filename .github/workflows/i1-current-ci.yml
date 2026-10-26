@@ -50,7 +50,9 @@ jobs:
   current-i1:
     name: I1 natural SMOKE + FULL (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Full structural + natural + M11 suites exceed the former 15-minute job window.
+    # Keep the entire current-model gate; do not skip or weaken tests.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -113,6 +115,12 @@ jobs:
         run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
       - name: Frozen I0 and versioned Lab source guard
         run: python -m unittest discover -s tests/i1 -p test_i1_source_snapshot.py -v
+      - name: Natural Stage10 postpublication M11 cold parity
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_stage10_m11_fragments_543.py -v
+      - name: Natural Stage10 nonempty SlowHistory publication contract
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_stage10_paid_publication_543.py -v
+      - name: Stage10 paid action fragment owner-boundary contract
+        run: python -m unittest discover -s tests/i1 -p test_i1_paid_action_consolidation_543.py -v
       - name: Generic action fragment provenance and paid Stage8 regression
         run: |
           python -m unittest discover -s tests/i1 -p test_i1_closed_action_fragments_541.py -v
