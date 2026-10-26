@@ -114,9 +114,8 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
         "schema": "i1-old-recall-natural-m11-audit-v1",
         "memory_recall_proposals": len(proposals),
         "old_memory_recall_proposals": sum(
-            len(valid_old_proposals(i + 1, event.get("cycle")))
-            > 0 for i, (event_index, event, count) in enumerate(proposals)
-            for i in (event_index,)
+            any(x[0] == index for x in valid_old_proposals(index + 1, event.get("cycle")))
+            for index, event, count in proposals
         ),
         "old_read_charges": len(paid),
         "accepted_old_read_charges": len(accepted),
