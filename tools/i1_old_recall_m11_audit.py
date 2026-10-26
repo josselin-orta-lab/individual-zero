@@ -32,8 +32,15 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
             closed_this_step.append(data)
             closed_count += 1
         if kind == "memory_recall_proposed":
-            if not isinstance(data, dict) or not isinstance(data.get("episode_ref"), str):
+            if not isinstance(data, dict) or type(data.get("episode_ref")) is not str:
                 raise ValueError("invalid Memory recall proposal")
+            episode_ref = data["episode_ref"]
+            cycle = event.get("cycle")
+            if (type(cycle) is not int or cycle < 1
+                    or data.get("subject_ref") != f"episode:{episode_ref}"
+                    or data.get("contribution_ref") !=
+                       f"memory-recall:{episode_ref}:{world_step}:{cycle}"):
+                raise ValueError("unauthenticated Memory contribution identity")
             proposals.append((index, event, closed_count))
         if is_old_charge:
             if (data.get("module") != "planning"
@@ -115,6 +122,18 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
         if (type(data.get("witnesses")) is not list
                 or len(data["witnesses"]) > 2):
             raise ValueError("unexpected unbounded lived witnesses")
+        for witness in data["witnesses"]:
+            if (type(witness) is not dict
+                    or type(witness.get("step")) is not int
+                    or not 1 <= witness["step"] < world_step
+                    or type(witness.get("source_event_refs")) not in (tuple, list)
+                    or len(witness["source_event_refs"]) != 2
+                    or set(witness["source_event_refs"]) != set(sources)
+                    or type(witness.get("source_episode_refs")) not in (tuple, list)
+                    or list(witness["source_episode_refs"]) != [ref]
+                    or witness.get("causal_attribution") is not False
+                    or witness.get("decision_evidence") is not False):
+                raise ValueError("old-memory action witness lacks exact custody")
         success.append(ref)
     return {
         "schema": "i1-old-recall-natural-m11-audit-v1",
