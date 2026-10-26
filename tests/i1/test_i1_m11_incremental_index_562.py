@@ -11,6 +11,35 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class M11IncrementalClosedIndex562(unittest.TestCase):
+    def test_incremental_index_matches_full_reconstruction(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        from i1_m11_closed_index import ClosedSourceOccurrenceIndex
+        index = ClosedSourceOccurrenceIndex()
+        closed = []
+        generations = [
+            [{"id": "episode:0", "event_refs": ["a", "b"]}],
+            [],
+            [{"id": "episode:1", "event_refs": []},
+             {"id": "episode:2", "event_refs": ["b", "c", "c"]}],
+            [{"id": "episode:3", "event_refs": ["x"]}],
+        ]
+        for generation in generations:
+            before = {}
+            for episode in closed:
+                for ref in episode["event_refs"]:
+                    before[ref] = before.get(ref, 0) + 1
+            self.assertEqual(index.before_step(episode_count=len(closed)), before)
+            with self.assertRaises(RuntimeError):
+                index.before_step(episode_count=len(closed) + 1)
+            index.extend_committed(generation)
+            closed.extend(generation)
+            after = {}
+            for episode in closed:
+                for ref in episode["event_refs"]:
+                    after[ref] = after.get(ref, 0) + 1
+            self.assertEqual(index.before_step(episode_count=len(closed)), after)
+        self.assertEqual(index.inspected_refs, 6)
+
     def test_canonical_m11_life_with_incremental_observer_index(self):
         with TemporaryDirectory() as folder:
             output = Path(folder) / "report"
