@@ -1,15 +1,15 @@
 # I1 Stage10 action-fragment consolidation: paid boundary (#543)
 
-Status: architecture and negative-contract preregistration; **not implemented** as active semantic publication. Parent branch: #542, whose natural full CI and merge remain independent gates.
+Status on `main` after PR #544 (`d45d3a6`, 26 October 2026): **the bounded descriptive action-fragment publication into `SlowHistory` is implemented and CI-validated in Python 3.11/3.12, including a natural nonempty publication and M11 cold recovery**. This document originated as a preimplementation contract. Its remaining criteria describe limits and future evidence needs, not unimplemented status for the entire mechanism.
 
 ## Verified current paths
 
 - Source: authenticated, unique, closed DC-09 `command_experienced` + `world_transition_experienced`, attested before `ConsolidationCut` by `FrozenLivedReplayEvidence`.
 - Source selection: paid Stage10 pending episode scan, frozen `ConsolidationTransaction` batch. A command and a physical result may reside in separate Memory episodes; do not infer availability from time alone.
-- Execution: the `episode_replay` unit is charged by `ConsolidationPassRunner.advance_unit` before `LivedSixPassAlgorithm.handle_detached`. Its current `private_replay_observations` keeps a digest and physical observation but does **not** carry enough paired action evidence for a longitudinal form.
-- Publication: four active owner adapters and `SlowHistory` at the Stage10 synchronized guarded cut. The perception form currently has an exact 6-field record containing only independent event observations; changing its schema requires a versioned, adversarial M11 migration plan.
+- Execution: the `episode_replay` unit is charged by `ConsolidationPassRunner.advance_unit` before `LivedSixPassAlgorithm.handle_detached`. The implementation now also stores bounded authenticated action/transition evidence in `private_paid_action_sources` through `src/i1/modules/paid_action_consolidation.py`, then assembles `lived_action_fragments` at the already-budgeted `index_maintenance` pass.
+- Publication: four active owner adapters and `SlowHistory` at the Stage10 synchronized guarded cut. The new descriptive fragment list belongs to the existing `SlowHistory` candidate, not a new fifth owner or a changed perception-owner record schema. This supports **durable L1 descriptive custody**, not new causal attribution or a measured motor improvement.
 
-## Mandatory next implementation boundaries
+## Original preregistration and remaining boundaries
 
 1. Keep any new private paired-action projection in the existing transaction candidate, not another causal owner. Record only the validated paid replay unit's detached command/transition observation, with exact event/episode refs and world step from that event. Bound stored entries and reject duplicates, missing companion refs and invalid pre-body.
 2. Do **not** scan all frozen episodes in the sixth pass under one constant-price maintenance unit. The individual event's projection is handled only after its explicit `episode_replay` UC charge; a separate bounded, priced aggregation unit is required for any extra work not covered by the existing prices.
@@ -24,4 +24,4 @@ Status: architecture and negative-contract preregistration; **not implemented** 
 
 Duplicates across closed episodes, missing/failed AutoSegmentCommit, future event after cut, command-only and transition-only units, swapped result order, missing pre-body, body discontinuity, oscillating sleep/wait, same-site re-admissions, changed site, max-step cap, candidate mutation, owner update between prepare and commit, aborted publication, terminal death and M11 cold tampering.
 
-Do not merge this contract as a claim of completed Stage10 semantic consolidation. Related #467, #473, #541, #543, #348.
+PR #544 has been merged with nonempty Stage10 `SlowHistory` publication and M11 parity demonstrated for tested natural lives. **Still open**: UC-paid cognitive consultation during Stage8 (issue #549 / draft PR #550), subjective sleep admission/awakening continuity (#467), situated evaluation (#473), broad four-owner usefulness and any L3 causal improvement in choice or survival. Never treat `observed_not_verified` fragments as learned safety rules. Related #467, #473, #541, #543, #549 and policy #348.
