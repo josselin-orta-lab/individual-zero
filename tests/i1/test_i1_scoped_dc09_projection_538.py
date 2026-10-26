@@ -36,6 +36,14 @@ expected=v.autobiographical(policies=policies,selected_event_refs=selected)
 rows=v.selected_committed_autobiography(
     policies=policies,selected_event_refs=selected)
 assert rows == expected and len(rows)==2
+assert v.selected_committed_autobiography(policies=policies,selected_event_refs=selected,max_verified_sources=2)==rows
+for invalid_limit in (0, True, 4097):
+    try: v.selected_committed_autobiography(policies=policies,selected_event_refs=selected,max_verified_sources=invalid_limit)
+    except ValueError: pass
+    else: raise AssertionError("invalid prepaid DC09 limit accepted")
+try: v.selected_committed_autobiography(policies=policies,selected_event_refs=selected,max_verified_sources=1)
+except ValueError: pass
+else: raise AssertionError("underpaid touched source verification accepted")
 assert all("hidden_oracle" not in row for row in rows)
 cold=JournalViews(journal=j)
 assert cold.selected_committed_autobiography(
