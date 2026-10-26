@@ -81,6 +81,23 @@ for offset, event in enumerate(scenario):
     observed=record_paid_source(observed,episode_ref="scenario",
         event_offset=offset,event=event,before_step=10)
 assert merge_paid_fragments(observed,[],cut_step=10)[0]["observed_effects_by_step"]==[{}]
+# A genuine discontinuity must not become a fabricated continuous rest.
+broken=deepcopy(s2)
+broken[1]["body_before"]=body(12,12)
+different=[]
+for offset,event in enumerate([*s1,*broken]):
+    different=record_paid_source(different,episode_ref="break",
+        event_offset=offset,event=event,before_step=10)
+assert [row["observed_steps"] for row in merge_paid_fragments(
+    different,[],cut_step=10)]==[1,1]
+gap=deepcopy(s2)
+for event in gap: event["t_monde"]=5
+gapped=[]
+for offset,event in enumerate([*s1,*gap]):
+    gapped=record_paid_source(gapped,episode_ref="gap",
+        event_offset=offset,event=event,before_step=10)
+assert [row["observed_steps"] for row in merge_paid_fragments(
+    gapped,[],cut_step=10)]==[1,1]
 assert merge_paid_fragments([],[],cut_step=10)==[]
 print("I1_543_PAID_STAGE10_FRAGMENTS_OK")
 """
