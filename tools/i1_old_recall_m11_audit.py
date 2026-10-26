@@ -14,6 +14,7 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
     closed_this_step = []
     proposals, paid, observed = [], [], []
     accepted = []
+    recall_cycles = set()
     for index, event in enumerate(events):
         kind, data = event.get("kind"), event.get("data")
         is_old_charge = (kind == "compute_charge"
@@ -49,6 +50,11 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
                     or data.get("contribution_ref") !=
                        f"memory-recall:{episode_ref}:{world_step}:{cycle}"):
                 raise ValueError("unauthenticated Memory contribution identity")
+            # Stage7 emits at most one spontaneous Memory recall per cycle.
+            # A second proposal changes the native provenance of the debit.
+            if cycle in recall_cycles:
+                raise ValueError("duplicate Memory recall in cognitive cycle")
+            recall_cycles.add(cycle)
             # Preserve the number of closures already witnessed, not merely
             # the final set of owners at the end of the physical step.
             proposals.append((index, event, closed_count,
@@ -154,9 +160,13 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
             for source in episode["event_refs"]:
                 if source in owners:
                     owners[source].append(episode["id"])
-        if any(owners.get(x) != [ref] or previous_commits.get(x, world_step) >= world_step
-               for x in sources):
+        if any(owners.get(x) != [ref] for x in sources):
             raise ValueError("source lacks unique old committed custody")
+        # Real DC-09 commitment dates must exist and precede the recall.
+        # A bool or a malformed historical timestamp is not an integer step.
+        if any(type(previous_commits.get(x)) is not int
+               or not 1 <= previous_commits[x] < world_step for x in sources):
+            raise ValueError("old source not authentically committed before step")
         if (type(data.get("witnesses")) is not list
                 or len(data["witnesses"]) > 2):
             raise ValueError("unexpected unbounded lived witnesses")
@@ -174,6 +184,9 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
                     or witness.get("causal_attribution") is not False
                     or witness.get("decision_evidence") is not False):
                 raise ValueError("old-memory action witness lacks exact custody")
+            if any(previous_commits[x] != witness["step"]
+                   for x in witness["source_event_refs"]):
+                raise ValueError("old-memory witness step and commit disagree")
         success.append(ref)
     return {
         "schema": "i1-old-recall-natural-m11-audit-v1",

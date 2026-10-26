@@ -259,6 +259,42 @@ class OldRecallM11Audit560(unittest.TestCase):
         )
         self.assertEqual(accepted["authentic_old_consultations"], 0)
 
+    def test_double_memory_proposals_same_cycle_rejected(self):
+        from copy import deepcopy
+        second = deepcopy(self.proposal)
+        second["data"].update({
+            "episode_ref": "episode:33",
+            "subject_ref": "episode:episode:33",
+            "contribution_ref": "memory-recall:episode:33:35:1",
+        })
+        with self.assertRaises(ValueError):
+            self.audit([self.proposal, second, self.charge, self.observed])
+        valid = self.audit([self.proposal, self.charge, self.observed])
+        self.assertEqual(valid["authentic_old_consultations"], 1)
+
+    def test_action_witness_step_matches_dc09_committed_step(self):
+        from copy import deepcopy
+        receipt = deepcopy(self.observed)
+        receipt["data"]["witnesses"] = [{
+            "step": 2,
+            "source_event_refs": ["cmd:1", "transition:1"],
+            "source_episode_refs": ["episode:0"],
+            "causal_attribution": False, "decision_evidence": False,
+        }]
+        with self.assertRaises(ValueError):
+            self.audit([self.proposal, self.charge, receipt])
+        receipt["data"]["witnesses"][0]["step"] = 1
+        valid = self.audit([self.proposal, self.charge, receipt])
+        self.assertEqual(valid["authentic_old_consultations"], 1)
+
+    def test_source_commit_time_must_be_positive_integer_in_past(self):
+        for corrupt in ("1", 0, True, -1, None, 35, 36):
+            commits = dict(self.commits)
+            commits["cmd:1"] = corrupt
+            with self.subTest(corrupt=corrupt), self.assertRaises(ValueError):
+                self.audit([self.proposal, self.charge, self.observed],
+                           commits=commits)
+
     def test_recent_episode_cannot_count_as_old(self):
         from copy import deepcopy
         p = deepcopy(self.proposal)
