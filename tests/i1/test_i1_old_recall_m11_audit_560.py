@@ -185,6 +185,25 @@ class OldRecallM11Audit560(unittest.TestCase):
                 newly_closed=[closing["data"]], previous_commits=self.commits,
             )
 
+    def test_later_same_step_closure_cannot_justify_earlier_memory_proposal(self):
+        from copy import deepcopy
+        # 34 already closed episodes: episode 0 is old enough only if it
+        # actually exists at the moment its spontaneous proposal is emitted.
+        original = self.episodes
+        replacement = [{"id": "episode:34", "event_refs": ["other"]}]
+        self.episodes = original[1:] + replacement
+        closure = {"kind": "episode_closed", "t_monde": 35, "cycle": 1,
+                   "data": original[0]}
+        try:
+            with self.assertRaises(ValueError):
+                audit_old_recall_step(
+                    events=[self.proposal, closure, self.charge, self.observed],
+                    world_step=35, preclosed=self.episodes,
+                    newly_closed=[original[0]], previous_commits=self.commits,
+                )
+        finally:
+            self.episodes = original
+
     def test_recent_episode_cannot_count_as_old(self):
         from copy import deepcopy
         p = deepcopy(self.proposal)
