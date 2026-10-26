@@ -54,19 +54,28 @@ with TemporaryDirectory() as folder:
     path=str(Path(folder)/"life.sqlite")
     with birth_i1_m11(db_path=path,life_id=identity,**params) as life:
         actor=life._runtime
+        birth_head=actor.journal.head_hash
         cost=actor.compute_budget._config.operation_costs
         assert cost[_OLD_RECALL_OPERATION] == 8
         assert cost[_SLEEP_RECALL_OPERATION] == 1
         assert actor.memory.episode_count < 32
         result=life.run_step()
         assert result.status in ("active","dead")
-        assert not old_events(actor)
-        before=actor.journal.head_hash
-        assert actor.journal.verify()
+        # M11 publishes a newly copied runtime only after the SQL commit.
+        # The previous actor must remain untouched, not be used as evidence.
+        committed=life._runtime
+        assert committed is not actor
+        assert actor.journal.head_hash==birth_head
+        assert not old_events(committed)
+        before=committed.journal.head_hash
+        assert result.journal_head==before and before!=birth_head
+        assert committed.journal.verify()
     audit=SQLiteLifeLedger.audit_read_only(
         path=path,expected_individual_id=identity)
     assert audit.journal_head==before
-    assert audit.may_recover == (result.status=="active"), (\n        audit.status, audit.pending_intent, audit.may_recover, result.status,\n    )
+    assert audit.may_recover == (result.status=="active"), (
+        audit.status, audit.pending_intent, audit.may_recover, result.status,
+    )
     if result.status=="active":
         with recover_i1_m11(
             db_path=path,life_id=identity,runtime_factory=factory
