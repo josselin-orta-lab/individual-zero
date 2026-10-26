@@ -65,6 +65,11 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
                 accepted.append((index, event))
         if kind == "i1_old_episode_paid_observation":
             observed.append((index, event, len(closed_this_step)))
+    if len(closed_this_step) != len(newly_closed):
+        # Owner-exported closures and the journal's actual chronological
+        # receipts must agree, even on a step without an old recall. Otherwise
+        # a missing Memory receipt silently corrupts the provenance boundary.
+        raise ValueError("incomplete M11 episode closure receipts")
     if len(accepted) > 1 or len(observed) > 1 or len(paid) > 1:
         raise ValueError("duplicate old-memory charge or observation")
     def chronological_old_episode(episode, count, closed_at_proposal):
