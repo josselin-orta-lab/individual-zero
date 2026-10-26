@@ -504,6 +504,30 @@ class I1Runtime(I1WaterPrudentRuntime):
                 ]
                 if not matching:
                     continue
+                if command.primitive == "dormir":
+                    from i1.modules.situated_sleep_history import (
+                        describe_situated_sleep_history,
+                    )
+                    situated = describe_situated_sleep_history(
+                        published_fragments=h_context["fragments"],
+                        current_site=(capture.x, capture.y),
+                        before_step=capture.t_monde,
+                    )
+                    self._write(
+                        kind="i1_situated_sleep_h_context_observed",
+                        cycle=cycle,
+                        data={
+                            "option_ref": proposal.option.id,
+                            "option_version": proposal.option.version,
+                            "history_version": h_context["history_version"],
+                            "charged_operation": _H_RECALL_OPERATION,
+                            "owner": "SlowHistory",
+                            "situated": situated,
+                            "stage8_evidence_unchanged": supplied.evidence,
+                            "q_or_p40_augmented": False,
+                            "motor_permission": False,
+                        },
+                    )
                 self._write(
                     kind="i1_published_action_stage8_context_observed",
                     cycle=cycle,
