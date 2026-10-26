@@ -70,49 +70,62 @@ class M11IncrementalClosedIndex562(unittest.TestCase):
         with only the operator-side indexing algorithm swapped. This is NOT a
         benchmark and does not assert a particular chosen behavior.
         """
-        from unittest.mock import patch
-        sys.path.insert(0, str(ROOT / "tools"))
-        import i1_m11_closed_index
-        import run_i1_world_preset as runner
+        # The canonical fork is created by the runner. Never import its
+        # generated i1lab package in the unittest process: preceding tests
+        # may already own an incompatible in-memory i1lab namespace.
+        program = r"""
+import sys
+from pathlib import Path
+from unittest.mock import patch
+root = Path.cwd()
+sys.path.insert(0, str(root / "tools"))
+import i1_m11_closed_index
+import run_i1_world_preset as runner
 
-        class ReferenceFullScanIndex:
-            def __init__(self):
-                self.episodes = []
+class ReferenceFullScanIndex:
+    def __init__(self):
+        self.episodes = []
 
-            def before_step(self, *, episode_count):
-                if episode_count != len(self.episodes):
-                    raise RuntimeError("full scan reference count drift")
-                occurrences = {}
-                for episode in self.episodes:
-                    for ref in episode["event_refs"]:
-                        occurrences[ref] = occurrences.get(ref, 0) + 1
-                return occurrences
+    def before_step(self, *, episode_count):
+        if episode_count != len(self.episodes):
+            raise RuntimeError("full scan reference count drift")
+        occurrences = {}
+        for episode in self.episodes:
+            for ref in episode["event_refs"]:
+                occurrences[ref] = occurrences.get(ref, 0) + 1
+        return occurrences
 
-            def extend_committed(self, newly_closed):
-                self.episodes.extend(newly_closed)
+    def extend_committed(self, newly_closed):
+        self.episodes.extend(newly_closed)
 
+out, mode = Path(sys.argv[1]), sys.argv[2]
+if mode == "reference":
+    with patch.object(i1_m11_closed_index, "ClosedSourceOccurrenceIndex",
+                      ReferenceFullScanIndex):
+        runner.execute(preset_name="empty-land", seed=246, steps=3,
+                       lives=1, custody="m11", output_dir=out)
+elif mode == "incremental":
+    runner.execute(preset_name="empty-land", seed=246, steps=3,
+                   lives=1, custody="m11", output_dir=out)
+else:
+    raise ValueError("unknown observer mode")
+"""
         with TemporaryDirectory() as directory:
-            def natural_run(folder, reference=False):
-                out = Path(directory) / folder
-                if reference:
-                    with patch.object(
-                        i1_m11_closed_index, "ClosedSourceOccurrenceIndex",
-                        ReferenceFullScanIndex,
-                    ):
-                        report = runner.execute(
-                            preset_name="empty-land", seed=246, steps=3,
-                            lives=1, custody="m11", output_dir=out,
-                        )
-                else:
-                    report = runner.execute(
-                        preset_name="empty-land", seed=246, steps=3,
-                        lives=1, custody="m11", output_dir=out,
-                    )
+            def natural_run(mode):
+                out = Path(directory) / mode
+                result = subprocess.run(
+                    [sys.executable, "-c", program, str(out), mode],
+                    cwd=ROOT, env=os.environ.copy(),
+                    capture_output=True, text=True, timeout=210,
+                )
+                self.assertEqual(result.returncode, 0,
+                                 result.stdout + result.stderr)
+                report = json.loads((out / "report.json").read_text())
                 self.assertEqual(report["status"],
                                  "COMPLETED_WITHOUT_SCIENTIFIC_VERDICT")
                 self.assertEqual(len(report["lives"]), 1)
                 return report
-            old = natural_run("reference", reference=True)
+            old = natural_run("reference")
             new = natural_run("incremental")
             self.assertEqual(
                 json.dumps(old, sort_keys=True, ensure_ascii=False),
