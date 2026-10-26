@@ -229,7 +229,7 @@ class OldRecallM11Audit560(unittest.TestCase):
         p["data"]["episode_ref"] = "episode:4"
         p["data"]["subject_ref"] = "episode:episode:4"
         p["data"]["contribution_ref"] = "memory-recall:episode:4:35:1"
-        o["data"]["episode_ref" = "episode:4"
+        o["data"]["episode_ref"] = "episode:4"
         o["data"]["source_event_refs"] = ["cmd:5"]
         with self.assertRaises(ValueError):
             self.audit([p, self.charge, o])
