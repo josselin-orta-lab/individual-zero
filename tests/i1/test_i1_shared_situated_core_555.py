@@ -31,6 +31,7 @@ for t,verb,xy,e0,e1 in (
     (3,"attendre",(2,3),40,39),
     (5,"dormir",(5,6),45,48),
     (7,"dormir",(2,3),50,49),
+    (9,"dormir",(2,3),60,65),
 ):
     for i,event in enumerate((
         {"event_id":f"c{t}","kind":"command_experienced",
@@ -62,8 +63,8 @@ assert sleep==expected
 assert list(sleep)==list(expected)
 assert "independent_action_session_proven" not in sleep
 assert sleep["complete_subjective_session_proven"] is False
-assert sleep["historical_fragment_count"]==3
-assert sleep["same_site_fragment_count"]==2
+assert sleep["historical_fragment_count"]==4
+assert sleep["same_site_fragment_count"]==3
 assert sleep["other_site_fragment_count"]==1
 assert sleep["site_observations"][0]["sign_counts_by_fragment"]["energy"]["contradictory"]
 assert sleep["site_observations"][0]["observed_full_energy_before_count"]==1
