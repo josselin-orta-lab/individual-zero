@@ -24,9 +24,16 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
             if event.get("t_monde") != world_step:
                 raise ValueError("cross-step old recall occurrence")
         if kind == "episode_closed":
-            if not isinstance(data, dict) or data not in newly_closed:
-                raise ValueError("unowned same-step closed episode")
-            if data["id"] in newly_seen:
+            if (type(data) is not dict
+                    or type(data.get("id")) is not str
+                    or type(data.get("event_refs")) is not list
+                    or any(type(ref) is not str or not ref
+                           for ref in data["event_refs"])
+                    or data not in newly_closed):
+                raise ValueError("unowned or malformed same-step closed episode")
+            if (data["id"] in newly_seen
+                    or any(episode.get("id") == data["id"]
+                           for episode in preclosed)):
                 raise ValueError("duplicate closed episode")
             newly_seen.add(data["id"])
             closed_this_step.append(data)
@@ -83,8 +90,8 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
         sources = data.get("source_event_refs")
         if (type(ref) is not str or type(sources) is not list
                 or not 1 <= len(sources) <= 2
+                or any(type(x) is not str or not x for x in sources)
                 or len(set(sources)) != len(sources)
-                or any(type(x) is not str for x in sources)
                 or data.get("charged_operation") != "i1_bounded_old_episode_recall"
                 or data.get("charged_uc") != 8
                 or any(data.get(k) is not False for k in (
@@ -128,6 +135,8 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
                     or not 1 <= witness["step"] < world_step
                     or type(witness.get("source_event_refs")) not in (tuple, list)
                     or len(witness["source_event_refs"]) != 2
+                    or any(type(x) is not str or not x
+                           for x in witness["source_event_refs"])
                     or set(witness["source_event_refs"]) != set(sources)
                     or type(witness.get("source_episode_refs")) not in (tuple, list)
                     or list(witness["source_episode_refs"]) != [ref]
