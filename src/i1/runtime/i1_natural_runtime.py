@@ -528,6 +528,36 @@ class I1Runtime(I1WaterPrudentRuntime):
                             "motor_permission": False,
                         },
                     )
+                if command.primitive != "dormir":
+                    from i1.modules.situated_action_history import (
+                        describe_situated_action_history,
+                    )
+                    observed_action = describe_situated_action_history(
+                        published_fragments=h_context["fragments"],
+                        current_site=(capture.x, capture.y),
+                        before_step=capture.t_monde,
+                        primitive=command.primitive,
+                        parameters=dict(command.parameters),
+                    )
+                    if observed_action["historical_fragment_count"]:
+                        self._write(
+                            kind="i1_situated_action_h_context_observed",
+                            cycle=cycle,
+                            data={
+                                "option_ref": proposal.option.id,
+                                "option_version": proposal.option.version,
+                                "owner": "SlowHistory",
+                                "history_version": h_context["history_version"],
+                                "charged_operation": _H_RECALL_OPERATION,
+                                "new_uc_debit_at_stage8": False,
+                                "situated": observed_action,
+                                "stage8_evidence_unchanged": supplied.evidence,
+                                "decision_evidence": False,
+                                "causal_attribution": False,
+                                "q_or_p40_augmented": False,
+                                "motor_permission": False,
+                            },
+                        )
                 self._write(
                     kind="i1_published_action_stage8_context_observed",
                     cycle=cycle,
