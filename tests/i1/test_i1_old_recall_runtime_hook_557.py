@@ -63,6 +63,8 @@ class Memory:
         self.owner=owner
         self.selected=selected
         self.reads=[]
+    def closed_sleep_recall_source_refs(self):
+        return frozenset()
     def closed_last_recalled_episode_source_refs(self,*,now):
         assert now==35
         assert self.owner.compute_budget.consumed_module_uc("planning")==128
