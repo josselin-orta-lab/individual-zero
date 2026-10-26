@@ -126,6 +126,8 @@ jobs:
         run: python -m unittest discover -s tests/i1 -p test_i1_general_situated_stage8_guard_553.py -v
       - name: General situated history wait and action identity
         run: python -m unittest discover -s tests/i1 -p test_i1_general_situated_h_553.py -v
+      - name: Canonical born old recall idle budget no-subsidy guard
+        run: python -m unittest discover -s tests/i1 -p test_i1_old_recall_no_uc_subsidy_557.py -v
       - name: Positive paid old-episode runtime hook and P43 negative controls
         run: python -m unittest discover -s tests/i1 -p test_i1_old_recall_runtime_hook_557.py -v
       - name: Natural I1 separately priced old recall negative M11 guard
