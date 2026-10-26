@@ -1647,6 +1647,7 @@ def verify(reference_root: Path) -> None:
                 or _approved_stage10_paid_fragments_543(new_root, rel)
                 or _approved_published_h_recall_549(new_root, rel)
                 or _approved_situated_sleep_observer_473(new_root, rel)
+                or _approved_general_situated_h_553(new_root, rel)
                 or (rel == "i1lab/journal_views.py"
                     and _approved_autobio_index_rehydration(
                         _reference_autobio_fastpath((old_root / rel).read_bytes()),
