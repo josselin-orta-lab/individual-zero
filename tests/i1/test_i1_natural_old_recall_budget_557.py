@@ -54,7 +54,7 @@ with TemporaryDirectory() as folder:
     path=str(Path(folder)/"life.sqlite")
     with birth_i1_m11(db_path=path,life_id=identity,**params) as life:
         actor=life._runtime
-        cost=actor.compute_budget.config.operation_costs
+        cost=actor.compute_budget._config.operation_costs
         assert cost[_OLD_RECALL_OPERATION] == 128
         assert cost[_SLEEP_RECALL_OPERATION] == 1
         assert actor.memory.episode_count < 32
