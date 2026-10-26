@@ -113,6 +113,8 @@ jobs:
         run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
       - name: Frozen I0 and versioned Lab source guard
         run: python -m unittest discover -s tests/i1 -p test_i1_source_snapshot.py -v
+      - name: Natural Stage10 nonempty SlowHistory publication contract
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_stage10_paid_publication_543.py -v
       - name: Stage10 paid action fragment owner-boundary contract
         run: python -m unittest discover -s tests/i1 -p test_i1_paid_action_consolidation_543.py -v
       - name: Generic action fragment provenance and paid Stage8 regression
