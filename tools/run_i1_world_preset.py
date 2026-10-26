@@ -551,8 +551,8 @@ def _m11_life(*, birth, params, life_id, path, steps):
     first_autobiographical_commit = {}
     first_memory_ingestion = {}
     # Derived observer index only. It is never part of the I1 causal state.
-    closed_source_occurrences = {}
-    indexed_closed_episodes = 0
+    from i1_m11_closed_index import ClosedSourceOccurrenceIndex
+    closed_index = ClosedSourceOccurrenceIndex()
     with birth(db_path=str(path), life_id=life_id, **params) as life:
         effective = {
             "version": life._runtime.world.config.version,
@@ -568,11 +568,8 @@ def _m11_life(*, birth, params, life_id, path, steps):
             seen_before = len(memory_before["seen_event_refs"])
             # Operator-only pre-step ownership snapshot: a source learned in
             # this world step is not admissible evidence for earlier recall.
-            if indexed_closed_episodes != episodes_before:
-                raise RuntimeError("incremental M11 closed-episode count drift")
-            # Do not copy or re-enumerate the entire history. The mapping is
-            # not updated until the current generation audit is complete.
-            preclosed_occurrences = closed_source_occurrences
+            preclosed_occurrences = closed_index.before_step(
+                episode_count=episodes_before)
             position_before = life._runtime.world.position.as_dict()
             pre_body = dict(life._runtime.world.telemetry())
             mode_before = life._runtime.sleep_session.mode
@@ -1280,11 +1277,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
             })
             # Advance observer-only ownership after all current-step checks:
             # no future closure can retroactively authorize an earlier read.
-            for episode in newly_closed:
-                for ref in episode["event_refs"]:
-                    closed_source_occurrences[ref] = (
-                        closed_source_occurrences.get(ref, 0) + 1)
-            indexed_closed_episodes += len(newly_closed)
+            closed_index.extend_committed(newly_closed)
             if receipt.status == "dead":
                 break
     if not trajectory:
