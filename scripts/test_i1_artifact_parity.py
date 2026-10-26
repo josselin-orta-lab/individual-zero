@@ -178,7 +178,7 @@ def _approved_paid_old_recall_557(root: Path, rel: str) -> bool:
     if rel != "i1lab/i1_natural_runtime.py" or not (root / rel).is_file():
         return False
     data = (ROOT / "src/i1/runtime/i1_natural_runtime.py").read_bytes()
-    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest() == "72a6b988b7e39a84dbbcbe1b5a7e5260f1f657e7"
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == "72a6b988b7e39a84dbbcbe1b5a7e5260f1f657e7"
 
 
 def _approved_indexed_dc09_538(root: Path, rel: str) -> bool:
