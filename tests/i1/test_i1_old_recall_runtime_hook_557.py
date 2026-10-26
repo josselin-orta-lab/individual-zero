@@ -86,7 +86,8 @@ def make(cycle=1,available=128,fresh=True,selected=refs):
         protected_capacity=0,
         operation_costs={
             _OLD_RECALL_OPERATION:128,
-            _SLEEP_RECALL_OPERATION:1,
+            # Disable the independent recent read in this focused old-lane fixture.
+            _SLEEP_RECALL_OPERATION:129,
             _H_RECALL_OPERATION:1,
         },
     )
