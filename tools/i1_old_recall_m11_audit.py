@@ -29,8 +29,9 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
                     or type(data.get("event_refs")) is not list
                     or any(type(ref) is not str or not ref
                            for ref in data["event_refs"])
-                    or data not in newly_closed):
-                raise ValueError("unowned or malformed same-step closed episode")
+                    or len(closed_this_step) >= len(newly_closed)
+                    or data != newly_closed[len(closed_this_step)]):
+                raise ValueError("unowned, out-of-order or malformed same-step closure")
             if (data["id"] in newly_seen
                     or any(episode.get("id") == data["id"]
                            for episode in preclosed)):
