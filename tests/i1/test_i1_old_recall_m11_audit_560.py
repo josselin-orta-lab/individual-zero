@@ -138,6 +138,25 @@ class OldRecallM11Audit560(unittest.TestCase):
         finally:
             self.episodes = previous
 
+    def test_memory_contribution_and_action_witness_forgery(self):
+        from copy import deepcopy
+        for field, value in (
+            ("subject_ref", "episode:episode:33"),
+            ("contribution_ref", "memory-recall:episode:0:34:1"),
+        ):
+            proposal = deepcopy(self.proposal)
+            proposal["data"][field] = value
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                self.audit([proposal, self.charge, self.observed])
+        observed = deepcopy(self.observed)
+        observed["data"]["witnesses"] = [{
+            "step": 1, "source_event_refs": ["cmd:1", "transition:1"],
+            "source_episode_refs": ["episode:33"],
+            "causal_attribution": False, "decision_evidence": False,
+        }]
+        with self.assertRaises(ValueError):
+            self.audit([self.proposal, self.charge, observed])
+
     def test_recent_episode_cannot_count_as_old(self):
         from copy import deepcopy
         p = deepcopy(self.proposal)
