@@ -43,9 +43,10 @@ capture=SimpleNamespace(t_monde=35,x=2,y=3)
 key="memory-recall:episode:0:35:1"
 
 class Sources:
-    def __init__(self,owner,selected):
+    def __init__(self,owner,selected,reject=False):
         self.owner=owner
         self.selected=selected
+        self.reject=reject
         self.reads=[]
     def selected_committed_autobiography(self,*,policies,selected_event_refs,max_verified_sources):
         assert self.owner.compute_budget.consumed_module_uc("planning")==8
@@ -53,6 +54,8 @@ class Sources:
         assert len(policies)==4
         assert max_verified_sources==8
         self.reads.append("dc09")
+        if self.reject:
+            raise ValueError("prepaid touched DC-09 commitment exceeds bound")
         return projected
 
 class Memory:
@@ -79,7 +82,7 @@ class Memory:
         self.reads.append("witness")
         return (witness,)
 
-def make(cycle=1,available=8,fresh=True,selected=refs):
+def make(cycle=1,available=8,fresh=True,selected=refs,reject_dc09=False):
     actor=object.__new__(I1Runtime)
     cfg=ComputeBudgetConfig(
         version="test-557",cycle_ceiling=available,
@@ -97,7 +100,7 @@ def make(cycle=1,available=8,fresh=True,selected=refs):
     actor._cycle_degraded=False
     actor._pending_contributions={}
     actor.memory=Memory(actor,selected)
-    views=Sources(actor,selected)
+    views=Sources(actor,selected,reject=reject_dc09)
     actor.stage3=SimpleNamespace(substrate=SimpleNamespace(views=views))
     actor.slow_history=SimpleNamespace(current_version="h:birth:")
     writes=[]
@@ -160,6 +163,14 @@ wide,view,writes=make(selected=frozenset({"cmd:1","transition:1","extra"}))
 assert len(writes)==1 and writes[0][0]=="compute_charge"
 assert not view.reads
 assert wide.memory.reads==["memory"]
+# A *real* charged request may be rejected by touched-commit validation.
+# This is paid negative evidence, not a recalled lived consequence.
+invalid,view,writes=make(reject_dc09=True)
+assert [kind for kind,_,_ in writes]==["compute_charge"]
+assert writes[0][1]["accepted"] is True
+assert writes[0][1]["requested_uc"]==8
+assert invalid.compute_budget.consumed_module_uc("planning")==8
+assert invalid.memory.reads==["memory"] and view.reads==["dc09"]
 print("I1_557_PAID_OLD_RUNTIME_HOOK_L1_OK")
 """
             env = os.environ.copy()
