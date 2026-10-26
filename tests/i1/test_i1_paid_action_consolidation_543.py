@@ -98,6 +98,19 @@ for offset,event in enumerate([*s1,*gap]):
         event_offset=offset,event=event,before_step=10)
 assert [row["observed_steps"] for row in merge_paid_fragments(
     gapped,[],cut_step=10)]==[1,1]
+# The already-owned SlowHistory state preserves the exact bounded
+# observation through an exported / restored causal snapshot.
+from i1lab.consolidation_publication import SlowHistory
+history=SlowHistory(birth_version="before",birth_state={
+    "forms":{}, "consolidated_episode_refs":["e1","e2","e3"],
+    "lived_action_fragments":deepcopy(out)})
+snapshot=history.export_causal_state()
+cold=SlowHistory(birth_version="unrelated",birth_state={
+    "forms":{}, "consolidated_episode_refs":[]})
+cold.restore_causal_state(snapshot)
+assert cold.export_causal_state()==snapshot
+assert cold.read_committed()["lived_action_fragments"]==out
+assert validate_published_fragments(cold.read_committed()["lived_action_fragments"])
 assert merge_paid_fragments([],[],cut_step=10)==[]
 print("I1_543_PAID_STAGE10_FRAGMENTS_OK")
 """
