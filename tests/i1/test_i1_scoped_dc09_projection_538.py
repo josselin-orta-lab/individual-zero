@@ -36,6 +36,43 @@ expected=v.autobiographical(policies=policies,selected_event_refs=selected)
 rows=v.selected_committed_autobiography(
     policies=policies,selected_event_refs=selected)
 assert rows == expected and len(rows)==2
+assert v.selected_committed_autobiography(policies=policies,selected_event_refs=selected,max_verified_sources=2)==rows
+for invalid_limit in (0, True, 4097):
+    try: v.selected_committed_autobiography(policies=policies,selected_event_refs=selected,max_verified_sources=invalid_limit)
+    except ValueError: pass
+    else: raise AssertionError("invalid prepaid DC09 limit accepted")
+try: v.selected_committed_autobiography(policies=policies,selected_event_refs=selected,max_verified_sources=1)
+except ValueError: pass
+else: raise AssertionError("underpaid touched source verification accepted")
+# Pricing is on EVERY source in a touched commitment, not merely
+# on the selected event count. Two selected identities may touch nine
+# sources, which cannot be charged at the eight-UC maximum.
+wide_journal=HashChainedJournal()
+wide_views=JournalViews(journal=wide_journal)
+wide_refs=[]
+for i in range(9):
+    event=wide_journal.append(event_id=f"wide:{i}",causal_event=dict(
+        kind="command_experienced",t_monde=60,attempt_ref="attempt:60",
+        primitive="boire",parameters={"target":"water"}))
+    wide_refs.append(event.event_id)
+wide_views.commit_autobiographical(
+    t_monde=60,attempt_ref="attempt:60",event_refs=tuple(wide_refs),
+    policy=P)
+two_refs=frozenset(wide_refs[:2])
+for reader in (wide_views,JournalViews(journal=wide_journal)):
+    try:
+        reader.selected_committed_autobiography(
+            policies=policies, selected_event_refs=two_refs,
+            max_verified_sources=8)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("nine-source commitment passed eight-UC limit")
+    projected=reader.selected_committed_autobiography(
+        policies=policies, selected_event_refs=two_refs,
+        max_verified_sources=9)
+    assert len(projected)==2
+    assert {entry["event_id"] for entry in projected}==two_refs
 assert all("hidden_oracle" not in row for row in rows)
 cold=JournalViews(journal=j)
 assert cold.selected_committed_autobiography(

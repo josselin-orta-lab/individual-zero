@@ -173,11 +173,19 @@ def _approved_native_prebody_activation_467(root: Path, rel: str) -> bool:
     return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == pair[1]
 
 
+def _approved_paid_old_recall_557(root: Path, rel: str) -> bool:
+    """Exact canonical I1 runtime with bounded separately priced old recall."""
+    if rel != "i1lab/i1_natural_runtime.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/runtime/i1_natural_runtime.py").read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == "730cc8a5e1d6fb64f00e08d0d3bdec4f9033285f"
+
+
 def _approved_indexed_dc09_538(root: Path, rel: str) -> bool:
     if rel != "i1lab/journal_views.py" or not (root / rel).is_file():
         return False
     data = (ROOT / "src/i1/runtime/journal_views.py").read_bytes()
-    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == "5f4bb213cd04c406cd58c6ffcb4df3d34a3a2f71"
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == "744ea2d268954178c6356b3289b017c751a624dd"
 
 def _approved_unique_dc09_source_467(root: Path, rel: str) -> bool:
     """Exact native I1-only journal view for unique source custody."""
@@ -1658,6 +1666,7 @@ def verify(reference_root: Path) -> None:
                     and _approved_stage9_episode_slice(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
+                or _approved_paid_old_recall_557(new_root, rel)
                 or _approved_indexed_dc09_538(new_root, rel)
                 or _approved_unique_dc09_source_467(new_root, rel) or _approved_native_prebody_activation_467(new_root, rel)
                 or _approved_closed_waking_adjacency_495(new_root, rel)
