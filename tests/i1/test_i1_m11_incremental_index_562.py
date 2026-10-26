@@ -40,6 +40,29 @@ class M11IncrementalClosedIndex562(unittest.TestCase):
             self.assertEqual(index.before_step(episode_count=len(closed)), after)
         self.assertEqual(index.inspected_refs, 6)
 
+    def test_readonly_index_and_failed_batch_are_atomic(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        from i1_m11_closed_index import ClosedSourceOccurrenceIndex
+        index = ClosedSourceOccurrenceIndex()
+        index.extend_committed([{"id": "episode:0", "event_refs": ["a"]}])
+        view = index.before_step(episode_count=1)
+        with self.assertRaises(TypeError):
+            view["a"] = 99
+        for malformed in (
+            [{"id": "episode:1", "event_refs": ["b"]},
+             {"id": "episode:1", "event_refs": ["c"]}],
+            [{"id": "episode:1", "event_refs": ["b"]},
+             {"id": "episode:2", "event_refs": [["unhashable"]]}],
+            [{"id": "episode:0", "event_refs": ["duplicate-id"]}],
+        ):
+            with self.subTest(batch=malformed), self.assertRaises(ValueError):
+                index.extend_committed(malformed)
+            self.assertEqual(dict(view), {"a": 1})
+            self.assertEqual(index.episode_count, 1)
+            self.assertEqual(index.inspected_refs, 1)
+        index.extend_committed([{"id": "episode:1", "event_refs": ["b"]}])
+        self.assertEqual(dict(view), {"a": 1, "b": 1})
+
     def test_same_natural_m11_life_has_identical_full_scan_report(self):
         """The reference algorithm must produce the same complete life audit.
 
