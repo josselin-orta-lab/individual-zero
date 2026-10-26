@@ -82,7 +82,7 @@ class Memory:
         self.reads.append("witness")
         return (witness,)
 
-def make(cycle=1,available=8,fresh=True,selected=refs,reject_dc09=False):
+def make(cycle=1,available=8,fresh=True,selected=refs,reject_dc09=False,ordinary_cost=0):
     actor=object.__new__(I1Runtime)
     cfg=ComputeBudgetConfig(
         version="test-557",cycle_ceiling=available,
@@ -90,6 +90,7 @@ def make(cycle=1,available=8,fresh=True,selected=refs,reject_dc09=False):
         protected_capacity=0,
         operation_costs={
             _OLD_RECALL_OPERATION:8,
+            "ordinary_planning_fixture":1,
             # Disable the independent recent read in this focused old-lane fixture.
             _SLEEP_RECALL_OPERATION:9,
             _H_RECALL_OPERATION:1,
@@ -120,8 +121,11 @@ def make(cycle=1,available=8,fresh=True,selected=refs,reject_dc09=False):
                     production_t=35,production_cycle=1,expires_at_step=36,
                     payload={"episode_ref":"episode:0"},
                 )
+        def ordinary_planning(ctx):
+            for _ in range(ordinary_cost):
+                assert actor._charge(module="planning",operation="ordinary_planning_fixture")
         return {
-            1:{"memory":memory,"planning":lambda ctx:None},
+            1:{"memory":memory,"planning":ordinary_planning},
             3:{"competition":lambda ctx:None},
             4:{"action_control":lambda ctx:None},
         }
@@ -171,6 +175,13 @@ assert writes[0][1]["accepted"] is True
 assert writes[0][1]["requested_uc"]==8
 assert invalid.compute_budget.consumed_module_uc("planning")==8
 assert invalid.memory.reads==["memory"] and view.reads==["dc09"]
+# Ordinary Planning consumes UC before the optional ancient observer.
+# At eight available UC, a single existing operation must retain priority.
+priority,view,writes=make(ordinary_cost=1)
+assert [kind for kind,_,_ in writes]==["compute_charge"]
+assert writes[0][1]["operation"]=="ordinary_planning_fixture"
+assert priority.compute_budget.consumed_module_uc("planning")==1
+assert not priority.memory.reads and not view.reads
 print("I1_557_PAID_OLD_RUNTIME_HOOK_L1_OK")
 """
             env = os.environ.copy()
