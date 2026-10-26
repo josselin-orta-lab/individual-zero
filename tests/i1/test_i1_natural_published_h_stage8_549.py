@@ -58,7 +58,18 @@ with TemporaryDirectory() as home:
         "published_fragments": len(life.slow_history.read_committed().get(
             "lived_action_fragments", [])),
     }
+    paid = {
+        (row.causal_event["t_monde"], row.causal_event.get("cycle"))
+        for row in events
+        if row.causal_event["kind"] == "compute_charge"
+        and row.causal_event["data"].get("module") == "planning"
+        and row.causal_event["data"].get("operation") == "i1_published_action_recall"
+        and row.causal_event["data"].get("accepted") is True
+        and row.causal_event["data"].get("requested_uc") == 1
+    }
     for row in observed:
+        assert (row.causal_event["t_monde"], row.causal_event.get("cycle")) in paid, (
+            "unpaid or stale Stage8 published-h consultation")
         data = row.causal_event["data"]
         assert data["owner"] == "SlowHistory"
         assert data["history_version"] in activated
