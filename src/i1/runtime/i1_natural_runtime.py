@@ -832,17 +832,24 @@ class I1Runtime(I1WaterPrudentRuntime):
                         LIVED_PREBODY_POLICY as PNEW,
                         LIVED_WAKING_BODY_POLICY as PWAKE,
                     )
-                    projected = self.stage3.substrate.views.selected_committed_autobiography(
-                        policies={p.version: p for p in (P2, P7, PNEW, PWAKE)},
-                        selected_event_refs=refs,
-                        max_verified_sources=_OLD_RECALL_COST_UC,
-                    )
-                    witnesses = self.memory.closed_applied_action_witnesses(
-                        autobiography=projected, now=capture.t_monde,
-                        recalled_episode_refs=refs,
-                    )
-                    self._write(
-                        kind="i1_old_episode_paid_observation", cycle=cycle,
+                    try:
+                        projected = self.stage3.substrate.views.selected_committed_autobiography(
+                            policies={p.version: p for p in (P2, P7, PNEW, PWAKE)},
+                            selected_event_refs=refs,
+                            max_verified_sources=_OLD_RECALL_COST_UC,
+                        )
+                    except ValueError:
+                        # Reject a touched commitment beyond the paid scope,
+                        # or invalid first-person provenance, without publishing
+                        # an apparent lived observation or new motor evidence.
+                        projected = ()
+                    if projected:
+                        witnesses = self.memory.closed_applied_action_witnesses(
+                            autobiography=projected, now=capture.t_monde,
+                            recalled_episode_refs=refs,
+                        )
+                        self._write(
+                            kind="i1_old_episode_paid_observation", cycle=cycle,
                         data={
                             "episode_ref": old_episode,
                             "source_event_refs": sorted(refs),
@@ -853,9 +860,9 @@ class I1Runtime(I1WaterPrudentRuntime):
                             "decision_evidence": False,
                             "causal_attribution": False,
                             "q_or_p40_augmented": False,
-                            "motor_permission": False,
-                        },
-                    )
+                                "motor_permission": False,
+                            },
+                        )
             # Paid waking recall of already closed, first-person sources only.
             if (cycle == 1 and not self._cycle_degraded
                     and self.memory.episode_count
