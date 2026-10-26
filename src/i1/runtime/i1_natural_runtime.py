@@ -33,6 +33,10 @@ _SLEEP_RECALL_COST_UC = 1
 _H_RECALL_VERSION = "i1-published-action-recall-v1"
 _H_RECALL_OPERATION = "i1_published_action_recall"
 _H_RECALL_COST_UC = 1
+# Two selected refs can each touch one independent 64-source DC-09 commit.
+# Price the complete 2 * 64 upper bound, not just the returned rows.
+_OLD_RECALL_OPERATION = "i1_bounded_old_episode_recall"
+_OLD_RECALL_COST_UC = 128
 _PRIVATE_RECALL_OPERATION = "i1_private_procedure_recall"
 _PRIVATE_RECALL_COST_UC = 1
 _OPTION_INTENTION_COST_UC = 1
@@ -314,6 +318,8 @@ class I1Runtime(I1WaterPrudentRuntime):
             raise ValueError("duplicate I1 sleep recall charge")
         if _H_RECALL_OPERATION in original.operation_costs:
             raise ValueError("duplicate I1 published h recall charge")
+        if _OLD_RECALL_OPERATION in original.operation_costs:
+            raise ValueError("duplicate I1 old episodic recall charge")
         if _PRIVATE_RECALL_OPERATION in original.operation_costs:
             raise ValueError("I1 private recall operation already registered")
         # A second independent Planning producer may coexist with the
@@ -327,8 +333,9 @@ class I1Runtime(I1WaterPrudentRuntime):
             version=(original.version + "+" + _PRIVATE_RECALL_VERSION
                      + "+" + _SLEEP_RECALL_VERSION
                      + "+" + _H_RECALL_VERSION
+                     + "+i1-old-episode-paid-v1"
                      + "+i1-goal-independent-local-v1"),
-            cycle_ceiling=(original.cycle_ceiling + _H_RECALL_COST_UC
+            cycle_ceiling=(original.cycle_ceiling + _OLD_RECALL_COST_UC + _H_RECALL_COST_UC
                            + _SLEEP_RECALL_COST_UC
                            + _PRIVATE_RECALL_COST_UC
                            + local_planning + local_registration + local_evaluation
@@ -336,6 +343,7 @@ class I1Runtime(I1WaterPrudentRuntime):
             module_envelopes={
                 **original.module_envelopes,
                 "planning": (original.module_envelopes["planning"]
+                             + _OLD_RECALL_COST_UC
                              + _SLEEP_RECALL_COST_UC + _H_RECALL_COST_UC
                              + _PRIVATE_RECALL_COST_UC + local_planning
                              + _OPTION_INTENTION_COST_UC),
@@ -346,6 +354,7 @@ class I1Runtime(I1WaterPrudentRuntime):
                 **original.operation_costs,
                 _SLEEP_RECALL_OPERATION: _SLEEP_RECALL_COST_UC,
                 _H_RECALL_OPERATION: _H_RECALL_COST_UC,
+                _OLD_RECALL_OPERATION: _OLD_RECALL_COST_UC,
                 _PRIVATE_RECALL_OPERATION: _PRIVATE_RECALL_COST_UC,
                 _OPTION_INTENTION_OPERATION: _OPTION_INTENTION_COST_UC,
             },
@@ -736,12 +745,42 @@ class I1Runtime(I1WaterPrudentRuntime):
         self._i1_sleep_site_paid_context = None
         self._i1_generic_action_paid_context = None
         self._i1_h_action_paid_context = None
+        self._i1_current_old_recall = None
         hooks = super()._phase_hooks(
             cycle=cycle, capture=capture,
             goal_for_planning=goal_for_planning,
             st_before_cycle=st_before_cycle,
         )
+        normal_memory = hooks[1]["memory"]
         normal_plan = hooks[1]["planning"]
+
+        def authenticate_cycle_recall(ctx):
+            normal_memory(ctx)
+            if cycle != 1 or self._cycle_degraded:
+                return
+            episode = self.memory.last_recalled_ref
+            if type(episode) is not str or not episode.startswith("episode:"):
+                return
+            suffix = episode[8:]
+            if not suffix.isascii() or not suffix.isdigit() or str(int(suffix)) != suffix:
+                return
+            ordinal = int(suffix)
+            # Only a genuinely old native ordinal, never a recent source
+            # already covered by the existing paid 32-episode read.
+            if ordinal >= self.memory.episode_count - 32:
+                return
+            expected_id = f"memory-recall:{episode}:{capture.t_monde}:{cycle}"
+            contribution = self._pending_contributions.get(expected_id)
+            if (contribution is None or contribution.emitter_module != "memory"
+                    or contribution.signal_family != "memory_recall"
+                    or contribution.production_t != capture.t_monde
+                    or contribution.production_cycle != cycle
+                    or not isinstance(contribution.payload, dict)
+                    or contribution.payload.get("episode_ref") != episode):
+                return
+            self._i1_current_old_recall = episode
+
+        hooks[1]["memory"] = authenticate_cycle_recall
         normal_register = hooks[3]["competition"]
 
         def plan_independent_local(ctx):
@@ -767,6 +806,53 @@ class I1Runtime(I1WaterPrudentRuntime):
                     "charged_operation": _H_RECALL_OPERATION,
                     "fragments": projection["fragments"],
                 }
+            # A separate priced, non-motor observation of ONE actually
+            # recalled old closed episode. Do not reuse the recent-read debit.
+            old_episode = self._i1_current_old_recall
+            if (cycle == 1 and not self._cycle_degraded
+                    and old_episode is not None
+                    and self.compute_budget.quote_operations(
+                        module="planning", operations=(_OLD_RECALL_OPERATION,),
+                    ).affordable
+                    and self._charge(
+                        module="planning", operation=_OLD_RECALL_OPERATION,
+                    )):
+                refs = self.memory.closed_last_recalled_episode_source_refs(
+                    now=capture.t_monde,
+                )
+                # At most two selected refs, two 64-source touched commits.
+                # The fixed 128 UC covers the worst-case scoped verification.
+                if (1 <= len(refs) <= 2
+                        and self.memory.last_recalled_ref == old_episode):
+                    from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY as P2
+                    from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY as P7
+                    from .i1_natural_prebody_policy import (
+                        LIVED_PREBODY_POLICY as PNEW,
+                        LIVED_WAKING_BODY_POLICY as PWAKE,
+                    )
+                    projected = self.stage3.substrate.views.selected_committed_autobiography(
+                        policies={p.version: p for p in (P2, P7, PNEW, PWAKE)},
+                        selected_event_refs=refs,
+                    )
+                    witnesses = self.memory.closed_applied_action_witnesses(
+                        autobiography=projected, now=capture.t_monde,
+                        recalled_episode_refs=refs,
+                    )
+                    self._write(
+                        kind="i1_old_episode_paid_observation", cycle=cycle,
+                        data={
+                            "episode_ref": old_episode,
+                            "source_event_refs": sorted(refs),
+                            "witnesses": list(witnesses),
+                            "current_site": [capture.x, capture.y],
+                            "charged_operation": _OLD_RECALL_OPERATION,
+                            "charged_uc": _OLD_RECALL_COST_UC,
+                            "decision_evidence": False,
+                            "causal_attribution": False,
+                            "q_or_p40_augmented": False,
+                            "motor_permission": False,
+                        },
+                    )
             # Paid waking recall of already closed, first-person sources only.
             if (cycle == 1 and not self._cycle_degraded
                     and self.memory.episode_count
