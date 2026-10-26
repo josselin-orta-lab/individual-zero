@@ -551,6 +551,9 @@ def _m11_life(*, birth, params, life_id, path, steps):
     # Observational custody only, never visible to the cognitive agent.
     first_autobiographical_commit = {}
     first_memory_ingestion = {}
+    # Derived observer index only. It is never part of the I1 causal state.
+    from i1_m11_closed_index import ClosedSourceOccurrenceIndex
+    closed_index = ClosedSourceOccurrenceIndex()
     with birth(db_path=str(path), life_id=life_id, **params) as life:
         effective = {
             "version": life._runtime.world.config.version,
@@ -566,11 +569,8 @@ def _m11_life(*, birth, params, life_id, path, steps):
             seen_before = len(memory_before["seen_event_refs"])
             # Operator-only pre-step ownership snapshot: a source learned in
             # this world step is not admissible evidence for earlier recall.
-            preclosed_occurrences = {}
-            for episode in memory_before["episodes"]:
-                for ref in episode["event_refs"]:
-                    preclosed_occurrences[ref] = (
-                        preclosed_occurrences.get(ref, 0) + 1)
+            preclosed_occurrences = closed_index.before_step(
+                episode_count=episodes_before)
             position_before = life._runtime.world.position.as_dict()
             pre_body = dict(life._runtime.world.telemetry())
             mode_before = life._runtime.sleep_session.mode
@@ -902,6 +902,9 @@ def _m11_life(*, birth, params, life_id, path, steps):
             # never call the charged read_episodes_range API from Lab.
             memory_image = memory_owner.export_causal_state()
             newly_closed = memory_image["episodes"][episodes_before:]
+            if (len(memory_image["episodes"]) != episodes_before + len(newly_closed)
+                    or len(memory_image["episodes"]) < episodes_before):
+                raise RuntimeError("M11 closed-episode length regressed")
             memory_seen = set(memory_image["seen_event_refs"])
             for committed in owned_commits:
                 for source_ref in committed["event_refs"]:
@@ -1280,6 +1283,9 @@ def _m11_life(*, birth, params, life_id, path, steps):
                     else list(life._runtime.stage3.substrate._mortal_boundary.terminal_death.reasons)
                 ),
             })
+            # Advance observer-only ownership after all current-step checks:
+            # no future closure can retroactively authorize an earlier read.
+            closed_index.extend_committed(newly_closed)
             if receipt.status == "dead":
                 break
     if not trajectory:
