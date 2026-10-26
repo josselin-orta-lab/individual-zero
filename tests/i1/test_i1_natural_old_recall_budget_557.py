@@ -66,7 +66,7 @@ with TemporaryDirectory() as folder:
     audit=SQLiteLifeLedger.audit_read_only(
         path=path,expected_individual_id=identity)
     assert audit.journal_head==before
-    assert audit.may_recover == (result.status=="active")
+    assert audit.may_recover == (result.status=="active"), (\n        audit.status, audit.pending_intent, audit.may_recover, result.status,\n    )
     if result.status=="active":
         with recover_i1_m11(
             db_path=path,life_id=identity,runtime_factory=factory
