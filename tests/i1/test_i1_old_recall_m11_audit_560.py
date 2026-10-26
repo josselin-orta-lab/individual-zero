@@ -222,6 +222,26 @@ class OldRecallM11Audit560(unittest.TestCase):
         self.assertEqual(valid["old_memory_recall_proposals"], 1)
         self.assertEqual(valid["authentic_old_consultations"], 1)
 
+    def test_same_step_closure_receipts_must_follow_owner_order(self):
+        from copy import deepcopy
+        a = {"id": "episode:34", "event_refs": ["new:a"]}
+        b = {"id": "episode:35", "event_refs": ["new:b"]}
+        def event(item):
+            return {"kind": "episode_closed", "t_monde": 35,
+                    "cycle": 1, "data": deepcopy(item)}
+        with self.assertRaises(ValueError):
+            audit_old_recall_step(
+                events=[event(b), event(a)], world_step=35,
+                preclosed=self.episodes, newly_closed=[a, b],
+                previous_commits=self.commits,
+            )
+        accepted = audit_old_recall_step(
+            events=[event(a), event(b)], world_step=35,
+            preclosed=self.episodes, newly_closed=[a, b],
+            previous_commits=self.commits,
+        )
+        self.assertEqual(accepted["authentic_old_consultations"], 0)
+
     def test_recent_episode_cannot_count_as_old(self):
         from copy import deepcopy
         p = deepcopy(self.proposal)
