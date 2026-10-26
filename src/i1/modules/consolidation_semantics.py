@@ -607,6 +607,14 @@ class LivedSixPassAlgorithm:
             if observation is not None:
                 entry["lived_observation"] = observation
             state.setdefault("private_replay_observations",[]).append(entry)
+            if item["kind"] in ("command_experienced", "world_transition_experienced"):
+                from .paid_action_consolidation import record_paid_source
+                state["private_paid_action_sources"] = record_paid_source(
+                    state.get("private_paid_action_sources", []),
+                    episode_ref=ref,
+                    event_offset=unit.data.get("event_offset"),
+                    event=item, before_step=cut.world_step,
+                )
         elif name=="rule_extraction":
             extracted = self._extract_episode_rules(
                 unit.episode_refs[0], events, cut,
@@ -670,6 +678,12 @@ class LivedSixPassAlgorithm:
         elif name=="index_maintenance":
             if unit.episode_refs:
                 raise ValueError("index maintenance must have no episode input")
+            from .paid_action_consolidation import merge_paid_fragments
+            state["lived_action_fragments"] = merge_paid_fragments(
+                state.pop("private_paid_action_sources", []),
+                state.get("lived_action_fragments", []),
+                cut_step=cut.world_step,
+            )
             state["hypotheses"]=[
                 item for item in state.get("hypotheses",[])
                 if item["expires_at_step"]>cut.world_step
@@ -720,6 +734,15 @@ class LivedSixPassAlgorithm:
             or item.get("safety_certified") is not False
             for item in state.get("procedural", [])
         ):
+            return False
+        from .paid_action_consolidation import (
+            validate_paid_sources, validate_published_fragments,
+        )
+        if (not validate_paid_sources(
+                state.get("private_paid_action_sources", []),
+                before_step=self.transaction.cut.world_step)
+                or not validate_published_fragments(
+                    state.get("lived_action_fragments", []))):
             return False
         try:
             canonical_causal_bytes(state)

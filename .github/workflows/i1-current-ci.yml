@@ -50,7 +50,8 @@ jobs:
   current-i1:
     name: I1 natural SMOKE + FULL (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Match merged #544 natural/M11 full-suite window (no tests skipped).
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -113,6 +114,40 @@ jobs:
         run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
       - name: Frozen I0 and versioned Lab source guard
         run: python -m unittest discover -s tests/i1 -p test_i1_source_snapshot.py -v
+      - name: Published SlowHistory no-unpaid-read P43 budget guard
+        run: python -m unittest discover -s tests/i1 -p test_i1_published_h_budget_guard_549.py -v
+      - name: Situated Stage8 observer adversarial context guard
+        run: python -m unittest discover -s tests/i1 -p test_i1_situated_sleep_stage8_guard_473.py -v
+      - name: Natural situated sleep Stage8 receipt and M11 cold parity
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_situated_sleep_m11_473.py -v
+      - name: Natural non-sleep situated Stage8 and M11 cold parity
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_general_situated_m11_553.py -v
+      - name: Generic situated Stage8 paid observer adversarial guard
+        run: python -m unittest discover -s tests/i1 -p test_i1_general_situated_stage8_guard_553.py -v
+      - name: General situated history wait and action identity
+        run: python -m unittest discover -s tests/i1 -p test_i1_general_situated_h_553.py -v
+      - name: Shared situated sleep and generic h core compatibility
+        run: python -m unittest discover -s tests/i1 -p test_i1_shared_situated_core_555.py -v
+      - name: Situated first-person h sleep summary regression
+        run: python -m unittest discover -s tests/i1 -p test_i1_situated_sleep_h_473.py -v
+      - name: Stage8 paid published-h adversarial guard
+        run: python -m unittest discover -s tests/i1 -p test_i1_published_h_stage8_guard_549.py -v
+      - name: Natural post-recall M11 cold parity
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_h_recall_m11_549.py -v
+      - name: Natural paid Stage8 committed h recall contract
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_published_h_stage8_549.py -v
+      - name: Bounded published h recall ownership regression
+        run: python -m unittest discover -s tests/i1 -p test_i1_published_h_recall_549.py -v
+      - name: Natural Stage10 postpublication M11 cold parity
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_stage10_m11_fragments_543.py -v
+      - name: Natural Stage10 nonempty SlowHistory publication contract
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_stage10_paid_publication_543.py -v
+      - name: Stage10 paid action fragment owner-boundary contract
+        run: python -m unittest discover -s tests/i1 -p test_i1_paid_action_consolidation_543.py -v
+      - name: Generic action fragment provenance and paid Stage8 regression
+        run: |
+          python -m unittest discover -s tests/i1 -p test_i1_closed_action_fragments_541.py -v
+          python -m unittest discover -s tests/i1 -p test_i1_paid_generic_stage8_context_528.py -v
       - name: Current I1 independent SMOKE/FULL
         run: python scripts/test_i1_ci.py --mode ${{ github.event.inputs.mode || 'smoke' }} --seed 246 --junit reports/i1-${{ matrix.python-version }}.xml
       - name: I1 local perception differential microbenchmark (informational)

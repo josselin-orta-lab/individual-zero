@@ -357,6 +357,100 @@ def _approved_closed_generic_action_526(root: Path, rel: str) -> bool:
     return digest == "30d766e08888107d5b2eead9dcd4923e41663d38"
 
 
+def _approved_action_fragments_541(root: Path, rel: str) -> bool:
+    """Only #541's exact source-owned generic fragments and paid bridge."""
+    pins = {
+        "i1/modules/action_fragments.py": (
+            "src/i1/modules/action_fragments.py", "e0616b41fdc2754918ed92dff42f173be2649cee"),
+        "i1lab/i1_natural_runtime.py": (
+            "src/i1/runtime/i1_natural_runtime.py", "eca2411f80d4a97bc1366504dd2507e2caee05cf"),
+    }
+    row = pins.get(rel)
+    if row is None or not (root / rel).is_file():
+        return False
+    content = (ROOT / row[0]).read_bytes()
+    source_sha = sha1(b"blob " + str(len(content)).encode("ascii")
+                      + b"\0" + content).hexdigest()
+    return source_sha == row[1]
+
+
+def _approved_stage10_paid_fragments_543(root: Path, rel: str) -> bool:
+    """Pinned I1-only six-pass action fragment evidence, not an I0 change."""
+    pins = {
+        "i1/modules/paid_action_consolidation.py": (
+            "src/i1/modules/paid_action_consolidation.py", "fd05ef85a482317193e1056e1d6f9d11b5916063"),
+        "i1/modules/consolidation_semantics.py": (
+            "src/i1/modules/consolidation_semantics.py", "96fa45008043902da85ea9356f521a099fe153cb"),
+    }
+    row = pins.get(rel)
+    if row is None or not (root / rel).is_file():
+        return False
+    data = (ROOT / row[0]).read_bytes()
+    blob = sha1(b"blob " + str(len(data)).encode("ascii")
+                + bytes([0]) + data).hexdigest()
+    return blob == row[1]
+
+
+def _approved_general_situated_h_553(root: Path, rel: str) -> bool:
+    """Pinned I1-only generic situated observer without I0 changes."""
+    pins = {
+        "i1/modules/situated_action_history.py": ("src/i1/modules/situated_action_history.py", "66436661999d831e7f4ffa1b73eb7e51a2b489b3"),
+        "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py", "5cfbf7c6b0586c0d94a384990990f4427cc3b555"),
+    }
+    item = pins.get(rel)
+    if item is None:
+        return False
+    data = (ROOT / item[0]).read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii")
+                  + bytes([0]) + data).hexdigest()
+    return digest == item[1] and (root / rel).is_file()
+
+
+def _approved_shared_situated_core_555(root: Path, rel: str) -> bool:
+    """Exactly pinned compatible sleep view of merged generic core."""
+    if rel != "i1/modules/situated_sleep_history.py":
+        return False
+    expected = "b02d377edb22ed98ddc7e3fcb6851d6d06da1e2f"
+    file = ROOT / "src/i1/modules/situated_sleep_history.py"
+    data = file.read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii")
+                  + bytes([0]) + data).hexdigest()
+    return digest == expected and (root / rel).is_file()
+
+
+def _approved_situated_sleep_observer_473(root: Path, rel: str) -> bool:
+    """Exact pinned I1 observer-only situated sleep projection."""
+    pins = {
+        "i1/modules/situated_sleep_history.py": (
+            "src/i1/modules/situated_sleep_history.py", "c116a91c3488386c9a3b641604b021f1ad461c58"),
+        "i1lab/i1_natural_runtime.py": (
+            "src/i1/runtime/i1_natural_runtime.py", "c2e1aa9c08ac1bc72c61002d5511658a3a333adf"),
+    }
+    item = pins.get(rel)
+    if item is None or not (root / rel).is_file():
+        return False
+    data = (ROOT / item[0]).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii")
+                + bytes([0]) + data).hexdigest() == item[1]
+
+
+def _approved_published_h_recall_549(root: Path, rel: str) -> bool:
+    """Exact pinned I1 owner read and charged natural Stage8 bridge."""
+    pins = {
+        "i1lab/consolidation_publication.py": (
+            "src/i1/runtime/consolidation_publication.py", "31772dde7ab157e433798cfe79189fe360b3478f"),
+        "i1lab/i1_natural_runtime.py": (
+            "src/i1/runtime/i1_natural_runtime.py", "ca3d664d5a7575f86cccb395b38e11fba2f83edf"),
+    }
+    row = pins.get(rel)
+    if row is None or not (root / rel).is_file():
+        return False
+    data = (ROOT / row[0]).read_bytes()
+    blob = sha1(b"blob " + str(len(data)).encode("ascii")
+                + bytes([0]) + data).hexdigest()
+    return blob == row[1]
+
+
 def _approved_memory_overlap(before: bytes, after: bytes) -> bool:
     """Allow only the reviewed Stage7 exact reference-overlap replacement."""
     original = before.decode("utf-8")
@@ -1456,7 +1550,7 @@ def verify(reference_root: Path) -> None:
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
         added = sorted(rel for rel in set(new) - set(old)
-                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_closed_sleep_site_467(new_root, rel) or _approved_transition_prebody_467(new_root, rel) or _approved_dormant_prebody_dc09_467(new_root, rel) or _approved_situated_sleep_473(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel) or _approved_site_328(new_root, rel) or _approved_wake_329(new_root, rel) or _approved_memory_359(new_root, rel) or _approved_option_360(new_root, rel) or _approved_prospect_361(new_root, rel) or _approved_memory_426(new_root, rel) or _approved_lived_prospect_427(new_root, rel) or _approved_metabolic_v4_461(new_root, rel) or _approved_zero_reserve_457(new_root, rel)))
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_closed_sleep_site_467(new_root, rel) or _approved_transition_prebody_467(new_root, rel) or _approved_dormant_prebody_dc09_467(new_root, rel) or _approved_situated_sleep_473(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel) or _approved_site_328(new_root, rel) or _approved_wake_329(new_root, rel) or _approved_memory_359(new_root, rel) or _approved_option_360(new_root, rel) or _approved_prospect_361(new_root, rel) or _approved_memory_426(new_root, rel) or _approved_lived_prospect_427(new_root, rel) or _approved_metabolic_v4_461(new_root, rel) or _approved_zero_reserve_457(new_root, rel) or _approved_action_fragments_541(new_root, rel) or _approved_stage10_paid_fragments_543(new_root, rel) or _approved_published_h_recall_549(new_root, rel) or _approved_situated_sleep_observer_473(new_root, rel) or _approved_shared_situated_core_555(new_root, rel) or _approved_general_situated_h_553(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
             if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_closed_sleep_site_467(new_root, rel) or _approved_transition_prebody_467(new_root, rel) or _approved_dormant_prebody_dc09_467(new_root, rel) or _approved_situated_sleep_473(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel) or _approved_site_328(new_root, rel) or _approved_wake_329(new_root, rel) or _approved_memory_359(new_root, rel) or _approved_option_360(new_root, rel) or _approved_prospect_361(new_root, rel) or _approved_memory_426(new_root, rel) or _approved_lived_prospect_427(new_root, rel) or _approved_metabolic_v4_461(new_root, rel) or _approved_zero_reserve_457(new_root, rel)) and not (
@@ -1569,6 +1663,11 @@ def verify(reference_root: Path) -> None:
                 or _approved_recalled_episode_custody_535(new_root, rel)
                 or _approved_old_action_witness_scope_535(new_root, rel)
                 or _approved_paid_generic_stage8_528(new_root, rel)
+                or _approved_action_fragments_541(new_root, rel)
+                or _approved_stage10_paid_fragments_543(new_root, rel)
+                or _approved_published_h_recall_549(new_root, rel)
+                or _approved_situated_sleep_observer_473(new_root, rel) or _approved_shared_situated_core_555(new_root, rel)
+                or _approved_general_situated_h_553(new_root, rel)
                 or (rel == "i1lab/journal_views.py"
                     and _approved_autobio_index_rehydration(
                         _reference_autobio_fastpath((old_root / rel).read_bytes()),
