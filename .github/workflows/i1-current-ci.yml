@@ -50,7 +50,8 @@ jobs:
   current-i1:
     name: I1 natural SMOKE + FULL (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Match merged #544 natural/M11 full-suite window (no tests skipped).
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
