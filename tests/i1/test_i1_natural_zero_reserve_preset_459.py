@@ -391,28 +391,53 @@ with TemporaryDirectory(prefix="i1-459-empty-") as d:
     assert all(x["all_sources_in_closed_episodes"] ==
                (x["sources_in_closed_episodes"] == x["source_count"])
                for x in runs)
-    expected_provenance = {"ordinary_awake_admission": 3,
-                           "readmitted_after_wake": 31,
-                           "reduced_sleep_continuation": 9}
+    # Historical #459 evidence counted 3 initial admissions, 31 wake
+    # readmissions, 9 reduced continuations and 34 decisions. Those were
+    # measurements of ONE earlier cognitive trajectory, not physiological
+    # laws. Current I1 may choose differently. Assert independent receipts
+    # reconcile exactly, without rewriting the earlier observation.
+    provenance_kinds = tuple(classes)
     observed_provenance = {kind: sum(
-        x["provenance_counts"][kind] for x in runs
-    ) for kind in expected_provenance}
-    assert observed_provenance == expected_provenance, (
-        observed_provenance, expected_provenance,
-        [(x["start_step"], x["end_step"], x["provenance_counts"])
-         for x in runs],
+        run["provenance_counts"][kind] for run in runs
+    ) for kind in provenance_kinds}
+    physical_provenance = {kind: len(classes[kind])
+                           for kind in provenance_kinds}
+    assert observed_provenance == physical_provenance, (
+        observed_provenance, physical_provenance,
     )
-    assert [x["provenance_counts"]["readmitted_after_wake"] for x in runs] == [0, 0, 31]
+    for run in runs:
+        from_physical = {kind: sum(
+            run["start_step"] <= step <= run["end_step"]
+            and observation["provenance"] == kind
+            for step, observation in sleep_rows
+        ) for kind in provenance_kinds}
+        assert run["provenance_counts"] == from_physical, (
+            run["start_step"], run["end_step"],
+            run["provenance_counts"], from_physical,
+        )
     assert len(runs) <= sleep_count
     decisions = life["sleep_decision_custody_audit_490"]
-    assert len(decisions) == 34, len(decisions)
+    waking_count = (len(classes["ordinary_awake_admission"])
+                    + len(classes["readmitted_after_wake"]))
+    assert len(decisions) == waking_count, (len(decisions), waking_count)
+    assert all(x["physical_command_count"] >= 1
+               and x["physical_command_count"] == len(x["physical_steps"])
+               for x in decisions)
+    assert [step for decision in decisions for step in decision["physical_steps"]] == [
+        step for step, _ in sleep_rows
+    ], "sleep decisions and actual physical steps differ"
     assert sum(x["physical_command_count"] for x in decisions) == sleep_count
     assert sum(x["source_count"] for x in decisions) == 2 * sleep_count
+    assert {x["admission_class"] for x in decisions} <= {
+        "ordinary_awake_admission", "readmitted_after_wake"
+    }
     assert sum(x["admission_class"] == "readmitted_after_wake"
-               for x in decisions) == 31
+               for x in decisions) == len(classes["readmitted_after_wake"])
     assert sum(x["admission_class"] == "ordinary_awake_admission"
-               for x in decisions) == 3
-    assert any(x["physical_command_count"] > 1 for x in decisions)
+               for x in decisions) == len(classes["ordinary_awake_admission"])
+    assert sum(x["physical_command_count"] - 1 for x in decisions) == len(
+        classes["reduced_sleep_continuation"]
+    )
     assert all(x["physical_steps"][0] == x["decision_step"] for x in decisions)
     assert all(x["sources_in_closed_episodes"] <= x["ingested_sources"]
                <= x["committed_sources"] <= x["source_count"]
