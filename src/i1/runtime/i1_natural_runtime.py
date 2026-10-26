@@ -850,16 +850,16 @@ class I1Runtime(I1WaterPrudentRuntime):
                         )
                         self._write(
                             kind="i1_old_episode_paid_observation", cycle=cycle,
-                        data={
-                            "episode_ref": old_episode,
-                            "source_event_refs": sorted(refs),
-                            "witnesses": list(witnesses),
-                            "current_site": [capture.x, capture.y],
-                            "charged_operation": _OLD_RECALL_OPERATION,
-                            "charged_uc": _OLD_RECALL_COST_UC,
-                            "decision_evidence": False,
-                            "causal_attribution": False,
-                            "q_or_p40_augmented": False,
+                            data={
+                                "episode_ref": old_episode,
+                                "source_event_refs": sorted(refs),
+                                "witnesses": list(witnesses),
+                                "current_site": [capture.x, capture.y],
+                                "charged_operation": _OLD_RECALL_OPERATION,
+                                "charged_uc": _OLD_RECALL_COST_UC,
+                                "decision_evidence": False,
+                                "causal_attribution": False,
+                                "q_or_p40_augmented": False,
                                 "motor_permission": False,
                             },
                         )
