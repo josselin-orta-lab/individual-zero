@@ -20,7 +20,7 @@ class OldRecallM11Audit560(unittest.TestCase):
         self.charge = {"kind": "compute_charge", "t_monde": 35,
                        "cycle": 1, "data": {
                            "module": "planning", "operation": "i1_bounded_old_episode_recall",
-                           "requested_uc": 8, "accepted": True}}
+                           "count": 1, "requested_uc": 8, "accepted": True}}
         self.observed = {"kind": "i1_old_episode_paid_observation", "t_monde": 35,
                          "cycle": 1, "data": {
                              "episode_ref": "episode:0",
@@ -204,12 +204,32 @@ class OldRecallM11Audit560(unittest.TestCase):
         finally:
             self.episodes = original
 
+    def test_native_episode_position_and_single_charge_only(self):
+        from copy import deepcopy
+        original = self.episodes
+        self.episodes = original[1:] + original[:1]
+        try:
+            with self.assertRaises(ValueError):
+                self.audit([self.proposal, self.charge, self.observed])
+        finally:
+            self.episodes = original
+        for count in (0, 2, True, "1"):
+            charge = deepcopy(self.charge)
+            charge["data"]["count"] = count
+            with self.subTest(count=count), self.assertRaises(ValueError):
+                self.audit([self.proposal, charge, self.observed])
+        valid = self.audit([self.proposal, self.charge, self.observed])
+        self.assertEqual(valid["old_memory_recall_proposals"], 1)
+        self.assertEqual(valid["authentic_old_consultations"], 1)
+
     def test_recent_episode_cannot_count_as_old(self):
         from copy import deepcopy
         p = deepcopy(self.proposal)
         o = deepcopy(self.observed)
         p["data"]["episode_ref"] = "episode:4"
-        o["data"]["episode_ref"] = "episode:4"
+        p["data"]["subject_ref"] = "episode:episode:4"
+        p["data"]["contribution_ref"] = "memory-recall:episode:4:35:1"
+        o["data"]["episode_ref" = "episode:4"
         o["data"]["source_event_refs"] = ["cmd:5"]
         with self.assertRaises(ValueError):
             self.audit([p, self.charge, o])
