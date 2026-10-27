@@ -2248,36 +2248,54 @@ class EpisodicMemory:
         closed_ref_owners: dict[str, str | None] = {}
         for episode in restored:
             self._claim_closed_refs(closed_ref_owners, episode)
-        self._episodes = restored
-        self._episode_ids_dense = restored_dense
-        self._closed_ref_owners = closed_ref_owners
-        self._recall_above_threshold = restored_above
-        self._seen_event_refs = {
+        next_episodes = restored
+        next_episode_ids_dense = restored_dense
+        next_closed_ref_owners = closed_ref_owners
+        next_recall_above_threshold = restored_above
+        next_seen_event_refs = {
             str(x) for x in state.get("seen_event_refs", [])
         }
-        self._open_event_refs = [
+        next_open_event_refs = [
             str(x) for x in state.get("open_event_refs", [])
         ]
         raw_start = state.get("open_start_t")
-        self._open_start_t = None if raw_start is None else int(raw_start)
+        next_open_start_t = None if raw_start is None else int(raw_start)
         raw_goal = state.get("open_goal_ref")
-        self._open_goal_ref = None if raw_goal is None else str(raw_goal)
+        next_open_goal_ref = None if raw_goal is None else str(raw_goal)
         raw_body_start = state.get("open_body_start")
         raw_body_end = state.get("open_body_end")
-        self._open_body_start = (
+        next_open_body_start = (
             None if raw_body_start is None else dict(raw_body_start)
         )
-        self._open_body_end = (
+        next_open_body_end = (
             None if raw_body_end is None else dict(raw_body_end)
         )
         raw_zone = state.get("open_zone_ref")
-        self._open_zone_ref = None if raw_zone is None else str(raw_zone)
-        self._open_reward = float(state.get("open_reward", 0.0))
-        self._open_surprise = float(state.get("open_surprise", 0.0))
-        self._episode_sequence = int(state.get("episode_sequence", 0))
+        next_open_zone_ref = None if raw_zone is None else str(raw_zone)
+        next_open_reward = float(state.get("open_reward", 0.0))
+        next_open_surprise = float(state.get("open_surprise", 0.0))
+        next_episode_sequence = int(state.get("episode_sequence", 0))
         raw_recalled = state.get("last_recalled_ref")
-        self._last_recalled_ref = (
+        next_last_recalled_ref = (
             None if raw_recalled is None else str(raw_recalled)
         )
 
-        self._intentions = validated_intentions
+        next_intentions = validated_intentions
+
+        # Commit after every field, including late scalar conversions, succeeds.
+        self._episodes = next_episodes
+        self._episode_ids_dense = next_episode_ids_dense
+        self._closed_ref_owners = next_closed_ref_owners
+        self._recall_above_threshold = next_recall_above_threshold
+        self._seen_event_refs = next_seen_event_refs
+        self._open_event_refs = next_open_event_refs
+        self._open_start_t = next_open_start_t
+        self._open_goal_ref = next_open_goal_ref
+        self._open_body_start = next_open_body_start
+        self._open_body_end = next_open_body_end
+        self._open_zone_ref = next_open_zone_ref
+        self._open_reward = next_open_reward
+        self._open_surprise = next_open_surprise
+        self._episode_sequence = next_episode_sequence
+        self._last_recalled_ref = next_last_recalled_ref
+        self._intentions = next_intentions
