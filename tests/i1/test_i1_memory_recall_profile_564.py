@@ -85,7 +85,7 @@ def build(n):
 
 
 def exhaustive_reference(memory, st, t):
-    """Independent exact mathematical equation, no prefilter or heap."""
+    # Independent exact mathematical equation; no prefilter or heap.
     cfg = memory._config
     refs = (
         None if st is None
