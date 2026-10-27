@@ -110,6 +110,10 @@ jobs:
           PY
       - name: Incremental closed M11 observer index canonical report custody
         run: python -m unittest discover -s tests/i1 -p test_i1_m11_incremental_index_562.py -v
+      - name: M11 first-ingestion delta differential guards
+        run: |
+          python -m unittest discover -s tests/i1 -p test_i1_m11_ingestion_delta_562.py -v
+          python -m unittest discover -s tests/i1 -p test_i1_m11_ingestion_delta_natural_562.py -v
       - name: M11 Memory image reuse unit and natural full-export parity
         run: |
           python -m unittest discover -s tests/i1 -p test_i1_m11_memory_image_562.py -v

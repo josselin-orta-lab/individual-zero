@@ -554,6 +554,7 @@ def _m11_life(*, birth, params, life_id, path, steps):
     # Derived observer index only. It is never part of the I1 causal state.
     from i1_m11_closed_index import ClosedSourceOccurrenceIndex
     from i1_m11_memory_image import CommittedMemoryImage
+    from i1_m11_ingestion_delta import update_first_memory_ingestion
     closed_index = ClosedSourceOccurrenceIndex()
     memory_images = CommittedMemoryImage()
     with birth(db_path=str(path), life_id=life_id, **params) as life:
@@ -914,9 +915,8 @@ def _m11_life(*, birth, params, life_id, path, steps):
                 for source_ref in committed["event_refs"]:
                     first_autobiographical_commit.setdefault(
                         source_ref, receipt.world_step)
-            for source_ref in memory_seen:
-                first_memory_ingestion.setdefault(
-                    source_ref, receipt.world_step)
+            update_first_memory_ingestion(
+                first_memory_ingestion, memory_seen, world_step=receipt.world_step)
             # #467: independent post-commit audit of the *paid cognitive*
             # sleep-site recall, not a replacement for first-person Memory.
             # Accept a Memory closure DURING this cognitive world step only
