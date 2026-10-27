@@ -178,11 +178,7 @@ for n in (0, 1, 32, 128, 512, 2048):
         restored = cold.spontaneous_contribution(
             st=st, t_monde=t, cycle=1,
         )
-        assert (
-            None if original is None else original.as_dict()
-        ) == (
-            None if restored is None else restored.as_dict()
-        ), ("M11 cold recall parity", n)
+        assert original == restored, ("M11 cold recall parity", n)
         assert (
             memory._recall_above_threshold
             == cold._recall_above_threshold
