@@ -553,7 +553,9 @@ def _m11_life(*, birth, params, life_id, path, steps):
     first_memory_ingestion = {}
     # Derived observer index only. It is never part of the I1 causal state.
     from i1_m11_closed_index import ClosedSourceOccurrenceIndex
+    from i1_m11_memory_image import CommittedMemoryImage
     closed_index = ClosedSourceOccurrenceIndex()
+    memory_images = CommittedMemoryImage()
     with birth(db_path=str(path), life_id=life_id, **params) as life:
         effective = {
             "version": life._runtime.world.config.version,
@@ -565,7 +567,8 @@ def _m11_life(*, birth, params, life_id, path, steps):
             # #467: owner snapshots around the same authentic, paid M11
             # generation. No Memory/TD/History method below writes a state.
             episodes_before = life._runtime.memory.episode_count
-            memory_before = life._runtime.memory.export_causal_state()
+            memory_before = memory_images.before_step(
+                life._runtime.memory, episode_count=episodes_before)
             seen_before = len(memory_before["seen_event_refs"])
             # Operator-only pre-step ownership snapshot: a source learned in
             # this world step is not admissible evidence for earlier recall.
@@ -900,7 +903,8 @@ def _m11_life(*, birth, params, life_id, path, steps):
             memory_owner = life._runtime.memory
             # External observation uses the owner-exported *causal image*;
             # never call the charged read_episodes_range API from Lab.
-            memory_image = memory_owner.export_causal_state()
+            memory_image = memory_images.after_step(
+                memory_owner, episode_count=episodes_before)
             newly_closed = memory_image["episodes"][episodes_before:]
             if (len(memory_image["episodes"]) != episodes_before + len(newly_closed)
                     or len(memory_image["episodes"]) < episodes_before):
