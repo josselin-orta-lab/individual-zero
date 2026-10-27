@@ -184,6 +184,8 @@ jobs:
         run: python -m unittest discover -s tests/i1 -p test_i1_recall_envelope_amortized_564.py -v
       - name: Natural M11 derived shadow recall parity, no cognitive index (#564)
         run: python -m unittest discover -s tests/i1 -p test_i1_natural_shadow_recall_564.py -v
+      - name: Longer-life natural M11 recall shadow (informational #564)
+        run: python -m unittest discover -s tests/i1 -p test_i1_long_natural_shadow_564.py -v
       - name: Natural M11 Memory recall work and logical UC passive parity (#564)
         run: python -m unittest discover -s tests/i1 -p test_i1_natural_recall_work_uc_564.py -v
       - name: I1 local perception differential microbenchmark (informational)
