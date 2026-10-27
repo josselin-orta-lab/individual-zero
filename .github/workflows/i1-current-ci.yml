@@ -168,6 +168,8 @@ jobs:
           python -m unittest discover -s tests/i1 -p test_i1_paid_generic_stage8_context_528.py -v
       - name: Current I1 independent SMOKE/FULL
         run: python scripts/test_i1_ci.py --mode ${{ github.event.inputs.mode || 'smoke' }} --seed 246 --junit reports/i1-${{ matrix.python-version }}.xml
+      - name: Native Memory all-episode work profile and cold parity (#564)
+        run: python -m unittest discover -s tests/i1 -p test_i1_memory_recall_profile_564.py -v
       - name: I1 local perception differential microbenchmark (informational)
         env:
           I1_CAPTURE_BENCH: "1"
