@@ -20,8 +20,9 @@ import json
 import math
 from bisect import bisect_right
 from collections import defaultdict
+from collections.abc import Mapping
 from dataclasses import replace
-from types import SimpleNamespace
+from types import MappingProxyType, SimpleNamespace
 from i1.modules.memory import EpisodicMemory, Episode, MemoryConfig
 
 
@@ -80,7 +81,7 @@ class ConservativeEnvelope:
             visible = ()
         else:
             active = st.fixed.get("active_goal")
-            goal = active.get("id") if isinstance(active, dict) else None
+            goal = active.get("id") if isinstance(active, Mapping) else None
             visible = tuple(x.contribution_ref for x in st.competitive)
             if (goal is not None and type(goal) is not str
                     or any(type(ref) is not str for ref in visible)):
@@ -161,11 +162,15 @@ def build(n, cfg):
     return memory
 
 
-def context(*, goal=None, refs=()):
+def context(*, goal=None, refs=(), mapping_proxy=False):
+    active = None if goal is None else {"id": goal}
+    if mapping_proxy and active is not None:
+        active = MappingProxyType(active)
+    fixed = {"active_goal": active}
+    if mapping_proxy:
+        fixed = MappingProxyType(fixed)
     return SimpleNamespace(
-        fixed={
-            "active_goal": None if goal is None else {"id": goal}
-        },
+        fixed=fixed,
         competitive=tuple(
             SimpleNamespace(contribution_ref=ref) for ref in refs),
     )
@@ -186,6 +191,7 @@ def subset(original, indices):
 metrics = []
 contexts = (
     None, context(), context(goal="goal:ancient"),
+    context(goal="goal:ancient", mapping_proxy=True),
     context(refs=("src:0",)),
     context(goal="goal:water", refs=("common:3",)),
     context(goal="unseen", refs=("never-visible",)),
