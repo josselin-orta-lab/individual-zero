@@ -87,8 +87,8 @@ class ExactNaturalWakeLinkReplay562(unittest.TestCase):
                 out = Path(tmp) / mode
                 p = subprocess.run(
                     [sys.executable, "-c", PROGRAM, mode, str(out)],
-                    cwd=ROOT, env=os.environ.copy(),
-                    capture_output=True, text=True, timeout=240,
+                    cwd=ROOT, capture_output=True, text=True,
+                    timeout=240,
                     env={**os.environ, "PYTHONHASHSEED": "0"})
                 self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
                 report = json.loads((out / "report.json").read_text())
