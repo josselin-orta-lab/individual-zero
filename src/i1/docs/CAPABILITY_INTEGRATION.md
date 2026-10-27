@@ -1,5 +1,21 @@
 # I1 capability integration register (campaign #348)
 
+## Current status checkpoint (2026-10-27, main `e21f1df39ab6e05f73f8b8912a157f03bcdfbda1`)
+
+This checkpoint supersedes the *conditional* activation wording in the historical 2026-10-20 ledger below; historic PR-by-PR narratives are retained as provenance, **not** current integration gates.
+
+| Capability | Current code / PR evidence | Canonical status | Scientific limit |
+| --- | --- | --- | --- |
+| Generic remembered entity/place navigation (#314, #317) | #315, #320, #324; generated `test_i1_generic_spatial_memory_314.py` | ACTIVE proposal/Competition path; #314's water-specific implementation ticket subsumed by #317 | No established spontaneously useful water return or survival |
+| Cross-hop spatial intention (#326, #317) | #352, #358, #446; `test_i1_issue_351_l2_spatial_wiring.py` | ACTIVE bounded owner and fresh UC-paid motor re-arbitration | No confirmed naturally selected useful multi-hop return |
+| Goal-independent local opportunities (#327) | #353; `test_i1_issue_327_natural_activation.py` | ACTIVE in natural birth | Ecological benefit NOT_ESTABLISHED |
+| Personally witnessed positive/adverse site context (#328) | **#354 merged**; `test_i1_issue_328_natural_lived_sites.py` | **ACTIVE in natural birth** | Correlation only; no innate site utility or demonstrated causal motor improvement |
+| Physiological wake/re-admission (#329) | **#355 merged**; `test_i1_issue_329_wake_reentry.py` | **ACTIVE in natural birth** | No universal emergency-priority or survival GO |
+| General nonspatial prospective Memory intentions (#326) | #360, #361, #362 and successors; `test_i1_issue_361_prospective_intent.py` | ACTIVE bounded formation/reconsideration contracts | Semantic goal achievement and adaptive multi-domain decisions NOT_ESTABLISHED |
+
+**Active backlog, not a list of unmerged prerequisites:** #317 (physical crossing/return), #326 (generality/usefulness), #301 (goal versus exploration), #438 (independent learned-Q motor influence), #451 (sleep/needs rivalry). #314 was administratively closed as overlapping #317; this does **not** establish a successful return to water. Historical reports before the 2026-10-23 physiology v4 births are retained for their own source versions, not treated as current mortality or recovery proofs. Recovery M11 is only from the committed current generation on a fresh detached candidate; **never rollback a published life**. Local restore-on-live-owner atomicity is not a standalone development campaign without a demonstrated active call path. I0 remains untouched.
+
+
 **Authority:** executable `src/i1/engine.json`, natural `birth_i1` wiring, current `main` source and exact-head CI. This register is an engineering status index; no SCIENTIFIC GO is implied.
 
 ## Meaning of status
@@ -17,10 +33,10 @@
 | Competition fallback without false winner residual | #317 / PR #320 | ACTIVE software fix | Preserve existing arbitration tests | NOT_ESTABLISHED |
 | Stable personally observed local place-option IDs | #317 / PR #324 | ACTIVE software fix | Distinguish new hop from persistent intention | NOT_ESTABLISHED |
 | Stable observed geographical frontier/transit option IDs | #330 / PR #335 | ACTIVE software fix | No change required to existing identities | NOT_ESTABLISHED |
-| Bounded cross-hop remembered-place intention | #326, #351 / PR #331, #347, #350, **#352** | **ACTIVE in canonical I1 once #352 merged** | Competition owns an applied-intention descriptor; Stage11 verifies arrival and re-registers a newly paid, subthreshold motor candidate. No motor replay, Action Control still decides. Technical two-step M11 recovery and owner-state tests; a naturally selected multi-hop episode has not been independently observed. | NOT_ESTABLISHED |
-| Goal-independent first-person local option consideration | #327 / PR #332, #342, #353 | ACTIVE in natural birth after #353 merge | Separate Phase-1 producer and charged Competition registration; actual canonical M11 1-step candidate publication and cold recovery; existing goal producer preserved, bounded learned Q. | NOT_ESTABLISHED |
-| Experienced-place relevance from personally observed bodily effects | #328 / PR #333, #343; canonical integration PR | ACTIVE only after accepted L2 PR merge | Current-life Exploration site effects from genuinely applied local actions and next physical capture, plus positive/negative/contradictory body outcomes; Stage8 uses generic need pressures and confidence. No resource-type utility. | NOT_ESTABLISHED |
-| Wake on first-person physiological alerts and free return to Competition | #329 / PR #334 (dormant diagnostics), PR #355 | **ACTIVE after #355 merge** | Stage10 uses authentic reduced bodily Perception for wake; GoalManager/Competition reconsider fresh needs; a genuinely applied choice to sleep again must re-arm SleepSession at the next step. No motor lock. | NOT_ESTABLISHED |
+| Bounded cross-hop remembered-place intention | #326, #351 / PR #331, #347, #350, **#352 merged** | **ACTIVE in canonical I1** | Competition owns an applied-intention descriptor; Stage11 verifies arrival and re-registers a newly paid, subthreshold motor candidate. No motor replay, Action Control still decides. Technical two-step M11 recovery and owner-state tests; a naturally selected multi-hop episode has not been independently observed. | NOT_ESTABLISHED |
+| Goal-independent first-person local option consideration | #327 / PR #332, #342, #353 | ACTIVE in natural birth (#353 merged) | Separate Phase-1 producer and charged Competition registration; actual canonical M11 1-step candidate publication and cold recovery; existing goal producer preserved, bounded learned Q. | NOT_ESTABLISHED |
+| Experienced-place relevance from personally observed bodily effects | #328 / PR #333, #343, **#354 merged** | ACTIVE after #354 merge | Current-life Exploration site effects from genuinely applied local actions and next physical capture, plus positive/negative/contradictory body outcomes; Stage8 uses generic need pressures and confidence. No resource-type utility. | NOT_ESTABLISHED |
+| Wake on first-person physiological alerts and free return to Competition | #329 / PR #334 (dormant diagnostics), PR #355 | **ACTIVE (#355 merged)** | Stage10 uses authentic reduced bodily Perception for wake; GoalManager/Competition reconsider fresh needs; a genuinely applied choice to sleep again must re-arm SleepSession at the next step. No motor lock. | NOT_ESTABLISHED |
 | Broad research source #318 | #317 / PR #318 | RESEARCH, do not merge en bloc | Trace each retained fragment to a targeted issue | INCONCLUSIVE / NO_GO not promoted |
 
 ## Merge policy
