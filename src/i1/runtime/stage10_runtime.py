@@ -46,6 +46,9 @@ from .determinism import deterministic_id
 from .stage4_runtime import Stage4StepResult
 from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY
 from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY
+from .i1_natural_prebody_policy import (
+    LIVED_PREBODY_POLICY, LIVED_WAKING_BODY_POLICY,
+)
 from .stage9_runtime import Stage9Config, Stage9Runtime
 
 
@@ -342,6 +345,7 @@ class Stage10Runtime(Stage9Runtime):
             proposal = create_sleep_proposal(
                 health=self.sleep_health,t_monde=capture.t_monde,
                 st_version=st.version,charged_preparation=charge,
+                site=(capture.x, capture.y),
             )
             if not self._charge(
                 module="competition",operation="competition_register",
@@ -378,6 +382,15 @@ class Stage10Runtime(Stage9Runtime):
         hooks[5]["metacognition_health"] = close_fatigue
         return hooks
 
+    def _before_competition_accumulation(self, *, capture, cycle, evidence_inputs):
+        """Stage-11 extension after real Stage8 evidence and paid Competition UC.
+
+        Invoked only through Stage4's charged competition_decision_hook, before
+        the existing Competition owner accumulates this cycle. Stage10 itself
+        does not supply extra evidence or mutate the registered candidates.
+        """
+        return None
+
     def _evaluate_competition_cycle(self, *, capture, cycle):
         initial = state_from_capture(
             capture=capture,is_night=self.world.is_night(capture.t_monde),
@@ -403,6 +416,7 @@ class Stage10Runtime(Stage9Runtime):
                     proposal=proposal,base=supplied,health=self.sleep_health,
                     t_monde=capture.t_monde,cycle=cycle,
                     intrinsic_weight=self._stage10_config.intrinsic_weight,
+                    site=(capture.x, capture.y),
                 )
             evidence[proposal.option.id] = supplied
             ev = supplied.evaluation
@@ -420,6 +434,11 @@ class Stage10Runtime(Stage9Runtime):
                 "equipment_version":self.equipment.version,
                 "q_version":self._stage8_config.td.version,
             })
+        # Stage8 has now determined which options were actually evaluated.
+        # Stage4 already paid for this Competition cycle before entry here.
+        self._before_competition_accumulation(
+            capture=capture, cycle=cycle, evidence_inputs=evidence,
+        )
         return self.competition.evaluate(
             cycle=cycle,t_monde=capture.t_monde,evidence_inputs=evidence,
         )
@@ -564,6 +583,10 @@ class Stage10Runtime(Stage9Runtime):
                         STAGE2_AUTOBIOGRAPHICAL_POLICY,
                     STAGE7_AUTOBIOGRAPHICAL_POLICY.version:
                         STAGE7_AUTOBIOGRAPHICAL_POLICY,
+                    LIVED_PREBODY_POLICY.version:
+                        LIVED_PREBODY_POLICY,
+                    LIVED_WAKING_BODY_POLICY.version:
+                        LIVED_WAKING_BODY_POLICY,
                 },
             )
             self.consolidation.begin(tx)
@@ -596,6 +619,10 @@ class Stage10Runtime(Stage9Runtime):
                     STAGE2_AUTOBIOGRAPHICAL_POLICY,
                 STAGE7_AUTOBIOGRAPHICAL_POLICY.version:
                     STAGE7_AUTOBIOGRAPHICAL_POLICY,
+                LIVED_PREBODY_POLICY.version:
+                    LIVED_PREBODY_POLICY,
+                LIVED_WAKING_BODY_POLICY.version:
+                    LIVED_WAKING_BODY_POLICY,
             },
         )
         algorithm = LivedSixPassAlgorithm(
@@ -833,6 +860,20 @@ class Stage10Runtime(Stage9Runtime):
             critical_thresholds=self._stage10_config.critical_body_thresholds,
         )
         before = self.sleep_session.mode
+        # Reduced sleep capture has no spatial observation. Expiry is purely
+        # chronological and must precede the physical sleep checkpoint.
+        if self.competition.expire_memory_intention(world_step=t):
+            self._write(kind="i1_place_memory_intention_sleep_expired",
+                        data={"world_step": t, "spatial_confirmation": False,
+                              "motor_admission_inherited": False})
+        # Memory's prospective options also age during reduced sleep.
+        # This transition supplies no affordance, observation, or wake right.
+        expired_prospects = self.memory.expire_option_intentions(world_step=t)
+        if expired_prospects:
+            self._write(kind="i1_prospective_memory_sleep_expired",
+                        data={"world_step": t, "expired_count": len(expired_prospects),
+                              "full_cognitive_perception": False,
+                              "motor_admission_inherited": False})
         if self.sleep_session.open_world_step(t) != "sleeping":
             raise ValueError("unadmitted sleep entry")
         if before == "awake":
@@ -936,12 +977,27 @@ class Stage10Runtime(Stage9Runtime):
             if result.execution_status == "applied":
                 if self._last_applied_decision is None:
                     raise RuntimeError("waking command has no Action Control evidence")
-                admission,prepared,_ = self._last_applied_decision
+                admission,prepared,proposal = self._last_applied_decision
+                if prepared.command.primitive == "dormir":
+                    # A voluntary, independently admitted new sleep decision
+                    # may follow an alert wake. Never prohibit it or infer it.
+                    self._verify_ordinary_sleep_provenance(
+                        result=result, prepared=prepared, proposal=proposal,
+                    )
                 self.sleep_session.finish_sleep_step(
                     decision=outcome,admission=admission,prepared=prepared,
                     command_sent=True,world_advanced=True,
                     consolidation_interrupted=active,
                 )
+                if prepared.command.primitive == "dormir":
+                    # SleepSession is now awake with no pending wake receipt.
+                    # Re-arm only the actually applied choice for the NEXT
+                    # world step, not this already committed physical step.
+                    self.sleep_session.record_applied_sleep_decision(
+                        world_step=self.scheduler.t_monde,
+                        admission=admission, prepared=prepared,
+                        execution_status=result.execution_status,
+                    )
             return result
         # This step was admitted as sleep by the reduced wake rule. All
         # semantic work remains private until its scheduler-owned commit.
@@ -1048,6 +1104,27 @@ class Stage10Runtime(Stage9Runtime):
                 substrate._mortal_boundary.halt(failed_step=failure_step)
             raise
 
+    @staticmethod
+    def _verify_ordinary_sleep_provenance(*, result, prepared, proposal) -> None:
+        """Require the actual admitted Competition plan, never a fallback."""
+        option = getattr(proposal, "option", None)
+        plan = getattr(proposal, "plan", None)
+        if (result.execution_status != "applied"
+                or result.source != "decision"
+                or result.fallback_used is not False
+                or result.command_primitive != "dormir"
+                or not result.option_ref
+                or option is None or plan is None
+                or result.option_ref != getattr(option, "id", None)
+                or result.option_ref != getattr(prepared, "option_ref", None)
+                or getattr(option, "plan_ref", None) != getattr(plan, "id", None)
+                or getattr(plan, "option_ref", None) != result.option_ref
+                or not any(
+                    getattr(step, "command", None) == getattr(prepared, "command", None)
+                    for step in getattr(plan, "steps", ())
+                )):
+            raise RuntimeError("sleep command does not match applied ordinary option plan")
+
     def _run_step_with_mortal_guard(self):
         if (self.sleep_session.mode == "sleeping"
                 or self.sleep_session.export_causal_state()["admitted_sleep_step"] is not None):
@@ -1060,11 +1137,13 @@ class Stage10Runtime(Stage9Runtime):
             if self._last_applied_decision is None:
                 raise RuntimeError("applied sleep has no matching admission")
             admission,prepared,proposal = self._last_applied_decision
+            self._verify_ordinary_sleep_provenance(
+                result=result, prepared=prepared, proposal=proposal,
+            )
             self.sleep_session.record_applied_sleep_decision(
                 world_step=self.scheduler.t_monde,
                 admission=admission,prepared=prepared,
-                motive_type=proposal.option.motive_ref.type,
-                execution_status="applied",
+                execution_status=result.execution_status,
             )
             # The next physical step, not this one, enters sleeping mode.
         return result

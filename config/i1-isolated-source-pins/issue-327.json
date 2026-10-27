@@ -1,0 +1,7 @@
+{
+  "schema": "i1-isolated-source-pin-v1",
+  "issue": 327,
+  "generated": "i1/experimental/local_opportunity_selection.py",
+  "native": "src/i1/experimental/local_opportunity_selection.py",
+  "blob_sha1": "a830e062c68fd00c0c0563e38670499a2a9d8293"
+}

@@ -11,8 +11,9 @@ from __future__ import annotations
 
 import argparse
 import difflib
-from hashlib import sha256
+from hashlib import sha1, sha256
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -144,6 +145,325 @@ def _approved_pending_index_cursor(before: bytes, after: bytes) -> bool:
             return False
         old = old.replace(prior, replacement, 1)
     return old == new
+
+def _approved_native_prebody_activation_467(root: Path, rel: str) -> bool:
+    """Pin exactly the born I1 DC-09 selector, readers, and replay owner."""
+    pins = {
+        "i1lab/journal_views.py": (
+            "src/i1/runtime/journal_views.py",
+            "1e36a97f20443470a3d317bb1da62d9887c4f360",
+        ),
+        "i1lab/i1_natural_runtime.py": (
+            "src/i1/runtime/i1_natural_runtime.py",
+            "c8fbd15318f2ffb29a9ad2e2a7830b79b5a50153",
+        ),
+        "i1lab/stage10_runtime.py": (
+            "src/i1/runtime/stage10_runtime.py",
+            "08cd13ae3d4b72c5afedb1f446caac1aa3c8d4f4",
+        ),
+        "i1lab/m11_transactional_mortal.py": (
+            "src/i1/runtime/m11_transactional_mortal.py",
+            "53331329e85f15cf624d59e909e23433babc6320",
+        ),
+    }
+    pair = pins.get(rel)
+    if pair is None or not (root / rel).is_file():
+        return False
+    data = (ROOT / pair[0]).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == pair[1]
+
+
+def _approved_paid_old_recall_557(root: Path, rel: str) -> bool:
+    """Exact canonical I1 runtime with bounded separately priced old recall."""
+    if rel != "i1lab/i1_natural_runtime.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/runtime/i1_natural_runtime.py").read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == "730cc8a5e1d6fb64f00e08d0d3bdec4f9033285f"
+
+
+def _approved_indexed_dc09_538(root: Path, rel: str) -> bool:
+    if rel != "i1lab/journal_views.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/runtime/journal_views.py").read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == "744ea2d268954178c6356b3289b017c751a624dd"
+
+def _approved_unique_dc09_source_467(root: Path, rel: str) -> bool:
+    """Exact native I1-only journal view for unique source custody."""
+    if rel != "i1lab/journal_views.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/runtime/journal_views.py").read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == "901748016b7aa3d0a40b3510c92221ad42fc5986"
+
+
+def _approved_dormant_prebody_dc09_467(root: Path, rel: str) -> bool:
+    """Exact native I1-only DC-09 guard and dormant policy revisions."""
+    sources = {
+        "i1lab/epistemic_guard.py": (
+            "src/i1/lab/epistemic_guard.py",
+            "4eb31c4c3879c496e0b13b5eaecaa4419692640f",
+        ),
+        "i1lab/i1_natural_prebody_policy.py": (
+            "src/i1/runtime/i1_natural_prebody_policy.py",
+            "af80a2dff38559a63f68c5cafb767f661c9fac4a",
+        ),
+    }
+    spec = sources.get(rel)
+    if spec is None or not (root / rel).is_file():
+        return False
+    data = (ROOT / spec[0]).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == spec[1]
+
+
+def _approved_transition_prebody_467(root: Path, rel: str) -> bool:
+    """Exact native I1 technical transition revision, not a lived projection."""
+    if rel != "i1lab/stage2_runtime.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/lab/stage2_runtime.py").read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == "13b3893fb54e2dd508489001832d2d9d8988b48c"
+
+
+def _approved_situated_sleep_473(root: Path, rel: str) -> bool:
+    """Only these exact I1 sleep identity/Stage10 source revisions."""
+    source_pins = {
+        "i1/modules/sleep_competition.py": (
+            "src/i1/modules/sleep_competition.py",
+            "b3a0b70a5a73dce29d47cfcc344e5f371c4aac5d",
+        ),
+        "i1lab/stage10_runtime.py": (
+            "src/i1/runtime/stage10_runtime.py",
+            "ae62c448ef1674a458c517d8cec3351737f58d65",
+        ),
+    }
+    spec = source_pins.get(rel)
+    if spec is None or not (root / rel).is_file():
+        return False
+    data = (ROOT / spec[0]).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == spec[1]
+
+
+def _approved_paid_sleep_recall_467(root: Path, rel: str) -> bool:
+    """Exact reviewed I1-only natural runtime source for paid recall."""
+    if rel != "i1lab/i1_natural_runtime.py":
+        return False
+    data = (ROOT / "src/i1/runtime/i1_natural_runtime.py").read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == "bbfe14ac9002b0e0f8c107678bc68f23db09ce48" and (root / rel).is_file()
+
+
+def _approved_closed_sleep_site_467(root: Path, rel: str) -> bool:
+    """Exact reviewed source blob for bounded, non-motor sleep witness API.
+
+    This allows only the I1-owned Memory source pinned by #467. It does
+    not bless arbitrary edits or alter the historical I0 reference.
+    """
+    if rel != "i1/modules/memory.py":
+        return False
+    source = ROOT / "src/i1/modules/memory.py"
+    data = source.read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return (digest == "56fcf187a1d5dbb596584d66720d7d38605b325b"
+            and (root / rel).is_file())
+
+
+def _approved_closed_waking_adjacency_495(root: Path, rel: str) -> bool:
+    """Pin the exact closed-source, non-motor waking association on I1 only."""
+    if rel != "i1/modules/memory.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/modules/memory.py").read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == "3c8118ae8bafc7afab2c058a5b63033a5cf54208"
+
+
+def _approved_paid_waking_link_495(root: Path, rel: str) -> bool:
+    """Exact pin for the born I1-only, non-motor paid recall receipt."""
+    if rel != "i1lab/i1_natural_runtime.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/runtime/i1_natural_runtime.py").read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == "0b2cda5e68d7ca19cacd64fb6596166037e51e43"
+
+
+def _approved_paid_stage8_sleep_context_510(root: Path, rel: str) -> bool:
+    """Only the exact I1 native non-scoring Stage8 sleep-context source."""
+    if rel != "i1lab/i1_natural_runtime.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/runtime/i1_natural_runtime.py").read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == "47e19dec543ede1a4fd5871326675de89689ae67"
+
+
+def _approved_closed_stationary_controls_519(root: Path, rel: str) -> bool:
+    pins = {
+        "i1/modules/memory.py": (
+            "src/i1/modules/memory.py",
+            "ada5979f60e0480b894e96cd4506b2268b280513",
+        ),
+        "i1lab/i1_natural_runtime.py": (
+            "src/i1/runtime/i1_natural_runtime.py",
+            "4b2a84db7fd055afd5fc1e054368078d5ab08c76",
+        ),
+    }
+    spec = pins.get(rel)
+    if spec is None or not (root / rel).is_file():
+        return False
+    data = (ROOT / spec[0]).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == spec[1]
+
+
+def _approved_paid_generic_stage8_528(root: Path, rel: str) -> bool:
+    """Pin exact born I1-only, non-scoring general-action Stage8 context."""
+    if rel != "i1lab/i1_natural_runtime.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/runtime/i1_natural_runtime.py").read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == "9fc2b270ca4a3d170eaed1f35cfc4a6b0e276d6c"
+
+
+def _approved_old_action_witness_scope_535(root: Path, rel: str) -> bool:
+    if rel != "i1/modules/memory.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/modules/memory.py").read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == "c53b1d563e8360e6bf4f780108a9df58732dd39d"
+
+
+def _approved_recalled_episode_custody_535(root: Path, rel: str) -> bool:
+    if rel != "i1/modules/memory.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/modules/memory.py").read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == "9612623fcbef715a38b973ae91278c45bcaa2b7f"
+
+
+def _approved_diverse_action_recall_533(root: Path, rel: str) -> bool:
+    pins = {
+        "i1/modules/memory.py": ("src/i1/modules/memory.py",
+            "0b282299e155a0117340f058178027ee00e3f09d"),
+        "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py",
+            "4e8b63d4a71defbaac6cfe110ba7c2cafa397736"),
+    }
+    spec = pins.get(rel)
+    if spec is None or not (root / rel).is_file():
+        return False
+    data = (ROOT / spec[0]).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == spec[1]
+
+
+def _approved_lived_action_effects_530(root: Path, rel: str) -> bool:
+    """Exact I1-only Memory effect-projection revision, not a parity bypass."""
+    if rel != "i1/modules/memory.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/modules/memory.py").read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == "712a8f6bfc44647a961839abd74f5c78a65e3c68"
+
+
+def _approved_closed_generic_action_526(root: Path, rel: str) -> bool:
+    """Allow only the exact reviewed I1 Memory action-witness source blob.
+
+    This approval does not relax generated parity for any other code,
+    commit or engine. The builder still checks each generated source.
+    """
+    if rel != "i1/modules/memory.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/modules/memory.py").read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == "30d766e08888107d5b2eead9dcd4923e41663d38"
+
+
+def _approved_action_fragments_541(root: Path, rel: str) -> bool:
+    """Only #541's exact source-owned generic fragments and paid bridge."""
+    pins = {
+        "i1/modules/action_fragments.py": (
+            "src/i1/modules/action_fragments.py", "e0616b41fdc2754918ed92dff42f173be2649cee"),
+        "i1lab/i1_natural_runtime.py": (
+            "src/i1/runtime/i1_natural_runtime.py", "eca2411f80d4a97bc1366504dd2507e2caee05cf"),
+    }
+    row = pins.get(rel)
+    if row is None or not (root / rel).is_file():
+        return False
+    content = (ROOT / row[0]).read_bytes()
+    source_sha = sha1(b"blob " + str(len(content)).encode("ascii")
+                      + b"\0" + content).hexdigest()
+    return source_sha == row[1]
+
+
+def _approved_stage10_paid_fragments_543(root: Path, rel: str) -> bool:
+    """Pinned I1-only six-pass action fragment evidence, not an I0 change."""
+    pins = {
+        "i1/modules/paid_action_consolidation.py": (
+            "src/i1/modules/paid_action_consolidation.py", "fd05ef85a482317193e1056e1d6f9d11b5916063"),
+        "i1/modules/consolidation_semantics.py": (
+            "src/i1/modules/consolidation_semantics.py", "96fa45008043902da85ea9356f521a099fe153cb"),
+    }
+    row = pins.get(rel)
+    if row is None or not (root / rel).is_file():
+        return False
+    data = (ROOT / row[0]).read_bytes()
+    blob = sha1(b"blob " + str(len(data)).encode("ascii")
+                + bytes([0]) + data).hexdigest()
+    return blob == row[1]
+
+
+def _approved_general_situated_h_553(root: Path, rel: str) -> bool:
+    """Pinned I1-only generic situated observer without I0 changes."""
+    pins = {
+        "i1/modules/situated_action_history.py": ("src/i1/modules/situated_action_history.py", "66436661999d831e7f4ffa1b73eb7e51a2b489b3"),
+        "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py", "5cfbf7c6b0586c0d94a384990990f4427cc3b555"),
+    }
+    item = pins.get(rel)
+    if item is None:
+        return False
+    data = (ROOT / item[0]).read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii")
+                  + bytes([0]) + data).hexdigest()
+    return digest == item[1] and (root / rel).is_file()
+
+
+def _approved_shared_situated_core_555(root: Path, rel: str) -> bool:
+    """Exactly pinned compatible sleep view of merged generic core."""
+    if rel != "i1/modules/situated_sleep_history.py":
+        return False
+    expected = "b02d377edb22ed98ddc7e3fcb6851d6d06da1e2f"
+    file = ROOT / "src/i1/modules/situated_sleep_history.py"
+    data = file.read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii")
+                  + bytes([0]) + data).hexdigest()
+    return digest == expected and (root / rel).is_file()
+
+
+def _approved_situated_sleep_observer_473(root: Path, rel: str) -> bool:
+    """Exact pinned I1 observer-only situated sleep projection."""
+    pins = {
+        "i1/modules/situated_sleep_history.py": (
+            "src/i1/modules/situated_sleep_history.py", "c116a91c3488386c9a3b641604b021f1ad461c58"),
+        "i1lab/i1_natural_runtime.py": (
+            "src/i1/runtime/i1_natural_runtime.py", "c2e1aa9c08ac1bc72c61002d5511658a3a333adf"),
+    }
+    item = pins.get(rel)
+    if item is None or not (root / rel).is_file():
+        return False
+    data = (ROOT / item[0]).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii")
+                + bytes([0]) + data).hexdigest() == item[1]
+
+
+def _approved_published_h_recall_549(root: Path, rel: str) -> bool:
+    """Exact pinned I1 owner read and charged natural Stage8 bridge."""
+    pins = {
+        "i1lab/consolidation_publication.py": (
+            "src/i1/runtime/consolidation_publication.py", "31772dde7ab157e433798cfe79189fe360b3478f"),
+        "i1lab/i1_natural_runtime.py": (
+            "src/i1/runtime/i1_natural_runtime.py", "ca3d664d5a7575f86cccb395b38e11fba2f83edf"),
+    }
+    row = pins.get(rel)
+    if row is None or not (root / rel).is_file():
+        return False
+    data = (ROOT / row[0]).read_bytes()
+    blob = sha1(b"blob " + str(len(data)).encode("ascii")
+                + bytes([0]) + data).hexdigest()
+    return blob == row[1]
+
 
 def _approved_memory_overlap(before: bytes, after: bytes) -> bool:
     """Allow only the reviewed Stage7 exact reference-overlap replacement."""
@@ -730,6 +1050,509 @@ def _reference_agency_index(before: bytes) -> bytes:
     return source.encode("utf-8")
 
 
+def _approved_natural_goal_birth(before: bytes, after: bytes) -> bool:
+    """Approve only the reviewed natural I1 threshold birth transformation."""
+    source, candidate = before.decode("utf-8"), after.decode("utf-8")
+    helper_start = "# I1-only birth calibration. Historical values remain opt-in"
+    helper_end = "class I1Runtime(I1WaterPrudentRuntime):"
+    if candidate.count(helper_start) != 1 or candidate.count(helper_end) != 1:
+        return False
+    a = candidate.index(helper_start)
+    b = candidate.index(helper_end)
+    block = candidate[a:b]
+    if ("_I1_GOAL_POLICIES = {" not in block
+            or '"natural-004": (0.04, 0.35)' not in block
+            or '"historical-010": (0.10, 0.90)' not in block
+            or "def _configure_birth_goal_policy(config, policy):" not in block):
+        return False
+    candidate = candidate[:a] + candidate[b:]
+    inserted = '''        # This selector is research-only. The canonical birth_i1 entry point
+        # always uses natural-004 and cannot override it.
+        goal_policy = kwargs.pop("i1_goal_policy", "natural-004")
+        if goal_policy not in _I1_GOAL_POLICIES:
+            raise ValueError("unregistered I1 natural goal arbitration policy")
+'''
+    original = "    def __init__(self, **kwargs):\n"
+    if candidate.count(original + inserted) != 1:
+        return False
+    candidate = candidate.replace(original + inserted, original, 1)
+    inserted = '''        # The immutable goal subtree is installed before any owner or body is
+        # created. No action, learned value, world fact or survival rule changes.
+        cfg = _configure_birth_goal_policy(cfg, goal_policy)
+'''
+    original = "        cfg = configure_birth_temperament(cfg, life_id=life_id)\n"
+    if candidate.count(original + inserted) != 1:
+        return False
+    candidate = candidate.replace(original + inserted, original, 1)
+    replaced = '''            sleep_cfg, version=(sleep_cfg.version + "+i1-birth-temperament-v1"
+                                + "+" + _GOAL_POLICY_VERSION + ":" + goal_policy),
+'''
+    original = '            sleep_cfg, version=sleep_cfg.version + "+i1-birth-temperament-v1",\n'
+    if candidate.count(replaced) != 1:
+        return False
+    candidate = candidate.replace(replaced, original, 1)
+    return candidate == source
+
+
+def _approved_natural_toxic_berry_birth(before: bytes, after: bytes) -> bool:
+    """Accept only the reviewed natural-I1 berry delta, no broader parity skip."""
+    source, candidate = before.decode("utf-8"), after.decode("utf-8")
+    addition = '''TOXIC_BERRY_POLICY = "i1-natural-toxic-berry-integrity-minus-10-v1"
+DEFAULT_TOXIC_BERRY_INTEGRITY_DELTA = -10.0
+'''
+    if candidate.count(addition) != 1:
+        return False
+    candidate = candidate.replace(addition, "", 1)
+    marker = '''    upgraded.validate()
+    return upgraded'''
+    patch = '''    # Natural I1 physics only. Keep the historical software-reference
+    # fixture untouched, including its original -100 toxic-berry effect.
+    # The fruit is still unknown to the newborn; no behavior is imposed.
+    from i1lab.world import BerryEffect
+    effects = dict(upgraded.berry_effects)
+    toxic = effects["berry_b"]
+    if toxic.integrity_delta == -100.0:
+        effects["berry_b"] = BerryEffect(
+            toxic.food_gain, DEFAULT_TOXIC_BERRY_INTEGRITY_DELTA)
+        upgraded = replace(
+            upgraded, version=upgraded.version + "+" + TOXIC_BERRY_POLICY,
+            berry_effects=effects,
+        )
+'''
+    if candidate.count(patch + marker) != 1:
+        return False
+    candidate = candidate.replace(patch + marker, marker, 1)
+    return candidate == source
+
+
+
+# Review-locked #314 exception for intentional NEW I1 cognitive capability.
+# Unlike a loose path allowlist, exact Git blob digests reject any subsequent
+# source changes until each is reviewed and the digest is explicitly updated.
+# All other generated I1 files retain their existing strict migration parity.
+_ISSUE_314_PINNED_BLOBS = {
+    "i1/modules/spatial_memory.py": "4aaf4140d89f83fe99c6081909a12c69689b45ba",
+    "i1/modules/geographic_exploration.py": "6e3f6807cb63406c7dbfbc6d5ebbdf573f2aed9b",
+    "i1/modules/geographic_planning.py": "340fe53c2ee1d1cd1cd9025b929fc157a5ea2e31",
+    "i1/modules/stage11_evaluator.py": "ee40ddbedee554525bf9f4565b03d4bba3654d65",
+    "i1lab/i1_natural_runtime.py": "f4f6f35e3b3d323256845602253e90d7212b2ae5",
+    "i1lab/stage11_runtime.py": "76a161dec8c0e0b99e0f18fd81aa10ac9e34731b",
+}
+
+
+# #360: exact reviewed native M11 memory and natural birth code.
+_PROSPECT_361_PINS = {
+    "i1/modules/memory.py": ("src/i1/modules/memory.py", "c62865986b7ecd15f52f33c84c27a7c84cde691b"),
+    "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py", "4cd1a4e0d654af6004f60536464c5e1387d58980"),
+}
+
+def _approved_prospect_361(root: Path, rel: str) -> bool:
+    pair = _PROSPECT_361_PINS.get(rel)
+    if pair is None or not (root / rel).is_file():
+        return False
+    native, expected = pair
+    data = (ROOT / native).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == expected
+
+
+_OPTION_360_PINS = {
+    "i1/modules/memory.py": ("src/i1/modules/memory.py",
+        "2d9d4e7748a55d3b09aff194e446f8327bf4bef2"),
+    "i1lab/i1_natural_runtime.py": ("src/i1/runtime/i1_natural_runtime.py",
+        "cdbd72d1aac9ca2d02f626651cb63ed866cb3d93"),
+}
+
+
+def _approved_option_360(root: Path, rel: str) -> bool:
+    pair = _OPTION_360_PINS.get(rel)
+    if pair is None or not (root / rel).is_file():
+        return False
+    native, expected = pair
+    data = (ROOT / native).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == expected
+
+
+# Strict reviewed #359 Memory intention cold-restore source pin.
+_MEMORY_359_PINS = {"i1/modules/memory.py": (
+    "src/i1/modules/memory.py",
+    "1d1d270aa76f246478dbbd1bf537c3557d3a1db4",
+)}
+
+
+def _approved_memory_359(root: Path, rel: str) -> bool:
+    entry = _MEMORY_359_PINS.get(rel)
+    if entry is None or not (root / rel).is_file():
+        return False
+    native, expected = entry
+    data = (ROOT / native).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == expected
+
+
+# Issue #426: reviewed non-motor Memory prospect contract, pinned to exact
+# source bytes. This is not an experimental pin or a wildcard exception.
+_MEMORY_426_NATIVE_BLOB = "225dc8164ae198599345ea5dd20e437b7b0f01f9"
+
+def _approved_memory_426(root: Path, rel: str) -> bool:
+    if rel != "i1/modules/memory.py" or not (root / rel).is_file():
+        return False
+    data = (ROOT / "src/i1/modules/memory.py").read_bytes()
+    actual = sha1(
+        b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+    ).hexdigest()
+    return actual == _MEMORY_426_NATIVE_BLOB
+
+# #427: reviewed first-person lived-site natural Memory consideration.
+# No wildcard: each modified native runtime requires an exact Git blob.
+_LIVED_PROSPECT_427_PINS = {
+    "i1lab/i1_natural_runtime.py": (
+        "src/i1/runtime/i1_natural_runtime.py",
+        "aa94446a3965e5486f86fab5576f25b30e3c3731",
+    ),
+    "i1lab/stage11_runtime.py": (
+        "src/i1/runtime/stage11_runtime.py",
+        "623750b84cc27f09b31c83c637193c75a539d5db",
+    ),
+}
+
+def _approved_lived_prospect_427(root: Path, rel: str) -> bool:
+    entry = _LIVED_PROSPECT_427_PINS.get(rel)
+    if entry is None or not (root / rel).is_file():
+        return False
+    source, expected = entry
+    data = (ROOT / source).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == expected
+
+
+# Issue #329: exact pinned wake-to-voluntary-sleep source, not a parity waiver.
+_WAKE_329_PINS = {"i1lab/stage10_runtime.py": (
+    "src/i1/runtime/stage10_runtime.py",
+    "c35161d45a9329f30ddeeac5048634df28862d2c",
+)}
+
+
+def _approved_wake_329(root: Path, rel: str) -> bool:
+    entry = _WAKE_329_PINS.get(rel)
+    if entry is None or not (root / rel).is_file():
+        return False
+    native, expected = entry
+    data = (ROOT / native).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == expected
+
+
+# Canonical #328: exact-only first-person site association source review.
+_SITE_328_PINS = {
+    "i1/modules/geographic_exploration.py": (
+        "src/i1/modules/geographic_exploration.py",
+        "c25635f5170506073670c1584b046ed50de93e48",
+    ),
+    "i1lab/i1_natural_runtime.py": (
+        "src/i1/runtime/i1_natural_runtime.py",
+        "99e30a4b5fdfc1f6820c3a98ede0d39647151bd2",
+    ),
+    "i1lab/stage11_runtime.py": (
+        "src/i1/runtime/stage11_runtime.py",
+        "dd237a6545a0b0137b8a275f40aed084b624af9b",
+    ),
+    "i1/modules/stage11_evaluator.py": (
+        "src/i1/modules/stage11_evaluator.py",
+        "0a5f3a43a5015c5ebf4e12d58fa3ceeafc2ee3ac",
+    ),
+}
+
+
+def _approved_site_328(root: Path, rel: str) -> bool:
+    entry = _SITE_328_PINS.get(rel)
+    if entry is None or not (root / rel).is_file():
+        return False
+    native, expected = entry
+    data = (ROOT / native).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == expected
+
+
+# Canonical #327: exact-blob review for two native local-opportunity wiring files.
+# Never accepts unrelated generated drift, nor changes in I0.
+_LOCAL_327_PINS = {
+    "i1lab/i1_active_runtime.py": (
+        "src/i1/runtime/i1_active_runtime.py",
+        "0bd8655f5631e08dd0b26107d16fbe9e5d5d00c5",
+    ),
+    "i1lab/i1_natural_runtime.py": (
+        "src/i1/runtime/i1_natural_runtime.py",
+        "9b4b6f6e9da0fa20b2ebd2a42dcac3460f6b3edf",
+    ),
+}
+
+
+def _approved_local_327(root: Path, rel: str) -> bool:
+    entry = _LOCAL_327_PINS.get(rel)
+    if entry is None or not (root / rel).is_file():
+        return False
+    path, expected = entry
+    data = (ROOT / path).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == expected
+
+
+# Exact reviewed M11 cold body type fix; no broad waiver.
+_M11_BODY_TYPE_BLOB = "4be8c04fc5bb4d58991317586c7ce4759fbc9131"
+
+
+def _approved_m11_body_type(root: Path, rel: str) -> bool:
+    if rel != "i1lab/m11_transactional_mortal.py":
+        return False
+    data = (ROOT / "src/i1/runtime/m11_transactional_mortal.py").read_bytes()
+    actual = sha1(
+        b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+    ).hexdigest()
+    return actual == _M11_BODY_TYPE_BLOB and (root / rel).is_file()
+
+
+_COMPETITION_FALLBACK_PINS = {
+    "i1/modules/competition.py":
+        ("src/i1/modules/competition.py", "ca1532e1875cc963725afb3b814406b86cb4485c"),
+    "i1lab/stage4_runtime.py":
+        ("src/i1/runtime/stage4_runtime.py", "29e20ec17bc35def9f16b490d9f45bff2641f1de"),
+}
+
+
+# Issue #351: reviewed L2 candidate, locked to two exact native source blobs.
+_INTENTION_351_PINS = {
+    "i1/modules/competition.py":
+        ("src/i1/modules/competition.py", "559fbf1ae932a0eeff2762cb00aeddc453a13f49"),
+    "i1lab/stage11_runtime.py":
+        ("src/i1/runtime/stage11_runtime.py", "dd237a6545a0b0137b8a275f40aed084b624af9b"),
+}
+
+
+def _approved_intention_351(root: Path, rel: str) -> bool:
+    entry = _INTENTION_351_PINS.get(rel)
+    if entry is None or not (root / rel).is_file():
+        return False
+    path, expected = entry
+    data = (ROOT / path).read_bytes()
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == expected
+
+
+def _approved_competition_fallback(root: Path, rel: str) -> bool:
+    entry = _COMPETITION_FALLBACK_PINS.get(rel)
+    if entry is None:
+        return False
+    source_path, expected = entry
+    data = (ROOT / source_path).read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == expected and (root / rel).is_file()
+
+
+# Issue #317 staged memory identity. Exact reviewed native blobs only.
+# Generated sources may rewrite imports; the fixed native blobs are authoritative.
+_MEMORY_IDENTITY_PINS = {
+    "i1/modules/geographic_exploration.py":
+        ("src/i1/modules/geographic_exploration.py", "c25635f5170506073670c1584b046ed50de93e48"),
+    "i1/modules/geographic_planning.py":
+        ("src/i1/modules/geographic_planning.py", "d83aef41d40682e947f3802d9f67cd785b0bd5b0"),
+    "i1lab/stage11_runtime.py":
+        ("src/i1/runtime/stage11_runtime.py", "dd237a6545a0b0137b8a275f40aed084b624af9b"),
+}
+
+
+def _approved_memory_identity(root: Path, rel: str) -> bool:
+    entry = _MEMORY_IDENTITY_PINS.get(rel)
+    if entry is None:
+        return False
+    source_path, expected = entry
+    data = (ROOT / source_path).read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == expected and (root / rel).is_file()
+
+
+# #330: exact review pins for unchanged-context frontier/transit identity.
+_GEOGRAPHIC_IDENTITY_PINS = {
+    "i1/modules/geographic_planning.py":
+        ("src/i1/modules/geographic_planning.py", "d83aef41d40682e947f3802d9f67cd785b0bd5b0"),
+    "i1/modules/geographic_exploration.py":
+        ("src/i1/modules/geographic_exploration.py", "c25635f5170506073670c1584b046ed50de93e48"),
+    "i1/modules/stage11_evaluator.py":
+        ("src/i1/modules/stage11_evaluator.py", "0a5f3a43a5015c5ebf4e12d58fa3ceeafc2ee3ac"),
+}
+
+def _approved_geographic_identity(root: Path, rel: str) -> bool:
+    entry = _GEOGRAPHIC_IDENTITY_PINS.get(rel)
+    if entry is None:
+        return False
+    path, expected = entry
+    content = (ROOT / path).read_bytes()
+    return (sha1(b"blob " + str(len(content)).encode("ascii") + b"\0" + content).hexdigest() == expected
+            and (root / rel).is_file())
+
+
+
+# #457 is an intentionally changed, separately versioned I1 *physical*
+# contract. These two exact native blobs are approved together, never via a
+# wildcard or a runtime bypass. Builder manifest parity remains mandatory.
+_ZERO_RESERVE_457_PINS = {
+    "i1lab/world.py": (
+        "src/i1/runtime/world.py",
+        "34564b36010763291dbde8339698080aba7a9c05",
+    ),
+    "i1lab/i1_natural_sleep.py": (
+        "src/i1/runtime/i1_natural_sleep.py",
+        "c48498fc2588652e8842b537a142bb0b335123cb",
+    ),
+}
+
+
+def _approved_zero_reserve_457(root: Path, rel: str) -> bool:
+    pinned = _ZERO_RESERVE_457_PINS.get(rel)
+    if pinned is None or not (root / rel).is_file():
+        return False
+    path, expected = pinned
+    data = (ROOT / path).read_bytes()
+    digest = sha1(
+        b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+    ).hexdigest()
+    return digest == expected
+
+
+# #461: exact reviewed native blobs for separately born metabolic v4.
+# Historical I1 comparison remains enforced everywhere else.
+_METABOLIC_V4_461_PINS = {
+    "i1lab/world.py": (
+        "src/i1/runtime/world.py", "d4e9449bbbef3bd7c1b72e82f446830f7a74fc25",
+    ),
+    "i1lab/i1_natural_sleep.py": (
+        "src/i1/runtime/i1_natural_sleep.py", "5573e4ce1d9664c2ff0b15e88d0a5378a2c0f99d",
+    ),
+}
+
+
+def _approved_metabolic_v4_461(root: Path, rel: str) -> bool:
+    pinned = _METABOLIC_V4_461_PINS.get(rel)
+    if pinned is None or not (root / rel).is_file():
+        return False
+    source, expected = pinned
+    content = (ROOT / source).read_bytes()
+    digest = sha1(
+        b"blob " + str(len(content)).encode("ascii") + b"\0" + content
+    ).hexdigest()
+    return digest == expected
+
+
+# Explicit, one-file-per-issue source attestations for disabled experiments.
+# Manifests never authorize arbitrary packages, globs or generated output.
+_ISOLATED_PINS_DIR = ROOT / "config" / "i1-isolated-source-pins"
+
+
+def _load_isolated_source_pins(directory: Path) -> dict[str, tuple[str, str]]:
+    """Fail closed on malformed, duplicate or non-exact review manifests."""
+    if not directory.is_dir():
+        raise ValueError("missing isolated I1 source attestation directory")
+    files = sorted(directory.iterdir())
+    if not files or len(files) > 32:
+        raise ValueError("missing or unbounded I1 source attestations")
+    pins: dict[str, tuple[str, str]] = {}
+    for manifest in files:
+        match = re.fullmatch(r"issue-([1-9][0-9]*)[.]json", manifest.name)
+        if not manifest.is_file() or match is None:
+            raise ValueError("unreviewed I1 source pin manifest")
+        record = json.loads(manifest.read_text(encoding="utf-8"))
+        if (type(record) is not dict
+            or set(record) != {"schema", "issue", "generated", "native", "blob_sha1"}
+            or record["schema"] != "i1-isolated-source-pin-v1"
+            or type(record["issue"]) is not int
+            or record["issue"] != int(match.group(1))
+            or type(record["generated"]) is not str
+            or re.fullmatch(r"i1/experimental/[a-z][a-z0-9_]*[.]py",
+                            record["generated"]) is None
+            or record["native"] != "src/" + record["generated"]
+            or type(record["blob_sha1"]) is not str
+            or re.fullmatch(r"[0-9a-f]{40}", record["blob_sha1"]) is None):
+            raise ValueError("invalid or non-exact I1 source attestation")
+        if record["generated"] in pins:
+            raise ValueError("duplicate I1 source attestation")
+        pins[record["generated"]] = (record["native"], record["blob_sha1"])
+    return pins
+
+
+def _approved_isolated_experimental(root: Path, rel: str) -> bool:
+    """Exact SHA of current native source, with a named generated artifact."""
+    if not rel.startswith("i1/experimental/"):
+        return False
+    entry = _load_isolated_source_pins(_ISOLATED_PINS_DIR).get(rel)
+    if entry is None:
+        return False
+    source, expected = entry
+    path = ROOT / source
+    if not path.is_file() or not (root / rel).is_file():
+        return False
+    data = path.read_bytes()
+    actual = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return actual == expected
+
+
+# Strictly scoped Lab-only matched temperament review. No broad exceptions.
+_MATCHED_TAU_PINS = {
+    "i1lab/i1_birth_temperament.py":
+        ("src/i1/runtime/i1_birth_temperament.py", "e88bedd1f89eb1409e8d6f6524e906718a1e8654"),
+    "i1lab/matched_temperament_research.py":
+        ("src/i1/lab/matched_temperament_research.py", "b0bd7682186042122c05cacf17b4ca4ebc06b957"),
+}
+
+
+def _approved_matched_tau_lab(root: Path, rel: str) -> bool:
+    record = _MATCHED_TAU_PINS.get(rel)
+    if record is None:
+        return False
+    path, expected = record
+    data = (ROOT / path).read_bytes()
+    return (
+        sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == expected
+        and (root / rel).is_file()
+    )
+
+
+_SLEEP_APPLIED_PINS = {
+    "i1/modules/sleep_session.py":
+        ("src/i1/modules/sleep_session.py", "edfd4a58431eb3e98b7a5a813fbbc1136cb03f6e"),
+    "i1lab/stage10_runtime.py":
+        ("src/i1/runtime/stage10_runtime.py", "6ae421e53e3755fa2897b59dd35f650a1e363ba4"),
+}
+
+
+def _approved_applied_sleep(root: Path, rel: str) -> bool:
+    entry = _SLEEP_APPLIED_PINS.get(rel)
+    if entry is None:
+        return False
+    path, expected = entry
+    data = (ROOT / path).read_bytes()
+    digest = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    return digest == expected and (root / rel).is_file()
+
+
+def _approved_issue314_blob(root: Path, rel: str) -> bool:
+    expected = _ISSUE_314_PINNED_BLOBS.get(rel)
+    if expected is None:
+        return False
+    data = (root / rel).read_bytes()
+    actual = sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+    if actual == expected:
+        return True
+    # The native builder rewrites import namespaces for these two modules.
+    # Their exact source blobs remain review-locked and the generated output
+    # is already checked against its independent builder manifest.
+    source_by_generated = {
+        "i1/modules/geographic_planning.py":
+            "src/i1/modules/geographic_planning.py",
+        "i1/modules/stage11_evaluator.py":
+            "src/i1/modules/stage11_evaluator.py",
+    }
+    native_source = source_by_generated.get(rel)
+    if native_source is None:
+        return False
+    data = (ROOT / native_source).read_bytes()
+    source_blob = sha1(
+        b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+    ).hexdigest()
+    return source_blob == expected
+
 def verify(reference_root: Path) -> None:
     reference_root = reference_root.resolve()
     if reference_root == ROOT.resolve():
@@ -740,11 +1563,21 @@ def verify(reference_root: Path) -> None:
         old = _build(reference_root, old_root)
         new = _build(ROOT, new_root)
         missing = sorted(set(old) - set(new))
-        added = sorted(set(new) - set(old))
+        added = sorted(rel for rel in set(new) - set(old)
+                       if not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_closed_sleep_site_467(new_root, rel) or _approved_transition_prebody_467(new_root, rel) or _approved_dormant_prebody_dc09_467(new_root, rel) or _approved_situated_sleep_473(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel) or _approved_site_328(new_root, rel) or _approved_wake_329(new_root, rel) or _approved_memory_359(new_root, rel) or _approved_option_360(new_root, rel) or _approved_prospect_361(new_root, rel) or _approved_memory_426(new_root, rel) or _approved_lived_prospect_427(new_root, rel) or _approved_metabolic_v4_461(new_root, rel) or _approved_zero_reserve_457(new_root, rel) or _approved_action_fragments_541(new_root, rel) or _approved_stage10_paid_fragments_543(new_root, rel) or _approved_published_h_recall_549(new_root, rel) or _approved_situated_sleep_observer_473(new_root, rel) or _approved_shared_situated_core_555(new_root, rel) or _approved_general_situated_h_553(new_root, rel)))
         changed = sorted(
             rel for rel in old.keys() & new.keys()
-            if old[rel] != new[rel] and not (
+            if old[rel] != new[rel] and not (_approved_issue314_blob(new_root, rel) or _approved_m11_body_type(new_root, rel) or _approved_competition_fallback(new_root, rel) or _approved_matched_tau_lab(new_root, rel) or _approved_applied_sleep(new_root, rel) or _approved_memory_identity(new_root, rel) or _approved_closed_sleep_site_467(new_root, rel) or _approved_transition_prebody_467(new_root, rel) or _approved_dormant_prebody_dc09_467(new_root, rel) or _approved_situated_sleep_473(new_root, rel) or _approved_geographic_identity(new_root, rel) or _approved_isolated_experimental(new_root, rel) or _approved_intention_351(new_root, rel) or _approved_local_327(new_root, rel) or _approved_site_328(new_root, rel) or _approved_wake_329(new_root, rel) or _approved_memory_359(new_root, rel) or _approved_option_360(new_root, rel) or _approved_prospect_361(new_root, rel) or _approved_memory_426(new_root, rel) or _approved_lived_prospect_427(new_root, rel) or _approved_metabolic_v4_461(new_root, rel) or _approved_zero_reserve_457(new_root, rel)) and not (
                 False  # Stage10 is handled by the stacked exact approval below
+                or (rel == "i1lab/i1_natural_sleep.py"
+                    and _approved_natural_toxic_berry_birth(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
+                or _approved_transition_prebody_467(new_root, rel) or _approved_dormant_prebody_dc09_467(new_root, rel) or _approved_situated_sleep_473(new_root, rel) or _approved_paid_sleep_recall_467(new_root, rel)
+                or (rel == "i1lab/i1_natural_runtime.py"
+                    and _approved_natural_goal_birth(
+                        (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
+                    ))
                 or (rel == "i1lab/stage10_runtime.py"
                     and _approved_i1_287_stage10_authentic_policy_union(
                         _reference_i1_255_stage10_move(
@@ -833,6 +1666,24 @@ def verify(reference_root: Path) -> None:
                     and _approved_stage9_episode_slice(
                         (old_root / rel).read_bytes(), (new_root / rel).read_bytes()
                     ))
+                or _approved_paid_old_recall_557(new_root, rel)
+                or _approved_indexed_dc09_538(new_root, rel)
+                or _approved_unique_dc09_source_467(new_root, rel) or _approved_native_prebody_activation_467(new_root, rel)
+                or _approved_closed_waking_adjacency_495(new_root, rel)
+                or _approved_paid_waking_link_495(new_root, rel)
+                or _approved_paid_stage8_sleep_context_510(new_root, rel)
+                or _approved_closed_stationary_controls_519(new_root, rel)
+                or _approved_closed_generic_action_526(new_root, rel)
+                or _approved_lived_action_effects_530(new_root, rel)
+                or _approved_diverse_action_recall_533(new_root, rel)
+                or _approved_recalled_episode_custody_535(new_root, rel)
+                or _approved_old_action_witness_scope_535(new_root, rel)
+                or _approved_paid_generic_stage8_528(new_root, rel)
+                or _approved_action_fragments_541(new_root, rel)
+                or _approved_stage10_paid_fragments_543(new_root, rel)
+                or _approved_published_h_recall_549(new_root, rel)
+                or _approved_situated_sleep_observer_473(new_root, rel) or _approved_shared_situated_core_555(new_root, rel)
+                or _approved_general_situated_h_553(new_root, rel)
                 or (rel == "i1lab/journal_views.py"
                     and _approved_autobio_index_rehydration(
                         _reference_autobio_fastpath((old_root / rel).read_bytes()),
@@ -852,7 +1703,7 @@ def verify(reference_root: Path) -> None:
                 )
                 print("".join(list(diff)[:100]), file=sys.stderr)
             raise AssertionError("native migration changed generated I1 bytes")
-        print(f"I1_GENERATED_PARITY_OK: {len(new)} files; only reviewed #255 and local-capture block transformations permitted")
+        print(f"I1_GENERATED_PARITY_OK: {len(new)} files; migration exceptions plus reviewed exact-blob #314 changes")
 
 
 def main() -> None:

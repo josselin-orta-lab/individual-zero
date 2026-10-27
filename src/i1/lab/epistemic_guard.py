@@ -50,8 +50,11 @@ _LIVED_TRANSITION_EFFECTS = {
 }
 _LIVED_FIELD_SCHEMAS = {
     ("observation_perceived", "perceptible"): _LEAF,
+    ("waking_body_perceived", "position"): _POSITION,
+    ("waking_body_perceived", "body_perceived"): _BODY,
     ("command_experienced", "parameters"): _LIVED_COMMAND_PARAMETERS,
     ("world_transition_experienced", "position_after"): _POSITION,
+    ("world_transition_experienced", "body_before"): _BODY,
     ("world_transition_experienced", "body_after"): _BODY,
     ("world_transition_experienced", "effects"): _LIVED_TRANSITION_EFFECTS,
 }
@@ -103,11 +106,14 @@ _AUTHORIZED_LIVED_FIELDS = {
     "observation_perceived": frozenset({
         "t_monde", "perceptible", "event_id",
     }),
+    "waking_body_perceived": frozenset({
+        "t_monde", "position", "body_perceived", "event_id",
+    }),
     "command_experienced": frozenset({
         "t_monde", "primitive", "parameters", "event_id",
     }),
     "world_transition_experienced": frozenset({
-        "t_monde", "position_after", "body_after", "effects", "event_id",
+        "t_monde", "position_after", "body_before", "body_after", "effects", "event_id",
     }),
     "active_goal_changed": frozenset({
         "t_monde", "cycle", "data", "event_id",

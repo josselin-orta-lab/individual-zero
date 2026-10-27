@@ -8,12 +8,46 @@ Spec: 10.1-10.4, 20.3 Stage 7, P-34, DC-09, INV-02, INV-27.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from heapq import nsmallest
+from math import isfinite
+from re import fullmatch
 from typing import Iterator, Mapping, Sequence
 
 from i0.contracts import Contribution, GoalProposal, STVersion
 from i0.requests import Request, Response
+
+_INTENTION_BODY_KEYS = frozenset({"energy", "food", "water", "integrity"})
+
+def same_lived_command_parameters(
+    left: Mapping[str, object], right: Mapping[str, object],
+) -> bool:
+    """Match actual command parameters without Python bool/numeric aliasing.
+
+    DC-09 permits primitive scalars and one canonical float scalar wrapper.
+    Reject unreviewed nested structures rather than declaring them equal.
+    This is identity only, never a memory relevance/value score.
+    """
+    if not isinstance(left, Mapping) or not isinstance(right, Mapping):
+        return False
+    if (any(type(key) is not str for key in (*left, *right))
+            or left.keys() != right.keys()):
+        return False
+    for key in left:
+        a, b = left[key], right[key]
+        if type(a) is not type(b):
+            return False
+        if type(a) is dict:
+            if (set(a) != {"$f64"} or set(b) != {"$f64"}
+                    or type(a["$f64"]) is not str
+                    or a["$f64"] != b["$f64"]):
+                return False
+        elif type(a) not in (str, int, float, bool, type(None)):
+            return False
+        elif a != b:
+            return False
+    return True
+
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,6 +120,78 @@ class Episode:
         }
 
 
+
+def _authentic_considered_option_source(
+    signature: str, source_option_ref: str, step: int,
+) -> bool:
+    """Validate a prior considered option's bounded, first-person identity.
+
+    The runtime still proves actual Stage8 evaluation and UC expenditure.
+    This structural check prevents restored Memory images from changing the
+    remembered entity/route or masquerading as an applied motor command.
+    """
+    if (type(signature) is not str or not signature
+        or len(signature) > 256
+        or type(source_option_ref) is not str
+        or len(source_option_ref) > 1024
+        or type(step) is not int or step < 1):
+        return False
+    if signature.startswith("i1:affordance:"):
+        return source_option_ref == (
+            f"option:i1:local:t{step}:"
+            + signature.removeprefix("i1:affordance:")
+        )
+    if signature.startswith("lived_site_return:"):
+        # Site consequences are memories of bodily observations, not learned
+        # utility of a resource type. The source must encode an older,
+        # personally offered one-hop route with a physically adjacent hop.
+        coord = r"(-?(?:0|[1-9][0-9]*))"
+        semantic = fullmatch(
+            r"lived_site_return:" + coord + ":" + coord, signature,
+        )
+        route = fullmatch(
+            r"option:lived-site:lived-site:" + coord + ":" + coord
+            + r":observed-t([1-9][0-9]*):from:" + coord + ":" + coord
+            + r":via:" + coord + ":" + coord,
+            source_option_ref,
+        )
+        if semantic is None or route is None:
+            return False
+        numbers = tuple(int(value) for value in route.groups())
+        x, y, observed, origin_x, origin_y, via_x, via_y = numbers
+        return bool(
+            tuple(int(value) for value in semantic.groups()) == (x, y)
+            and 2 <= observed < step
+            and abs(origin_x - via_x) + abs(origin_y - via_y) == 1
+            and source_option_ref == (
+                f"option:lived-site:lived-site:{x}:{y}:observed-t{observed}"
+                f":from:{origin_x}:{origin_y}:via:{via_x}:{via_y}"
+            )
+        )
+    if not signature.startswith("memory_place_return:"):
+        return False
+    entity_id = signature.removeprefix("memory_place_return:")
+    if not entity_id:
+        return False
+    coord = r"(-?(?:0|[1-9][0-9]*))"
+    found = fullmatch(
+        r"option:place-memory:place:(.+):at:" + coord + ":" + coord
+        + r":from:" + coord + ":" + coord
+        + r":via:" + coord + ":" + coord,
+        source_option_ref,
+    )
+    if found is None or found.group(1) != entity_id:
+        return False
+    numbers = tuple(int(x) for x in found.groups()[1:])
+    if (abs(numbers[2] - numbers[4]) +
+        abs(numbers[3] - numbers[5]) != 1):
+        return False
+    return source_option_ref == (
+        f"option:place-memory:place:{entity_id}:at:{numbers[0]}:{numbers[1]}"
+        f":from:{numbers[2]}:{numbers[3]}:via:{numbers[4]}:{numbers[5]}"
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class Intention:
     id: str
@@ -104,7 +210,7 @@ class Intention:
     def validate(self) -> None:
         if not self.id or not self.goal_type or not self.target:
             raise ValueError("intention identity and goal fields are required")
-        if self.trigger_type not in {"event", "time", "context"}:
+        if self.trigger_type not in {"event", "time", "context", "option"}:
             raise ValueError("invalid intention trigger type")
         if not 0.0 <= self.base_pressure <= 1.0:
             raise ValueError("intention base pressure must be in [0,1]")
@@ -112,10 +218,114 @@ class Intention:
             raise ValueError("invalid intention monitoring mode")
         if self.cost_uc < 0:
             raise ValueError("intention cost must be non-negative")
-        if self.state not in {"pending", "triggered", "done", "abandoned"}:
+        if self.state not in {"pending", "triggered", "done", "abandoned", "suspended", "awaiting_observation"}:
             raise ValueError("invalid intention state")
         if self.deadline_step is not None and self.deadline_step < 0:
             raise ValueError("intention deadline must be non-negative")
+        if self.state == "suspended" and self.trigger_type != "option":
+            raise ValueError("only cognitive option intentions may suspend")
+        if self.trigger_type == "option":
+            # Memory of a personally chosen and applied non-spatial option.
+            # Not a new goal, wake deadline, Q update or motor commitment.
+            witnessed = self.trigger_value
+            phase_key = (
+                "applied_step" if isinstance(witnessed, Mapping)
+                and "applied_step" in witnessed else "considered_step"
+            )
+            extras = set()
+            if isinstance(witnessed, Mapping) and phase_key == "applied_step":
+                if "body_before" in witnessed:
+                    extras.add("body_before")
+                if "observed_step" in witnessed or "body_delta" in witnessed:
+                    extras.update({"observed_step", "body_delta"})
+                if "observations" in witnessed:
+                    extras.add("observations")
+            if (self.goal_type != "option_reconsideration"
+                or type(self.target) is not str
+                or len(self.target) > 256
+                or self.id != "intention:i1:option:" + self.target
+                or not isinstance(witnessed, Mapping)
+                or set(witnessed) != {phase_key, "source_option_ref"} | extras
+                or type(witnessed[phase_key]) is not int
+                or witnessed[phase_key] < 1
+                or not _authentic_considered_option_source(
+                    self.target, witnessed["source_option_ref"],
+                    witnessed[phase_key],
+                )
+                or (phase_key == "applied_step"
+                    and not self.target.startswith("i1:affordance:"))
+                or self.deadline_step is None
+                or not witnessed[phase_key] < self.deadline_step
+                or self.deadline_step - witnessed[phase_key] > 64
+                or self.monitoring != "spontaneous"
+                or self.cost_uc < 1 or type(self.cost_uc) is not int
+                or type(self.base_pressure) not in (float, int)
+                or self.base_pressure != 0.0
+                or self.wake_authorized is not False
+                or self.candidacy_active is not False
+                # Semantic option intentions have no authenticated
+                # result-success contract. An applied action or contextual
+                # body change is not proof that this intention was fulfilled.
+                or self.state not in {
+                    "pending", "suspended", "abandoned",
+                    "awaiting_observation",
+                }
+                or (self.state == "awaiting_observation"
+                    and extras - {"observations"} != {"body_before"})
+                or (extras and phase_key != "applied_step")
+                or "body_before" in extras
+                   and self.state != "awaiting_observation"
+                or "observed_step" in extras
+                   and (self.state not in {"pending", "suspended", "abandoned"}
+                        or "body_before" in extras
+                        or type(witnessed.get("observed_step")) is not int
+                        or witnessed["observed_step"] != witnessed["applied_step"] + 1)):
+                raise ValueError("invalid first-person option intention")
+            for field, lo, hi in (
+                ("body_before", 0.0, 100.0),
+                ("body_delta", -100.0, 100.0),
+            ):
+                if field not in extras:
+                    continue
+                body = witnessed.get(field)
+                if (not isinstance(body, Mapping)
+                    or set(body) != _INTENTION_BODY_KEYS
+                    or any(type(v) not in (int, float)
+                           or not isfinite(v) or not lo <= v <= hi
+                           for v in body.values())):
+                    raise ValueError("invalid authenticated first-person bodily witness")
+            # Bounded first-person history in THIS Memory owner. No new Q or
+            # inferred action-to-outcome causality; snapshots cannot forge a
+            # witness, reorder events, or duplicate the same physical step.
+            if "observations" in extras:
+                rows = witnessed["observations"]
+                if type(rows) is not list or not 1 <= len(rows) <= 8:
+                    raise ValueError("invalid bounded observed option history")
+                previous_step = 0
+                for row in rows:
+                    if type(row) is not dict or set(row) != {
+                        "applied_step", "source_option_ref", "observed_step",
+                        "body_delta",
+                    }:
+                        raise ValueError("invalid historical witness structure")
+                    step = row["applied_step"]
+                    observed = row["observed_step"]
+                    if (type(step) is not int or type(observed) is not int
+                        or step <= previous_step or step >= witnessed[phase_key]
+                        or observed != step + 1
+                        or type(row["source_option_ref"]) is not str
+                        or row["source_option_ref"] != (
+                            f"option:i1:local:t{step}:"
+                            + self.target.removeprefix("i1:affordance:")
+                        )
+                        or type(row["body_delta"]) is not dict
+                        or set(row["body_delta"]) != _INTENTION_BODY_KEYS
+                        or any(type(value) not in (int, float)
+                               or not isfinite(value) or not -100 <= value <= 100
+                               for value in row["body_delta"].values())):
+                        raise ValueError("invalid authenticated historical witness")
+                    previous_step = step
+
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,6 +364,9 @@ class EpisodicMemory:
         # Derived lookup property, never exported as autobiographical state.
         # M11 cold restore recomputes it from the authenticated episodes.
         self._episode_ids_dense = True
+        # Derived closed-source ownership, never serialized as second Memory.
+        # Rebuilt from native episode custody on M11 cold recovery.
+        self._closed_ref_owners: dict[str, str | None] = {}
         self._seen_event_refs: set[str] = set()
         self._open_event_refs: list[str] = []
         self._open_start_t: int | None = None
@@ -189,6 +402,617 @@ class EpisodicMemory:
             raise ValueError("invalid closed episode range")
         return tuple(self._episodes[start:stop])
 
+    @staticmethod
+    def _claim_closed_refs(
+        owners: dict[str, str | None], episode: Episode,
+    ) -> None:
+        """Track all closed-source owners; duplicate ownership is ambiguous."""
+        for ref in episode.event_refs:
+            if type(ref) is not str or not ref:
+                continue
+            if ref in owners:
+                owners[ref] = None
+            else:
+                owners[ref] = episode.id
+
+    def closed_last_recalled_episode_source_refs(
+        self, *, now: int,
+    ) -> frozenset[str]:
+        """One previously recalled CLOSED episode, not a journal-wide query.
+
+        The episode identity must originate from Memory's prior recall.
+        Only native ordinal episodes are eligible for constant-time lookup.
+        Each source is checked against the full derived closed-custody index;
+        no open, future, duplicated or unauthenticated ref can pass.
+        The natural caller MUST pay UC before using these refs and before
+        reading any JournalViews projection. A read cannot select or score
+        an episode, acquire motor authority, or grant any future effects.
+        """
+        if type(now) is not int or now < 1:
+            raise ValueError("invalid recalled episode world time")
+        if (type(self._last_recalled_ref) is not str
+                or not self._episode_ids_dense):
+            return frozenset()
+        episode = self._find_closed_episode(self._last_recalled_ref)
+        if (episode is None or type(episode.end_t_monde) is not int
+                or episode.end_t_monde >= now
+                or not 1 <= len(episode.event_refs) <= 64):
+            return frozenset()
+        if any(
+            type(ref) is not str or not ref
+            or ref not in self._seen_event_refs
+            or self._closed_ref_owners.get(ref) != episode.id
+            for ref in episode.event_refs
+        ):
+            return frozenset()
+        return frozenset(episode.event_refs)
+
+    def _closed_sleep_custody(self) -> dict[str, str | None]:
+        """Bound the existing closed-episode reference ownership, not memory."""
+        custody: dict[str, str | None] = {}
+        scanned = 0
+        for episode in reversed(self._episodes[-32:]):
+            for ref in reversed(episode.event_refs):
+                scanned += 1
+                # No partial "unique custody" answer is safe when the
+                # verification window is exhausted. Reject the whole read.
+                if scanned > 4096:
+                    return {}
+                if type(ref) is not str or ref not in self._seen_event_refs:
+                    continue
+                if ref in custody:
+                    custody[ref] = None  # Ambiguous ownership cannot be recalled.
+                elif len(custody) < 256:
+                    custody[ref] = episode.id
+                # Keep scanning after reaching 256 selected refs: an older
+                # duplicate must still invalidate a more recent selection.
+        return custody
+
+    def closed_sleep_recall_source_refs(self) -> frozenset[str]:
+        """Bounded source selection; the runtime MUST pay before this read.
+
+        This is not a second autobiographical projection, a WAL read, or a
+        persistent index. Only unique references of CLOSED episodes qualify.
+        """
+        return frozenset(
+            ref for ref, owner in self._closed_sleep_custody().items()
+            if owner is not None
+        )
+
+    def closed_applied_action_witnesses(
+        self, *, autobiography: Sequence[Mapping[str, object]],
+        now: int, primitive: str | None = None, limit: int = 16,
+        per_command_limit: int | None = None,
+        recalled_episode_refs: frozenset[str] | None = None,
+    ) -> tuple[dict[str, object], ...]:
+        """Describe generic first-person applied actions from CLOSED DC-09 refs.
+
+        Only the caller's already-UC-paid, committed JournalViews projection
+        may be supplied. The owner does not read a journal, infer an action
+        outcome's cause, or grant a value/motor preference. The resulting
+        position is explicitly AFTER the action, never an invented origin.
+        A natural runtime caller must pay before obtaining these sources.
+        """
+        if (type(now) is not int or now < 1
+                or primitive is not None and (
+                    type(primitive) is not str or not primitive)
+                or type(limit) is not int or not 1 <= limit <= 16
+                or per_command_limit is not None and (
+                    type(per_command_limit) is not int
+                    or not 1 <= per_command_limit <= limit)):
+            raise ValueError("invalid bounded lived action recall query")
+        if recalled_episode_refs is None:
+            custody = self._closed_sleep_custody()
+        else:
+            # Do not accept arbitrary JournalViews refs or invent an owner.
+            # The caller must pay before acquiring the source selection.
+            expected = self.closed_last_recalled_episode_source_refs(now=now)
+            if (type(recalled_episode_refs) is not frozenset
+                    or not expected or recalled_episode_refs != expected):
+                raise ValueError("unauthorized old episode source selection")
+            episode = self._find_closed_episode(self._last_recalled_ref)
+            if episode is None:
+                raise ValueError("missing recalled episode")
+            custody = {ref: episode.id for ref in expected}
+        by_step: dict[int, dict[str, list[Mapping[str, object]]]] = {}
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        # A source must belong to a uniquely closed, previously ingested
+        # episode; an unclosed, future or duplicate projection fails closed.
+        for event in autobiography:
+            if not isinstance(event, Mapping):
+                continue
+            ref = event.get("event_id")
+            step = event.get("t_monde")
+            kind = event.get("kind")
+            if (type(ref) is not str or custody.get(ref) is None
+                    or type(step) is not int or not 1 <= step < now
+                    or kind not in ("command_experienced",
+                                    "world_transition_experienced")):
+                continue
+            if ref in seen:
+                duplicates.add(ref)
+            seen.add(ref)
+            key = ("commands" if kind == "command_experienced"
+                   else "transitions")
+            by_step.setdefault(step, {"commands": [], "transitions": []})[
+                key
+            ].append(event)
+
+        channels = ("energy", "food", "water", "integrity")
+        def body_value(value):
+            if (not isinstance(value, Mapping)
+                    or set(value) != _INTENTION_BODY_KEYS
+                    or any(type(value[k]) not in (int, float)
+                           or not isfinite(value[k])
+                           or not 0 <= value[k] <= 100 for k in channels)):
+                return None
+            return {k: float(value[k]) for k in channels}
+
+        # Exact DC-09 first-person transition vocabulary. Do not retain
+        # arbitrary technical fields even if Memory is called directly.
+        def lived_effects(raw):
+            if not isinstance(raw, Mapping):
+                return None
+            scalar = {
+                "movement": str, "ate": str, "rest": str,
+                "drank": bool, "tool_crafted": bool,
+                "shelter_formed": bool, "placed_stone_count": int,
+            }
+            if any(type(k) is not str or k not in (*scalar, "collected")
+                   for k in raw):
+                return None
+            detached = {}
+            for key, value in raw.items():
+                if key == "collected":
+                    if (not isinstance(value, Mapping)
+                            or set(value) != {"kind", "quantity"}
+                            or type(value["kind"]) is not str
+                            or not value["kind"]
+                            or type(value["quantity"]) is not int
+                            or value["quantity"] < 0):
+                        return None
+                    detached[key] = {
+                        "kind": value["kind"], "quantity": value["quantity"],
+                    }
+                elif (type(value) is not scalar[key]
+                      or key == "placed_stone_count" and value < 0):
+                    return None
+                else:
+                    detached[key] = value
+            return detached
+
+        witnesses = []
+        for step in sorted(by_step):
+            pair = by_step[step]
+            if len(pair["commands"]) != 1 or len(pair["transitions"]) != 1:
+                continue
+            cmd, outcome = pair["commands"][0], pair["transitions"][0]
+            c_ref, t_ref = cmd["event_id"], outcome["event_id"]
+            if (c_ref == t_ref or c_ref in duplicates or t_ref in duplicates
+                    or set(cmd) != {"event_id", "kind", "t_monde",
+                                    "primitive", "parameters"}
+                    or set(outcome) not in (
+                        {"event_id", "kind", "t_monde", "position_after",
+                         "body_after", "effects"},
+                        {"event_id", "kind", "t_monde", "position_after",
+                         "body_before", "body_after", "effects"})
+                    or type(cmd["primitive"]) is not str
+                    or not cmd["primitive"]
+                    or primitive is not None and cmd["primitive"] != primitive
+                    or not isinstance(cmd["parameters"], Mapping)
+                    or not isinstance(outcome["effects"], Mapping)):
+                continue
+            position = outcome["position_after"]
+            if (not isinstance(position, Mapping)
+                    or set(position) != {"x", "y"}
+                    or any(type(position[k]) is not int for k in ("x", "y"))):
+                continue
+            after = body_value(outcome["body_after"])
+            effects = lived_effects(outcome["effects"])
+            if after is None or effects is None:
+                continue
+            # A prebody is not required in older policies or reduced capture.
+            # A *present but malformed* prebody invalidates the whole pair.
+            before = (body_value(outcome["body_before"])
+                      if "body_before" in outcome else None)
+            if "body_before" in outcome and before is None:
+                continue
+            witnesses.append({
+                "step": step,
+                "primitive": cmd["primitive"],
+                "parameters": dict(cmd["parameters"]),
+                "position_after": {"x": position["x"], "y": position["y"]},
+                "source_event_refs": (c_ref, t_ref),
+                "source_episode_refs": tuple(dict.fromkeys(
+                    (custody[c_ref], custody[t_ref]))),
+                "body_before": before,
+                "body_after": after,
+                "observed_effects": effects,
+                "same_step_body_delta": (
+                    None if before is None else {
+                        k: after[k] - before[k] for k in channels
+                    }),
+                "causal_attribution": False,
+                "decision_evidence": False,
+            })
+        if per_command_limit is None:
+            return tuple(witnesses[-limit:])
+        # Exact primitive + parameters identity, without a privileged action.
+        # The already-bounded source scan is unchanged; the paid natural
+        # caller can retain rare commands without giving Memory a score.
+        selected = []
+        for row in reversed(witnesses):
+            # A first-person scalar can be an authorized canonical-float
+            # mapping. Compare exact parameter structures, not a hash key
+            # that would crash on an unhashable nested scalar. The selected
+            # set is always <= 16, so equality checks remain bounded.
+            already_selected = sum(
+                previous["primitive"] == row["primitive"]
+                and same_lived_command_parameters(
+                    previous["parameters"], row["parameters"])
+                for previous in selected
+            )
+            if already_selected >= per_command_limit:
+                continue
+            selected.append(row)
+            if len(selected) == limit:
+                break
+        return tuple(reversed(selected))
+
+    def closed_sleep_site_witnesses(
+        self, *, autobiography: Sequence[Mapping[str, object]],
+        site: tuple[int, int], now: int,
+    ) -> tuple[dict[str, object], ...]:
+        """Preserve the historical sleep-only, already-paid witness contract."""
+        return self.closed_stationary_site_witnesses(
+            autobiography=autobiography, site=site, now=now,
+        )["dormir"]
+
+    def closed_stationary_site_witnesses(
+        self, *, autobiography: Sequence[Mapping[str, object]],
+        site: tuple[int, int], now: int,
+    ) -> dict[str, tuple[dict[str, object], ...]]:
+        """Read bounded sleep and awake-wait controls in ONE paid source scan.
+
+        Caller must pay UC and pass only a DC-09 JournalViews projection.
+        Never consult WorldBody or technical journal sources here, nor create
+        inferred pre-action perception, site safety, or causal attribution.
+        The wait control is descriptive only, not a motor or value signal.
+        Paired events are observations, not full sleep sessions, a prediction,
+        or an inferred reward. A waking cue may be attached only to the
+        immediately preceding sleep action when ALL three postwake sources
+        (cue, applied command, physical transition) are independently closed.
+        This is an observed temporal boundary, NOT proof of an uninterrupted
+        subjective sleep session. Unknown pre-action body stays unknown.
+        """
+        if (type(now) is not int or now < 1 or type(site) is not tuple
+                or len(site) != 2 or any(type(v) is not int for v in site)):
+            raise ValueError("invalid personal sleep recall context")
+        custody = self._closed_sleep_custody()
+        per_step: dict[int, dict[str, list[Mapping[str, object]]]] = {}
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for event in autobiography:
+            if not isinstance(event, Mapping):
+                continue
+            ref, kind, step = (event.get("event_id"), event.get("kind"),
+                               event.get("t_monde"))
+            if (type(ref) is not str or custody.get(ref) is None
+                    or type(step) is not int or not 1 <= step < now
+                    or kind not in {"command_experienced",
+                                    "world_transition_experienced",
+                                    "waking_body_perceived"}):
+                continue
+            if ref in seen:
+                duplicates.add(ref)
+            seen.add(ref)
+            per_step.setdefault(
+                step, {"command": [], "transition": [], "waking": []},
+            )[{
+                "command_experienced": "command",
+                "world_transition_experienced": "transition",
+                "waking_body_perceived": "waking",
+            }[kind]].append(event)
+
+        def adjacent_waking_boundary(sleep_step: int) -> dict[str, object] | None:
+            """Relate exactly one next-step personally perceived waking cue.
+
+            Trust only the caller's committed DC-09 projection AND Memory's
+            unique CLOSED ownership. Never inspect technical wake markers,
+            infer continuity across voluntary re-admissions, or synthesize
+            a cue from two adjacent bodily snapshots.
+            """
+            next_step = per_step.get(sleep_step + 1)
+            if (next_step is None
+                    or any(len(next_step[k]) != 1
+                           for k in ("waking", "command", "transition"))):
+                return None
+            wake = next_step["waking"][0]
+            command = next_step["command"][0]
+            transition = next_step["transition"][0]
+            refs = (wake["event_id"], command["event_id"],
+                    transition["event_id"])
+            if (len(set(refs)) != 3 or any(ref in duplicates for ref in refs)
+                    or set(wake) != {
+                        "event_id", "kind", "t_monde",
+                        "position", "body_perceived",
+                    }
+                    or set(command) != {
+                        "event_id", "kind", "t_monde",
+                        "primitive", "parameters",
+                    }
+                    or type(command["primitive"]) is not str
+                    or not command["primitive"]
+                    or not isinstance(command["parameters"], Mapping)
+                    or set(transition) != {
+                        "event_id", "kind", "t_monde", "position_after",
+                        "body_before", "body_after", "effects",
+                    }):
+                return None
+            position = wake["position"]
+            perceived = wake["body_perceived"]
+            physical_before = transition["body_before"]
+            if (not isinstance(position, Mapping)
+                    or set(position) != {"x", "y"}
+                    or any(type(position[k]) is not int for k in ("x", "y"))
+                    or (position["x"], position["y"]) != site
+                    or not isinstance(perceived, Mapping)
+                    or not isinstance(physical_before, Mapping)
+                    or set(perceived) != _INTENTION_BODY_KEYS
+                    or set(physical_before) != _INTENTION_BODY_KEYS
+                    or any(
+                        type(perceived[k]) not in (int, float)
+                        or type(physical_before[k]) not in (int, float)
+                        or not isfinite(perceived[k])
+                        or not isfinite(physical_before[k])
+                        or not 0 <= perceived[k] <= 100
+                        or not 0 <= physical_before[k] <= 100
+                        or float(perceived[k]) != float(physical_before[k])
+                        for k in _INTENTION_BODY_KEYS
+                    )):
+                return None
+            return {
+                "step": sleep_step + 1,
+                "cue_event_ref": wake["event_id"],
+                "cue_episode_ref": custody[wake["event_id"]],
+                "applied_command_ref": command["event_id"],
+                "applied_transition_ref": transition["event_id"],
+                "applied_primitive": command["primitive"],
+                "body_perceived": {
+                    k: float(perceived[k]) for k in
+                    ("energy", "food", "water", "integrity")
+                },
+                "relation": "immediate_next_step_only",
+            }
+
+        found: dict[str, list[dict[str, object]]] = {
+            "dormir": [], "attendre": [],
+        }
+        for step in sorted(per_step):
+            pair = per_step[step]
+            if len(pair["command"]) != 1 or len(pair["transition"]) != 1:
+                continue
+            command, transition = pair["command"][0], pair["transition"][0]
+            refs = (command["event_id"], transition["event_id"])
+            if (any(ref in duplicates for ref in refs)
+                    or set(command) != {"event_id", "kind", "t_monde",
+                                       "primitive", "parameters"}
+                    or command["primitive"] not in ("dormir", "attendre")
+                    or command["parameters"] != {}
+                    or set(transition) not in (
+                        {"event_id", "kind", "t_monde", "position_after",
+                         "body_after", "effects"},
+                        {"event_id", "kind", "t_monde", "position_after",
+                         "body_before", "body_after", "effects"})):
+                continue
+            position, body = (transition["position_after"],
+                              transition["body_after"])
+            if (not isinstance(position, Mapping)
+                    or set(position) != {"x", "y"}
+                    or any(type(position[k]) is not int for k in ("x", "y"))
+                    or (position["x"], position["y"]) != site
+                    or not isinstance(body, Mapping)
+                    or set(body) != _INTENTION_BODY_KEYS
+                    or any(type(body[k]) not in (int, float)
+                           or not isfinite(body[k]) or not 0 <= body[k] <= 100
+                           for k in _INTENTION_BODY_KEYS)):
+                continue
+            # Only a versioned, authorized DC-09 projection may carry a
+            # personally perceived same-step pre-action body. Never infer
+            # it from the physical journal or adjacent observations.
+            prebody = transition.get("body_before")
+            if prebody is not None and (
+                    not isinstance(prebody, Mapping)
+                    or set(prebody) != _INTENTION_BODY_KEYS
+                    or any(type(prebody[k]) not in (int, float)
+                           or not isfinite(prebody[k])
+                           or not 0 <= prebody[k] <= 100
+                           for k in _INTENTION_BODY_KEYS)):
+                continue
+            # No technical WorldBody snapshot and no inferred same-step
+            # pre-action state. Only a UNIQUE previously CLOSED first-person
+            # after-transition at the IMMEDIATELY preceding world step can
+            # support a contextual between-step bodily change. This is not
+            # sleep-specific causality or proof of one uninterrupted admission.
+            previous_transition_ref = None
+            previous_episode_ref = None
+            adjacent_after_state_delta = None
+            previous_candidates = per_step.get(step - 1, {}).get(
+                "transition", [])
+            if len(previous_candidates) == 1:
+                previous = previous_candidates[0]
+                previous_ref = previous.get("event_id")
+                previous_site = previous.get("position_after")
+                previous_body = previous.get("body_after")
+                if (type(previous_ref) is str
+                        and previous_ref not in duplicates
+                        and custody.get(previous_ref) is not None
+                        and set(previous) in (
+                            {"event_id", "kind", "t_monde",
+                             "position_after", "body_after", "effects"},
+                            {"event_id", "kind", "t_monde",
+                             "position_after", "body_before",
+                             "body_after", "effects"},
+                        )
+                        and isinstance(previous_site, Mapping)
+                        and set(previous_site) == {"x", "y"}
+                        and all(type(previous_site[k]) is int
+                                for k in ("x", "y"))
+                        and (previous_site["x"], previous_site["y"]) == site
+                        and isinstance(previous_body, Mapping)
+                        and set(previous_body) == _INTENTION_BODY_KEYS
+                        and all(type(previous_body[k]) in (int, float)
+                                and isfinite(previous_body[k])
+                                and 0 <= previous_body[k] <= 100
+                                for k in _INTENTION_BODY_KEYS)
+                        and isinstance(previous.get("effects"), Mapping)):
+                    previous_transition_ref = previous_ref
+                    previous_episode_ref = custody[previous_ref]
+                    adjacent_after_state_delta = {
+                        k: float(body[k]) - float(previous_body[k])
+                        for k in ("energy", "food", "water", "integrity")
+                    }
+            primitive = command["primitive"]
+            found[primitive].append({
+                "step": step,
+                "site_ref": f"sleep-site:{site[0]}:{site[1]}",
+                "source_event_refs": refs,
+                "source_episode_refs": tuple(dict.fromkeys(custody[r] for r in refs)),
+                "body_after": {k: float(body[k]) for k in
+                               ("energy", "food", "water", "integrity")},
+                "body_before": (
+                    None if prebody is None else
+                    {k: float(prebody[k]) for k in
+                     ("energy", "food", "water", "integrity")}
+                ),
+                "same_step_body_delta": (
+                    None if prebody is None else
+                    {k: float(body[k]) - float(prebody[k]) for k in
+                     ("energy", "food", "water", "integrity")}
+                ),
+                "continuous_sleep_session": None,
+                # One bounded autobiographical temporal relation, never a
+                # continuous session or proof of why I1 chose to sleep.
+                "next_step_waking": (
+                    adjacent_waking_boundary(step)
+                    if primitive == "dormir" else None
+                ),
+                "previous_step_after_ref": previous_transition_ref,
+                "previous_step_after_episode_ref": previous_episode_ref,
+                "adjacent_after_state_delta": adjacent_after_state_delta,
+            })
+        # Each activity remains separately bounded; no cross-activity
+        # mixing or rereading the journal/Memory for the same UC debit.
+        return {
+            primitive: tuple(rows[-16:])
+            for primitive, rows in found.items()
+        }
+
+    def describe_closed_sleep_site(
+        self, *, witnesses: Sequence[Mapping[str, object]],
+        site: tuple[int, int],
+    ) -> dict[str, object]:
+        """Descriptive view of a caller's already PAID sleep-site witnesses.
+
+        No causal effect, session, safety, preference, expected utility,
+        learned Q, or motor evidence is inferred from adjacent after-states.
+        This method never consults a journal or creates persistent state.
+        """
+        if (type(site) is not tuple or len(site) != 2
+                or any(type(v) is not int for v in site)):
+            raise ValueError("invalid sleep-site summary coordinate")
+        channels = ("energy", "food", "water", "integrity")
+        counts = {name: {"increase": 0, "decrease": 0, "stable": 0,
+                         "unknown": 0} for name in channels}
+        # Preserve historical adjacent after->after reports separately from
+        # the personally witnessed before->after delta of one applied step.
+        same_step_counts = {name: {"increase": 0, "decrease": 0,
+                                   "stable": 0, "unknown": 0}
+                            for name in channels}
+        rows = []
+        seen: set[tuple[str, str]] = set()
+        for witness in witnesses:
+            if not isinstance(witness, Mapping):
+                continue
+            refs = witness.get("source_event_refs")
+            position_ref = witness.get("site_ref")
+            if (position_ref != f"sleep-site:{site[0]}:{site[1]}"
+                    or not isinstance(refs, tuple) or len(refs) != 2
+                    or any(type(x) is not str or not x for x in refs)
+                    or refs[0] == refs[1] or refs in seen):
+                continue
+            seen.add(refs)
+            delta = witness.get("adjacent_after_state_delta")
+            prior = witness.get("previous_step_after_ref")
+            source = witness.get("previous_step_after_episode_ref")
+            valid = (
+                isinstance(delta, Mapping)
+                and set(delta) == set(channels)
+                and type(prior) is str and bool(prior)
+                and type(source) is str and bool(source)
+                and prior not in refs
+                and all(type(delta[k]) in (int, float)
+                        and isfinite(delta[k]) for k in channels)
+            )
+            if valid:
+                kinds = {k: ("increase" if delta[k] > 0 else
+                             "decrease" if delta[k] < 0 else "stable")
+                         for k in channels}
+            else:
+                kinds = {k: "unknown" for k in channels}
+            for k, kind in kinds.items():
+                counts[k][kind] += 1
+            same_delta = witness.get("same_step_body_delta")
+            before = witness.get("body_before")
+            after = witness.get("body_after")
+            same_valid = (
+                isinstance(same_delta, Mapping)
+                and isinstance(before, Mapping)
+                and isinstance(after, Mapping)
+                and set(same_delta) == set(channels)
+                and set(before) == set(channels)
+                and set(after) == set(channels)
+                and all(
+                    type(before[k]) in (int, float)
+                    and type(after[k]) in (int, float)
+                    and type(same_delta[k]) in (int, float)
+                    and isfinite(before[k]) and isfinite(after[k])
+                    and isfinite(same_delta[k])
+                    and 0 <= before[k] <= 100 and 0 <= after[k] <= 100
+                    and float(after[k]) - float(before[k])
+                        == float(same_delta[k])
+                    for k in channels
+                )
+            )
+            same_kinds = {
+                k: ("increase" if same_delta[k] > 0 else
+                    "decrease" if same_delta[k] < 0 else "stable")
+                if same_valid else "unknown"
+                for k in channels
+            }
+            for k, kind in same_kinds.items():
+                same_step_counts[k][kind] += 1
+            rows.append({
+                "step": witness.get("step"),
+                "source_event_refs": refs,
+                "previous_step_after_ref": prior if valid else None,
+                "previous_step_after_episode_ref": source if valid else None,
+                "directions": kinds,
+                "same_step_directions": same_kinds,
+                "same_step_prebody_attested": same_valid,
+            })
+        return {
+            "site_ref": f"sleep-site:{site[0]}:{site[1]}",
+            "witness_count": len(rows),
+            "channels": counts,
+            "same_step_channels": same_step_counts,
+            "observations": tuple(rows),
+            "causal_attribution": False,
+            "continuous_sleep_session": None,
+            "decision_evidence": False,
+        }
+
     @property
     def last_recalled_ref(self) -> str | None:
         return self._last_recalled_ref
@@ -215,10 +1039,378 @@ class EpisodicMemory:
             raise ValueError("intention id already exists")
         self._intentions[intention.id] = intention
 
+    def remember_considered_option(
+        self, *, signature: str, source_option_ref: str,
+        considered_step: int, cost_uc: int,
+    ) -> bool:
+        """Remember a genuine local or spatial option BEFORE physical action.
+
+        Caller verifies Stage8 evidence, personal spatial ownership and real
+        UC payment. Memory retains a semantic prospect, not a command,
+        reward, goal, observed arrival or motor authorization.
+        """
+        if not self._atomic_world_step_length_boundary:
+            return False
+        if (type(considered_step) is not int or considered_step < 1
+            or type(cost_uc) is not int or cost_uc < 1
+            or type(signature) is not str
+            or not _authentic_considered_option_source(
+                signature, source_option_ref, considered_step,
+            )):
+            raise ValueError("invalid personally considered option provenance")
+        key = "intention:i1:option:" + signature
+        existing = self._intentions.get(key)
+        if existing is not None:
+            if existing.trigger_type != "option":
+                raise ValueError("semantic intention identity collision")
+            # A fresh, UC-paid Stage8 evaluation may form a *new* prospect
+            # after the old, never-applied prospect expired. An unexpired
+            # prospect cannot be refreshed, and a mere consideration must
+            # never replace personally APPLIED evidence, even after expiry.
+            if ("applied_step" in existing.trigger_value
+                or existing.deadline_step is None
+                or considered_step <= existing.deadline_step):
+                return False
+        remaining = {
+            k: v for k, v in self._intentions.items()
+            if v.trigger_type != "option" or (
+                v.deadline_step is not None
+                and v.deadline_step >= considered_step
+            )
+        }
+        if sum(v.trigger_type == "option"
+               for v in remaining.values()) >= 16:
+            return False
+        intent = Intention(
+            id=key, goal_type="option_reconsideration", target=signature,
+            trigger_type="option",
+            trigger_value={
+                "considered_step": considered_step,
+                "source_option_ref": source_option_ref,
+            },
+            deadline_step=considered_step + min(
+                64, max(2, 2 * self._config.max_episode_steps),
+            ),
+            base_pressure=0.0, monitoring="spontaneous", cost_uc=cost_uc,
+            wake_authorized=False, state="pending",
+            candidacy_active=False,
+        )
+        intent.validate()
+        remaining[key] = intent
+        self._intentions = remaining
+        return True
+
+    def reconcile_option_intentions(
+        self, *, available_signatures: frozenset[str], world_step: int,
+        namespace: str = "i1:affordance:",
+    ) -> tuple[str, ...]:
+        """Suspend absent prospects; reconsider only freshly afforded ones.
+
+        Natural Planning must charge UC BEFORE invoking this Memory scan.
+        Does not generate an option, action, goal or competition evidence.
+        Expiry makes the prospective commitment terminal, even after M11.
+        """
+        if (type(world_step) is not int or world_step < 1
+            or namespace not in (
+                "i1:affordance:", "memory_place_return:", "lived_site_return:",
+            )
+            or type(available_signatures) is not frozenset
+            or any(type(ref) is not str or not ref.startswith(namespace)
+                   for ref in available_signatures)
+            or len(available_signatures) > 128):
+            raise ValueError("invalid first-person availability set")
+        changed = []
+        # Construct a new immutable mapping, then publish atomically.
+        updated = dict(self._intentions)
+        for ref, record in self._intentions.items():
+            if (record.trigger_type != "option"
+                or not record.target.startswith(namespace)):
+                continue
+            if record.state in ("done", "abandoned", "awaiting_observation"):
+                continue
+            if record.deadline_step is not None and world_step > record.deadline_step:
+                target = "abandoned"
+            elif record.target in available_signatures:
+                target = "pending"
+            else:
+                target = "suspended"
+            if target != record.state:
+                updated[ref] = replace(record, state=target)
+                updated[ref].validate()
+                changed.append(ref)
+        self._intentions = updated
+        return tuple(changed)
+
+    def expire_option_intentions(self, *, world_step: int) -> tuple[str, ...]:
+        """Chronological expiry without an invented Perception or motor event.
+
+        Reduced sleep has no fresh local affordance or spatial observation.
+        It can only end overdue prospective availability, not confirm or
+        suspend an option on perceptual grounds. Pending applied-action
+        followups remain awaiting real next-capture resolution.
+        """
+        if type(world_step) is not int or world_step < 1:
+            raise ValueError("invalid prospective expiration clock")
+        changed = {}
+        for ref, record in self._intentions.items():
+            if (record.trigger_type == "option"
+                and record.state in ("pending", "suspended")
+                and record.deadline_step is not None
+                and world_step > record.deadline_step):
+                updated = replace(record, state="abandoned")
+                updated.validate()
+                changed[ref] = updated
+        if changed:
+            self._intentions = {**self._intentions, **changed}
+        return tuple(sorted(changed))
+
+    @property
+    def applied_option_intention_count(self) -> int:
+        """Metadata only; no intentions or causal values exported."""
+        return sum(1 for x in self._intentions.values()
+                   if x.trigger_type == "option"
+                   and x.target.startswith("i1:affordance:")
+                   and x.state in ("pending", "suspended"))
+
+    @property
+    def spatial_option_prospect_count(self) -> int:
+        """Only owner metadata; the caller pays UC for any actual recall."""
+        return sum(1 for x in self._intentions.values()
+                   if x.trigger_type == "option"
+                   and x.target.startswith("memory_place_return:")
+                   and x.state in ("pending", "suspended"))
+
+    @property
+    def lived_site_option_prospect_count(self) -> int:
+        """Bounded, nonmotor interest in sites personally experienced."""
+        return sum(1 for x in self._intentions.values()
+                   if x.trigger_type == "option"
+                   and x.target.startswith("lived_site_return:")
+                   and x.state in ("pending", "suspended"))
+
+    def remember_applied_option(
+        self, *, signature: str, source_option_ref: str,
+        applied_step: int, cost_uc: int,
+        body_before: Mapping[str, float] | None = None,
+    ) -> bool:
+        """Record a semantic possibility after a CHOSEN, APPLIED local action.
+
+        The caller verifies Action Control and pays cognitive encoding UC
+        BEFORE committing the physical action. This owner stores neither a
+        command nor a predicted consequence; M11 exports the same intention
+        map as other prospective records. I0/reference Stages cannot opt in.
+        """
+        if not self._atomic_world_step_length_boundary:
+            return False
+        if (type(signature) is not str
+            or not signature.startswith("i1:affordance:")
+            or len(signature) > 256
+            or type(source_option_ref) is not str
+            or type(applied_step) is not int
+            or applied_step < 1
+            or not source_option_ref.startswith(
+                f"option:i1:local:t{applied_step}:")
+            or type(cost_uc) is not int or cost_uc < 1):
+            raise ValueError("invalid physically witnessed option intention")
+        if body_before is not None:
+            if (not isinstance(body_before, Mapping)
+                or set(body_before) != _INTENTION_BODY_KEYS
+                or any(type(v) not in (int, float)
+                       or not isfinite(v) or not 0 <= v <= 100
+                       for v in body_before.values())):
+                raise ValueError("invalid pre-application first-person body")
+        key = "intention:i1:option:" + signature
+        existing = self._intentions.get(key)
+        if existing is not None and existing.trigger_type != "option":
+            raise ValueError("intention identity collision")
+        if (existing is not None
+            and "applied_step" in existing.trigger_value
+            and existing.trigger_value["applied_step"] >= applied_step):
+            return False  # no repeated benefit from the same applied hop
+        # Bounded current-life records; expired/superseded option memories
+        # are discarded only on a successful, paid new recording.
+        remaining = {
+            k: v for k, v in self._intentions.items()
+            if (v.trigger_type != "option"
+                or (v.deadline_step is not None
+                    and v.deadline_step >= applied_step))
+        }
+        active = sum(1 for v in remaining.values()
+                     if v.trigger_type == "option")
+        if key not in remaining and active >= 16:
+            return False
+        if existing is not None and existing.state == "awaiting_observation":
+            # A missing next capture cannot be overwritten with a new
+            # commanded effect or retroactive evidence.
+            return False
+        # Use only witnesses still inside Memory's own causal TTL.
+        # Otherwise a newly applied action would quietly resurrect past
+        # observations that Planning was already forbidden to recall.
+        retained = remaining.get(key)
+        prior_witnesses = (
+            list(retained.trigger_value.get("observations", ()))
+            if retained is not None else []
+        )
+        if retained is not None and "observed_step" in retained.trigger_value:
+            witness = retained.trigger_value
+            prior_witnesses.append({
+                "applied_step": witness["applied_step"],
+                "source_option_ref": witness["source_option_ref"],
+                "observed_step": witness["observed_step"],
+                "body_delta": dict(witness["body_delta"]),
+            })
+        prior_witnesses = prior_witnesses[-8:]
+        new = Intention(
+            id=key, goal_type="option_reconsideration", target=signature,
+            trigger_type="option",
+            trigger_value={
+                "applied_step": applied_step,
+                "source_option_ref": source_option_ref,
+                **({"body_before": {
+                    k: float(body_before[k]) for k in sorted(_INTENTION_BODY_KEYS)
+                }} if body_before is not None else {}),
+                **({"observations": prior_witnesses}
+                   if prior_witnesses else {}),
+            },
+            deadline_step=applied_step + min(64, max(
+                2, 2 * self._config.max_episode_steps,
+            )),
+            base_pressure=0.0, monitoring="spontaneous", cost_uc=cost_uc,
+            wake_authorized=False,
+            # Application is NEVER proof that an outcome was achieved.
+            # A fresh capture must resolve the pre-body witness; old callers
+            # without a capture retain only an unconfirmed historical trace.
+            state=("awaiting_observation" if body_before is not None
+                   else "pending"),
+            candidacy_active=False,
+        )
+        new.validate()
+        remaining[key] = new
+        self._intentions = remaining
+        return True
+
+    def observe_applied_option_followups(
+        self, *, world_step: int, body_after: Mapping[str, float],
+    ) -> tuple[tuple[str, str, Mapping[str, float] | None], ...]:
+        """Resolve prior applied-option witnesses from ONE new Perception.
+
+        Observed body change is a contextual association, NOT a demonstrated
+        action effect, Q reward, achieved goal, or permission to repeat.
+        Missing the immediate following real capture loses attribution.
+        Memory alone owns this finite lived intention record under M11.
+        """
+        if (type(world_step) is not int or world_step < 1
+            or not isinstance(body_after, Mapping)
+            or set(body_after) != _INTENTION_BODY_KEYS
+            or any(type(v) not in (int, float)
+                   or not isfinite(v) or not 0 <= v <= 100
+                   for v in body_after.values())):
+            raise ValueError("invalid real bodily followup")
+        changed = {}
+        events = []
+        for ref, intent in self._intentions.items():
+            if (intent.trigger_type != "option"
+                or intent.state != "awaiting_observation"):
+                continue
+            applied = intent.trigger_value["applied_step"]
+            if world_step <= applied:
+                continue
+            original = intent.trigger_value
+            witness = {
+                "applied_step": applied,
+                "source_option_ref": original["source_option_ref"],
+                **({"observations": [
+                    {**entry, "body_delta": dict(entry["body_delta"])}
+                    for entry in original["observations"]
+                ]} if "observations" in original else {}),
+            }
+            if world_step == applied + 1:
+                delta = {
+                    k: float(body_after[k]) - original["body_before"][k]
+                    for k in sorted(_INTENTION_BODY_KEYS)
+                }
+                witness["observed_step"] = world_step
+                witness["body_delta"] = delta
+                status = "observed_not_causal"
+                state = "pending"
+                evidence = delta
+            else:
+                # A missing first-person step cannot be retroactively filled.
+                status = "not_observed_in_next_step"
+                state = "suspended"
+                evidence = None
+            updated = replace(intent, trigger_value=witness, state=state)
+            updated.validate()
+            changed[ref] = updated
+            events.append((ref, status, evidence))
+        if changed:
+            self._intentions = {**self._intentions, **changed}
+        return tuple(events)
+
+    def observed_option_witnesses(
+        self, *, signature: str, world_step: int,
+    ) -> tuple[dict[str, object], ...]:
+        """Paid-by-Planning query of contextual observations, not new Q.
+
+        Returns copies, not M11-owner mutable references; caller checks the
+        current first-person affordance and charges its cognitive UC first.
+        """
+        if (type(signature) is not str or not signature
+            or type(world_step) is not int or world_step < 1):
+            raise ValueError("invalid episodic option witness query")
+        record = self._intentions.get("intention:i1:option:" + signature)
+        if (record is None or record.trigger_type != "option"
+            or record.state not in ("pending", "done")
+            or record.deadline_step is None or world_step > record.deadline_step):
+            return ()
+        value = record.trigger_value
+        rows = list(value.get("observations", ()))
+        if "observed_step" in value:
+            rows.append({
+                "applied_step": value["applied_step"],
+                "source_option_ref": value["source_option_ref"],
+                "observed_step": value["observed_step"],
+                "body_delta": value["body_delta"],
+            })
+        return tuple({
+            "applied_step": row["applied_step"],
+            "source_option_ref": row["source_option_ref"],
+            "observed_step": row["observed_step"],
+            "body_delta": dict(row["body_delta"]),
+        } for row in rows)
+
+    def recalled_applied_option(
+        self, *, signature: str, world_step: int,
+    ) -> bool:
+        """Passive, paid-by-caller memory lookup of a currently offered option.
+
+        Reading a preference creates no GoalProposal, Option, UC exemption or
+        motor right. The Planning caller independently verifies affordance.
+        """
+        if (type(signature) is not str or not signature
+            or type(world_step) is not int or world_step < 1):
+            raise ValueError("invalid option recall query")
+        record = self._intentions.get("intention:i1:option:" + signature)
+        return bool(
+            record is not None
+            and record.trigger_type == "option"
+            and record.state in ("pending", "done")
+            and record.deadline_step is not None
+            and record.trigger_value.get(
+                "applied_step", record.trigger_value.get("considered_step")
+            ) < world_step <= record.deadline_step
+        )
+
     def complete_intention(self, intention_ref: str) -> None:
         current = self._intentions.get(intention_ref)
         if current is None:
             raise KeyError(f"unknown intention: {intention_ref}")
+        # Legacy time/context/event intentions may finish through their
+        # existing trigger contract. Nonspatial option intentions have no
+        # independently witnessed semantic success predicate yet; merely
+        # applying their command MUST NOT create an achievement assertion.
+        if current.trigger_type == "option":
+            raise ValueError("option intention has no verified success contract")
         self._intentions[intention_ref] = Intention(
             id=current.id,
             goal_type=current.goal_type,
@@ -268,6 +1460,12 @@ class EpisodicMemory:
     ) -> tuple[IntentionTriggerResult, ...]:
         results: list[IntentionTriggerResult] = []
         for item in self.intentions:
+            # Option memories are semantic recollections, NOT autonomous
+            # goal proposals or authorized waking intentions. Their only
+            # consumers are currently afforded, separately paid Planning
+            # candidates in natural I1.
+            if item.trigger_type == "option":
+                continue
             if item.state not in {"pending", "triggered"}:
                 continue
             matches = self._trigger_matches(item, st=st, t_monde=t_monde)
@@ -492,6 +1690,7 @@ class EpisodicMemory:
             and episode.id == f"episode:{len(self._episodes)}"
         )
         self._episodes.append(episode)
+        self._claim_closed_refs(self._closed_ref_owners, episode)
 
         self._open_event_refs = []
         self._open_start_t = None
@@ -995,14 +2194,63 @@ class EpisodicMemory:
             raise ValueError("invalid Memory recall threshold snapshot")
         restored_above = set(raw_above)
 
+        # Intention records are causal M11 state. Decode all of them before
+        # mutating ANY Memory owner field. Reject duplicate IDs and coercions
+        # that could fabricate wake authorization or active candidacy.
+        raw_intentions = state.get("intentions", [])
+        if not isinstance(raw_intentions, list):
+            raise ValueError("Memory intentions must be a list")
+        validated_intentions: dict[str, Intention] = {}
+        for raw in raw_intentions:
+            if not isinstance(raw, Mapping):
+                raise ValueError("invalid intention state")
+            required = {
+                "id", "goal_type", "target", "trigger_type", "trigger_value",
+                "deadline_step", "base_pressure", "monitoring", "cost_uc",
+                "wake_authorized", "state", "candidacy_active",
+            }
+            if (set(raw) != required
+                or any(type(raw[k]) is not str or not raw[k]
+                       for k in ("id", "goal_type", "target", "trigger_type",
+                                 "monitoring", "state"))
+                or type(raw["wake_authorized"]) is not bool
+                or type(raw["candidacy_active"]) is not bool
+                or type(raw["cost_uc"]) is not int
+                or type(raw["base_pressure"]) not in (int, float)
+                or (raw["deadline_step"] is not None
+                    and type(raw["deadline_step"]) is not int)):
+                raise ValueError("malformed persisted intention")
+            item = Intention(
+                id=raw["id"], goal_type=raw["goal_type"],
+                target=raw["target"], trigger_type=raw["trigger_type"],
+                trigger_value=raw["trigger_value"],
+                deadline_step=raw["deadline_step"],
+                base_pressure=raw["base_pressure"],
+                monitoring=raw["monitoring"], cost_uc=raw["cost_uc"],
+                wake_authorized=raw["wake_authorized"],
+                state=raw["state"], candidacy_active=raw["candidacy_active"],
+            )
+            item.validate()
+            if item.id in validated_intentions:
+                raise ValueError("duplicate persisted intention identity")
+            validated_intentions[item.id] = item
+
         # Re-derive the lookup mode from the complete authenticated imported
         # history. Do not trust a persisted flag or select an older snapshot.
         restored_dense = all(
             episode.id == f"episode:{ordinal}"
             for ordinal, episode in enumerate(restored)
         )
+        # Derive the complete source index once on cold restoration, never
+        # from an unauthenticated serialized index or on each paid recall.
+        # Unusual imported episode orders remain supported by legacy APIs,
+        # but cannot use the constant-time new I1-only scoped reader.
+        closed_ref_owners: dict[str, str | None] = {}
+        for episode in restored:
+            self._claim_closed_refs(closed_ref_owners, episode)
         self._episodes = restored
         self._episode_ids_dense = restored_dense
+        self._closed_ref_owners = closed_ref_owners
         self._recall_above_threshold = restored_above
         self._seen_event_refs = {
             str(x) for x in state.get("seen_event_refs", [])
@@ -1032,30 +2280,4 @@ class EpisodicMemory:
             None if raw_recalled is None else str(raw_recalled)
         )
 
-        raw_intentions = state.get("intentions", [])
-        if not isinstance(raw_intentions, list):
-            raise ValueError("Memory intentions must be a list")
-        self._intentions = {}
-        for raw in raw_intentions:
-            if not isinstance(raw, Mapping):
-                raise ValueError("invalid intention state")
-            item = Intention(
-                id=str(raw["id"]),
-                goal_type=str(raw["goal_type"]),
-                target=str(raw["target"]),
-                trigger_type=str(raw["trigger_type"]),
-                trigger_value=raw.get("trigger_value"),
-                deadline_step=(
-                    None
-                    if raw.get("deadline_step") is None
-                    else int(raw["deadline_step"])
-                ),
-                base_pressure=float(raw["base_pressure"]),
-                monitoring=str(raw["monitoring"]),
-                cost_uc=int(raw["cost_uc"]),
-                wake_authorized=bool(raw["wake_authorized"]),
-                state=str(raw["state"]),
-                candidacy_active=bool(raw["candidacy_active"]),
-            )
-            item.validate()
-            self._intentions[item.id] = item
+        self._intentions = validated_intentions

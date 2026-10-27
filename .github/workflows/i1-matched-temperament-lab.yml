@@ -1,0 +1,22 @@
+name: I1 matched temperament Lab contract
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/i1/runtime/i1_birth_temperament.py'
+      - 'src/i1/lab/matched_temperament_research.py'
+      - 'tests/i1/test_i1_lab_matched_temperament.py'
+      - '.github/workflows/i1-matched-temperament-lab.yml'
+permissions:
+  contents: read
+jobs:
+  matched-config:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - run: python -m unittest discover -s tests/i1 -p test_i1_lab_matched_temperament.py -v

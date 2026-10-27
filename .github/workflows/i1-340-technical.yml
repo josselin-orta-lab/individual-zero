@@ -1,0 +1,23 @@
+name: I1 issue 340 contract
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/i1/experimental/local_command_dedup.py'
+      - 'tests/i1/test_i1_issue_340_isolated.py'
+      - '.github/workflows/i1-340-technical.yml'
+permissions:
+  contents: read
+jobs:
+  contract:
+    name: I1 340 (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m unittest discover -s tests/i1 -p test_i1_issue_340_isolated.py -v

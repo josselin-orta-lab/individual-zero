@@ -10,6 +10,47 @@
 - **Goal and options:** `modules/goal_manager.py`, `modules/stage6_planning.py`, `modules/exploration.py` generate and arbitrate hypotheses about possible goals and acts.
 - **Decision and execution:** `modules/gatekeeper.py`, `modules/competition.py`, `modules/action_control.py` and `runtime/stage4_runtime.py` establish admission and dispatch; the world determines actual effects.
 
+## Current natural I1 mortality contract (#457)
+
+Natural I1 births with living physiology v3 treat **food at zero** and **water
+at zero** as independent terminal physical causes, `zero_food` and
+`zero_water`. There is no starvation/dehydration integrity drain.
+Food/water above zero remain continuous first-person need values without
+an innate food/eating or drinking action. A successful physical eating or
+drinking action at the end of the same step can rescue the matching reserve
+after ordinary decay; an unavailable/failed action cannot. A real sleep step
+may restore energy or integrity but cannot compensate for zero food/water.
+Hazards, toxic food, and integrity death remain independent causes.
+
+The physical version is frozen before an individual's birth, included in
+the causal world digest, and must match across M11 cold recovery. Old
+reference physics remains an explicitly different contract. These are
+world consequences, **not commands**, priors about edible resources, or
+proof of improved survival.
+
+## Newborn living-v4 substrate-coupled rest and recovery (#461)
+
+For **new I1 births only**, functional `energy` and tissue `integrity`
+recovery while sleeping or resting are bounded by *actually available
+post-metabolism* `food` as metabolic substrate. The resource cost of
+restorative energy is 0.05 food unit per recovered energy unit. Healing
+costs 0.10 food unit per integrity unit. Both are frozen illustrative
+simulation coefficients, not measured physiological constants. Below
+0.05 water units after physical decay, neither restorative process occurs;
+water supports metabolism but contributes no calories. Actions have their
+existing costs; eating replenishes `food`, drinking replenishes `water`.
+Baseline food/water decay continues during sleep. Each actual recovery
+consumes food exactly once and is capped by both its original gain limit
+and the remaining reserve. There is no action policy or imperative added.
+
+This v4 contract preserves the separate #457 fatal boundary (food **or**
+water at zero in the **post-action state**). Damage to integrity from
+independent toxins or external hazards remains unchanged. These simplified
+states and immediate-death thresholds do **not** reproduce human
+metabolism literally, and the effect on autonomous survival L3 is
+`NOT_ESTABLISHED`. Historical born versions have their own frozen
+semantics; M11 refuses cross-version recovery.
+
 ## Diagnostic cases
 
 | External symptom | What to measure | What it does NOT establish |

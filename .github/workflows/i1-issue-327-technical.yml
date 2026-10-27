@@ -1,0 +1,30 @@
+name: I1 isolated issue 327 technical validation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/i1/experimental/**'
+      - 'scripts/test_i1_artifact_parity.py'
+      - 'tests/i1/test_i1_issue_327_isolated.py'
+      - '.github/workflows/i1-issue-327-technical.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-327:
+    name: I1 isolated 327 (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install current engine
+        run: python -m pip install -e .
+      - name: Technical unit contract only
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_issue_327_isolated.py -v

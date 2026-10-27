@@ -205,6 +205,9 @@ def _wal_life(*, birth, params, life_id, path, steps, observe_owner_digests=Fals
 
     life = birth(life_id=life_id, wal_path=str(path), **params)
     trajectory = []
+    effective = {"version": life.world.config.version,
+                 "digest": life.world.config.digest(),
+                 "zero_reserve_lethal": life.world.config.zero_reserve_lethal}
     for _ in range(steps):
         # Read-only observer, strictly outside the cognitive world step.
         before = _observer_owner_hashes(life) if observe_owner_digests else None
@@ -227,6 +230,10 @@ def _wal_life(*, birth, params, life_id, path, steps, observe_owner_digests=Fals
             "position": life.world.position.as_dict(),
             "inventory": dict(life.world.inventory()),
             "journal_head": life.journal.head_hash,
+            "terminal_reasons": (
+                [] if life.stage3.substrate._mortal_boundary.terminal_death is None
+                else list(life.stage3.substrate._mortal_boundary.terminal_death.reasons)
+            ),
         })
         if observe_owner_digests:
             committed_refs = [
@@ -259,26 +266,1030 @@ def _wal_life(*, birth, params, life_id, path, steps, observe_owner_digests=Fals
         "journal_head": life.journal.head_hash,
         "durable_entries": audit["verified_entries"],
         "custody_file": path.name,
+        "effective_birth_physics": effective,
+    }
+
+
+def _closed_custody_at_sleep_recall(
+    *, preclosed_occurrences, step_events, recall, newly_closed, world_step,
+):
+    """Observer-only chronology: Memory may close an episode before Planning.
+
+    A valid mid-step closure must have an actual earlier episode_closed journal
+    occurrence from Memory and a matching final Memory owner image. An event
+    published after recall can never retroactively authorize that recall.
+    """
+    counts = dict(preclosed_occurrences)
+    fresh = {item["id"]: item for item in newly_closed}
+    if len(fresh) != len(newly_closed):
+        raise RuntimeError("duplicate newly closed Memory episode IDs")
+    observed_ids = set()
+    for event in step_events:
+        if event is recall:
+            return counts, len(observed_ids)
+        if event.get("kind") != "episode_closed":
+            continue
+        episode = event.get("data")
+        if (event.get("t_monde") != world_step
+                or not isinstance(episode, dict)
+                or type(episode.get("id")) is not str
+                or episode["id"] in observed_ids
+                or fresh.get(episode["id"]) != episode):
+            raise RuntimeError("unowned or inconsistent mid-step Memory closure")
+        refs = episode.get("event_refs")
+        if (type(refs) is not list or any(type(ref) is not str or not ref
+                                         for ref in refs)
+                or len(refs) != len(set(refs))):
+            raise RuntimeError("invalid mid-step closed episode sources")
+        observed_ids.add(episode["id"])
+        for ref in refs:
+            counts[ref] = counts.get(ref, 0) + 1
+    raise RuntimeError("sleep recall receipt absent from physical step journal")
+
+
+def _same_attempt_waking_reentry(
+    *, events, reduced, woke, capture, command,
+):
+    """Operator-only four-receipt provenance; never a Memory wake claim."""
+    if (not all(isinstance(row, dict)
+                for row in (reduced, woke, capture, command))
+            or not isinstance(events, list)):
+        return False
+    attempt = command.get("attempt_ref")
+    step = command.get("t_monde")
+    if (type(attempt) is not str or not attempt
+            or type(step) is not int
+            or any(row.get("attempt_ref") != attempt
+                   or row.get("t_monde") != step
+                   for row in (reduced, woke, capture))):
+        return False
+    # The same original event occurrences must appear exactly once, in the
+    # authenticated step journal order. The test works on immutable copies;
+    # none of this information is provided to the cognitive individual.
+    indices = []
+    for row in (reduced, woke, capture, command):
+        matches = [i for i, event in enumerate(events) if event is row]
+        if len(matches) != 1:
+            return False
+        indices.append(matches[0])
+    return indices == sorted(set(indices)) and len(set(indices)) == 4
+
+
+def _split_applied_sleep_decisions(trajectory):
+    """Operator-only grouping: each waking admission owns its reduced continuations."""
+    decision_groups = []
+    active_decision = None
+    for row in trajectory:
+        physical = row["physical_journal_observation"]
+        sleep = row["sleep_custody_observation"]
+        kind = sleep["provenance"]
+        if physical is None or physical["primitive"] != "dormir":
+            active_decision = None
+            continue
+        refs = row["autobiographical_sleep_custody_467"]["physical_source_refs"]
+        if kind in ("ordinary_awake_admission", "readmitted_after_wake"):
+            if kind == "readmitted_after_wake":
+                if not sleep["woke"] or not sleep["reduced_perception"]:
+                    raise RuntimeError("readmission lacks a real reduced wake")
+                if (active_decision is None
+                        or row["world_step"] != active_decision["steps"][-1] + 1):
+                    raise RuntimeError("readmission lacks preceding sleep step")
+            if kind == "ordinary_awake_admission" and sleep["reduced_perception"]:
+                raise RuntimeError("ordinary decision cannot be reduced")
+            active_decision = {
+                "decision_step": row["world_step"],
+                "source": kind,
+                "steps": [],
+                "source_refs": [],
+            }
+            decision_groups.append(active_decision)
+        elif kind == "reduced_sleep_continuation":
+            if (active_decision is None or sleep["woke"]
+                    or not sleep["reduced_perception"]):
+                raise RuntimeError("unowned or waking reduced sleep continuation")
+            if row["world_step"] != active_decision["steps"][-1] + 1:
+                raise RuntimeError("nonconsecutive reduced sleep continuation")
+        else:
+            raise RuntimeError("unknown physical dormir admission classification")
+        active_decision["steps"].append(row["world_step"])
+        active_decision["source_refs"].extend(refs)
+    return decision_groups
+
+
+
+def _audit_distinct_paid_waking_links(trajectory):
+    """Post-COMMIT M11 observer: distinguish recalled occurrences from sources.
+
+    No Memory read, UC charge, technical truth or synthetic event is passed
+    to the living individual. Reject aliasing of a genuine waking cue across
+    distinct sleeping steps, duplicate results within a paid recall, and
+    retrospective links whose physical owners cannot be authenticated.
+    """
+    by_step = {row["world_step"]: row for row in trajectory}
+    if len(by_step) != len(trajectory):
+        raise RuntimeError("duplicate physical generations in waking-link audit")
+    distinct = {}
+    cue_owners = {}
+    total = 0
+    charged_reads = 0
+    first_consultation = None
+    for observed in trajectory:
+        recall = observed["sleep_site_recall_custody_467"]
+        links = recall["waking_links"]
+        if (type(recall["read_count"]) is not int
+                or recall["read_count"] not in (0, 1)
+                or type(recall["waking_link_count"]) is not int
+                or recall["waking_link_count"] != len(links)
+                or (links and not recall["read_count"])):
+            raise RuntimeError("unpaid or malformed waking link audit")
+        charged_reads += recall["read_count"]
+        in_read = set()
+        for link in links:
+            if (type(link.get("sleep_step")) is not int
+                    or type(link.get("waking_step")) is not int
+                    or link["waking_step"] != link["sleep_step"] + 1
+                    or link["waking_step"] >= observed["world_step"]
+                    or link.get("relation") != "immediate_next_step_only"):
+                raise RuntimeError("retroactive or nonadjacent waking link")
+            sleep = by_step.get(link["sleep_step"])
+            wake = by_step.get(link["waking_step"])
+            if sleep is None or wake is None:
+                raise RuntimeError("missing physical owner of waking link")
+            sleep_refs = sleep["autobiographical_sleep_custody_467"][
+                "physical_source_refs"]
+            wake_refs = wake["autobiographical_sleep_custody_467"][
+                "physical_source_refs"]
+            wake_custody = wake["sleep_custody_observation"]
+            wake_physical = wake["physical_journal_observation"]
+            if (sleep["physical_journal_observation"] is None
+                    or sleep["physical_journal_observation"]["primitive"]
+                       != "dormir"
+                    or list(link.get("sleep_source_refs", ())) != sleep_refs
+                    or wake_physical is None
+                    or not wake_custody["woke"]
+                    or not wake_custody["waking_dc09_committed"]
+                    or wake_custody["waking_dc09_source_ref"]
+                       != link.get("waking_cue_ref")
+                    or wake_physical["primitive"]
+                       != link.get("waking_applied_primitive")
+                    or wake_refs != [
+                        link.get("waking_applied_command_ref"),
+                        link.get("waking_applied_transition_ref"),
+                    ]):
+                raise RuntimeError("paid waking link contradicts physical sources")
+            key = (
+                tuple(link["sleep_source_refs"]),
+                link["waking_cue_ref"],
+                link["waking_applied_command_ref"],
+                link["waking_applied_transition_ref"],
+            )
+            if key in in_read:
+                raise RuntimeError("waking link repeated inside one paid read")
+            in_read.add(key)
+            owner = cue_owners.setdefault(link["waking_cue_ref"], key)
+            if owner != key:
+                raise RuntimeError("one autobiographical cue assigned to two sleeps")
+            if key in distinct and distinct[key] != link:
+                raise RuntimeError("recalled waking source mutated between reads")
+            distinct[key] = link
+            total += 1
+            if first_consultation is None:
+                first_consultation = observed["world_step"]
+    return {
+        "paid_read_count": charged_reads,
+        "consulted_occurrences": total,
+        "distinct_source_links": len(distinct),
+        "repeated_consultations": total - len(distinct),
+        "first_consultation_step": first_consultation,
+        "continuous_subjective_session_proven": False,
+        "decision_influence_proven": False,
+    }
+
+
+
+def _audit_paid_matched_stationary_sites(trajectory):
+    """Operator-only source-to-physical pairing of already paid memories.
+
+    Never calls Memory or adds a decision input. Counts repeated receipts
+    separately from distinct, authentically closed and matched steps.
+    """
+    physical = {}
+    for row in trajectory:
+        action = row["physical_journal_observation"]
+        refs = row["autobiographical_sleep_custody_467"]["physical_source_refs"]
+        if action is None:
+            continue
+        if len(refs) != 2 or len(set(refs)) != 2:
+            raise RuntimeError("ambiguous physical stationary source identity")
+        physical[frozenset(refs)] = (
+            row["world_step"], action["primitive"], tuple(row["position_after"])
+            if isinstance(row["position_after"], (list, tuple))
+            else (row["position_after"]["x"], row["position_after"]["y"]),
+        )
+    unique_sleep, unique_wait = set(), set()
+    matched_reads = 0
+    for row in trajectory:
+        recall = row["sleep_site_recall_custody_467"]
+        if not recall["read_count"]:
+            if recall["witness_count"] or recall["wait_witness_count"]:
+                raise RuntimeError("unpaid stationary site context")
+            continue
+        if recall["paid_uc"] != 1:
+            raise RuntimeError("stationary recall not charged exactly once")
+        site = tuple(recall["observed_site"])
+        if len(site) != 2:
+            raise RuntimeError("invalid personally recalled site")
+        owned = []
+        for primitive, refs, count, target in (
+            ("dormir", recall["source_event_refs"], recall["witness_count"],
+             unique_sleep),
+            ("attendre", recall["wait_source_event_refs"],
+             recall["wait_witness_count"], unique_wait),
+        ):
+            if len(refs) != count * 2 or len(refs) != len(set(refs)):
+                raise RuntimeError("malformed autobiographical stationary refs")
+            source_set = set(refs)
+            found = 0
+            for pair, (step, action, actual_site) in physical.items():
+                if pair <= source_set:
+                    if (action != primitive or actual_site != site
+                            or step >= row["world_step"]):
+                        raise RuntimeError("foreign or future stationary recall")
+                    target.add((site, step, tuple(sorted(pair))))
+                    owned.extend(pair)
+                    found += 1
+            if found != count:
+                raise RuntimeError("unmatched stationary witness ownership")
+        if len(owned) != len(set(owned)):
+            raise RuntimeError("sleep/wait control source overlap")
+        if recall["witness_count"] and recall["wait_witness_count"]:
+            matched_reads += 1
+    matched_sites = {site for site, *_ in unique_sleep} & {
+        site for site, *_ in unique_wait
+    }
+    return {
+        "paid_reads": sum(row["sleep_site_recall_custody_467"]["read_count"]
+                          for row in trajectory),
+        "sleep_distinct": len(unique_sleep),
+        "wait_distinct": len(unique_wait),
+        "matched_site_count": len(matched_sites),
+        "matched_paid_reads": matched_reads,
+        "sleep_occurrences": sum(row["sleep_site_recall_custody_467"]["witness_count"]
+                                  for row in trajectory),
+        "wait_occurrences": sum(row["sleep_site_recall_custody_467"]["wait_witness_count"]
+                                 for row in trajectory),
+        "causal_attribution": False,
+        "decision_influence_proven": False,
     }
 
 
 def _m11_life(*, birth, params, life_id, path, steps):
     from i1lab.sqlite_life_store import SQLiteLifeLedger
+    from i1_old_recall_m11_audit import audit_old_recall_step
 
     trajectory = []
+    # Observational custody only, never visible to the cognitive agent.
+    first_autobiographical_commit = {}
+    first_memory_ingestion = {}
+    # Derived observer index only. It is never part of the I1 causal state.
+    from i1_m11_closed_index import ClosedSourceOccurrenceIndex
+    from i1_m11_memory_image import CommittedMemoryImage
+    from i1_m11_ingestion_delta import update_first_memory_ingestion
+    closed_index = ClosedSourceOccurrenceIndex()
+    memory_images = CommittedMemoryImage()
     with birth(db_path=str(path), life_id=life_id, **params) as life:
+        effective = {
+            "version": life._runtime.world.config.version,
+            "digest": life._runtime.world.config.digest(),
+            "zero_reserve_lethal": life._runtime.world.config.zero_reserve_lethal,
+        }
         for _ in range(steps):
+            pre_count = life._runtime.journal.entry_count
+            # #467: owner snapshots around the same authentic, paid M11
+            # generation. No Memory/TD/History method below writes a state.
+            episodes_before = life._runtime.memory.episode_count
+            memory_before = memory_images.before_step(
+                life._runtime.memory, episode_count=episodes_before)
+            seen_before = len(memory_before["seen_event_refs"])
+            # Operator-only pre-step ownership snapshot: a source learned in
+            # this world step is not admissible evidence for earlier recall.
+            preclosed_occurrences = closed_index.before_step(
+                episode_count=episodes_before)
+            position_before = life._runtime.world.position.as_dict()
+            pre_body = dict(life._runtime.world.telemetry())
+            mode_before = life._runtime.sleep_session.mode
+            prior_frozen = life._runtime.sleep_health.frozen
+            fatigue_before = life._runtime.sleep_health.fatigue
             receipt = life.run_step()
             if receipt.status not in ("active", "dead"):
                 raise RuntimeError("uncertain M11 life status")
+            step_events = [
+                dict(e.causal_event)
+                for e in life._runtime.journal.entries_since(pre_count)
+            ]
+            authentic = [
+                e for e in step_events
+                if e.get("kind") in {
+                    "command_experienced", "world_transition_experienced"}
+            ]
+            commands = [e for e in authentic
+                        if e["kind"] == "command_experienced"]
+            transitions = [e for e in authentic
+                           if e["kind"] == "world_transition_experienced"]
+            if len(commands) != len(transitions) or len(commands) > 1:
+                raise RuntimeError("ambiguous M11 physical event provenance")
+            if transitions:
+                command, physical = commands[0], transitions[0]
+                if (command["t_monde"] != receipt.world_step
+                        or physical["t_monde"] != receipt.world_step
+                        or physical["body_after"] !=
+                        dict(life._runtime.world.telemetry())):
+                    raise RuntimeError("physical journal and committed body differ")
+                actual = {
+                    "primitive": command["primitive"],
+                    "parameters": command["parameters"],
+                    "body_before": pre_body,
+                    "body_after": physical["body_after"],
+                    "effects": physical["effects"],
+                }
+            else:
+                actual = None
+            # #467: operator-side concordance audit only. A physical
+            # transition before-state is not necessarily the waking body's
+            # last captured state, especially after an after_admission input
+            # or during reduced-perception sleep. Never feed this audit into
+            # the cognitive agent or a DC-09 policy commitment.
+            from i1lab.i1_natural_prebody_policy import (
+                captured_prebody_matches_transition,
+            )
+            # Stage3 clears _capture after dispatch; only the immutable
+            # same-attempt perceptual_capture receipt, emitted BEFORE the
+            # physical command, can attest what was actually perceptible.
+            # Natural I1's dual-scope body cue is a first-person projection,
+            # not a postmortem WorldBody read or a reduced sleep observation.
+            captures = [
+                e for e in step_events
+                if (e.get("kind") == "perceptual_capture"
+                    and e.get("t_monde") == receipt.world_step
+                    and isinstance(e.get("data"), dict)
+                    and e["data"].get("capture_t_monde") == receipt.world_step
+                    and e["data"].get("dual_scope_capture_schema")
+                        == "stage12-dual-scope-body-cue-v1")
+            ]
+            capture_receipt = (
+                captures[0] if len(captures) == 1 else None
+            )
+            same_step_capture = (
+                capture_receipt is not None
+                and actual is not None
+                and step_events.index(capture_receipt) <
+                    step_events.index(command)
+                and capture_receipt.get("attempt_ref")
+                    == command.get("attempt_ref")
+            )
+            if actual is None:
+                prebody_status = "no_physical_transition"
+            elif not same_step_capture:
+                prebody_status = "no_current_waking_capture"
+            elif captured_prebody_matches_transition(
+                captured_body=capture_receipt["data"].get(
+                    "dual_scope_visible_body"),
+                physical_body_before=physical["body_before"],
+            ):
+                prebody_status = "capture_matches_physical_before"
+            else:
+                prebody_status = "capture_physical_divergence"
+            prebody_concordance = {
+                "status": prebody_status,
+                "current_waking_capture": bool(same_step_capture),
+                "physical_before_present": (
+                    actual is not None and "body_before" in physical),
+                "autobiographical_policy_activated": False,
+                "memory_wrote_prebody": False,
+            }
+            # #465: strictly external post-COMMIT sleep provenance. A
+            # physical dormir can be a first ordinary choice, a fresh
+            # voluntary choice after wake, or reduced-perception continuation.
+            # Never count every dormir as a new paid Competition decision.
+            def events_of(kind):
+                return [e for e in step_events if e.get("kind") == kind]
+
+            reduced = events_of("stage10_reduced_capture")
+            entered = events_of("stage10_sleep_entered")
+            wakes = events_of("stage10_sleep_woke")
+            frozen = events_of("stage10_sleep_pressure_frozen")
+            frames = events_of("competition_cycle")
+            assessments = events_of("stage8_option_evaluation")
+            if any(len(rows) > 1 for rows in (reduced, entered, wakes, frozen)):
+                raise RuntimeError("duplicate sleep owner receipt in one M11 step")
+            if any(e["t_monde"] != receipt.world_step for e in (
+                    reduced + entered + wakes + frozen + frames + assessments)):
+                raise RuntimeError("foreign-step sleep/competition occurrence")
+            primitive = None if actual is None else actual["primitive"]
+            if primitive != "dormir":
+                sleep_provenance = "not_sleep"
+            elif reduced and wakes:
+                sleep_provenance = "readmitted_after_wake"
+            elif reduced:
+                sleep_provenance = "reduced_sleep_continuation"
+            else:
+                sleep_provenance = "ordinary_awake_admission"
+            # #495: independent dormant first-person eligibility test on
+            # original event IDs. This is operator-only evidence; never
+            # publish its result to Memory or re-author a DC-09 commitment.
+            from i1lab.i1_natural_prebody_policy import (
+                attested_postwake_perceptual_body,
+            )
+            wake_cue_candidate = None
+            if actual is not None:
+                source_entries = tuple(
+                    life._runtime.journal.entries_since(pre_count)
+                )
+                command_sources = [
+                    e for e in source_entries
+                    if e.causal_event.get("kind") == "command_experienced"
+                ]
+                physical_sources = [
+                    e for e in source_entries
+                    if e.causal_event.get("kind") == "world_transition_experienced"
+                ]
+                if len(command_sources) != 1 or len(physical_sources) != 1:
+                    raise RuntimeError("ambiguous dormant wake-cue source IDs")
+                wake_cue_candidate = attested_postwake_perceptual_body(
+                    journal=life._runtime.journal,
+                    t_monde=receipt.world_step,
+                    attempt_ref=command.get("attempt_ref"),
+                    command_ref=command_sources[0].event_id,
+                    physical_ref=physical_sources[0].event_id,
+                )
+            if (wake_cue_candidate is not None
+                    and sleep_provenance in (
+                        "ordinary_awake_admission",
+                        "reduced_sleep_continuation",
+                    )):
+                raise RuntimeError("dormant wake cue crossed sleep classifications")
+            if sleep_provenance == "readmitted_after_wake":
+                if (wake_cue_candidate is None
+                        or wake_cue_candidate["source_event_ref"] not in {
+                            e.event_id for e in source_entries
+                            if e.causal_event.get("kind") == "perceptual_capture"
+                        }):
+                    raise RuntimeError("true waking readmission lacks authentic cue")
+            # #495: independently verify native DC-09 custody of the new
+            # first-person waking event. The selector's output is not Memory;
+            # the actual AutoSegmentCommit must own the distinct new source.
+            wake_events = [
+                e for e in step_events
+                if e.get("kind") == "waking_body_perceived"
+            ]
+            wake_commits = [
+                e for e in step_events
+                if e.get("kind") == "auto_segment_commit"
+                and e.get("filter_version")
+                    == "i1-lived-prebody-waking-body-v1"
+            ]
+            # Mortal death is an intentionally uncommitted terminal transition.
+            # The first-person capture may be authentic, but no post-death
+            # DC-09 event or AutoSegmentCommit may be published.
+            expected_wake_commit = (
+                wake_cue_candidate is not None and receipt.status == "active"
+            )
+            if (bool(wake_events) != expected_wake_commit
+                    or bool(wake_commits) != expected_wake_commit
+                    or len(wake_events) > 1 or len(wake_commits) > 1):
+                raise RuntimeError(
+                    "waking DC-09 commitment and lived capture disagree: "
+                    f"step={receipt.world_step} source={sleep_provenance} "
+                    f"candidate={wake_cue_candidate is not None} "
+                    f"waking_events={len(wake_events)} "
+                    f"waking_commits={len(wake_commits)} "
+                    f"filters={[e.get('filter_version') for e in step_events if e.get('kind') == 'auto_segment_commit']} "
+                    f"step_status={receipt.status}"
+                )
+            if wake_events:
+                if (len(wake_commits) != 1
+                        or wake_events[0]["body_perceived"]
+                           != wake_cue_candidate["body_perceived"]
+                        or wake_events[0]["position"]
+                           != wake_cue_candidate["position"]):
+                    raise RuntimeError("native waking sensory payload mismatch")
+                cue_id = wake_commits[0]["event_refs"][-1]
+                if (len(wake_commits[0]["event_refs"]) < 3
+                        or life._runtime.journal.get(cue_id).causal_event
+                           != wake_events[0]):
+                    raise RuntimeError("waking cue not owned by its DC-09 commitment")
+            # #490: A waking re-admission is not merely a technical wake
+            # label. It must have a full, same-attempt, pre-command sensory
+            # capture already observed by the waking Stage3 path. Never use
+            # this audit as a source of new Memory, a future prediction, or
+            # permission to issue a command.
+            if sleep_provenance in (
+                    "ordinary_awake_admission", "readmitted_after_wake"):
+                if not same_step_capture:
+                    raise RuntimeError(
+                        "awake sleep decision missing authentic pre-command perception")
+            elif sleep_provenance == "reduced_sleep_continuation":
+                if captures:
+                    raise RuntimeError(
+                        "reduced continuation unexpectedly has full waking perception")
+            if sleep_provenance == "readmitted_after_wake":
+                if (not wakes or len(reduced) != 1
+                        or not _same_attempt_waking_reentry(
+                            events=step_events, reduced=reduced[0],
+                            woke=wakes[0], capture=capture_receipt,
+                            command=command,
+                        )):
+                    raise RuntimeError(
+                        "readmission lacks wake-before-perception-before-command")
+            latest = max(frames, key=lambda e: e["cycle"]) if frames else None
+            evaluations = (
+                {e["data"]["option_ref"]: e["data"]["learning_signature"]
+                 for e in assessments if latest is not None
+                 and e["cycle"] == latest["cycle"]}
+            )
+            crossed = [] if latest is None else [
+                e for e in latest["data"]["traces"] if e["crossed"]
+            ]
+            sleep_crossed = sum(
+                evaluations.get(e["option_ref"]) == "primitive:dormir"
+                for e in crossed
+            )
+            awake_crossed = sum(
+                evaluations.get(e["option_ref"]) not in (
+                    None, "primitive:dormir")
+                for e in crossed
+            )
+            unattributed_crossed = (
+                len(crossed) - sleep_crossed - awake_crossed
+            )
+            pressure = (
+                frozen[0]["data"]["sleep_pressure"] if frozen
+                else None if prior_frozen is None
+                else prior_frozen.sleep_pressure
+            )
+            sleep_custody = {
+                "provenance": sleep_provenance,
+                "mode_before": mode_before,
+                "mode_after": life._runtime.sleep_session.mode,
+                "reduced_perception": bool(reduced),
+                "waking_capture_before_command": bool(same_step_capture),
+                "wake_capture_after_control_boundary": (
+                    sleep_provenance == "readmitted_after_wake"
+                    and bool(same_step_capture)),
+                "dormant_wake_cue_eligible": wake_cue_candidate is not None,
+                "waking_dc09_committed": bool(wake_commits),
+                "waking_dc09_source_ref": (
+                    None if not wake_commits else
+                    wake_commits[0]["event_refs"][-1]),
+                "waking_dc09_terminal_uncommitted": (
+                    wake_cue_candidate is not None and receipt.status == "dead"
+                    and not wake_commits and not wake_events),
+                "dormant_wake_capture_ref": (
+                    None if wake_cue_candidate is None else
+                    wake_cue_candidate["source_event_ref"]),
+                "dormant_wake_applied_transition_ref": (
+                    None if wake_cue_candidate is None else
+                    physical_sources[0].event_id),
+                "sleep_entered": bool(entered),
+                "woke": bool(wakes),
+                "wake_reason": None if not wakes else wakes[0]["data"]["reason"],
+                "reduced_critical_channels": (
+                    None if not reduced
+                    else list(reduced[0]["data"]["critical_body_channels"])),
+                "pressure": pressure,
+                "pressure_source": (
+                    "new_waking_freeze" if frozen else
+                    "previous_waking_freeze" if prior_frozen else "not_exposed"),
+                "fatigue_before": fatigue_before,
+                "fatigue_after": life._runtime.sleep_health.fatigue,
+                "is_night": life._runtime.world.is_night(receipt.world_step),
+                "paid_competition_cycles": len(frames),
+                "last_paid_sleep_crossed": sleep_crossed if latest else None,
+                "last_paid_awake_crossed": awake_crossed if latest else None,
+                "last_paid_unattributed_crossed": (
+                    unattributed_crossed if latest else None),
+                "consolidation_commits": len(
+                    events_of("stage10_consolidation_committed")),
+                "consolidation_pass_checkpoints": len(
+                    events_of("stage10_consolidation_pass_checkpointed")),
+                "consolidation_deferred_events": len(
+                    events_of("stage10_consolidation_work_deferred")),
+            }
+            if sleep_provenance == "reduced_sleep_continuation" and frames:
+                raise RuntimeError("undeliberated sleep continuation gained competition")
+            if sleep_provenance == "readmitted_after_wake" and not frames:
+                raise RuntimeError("re-admitted sleep has no ordinary Competition")
+            if sleep_provenance == "ordinary_awake_admission" and not frames:
+                raise RuntimeError("ordinary admitted sleep lacks paid Competition")
+            if sleep_provenance != "not_sleep" and pressure is None:
+                raise RuntimeError("applied dormir without previously frozen P-40")
+            # DC-09: a technical event is not autobiographical merely
+            # because it was journaled. Only actual AutoSegmentCommit source
+            # references make a physical sleep step accessible to Memory.
+            owned_commits = events_of("auto_segment_commit")
+            if len(owned_commits) > 1:
+                raise RuntimeError("duplicate autobiographical sleep commit")
+            physical_refs = [
+                e.event_id
+                for e in life._runtime.journal.entries_since(pre_count)
+                if e.causal_event.get("kind") in (
+                    "command_experienced", "world_transition_experienced")
+            ]
+            if owned_commits:
+                sources = owned_commits[0]["event_refs"]
+                if not all(ref in sources for ref in physical_refs):
+                    raise RuntimeError("missing first-person physical sources")
+                if owned_commits[0]["t_monde"] != receipt.world_step:
+                    raise RuntimeError("autobiography from foreign physical step")
+            memory_owner = life._runtime.memory
+            # External observation uses the owner-exported *causal image*;
+            # never call the charged read_episodes_range API from Lab.
+            memory_image = memory_images.after_step(
+                memory_owner, episode_count=episodes_before)
+            newly_closed = memory_image["episodes"][episodes_before:]
+            if (len(memory_image["episodes"]) != episodes_before + len(newly_closed)
+                    or len(memory_image["episodes"]) < episodes_before):
+                raise RuntimeError("M11 closed-episode length regressed")
+            memory_seen = set(memory_image["seen_event_refs"])
+            for committed in owned_commits:
+                for source_ref in committed["event_refs"]:
+                    first_autobiographical_commit.setdefault(
+                        source_ref, receipt.world_step)
+            update_first_memory_ingestion(
+                first_memory_ingestion, memory_seen, world_step=receipt.world_step)
+            # #467: independent post-commit audit of the *paid cognitive*
+            # sleep-site recall, not a replacement for first-person Memory.
+            # Accept a Memory closure DURING this cognitive world step only
+            # when its actual episode_closed receipt precedes this recall.
+            # Never authorize an event that closes after the recall.
+            recalls = events_of("i1_sleep_site_recall_consulted")
+            recall_charges = [
+                e for e in events_of("compute_charge")
+                if e["data"].get("operation") == "i1_closed_sleep_recall"
+            ]
+            if len(recalls) > 1 or len(recall_charges) > 1:
+                raise RuntimeError("multiple sleep recalls in one physical step")
+            if recalls:
+                observation = recalls[0]
+                info = observation["data"]
+                valid_charges = [
+                    row for row in recall_charges
+                    if row.get("cycle") == observation.get("cycle")
+                    and row["data"].get("module") == "planning"
+                    and row["data"].get("requested_uc") == 1
+                    and row["data"].get("accepted") is True
+                ]
+                if len(valid_charges) != 1:
+                    raise RuntimeError("unpaid first-person sleep-site recall")
+                if (observation["t_monde"] != receipt.world_step
+                    or info.get("site") != [
+                        position_before["x"], position_before["y"]]
+                    or info.get("charged_operation")
+                        != "i1_closed_sleep_recall"
+                    or info.get("evidence_applied") is not False
+                    or type(info.get("witness_count")) is not int
+                    or info["witness_count"] < 0
+                    or type(info.get("event_refs")) is not list
+                    or len(info["event_refs"]) != 2 * info["witness_count"]
+                    or len(set(info["event_refs"])) != len(info["event_refs"])):
+                    raise RuntimeError("inconsistent personal sleep recall receipt")
+                # #473: independent observation of the non-causal summary
+                # created INSIDE the already paid first-person read.
+                balance = info.get("site_balance")
+                if (not isinstance(balance, dict)
+                        or balance.get("witness_count") != info["witness_count"]
+                        or balance.get("causal_attribution") is not False
+                        or balance.get("decision_evidence") is not False
+                        or not isinstance(balance.get("channels"), dict)
+                        or set(balance["channels"]) != {
+                            "energy", "food", "water", "integrity"
+                        }):
+                    raise RuntimeError("invalid paid sleep-site balance receipt")
+                same_step = balance.get("same_step_channels")
+                if (not isinstance(same_step, dict)
+                        or set(same_step) != {
+                            "energy", "food", "water", "integrity"
+                        }):
+                    raise RuntimeError("missing attested same-step sleep-site balance")
+                for counts in same_step.values():
+                    if (not isinstance(counts, dict)
+                            or set(counts) != {
+                                "increase", "decrease", "stable", "unknown"
+                            }
+                            or any(type(v) is not int or v < 0
+                                   for v in counts.values())
+                            or sum(counts.values()) != info["witness_count"]):
+                        raise RuntimeError("invalid same-step sleep-site channel counts")
+                for counts in balance["channels"].values():
+                    if (not isinstance(counts, dict)
+                            or set(counts) != {
+                                "increase", "decrease", "stable", "unknown"
+                            }
+                            or any(type(v) is not int or v < 0
+                                   for v in counts.values())
+                            or sum(counts.values()) != info["witness_count"]):
+                        raise RuntimeError("sleep-site balance counts contradict witnesses")
+                authorized, same_step_closed = _closed_custody_at_sleep_recall(
+                    preclosed_occurrences=preclosed_occurrences,
+                    step_events=step_events,
+                    recall=observation,
+                    newly_closed=newly_closed,
+                    world_step=receipt.world_step,
+                )
+                if step_events.index(valid_charges[0]) >= step_events.index(
+                    observation
+                ):
+                    raise RuntimeError("sleep recall charge followed its read")
+                for ref in info["event_refs"]:
+                    if (authorized.get(ref) != 1
+                        or ref not in memory_seen
+                        or first_autobiographical_commit.get(ref) is None
+                        or first_autobiographical_commit[ref]
+                            >= receipt.world_step):
+                        raise RuntimeError(
+                            "sleep recall referenced uncommitted or open source: "
+                            f"step={receipt.world_step}, ref={ref}, "
+                            f"closed_at_recall={authorized.get(ref)}, "
+                            f"first_commit={first_autobiographical_commit.get(ref)}")
+                # #519: same charged read may describe genuine CLOSED,
+                # first-person awake-wait controls at this very site.
+                # WorldBody telemetry is used only by this post-COMMIT
+                # observer to cross-check sources; never passed to Memory.
+                wait_refs = info.get("wait_event_refs")
+                wait_count = info.get("wait_witness_count")
+                wait_channels = info.get("wait_same_step_channels")
+                if (type(wait_count) is not int or wait_count < 0
+                        or wait_count > 16
+                        or type(wait_refs) is not list
+                        or len(wait_refs) != 2 * wait_count
+                        or len(set(wait_refs)) != len(wait_refs)
+                        or not isinstance(wait_channels, dict)
+                        or set(wait_channels) != {
+                            "energy", "food", "water", "integrity"
+                        }
+                        or info.get("wait_causal_attribution") is not False
+                        or info.get("wait_decision_evidence") is not False):
+                    raise RuntimeError("invalid paid wait-control receipt")
+                for counts in wait_channels.values():
+                    if (not isinstance(counts, dict)
+                            or set(counts) != {
+                                "increase", "decrease", "stable", "unknown"
+                            }
+                            or any(type(v) is not int or v < 0
+                                   for v in counts.values())
+                            or sum(counts.values()) != wait_count):
+                        raise RuntimeError("invalid personally observed wait directions")
+                for ref in wait_refs:
+                    if (ref in info["event_refs"]
+                            or authorized.get(ref) != 1
+                            or ref not in memory_seen
+                            or first_autobiographical_commit.get(ref) is None
+                            or first_autobiographical_commit[ref]
+                               >= receipt.world_step):
+                        raise RuntimeError("unclosed or cross-activity wait source")
+                physical_controls = [
+                    prior for prior in trajectory
+                    if prior["world_step"] < receipt.world_step
+                    and prior["physical_journal_observation"] is not None
+                    and prior["physical_journal_observation"]["primitive"]
+                       == "attendre"
+                    and prior["position_after"] == position_before
+                ]
+                authentic_wait_pairs = {
+                    tuple(row["autobiographical_sleep_custody_467"]
+                          ["physical_source_refs"])
+                    for row in physical_controls
+                }
+                recalled = set(wait_refs)
+                matched = {
+                    ref
+                    for pair in authentic_wait_pairs
+                    if len(pair) == 2 and set(pair) <= recalled
+                    for ref in pair
+                }
+                if matched != recalled:
+                    raise RuntimeError("paid wait-control source is not a lived local wait")
+                # #495: a paid autobiographical wake association must
+                # reference only unique, already-closed source ownership.
+                # This operator audit never supplies new facts to Memory.
+                links = info.get("waking_links")
+                if (type(info.get("waking_link_count")) is not int
+                        or not isinstance(links, list)
+                        or info["waking_link_count"] != len(links)
+                        or len(links) > info["witness_count"]
+                        or info.get("continuous_subjective_session_proven")
+                           is not False):
+                    raise RuntimeError("invalid paid waking-link receipt")
+                for link in links:
+                    if (type(link) is not dict
+                            or link.get("relation") != "immediate_next_step_only"
+                            or type(link.get("sleep_step")) is not int
+                            or type(link.get("waking_step")) is not int
+                            or link["waking_step"] != link["sleep_step"] + 1
+                            or not isinstance(link.get("sleep_source_refs"), list)
+                            or len(link["sleep_source_refs"]) != 2
+                            or any(ref not in info["event_refs"]
+                                   for ref in link["sleep_source_refs"])
+                            or any(type(link.get(k)) is not str or not link[k]
+                                   for k in (
+                                       "waking_cue_ref",
+                                       "waking_cue_episode_ref",
+                                       "waking_applied_command_ref",
+                                       "waking_applied_transition_ref",
+                                       "waking_applied_primitive",
+                                   ))):
+                        raise RuntimeError("malformed paid waking-link provenance")
+                    refs = (link["waking_cue_ref"],
+                            link["waking_applied_command_ref"],
+                            link["waking_applied_transition_ref"])
+                    if (len(set(refs)) != 3
+                            or any(authorized.get(ref) != 1
+                                   or ref not in memory_seen
+                                   or first_autobiographical_commit.get(ref)
+                                      is None
+                                   or first_autobiographical_commit[ref]
+                                      >= receipt.world_step
+                                   for ref in refs)
+                            or not any(link["waking_cue_ref"] in
+                                       episode["event_refs"]
+                                       and episode["id"] ==
+                                       link["waking_cue_episode_ref"]
+                                       for episode in memory_image["episodes"])):
+                        raise RuntimeError("unclosed paid waking-link source")
+                # Memory closure events are the only extra same-step source
+                # of ownership beyond the immutable pre-step causal image.
+                # This does not grant I1 access to operator-only state.
+            # #510: independent post-COMMIT witness of the true Stage8
+            # boundary. Technical journal evidence stays outside I1 Memory.
+            context_receipts = events_of("i1_sleep_site_stage8_context_observed")
+            if len(context_receipts) > 1:
+                raise RuntimeError("duplicate same-cycle sleep context")
+            if context_receipts:
+                seen_context = context_receipts[0]
+                data = seen_context["data"]
+                if (not recalls or len(recalls) != 1
+                        or step_events.index(recalls[0])
+                           >= step_events.index(seen_context)
+                        or data.get("source_event_refs") !=
+                           recalls[0]["data"]["event_refs"]
+                        or data.get("witness_count") !=
+                           recalls[0]["data"]["witness_count"]
+                        or data.get("same_step_channels") !=
+                           recalls[0]["data"]["site_balance"]["same_step_channels"]
+                        or data.get("wait_witness_count") !=
+                           recalls[0]["data"]["wait_witness_count"]
+                        or data.get("wait_source_event_refs") !=
+                           recalls[0]["data"]["wait_event_refs"]
+                        or data.get("wait_same_step_channels") !=
+                           recalls[0]["data"]["wait_same_step_channels"]
+                        or data.get("wait_causal_attribution") is not False
+                        or data.get("wait_decision_evidence") is not False
+                        or data.get("site_ref") !=
+                           "sleep-site:%d:%d" % (
+                               position_before["x"], position_before["y"])
+                        or data.get("charged_operation") != "i1_closed_sleep_recall"
+                        or any(data.get(name) is not False for name in (
+                            "context_score_applied", "q_or_p40_augmented",
+                            "competition_evidence_overridden"))
+                        or data.get("stage8_evidence_unchanged") not in
+                           [e["data"].get("evidence") for e in assessments
+                            if e["data"].get("option_ref") == data.get("option_ref")]
+                        or not any(e["data"].get("option_ref") ==
+                                   data.get("option_ref")
+                                   and e.get("cycle") == seen_context.get("cycle")
+                                   for e in assessments)):
+                    raise RuntimeError("paid sleep context was not identical to Stage8")
+            # #512: Q already represents spatial coordinates, bodily state,
+            # time and goals. Observer-only metadata cannot become a second
+            # source of value or alter the already evaluated Stage8 score.
+            td_features = tuple(life._runtime.q_active.config.features.feature_names)
+            if context_receipts and not {"x", "y"}.issubset(td_features):
+                raise RuntimeError("sleep context Q spatial overlap contract changed")
+            context_audit = {
+                "q_spatial_features_present": (
+                    "x" in td_features and "y" in td_features),
+                "q_feature_names": list(td_features),
+                "q_signature_general": "primitive:dormir",
+                "independent_context_value_established": False,
+                "read_count": len(context_receipts),
+                "source_refs": ([] if not context_receipts else
+                                context_receipts[0]["data"]["source_event_refs"]),
+                "option_ref": (None if not context_receipts else
+                               context_receipts[0]["data"]["option_ref"]),
+                "score_applied": False,
+            }
+            recall_audit = {
+                "paid_uc": sum(
+                    row["data"]["requested_uc"] for row in recall_charges
+                    if row["data"]["accepted"]),
+                "read_count": len(recalls),
+                "witness_count": (
+                    0 if not recalls else recalls[0]["data"]["witness_count"]),
+                "site_balance": (
+                    None if not recalls else
+                    recalls[0]["data"]["site_balance"]["channels"]),
+                "same_step_site_balance": (
+                    None if not recalls else
+                    recalls[0]["data"]["site_balance"]["same_step_channels"]),
+                "source_event_refs": (
+                    [] if not recalls else list(recalls[0]["data"]["event_refs"])),
+                "observed_site": (
+                    None if not recalls else list(recalls[0]["data"]["site"])),
+                "published_evidence": False,
+                "wait_witness_count": (
+                    0 if not recalls else recalls[0]["data"]["wait_witness_count"]),
+                "wait_source_event_refs": (
+                    [] if not recalls else list(recalls[0]["data"]["wait_event_refs"])),
+                "wait_same_step_channels": (
+                    None if not recalls else
+                    recalls[0]["data"]["wait_same_step_channels"]),
+                "wait_context_score_applied": False,
+                "waking_link_count": (
+                    0 if not recalls else recalls[0]["data"]["waking_link_count"]),
+                "waking_links": (
+                    [] if not recalls else list(recalls[0]["data"]["waking_links"])),
+                "mid_step_episodes_closed_before_read": (
+                    0 if not recalls else same_step_closed),
+            }
+            pending_td = life._runtime.q_active.pending_segment
+            custody = {
+                "auto_commit_count": len(owned_commits),
+                "auto_commit_refs": (
+                    [] if not owned_commits
+                    else list(owned_commits[0]["event_refs"])),
+                "physical_source_refs": physical_refs,
+                "physical_autobiographical_commit_steps": {
+                    ref: first_autobiographical_commit.get(ref)
+                    for ref in physical_refs
+                },
+                "physical_memory_ingestion_steps": {
+                    ref: first_memory_ingestion.get(ref)
+                    for ref in physical_refs
+                },
+                "physical_refs_seen_by_memory_after_commit": sum(
+                    ref in memory_seen for ref in physical_refs),
+                "memory_seen_before": seen_before,
+                "memory_seen_after": len(memory_seen),
+                "episodes_closed_during_step": [
+                    {"id": e["id"], "start": e["start_t_monde"],
+                     "end": e["end_t_monde"],
+                     "boundary_type": e["boundary_type"],
+                     "body_start": e["body_start"],
+                     "body_end": e["body_end"]}
+                    for e in newly_closed
+                ],
+                "memory_last_recalled_ref": (
+                    memory_owner.last_recalled_ref),
+                "memory_recall_events": len(
+                    events_of("memory_recall_proposed")),
+                "td_pending": (
+                    None if pending_td is None else {
+                        "decision_step": pending_td.decision_t_monde,
+                        "learning_signature": pending_td.signature,
+                        "rewards_count": len(pending_td.rewards),
+                    }),
+                "td_published_updates": [
+                    {"previous_signature": e["data"]["previous_signature"],
+                     "segment_length": e["data"]["segment_length"]}
+                    for e in events_of("td_update_published")
+                ],
+                "slow_history_version": (
+                    life._runtime.slow_history.current_version),
+                "consolidated_episode_refs": list(
+                    life._runtime.slow_history.committed_episode_refs()),
+            }
+            old_recall_audit = audit_old_recall_step(
+                events=step_events, world_step=receipt.world_step,
+                preclosed=memory_before["episodes"],
+                newly_closed=newly_closed,
+                previous_commits=first_autobiographical_commit,
+            )
             trajectory.append({
                 "world_step": receipt.world_step,
                 "generation": receipt.generation,
+                "physical_journal_observation": actual,
+                "prebody_concordance_audit_467": prebody_concordance,
+                "sleep_custody_observation": sleep_custody,
+                "autobiographical_sleep_custody_467": custody,
+                "sleep_site_recall_custody_467": recall_audit,
+                "old_recall_m11_audit_560": old_recall_audit,
+                "sleep_site_stage8_context_custody_510": context_audit,
                 "lifecycle": receipt.status,
                 "execution": receipt.outcome,
                 "journal_count": receipt.journal_count,
                 "journal_head": receipt.journal_head,
+                # Published ONLY after the committed M11 generation, no
+                # private staging mutation or extra physical/cognitive step.
+                "body_after": dict(life._runtime.world.telemetry()),
+                "position_after": life._runtime.world.position.as_dict(),
+                "terminal_reasons": (
+                    [] if life._runtime.stage3.substrate._mortal_boundary.terminal_death is None
+                    else list(life._runtime.stage3.substrate._mortal_boundary.terminal_death.reasons)
+                ),
             })
+            # Advance observer-only ownership after all current-step checks:
+            # no future closure can retroactively authorize an earlier read.
+            closed_index.extend_committed(newly_closed)
             if receipt.status == "dead":
                 break
     if not trajectory:
@@ -291,12 +1302,217 @@ def _m11_life(*, birth, params, life_id, path, steps):
         raise RuntimeError("M11 read-only audit disagrees with committed life")
     if audit.status == "dead" and audit.may_recover:
         raise RuntimeError("terminal identity unexpectedly recoverable")
+    # #471: operator-only proof of which real sleeping source references
+    # are present in *closed* Memory episodes, not merely a technical
+    # journal, an open episode, or a paid-but-unrelated h publication.
+    final_memory = life._runtime.memory.export_causal_state()
+    indexed_refs = {}
+    for episode in final_memory["episodes"]:
+        for ref in episode["event_refs"]:
+            indexed_refs.setdefault(ref, []).append(episode["id"])
+    sleep_runs = []
+    current_run = []
+    for row in trajectory:
+        is_sleep = (row["physical_journal_observation"] is not None
+                    and row["physical_journal_observation"]["primitive"] == "dormir")
+        if not is_sleep and current_run:
+            sleep_runs.append(current_run)
+            current_run = []
+        if is_sleep:
+            current_run.append(row)
+    if current_run:
+        sleep_runs.append(current_run)
+    # Contiguous physical commands are not necessarily uninterrupted sleep:
+    # wake plus a new paid admission may occur between adjacent commands.
+    sleep_run_audits = []
+    for run in sleep_runs:
+        refs = [ref for row in run
+                for ref in row["autobiographical_sleep_custody_467"][
+                    "physical_source_refs"]]
+        first = run[0]["physical_journal_observation"]["body_before"]
+        last = run[-1]["physical_journal_observation"]["body_after"]
+        closed_matches = {ref: indexed_refs.get(ref, []) for ref in refs}
+        if any(len(matches) > 1 for matches in closed_matches.values()):
+            raise RuntimeError("one lived source assigned to multiple closed episodes")
+        published = {
+            ref for row in run
+            for ref in row["autobiographical_sleep_custody_467"][
+                "physical_source_refs"]
+            if first_autobiographical_commit.get(ref) is not None
+        }
+        if any(ref not in published for ref in closed_matches
+               if closed_matches[ref]):
+            raise RuntimeError("non-autobiographical event in closed sleep episode")
+        encountered = sorted({e for xs in closed_matches.values() for e in xs})
+        provenance_counts = {
+            kind: sum(row["sleep_custody_observation"]["provenance"] == kind
+                      for row in run)
+            for kind in ("ordinary_awake_admission", "readmitted_after_wake",
+                         "reduced_sleep_continuation")
+        }
+        sleep_run_audits.append({
+            "provenance_counts": provenance_counts,
+            "start_step": run[0]["world_step"],
+            "end_step": run[-1]["world_step"],
+            "steps": len(run),
+            "body_before": dict(first),
+            "body_after": dict(last),
+            "body_delta": {k: last[k] - first[k] for k in first},
+            "source_count": len(refs),
+            "sources_seen_by_memory": sum(
+                ref in first_memory_ingestion for ref in refs),
+            "sources_in_closed_episodes": sum(bool(x) for x in closed_matches.values()),
+            "distinct_closed_episode_refs": encountered,
+            "all_sources_in_closed_episodes": all(
+                bool(x) for x in closed_matches.values()),
+            "final_life_terminal": (
+                run[-1]["lifecycle"] == "dead"),
+        })
+    # #490: operator-only *decision* custody, never a new Memory owner.
+    # Contiguous dormir commands can cross wake + deliberate re-admission.
+    # Split only on the independently classified real applied admission,
+    # not on position, rest effects, or an inferred continuous session.
+    decision_groups = _split_applied_sleep_decisions(trajectory)
+    # #495: distinguish a directly perceived postwake body from the
+    # *separate* physical transition that Memory could have received. The
+    # technical capture is never itself an autobiographical source. A
+    # qualifying cue does not imply that its applied transition was read,
+    # ingested, closed, or attached to a subjective sleep session.
+    wake_custody = []
+    for row in trajectory:
+        sleep = row["sleep_custody_observation"]
+        capture_ref = sleep["dormant_wake_capture_ref"]
+        physical_ref = sleep["dormant_wake_applied_transition_ref"]
+        if capture_ref is None:
+            if physical_ref is not None or sleep["dormant_wake_cue_eligible"]:
+                raise RuntimeError("orphan postwake candidate transition")
+            continue
+        if (not sleep["dormant_wake_cue_eligible"]
+                or type(capture_ref) is not str or not capture_ref
+                or type(physical_ref) is not str or not physical_ref):
+            raise RuntimeError("malformed first-person wake candidate custody")
+        physical_refs = row["autobiographical_sleep_custody_467"][
+            "physical_source_refs"]
+        if physical_ref not in physical_refs:
+            raise RuntimeError("wake candidate lacks same-step applied transition")
+        owners = indexed_refs.get(physical_ref, [])
+        # A raw Stage3 capture has not been authorized for DC-09. Prove
+        # non-promotion from the actual commitment and Memory indices,
+        # rather than hardcoding a non-memory label in the report.
+        if (capture_ref in first_autobiographical_commit
+                or capture_ref in first_memory_ingestion
+                or capture_ref in indexed_refs):
+            raise RuntimeError("unversioned wake capture promoted into Memory")
+        if len(owners) > 1:
+            raise RuntimeError("duplicate wake transition episode owner")
+        wake_ref = sleep["waking_dc09_source_ref"]
+        if wake_ref is not None:
+            if (not sleep["waking_dc09_committed"]
+                    or type(wake_ref) is not str or not wake_ref
+                    or wake_ref == physical_ref or wake_ref == capture_ref):
+                raise RuntimeError("ambiguous waking autobiographical source")
+            wake_owners = indexed_refs.get(wake_ref, [])
+            if len(wake_owners) > 1:
+                raise RuntimeError("duplicated waking memory episode ownership")
+            wake_commit_step = first_autobiographical_commit.get(wake_ref)
+            wake_ingest_step = first_memory_ingestion.get(wake_ref)
+            if (wake_commit_step is None
+                    or wake_ingest_step is not None
+                    and wake_ingest_step < wake_commit_step
+                    or wake_owners and wake_ingest_step is None):
+                raise RuntimeError("unowned or premature waking Memory source")
+        else:
+            wake_owners = []
+            wake_commit_step = wake_ingest_step = None
+        commit_step = first_autobiographical_commit.get(physical_ref)
+        ingest_step = first_memory_ingestion.get(physical_ref)
+        if (ingest_step is not None
+                and (commit_step is None or ingest_step < commit_step)):
+            raise RuntimeError("Memory received uncommitted wake transition")
+        if owners and ingest_step is None:
+            raise RuntimeError("closed wake transition was never ingested")
+        wake_custody.append({
+            "step": row["world_step"],
+            "first_person_capture_ref": capture_ref,
+            "applied_transition_ref": physical_ref,
+            "waking_autobiographical_ref": wake_ref,
+            "waking_commit_step": wake_commit_step,
+            "waking_ingestion_step": wake_ingest_step,
+            "waking_closed_episode_ref": (
+                None if not wake_owners else wake_owners[0]),
+            "transition_committed_step": commit_step,
+            "transition_ingested_step": ingest_step,
+            "closed_episode_ref": None if not owners else owners[0],
+            "capture_is_personal_memory": False,
+            "subjective_waking_boundary_proven": False,
+            "continuous_subjective_session_proven": False,
+        })
+    decision_audits = []
+    for group in decision_groups:
+        refs = group["source_refs"]
+        if len(refs) != 2 * len(group["steps"]) or len(refs) != len(set(refs)):
+            raise RuntimeError("ambiguous physical sleep decision source refs")
+        episodes = {ref: indexed_refs.get(ref, []) for ref in refs}
+        if any(len(matches) > 1 for matches in episodes.values()):
+            raise RuntimeError("duplicate closed episode ownership")
+        decision_audits.append({
+            "decision_step": group["decision_step"],
+            "admission_class": group["source"],
+            "physical_steps": list(group["steps"]),
+            "physical_command_count": len(group["steps"]),
+            "source_count": len(refs),
+            "committed_sources": sum(
+                ref in first_autobiographical_commit for ref in refs),
+            "ingested_sources": sum(
+                ref in first_memory_ingestion for ref in refs),
+            "sources_in_closed_episodes": sum(bool(episodes[ref])
+                                              for ref in refs),
+            "closed_episode_refs": sorted({
+                ep for matches in episodes.values() for ep in matches
+            }),
+            "continuous_subjective_session_proven": False,
+            "decision_influence_proven": False,
+        })
     return {
         "lifecycle": audit.status, "steps": trajectory,
         "journal_head": audit.journal_head,
         "durable_entries": audit.journal_count,
         "may_recover": audit.may_recover,
         "custody_file": path.name,
+        "effective_birth_physics": effective,
+        "old_recall_m11_summary_560": {
+            "schema": "i1-old-recall-natural-m11-summary-v1",
+            "authentic_old_consultations": sum(
+                step["old_recall_m11_audit_560"]["authentic_old_consultations"]
+                for step in trajectory),
+            "accepted_old_read_charges": sum(
+                step["old_recall_m11_audit_560"]["accepted_old_read_charges"]
+                for step in trajectory),
+            "l2_positive": ("OBSERVED" if any(
+                step["old_recall_m11_audit_560"]["authentic_old_consultations"]
+                for step in trajectory) else "NOT_OBSERVED"),
+            "l3_decision_influence": "NOT_ESTABLISHED",
+        },
+        "sleep_episode_link_audit_471": sleep_run_audits,
+        "sleep_decision_custody_audit_490": decision_audits,
+        "waking_perception_transition_custody_495": wake_custody,
+        "distinct_paid_waking_links_audit_495": _audit_distinct_paid_waking_links(trajectory),
+        "matched_stationary_site_audit_521": _audit_paid_matched_stationary_sites(trajectory),
+        "physical_memory_custody_469": [
+            {
+                "step": row["world_step"],
+                "primitive": (
+                    None if row["physical_journal_observation"] is None
+                    else row["physical_journal_observation"]["primitive"]),
+                "source_ref": ref,
+                "autobiographical_commit_step":
+                    first_autobiographical_commit.get(ref),
+                "memory_ingestion_step": first_memory_ingestion.get(ref),
+            }
+            for row in trajectory
+            for ref in row["autobiographical_sleep_custody_467"][
+                "physical_source_refs"]
+        ],
     }
 
 
@@ -351,6 +1567,7 @@ def execute(*, preset_name, seed, steps, lives, custody, output_dir,
                 "initial_body": preset["initial_body"],
                 "layout": preset["layout"],  # External operator ONLY.
                 "world_physics_digest": params["world_config"].digest(),
+                "world_physics_digest_kind": "input_prebirth_config",
                 "initial_local_perception": initial_local,
                 "privileged_environment_not_given_to_policy": True,
             }

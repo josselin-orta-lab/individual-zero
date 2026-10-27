@@ -9,8 +9,8 @@ Spec: 8.3-8.8, DC-01, DC-02, DC-10, 20.4 Stage 4.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from math import exp
+from dataclasses import dataclass, replace
+from math import exp, isfinite
 from typing import Callable, Mapping, Sequence
 
 from i0.contracts import EvaluationOption, Option, OptionProposal, canonical_option_order
@@ -104,6 +104,80 @@ class CompetitionCycleResult:
     cycle: int
 
 
+@dataclass(frozen=True, slots=True)
+class AppliedMemoryIntention:
+    """A remembered semantic commitment, never an engaged motor option.
+
+    Competition owns the evidence; the next fresh perception can confirm or
+    contradict an arrival. M11 persists this as ordinary Competition state.
+    """
+    semantic_ref: str
+    source_option_ref: str
+    goal_ref: str
+    expected_position: tuple[int, int]
+    observed_site: tuple[int, int]
+    applied_step: int
+    expires_at_step: int
+    evidence: float
+    reconsidered_step: int | None = None
+    confirmed_step: int | None = None  # ONLY the next authentic Perception
+
+    def validate(self) -> None:
+        def point(value):
+            return (type(value) is tuple and len(value) == 2
+                    and all(type(n) is int for n in value))
+        # The applied option is an immutable first-person causal reference.
+        # Its canonical place, entity and first hop must agree with the
+        # semantic intention and observed control result, also after M11.
+        canonical = None
+        if type(self.source_option_ref) is str:
+            import re
+            canonical = re.fullmatch(
+                r"option:place-memory:place:(.+):at:(-?(?:0|[1-9][0-9]*)):"
+                r"(-?(?:0|[1-9][0-9]*)):from:(-?(?:0|[1-9][0-9]*)):"
+                r"(-?(?:0|[1-9][0-9]*)):via:(-?(?:0|[1-9][0-9]*)):"
+                r"(-?(?:0|[1-9][0-9]*))",
+                self.source_option_ref,
+            )
+        if (canonical is None
+            or type(self.semantic_ref) is not str
+            or not point(self.observed_site)
+            or not point(self.expected_position)
+            or canonical.group(1) != self.semantic_ref.removeprefix("memory_place_return:")
+            or tuple(map(int, canonical.group(2, 3))) != self.observed_site
+            or tuple(map(int, canonical.group(6, 7))) != self.expected_position
+            or sum(abs(a-b) for a,b in zip(
+                map(int, canonical.group(4,5)),
+                map(int, canonical.group(6,7)))) != 1):
+            raise ValueError("spatial intention provenance is inconsistent")
+        if (type(self.semantic_ref) is not str
+            or not self.semantic_ref.startswith("memory_place_return:")
+            or len(self.semantic_ref) <= len("memory_place_return:")
+            or type(self.source_option_ref) is not str
+            or not self.source_option_ref.startswith("option:place-memory:place:")
+            or type(self.goal_ref) is not str or not self.goal_ref
+            or not point(self.expected_position) or not point(self.observed_site)
+            or type(self.applied_step) is not int or self.applied_step < 1
+            or type(self.expires_at_step) is not int
+            or self.expires_at_step <= self.applied_step
+            or type(self.evidence) not in (int, float)
+            or not isfinite(self.evidence) or not 0.0 < self.evidence <= 1.0
+            or (self.reconsidered_step is not None and
+                (type(self.reconsidered_step) is not int
+                 or not self.applied_step < self.reconsidered_step
+                        < self.expires_at_step))
+            or (self.confirmed_step is not None and (
+                type(self.confirmed_step) is not int
+                or self.confirmed_step != self.applied_step + 1
+                or self.confirmed_step >= self.expires_at_step))
+            # No M11 image may claim that an intention was reconsidered
+            # before its arrival was confirmed by the next Perception.
+            or (self.reconsidered_step is not None
+                and (self.confirmed_step is None
+                     or self.reconsidered_step < self.confirmed_step))):
+            raise ValueError("invalid first-person applied memory intention")
+
+
 class Competition:
     owner_id = "competition"
 
@@ -120,6 +194,7 @@ class Competition:
         self._noise_draw = noise_draw
         self._registry: dict[str, CandidateState] = {}
         self._engaged_option_id: str | None = None
+        self._applied_memory_intent: AppliedMemoryIntention | None = None
         self._cycle = 0
 
     @property
@@ -188,6 +263,336 @@ class Competition:
         state = self._registry.get(option_ref)
         return None if state is None else state.accumulator
 
+    @property
+    def applied_memory_intention(self) -> AppliedMemoryIntention | None:
+        """Read-only owner state, not an option/command or fresh motor right."""
+        return self._applied_memory_intent
+
+    def record_applied_memory_intention(
+        self, *, option_ref: str, verified_control_step: tuple,
+        applied_step: int, expected_position: tuple[int, int],
+        observed_site: tuple[int, int], fallback_used: bool,
+    ) -> bool:
+        """Record only a previously evaluated AND physically applied choice.
+
+        Stage11 supplies destination and site from a frozen first-person
+        Exploration offer. Action Control must have advanced the same plan.
+        An unselected proposed route, refusal or fallback cannot record it.
+        """
+        if (type(fallback_used) is not bool
+            or type(applied_step) is not int or applied_step < 1
+            or type(verified_control_step) is not tuple
+            or len(verified_control_step) != 3
+            or type(expected_position) is not tuple
+            or len(expected_position) != 2
+            or any(type(x) is not int for x in expected_position)
+            or type(observed_site) is not tuple
+            or len(observed_site) != 2
+            or any(type(x) is not int for x in observed_site)):
+            raise ValueError("invalid applied intention provenance")
+        current = self._registry.get(option_ref)
+        if current is None or fallback_used:
+            return False
+        proposal = current.proposal
+        opt, plan = proposal.option, proposal.plan
+        if (opt.id != option_ref
+            or opt.provenance != "memory"
+            or opt.motive_ref.type != "place_memory"
+            or opt.id != f"option:place-memory:{opt.motive_ref.id}"
+            or not opt.learning_signature.startswith("memory_place_return:")
+            or opt.goal_ref is None or plan is None
+            or plan.goal_ref != opt.goal_ref
+            or plan.id != verified_control_step[1]
+            or verified_control_step != (opt.id, plan.id, 1)
+            or len(plan.steps) != 1
+            or plan.steps[0].command.primitive != "se_deplacer"
+            or not self._matches_applied_memory_motor_geometry(
+                opt.motive_ref.id, plan.steps[0].command.parameters,
+                expected_position)
+            or current.last_proposal_t != applied_step
+            or current.accumulator < current.last_threshold
+            or not isfinite(current.accumulator)
+            or opt.expires_at_step <= applied_step):
+            return False
+        record = AppliedMemoryIntention(
+            semantic_ref=opt.learning_signature,
+            source_option_ref=opt.id,
+            goal_ref=opt.goal_ref,
+            expected_position=expected_position,
+            observed_site=observed_site,
+            applied_step=applied_step,
+            expires_at_step=opt.expires_at_step,
+            evidence=min(1.0, current.accumulator),
+        )
+        try:
+            record.validate()
+        except ValueError:
+            # A mismatched current proposal/physical result is not an intent.
+            return False
+        self._applied_memory_intent = record
+        return True
+
+    @staticmethod
+    def _matches_applied_memory_motor_geometry(
+        route_ref: str, parameters: Mapping[str, object],
+        expected_position: tuple[int, int],
+    ) -> bool:
+        """Cross-check the admitted first motor hop with its claimed route."""
+        import re
+        match = re.fullmatch(
+            r"place:(.+):at:(-?(?:0|[1-9][0-9]*)):"
+            r"(-?(?:0|[1-9][0-9]*)):from:(-?(?:0|[1-9][0-9]*)):"
+            r"(-?(?:0|[1-9][0-9]*)):via:(-?(?:0|[1-9][0-9]*)):"
+            r"(-?(?:0|[1-9][0-9]*))", route_ref,
+        ) if type(route_ref) is str else None
+        if match is None or not isinstance(parameters, Mapping):
+            return False
+        origin = tuple(map(int, match.group(4, 5)))
+        destination = tuple(map(int, match.group(6, 7)))
+        delta = tuple(a-b for a,b in zip(destination, origin))
+        directions = {
+            (0, -1): "north", (1, 0): "east",
+            (0, 1): "south", (-1, 0): "west",
+        }
+        return (
+            destination == expected_position
+            and len(parameters) == 1
+            and parameters.get("direction") == directions.get(delta)
+        )
+
+    def expire_memory_intention(self, *, world_step: int) -> bool:
+        """Expire a semantic commitment by physical time, without Perception.
+
+        Sleep never confirms a position, changes Q or grants motor admission.
+        Only Competition owns this time-bound causal descriptor.
+        """
+        if type(world_step) is not int or world_step < 1:
+            raise ValueError("invalid intention expiration clock")
+        intent = self._applied_memory_intent
+        if intent is None:
+            return False
+        if world_step < intent.applied_step:
+            raise ValueError("intention clock predates application")
+        if world_step < intent.expires_at_step:
+            return False
+        self._applied_memory_intent = None
+        return True
+
+    def observe_memory_intention(
+        self, *, world_step: int, observed_position: tuple[int, int],
+    ) -> str:
+        """Compare the trusted last applied intention to fresh Perception.
+
+        This does not observe WorldBody or dispatch an action. An intervening
+        step never fabricates fresh continuity; it may leave the semantic
+        interest suspended until expiry. GoalManager still owns which goal
+        is active and Stage8/Competition still arbitrate every new command.
+        """
+        if (type(world_step) is not int or world_step < 1
+            or type(observed_position) is not tuple
+            or len(observed_position) != 2
+            or any(type(n) is not int for n in observed_position)):
+            raise ValueError("invalid first-person intention observation")
+        intent = self._applied_memory_intent
+        if intent is None:
+            return "absent"
+        if world_step < intent.applied_step:
+            raise ValueError("memory intention cannot precede applied step")
+        if world_step >= intent.expires_at_step:
+            self._applied_memory_intent = None
+            return "expired"
+        if world_step == intent.applied_step:
+            return "awaiting_new_capture"
+        if world_step == intent.applied_step + 1:
+            if observed_position != intent.expected_position:
+                self._applied_memory_intent = None
+                return "contradicted"
+            if intent.confirmed_step is None:
+                # Confirm the physically expected arrival in the owner only
+                # AFTER the next actual first-person Perception.
+                self._applied_memory_intent = replace(
+                    intent, confirmed_step=world_step,
+                )
+            return "reconsider"
+        # A late capture is NOT retroactive arrival confirmation. Without
+        # a confirmed next-step observation, suspended intent is inert.
+        return "suspended"
+
+    def invalidate_contradicted_place_intention(
+        self, *, semantic_ref: str, observed_site: tuple[int, int],
+        contradiction_step: int,
+    ) -> bool:
+        """Forget an intent only when its personally observed site is disproved.
+
+        Exploration owns the perception and its paid observation. This owner
+        only invalidates the matching applied semantic commitment; it never
+        erases the historical place memory, Q or a physical control command.
+        """
+        if (type(semantic_ref) is not str
+            or not semantic_ref.startswith("memory_place_return:")
+            or type(observed_site) is not tuple or len(observed_site) != 2
+            or any(type(v) is not int for v in observed_site)
+            or type(contradiction_step) is not int or contradiction_step < 1):
+            raise ValueError("invalid first-person place contradiction")
+        intent = self._applied_memory_intent
+        if (intent is None or intent.semantic_ref != semantic_ref
+            or intent.observed_site != observed_site
+            or contradiction_step <= intent.applied_step):
+            return False
+        self._applied_memory_intent = None
+        return True
+
+    def drop_memory_intention(self) -> None:
+        """Forget contradicting/expired evidence without moving the body."""
+        self._applied_memory_intent = None
+
+    def retain_bounded_intention_evidence(
+        self, *, option_ref: str, t_monde: int,
+        observed_origin: tuple[int, int], evidence: float,
+    ) -> bool:
+        """Reconsider one new PAID candidate, strictly below motor threshold.
+
+        This preserves no Action Control admission, fallback engagement or Q.
+        A semantic intention may remain after interruption, but cannot reuse
+        motor proof after a non-consecutive step or twice in one world step.
+        """
+        if (type(option_ref) is not str or not option_ref
+            or type(t_monde) is not int or t_monde < 2
+            or type(observed_origin) is not tuple
+            or len(observed_origin) != 2
+            or any(type(n) is not int for n in observed_origin)
+            or type(evidence) not in (float, int)
+            or not isfinite(evidence) or not 0.0 < evidence <= 1.0):
+            raise ValueError("invalid bounded intention evidence")
+        intent = self._applied_memory_intent
+        candidate = self._registry.get(option_ref)
+        if (intent is None or candidate is None
+            # Retention is evidence about a CONFIRMED lived hop, never
+            # an inherited priority from Action Control's application.
+            # Requiring the owner-side Perception confirmation closes a
+            # direct API bypass even if the natural runtime calls observe
+            # before retention.
+            or intent.confirmed_step != t_monde
+            or t_monde != intent.applied_step + 1
+            or t_monde >= intent.expires_at_step
+            or intent.reconsidered_step is not None
+            or observed_origin != intent.expected_position
+            or candidate.last_proposal_t != t_monde
+            or candidate.accumulator != 0.0
+            or self._engaged_option_id == option_ref):
+            return False
+        option, plan = candidate.proposal.option, candidate.proposal.plan
+        if (option.id == intent.source_option_ref
+            or option.provenance != "memory"
+            or option.motive_ref.type != "place_memory"
+            or option.id != f"option:place-memory:{option.motive_ref.id}"
+            or option.learning_signature != intent.semantic_ref
+            or not self._matches_remembered_place(option, intent, observed_origin=observed_origin, verify_next_hop=True, plan=plan)
+            or option.goal_ref != intent.goal_ref
+            or plan is None or plan.goal_ref != intent.goal_ref
+            or len(plan.steps) != 1
+            or plan.steps[0].command.primitive != "se_deplacer"):
+            return False
+        retained = min(float(evidence), intent.evidence,
+                       candidate.last_threshold * self._config.residual)
+        if not 0.0 < retained < candidate.last_threshold:
+            return False
+        candidate.accumulator = retained
+        self._applied_memory_intent = AppliedMemoryIntention(
+            semantic_ref=intent.semantic_ref,
+            source_option_ref=intent.source_option_ref,
+            goal_ref=intent.goal_ref,
+            expected_position=intent.expected_position,
+            observed_site=intent.observed_site,
+            applied_step=intent.applied_step,
+            expires_at_step=intent.expires_at_step,
+            evidence=intent.evidence,
+            reconsidered_step=t_monde,
+            confirmed_step=intent.confirmed_step,
+        )
+        return True
+
+    @staticmethod
+    def _matches_remembered_place(option: Option, intent: AppliedMemoryIntention, *, observed_origin: tuple[int, int] | None = None, verify_next_hop: bool = False, plan: object = None) -> bool:
+        """The actual newly registered option must target the same lived site."""
+        import re
+        ref = option.motive_ref.id
+        match = re.fullmatch(
+            r"place:(.+):at:(-?(?:0|[1-9][0-9]*)):"
+            r"(-?(?:0|[1-9][0-9]*)):from:(-?(?:0|[1-9][0-9]*)):"
+            r"(-?(?:0|[1-9][0-9]*)):via:(-?(?:0|[1-9][0-9]*)):"
+            r"(-?(?:0|[1-9][0-9]*))", ref,
+        ) if type(ref) is str else None
+        return bool(
+            match is not None
+            and match.group(1) == intent.semantic_ref.removeprefix("memory_place_return:")
+            and tuple(map(int, match.group(2, 3))) == intent.observed_site
+            and sum(abs(a-b) for a,b in zip(
+                map(int,match.group(4,5)),map(int,match.group(6,7)))) == 1
+            and (not verify_next_hop or (
+                observed_origin is not None
+                and tuple(map(int, match.group(4,5))) == observed_origin
+                and tuple(map(int, match.group(4,5))) == intent.expected_position
+                and plan is not None
+                and len(plan.steps) == 1
+                and plan.steps[0].command.primitive == "se_deplacer"
+                and plan.steps[0].command.parameters.get("direction") ==
+                    next((direction for direction, delta in (
+                        ("north", (0,-1)), ("east", (1,0)),
+                        ("south", (0,1)), ("west", (-1,0)))
+                        if delta == tuple(
+                            v-o for v,o in zip(
+                                map(int,match.group(6,7)),
+                                map(int,match.group(4,5))))), None)
+            ))
+        )
+
+    def reconsider_confirmed_intention(
+        self, *, option_ref: str, t_monde: int,
+        observed_site: tuple[int, int], active_goal_id: str | None,
+    ) -> bool:
+        """Resume considering a semantic place AFTER an interruption.
+
+        Only a newly registered, paid, independently evaluated option may be
+        reconsidered. No prior accumulator, engagement, Q, UC or motor permit
+        is transferred; the ordinary evaluator alone establishes its value.
+        """
+        if (type(option_ref) is not str or not option_ref
+            or type(t_monde) is not int or t_monde < 2
+            or type(observed_site) is not tuple or len(observed_site) != 2
+            or any(type(x) is not int for x in observed_site)
+            or (active_goal_id is not None
+                and type(active_goal_id) is not str)):
+            raise ValueError("invalid semantic intention reconsideration")
+        intent = self._applied_memory_intent
+        candidate = self._registry.get(option_ref)
+        if (intent is None or intent.confirmed_step != intent.applied_step + 1
+            or t_monde <= intent.confirmed_step
+            or t_monde >= intent.expires_at_step
+            or intent.reconsidered_step == t_monde
+            or intent.goal_ref != active_goal_id
+            or intent.observed_site != observed_site
+            or candidate is None or candidate.last_proposal_t != t_monde
+            or self._engaged_option_id == option_ref):
+            return False
+        option, plan = candidate.proposal.option, candidate.proposal.plan
+        if (option.id == intent.source_option_ref
+            or option.provenance != "memory"
+            or option.motive_ref.type != "place_memory"
+            or option.id != f"option:place-memory:{option.motive_ref.id}"
+            or option.learning_signature != intent.semantic_ref
+            or not self._matches_remembered_place(option, intent)
+            or option.goal_ref != intent.goal_ref
+            or plan is None or plan.goal_ref != intent.goal_ref
+            or len(plan.steps) != 1
+            or plan.steps[0].command.primitive != "se_deplacer"):
+            return False
+        # Crucially, do NOT change candidate.accumulator or last_threshold.
+        self._applied_memory_intent = replace(
+            intent, reconsidered_step=t_monde,
+        )
+        return True
+
     def is_engaged(self, option_ref: str) -> bool:
         return self._engaged_option_id == option_ref
 
@@ -207,11 +612,33 @@ class Competition:
 
         existing = self._registry.get(option.id)
         if existing is not None:
+            # A later callback cannot rewrite a candidate's already
+            # authenticated proposal clock into an earlier deliberation.
+            if t_monde < existing.last_proposal_t:
+                return False
+            old_option = existing.proposal.option
+            semantic_change = (
+                old_option.learning_signature != option.learning_signature
+                or old_option.version != option.version
+                or old_option.type != option.type
+                or old_option.preconditions != option.preconditions
+                or old_option.success_condition != option.success_condition
+                or old_option.failure_condition != option.failure_condition
+                or old_option.invalidation_condition != option.invalidation_condition
+                or old_option.provenance != option.provenance
+                or old_option.motive_ref != option.motive_ref
+                or old_option.goal_ref != option.goal_ref
+            )
             material_change = self.material_plan_change(
                 existing.proposal,
                 proposal,
             )
-            if material_change and option.id != self._engaged_option_id:
+            if ((semantic_change or material_change)
+                and option.id == self._engaged_option_id):
+                # Engagement belongs to the evaluated motor realization.
+                # A different plan must compete anew, not inherit its credit.
+                return False
+            if material_change or semantic_change:
                 # DC-17: evidence accumulated for a different realization of
                 # a non-engaged option never transfers to the revised plan.
                 existing.accumulator = 0.0
@@ -319,6 +746,9 @@ class Competition:
         t_monde: int,
     ) -> None:
         self._cycle = 0
+        if (self._applied_memory_intent is not None
+            and t_monde >= self._applied_memory_intent.expires_at_step):
+            self._applied_memory_intent = None
         for option_id in list(self._registry):
             state = self._registry[option_id]
             option = state.proposal.option
@@ -351,6 +781,22 @@ class Competition:
     ) -> CompetitionCycleResult:
         if cycle < 1:
             raise ValueError("competition cycle must be >= 1")
+        # Validate the complete Stage8 batch before mutating ANY candidate.
+        # Dictionary indexing alone is not proof of evaluator provenance.
+        if evidence_inputs is not None:
+            for option_id, state in self._registry.items():
+                supplied = evidence_inputs.get(option_id)
+                if supplied is None:
+                    raise ValueError(
+                        f"missing Stage-6 evidence input for option {option_id}"
+                    )
+                supplied.validate()
+                evaluation = supplied.evaluation
+                if (evaluation.option_ref != option_id
+                    or evaluation.option_version != state.proposal.option.version
+                    or evaluation.cycle != cycle
+                    or evaluation.t_monde != t_monde):
+                    raise ValueError("Stage8 evidence does not match current candidate")
         self._cycle = cycle
 
         evaluations: list[EvaluationOption] = []
@@ -502,8 +948,22 @@ class Competition:
         if self._engaged_option_id == option_ref:
             self._engaged_option_id = None
 
-    def close_deliberation(self, winner: OptionProposal | None) -> None:
+    def close_deliberation(
+        self, winner: OptionProposal | None, *, adjudicated: bool = True,
+    ) -> None:
+        # A physically applied fallback is not an adjudicated Competition win.
+        # It must not erode the evidence of unrelated still-viable options.
+        # Existing validity checks, expiry and capacity constraints remain.
+        if type(adjudicated) is not bool:
+            raise ValueError("Competition adjudication flag must be boolean")
+        if not adjudicated:
+            return
         winner_id = None if winner is None else winner.option.id
+        if winner is not None:
+            winner.validate()
+            current = self._registry.get(winner_id)
+            if current is None or current.proposal != winner:
+                raise ValueError("Competition winner must be the registered candidate")
         for option_id, state in self._registry.items():
             if option_id == winner_id:
                 continue
@@ -531,7 +991,7 @@ class Competition:
         return candidates[0]
 
     def export_causal_state(self) -> object:
-        return {
+        state = {
             "config_version": self._config.version,
             "cycle": self._cycle,
             "engaged_option_id": self._engaged_option_id,
@@ -545,35 +1005,115 @@ class Competition:
                 for _, state in sorted(self._registry.items())
             ],
         }
+        intent = self._applied_memory_intent
+        if intent is not None:
+            intent.validate()
+            state["applied_memory_intention"] = {
+                "semantic_ref": intent.semantic_ref,
+                "source_option_ref": intent.source_option_ref,
+                "goal_ref": intent.goal_ref,
+                "expected_position": list(intent.expected_position),
+                "observed_site": list(intent.observed_site),
+                "applied_step": intent.applied_step,
+                "expires_at_step": intent.expires_at_step,
+                "evidence": intent.evidence,
+                "reconsidered_step": intent.reconsidered_step,
+                **({"confirmed_step": intent.confirmed_step}
+                   if intent.confirmed_step is not None else {}),
+            }
+        return state
 
     def restore_causal_state(self, state: object) -> None:
         if not isinstance(state, Mapping):
             raise ValueError("Competition state must be a mapping")
         if state.get("config_version") != self._config.version:
             raise ValueError("Competition config version mismatch")
+        required = {"config_version", "cycle", "engaged_option_id", "registry"}
+        if set(state) not in (required, required | {"applied_memory_intention"}):
+            raise ValueError("invalid Competition owner-image fields")
         cycle = state.get("cycle")
-        if not isinstance(cycle, int) or cycle < 0:
+        if type(cycle) is not int or cycle < 0:
             raise ValueError("invalid Competition cycle")
         engaged = state.get("engaged_option_id")
-        if engaged is not None and not isinstance(engaged, str):
+        if engaged is not None and (type(engaged) is not str or not engaged):
             raise ValueError("invalid engaged option id")
         raw_registry = state.get("registry")
         if not isinstance(raw_registry, list):
             raise ValueError("invalid Competition registry")
         registry: dict[str, CandidateState] = {}
         for row in raw_registry:
-            if not isinstance(row, Mapping):
-                raise ValueError("invalid Competition candidate")
-            proposal_raw = row.get("proposal")
+            if (not isinstance(row, Mapping)
+                or set(row) != {"proposal", "accumulator",
+                                "last_threshold", "last_proposal_t"}):
+                raise ValueError("invalid Competition candidate fields")
+            proposal_raw = row["proposal"]
             if not isinstance(proposal_raw, Mapping):
                 raise ValueError("invalid Competition proposal")
             proposal = decode_proposal(proposal_raw)
-            registry[proposal.option.id] = CandidateState(
-                proposal=proposal,
-                accumulator=float(row["accumulator"]),
-                last_threshold=float(row["last_threshold"]),
-                last_proposal_t=int(row["last_proposal_t"]),
+            proposal.validate()
+            option_id = proposal.option.id
+            if option_id in registry:
+                # No duplicate causal candidate may silently replace another.
+                raise ValueError("duplicate Competition candidate identity")
+            raw_accumulator = row["accumulator"]
+            raw_threshold = row["last_threshold"]
+            proposal_step = row["last_proposal_t"]
+            if (type(raw_accumulator) not in (int, float)
+                or type(raw_threshold) not in (int, float)
+                or type(proposal_step) is not int
+                or proposal_step < 1
+                or proposal_step >= proposal.option.expires_at_step):
+                raise ValueError("invalid Competition candidate numeric provenance")
+            try:
+                accumulator = float(raw_accumulator)
+                threshold = float(raw_threshold)
+            except (OverflowError, ValueError) as error:
+                raise ValueError("invalid Competition candidate numeric range") from error
+            if (not isfinite(accumulator) or accumulator < 0.0
+                or not isfinite(threshold)
+                or not self._config.threshold_floor <= threshold <= self._config.base_threshold):
+                raise ValueError("invalid Competition candidate accumulation or threshold")
+            registry[option_id] = CandidateState(
+                proposal=proposal, accumulator=accumulator,
+                last_threshold=threshold, last_proposal_t=proposal_step,
             )
+        if engaged is not None and engaged not in registry:
+            raise ValueError("orphan Competition motor engagement")
+        if sum(ident != "permanent:attendre" for ident in registry) > self._config.options_max:
+            raise ValueError("Competition image exceeds the candidate capacity")
+        raw_intent = state.get("applied_memory_intention")
+        intention = None
+        if raw_intent is not None:
+            required = {
+                "semantic_ref", "source_option_ref", "goal_ref",
+                "expected_position", "observed_site", "applied_step",
+                "expires_at_step", "evidence", "reconsidered_step",
+            }
+            if (not isinstance(raw_intent, Mapping)
+                or set(raw_intent) not in (required, required | {"confirmed_step"})
+                or any(type(raw_intent[k]) is not str
+                       for k in ("semantic_ref", "source_option_ref", "goal_ref"))
+                or any(not isinstance(raw_intent[k], (tuple, list))
+                       or len(raw_intent[k]) != 2
+                       for k in ("expected_position", "observed_site"))):
+                raise ValueError("invalid persisted memory intention")
+            intention = AppliedMemoryIntention(
+                semantic_ref=raw_intent["semantic_ref"],
+                source_option_ref=raw_intent["source_option_ref"],
+                goal_ref=raw_intent["goal_ref"],
+                expected_position=tuple(raw_intent["expected_position"]),
+                observed_site=tuple(raw_intent["observed_site"]),
+                applied_step=raw_intent["applied_step"],
+                expires_at_step=raw_intent["expires_at_step"],
+                evidence=raw_intent["evidence"],
+                reconsidered_step=raw_intent["reconsidered_step"],
+                confirmed_step=raw_intent.get("confirmed_step"),
+            )
+            intention.validate()
+            if ("confirmed_step" in raw_intent
+                and intention.confirmed_step is None):
+                raise ValueError("invalid explicit arrival-confirmation receipt")
         self._cycle = cycle
         self._engaged_option_id = engaged
         self._registry = registry
+        self._applied_memory_intent = intention

@@ -9,7 +9,8 @@
 3. [EVIDENCE_MATRIX.md](EVIDENCE_MATRIX.md): implementation vs verified behavior vs science
 4. [OBSERVABILITY.md](OBSERVABILITY.md): read-only reports and epistemic limitations
 5. [DEVELOPMENT_PLAYBOOK.md](DEVELOPMENT_PLAYBOOK.md): disciplined interventions and CI
-6. [ARCHITECTURE.md](ARCHITECTURE.md), [TEST_PLAN.md](TEST_PLAN.md), [STATUS.md](STATUS.md), [WORLD_PRESETS.md](WORLD_PRESETS.md): active engineering reference
+6. [CAPABILITY_INTEGRATION.md](CAPABILITY_INTEGRATION.md): actual birth activation separate from scientific evidence
+7. [ARCHITECTURE.md](ARCHITECTURE.md), [TEST_PLAN.md](TEST_PLAN.md), [STATUS.md](STATUS.md), [WORLD_PRESETS.md](WORLD_PRESETS.md): active engineering reference
 
 ## Deep technical guides
 
@@ -22,6 +23,22 @@
 - [STAGES_AND_INTERFACES.md](STAGES_AND_INTERFACES.md): executable Stage ownership, multiple inheritance, data handoffs and intervention map
 - [UC_AND_SCHEDULING.md](UC_AND_SCHEDULING.md): two independent logical UC ledgers, actual charge points, failure diagnosis
 - [EXPERIMENT_PROTOCOL.md](EXPERIMENT_PROTOCOL.md): independent mortal lives, controls, traces and limits of scientific inference
+- [ISSUE_317_STAGED_INTEGRATION.md](ISSUE_317_STAGED_INTEGRATION.md): stable personally grounded memory option ID and gated retention across steps
+- [STATUS.md](STATUS.md): verified staged #318 integration ledger and remaining review boundaries
+- [ISSUE_330_STABLE_GEOGRAPHIC_IDENTITY.md](ISSUE_330_STABLE_GEOGRAPHIC_IDENTITY.md): exact local frontier/transit identity from fresh observations
+- [ISSUE_326_IMPLEMENTATION.md](ISSUE_326_IMPLEMENTATION.md): dormant and bounded intention-continuation prototype, issue #326
+- [ISSUE_327_IMPLEMENTATION.md](ISSUE_327_IMPLEMENTATION.md): dormant local-opportunity and Q exposure selectors, issue #327
+- [ISSUE_328_IMPLEMENTATION.md](ISSUE_328_IMPLEMENTATION.md): dormant personally experienced place-relevance adapter, issue #328
+- [ISSUE_329_IMPLEMENTATION.md](ISSUE_329_IMPLEMENTATION.md): dormant read-only bodily alert classifier, issue #329
+- [ISSUE_336_PARITY_REGISTRY.md](ISSUE_336_PARITY_REGISTRY.md): exact per-issue source pin manifests for inactive I1 modules
+
+## Bibliothèque scientifique externe (non normative)
+
+- [Références scientifiques](research/REFERENCES.md) : six architectures, sources inspectées et provenance.
+- [Étude comparative datée](research/COGNITIVE_ARCHITECTURES.md) : résultats rapportés, limites et inférences pour I1.
+- [Questions de recherche](research/RESEARCH_QUESTIONS.md) : expériences proposées et statuts non démontrés.
+
+L'index externe ne nourrit jamais la mémoire d'un I1 né naturellement et ne modifie ni l'architecture, ni les contrôles UC/M11, ni les critères de preuve.
 
 ## Authority
 

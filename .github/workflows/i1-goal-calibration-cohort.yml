@@ -1,0 +1,46 @@
+name: I1 matched vital goal newborn evidence
+on:
+  push:
+    branches: [fix/i1-natural-goal-calibration-20261018]
+    paths:
+      - 'tools/run_i1_goal_calibration_cohort.py'
+      - 'src/i1/runtime/i1_natural_runtime.py'
+      - '.github/workflows/i1-goal-calibration-cohort.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  paired-lives:
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        world: [oasis, foraging]
+        seed: [701, 702, 703]
+        policy: [natural-004, historical-010]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - name: One fresh mortal I1, no forced decisions
+        shell: bash
+        env:
+          WORLD: ${{ matrix.world }}
+          SEED: ${{ matrix.seed }}
+          POLICY: ${{ matrix.policy }}
+        run: |
+          python tools/run_i1_goal_calibration_cohort.py \
+            --world "$WORLD" --seed "$SEED" --policy "$POLICY" \
+            --steps 150 --output-dir "reports/${WORLD}/${SEED}/${POLICY}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: life-${{ matrix.world }}-${{ matrix.seed }}-${{ matrix.policy }}
+          path: reports/
+          retention-days: 30

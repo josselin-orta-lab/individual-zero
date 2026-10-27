@@ -104,10 +104,9 @@ class CurrentI1(unittest.TestCase):
             self.assertEqual(owners.count(owner), 1)
         self.assertGreater(life.world.config.food_decay_per_step, 0)
         self.assertGreater(life.world.config.water_decay_per_step, 0)
-        self.assertGreater(
-            life.world.config.starvation_integrity_damage_per_step, 0)
-        self.assertGreater(
-            life.world.config.dehydration_integrity_damage_per_step, 0)
+        self.assertTrue(life.world.config.zero_reserve_lethal)
+        self.assertEqual(life.world.config.starvation_integrity_damage_per_step, 0.0)
+        self.assertEqual(life.world.config.dehydration_integrity_damage_per_step, 0.0)
 
     def test_complete_natural_architecture_is_enabled(self):
         """No historical test flags or disabled current-I1 cognitive modules.
@@ -263,10 +262,10 @@ class CurrentI1(unittest.TestCase):
         step = physical.apply(PrimitiveCommand("attendre", {}), t_monde=1)
         self.assertEqual(physical.telemetry()["food"], 0.0)
         self.assertEqual(physical.telemetry()["water"], 0.0)
-        self.assertLess(physical.telemetry()["integrity"], before)
-        charges = step.effects["deprivation_integrity_damage"]
-        self.assertGreater(charges["starvation"], 0)
-        self.assertGreater(charges["dehydration"], 0)
+        self.assertGreaterEqual(physical.telemetry()["integrity"], before)
+        self.assertNotIn("deprivation_integrity_damage", step.effects)
+        self.assertTrue(step.lethal)
+        self.assertEqual(step.lethal_reasons, ("zero_food", "zero_water"))
 
     def test_terminal_death_cannot_resume_or_rewind(self):
         from i1lab.world import BodyState

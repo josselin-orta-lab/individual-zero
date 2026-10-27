@@ -186,6 +186,22 @@ def _runtime_contract(runtime: Any) -> str:
     if getattr(runtime, "_i1_water_contract", None) is not None:
         configuration = (*configuration,
             ("i1-water-firstperson-birth-v1", runtime._i1_water_contract))
+    # I1 natural M11 must not cold-recover with a different birth-time
+    # Action Control prohibition policy. Learned facts remain owned by the
+    # restored Causal Model; only the immutable innate policy is pinned here.
+    from .i1_natural_runtime import I1Runtime
+    if type(runtime) is I1Runtime:
+        from i1.modules.action_control import StaticSafetyFacts
+        canonical = runtime._canonical_safety
+        innate = canonical._innate
+        if type(innate) is not StaticSafetyFacts:
+            raise RecoveryBlocked("canonical I1 requires frozen innate safety facts")
+        configuration = (*configuration, (
+            "i1-m11-action-control-birth-safety-v1",
+            innate,
+            runtime.stage3.control._config,
+            runtime.stage3.substrate.safety._config,
+        ))
     return sha256_hex(canonical_causal_bytes(_contract_value(configuration)))
 
 
@@ -323,6 +339,23 @@ def _install_trusted_current_on_fresh(
     staging.restore_causal_state(image["world"])
     if staging.export_causal_state() != image["world"]:
         raise RecoveryBlocked("cold physical image differs from current SQL state")
+    # The detached WorldBody legacy importer normalizes numeric fields to
+    # float. SQLite can legitimately contain unchanged integers (85 versus
+    # 85.0): those have DIFFERENT canonical M11 causal bytes. Preserve the
+    # exact, independently authenticated current-generation body types on
+    # this never-published staging world only. No living-world rollback.
+    from .world import BodyState
+    raw_body = image["world"]["body"]
+    if (type(raw_body) is not dict
+            or set(raw_body) != {"energy", "food", "water", "integrity"}
+            or any(type(v) not in (int, float) for v in raw_body.values())):
+        raise RecoveryBlocked("noncanonical current-generation body fields")
+    exact_body = BodyState(**raw_body)
+    exact_body.validate()
+    staging._body = exact_body
+    if (canonical_causal_bytes(staging.export_causal_state())
+            != canonical_causal_bytes(image["world"])):
+        raise RecoveryBlocked("cold body type fidelity differs from SQLite image")
     current = dict(runtime.world.__dict__)
     for name in _PHYSICAL_MUTABLE:
         current[name] = deepcopy(getattr(staging, name))
@@ -355,10 +388,18 @@ def _install_trusted_current_on_fresh(
     runtime.stage3._event_sequence = local["stage3_event_sequence"]
     runtime._event_sequence = local["stage4_event_sequence"]
     runtime.bus._event_sequence = local["bus_event_sequence"]
-    runtime.stage3.substrate.views._commit_event_ids = [
-        row.event_id for row in runtime.journal.entries
-        if row.causal_event.get("kind") == "auto_segment_commit"
-    ]
+    # Rebuild BOTH the visible commit index and the #484 unique-source
+    # custody index after replaying the authenticated journal. The fresh
+    # JournalViews birth preceded cold journal installation; assigning only
+    # _commit_event_ids would silently forget historical source ownership.
+    try:
+        reindexed = JournalViews(journal=runtime.journal)
+    except ValueError as exc:
+        raise RecoveryBlocked("invalid cold DC-09 source custody") from exc
+    runtime.stage3.substrate.views._commit_event_ids = list(
+        reindexed._commit_event_ids)
+    runtime.stage3.substrate.views._committed_source_refs = set(
+        reindexed._committed_source_refs)
     runtime.stage3.substrate.views._commit_sequence = local[
         "autobiographical_commit_sequence"]
     if (runtime.stage3.substrate.views._commit_sequence !=

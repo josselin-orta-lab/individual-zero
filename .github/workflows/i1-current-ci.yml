@@ -50,7 +50,8 @@ jobs:
   current-i1:
     name: I1 natural SMOKE + FULL (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Match merged #544 natural/M11 full-suite window (no tests skipped).
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -90,14 +91,105 @@ jobs:
         run: python tools/run_i1_world_preset.py --list
       - name: Real natural I1 preset birth and mortal WAL smoke
         run: python tools/run_i1_world_preset.py --preset oasis --seed 246 --steps 2 --lives 1 --custody wal --output-dir reports/preset-oasis-ci
+      - name: Issue 314 WAL false-positive regression tests
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_wal_audit_314.py -v
+      - name: Read-only spatial memory WAL evidence audit
+        run: |
+          python tools/audit_i1_spatial_navigation_314.py reports/preset-oasis-ci/life-01.wal --output reports/preset-oasis-ci/spatial-audit.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("reports/preset-oasis-ci/spatial-audit.json").read_text())
+          assert data["journal_entries"] > 0
+          assert data["independent_hash_chain_verified"] is True
+          assert data["stages"]["proposed"] >= 0
+          assert data["stages"]["physically_applied"] >= 0
+          assert not data["causal_learning_proven"]
+          assert not data["survival_improvement_proven"]
+          print("I1_SPATIAL_WAL_READ_ONLY_AUDIT_OK")
+          PY
+      - name: Natural M11 waking-link scan frequency (informational #562)
+        run: python -m unittest discover -s tests/i1 -p test_i1_m11_waking_link_frequency_562.py -v
+      - name: Natural M11 exact paid waking-link replay and full report parity (#562)
+        run: python -m unittest discover -s tests/i1 -p test_i1_m11_waking_link_exact_replay_562.py -v
+      - name: Incremental closed M11 observer index canonical report custody
+        run: python -m unittest discover -s tests/i1 -p test_i1_m11_incremental_index_562.py -v
+      - name: M11 first-ingestion delta differential guards
+        run: |
+          python -m unittest discover -s tests/i1 -p test_i1_m11_ingestion_delta_562.py -v
+          python -m unittest discover -s tests/i1 -p test_i1_m11_ingestion_delta_natural_562.py -v
+      - name: M11 Memory image reuse unit and natural full-export parity
+        run: |
+          python -m unittest discover -s tests/i1 -p test_i1_m11_memory_image_562.py -v
+          python -m unittest discover -s tests/i1 -p test_i1_m11_memory_image_natural_562.py -v
       - name: Real natural I1 preset M11 transactional smoke
         run: python tools/run_i1_world_preset.py --preset empty-land --seed 247 --steps 1 --lives 1 --custody m11 --output-dir reports/preset-empty-m11-ci
       - name: Static syntax
         run: python -m py_compile scripts/build_i1_fork.py scripts/test_i1_ci.py
       - name: Frozen I0 and versioned Lab source guard
         run: python -m unittest discover -s tests/i1 -p test_i1_source_snapshot.py -v
+      - name: Published SlowHistory no-unpaid-read P43 budget guard
+        run: python -m unittest discover -s tests/i1 -p test_i1_published_h_budget_guard_549.py -v
+      - name: Situated Stage8 observer adversarial context guard
+        run: python -m unittest discover -s tests/i1 -p test_i1_situated_sleep_stage8_guard_473.py -v
+      - name: Natural situated sleep Stage8 receipt and M11 cold parity
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_situated_sleep_m11_473.py -v
+      - name: Natural non-sleep situated Stage8 and M11 cold parity
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_general_situated_m11_553.py -v
+      - name: Generic situated Stage8 paid observer adversarial guard
+        run: python -m unittest discover -s tests/i1 -p test_i1_general_situated_stage8_guard_553.py -v
+      - name: General situated history wait and action identity
+        run: python -m unittest discover -s tests/i1 -p test_i1_general_situated_h_553.py -v
+      - name: Canonical born old recall idle budget no-subsidy guard
+        run: python -m unittest discover -s tests/i1 -p test_i1_old_recall_no_uc_subsidy_557.py -v
+      - name: Positive paid old-episode runtime hook and P43 negative controls
+        run: python -m unittest discover -s tests/i1 -p test_i1_old_recall_runtime_hook_557.py -v
+      - name: Natural I1 separately priced old recall negative M11 guard
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_old_recall_budget_557.py -v
+      - name: Compile operator-only M11 old recall audit and tests
+        run: python -m py_compile tools/i1_old_recall_m11_audit.py tests/i1/test_i1_old_recall_m11_audit_560.py
+      - name: Operator-only M11 old recall journal evidence audit and negative controls
+        run: python -m unittest discover -s tests/i1 -p test_i1_old_recall_m11_audit_560.py -v
+      - name: Old recalled episode joined Memory and indexed DC-09 L1 custody
+        run: python -m unittest discover -s tests/i1 -p test_i1_old_episode_joint_contract_557.py -v
+      - name: Shared situated sleep and generic h core compatibility
+        run: python -m unittest discover -s tests/i1 -p test_i1_shared_situated_core_555.py -v
+      - name: Situated first-person h sleep summary regression
+        run: python -m unittest discover -s tests/i1 -p test_i1_situated_sleep_h_473.py -v
+      - name: Stage8 paid published-h adversarial guard
+        run: python -m unittest discover -s tests/i1 -p test_i1_published_h_stage8_guard_549.py -v
+      - name: Natural post-recall M11 cold parity
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_h_recall_m11_549.py -v
+      - name: Natural paid Stage8 committed h recall contract
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_published_h_stage8_549.py -v
+      - name: Bounded published h recall ownership regression
+        run: python -m unittest discover -s tests/i1 -p test_i1_published_h_recall_549.py -v
+      - name: Natural Stage10 postpublication M11 cold parity
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_stage10_m11_fragments_543.py -v
+      - name: Natural Stage10 nonempty SlowHistory publication contract
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_stage10_paid_publication_543.py -v
+      - name: Stage10 paid action fragment owner-boundary contract
+        run: python -m unittest discover -s tests/i1 -p test_i1_paid_action_consolidation_543.py -v
+      - name: Generic action fragment provenance and paid Stage8 regression
+        run: |
+          python -m unittest discover -s tests/i1 -p test_i1_closed_action_fragments_541.py -v
+          python -m unittest discover -s tests/i1 -p test_i1_paid_generic_stage8_context_528.py -v
       - name: Current I1 independent SMOKE/FULL
         run: python scripts/test_i1_ci.py --mode ${{ github.event.inputs.mode || 'smoke' }} --seed 246 --junit reports/i1-${{ matrix.python-version }}.xml
+      - name: Native Memory all-episode work profile and cold parity (#564)
+        run: python -m unittest discover -s tests/i1 -p test_i1_memory_recall_profile_564.py -v
+      - name: L1 ancient-safe recall envelope differential and cold derivation (#564)
+        run: python -m unittest discover -s tests/i1 -p test_i1_recall_envelope_feasibility_564.py -v
+      - name: Informational L1 recall envelope amortized profile (#564)
+        run: python -m unittest discover -s tests/i1 -p test_i1_recall_envelope_amortized_564.py -v
+      - name: Natural M11 derived shadow recall parity, no cognitive index (#564)
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_shadow_recall_564.py -v
+      - name: Longer-life natural M11 recall shadow (informational #564)
+        run: python -m unittest discover -s tests/i1 -p test_i1_long_natural_shadow_564.py -v
+      - name: Natural M11 recall CPU cost breakdown (informational #564)
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_recall_cpu_profile_564.py -v
+      - name: Natural M11 Memory recall work and logical UC passive parity (#564)
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_recall_work_uc_564.py -v
       - name: I1 local perception differential microbenchmark (informational)
         env:
           I1_CAPTURE_BENCH: "1"
@@ -170,5 +262,6 @@ jobs:
             reports/*.json
             reports/*.md
             reports/preset-oasis-ci/report.json
+            reports/preset-oasis-ci/spatial-audit.json
             reports/preset-empty-m11-ci/report.json
           if-no-files-found: warn

@@ -16,13 +16,34 @@ from .competition import OptionEvidenceInput
 from .sleep_health import SleepHealth
 
 
-def _identity(health: SleepHealth, t_monde: int) -> str:
-    return f"sleep-pressure:{health.rules.config.version}:t{t_monde}"
+def _sleep_site_ref(site: tuple[int, int]) -> str:
+    """Stable local identity from the CURRENT first-person position only.
+
+    There is no safety ranking, world lookup or extra memory owner here.
+    The location is bound at proposal time; an evaluation at a different
+    captured site cannot reuse that proposal.
+    """
+    if (type(site) is not tuple or len(site) != 2
+            or any(type(c) is not int or c < 0 for c in site)):
+        raise ValueError("sleep site must be two perceived coordinates")
+    return f"sleep-site:{site[0]}:{site[1]}"
+
+
+def _identity(
+    health: SleepHealth, t_monde: int, *,
+    site: tuple[int, int] | None = None,
+) -> str:
+    # The site-independent path remains for historical Stage10 fixtures;
+    # canonical natural I1 Stage10 ALWAYS supplies its perceptual site.
+    prefix = f"sleep-pressure:{health.rules.config.version}"
+    return (f"{prefix}:t{t_monde}" if site is None else
+            f"{prefix}:{_sleep_site_ref(site)}:t{t_monde}")
 
 
 def create_sleep_proposal(
     *, health: SleepHealth, t_monde: int, st_version: str,
     charged_preparation: object,
+    site: tuple[int, int] | None = None,
 ) -> OptionProposal:
     """Produce one primitive candidate with genuine accepted logical-UC proof.
 
@@ -48,7 +69,7 @@ def create_sleep_proposal(
             or type(getattr(charge, "consumed_module_uc", None)) is not int
             or charge.consumed_module_uc < charge.requested_uc):
         raise ValueError("P-43 sleep candidate requires real accepted budget debit")
-    reference = _identity(health, t_monde)
+    reference = _identity(health, t_monde, site=site)
     option_id = f"option:{reference}"
     plan_id = f"plan:{reference}"
     plan = Plan(
@@ -74,12 +95,13 @@ def create_sleep_proposal(
 
 def _valid_sleep_shape(
     proposal: OptionProposal, *, health: SleepHealth, t_monde: int,
+    site: tuple[int, int] | None = None,
 ) -> bool:
     o, p = proposal.option, proposal.plan
     return (
         o.type == "primitive"
         and o.motive_ref.type == "sleep_pressure"
-        and o.motive_ref.id == _identity(health, t_monde)
+        and o.motive_ref.id == _identity(health, t_monde, site=site)
         and o.id == f"option:{o.motive_ref.id}"
         and o.version == health.rules.config.version
         and o.learning_signature == "primitive:dormir"
@@ -112,6 +134,7 @@ def _valid_sleep_shape(
 def assemble_sleep_evidence(
     *, proposal: OptionProposal, base: OptionEvidenceInput,
     health: SleepHealth, t_monde: int, cycle: int, intrinsic_weight: float,
+    site: tuple[int, int] | None = None,
 ) -> OptionEvidenceInput:
     """Augment existing Stage-8 extrinsic evidence with *only* P-40 sleep m_a.
 
@@ -135,7 +158,8 @@ def assemble_sleep_evidence(
     if (health.frozen_world_step != t_monde or frozen is None
             or frozen.intrinsic_status != "applicable"
             or frozen.intrinsic_value is None
-            or not _valid_sleep_shape(proposal, health=health, t_monde=t_monde)):
+            or not _valid_sleep_shape(
+                proposal, health=health, t_monde=t_monde, site=site)):
         invalid = replace(
             ev, status="not_evaluated",
             intrinsic_status="applicable", intrinsic_value=None,
@@ -144,7 +168,7 @@ def assemble_sleep_evidence(
         result = OptionEvidenceInput(invalid, None)
         result.validate()
         return result
-    signal = _identity(health, t_monde)
+    signal = _identity(health, t_monde, site=site)
     if signal in ev.signal_ids:
         raise ValueError("extrinsic and intrinsic evidence cannot reuse the same signal")
     extrinsic = 0.0 if base.evidence is None else float(base.evidence)

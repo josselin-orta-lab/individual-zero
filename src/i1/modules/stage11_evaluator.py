@@ -9,13 +9,66 @@ from .stage8_evaluator import Stage8OptionEvaluator
 
 
 class Stage11OptionEvaluator(Stage9OptionEvaluator):
-    def __init__(self, *, exploration, intrinsic_weight, instrumental_planning=None, **kwargs):
+    def __init__(self, *, exploration, intrinsic_weight, instrumental_planning=None,
+                 site_needs_config=None, **kwargs):
         super().__init__(**kwargs)
         if not isfinite(intrinsic_weight) or intrinsic_weight < 0:
             raise ValueError("P-15 intrinsic weight must be finite and nonnegative")
+        if site_needs_config is not None:
+            site_needs_config.validate()
         self._exploration = exploration
         self._intrinsic_weight = intrinsic_weight
         self._instrumental_planning = instrumental_planning
+        self._site_needs_config = site_needs_config
+
+    def _experienced_site_context(self, *, target, body, t_monde):
+        """Bounded valence from one's OWN observed bodily effects at a site.
+
+        Generic four need variables, personally witnessed action and followup
+        only, with negative/contradictory effects and recency. A past
+        association is NOT a predicted utility or action-specific causality.
+        """
+        cfg = self._site_needs_config
+        geo = self._exploration.geographic
+        if cfg is None or geo is None or not geo.config.experienced_site_effects:
+            return 0.0, None
+        owner = geo.site_effect_for(tuple(target.observed_position))
+        if owner is None or owner.last_observed_step >= t_monde:
+            return 0.0, None
+        variables = ("energy", "food", "water", "integrity")
+        total_weight = max(cfg.weights.values(), default=0.0)
+        if total_weight <= 0:
+            return 0.0, None
+        favorable = adverse = 0.0
+        for i, name in enumerate(variables):
+            current = float(body[name])
+            if not isfinite(current) or not 0 <= current <= 100:
+                raise ValueError("invalid first-person body for lived place")
+            deficit = max(0.0, min(1.0,
+                (cfg.setpoints[name] - current) / cfg.normalization_scales[name]
+            ))
+            pressure = deficit * cfg.weights[name] / total_weight
+            favorable += pressure * owner.favorable[i] / 100.0
+            # A personally witnessed adverse effect stays worth considering,
+            # even when its related homeostatic need is not yet urgent.
+            adverse += max(0.15, pressure) * owner.adverse[i] / 100.0
+        net = favorable - adverse
+        if net == 0:
+            return 0.0, None
+        age = t_monde - owner.last_observed_step
+        hops = len(target.visited_path) - 1
+        relevance = max(-0.25, min(0.25,
+            0.5 * net * (target.confidence if hasattr(target, "confidence") else 1.0)
+            * min(1.0, owner.samples / 2.0)
+            / (1.0 + age / 120.0)
+            / (1.0 + 0.1 * (hops - 1))
+        ))
+        if relevance == 0:
+            return 0.0, None
+        return relevance, (
+            f"lived-site:{owner.position[0]}:{owner.position[1]}"
+            f":observed-t{owner.last_observed_step}"
+        )
 
     @staticmethod
     def _safe_causal_test_shape(proposal):
@@ -64,7 +117,7 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
             option.motive_ref.type != "cible_exploration"
             or option.motive_ref.id != target.ref
             or option.id != (
-                f"option:geographic:{target.ref}:t{target.source_t_monde}"
+                f"option:geographic:{target.ref}"
             )
             or option.provenance != "exploration"
             or option.type != "primitive"
@@ -129,7 +182,7 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
         if (
             option.motive_ref.type != "cible_exploration"
             or option.motive_ref.id != target.ref
-            or option.id != f"option:geographic:{target.ref}:t{target.source_t_monde}"
+            or option.id != f"option:geographic:{target.ref}"
             or option.provenance != "exploration"
             or option.type != "primitive"
             or option.goal_ref is not None
@@ -190,6 +243,120 @@ class Stage11OptionEvaluator(Stage9OptionEvaluator):
 
     def evaluate(self, *, proposal, evaluation_state, initial_state, cycle, t_monde,
                  remaining_plan_index=0):
+        if proposal.option.motive_ref.type == "lived_site":
+            geo = self._exploration.geographic
+            target = None if geo is None else geo.lived_for(proposal.option)
+            option, plan = proposal.option, proposal.plan
+            valid = (
+                target is not None and target.source_t_monde == t_monde
+                and option.id == f"option:lived-site:{target.ref}"
+                and option.motive_ref.id == target.ref
+                and option.learning_signature == (
+                    f"lived_site_return:{target.observed_position[0]}:"
+                    f"{target.observed_position[1]}")
+                and option.goal_ref is None and option.provenance == "memory"
+                and option.type == "primitive"
+                and option.preconditions == ("adjacent_passable",)
+                and option.success_condition == "target_position_observed"
+                and option.failure_condition == "target_position_not_observed"
+                and option.invalidation_condition == "lived_site_or_context_changed"
+                and plan is not None and plan.goal_ref is None
+                and plan.id == option.plan_ref
+                and plan.option_ref == option.id
+                and plan.status == "valid"
+                and plan.st_version == option.founding_st_version
+                and len(plan.steps) == 1
+                and plan.steps[0].command.primitive == "se_deplacer"
+                and plan.steps[0].command.parameters == {"direction": target.direction}
+                and plan.steps[0].preconditions == ("adjacent_passable",)
+                and plan.steps[0].observation_window_steps == 1
+            )
+            if not valid:
+                return self._unscored_geographic(
+                    proposal, cycle=cycle, t_monde=t_monde)
+            original = Stage8OptionEvaluator.evaluate(
+                self, proposal=proposal, evaluation_state=evaluation_state,
+                initial_state=initial_state, cycle=cycle, t_monde=t_monde,
+                remaining_plan_index=remaining_plan_index,
+            )
+            context, ref = self._experienced_site_context(
+                target=target, body=evaluation_state.body, t_monde=t_monde)
+            # No generic positive reward for visiting a site: signed, bounded
+            # first-person association only. Q/TD remains independently owned.
+            ext = 0.0 if original.evidence is None else original.evidence
+            signals = original.evaluation.signal_ids
+            producers = original.evaluation.producers
+            if ref is not None:
+                signals += (ref,)
+                producers += ("exploration:lived_site_context_not_causal",)
+            assessment = replace(
+                original.evaluation, status="evaluated",
+                intrinsic_status="applicable", intrinsic_value=0.0,
+                signal_ids=signals, producers=tuple(dict.fromkeys(producers)),
+            )
+            scored = OptionEvidenceInput(
+                assessment, max(-1.0, min(1.0, ext + context)))
+            scored.validate()
+            return scored
+        if proposal.option.motive_ref.type == "place_memory":
+            geo = self._exploration.geographic
+            target = None if geo is None else geo.place_for(proposal.option)
+            valid = (target is not None and target.source_t_monde == t_monde
+                     and proposal.option.goal_ref is not None
+                     and proposal.option.provenance == "memory"
+                     and proposal.plan is not None
+                     and proposal.option.plan_ref == proposal.plan.id
+                     and proposal.option.type == "primitive"
+                     and proposal.option.learning_signature == (
+                         f"memory_place_return:{target.entity_id}"
+                     )
+                     and proposal.plan.goal_ref == proposal.option.goal_ref
+                     and proposal.plan.st_version ==
+                         proposal.option.founding_st_version
+                     and len(proposal.plan.steps) == 1
+                     and proposal.plan.steps[0].command.primitive == "se_deplacer"
+                     and proposal.plan.steps[0].command.parameters ==
+                         {"direction": target.direction}
+                     and proposal.plan.steps[0].preconditions ==
+                         ("adjacent_passable",))
+            if not valid:
+                return self._unscored_geographic(
+                    proposal, cycle=cycle, t_monde=t_monde)
+            original = Stage8OptionEvaluator.evaluate(
+                self, proposal=proposal, evaluation_state=evaluation_state,
+                initial_state=initial_state, cycle=cycle, t_monde=t_monde,
+                remaining_plan_index=remaining_plan_index,
+            )
+            # This is confidence in a remembered destination, NOT a claim
+            # about physiology or an artificially learned Q value.
+            # Existing goal pressure is supplied by Stage4's real need owner.
+            # No built-in entity-usefulness relation: even a remembered berry
+            # has no prelearned nutritional value. Stage8 TD stays authoritative.
+            value = min(0.12, self._intrinsic_weight * 0.12 * target.confidence)
+            ext = 0.0 if original.evidence is None else original.evidence
+            context, context_ref = self._experienced_site_context(
+                target=target, body=evaluation_state.body, t_monde=t_monde,
+            )
+            signals = tuple(original.evaluation.signal_ids) + (
+                f"place-memory:{target.entity_id}:seen-t{target.observed_step}",
+            )
+            producers = original.evaluation.producers + ("exploration:entity_place_recall",)
+            if context_ref is not None:
+                if context_ref in signals:
+                    raise ValueError("duplicate personally experienced site evidence")
+                signals += (context_ref,)
+                producers += ("exploration:lived_site_context_not_causal",)
+            assessment = replace(
+                original.evaluation, status="evaluated",
+                intrinsic_status="applicable", intrinsic_value=value,
+                signal_ids=signals,
+                producers=tuple(dict.fromkeys(producers)),
+            )
+            scored = OptionEvidenceInput(
+                assessment, max(-1.0, min(1.0, ext + value + context)),
+            )
+            scored.validate()
+            return scored
         if proposal.option.motive_ref.type == "cible_exploration":
             geographic = self._exploration.geographic
             target = (

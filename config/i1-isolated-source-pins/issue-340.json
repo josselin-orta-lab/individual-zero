@@ -1,0 +1,7 @@
+{
+  "schema": "i1-isolated-source-pin-v1",
+  "issue": 340,
+  "generated": "i1/experimental/local_command_dedup.py",
+  "native": "src/i1/experimental/local_command_dedup.py",
+  "blob_sha1": "649a8ffee7d0a32ecfc0311bbc0ca52d0f89d277"
+}

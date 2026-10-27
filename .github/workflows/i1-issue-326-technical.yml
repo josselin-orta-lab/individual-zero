@@ -1,0 +1,233 @@
+name: I1 isolated issue 326 technical validation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/i1/experimental/**'
+      - 'scripts/test_i1_artifact_parity.py'
+      - 'tests/i1/test_i1_issue_326_isolated.py'
+      - 'tests/i1/test_i1_adverse_lived_ranking_368.py'
+      - 'tests/i1/test_i1_expired_option_lifecycle_369.py'
+      - 'tests/i1/test_i1_option_success_contract_370.py'
+      - 'tests/i1/test_i1_option_success_canonical_m11_371.py'
+      - 'tests/i1/test_i1_spatial_confirmation_guard_372.py'
+      - 'tests/i1/test_i1_spatial_intent_premise_374.py'
+      - 'tests/i1/test_i1_spatial_intent_source_375.py'
+      - 'tests/i1/test_i1_spatial_resumption_site_376.py'
+      - 'tests/i1/test_i1_natural_spatial_m11_377.py'
+      - 'tests/i1/test_i1_natural_local_site_m11_380.py'
+      - 'tests/i1/test_i1_natural_lived_site_stage8_381.py'
+      - 'tests/i1/test_i1_bodily_site_entity_gap_382.py'
+      - 'tests/i1/test_i1_lived_site_route_planning_383.py'
+      - 'tests/i1/test_i1_lived_site_natural_wiring_384.py'
+      - 'tests/i1/test_i1_natural_lived_site_activation_385.py'
+      - 'tests/i1/test_i1_lived_site_offer_expiration_386.py'
+      - 'tests/i1/test_i1_natural_lived_site_move_387.py'
+      - 'tests/i1/test_i1_natural_lived_site_evidence_388.py'
+      - 'tests/i1/test_i1_spatial_capture_boundary_389.py'
+      - 'tests/i1/test_i1_reconsider_evaluated_390.py'
+      - 'tests/i1/test_i1_paid_continuation_391.py'
+      - 'tests/i1/test_i1_competition_m11_image_392.py'
+      - 'tests/i1/test_i1_sleep_intention_expiry_393.py'
+      - 'tests/i1/test_i1_spatial_prospect_read_395.py'
+      - 'tests/i1/test_i1_sleep_prospective_expiry_396.py'
+      - 'tests/i1/test_i1_spatial_reconcile_before_read_398.py'
+      - 'tests/i1/test_i1_competition_temporal_refresh_400.py'
+      - 'tests/i1/test_i1_competition_evidence_identity_402.py'
+      - 'tests/i1/test_i1_goal_prune_before_uc_406.py'
+      - 'tests/i1/test_i1_spatial_negative_search_408.py'
+      - 'tests/i1/test_i1_competition_semantic_candidate_410.py'
+      - 'tests/i1/test_i1_competition_outcome_identity_412.py'
+      - 'tests/i1/test_i1_competition_winner_identity_414.py'
+      - 'tests/i1/test_i1_engaged_material_plan_416.py'
+      - '.github/workflows/i1-issue-326-technical.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-326:
+    name: I1 isolated 326 (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install current engine
+        run: python -m pip install -e .
+      - name: Technical unit contract only
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_issue_326_isolated.py -v
+      - name: Natural adverse-memory regression on generated I1
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_adverse_lived_ranking_368.py -v
+
+      - name: Expired first-person intention lifecycle and M11 contract
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_expired_option_lifecycle_369.py -v
+
+      - name: No false success for applied semantic options
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_option_success_contract_370.py -v
+
+      - name: Canonical two-step M11 option-success cold recovery
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_option_success_canonical_m11_371.py -v
+
+      - name: Spatial confirmation before Competition residual
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_confirmation_guard_372.py -v
+
+      - name: Invalidated personally contradicted spatial intention
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_intent_premise_374.py -v
+
+      - name: Spatial intention source consistency and canonical M11 recovery
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_intent_source_375.py -v
+
+      - name: Spatial intention resumption must match remembered site
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_resumption_site_376.py -v
+
+      - name: Authentic natural spatial pipeline and M11 cold parity
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_spatial_m11_377.py -v
+
+      - name: Canonical six-step local-site M11 cold recovery
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_local_site_m11_380.py -v
+
+      - name: Natural lived-site Stage8 after cold M11
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_lived_site_stage8_381.py -v
+
+      - name: Lived site versus entity place separation in generated I1
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_bodily_site_entity_gap_382.py -v
+
+      - name: First-person lived-site route primitives in generated I1
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_lived_site_route_planning_383.py -v
+
+      - name: First-person lived-site natural option with cold M11
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_lived_site_natural_wiring_384.py -v
+
+      - name: Genuine lived-site natural opportunity and M11 activation trace
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_lived_site_activation_385.py -v
+
+      - name: Expire lived-site offers at next physical capture
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_lived_site_offer_expiration_386.py -v
+
+      - name: Short canonical lived-site movement and cold M11 parity
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_lived_site_move_387.py -v
+
+      - name: Authentic lived-site Competition evidence trace
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_lived_site_evidence_388.py -v
+
+      - name: Spatial intention full-capture before reflex and M11 owner restoration
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_capture_boundary_389.py -v
+
+      - name: Reconsider only after paid Stage8 evaluation
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_reconsider_evaluated_390.py -v
+
+      - name: Spatial continuation requires paid, evaluated candidate
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_paid_continuation_391.py -v
+
+      - name: M11 Competition image negative and atomic restore checks
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_competition_m11_image_392.py -v
+
+      - name: Sleep-clock spatial intention expiry without false perception
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_sleep_intention_expiry_393.py -v
+
+      - name: Paid spatial prospective Memory read changes only consideration order
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_prospect_read_395.py -v
+
+      - name: Prospective option sleep expiry under owner and M11 contract
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_sleep_prospective_expiry_396.py -v
+
+      - name: Reconcile prospect before same-cycle paid spatial read
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_reconcile_before_read_398.py -v
+
+      - name: Reject regressive Competition candidate proposal time
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_competition_temporal_refresh_400.py -v
+
+      - name: Reject foreign or stale Stage8 evidence before Competition mutation
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_competition_evidence_identity_402.py -v
+
+      - name: Goal invalidation before denied Competition registration UC
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_goal_prune_before_uc_406.py -v
+
+      - name: Spatial negative availability requires completed paid route search
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_spatial_negative_search_408.py -v
+
+      - name: Competition evidence requires stable option semantics
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_competition_semantic_candidate_410.py -v
+
+      - name: Competition option outcome identity evidence regression
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_competition_outcome_identity_412.py -v
+
+      - name: Reject unregistered Competition winners before engagement
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_competition_winner_identity_414.py -v
+
+      - name: Engaged Competition plan cannot silently change
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/i1 -p test_i1_engaged_material_plan_416.py -v

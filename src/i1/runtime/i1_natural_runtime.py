@@ -19,16 +19,71 @@ from i1.modules.geographic_exploration import GeographicExplorationConfig
 from .i1_birth_temperament import configure_birth_temperament
 from .i1_natural_sleep import enable_natural_sleep_birth
 from .i1_cognitive_publication import ActiveConsolidatedOwner
+from .i1_active_runtime import (
+    I1_AFFORDANCE_POLICY, I1_AFFORDANCE_OPERATION, I1_SCORE,
+)
+from i1.contracts import MotiveRef, Option, OptionProposal, Plan, PlanStep
+from i1.modules.simulator import state_from_capture
+from i1.experimental.local_opportunity_selection import local_interaction_choices
 
 _PRIVATE_RECALL_VERSION = "i1-private-procedure-advisory-v1"
+_SLEEP_RECALL_VERSION = "i1-lived-sleep-recall-v1"
+_SLEEP_RECALL_OPERATION = "i1_closed_sleep_recall"
+_SLEEP_RECALL_COST_UC = 1
+_H_RECALL_VERSION = "i1-published-action-recall-v1"
+_H_RECALL_OPERATION = "i1_published_action_recall"
+_H_RECALL_COST_UC = 1
+# Limit the sum of all touched DC-09 sources to 8, paid before selection.
+# A larger commitment is refused, not verified for a discounted price.
+_OLD_RECALL_OPERATION = "i1_bounded_old_episode_recall"
+_OLD_RECALL_COST_UC = 8
 _PRIVATE_RECALL_OPERATION = "i1_private_procedure_recall"
 _PRIVATE_RECALL_COST_UC = 1
+_OPTION_INTENTION_COST_UC = 1
+_OPTION_INTENTION_OPERATION = "i1_applied_option_intention"
 _PRIVATE_OBSERVED_FIELDS = {
     "boire": "drank",
     "collecter": "collected",
     "fabriquer_outil": "tool_crafted",
     "poser_une_pierre": "stone_placed",
 }
+
+def _rank_current_local_opportunity(
+    *, learned_evidence: float | None, remembered: bool,
+    witnesses: tuple[dict[str, object], ...], rotation: int,
+) -> tuple[float, int, int]:
+    """Order currently afforded alternatives; no new Q or motor authority.
+
+    Contradiction is a pair of opposite signed, genuinely witnessed bodily
+    changes for ANY one channel in the bounded Memory history. A zero-delta
+    observation between them is neutral, not a reason to erase uncertainty.
+    An exclusively adverse contextual history also removes that tie-break.
+    Memory remains subordinate to already learned Q/TD evidence.
+    """
+    channels = ("energy", "food", "water", "integrity")
+    conflict = any(
+        any(row["body_delta"][channel] > 0 for row in witnesses)
+        and any(row["body_delta"][channel] < 0 for row in witnesses)
+        for channel in channels
+    )
+    favorable = any(
+        row["body_delta"][channel] > 0
+        for row in witnesses for channel in channels
+    )
+    adverse = any(
+        row["body_delta"][channel] < 0
+        for row in witnesses for channel in channels
+    )
+    # An exclusively adverse *contextual* history cannot reinforce the
+    # memory tie-break merely because this option was once considered.
+    # Mixed observations remain uncertain; no causality or Q is inferred.
+    unconvincing = conflict or (adverse and not favorable)
+    return (
+        -float(learned_evidence or 0.0),
+        -int(remembered and not unconvincing),
+        rotation,
+    )
+
 
 # Historical arms remain available explicitly from the independent
 # I1A238ExperimentalRuntime / I1A239ExperimentalRuntime classes. They are
@@ -47,12 +102,51 @@ _ABLATION_SETTINGS = frozenset({
 })
 
 
+# I1-only birth calibration. Historical values remain opt-in for matched
+# laboratory counterfactuals; birth_i1 never exposes the research selector.
+_I1_GOAL_POLICIES = {
+    "natural-004": (0.04, 0.35),
+    "historical-010": (0.10, 0.90),
+}
+_GOAL_POLICY_VERSION = "i1-natural-goal-pressure-v1"
+
+
+def _configure_birth_goal_policy(config, policy):
+    """Freeze one GoalManager owner policy in the actual Stage11 Stage4 tree."""
+    if policy not in _I1_GOAL_POLICIES:
+        raise ValueError("unregistered I1 natural goal arbitration policy")
+    hysteresis, critical = _I1_GOAL_POLICIES[policy]
+    s9 = config.stage9
+    s8 = s9.stage8
+    s7 = s8.stage7
+    s6 = s7.stage6
+    s4 = s6.stage4
+    tag = "+" + _GOAL_POLICY_VERSION + ":" + policy
+    goals = replace(
+        s4.goals, version=s4.goals.version + tag,
+        replacement_hysteresis=hysteresis, critical_pressure=critical,
+    )
+    s4 = replace(s4, version=s4.version + tag, goals=goals)
+    s6 = replace(s6, version=s6.version + tag, stage4=s4)
+    s7 = replace(s7, version=s7.version + tag, stage6=s6)
+    s8 = replace(s8, version=s8.version + tag, stage7=s7)
+    s9 = replace(s9, version=s9.version + tag, stage8=s8)
+    configured = replace(config, version=config.version + tag, stage9=s9)
+    configured.validate()
+    return configured
+
+
 class I1Runtime(I1WaterPrudentRuntime):
     """Default I1 actor. H1/H2 are not part of its inheritance graph."""
 
     individual_id = "i1-natural-default-v1"
 
     def __init__(self, **kwargs):
+        # This selector is research-only. The canonical birth_i1 entry point
+        # always uses natural-004 and cannot override it.
+        goal_policy = kwargs.pop("i1_goal_policy", "natural-004")
+        if goal_policy not in _I1_GOAL_POLICIES:
+            raise ValueError("unregistered I1 natural goal arbitration policy")
         # Version the prospective I1 configuration instead of modifying the
         # canonical reference fixture or copying A2.38 researcher switches.
         cfg = kwargs.get("stage11_config")
@@ -72,16 +166,32 @@ class I1Runtime(I1WaterPrudentRuntime):
         )
         if cfg.geographic is None:
             geographic = GeographicExplorationConfig(
-                version="i1-firstperson-frontier-v1",
+                version="i1-firstperson-frontier-v1+lived-sites-v1",
                 novelty_weight=0.15, max_distinct_sites=1024,
                 max_targets_per_cycle=1,
-                observe_routes=False, refresh_surveys=False,
+                observe_routes=True, refresh_surveys=True, remember_entities=True,
+                max_place_candidates=3, experienced_site_effects=True,
             )
             cfg = replace(
-                cfg, version=cfg.version + "+i1-firstperson-frontier-v1",
+                cfg, version=cfg.version + "+i1-firstperson-frontier-v1+lived-sites-v1",
                 geographic=geographic, intrinsic_weight=min(cfg.intrinsic_weight, 0.35),
                 local_threat_alerts=True,
                 geographic_capacity_guard_enabled=True,
+                geographic_route_enabled=True,
+            )
+        # Existing geographic owner, newly enabled current-life site effects.
+        # A reference Stage11 with this optional contract disabled remains
+        # untouched; the natural birth uses the already mortal owner for M11.
+        if (cfg.geographic is not None
+            and cfg.geographic.remember_entities
+            and not cfg.geographic.experienced_site_effects):
+            cfg = replace(
+                cfg, version=cfg.version + "+i1-lived-sites-v1",
+                geographic=replace(
+                    cfg.geographic,
+                    version=cfg.geographic.version + "+i1-lived-sites-v1",
+                    experienced_site_effects=True,
+                ),
             )
         # Ordinary I1 identifies each charged cognitive cycle by the
         # actual Scheduler world-step/attempt/cycle tuple. This prevents a
@@ -125,6 +235,12 @@ class I1Runtime(I1WaterPrudentRuntime):
         )
         life_id = kwargs.get("birth_life_id")
         cfg = configure_birth_temperament(cfg, life_id=life_id)
+        # The immutable goal subtree is installed before any owner or body is
+        # created. No action, learned value, world fact or survival rule changes.
+        cfg = _configure_birth_goal_policy(cfg, goal_policy)
+        # A changed DC-09 birth contract must never reinterpret an older
+        # M11 generation as if it possessed the newly perceived prebody.
+        cfg = replace(cfg, version=cfg.version + "+i1-prebody-waking-dc09-birth-v1")
         kwargs["stage11_config"] = cfg
         # Both integrated stages must agree on the identical frozen Stage9
         # substrate after temperament projection, before creating the body.
@@ -132,7 +248,8 @@ class I1Runtime(I1WaterPrudentRuntime):
         if sleep_cfg is None:
             raise ValueError("natural I1 birth requires Stage10 configuration")
         kwargs["stage10_config"] = replace(
-            sleep_cfg, version=sleep_cfg.version + "+i1-birth-temperament-v1",
+            sleep_cfg, version=(sleep_cfg.version + "+i1-birth-temperament-v1"
+                                + "+" + _GOAL_POLICY_VERSION + ":" + goal_policy),
             stage9=cfg.stage9,
         )
         # First-person proximal action agency, never a claim that a distal
@@ -163,8 +280,10 @@ class I1Runtime(I1WaterPrudentRuntime):
         kwargs["i1_d2_prudence"] = False
         # Quiescent, step-local accounting only. GoalManager itself owns the
         # durable refractory and failure counters (M11 causal state).
+        self._i1_personal_id = life_id
         self._i1_last_nonplannable_observation = None
         super().__init__(**kwargs)
+        self.stage3.substrate.views.enable_i1_prebody_at_birth()
         self._i1_active_owner_views = {
             "causal_model": ActiveConsolidatedOwner(
                 self.causal_model, "causal_model",
@@ -195,20 +314,53 @@ class I1Runtime(I1WaterPrudentRuntime):
         stage6 = stage7.stage6
         stage4 = stage6.stage4
         original = stage4.compute_budget
+        if _SLEEP_RECALL_OPERATION in original.operation_costs:
+            raise ValueError("duplicate I1 sleep recall charge")
+        if _H_RECALL_OPERATION in original.operation_costs:
+            raise ValueError("duplicate I1 published h recall charge")
+        if _OLD_RECALL_OPERATION in original.operation_costs:
+            raise ValueError("duplicate I1 old episodic recall charge")
         if _PRIVATE_RECALL_OPERATION in original.operation_costs:
             raise ValueError("I1 private recall operation already registered")
+        # The optional old-episode observer must compete for ordinary UC
+        # already available to Planning. Register its 8-UC price, but mint
+        # neither an 8-UC cycle grant nor an 8-UC Planning envelope grant.
+        # Without a current qualifying recall this avoids a dormant budget
+        # subsidy affecting other decisions. An unaffordable recall is skipped.
+        # A second independent Planning producer may coexist with the
+        # existing goal candidate. Reserve its actual paid Planning,
+        # Competition register and per-option evaluation costs separately.
+        local_planning = original.operation_costs[I1_AFFORDANCE_OPERATION]
+        local_registration = original.operation_costs["competition_register"]
+        local_evaluation = original.operation_costs["competition_evaluate"]
         budget = replace(
             original,
-            version=original.version + "+" + _PRIVATE_RECALL_VERSION,
-            cycle_ceiling=original.cycle_ceiling + _PRIVATE_RECALL_COST_UC,
+            version=(original.version + "+" + _PRIVATE_RECALL_VERSION
+                     + "+" + _SLEEP_RECALL_VERSION
+                     + "+" + _H_RECALL_VERSION
+                     + "+i1-old-episode-paid-v1"
+                     + "+i1-goal-independent-local-v1"),
+            cycle_ceiling=(original.cycle_ceiling + _H_RECALL_COST_UC
+                           + _SLEEP_RECALL_COST_UC
+                           + _PRIVATE_RECALL_COST_UC
+                           + local_planning + local_registration + local_evaluation
+                           + _OPTION_INTENTION_COST_UC),
             module_envelopes={
                 **original.module_envelopes,
-                "planning": original.module_envelopes["planning"]
-                + _PRIVATE_RECALL_COST_UC,
+                "planning": (original.module_envelopes["planning"]
+                             + _SLEEP_RECALL_COST_UC + _H_RECALL_COST_UC
+                             + _PRIVATE_RECALL_COST_UC + local_planning
+                             + _OPTION_INTENTION_COST_UC),
+                "competition": (original.module_envelopes["competition"]
+                                + local_registration + local_evaluation),
             },
             operation_costs={
                 **original.operation_costs,
+                _SLEEP_RECALL_OPERATION: _SLEEP_RECALL_COST_UC,
+                _H_RECALL_OPERATION: _H_RECALL_COST_UC,
+                _OLD_RECALL_OPERATION: _OLD_RECALL_COST_UC,
                 _PRIVATE_RECALL_OPERATION: _PRIVATE_RECALL_COST_UC,
+                _OPTION_INTENTION_OPERATION: _OPTION_INTENTION_COST_UC,
             },
         )
         return replace(
@@ -225,6 +377,1083 @@ class I1Runtime(I1WaterPrudentRuntime):
                 ),
             ),
         )
+
+    def _order_considered_spatial_targets(self, targets, *, capture, cycle):
+        """A charged, first-person Memory tie-break for offered spatial routes.
+
+        No route, evidence, Q value, action or motor threshold is created.
+        Only options from the ordinary observed Planning search can move.
+        """
+        if not targets or not self.memory.spatial_option_prospect_count:
+            return targets
+        # Current first-person route availability must be reconciled BEFORE
+        # reading pending semantic prospects, not after this Planning producer.
+        # This consumes the existing (not an extra) reconciliation charge.
+        if not self._charge(module="planning", operation=_OPTION_INTENTION_OPERATION):
+            return targets
+        available = frozenset(
+            f"memory_place_return:{target.entity_id}" for target in targets
+        )
+        self.memory.reconcile_option_intentions(
+            available_signatures=available, world_step=capture.t_monde,
+            namespace="memory_place_return:",
+        )
+        self._i1_spatial_reconciled_cycle = (capture.t_monde, cycle)
+        # A second independent UC charge gates the actual Memory read.
+        if not self._charge(module="planning", operation=_OPTION_INTENTION_OPERATION):
+            return targets
+        preferred = set()
+        for target in targets:
+            signature = f"memory_place_return:{target.entity_id}"
+            if self.memory.recalled_applied_option(
+                signature=signature, world_step=capture.t_monde,
+            ):
+                preferred.add(signature)
+        ordered = tuple(sorted(
+            targets, key=lambda target: (
+                f"memory_place_return:{target.entity_id}" not in preferred,
+            ),
+        ))
+        if preferred:
+            self._write(
+                kind="i1_spatial_prospect_consulted", cycle=cycle,
+                data={"available_count": len(targets),
+                      "remembered_count": len(preferred),
+                      "consideration_order_changed": ordered != tuple(targets),
+                      "charged_operation": _OPTION_INTENTION_OPERATION,
+                      "motor_admission_inherited": False},
+            )
+        return ordered
+
+    def _order_considered_lived_targets(self, targets, *, capture, cycle):
+        """Pay for an optional Memory read, not a lived-site motor advantage.
+
+        The natural route search owns the candidate list. Recollection is
+        metadata only and cannot re-rank evidence or prescribe movement.
+        """
+        if not self.memory.lived_site_option_prospect_count:
+            return targets
+        if not self._charge(
+            module="planning", operation=_OPTION_INTENTION_OPERATION,
+        ):
+            return targets
+        available = frozenset(
+            f"lived_site_return:{target.observed_position[0]}:"
+            f"{target.observed_position[1]}" for target in targets
+        )
+        self.memory.reconcile_option_intentions(
+            available_signatures=available, world_step=capture.t_monde,
+            namespace="lived_site_return:",
+        )
+        self._i1_lived_reconciled_cycle = (capture.t_monde, cycle)
+        if not targets or not self._charge(
+            module="planning", operation=_OPTION_INTENTION_OPERATION,
+        ):
+            return targets
+        count = sum(
+            self.memory.recalled_applied_option(
+                signature=(f"lived_site_return:{target.observed_position[0]}:"
+                           f"{target.observed_position[1]}"),
+                world_step=capture.t_monde,
+            )
+            for target in targets
+        )
+        if count:
+            self._write(
+                kind="i1_lived_site_prospect_consulted", cycle=cycle,
+                data={"available_count": len(targets),
+                      "remembered_count": count,
+                      "consideration_order_changed": False,
+                      "charged_operation": _OPTION_INTENTION_OPERATION,
+                      "motor_admission_inherited": False},
+            )
+        return targets
+
+    def _before_competition_accumulation(self, *, capture, cycle, evidence_inputs):
+        """#510: observe the Stage8 sleep result against already-paid site memory.
+
+        Stage8 has independently evaluated Q/Stage6/P-40. This bridge makes
+        the paid Memory site context traceable at the real pre-Competition
+        boundary without adding a second score or rewriting any evidence.
+        """
+        super()._before_competition_accumulation(
+            capture=capture, cycle=cycle, evidence_inputs=evidence_inputs,
+        )
+        h_context = getattr(self, "_i1_h_action_paid_context", None)
+        if (h_context is not None and not self._cycle_degraded
+                and h_context["step"] == capture.t_monde
+                and h_context["cycle"] == cycle
+                and h_context["site"] == (capture.x, capture.y)
+                and h_context["history_version"] == self.slow_history.current_version
+                and h_context["charged_operation"] == _H_RECALL_OPERATION):
+            from i1.modules.memory import same_lived_command_parameters
+            selected_option, selected_plan, step_index = self.stage3.control.current_step
+            for proposal in self.competition.candidate_proposals:
+                plan = proposal.plan
+                if plan is None or not plan.steps:
+                    continue
+                cursor = (step_index if (
+                    selected_option == proposal.option.id
+                    and selected_plan == plan.id
+                    and self.competition.is_engaged(proposal.option.id)
+                    and 0 <= step_index < len(plan.steps)
+                ) else 0)
+                command = plan.steps[cursor].command
+                supplied = evidence_inputs.get(proposal.option.id)
+                if supplied is None:
+                    continue
+                evaluation = supplied.evaluation
+                if (evaluation.status != "evaluated"
+                        or proposal.option.expires_at_step <= capture.t_monde
+                        or evaluation.option_ref != proposal.option.id
+                        or evaluation.option_version != proposal.option.version
+                        or evaluation.t_monde != capture.t_monde
+                        or evaluation.cycle != cycle):
+                    continue
+                matching = [
+                    row for row in h_context["fragments"]
+                    if row["primitive"] == command.primitive
+                    and same_lived_command_parameters(row["parameters"], command.parameters)
+                ]
+                if not matching:
+                    continue
+                if command.primitive == "dormir":
+                    from i1.modules.situated_sleep_history import (
+                        describe_situated_sleep_history,
+                    )
+                    situated = describe_situated_sleep_history(
+                        published_fragments=h_context["fragments"],
+                        current_site=(capture.x, capture.y),
+                        before_step=capture.t_monde,
+                    )
+                    self._write(
+                        kind="i1_situated_sleep_h_context_observed",
+                        cycle=cycle,
+                        data={
+                            "option_ref": proposal.option.id,
+                            "option_version": proposal.option.version,
+                            "history_version": h_context["history_version"],
+                            "charged_operation": _H_RECALL_OPERATION,
+                            "owner": "SlowHistory",
+                            "situated": situated,
+                            "stage8_evidence_unchanged": supplied.evidence,
+                            "q_or_p40_augmented": False,
+                            "motor_permission": False,
+                        },
+                    )
+                if command.primitive != "dormir":
+                    from i1.modules.situated_action_history import (
+                        describe_situated_action_history,
+                    )
+                    observed_action = describe_situated_action_history(
+                        published_fragments=h_context["fragments"],
+                        current_site=(capture.x, capture.y),
+                        before_step=capture.t_monde,
+                        primitive=command.primitive,
+                        parameters=dict(command.parameters),
+                    )
+                    if observed_action["historical_fragment_count"]:
+                        self._write(
+                            kind="i1_situated_action_h_context_observed",
+                            cycle=cycle,
+                            data={
+                                "option_ref": proposal.option.id,
+                                "option_version": proposal.option.version,
+                                "owner": "SlowHistory",
+                                "history_version": h_context["history_version"],
+                                "charged_operation": _H_RECALL_OPERATION,
+                                "new_uc_debit_at_stage8": False,
+                                "situated": observed_action,
+                                "stage8_evidence_unchanged": supplied.evidence,
+                                "decision_evidence": False,
+                                "causal_attribution": False,
+                                "q_or_p40_augmented": False,
+                                "motor_permission": False,
+                            },
+                        )
+                self._write(
+                    kind="i1_published_action_stage8_context_observed",
+                    cycle=cycle,
+                    data={
+                        "option_ref": proposal.option.id,
+                        "primitive": command.primitive,
+                        "parameters": dict(command.parameters),
+                        "current_site": [capture.x, capture.y],
+                        "owner": "SlowHistory",
+                        "history_version": h_context["history_version"],
+                        "fragment_count": len(matching),
+                        "historical_fragments": matching,
+                        "historical_fragment_ids": [row["id"] for row in matching],
+                        "source_event_refs": [ref for row in matching
+                                              for ref in row["source_event_refs"]],
+                        "source_episode_refs": list(dict.fromkeys(
+                            ref for row in matching
+                            for ref in row["source_episode_refs"]
+                        )),
+                        "historical_sites": [dict(row["site_after"])
+                                             for row in matching],
+                        "observed_body_deltas": [row["observed_total_body_delta"]
+                                                 for row in matching],
+                        "charged_operation": _H_RECALL_OPERATION,
+                        "new_uc_debit_at_stage8": False,
+                        "stage8_evidence_unchanged": supplied.evidence,
+                        "decision_evidence": False,
+                        "causal_attribution": False,
+                        "motor_permission": False,
+                        "q_or_p40_augmented": False,
+                    },
+                )
+        context = getattr(self, "_i1_sleep_site_paid_context", None)
+        # #528: same UC-paid closed first-person source scan, across ALL
+        # ordinary current options. Merely report matched testimony; do not
+        # alter Stage8 evidence, learned Q, Competition or Action Control.
+        generic = getattr(self, "_i1_generic_action_paid_context", None)
+        if (generic is not None and not self._cycle_degraded
+                and generic["step"] == capture.t_monde
+                and generic["cycle"] == cycle
+                and generic["site"] == (capture.x, capture.y)
+                and generic["charged_operation"] == _SLEEP_RECALL_OPERATION):
+            # Follow Stage8's own resumed-plan cursor, not an obsolete
+            # step-0 command. Never borrow another option's engaged cursor.
+            control_option, control_plan, next_index = (
+                self.stage3.control.current_step
+            )
+            for proposal in self.competition.candidate_proposals:
+                plan = proposal.plan
+                if plan is None or not plan.steps:
+                    continue
+                cursor = (next_index if (
+                    control_option == proposal.option.id
+                    and control_plan == plan.id
+                    and self.competition.is_engaged(proposal.option.id)
+                    and 0 <= next_index < len(plan.steps)
+                ) else 0)
+                command = plan.steps[cursor].command
+                supplied = evidence_inputs.get(proposal.option.id)
+                if supplied is None:
+                    continue
+                ev = supplied.evaluation
+                if (ev.status != "evaluated"
+                        or proposal.option.expires_at_step <= capture.t_monde
+                        or ev.option_ref != proposal.option.id
+                        or ev.option_version != proposal.option.version
+                        or ev.t_monde != capture.t_monde
+                        or ev.cycle != cycle):
+                    continue
+                from i1.modules.memory import same_lived_command_parameters
+                matches = tuple(row for row in generic["witnesses"]
+                                if row["primitive"] == command.primitive
+                                and same_lived_command_parameters(
+                                    row["parameters"], command.parameters))
+                if not matches:
+                    continue
+                from i1.modules.memory import same_lived_command_parameters
+                fragments = tuple(
+                    fragment for fragment in generic.get("fragments", ())
+                    if fragment["primitive"] == command.primitive
+                    and same_lived_command_parameters(
+                        fragment["parameters"], command.parameters)
+                )
+                self._write(
+                    kind="i1_generic_lived_action_stage8_context_observed",
+                    cycle=cycle, data={
+                        "option_ref": proposal.option.id,
+                        "primitive": command.primitive,
+                        "parameters": dict(command.parameters),
+                        "current_site": [capture.x, capture.y],
+                        "witness_count": len(matches),
+                        "observed_fragment_count": len(fragments),
+                        "observed_fragments": list(fragments),
+                        "fragments_causal_attribution": False,
+                        "fragments_decision_evidence": False,
+                        "witnesses": [
+                            {
+                                "step": row["step"],
+                                "position_after": row["position_after"],
+                                "source_event_refs": list(row["source_event_refs"]),
+                                "source_episode_refs": list(row["source_episode_refs"]),
+                                "body_before": row["body_before"],
+                                "body_after": row["body_after"],
+                                "observed_effects": row["observed_effects"],
+                                "same_step_body_delta": row["same_step_body_delta"],
+                            }
+                            for row in matches
+                        ],
+                        "stage8_status": ev.status,
+                        "stage8_evidence_unchanged": supplied.evidence,
+                        "charged_operation": _SLEEP_RECALL_OPERATION,
+                        "new_uc_debit": False,
+                        "context_score_applied": False,
+                        "causal_attribution": False,
+                        "motor_admission_inherited": False,
+                    },
+                )
+        # Historical sleep-site receipts remain independent of whether
+        # any generic candidate matched this paid memory consultation.
+        if (context is None or self._cycle_degraded
+                or context["step"] != capture.t_monde
+                or context["cycle"] != cycle
+                or context["site"] != (capture.x, capture.y)
+                or context["charged_operation"] != _SLEEP_RECALL_OPERATION):
+            return
+        from i1.modules.sleep_competition import (
+            _sleep_site_ref, _valid_sleep_shape,
+        )
+        site = (capture.x, capture.y)
+        site_ref = _sleep_site_ref(site)
+        for proposal in self.competition.candidate_proposals:
+            if (proposal.option.motive_ref.type != "sleep_pressure"
+                    or not _valid_sleep_shape(
+                        proposal, health=self.sleep_health,
+                        t_monde=capture.t_monde, site=site,
+                    )):
+                continue
+            supplied = evidence_inputs.get(proposal.option.id)
+            if supplied is None:
+                continue
+            ev = supplied.evaluation
+            if (ev.option_ref != proposal.option.id
+                    or ev.t_monde != capture.t_monde or ev.cycle != cycle):
+                continue
+            self._write(kind="i1_sleep_site_stage8_context_observed",
+                        cycle=cycle, data={
+                "option_ref": proposal.option.id,
+                "site_ref": site_ref,
+                "source_event_refs": list(context["source_event_refs"]),
+                "witness_count": context["witness_count"],
+                "same_step_channels": context["same_step_channels"],
+                "wait_witness_count": context["wait_witness_count"],
+                "wait_source_event_refs": list(context["wait_source_event_refs"]),
+                "wait_same_step_channels": context["wait_same_step_channels"],
+                "wait_causal_attribution": False,
+                "wait_decision_evidence": False,
+                "stage8_status": ev.status,
+                "learned_value_status": ev.learned_value_status,
+                "simulated_value_status": ev.simulated_value_status,
+                "stage8_evidence_unchanged": supplied.evidence,
+                "charged_operation": _SLEEP_RECALL_OPERATION,
+                "context_score_applied": False,
+                "q_or_p40_augmented": False,
+                "competition_evidence_overridden": False,
+            })
+            break
+
+    def _phase_hooks(self, *, cycle, capture, goal_for_planning, st_before_cycle):
+        """Add a second normal Phase-1 producer, not a replacement GoalManager.
+
+        The existing Planning and Stage11 geographic producers run first.
+        Any local option gets its own paid Competition admission path in Phase
+        3, with the same Stage8 and Action Control used by other options.
+        """
+        # Never carry a previous cycle's paid personal site consultation.
+        self._i1_sleep_site_paid_context = None
+        self._i1_generic_action_paid_context = None
+        self._i1_h_action_paid_context = None
+        self._i1_current_old_recall = None
+        hooks = super()._phase_hooks(
+            cycle=cycle, capture=capture,
+            goal_for_planning=goal_for_planning,
+            st_before_cycle=st_before_cycle,
+        )
+        normal_memory = hooks[1].get("memory")
+        normal_plan = hooks[1]["planning"]
+
+        def authenticate_cycle_recall(ctx):
+            normal_memory(ctx)
+            if cycle != 1 or self._cycle_degraded:
+                return
+            episode = self.memory.last_recalled_ref
+            if type(episode) is not str or not episode.startswith("episode:"):
+                return
+            suffix = episode[8:]
+            if not suffix.isascii() or not suffix.isdigit() or str(int(suffix)) != suffix:
+                return
+            ordinal = int(suffix)
+            # Only a genuinely old native ordinal, never a recent source
+            # already covered by the existing paid 32-episode read.
+            if ordinal >= self.memory.episode_count - 32:
+                return
+            expected_id = f"memory-recall:{episode}:{capture.t_monde}:{cycle}"
+            contribution = self._pending_contributions.get(expected_id)
+            if (contribution is None or contribution.emitter_module != "memory"
+                    or contribution.signal_family != "memory_recall"
+                    or contribution.production_t != capture.t_monde
+                    or contribution.production_cycle != cycle
+                    or not isinstance(contribution.payload, dict)
+                    or contribution.payload.get("episode_ref") != episode):
+                return
+            self._i1_current_old_recall = episode
+
+        # Historical isolated Planning fixtures may omit Memory entirely.
+        # Only the real canonical scheduler provides this owner hook.
+        if normal_memory is not None:
+            hooks[1]["memory"] = authenticate_cycle_recall
+        normal_register = hooks[3]["competition"]
+
+        def consult_old_episode_after_ordinary_planning():
+            # A separate priced, non-motor observation of ONE actually
+            # recalled old closed episode. Do not reuse the recent-read debit.
+            old_episode = self._i1_current_old_recall
+            if (cycle == 1 and not self._cycle_degraded
+                    and old_episode is not None
+                    and self.compute_budget.quote_operations(
+                        module="planning", operations=(_OLD_RECALL_OPERATION,),
+                    ).affordable
+                    and self._charge(
+                        module="planning", operation=_OLD_RECALL_OPERATION,
+                    )):
+                refs = self.memory.closed_last_recalled_episode_source_refs(
+                    now=capture.t_monde,
+                )
+                # At most two selected refs; verify at most 8 sources in all touched commits.
+                if (1 <= len(refs) <= 2
+                        and self.memory.last_recalled_ref == old_episode):
+                    from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY as P2
+                    from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY as P7
+                    from .i1_natural_prebody_policy import (
+                        LIVED_PREBODY_POLICY as PNEW,
+                        LIVED_WAKING_BODY_POLICY as PWAKE,
+                    )
+                    try:
+                        projected = self.stage3.substrate.views.selected_committed_autobiography(
+                            policies={p.version: p for p in (P2, P7, PNEW, PWAKE)},
+                            selected_event_refs=refs,
+                            max_verified_sources=_OLD_RECALL_COST_UC,
+                        )
+                    except ValueError:
+                        # Reject a touched commitment beyond the paid scope,
+                        # or invalid first-person provenance, without publishing
+                        # an apparent lived observation or new motor evidence.
+                        projected = ()
+                    if projected:
+                        witnesses = self.memory.closed_applied_action_witnesses(
+                            autobiography=projected, now=capture.t_monde,
+                            recalled_episode_refs=refs,
+                        )
+                        self._write(
+                            kind="i1_old_episode_paid_observation", cycle=cycle,
+                            data={
+                                "episode_ref": old_episode,
+                                "source_event_refs": sorted(refs),
+                                "witnesses": list(witnesses),
+                                "current_site": [capture.x, capture.y],
+                                "charged_operation": _OLD_RECALL_OPERATION,
+                                "charged_uc": _OLD_RECALL_COST_UC,
+                                "decision_evidence": False,
+                                "causal_attribution": False,
+                                "q_or_p40_augmented": False,
+                                "motor_permission": False,
+                            },
+                        )
+
+        def plan_independent_local(ctx):
+            # A new deliberation has no inherited paid admission/prospect.
+            self._i1_option_intention_paid = None
+            normal_plan(ctx)
+            if (cycle == 1 and not self._cycle_degraded
+                    and not self.slow_history.current_version.startswith("h:birth:")
+                    and self.compute_budget.quote_operations(
+                        module="planning", operations=(_H_RECALL_OPERATION,),
+                    ).affordable
+                    and self._charge(
+                        module="planning", operation=_H_RECALL_OPERATION,
+                    )):
+                projection = self.slow_history.read_published_action_fragments(
+                    before_step=capture.t_monde,
+                )
+                self._i1_h_action_paid_context = {
+                    "step": capture.t_monde,
+                    "cycle": cycle,
+                    "site": (capture.x, capture.y),
+                    "history_version": projection["history_version"],
+                    "charged_operation": _H_RECALL_OPERATION,
+                    "fragments": projection["fragments"],
+                }
+            # Paid waking recall of already closed, first-person sources only.
+            if (cycle == 1 and not self._cycle_degraded
+                    and self.memory.episode_count
+                    and self.compute_budget.quote_operations(
+                        module="planning",
+                        operations=(_SLEEP_RECALL_OPERATION,),
+                    ).affordable
+                    and self._charge(
+                        module="planning", operation=_SLEEP_RECALL_OPERATION,
+                    )):
+                refs = self.memory.closed_sleep_recall_source_refs()
+                if refs:
+                    from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY as P2
+                    from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY as P7
+                    from .i1_natural_prebody_policy import (
+                        LIVED_PREBODY_POLICY as PNEW,
+                        LIVED_WAKING_BODY_POLICY as PWAKE,
+                    )
+                    projected = self.stage3.substrate.views.autobiographical(
+                        policies={p.version: p for p in (P2, P7, PNEW, PWAKE)},
+                        selected_event_refs=refs,
+                    )
+                    from i1.modules.action_fragments import closed_action_fragments
+                    action_witnesses = self.memory.closed_applied_action_witnesses(
+                        autobiography=projected,
+                        now=capture.t_monde,
+                        per_command_limit=3,
+                    )
+                    self._i1_generic_action_paid_context = {
+                        "step": capture.t_monde,
+                        "cycle": cycle,
+                        "site": (capture.x, capture.y),
+                        "charged_operation": _SLEEP_RECALL_OPERATION,
+                        "witnesses": action_witnesses,
+                        # Derived solely from the same already-paid witnesses.
+                        "fragments": closed_action_fragments(action_witnesses),
+                    }
+                    stationary = self.memory.closed_stationary_site_witnesses(
+                        autobiography=projected,
+                        site=(capture.x, capture.y),
+                        now=capture.t_monde,
+                    )
+                    rows = stationary["dormir"]
+                    wait_rows = stationary["attendre"]
+                    balance = self.memory.describe_closed_sleep_site(
+                        witnesses=rows, site=(capture.x, capture.y),
+                    )
+                    wait_balance = self.memory.describe_closed_sleep_site(
+                        witnesses=wait_rows, site=(capture.x, capture.y),
+                    )
+                    wait_refs = sorted({
+                        ref for row in wait_rows for ref in row["source_event_refs"]
+                    })
+                    # #495: surface only source-owned, bounded temporal
+                    # associations from THIS already-paid Memory read. They
+                    # are observer evidence of what was recalled, not an
+                    # inferred session, Stage8 value or motor permission.
+                    waking_links = [
+                        {
+                            "sleep_step": row["step"],
+                            "sleep_source_refs": list(row["source_event_refs"]),
+                            "waking_step": link["step"],
+                            "waking_cue_ref": link["cue_event_ref"],
+                            "waking_cue_episode_ref": link["cue_episode_ref"],
+                            "waking_applied_command_ref": link["applied_command_ref"],
+                            "waking_applied_transition_ref": link["applied_transition_ref"],
+                            "waking_applied_primitive": link["applied_primitive"],
+                            "relation": link["relation"],
+                        }
+                        for row in rows
+                        for link in (row["next_step_waking"],)
+                        if link is not None
+                    ]
+                    self._i1_sleep_site_paid_context = {
+                        "step": capture.t_monde, "cycle": cycle,
+                        "site": (capture.x, capture.y),
+                        "source_event_refs": tuple(sorted({
+                            ref for row in rows
+                            for ref in row["source_event_refs"]
+                        })),
+                        "witness_count": len(rows),
+                        "same_step_channels": balance["same_step_channels"],
+                        "wait_witness_count": len(wait_rows),
+                        "wait_source_event_refs": tuple(wait_refs),
+                        "wait_same_step_channels": wait_balance["same_step_channels"],
+                        "charged_operation": _SLEEP_RECALL_OPERATION,
+                    }
+                    self._write(
+                        kind="i1_sleep_site_recall_consulted", cycle=cycle,
+                        data={
+                            "site": [capture.x, capture.y],
+                            "witness_count": len(rows),
+                            "wait_witness_count": len(wait_rows),
+                            "wait_event_refs": wait_refs,
+                            "wait_same_step_channels": wait_balance["same_step_channels"],
+                            "wait_causal_attribution": False,
+                            "wait_decision_evidence": False,
+                            "event_refs": sorted({
+                                ref for row in rows
+                                for ref in row["source_event_refs"]
+                            }),
+                            "charged_operation": _SLEEP_RECALL_OPERATION,
+                            "evidence_applied": False,
+                            "waking_link_count": len(waking_links),
+                            "waking_links": waking_links,
+                            "continuous_subjective_session_proven": False,
+                            "site_balance": {
+                                "witness_count": balance["witness_count"],
+                                "channels": balance["channels"],
+                                "same_step_channels": balance["same_step_channels"],
+                                "causal_attribution": False,
+                                "decision_evidence": False,
+                            },
+                        },
+                    )
+            # A paid scan can suspend a spatial prospect when the
+            # first-person route is no longer genuinely offered.
+            if (self.memory.spatial_option_prospect_count
+                and getattr(self, "_stage11_place_search_completed_cycle", None)
+                    == (capture.t_monde, cycle)
+                and getattr(self, "_i1_spatial_reconciled_cycle", None)
+                    != (capture.t_monde, cycle)):
+                # Fallback for a skipped/empty geographic producer. Never
+                # charge twice when a route was already reconciled above.
+                available = frozenset(
+                    f"memory_place_return:{target.entity_id}"
+                    for target in self._stage11_frozen_place_targets
+                )
+                if self._charge(
+                    module="planning", operation=_OPTION_INTENTION_OPERATION,
+                ):
+                    self.memory.reconcile_option_intentions(
+                        available_signatures=available,
+                        world_step=capture.t_monde,
+                        namespace="memory_place_return:",
+                    )
+            if (self.memory.lived_site_option_prospect_count
+                and getattr(self, "_stage11_lived_search_completed_cycle", None)
+                    == (capture.t_monde, cycle)
+                and getattr(self, "_i1_lived_reconciled_cycle", None)
+                    != (capture.t_monde, cycle)
+                and self._charge(
+                    module="planning", operation=_OPTION_INTENTION_OPERATION,
+                )):
+                self.memory.reconcile_option_intentions(
+                    available_signatures=frozenset(
+                        f"lived_site_return:{target.observed_position[0]}:"
+                        f"{target.observed_position[1]}"
+                        for target in self._stage11_frozen_lived_targets
+                    ),
+                    world_step=capture.t_monde, namespace="lived_site_return:",
+                )
+            self._i1_local_proposal_this_cycle = None
+            if not self._cycle_degraded and st_before_cycle is not None:
+                proposal = self._propose_independent_local(
+                    capture=capture, cycle=cycle,
+                    st_version=st_before_cycle.version,
+                )
+                if proposal is not None:
+                    self._i1_local_proposal_this_cycle = proposal
+                    self._publish_contribution(
+                        self._planning_contribution(
+                            proposal, t_monde=capture.t_monde, cycle=cycle,
+                        )
+                    )
+            # Observer-only: do not steal UC from the already-established
+            # recent recall, intention reconciliation or local proposal.
+            consult_old_episode_after_ordinary_planning()
+
+        def register_independent_local(ctx):
+            normal_register(ctx)
+            proposal = self._i1_local_proposal_this_cycle
+            if proposal is None or self._cycle_degraded:
+                return
+            if not self._charge(
+                module="competition", operation="competition_register",
+            ):
+                self._write(
+                    kind="i1_local_opportunity_registration", cycle=cycle,
+                    data={"option_ref": proposal.option.id,
+                          "registered": False, "reason": "insufficient_uc"},
+                )
+                return
+            accepted = self._register_option_proposal(
+                proposal=proposal,
+                active_goal_id=(
+                    None if self.goal_manager.active_goal is None
+                    else self.goal_manager.active_goal.id
+                ), t_monde=capture.t_monde, cycle=cycle,
+            )
+            self._write(
+                kind="i1_local_opportunity_registration", cycle=cycle,
+                data={"option_ref": proposal.option.id, "registered": accepted,
+                      "goal_neutral": proposal.option.goal_ref is None},
+            )
+            if not accepted:
+                self._i1_pending.pop("local_opportunity_evidence", None)
+
+        original_control = hooks[4]["action_control"]
+
+        def remember_prospect_before_motor(ctx):
+            # A genuine Stage8-evaluated candidate is a cognitive possibility,
+            # even when no option crosses Competition's motor threshold.
+            # Do NOT make remembering contingent on Action Control admitting
+            # or applying an action: the intention is NOT a motor command.
+            candidate = self._i1_local_proposal_this_cycle
+            results = self._cycle_result
+            if (candidate is not None and results is not None
+                and not self._cycle_degraded
+                and self._i1_option_intention_paid == candidate.option.id
+                and candidate.option.provenance == "i1_unknown_affordance"
+                and candidate.option.motive_ref.type == "local_opportunity"
+                and candidate.option.expires_at_step > capture.t_monde):
+                option_ref = candidate.option.id
+                trace = next((
+                    trace for trace in results.traces
+                    if trace.option_ref == option_ref
+                ), None)
+                assessment = next((
+                    evaluation for evaluation in results.evaluations
+                    if evaluation.option_ref == option_ref
+                    and evaluation.t_monde == capture.t_monde
+                    and evaluation.cycle == cycle
+                ), None)
+                if (trace is not None and assessment is not None
+                    and assessment.status == "evaluated"
+                    and trace.evidence is not None
+                    and trace.evidence > 0.0
+                    and trace.accumulator_after > trace.accumulator_before):
+                    created = self.memory.remember_considered_option(
+                        signature=candidate.option.learning_signature,
+                        source_option_ref=option_ref,
+                        considered_step=capture.t_monde,
+                        cost_uc=_OPTION_INTENTION_COST_UC,
+                    )
+                    if created:
+                        # Write BEFORE the physical dispatch and WAL close.
+                        # This is an auditable, paid cognitive occurrence,
+                        # not a claim of action admission or accomplishment.
+                        self._write(
+                            kind="i1_nonspatial_intention_prospected",
+                            cycle=cycle,
+                            data={
+                                "option_ref": option_ref,
+                                "signature": candidate.option.learning_signature,
+                                "world_step": capture.t_monde,
+                                "stage8_evaluated": True,
+                                "competition_crossed": trace.crossed,
+                                "paid_operation": _OPTION_INTENTION_OPERATION,
+                                "motor_admission_inherited": False,
+                                "action_applied": False,
+                            },
+                        )
+            # Spatial prospect: the same paid Memory owner, but no command
+            # admission is required or inherited. This runs after Stage8.
+            geo = self.exploration.geographic
+            results = self._cycle_result
+            if (geo is not None and results is not None
+                and not self._cycle_degraded):
+                evaluated = {
+                    row.option_ref: row for row in results.evaluations
+                    if row.status == "evaluated"
+                    and row.t_monde == capture.t_monde
+                    and row.cycle == cycle
+                }
+                for target in geo.place_offered:
+                    ref = f"option:place-memory:{target.ref}"
+                    row = evaluated.get(ref)
+                    trace = next((
+                        tr for tr in results.traces if tr.option_ref == ref
+                    ), None)
+                    if (row is None or trace is None
+                        or trace.evidence is None or trace.evidence <= 0
+                        or trace.accumulator_after <= trace.accumulator_before):
+                        continue
+                    proposal = self.competition.proposal_for(ref)
+                    if (proposal is None
+                        or proposal.option.learning_signature !=
+                           f"memory_place_return:{target.entity_id}"):
+                        continue
+                    if not self._charge(
+                        module="planning", operation=_OPTION_INTENTION_OPERATION,
+                    ):
+                        break
+                    created = self.memory.remember_considered_option(
+                        signature=proposal.option.learning_signature,
+                        source_option_ref=ref,
+                        considered_step=capture.t_monde,
+                        cost_uc=_OPTION_INTENTION_COST_UC,
+                    )
+                    if created:
+                        self._write(
+                            kind="i1_spatial_option_prospected", cycle=cycle,
+                            data={"option_ref": ref,
+                                  "semantic_ref": proposal.option.learning_signature,
+                                  "stage8_evaluated": True,
+                                  "motor_admission_inherited": False,
+                                  "action_applied": False},
+                        )
+                    break
+                # A previously experienced coordinate is a semantic Memory
+                # prospect only after a paid Stage8 evaluation and a positive
+                # contribution that actually reached Competition.
+                for target in geo.lived_offered:
+                    ref = f"option:lived-site:{target.ref}"
+                    row = evaluated.get(ref)
+                    trace = next((
+                        tr for tr in results.traces if tr.option_ref == ref
+                    ), None)
+                    if (row is None or trace is None
+                        or trace.evidence is None or trace.evidence <= 0
+                        or trace.accumulator_after <= trace.accumulator_before):
+                        continue
+                    proposal = self.competition.proposal_for(ref)
+                    signature = (
+                        f"lived_site_return:{target.observed_position[0]}:"
+                        f"{target.observed_position[1]}"
+                    )
+                    if (proposal is None
+                        or proposal.option.learning_signature != signature
+                        or proposal.option.motive_ref.type != "lived_site"):
+                        continue
+                    if not self._charge(
+                        module="planning", operation=_OPTION_INTENTION_OPERATION,
+                    ):
+                        break
+                    created = self.memory.remember_considered_option(
+                        signature=signature, source_option_ref=ref,
+                        considered_step=capture.t_monde,
+                        cost_uc=_OPTION_INTENTION_COST_UC,
+                    )
+                    if created:
+                        self._write(
+                            kind="i1_lived_site_option_prospected", cycle=cycle,
+                            data={"option_ref": ref, "semantic_ref": signature,
+                                  "stage8_evaluated": True,
+                                  "charged_operation": _OPTION_INTENTION_OPERATION,
+                                  "motor_admission_inherited": False,
+                                  "action_applied": False},
+                        )
+                    break
+            original_control(ctx)
+
+        hooks[1]["planning"] = plan_independent_local
+        hooks[3]["competition"] = register_independent_local
+        hooks[4]["action_control"] = remember_prospect_before_motor
+        return hooks
+
+    def _propose_independent_local(self, *, capture, cycle, st_version):
+        """Consider ONE personally accessible interaction, never its result.
+
+        No fixed food or water priority: action availability originates from
+        the normal Planning candidate_commands over Perception's current
+        SimulationState. The same personally learned Q owner ranks choices;
+        absent learned Q, temperament supplies modest exploratory interest.
+        """
+        state = state_from_capture(
+            capture=capture, is_night=self.world.is_night(capture.t_monde),
+        )
+        available = tuple(self.planning.candidate_commands(state))
+        if len(available) > 128:
+            self._write(
+                kind="i1_local_opportunity_unavailable", cycle=cycle,
+                data={"reason": "unbounded_local_candidates"},
+            )
+            return None
+        interactions = local_interaction_choices(available, enabled=True)
+
+        def key(command):
+            return (command.primitive, tuple(
+                (k, str(command.parameters[k]))
+                for k in sorted(command.parameters)
+            ))
+
+        already = set()
+        if (self._proposal_this_cycle is not None
+            and self._proposal_this_cycle.plan is not None):
+            already.add(key(self._proposal_this_cycle.plan.steps[0].command))
+        for candidate in self.competition.candidate_proposals:
+            if (candidate.option.expires_at_step > capture.t_monde
+                and candidate.plan is not None and candidate.plan.steps):
+                already.add(key(candidate.plan.steps[0].command))
+        choices = tuple(c for c in interactions if key(c) not in already)
+        self._write(
+            kind="i1_local_opportunity_perceived", cycle=cycle,
+            data={"accessible_count": len(interactions),
+                  "unique_unregistered_count": len(choices),
+                  "goal_relevance_filter": False,
+                  "goal_option_preserved": self._proposal_this_cycle is not None},
+        )
+        if not choices:
+            # A memory may need suspension even if no NEW local option can
+            # be produced (none visible or all already represented by the
+            # GoalManager / Competition). Observed accessibility, not
+            # independent candidature, decides whether it stays available.
+            if (self.memory.applied_option_intention_count
+                and self._charge(
+                    module="planning", operation=_OPTION_INTENTION_OPERATION,
+                )):
+                signatures = frozenset(
+                    "i1:affordance:" + c.primitive + ":" +
+                    (":".join(
+                        f"{k}={c.parameters[k]}" for k in sorted(c.parameters)
+                    ) or "here")
+                    for c in interactions
+                )
+                self.memory.reconcile_option_intentions(
+                    available_signatures=signatures,
+                    world_step=capture.t_monde,
+                )
+            return None
+        if not self._charge(module="planning",
+                            operation=I1_AFFORDANCE_OPERATION):
+            self._write(
+                kind="i1_local_opportunity_unavailable", cycle=cycle,
+                data={"reason": "insufficient_uc"},
+            )
+            return None
+        # Charge before any durable Memory intent recall. A matching
+        # intention is a historical first-person choice, not learned Q
+        # evidence, causal reward or extra motor admission.
+        intention_paid = self._charge(
+            module="planning", operation=_OPTION_INTENTION_OPERATION,
+        )
+        if intention_paid:
+            signatures = frozenset(
+                "i1:affordance:" + c.primitive + ":" +
+                (":".join(f"{k}={c.parameters[k]}" for k in sorted(c.parameters))
+                 or "here")
+                for c in interactions
+            )
+            self.memory.reconcile_option_intentions(
+                available_signatures=signatures, world_step=capture.t_monde,
+            )
+        lived = self._evaluation_state(capture)
+        selected = None
+        count = len(choices)
+        for index, command in enumerate(choices):
+            suffix = ":".join(
+                f"{k}={command.parameters[k]}" for k in sorted(command.parameters)
+            ) or "here"
+            signature = f"i1:affordance:{command.primitive}:{suffix}"
+            learned = self.q_active.learned_value(lived, signature)
+            remembered = (self.memory.recalled_applied_option(
+                signature=signature, world_step=capture.t_monde,
+            ) if intention_paid else False)
+            # Only already UC-funded, currently afforded recollections may be
+            # consulted. Contradictory witnessed body changes reduce the
+            # confidence of the *memory tie-break*, never learned Q or motor
+            # admissibility. This is epistemic uncertainty, not reward.
+            witnesses = (self.memory.observed_option_witnesses(
+                signature=signature, world_step=capture.t_monde,
+            ) if intention_paid and remembered else ())
+            rank = _rank_current_local_opportunity(
+                learned_evidence=learned.evidence,
+                remembered=remembered, witnesses=witnesses,
+                rotation=(capture.t_monde + index) % count,
+            )
+            if selected is None or rank < selected[0]:
+                selected = (rank, command, suffix, signature, learned)
+        _, command, suffix, signature, learned = selected
+        exploration = float(self.temperament_parameters.exploration_coefficient)
+        uncertainty = float(self.temperament_parameters.uncertainty_penalty_scale)
+        prior = max(0.0, min(1.0, I1_SCORE *
+                            (1.0 + .25 * exploration) /
+                            (1.0 + .25 * uncertainty)))
+        identity = (f"option:i1:local:t{capture.t_monde}:"
+                    f"{command.primitive}:{suffix}")
+        plan_id = "plan:" + identity + ":v1"
+        policy = I1_AFFORDANCE_POLICY + "+goal-independent-v1"
+        plan = Plan(
+            id=plan_id, option_ref=identity, version=policy,
+            steps=(PlanStep(
+                index=0, command=command, preconditions=(),
+                predicted_consequences=(), observation_window_steps=1,
+            ),), goal_ref=None, budget_used_uc=self._i1_unknown_action_cost_uc,
+            status="valid", st_version=st_version,
+        )
+        retained = (set() if self.s_t.current is None else {
+            item.contribution_ref for item in self.s_t.current.competitive
+        })
+        grounded = tuple(sorted(
+            ref for ref in self.stage3.perception.observation_ref_by_entity.values()
+            if ref in retained
+        ))
+        option = Option(
+            id=identity, version=policy, type="primitive",
+            learning_signature=signature,
+            preconditions=(), success_condition="step_completed",
+            failure_condition="outcome_unconfirmed",
+            invalidation_condition="new_real_capture",
+            motive_ref=MotiveRef(type="local_opportunity", id=identity),
+            founding_st_version=st_version,
+            expires_at_step=capture.t_monde + 1,
+            provenance="i1_unknown_affordance",
+            grounding_contribution_refs=grounded,
+            goal_ref=None, plan_ref=plan_id,
+        )
+        proposal = OptionProposal(
+            option=option, plan=plan,
+            preliminary_admissibility="indeterminate",
+        )
+        proposal.validate()
+        # The first-person Memory hint only breaks equal-Q ties; it is
+        # not a second utility system and never exempts Competition UC.
+        self._i1_option_intention_paid = identity if intention_paid else None
+        self._i1_pending["local_opportunity_evidence"] = {
+            "option_ref": identity, "world_step": capture.t_monde,
+            "affordance": True, "prior_evidence": prior,
+            "learned_evidence": learned.evidence,
+            "learned_value": learned.value, "learned_status": learned.status,
+        }
+        self._write(
+            kind="i1_local_opportunity_proposed", cycle=cycle,
+            data={"option_ref": identity, "goal_ref": None,
+                  "learning_signature": signature,
+                  "command": command.as_dict(),
+                  "learned_value_status": learned.status,
+                  "prior_evidence": prior,
+                  "motor_command_forced": False,
+                  "predicted_result": None},
+        )
+        return proposal
+
+    def _autobiographical_events(self, *, cycle: int):
+        """Read only committed old/new DC-09 projections into canonical Memory."""
+        from .stage2_runtime import STAGE2_AUTOBIOGRAPHICAL_POLICY as P2
+        from .stage7_runtime import STAGE7_AUTOBIOGRAPHICAL_POLICY as P7
+        from .i1_natural_prebody_policy import (
+            LIVED_PREBODY_POLICY as PNEW,
+            LIVED_WAKING_BODY_POLICY as PWAKE,
+        )
+        policies = {policy.version: policy for policy in (P2, P7, PNEW, PWAKE)}
+        events = self.stage3.substrate.views.autobiographical(
+            policies=policies,
+        )
+        self._write(
+            kind="memory_autobiographical_access",
+            cycle=cycle,
+            data={
+                "reader": "memory",
+                "mode": "read_only_projection",
+                "event_count": len(events),
+                "policy_versions": list(policies),
+            },
+        )
+        return events
+
+    def _on_open_step_capture(self, capture) -> None:
+        super()._on_open_step_capture(capture)
+        # Only the next authentic physical capture can resolve a previously
+        # applied option. No causal claim or Q reward is generated.
+        self.memory.observe_applied_option_followups(
+            world_step=capture.t_monde, body_after=capture.body,
+        )
+
+    def _dispatch_decision(self, *, proposal, prepared, admission,
+                           cycle, sent_t_monde):
+        execution = super()._dispatch_decision(
+            proposal=proposal, prepared=prepared, admission=admission,
+            cycle=cycle, sent_t_monde=sent_t_monde,
+        )
+        # No late WAL write. The M11 outer transaction exports owner state
+        # after the full natural run_step; Action Control already committed.
+        if (execution.status == "applied"
+            and not self._fallback_used_this_cycle
+            and getattr(self, "_i1_option_intention_paid", None)
+                == proposal.option.id
+            and proposal.option.provenance == "i1_unknown_affordance"
+            and proposal.option.motive_ref.type == "local_opportunity"
+            and proposal.plan is not None
+            and self.stage3.control.current_step[0] == proposal.option.id):
+            self.memory.remember_applied_option(
+                signature=proposal.option.learning_signature,
+                source_option_ref=proposal.option.id,
+                applied_step=sent_t_monde,
+                cost_uc=_OPTION_INTENTION_COST_UC,
+                body_before=(
+                    self.stage3._capture.body
+                    if self.stage3._capture is not None
+                    and self.stage3._capture.t_monde == sent_t_monde
+                    else None
+                ),
+            )
+        return execution
 
     def _consider_uncertain_affordance(
         self, *, capture, goal, st_version, cycle, exact,
