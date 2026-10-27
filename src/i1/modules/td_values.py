@@ -425,19 +425,20 @@ class LinearTDValues:
                 result[str(signature)] = [float(value) for value in values]
             return result
 
-        self._weights = vectors("weights")
-        self._traces = vectors("traces")
+        # Validate the entire image before publishing any owner field.
+        next_weights = vectors("weights")
+        next_traces = vectors("traces")
         raw_counts = state.get("update_counts", {})
         if not isinstance(raw_counts, Mapping):
             raise ValueError("TD update_counts must be a mapping")
-        self._update_counts = {
+        next_counts = {
             str(signature): int(count)
             for signature, count in raw_counts.items()
         }
 
         raw_pending = state.get("pending")
         if raw_pending is None:
-            self._pending = None
+            next_pending = None
         elif isinstance(raw_pending, Mapping):
             raw_state = raw_pending.get("state")
             if not isinstance(raw_state, Mapping):
@@ -454,7 +455,7 @@ class LinearTDValues:
                 temporal_context=str(raw_state["temporal_context"]),
             )
             pending_state.validate()
-            self._pending = PendingTDSegment(
+            next_pending = PendingTDSegment(
                 decision_t_monde=int(raw_pending["decision_t_monde"]),
                 state=pending_state,
                 signature=str(raw_pending["signature"]),
@@ -462,3 +463,8 @@ class LinearTDValues:
             )
         else:
             raise ValueError("TD pending state must be a mapping or null")
+
+        self._weights = next_weights
+        self._traces = next_traces
+        self._update_counts = next_counts
+        self._pending = next_pending
