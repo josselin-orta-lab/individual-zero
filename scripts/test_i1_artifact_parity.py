@@ -1503,7 +1503,7 @@ def _approved_atomic_restore_576(root: Path, rel: str) -> bool:
         return False
     source, expected = pair
     data = (ROOT / source).read_bytes()
-    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest() == expected
+    return sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == expected
 
 
 # Strictly scoped Lab-only matched temperament review. No broad exceptions.
