@@ -236,12 +236,12 @@ class ValueAndNeeds:
         if state.get("config_version") != self._config.version:
             raise ValueError("Value/Needs config version mismatch")
         previous = state.get("previous_deviation")
-        self._previous_deviation = None if previous is None else float(previous)
+        next_previous = None if previous is None else float(previous)
         raw = state.get("last_state")
         if raw is None:
-            self._last_state = None
+            next_last_state = None
         elif isinstance(raw, Mapping):
-            self._last_state = NeedState(
+            next_last_state = NeedState(
                 body=dict(raw["body"]),
                 deficits=dict(raw["deficits"]),
                 pressures=dict(raw["pressures"]),
@@ -255,3 +255,7 @@ class ValueAndNeeds:
             if self._td_values is None:
                 raise ValueError("snapshot contains TD state but no model is attached")
             self._td_values.restore_causal_state(raw_td)
+
+        # TD has published only after complete validation; publish local fields last.
+        self._previous_deviation = next_previous
+        self._last_state = next_last_state
