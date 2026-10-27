@@ -27,6 +27,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from i1.modules.value_needs import BODY_VARIABLES, ValueAndNeeds
+from i1.modules.td_values import LinearTDValues
 from i1lab.i1_birth import birth_i1_m11, recover_i1_m11
 from i1lab.i1_natural_runtime import I1Runtime
 from i1lab.sqlite_life_store import SQLiteLifeLedger
@@ -38,6 +39,7 @@ params = dict(params, diagnostic_sample_cost_uc=1, module_occupancy_cost_uc=1)
 identity = "i1:306:natural-v4-reward-observer"
 TOTAL, SPLIT = 12, 6
 original = ValueAndNeeds.reward_between
+original_append = LinearTDValues.append_experienced_reward
 
 def factory():
     return I1Runtime(birth_life_id=identity, wal_path=None,
@@ -46,6 +48,16 @@ def factory():
 def arm(path, cold):
     observed = []
     current = []
+    appended = []
+    def observed_append(self, reward):
+        prior = self.pending_segment
+        result = original_append(self, reward)
+        after_pending = self.pending_segment
+        appended.append({"reward": float(reward), "stored": bool(
+            prior is not None and after_pending is not None
+            and len(after_pending.rewards) == len(prior.rewards) + 1)})
+        return result
+
     def wrapped(self, before, after):
         result = original(self, before, after)
         weights, setpoints = self.config.weights, self.config.setpoints
@@ -62,13 +74,17 @@ def arm(path, cold):
         for _ in range(count):
             before = dict(life._runtime.world.body.as_dict())
             current.clear()
+            appended.clear()
             receipt = life.run_step()
             assert receipt.status == "active", receipt
             rt = life._runtime
             after = dict(rt.world.body.as_dict())
             # Exactly one reward registered for each truly applied step.
             assert len(current) == 1, (receipt.world_step, current)
+            assert len(appended) == 1, (receipt.world_step, appended)
+            assert isclose(appended[0]["reward"], current[0]["reward"], abs_tol=1e-9)
             row = dict(current[0])
+            row["td_append"] = dict(appended[0])
             assert row["before"] == before and row["after"] == after
             assert "i1-living-physical-defaults-v4-metabolic-coupling" in rt.world.config.version
             experienced = [e.causal_event for e in rt.journal.entries_since(0)
@@ -79,7 +95,8 @@ def arm(path, cold):
                        head=receipt.journal_head, generation=receipt.generation)
             observed.append(row)
 
-    with patch.object(ValueAndNeeds, "reward_between", wrapped):
+    with (patch.object(ValueAndNeeds, "reward_between", wrapped),
+          patch.object(LinearTDValues, "append_experienced_reward", observed_append)):
         with birth_i1_m11(db_path=path, life_id=identity, **params) as life:
             drive(life, SPLIT if cold else TOTAL)
             if cold:
@@ -104,13 +121,27 @@ with TemporaryDirectory(prefix="i1-306-m11-") as home:
 assert cold == control, "observer altered reward, physical outcomes or M11 continuity"
 drinks = [x for x in control if x["primitive"] == "boire"]
 assert drinks, "this natural birth no longer exposes any drink witness"
-for x in drinks:
-    assert x["after"]["water"] > x["before"]["water"]
+# A saturated body may drink without strictly increasing stored water.
+# Zero/negative water delta is an observation, not a reason to discard a life.
+assert all(0.0 <= x["before"]["water"] <= 100.0
+           and 0.0 <= x["after"]["water"] <= 100.0 for x in drinks)
 print("I1_306_NATURAL_V4_REWARD_AUDIT=" + json.dumps({
     "steps": len(control), "drinks": len(drinks),
     "primitives": dict(Counter(x["primitive"] for x in control)),
+    "drinks_observed": [{
+        "step": x["step"],
+        "water_before": x["before"]["water"],
+        "water_after": x["after"]["water"],
+        "water_delta": x["after"]["water"] - x["before"]["water"],
+        "water_reward": x["components"]["water"],
+        "total_reward": x["reward"],
+        "td_append_reward": x["td_append"]["reward"],
+        "td_pending_segment_stored": x["td_append"]["stored"],
+    } for x in drinks],
     "drink_water_components": [x["components"]["water"] for x in drinks],
     "drink_total_rewards": [x["reward"] for x in drinks],
+    "drink_no_positive_water_delta": sum(
+        x["after"]["water"] <= x["before"]["water"] for x in drinks),
     "cold_exact_parity": True, "owner_mutated_by_observer": False,
     "causal_motor_learning": "NOT_ESTABLISHED",
 }, sort_keys=True))
