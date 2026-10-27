@@ -110,6 +110,8 @@ jobs:
           PY
       - name: Natural M11 waking-link scan frequency (informational #562)
         run: python -m unittest discover -s tests/i1 -p test_i1_m11_waking_link_frequency_562.py -v
+      - name: Natural M11 exact paid waking-link replay and full report parity (#562)
+        run: python -m unittest discover -s tests/i1 -p test_i1_m11_waking_link_exact_replay_562.py -v
       - name: Incremental closed M11 observer index canonical report custody
         run: python -m unittest discover -s tests/i1 -p test_i1_m11_incremental_index_562.py -v
       - name: M11 first-ingestion delta differential guards
