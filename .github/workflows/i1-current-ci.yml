@@ -182,6 +182,8 @@ jobs:
         run: python -m unittest discover -s tests/i1 -p test_i1_recall_envelope_feasibility_564.py -v
       - name: Informational L1 recall envelope amortized profile (#564)
         run: python -m unittest discover -s tests/i1 -p test_i1_recall_envelope_amortized_564.py -v
+      - name: Natural M11 derived shadow recall parity, no cognitive index (#564)
+        run: python -m unittest discover -s tests/i1 -p test_i1_natural_shadow_recall_564.py -v
       - name: Natural M11 Memory recall work and logical UC passive parity (#564)
         run: python -m unittest discover -s tests/i1 -p test_i1_natural_recall_work_uc_564.py -v
       - name: I1 local perception differential microbenchmark (informational)
