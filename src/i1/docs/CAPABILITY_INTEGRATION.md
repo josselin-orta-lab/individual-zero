@@ -304,3 +304,13 @@ At the validated #440 code SHA, **24 of the 26** arm observations place the Q-ch
 Therefore the unchanged physical trajectories are **consistent with the measured candidate ordering in these lives**, not evidence of a general incapacity to choose from learned experience. Evidence strength, current needs, and other contextual terms may differ after actual nutrition; this paired study does not isolate all of those causes or certify physical admissibility of each nonselected candidate. Exact-head **Python 3.11 and 3.12 structural + full I1** CI passed on the diagnostic code; the documentation-inclusive final SHA must also pass before merge. TD influence on useful motor decisions and scientific L3 remain **NOT_ESTABLISHED**.
 
 Scope: I1 test instrumentation and capability documentation only, no modified I1 cognitive algorithm, weight/threshold, reward, TD update, UC charge, motor authority, world dynamics, M11 generation-custody protocol, sleep/mortality or I0.
+
+## Historical S1 sleep research archive (#294)
+
+The dated, read-only S1 fatigue-pressure investigation is preserved in
+[`docs/research/i1-s1-fcog-sleep-dominance-investigation-2026-10-18.fr.md`](../../../docs/research/i1-s1-fcog-sleep-dominance-investigation-2026-10-18.fr.md)
+(72 historical M11 lives, 12,983 physical steps) and tracked by still-open issue #292.
+Its mathematical sensitivity analysis is **not** an actual counterfactual life,
+proof of a sleep optimization, or an instruction to promote historical fatigue
+weights in the current engine. This is provenance documentation only; no new
+cohort, model change, or scientific GO follows from archiving it.
