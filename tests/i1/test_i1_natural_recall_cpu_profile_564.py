@@ -3,7 +3,8 @@
 This test extends the already validated #573 natural paired protocol, without
 activating an index in I1. It reports costs of maintaining the derived index,
 candidate selection, shadow construction, exhaustive and candidate ranking,
-and both full/selected spontaneous recall. Timings are informational only;
+and both full/selected spontaneous recall. process_time_ns measures process CPU
+not elapsed wall time. Timings are informational only;
 only equality of causal results is a gate. In particular, the disposable
 shadow-owner construction is NOT an estimate of a production index cost.
 """
@@ -25,52 +26,52 @@ REPLACEMENTS = (
         "from contextlib import nullcontext\n",
         "from contextlib import nullcontext\n"
         "from statistics import median\n"
-        "from time import perf_counter_ns\n",
+        "from time import process_time_ns\n",
     ),
     (
         "                count = self.episode_count\n",
         "                count = self.episode_count\n"
-        "                index_maintenance_t0 = perf_counter_ns()\n",
+        "                index_maintenance_t0 = process_time_ns()\n",
     ),
     (
         "                candidates = selector.select(st=st, t_monde=t_monde)\n",
         "                index_maintenance_ns = ("
-        "perf_counter_ns() - index_maintenance_t0)\n"
-        "                selection_t0 = perf_counter_ns()\n"
+        "process_time_ns() - index_maintenance_t0)\n"
+        "                selection_t0 = process_time_ns()\n"
         "                candidates = selector.select(st=st, t_monde=t_monde)\n"
-        "                selection_ns = perf_counter_ns() - selection_t0\n",
+        "                selection_ns = process_time_ns() - selection_t0\n",
     ),
     (
         "                shadow = subset(self, candidates)\n",
-        "                setup_t0 = perf_counter_ns()\n"
+        "                setup_t0 = process_time_ns()\n"
         "                shadow = subset(self, candidates)\n"
-        "                shadow_setup_ns = perf_counter_ns() - setup_t0\n",
+        "                shadow_setup_ns = process_time_ns() - setup_t0\n",
     ),
     (
         "                full_rank = self.recall(st=st, t_monde=t_monde)\n",
-        "                full_rank_t0 = perf_counter_ns()\n"
+        "                full_rank_t0 = process_time_ns()\n"
         "                full_rank = self.recall(st=st, t_monde=t_monde)\n"
-        "                full_rank_ns = perf_counter_ns() - full_rank_t0\n",
+        "                full_rank_ns = process_time_ns() - full_rank_t0\n",
     ),
     (
         "                shadow_rank = shadow.recall(st=st, t_monde=t_monde)\n",
-        "                shadow_rank_t0 = perf_counter_ns()\n"
+        "                shadow_rank_t0 = process_time_ns()\n"
         "                shadow_rank = shadow.recall(st=st, t_monde=t_monde)\n"
-        "                shadow_rank_ns = perf_counter_ns() - shadow_rank_t0\n",
+        "                shadow_rank_ns = process_time_ns() - shadow_rank_t0\n",
     ),
     (
         "                anticipated = original(\n"
         "                    shadow, st=st, t_monde=t_monde, cycle=cycle)\n"
         "                actual = original(\n"
         "                    self, st=st, t_monde=t_monde, cycle=cycle)\n",
-        "                shadow_spont_t0 = perf_counter_ns()\n"
+        "                shadow_spont_t0 = process_time_ns()\n"
         "                anticipated = original(\n"
         "                    shadow, st=st, t_monde=t_monde, cycle=cycle)\n"
-        "                shadow_spont_ns = perf_counter_ns() - shadow_spont_t0\n"
-        "                true_spont_t0 = perf_counter_ns()\n"
+        "                shadow_spont_ns = process_time_ns() - shadow_spont_t0\n"
+        "                true_spont_t0 = process_time_ns()\n"
         "                actual = original(\n"
         "                    self, st=st, t_monde=t_monde, cycle=cycle)\n"
-        "                true_spont_ns = perf_counter_ns() - true_spont_t0\n",
+        "                true_spont_ns = process_time_ns() - true_spont_t0\n",
     ),
     (
         '                    "index_rebuilt": rebuilt,\n',
