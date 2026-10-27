@@ -322,9 +322,9 @@ class GoalManager:
 
         raw_active = state.get("active")
         if raw_active is None:
-            self._active = None
+            next_active = None
         elif isinstance(raw_active, Mapping):
-            self._active = Goal(
+            next_active = Goal(
                 id=str(raw_active["id"]),
                 goal_type=str(raw_active["goal_type"]),
                 target=str(raw_active["target"]),
@@ -343,15 +343,15 @@ class GoalManager:
         else:
             raise ValueError("invalid active goal state")
 
-        self._latest_pressure = {
+        next_latest_pressure = {
             (str(row[0]), str(row[1])): float(row[2])
             for row in state.get("latest_pressure", [])
         }
-        self._refractory_until = {
+        next_refractory_until = {
             (str(row[0]), str(row[1])): int(row[2])
             for row in state.get("refractory_until", [])
         }
-        self._impossible_failures = {
+        next_impossible_failures = {
             (str(row[0]), str(row[1])): (str(row[2]), int(row[3]))
             for row in state.get("impossible_failures", [])
         }
@@ -380,5 +380,13 @@ class GoalManager:
                 result.append(proposal)
             return tuple(result)
 
-        self._visible_proposals = decode_proposals("visible_proposals")
-        self._next_proposals = decode_proposals("next_proposals")
+        next_visible = decode_proposals("visible_proposals")
+        next_proposals = decode_proposals("next_proposals")
+
+        # Publish only once all nested proposals and maps have been decoded.
+        self._active = next_active
+        self._latest_pressure = next_latest_pressure
+        self._refractory_until = next_refractory_until
+        self._impossible_failures = next_impossible_failures
+        self._visible_proposals = next_visible
+        self._next_proposals = next_proposals
