@@ -16,7 +16,11 @@ sys.path.insert(0, str(Path.cwd() / "tools"))
 import run_i1_world_preset as runner
 import i1_m11_ingestion_delta
 
+legacy_calls = 0
+
 def old_scan(first, current, *, world_step):
+    global legacy_calls
+    legacy_calls += 1
     for ref in current:
         first.setdefault(ref, world_step)
 
@@ -24,11 +28,11 @@ mode, preset, seed, steps, output = sys.argv[1:]
 if mode == "reference":
     with patch.object(i1_m11_ingestion_delta,
                       "update_first_memory_ingestion", old_scan):
-        # Runner imported the helper directly: patch its local binding too.
-        with patch.object(runner, "_m11_life", wraps=runner._m11_life):
-            # Its lazy import resolves the module patched above.
-            runner.execute(preset_name=preset, seed=int(seed), steps=int(steps),
-                           lives=1, custody="m11", output_dir=Path(output))
+        # The runner imports the helper inside _m11_life on each birth.
+        runner.execute(preset_name=preset, seed=int(seed), steps=int(steps),
+                       lives=1, custody="m11", output_dir=Path(output))
+    assert legacy_calls > 0, "reference first-ingestion loop was never exercised"
+    print("M11_REFERENCE_SCAN_CALLED:", legacy_calls)
 else:
     runner.execute(preset_name=preset, seed=int(seed), steps=int(steps),
                    lives=1, custody="m11", output_dir=Path(output))
@@ -48,7 +52,12 @@ class NaturalFirstIngestionParity562(unittest.TestCase):
                         cwd=ROOT, env=os.environ.copy(), text=True,
                         capture_output=True, timeout=240)
                     self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
-                    reports.append(json.loads((output / "report.json").read_text()))
+                    if mode == "reference":
+                        self.assertIn("M11_REFERENCE_SCAN_CALLED:", proc.stdout)
+                    report = json.loads((output / "report.json").read_text())
+                    self.assertEqual(report["status"],
+                                     "COMPLETED_WITHOUT_SCIENTIFIC_VERDICT")
+                    reports.append(report)
                 self.assertEqual(reports[0], reports[1], preset)
 
 if __name__ == "__main__":
