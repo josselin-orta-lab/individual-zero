@@ -422,6 +422,64 @@ summary = {
         if first_physical is not None
         and preset_name == "oasis" and identity_suffix == "b" else None
     ),
+    "post_meal_reuse_audit": (
+        {
+            "first_meal_step": next(
+                (t for t in sorted(canonical["applied"])
+                 if canonical["applied"][t]["primitive"] == "manger"),
+                None),
+            "later_applied": [
+                {"step": t, **canonical["applied"][t]}
+                for t in sorted(canonical["applied"])
+                if t > 11
+            ],
+            "later_bodies": [
+                {"step": row["step"], "before": row["before"]["body"],
+                 "after": row["after"]["body"],
+                 "before_inventory": row["before"]["inventory"],
+                 "after_inventory": row["after"]["inventory"]}
+                for row in canonical["snapshots"] if row["step"] > 11
+            ],
+            "later_td": [
+                {"step": e["t_monde"], "cycle": e["cycle"],
+                 "previous_signature": e["data"]["previous_signature"],
+                 "next_signature": e["data"]["next_signature"],
+                 "return_g": e["data"]["return_g"],
+                 "delta": e["data"]["delta"],
+                 "updated_signatures": e["data"]["updated_signatures"]}
+                for e in canonical["events"]
+                if e.get("kind") == "td_update_published"
+                and e["t_monde"] > 11
+            ],
+            "later_food_stage8": [
+                {"step": k[0], "cycle": k[1], "option_ref": k[2], **v,
+                 "competition": canonical["competition"].get(k)}
+                for k, v in sorted(canonical["stage8"].items())
+                if k[0] > 11 and
+                (":manger:" in v["signature"] or
+                 ":collecter:" in v["signature"])
+            ],
+            "later_food_proposals": [
+                {"step": e["t_monde"], "cycle": e["cycle"],
+                 "signature": e["data"].get("learning_signature"),
+                 "command": e["data"].get("command"),
+                 "learned_value_status": e["data"].get("learned_value_status")}
+                for e in canonical["events"]
+                if e.get("kind") == "i1_local_opportunity_proposed"
+                and e["t_monde"] > 11 and
+                e["data"].get("command", {}).get("primitive")
+                in ("collecter", "manger")
+            ],
+            "later_food_admissions": [
+                {"step": t, **v}
+                for t, v in sorted(canonical["admitted"].items())
+                if t > 11 and v["primitive"] in ("collecter", "manger")
+            ],
+            "learning_reuse_causal_verdict": "NOT_ESTABLISHED",
+            "source": "same-authenticated-natural-M11-life-no-extended-horizon",
+        }
+        if preset_name == "oasis" and identity_suffix == "b" else None
+    ),
     "immediate_first_divergence": immediate,
     "adaptive_benefit": "NOT_ESTABLISHED",
     "durability_and_generalization": "NOT_ESTABLISHED",
