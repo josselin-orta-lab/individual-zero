@@ -191,11 +191,13 @@ def audit_old_recall_step(*, events, world_step, preclosed, newly_closed,
     return {
         "schema": "i1-old-recall-natural-m11-audit-v1",
         "memory_recall_proposals": len(proposals),
+        # Count ALL genuine old proposals, even in later cognitive cycles
+        # where the natural reader deliberately does not spend its 8 UC.
+        # This measurement must not imply an accepted charge or L2 proof.
         "old_memory_recall_proposals": sum(
-            event.get("cycle") == 1
-            and chronological_old_episode(
+            chronological_old_episode(
                 event["data"]["episode_ref"], count, closed_at_proposal)
-            for index, event, count, closed_at_proposal in proposals
+            for _, event, count, closed_at_proposal in proposals
         ),
         "old_read_charges": len(paid),
         "accepted_old_read_charges": len(accepted),
