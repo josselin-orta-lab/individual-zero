@@ -91,9 +91,21 @@ def natural_pair(preset_name, max_steps):
                     shadow._recall_above_threshold
                 ), "causal threshold crossing divergence"
                 assert self._last_recalled_ref == shadow._last_recalled_ref
+                # This is an operator-only age classification of REAL closed
+                # episodes. It neither selects nor reoffers any memory.
+                old_refs = {item.id for item in self._episodes[:-32]}
+                old_eligible = sum(
+                    item.episode_ref in old_refs for item in full_rank)
+                old_selected = bool(
+                    actual is not None
+                    and actual.payload["episode_ref"] in old_refs)
+                assert not old_selected or old_eligible > 0
                 observations.append({
                     "total_episodes": count,
                     "candidate_episodes": len(candidates),
+                    "old_closed_episodes": len(old_refs),
+                    "old_threshold_eligible": old_eligible,
+                    "old_selected_spontaneously": old_selected,
                     "trusted": selector.trusted,
                     "index_rebuilt": rebuilt,
                 })
@@ -172,12 +184,32 @@ def natural_pair(preset_name, max_steps):
         assert work, "natural recall hook did not execute"
         assert all(0 <= x["candidate_episodes"] <= x["total_episodes"]
                    for x in work)
+        assert all(
+            x["old_closed_episodes"] == max(0, x["total_episodes"] - 32)
+            and 0 <= x["old_threshold_eligible"] <= x["old_closed_episodes"]
+            and (not x["old_selected_spontaneously"]
+                 or x["old_threshold_eligible"] > 0)
+            for x in work
+        )
         return {
             "preset": preset_name,
             "physical_steps": len(reference),
             "recall_shadow_checks": len(work),
+            # Volumes sum repeated hook exposures, not distinct episodes.
             "episode_volume": sum(x["total_episodes"] for x in work),
             "candidate_volume": sum(x["candidate_episodes"] for x in work),
+            # Separate CLOSED first-person episode counts from cumulative
+            # observations. Old = outside the most recent 32 closed episodes.
+            "final_distinct_closed_episodes": len(
+                reference[-1]["memory"]["episodes"]),
+            "peak_distinct_closed_episodes_at_recall": max(
+                x["total_episodes"] for x in work),
+            "hooks_with_old_closed_episodes": sum(
+                x["old_closed_episodes"] > 0 for x in work),
+            "hooks_with_old_threshold_eligible": sum(
+                x["old_threshold_eligible"] > 0 for x in work),
+            "old_spontaneous_contributions": sum(
+                x["old_selected_spontaneously"] for x in work),
             "untrusted_fallbacks": sum(not x["trusted"] for x in work),
             "cold_and_reports_identical": True,
         }
@@ -233,6 +265,18 @@ class NaturalShadowRecallEnvelope564(unittest.TestCase):
                 self.assertGreater(row["recall_shadow_checks"], 0)
                 self.assertLessEqual(row["candidate_volume"],
                                      row["episode_volume"])
+                self.assertLessEqual(
+                    row["peak_distinct_closed_episodes_at_recall"],
+                    row["final_distinct_closed_episodes"])
+                self.assertLessEqual(
+                    row["hooks_with_old_threshold_eligible"],
+                    row["hooks_with_old_closed_episodes"])
+                self.assertLessEqual(
+                    row["old_spontaneous_contributions"],
+                    row["hooks_with_old_threshold_eligible"])
+                self.assertLessEqual(
+                    row["hooks_with_old_closed_episodes"],
+                    row["recall_shadow_checks"])
             print(lines[0])
 
 
