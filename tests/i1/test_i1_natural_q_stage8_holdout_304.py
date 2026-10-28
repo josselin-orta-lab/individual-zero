@@ -29,6 +29,7 @@ from unittest.mock import patch
 
 from i1.modules.stage8_evaluator import Stage8OptionEvaluator
 from i1.modules.td_values import LearnedValue, LinearTDValues
+from i1lab.i1_active_runtime import ExperimentalI1Stage12Runtime
 from i1lab.i1_birth import birth_i1_m11
 from i1lab.sqlite_life_store import SQLiteLifeLedger
 from run_i1_world_preset import load_preset, _birth_parameters
@@ -44,6 +45,7 @@ IDENTITY = "i1:304:heldout:" + preset_name + ":" + identity_suffix
 LIMIT = 18
 original_stage8 = Stage8OptionEvaluator.evaluate
 original_read = LinearTDValues.learned_value
+original_consider = ExperimentalI1Stage12Runtime._consider_uncertain_affordance
 
 
 def life(mode, path):
@@ -51,6 +53,29 @@ def life(mode, path):
     masked_reads = []
     cursor = {}
     read_calls = [0]
+    upstream_reads = []
+    def observe_consider(owner, *, capture, goal, st_version, cycle, exact):
+        reads = []
+        def observer(td_owner, state, signature):
+            value = original_read(td_owner, state, signature)
+            if td_owner is owner.q_active:
+                reads.append({
+                    "signature": signature, "status": value.status,
+                    "value": value.value, "evidence": value.evidence,
+                    "update_count": value.update_count,
+                })
+            return value
+        with patch.object(LinearTDValues, "learned_value", observer):
+            result = original_consider(
+                owner, capture=capture, goal=goal, st_version=st_version,
+                cycle=cycle, exact=exact)
+        if reads:
+            assert result is not None
+            upstream_reads.append({
+                "step": capture.t_monde, "cycle": cycle,
+                "option_ref": result.option.id, "reads": reads,
+            })
+        return result
 
     def blind_read(owner, state, signature):
         read_calls[0] += 1
@@ -81,7 +106,8 @@ def life(mode, path):
     scope = (patch.object(Stage8OptionEvaluator, "evaluate", blind_stage8)
              if mode == "stage8_q_read_masked" else nullcontext())
     snapshots, receipts = [], []
-    with scope:
+    with scope, patch.object(ExperimentalI1Stage12Runtime,
+                             "_consider_uncertain_affordance", observe_consider):
         with birth_i1_m11(db_path=str(path), life_id=IDENTITY, **params) as actor:
             rt = actor._runtime
             local_at_birth = rt.world.capture_local(t_monde=1).as_dict()
@@ -134,6 +160,30 @@ def life(mode, path):
     assert audit.generation == len(receipts)
     assert audit.journal_head == head == receipts[-1]["head"]
     assert audit.status == receipts[-1]["status"] and not audit.pending_intent
+    proposed = [e for e in events
+                if e.get("kind") == "i1_unknown_affordance_proposed"]
+    assert len(proposed) == len(upstream_reads)
+    upstream_joined = []
+    for event, observation in zip(proposed, upstream_reads):
+        data = event["data"]
+        assert (event["t_monde"], event["cycle"], data["option_ref"]) == (
+            observation["step"], observation["cycle"], observation["option_ref"])
+        reads = observation["reads"]
+        assert len(reads) == data["candidate_count"]
+        assert [x["signature"].split(":")[2] for x in reads] == data["candidate_primitives"]
+        command = data["command"]
+        suffix = ":".join(f"{k}={command['parameters'][k]}"
+                          for k in sorted(command["parameters"])) or "here"
+        signature = "i1:affordance:" + command["primitive"] + ":" + suffix
+        winners = [x for x in reads if x["signature"] == signature]
+        assert len(winners) == 1
+        assert winners[0]["status"] == data["learned_value_status"]
+        assert winners[0]["value"] == data["learned_value"]
+        upstream_joined.append({
+            "step": observation["step"], "cycle": observation["cycle"],
+            "option_ref": observation["option_ref"], "reads": reads,
+            "winner_signature": signature, "candidate_count": len(reads),
+        })
 
     applied, admitted, stage8, competition, p40, td, charges = {}, {}, {}, {}, {}, [], {}
     for event in events:
@@ -201,6 +251,7 @@ def life(mode, path):
         "stage8": stage8, "competition": competition, "p40": p40, "td": td,
         "charges": charges, "masked_reads": masked_reads,
         "events": events,
+        "upstream_q_actual_reads": upstream_joined,
         "m11_generation": audit.generation, "m11_status": audit.status,
         "head_verified": True,
     }
@@ -429,7 +480,31 @@ def competition_mediation_438(a, b):
     }
 
 
+def upstream_exposure_305(arm):
+    rows = arm["upstream_q_actual_reads"]
+    multi = [r for r in rows if r["candidate_count"] > 1]
+    learned = [r for r in multi if any(
+        q["status"] == "learned" for q in r["reads"])]
+    return {
+        "source": "original_Q_reads_joined_to_audited_M11_proposals",
+        "proposed_events": len(rows), "multicandidate_events": len(multi),
+        "multi_with_learned_Q": len(learned),
+        "multicandidate": multi,
+        "verdict": (
+            "NO_MULTICANDIDATE" if not multi else
+            "MULTICANDIDATE_WITH_LEARNED_Q" if learned
+            else "MULTICANDIDATE_ALL_UNLEARNED"
+        ),
+        "upstream_causal_choice": "NOT_ESTABLISHED",
+        "instrumental_benefit": "NOT_ESTABLISHED",
+    }
+
+
 summary = {
+    "upstream_q_crossworld_305": {
+        "canonical": upstream_exposure_305(canonical),
+        "stage8_masked": upstream_exposure_305(masked),
+    },
     "competition_mediation_chronology_438": competition_mediation_438(canonical, masked),
     "source": "fixed-heldout-two-registered-worlds-prebirth-m11",
     "preset": preset_name,
