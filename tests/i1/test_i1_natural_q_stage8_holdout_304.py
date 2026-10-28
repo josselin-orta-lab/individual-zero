@@ -346,7 +346,7 @@ else:
     verdict = "L3_NOT_ESTABLISHED_NO_APPLIED_DIFFERENCE"
 
 def competition_mediation_438(a, b):
-    """No extra TD/Stage8/Competition calls: join validated committed M11 logs."""
+    # No extra TD/Stage8/Competition calls: join validated committed M11 logs.
     assert a["head_verified"] and b["head_verified"]
     reads = sorted(
         (r["step"], r["cycle"], r["option_ref"], r["signature"])
