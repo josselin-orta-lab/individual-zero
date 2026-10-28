@@ -122,6 +122,21 @@ class OldRecallM11Audit560(unittest.TestCase):
         self.assertEqual(out["authentic_old_consultations"], 0)
         self.assertEqual(out["old_memory_recall_proposals"], 1)
 
+    def test_later_cycle_old_proposal_is_counted_but_not_paid(self):
+        from copy import deepcopy
+        later = deepcopy(self.proposal)
+        later["cycle"] = 2
+        later["data"]["contribution_ref"] = "memory-recall:episode:0:35:2"
+        receipt = self.audit([later])
+        self.assertEqual(receipt["memory_recall_proposals"], 1)
+        self.assertEqual(receipt["old_memory_recall_proposals"], 1)
+        self.assertEqual(receipt["accepted_old_read_charges"], 0)
+        self.assertEqual(receipt["authentic_old_consultations"], 0)
+        self.assertEqual(receipt["l2_positive"], "NOT_OBSERVED")
+        # The real runtime pays old reads at cycle 1 only.
+        with self.assertRaises(ValueError):
+            self.audit([later, self.charge])
+
     def test_future_same_step_closure_cannot_authorize_observation(self):
         from copy import deepcopy
         previous = self.episodes
