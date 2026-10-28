@@ -438,6 +438,55 @@ summary = {
     "step18_applied_masked": masked["applied"].get(18),
     "step18_admitted_canonical": canonical["admitted"].get(18),
     "step18_admitted_masked": masked["admitted"].get(18),
+    "upstream_affordance_exposure_full_life": {
+        arm: {
+            "source": "already_committed_i1_unknown_affordance_proposed",
+            "event_count": len(rows),
+            "multicandidate_events": sum(
+                x["candidate_count"] > 1 for x in rows),
+            "maximum_candidate_count": max(
+                (x["candidate_count"] for x in rows), default=0),
+            "multi_with_learned_winner": sum(
+                x["candidate_count"] > 1
+                and x["learned_value_status"] == "learned" for x in rows),
+            "events": rows,
+            "verdict": (
+                "NOT_EXPOSED" if not rows else
+                "MULTI_CANDIDATE_EXPOSURE_OBSERVED" if any(
+                    x["candidate_count"] > 1 for x in rows)
+                else "UPSTREAM_RANK_NON_DISCRIMINATING_IN_THIS_WINDOW"),
+            "upstream_q_causal_choice": "NOT_ESTABLISHED",
+            "instrumental_adaptive_benefit": "NOT_ESTABLISHED",
+        }
+        for arm, rows in {
+            "canonical": [
+                {"step": e["t_monde"], "cycle": e["cycle"],
+                 "option_ref": e["data"]["option_ref"],
+                 "goal_ref": e["data"]["goal_ref"],
+                 "candidate_count": e["data"]["candidate_count"],
+                 "candidate_primitives": e["data"]["candidate_primitives"],
+                 "command": e["data"]["command"],
+                 "learned_value_status": e["data"]["learned_value_status"],
+                 "learned_value": e["data"]["learned_value"],
+                 "visible_input_sha256": e["data"]["visible_input_sha256"]}
+                for e in canonical["events"]
+                if e.get("kind") == "i1_unknown_affordance_proposed"
+            ],
+            "stage8_masked": [
+                {"step": e["t_monde"], "cycle": e["cycle"],
+                 "option_ref": e["data"]["option_ref"],
+                 "goal_ref": e["data"]["goal_ref"],
+                 "candidate_count": e["data"]["candidate_count"],
+                 "candidate_primitives": e["data"]["candidate_primitives"],
+                 "command": e["data"]["command"],
+                 "learned_value_status": e["data"]["learned_value_status"],
+                 "learned_value": e["data"]["learned_value"],
+                 "visible_input_sha256": e["data"]["visible_input_sha256"]}
+                for e in masked["events"]
+                if e.get("kind") == "i1_unknown_affordance_proposed"
+            ],
+        }.items()
+    },
     "upstream_affordance_exposure_at_step18": {
         "canonical": [
             {"cycle": e["cycle"], "kind": e["kind"],
