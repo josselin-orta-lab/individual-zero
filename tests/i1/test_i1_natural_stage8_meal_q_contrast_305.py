@@ -22,8 +22,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
-from i1.modules.stage8_evaluator import Stage8OptionEvaluator
-from i1.modules.td_values import LearnedValue, LinearTDValues
+from i1lab.i1_active_runtime import I1PartialEvidenceAdapter
 from i1lab.i1_birth import birth_i1_m11
 from i1lab.sqlite_life_store import SQLiteLifeLedger
 from run_i1_world_preset import load_preset, _birth_parameters
@@ -33,36 +32,44 @@ raw, initial_local = _birth_parameters(preset)
 params = dict(raw, diagnostic_sample_cost_uc=1, module_occupancy_cost_uc=1)
 IDENTITY = "i1:304:heldout:oasis:b"
 SIGNATURE = "i1:affordance:manger:target=berry_a"
-original_stage8 = Stage8OptionEvaluator.evaluate
-original_read = LinearTDValues.learned_value
+original_adapter = I1PartialEvidenceAdapter.evaluate
 
 def life(mode, path):
     target_step = {"canonical": None, "mask19": 19, "mask21": 21}[mode]
     masked_reads, receipts, snapshots = [], [], []
-    def stage8_wrapper(owner, **kw):
-        if kw["t_monde"] != target_step or kw["proposal"].option.learning_signature != SIGNATURE:
-            return original_stage8(owner, **kw)
-        cursor = (kw["t_monde"], kw["cycle"], kw["proposal"].option.id)
-        reads = [0]
-        def blind_read(qowner, state, signature):
-            reads[0] += 1
-            actual = original_read(qowner, state, signature)
-            assert signature == SIGNATURE
-            if actual.status == "learned":
-                masked_reads.append({
-                    "step": cursor[0], "cycle": cursor[1],
-                    "option_ref": cursor[2], "signature": signature,
-                    "q": actual.value, "count": actual.update_count,
-                })
-                return LearnedValue(signature=signature, status="unlearned",
-                                    value=None, evidence=None, update_count=0)
-            return actual
-        with patch.object(LinearTDValues, "learned_value", blind_read):
-            result = original_stage8(owner, **kw)
-        assert reads[0] == 1
-        return result
+    def stage8_wrapper(owner, *, proposal, **kw):
+        if (kw["t_monde"] != target_step
+                or proposal.option.learning_signature != SIGNATURE
+                or proposal.option.provenance != "i1_unknown_affordance"):
+            return original_adapter(owner, proposal=proposal, **kw)
+        pending = owner._pending
+        local = pending.get("local_opportunity_evidence")
+        if (not isinstance(local, dict)
+                or local.get("option_ref") != proposal.option.id
+                or local.get("world_step") != kw["t_monde"]
+                or local.get("affordance") is not True):
+            return original_adapter(owner, proposal=proposal, **kw)
+        if local.get("learned_status") != "learned":
+            return original_adapter(owner, proposal=proposal, **kw)
+        assert local.get("learned_value") is not None
+        assert local.get("learned_evidence") is not None
+        masked_reads.append({
+            "step": kw["t_monde"], "cycle": kw["cycle"],
+            "option_ref": proposal.option.id, "signature": SIGNATURE,
+            "q": local["learned_value"],
+            "evidence": local["learned_evidence"],
+        })
+        original_local = pending["local_opportunity_evidence"]
+        pending["local_opportunity_evidence"] = {
+            **local, "learned_status": "unlearned",
+            "learned_value": None, "learned_evidence": None,
+        }
+        try:
+            return original_adapter(owner, proposal=proposal, **kw)
+        finally:
+            pending["local_opportunity_evidence"] = original_local
     scope = (nullcontext() if target_step is None
-             else patch.object(Stage8OptionEvaluator, "evaluate", stage8_wrapper))
+             else patch.object(I1PartialEvidenceAdapter, "evaluate", stage8_wrapper))
     with scope:
         with birth_i1_m11(db_path=str(path), life_id=IDENTITY, **params) as actor:
             rt = actor._runtime
