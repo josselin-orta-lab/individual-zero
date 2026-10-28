@@ -438,6 +438,32 @@ summary = {
     "step18_applied_masked": masked["applied"].get(18),
     "step18_admitted_canonical": canonical["admitted"].get(18),
     "step18_admitted_masked": masked["admitted"].get(18),
+    "upstream_affordance_exposure_at_step18": {
+        "canonical": [
+            {"cycle": e["cycle"], "kind": e["kind"],
+             "option_ref": e["data"].get("option_ref"),
+             "candidate_count": e["data"].get("candidate_count"),
+             "candidate_primitives": e["data"].get("candidate_primitives"),
+             "command": e["data"].get("command"),
+             "learned_value_status": e["data"].get("learned_value_status"),
+             "learned_value": e["data"].get("learned_value")}
+            for e in canonical["events"]
+            if e["t_monde"] == 18 and
+            e.get("kind") == "i1_unknown_affordance_proposed"
+        ],
+        "research": [
+            {"cycle": e["cycle"], "kind": e["kind"],
+             "option_ref": e["data"].get("option_ref"),
+             "candidate_count": e["data"].get("candidate_count"),
+             "candidate_primitives": e["data"].get("candidate_primitives"),
+             "command": e["data"].get("command"),
+             "learned_value_status": e["data"].get("learned_value_status"),
+             "learned_value": e["data"].get("learned_value")}
+            for e in masked["events"]
+            if e["t_monde"] == 18 and
+            e.get("kind") == "i1_unknown_affordance_proposed"
+        ],
+    },
     "selective_intervention_audit": {
         "wrapper_class": "i1lab.i1_active_runtime.I1PartialEvidenceAdapter",
         "research_stage8_calls_last_two_steps": masked["stage8_calls"],
