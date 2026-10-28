@@ -27,7 +27,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from i1lab.i1_active_runtime import I1PartialEvidenceAdapter
+from i1lab.i1_active_runtime import I1PartialEvidenceAdapter, ExperimentalI1Stage12Runtime
+from i1.modules.td_values import LinearTDValues
 from i1lab.i1_birth import birth_i1_m11
 from i1lab.sqlite_life_store import SQLiteLifeLedger
 from run_i1_world_preset import load_preset, _birth_parameters
@@ -41,12 +42,37 @@ IDENTITY = "i1:304:heldout:" + preset_name + ":" + identity_suffix
 LIMIT = 18
 TARGET_Q = "i1:affordance:collecter:target=berry_a"
 original_adapter = I1PartialEvidenceAdapter.evaluate
+original_consider = ExperimentalI1Stage12Runtime._consider_uncertain_affordance
+original_qread = LinearTDValues.learned_value
 
 def life(mode, path):
     assert mode in ("canonical", "stage8_q_read_masked")
     masked_reads = []
     read_attempts = []
     stage8_calls = []
+    rank_reads = []
+    def observe_consider(owner, *, capture, goal, st_version, cycle, exact):
+        entries = []
+        def observe_q(td_owner, state, signature):
+            value = original_qread(td_owner, state, signature)
+            if td_owner is owner.q_active:
+                entries.append({
+                    "signature": signature, "status": value.status,
+                    "value": value.value, "evidence": value.evidence,
+                    "update_count": value.update_count,
+                })
+            return value
+        with patch.object(LinearTDValues, "learned_value", observe_q):
+            result = original_consider(
+                owner, capture=capture, goal=goal, st_version=st_version,
+                cycle=cycle, exact=exact)
+        if entries:
+            assert result is not None
+            rank_reads.append({
+                "step": capture.t_monde, "cycle": cycle,
+                "option_ref": result.option.id, "reads": entries,
+            })
+        return result
     def blind_adapter(owner, *, proposal, **kwargs):
         step = kwargs["t_monde"]
         signature = proposal.option.learning_signature
@@ -86,7 +112,7 @@ def life(mode, path):
     scope = (patch.object(I1PartialEvidenceAdapter, "evaluate", blind_adapter)
              if mode == "stage8_q_read_masked" else nullcontext())
     snapshots, receipts = [], []
-    with scope:
+    with scope, patch.object(ExperimentalI1Stage12Runtime, "_consider_uncertain_affordance", observe_consider):
         with birth_i1_m11(db_path=str(path), life_id=IDENTITY, **params) as actor:
             rt = actor._runtime
             local_at_birth = rt.world.capture_local(t_monde=1).as_dict()
@@ -139,6 +165,36 @@ def life(mode, path):
     assert audit.generation == len(receipts)
     assert audit.journal_head == head == receipts[-1]["head"]
     assert audit.status == receipts[-1]["status"] and not audit.pending_intent
+    proposals = [
+        e for e in events if e.get("kind") == "i1_unknown_affordance_proposed"
+    ]
+    assert len(proposals) == len(rank_reads), (
+        "in-process Q reads must correspond one-to-one to committed proposals")
+    joined = []
+    for event, observed in zip(proposals, rank_reads):
+        data = event["data"]
+        assert (event["t_monde"], event["cycle"], data["option_ref"]) == (
+            observed["step"], observed["cycle"], observed["option_ref"])
+        reads = observed["reads"]
+        assert len(reads) == data["candidate_count"]
+        assert [r["signature"].split(":")[2] for r in reads] == data["candidate_primitives"]
+        assert all(r["status"] in ("learned", "unlearned") for r in reads)
+        command = data["command"]
+        suffix = ":".join(
+            f"{key}={command['parameters'][key]}"
+            for key in sorted(command["parameters"])) or "here"
+        winner_signature = "i1:affordance:" + command["primitive"] + ":" + suffix
+        matches = [r for r in reads if r["signature"] == winner_signature]
+        assert len(matches) == 1
+        assert matches[0]["status"] == data["learned_value_status"]
+        assert matches[0]["value"] == data["learned_value"]
+        joined.append({
+            "step": observed["step"], "cycle": observed["cycle"],
+            "option_ref": observed["option_ref"],
+            "candidate_count": len(reads),
+            "candidate_reads": reads, "winner_signature": winner_signature,
+            "winner_status": matches[0]["status"],
+        })
 
     applied, admitted, stage8, competition, p40, td, charges = {}, {}, {}, {}, {}, [], {}
     for event in events:
@@ -204,6 +260,7 @@ def life(mode, path):
         "charges": charges, "masked_reads": masked_reads,
         "read_attempts": read_attempts, "stage8_calls": stage8_calls,
         "events": events,
+        "upstream_q_reads": joined,
         "m11_generation": audit.generation, "m11_status": audit.status,
         "head_verified": True,
     }
@@ -438,6 +495,31 @@ summary = {
     "step18_applied_masked": masked["applied"].get(18),
     "step18_admitted_canonical": canonical["admitted"].get(18),
     "step18_admitted_masked": masked["admitted"].get(18),
+    "upstream_candidate_q_actual_reads_305": {
+        arm: {
+            "event_count": len(rows),
+            "multicandidate": [r for r in rows if r["candidate_count"] > 1],
+            "multi_with_learned_q": sum(
+                r["candidate_count"] > 1 and any(
+                    c["status"] == "learned" for c in r["candidate_reads"])
+                for r in rows),
+            "verdict": (
+                "NOT_EXPOSED" if not any(
+                    r["candidate_count"] > 1 for r in rows) else
+                "MULTI_CANDIDATE_WITH_LEARNED_Q" if any(
+                    r["candidate_count"] > 1 and any(
+                        c["status"] == "learned" for c in r["candidate_reads"])
+                    for r in rows)
+                else "MULTI_CANDIDATE_BUT_ALL_Q_UNLEARNED"),
+            "upstream_q_causal_motor_effect": "NOT_ESTABLISHED",
+            "instrumental_benefit": "NOT_ESTABLISHED",
+            "source": "in_process_actual_calls_joined_to_audited_M11_proposal",
+        }
+        for arm, rows in {
+            "canonical": canonical["upstream_q_reads"],
+            "stage8_masked": masked["upstream_q_reads"],
+        }.items()
+    },
     "upstream_affordance_exposure_full_life": {
         arm: {
             "source": "already_committed_i1_unknown_affordance_proposed",
