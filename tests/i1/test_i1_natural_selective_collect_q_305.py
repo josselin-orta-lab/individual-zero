@@ -27,14 +27,11 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from i1.modules.stage11_evaluator import Stage11OptionEvaluator
-from i1.modules.td_values import LearnedValue, LinearTDValues
+from i1lab.i1_active_runtime import I1PartialEvidenceAdapter
 from i1lab.i1_birth import birth_i1_m11
 from i1lab.sqlite_life_store import SQLiteLifeLedger
 from run_i1_world_preset import load_preset, _birth_parameters
 
-# All intervention and analysis decisions were specified in the checked-in
-# preregistration BEFORE this experiment can be run in CI.
 preset_name = __import__("os").environ["I1_HELDOUT_PRESET"]
 identity_suffix = __import__("os").environ["I1_HELDOUT_IDENTITY"]
 preset, digest = load_preset(preset_name)
@@ -42,70 +39,51 @@ raw, initial_local = _birth_parameters(preset)
 params = dict(raw, diagnostic_sample_cost_uc=1, module_occupancy_cost_uc=1)
 IDENTITY = "i1:304:heldout:" + preset_name + ":" + identity_suffix
 LIMIT = 18
-original_stage8 = Stage11OptionEvaluator.evaluate
-original_read = LinearTDValues.learned_value
-
+TARGET_Q = "i1:affordance:collecter:target=berry_a"
+original_adapter = I1PartialEvidenceAdapter.evaluate
 
 def life(mode, path):
     assert mode in ("canonical", "stage8_q_read_masked")
     masked_reads = []
     read_attempts = []
     stage8_calls = []
-    cursor = {}
-    read_calls = [0]
+    def blind_adapter(owner, *, proposal, **kwargs):
+        step = kwargs["t_monde"]
+        signature = proposal.option.learning_signature
+        pending = owner._pending
+        target = (
+            step == 18 and signature == TARGET_Q
+            and proposal.option.provenance == "i1_unknown_affordance"
+            and proposal.option.id == pending.get("option_ref")
+            and pending.get("world_step") == step
+            and pending.get("affordance") is True
+        )
+        if step >= 17:
+            stage8_calls.append({"step": step, "cycle": kwargs["cycle"],
+                                  "option_ref": proposal.option.id,
+                                  "signature": signature, "target": target})
+        if not target:
+            return original_adapter(owner, proposal=proposal, **kwargs)
+        assert pending.get("learned_status") == "learned"
+        assert pending.get("learned_value") is not None
+        assert pending.get("learned_evidence") is not None
+        masked_reads.append({"step": step, "cycle": kwargs["cycle"],
+                             "option_ref": proposal.option.id,
+                             "signature": signature,
+                             "q": float(pending["learned_value"]),
+                             "prior_evidence": float(pending["prior_evidence"])})
+        read_attempts.append(masked_reads[-1])
+        # Only alter the transient Stage8 adapter input for this option.
+        # Upstream Q-based proposal ranking and all genuine owner reads stay intact.
+        original_pending = owner._pending
+        owner._pending = {**pending, "learned_status": "unlearned",
+                          "learned_value": None, "learned_evidence": None}
+        try:
+            return original_adapter(owner, proposal=proposal, **kwargs)
+        finally:
+            owner._pending = original_pending
 
-    def blind_read(owner, state, signature):
-        read_calls[0] += 1
-        actual = original_read(owner, state, signature)
-        if cursor["step"] >= 17:
-            read_attempts.append({
-                "step": cursor["step"], "cycle": cursor["cycle"],
-                "signature": signature, "status": actual.status,
-                "option_ref": cursor["option_ref"],
-                "value": actual.value,
-                "will_mask": (cursor["step"] == 18 and
-                              signature == "i1:affordance:collecter:target=berry_a"),
-            })
-        if (cursor["step"] == 18 and
-            signature == "i1:affordance:collecter:target=berry_a" and
-            actual.status == "learned"):
-            assert actual.value is not None
-            masked_reads.append({
-                "step": cursor["step"], "cycle": cursor["cycle"],
-                "option_ref": cursor["option_ref"],
-                "signature": signature, "q": float(actual.value),
-                "update_count": actual.update_count,
-            })
-        if cursor["step"] != 18 or signature != "i1:affordance:collecter:target=berry_a":
-            return actual
-        # Only the Stage8 readback is hidden, not the TD owner/write or
-        # Planning's normal independently paid Q read.
-        return LearnedValue(signature=signature, status="unlearned",
-                            value=None, evidence=None, update_count=0)
-
-    def blind_stage8(owner, **kw):
-        cursor.update(step=kw["t_monde"], cycle=kw["cycle"],
-                      option_ref=kw["proposal"].option.id)
-        if cursor["step"] >= 17:
-            stage8_calls.append(dict(cursor))
-        before_calls = read_calls[0]
-        with patch.object(LinearTDValues, "learned_value", blind_read):
-            result = original_stage8(owner, **kw)
-        actual_reads = read_calls[0] - before_calls
-        # Stage11 can legitimately return an unscored geographic option
-        # before calling Stage8. Only the targeted, learned collect offer
-        # MUST reach exactly one genuine owner read.
-        assert actual_reads in (0, 1), (
-            "Stage11 made unexpected multiple owner Q reads")
-        target = (cursor["step"] == 18 and
-                  kw["proposal"].option.learning_signature ==
-                  "i1:affordance:collecter:target=berry_a")
-        if target:
-            assert actual_reads == 1, (
-                "Target collect offer bypassed its actual owner Q read")
-        return result
-
-    scope = (patch.object(Stage11OptionEvaluator, "evaluate", blind_stage8)
+    scope = (patch.object(I1PartialEvidenceAdapter, "evaluate", blind_adapter)
              if mode == "stage8_q_read_masked" else nullcontext())
     snapshots, receipts = [], []
     with scope:
@@ -461,7 +439,7 @@ summary = {
     "step18_admitted_canonical": canonical["admitted"].get(18),
     "step18_admitted_masked": masked["admitted"].get(18),
     "selective_intervention_audit": {
-        "wrapper_class": "i1.modules.stage11_evaluator.Stage11OptionEvaluator",
+        "wrapper_class": "i1lab.i1_active_runtime.I1PartialEvidenceAdapter",
         "research_stage8_calls_last_two_steps": masked["stage8_calls"],
         "research_q_read_attempts_last_two_steps": masked["read_attempts"],
         "canonical_food_stage8_last_step": [
