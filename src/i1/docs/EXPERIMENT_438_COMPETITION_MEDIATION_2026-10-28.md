@@ -1,0 +1,21 @@
+# #438 : chronologie M11 de la première divergence Competition médiée par Stage8-Q
+
+**Enregistrement antérieur au nouvel audit** : 28 octobre 2026, base canonique `9893693f1990cca855318ddf39d12bc29f7afda1`. Test existant : `tests/i1/test_i1_natural_q_stage8_holdout_304.py`, né en M11 v4 sur `oasis/{a,b}` et `foraging/{a,b}`, 18 pas au maximum, avec deux bras indépendamment stockés : Stage8 canonique / lecture Stage8-Q masquée dès la naissance. Réutiliser **uniquement** les événements déjà produits dans ces vies; le nouveau diagnostic n'ajoute ni nouvelle naissance, ni geste, ni lecture propriétaire, ni UC, ni contrôleur, ni condition favorable au résultat.
+
+## Question et hypothèses rivales
+
+Le résultat #595 `foraging/b` observe un premier Q Stage8 supprimé au pas 9 et un premier acte divergent au pas 10, alors que l'état Competition préaction du pas 10 diffère. Ce propriétaire pourrait être **un médiateur temporel normal** de l'ablation plutôt qu'une anomalie de comparabilité. La divergence peut cependant être due à une autre option, une autre proposition, une autre admission ou une chronologie de débits différente. Ne pas transformer cette possibilité en attribution certaine.
+
+H0 : aucune divergence dans une trace Competition **appariée et commise** avant l'action, ou différence d'options/temps/UC empêchant d'isoler son origine. H1 : le premier écart de l'évidence/accumulateur survient, à temps et option appariés, **après** une lecture Q apprise et masquée dans Stage8, avec reçu Stage8 concordant; le propriétaire Competition peut alors expliquer une **médiation compatible** avec la différence motrice ultérieure. Ni H0 ni H1 n'impliquent une meilleure adaptation.
+
+## Mesures en lecture seule
+
+Après la vérification du nombre de générations, du hash du journal, de l'état de décès et de l'absence d'intention M11 pendante, relever les vrais `stage8_option_evaluation`, `competition_cycle`, `compute_charge`, `command_admitted` et `command_experienced`. Aligner chronologiquement les clés `(pas, cycle, option_ref)` du cycle cognitif effectivement effectué. Pour chaque trace Competition, conserver evidence, accumulateur avant/après, seuil et franchissement. Identifier : premier Q réellement masqué, première trace Competition non identique (valeur ou identité de candidat), premier propriétaire Competition préaction différent, et première commande physique différente. Fournir les deux reçus Stage8 au même instant ainsi que les débits payés du pas associé. Tous les champs de Q, UC et corpus M11 demeurent **observations**, pas connaissances importées dans I1.
+
+**Témoins négatifs obligatoires** : `oasis/a` peut exposer des lectures apprises sans divergence motrice ; les autres vies doivent rester dans le rapport avec leurs propres chronologies, sans verdict positif exigé. Les comparaisons doivent discriminer (a) trace commune de même option avec preuves différentes, (b) option/cycle manquant dans un bras, (c) état propriétaire Competition déjà divergent, et (d) absence de toute exposition.
+
+## Interprétation admissible
+
+Une trace commune dont l'evidence change avec une lecture Q effectivement masquée et authentifiée dans le même couple cycle/option soutient une **médiation Competition compatible avec l'intervention**; elle ne prouve pas une amélioration d'apprentissage. Si la première différence porte sur des candidats non appariés, il faut la qualifier `UNMATCHED_CANDIDATES`, pas lui attribuer un delta chiffré imaginaire. Si le premier écart précède le masquage, qualifier `CHRONOLOGY_INCONSISTENT` et investiguer, sans réinterprétation a posteriori. L'effet direct instantané au pas 10 sous Competition préaction différent reste `NOT_ESTABLISHED` ; on ne force pas l'égalité d'un médiateur pour établir un effet total d'une intervention née avant le pas 9.
+
+Le résultat appartient à **L1 observation vérifiable / L2 naissance M11 naturelle**. La causalité locale d'une ablation Stage8-Q sur la commande a déjà des témoins propres #592/#595. La généralisation, utilité alimentaire différée, survie et apprentissage robuste restent `NOT_ESTABLISHED`. Aucune modification physique/Q/TD/Stage8/Competition/M11/I0. Intégration seulement avec CI exacte 4/4 Python 3.11/3.12 et lecture critique des résultats.

@@ -170,6 +170,9 @@ def life(mode, path):
                     "evidence": trace["evidence"],
                     "ratio": trace["accumulator_after"] / trace["threshold"],
                     "crossed": bool(trace["crossed"]),
+                    "accumulator_before": trace["accumulator_before"],
+                    "accumulator_after": trace["accumulator_after"],
+                    "threshold": trace["threshold"],
                 }
         elif kind == "stage10_sleep_pressure_frozen":
             assert step not in p40
@@ -342,7 +345,92 @@ elif first_physical is not None:
 else:
     verdict = "L3_NOT_ESTABLISHED_NO_APPLIED_DIFFERENCE"
 
+def competition_mediation_438(a, b):
+    # No extra TD/Stage8/Competition calls: join validated committed M11 logs.
+    assert a["head_verified"] and b["head_verified"]
+    reads = sorted(
+        (r["step"], r["cycle"], r["option_ref"], r["signature"])
+        for r in b["masked_reads"]
+    )
+    masked_keys = {(t, c, ref) for t, c, ref, _ in reads}
+    keys = sorted(set(a["competition"]) | set(b["competition"]))
+    first = next(
+        (k for k in keys
+         if a["competition"].get(k) != b["competition"].get(k)), None)
+    first_read = reads[0] if reads else None
+    owner_before = next(
+        (t for t in sorted(a["applied"])
+         if t in b["applied"] and
+         a["snapshots"][t-1]["before"]["competition"] !=
+         b["snapshots"][t-1]["before"]["competition"]),
+        None)
+    first_motor = next(
+        (t for t in sorted(set(a["applied"]) & set(b["applied"]))
+         if a["applied"][t] != b["applied"][t]), None)
+    record = None
+    verdict = "NO_COMPETITION_DIVERGENCE"
+    if first is not None:
+        x, y = a["competition"].get(first), b["competition"].get(first)
+        s8a, s8b = a["stage8"].get(first), b["stage8"].get(first)
+        paired = x is not None and y is not None
+        matched_q_read = bool(
+            paired and first in masked_keys
+            and s8a is not None and s8b is not None
+            and s8a["learned"] == "learned"
+            and s8b["learned"] == "unlearned"
+            and s8a["signature"] == s8b["signature"]
+            and s8a["status"] == s8b["status"] == "evaluated"
+            and abs(x["evidence"] - s8a["evidence"]) < 1e-10
+            and abs(y["evidence"] - s8b["evidence"]) < 1e-10
+        )
+        record = {
+            "step": first[0], "cycle": first[1], "option_ref": first[2],
+            "canonical_competition": x, "masked_competition": y,
+            "canonical_stage8": s8a, "masked_stage8": s8b,
+            "same_option_present_both": paired,
+            "genuine_masked_learned_read_on_same_option": matched_q_read,
+            "canonical_compute_charges_this_step": a["charges"].get(first[0], []),
+            "masked_compute_charges_this_step": b["charges"].get(first[0], []),
+        }
+        if first_read is None or (first[0], first[1]) < first_read[:2]:
+            verdict = "CHRONOLOGY_INCONSISTENT"
+        elif not paired:
+            verdict = "UNMATCHED_CANDIDATES"
+        elif matched_q_read and x["evidence"] != y["evidence"]:
+            verdict = "MATCHED_STAGE8_Q_EVIDENCE_MEDIATION_COMPATIBLE"
+        else:
+            verdict = "MATCHED_TRACE_DIVERGENCE_CAUSE_NOT_ISOLATED"
+    return {
+        "source": "read_only_join_of_audited_committed_M11_cycles",
+        "first_masked_learned_stage8_read": (
+            {"step": first_read[0], "cycle": first_read[1],
+             "option_ref": first_read[2], "signature": first_read[3]}
+            if first_read is not None else None
+        ),
+        "first_competition_trace_difference": record,
+        "first_different_competition_owner_preaction_step": owner_before,
+        "first_physically_different_action_step": first_motor,
+        "competition_diff_precedes_or_coincides_with_motor": (
+            None if first is None or first_motor is None
+            else first[0] <= first_motor
+        ),
+        "paired_chronology_verdict": verdict,
+        "direct_motor_effect_at_competition_equal": (
+            "NOT_ESTABLISHED" if owner_before is not None
+            and first_motor is not None and owner_before <= first_motor
+            else "NOT_ASSESSED_BY_THIS_AUDIT"
+        ),
+        "total_intervention_motor_effect": (
+            "ACTION_DIVERGENCE_OBSERVED" if first_motor is not None
+            else "NOT_OBSERVED"
+        ),
+        "adaptive_benefit": "NOT_ESTABLISHED",
+        "scientific_generalization": "NOT_ESTABLISHED",
+    }
+
+
 summary = {
+    "competition_mediation_chronology_438": competition_mediation_438(canonical, masked),
     "source": "fixed-heldout-two-registered-worlds-prebirth-m11",
     "preset": preset_name,
     "identity_suffix": identity_suffix,
