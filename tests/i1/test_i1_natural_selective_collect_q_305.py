@@ -27,7 +27,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from i1.modules.stage8_evaluator import Stage8OptionEvaluator
+from i1.modules.stage11_evaluator import Stage11OptionEvaluator
 from i1.modules.td_values import LearnedValue, LinearTDValues
 from i1lab.i1_birth import birth_i1_m11
 from i1lab.sqlite_life_store import SQLiteLifeLedger
@@ -42,7 +42,7 @@ raw, initial_local = _birth_parameters(preset)
 params = dict(raw, diagnostic_sample_cost_uc=1, module_occupancy_cost_uc=1)
 IDENTITY = "i1:304:heldout:" + preset_name + ":" + identity_suffix
 LIMIT = 18
-original_stage8 = Stage8OptionEvaluator.evaluate
+original_stage8 = Stage11OptionEvaluator.evaluate
 original_read = LinearTDValues.learned_value
 
 
@@ -95,7 +95,7 @@ def life(mode, path):
             "Stage8 must make exactly its single normal Q read")
         return result
 
-    scope = (patch.object(Stage8OptionEvaluator, "evaluate", blind_stage8)
+    scope = (patch.object(Stage11OptionEvaluator, "evaluate", blind_stage8)
              if mode == "stage8_q_read_masked" else nullcontext())
     snapshots, receipts = [], []
     with scope:
@@ -349,6 +349,37 @@ else:
     assert all(canonical["snapshots"][t-1]["after"]["body"] ==
                masked["snapshots"][t-1]["after"]["body"] for t in common)
 
+
+# Manipulation fidelity is a technical validity gate, not a requirement that
+# the intervention change an autonomous decision. A canonical learned read
+# at step 18 must be exposed in the paired arm by our prebirth wrapper.
+TARGET_Q = "i1:affordance:collecter:target=berry_a"
+canonical_target_reads = [
+    (k, v) for k, v in canonical["stage8"].items()
+    if k[0] == 18 and v["signature"] == TARGET_Q and v["learned"] == "learned"
+]
+research_target_evals = [
+    (k, v) for k, v in masked["stage8"].items()
+    if k[0] == 18 and v["signature"] == TARGET_Q
+]
+if canonical_target_reads:
+    assert len(masked["masked_reads"]) == len(research_target_evals) > 0, (
+        "targeted Stage11 Q read interception did not occur")
+    assert all(row["step"] == 18 and row["signature"] == TARGET_Q
+               for row in masked["masked_reads"])
+    assert all(v["learned"] == "unlearned" and v["q"] is None
+               for _, v in research_target_evals), (
+        "targeted manipulation leaked learned Q to Stage11")
+    assert all(canonical["applied"][t] == masked["applied"][t]
+               for t in range(1, 18)), (
+        "targeted research arm diverged before intervention")
+    assert (canonical["snapshots"][17]["before"]["body"] ==
+            masked["snapshots"][17]["before"]["body"]), (
+        "targeted research arms had different pre-step-18 bodies")
+else:
+    assert not masked["masked_reads"], (
+        "unregistered targeted Q read in a non-exposed birth")
+
 eligible = bool(first_physical is not None and precondition is not None
                 and all(precondition.values()))
 if first_q_suppression_step is None:
@@ -372,6 +403,7 @@ summary = {
     "first_q_suppression_step": first_q_suppression_step,
     "masked_genuine_learned_stage8_reads": len(masked["masked_reads"]),
     "selective_intervention_audit": {
+        "wrapper_class": "i1.modules.stage11_evaluator.Stage11OptionEvaluator",
         "research_stage8_calls_last_two_steps": masked["stage8_calls"],
         "research_q_read_attempts_last_two_steps": masked["read_attempts"],
         "canonical_food_stage8_last_step": [
