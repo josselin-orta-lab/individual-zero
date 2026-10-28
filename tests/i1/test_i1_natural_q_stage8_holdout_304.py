@@ -197,6 +197,7 @@ def life(mode, path):
         "snapshots": snapshots, "applied": applied, "admitted": admitted,
         "stage8": stage8, "competition": competition, "p40": p40, "td": td,
         "charges": charges, "masked_reads": masked_reads,
+        "events": events,
         "m11_generation": audit.generation, "m11_status": audit.status,
         "head_verified": True,
     }
@@ -377,6 +378,50 @@ summary = {
         "paid_competition_evaluations": len(masked["competition"]),
     },
     "scientific_motor_verdict": verdict,
+    "first_divergence_q_and_competition": (
+        {
+            "step": first_physical,
+            "canonical_stage8": [
+                {"cycle": k[1], "option_ref": k[2], **v}
+                for k, v in sorted(canonical["stage8"].items())
+                if k[0] == first_physical
+            ],
+            "masked_stage8": [
+                {"cycle": k[1], "option_ref": k[2], **v}
+                for k, v in sorted(masked["stage8"].items())
+                if k[0] == first_physical
+            ],
+            "canonical_competition": [
+                {"cycle": k[1], "option_ref": k[2], **v}
+                for k, v in sorted(canonical["competition"].items())
+                if k[0] == first_physical
+            ],
+            "masked_competition": [
+                {"cycle": k[1], "option_ref": k[2], **v}
+                for k, v in sorted(masked["competition"].items())
+                if k[0] == first_physical
+            ],
+            "canonical_td_publications": [
+                {"step": event["t_monde"],
+                 "previous_signature": event["data"]["previous_signature"],
+                 "next_signature": event["data"]["next_signature"],
+                 "return_g": event["data"]["return_g"],
+                 "delta": event["data"]["delta"],
+                 "updated_signatures": event["data"]["updated_signatures"]}
+                for event in canonical["events"]
+                if event.get("kind") == "td_update_published"
+                and event["t_monde"] <= first_physical
+            ],
+            "canonical_admitted": canonical["admitted"][first_physical],
+            "masked_admitted": masked["admitted"][first_physical],
+            "masked_genuine_learned_reads": [
+                x for x in masked["masked_reads"]
+                if x["step"] == first_physical
+            ],
+        }
+        if first_physical is not None
+        and preset_name == "oasis" and identity_suffix == "b" else None
+    ),
     "immediate_first_divergence": immediate,
     "adaptive_benefit": "NOT_ESTABLISHED",
     "durability_and_generalization": "NOT_ESTABLISHED",
