@@ -89,6 +89,7 @@ def life(mode, path):
                 physics_version), physics_version
             born_noise = rt.competition._config.noise_sigma
             td_config = rt.q_active.config
+            born_needs = rt.value_needs.config
             for _ in range(LIMIT):
                 rt = actor._runtime
                 before = {
@@ -98,6 +99,8 @@ def life(mode, path):
                     "q": rt.q_active.export_causal_state(),
                     "competition": rt.competition.export_causal_state(),
                     "goal": rt.goal_manager.export_causal_state(),
+                    "fatigue": float(rt.sleep_health.fatigue),
+                    "sleep_mode": str(rt.sleep_session.mode),
                 }
                 receipt = actor.run_step()  # Sole physical action authority.
                 assert receipt.status in ("active", "dead"), receipt
@@ -109,6 +112,8 @@ def life(mode, path):
                         "body": dict(rt.world.body.as_dict()),
                         "position": dict(rt.world.position.as_dict()),
                         "inventory": dict(rt.world.inventory()),
+                        "fatigue": float(rt.sleep_health.fatigue),
+                        "sleep_mode": str(rt.sleep_session.mode),
                     },
                     "status": receipt.status,
                 })
@@ -185,6 +190,8 @@ def life(mode, path):
         "physics_version": physics_version, "born_noise": born_noise,
         "td_config": (td_config.version, td_config.beta, td_config.eta,
                       td_config.lambda_e),
+        "born_need_weights": dict(born_needs.weights),
+        "born_need_setpoints": dict(born_needs.setpoints),
         "snapshots": snapshots, "applied": applied, "admitted": admitted,
         "stage8": stage8, "competition": competition, "p40": p40, "td": td,
         "charges": charges, "masked_reads": masked_reads,
@@ -203,6 +210,8 @@ assert canonical["physics_digest"] == masked["physics_digest"]
 assert canonical["physics_version"] == masked["physics_version"]
 assert canonical["born_noise"] == masked["born_noise"]
 assert canonical["td_config"] == masked["td_config"]
+assert canonical["born_need_weights"] == masked["born_need_weights"]
+assert canonical["born_need_setpoints"] == masked["born_need_setpoints"]
 assert not canonical["masked_reads"]
 assert canonical["head_verified"] and masked["head_verified"]
 assert canonical["snapshots"][0]["before"] == masked["snapshots"][0]["before"]
@@ -255,6 +264,8 @@ if first_physical is not None:
         "same_td": a["q"] == b["q"],
         "same_competition": a["competition"] == b["competition"],
         "same_active_goal": a["goal"] == b["goal"],
+        "same_fatigue": a["fatigue"] == b["fatigue"],
+        "same_sleep_mode": a["sleep_mode"] == b["sleep_mode"],
         "same_frozen_p40": (
             canonical["p40"].get(first_physical) ==
             masked["p40"].get(first_physical)),
@@ -272,6 +283,50 @@ if first_physical is not None:
     assert all(precondition[k] for k in (
         "same_body", "same_position", "same_inventory")), (
         "world trajectories diverged before recorded first physical command")
+
+
+# Pure observer arithmetic over already committed M11 bodily snapshots.
+immediate = None
+if first_physical is not None:
+    ca = canonical["snapshots"][first_physical - 1]
+    ab = masked["snapshots"][first_physical - 1]
+    assert ca["before"]["body"] == ab["before"]["body"]
+    channels = ("energy", "food", "water", "integrity")
+    weights = canonical["born_need_weights"]
+    setpoints = canonical["born_need_setpoints"]
+    def distance(body):
+        return sum(weights[k] * abs(float(body[k]) - setpoints[k])
+                   for k in channels)
+    pre, post_c, post_m = (ca["before"]["body"],
+                            ca["after"]["body"], ab["after"]["body"])
+    dc, dm = distance(post_c), distance(post_m)
+    gap = dm - dc
+    immediate = {
+        "step": first_physical,
+        "born_need_weights": weights, "born_need_setpoints": setpoints,
+        "before": pre, "canonical_after": post_c, "masked_after": post_m,
+        "canonical_change": {k: post_c[k] - pre[k] for k in channels},
+        "masked_change": {k: post_m[k] - pre[k] for k in channels},
+        "canonical_minus_masked": {k: post_c[k] - post_m[k] for k in channels},
+        "distance_before": distance(pre),
+        "distance_canonical_after": dc, "distance_masked_after": dm,
+        "improvement_canonical": distance(pre) - dc,
+        "improvement_masked": distance(pre) - dm,
+        "distance_advantage_canonical": gap,
+        "fatigue_before": ca["before"]["fatigue"],
+        "fatigue_canonical_after": ca["after"]["fatigue"],
+        "fatigue_masked_after": ab["after"]["fatigue"],
+        "sleep_mode_before": ca["before"]["sleep_mode"],
+        "sleep_mode_canonical_after": ca["after"]["sleep_mode"],
+        "sleep_mode_masked_after": ab["after"]["sleep_mode"],
+        "verdict": ("IMMEDIATE_HOMEOSTASIS_CANONICAL_BETTER"
+                    if gap > 1e-12 else
+                    "IMMEDIATE_HOMEOSTASIS_MASKED_BETTER"
+                    if gap < -1e-12 else "IMMEDIATE_HOMEOSTASIS_TIED"),
+    }
+else:
+    assert all(canonical["snapshots"][t-1]["after"]["body"] ==
+               masked["snapshots"][t-1]["after"]["body"] for t in common)
 
 eligible = bool(first_physical is not None and precondition is not None
                 and all(precondition.values()))
@@ -318,6 +373,7 @@ summary = {
         "paid_competition_evaluations": len(masked["competition"]),
     },
     "scientific_motor_verdict": verdict,
+    "immediate_first_divergence": immediate,
     "adaptive_benefit": "NOT_ESTABLISHED",
     "durability_and_generalization": "NOT_ESTABLISHED",
     "no_result_forced": True,
