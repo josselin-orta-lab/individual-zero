@@ -79,6 +79,9 @@ def natural_pair(preset_name, max_steps):
                     "natural ranked recall divergence",
                     preset_name, t_monde, cycle,
                 )
+                # Snapshot the authentic prior threshold-set before either
+                # spontaneous hook changes it. This is only a passive witness.
+                previously_above = frozenset(self._recall_above_threshold)
                 anticipated = original(
                     shadow, st=st, t_monde=t_monde, cycle=cycle)
                 actual = original(
@@ -100,11 +103,37 @@ def natural_pair(preset_name, max_steps):
                     actual is not None
                     and actual.payload["episode_ref"] in old_refs)
                 assert not old_selected or old_eligible > 0
+                old_already_eligible = sum(
+                    item.episode_ref in old_refs
+                    and item.episode_ref in previously_above
+                    for item in full_rank)
+                newly_eligible = [
+                    item for item in full_rank
+                    if item.episode_ref not in previously_above
+                ]
+                old_newly_eligible = sum(
+                    item.episode_ref in old_refs for item in newly_eligible)
+                first_new_is_old = bool(
+                    newly_eligible
+                    and newly_eligible[0].episode_ref in old_refs)
+                assert old_eligible == (
+                    old_already_eligible + old_newly_eligible)
+                # Audit the REAL selected contribution, not a replacement:
+                # Memory only proposes the strongest NEW threshold crossing.
+                assert (actual is None) == (not newly_eligible)
+                if actual is not None:
+                    assert actual.payload["episode_ref"] == (
+                        newly_eligible[0].episode_ref)
+                assert old_selected == first_new_is_old
                 observations.append({
                     "total_episodes": count,
                     "candidate_episodes": len(candidates),
                     "old_closed_episodes": len(old_refs),
                     "old_threshold_eligible": old_eligible,
+                    "old_already_eligible": old_already_eligible,
+                    "old_newly_eligible": old_newly_eligible,
+                    "old_newly_eligible_outcompeted": bool(
+                        old_newly_eligible and not first_new_is_old),
                     "old_selected_spontaneously": old_selected,
                     "trusted": selector.trusted,
                     "index_rebuilt": rebuilt,
@@ -189,6 +218,12 @@ def natural_pair(preset_name, max_steps):
             and 0 <= x["old_threshold_eligible"] <= x["old_closed_episodes"]
             and (not x["old_selected_spontaneously"]
                  or x["old_threshold_eligible"] > 0)
+            and x["old_threshold_eligible"] == (
+                x["old_already_eligible"] + x["old_newly_eligible"])
+            and (not x["old_newly_eligible_outcompeted"]
+                 or x["old_newly_eligible"] > 0)
+            and (not x["old_selected_spontaneously"]
+                 or x["old_newly_eligible"] > 0)
             for x in work
         )
         return {
@@ -208,6 +243,18 @@ def natural_pair(preset_name, max_steps):
                 x["old_closed_episodes"] > 0 for x in work),
             "hooks_with_old_threshold_eligible": sum(
                 x["old_threshold_eligible"] > 0 for x in work),
+            # Exposure counts are repeated hook observations, not distinct
+            # episodes or paid M11/DC-09 consults.
+            "old_threshold_eligible_exposures": sum(
+                x["old_threshold_eligible"] for x in work),
+            "old_already_eligible_exposures": sum(
+                x["old_already_eligible"] for x in work),
+            "old_newly_eligible_exposures": sum(
+                x["old_newly_eligible"] for x in work),
+            "hooks_with_old_newly_eligible": sum(
+                x["old_newly_eligible"] > 0 for x in work),
+            "hooks_with_old_newly_eligible_outcompeted": sum(
+                x["old_newly_eligible_outcompeted"] for x in work),
             "old_spontaneous_contributions": sum(
                 x["old_selected_spontaneously"] for x in work),
             "untrusted_fallbacks": sum(not x["trusted"] for x in work),
@@ -274,6 +321,19 @@ class NaturalShadowRecallEnvelope564(unittest.TestCase):
                 self.assertLessEqual(
                     row["old_spontaneous_contributions"],
                     row["hooks_with_old_threshold_eligible"])
+                self.assertEqual(
+                    row["old_threshold_eligible_exposures"],
+                    row["old_already_eligible_exposures"]
+                    + row["old_newly_eligible_exposures"])
+                self.assertLessEqual(
+                    row["hooks_with_old_newly_eligible"],
+                    row["hooks_with_old_threshold_eligible"])
+                self.assertLessEqual(
+                    row["hooks_with_old_newly_eligible_outcompeted"],
+                    row["hooks_with_old_newly_eligible"])
+                self.assertLessEqual(
+                    row["old_spontaneous_contributions"],
+                    row["hooks_with_old_newly_eligible"])
                 self.assertLessEqual(
                     row["hooks_with_old_closed_episodes"],
                     row["recall_shadow_checks"])
