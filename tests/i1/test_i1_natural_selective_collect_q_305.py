@@ -49,12 +49,23 @@ original_read = LinearTDValues.learned_value
 def life(mode, path):
     assert mode in ("canonical", "stage8_q_read_masked")
     masked_reads = []
+    read_attempts = []
+    stage8_calls = []
     cursor = {}
     read_calls = [0]
 
     def blind_read(owner, state, signature):
         read_calls[0] += 1
         actual = original_read(owner, state, signature)
+        if cursor["step"] >= 17:
+            read_attempts.append({
+                "step": cursor["step"], "cycle": cursor["cycle"],
+                "signature": signature, "status": actual.status,
+                "option_ref": cursor["option_ref"],
+                "value": actual.value,
+                "will_mask": (cursor["step"] == 18 and
+                              signature == "i1:affordance:collecter:target=berry_a"),
+            })
         if (cursor["step"] == 18 and
             signature == "i1:affordance:collecter:target=berry_a" and
             actual.status == "learned"):
@@ -75,6 +86,8 @@ def life(mode, path):
     def blind_stage8(owner, **kw):
         cursor.update(step=kw["t_monde"], cycle=kw["cycle"],
                       option_ref=kw["proposal"].option.id)
+        if cursor["step"] >= 17:
+            stage8_calls.append(dict(cursor))
         before_calls = read_calls[0]
         with patch.object(LinearTDValues, "learned_value", blind_read):
             result = original_stage8(owner, **kw)
@@ -201,6 +214,7 @@ def life(mode, path):
         "snapshots": snapshots, "applied": applied, "admitted": admitted,
         "stage8": stage8, "competition": competition, "p40": p40, "td": td,
         "charges": charges, "masked_reads": masked_reads,
+        "read_attempts": read_attempts, "stage8_calls": stage8_calls,
         "events": events,
         "m11_generation": audit.generation, "m11_status": audit.status,
         "head_verified": True,
@@ -357,6 +371,20 @@ summary = {
     "birth_identity_same_in_separate_ledgers": True,
     "first_q_suppression_step": first_q_suppression_step,
     "masked_genuine_learned_stage8_reads": len(masked["masked_reads"]),
+    "selective_intervention_audit": {
+        "research_stage8_calls_last_two_steps": masked["stage8_calls"],
+        "research_q_read_attempts_last_two_steps": masked["read_attempts"],
+        "canonical_food_stage8_last_step": [
+            {"cycle": k[1], "option_ref": k[2], **v}
+            for k, v in sorted(canonical["stage8"].items())
+            if k[0] == 18 and "collecter" in v["signature"]
+        ],
+        "research_food_stage8_last_step": [
+            {"cycle": k[1], "option_ref": k[2], **v}
+            for k, v in sorted(masked["stage8"].items())
+            if k[0] == 18 and "collecter" in v["signature"]
+        ],
+    },
     "matched_stage8_option_cycles_with_learned_read_removed": len(changed_q_reads),
     "same_commands_before_first_divergence": all(
         canonical["applied"][t] == masked["applied"][t]
