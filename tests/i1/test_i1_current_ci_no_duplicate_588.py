@@ -51,7 +51,7 @@ class CurrentCiNoDuplicate588(unittest.TestCase):
             self.assertEqual(len(found), 1,
                              "unexpected grouped targeted test executions")
             for env in BENCH_ENV:
-                if re.search(r"^          " + re.escape(env) + r': ["\\\']?1["\\\']?$', chunk, re.MULTILINE):
+                if ("          " + env + ': "1"') in chunk:
                     self.assertNotIn(env, seen, "duplicated benchmark mode")
                     seen[env] = found[0]
             self.assertTrue(any(env in chunk for env in BENCH_ENV),
