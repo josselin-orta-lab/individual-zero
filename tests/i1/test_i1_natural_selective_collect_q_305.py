@@ -360,6 +360,45 @@ else:
                masked["snapshots"][t-1]["after"]["body"] for t in common)
 
 
+# Compare all causal owners before the preregistered intervention, not
+# only the body. This guard applies even when the primitive never changes.
+assert len(canonical["snapshots"]) == len(masked["snapshots"]) == LIMIT
+assert all(canonical["applied"][t] == masked["applied"][t]
+           for t in range(1, 18)), (
+    "physical histories diverged before the step-18 intervention")
+pre_step18 = {
+    "same_body_and_cognitive_owners": (
+        canonical["snapshots"][17]["before"] ==
+        masked["snapshots"][17]["before"]),
+    "same_paid_uc_chronology_before_intervention": all(
+        canonical["charges"].get(t) == masked["charges"].get(t)
+        for t in range(1, 18)),
+    "same_p40_before_intervention": all(
+        canonical["p40"].get(t) == masked["p40"].get(t)
+        for t in range(1, 19)),
+    "same_td_publications_before_intervention": [
+        x for x in canonical["td"] if x[0] < 18
+    ] == [
+        x for x in masked["td"] if x[0] < 18
+    ],
+}
+assert all(pre_step18.values()), (
+    "research arm changed pre-intervention causal owner or UC history")
+
+# Observe Competition even if the action is unchanged: a changed rank,
+# accumulator or threshold crossing is distinct from a motor effect.
+def competition_at_18(arm):
+    return [
+        {"cycle": k[1], "option_ref": k[2], **v}
+        for k, v in sorted(arm["competition"].items()) if k[0] == 18
+    ]
+
+def stage8_at_18(arm):
+    return [
+        {"cycle": k[1], "option_ref": k[2], **v}
+        for k, v in sorted(arm["stage8"].items()) if k[0] == 18
+    ]
+
 # Manipulation fidelity is a technical validity gate, not a requirement that
 # the intervention change an autonomous decision. A canonical learned read
 # at step 18 must be exposed in the paired arm by our prebirth wrapper.
@@ -412,6 +451,15 @@ summary = {
     "birth_identity_same_in_separate_ledgers": True,
     "first_q_suppression_step": first_q_suppression_step,
     "masked_genuine_learned_stage8_reads": len(masked["masked_reads"]),
+    "pre_step18_causal_parity": pre_step18,
+    "step18_competition_canonical": competition_at_18(canonical),
+    "step18_competition_masked": competition_at_18(masked),
+    "step18_stage8_canonical": stage8_at_18(canonical),
+    "step18_stage8_masked": stage8_at_18(masked),
+    "step18_applied_canonical": canonical["applied"].get(18),
+    "step18_applied_masked": masked["applied"].get(18),
+    "step18_admitted_canonical": canonical["admitted"].get(18),
+    "step18_admitted_masked": masked["admitted"].get(18),
     "selective_intervention_audit": {
         "wrapper_class": "i1.modules.stage11_evaluator.Stage11OptionEvaluator",
         "research_stage8_calls_last_two_steps": masked["stage8_calls"],
