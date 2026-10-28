@@ -134,6 +134,7 @@ def life(mode, path):
     assert audit.status == receipts[-1]["status"] and not audit.pending_intent
 
     applied, admitted, stage8, competition, p40, td, charges = {}, {}, {}, {}, {}, [], {}
+    upstream = []  # Passive inspection of already committed personal events.
     for event in events:
         kind, step = event.get("kind"), event["t_monde"]
         data = event.get("data", {})
@@ -150,6 +151,25 @@ def life(mode, path):
                 "option_ref": data.get("option_ref"),
                 "source": data.get("source"),
             }
+        elif kind == "i1_unknown_affordance_proposed":
+            row = {
+                "step": step, "cycle": event["cycle"],
+                "option_ref": data["option_ref"],
+                "goal_ref": data["goal_ref"],
+                "candidate_count": data["candidate_count"],
+                "candidate_primitives": data["candidate_primitives"],
+                "command": data["command"],
+                "learned_value_status": data["learned_value_status"],
+                "learned_value": data["learned_value"],
+                "visible_input_sha256": data["visible_input_sha256"],
+            }
+            assert (type(row["candidate_count"]) is int
+                    and row["candidate_count"] >= 1
+                    and type(row["candidate_primitives"]) is list
+                    and len(row["candidate_primitives"]) == row["candidate_count"]
+                    and row["command"]["primitive"] in row["candidate_primitives"]
+                    and row["learned_value_status"] in ("learned", "unlearned"))
+            upstream.append(row)
         elif kind == "stage8_option_evaluation":
             key = (step, event["cycle"], data["option_ref"])
             assert key not in stage8
@@ -193,6 +213,7 @@ def life(mode, path):
         "born_need_weights": dict(born_needs.weights),
         "born_need_setpoints": dict(born_needs.setpoints),
         "snapshots": snapshots, "applied": applied, "admitted": admitted,
+        "upstream_affordance": upstream,
         "stage8": stage8, "competition": competition, "p40": p40, "td": td,
         "charges": charges, "masked_reads": masked_reads,
         "m11_generation": audit.generation, "m11_status": audit.status,
@@ -339,8 +360,29 @@ elif first_physical is not None:
 else:
     verdict = "L3_NOT_ESTABLISHED_NO_APPLIED_DIFFERENCE"
 
+def rank_exposure(arm):
+    events = arm["upstream_affordance"]
+    counts = [e["candidate_count"] for e in events]
+    return {
+        "source": "already_committed_m11_i1_unknown_affordance_proposed",
+        "event_count": len(events),
+        "multicandidate_events": sum(n > 1 for n in counts),
+        "maximum_candidate_count": max(counts, default=0),
+        "events": events,
+        "verdict": (
+            "NOT_EXPOSED" if not counts else
+            "MULTI_CANDIDATE_EXPOSURE_OBSERVED" if any(n > 1 for n in counts)
+            else "UPSTREAM_RANK_NON_DISCRIMINATING_IN_THIS_WINDOW"
+        ),
+        "causal_upstream_q_influence": "NOT_ESTABLISHED",
+        "instrumental_benefit": "NOT_ESTABLISHED",
+    }
+
+
 summary = {
     "source": "independent-M11-paired-natural-actions-research-ablation",
+    "upstream_q_rank_exposure_305": {"canonical": rank_exposure(canonical),
+                                     "stage8_masked": rank_exposure(masked)},
     "preregistered": True,
     "canonical_engine_unchanged": True,
     "research_variant": "stage8-only-q-read-masked-before-birth",
