@@ -3,6 +3,8 @@
 Extend the validated #573 paired-life protocol without changing its causal
 observer, Memory scoring or UC. No minimum speedup/episode count gate: death
 and missing old recall remain authentic negative evidence.
+The existing oasis arm now permits up to 96 unforced steps to test whether
+natural closure actually crosses the >32-episode precondition of issue #560.
 """
 import json
 import os
@@ -27,7 +29,7 @@ class LongerNaturalShadow564(unittest.TestCase):
 ]'''
         new = '''results = [
     natural_pair("empty-land", 48),
-    natural_pair("oasis", 32),
+    natural_pair("oasis", 96),
 ]'''
         self.assertEqual(source.count(old), 1, "source shadow protocol drift")
         program = source.replace(old, new).replace(
@@ -62,7 +64,7 @@ class LongerNaturalShadow564(unittest.TestCase):
             self.assertEqual([x["preset"] for x in record["rows"]],
                              ["empty-land", "oasis"])
             self.assertLessEqual(record["rows"][0]["physical_steps"], 48)
-            self.assertLessEqual(record["rows"][1]["physical_steps"], 32)
+            self.assertLessEqual(record["rows"][1]["physical_steps"], 96)
             for row in record["rows"]:
                 self.assertGreater(row["physical_steps"], 0)
                 self.assertGreater(row["recall_shadow_checks"], 0)
