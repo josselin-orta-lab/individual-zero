@@ -91,8 +91,18 @@ def life(mode, path):
         before_calls = read_calls[0]
         with patch.object(LinearTDValues, "learned_value", blind_read):
             result = original_stage8(owner, **kw)
-        assert read_calls[0] == before_calls + 1, (
-            "Stage8 must make exactly its single normal Q read")
+        actual_reads = read_calls[0] - before_calls
+        # Stage11 can legitimately return an unscored geographic option
+        # before calling Stage8. Only the targeted, learned collect offer
+        # MUST reach exactly one genuine owner read.
+        assert actual_reads in (0, 1), (
+            "Stage11 made unexpected multiple owner Q reads")
+        target = (cursor["step"] == 18 and
+                  kw["proposal"].option.learning_signature ==
+                  "i1:affordance:collecter:target=berry_a")
+        if target:
+            assert actual_reads == 1, (
+                "Target collect offer bypassed its actual owner Q read")
         return result
 
     scope = (patch.object(Stage11OptionEvaluator, "evaluate", blind_stage8)
