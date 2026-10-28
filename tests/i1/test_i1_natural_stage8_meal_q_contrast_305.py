@@ -43,31 +43,30 @@ def life(mode, path):
                 or proposal.option.provenance != "i1_unknown_affordance"):
             return original_adapter(owner, proposal=proposal, **kw)
         pending = owner._pending
-        local = pending.get("local_opportunity_evidence")
-        if (not isinstance(local, dict)
-                or local.get("option_ref") != proposal.option.id
-                or local.get("world_step") != kw["t_monde"]
-                or local.get("affordance") is not True):
+        # Natural I1 affordances use the root pending proposal. The optional
+        # local_opportunity_evidence is reserved for a different path.
+        if (pending.get("option_ref") != proposal.option.id
+                or pending.get("world_step") != kw["t_monde"]
+                or pending.get("affordance") is not True):
             return original_adapter(owner, proposal=proposal, **kw)
-        if local.get("learned_status") != "learned":
+        if pending.get("learned_status") != "learned":
             return original_adapter(owner, proposal=proposal, **kw)
-        assert local.get("learned_value") is not None
-        assert local.get("learned_evidence") is not None
+        assert pending.get("learned_value") is not None
+        assert pending.get("learned_evidence") is not None
         masked_reads.append({
             "step": kw["t_monde"], "cycle": kw["cycle"],
             "option_ref": proposal.option.id, "signature": SIGNATURE,
-            "q": local["learned_value"],
-            "evidence": local["learned_evidence"],
+            "q": pending["learned_value"],
+            "evidence": pending["learned_evidence"],
         })
-        original_local = pending["local_opportunity_evidence"]
-        pending["local_opportunity_evidence"] = {
-            **local, "learned_status": "unlearned",
-            "learned_value": None, "learned_evidence": None,
-        }
+        original_fields = {k: pending[k] for k in (
+            "learned_status", "learned_value", "learned_evidence")}
+        pending.update(learned_status="unlearned", learned_value=None,
+                       learned_evidence=None)
         try:
             return original_adapter(owner, proposal=proposal, **kw)
         finally:
-            pending["local_opportunity_evidence"] = original_local
+            pending.update(original_fields)
     scope = (nullcontext() if target_step is None
              else patch.object(I1PartialEvidenceAdapter, "evaluate", stage8_wrapper))
     with scope:
