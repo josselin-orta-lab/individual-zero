@@ -1,0 +1,74 @@
+name: I1 ECO-v1 A1 cold re-audit of original eight lives
+# No births. No change to the historical source SHA or M11 archives.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/i1-eco-a1-cold-reaudit.yml'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: i1-eco-a1-original-40938021102-cold-audit
+  cancel-in-progress: false
+jobs:
+  cold_audit:
+    if: github.run_attempt == 1 && contains(github.event.head_commit.message, '[I1-ECO-A1-COLD-AUDIT]')
+    name: Cold M11 audit of the original eight A1-P shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install audit reader without executing any life
+        run: python -m pip install -e .
+      - name: Recover only original individual archives, never aggregate outputs
+        uses: actions/download-artifact@v4
+        with:
+          repository: josselin-orta-lab/individual-zero
+          run-id: 40938021102
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: 'a1-*-s?-*'
+          merge-multiple: false
+          path: reports/a1-original-shards
+      - name: Check original matrix is complete, disjoint and unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          for role in native reversed; do
+            for seed in 1 2; do
+              for arm in canonical td_read_masked; do
+                folder="reports/a1-original-shards/a1-$role-s$seed-$arm"
+                test -f "$folder/report.json"
+                test -f "$folder/life.sqlite"
+              done
+            done
+          done
+          test "$(find reports/a1-original-shards -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 8
+      - name: Audit eight original SQLite and pair results under fixed A1 source
+        shell: bash
+        run: |
+          mkdir -p reports/a1-cold-reaudit
+          set +e
+          python tools/aggregate_i1_eco_a1.py \
+            --source-run-id 40938021102 \
+            --source-commit 012ece9eb0b4531f714bd69af439eeb38d7bf701 \
+            --artifacts reports/a1-original-shards \
+            --out reports/a1-cold-reaudit/report.json \
+            > reports/a1-cold-reaudit/audit.log 2>&1
+          code=$?
+          cat reports/a1-cold-reaudit/audit.log
+          exit "$code"
+      - name: Archive both positive and blocked independent audit outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-eco-a1-cold-reaudit-40938021102-${{ github.run_id }}
+          path: reports/a1-cold-reaudit/
+          if-no-files-found: warn
+          retention-days: 30

@@ -16,8 +16,12 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from build_i1_fork import generate
 from run_i1_eco_a1 import MATRIX, HORIZON, IDENTITIES, SCHEMA, SHA
 
+# An already executed single-source cohort: NEVER rerun these eight births.
+A1_ARCHIVED_RUN_ID = 40938021102
+A1_ARCHIVED_SOURCE_SHA = "012ece9eb0b4531f714bd69af439eeb38d7bf701"
 
-def aggregate(root, generated):
+
+def aggregate(root, generated, *, source_commit=None, source_run_id=None):
     sys.path.insert(0, str(generated))
     sys.path.insert(0, str(ROOT / "tools"))
     from i1_eco_m11_reader import audited_life_metrics
@@ -26,11 +30,19 @@ def aggregate(root, generated):
     from i1_eco_a1_worlds import a1_world_parameters
     from run_i1_world_preset import load_preset, _birth_parameters
 
-    commit = subprocess.check_output(
+    tool_commit = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
     ).strip()
-    if not SHA.fullmatch(commit):
-        raise ValueError("invalid exact source")
+    if not SHA.fullmatch(tool_commit):
+        raise ValueError("invalid exact audit-tool commit")
+    if (source_commit is None) != (source_run_id is None):
+        raise ValueError("archival source commit and run-id must be paired")
+    if source_commit is not None:
+        if (source_commit != A1_ARCHIVED_SOURCE_SHA
+                or type(source_run_id) is not int
+                or source_run_id != A1_ARCHIVED_RUN_ID):
+            raise ValueError("A1 cold re-audit accepts only frozen original cohort")
+    commit = source_commit if source_commit is not None else tool_commit
     base, preset_digest = load_preset("oasis")
     params, _ = _birth_parameters(base)
     expected_worlds = {
@@ -245,6 +257,8 @@ def aggregate(root, generated):
         "schema": "individual-zero-i1-eco-v1-a1-pilot-aggregate/1",
         "verdict": "MEASUREMENT_READY" if ready else "MEASUREMENT_BLOCKED",
         "source_commit": commit,
+        "audit_tool_commit": tool_commit,
+        "original_run_id": source_run_id,
         "audited_lives": len(rows), "pairs": pairs, "problems": issues,
         "adaptive_learning_go": "NOT_ESTABLISHED",
         "causal_attribution": "NOT_ESTABLISHED",
@@ -256,9 +270,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--artifacts", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--source-commit", default=None,
+                        help="Frozen original A1-P SHA for read-only re-audit")
+    parser.add_argument("--source-run-id", type=int, default=None,
+                        help="Frozen original GitHub Actions run identity")
     args = parser.parse_args()
     generate(args.out.parent / "generated")
-    result = aggregate(args.artifacts, args.out.parent / "generated")
+    result = aggregate(
+        args.artifacts, args.out.parent / "generated",
+        source_commit=args.source_commit, source_run_id=args.source_run_id)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, sort_keys=True, indent=2) + "\n")
     print(json.dumps({"verdict": result["verdict"],
