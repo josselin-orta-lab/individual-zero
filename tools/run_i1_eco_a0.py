@@ -107,8 +107,17 @@ print("I1_ECO_A0_LIFE=" + json.dumps(result, sort_keys=True))
             continue
         try:
             life = json.loads(reports[0])
-            if type(life) is not dict or life.get("preset") != name:
-                raise ValueError("wrong or malformed A0 life identity")
+            if (type(life) is not dict or life.get("preset") != name
+                    or life.get("horizon") != horizon
+                    or life.get("identity") != "i1:eco:v1:a0:" + name
+                    or life.get("interpretation") !=
+                    "MEASUREMENT_ONLY_NOT_ADAPTIVE_GO"
+                    or type(life.get("audited")) is not dict
+                    or life["audited"].get("custody") !=
+                    "audited_SQLite_M11_read_only"
+                    or life["audited"].get("causal_performance") !=
+                    "NOT_ESTABLISHED"):
+                raise ValueError("invalid A0 provenance, scope or audit receipt")
         except (ValueError, TypeError) as exc:
             manifest["lives"].append({
                 "preset": name, "status": "INVALID_REPORT",
