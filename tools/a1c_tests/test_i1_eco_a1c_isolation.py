@@ -29,6 +29,39 @@ class ConfirmatoryIsolation(unittest.TestCase):
         self.assertFalse(out["mechanism_exposed"])
         self.assertEqual(out["reason"],"NOT_EXPOSED")
 
+    def test_m11_anchored_learned_read_and_real_competition_with_motor_change(self):
+        read = {"step": 1, "cycle": 1, "signature": "primitive:attendre",
+                "source": "stage8_direct", "option_ref": "opt",
+                "original_status": "learned", "masked": True}
+        c = [
+            {"kind": "stage8_option_evaluation", "t_monde": 1, "cycle": 1,
+             "data": {"option_ref": "opt", "status": "evaluated",
+                      "learning_signature": "primitive:attendre",
+                      "learned_value_status": "learned"}},
+            {"kind": "stage8_option_evaluation", "t_monde": 1, "cycle": 1,
+             "data": {"option_ref": "other", "status": "evaluated",
+                      "learning_signature": "primitive:boire"}},
+            {"kind": "competition_cycle", "t_monde": 1, "cycle": 1,
+             "data": {"traces": [{"option_ref": "opt"},
+                                 {"option_ref": "other"}]}}
+        ]
+        from copy import deepcopy
+        m = deepcopy(c)
+        m[0]["data"]["learned_value_status"] = "unlearned"
+        outcome = verify_mechanism(
+            canonical_events=c, masked_events=m, masked_reads=[read],
+            adapters=[], canonical_prefix=[{"primitive": "boire"}],
+            masked_prefix=[{"primitive": "attendre"}], first_masked_step=1)
+        self.assertTrue(outcome["mechanism_exposed"])
+        self.assertEqual(outcome["reason"],
+                         "M11_LINKED_COMPETITIVE_Q_TO_MOTOR")
+        with self.assertRaises(ValueError):
+            verify_mechanism(
+                canonical_events=c, masked_events=m, masked_reads=[read],
+                adapters=[], canonical_prefix=[{"primitive":"boire"}],
+                masked_prefix=[{"primitive":"attendre"}],
+                first_masked_step=2)
+
     def test_strong_q_observer_without_competitors_is_not_exposure(self):
         read={"step":1,"cycle":1,"signature":"primitive:attendre",
               "source":"stage8_direct", "option_ref":"opt",
