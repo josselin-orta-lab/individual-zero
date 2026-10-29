@@ -49,6 +49,8 @@ with TemporaryDirectory() as home:
         scales = dict(rt.value_needs.config.normalization_scales)
         for _ in range(3):
             receipt = actor.run_step()
+            # M11 publishes a new private runtime after every committed step.
+            rt = actor._runtime
             if receipt.status == "dead":
                 break
         head = rt.journal.head_hash
