@@ -277,14 +277,21 @@ def verify_decision_alignment(*, events, reads, adapters, mode, generation):
             for trace in comp[key[:2]].get("traces", ())
         ):
             raise ValueError("pending Stage8 option not in Competition")
-        if not any(
-            p.get("option_ref") == key[2]
+        # A pending local proposal can be carried from an earlier cycle
+        # or earlier physical step; the adapter evaluates it later.
+        # Require a committed, non-future Planning origin and the same
+        # option and learning signature. Never accept a future proposal.
+        origins = [
+            (point, proposed)
             for name in ("i1_local_opportunity_proposed",
                          "i1_unknown_affordance_proposed")
-            for point, p in kinds[name].items()
-            if point == key[:2]
-        ):
-            raise ValueError("pending Stage8 has no M11 Planning origin")
+            for point, proposed in kinds[name].items()
+            if (point <= key[:2]
+                and proposed.get("option_ref") == key[2]
+                and proposed.get("learning_signature") == a["signature"])
+        ]
+        if not origins:
+            raise ValueError("pending Stage8 has no prior M11 Planning origin")
         stage8_observed.add(key)
         adapter_links += 1
     # Every learned Stage8 evidence occurrence must be accounted for by a
