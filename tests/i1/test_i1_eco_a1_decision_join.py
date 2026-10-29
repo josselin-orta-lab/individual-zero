@@ -18,7 +18,7 @@ class A1DecisionJoinTests(unittest.TestCase):
             generate(generated)
             program = r"""
 from copy import deepcopy
-from i1_eco_a1_decision_join import verify_decision_alignment
+from i1_eco_a1_decision_join import verify_decision_alignment, guard_preintervention_prefix
 
 ev = [
  {"kind":"td_update_published", "t_monde":1,
@@ -73,6 +73,33 @@ fails(ev, [badread], [], "td_read_masked")
 bad = deepcopy(ev)
 bad[5]["data"]["command_hash"] = "wrong"
 fails(bad, [read], [], "td_read_masked")
+physical = [{"primitive": "attendre", "parameters": {}, "body_after": {"energy": 60}},
+            {"primitive": "dormir", "parameters": {}, "body_after": {"energy": 65}}]
+twin = deepcopy(physical)
+assert guard_preintervention_prefix(
+    canonical=physical, masked=twin, first_masked_step=2
+)["prefix_steps_equal"] == 1
+twin[1]["primitive"] = "boire"
+assert guard_preintervention_prefix(
+    canonical=physical, masked=twin, first_masked_step=2
+)["prefix_steps_equal"] == 1
+for step in (None, 3):
+    try:
+        guard_preintervention_prefix(
+            canonical=physical, masked=twin, first_masked_step=step)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("invalid or unexposed divergence accepted")
+twin[0]["primitive"] = "manger"
+try:
+    guard_preintervention_prefix(
+        canonical=physical, masked=twin, first_masked_step=2)
+except ValueError:
+    pass
+else:
+    raise AssertionError("pre-mask divergence accepted")
+
 """
             env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1",
                        PYTHONPATH=os.pathsep.join((
