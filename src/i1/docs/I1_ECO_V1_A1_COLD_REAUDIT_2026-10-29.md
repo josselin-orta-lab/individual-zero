@@ -1,0 +1,11 @@
+# Original A1-P pilot: immutable source and distinct re-audit reader
+
+**Source cohort**: run [40938021102](https://github.com/josselin-orta-lab/individual-zero/actions/runs/40938021102), original commit `012ece9eb0b4531f714bd69af439eeb38d7bf701`, launched once on 29 October 2026. Exactly eight independent mortal M11 lives, horizon 48, no deaths through step 48. Original eight artifact ZIPs are retained by the first run and MUST NOT be replaced or rerun.
+
+**Original aggregation**: `MEASUREMENT_BLOCKED`, eight technical errors of the same type: `pending Stage8 has no prior M11 Planning origin`. Investigation against the original SQLite events showed `i1_unknown_affordance_proposed` stores a native `command`, but omits the optional `learning_signature`; the verifier erroneously required it. The native goal Planning signature is reconstructible from the recorded command. No cognitive or world-model change is warranted. The eight native M11 journal heads, generations, counts and identities have been independently read-only audited against archived receipts.
+
+**Correction**: `tools/i1_eco_a1_decision_join.py` computes the signature from the M11 command for goal-affordance proposals; local-proposal signatures remain direct. Chronological checks still reject future, foreign, or conflicting origins. Python 3.11/3.12 focused contract suite and standalone positive/five-negative adversarial goal-origin test apply, without a full natural CI or new A1 birth.
+
+**Audit provenance**: `tools/aggregate_i1_eco_a1.py --source-run-id 40938021102 --source-commit 012ece9eb0b4531f714bd69af439eeb38d7bf701` allows reading only the frozen A1 cohort while separately reporting the new `audit_tool_commit`. Operator-supplied source override is rejected for any other SHA or run ID. The workflow fetches only eight original shards and executes no `run_i1_eco_a1.py`.
+
+**Interpretation**: cold matching of the external Q observer with native M11 events does not independently sign the original floating-point read. A1-P remains exploratory and its report fixes `adaptive_learning_go=NOT_ESTABLISHED` and `causal_attribution=NOT_ESTABLISHED` even when scores differ. No new cohort, post-result tuning, selective rerun or GO from this repair.
