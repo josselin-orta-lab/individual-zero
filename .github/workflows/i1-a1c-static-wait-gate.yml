@@ -1,0 +1,37 @@
+name: I1 A1-C static wait Q decision gate (observer-only)
+on:
+  pull_request:
+    paths:
+      - 'tools/research/i1_a1c_wait_gate.py'
+      - 'tools/research/i1_a1c_wait_gate_audit.py'
+      - 'tools/research/tests/test_i1_a1c_wait_gate.py'
+      - 'docs/research/audits/I1_ECO_A1C_WAIT_Q_ONLY_STATIC_GATE_2026-10-29.md'
+      - '.github/workflows/i1-a1c-static-wait-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: i1-a1c-static-wait-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  static_observer:
+    name: A1-C wait gate positive and negative contracts (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile only the observer tools
+        run: python -m py_compile tools/research/i1_a1c_wait_gate.py tools/research/i1_a1c_wait_gate_audit.py
+      - name: Run one focused adversarial test module (no lives)
+        run: python -m unittest discover -s tools/research/tests -p test_i1_a1c_wait_gate.py -v
+      - name: No original cohort re-execution
+        run: test ! -d reports/i1-eco-a1c-cohort
