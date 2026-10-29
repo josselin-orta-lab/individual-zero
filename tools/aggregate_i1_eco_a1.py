@@ -21,6 +21,7 @@ def aggregate(root, generated):
     sys.path.insert(0, str(generated))
     sys.path.insert(0, str(ROOT / "tools"))
     from i1_eco_m11_reader import audited_life_metrics
+    from i1_eco_a1_decision_join import audited_a1_decision_alignment
     from i1_eco_a1_worlds import a1_world_parameters
     from run_i1_world_preset import load_preset, _birth_parameters
 
@@ -108,6 +109,10 @@ def aggregate(root, generated):
                     any(x.get("delivered_status") == "learned"
                         for x in adapters)):
                 raise ValueError("A1 masked/unmasked read contract violated")
+            alignment = audited_a1_decision_alignment(
+                path=str(database.resolve()), identity=identity,
+                audited=audited, reads=reads, adapters=adapters,
+                mode=mode)
             if life["interpretation"] != "EXPLORATORY_NOT_CONFIRMATORY":
                 raise ValueError("A1 overclaimed interpretation")
             rows.append({
@@ -126,6 +131,7 @@ def aggregate(root, generated):
                 "observed_learned_reads": sum(
                     x["original_status"] == "learned" for x in reads),
                 "read_provenance": life.get("read_provenance"),
+                "decision_alignment": alignment,
             })
         except (OSError, ValueError, KeyError, TypeError, IndexError) as exc:
             issues.append({"scope": name, "problem": "TECHNICAL_AUDIT_FAILURE",
