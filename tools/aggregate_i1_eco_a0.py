@@ -19,7 +19,24 @@ from run_i1_world_preset import _birth_parameters, load_preset
 from run_i1_eco_a0 import LABEL, PRESETS
 
 GIT_SHA = re.compile(r"[0-9a-f]{40}\Z")
-M11_HEAD = re.compile(r"[0-9a-f]{64}\Z")
+M11_HEAD = re.compile(r"[0-9a-f]{64}\\Z")
+
+
+def _effective_birth_physics_digest(params):
+    """Reconstruct I1's actual versioned birth physics, never its raw preset.
+
+    I1Runtime applies the natural physiology/sleep policy before creating the
+    mortal WorldBody. This read-only verifier must compare the same effective
+    config that the independent M11 birth recorded. It must not suppress or
+    weaken an exact digest mismatch.
+    """
+    from i1lab.i1_natural_sleep import enable_natural_sleep_birth
+
+    physical, _ = enable_natural_sleep_birth(
+        world_config=params["world_config"],
+        stage10_config=params["stage10_config"],
+    )
+    return physical.digest()
 
 
 def aggregate(root, generated):
@@ -60,7 +77,7 @@ def aggregate(root, generated):
             native_needs = (physics["stage11_config"].stage9.stage8.stage7
                             .stage6.stage4.value_needs)
             if (life["preset_sha256"] != digest
-                    or life["physics_sha256"] != physics["world_config"].digest()
+                    or life["physics_sha256"] != _effective_birth_physics_digest(physics)
                     or life.get("source_commit") != code_sha):
                 raise ValueError("source commit, preset or physics digest mismatch")
             if (life.get("setpoints") != dict(native_needs.setpoints)
