@@ -77,6 +77,8 @@ with TemporaryDirectory() as d:
             with a1_matched_temperament_birth(life_id=identity, seed=1):
                 return I1Runtime(
                     birth_life_id=identity, **params,
+                    diagnostic_sample_cost_uc=1,
+                    module_occupancy_cost_uc=1,
                     autonomous_mortal=True, wal_path=None,
                     m11_sqlite_custody=True,
                 )
