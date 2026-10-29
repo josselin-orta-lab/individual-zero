@@ -27,6 +27,8 @@ def aggregate(root, generated, *, source_commit=None, source_run_id=None):
     from i1_eco_a1_decision_join import (audited_a1_decision_alignment,
         audited_a1_physical_prefix, guard_preintervention_prefix)
     from i1_eco_a1_worlds import a1_world_parameters
+    from i1_eco_a1c_mechanism import audited_pair_mechanism
+    from i1_eco_a1c_statistics import assess_a1c
     from run_i1_world_preset import load_preset, _birth_parameters
 
     tool_commit = subprocess.check_output(
@@ -44,7 +46,7 @@ def aggregate(root, generated, *, source_commit=None, source_run_id=None):
         for role in ROLES
     }
     rows, issues = [], []
-    names = {"a1-" + role + "-s" + str(seed) + "-" + mode
+    names = {"a1c-" + role + "-s" + str(seed) + "-" + mode
              for role, seed, mode in MATRIX}
     extras = sorted(p.name for p in root.iterdir()
                     if p.name not in names) if root.is_dir() else []
@@ -52,7 +54,7 @@ def aggregate(root, generated, *, source_commit=None, source_run_id=None):
         issues.append({"scope": "cohort", "problem": "UNREGISTERED_ARTIFACTS",
                        "detail": extras})
     for role, seed, mode in MATRIX:
-        name = "a1-" + role + "-s" + str(seed) + "-" + mode
+        name = "a1c-" + role + "-s" + str(seed) + "-" + mode
         identity = IDENTITIES[(role, seed, mode)]
         folder = root / name
         try:
@@ -77,7 +79,7 @@ def aggregate(root, generated, *, source_commit=None, source_run_id=None):
                     or life.get("mode") != mode
                     or life.get("horizon") != HORIZON
                     or life.get("interpretation") !=
-                        "EXPLORATORY_NOT_CONFIRMATORY"
+                        "CONFIRMATORY_ANALYSIS_PENDING"
                     or life.get("adaptive_learning_go") != "NOT_ESTABLISHED"
                     or life.get("read_provenance") !=
                         "EXTERNAL_OBSERVER_REQUIRES_JOIN_TO_M11"):
@@ -169,7 +171,7 @@ def aggregate(root, generated, *, source_commit=None, source_run_id=None):
                 path=str(database.resolve()), identity=identity,
                 audited=audited, reads=reads, adapters=adapters,
                 mode=mode)
-            if life["interpretation"] != "EXPLORATORY_NOT_CONFIRMATORY":
+            if life["interpretation"] != "CONFIRMATORY_ANALYSIS_PENDING":
                 raise ValueError("A1 overclaimed interpretation")
             rows.append({
                 "role": role, "seed": seed, "mode": mode, "identity": identity,
@@ -188,6 +190,9 @@ def aggregate(root, generated, *, source_commit=None, source_run_id=None):
                     x["original_status"] == "learned" for x in reads),
                 "read_provenance": life.get("read_provenance"),
                 "decision_alignment": alignment,
+                "read_observations": reads,
+                "pending_adapter_observations": adapters,
+                "database_path": str(database.resolve()),
                 "physical_prefix": audited_a1_physical_prefix(
                     path=str(database.resolve()), identity=identity,
                     audited=audited),
@@ -224,9 +229,11 @@ def aggregate(root, generated, *, source_commit=None, source_run_id=None):
                         "detail": str(exc),
                     })
                     continue
-                # This is a *prospective exploratory* contrast. External
-                # read observations have not yet been causally joined to all
-                # native M11 decision events, so never label it causal.
+                # A1-C exposure is a conservative, falsifiable M11-anchored
+                # mechanism check, not authentication of external Q floats.
+                mechanism = audited_pair_mechanism(
+                    canonical=a, masked=b, first_masked_step=(
+                        b["decision_alignment"]["first_masked_read_step"]))
                 ma = a["audited"]["metrics"]
                 mb = b["audited"]["metrics"]
                 diff = (mb["deficit_area_total"] -
@@ -234,6 +241,8 @@ def aggregate(root, generated, *, source_commit=None, source_run_id=None):
                 pairs.append({
                     "role": role, "seed": seed,
                     "preintervention_guard": prefix_guard,
+                    "mechanism": mechanism,
+                    "mechanism_exposed": mechanism["mechanism_exposed"],
                     "canonical": a["identity"], "masked": b["identity"],
                     "masked_minus_canonical_normalized_deficit": diff,
                     "canonical_dead": ma["mortality"],
@@ -247,6 +256,11 @@ def aggregate(root, generated, *, source_commit=None, source_run_id=None):
                     "verdict": "DESCRIPTIVE_ONLY",
                 })
     ready = not issues and len(pairs) == len(ROLES) * len(SEEDS)
+    statistics = (assess_a1c([
+        {"role": x["role"], "seed": x["seed"],
+         "difference": x["masked_minus_canonical_normalized_deficit"],
+         "mechanism_exposed": x["mechanism_exposed"]}
+        for x in pairs]) if ready else None)
     return {
         "schema": "individual-zero-i1-eco-v1-a1-confirmatory-aggregate/1",
         "verdict": "MEASUREMENT_READY" if ready else "MEASUREMENT_BLOCKED",
@@ -254,9 +268,12 @@ def aggregate(root, generated, *, source_commit=None, source_run_id=None):
         "audit_tool_commit": tool_commit,
         "original_run_id": source_run_id,
         "audited_lives": len(rows), "pairs": pairs, "problems": issues,
+        "frozen_statistical_analysis": statistics,
+        "targeted_status": (statistics["targeted_status"] if ready
+                            else "INVALID_EXPERIMENT"),
         "adaptive_learning_go": "NOT_ESTABLISHED",
         "causal_attribution": "NOT_ESTABLISHED",
-        "independent_confirmatory_cohort": False,
+        "independent_confirmatory_cohort": ready,
     }
 
 
