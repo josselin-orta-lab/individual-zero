@@ -13,6 +13,8 @@ class LabTwinTests(unittest.TestCase):
             out=Path(d)/"generated"
             generate(out)
             sys.path.insert(0,str(out))
+            import i1lab
+            i1lab.__path__.insert(0, str(out / "i1lab"))
             from i1lab.stage11_reference_fixture import build_stage11_reference_runtime
             from i1lab.matched_temperament_research import matched_temperament_configuration
             from i1lab.i1_birth_temperament import configure_birth_temperament
