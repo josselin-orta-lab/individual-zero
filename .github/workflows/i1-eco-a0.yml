@@ -33,3 +33,33 @@ jobs:
           path: reports/i1-eco-a0-${{ matrix.preset }}/
           if-no-files-found: warn
           retention-days: 30
+  aggregate:
+    name: A0 independent M11 aggregation
+    needs: [worlds]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install current model
+        run: python -m pip install -e .
+      - name: Recover all six isolated artifacts, including failed shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: i1-eco-a0-*
+          path: reports/a0-artifacts
+      - name: Independently audit every M11 and compute the six-world result
+        run: python tools/aggregate_i1_eco_a0.py --artifacts reports/a0-artifacts --out reports/a0-summary/report.json
+      - name: Archive aggregation verdict even when incomplete
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-eco-a0-aggregate-${{ github.run_id }}
+          path: reports/a0-summary/
+          if-no-files-found: warn
+          retention-days: 30
