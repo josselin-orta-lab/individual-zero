@@ -1,0 +1,40 @@
+name: I1 A1-C fixed-tape reward sensitivity (observer only)
+on:
+  pull_request:
+    paths:
+      - 'tools/research/i1_a1c_reward_shadow.py'
+      - 'tools/research/i1_a1c_reward_shadow_audit.py'
+      - 'tools/research/tests/test_i1_a1c_reward_shadow.py'
+      - 'docs/research/audits/I1_ECO_A1C_FIXED_TAPE_REWARD_SENSITIVITY_2026-10-30.md'
+      - 'docs/research/audits/I1_ECO_A1C_FIXED_TAPE_REWARD_SUMMARY_2026-10-30.json'
+      - '.github/workflows/i1-a1c-reward-shadow.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: i1-a1c-fixed-tape-reward-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  observer_contracts:
+    name: No-birth reward observer tests Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify pure observer syntax
+        run: |
+          python -m py_compile tools/research/i1_a1c_reward_shadow.py tools/research/i1_a1c_reward_shadow_audit.py
+      - name: Run focused positive and adversarial contracts only
+        run: |
+          python -m unittest discover -s tools/research/tests -p 'test_i1_a1c_reward_shadow.py' -v
+      - name: Ensure the original A1-C cohort was not regenerated
+        run: test ! -d reports/i1-eco-a1c-cohort

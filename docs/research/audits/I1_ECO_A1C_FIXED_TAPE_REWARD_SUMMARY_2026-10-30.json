@@ -1,0 +1,210 @@
+{
+  "L3": "NOT_ESTABLISHED",
+  "audited_original_lives": 48,
+  "by_action_repeated_steps": {
+    "attendre": {
+      "both_negative": 0,
+      "deficit_only_reward_total": 15.325841800001172,
+      "native_negative_shadow_nonnegative": 0,
+      "native_positive": 442,
+      "native_positive_shadow_nonpositive": 172,
+      "native_reward_total": 362.66584180000063,
+      "observations": 442,
+      "shadow_positive": 270,
+      "surplus_energy_total": 154.6999999999975,
+      "surplus_food_total": 15.839999999999918,
+      "surplus_integrity_total": 0.0,
+      "surplus_reward_total": 347.34000000000106,
+      "surplus_water_total": 176.8000000000025
+    },
+    "boire": {
+      "both_negative": 56,
+      "deficit_only_reward_total": 1179.1999999999975,
+      "native_negative_shadow_nonnegative": 0,
+      "native_positive": 48,
+      "native_positive_shadow_nonpositive": 0,
+      "native_reward_total": -742.4000000000013,
+      "observations": 104,
+      "shadow_positive": 48,
+      "surplus_energy_total": 52.0,
+      "surplus_food_total": 0.0,
+      "surplus_integrity_total": 0.0,
+      "surplus_reward_total": -1921.6000000000004,
+      "surplus_water_total": -1973.6000000000004
+    },
+    "collecter": {
+      "both_negative": 0,
+      "deficit_only_reward_total": -36.20000000000044,
+      "native_negative_shadow_nonnegative": 0,
+      "native_positive": 195,
+      "native_positive_shadow_nonpositive": 195,
+      "native_reward_total": 239.60000000000002,
+      "observations": 195,
+      "shadow_positive": 0,
+      "surplus_energy_total": 195.0,
+      "surplus_food_total": 2.80000000000004,
+      "surplus_integrity_total": 0.0,
+      "surplus_reward_total": 275.80000000000086,
+      "surplus_water_total": 78.00000000000111
+    },
+    "dormir": {
+      "both_negative": 621,
+      "deficit_only_reward_total": -63.50842753999976,
+      "native_negative_shadow_nonnegative": 64,
+      "native_positive": 765,
+      "native_positive_shadow_nonpositive": 264,
+      "native_reward_total": -1250.2109275399969,
+      "observations": 1450,
+      "shadow_positive": 565,
+      "surplus_energy_total": -1788.5499999999975,
+      "surplus_food_total": 21.84749999999992,
+      "surplus_integrity_total": 0.0,
+      "surplus_reward_total": -1186.7024999999983,
+      "surplus_water_total": 579.9999999999852
+    },
+    "manger": {
+      "both_negative": 32,
+      "deficit_only_reward_total": 391.35477700000104,
+      "native_negative_shadow_nonnegative": 18,
+      "native_positive": 63,
+      "native_positive_shadow_nonpositive": 3,
+      "native_reward_total": 308.01977700000185,
+      "observations": 113,
+      "shadow_positive": 64,
+      "surplus_energy_total": 56.5,
+      "surplus_food_total": -185.03499999999917,
+      "surplus_integrity_total": 0.0,
+      "surplus_reward_total": -83.33499999999849,
+      "surplus_water_total": 45.20000000000064
+    }
+  },
+  "by_role_canonical": {
+    "native/canonical": {
+      "lives": 12,
+      "shadow_wait_Q_nonpositive_at_same_original_cycle": 51,
+      "wait_q_only_wins": 77
+    },
+    "reversed/canonical": {
+      "lives": 12,
+      "shadow_wait_Q_nonpositive_at_same_original_cycle": 51,
+      "wait_q_only_wins": 77
+    }
+  },
+  "by_seed_canonical_Q_only_original": {
+    "101": {
+      "native": 26,
+      "reversed": 26
+    },
+    "102": {
+      "native": 25,
+      "reversed": 25
+    },
+    "103": {
+      "native": 0,
+      "reversed": 0
+    },
+    "104": {
+      "native": 0,
+      "reversed": 0
+    },
+    "105": {
+      "native": 0,
+      "reversed": 0
+    },
+    "106": {
+      "native": 0,
+      "reversed": 0
+    },
+    "107": {
+      "native": 0,
+      "reversed": 0
+    },
+    "108": {
+      "native": 0,
+      "reversed": 0
+    },
+    "109": {
+      "native": 0,
+      "reversed": 0
+    },
+    "110": {
+      "native": 0,
+      "reversed": 0
+    },
+    "111": {
+      "native": 26,
+      "reversed": 26
+    },
+    "112": {
+      "native": 0,
+      "reversed": 0
+    }
+  },
+  "by_seed_shadow_wait_Q_nonpositive": {
+    "101": {
+      "native": 0,
+      "reversed": 0
+    },
+    "102": {
+      "native": 25,
+      "reversed": 25
+    },
+    "103": {
+      "native": 0,
+      "reversed": 0
+    },
+    "104": {
+      "native": 0,
+      "reversed": 0
+    },
+    "105": {
+      "native": 0,
+      "reversed": 0
+    },
+    "106": {
+      "native": 0,
+      "reversed": 0
+    },
+    "107": {
+      "native": 0,
+      "reversed": 0
+    },
+    "108": {
+      "native": 0,
+      "reversed": 0
+    },
+    "109": {
+      "native": 0,
+      "reversed": 0
+    },
+    "110": {
+      "native": 0,
+      "reversed": 0
+    },
+    "111": {
+      "native": 26,
+      "reversed": 26
+    },
+    "112": {
+      "native": 0,
+      "reversed": 0
+    }
+  },
+  "cohort_A1C": "NO_GO",
+  "independent_birth_temperament_blocks": 12,
+  "native_stage8_q_values_reverified": 5261,
+  "native_td_updates_reverified": 1067,
+  "no_new_births": true,
+  "original_run_id": 40944104333,
+  "original_source_sha": "26f7929b6db43f68e78b0cc0d9c67e7444f924c6",
+  "original_wait_q_only_winner_cycles": 154,
+  "paired_worlds": 24,
+  "schema": "individual-zero-i1-a1c-fixed-reward-tape-shadow/1",
+  "scope": "POSTHOC_FIXED_ACTION_TAPE_NO_BEHAVIORAL_COUNTERFACTUAL",
+  "shadow_Q_nonpositive_at_same_original_cycle": 102,
+  "shadow_Q_positive_at_same_original_cycle": 52,
+  "temperament_blocks_with_shadow_sign_change": [
+    102,
+    111
+  ]
+}
