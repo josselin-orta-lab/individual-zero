@@ -7,6 +7,7 @@ import argparse
 import json
 from pathlib import Path
 import re
+import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,6 +25,9 @@ def aggregate(root, generated):
     sys.path.insert(0, str(ROOT / "tools"))
     from i1_eco_m11_reader import audited_life_metrics
 
+    code_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+    if not HEX64.fullmatch(code_sha):
+        raise ValueError("invalid checked-out experiment source revision")
     rows = []
     problems = []
     for name, horizon in PRESETS:
@@ -50,9 +54,15 @@ def aggregate(root, generated):
                 raise ValueError("life identity, horizon or scope mismatch")
             preset, digest = load_preset(name)
             physics, _ = _birth_parameters(preset)
+            native_needs = (physics["stage11_config"].stage9.stage8.stage7
+                            .stage6.stage4.value_needs)
             if (life["preset_sha256"] != digest
-                    or life["physics_sha256"] != physics["world_config"].digest()):
-                raise ValueError("preset or physics digest mismatch")
+                    or life["physics_sha256"] != physics["world_config"].digest()
+                    or life.get("source_commit") != code_sha):
+                raise ValueError("source commit, preset or physics digest mismatch")
+            if (life.get("setpoints") != dict(native_needs.setpoints)
+                    or life.get("scales") != dict(native_needs.normalization_scales)):
+                raise ValueError("scoring parameters disagree with native birth configuration")
             if not sqlite_path.is_file() or sqlite_path.is_symlink():
                 raise ValueError("missing or symlinked M11 evidence")
             for key in ("journal_head", "journal_count", "generation"):
@@ -93,6 +103,7 @@ def aggregate(root, generated):
         "problems": problems,
         "adaptive_learning_go": "NOT_ESTABLISHED",
         "independent_cohort": False,
+        "source_commit": code_sha,
         "td_masked_comparator": False,
     }
 
