@@ -17,7 +17,8 @@ from run_i1_world_preset import _birth_parameters, load_preset
 
 from run_i1_eco_a0 import LABEL, PRESETS
 
-HEX64 = re.compile(r"[0-9a-f]{64}\Z")
+GIT_SHA = re.compile(r"[0-9a-f]{40}\Z")
+M11_HEAD = re.compile(r"[0-9a-f]{64}\Z")
 
 
 def aggregate(root, generated):
@@ -26,7 +27,7 @@ def aggregate(root, generated):
     from i1_eco_m11_reader import audited_life_metrics
 
     code_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
-    if not HEX64.fullmatch(code_sha):
+    if not GIT_SHA.fullmatch(code_sha):
         raise ValueError("invalid checked-out experiment source revision")
     rows = []
     problems = []
@@ -68,7 +69,7 @@ def aggregate(root, generated):
             for key in ("journal_head", "journal_count", "generation"):
                 if key not in life["audited"]:
                     raise ValueError("missing custody field " + key)
-            if not HEX64.fullmatch(life["audited"]["journal_head"]):
+            if not M11_HEAD.fullmatch(life["audited"]["journal_head"]):
                 raise ValueError("invalid journal head")
             independently = audited_life_metrics(
                 path=str(sqlite_path.resolve()),
