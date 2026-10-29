@@ -14,6 +14,27 @@ from run_i1_eco_a0 import PRESETS
 
 
 class A0AggregationContractTests(unittest.TestCase):
+    def test_corrupt_m11_is_recorded_without_losing_other_worlds(self):
+        with tempfile.TemporaryDirectory() as home:
+            root = Path(home)
+            generated = root / "generated"
+            generate(generated)
+            directory = root / "i1-eco-a0-oasis-test"
+            directory.mkdir()
+            (directory / "report.json").write_text(
+                '{"schema":"i1-eco-v1-a0-measurement-only",'
+                '"presets":["oasis"],"horizons":{"oasis":24},'
+                '"verdict":"MEASUREMENT_FRAGMENT_READY","lives":[{'
+                '"preset":"oasis","horizon":24,"identity":"i1:eco:v1:a0:oasis",'
+                '"interpretation":"MEASUREMENT_ONLY_NOT_ADAPTIVE_GO"}]}',
+                encoding="utf-8")
+            (directory / "oasis.sqlite").write_bytes(b"not a SQLite database")
+            result = aggregate(root, generated)
+        self.assertEqual(result["verdict"], "MEASUREMENT_BLOCKED")
+        self.assertEqual(len(result["problems"]), len(PRESETS))
+        self.assertEqual(result["problems"][0]["preset"], "oasis")
+        self.assertEqual(result["problems"][0]["problem"], "TECHNICAL_AUDIT_FAILURE")
+
     def test_missing_all_six_keeps_evidence_gap_visible(self):
         with tempfile.TemporaryDirectory() as home:
             root = Path(home)
