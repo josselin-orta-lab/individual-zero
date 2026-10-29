@@ -1,0 +1,108 @@
+name: I1 ECO A1-C confirmatory cohort (48 independent lives)
+# A1-C: 12 independent temperament blocks, two berry-role assignments,
+# canonical and TD-read-masked newborn in each condition.
+# The event trigger and commit marker authorize EXACTLY one original cohort.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/i1-eco-a1c-one-shot.yml'
+permissions:
+  contents: read
+concurrency:
+  group: i1-eco-a1c-confirmatory-original-cohort
+  cancel-in-progress: false
+
+jobs:
+  lives:
+    if: github.run_attempt == 1 && contains(github.event.head_commit.message, '[I1-ECO-A1C-ONE-SHOT]')
+    name: A1-C M11 / ${{ matrix.role }} / seed${{ matrix.seed }} / ${{ matrix.mode }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        role: [native, reversed]
+        seed: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112]
+        mode: [canonical, td_read_masked]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install frozen scientific I1
+        run: python -m pip install -e .
+      - name: Verify exact launch SHA and preregistered scientific contracts
+        run: |
+          test -f tools/run_i1_eco_a1c.py
+          test -f tools/aggregate_i1_eco_a1c.py
+          test -f tools/i1_eco_a1c_statistics.py
+          test -f docs/research/I1_ECO_A1C_PREREGISTRATION_2026-10-29.md
+          git rev-parse HEAD
+      - name: Execute a single new mortal I1 life, without forced commands
+        env:
+          A1C_ROLE: ${{ matrix.role }}
+          A1C_SEED: ${{ matrix.seed }}
+          A1C_MODE: ${{ matrix.mode }}
+        shell: bash
+        run: |
+          python tools/run_i1_eco_a1c.py \
+            --role "$A1C_ROLE" --seed "$A1C_SEED" --mode "$A1C_MODE" \
+            --out "reports/a1c-$A1C_ROLE-s$A1C_SEED-$A1C_MODE"
+      - name: Archive the exact original M11 SQLite and failure manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a1c-${{ matrix.role }}-s${{ matrix.seed }}-${{ matrix.mode }}
+          path: |
+            reports/a1c-${{ matrix.role }}-s${{ matrix.seed }}-${{ matrix.mode }}/report.json
+            reports/a1c-${{ matrix.role }}-s${{ matrix.seed }}-${{ matrix.mode }}/*.sqlite*
+          if-no-files-found: warn
+          retention-days: 30
+
+  aggregate:
+    if: always() && github.run_attempt == 1 && contains(github.event.head_commit.message, '[I1-ECO-A1C-ONE-SHOT]')
+    name: A1-C frozen 12-block statistical and independent cold M11 audit
+    needs: [lives]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install same exact source
+        run: python -m pip install -e .
+      - name: Download all available original cohort fragments, including failures
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: a1c-*
+          path: reports/a1c-original
+      - name: Recompute 48 M11 ledgers, 24 matches, 12-block statistics
+        shell: bash
+        run: |
+          mkdir -p reports/a1c-summary
+          set +e
+          python tools/aggregate_i1_eco_a1c.py \
+            --artifacts reports/a1c-original \
+            --out reports/a1c-summary/report.json \
+            > reports/a1c-summary/audit.log 2>&1
+          code=$?
+          cat reports/a1c-summary/audit.log
+          exit "$code"
+      - name: Preserve original aggregate outcome, even if no GO
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a1c-aggregate-${{ github.run_id }}
+          path: reports/a1c-summary/
+          if-no-files-found: warn
+          retention-days: 30
