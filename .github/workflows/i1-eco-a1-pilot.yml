@@ -1,0 +1,104 @@
+name: I1 ECO-v1 A1 paired scientific pilot (eight natural lives)
+# A1 is an exploratory, preregistered one-shot cohort, NOT a routine CI suite.
+# The workflow triggers only on an intentional merged launch commit.
+# Re-running a failed workflow is intentionally disabled: no recycled identities.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/i1-eco-a1-pilot.yml'
+permissions:
+  contents: read
+concurrency:
+  group: i1-eco-a1-one-shot-main
+  cancel-in-progress: false
+
+jobs:
+  lives:
+    if: github.run_attempt == 1 && contains(github.event.head_commit.message, '[I1-ECO-A1-ONE-SHOT]')
+    name: A1 independent mortal M11 / ${{ matrix.role }} / s${{ matrix.seed }} / ${{ matrix.mode }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        role: [native, reversed]
+        seed: [1, 2]
+        mode: [canonical, td_read_masked]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install exact I1 source
+        run: python -m pip install -e .
+      - name: Confirm preregistered tools exist on the launch commit
+        run: |
+          test -f tools/run_i1_eco_a1.py
+          test -f tools/aggregate_i1_eco_a1.py
+          test -f tools/i1_eco_a1_decision_join.py
+          git rev-parse HEAD
+      - name: Execute one unforced A1-P life and independent M11 readback
+        env:
+          A1_ROLE: ${{ matrix.role }}
+          A1_SEED: ${{ matrix.seed }}
+          A1_MODE: ${{ matrix.mode }}
+        run: |
+          python tools/run_i1_eco_a1.py \
+            --role "$A1_ROLE" --seed "$A1_SEED" --mode "$A1_MODE" \
+            --out "reports/a1-$A1_ROLE-s$A1_SEED-$A1_MODE"
+      - name: Retain all evidence, including death and technical failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a1-${{ matrix.role }}-s${{ matrix.seed }}-${{ matrix.mode }}
+          path: |
+            reports/a1-${{ matrix.role }}-s${{ matrix.seed }}-${{ matrix.mode }}/report.json
+            reports/a1-${{ matrix.role }}-s${{ matrix.seed }}-${{ matrix.mode }}/*.sqlite*
+          if-no-files-found: warn
+          retention-days: 30
+  aggregate:
+    if: always() && github.run_attempt == 1 && contains(github.event.head_commit.message, '[I1-ECO-A1-ONE-SHOT]')
+    name: A1 eight-life independent cold M11 audit and paired result
+    needs: [lives]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install exact scientific model
+        run: python -m pip install -e .
+      - name: Recover every available cohort shard, including failures
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: a1-*
+          path: reports/a1-artifacts
+      - name: Cold audit every M11 and recompute registered exploratory contrast
+        shell: bash
+        run: |
+          mkdir -p reports/a1-summary
+          set +e
+          python tools/aggregate_i1_eco_a1.py \
+            --artifacts reports/a1-artifacts \
+            --out reports/a1-summary/report.json \
+            > reports/a1-summary/audit.log 2>&1
+          code=$?
+          cat reports/a1-summary/audit.log
+          exit "$code"
+      - name: Preserve incomplete audit and failures without selective reruns
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a1-aggregate-${{ github.run_id }}
+          path: reports/a1-summary/
+          if-no-files-found: warn
+          retention-days: 30
