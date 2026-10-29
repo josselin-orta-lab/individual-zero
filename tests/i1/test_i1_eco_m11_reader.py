@@ -40,7 +40,7 @@ with TemporaryDirectory() as home:
                 break
         head = rt.journal.head_hash
         last = dict(rt.world.body.as_dict())
-        count = rt.journal.entry_count
+        count = len(rt.journal.entries)
     observed = audited_life_metrics(
         path=path, individual_id=identity, horizon=3,
         setpoints=setpoints, scales=scales)
