@@ -1,0 +1,39 @@
+name: I1 ECO A1-C frozen statistical criteria (no births)
+on:
+  pull_request:
+    paths:
+      - 'tools/i1_eco_a1c_*.py'
+      - 'tools/a1c_tests/**'
+      - 'docs/research/I1_ECO_A1C_PREREGISTRATION_2026-10-29.md'
+      - '.github/workflows/i1-eco-a1c-focused.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: i1-a1c-focused-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  research:
+    name: A1-C contracts Python ${{ matrix.python-version }} (zero cohort births)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install scientific sources
+        run: python -m pip install -e .
+      - name: Compile and test only A1-C observer / decision contracts
+        shell: bash
+        run: |
+          python -m py_compile tools/i1_eco_a1c_statistics.py
+          python -m unittest discover -s tools/a1c_tests -p 'test_*.py' -v
+      - name: Ensure A1-C cohort was not started by validation
+        run: test ! -d reports/i1-eco-a1c-cohort
