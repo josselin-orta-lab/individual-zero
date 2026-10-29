@@ -29,7 +29,7 @@ def _verified_body(value):
                 raise ValueError("invalid M11 IEEE-754 representation")
             try:
                 number = float.fromhex(hex_value)
-            except ValueError as exc:
+            except (ValueError, OverflowError) as exc:
                 raise ValueError("invalid M11 IEEE-754 representation") from exc
             if number.hex().lower() != hex_value or not math.isfinite(number):
                 raise ValueError("noncanonical M11 IEEE-754 representation")
