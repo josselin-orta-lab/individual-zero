@@ -324,3 +324,104 @@ def audited_a1_decision_alignment(*, path, identity, audited, reads,
     return verify_decision_alignment(
         events=events, reads=reads, adapters=adapters,
         mode=mode, generation=audited["generation"])
+
+
+def _physical_prefix(events, *, generation):
+    """Only source-verified motor and WorldBody events, with exact wire values.
+
+    Distinct M11 identities have different attempt IDs, option IDs, and
+    journal hashes: never compare those. Compare exactly the command semantics,
+    body, position, and physical effects before the first read intervention.
+    """
+    by_step = {}
+    required = ("command_admitted", "command_experienced",
+                "world_transition_experienced", "step_closed")
+    for e in events:
+        if e.get("kind") not in required:
+            continue
+        step = e.get("t_monde")
+        if type(step) is not int or not 1 <= step <= generation:
+            raise ValueError("A1 physical prefix outside audited generation")
+        slot = by_step.setdefault(step, {})
+        kind = e["kind"]
+        if kind in slot:
+            raise ValueError("A1 repeated physical M11 occurrence")
+        slot[kind] = e
+    if set(by_step) != set(range(1, generation + 1)):
+        raise ValueError("A1 physical prefix missing a committed generation")
+    prefix = []
+    previous_after = None
+    for step in range(1, generation + 1):
+        slot = by_step[step]
+        if set(slot) != set(required):
+            raise ValueError("A1 incomplete physical M11 step")
+        admitted = slot["command_admitted"].get("data", {})
+        experienced = slot["command_experienced"]
+        transition = slot["world_transition_experienced"]
+        closed = slot["step_closed"].get("data", {})
+        if (type(admitted) is not dict or
+                type(experienced.get("parameters")) is not dict or
+                admitted.get("primitive") != experienced.get("primitive") or
+                admitted.get("command_hash") != experienced.get("command_hash") or
+                type(transition.get("body_before")) is not dict or
+                type(transition.get("body_after")) is not dict or
+                type(transition.get("position_after")) is not dict or
+                closed.get("outcome") not in ("normal", "dead")):
+            raise ValueError("A1 physical prefix has inconsistent M11 events")
+        if (previous_after is not None and
+                transition["body_before"] != previous_after):
+            raise ValueError("A1 physical prefix has discontinuous body")
+        previous_after = transition["body_after"]
+        prefix.append({
+            "primitive": experienced["primitive"],
+            "parameters": experienced["parameters"],
+            "command_hash": experienced["command_hash"],
+            "body_before": transition["body_before"],
+            "body_after": transition["body_after"],
+            "position_after": transition["position_after"],
+            "effects": transition.get("effects"),
+            "outcome": closed["outcome"],
+        })
+    return prefix
+
+
+def audited_a1_physical_prefix(*, path, identity, audited):
+    """Re-read full M11 custody; do not trust the external life report."""
+    return _physical_prefix(
+        _read_canonical_events(path=path, identity=identity, audit=audited),
+        generation=audited["generation"],
+    )
+
+
+def guard_preintervention_prefix(*, canonical, masked, first_masked_step):
+    """Disallow differences *before* the only intended TD-read intervention.
+
+    If there was never an actual masked learned read, all overlapping
+    physical steps must match; otherwise unrelated ID/engine effects spoil
+    any causal contrast. A first read at step N permits motor differences
+    starting at N, but never at an earlier step.
+    """
+    if (type(canonical) is not list or type(masked) is not list or
+            not canonical or not masked):
+        raise ValueError("A1 missing authenticated physical prefixes")
+    if first_masked_step is not None and (
+        type(first_masked_step) is not int or
+        not 1 <= first_masked_step <= len(masked)):
+        raise ValueError("A1 invalid first TD intervention step")
+    compare_until = (first_masked_step - 1
+                     if first_masked_step is not None else
+                     min(len(canonical), len(masked)))
+    for i in range(compare_until):
+        if i >= len(canonical) or i >= len(masked) or (
+                canonical[i] != masked[i]):
+            raise ValueError(
+                "A1 UNMATCHED_PREINTERVENTION_PHYSICAL_PREFIX at step " +
+                str(i + 1))
+    if first_masked_step is None and len(canonical) != len(masked):
+        raise ValueError("A1 diverged despite never using the TD intervention")
+    return {
+        "prefix_steps_equal": compare_until,
+        "first_masked_step": first_masked_step,
+        "verdict": ("NO_MASKED_EXPOSURE" if first_masked_step is None else
+                    "PREINTERVENTION_PHYSICAL_PREFIX_MATCHED"),
+    }
