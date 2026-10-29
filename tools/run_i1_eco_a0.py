@@ -81,10 +81,17 @@ print("I1_ECO_A0_LIFE=" + json.dumps(result, sort_keys=True))
                 "horizons": {p: h for p, h in selected},
                 "lives": [], "verdict": "MEASUREMENT_BLOCKED"}
     for name, horizon in selected:
-        p = subprocess.run([sys.executable, "-B", "-c", program,
-                            name, str(horizon), str(destination)],
-                           cwd=ROOT, env=env, capture_output=True, text=True,
-                           timeout=900)
+        try:
+            p = subprocess.run([sys.executable, "-B", "-c", program,
+                                name, str(horizon), str(destination)],
+                               cwd=ROOT, env=env, capture_output=True, text=True,
+                               timeout=900)
+        except subprocess.TimeoutExpired as exc:
+            manifest["lives"].append({
+                "preset": name, "status": "TECHNICAL_TIMEOUT",
+                "stderr": str(exc.stderr or "")[-4000:],
+                "stdout": str(exc.stdout or "")[-4000:]})
+            continue
         if p.returncode:
             manifest["lives"].append({
                 "preset": name, "status": "TECHNICAL_FAILURE",
