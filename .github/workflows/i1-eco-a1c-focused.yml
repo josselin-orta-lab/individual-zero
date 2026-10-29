@@ -33,7 +33,7 @@ jobs:
       - name: Compile and test only A1-C observer / decision contracts
         shell: bash
         run: |
-          python -m py_compile tools/i1_eco_a1c_statistics.py
+          python -m py_compile tools/i1_eco_a1c_statistics.py tools/i1_eco_a1c_birth.py tools/run_i1_eco_a1c.py tools/aggregate_i1_eco_a1c.py tools/i1_eco_a1c_mechanism.py
           python -m unittest discover -s tools/a1c_tests -p 'test_*.py' -v
       - name: Ensure A1-C cohort was not started by validation
         run: test ! -d reports/i1-eco-a1c-cohort
