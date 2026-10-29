@@ -288,7 +288,9 @@ def verify_decision_alignment(*, events, reads, adapters, mode, generation):
             for point, proposed in kinds[name].items()
             if (point <= key[:2]
                 and proposed.get("option_ref") == key[2]
-                and proposed.get("learning_signature") == a["signature"])
+                and (proposed.get("learning_signature")
+                     if name == "i1_local_opportunity_proposed"
+                     else _signature(proposed.get("command"))) == a["signature"])
         ]
         if not origins:
             raise ValueError("pending Stage8 has no prior M11 Planning origin")
