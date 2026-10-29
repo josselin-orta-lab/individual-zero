@@ -44,9 +44,7 @@ with TemporaryDirectory() as d:
         with actor:
             rt = actor._runtime
             t = rt.temperament_parameters
-            initial = (t.reward_sensitivity, t.threat_sensitivity,
-                       t.exploration_coefficient, t.goal_protection,
-                       t.affiliation) if False else t.as_dict()
+            initial = t.as_dict()
             cfg = rt._stage11_config.stage9.stage8.stage7.stage6.stage4
             measures = (
                 dict(cfg.gatekeeper.weights),
