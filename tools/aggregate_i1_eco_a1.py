@@ -73,6 +73,42 @@ def aggregate(root, generated):
                     or life["identity"] != identity
                     or life["birth_physics_sha256"] != physical.digest()):
                 raise ValueError("A1 birth source or physics mismatch")
+            # The paired arms must match EACH OTHER *and* their frozen
+            # research source. Equality alone could validate two incorrectly
+            # born individuals or two identically forged need scales.
+            from i1lab.matched_temperament_research import (
+                matched_temperament_configuration,
+            )
+            from i1lab.world import WorldBody
+            configured = matched_temperament_configuration(
+                params["stage11_config"], life_id=identity,
+                world="eco-a1-pilot", seed=seed,
+            )
+            s4 = configured.stage9.stage8.stage7.stage6.stage4
+            td = configured.stage9.stage8.td
+            expected_td = {
+                "version": td.version, "beta": td.beta,
+                "eta": td.eta, "lambda_e": td.lambda_e,
+            }
+            if (life.get("born_temperament") !=
+                    configured.temperament_parameters.as_dict()
+                    or life.get("born_td") != expected_td
+                    or life.get("setpoints") != dict(s4.value_needs.setpoints)
+                    or life.get("scales") != dict(
+                        s4.value_needs.normalization_scales)):
+                raise ValueError(
+                    "A1 born temperament, TD, setpoints or scales "
+                    "do not match the preregistered research source")
+            layout = a1_world_parameters(params, role=role)[0]["layout"]
+            pristine = WorldBody(config=physical, layout=layout)
+            if (life.get("initial_body") != pristine.body.as_dict()
+                    or life.get("initial_inventory") !=
+                        dict(pristine.inventory())
+                    or life.get("initial_perception") !=
+                        pristine.capture_local(t_monde=1).as_dict()):
+                raise ValueError(
+                    "A1 born physical state or initial perception "
+                    "does not match the frozen world")
             database = folder / "life.sqlite"
             if not database.is_file() or database.is_symlink():
                 raise ValueError("M11 SQLite missing or symlinked")
