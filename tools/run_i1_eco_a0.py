@@ -35,12 +35,14 @@ def main():
     program = r"""
 import json
 from pathlib import Path
+import subprocess
 import sys
 from i1lab.i1_birth import birth_i1_m11
 from i1_eco_m11_reader import audited_life_metrics
 from run_i1_world_preset import load_preset, _birth_parameters
 
 name, horizon, out = sys.argv[1], int(sys.argv[2]), Path(sys.argv[3])
+source_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
 preset, preset_sha256 = load_preset(name)
 if horizon != preset["recommended_steps"]:
     raise ValueError("horizon diverges from frozen world preset")
@@ -62,6 +64,7 @@ observed = audited_life_metrics(
     setpoints=setpoints, scales=scales)
 result = dict(
     preset=name, horizon=horizon, identity=identity,
+    source_commit=source_commit,
     preset_sha256=preset_sha256, physics_sha256=physics_sha256,
     setpoints=setpoints, scales=scales, audited=observed,
     interpretation="MEASUREMENT_ONLY_NOT_ADAPTIVE_GO",
