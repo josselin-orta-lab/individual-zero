@@ -39,7 +39,7 @@ def aggregate(root, generated):
     names = {"a1-" + role + "-s" + str(seed) + "-" + mode
              for role, seed, mode in MATRIX}
     extras = sorted(p.name for p in root.iterdir()
-                    if p.name not in names)
+                    if p.name not in names) if root.is_dir() else []
     if extras:
         issues.append({"scope": "cohort", "problem": "UNREGISTERED_ARTIFACTS",
                        "detail": extras})
