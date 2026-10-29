@@ -7,6 +7,7 @@ import argparse
 import json
 from pathlib import Path
 import re
+import sqlite3
 import subprocess
 import sys
 
@@ -25,6 +26,7 @@ def aggregate(root, generated):
     sys.path.insert(0, str(generated))
     sys.path.insert(0, str(ROOT / "tools"))
     from i1_eco_m11_reader import audited_life_metrics
+    from i1lab.sqlite_life_store import RecoveryBlocked
 
     code_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     if not GIT_SHA.fullmatch(code_sha):
@@ -92,7 +94,8 @@ def aggregate(root, generated):
                 "journal_count": independently["journal_count"],
                 "interpretation": "DESCRIPTIVE_ONLY",
             })
-        except (OSError, KeyError, TypeError, ValueError, IndexError) as exc:
+        except (OSError, KeyError, TypeError, ValueError, IndexError,
+                sqlite3.DatabaseError, RecoveryBlocked) as exc:
             problems.append({"preset": name, "problem": "TECHNICAL_AUDIT_FAILURE",
                              "detail": str(exc)[:500]})
     ready = len(rows) == len(PRESETS) and not problems
