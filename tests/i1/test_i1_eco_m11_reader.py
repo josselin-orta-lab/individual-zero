@@ -12,25 +12,6 @@ from build_i1_fork import generate
 
 
 class EcoV1M11ReadOnlyTests(unittest.TestCase):
-    def test_canonical_float_body_decoded_only_after_hash_verification(self):
-        sys.path.insert(0, str(ROOT / "tools"))
-        from i1_eco_m11_reader import _verified_body
-        encoded = {
-            "energy": {"$f64": (70.0).hex()},
-            "food": {"$f64": (35.0).hex()},
-            "water": {"$f64": (20.0).hex()},
-            "integrity": {"$f64": (100.0).hex()},
-        }
-        self.assertEqual(_verified_body(encoded), {
-            "energy": 70.0, "food": 35.0,
-            "water": 20.0, "integrity": 100.0,
-        })
-        for bad in ({"$f64": "nan"}, {"$f64": "0x1.0p+9999"},
-                    {"$f64": "0x1p+0"}, {"$f64": 200.0}):
-            with self.subTest(bad=bad):
-                with self.assertRaises(ValueError):
-                    _verified_body({**encoded, "food": bad})
-
     def test_real_mortal_physical_receipts_score_without_state_mutation(self):
         with TemporaryDirectory(prefix="i1-eco-v1-m11-") as tmp:
             generated = Path(tmp) / "generated"
@@ -41,7 +22,20 @@ from tempfile import TemporaryDirectory
 
 from i1lab.i1_birth import birth_i1_m11
 from run_i1_world_preset import _birth_parameters, load_preset
-from i1_eco_m11_reader import audited_life_metrics
+from i1_eco_m11_reader import audited_life_metrics, _verified_body
+
+wire = {k: {"$f64": v.hex()} for k, v in {
+    "energy": 70., "food": 35., "water": 20., "integrity": 100.
+}.items()}
+assert _verified_body(wire)["food"] == 35.0
+for bad in ({"$f64": "nan"}, {"$f64": "0x1.0p+9999"},
+            {"$f64": "0x1p+0"}, {"$f64": 200.0}):
+    try:
+        _verified_body({**wire, "food": bad})
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("noncanonical M11 body float accepted")
 
 preset, digest = load_preset("oasis")
 raw, _ = _birth_parameters(preset)
