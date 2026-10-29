@@ -5,6 +5,8 @@ from pathlib import Path
 from urllib.parse import quote
 
 from i1lab.sqlite_life_store import SQLiteLifeLedger
+from i1lab.determinism import canonical_causal_bytes, sha256_hex
+from i1lab.journal import GENESIS_HASH
 from i1_eco_metrics import evaluate_life
 
 
@@ -27,10 +29,32 @@ def audited_life_metrics(*, path, individual_id, horizon, setpoints, scales):
                        receipt.journal_count, receipt.journal_head):
             raise ValueError("M11 state changed since audit")
         rows = connection.execute(
-            "SELECT canonical_bytes FROM causal_occurrence ORDER BY idx").fetchall()
+            "SELECT idx, event_id, previous_hash, event_hash, canonical_bytes "
+            "FROM causal_occurrence ORDER BY idx").fetchall()
         if len(rows) != receipt.journal_count:
             raise ValueError("M11 occurrence count changed")
-        events = [json.loads(raw)["causal_event"] for (raw,) in rows]
+        previous = GENESIS_HASH
+        events = []
+        for expected, (idx, event_id, prev, event_hash, raw) in enumerate(rows):
+            if idx != expected or prev != previous or not isinstance(raw, bytes):
+                raise ValueError("M11 occurrence sequence changed since audit")
+            document = json.loads(raw.decode("utf-8"))
+            if (type(document) is not dict
+                    or canonical_causal_bytes(document) != raw
+                    or document.get("index") != idx
+                    or document.get("event_id") != event_id
+                    or document.get("event_hash") != event_hash
+                    or document.get("previous_hash") != previous
+                    or type(document.get("causal_event")) is not dict):
+                raise ValueError("M11 occurrence bytes changed since audit")
+            payload = canonical_causal_bytes({
+                "event_id": event_id, "causal_event": document["causal_event"]})
+            if sha256_hex(bytes.fromhex(previous) + payload) != event_hash:
+                raise ValueError("M11 occurrence hash changed since audit")
+            previous = event_hash
+            events.append(document["causal_event"])
+        if previous != receipt.journal_head:
+            raise ValueError("M11 head changed since audit")
     finally:
         connection.close()
     by_step = {}
@@ -46,7 +70,7 @@ def audited_life_metrics(*, path, individual_id, horizon, setpoints, scales):
         if record["attempt"] != attempt:
             raise ValueError("multiple attempt owners in physical step")
         record["entries"].append(e)
-    if len(by_step) != receipt.generation:
+    if receipt.generation < 1 or len(by_step) != receipt.generation:
         raise ValueError("physical steps do not match M11 generations")
     steps = []
     initial = None
