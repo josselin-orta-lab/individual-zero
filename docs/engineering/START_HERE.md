@@ -7,8 +7,7 @@
 2. [Machine registry](../../config/engine-registry.json) declares locations and test entrypoints.
 3. [Historical archive index](../../config/archives/i0-20261017.json) pins every archived file to its original Git blob.
 4. [PR #246 test audit](../research/i1-pr246-current-test-audit-2026-10-17.fr.md) documents I1 SMOKE/FULL, residual scientific limits and I0 protections.
-5. [CI minimale obligatoire](CI_MINIMUM_EXECUTION_POLICY.md) : périmètre, fréquence et déclenchement des validations sans CI lourde inutile.
-6. [Historical I0 README](../../archive/i0/README.md) documents restoration of old tests and GitHub workflows.
+5. [Historical I0 README](../../archive/i0/README.md) documents restoration of old tests and GitHub workflows.
 
 ## Day-one commands
 
