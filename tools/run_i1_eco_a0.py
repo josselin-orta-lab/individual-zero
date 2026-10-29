@@ -105,7 +105,16 @@ print("I1_ECO_A0_LIFE=" + json.dumps(result, sort_keys=True))
                 "preset": name, "status": "BAD_REPORT",
                 "stdout": p.stdout[-4000:]})
             continue
-        manifest["lives"].append(json.loads(reports[0]))
+        try:
+            life = json.loads(reports[0])
+            if type(life) is not dict or life.get("preset") != name:
+                raise ValueError("wrong or malformed A0 life identity")
+        except (ValueError, TypeError) as exc:
+            manifest["lives"].append({
+                "preset": name, "status": "INVALID_REPORT",
+                "detail": str(exc)[:500], "stdout": p.stdout[-4000:]})
+            continue
+        manifest["lives"].append(life)
     if len(manifest["lives"]) == len(selected) and all(
             "audited" in life for life in manifest["lives"]):
         manifest["verdict"] = ("MEASUREMENT_READY" if len(selected) == len(PRESETS)
