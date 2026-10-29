@@ -27,6 +27,8 @@ from i1lab.i1_birth import birth_i1_m11
 from i1lab.sqlite_life_store import SQLiteLifeLedger
 from i1_eco_a1_matched_birth import a1_matched_temperament_birth
 from i1_eco_a1_td_mask import a1_decision_read_scope, _decision_value
+from i1_eco_a1_decision_join import audited_a1_decision_alignment
+from i1_eco_m11_reader import audited_life_metrics
 from i1.modules.td_values import LearnedValue
 
 actual = LearnedValue(signature="test:learned", status="learned",
@@ -74,6 +76,8 @@ with TemporaryDirectory() as folder:
         rows, adapters = [], []
         with actor:
             initial = actor._runtime.temperament_parameters.as_dict()
+            setpoints = dict(actor._runtime.value_needs.config.setpoints)
+            scales = dict(actor._runtime.value_needs.config.normalization_scales)
             with a1_decision_read_scope(
                 mode=mode, reads=rows, adapters=adapters
             ):
@@ -85,6 +89,20 @@ with TemporaryDirectory() as folder:
             path=path, expected_individual_id=identity)
         assert audited.generation == receipt.generation
         assert audited.journal_head == receipt.journal_head
+        cold = audited_life_metrics(
+            path=path, individual_id=identity, horizon=24,
+            setpoints=setpoints, scales=scales,
+        )
+        alignment = audited_a1_decision_alignment(
+            path=path, identity=identity, audited=cold,
+            reads=rows, adapters=adapters, mode=mode,
+        )
+        assert alignment["read_count"] == len(rows)
+        assert alignment["stage8_direct_joined"] > 0
+        assert alignment["pending_adapters_joined"] > 0
+        assert alignment["planning_winners_joined"] > 0
+        assert alignment["scope"] == (
+            "M11_ANCHORED_EXTERNAL_OBSERVER_NOT_INDEPENDENT_CAUSAL_GO")
         assert any(x["source"] == "planning_local" for x in rows)
         assert any(x["source"] == "stage8_direct" for x in rows)
         assert any(x["original_status"] == "learned" for x in rows)
