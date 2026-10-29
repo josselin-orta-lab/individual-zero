@@ -19,7 +19,7 @@ from run_i1_world_preset import _birth_parameters, load_preset
 from run_i1_eco_a0 import LABEL, PRESETS
 
 GIT_SHA = re.compile(r"[0-9a-f]{40}\Z")
-M11_HEAD = re.compile(r"[0-9a-f]{64}\\Z")
+M11_HEAD = re.compile(r"[0-9a-f]{64}\Z")
 
 
 def _effective_birth_physics_digest(params):
