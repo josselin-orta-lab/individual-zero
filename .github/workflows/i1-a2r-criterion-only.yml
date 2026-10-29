@@ -1,0 +1,38 @@
+name: I1 A2-R frozen criterion (pure, no births)
+on:
+  pull_request:
+    paths:
+      - 'docs/research/I1_ECO_A2R_REWARD_PREREGISTRATION_2026-10-30.md'
+      - 'tools/research/i1_a2r_statistics.py'
+      - 'tools/research/tests/test_i1_a2r_statistics.py'
+      - '.github/workflows/i1-a2r-criterion-only.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: i1-a2r-criterion-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  criterion_only:
+    name: Pure A2-R criterion Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: tools/research
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Focused contracts only
+        run: |
+          python -m py_compile tools/research/i1_a2r_statistics.py
+          python -m unittest discover -s tools/research/tests -p 'test_i1_a2r_statistics.py' -v
+      - name: No cohort created by software gate
+        run: test ! -d reports/i1-eco-a2r-cohort
