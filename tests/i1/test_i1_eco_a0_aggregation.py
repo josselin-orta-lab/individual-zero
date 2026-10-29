@@ -1,5 +1,7 @@
 """A0 must reject absent worlds without manufacturing a scientific verdict."""
 import tempfile
+import os
+import subprocess
 from pathlib import Path
 import sys
 import unittest
@@ -49,6 +51,47 @@ class A0AggregationContractTests(unittest.TestCase):
         self.assertEqual(result["adaptive_learning_go"], "NOT_ESTABLISHED")
         self.assertFalse(result["independent_cohort"])
         self.assertFalse(result["td_masked_comparator"])
+
+
+    def test_effective_physics_matches_canonical_mortal_m11_birth(self):
+        """Raw preset physics is not I1's versioned natural birth config."""
+        with tempfile.TemporaryDirectory() as home:
+            root = Path(home)
+            generated = root / "generated"
+            generate(generated)
+            program = r"""
+from pathlib import Path
+import sys
+from tempfile import TemporaryDirectory
+from run_i1_world_preset import load_preset, _birth_parameters
+from aggregate_i1_eco_a0 import _effective_birth_physics_digest
+from i1lab.i1_birth import birth_i1_m11
+
+preset, _ = load_preset("oasis")
+params, _ = _birth_parameters(preset)
+expected = _effective_birth_physics_digest(params)
+assert expected != params["world_config"].digest()
+with TemporaryDirectory() as tmp:
+    with birth_i1_m11(
+        db_path=str(Path(tmp) / "life.sqlite"),
+        life_id="i1:eco:a0:birth-digest-contract",
+        **params,
+    ) as actor:
+        actual = actor._runtime.world.config.digest()
+        assert actual == expected, (actual, expected)
+        actor.run_step()
+        assert actor._runtime.world.config.digest() == expected
+"""
+            env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1",
+                       PYTHONPATH=os.pathsep.join((
+                           str(generated), str(ROOT / "src"),
+                           str(ROOT / "tools"))))
+            result = subprocess.run(
+                [sys.executable, "-B", "-c", program],
+                cwd=ROOT, env=env, capture_output=True,
+                text=True, timeout=180)
+            self.assertEqual(result.returncode, 0,
+                             result.stdout + result.stderr)
 
 
 if __name__ == "__main__":
