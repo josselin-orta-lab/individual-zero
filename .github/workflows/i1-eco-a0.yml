@@ -1,0 +1,74 @@
+name: I1 ECO-v1 A0 six-world measurement pilot
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/i1-eco-a0.yml'
+      - 'tools/run_i1_eco_a0.py'
+      - 'tools/aggregate_i1_eco_a0.py'
+permissions:
+  contents: read
+jobs:
+  worlds:
+    name: A0 physical world / ${{ matrix.preset }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [oasis, foraging, blocked-route, dry-valley, hazard-edge, empty-land]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install current model
+        run: python -m pip install -e .
+      - name: Execute one preregistered birth and independently audit M11
+        env:
+          PRESET: ${{ matrix.preset }}
+        run: python tools/run_i1_eco_a0.py --preset "$PRESET" --out "reports/i1-eco-a0-$PRESET"
+      - name: Preserve all results, including technical failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-eco-a0-${{ matrix.preset }}-${{ github.run_id }}
+          path: |
+            reports/i1-eco-a0-${{ matrix.preset }}/report.json
+            reports/i1-eco-a0-${{ matrix.preset }}/*.sqlite*
+          if-no-files-found: warn
+          retention-days: 30
+  aggregate:
+    name: A0 independent M11 aggregation
+    needs: [worlds]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install current model
+        run: python -m pip install -e .
+      - name: Recover all six isolated artifacts, including failed shards
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: i1-eco-a0-*
+          path: reports/a0-artifacts
+      - name: Independently audit every M11 and compute the six-world result
+        run: python tools/aggregate_i1_eco_a0.py --artifacts reports/a0-artifacts --out reports/a0-summary/report.json
+      - name: Archive aggregation verdict even when incomplete
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i1-eco-a0-aggregate-${{ github.run_id }}
+          path: reports/a0-summary/
+          if-no-files-found: warn
+          retention-days: 30
