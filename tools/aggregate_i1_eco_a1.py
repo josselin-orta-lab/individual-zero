@@ -61,23 +61,17 @@ def aggregate(root, generated):
                     or manifest.get("source_commit") != commit):
                 raise ValueError("A1 manifest identity or provenance mismatch")
             life = manifest["life"]
+            # Compare only to the effective naturally coupled birth config.
+            from i1lab.i1_natural_sleep import enable_natural_sleep_birth
+            physical, _ = enable_natural_sleep_birth(
+                world_config=expected_worlds[role],
+                stage10_config=params["stage10_config"],
+            )
             if (life["source_commit"] != commit
                     or life["base_preset_sha256"] != preset_digest
                     or life["identity"] != identity
-                    or life["birth_physics_sha256"] !=
-                        expected_worlds[role].digest()):
-                # M11 birth also applies natural sleep and metabolism. Digest
-                # comparison is performed below against effective birth config.
-                from i1lab.i1_natural_sleep import enable_natural_sleep_birth
-                physical, _ = enable_natural_sleep_birth(
-                    world_config=expected_worlds[role],
-                    stage10_config=params["stage10_config"],
-                )
-                if (life["source_commit"] != commit
-                        or life["base_preset_sha256"] != preset_digest
-                        or life["identity"] != identity
-                        or life["birth_physics_sha256"] != physical.digest()):
-                    raise ValueError("A1 birth source or physics mismatch")
+                    or life["birth_physics_sha256"] != physical.digest()):
+                raise ValueError("A1 birth source or physics mismatch")
             database = folder / "life.sqlite"
             if not database.is_file() or database.is_symlink():
                 raise ValueError("M11 SQLite missing or symlinked")
