@@ -21,6 +21,8 @@ LABEL = "i1-eco-v1-a0-measurement-only"
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--preset", choices=[name for name, _ in PRESETS],
+                        help="run exactly one preregistered world (CI shard)")
     options = parser.parse_args()
     destination = options.out.resolve()
     if destination.exists():
@@ -70,10 +72,12 @@ print("I1_ECO_A0_LIFE=" + json.dumps(result, sort_keys=True))
                PYTHONPATH=os.pathsep.join((
                    str(generated), str(ROOT / "src"), str(ROOT / "tools"))),
                PYTHONDONTWRITEBYTECODE="1")
-    manifest = {"schema": LABEL, "presets": [p for p, _ in PRESETS],
-                "horizons": {p: h for p, h in PRESETS},
+    selected = tuple((p, h) for p, h in PRESETS
+                     if options.preset is None or p == options.preset)
+    manifest = {"schema": LABEL, "presets": [p for p, _ in selected],
+                "horizons": {p: h for p, h in selected},
                 "lives": [], "verdict": "MEASUREMENT_BLOCKED"}
-    for name, horizon in PRESETS:
+    for name, horizon in selected:
         p = subprocess.run([sys.executable, "-B", "-c", program,
                             name, str(horizon), str(destination)],
                            cwd=ROOT, env=env, capture_output=True, text=True,
@@ -92,14 +96,16 @@ print("I1_ECO_A0_LIFE=" + json.dumps(result, sort_keys=True))
                 "stdout": p.stdout[-4000:]})
             continue
         manifest["lives"].append(json.loads(reports[0]))
-    if len(manifest["lives"]) == len(PRESETS) and all(
+    if len(manifest["lives"]) == len(selected) and all(
             "audited" in life for life in manifest["lives"]):
-        manifest["verdict"] = "MEASUREMENT_READY"
+        manifest["verdict"] = ("MEASUREMENT_READY" if len(selected) == len(PRESETS)
+                               else "MEASUREMENT_FRAGMENT_READY")
     (destination / "report.json").write_text(
         json.dumps(manifest, sort_keys=True, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"report": str(destination / "report.json"),
                       "verdict": manifest["verdict"]}, sort_keys=True))
-    if manifest["verdict"] != "MEASUREMENT_READY":
+    if manifest["verdict"] not in ("MEASUREMENT_READY",
+                                   "MEASUREMENT_FRAGMENT_READY"):
         raise SystemExit(1)
 
 
