@@ -25,6 +25,14 @@ Horizon fixe : **48 pas physiques maximum** par naissance, arrêt irréversible 
 
 Ces 8 vies sont un pilote de faisabilité. Deux sources de tempérament ne suffisent ni pour estimer un intervalle de confiance fiable ni pour un GO de généralisation.
 
+## Amendement pré-exécution A1-P : normalisation des rôles (29 octobre 2026)
+
+Avant toute naissance A1-P, un contrôle du moteur a identifié une règle native de physiologie : `enable_living_physiology_birth` transforme l'effet toxique historique `berry_b.integrity_delta=-100` en `-10` pendant la naissance, mais uniquement pour le nom `berry_b`. Une permutation naïve de la configuration source ferait donc subir `-100` à `berry_a` dans le monde inversé et seulement `-10` à `berry_b` dans le monde natif. Ce serait un **biais de construction**, pas une causalité d'apprentissage.
+
+La construction prospective `a1_world_parameters` doit d'abord appliquer hors de l'individu la **même constante physiologique native** de toxicité (`DEFAULT_TOXIC_BERRY_INTEGRITY_DELTA=-10`), puis permuter intégralement les couples (`food_gain`, `integrity_delta`) entre les noms avant naissance. Les versions physiques et digests restent attestés. L'autre mécanisme naturel de naissance (métabolisme, sommeil, besoins, énergie) reste strictement inchangé. Les deux bras d'une paire partagent exactement le même monde. Les deux rôles ont la même perception à la naissance et diffèrent uniquement par les effets physiques cachés de baies qui ont changé de nom. Toute nouvelle réécriture unilatérale pendant la naissance entraîne `INVALID_EXPERIMENT` ; on ne corrige pas une trajectoire après coup.
+
+Ce correctif de protocole est apporté **avant le lancement A1-P**, sans regarder de résultats de ces huit vies. Il ne change ni le seuil GO, ni l'horizon 48, ni le nombre de sources de tempérament.
+
 ## Préconditions strictes avant le lancement
 
 1. Prouver égalité des paramètres initiaux des bras : digests de monde et preset (dans un même rôle), projection de tempérament, Stage4/Stage8, configuration TD, besoins, état initial, coûts d'UC et exposition perceptive. Les identités et les journaux M11 restent distincts. Les deux rôles diffèrent **seulement** par permutation physique des effets des baies, attestée par deux digests différents.
