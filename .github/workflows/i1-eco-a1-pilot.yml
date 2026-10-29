@@ -1,6 +1,7 @@
 name: I1 ECO-v1 A1 paired scientific pilot (eight natural lives)
 # A1 is an exploratory, preregistered one-shot cohort, NOT a routine CI suite.
 # The workflow triggers only on an intentional merged launch commit.
+# Re-running a failed workflow is intentionally disabled: no recycled identities.
 on:
   push:
     branches: [main]
@@ -8,10 +9,13 @@ on:
       - '.github/workflows/i1-eco-a1-pilot.yml'
 permissions:
   contents: read
+concurrency:
+  group: i1-eco-a1-one-shot-main
+  cancel-in-progress: false
 
 jobs:
   lives:
-    if: contains(github.event.head_commit.message, '[I1-ECO-A1-ONE-SHOT]')
+    if: github.run_attempt == 1 && contains(github.event.head_commit.message, '[I1-ECO-A1-ONE-SHOT]')
     name: A1 independent mortal M11 / ${{ matrix.role }} / s${{ matrix.seed }} / ${{ matrix.mode }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -57,7 +61,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
   aggregate:
-    if: always() && contains(github.event.head_commit.message, '[I1-ECO-A1-ONE-SHOT]')
+    if: always() && github.run_attempt == 1 && contains(github.event.head_commit.message, '[I1-ECO-A1-ONE-SHOT]')
     name: A1 eight-life independent cold M11 audit and paired result
     needs: [lives]
     runs-on: ubuntu-latest
