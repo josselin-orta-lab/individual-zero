@@ -63,6 +63,19 @@ def aggregate(root, generated):
                     or manifest.get("source_commit") != commit):
                 raise ValueError("A1 manifest identity or provenance mismatch")
             life = manifest["life"]
+            if (type(life) is not dict
+                    or life.get("schema") != SCHEMA
+                    or life.get("role") != role
+                    or type(life.get("seed")) is not int
+                    or life["seed"] != seed
+                    or life.get("mode") != mode
+                    or life.get("horizon") != HORIZON
+                    or life.get("interpretation") !=
+                        "EXPLORATORY_NOT_CONFIRMATORY"
+                    or life.get("adaptive_learning_go") != "NOT_ESTABLISHED"
+                    or life.get("read_provenance") !=
+                        "EXTERNAL_OBSERVER_REQUIRES_JOIN_TO_M11"):
+                raise ValueError("A1 independent life schema or scope mismatch")
             # Compare only to the effective naturally coupled birth config.
             from i1lab.i1_natural_sleep import enable_natural_sleep_birth
             physical, _ = enable_natural_sleep_birth(
