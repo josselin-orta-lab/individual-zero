@@ -1,5 +1,6 @@
 """Read-only, audited M11 physical trajectory -> operator ECO-v1 score."""
 import json
+import math
 import sqlite3
 from pathlib import Path
 from urllib.parse import quote
@@ -7,7 +8,39 @@ from urllib.parse import quote
 from i1lab.sqlite_life_store import SQLiteLifeLedger
 from i1lab.determinism import canonical_causal_bytes, sha256_hex
 from i1lab.journal import GENESIS_HASH
-from i1_eco_metrics import evaluate_life
+from i1_eco_metrics import NEEDS, evaluate_life
+
+
+def _verified_body(value):
+    """Decode only physical body floats after the original M11 hash check.
+
+    Canonical M11 JSON stores IEEE-754 values as {"$f64": "0x..."}.
+    json.loads intentionally preserves this wire representation; never
+    pass these dictionaries to the ECO-v1 numeric scoring contract.
+    """
+    if type(value) is not dict or set(value) != set(NEEDS):
+        raise ValueError("M11 transition body schema mismatch")
+    body = {}
+    for name in NEEDS:
+        cell = value[name]
+        if type(cell) is dict and set(cell) == {"$f64"}:
+            hex_value = cell["$f64"]
+            if type(hex_value) is not str:
+                raise ValueError("invalid M11 IEEE-754 representation")
+            try:
+                number = float.fromhex(hex_value)
+            except ValueError as exc:
+                raise ValueError("invalid M11 IEEE-754 representation") from exc
+            if number.hex().lower() != hex_value or not math.isfinite(number):
+                raise ValueError("noncanonical M11 IEEE-754 representation")
+        elif type(cell) in (int, float):
+            number = float(cell)
+        else:
+            raise ValueError("invalid M11 body value")
+        if not math.isfinite(number) or not 0. <= number <= 100.:
+            raise ValueError("out-of-range M11 body value")
+        body[name] = number
+    return body
 
 
 def audited_life_metrics(*, path, individual_id, horizon, setpoints, scales):
@@ -90,7 +123,8 @@ def audited_life_metrics(*, path, individual_id, horizon, setpoints, scales):
         if (closed["data"].get("applied_command_count") != 1
                 or closed["data"].get("world_advance_count") != 1):
             raise ValueError("wrong physical execution count")
-        before, after = transition.get("body_before"), transition.get("body_after")
+        before = _verified_body(transition.get("body_before"))
+        after = _verified_body(transition.get("body_after"))
         if previous is not None and before != previous:
             raise ValueError("discontinuous body")
         if initial is None:
