@@ -247,8 +247,10 @@ def verify_decision_alignment(*, events, reads, adapters, mode, generation):
                         else None)):
                 raise ValueError("M11 Planning Q choice and observer disagree")
             winner_links += 1
-    if by_source:
-        raise ValueError("external Planning Q reads have no M11 proposal")
+    # A Planning cycle may inspect candidates yet legitimately publish no
+    # proposal (insufficient UC, already represented, or aborted planning).
+    # Unselected reads remain observer-only and cannot count as exposure.
+    unselected_reads = sum(len(v) for v in by_source.values())
 
     adapter_links = 0
     for a in adapters:
@@ -306,6 +308,7 @@ def verify_decision_alignment(*, events, reads, adapters, mode, generation):
         "masked_read_count": masked_count,
         "prior_td_anchored_learned_reads": learned,
         "planning_winners_joined": winner_links,
+        "planning_reads_without_published_option": unselected_reads,
         "stage8_direct_joined": stage8_linked,
         "pending_adapters_joined": adapter_links,
         "committed_competition_cycles": len(comp),
