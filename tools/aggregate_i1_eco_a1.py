@@ -21,7 +21,8 @@ def aggregate(root, generated):
     sys.path.insert(0, str(generated))
     sys.path.insert(0, str(ROOT / "tools"))
     from i1_eco_m11_reader import audited_life_metrics
-    from i1_eco_a1_decision_join import audited_a1_decision_alignment
+    from i1_eco_a1_decision_join import (audited_a1_decision_alignment,
+        audited_a1_physical_prefix, guard_preintervention_prefix)
     from i1_eco_a1_worlds import a1_world_parameters
     from run_i1_world_preset import load_preset, _birth_parameters
 
@@ -168,6 +169,9 @@ def aggregate(root, generated):
                     x["original_status"] == "learned" for x in reads),
                 "read_provenance": life.get("read_provenance"),
                 "decision_alignment": alignment,
+                "physical_prefix": audited_a1_physical_prefix(
+                    path=str(database.resolve()), identity=identity,
+                    audited=audited),
             })
         except (OSError, ValueError, KeyError, TypeError, IndexError) as exc:
             issues.append({"scope": name, "problem": "TECHNICAL_AUDIT_FAILURE",
@@ -187,6 +191,20 @@ def aggregate(root, generated):
                     issues.append({"scope": role + ":" + str(seed),
                                    "problem": "UNMATCHED_BIRTH"})
                     continue
+                try:
+                    prefix_guard = guard_preintervention_prefix(
+                        canonical=a["physical_prefix"],
+                        masked=b["physical_prefix"],
+                        first_masked_step=b["decision_alignment"][
+                            "first_masked_read_step"],
+                    )
+                except ValueError as exc:
+                    issues.append({
+                        "scope": role + ":" + str(seed),
+                        "problem": "INVALID_PREINTERVENTION_PREFIX",
+                        "detail": str(exc),
+                    })
+                    continue
                 # This is a *prospective exploratory* contrast. External
                 # read observations have not yet been causally joined to all
                 # native M11 decision events, so never label it causal.
@@ -196,6 +214,7 @@ def aggregate(root, generated):
                         ma["deficit_area_total"]) / (4 * HORIZON)
                 pairs.append({
                     "role": role, "seed": seed,
+                    "preintervention_guard": prefix_guard,
                     "canonical": a["identity"], "masked": b["identity"],
                     "masked_minus_canonical_normalized_deficit": diff,
                     "canonical_dead": ma["mortality"],
