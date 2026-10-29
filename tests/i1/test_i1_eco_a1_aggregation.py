@@ -20,6 +20,11 @@ class A1AggregationContract(unittest.TestCase):
             d = Path(root)
             generated = d / "generated"
             generate(generated)
+            # Other generated-I1 tests may have already imported i1lab.
+            # Point that namespace to this fresh isolated generated package.
+            sys.path.insert(0, str(generated))
+            import i1lab
+            i1lab.__path__.insert(0, str(generated / "i1lab"))
             with patch("aggregate_i1_eco_a1.subprocess.check_output",
                        return_value="a" * 40 + "\n"):
                 report = aggregate(d / "empty", generated)
