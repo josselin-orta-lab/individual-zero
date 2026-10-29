@@ -12,6 +12,25 @@ from build_i1_fork import generate
 
 
 class EcoV1M11ReadOnlyTests(unittest.TestCase):
+    def test_canonical_float_body_decoded_only_after_hash_verification(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        from i1_eco_m11_reader import _verified_body
+        encoded = {
+            "energy": {"$f64": (70.0).hex()},
+            "food": {"$f64": (35.0).hex()},
+            "water": {"$f64": (20.0).hex()},
+            "integrity": {"$f64": (100.0).hex()},
+        }
+        self.assertEqual(_verified_body(encoded), {
+            "energy": 70.0, "food": 35.0,
+            "water": 20.0, "integrity": 100.0,
+        })
+        for bad in ({"$f64": "nan"}, {"$f64": "0x1.0p+9999"},
+                    {"$f64": "0x1p+0"}, {"$f64": 200.0}):
+            with self.subTest(bad=bad):
+                with self.assertRaises(ValueError):
+                    _verified_body({**encoded, "food": bad})
+
     def test_real_mortal_physical_receipts_score_without_state_mutation(self):
         with TemporaryDirectory(prefix="i1-eco-v1-m11-") as tmp:
             generated = Path(tmp) / "generated"
