@@ -62,6 +62,7 @@ def observe_consider(owner, *, capture, goal, st_version, cycle, exact):
 with TemporaryDirectory(prefix="i1-305-m11-") as home:
     path = str(Path(home) / "life.sqlite")
     snapshots = []
+    td_snapshots = []
     with patch.object(ExperimentalI1Stage12Runtime,
                       "_consider_uncertain_affordance", observe_consider):
         with birth_i1_m11(db_path=path, life_id=IDENTITY, **params) as actor:
@@ -73,10 +74,13 @@ with TemporaryDirectory(prefix="i1-305-m11-") as home:
                     "body": dict(rt.world.body.as_dict()),
                     "inventory": dict(rt.world.inventory()),
                 }
+                before_td = rt.q_active.export_causal_state()
                 receipt = actor.run_step()
                 rt = actor._runtime
                 assert rt.journal.verify()
                 assert receipt.journal_head == rt.journal.head_hash
+                td_snapshots.append({"step": receipt.world_step, "before": before_td,
+                                     "after": rt.q_active.export_causal_state()})
                 snapshots.append({
                     "step": receipt.world_step, "status": receipt.status,
                     "before": before,
@@ -154,7 +158,41 @@ with TemporaryDirectory(prefix="i1-305-m11-") as home:
          "accepted": e["data"].get("accepted")}
         for e in events if e.get("kind") == "compute_charge"
         and e["t_monde"] >= 19]
+    td_events = [{"step": e["t_monde"], "cycle": e["cycle"], **e["data"]}
+                 for e in events if e.get("kind") == "td_update_published"
+                 and e["t_monde"] >= 19]
+    linked = []
+    signature = "i1:affordance:collecter:target=berry_a"
+    for update in td_events:
+        if (update["step"] <= 21 or
+                update["previous_signature"] !=
+                "i1:affordance:manger:target=berry_a"):
+            continue
+        pair = next((r for r in td_snapshots if r["step"] == update["step"]), None)
+        assert pair is not None
+        before_td, after_td = pair["before"], pair["after"]
+        before_w = before_td["weights"].get(signature, [])
+        after_w = after_td["weights"].get(signature, [])
+        trace = after_td["traces"].get(signature, [])
+        if signature in update["updated_signatures"]:
+            assert len(before_w) == len(after_w) == len(trace)
+            errors = [abs((a-b)-rt.q_active.config.eta*update["delta"]*z)
+                      for a,b,z in zip(after_w,before_w,trace)]
+            assert max(errors, default=0) < 1e-9
+            linked.append({"step": update["step"], "cycle": update["cycle"],
+                           "delta": update["delta"], "return_g": update["return_g"],
+                           "trace_nonzero": any(trace),
+                           "max_formula_error": max(errors, default=0)})
+    td_credit = {
+        "td_updates": td_events, "linked_updates": linked,
+        "verdict": ("LINKED_ELIGIBILITY_UPDATE_OBSERVED" if
+                    any(x["trace_nonzero"] for x in linked) else
+                    "NO_LINKED_ELIGIBILITY_UPDATE" if td_events else
+                    "NOT_EXPOSED"),
+        "causal_instrumental_choice": "NOT_ESTABLISHED",
+    }
     output = {
+        "td_delayed_credit_305": td_credit,
         "source": "new_pre_registered_unforced_oasis_b_m11_24_steps",
         "prefix_provenance_verified": True,
         "audit_verified": True,
