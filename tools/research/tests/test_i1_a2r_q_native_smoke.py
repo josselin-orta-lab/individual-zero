@@ -36,6 +36,7 @@ from i1_a2r_postflight import (
 from i1_a2r_intrinsic_cold import audit_stage11_intrinsic_magnitude
 from i1_a2r_geographic_history_cold import replay_geographic_history
 from i1_a2r_geo_intrinsic_join import reconcile_geographic_intrinsic
+from i1_a2r_control_cold import audit_native_action_control
 from i1_a2r_source_birth_audit import reconstruct_pristine_birth
 from i1_a2r_m11_cold import evidence_life, compare_pre_reward, inspect_m11
 from run_i1_world_preset import load_preset, _birth_parameters
@@ -105,6 +106,12 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
                  status=raw["receipt"]["status"],mode=mode,
                  setpoints=born_setpoints,weights=born_weights)
             assert pre["td_returns_checked"]==cold["td_updates"]
+            controller=audit_native_action_control(
+                raw["events"],q_replay=cold,birth=reconstruct_pristine_birth(
+                    role=role,seed=SEED,mode=mode,preset_sha256=preset_sha))
+            assert controller["all_motor_receipts_matched"] is True
+            assert controller["study_admissible"] is False
+            assert controller["native_q_decisions_joined_to_admission"] == len(cold["decisions"])
             history=replay_geographic_history(
                 raw["events"],final_exploration=raw["final_exploration"],
                 birth=reconstruct_pristine_birth(
