@@ -7,6 +7,8 @@ on:
       - 'tools/research/tests/test_i1_a2r_geo_intrinsic_join.py'
       - 'tools/research/tests/test_i1_a2r_postflight.py'
       - 'tools/research/i1_a2r_control_cold.py'
+      - 'tools/research/i1_a2r_candidate_provenance.py'
+      - 'tools/research/tests/test_i1_a2r_candidate_provenance.py'
       - 'tools/research/tests/test_i1_a2r_control_cold.py'
       - '.github/workflows/i1-a2r-postflight-pure.yml'
 permissions:
@@ -28,3 +30,4 @@ jobs:
       - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_postflight.py -v
       - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_geo_intrinsic_join.py -v
       - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_control_cold.py -v
+      - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_candidate_provenance.py -v
