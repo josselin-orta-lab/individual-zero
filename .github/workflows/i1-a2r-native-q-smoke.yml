@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'tools/research/tests/test_i1_a2r_q_native_smoke.py'
+      - 'tools/research/i1_a2r_m11_cold.py'
+      - 'tools/research/i1_a2r_q_replay.py'
       - '.github/workflows/i1-a2r-native-q-smoke.yml'
 permissions:
   contents: read
