@@ -103,10 +103,20 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
             assert reconstructed_birth["born_td"]==td_birth
             assert reconstructed_birth["setpoints"]==born_setpoints
             assert reconstructed_birth["weights"]==born_weights
-            stage8=attest_native_stage8(
-                raw["events"],q_replay=cold,
-                calibration=reconstructed_birth["stage8_evaluation"],
-                td_version=reconstructed_birth["born_td"]["version"])
+            try:
+                stage8=attest_native_stage8(
+                    raw["events"],q_replay=cold,
+                    calibration=reconstructed_birth["stage8_evaluation"],
+                    td_version=reconstructed_birth["born_td"]["version"])
+            except ValueError as exc:
+                failed=[{"t":e.get("t_monde"),"cycle":e.get("cycle"),
+                         "data":e.get("data")} for e in raw["events"]
+                        if e.get("kind")=="stage8_option_evaluation"
+                        and e.get("data",{}).get("learned_value_status")=="unlearned"
+                        and e.get("data",{}).get("simulated_value_status")!="computed"]
+                raise AssertionError(
+                    "native Stage8 mismatch: "+str(exc)
+                    +" candidate_events="+repr(failed[:3])) from exc
             assert stage8["stage8_evaluations_recomputed"]==cold["stage8_read_count"]
             assert stage8["learned_q_reads_recomputed"]==cold["learned_stage8_reads"]
             assert stage8["preregistered_mechanism_exposed"] is False
