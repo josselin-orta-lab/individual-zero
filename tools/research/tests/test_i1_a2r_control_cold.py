@@ -8,7 +8,7 @@ HASH="a"*64
 def fixture():
     common={"t_monde":1,"attempt_ref":"attempt-1"}
     competition=dict(common,kind="competition_cycle",cycle=1,
-        data={"traces":[{"option_ref":"permanent:attendre","crossed":True}]})
+        data={"traces":[{"option_ref":"permanent:attendre","crossed":True,"accumulator_before":0.0,"accumulator_after":1.2,"threshold":1.0,"evidence":0.5}]})
     admission=dict(common,kind="command_admitted",
         data={"source":"decision","primitive":"attendre",
               "command_hash":HASH,"policy_version":"mvp-v1.2.1",
@@ -20,7 +20,9 @@ def fixture():
             "full_q_replay_verified":True,"adaptive_learning_go":"NOT_ESTABLISHED",
             "birth_source_provenance_verified":False,"m11_identity":"life",
             "mode":"CANONICAL_ABS","generation":1,"status":"active",
-            "decisions":[{"step":1,"cycle":1,"option":"permanent:attendre"}]}
+            "decisions":[{"step":1,"cycle":1,"option":"permanent:attendre"}],
+            "stage8_observations":[{"step":1,"cycle":1,"option":"permanent:attendre",
+                                     "signature":"primitive:attendre"}]}
     birth={"scope":"SOURCE_RECONSTRUCTED_ZERO_STEP_REFERENCE_NOT_NEW_LIFE",
            "q_at_birth_empty":True,"identity":"life","mode":"CANONICAL_ABS",
            "action_control_policy_version":"mvp-v1.2.1"}
@@ -39,6 +41,45 @@ class ControlTests(unittest.TestCase):
         self.assertEqual(len(x["admitted_decision_occurrences"]),1)
         self.assertFalse(x["Q_to_action_counterfactual_proven"])
         self.assertFalse(x["study_admissible"])
+    def test_ranked_veto_then_admission(self):
+        e,q,b=fixture()
+        second=copy.deepcopy(e[0]["data"]["traces"][0])
+        second.update(option_ref="candidate:b", accumulator_after=1.5)
+        e[0]["data"]["traces"].append(second)
+        q["stage8_observations"].append(
+            {"step":1,"cycle":1,"option":"candidate:b","signature":"b"})
+        veto=copy.deepcopy(e[1])
+        veto["kind"]="command_vetoed"
+        veto["data"].update(option_ref="candidate:b",reason="known_toxic_item",
+                            scope="option",rule_id="toxic_item_consumption",
+                            rule_type="semantic_prohibition")
+        e.insert(1,veto)
+        audited=invoke(e,q,b)
+        self.assertEqual(audited["crossed_ranked_control_attempts"],2)
+        self.assertTrue(audited["native_rank_is_not_independent_state_replay"])
+        e[0]["data"]["traces"][1]["accumulator_after"]=1.1
+        with self.assertRaisesRegex(ValueError,"higher-ranked"):
+            invoke(e,q,b)
+
+    def test_missing_or_forged_rank_provenance_fails(self):
+        for attack in ("missing_candidate","false_cross","wrong_margin",
+                       "wrong_threshold","noncanonical_float","negative",
+                       "unevaluated_mutated"):
+            e,q,b=fixture()
+            tr=e[0]["data"]["traces"][0]
+            if attack=="missing_candidate":
+                q["stage8_observations"]=[]
+            elif attack=="false_cross":tr["crossed"]=False
+            elif attack=="wrong_margin":tr["accumulator_after"]=0.3
+            elif attack=="wrong_threshold":tr["threshold"]=0.0
+            elif attack=="noncanonical_float":
+                tr["accumulator_after"]={"$f64":"0X1.3333333333333P+0"}
+            elif attack=="negative":tr["accumulator_before"]=-1.0
+            elif attack=="unevaluated_mutated":
+                tr.update(evidence=None,crossed=False,accumulator_after=1.0)
+            with self.subTest(attack=attack),self.assertRaises(ValueError):
+                invoke(e,q,b)
+
     def test_each_tampering_fails(self):
         for attack in ("wrong_hash","wrong_attempt","wrong_policy","late_competition",
                        "late_veto","wrong_primitive","forged_source","missing_admission",

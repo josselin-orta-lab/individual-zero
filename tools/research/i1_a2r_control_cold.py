@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 
-from i1_a2r_m11_cold import physical_steps
+from i1_a2r_m11_cold import numeric, physical_steps
 
 _RULES = {
     "known_lethal_zone": ("option", "lethal_zone_movement", "semantic_prohibition"),
@@ -24,11 +24,45 @@ _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _SOURCES = frozenset(("decision", "reflex", "stage3_wait_stub"))
 
 
+def _native_crossed_rank(traces, *, step, cycle, signatures):
+    """Reconstruct only the published-margin ranking, NOT its causal inputs.
+
+    Tie-breaking uses the original Stage8 learning signature, checked by the
+    independent cold Q replay. Accumulator values still belong to the native
+    Competition receipt, so this is NOT an independent rank/state replay.
+    """
+    ranked = []
+    for option, trace in traces.items():
+        key = (step, cycle, option)
+        if key not in signatures:
+            raise ValueError("ranked candidate has no cold Stage8 signature")
+        before = numeric(trace.get("accumulator_before"))
+        after = numeric(trace.get("accumulator_after"))
+        threshold = numeric(trace.get("threshold"))
+        if threshold <= 0 or before < 0 or after < 0:
+            raise ValueError("invalid Competition accumulator or threshold")
+        raw_evidence = trace.get("evidence")
+        if raw_evidence is None:
+            if trace["crossed"] or after != before:
+                raise ValueError("unevaluated candidate mutated or crossed")
+        else:
+            evidence = numeric(raw_evidence)
+            if (not -1 <= evidence <= 1
+                    or trace["crossed"] != (after >= threshold)):
+                raise ValueError("Competition threshold crossing conflicts with trace")
+        if trace["crossed"]:
+            ranked.append((-(after - threshold) / threshold,
+                           signatures[key], option))
+    return tuple(row[2] for row in sorted(ranked))
+
+
 def audit_native_action_control(events, *, q_replay, birth):
     """Reconcile ALL physical commands, decision admissions and ordered vetoes.
 
     Inputs MUST be the immutable M11 stream from inspect_m11 and the separately
-    fully cold-verified Q replay. The safety reason itself is only a receipt:
+    fully cold-verified Q replay. We check the order in which crossed candidates
+    were actually challenged against signed margins and Stage8 identities.
+    The safety reason itself is only a receipt:
     learned Causal Model facts, primitive protocol masks and candidate ranking
     are NOT independently reconstructed by this observer.
     """
@@ -51,6 +85,24 @@ def audit_native_action_control(events, *, q_replay, birth):
     steps = physical_steps(events, generation=generation, status=status)
     actual = {s["step"]: s for s in steps}
     expected_decisions = {}
+    original_signatures = {}
+    observations = q_replay.get("stage8_observations")
+    if type(observations) is not list:
+        raise ValueError("missing cold Stage8 candidate identities for ranking")
+    for observation in observations:
+        if (type(observation) is not dict
+                or type(observation.get("step")) is not int
+                or type(observation.get("cycle")) is not int
+                or type(observation.get("option")) is not str
+                or not observation["option"]
+                or type(observation.get("signature")) is not str
+                or not observation["signature"]):
+            raise ValueError("invalid cold Stage8 candidate identity")
+        key = (observation["step"], observation["cycle"],
+               observation["option"])
+        if key in original_signatures:
+            raise ValueError("duplicated cold Stage8 candidate identity")
+        original_signatures[key] = observation["signature"]
     if type(q_replay.get("decisions")) is not list:
         raise ValueError("missing cold native Q decision occurrences")
     for row in q_replay["decisions"]:
@@ -69,6 +121,7 @@ def audit_native_action_control(events, *, q_replay, birth):
     experienced = {}
     vetoes = []
     admitted_decisions = {}
+    decision_attempts = {}
     reflex_or_other = []
     attempts = 0
     for order, ev in enumerate(events):
@@ -130,6 +183,8 @@ def audit_native_action_control(events, *, q_replay, birth):
             trace = competition[(t, cycle)].get(option)
             if trace is None:
                 raise ValueError("Action Control option absent from current Competition")
+            decision_attempts.setdefault((t, cycle), []).append(
+                (kind, option))
             if kind == "command_vetoed":
                 if not trace["crossed"] and option != "permanent:attendre":
                     raise ValueError("vetoed nonfallback option did not cross threshold")
@@ -151,6 +206,37 @@ def audit_native_action_control(events, *, q_replay, birth):
 
     if set(experienced) != set(actual):
         raise ValueError("missing physical command experiences")
+    native_ranked = {
+        key: _native_crossed_rank(
+            traces, step=key[0], cycle=key[1],
+            signatures=original_signatures)
+        for key, traces in competition.items()
+    }
+    native_keys = {
+        (step, cycle, option)
+        for (step, cycle), traces in competition.items()
+        for option in traces
+    }
+    if set(original_signatures) != native_keys:
+        raise ValueError("cold Stage8 candidates and Competition traces differ")
+    attempted_crossed = 0
+    unproven_fallbacks = 0
+    for key, sequence in decision_attempts.items():
+        ranked = native_ranked[key]
+        for index, (_kind, option) in enumerate(sequence):
+            if index < len(ranked):
+                if option != ranked[index]:
+                    raise ValueError(
+                        "Action Control skipped a higher-ranked crossed option")
+                attempted_crossed += 1
+            else:
+                # Stage4 may retry the engaged plan and then permanent wait
+                # after exhausting ranked options at the last cycle. The
+                # signed trace is NOT proof that these fallback options were
+                # truly engaged or that the budget legally reached c_max.
+                if len(sequence) > len(ranked) + 2:
+                    raise ValueError("more than two unverified fallback attempts")
+                unproven_fallbacks += 1
     # Both journal emitters attach the world-step attempt reference. The
     # matching physical receipt is the independent anchor: a signed event
     # from a different attempt at the same step must never be joined.
@@ -228,6 +314,10 @@ def audit_native_action_control(events, *, q_replay, birth):
         "nondecision_motor_sources": other_executed,
         "policy_version_matches_source_birth": True,
         "all_motor_receipts_matched": True,
+        "native_crossing_and_rank_prefix_consistent": True,
+        "crossed_ranked_control_attempts": attempted_crossed,
+        "unproven_fallback_attempts": unproven_fallbacks,
+        "native_rank_is_not_independent_state_replay": True,
         "veto_truth_independently_recomputed": False,
         "full_rank_order_independently_recomputed": False,
         "Q_to_action_counterfactual_proven": False,
