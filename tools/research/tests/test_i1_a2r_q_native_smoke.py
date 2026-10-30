@@ -29,6 +29,7 @@ from i1_eco_a2r_birth import (
 from i1_a2r_q_replay import cold_replay_m11
 from i1_a2r_pair_witness import cold_compare_pair
 from i1_a2r_stage8_evidence import attest_native_stage8
+from i1_a2r_affordance_cold import audit_native_affordance_evidence
 from i1_a2r_source_birth_audit import reconstruct_pristine_birth
 from i1_a2r_m11_cold import evidence_life, compare_pre_reward, inspect_m11
 from run_i1_world_preset import load_preset, _birth_parameters
@@ -123,6 +124,10 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
             assert stage8["all_native_evidence_recomputed"] is False
             assert stage8["learned_q_reads_recomputed"]<=cold["learned_stage8_reads"]
             assert stage8["preregistered_mechanism_exposed"] is False
+            local=audit_native_affordance_evidence(
+                raw["events"],q_replay=cold,birth=reconstructed_birth)
+            assert local["all_non_q_evaluations_recomputed"] is False
+            assert local["preregistered_mechanism_exposed"] is False
             other=(CANONICAL_ABS if mode==RESEARCH_DEFICIT else RESEARCH_DEFICIT)
             try:
                 cold_replay_m11(path=str(db),identity=identity,mode=other,

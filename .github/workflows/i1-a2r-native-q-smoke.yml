@@ -6,6 +6,7 @@ on:
       - 'tools/research/i1_a2r_m11_cold.py'
       - 'tools/research/i1_a2r_q_replay.py'
       - 'tools/research/i1_a2r_stage8_evidence.py'
+      - 'tools/research/i1_a2r_affordance_cold.py'
       - 'tools/research/i1_a2r_source_birth_audit.py'
       - '.github/workflows/i1-a2r-native-q-smoke.yml'
 permissions:
