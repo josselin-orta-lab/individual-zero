@@ -8,6 +8,7 @@ mediation, nor certify absence of a rollback from truncated histories.
 from __future__ import annotations
 
 import re
+from math import exp, isclose
 
 from i1_a2r_m11_cold import numeric, physical_steps
 
@@ -22,6 +23,52 @@ _Q_SCOPE = "A2R_COLD_NATIVE_Q_FULL_VECTOR_NOT_L3"
 _BIRTH_SCOPE = "SOURCE_RECONSTRUCTED_ZERO_STEP_REFERENCE_NOT_NEW_LIFE"
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _SOURCES = frozenset(("decision", "reflex", "stage3_wait_stub"))
+
+
+def _verify_native_equation(traces, *, cycle, born_calibration):
+    """Recompute source-born accumulator equations from signed before states.
+
+    Before values remain native receipts, NOT independently restored owner
+    state. Native selection/retention of candidates remains unproven.
+    """
+    fields = ("urgency_max", "urgency_scale_cycles", "leak", "gain",
+              "noise_sigma", "base_threshold", "threshold_floor", "inertia")
+    if type(born_calibration) is not dict or any(
+            key not in born_calibration for key in fields):
+        raise ValueError("missing source-born Competition calibration")
+    p = {key: numeric(born_calibration[key]) for key in fields}
+    if (p["noise_sigma"] != 0 or p["urgency_max"] < 1
+            or p["urgency_scale_cycles"] <= 0
+            or not 0 <= p["leak"] < 1 or p["gain"] <= 0
+            or p["threshold_floor"] <= 0
+            or p["base_threshold"] <= p["threshold_floor"]
+            or not 0 <= p["inertia"] <=
+            p["base_threshold"] - p["threshold_floor"]):
+        raise ValueError("unverifiable Competition formula or nonzero noise")
+    urgency = 1 + (p["urgency_max"] - 1) * (
+        1 - exp(-(cycle - 1) / p["urgency_scale_cycles"]))
+    verified = 0
+    for trace in traces.values():
+        before = numeric(trace.get("accumulator_before"))
+        after = numeric(trace.get("accumulator_after"))
+        threshold = numeric(trace.get("threshold"))
+        evidence = trace.get("evidence")
+        if evidence is None:
+            if not isclose(before, after, rel_tol=2e-9, abs_tol=2e-9):
+                raise ValueError("unevaluated native accumulator was modified")
+            continue
+        e = numeric(evidence)
+        expected = max(0., (1-p["leak"])*before + urgency*p["gain"]*e)
+        if not isclose(after, expected, rel_tol=2e-9, abs_tol=2e-9):
+            raise ValueError("native Competition accumulator recurrence mismatch")
+        permitted = (p["base_threshold"],
+                     max(p["threshold_floor"],
+                         p["base_threshold"]-p["inertia"]))
+        if not any(isclose(threshold, v, rel_tol=2e-9, abs_tol=2e-9)
+                   for v in permitted):
+            raise ValueError("Competition threshold differs from source birth")
+        verified += 1
+    return verified
 
 
 def _native_crossed_rank(traces, *, step, cycle, signatures):
@@ -80,6 +127,7 @@ def audit_native_action_control(events, *, q_replay, birth):
     version = birth.get("action_control_policy_version")
     if type(version) is not str or not version:
         raise ValueError("missing independently pinned Action Control policy version")
+    calibration = birth.get("competition_calibration")
     generation = q_replay.get("generation")
     status = q_replay.get("status")
     steps = physical_steps(events, generation=generation, status=status)
@@ -206,6 +254,11 @@ def audit_native_action_control(events, *, q_replay, birth):
 
     if set(experienced) != set(actual):
         raise ValueError("missing physical command experiences")
+    recurrence_verified = sum(
+        _verify_native_equation(traces, cycle=key[1],
+                                born_calibration=calibration)
+        for key, traces in competition.items()
+    )
     native_ranked = {
         key: _native_crossed_rank(
             traces, step=key[0], cycle=key[1],
@@ -315,6 +368,8 @@ def audit_native_action_control(events, *, q_replay, birth):
         "policy_version_matches_source_birth": True,
         "all_motor_receipts_matched": True,
         "native_crossing_and_rank_prefix_consistent": True,
+        "native_accumulator_equations_verified": recurrence_verified,
+        "native_before_states_not_independently_restored": True,
         "crossed_ranked_control_attempts": attempted_crossed,
         "unproven_fallback_attempts": unproven_fallbacks,
         "native_rank_is_not_independent_state_replay": True,

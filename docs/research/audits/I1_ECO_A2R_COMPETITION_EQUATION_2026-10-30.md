@@ -1,0 +1,9 @@
+# I1 A2-R : équation d'accumulation Competition, contrôle froid (30 octobre 2026)
+
+Après #646, le rang des candidats est reconstruit depuis les marges signées, mais la mise à jour de ces marges était auto-déclarée par Competition. Cette tranche apporte une calibration indépendante depuis la configuration d'une naissance vierge réalisée à partir des sources épinglées, puis recalcule pour chaque trace évaluée : `after = max(0, (1-leak)*before + urgency(cycle)*gain*evidence)`, avec `urgency = 1 + (urgency_max-1)*(1-exp(-(cycle-1)/urgency_scale_cycles))`.
+
+Ce contrôle est **borné aux naissances ayant noise_sigma = 0**. Tout autre bruit est rejeté, plutôt que supposé connu. Le seuil publié doit appartenir aux deux états possibles (base ou base-inertia borné par floor). Les traces non évaluées doivent rester inchangées. Le nombre d'équations effectivement rapprochées est rapporté; les falsifications de paramètres, de seuils et de valeurs échouent fermées.
+
+Limitation cruciale : **before est encore lu du reçu de Competition**. Les états propriétaires entre pas (engagement, réinitialisation, résiduel, invalidation, capacité de registre), l'identité du candidat engagé et les règles causales de veto ne sont pas indépendamment rejoués. Il s'agit d'une validation de l'équation locale, pas d'une restauration indépendante du propriétaire, d'une reconstruction de tous les rangs, ou d'une preuve que Q appris améliore l'action.
+
+Aucun moteur I1/I0 changé. Tests purement adversariaux et quatre vies techniques M11 courtes; aucune naissance H192. L3 global `NOT_ESTABLISHED`, A1-C `NO_GO`, A2-R `NOT_EXECUTED` (0/96).

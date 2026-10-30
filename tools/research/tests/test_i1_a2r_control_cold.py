@@ -8,7 +8,7 @@ HASH="a"*64
 def fixture():
     common={"t_monde":1,"attempt_ref":"attempt-1"}
     competition=dict(common,kind="competition_cycle",cycle=1,
-        data={"traces":[{"option_ref":"permanent:attendre","crossed":True,"accumulator_before":0.0,"accumulator_after":1.2,"threshold":1.0,"evidence":0.5}]})
+        data={"traces":[{"option_ref":"permanent:attendre","crossed":True,"accumulator_before":0.0,"accumulator_after":1.0,"threshold":1.0,"evidence":0.5}]})
     admission=dict(common,kind="command_admitted",
         data={"source":"decision","primitive":"attendre",
               "command_hash":HASH,"policy_version":"mvp-v1.2.1",
@@ -25,7 +25,10 @@ def fixture():
                                      "signature":"primitive:attendre"}]}
     birth={"scope":"SOURCE_RECONSTRUCTED_ZERO_STEP_REFERENCE_NOT_NEW_LIFE",
            "q_at_birth_empty":True,"identity":"life","mode":"CANONICAL_ABS",
-           "action_control_policy_version":"mvp-v1.2.1"}
+           "action_control_policy_version":"mvp-v1.2.1",
+           "competition_calibration":{"urgency_max":1.0,"urgency_scale_cycles":1.0,
+               "leak":0.0,"gain":2.0,"noise_sigma":0.0,
+               "base_threshold":1.0,"threshold_floor":0.5,"inertia":0.0}}
     return [competition,admission,experienced],replay,birth
 
 def invoke(events,replay,birth):
@@ -41,10 +44,11 @@ class ControlTests(unittest.TestCase):
         self.assertEqual(len(x["admitted_decision_occurrences"]),1)
         self.assertFalse(x["Q_to_action_counterfactual_proven"])
         self.assertFalse(x["study_admissible"])
+        self.assertEqual(x["native_accumulator_equations_verified"],1)
     def test_ranked_veto_then_admission(self):
         e,q,b=fixture()
         second=copy.deepcopy(e[0]["data"]["traces"][0])
-        second.update(option_ref="candidate:b", accumulator_after=1.5)
+        second.update(option_ref="candidate:b", accumulator_after=1.5, evidence=0.75)
         e[0]["data"]["traces"].append(second)
         q["stage8_observations"].append(
             {"step":1,"cycle":1,"option":"candidate:b","signature":"b"})
@@ -57,12 +61,13 @@ class ControlTests(unittest.TestCase):
         audited=invoke(e,q,b)
         self.assertEqual(audited["crossed_ranked_control_attempts"],2)
         self.assertTrue(audited["native_rank_is_not_independent_state_replay"])
-        e[0]["data"]["traces"][1]["accumulator_after"]=1.1
+        e[0]["data"]["traces"][0].update(accumulator_after=1.5, evidence=0.75)
+        e[0]["data"]["traces"][1].update(accumulator_after=1.0, evidence=0.5)
         with self.assertRaisesRegex(ValueError,"higher-ranked"):
             invoke(e,q,b)
 
     def test_missing_or_forged_rank_provenance_fails(self):
-        for attack in ("missing_candidate","false_cross","wrong_margin",
+        for attack in ("missing_candidate","false_cross","wrong_margin","wrong_recurrence",
                        "wrong_threshold","noncanonical_float","negative",
                        "unevaluated_mutated"):
             e,q,b=fixture()
@@ -71,9 +76,10 @@ class ControlTests(unittest.TestCase):
                 q["stage8_observations"]=[]
             elif attack=="false_cross":tr["crossed"]=False
             elif attack=="wrong_margin":tr["accumulator_after"]=0.3
+            elif attack=="wrong_recurrence":tr["accumulator_after"]=1.1
             elif attack=="wrong_threshold":tr["threshold"]=0.0
             elif attack=="noncanonical_float":
-                tr["accumulator_after"]={"$f64":"0X1.3333333333333P+0"}
+                tr["accumulator_after"]={"$f64":"0X1.0000000000000P+0"}
             elif attack=="negative":tr["accumulator_before"]=-1.0
             elif attack=="unevaluated_mutated":
                 tr.update(evidence=None,crossed=False,accumulator_after=1.0)
