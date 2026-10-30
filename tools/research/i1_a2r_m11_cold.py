@@ -320,6 +320,7 @@ def inspect_m11(*, path, identity, mode, allow_incomplete=False):
                     "state_hash": receipt.state_hash},
         "owner": owner,
         "final_exploration": decoded["owners"].get("exploration"),
+        "final_competition": decoded["owners"].get("competition"),
         "runtime_contract": decoded["runtime_local"]["runtime_contract"],
         "events": events, "physical_steps": steps,
         "analysis_admissible": not allow_incomplete,
