@@ -56,7 +56,7 @@ class PairWitnessTests(unittest.TestCase):
     def test_pre_reward_motor_difference_fail_closed(self):
         a,ae=pair("CANONICAL_ABS")
         b,be=pair("RESEARCH_DEFICIT",action="boire")
-        be[3]["primitive"]="boire"
+        next(e for e in be if e["kind"]=="command_experienced" and e["t_monde"]==1)["primitive"]="boire"
         with self.assertRaises(ValueError):
             compare_pair(canonical=a,candidate=b,canonical_events=ae,
               candidate_events=be,setpoints=dict.fromkeys(("energy","food","water","integrity"),60.),
