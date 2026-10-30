@@ -49,7 +49,7 @@ def expected_stage8_evidence(data, *, update_count, calibration, td_version):
     never read from an operator-supplied indication in the Stage8 event.
     """
     p = _calibration(calibration)
-    if (type(data) is not dict or set(data) != _REQUIRED
+    if (type(data) is not dict or not _REQUIRED <= set(data)
             or type(update_count) is not int or update_count < 0
             or type(td_version) is not str or not td_version
             or data["q_version"] != td_version
