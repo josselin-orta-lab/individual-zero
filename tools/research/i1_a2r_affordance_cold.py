@@ -113,7 +113,7 @@ def audit_native_affordance_evidence(events, *, q_replay, birth):
                 data.get("learning_signature") != proposal.get("learning_signature")
                 or q.get("signature") != proposal.get("learning_signature")
                 or q.get("status") != data.get("learned_value_status")):
-            raise ValueError("affordance proposal is not source of native Stage8 Q")
+            raise ValueError("affordance proposal not linked: key=%r order=%r evaluation_order=%r proposal_sig=%r eval_sig=%r replay_sig=%r proposal_status=%r eval_status=%r" % (key,index,position,proposal.get("learning_signature"),data.get("learning_signature"),q.get("signature"),proposal.get("learned_value_status"),data.get("learned_value_status")))
         if (data.get("intrinsic_status") != "not_applicable"
                 or data.get("intrinsic_value") is not None
                 or data.get("simulated_value_status") != "unavailable"
