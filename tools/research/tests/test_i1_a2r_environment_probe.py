@@ -26,6 +26,16 @@ class Tests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertEqual(classify_environment_snapshot(d)["observation"],
                                  "REVIEW_POLICY_INSUFFICIENT")
+    def test_injected_get_does_not_need_token(self):
+        seen=[]
+        def supplied(endpoint):
+            seen.append(endpoint)
+            return sample()
+        outcome=observe_live_environment(api_get=supplied,token="unused")
+        self.assertEqual(outcome["observation"],"REVIEW_RULE_OBSERVED")
+        self.assertEqual(len(seen),1)
+        self.assertFalse(outcome["birth_authorized"])
+
     def test_inaccessible_api_is_unknown_not_absent(self):
         def denied(_):raise ValueError("API blocked")
         x=observe_live_environment(api_get=denied)
