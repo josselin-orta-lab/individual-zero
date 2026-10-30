@@ -2,7 +2,7 @@
 import copy
 import unittest
 from unittest.mock import patch
-from i1_a2r_control_cold import audit_native_action_control
+from i1_a2r_control_cold import audit_native_action_control, audit_native_wait_continuity
 
 HASH="a"*64
 def fixture():
@@ -85,6 +85,25 @@ class ControlTests(unittest.TestCase):
                 tr.update(evidence=None,crossed=False,accumulator_after=1.0)
             with self.subTest(attack=attack),self.assertRaises(ValueError):
                 invoke(e,q,b)
+
+    def test_wait_continuity_signed_final_owner_and_tampering(self):
+        e,q,b=fixture()
+        control=invoke(e,q,b)
+        b["competition_calibration"]["residual"]=0.5
+        b["competition_calibration"]["version"]="comp-v1"
+        final={"config_version":"comp-v1","cycle":1,
+               "engaged_option_id":"permanent:attendre",
+               "registry":[{"proposal":{"option":{"id":"permanent:attendre"}},
+                            "accumulator":1.0,"last_threshold":1.0}]}
+        good=audit_native_wait_continuity(e,q_replay=q,birth=b,
+            control=control,final_competition=final)
+        self.assertTrue(good["sealed_last_wait_owner_join_verified"])
+        self.assertFalse(good["study_admissible"])
+        bad=copy.deepcopy(final)
+        bad["registry"][0]["accumulator"]=0.0
+        with self.assertRaisesRegex(ValueError,"sealed owner"):
+            audit_native_wait_continuity(e,q_replay=q,birth=b,
+                control=control,final_competition=bad)
 
     def test_each_tampering_fails(self):
         for attack in ("wrong_hash","wrong_attempt","wrong_policy","late_competition",
