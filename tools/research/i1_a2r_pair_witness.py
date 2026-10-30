@@ -51,7 +51,8 @@ def _step_proofs(events):
         if kind not in ("stage8_option_evaluation", "competition_cycle",
                         "command_admitted"):
             continue
-        if type(t) is not int or type(c) is not int or type(data) is not dict:
+        if (type(t) is not int or type(data) is not dict
+                or (kind != "command_admitted" and type(c) is not int)):
             raise ValueError("invalid paired M11 evidence chronology")
         if kind == "stage8_option_evaluation":
             option = data.get("option_ref")
@@ -85,7 +86,12 @@ def _step_proofs(events):
             key = t
             if key in admitted or type(data.get("option_ref")) is not str:
                 raise ValueError("duplicate paired decision admission")
-            admitted[key] = (c, data["option_ref"])
+            matches = sorted((cy, option) for (tt, cy, option) in stage8
+                             if tt == t and option == data["option_ref"]
+                             and (t, cy) in competition)
+            if not matches:
+                raise ValueError("motor admission has no M11 Stage8/Competition cycle")
+            admitted[key] = matches[-1]
     return stage8, competition, admitted
 
 
