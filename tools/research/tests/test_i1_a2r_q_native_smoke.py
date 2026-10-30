@@ -38,6 +38,7 @@ from i1_a2r_geographic_history_cold import replay_geographic_history
 from i1_a2r_geo_intrinsic_join import reconcile_geographic_intrinsic
 from i1_a2r_control_cold import audit_native_action_control, audit_native_wait_continuity
 from i1_a2r_candidate_provenance import audit_candidate_provenance
+from i1_a2r_q_coexposure import summarize_paid_q_coexposure
 from i1_a2r_source_birth_audit import reconstruct_pristine_birth
 from i1_a2r_m11_cold import evidence_life, compare_pre_reward, inspect_m11
 from run_i1_world_preset import load_preset, _birth_parameters
@@ -160,6 +161,10 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
             local=audit_native_affordance_evidence(
                 raw["events"],q_replay=cold,birth=reconstructed_birth)
             assert local["preregistered_mechanism_exposed"] is False
+            exposures=summarize_paid_q_coexposure(
+                raw["events"],q_replay=cold,controller=controller,
+                stage8=stage8,local=local)
+            assert exposures["study_admissible"] is False
             intrinsic=audit_stage11_intrinsic_magnitude(
                 raw["events"],q_replay=cold,stage8_audit=stage8,
                 birth=reconstructed_birth)
