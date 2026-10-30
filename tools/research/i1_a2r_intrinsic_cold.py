@@ -231,6 +231,7 @@ def audit_stage11_intrinsic_magnitude(events, *, q_replay, stage8_audit, birth):
         "unreconstructed_owner_intrinsic_occurrences":len(unavailable),
         "intrinsic_magnitude_verified":verified,
         "missing_owner_state_examples":unavailable[:12],
+        "unreconstructed_owner_intrinsic":unavailable,
         "all_stage11_intrinsic_state_independently_replayed":False,
         "frontier_admissibility_independently_replayed":False,
         "study_admissible":False,

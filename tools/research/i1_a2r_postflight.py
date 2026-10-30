@@ -23,7 +23,8 @@ PARITY_FIELDS = (
     "initial_body", "initial_inventory", "initial_perception",
     "born_temperament", "world_config_sha256", "setpoints", "weights",
     "scales", "born_td", "born_td_evidence_scale",
-    "stage8_evaluation", "stage11_intrinsic_weight", "world_clock",
+    "stage8_evaluation", "stage11_intrinsic_weight",
+    "stage11_geographic_novelty_weight", "world_clock",
 )
 
 
@@ -123,6 +124,91 @@ def reconcile_native_evidence(*, stage8, local, replay, require_complete=True):
         "general_L3": "NOT_ESTABLISHED",
     }
 
+
+
+def reconcile_stage11_intrinsic_provenance(*, stage8, intrinsic):
+    """Check every Stage11 diagnostic against the full Stage8 quarantine.
+
+    Direct-frontier magnitude is not evidence of physical novelty or
+    accessibility; even recomputed observations remain quarantined and
+    cannot become a scientific GO.
+    """
+    if (type(stage8) is not dict or type(intrinsic) is not dict
+            or stage8.get("scope") != "A2R_STAGE8_NATIVE_EVIDENCE_RECONSTRUCTED_NOT_L3"
+            or intrinsic.get("scope") !=
+                "A2R_STAGE11_PARTIAL_SOURCE_INTRINSIC_ARITHMETIC_NOT_L3"
+            or intrinsic.get("study_admissible") is not False
+            or intrinsic.get("preregistered_mechanism_exposed") is not False
+            or intrinsic.get("all_stage11_intrinsic_state_independently_replayed") is not False
+            or intrinsic.get("frontier_admissibility_independently_replayed") is not False
+            or intrinsic.get("general_L3") != "NOT_ESTABLISHED"):
+        raise ValueError("not an independent non-authorizing Stage11 cold audit")
+    pending = stage8.get("unreplayed_evaluations")
+    completed = intrinsic.get("intrinsic_magnitude_verified")
+    remaining = intrinsic.get("unreconstructed_owner_intrinsic")
+    if any(type(x) is not list for x in (pending, completed, remaining)):
+        raise ValueError("Stage11 full occurrence lists are required")
+
+    def identity(row):
+        if (type(row) is not dict
+                or type(row.get("step")) is not int or row["step"] < 1
+                or type(row.get("cycle")) is not int or row["cycle"] < 1
+                or type(row.get("option")) is not str or not row["option"]):
+            raise ValueError("invalid Stage11 original event identity")
+        return row["step"], row["cycle"], row["option"]
+
+    all_pending, expected = set(), set()
+    for row in pending:
+        key = identity(row)
+        if key in all_pending:
+            raise ValueError("duplicate native Stage8 quarantine event")
+        all_pending.add(key)
+        if row.get("family") == "intrinsic_or_unknown":
+            expected.add(key)
+
+    seen = set()
+    for row in completed:
+        key = identity(row)
+        if (key in seen or key not in expected
+                or row.get("producer") not in (
+                    "exploration:p48_geographic", "exploration:p48_instrumental")):
+            raise ValueError("forged or duplicate intrinsic formula event")
+        val, score = row.get("recomputed_intrinsic"), row.get("recomputed_evidence")
+        if (type(val) not in (float, int) or not isfinite(val)
+                or not 0 < val <= 1
+                or type(score) not in (float, int) or not isfinite(score)
+                or not -1 <= score <= 1):
+            raise ValueError("unbounded intrinsic source calculation")
+        seen.add(key)
+    for row in remaining:
+        key = identity(row)
+        if (key in seen or key not in expected
+                or type(row.get("reason")) is not str or not row["reason"]):
+            raise ValueError("unmatched intrinsic historical gap")
+        seen.add(key)
+
+    counts = (
+        intrinsic.get("stage11_intrinsic_occurrences"),
+        intrinsic.get("direct_frontier_intrinsic_recomputed"),
+        intrinsic.get("unreconstructed_owner_intrinsic_occurrences"),
+        stage8.get("stage11_post_competition_occurrences"),
+    )
+    if (any(type(v) is not int or v < 0 for v in counts)
+            or counts[0] != counts[3] or counts[1] != len(completed)
+            or counts[2] != len(remaining)
+            or counts[0] != counts[1] + counts[2] or seen != expected):
+        raise ValueError("incomplete native Stage11 occurrence census")
+    return {
+        "scope":"A2R_STAGE11_SOURCE_FORMULA_JOIN_NOT_L3",
+        "stage11_original_events_reconciled":len(seen),
+        "direct_frontier_formula_checked_not_novelty":len(completed),
+        "owner_history_missing_occurrences":len(remaining),
+        "still_quarantined_without_frontier_admissibility":len(seen),
+        "all_stage11_intrinsic_causes_proven":False,
+        "preregistered_mechanism_exposed":False,
+        "study_admissible":False,
+        "general_L3":"NOT_ESTABLISHED",
+    }
 
 def score_cold_original(*, original, reference, cold, replay):
     """Join source-born reference and real cold native receipts, then score.
@@ -289,6 +375,7 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
     from i1_a2r_pair_witness import compare_pair
     from i1_a2r_stage8_evidence import attest_native_stage8
     from i1_a2r_affordance_cold import audit_native_affordance_evidence
+    from i1_a2r_intrinsic_cold import audit_stage11_intrinsic_magnitude
 
     root = Path(archive_root)
     verify_archive(
@@ -325,6 +412,12 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
             td_version=ref["born_td"]["version"])
         local = audit_native_affordance_evidence(
             cold["events"], q_replay=replay, birth=ref)
+        intrinsic = audit_stage11_intrinsic_magnitude(
+            cold["events"], q_replay=replay, stage8_audit=stage8, birth=ref)
+        intrinsic_join = reconcile_stage11_intrinsic_provenance(
+            stage8=stage8, intrinsic=intrinsic)
+        # Direct-frontier intensity is NOT enough to establish that a
+        # physically admissible frontier was novel at that lived step.
         coverage = reconcile_native_evidence(
             stage8=stage8, local=local, replay=replay,
             require_complete=True)
@@ -336,7 +429,8 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
         stored[(role, seed, mode)] = {
             "reference": ref, "cold": cold, "replay": replay,
             "stage8": stage8, "local": local,
-            "coverage": coverage, "score": score,
+            "coverage": coverage, "intrinsic": intrinsic,
+            "intrinsic_join": intrinsic_join, "score": score,
         }
     pairs = []
     for role in ROLES:

@@ -1,6 +1,9 @@
 """Pure adversarial A2-R postflight score and paired census contracts."""
 import unittest
-from i1_a2r_postflight import score_cold_original, verify_birth_pair, describe_complete_pairs
+from i1_a2r_postflight import (
+    score_cold_original, verify_birth_pair, describe_complete_pairs,
+    reconcile_stage11_intrinsic_provenance,
+)
 from i1_a2r_archive_guard import ordered_rows
 
 NEEDS=("energy","food","water","integrity")
@@ -56,6 +59,48 @@ class PostflightTests(unittest.TestCase):
         self.assertTrue(verify_birth_pair(a,b))
         b["initial_body"]="changed"
         with self.assertRaises(ValueError):verify_birth_pair(a,b)
+
+    def test_intrinsic_join_fails_closed_and_exact(self):
+        a={"step":2,"cycle":1,"option":"frontier"}
+        b={"step":3,"cycle":1,"option":"causal_test"}
+        stage={"scope":"A2R_STAGE8_NATIVE_EVIDENCE_RECONSTRUCTED_NOT_L3",
+            "unreplayed_evaluations":[
+                dict(a,family="intrinsic_or_unknown"),
+                dict(b,family="intrinsic_or_unknown"),
+                {"step":3,"cycle":2,"option":"local","family":"local_affordance"}],
+            "stage11_post_competition_occurrences":2}
+        intrinsic={
+            "scope":"A2R_STAGE11_PARTIAL_SOURCE_INTRINSIC_ARITHMETIC_NOT_L3",
+            "stage11_intrinsic_occurrences":2,
+            "direct_frontier_intrinsic_recomputed":1,
+            "unreconstructed_owner_intrinsic_occurrences":1,
+            "intrinsic_magnitude_verified":[dict(a,
+                producer="exploration:p48_geographic",
+                recomputed_intrinsic=.4,recomputed_evidence=.2)],
+            "unreconstructed_owner_intrinsic":[dict(b,reason="history_missing")],
+            "all_stage11_intrinsic_state_independently_replayed":False,
+            "frontier_admissibility_independently_replayed":False,
+            "preregistered_mechanism_exposed":False,"study_admissible":False,
+            "general_L3":"NOT_ESTABLISHED"}
+        result=reconcile_stage11_intrinsic_provenance(
+            stage8=stage,intrinsic=intrinsic)
+        self.assertEqual(result["stage11_original_events_reconciled"],2)
+        self.assertEqual(result["still_quarantined_without_frontier_admissibility"],2)
+        self.assertFalse(result["study_admissible"])
+        from copy import deepcopy
+        for attack in ("lost", "fabricated", "duplicate", "false_go",
+                       "false_frontier", "bad_total", "wrong_family"):
+            x,y=deepcopy(stage),deepcopy(intrinsic)
+            if attack=="lost":y["unreconstructed_owner_intrinsic"]=[]
+            if attack=="fabricated":y["intrinsic_magnitude_verified"][0]["cycle"]=50
+            if attack=="duplicate":y["unreconstructed_owner_intrinsic"][0]=dict(a,reason="history_missing")
+            if attack=="false_go":y["study_admissible"]=True
+            if attack=="false_frontier":y["frontier_admissibility_independently_replayed"]=True
+            if attack=="bad_total":y["stage11_intrinsic_occurrences"]=1
+            if attack=="wrong_family":x["unreplayed_evaluations"][0]["family"]="external_adapter"
+            with self.subTest(attack=attack),self.assertRaises(ValueError):
+                reconcile_stage11_intrinsic_provenance(stage8=x,intrinsic=y)
+
     def test_all_48_pairs_are_only_descriptive(self):
         pairs=[]
         for row in ordered_rows():

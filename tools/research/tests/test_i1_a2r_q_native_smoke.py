@@ -30,7 +30,10 @@ from i1_a2r_q_replay import cold_replay_m11
 from i1_a2r_pair_witness import cold_compare_pair
 from i1_a2r_stage8_evidence import attest_native_stage8
 from i1_a2r_affordance_cold import audit_native_affordance_evidence
-from i1_a2r_postflight import reconcile_native_evidence
+from i1_a2r_postflight import (
+    reconcile_native_evidence, reconcile_stage11_intrinsic_provenance,
+)
+from i1_a2r_intrinsic_cold import audit_stage11_intrinsic_magnitude
 from i1_a2r_source_birth_audit import reconstruct_pristine_birth
 from i1_a2r_m11_cold import evidence_life, compare_pre_reward, inspect_m11
 from run_i1_world_preset import load_preset, _birth_parameters
@@ -128,6 +131,14 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
             local=audit_native_affordance_evidence(
                 raw["events"],q_replay=cold,birth=reconstructed_birth)
             assert local["preregistered_mechanism_exposed"] is False
+            intrinsic=audit_stage11_intrinsic_magnitude(
+                raw["events"],q_replay=cold,stage8_audit=stage8,
+                birth=reconstructed_birth)
+            joined=reconcile_stage11_intrinsic_provenance(
+                stage8=stage8,intrinsic=intrinsic)
+            assert joined["study_admissible"] is False
+            assert (joined["still_quarantined_without_frontier_admissibility"]
+                    == intrinsic["stage11_intrinsic_occurrences"])
             coverage=reconcile_native_evidence(
                 stage8=stage8,local=local,replay=cold,
                 require_complete=False)
@@ -153,6 +164,7 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
                 stage8_evidence=stage8["stage8_evaluations_recomputed"],
                 stage8_blends=stage8["q_simulation_blends_recomputed"],
                 local_recomputed=local["native_local_affordance_recomputed"],
+                stage11_checked=joined["stage11_original_events_reconciled"],
             )
     for role in ("native","reversed"):
         c=results[(role,CANONICAL_ABS)]

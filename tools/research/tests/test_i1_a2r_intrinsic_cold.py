@@ -50,6 +50,9 @@ class IntrinsicColdTests(unittest.TestCase):
         result=audit_stage11_intrinsic_magnitude(events,q_replay=q,stage8_audit=s,birth=b)
         self.assertEqual(result["direct_frontier_intrinsic_recomputed"],0)
         self.assertEqual(result["unreconstructed_owner_intrinsic_occurrences"],1)
+        self.assertEqual(len(result["unreconstructed_owner_intrinsic"]),1)
+        self.assertEqual(result["unreconstructed_owner_intrinsic"][0]["option"],
+                         events[1]["data"]["option_ref"])
     def test_duplicate_intrinsic_refused(self):
         events,q,s,b=fixture()
         with self.assertRaises(ValueError):
