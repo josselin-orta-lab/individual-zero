@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'tools/research/i1_a2r_postflight.py'
+      - 'tools/research/i1_a2r_geo_intrinsic_join.py'
+      - 'tools/research/tests/test_i1_a2r_geo_intrinsic_join.py'
       - 'tools/research/tests/test_i1_a2r_postflight.py'
       - '.github/workflows/i1-a2r-postflight-pure.yml'
 permissions:
@@ -22,3 +24,4 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_postflight.py -v
+      - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_geo_intrinsic_join.py -v

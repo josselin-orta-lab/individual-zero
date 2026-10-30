@@ -35,6 +35,7 @@ from i1_a2r_postflight import (
 )
 from i1_a2r_intrinsic_cold import audit_stage11_intrinsic_magnitude
 from i1_a2r_geographic_history_cold import replay_geographic_history
+from i1_a2r_geo_intrinsic_join import reconcile_geographic_intrinsic
 from i1_a2r_source_birth_audit import reconstruct_pristine_birth
 from i1_a2r_m11_cold import evidence_life, compare_pre_reward, inspect_m11
 from run_i1_world_preset import load_preset, _birth_parameters
@@ -144,6 +145,10 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
                 birth=reconstructed_birth)
             joined=reconcile_stage11_intrinsic_provenance(
                 stage8=stage8,intrinsic=intrinsic)
+            geo_intrinsic=reconcile_geographic_intrinsic(
+                geography=history,intrinsic=intrinsic,
+                stage11_join=joined)
+            assert geo_intrinsic["study_admissible"] is False
             assert joined["study_admissible"] is False
             assert (joined["still_quarantined_without_frontier_admissibility"]
                     == intrinsic["stage11_intrinsic_occurrences"])
