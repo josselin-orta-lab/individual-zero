@@ -31,10 +31,16 @@ class EvidenceTests(unittest.TestCase):
         x["evidence"]=.9
         with self.assertRaises(ValueError):expected_stage8_evidence(x,update_count=1,calibration=CAL,td_version=TD)
         with self.assertRaises(ValueError):expected_stage8_evidence(row(q=6.),update_count=0,calibration=CAL,td_version=TD)
-    def test_unpublished_non_q_fields_not_accepted(self):
+    def test_additive_native_fields_allowed_but_missing_math_rejected(self):
         x=row()
         x["protection"]=False
-        with self.assertRaises(ValueError):expected_stage8_evidence(x,update_count=0,calibration=CAL,td_version=TD)
+        self.assertAlmostEqual(
+            expected_stage8_evidence(x,update_count=0,
+                                     calibration=CAL,td_version=TD), tanh(.6))
+        del x["simulated_value"]
+        with self.assertRaises(ValueError):
+            expected_stage8_evidence(x,update_count=0,
+                                     calibration=CAL,td_version=TD)
     def test_invalid_calibration_and_wrong_learning_status(self):
         bad=dict(CAL,n0=0.)
         with self.assertRaises(ValueError):
