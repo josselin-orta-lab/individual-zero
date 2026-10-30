@@ -193,11 +193,29 @@ def attest_native_stage8(events, *, q_replay, calibration, td_version):
             if e.get("kind") == "stage11_intrinsic_evaluation"
             and (e.get("t_monde"), e.get("cycle"),
                  e["data"]["option_ref"]) == key)
-        if not original < competing < intrinsic_position:
-            raise ValueError("Stage11 intrinsic provenance is not after Competition")
+        if intrinsic_position <= original:
+            raise ValueError("Stage11 intrinsic record is not after its evaluation")
+        if not original < competing:
+            raise ValueError("Competition was not reached after Stage8")
+        stage8_data = next(e["data"] for e in events
+            if e.get("kind") == "stage8_option_evaluation"
+            and (e.get("t_monde"), e.get("cycle"),
+                 e["data"].get("option_ref")) == key)
+        intrinsic_data = next(e["data"] for e in events
+            if e.get("kind") == "stage11_intrinsic_evaluation"
+            and (e.get("t_monde"), e.get("cycle"),
+                 e["data"].get("option_ref")) == key)
+        if (stage8_data.get("intrinsic_status") != "applicable"
+                or stage8_data.get("intrinsic_value") != intrinsic_data.get("intrinsic_value")
+                or stage8_data.get("status") != intrinsic_data.get("status")):
+            raise ValueError("Stage8 and Stage11 intrinsic publications disagree")
         if key in local_sources:
             raise ValueError("local affordance was also credited as Stage11 intrinsic")
 
+    for key, position in stage8_positions.items():
+        data = events[position]["data"]
+        if data.get("intrinsic_status") == "applicable" and key not in intrinsic_sources:
+            raise ValueError("intrinsic Stage8 value lacks Stage11 provenance")
     td_by_step = {}
     for item in q_replay["td_recurrences"]:
         if type(item) is not dict or type(item.get("step")) is not int:
