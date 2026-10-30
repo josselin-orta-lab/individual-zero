@@ -1,0 +1,199 @@
+"""Independent A2-R Stage8 Q/simulation -> Competition-evidence replay.
+
+Consumes ONLY already authenticated M11 occurrences and a fully cold
+reconstructed 12-feature Q replay. Calibration MUST come from a pristine
+birth reconstructed from the pinned source, never the life report.
+
+This validates the actual blending equation of Stage8, not merely that a
+reported Stage8 evidence field was copied verbatim into Competition.
+It DOES NOT prove that a changed motor decision was caused solely by Q,
+nor establish a confirmatory exposure or a general L3 benefit.
+"""
+from __future__ import annotations
+
+from math import isfinite, tanh
+from i1_a2r_m11_cold import numeric
+
+_REQUIRED = frozenset((
+    "option_ref", "learning_signature", "status",
+    "learned_value_status", "learned_value",
+    "simulated_value_status", "simulated_value", "evidence",
+    "equipment_version", "q_version",
+))
+_SCOPE = "A2R_COLD_NATIVE_Q_FULL_VECTOR_NOT_L3"
+_TOL = 2e-9
+
+
+def _equal(left, right):
+    a, b = numeric(left), numeric(right)
+    return abs(a - b) <= _TOL * max(1.0, abs(a), abs(b))
+
+
+def _calibration(calibration):
+    if type(calibration) is not dict or set(calibration) != {
+            "version", "n0", "evidence_scale", "extrinsic_gain"}:
+        raise ValueError("missing pinned Stage8 blend configuration")
+    if type(calibration["version"]) is not str or not calibration["version"]:
+        raise ValueError("missing pinned Stage8 version")
+    parameters = {k: numeric(calibration[k]) for k in (
+        "n0", "evidence_scale", "extrinsic_gain")}
+    if any(v <= 0 for v in parameters.values()):
+        raise ValueError("invalid pinned Stage8 blending parameters")
+    return parameters
+
+
+def expected_stage8_evidence(data, *, update_count, calibration, td_version):
+    """Recalculate exact I1 Stage8 output from two first-person valuations.
+
+    The cumulative TD update count is reconstructed from the journal,
+    never read from an operator-supplied indication in the Stage8 event.
+    """
+    p = _calibration(calibration)
+    if (type(data) is not dict or set(data) != _REQUIRED
+            or type(update_count) is not int or update_count < 0
+            or type(td_version) is not str or not td_version
+            or data["q_version"] != td_version
+            or type(data["equipment_version"]) is not str
+            or not data["equipment_version"]
+            or type(data["option_ref"]) is not str or not data["option_ref"]
+            or type(data["learning_signature"]) is not str
+            or not data["learning_signature"]):
+        raise ValueError("Stage8 evidence event not from frozen native schema")
+
+    learned = data["learned_value_status"] == "learned"
+    unlearned = data["learned_value_status"] == "unlearned"
+    if not (learned or unlearned) or learned != (update_count > 0):
+        raise ValueError("Stage8 learned Q status not justified by TD history")
+    if learned:
+        q = numeric(data["learned_value"])
+    elif data["learned_value"] is not None:
+        raise ValueError("unlearned Stage8 published a numeric Q")
+    sim_status = data["simulated_value_status"]
+    if sim_status not in ("computed", "unavailable"):
+        raise ValueError("unknown Stage6 simulated value status")
+    simulated = sim_status == "computed"
+    if simulated:
+        sim = numeric(data["simulated_value"])
+    elif data["simulated_value"] is not None:
+        raise ValueError("unavailable simulation published a numeric value")
+
+    if not learned and not simulated:
+        if data["status"] != "not_evaluated" or data["evidence"] is not None:
+            raise ValueError("Stage8 no-Q/no-simulation must have no evidence")
+        return None
+    if data["status"] != "evaluated":
+        raise ValueError("Stage8 returned unevaluated evidence despite Q/simulation")
+    if learned and simulated:
+        weight = update_count / (update_count + p["n0"])
+        ext = weight * q + (1 - weight) * sim
+    elif learned:
+        ext = q
+    else:
+        ext = sim
+    expected = max(-1., min(1., p["extrinsic_gain"] *
+                             tanh(ext / p["evidence_scale"])))
+    if not _equal(data["evidence"], expected):
+        raise ValueError("published Stage8 evidence diverges from reconstructed Q/simulation")
+    return expected
+
+
+def attest_native_stage8(events, *, q_replay, calibration, td_version):
+    """Reconcile every native Stage8 output against TD update chronology.
+
+    The replay must already have been validated against the signed final M11
+    TD owner. This function is not a signature checker; its input is expected
+    from a separate cold ledger audit, not the birth's report.json.
+    """
+    _calibration(calibration)
+    if (type(events) is not list or type(q_replay) is not dict
+            or q_replay.get("scope") != _SCOPE
+            or q_replay.get("full_q_replay_verified") is not True
+            or q_replay.get("adaptive_learning_go") != "NOT_ESTABLISHED"
+            or type(q_replay.get("stage8_observations")) is not list
+            or type(q_replay.get("td_recurrences")) is not list):
+        raise ValueError("Stage8 audit needs fully cold-verified native Q replay")
+
+    published = {}
+    for row in q_replay["stage8_observations"]:
+        if type(row) is not dict:
+            raise ValueError("malformed Q replay Stage8 observation")
+        key = (row.get("step"), row.get("cycle"), row.get("option"))
+        if (type(key[0]) is not int or type(key[1]) is not int
+                or type(key[2]) is not str or key in published):
+            raise ValueError("duplicated Stage8 key in cold Q replay")
+        published[key] = row
+    td_by_step = {}
+    for item in q_replay["td_recurrences"]:
+        if type(item) is not dict or type(item.get("step")) is not int:
+            raise ValueError("malformed cold TD recurrence")
+        step = item["step"]
+        if step in td_by_step:
+            raise ValueError("duplicate TD update at same physical step")
+        td_by_step[step] = item
+
+    counts = {}
+    observed = set()
+    verified = learned_reads = blended_reads = 0
+    td_seen = set()
+    for event in events:
+        if type(event) is not dict:
+            raise ValueError("malformed authenticated M11 event")
+        kind = event.get("kind")
+        if kind == "td_update_published":
+            t = event.get("t_monde")
+            item = td_by_step.get(t)
+            if item is None or t in td_seen:
+                raise ValueError("unauthenticated TD update count")
+            td_seen.add(t)
+            signatures = item.get("signatures_updated")
+            if (type(signatures) not in (tuple, list)
+                    or len(signatures) != len(set(signatures))
+                    or type(event.get("data")) is not dict
+                    or list(signatures) != event["data"].get("updated_signatures")):
+                raise ValueError("TD signature counts diverge from cold Q replay")
+            for sig in signatures:
+                if type(sig) is not str or not sig:
+                    raise ValueError("invalid native TD signature")
+                counts[sig] = counts.get(sig, 0) + 1
+        elif kind == "stage8_option_evaluation":
+            data = event.get("data")
+            if type(data) is not dict:
+                raise ValueError("invalid Stage8 journal payload")
+            key = (event.get("t_monde"), event.get("cycle"),
+                   data.get("option_ref"))
+            row = published.get(key)
+            if row is None or key in observed:
+                raise ValueError("Stage8 event not matched to the cold Q replay")
+            observed.add(key)
+            signature = data.get("learning_signature")
+            if (signature != row.get("signature")
+                    or data.get("learned_value_status") != row.get("status")):
+                raise ValueError("Stage8 evidence signature/status mismatches cold Q")
+            if row.get("q") is None:
+                if data.get("learned_value") is not None:
+                    raise ValueError("Stage8 Q differs from independently replayed value")
+            elif not _equal(row["q"], data.get("learned_value")):
+                raise ValueError("Stage8 numeric Q differs from cold native Q")
+            count = counts.get(signature, 0)
+            expected_stage8_evidence(
+                data, update_count=count,
+                calibration=calibration, td_version=td_version)
+            learned_reads += count > 0
+            blended_reads += (count > 0 and
+                              data["simulated_value_status"] == "computed")
+            verified += 1
+
+    if observed != set(published) or td_seen != set(td_by_step):
+        raise ValueError("cold Q recurrence or Stage8 evidence missing from journal")
+    if q_replay.get("q_update_counts") != counts:
+        raise ValueError("final Q update-count map differs from Stage8 chronology")
+    return {
+        "scope": "A2R_STAGE8_NATIVE_EVIDENCE_RECONSTRUCTED_NOT_L3",
+        "stage8_evaluations_recomputed": verified,
+        "learned_q_reads_recomputed": learned_reads,
+        "q_simulation_blends_recomputed": blended_reads,
+        "td_updates_counted": len(td_seen),
+        "same_full_m11_q_replay": True,
+        "preregistered_mechanism_exposed": False,
+        "general_L3": "NOT_ESTABLISHED",
+    }
