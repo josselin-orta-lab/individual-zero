@@ -109,11 +109,24 @@ def audit_native_affordance_evidence(events, *, q_replay, birth):
             continue
         stage_kind, data, position = evaluations[key]
         q = q_observations[key]
-        if (position <= index or
-                data.get("learning_signature") != proposal.get("learning_signature")
-                or q.get("signature") != proposal.get("learning_signature")
-                or q.get("status") != data.get("learned_value_status")):
-            raise ValueError("affordance proposal not linked: key=%r order=%r evaluation_order=%r proposal_sig=%r eval_sig=%r replay_sig=%r proposal_status=%r eval_status=%r" % (key,index,position,proposal.get("learning_signature"),data.get("learning_signature"),q.get("signature"),proposal.get("learned_value_status"),data.get("learned_value_status")))
+        signature = data.get("learning_signature")
+        if kind == KINDS[0]:
+            origin_signature = proposal.get("learning_signature")
+        else:
+            # Goal-linked proposals publish option_ref but not the signature.
+            # Reconstruct the signature from the explicit command suffix
+            # of that option's occurrence, never assume a missing key.
+            token = ":t" + str(key[0]) + ":"
+            if not key[2].startswith("option:i1:affordance:") or token not in key[2]:
+                raise ValueError("goal-linked option has no grounded occurrence")
+            origin_signature = "i1:affordance:" + key[2].rsplit(token, 1)[1]
+        if (position <= index
+                or type(signature) is not str
+                or signature != origin_signature
+                or q.get("signature") != origin_signature
+                or q.get("status") != data.get("learned_value_status")
+                or proposal.get("learned_value_status") != data.get("learned_value_status")):
+            raise ValueError("affordance proposal is not source of native Stage8 Q")
         if (data.get("intrinsic_status") != "not_applicable"
                 or data.get("intrinsic_value") is not None
                 or data.get("simulated_value_status") != "unavailable"
