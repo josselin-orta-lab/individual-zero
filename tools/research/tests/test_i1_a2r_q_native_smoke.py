@@ -8,6 +8,7 @@ No forced commands, introspection affecting an actor, Q patch or long CI.
 """
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import json
 import os
 import subprocess
 import sys
@@ -18,6 +19,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from build_i1_fork import generate
 
 _CHILD = r'''
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from i1lab.i1_birth import birth_i1_m11
@@ -199,6 +201,8 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
                 db_path=str(db), individual_id=identity,
                 td_updates=cold["td_updates"],
                 q_reads=cold["native_q_checks"],
+                generation=cold["generation"],
+                q_coexposure=exposures,
                 stage8_evidence=stage8["stage8_evaluations_recomputed"],
                 stage8_blends=stage8["q_simulation_blends_recomputed"],
                 local_recomputed=local["native_local_affordance_recomputed"],
@@ -224,6 +228,41 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
         assert pair["preregistered_mechanism_exposed"] is False
         assert pair["general_L3"]=="NOT_ESTABLISHED"
     assert sum(row["local_recomputed"] for row in results.values()) > 0
+    # Operator-only, authentic observations from four disposable technical
+    # lives. Do NOT mistake a four-step L1 smoke for a confirmatory study.
+    census=[]
+    for role in ("native","reversed"):
+        for mode in MODES:
+            row=results[(role,mode)]
+            q=row["q_coexposure"]
+            assert q["scope"]=="A2R_NATIVE_PAID_Q_COEXPOSURE_DESCRIPTIVE_NOT_L3"
+            assert q["study_admissible"] is False
+            census.append({
+                "role":role,"mode":mode,"generation":row["generation"],
+                "paid_cycles":q["paid_competition_cycles"],
+                "learned_stage8_reads":q["stage8_cold_learned_reads"],
+                "learned_paid_evaluations":q["learned_paid_evaluations"],
+                "cycles_with_learned_and_alternative":
+                    q["paid_cycles_with_learned_q_and_evaluated_alternative"],
+                "cycles_with_two_learned":
+                    q["paid_cycles_with_two_learned_q_candidates"],
+                "cycles_with_two_formula_checked":
+                    q["paid_cycles_with_two_formula_checked_learned_candidates"],
+                "cycles_with_learned_crossing":
+                    q["paid_cycles_with_learned_q_crossing"],
+                "learned_physical_admissions":
+                    q["physically_admitted_learned_q_options"],
+                "nondecision_physical_steps":
+                    q["nondecision_physical_steps"],
+                "classes":q["cycle_classifications"],
+                "study_admissible":False,
+            })
+    print("I1_A2R_COEXPOSURE_H4="+json.dumps({
+        "schema":"i1-a2r-coexposure-h4-technical-v1","world":"oasis",
+        "seed":SEED,"max_steps":MAX_STEPS,"lives":census,
+        "general_L3":"NOT_ESTABLISHED",
+        "confirmatory_lives_executed":0,
+    },sort_keys=True,separators=(",",":")))
     print("A2R_NATIVE_M11_FOUR_SHORT_TECHNICAL_LIVES_Q_REPLAY_OK",
           sum(row["td_updates"] for row in results.values()),
           sum(row["q_reads"] for row in results.values()),
@@ -250,6 +289,33 @@ class NativeShortM11QReplay(unittest.TestCase):
                              result.stderr[-8000:]+result.stdout[-2000:])
             self.assertIn("A2R_NATIVE_M11_FOUR_SHORT_TECHNICAL_LIVES_Q_REPLAY_OK",
                           result.stdout)
+            lines=[line.partition("=")[2]
+                   for line in result.stdout.splitlines()
+                   if line.startswith("I1_A2R_COEXPOSURE_H4=")]
+            self.assertEqual(len(lines),1,"missing unique cold H4 observer census")
+            report=json.loads(lines[0])
+            self.assertEqual(report["schema"],"i1-a2r-coexposure-h4-technical-v1")
+            self.assertEqual(report["confirmatory_lives_executed"],0)
+            self.assertEqual(report["general_L3"],"NOT_ESTABLISHED")
+            lives=report["lives"]
+            self.assertEqual(len(lives),4)
+            self.assertEqual({(x["role"],x["mode"]) for x in lives},
+                             {(role,mode) for role in ("native","reversed")
+                              for mode in ("CANONICAL_ABS","RESEARCH_DEFICIT")})
+            for x in lives:
+                self.assertGreaterEqual(x["generation"],1)
+                self.assertLessEqual(x["generation"],4)
+                self.assertGreaterEqual(x["paid_cycles"],0)
+                self.assertLessEqual(x["cycles_with_two_formula_checked"],
+                                     x["cycles_with_two_learned"])
+                self.assertLessEqual(x["cycles_with_two_learned"],
+                                     x["cycles_with_learned_and_alternative"])
+                self.assertLessEqual(x["learned_paid_evaluations"],
+                                     x["learned_stage8_reads"])
+                self.assertFalse(x["study_admissible"])
+            # Publish only aggregate, non-identifying H4 counts to Actions log.
+            print("I1_A2R_COEXPOSURE_H4="+json.dumps(
+                report,sort_keys=True,separators=(",",":")))
 
 
 if __name__=="__main__":
