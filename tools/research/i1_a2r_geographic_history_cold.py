@@ -63,9 +63,10 @@ def replay_geographic_history(events, *, final_exploration, birth, generation):
             or type(generation) is not int or not 1 <= generation <= HORIZON
             or final_exploration.get("state_schema") != initial["state_schema"]
             or final_exploration.get("config_version") != initial.get("config_version")
-            or final_exploration.get("coefficient") != initial.get("coefficient")
-            or final_exploration.get("coefficient")
-               != birth.get("born_temperament",{}).get("exploration_coefficient")):
+            or numeric(final_exploration.get("coefficient"))
+               != numeric(initial.get("coefficient"))
+            or numeric(final_exploration.get("coefficient"))
+               != numeric(birth.get("born_temperament",{}).get("exploration_coefficient"))):
         raise ValueError("sealed final Exploration differs from pinned birth")
     geo = final_exploration.get("geography")
     prior = initial["geography"]
