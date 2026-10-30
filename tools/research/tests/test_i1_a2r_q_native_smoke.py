@@ -27,6 +27,7 @@ from i1_eco_a2r_birth import (
     a2r_matched_reward_birth, verify_born_reward_owner,
 )
 from i1_a2r_q_replay import cold_replay_m11
+from i1_a2r_pair_witness import cold_compare_pair
 from i1_a2r_m11_cold import evidence_life, compare_pre_reward, inspect_m11
 from run_i1_world_preset import load_preset, _birth_parameters
 
@@ -109,6 +110,7 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
                 td=td_birth,setpoints=born_setpoints,weights=born_weights,
                 scales=born_scales,
                 journal_head=cold["m11_journal_head"],
+                db_path=str(db), individual_id=identity,
                 td_updates=cold["td_updates"],
                 q_reads=cold["native_q_checks"],
             )
@@ -122,6 +124,15 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
         assert comparison["pre_reward_prefix_equal"] is True
         assert comparison["full_q_replay_verified"] is False
         assert comparison["mechanism_exposed"] is False
+        pair=cold_compare_pair(
+            canonical_path=c["db_path"],candidate_path=d["db_path"],
+            canonical_id=c["individual_id"],candidate_id=d["individual_id"],
+            setpoints=c["setpoints"],weights=c["weights"],born_td=c["td"],
+            world_clock=clock,allow_incomplete=True)
+        assert pair["scope"]=="COLD_PAIRED_L1_DIAGNOSTIC_NOT_L3"
+        assert pair["study_admissible"] is False
+        assert pair["preregistered_mechanism_exposed"] is False
+        assert pair["general_L3"]=="NOT_ESTABLISHED"
     print("A2R_NATIVE_M11_FOUR_SHORT_TECHNICAL_LIVES_Q_REPLAY_OK",
           sum(row["td_updates"] for row in results.values()),
           sum(row["q_reads"] for row in results.values()))
