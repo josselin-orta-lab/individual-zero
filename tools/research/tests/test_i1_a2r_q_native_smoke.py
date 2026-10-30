@@ -37,6 +37,7 @@ from i1_a2r_intrinsic_cold import audit_stage11_intrinsic_magnitude
 from i1_a2r_geographic_history_cold import replay_geographic_history
 from i1_a2r_geo_intrinsic_join import reconcile_geographic_intrinsic
 from i1_a2r_control_cold import audit_native_action_control, audit_native_wait_continuity
+from i1_a2r_candidate_provenance import audit_candidate_provenance
 from i1_a2r_source_birth_audit import reconstruct_pristine_birth
 from i1_a2r_m11_cold import evidence_life, compare_pre_reward, inspect_m11
 from run_i1_world_preset import load_preset, _birth_parameters
@@ -110,6 +111,11 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
                 raw["events"],q_replay=cold,birth=reconstruct_pristine_birth(
                     role=role,seed=SEED,mode=mode,preset_sha256=preset_sha))
             assert controller["all_motor_receipts_matched"] is True
+            candidate_audit=audit_candidate_provenance(
+                raw["events"], q_replay=cold,control=controller,
+                birth=reconstruct_pristine_birth(
+                    role=role,seed=SEED,mode=mode,preset_sha256=preset_sha))
+            assert candidate_audit["study_admissible"] is False
             continuity=audit_native_wait_continuity(
                 raw["events"],q_replay=cold,birth=reconstruct_pristine_birth(
                     role=role,seed=SEED,mode=mode,preset_sha256=preset_sha),
