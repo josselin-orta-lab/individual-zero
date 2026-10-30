@@ -126,7 +126,7 @@ class A2RColdPureTests(unittest.TestCase):
         v = copy.deepcopy(original)
         item = next(e for e in v if e["kind"] == "world_transition_experienced"
                     and e["t_monde"] == 2)
-        item["body_before"]["water"] = 100.
+        item["body_before"] = {**item["body_before"], "water": 100.}
         variants.append(v)
         for variant in variants:
             with self.subTest(index=variants.index(variant)), self.assertRaises(ValueError):
