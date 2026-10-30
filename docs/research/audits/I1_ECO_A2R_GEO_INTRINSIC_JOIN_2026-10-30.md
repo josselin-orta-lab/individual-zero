@@ -1,0 +1,3 @@
+# I1 A2-R: Jonction froid géographie / Stage11 (30 octobre 2026)
+Un rapprochement strict par (pas, cycle, option) entre les offres physiques M11 et les magnitudes de frontière Stage11. Il vérifie les effectifs et refuse les offres inventées, les doublons, les incohérences et toute prétention L3. Une offre sans évaluation reste une offre, non une vie supplémentaire.
+Limites : nouveauté du registre de visites ≠ admissibilité physique; absence de créature, sécurité Action Control, états historiques restants et médiation Q→action non démontrés. Un résultat concordant demeure en quarantaine. A1-C NO_GO, A2-R NOT_EXECUTED 0/96, L3 NOT_ESTABLISHED. Aucun moteur I1/I0 modifié ni CI naturelle lourde.

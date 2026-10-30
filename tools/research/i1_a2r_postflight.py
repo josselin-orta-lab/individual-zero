@@ -376,6 +376,8 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
     from i1_a2r_stage8_evidence import attest_native_stage8
     from i1_a2r_affordance_cold import audit_native_affordance_evidence
     from i1_a2r_intrinsic_cold import audit_stage11_intrinsic_magnitude
+    from i1_a2r_geographic_history_cold import replay_geographic_history
+    from i1_a2r_geo_intrinsic_join import reconcile_geographic_intrinsic
 
     root = Path(archive_root)
     verify_archive(
@@ -416,6 +418,12 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
             cold["events"], q_replay=replay, stage8_audit=stage8, birth=ref)
         intrinsic_join = reconcile_stage11_intrinsic_provenance(
             stage8=stage8, intrinsic=intrinsic)
+        geography = replay_geographic_history(
+            cold["events"], final_exploration=cold["final_exploration"],
+            birth=ref, generation=cold["receipt"]["generation"])
+        geo_intrinsic = reconcile_geographic_intrinsic(
+            geography=geography, intrinsic=intrinsic,
+            stage11_join=intrinsic_join)
         # Direct-frontier intensity is NOT enough to establish that a
         # physically admissible frontier was novel at that lived step.
         coverage = reconcile_native_evidence(
@@ -430,7 +438,8 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
             "reference": ref, "cold": cold, "replay": replay,
             "stage8": stage8, "local": local,
             "coverage": coverage, "intrinsic": intrinsic,
-            "intrinsic_join": intrinsic_join, "score": score,
+            "intrinsic_join": intrinsic_join, "geography": geography,
+            "geography_intrinsic": geo_intrinsic, "score": score,
         }
     pairs = []
     for role in ROLES:
