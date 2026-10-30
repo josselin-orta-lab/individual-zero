@@ -6,8 +6,8 @@ from i1_a2r_environment_review import ENVIRONMENT
 def sample():
     run={"id":42,"run_attempt":1,"event":"workflow_dispatch","head_sha":"a"*40,
          "actor":{"login":"initiator"},"repository":{"full_name":"josselin-orta-lab/individual-zero"}}
-    env={"name":ENVIRONMENT,"can_admins_bypass":False,"prevent_self_review":True,
-         "protection_rules":[{"type":"required_reviewers","reviewers":[
+    env={"name":ENVIRONMENT,"can_admins_bypass":False,
+         "protection_rules":[{"type":"required_reviewers","prevent_self_review":True,"reviewers":[
              {"type":"User","reviewer":{"login":"reviewer"}}]}]}
     history=[{"state":"approved","user":{"login":"reviewer"},
               "environments":[{"name":ENVIRONMENT}]}]
@@ -21,10 +21,10 @@ class NativeApprovalTests(unittest.TestCase):
         self.assertFalse(r["external_approval_attested"])
     def test_fail_closed_on_native_mutations(self):
         for change in ("bypass","self","missing","duplicate","wrong_reviewer",
-                       "wrong_env","wrong_run","not_approved","missing_rule"):
+                       "wrong_env","wrong_run","not_approved","missing_rule","missing_self_review"):
             run,env,h=copy.deepcopy(sample())
             if change=="bypass":env["can_admins_bypass"]=True
-            if change=="self":env["prevent_self_review"]=False
+            if change=="self":env["protection_rules"][0]["prevent_self_review"]=False
             if change=="missing":h=[]
             if change=="duplicate":h.append(copy.deepcopy(h[0]))
             if change=="wrong_reviewer":h[0]["user"]["login"]="initiator"
@@ -32,6 +32,7 @@ class NativeApprovalTests(unittest.TestCase):
             if change=="wrong_run":run["run_attempt"]=2
             if change=="not_approved":h[0]["state"]="rejected"
             if change=="missing_rule":env["protection_rules"]=[]
+            if change=="missing_self_review":del env["protection_rules"][0]["prevent_self_review"]
             with self.subTest(change=change),self.assertRaises(ValueError):
                 verify_native_review_history(run=run,environment=env,history=h)
     def test_live_collector_uses_exact_endpoints(self):
