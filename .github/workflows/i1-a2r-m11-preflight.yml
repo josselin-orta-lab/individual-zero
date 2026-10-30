@@ -1,0 +1,38 @@
+name: I1 A2-R cold M11 preflight (no births)
+on:
+  pull_request:
+    paths:
+      - 'tools/research/i1_a2r_m11_cold.py'
+      - 'tools/research/tests/test_i1_a2r_m11_cold.py'
+      - 'docs/research/audits/I1_ECO_A2R_COLD_M11_PREFLIGHT_2026-10-30.md'
+      - '.github/workflows/i1-a2r-m11-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: i1-a2r-m11-preflight-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  no_birth_contracts:
+    name: Cold observer Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: tools/research
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Pure cold preflight syntax and adversarial tests
+        run: |
+          python -m py_compile tools/research/i1_a2r_m11_cold.py
+          python -m unittest discover -s tools/research/tests -p test_i1_a2r_m11_cold.py -v
+      - name: No study births
+        run: test ! -d reports/i1-eco-a2r-cohort
