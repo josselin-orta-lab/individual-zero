@@ -35,6 +35,37 @@ class EvidenceTests(unittest.TestCase):
         x=row()
         x["protection"]=False
         with self.assertRaises(ValueError):expected_stage8_evidence(x,update_count=0,calibration=CAL,td_version=TD)
+    def test_invalid_calibration_and_wrong_learning_status(self):
+        bad=dict(CAL,n0=0.)
+        with self.assertRaises(ValueError):
+            expected_stage8_evidence(row(),update_count=0,
+                                     calibration=bad,td_version=TD)
+        x=row(q=6.)
+        x["learned_value_status"]="unlearned"
+        with self.assertRaises(ValueError):
+            expected_stage8_evidence(x,update_count=1,
+                                     calibration=CAL,td_version=TD)
+    def test_stage8_event_chronology_and_replay_signature(self):
+        event={"kind":"stage8_option_evaluation","t_monde":1,"cycle":1,
+               "data":row()}
+        replay={"scope":"A2R_COLD_NATIVE_Q_FULL_VECTOR_NOT_L3",
+                "full_q_replay_verified":True,
+                "adaptive_learning_go":"NOT_ESTABLISHED",
+                "td_recurrences":[],"q_update_counts":{},
+                "stage8_observations":[{
+                    "step":1,"cycle":1,"option":"permanent:attendre",
+                    "signature":"primitive:attendre","status":"unlearned",
+                    "q":None}]}
+        result=attest_native_stage8([event],q_replay=replay,
+                                   calibration=CAL,td_version=TD)
+        self.assertEqual(result["stage8_evaluations_recomputed"],1)
+        self.assertFalse(result["preregistered_mechanism_exposed"])
+        with self.assertRaises(ValueError):
+            attest_native_stage8([event,event],q_replay=replay,
+                                 calibration=CAL,td_version=TD)
+        with self.assertRaises(ValueError):
+            attest_native_stage8([],q_replay=replay,
+                                 calibration=CAL,td_version=TD)
     def test_missing_authenticated_replay_fails(self):
         with self.assertRaises(ValueError):
             attest_native_stage8([],q_replay={"full_q_replay_verified":False},calibration=CAL,td_version=TD)

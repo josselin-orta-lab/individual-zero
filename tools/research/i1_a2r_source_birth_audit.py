@@ -214,6 +214,17 @@ def reconstruct_pristine_birth(*, role, seed, mode, preset_sha256):
         raise ValueError("born Value/Needs weights differ from source")
     if born.world.capture_local(t_monde=1).as_dict() != initial_view:
         raise ValueError("born visible world differs from preregistered oasis")
+    # Stage8 blending parameters must come from the reconstructed frozen
+    # source, never from a life report or the experienced M11 reward stream.
+    stage8_config = born.stage8_option_evaluator.config
+    if (stage8_config != born._stage8_config.evaluation
+            or stage8_config != expected.stage9.stage8.evaluation):
+        raise ValueError("pristine Stage8 blend differs from source birth")
+    stage8_calibration = {
+        "version": stage8_config.version, "n0": stage8_config.n0,
+        "evidence_scale": stage8_config.evidence_scale,
+        "extrinsic_gain": stage8_config.extrinsic_gain,
+    }
     return {
         "identity": identity, "role": role, "seed": seed, "mode": mode,
         "runtime_contract": _runtime_contract(born),
@@ -227,6 +238,7 @@ def reconstruct_pristine_birth(*, role, seed, mode, preset_sha256):
         "weights": dict(born.value_needs.config.weights),
         "scales": dict(born.value_needs.config.normalization_scales),
         "born_td": _born_td_config(born),
+        "stage8_evaluation": stage8_calibration,
         "world_clock": {
             "day_steps": born.world.config.day_steps,
             "night_steps": born.world.config.night_steps,

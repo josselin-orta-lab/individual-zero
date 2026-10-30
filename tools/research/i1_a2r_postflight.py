@@ -22,7 +22,7 @@ from i1_eco_metrics import evaluate_life
 PARITY_FIELDS = (
     "initial_body", "initial_inventory", "initial_perception",
     "born_temperament", "world_config_sha256", "setpoints", "weights",
-    "scales", "born_td", "world_clock",
+    "scales", "born_td", "stage8_evaluation", "world_clock",
 )
 
 
@@ -189,6 +189,7 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
     from i1_a2r_m11_cold import inspect_m11
     from i1_a2r_q_replay import cold_replay_m11
     from i1_a2r_pair_witness import compare_pair
+    from i1_a2r_stage8_evidence import attest_native_stage8
 
     root = Path(archive_root)
     verify_archive(
@@ -217,10 +218,23 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
             path=path, identity=identity, mode=mode,
             setpoints=ref["setpoints"], weights=ref["weights"],
             born_td=ref["born_td"], world_clock=ref["world_clock"])
+        # Separate native evidence-equation check: cold Q parity alone does
+        # not prove that Stage8 actually used the reconstructed Q value.
+        stage8 = attest_native_stage8(
+            cold["events"], q_replay=replay,
+            calibration=ref["stage8_evaluation"],
+            td_version=ref["born_td"]["version"])
+        if (stage8["stage8_evaluations_recomputed"] != replay["stage8_read_count"]
+                or stage8["learned_q_reads_recomputed"]
+                != replay["learned_stage8_reads"]):
+            raise ValueError("native Stage8 math was not fully cold-replayed")
         score = score_cold_original(
             original=archived, reference=ref, cold=cold, replay=replay)
+        score["stage8_evidence_recomputed"] = True
+        score["stage8_math_read_count"] = stage8["stage8_evaluations_recomputed"]
         stored[(role, seed, mode)] = {
-            "reference": ref, "cold": cold, "replay": replay, "score": score,
+            "reference": ref, "cold": cold, "replay": replay,
+            "stage8": stage8, "score": score,
         }
     pairs = []
     for role in ROLES:
@@ -248,6 +262,7 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
         "external_lock_digest_checked": external_lock_sha256,
         "external_manifest_digest_checked": external_manifest_sha256,
         "all_96_cold_m11_and_12_feature_q_replayed": True,
+        "all_96_native_stage8_equations_recomputed": True,
         "all_96_death_inclusive_scores_recomputed": True,
         "pairs": pairs,
     }
