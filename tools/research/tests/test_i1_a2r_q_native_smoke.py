@@ -116,6 +116,8 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
                 birth=reconstruct_pristine_birth(
                     role=role,seed=SEED,mode=mode,preset_sha256=preset_sha))
             assert candidate_audit["study_admissible"] is False
+            assert candidate_audit["uninterrupted_same_step_candidate_carries_checked"]>=0
+            assert candidate_audit["source_bounded_memory_credits_checked"]>=0
             continuity=audit_native_wait_continuity(
                 raw["events"],q_replay=cold,birth=reconstruct_pristine_birth(
                     role=role,seed=SEED,mode=mode,preset_sha256=preset_sha),
