@@ -224,7 +224,8 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
             cold["events"], q_replay=replay,
             calibration=ref["stage8_evaluation"],
             td_version=ref["born_td"]["version"])
-        if (stage8["stage8_evaluations_recomputed"] != replay["stage8_read_count"]
+        if (stage8["all_native_evidence_recomputed"] is not True
+                or stage8["stage8_evaluations_recomputed"] != replay["stage8_read_count"]
                 or stage8["learned_q_reads_recomputed"]
                 != replay["learned_stage8_reads"]):
             raise ValueError("native Stage8 math was not fully cold-replayed")
