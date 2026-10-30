@@ -15,6 +15,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from copy import deepcopy
 from i1.modules.value_needs import ValueAndNeeds, ValueNeedsConfig
+from i1lab.i1_active_value_needs import I1ActiveValueNeeds
 from i1lab.i1_birth import birth_i1_m11, recover_i1_m11
 from i1lab.i1_natural_runtime import I1Runtime
 from i1lab.sqlite_life_store import SQLiteLifeLedger, RecoveryBlocked
@@ -39,7 +40,7 @@ config = ValueNeedsConfig(version='a2r-standalone-test' + REWARD_VERSION_SUFFIX,
     setpoints=setpoints, weights=weights, normalization_scales=scales,
     p_min=.1, contribution_ttl_steps=1)
 owner = A2RDeficitValueNeeds(config)
-assert owner.owner_id == 'value_needs'
+assert owner.owner_id == I1ActiveValueNeeds.owner_id
 before = dict.fromkeys(names, 60.)
 after = dict(before)
 before['water'], after['water'] = 48., 88.
