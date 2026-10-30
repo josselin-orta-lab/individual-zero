@@ -381,6 +381,7 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
     from i1_a2r_geographic_history_cold import replay_geographic_history
     from i1_a2r_geo_intrinsic_join import reconcile_geographic_intrinsic
     from i1_a2r_control_cold import audit_native_action_control, audit_native_wait_continuity
+    from i1_a2r_candidate_provenance import audit_candidate_provenance
 
     root = Path(archive_root)
     verify_archive(
@@ -429,6 +430,8 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
             stage11_join=intrinsic_join)
         controller = audit_native_action_control(
             cold["events"], q_replay=replay, birth=ref)
+        candidates = audit_candidate_provenance(
+            cold["events"], birth=ref, q_replay=replay, control=controller)
         continuity = audit_native_wait_continuity(
             cold["events"], q_replay=replay, birth=ref,
             control=controller, final_competition=cold["final_competition"])
@@ -449,6 +452,7 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
             "intrinsic_join": intrinsic_join, "geography": geography,
             "geography_intrinsic": geo_intrinsic,
             "action_control": controller, "wait_continuity": continuity,
+            "candidate_provenance": candidates,
             "score": score,
         }
     pairs = []
