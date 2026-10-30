@@ -1,8 +1,10 @@
 """Read-only native GitHub Actions review-history inspection. No launch permission.
 
 Fetches GET /actions/runs/{id}/approvals (native list) and GET /environments/
-{name} (native object). Run metadata is first checked by the existing frozen
-source/run lock audit. A snapshot is not immutable external human attestation.
+{name} (native object). GitHub nests prevent_self_review in the
+required_reviewers protection rule, not at the environment root.
+Run metadata still needs the separate frozen source/run lock audit.
+A snapshot is not immutable external human attestation.
 """
 from __future__ import annotations
 
@@ -25,13 +27,13 @@ def verify_native_review_history(*, run, environment, history):
         raise ValueError("untrusted triggering run")
     if (environment.get("name") != ENVIRONMENT
             or environment.get("can_admins_bypass") is not False
-            or environment.get("prevent_self_review") is not True
             or type(environment.get("protection_rules")) is not list):
         raise ValueError("environment review is missing or bypassable")
     rules=[r for r in environment["protection_rules"]
            if type(r) is dict and r.get("type")=="required_reviewers"]
-    if len(rules)!=1 or type(rules[0].get("reviewers")) is not list:
-        raise ValueError("exactly one native required-reviewer rule is needed")
+    if (len(rules)!=1 or type(rules[0].get("reviewers")) is not list
+            or rules[0].get("prevent_self_review") is not True):
+        raise ValueError("native required reviewers and self-review protection required")
     reviewers=set()
     for r in rules[0]["reviewers"]:
         if (type(r) is not dict or r.get("type")!="User"
