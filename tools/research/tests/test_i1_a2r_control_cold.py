@@ -73,7 +73,7 @@ class ControlTests(unittest.TestCase):
             elif attack=="wrong_margin":tr["accumulator_after"]=0.3
             elif attack=="wrong_threshold":tr["threshold"]=0.0
             elif attack=="noncanonical_float":
-                tr["accumulator_after"]={"$f64":"0x1.3333333333333p+0"}
+                tr["accumulator_after"]={"$f64":"0X1.3333333333333P+0"}
             elif attack=="negative":tr["accumulator_before"]=-1.0
             elif attack=="unevaluated_mutated":
                 tr.update(evidence=None,crossed=False,accumulator_after=1.0)
