@@ -127,8 +127,9 @@ def audit_native_affordance_evidence(events, *, q_replay, birth):
                 or q.get("status") != data.get("learned_value_status")
                 or proposal.get("learned_value_status") != data.get("learned_value_status")):
             raise ValueError("affordance proposal is not source of native Stage8 Q")
-        if (data.get("intrinsic_status") != "not_applicable"
-                or data.get("intrinsic_value") is not None
+        # Stage8's authentic M11 event does not serialize intrinsic fields.
+        # A separately emitted Stage11 event is the only native flag.
+        if (key in intrinsics
                 or data.get("simulated_value_status") != "unavailable"
                 or data.get("simulated_value") is not None
                 or data.get("status") != "evaluated"):
@@ -188,16 +189,16 @@ def audit_native_affordance_evidence(events, *, q_replay, birth):
     matched_intrinsic = 0
     for key, (_, payload, index) in intrinsics.items():
         if key not in evaluations or index <= evaluations[key][2]:
-            raise ValueError("Stage11 intrinsic event has no preceding Stage8")
+            raise ValueError("Stage11 intrinsic event must FOLLOW its Stage8 evaluation")
         data = evaluations[key][1]
-        if (data.get("intrinsic_status") != "applicable"
-                or payload.get("status") != data.get("status")):
+        if payload.get("status") != data.get("status"):
             raise ValueError("Stage11 intrinsic status differs from Stage8")
-        a, b = payload.get("intrinsic_value"), data.get("intrinsic_value")
-        if (a is None) != (b is None):
-            raise ValueError("Stage11 intrinsic value presence differs")
-        if a is not None:
-            _same(a, b, "Stage11 intrinsic value")
+        value = payload.get("intrinsic_value")
+        if (data["status"] == "evaluated" and value is None
+                or data["status"] == "not_evaluated" and value is not None):
+            raise ValueError("Stage11 intrinsic value and evaluation status disagree")
+        if value is not None:
+            _num(value, "separately published Stage11 intrinsic value")
         if (type(payload.get("intrinsic_producers")) is not list
                 or type(payload.get("signal_ids")) is not list):
             raise ValueError("Stage11 intrinsic provenance not recorded")
@@ -205,16 +206,16 @@ def audit_native_affordance_evidence(events, *, q_replay, birth):
         _same(payload.get("P15_intrinsic_weight"), expected_weight,
               "source-born P15 intrinsic weight")
         matched_intrinsic += 1
-    if any(data.get("intrinsic_status") == "applicable" and key not in intrinsics
-           for key, (_, data, _) in evaluations.items()):
-        raise ValueError("missing Stage11 intrinsic evidence provenance")
+    # The complete native Stage11 set is explicit, not inferred from
+    # absent fields in Stage8. Missing Stage11 source snapshots cannot
+    # be promoted to independently reconstructed motivation.
 
     # A remaining non-Q Stage8 option must NOT be promoted to a proof.
     remaining = [
         {"step":k[0], "cycle":k[1], "option":k[2]}
         for k, (_, data, _) in evaluations.items()
         if k not in covered and (
-            data.get("intrinsic_status") == "applicable"
+            k in intrinsics
             or (data.get("status") == "evaluated"
                 and data.get("simulated_value_status") != "computed"
                 and data.get("learned_value_status") == "unlearned"))
