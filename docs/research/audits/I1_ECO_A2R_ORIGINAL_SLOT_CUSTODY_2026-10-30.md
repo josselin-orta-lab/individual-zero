@@ -1,0 +1,9 @@
+# A2-R : réservation irréversible d'un original (30 octobre 2026)
+
+Après la PR #653, la porte de provenance vérifie des déclarations de source/run, mais **ne délivre pas d'autorisation de naissance**. Cette tranche développe le seul mécanisme de conservation des emplacements d'origine, **sans appeler I1, birth_i1_m11 ou run_step**.
+
+`reserve_original_slot` crée de manière exclusive le répertoire de l'identité préenregistrée et un `report.json` canonique `PENDING`. Un deuxième appel, même après un crash, une mort ou une erreur, échoue définitivement : **aucune deuxième naissance sur le même slot**. Un `PENDING` ne peut pas être interprété comme `COMPLETE` par l'assembleur existant. `finalize_original_slot` accepte une seule transition `PENDING → FAILED/COMPLETE`, sérialisée via verrou de répertoire, écriture fsync et remplacement atomique du rapport. Les octets des bases et WAL existants sont laissés intacts. Les sidecars supplémentaires, alias et résultats incompatibles sont rejetés.
+
+**Limite cruciale** : `COMPLETE` ici est une déclaration **syntaxique**, même si le fichier SQLite est frauduleux. Seuls les audits indépendants M11, de naissance et d'origine pourront ensuite attester les octets. Une interruption avant la finalisation laisse `PENDING` et bloque l'admissibilité ; aucune reprise ni création d'une vie remplaçante n'est autorisée. Il faut encore configurer la provenance du vrai run GitHub, l'approbation protégée, et le runner de vie prospectif, qui sont volontairement absents.
+
+Tests adversariaux purs Python 3.11/3.12 sans naissance ni CI lourde. A1-C NO_GO, A2-R NOT_EXECUTED (0/96), L3 NOT_ESTABLISHED.
