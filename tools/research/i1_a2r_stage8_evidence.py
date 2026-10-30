@@ -143,6 +143,61 @@ def attest_native_stage8(events, *, q_replay, calibration, td_version):
                 or key in local_sources):
             raise ValueError("duplicated or invalid local affordance origin")
         local_sources.add(key)
+    # The native Stage8 payload contains NO intrinsic_status/intrinsic_value.
+    # Stage11 writes a separate provenance event only AFTER Competition
+    # has processed Stage8's output. Treat that event as the source of
+    # the intrinsic classification, never a missing Stage8 field.
+    intrinsic_sources = set()
+    stage8_positions = {}
+    competition_positions = {}
+    for position, event in enumerate(events):
+        kind = event.get("kind")
+        if kind not in ("stage8_option_evaluation", "competition_cycle",
+                        "stage11_intrinsic_evaluation"):
+            continue
+        data = event.get("data")
+        step, cycle = event.get("t_monde"), event.get("cycle")
+        if type(step) is not int or type(cycle) is not int or type(data) is not dict:
+            raise ValueError("invalid M11 Stage8/Competition/Stage11 occurrence")
+        if kind == "competition_cycle":
+            pair = (step, cycle)
+            if pair in competition_positions:
+                raise ValueError("duplicate native Competition occurrence")
+            competition_positions[pair] = position
+            continue
+        option = data.get("option_ref")
+        if type(option) is not str or not option:
+            raise ValueError("invalid native intrinsic/Stage8 option")
+        key = (step, cycle, option)
+        if kind == "stage8_option_evaluation":
+            if key in stage8_positions:
+                raise ValueError("duplicate native Stage8 occurrence")
+            stage8_positions[key] = position
+        else:
+            if key in intrinsic_sources:
+                raise ValueError("duplicate native Stage11 intrinsic occurrence")
+            intrinsic_sources.add(key)
+            if (data.get("status") not in ("evaluated", "not_evaluated")
+                    or type(data.get("signal_ids")) is not list
+                    or type(data.get("intrinsic_producers")) is not list):
+                raise ValueError("invalid Stage11 intrinsic provenance")
+    for key in intrinsic_sources:
+        step, cycle, _ = key
+        if (key not in published or key not in stage8_positions
+                or (step, cycle) not in competition_positions):
+            raise ValueError("orphan Stage11 intrinsic evaluation")
+        original = stage8_positions[key]
+        competing = competition_positions[(step, cycle)]
+        intrinsic_position = next(
+            i for i, e in enumerate(events)
+            if e.get("kind") == "stage11_intrinsic_evaluation"
+            and (e.get("t_monde"), e.get("cycle"),
+                 e["data"]["option_ref"]) == key)
+        if not original < competing < intrinsic_position:
+            raise ValueError("Stage11 intrinsic provenance is not after Competition")
+        if key in local_sources:
+            raise ValueError("local affordance was also credited as Stage11 intrinsic")
+
     td_by_step = {}
     for item in q_replay["td_recurrences"]:
         if type(item) is not dict or type(item.get("step")) is not int:
@@ -201,8 +256,9 @@ def attest_native_stage8(events, *, q_replay, calibration, td_version):
             # normal Stage8 Q-only formula; intrinsic/unidentified producers
             # cannot silently inherit a normal Stage8 verification either.
             is_local = key in local_sources
+            is_intrinsic = key in intrinsic_sources
             other_family = (
-                is_local or data.get("intrinsic_status") != "not_applicable"
+                is_local or is_intrinsic
                 or (data["status"] == "evaluated" and count == 0
                     and data["simulated_value_status"] != "computed")
             )
@@ -217,12 +273,11 @@ def attest_native_stage8(events, *, q_replay, calibration, td_version):
                       or data["evidence"] is not None or is_local):
                     raise ValueError("unreplayed native evidence/status invalid")
                 family = ("local_affordance" if is_local else
-                          "intrinsic_or_unknown" if
-                          data.get("intrinsic_status") != "not_applicable" else
+                          "intrinsic_or_unknown" if is_intrinsic else
                           "external_adapter")
                 unsupported.append({"step":key[0], "cycle":key[1],
                                     "option":key[2], "family":family,
-                                    "intrinsic_status":data.get("intrinsic_status")})
+                                    "stage11_separate_event":is_intrinsic})
             else:
                 expected_stage8_evidence(
                     data, update_count=count,
@@ -245,6 +300,7 @@ def attest_native_stage8(events, *, q_replay, calibration, td_version):
         "all_native_evidence_recomputed": len(unsupported) == 0,
         "learned_q_reads_recomputed": learned_reads,
         "q_simulation_blends_recomputed": blended_reads,
+        "stage11_post_competition_occurrences": len(intrinsic_sources),
         "td_updates_counted": len(td_seen),
         "same_full_m11_q_replay": True,
         "preregistered_mechanism_exposed": False,

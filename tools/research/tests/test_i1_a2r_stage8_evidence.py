@@ -73,6 +73,29 @@ class EvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             attest_native_stage8([],q_replay=replay,
                                  calibration=CAL,td_version=TD)
+    def test_native_stage11_separate_after_competition(self):
+        event={"kind":"stage8_option_evaluation","t_monde":1,"cycle":1,
+               "data":row()}
+        comp={"kind":"competition_cycle","t_monde":1,"cycle":1,"data":{"traces":[]}}
+        intrinsic={"kind":"stage11_intrinsic_evaluation","t_monde":1,"cycle":1,
+                   "data":{"option_ref":"permanent:attendre","status":"evaluated",
+                           "intrinsic_value":.3,"signal_ids":["proof"],
+                           "intrinsic_producers":["exploration:p48"]}}
+        replay={"scope":"A2R_COLD_NATIVE_Q_FULL_VECTOR_NOT_L3",
+                "full_q_replay_verified":True,"adaptive_learning_go":"NOT_ESTABLISHED",
+                "td_recurrences":[],"q_update_counts":{},
+                "stage8_observations":[{"step":1,"cycle":1,"option":"permanent:attendre",
+                    "signature":"primitive:attendre","status":"unlearned","q":None}]}
+        result=attest_native_stage8([event,comp,intrinsic],q_replay=replay,
+                                    calibration=CAL,td_version=TD)
+        self.assertEqual(result["stage11_post_competition_occurrences"],1)
+        self.assertEqual(result["unreplayed_evaluations"][0]["family"],"intrinsic_or_unknown")
+        with self.assertRaises(ValueError):
+            attest_native_stage8([intrinsic,event,comp],q_replay=replay,
+                                 calibration=CAL,td_version=TD)
+        result=attest_native_stage8([event,comp],q_replay=replay,
+                                    calibration=CAL,td_version=TD)
+        self.assertEqual(result["stage8_evaluations_recomputed"],1)
     def test_missing_authenticated_replay_fails(self):
         with self.assertRaises(ValueError):
             attest_native_stage8([],q_replay={"full_q_replay_verified":False},calibration=CAL,td_version=TD)
