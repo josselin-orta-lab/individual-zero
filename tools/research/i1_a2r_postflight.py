@@ -24,7 +24,9 @@ PARITY_FIELDS = (
     "born_temperament", "world_config_sha256", "setpoints", "weights",
     "scales", "born_td", "born_td_evidence_scale",
     "stage8_evaluation", "stage11_intrinsic_weight",
-    "stage11_geographic_novelty_weight", "world_clock",
+    "stage11_geographic_novelty_weight",
+    "stage11_geographic_max_distinct_sites", "initial_exploration",
+    "action_control_policy_version", "world_clock",
 )
 
 

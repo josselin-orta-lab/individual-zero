@@ -7,6 +7,8 @@ mediation, nor certify absence of a rollback from truncated histories.
 """
 from __future__ import annotations
 
+import re
+
 from i1_a2r_m11_cold import physical_steps
 
 _RULES = {
@@ -18,6 +20,8 @@ _RULES = {
 }
 _Q_SCOPE = "A2R_COLD_NATIVE_Q_FULL_VECTOR_NOT_L3"
 _BIRTH_SCOPE = "SOURCE_RECONSTRUCTED_ZERO_STEP_REFERENCE_NOT_NEW_LIFE"
+_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+_SOURCES = frozenset(("decision", "reflex", "stage3_wait_stub"))
 
 
 def audit_native_action_control(events, *, q_replay, birth):
@@ -59,6 +63,7 @@ def audit_native_action_control(events, *, q_replay, birth):
             row["cycle"], row["option"])
 
     competition = {}
+    competition_orders = {}
     latest_competition = {}
     control = {}
     experienced = {}
@@ -88,14 +93,15 @@ def audit_native_action_control(events, *, q_replay, birth):
                     raise ValueError("invalid or duplicate Competition trace")
                 traces[tr["option_ref"]] = tr
             competition[(t, cycle)] = traces
+            competition_orders[(t, cycle)] = order
             latest_competition[t] = (cycle, order)
         elif kind in ("command_admitted", "command_vetoed"):
             if (type(t) is not int or t not in actual or type(data) is not dict
-                    or type(data.get("source")) is not str or not data["source"]
+                    or data.get("source") not in _SOURCES
                     or type(data.get("primitive")) is not str
                     or not data["primitive"]
                     or type(data.get("command_hash")) is not str
-                    or not data["command_hash"]
+                    or _SHA256.fullmatch(data["command_hash"]) is None
                     or data.get("policy_version") != version):
                 raise ValueError("unsigned/foreign Action Control decision receipt")
             if kind == "command_admitted":
@@ -125,6 +131,8 @@ def audit_native_action_control(events, *, q_replay, birth):
             if trace is None:
                 raise ValueError("Action Control option absent from current Competition")
             if kind == "command_vetoed":
+                if not trace["crossed"] and option != "permanent:attendre":
+                    raise ValueError("vetoed nonfallback option did not cross threshold")
                 vetoes.append({
                     "step": t, "cycle": cycle, "option": option,
                     "reason": data["reason"],
@@ -137,12 +145,27 @@ def audit_native_action_control(events, *, q_replay, birth):
         elif kind == "command_experienced":
             if (type(t) is not int or t not in actual or t in experienced
                     or type(ev.get("command_hash")) is not str
-                    or not ev["command_hash"]):
+                    or _SHA256.fullmatch(ev["command_hash"]) is None):
                 raise ValueError("missing or repeated original physical command")
             experienced[t] = (ev, order)
 
     if set(experienced) != set(actual):
         raise ValueError("missing physical command experiences")
+    # Both journal emitters attach the world-step attempt reference. The
+    # matching physical receipt is the independent anchor: a signed event
+    # from a different attempt at the same step must never be joined.
+    for ev in events:
+        if ev.get("kind") not in (
+                "competition_cycle", "command_admitted", "command_vetoed"):
+            continue
+        step = ev.get("t_monde")
+        if (step not in experienced
+                or ev.get("attempt_ref") !=
+                   experienced[step][0].get("attempt_ref")):
+            raise ValueError("Action Control and physical attempt owners differ")
+    if any(position >= experienced[step][1]
+           for (step, _cycle), position in competition_orders.items()):
+        raise ValueError("Competition was recorded after physical execution")
     if set(admitted_decisions) != set(expected_decisions):
         raise ValueError("decision admission set differs from independently cold Q")
     other_executed = 0
@@ -195,6 +218,13 @@ def audit_native_action_control(events, *, q_replay, birth):
         "control_attempts_checked": attempts,
         "ranked_option_veto_receipts_reconciled": len(vetoes),
         "veto_examples": vetoes[:8],
+        "veto_occurrences": vetoes,
+        "admitted_decision_occurrences": [
+            {"step": step, "cycle": entry[0], "option": entry[1],
+             "primitive": entry[2]["primitive"],
+             "command_hash": entry[2]["command_hash"]}
+            for step, entry in sorted(admitted_decisions.items())
+        ],
         "nondecision_motor_sources": other_executed,
         "policy_version_matches_source_birth": True,
         "all_motor_receipts_matched": True,
