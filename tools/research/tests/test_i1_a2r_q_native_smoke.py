@@ -112,17 +112,6 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
                 raw["events"],q_replay=cold,birth=reconstruct_pristine_birth(
                     role=role,seed=SEED,mode=mode,preset_sha256=preset_sha))
             assert controller["all_motor_receipts_matched"] is True
-            exposures=summarize_paid_q_coexposure(
-                raw["events"],q_replay=cold,controller=controller,
-                stage8=stage8 if "stage8" in locals() else attest_native_stage8(
-                    raw["events"],q_replay=cold,
-                    calibration=reconstruct_pristine_birth(
-                        role=role,seed=SEED,mode=mode,preset_sha256=preset_sha)["stage8_evaluation"],
-                    td_version=cold["q_weights"] and td_birth["version"] or td_birth["version"]),
-                local=local if "local" in locals() else audit_native_affordance_evidence(
-                    raw["events"],q_replay=cold,birth=reconstruct_pristine_birth(
-                        role=role,seed=SEED,mode=mode,preset_sha256=preset_sha)))
-            assert exposures["study_admissible"] is False
             candidate_audit=audit_candidate_provenance(
                 raw["events"], q_replay=cold,control=controller,
                 birth=reconstruct_pristine_birth(
@@ -172,6 +161,10 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
             local=audit_native_affordance_evidence(
                 raw["events"],q_replay=cold,birth=reconstructed_birth)
             assert local["preregistered_mechanism_exposed"] is False
+            exposures=summarize_paid_q_coexposure(
+                raw["events"],q_replay=cold,controller=controller,
+                stage8=stage8,local=local)
+            assert exposures["study_admissible"] is False
             intrinsic=audit_stage11_intrinsic_magnitude(
                 raw["events"],q_replay=cold,stage8_audit=stage8,
                 birth=reconstructed_birth)
