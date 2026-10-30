@@ -7,6 +7,7 @@ configuration changes, scientific evidence or retrospective approval.
 from __future__ import annotations
 
 import json
+import os
 
 from i1_a2r_actions_provenance import _fetch_github_json, REPOSITORY
 from i1_a2r_environment_review import ENVIRONMENT
@@ -62,9 +63,14 @@ def classify_environment_snapshot(environment):
     }
 
 
-def observe_live_environment(*, api_get=None):
-    """Never infer missing protection from an inaccessible API response."""
-    get = api_get if api_get is not None else _fetch_github_json
+def observe_live_environment(*, api_get=None, token=None):
+    """Use explicitly supplied read-only token without leaking it in reports.
+
+    A missing or unauthorized token must remain API_UNVERIFIABLE. The token
+    does not prove a protected review, an external lock or a launch permit.
+    """
+    get = (api_get if api_get is not None else
+           lambda endpoint: _fetch_github_json(endpoint, token=token))
     try:
         response = get(ENDPOINT)
         return classify_environment_snapshot(response)
@@ -87,7 +93,8 @@ def observe_live_environment(*, api_get=None):
 
 def main():
     print("I1_A2R_ENVIRONMENT_OBSERVATION=" + json.dumps(
-        observe_live_environment(), sort_keys=True, separators=(",", ":")))
+        observe_live_environment(token=os.environ.get("GITHUB_TOKEN")),
+        sort_keys=True, separators=(",", ":")))
 
 
 if __name__ == "__main__":
