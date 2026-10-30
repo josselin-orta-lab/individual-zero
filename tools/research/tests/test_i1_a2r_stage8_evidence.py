@@ -76,6 +76,8 @@ class EvidenceTests(unittest.TestCase):
     def test_native_stage11_separate_after_competition(self):
         event={"kind":"stage8_option_evaluation","t_monde":1,"cycle":1,
                "data":row()}
+        event["data"]["intrinsic_status"]="applicable"
+        event["data"]["intrinsic_value"]=.3
         comp={"kind":"competition_cycle","t_monde":1,"cycle":1,"data":{"traces":[]}}
         intrinsic={"kind":"stage11_intrinsic_evaluation","t_monde":1,"cycle":1,
                    "data":{"option_ref":"permanent:attendre","status":"evaluated",
@@ -93,7 +95,11 @@ class EvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             attest_native_stage8([intrinsic,event,comp],q_replay=replay,
                                  calibration=CAL,td_version=TD)
-        result=attest_native_stage8([event,comp],q_replay=replay,
+        with self.assertRaises(ValueError):
+            attest_native_stage8([event,comp],q_replay=replay,
+                                 calibration=CAL,td_version=TD)
+        ordinary={"kind":"stage8_option_evaluation","t_monde":1,"cycle":1,"data":row()}
+        result=attest_native_stage8([ordinary,comp],q_replay=replay,
                                     calibration=CAL,td_version=TD)
         self.assertEqual(result["stage8_evaluations_recomputed"],1)
     def test_missing_authenticated_replay_fails(self):
