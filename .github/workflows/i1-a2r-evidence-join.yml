@@ -1,0 +1,26 @@
+name: A2-R exact cold evidence join pure
+on:
+  pull_request:
+    paths:
+      - 'tools/research/i1_a2r_postflight.py'
+      - 'tools/research/i1_a2r_stage8_evidence.py'
+      - 'tools/research/i1_a2r_affordance_cold.py'
+      - 'tools/research/tests/test_i1_a2r_evidence_join.py'
+      - '.github/workflows/i1-a2r-evidence-join.yml'
+permissions:
+  contents: read
+jobs:
+  pure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        python-version: ['3.11','3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_evidence_join.py -v

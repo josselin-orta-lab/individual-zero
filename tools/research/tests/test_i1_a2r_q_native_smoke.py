@@ -30,6 +30,7 @@ from i1_a2r_q_replay import cold_replay_m11
 from i1_a2r_pair_witness import cold_compare_pair
 from i1_a2r_stage8_evidence import attest_native_stage8
 from i1_a2r_affordance_cold import audit_native_affordance_evidence
+from i1_a2r_postflight import reconcile_native_evidence
 from i1_a2r_source_birth_audit import reconstruct_pristine_birth
 from i1_a2r_m11_cold import evidence_life, compare_pre_reward, inspect_m11
 from run_i1_world_preset import load_preset, _birth_parameters
@@ -126,8 +127,12 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
             assert stage8["preregistered_mechanism_exposed"] is False
             local=audit_native_affordance_evidence(
                 raw["events"],q_replay=cold,birth=reconstructed_birth)
-            assert local["all_non_q_evaluations_recomputed"] is False
             assert local["preregistered_mechanism_exposed"] is False
+            coverage=reconcile_native_evidence(
+                stage8=stage8,local=local,replay=cold,
+                require_complete=False)
+            assert coverage["study_admissible"] is False
+            assert coverage["preregistered_mechanism_exposed"] is False
             other=(CANONICAL_ABS if mode==RESEARCH_DEFICIT else RESEARCH_DEFICIT)
             try:
                 cold_replay_m11(path=str(db),identity=identity,mode=other,
@@ -147,6 +152,7 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
                 q_reads=cold["native_q_checks"],
                 stage8_evidence=stage8["stage8_evaluations_recomputed"],
                 stage8_blends=stage8["q_simulation_blends_recomputed"],
+                local_recomputed=local["native_local_affordance_recomputed"],
             )
     for role in ("native","reversed"):
         c=results[(role,CANONICAL_ABS)]
@@ -167,6 +173,7 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
         assert pair["study_admissible"] is False
         assert pair["preregistered_mechanism_exposed"] is False
         assert pair["general_L3"]=="NOT_ESTABLISHED"
+    assert sum(row["local_recomputed"] for row in results.values()) > 0
     print("A2R_NATIVE_M11_FOUR_SHORT_TECHNICAL_LIVES_Q_REPLAY_OK",
           sum(row["td_updates"] for row in results.values()),
           sum(row["q_reads"] for row in results.values()),

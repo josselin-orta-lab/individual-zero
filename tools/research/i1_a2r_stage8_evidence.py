@@ -122,6 +122,27 @@ def attest_native_stage8(events, *, q_replay, calibration, td_version):
                 or type(key[2]) is not str or key in published):
             raise ValueError("duplicated Stage8 key in cold Q replay")
         published[key] = row
+    # A learned local affordance uses I1's 25% prior / 75% Q adapter,
+    # NOT Stage8's ordinary Q-only equation. Native local occurrences
+    # stay unverified until their separate source-born formula is checked.
+    local_sources = set()
+    for event in events:
+        if type(event) is not dict:
+            raise ValueError("malformed M11 event")
+        if event.get("kind") not in (
+                "i1_local_opportunity_proposed",
+                "i1_unknown_affordance_proposed"):
+            continue
+        data = event.get("data")
+        if type(data) is not dict:
+            raise ValueError("malformed M11 affordance origin")
+        key = (event.get("t_monde"), event.get("cycle"),
+               data.get("option_ref"))
+        if (type(key[0]) is not int or type(key[1]) is not int
+                or type(key[2]) is not str or not key[2]
+                or key in local_sources):
+            raise ValueError("duplicated or invalid local affordance origin")
+        local_sources.add(key)
     td_by_step = {}
     for item in q_replay["td_recurrences"]:
         if type(item) is not dict or type(item.get("step")) is not int:
@@ -176,23 +197,31 @@ def attest_native_stage8(events, *, q_replay, calibration, td_version):
             elif not _equal(row["q"], data.get("learned_value")):
                 raise ValueError("Stage8 numeric Q differs from cold native Q")
             count = counts.get(signature, 0)
-            # Native I1 includes supplementary intrinsic and local-affordance
-            # evaluators. Their evidence is NOT governed by the Stage8
-            # learned-Q/simulation equation. They need a separate source-
-            # attested replay before a complete decision mediation claim.
-            if data.get("intrinsic_status") != "not_applicable" or (
-                    data["status"] == "evaluated"
-                    and count == 0
-                    and data["simulated_value_status"] != "computed"):
-                if data["evidence"] is None:
-                    raise ValueError("unreplayed native non-Q evidence missing")
-                value = numeric(data["evidence"])
-                if not -1. <= value <= 1.:
-                    raise ValueError("native non-Q evidence outside bounds")
-                if data["status"] != "evaluated":
-                    raise ValueError("native non-Q evidence status invalid")
+            # An already-learned local Q must never be mistaken for the
+            # normal Stage8 Q-only formula; intrinsic/unidentified producers
+            # cannot silently inherit a normal Stage8 verification either.
+            is_local = key in local_sources
+            other_family = (
+                is_local or data.get("intrinsic_status") != "not_applicable"
+                or (data["status"] == "evaluated" and count == 0
+                    and data["simulated_value_status"] != "computed")
+            )
+            if other_family:
+                if data["status"] == "evaluated":
+                    if data["evidence"] is None:
+                        raise ValueError("unreplayed native evidence missing")
+                    value = numeric(data["evidence"])
+                    if not -1. <= value <= 1.:
+                        raise ValueError("native evidence outside bounds")
+                elif (data["status"] != "not_evaluated"
+                      or data["evidence"] is not None or is_local):
+                    raise ValueError("unreplayed native evidence/status invalid")
+                family = ("local_affordance" if is_local else
+                          "intrinsic_or_unknown" if
+                          data.get("intrinsic_status") != "not_applicable" else
+                          "external_adapter")
                 unsupported.append({"step":key[0], "cycle":key[1],
-                                    "option":key[2],
+                                    "option":key[2], "family":family,
                                     "intrinsic_status":data.get("intrinsic_status")})
             else:
                 expected_stage8_evidence(
@@ -212,6 +241,7 @@ def attest_native_stage8(events, *, q_replay, calibration, td_version):
         "stage8_evaluations_recomputed": verified,
         "stage8_other_evaluations_unreplayed": len(unsupported),
         "stage8_other_evaluation_examples": unsupported[:8],
+        "unreplayed_evaluations": unsupported,
         "all_native_evidence_recomputed": len(unsupported) == 0,
         "learned_q_reads_recomputed": learned_reads,
         "q_simulation_blends_recomputed": blended_reads,

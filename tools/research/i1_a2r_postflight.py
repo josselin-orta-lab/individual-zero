@@ -22,8 +22,106 @@ from i1_eco_metrics import evaluate_life
 PARITY_FIELDS = (
     "initial_body", "initial_inventory", "initial_perception",
     "born_temperament", "world_config_sha256", "setpoints", "weights",
-    "scales", "born_td", "stage8_evaluation", "world_clock",
+    "scales", "born_td", "born_td_evidence_scale",
+    "stage8_evaluation", "stage11_intrinsic_weight", "world_clock",
 )
+
+
+
+
+def reconcile_native_evidence(*, stage8, local, replay, require_complete=True):
+    """Join full M11 Stage8 quarantine to independently reconstructed local Q.
+
+    Only the exact same (world step, cycle, option) may discharge an already
+    quarantined local event. No unknown, intrinsic or other producer is
+    promoted to verified by the mere presence of an affordance somewhere.
+    Even a complete arithmetic join is NOT a confirmatory L3 verdict.
+    """
+    if (type(require_complete) is not bool
+            or type(stage8) is not dict or type(local) is not dict
+            or type(replay) is not dict
+            or stage8.get("scope") != "A2R_STAGE8_NATIVE_EVIDENCE_RECONSTRUCTED_NOT_L3"
+            or local.get("scope") != "A2R_NATIVE_LOCAL_AFFORDANCE_ARITHMETIC_NOT_L3"
+            or replay.get("full_q_replay_verified") is not True
+            or stage8.get("preregistered_mechanism_exposed") is not False
+            or local.get("preregistered_mechanism_exposed") is not False):
+        raise ValueError("native evidence join requires two cold technical auditors")
+
+    pending = stage8.get("unreplayed_evaluations")
+    verified = local.get("verified_evaluations")
+    if type(pending) is not list or type(verified) is not list:
+        raise ValueError("full per-occurrence M11 evidence lists required")
+
+    def key(row):
+        if (type(row) is not dict or type(row.get("step")) is not int
+                or type(row.get("cycle")) is not int
+                or type(row.get("option")) is not str or not row["option"]):
+            raise ValueError("malformed evidence occurrence identity")
+        return row["step"], row["cycle"], row["option"]
+
+    quarantine = {}
+    for row in pending:
+        identity = key(row)
+        if (identity in quarantine
+                or row.get("family") not in (
+                    "local_affordance", "intrinsic_or_unknown",
+                    "external_adapter")):
+            raise ValueError("duplicated/unknown Stage8 evidence quarantine")
+        quarantine[identity] = row
+
+    covered = set()
+    learned_local = 0
+    for row in verified:
+        identity = key(row)
+        if (identity in covered or identity not in quarantine
+                or quarantine[identity]["family"] != "local_affordance"
+                or row.get("path") not in ("local", "goal_linked")
+                or type(row.get("q_active_used")) is not bool
+                or type(row.get("expected_evidence")) not in (int, float)
+                or not isfinite(row["expected_evidence"])
+                or not -1. <= row["expected_evidence"] <= 1.):
+            raise ValueError("unmatched or forged native local Q evidence")
+        covered.add(identity)
+        learned_local += row["q_active_used"]
+
+    stage8_count = stage8.get("stage8_evaluations_recomputed")
+    pending_count = stage8.get("stage8_other_evaluations_unreplayed")
+    local_count = local.get("native_local_affordance_recomputed")
+    local_q = local.get("local_with_learned_q")
+    total = replay.get("stage8_read_count")
+    learned_total = replay.get("learned_stage8_reads")
+    stage8_q = stage8.get("learned_q_reads_recomputed")
+    if (any(type(v) is not int or v < 0 for v in (
+            stage8_count, pending_count, local_count, local_q, total,
+            learned_total, stage8_q))
+            or local_count != len(verified) or local_q != learned_local
+            or pending_count != len(pending)
+            or stage8_count + pending_count != total
+            or stage8_count + len(covered) > total
+            or stage8_q + learned_local > learned_total
+            or stage8.get("all_native_evidence_recomputed") is not (
+                not pending)):
+        raise ValueError("native Stage8/Q and local evidence counts disagree")
+
+    unknown = [row for row in pending if key(row) not in covered]
+    if not unknown and stage8_q + learned_local != learned_total:
+        raise ValueError("learned native Q read not covered by any formula")
+    if require_complete and unknown:
+        raise ValueError(
+            "unreplayed native intrinsic/other evidence remains: %d"
+            % len(unknown))
+    return {
+        "scope": "A2R_COLD_NATIVE_EVIDENCE_JOIN_NOT_L3",
+        "ordinary_stage8_equations_recomputed": stage8_count,
+        "local_affordance_equations_recomputed": local_count,
+        "full_native_stage8_occurrences": total,
+        "unreplayed_other_producer_occurrences": len(unknown),
+        "unreplayed_examples": unknown[:8],
+        "all_native_equations_recomputed": not unknown,
+        "preregistered_mechanism_exposed": False,
+        "study_admissible": False,
+        "general_L3": "NOT_ESTABLISHED",
+    }
 
 
 def score_cold_original(*, original, reference, cold, replay):
@@ -190,6 +288,7 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
     from i1_a2r_q_replay import cold_replay_m11
     from i1_a2r_pair_witness import compare_pair
     from i1_a2r_stage8_evidence import attest_native_stage8
+    from i1_a2r_affordance_cold import audit_native_affordance_evidence
 
     root = Path(archive_root)
     verify_archive(
@@ -224,18 +323,20 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
             cold["events"], q_replay=replay,
             calibration=ref["stage8_evaluation"],
             td_version=ref["born_td"]["version"])
-        if (stage8["all_native_evidence_recomputed"] is not True
-                or stage8["stage8_evaluations_recomputed"] != replay["stage8_read_count"]
-                or stage8["learned_q_reads_recomputed"]
-                != replay["learned_stage8_reads"]):
-            raise ValueError("native Stage8 math was not fully cold-replayed")
+        local = audit_native_affordance_evidence(
+            cold["events"], q_replay=replay, birth=ref)
+        coverage = reconcile_native_evidence(
+            stage8=stage8, local=local, replay=replay,
+            require_complete=True)
         score = score_cold_original(
             original=archived, reference=ref, cold=cold, replay=replay)
         score["stage8_evidence_recomputed"] = True
         score["stage8_math_read_count"] = stage8["stage8_evaluations_recomputed"]
+        score["local_affordance_math_read_count"] = local["native_local_affordance_recomputed"]
         stored[(role, seed, mode)] = {
             "reference": ref, "cold": cold, "replay": replay,
-            "stage8": stage8, "score": score,
+            "stage8": stage8, "local": local,
+            "coverage": coverage, "score": score,
         }
     pairs = []
     for role in ROLES:
@@ -264,6 +365,7 @@ def audit_sealed_originals(*, archive_root, checkout_root, generated_root,
         "external_manifest_digest_checked": external_manifest_sha256,
         "all_96_cold_m11_and_12_feature_q_replayed": True,
         "all_96_native_stage8_equations_recomputed": True,
+        "all_96_local_affordance_equations_reconciled": True,
         "all_96_death_inclusive_scores_recomputed": True,
         "pairs": pairs,
     }
