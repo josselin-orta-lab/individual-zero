@@ -15,7 +15,8 @@ def row(q=None,sim=3.,evidence=None):
       "status":"evaluated" if learned or valid_sim else "not_evaluated",
       "learned_value_status":"learned" if learned else "unlearned",
       "learned_value":q,"simulated_value_status":"computed" if valid_sim else "unavailable",
-      "simulated_value":sim,"evidence":evidence,"equipment_version":"e1","q_version":TD}
+      "simulated_value":sim,"evidence":evidence,"equipment_version":"e1",
+      "intrinsic_status":"not_applicable","intrinsic_value":None,"q_version":TD}
 class EvidenceTests(unittest.TestCase):
     def test_simulation_only(self):
         self.assertAlmostEqual(expected_stage8_evidence(row(),update_count=0,calibration=CAL,td_version=TD),tanh(.6))
