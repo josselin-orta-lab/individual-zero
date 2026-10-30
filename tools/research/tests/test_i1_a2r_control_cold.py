@@ -61,6 +61,7 @@ class ControlTests(unittest.TestCase):
         audited=invoke(e,q,b)
         self.assertEqual(audited["crossed_ranked_control_attempts"],2)
         self.assertTrue(audited["native_rank_is_not_independent_state_replay"])
+        e[0]["data"]["traces"][0].update(accumulator_after=1.5, evidence=0.75)
         e[0]["data"]["traces"][1].update(accumulator_after=1.0, evidence=0.5)
         with self.assertRaisesRegex(ValueError,"higher-ranked"):
             invoke(e,q,b)
