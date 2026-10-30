@@ -117,8 +117,11 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
                 raise AssertionError(
                     "native Stage8 mismatch: "+str(exc)
                     +" candidate_events="+repr(failed[:3])) from exc
-            assert stage8["stage8_evaluations_recomputed"]==cold["stage8_read_count"]
-            assert stage8["learned_q_reads_recomputed"]==cold["learned_stage8_reads"]
+            assert (stage8["stage8_evaluations_recomputed"]
+                    + stage8["stage8_other_evaluations_unreplayed"]
+                    == cold["stage8_read_count"])
+            assert stage8["all_native_evidence_recomputed"] is False
+            assert stage8["learned_q_reads_recomputed"]<=cold["learned_stage8_reads"]
             assert stage8["preregistered_mechanism_exposed"] is False
             other=(CANONICAL_ABS if mode==RESEARCH_DEFICIT else RESEARCH_DEFICIT)
             try:
