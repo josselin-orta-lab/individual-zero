@@ -226,6 +226,7 @@ def audit_native_affordance_evidence(events, *, q_replay, birth):
         "stage11_intrinsic_provenance_matched_not_replayed":matched_intrinsic,
         "other_non_q_evaluations_not_replayed":len(remaining),
         "example_covered":verification[:6],
+        "verified_evaluations":verification,
         "example_remaining":remaining[:6],
         "all_non_q_evaluations_recomputed":len(remaining) == 0,
         "independent_source_checkout_required":True,
