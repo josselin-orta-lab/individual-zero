@@ -225,6 +225,22 @@ def reconstruct_pristine_birth(*, role, seed, mode, preset_sha256):
         "evidence_scale": stage8_config.evidence_scale,
         "extrinsic_gain": stage8_config.extrinsic_gain,
     }
+    # Independently source-born Competition arithmetic, NOT a replay of
+    # historical candidate owner states or stochastic noise realizations.
+    native_competition = born.competition._config
+    competition_calibration = {
+        "version": native_competition.version,
+        "c_max": native_competition.c_max,
+        "urgency_max": native_competition.urgency_max,
+        "urgency_scale_cycles": native_competition.urgency_scale_cycles,
+        "leak": native_competition.leak,
+        "gain": native_competition.gain,
+        "noise_sigma": native_competition.noise_sigma,
+        "base_threshold": native_competition.base_threshold,
+        "threshold_floor": native_competition.threshold_floor,
+        "inertia": native_competition.inertia,
+        "residual": native_competition.residual,
+    }
     return {
         "identity": identity, "role": role, "seed": seed, "mode": mode,
         "runtime_contract": _runtime_contract(born),
@@ -243,6 +259,7 @@ def reconstruct_pristine_birth(*, role, seed, mode, preset_sha256):
         "scales": dict(born.value_needs.config.normalization_scales),
         "born_td": _born_td_config(born),
         "stage8_evaluation": stage8_calibration,
+        "competition_calibration": competition_calibration,
         "action_control_policy_version": born.stage3.control._config.safety_policy_version,
         "born_td_evidence_scale": born.q_active.config.evidence_scale,
         "stage11_intrinsic_weight": born._stage11_config.intrinsic_weight,
