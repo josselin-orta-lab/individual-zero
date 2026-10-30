@@ -1,0 +1,5 @@
+# I1 A2-R : contrôle natif Competition → Action Control → commande (30/10/2026)
+
+Audit froid, en lecture seule, des reçus déjà authentifiés M11. Il vérifie que chaque commande réellement exécutée possède une unique admission préalable dont le hash et la primitive correspondent à l'exécution physique, qu'une décision provient bien d'un cycle Competition et qu'aucun veto ne peut suivre l'admission gagnante. Les commandes réflexes et les replis sont distingués des décisions Q/TD. Les versions de politique d'admission proviennent d'une naissance indépendante.
+
+Il n'établit **pas** la vérité des faits de danger appris, la totalité du classement des candidats en compétition, une médiation contre-factuelle de Q, ou la validité d'une action sur tous les états internes. Les chemins comportant des admissions antérieures non rejouées ou une ambiguïté d'ordonnancement échouent fermés. Les quatre vies techniques M11 sont le périmètre initial de test. Pas de H192, pas de CI naturelle lourde, aucun changement du moteur I1/I0. A1-C NO_GO, A2-R NOT_EXECUTED, L3 NOT_ESTABLISHED.
