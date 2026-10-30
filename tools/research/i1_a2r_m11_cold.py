@@ -299,9 +299,9 @@ def inspect_m11(*, path, identity, mode, allow_incomplete=False):
         connection.close()
     if (type(decoded) is not dict or type(decoded.get("owners")) is not dict
             or type(decoded.get("owner_ids")) is not list
-            or decoded["owner_ids"].count("value_needs") != 1):
+            or decoded["owner_ids"].count("value_and_needs") != 1):
         raise ValueError("missing unique Value/Needs in M11 owner roster")
-    owner = check_owner_state(decoded["owners"].get("value_needs"), mode=mode)
+    owner = check_owner_state(decoded["owners"].get("value_and_needs"), mode=mode)
     if type(decoded.get("runtime_local")) is not dict or type(
             decoded["runtime_local"].get("runtime_contract")) is not str:
         raise ValueError("missing M11 frozen birth-constructor contract")
