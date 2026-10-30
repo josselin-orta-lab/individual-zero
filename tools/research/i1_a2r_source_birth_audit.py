@@ -239,6 +239,8 @@ def reconstruct_pristine_birth(*, role, seed, mode, preset_sha256):
         "scales": dict(born.value_needs.config.normalization_scales),
         "born_td": _born_td_config(born),
         "stage8_evaluation": stage8_calibration,
+        "born_td_evidence_scale": born.q_active.config.evidence_scale,
+        "stage11_intrinsic_weight": born._stage11_config.intrinsic_weight,
         "world_clock": {
             "day_steps": born.world.config.day_steps,
             "night_steps": born.world.config.night_steps,
