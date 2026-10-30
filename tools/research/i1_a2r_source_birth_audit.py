@@ -241,6 +241,9 @@ def reconstruct_pristine_birth(*, role, seed, mode, preset_sha256):
         "stage8_evaluation": stage8_calibration,
         "born_td_evidence_scale": born.q_active.config.evidence_scale,
         "stage11_intrinsic_weight": born._stage11_config.intrinsic_weight,
+        "stage11_geographic_novelty_weight": (
+            None if born._stage11_config.geographic is None
+            else born._stage11_config.geographic.novelty_weight),
         "world_clock": {
             "day_steps": born.world.config.day_steps,
             "night_steps": born.world.config.night_steps,
