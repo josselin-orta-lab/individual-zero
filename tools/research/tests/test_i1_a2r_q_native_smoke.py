@@ -34,6 +34,7 @@ from i1_a2r_postflight import (
     reconcile_native_evidence, reconcile_stage11_intrinsic_provenance,
 )
 from i1_a2r_intrinsic_cold import audit_stage11_intrinsic_magnitude
+from i1_a2r_geographic_history_cold import replay_geographic_history
 from i1_a2r_source_birth_audit import reconstruct_pristine_birth
 from i1_a2r_m11_cold import evidence_life, compare_pre_reward, inspect_m11
 from run_i1_world_preset import load_preset, _birth_parameters
@@ -103,6 +104,13 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
                  status=raw["receipt"]["status"],mode=mode,
                  setpoints=born_setpoints,weights=born_weights)
             assert pre["td_returns_checked"]==cold["td_updates"]
+            history=replay_geographic_history(
+                raw["events"],final_exploration=raw["final_exploration"],
+                birth=reconstruct_pristine_birth(
+                    role=role,seed=SEED,mode=mode,preset_sha256=preset_sha),
+                generation=raw["receipt"]["generation"])
+            assert history["historic_visits_match_sealed_final_owner"] is True
+            assert history["study_admissible"] is False
             reconstructed_birth=reconstruct_pristine_birth(
                 role=role,seed=SEED,mode=mode,preset_sha256=preset_sha)
             assert reconstructed_birth["born_td"]==td_birth

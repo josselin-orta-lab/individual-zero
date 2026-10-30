@@ -233,6 +233,10 @@ def reconstruct_pristine_birth(*, role, seed, mode, preset_sha256):
         "initial_inventory": dict(born.world.inventory()),
         "initial_perception": born.world.capture_local(t_monde=1).as_dict(),
         "born_temperament": intended,
+        "initial_exploration": born.exploration.export_causal_state(),
+        "stage11_geographic_max_distinct_sites": (
+            None if born.exploration.geographic is None
+            else born.exploration.geographic.config.max_distinct_sites),
         "value_needs_config_version": born.value_needs.config.version,
         "setpoints": dict(born.value_needs.config.setpoints),
         "weights": dict(born.value_needs.config.weights),
