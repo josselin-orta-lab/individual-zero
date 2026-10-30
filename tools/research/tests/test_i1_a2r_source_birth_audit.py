@@ -20,6 +20,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from i1lab.i1_birth import birth_i1_m11
+from i1lab.sqlite_life_store import RecoveryBlocked
 from i1_eco_a1_worlds import a1_world_parameters
 from i1_eco_a2r_birth import IDENTITIES, a2r_matched_reward_birth
 from i1_a2r_source_birth_audit import (
@@ -76,7 +77,7 @@ with TemporaryDirectory(prefix="a2r-source-born-m11-smoke-") as folder:
                 expected_source_commit=sha,expected_source_tree=tree,
                 expected_preset_sha256=preset,checkout_root=root,
                 generated_root=generated,allow_incomplete=True)
-        except ValueError:
+        except (ValueError, RecoveryBlocked):
             pass
         else:
             raise AssertionError("accepted signed M11 under an incompatible reward-mode source")
