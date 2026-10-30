@@ -412,7 +412,7 @@ def cold_replay_m11(*, path, identity, mode, setpoints, weights,
             raise ValueError("changed M11 current causal image")
     finally:
         db.close()
-    owner = image["owners"]["value_needs"]
+    owner = image["owners"]["value_and_needs"]
     if not isinstance(owner, dict) or not isinstance(owner.get("td_values"), dict):
         raise ValueError("no final M11 Value/Needs TD owner")
     result = replay_q(
