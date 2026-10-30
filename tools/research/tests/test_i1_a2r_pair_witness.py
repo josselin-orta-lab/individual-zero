@@ -4,9 +4,10 @@ from i1_a2r_pair_witness import compare_pair
 
 def pair(mode, q=0.1, evidence=.2, action="attendre", td=1.):
     events=[]
+    previous=dict(energy=80.,food=50.,water=59.,integrity=100.)
     for t in (1,2,3):
-        before=dict(energy=80.,food=50.,water=48.,integrity=100.)
-        after=dict(before,water=48.+t)
+        before=dict(previous)
+        after=dict(before,water=before["water"]+1.)
         opt="permanent:attendre" if action=="attendre" or t<3 else "option:boire"
         options=["permanent:attendre"] if t<3 else ["permanent:attendre","option:boire"]
         for o in options:
@@ -29,6 +30,7 @@ def pair(mode, q=0.1, evidence=.2, action="attendre", td=1.):
              "body_before":before,"body_after":after},
             {"kind":"step_closed","t_monde":t,"attempt_ref":str(t),"data":{
                 "applied_command_count":1,"world_advance_count":1,"outcome":"normal"}}])
+        previous=after
     row={"scope":"A2R_COLD_NATIVE_Q_FULL_VECTOR_NOT_L3","mode":mode,
        "full_q_replay_verified":True,"birth_source_provenance_verified":False,
        "adaptive_learning_go":"NOT_ESTABLISHED","m11_identity":"id:"+mode,
