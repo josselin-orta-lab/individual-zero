@@ -1,0 +1,9 @@
+# A2-R : lire l'historique de revue GitHub natif (30 octobre 2026)
+
+Cette tranche corrige le décalage entre le contrat normalisé #655 et les réponses natives GitHub. L'endpoint de revue `GET /repos/{owner}/{repo}/actions/runs/{run_id}/approvals` renvoie une **liste** d'enregistrements contenant `state`, `user` et `environments`, mais pas de `run_id` dans chaque ligne. Le lien au run est donc établi par **l'URL de requête**, suivie de la relecture séparée du run. La réponse environnement est lue à `GET /repos/{owner}/{repo}/environments/i1-a2r-confirmatory`.
+
+Le contrôleur n'accepte qu'une seule approbation valide liée à l'environnement attendu, avec compte utilisateur indépendant de l'acteur de run. Il refuse les mécanismes de contournement admin, d'auto-revue, les règles de reviewers absentes et les réponses ambiguës. Toute erreur 403/404 est un **blocage**, jamais un acquittement implicite.
+
+**Réserve fondamentale :** les résultats de l'API restent une image courante modifiable, et les tests utilisent des fixtures synthétiques. L'outil **n'atteste pas** une approbation historique immuable, ni l'authenticité complète de son contexte externe, ni l'exécution du code épinglé. Il n'est pas une autorisation de naissance ou de cohorte. Les revues n'ayant pas de numéro de tentative natif, la tentative doit être contrôlée sur la ressource run distincte. Le contrat #655 reste conservé pour d'autres preuves normalisées. Sans approbation extérieure durable et vérification du véritable environnement côté GitHub, STOP.
+
+Aucun nouveau workflow de cohorte, aucune naissance H192, aucune modification I1/I0. Test pur Python 3.11/3.12 uniquement. A1-C NO_GO ; A2-R 0/96 NOT_EXECUTED ; L3 NOT_ESTABLISHED.

@@ -4,6 +4,8 @@ on:
     paths:
       - 'tools/research/i1_a2r_actions_provenance.py'
       - 'tools/research/i1_a2r_environment_review.py'
+      - 'tools/research/i1_a2r_native_review_history.py'
+      - 'tools/research/tests/test_i1_a2r_native_review_history.py'
       - 'tools/research/tests/test_i1_a2r_environment_review.py'
       - 'tools/research/tests/test_i1_a2r_actions_provenance.py'
       - '.github/workflows/i1-a2r-actions-provenance.yml'
@@ -25,3 +27,4 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: PYTHONPATH=tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_actions_provenance.py -v
       - run: PYTHONPATH=tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_environment_review.py -v
+      - run: PYTHONPATH=tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_native_review_history.py -v

@@ -133,8 +133,10 @@ def verify_actions_run(*, lock, commit, tree, preset, run_id, run, workflow,
     }
 
 
-def _fetch_github_json(path, *, token=None):
+def _fetch_github_json(path, *, token=None, expected_type=dict):
     """GitHub API HTTPS only; do not read self-reported in-run manifests."""
+    if expected_type not in (dict, list):
+        raise ValueError("unsupported GitHub API payload type")
     if type(path) is not str or not path.startswith(
             "/repos/" + REPOSITORY + "/") or len(path) > 512:
         raise ValueError("unsupported live GitHub provenance endpoint")
@@ -158,8 +160,8 @@ def _fetch_github_json(path, *, token=None):
         obj = json.loads(raw)
     except (UnicodeError, json.JSONDecodeError) as exc:
         raise ValueError("malformed GitHub provenance JSON") from exc
-    if type(obj) is not dict:
-        raise ValueError("GitHub provenance root must be an object")
+    if type(obj) is not expected_type:
+        raise ValueError("GitHub provenance root type differs from expected endpoint")
     return obj
 
 
