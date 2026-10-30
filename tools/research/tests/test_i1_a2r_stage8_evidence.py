@@ -15,7 +15,8 @@ def row(q=None,sim=3.,evidence=None):
       "status":"evaluated" if learned or valid_sim else "not_evaluated",
       "learned_value_status":"learned" if learned else "unlearned",
       "learned_value":q,"simulated_value_status":"computed" if valid_sim else "unavailable",
-      "simulated_value":sim,"evidence":evidence,"equipment_version":"e1","q_version":TD}
+      "simulated_value":sim,"evidence":evidence,"equipment_version":"e1",
+      "intrinsic_status":"not_applicable","intrinsic_value":None,"q_version":TD}
 class EvidenceTests(unittest.TestCase):
     def test_simulation_only(self):
         self.assertAlmostEqual(expected_stage8_evidence(row(),update_count=0,calibration=CAL,td_version=TD),tanh(.6))
@@ -31,10 +32,47 @@ class EvidenceTests(unittest.TestCase):
         x["evidence"]=.9
         with self.assertRaises(ValueError):expected_stage8_evidence(x,update_count=1,calibration=CAL,td_version=TD)
         with self.assertRaises(ValueError):expected_stage8_evidence(row(q=6.),update_count=0,calibration=CAL,td_version=TD)
-    def test_unpublished_non_q_fields_not_accepted(self):
+    def test_additive_native_fields_allowed_but_missing_math_rejected(self):
         x=row()
         x["protection"]=False
-        with self.assertRaises(ValueError):expected_stage8_evidence(x,update_count=0,calibration=CAL,td_version=TD)
+        self.assertAlmostEqual(
+            expected_stage8_evidence(x,update_count=0,
+                                     calibration=CAL,td_version=TD), tanh(.6))
+        del x["simulated_value"]
+        with self.assertRaises(ValueError):
+            expected_stage8_evidence(x,update_count=0,
+                                     calibration=CAL,td_version=TD)
+    def test_invalid_calibration_and_wrong_learning_status(self):
+        bad=dict(CAL,n0=0.)
+        with self.assertRaises(ValueError):
+            expected_stage8_evidence(row(),update_count=0,
+                                     calibration=bad,td_version=TD)
+        x=row(q=6.)
+        x["learned_value_status"]="unlearned"
+        with self.assertRaises(ValueError):
+            expected_stage8_evidence(x,update_count=1,
+                                     calibration=CAL,td_version=TD)
+    def test_stage8_event_chronology_and_replay_signature(self):
+        event={"kind":"stage8_option_evaluation","t_monde":1,"cycle":1,
+               "data":row()}
+        replay={"scope":"A2R_COLD_NATIVE_Q_FULL_VECTOR_NOT_L3",
+                "full_q_replay_verified":True,
+                "adaptive_learning_go":"NOT_ESTABLISHED",
+                "td_recurrences":[],"q_update_counts":{},
+                "stage8_observations":[{
+                    "step":1,"cycle":1,"option":"permanent:attendre",
+                    "signature":"primitive:attendre","status":"unlearned",
+                    "q":None}]}
+        result=attest_native_stage8([event],q_replay=replay,
+                                   calibration=CAL,td_version=TD)
+        self.assertEqual(result["stage8_evaluations_recomputed"],1)
+        self.assertFalse(result["preregistered_mechanism_exposed"])
+        with self.assertRaises(ValueError):
+            attest_native_stage8([event,event],q_replay=replay,
+                                 calibration=CAL,td_version=TD)
+        with self.assertRaises(ValueError):
+            attest_native_stage8([],q_replay=replay,
+                                 calibration=CAL,td_version=TD)
     def test_missing_authenticated_replay_fails(self):
         with self.assertRaises(ValueError):
             attest_native_stage8([],q_replay={"full_q_replay_verified":False},calibration=CAL,td_version=TD)

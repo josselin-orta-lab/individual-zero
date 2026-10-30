@@ -49,7 +49,7 @@ def expected_stage8_evidence(data, *, update_count, calibration, td_version):
     never read from an operator-supplied indication in the Stage8 event.
     """
     p = _calibration(calibration)
-    if (type(data) is not dict or set(data) != _REQUIRED
+    if (type(data) is not dict or not _REQUIRED <= set(data)
             or type(update_count) is not int or update_count < 0
             or type(td_version) is not str or not td_version
             or data["q_version"] != td_version
@@ -135,6 +135,7 @@ def attest_native_stage8(events, *, q_replay, calibration, td_version):
     observed = set()
     verified = learned_reads = blended_reads = 0
     td_seen = set()
+    unsupported = []
     for event in events:
         if type(event) is not dict:
             raise ValueError("malformed authenticated M11 event")
@@ -175,13 +176,32 @@ def attest_native_stage8(events, *, q_replay, calibration, td_version):
             elif not _equal(row["q"], data.get("learned_value")):
                 raise ValueError("Stage8 numeric Q differs from cold native Q")
             count = counts.get(signature, 0)
-            expected_stage8_evidence(
-                data, update_count=count,
-                calibration=calibration, td_version=td_version)
-            learned_reads += count > 0
-            blended_reads += (count > 0 and
-                              data["simulated_value_status"] == "computed")
-            verified += 1
+            # Native I1 includes supplementary intrinsic and local-affordance
+            # evaluators. Their evidence is NOT governed by the Stage8
+            # learned-Q/simulation equation. They need a separate source-
+            # attested replay before a complete decision mediation claim.
+            if data.get("intrinsic_status") != "not_applicable" or (
+                    data["status"] == "evaluated"
+                    and count == 0
+                    and data["simulated_value_status"] != "computed"):
+                if data["evidence"] is None:
+                    raise ValueError("unreplayed native non-Q evidence missing")
+                value = numeric(data["evidence"])
+                if not -1. <= value <= 1.:
+                    raise ValueError("native non-Q evidence outside bounds")
+                if data["status"] != "evaluated":
+                    raise ValueError("native non-Q evidence status invalid")
+                unsupported.append({"step":key[0], "cycle":key[1],
+                                    "option":key[2],
+                                    "intrinsic_status":data.get("intrinsic_status")})
+            else:
+                expected_stage8_evidence(
+                    data, update_count=count,
+                    calibration=calibration, td_version=td_version)
+                learned_reads += count > 0
+                blended_reads += (count > 0 and
+                                  data["simulated_value_status"] == "computed")
+                verified += 1
 
     if observed != set(published) or td_seen != set(td_by_step):
         raise ValueError("cold Q recurrence or Stage8 evidence missing from journal")
@@ -190,6 +210,9 @@ def attest_native_stage8(events, *, q_replay, calibration, td_version):
     return {
         "scope": "A2R_STAGE8_NATIVE_EVIDENCE_RECONSTRUCTED_NOT_L3",
         "stage8_evaluations_recomputed": verified,
+        "stage8_other_evaluations_unreplayed": len(unsupported),
+        "stage8_other_evaluation_examples": unsupported[:8],
+        "all_native_evidence_recomputed": len(unsupported) == 0,
         "learned_q_reads_recomputed": learned_reads,
         "q_simulation_blends_recomputed": blended_reads,
         "td_updates_counted": len(td_seen),

@@ -28,6 +28,8 @@ from i1_eco_a2r_birth import (
 )
 from i1_a2r_q_replay import cold_replay_m11
 from i1_a2r_pair_witness import cold_compare_pair
+from i1_a2r_stage8_evidence import attest_native_stage8
+from i1_a2r_source_birth_audit import reconstruct_pristine_birth
 from i1_a2r_m11_cold import evidence_life, compare_pre_reward, inspect_m11
 from run_i1_world_preset import load_preset, _birth_parameters
 
@@ -36,7 +38,7 @@ MAX_STEPS=4
 results={}
 with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
     root=Path(work)
-    base,_=load_preset("oasis")
+    base,preset_sha=load_preset("oasis")
     params,_=_birth_parameters(base)
     for role in ("native","reversed"):
         configured,_=a1_world_parameters(params,role=role)
@@ -96,6 +98,31 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
                  status=raw["receipt"]["status"],mode=mode,
                  setpoints=born_setpoints,weights=born_weights)
             assert pre["td_returns_checked"]==cold["td_updates"]
+            reconstructed_birth=reconstruct_pristine_birth(
+                role=role,seed=SEED,mode=mode,preset_sha256=preset_sha)
+            assert reconstructed_birth["born_td"]==td_birth
+            assert reconstructed_birth["setpoints"]==born_setpoints
+            assert reconstructed_birth["weights"]==born_weights
+            try:
+                stage8=attest_native_stage8(
+                    raw["events"],q_replay=cold,
+                    calibration=reconstructed_birth["stage8_evaluation"],
+                    td_version=reconstructed_birth["born_td"]["version"])
+            except ValueError as exc:
+                failed=[{"t":e.get("t_monde"),"cycle":e.get("cycle"),
+                         "data":e.get("data")} for e in raw["events"]
+                        if e.get("kind")=="stage8_option_evaluation"
+                        and e.get("data",{}).get("learned_value_status")=="unlearned"
+                        and e.get("data",{}).get("simulated_value_status")!="computed"]
+                raise AssertionError(
+                    "native Stage8 mismatch: "+str(exc)
+                    +" candidate_events="+repr(failed[:3])) from exc
+            assert (stage8["stage8_evaluations_recomputed"]
+                    + stage8["stage8_other_evaluations_unreplayed"]
+                    == cold["stage8_read_count"])
+            assert stage8["all_native_evidence_recomputed"] is False
+            assert stage8["learned_q_reads_recomputed"]<=cold["learned_stage8_reads"]
+            assert stage8["preregistered_mechanism_exposed"] is False
             other=(CANONICAL_ABS if mode==RESEARCH_DEFICIT else RESEARCH_DEFICIT)
             try:
                 cold_replay_m11(path=str(db),identity=identity,mode=other,
@@ -113,6 +140,8 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
                 db_path=str(db), individual_id=identity,
                 td_updates=cold["td_updates"],
                 q_reads=cold["native_q_checks"],
+                stage8_evidence=stage8["stage8_evaluations_recomputed"],
+                stage8_blends=stage8["q_simulation_blends_recomputed"],
             )
     for role in ("native","reversed"):
         c=results[(role,CANONICAL_ABS)]
@@ -135,7 +164,9 @@ with TemporaryDirectory(prefix="i1-a2r-native-cold-smoke-") as work:
         assert pair["general_L3"]=="NOT_ESTABLISHED"
     print("A2R_NATIVE_M11_FOUR_SHORT_TECHNICAL_LIVES_Q_REPLAY_OK",
           sum(row["td_updates"] for row in results.values()),
-          sum(row["q_reads"] for row in results.values()))
+          sum(row["q_reads"] for row in results.values()),
+          sum(row["stage8_evidence"] for row in results.values()),
+          sum(row["stage8_blends"] for row in results.values()))
 '''
 
 
