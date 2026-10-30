@@ -380,3 +380,162 @@ def audit_native_action_control(events, *, q_replay, birth):
         "study_admissible": False,
         "general_L3": "NOT_ESTABLISHED",
     }
+
+
+def audit_native_wait_continuity(
+    events, *, q_replay, birth, control, final_competition,
+):
+    """Check the permanently offered wait candidate's persisted continuity.
+
+    This source-specific proof starts only AFTER the M11 event chain, cold Q,
+    the Action Control motor join and source-born birth were audited. Its
+    calculations cannot recover arbitrary option semantic refreshes, prior
+    engaged owners, unlogged mutations or true safety predicates.
+    """
+    from math import isclose
+
+    if (type(events) is not list or type(q_replay) is not dict
+            or type(birth) is not dict or type(control) is not dict
+            or type(final_competition) is not dict
+            or q_replay.get("scope") != _Q_SCOPE
+            or q_replay.get("full_q_replay_verified") is not True
+            or q_replay.get("m11_identity") != birth.get("identity")
+            or q_replay.get("mode") != birth.get("mode")
+            or birth.get("scope") != _BIRTH_SCOPE
+            or control.get("scope") != "A2R_COLD_NATIVE_ACTION_CONTROL_PATH_NOT_L3"
+            or control.get("all_motor_receipts_matched") is not True
+            or control.get("native_crossing_and_rank_prefix_consistent") is not True):
+        raise ValueError("wait continuity needs verified signed M11 motor inputs")
+    calibration = birth.get("competition_calibration")
+    if type(calibration) is not dict:
+        raise ValueError("missing source-born Competition calibration")
+    residual = numeric(calibration.get("residual"))
+    if not 0 < residual < 1:
+        raise ValueError("invalid born residual")
+    if final_competition.get("config_version") != calibration.get("version"):
+        raise ValueError("final Competition owner has foreign source version")
+    def close(a, b):
+        return isclose(numeric(a), numeric(b), rel_tol=2e-9, abs_tol=2e-9)
+
+    wait = "permanent:attendre"
+    steps = {}
+    disturbances = []
+    for order, ev in enumerate(events):
+        if type(ev) is not dict:
+            raise ValueError("invalid native event in wait continuity")
+        kind, t, data = ev.get("kind"), ev.get("t_monde"), ev.get("data")
+        if (kind == "command_vetoed" and type(data) is dict
+                and data.get("option_ref") == wait
+                and data.get("scope") == "option"):
+            disturbances.append(order)
+        if (type(kind) is str and kind.endswith("option_registration")
+                and type(data) is dict and data.get("option_ref") == wait
+                and data.get("registered") is True):
+            disturbances.append(order)
+        if kind != "competition_cycle":
+            continue
+        if (type(t) is not int or type(ev.get("cycle")) is not int
+                or type(data) is not dict or type(data.get("traces")) is not list):
+            raise ValueError("invalid wait Competition occurrence")
+        candidates = [
+            row for row in data["traces"]
+            if type(row) is dict and row.get("option_ref") == wait
+        ]
+        if len(candidates) != 1:
+            raise ValueError("native Competition omitted permanent wait")
+        row = candidates[0]
+        before = numeric(row.get("accumulator_before"))
+        after = numeric(row.get("accumulator_after"))
+        threshold = numeric(row.get("threshold"))
+        if before < 0 or after < 0 or threshold <= 0:
+            raise ValueError("invalid persistent wait accumulator")
+        current = (order, ev["cycle"], before, after, threshold)
+        if t in steps and ev["cycle"] <= steps[t][-1][1]:
+            raise ValueError("wait Competition cycle not monotonic")
+        steps.setdefault(t, []).append(current)
+    if any(i >= j for i,j in zip(sorted(steps),list(sorted(steps))[1:])):
+        raise ValueError("wait Competition step order invalid")
+    def disturbed(start, end):
+        return any(start < pos < end for pos in disturbances)
+    within_checked = adjacent_checked = quarantined = 0
+    for t, rows in sorted(steps.items()):
+        for earlier, later in zip(rows, rows[1:]):
+            if disturbed(earlier[0], later[0]):
+                quarantined += 1
+            elif not close(earlier[3], later[2]):
+                raise ValueError("persistent wait accumulator changed between paid cycles")
+            else:
+                within_checked += 1
+
+    admissions = control.get("admitted_decision_occurrences")
+    if type(admissions) is not list:
+        raise ValueError("missing authenticated admitted decisions")
+    winners = {}
+    for row in admissions:
+        if (type(row) is not dict or type(row.get("step")) is not int
+                or type(row.get("cycle")) is not int
+                or type(row.get("option")) is not str
+                or row["step"] in winners):
+            raise ValueError("invalid wait-continuity decision identity")
+        winners[row["step"]] = row
+    for t in sorted(steps):
+        if t + 1 not in steps or t not in winners:
+            continue
+        former, latter = steps[t][-1], steps[t+1][0]
+        if disturbed(former[0], latter[0]):
+            quarantined += 1
+            continue
+        if winners[t]["cycle"] != former[1]:
+            raise ValueError("decision not anchored to final step Competition cycle")
+        expected = (0.0 if winners[t]["option"] == wait
+                    else former[3] * residual)
+        if not close(expected, latter[2]):
+            raise ValueError("wait accumulation continuity broken after physical decision")
+        adjacent_checked += 1
+
+    anchor_checked = False
+    generation = q_replay.get("generation")
+    if (type(generation) is not int or generation < 1
+            or q_replay.get("status") not in ("active", "dead")):
+        raise ValueError("wait continuity has invalid M11 terminal generation")
+    if generation in steps and generation in winners and q_replay["status"] == "active":
+        final = steps[generation][-1]
+        if not any(pos > final[0] for pos in disturbances):
+            winner = winners[generation]
+            if (winner["cycle"] != final[1]
+                    or final_competition.get("cycle") != final[1]
+                    or final_competition.get("engaged_option_id") != winner["option"]):
+                raise ValueError("sealed Competition owner winner/cycle differs from action")
+            registry = final_competition.get("registry")
+            if type(registry) is not list:
+                raise ValueError("missing sealed Competition registry")
+            matches = [
+                row for row in registry
+                if type(row) is dict and type(row.get("proposal")) is dict
+                and type(row["proposal"].get("option")) is dict
+                and row["proposal"]["option"].get("id") == wait
+            ]
+            if len(matches) != 1:
+                raise ValueError("sealed Competition lacks unique persistent wait")
+            actual = matches[0]
+            expected = (final[3] if winner["option"] == wait
+                        else final[3] * residual)
+            if (not close(actual.get("accumulator"), expected)
+                    or not close(actual.get("last_threshold"), final[4])):
+                raise ValueError("signed last wait cycle conflicts with sealed owner")
+            anchor_checked = True
+
+    return {
+        "scope": "A2R_NATIVE_PERMANENT_WAIT_CONTINUITY_ONLY_NOT_L3",
+        "same_step_wait_carry_checks": within_checked,
+        "adjacent_applied_step_wait_carry_checks": adjacent_checked,
+        "wait_continuity_links_quarantined": quarantined,
+        "sealed_last_wait_owner_join_verified": anchor_checked,
+        "non_wait_owner_state_independently_replayed": False,
+        "historical_engagement_and_registrations_replayed": False,
+        "veto_truth_independently_recomputed": False,
+        "Q_to_action_counterfactual_proven": False,
+        "preregistered_mechanism_exposed": False,
+        "study_admissible": False,
+        "general_L3": "NOT_ESTABLISHED",
+    }
