@@ -23,7 +23,7 @@ class CandidateProvenanceTests(unittest.TestCase):
             {"kind":"option_registration","t_monde":1,"cycle":1,
              "data":{"option_ref":"candidate:x","registered":True}},
             {"kind":"competition_cycle","t_monde":1,"cycle":1,
-             "data":{"traces":[{"option_ref":"candidate:x","accumulator_before":0}]}},
+             "data":{"traces":[{"option_ref":"candidate:x","accumulator_before":0,"accumulator_after":1}]}},
             {"kind":"competition_cycle","t_monde":1,"cycle":2,
              "data":{"traces":[{"option_ref":"candidate:x","accumulator_before":1}]}},
         ]
@@ -38,7 +38,7 @@ class CandidateProvenanceTests(unittest.TestCase):
             {"kind":"i1_place_memory_option_registration","t_monde":2,"cycle":1,
              "data":{"option_ref":"memory:x","registered":True}},
             {"kind":"i1_place_memory_intention_reconsidered","t_monde":2,"cycle":1,
-             "data":{"next_option_ref":"memory:x"}},
+             "data":{"next_option_ref":"memory:x","carried_evidence":0.4}},
             {"kind":"competition_cycle","t_monde":2,"cycle":1,
              "data":{"traces":[{"option_ref":"memory:x","accumulator_before":0.3}]}},
         ]
