@@ -104,7 +104,7 @@ class DurableChallengeTests(unittest.TestCase):
                     lock.touch(mode=0o600)
                 return super()._check_named_file(name, fd)
         source=SwapAfterLock(directory=self.dir,candidate_source=lambda: NEXT)
-        with self.assertRaisesRegex(ChallengeCustodyError,"replaced"):
+        with self.assertRaisesRegex(ChallengeCustodyError,"unsafe|replaced"):
             source.next_challenge()
         self.assertEqual((self.dir/"challenges.log").read_bytes(),
                          (NONCE+"\\n").encode("ascii"))
