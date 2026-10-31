@@ -53,8 +53,9 @@ class LongitudinalH2Tests(unittest.TestCase):
             else:
                 owner.observe(claim=observed, feedback_previous=memory,
                               feedback_update=update)
-            memory = update.new_memory
             owner = CognitiveCycleFixture.reopen(**ports)
+            memory = owner.feedback_snapshot()
+            self.assertEqual(memory, update.new_memory)
             self.assertEqual(owner.audit()["feedback_version"], index + 1)
         self.assertEqual(len(memory.used_issue_captures), 16)
         self.assertNotIn(first_score.issue_capture_ref, memory.used_issue_captures)
