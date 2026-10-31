@@ -37,6 +37,10 @@ Le test `minimum_witness` refuse un témoin externe régressif (`STALE`), équiv
 
 Les contrats `challenge_witness_contract.py` et `challenge_witness_adapter.py` spécifient et testent des enveloppes de témoin avec nonce, identité, fenêtre de validité et vérifications **injectées**. La borne `minimum_witness` est également transmise par l'inspection terminale. Il n'existe pas de fournisseur externe authentifié, ni de gestion persistante de nonce, ni de service de signature/de temps fiable ; les tests montrent un risque de rejeu avec nonce réutilisé. Ces diagnostics G2 n'autorisent **aucune naissance, action, reprise, ni promotion G3**. Voir [l'audit externe](LIFECYCLE_EXTERNAL_WITNESS.md) et le [registre historique](STATUS_HISTORY.md).
 
+### G2 : non-réutilisation des défis dans une instance
+
+L'adaptateur de témoin réserve et valide maintenant le nonce avant tout appel au transport, sous verrou interthreads. Une répétition ou un nonce malformé est refusé, et un échec réseau ne libère pas le nonce. Il s'agit d'un garde **volatile** uniquement : aucune garantie d'unicité après redémarrage ou entre processus, aucune source cryptographique indépendante ni M11 vivant. Les tests sont synthétiques et ne donnent aucune autorité motrice ni de reprise.
+
 ## Next authorized work
 
 Review [architecture](ARCHITECTURE.md), [research hypothesis](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md) and [promotion procedure](../../../docs/engineering/ENGINE_PROMOTION.md); close separately the genuine-world, independent custody and preregistered science gates. Do not instantiate an I2 individual.
