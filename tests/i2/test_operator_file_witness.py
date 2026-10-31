@@ -110,6 +110,43 @@ class FileWitnessTests(unittest.TestCase):
         self.assertEqual(latest.committed, 1)
         self.assertIn(latest.chain_head, ("a" * 64, "b" * 64))
 
+    def test_noncanonical_bytes_fail_closed_even_with_valid_hmac(self):
+        import json
+
+        first = self.genesis()
+        original = (self.dir / "heads.jsonl").read_bytes()
+        row = json.loads(original)
+        variants = (
+            original.replace(b"\\n", b"\\r\\n"),
+            (json.dumps(row, indent=2, sort_keys=False).encode("ascii") + b"\\n"),
+            (original[:-2] + b" " + original[-2:]),
+        )
+        for forged in variants:
+            with self.subTest(forged=forged[:70]):
+                (self.dir / "heads.jsonl").write_bytes(forged)
+                with self.assertRaises(WitnessStoreError):
+                    self.store.read_verified_latest(life_ref=LIFE, genesis_ref=GENESIS)
+        (self.dir / "heads.jsonl").write_bytes(original)
+        self.assertEqual(
+            self.store.read_verified_latest(life_ref=LIFE, genesis_ref=GENESIS),
+            first,
+        )
+
+    def test_duplicate_json_keys_are_rejected_not_silently_collapsed(self):
+        import json
+
+        self.genesis()
+        original = (self.dir / "heads.jsonl").read_bytes()
+        # Extra repeated schema key has the SAME parsed value and MAC.
+        row = json.loads(original)
+        prefix = b'{"schema":'
+        self.assertIn(prefix, original)
+        duplicate = (b'{"schema":' + json.dumps(row["schema"]).encode("ascii")
+                     + b',' + original[1:])
+        (self.dir / "heads.jsonl").write_bytes(duplicate)
+        with self.assertRaises(WitnessStoreError):
+            self.store.read_verified_latest(life_ref=LIFE, genesis_ref=GENESIS)
+
     def test_complete_directory_rollback_remains_undetectable_here(self):
         """Explicit negative boundary: no independent latest-generation anchor."""
         first = self.genesis()
