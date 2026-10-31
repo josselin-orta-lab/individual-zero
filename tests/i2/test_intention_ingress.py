@@ -274,6 +274,62 @@ class TestIntentionIngress(unittest.TestCase):
                 gate.open(claim=c,semantic_ref=sem,evidence_ref='evidence:lived',ttl_steps=ttl)
         self.assertEqual(uc.calls,[])
 
+    def test_uncertain_debit_never_retries_same_capture(self):
+        gate, src, uc = setup()
+        c = claim(3)
+        src.admit_for_test(c)
+
+        def lost_ack(receipt):
+            raise TimeoutError("external debit acknowledgement lost")
+
+        uc.override = lost_ack
+        with self.assertRaises(TimeoutError):
+            gate.observe(claim=c)
+        self.assertEqual(len(uc.calls), 1)
+        self.assertEqual(uc.balance, 7)
+        with self.assertRaisesRegex(ValueError, "stale or reused"):
+            gate.observe(claim=c)
+        self.assertEqual(len(uc.calls), 1)
+        self.assertIsNone(gate.current)
+
+    def test_invalid_receipt_after_external_debit_is_not_retried(self):
+        gate, src, uc = setup()
+        c = claim(3)
+        src.admit_for_test(c)
+        uc.override = lambda receipt: replace(receipt, life_ref="life:other")
+        with self.assertRaises(ValueError):
+            gate.observe(claim=c)
+        with self.assertRaisesRegex(ValueError, "stale or reused"):
+            gate.observe(claim=c)
+        self.assertEqual(len(uc.calls), 1)
+        self.assertEqual(uc.balance, 7)
+        self.assertIsNone(gate.current)
+
+    def test_concurrent_same_capture_has_only_one_uc_debit(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Barrier
+
+        gate, src, uc = setup()
+        c = claim(3)
+        src.admit_for_test(c)
+        start = Barrier(3)
+
+        def attempt():
+            start.wait()
+            try:
+                gate.observe(claim=c)
+                return "accepted"
+            except ValueError:
+                return "refused"
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(attempt) for _ in range(2)]
+            start.wait()
+            outcomes = sorted(f.result(timeout=5) for f in futures)
+        self.assertEqual(outcomes, ["accepted", "refused"])
+        self.assertEqual(len(uc.calls), 1)
+        self.assertEqual(uc.balance, 7)
+
     def test_no_birth_engine_m11_recovery_or_motor_state(self):
         gate, src, uc=opened()
         s=gate.inspect_proposal_state()
