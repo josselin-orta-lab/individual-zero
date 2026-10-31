@@ -1,35 +1,40 @@
 # Individual Zero
 
-**Individual Zero** is an open research project exploring a modular, reproducible architecture for an artificial individual capable of learning, adapting, and mobilizing knowledge in novel situations.
+**Open research in artificial intelligence, cognitive architectures, and autonomous learning for embodied artificial individuals.**
 
-The project does not assume that human-inspired cognitive mechanisms are the answer. They are hypotheses to test. The goal is to build an architecture whose important mechanisms can be understood, observed, measured, challenged, and replaced.
+Individual Zero investigates whether an artificial individual in a simplified world and body can learn useful behavior from its own observations, needs, actions, and consequences, including in unfamiliar situations. The work explores perception, memory, learning, consolidation, motivation, action selection, and causal attribution without preloading a successful behavioral policy.
+
+Human-inspired cognitive mechanisms are hypotheses to test, not assumptions to accept. The aim is an observable, falsifiable, and reproducible research architecture. A software test passing or an agent surviving a scenario is not, by itself, evidence of generalized autonomous learning.
 
 ## Start here
 
 If this is your first visit:
 
-1. read the short [project overview](docs/presentation/01-project-overview.md);
-2. take the [repository tour](docs/presentation/02-repository-tour.md);
-3. read [how the research workflow works](docs/presentation/03-research-workflow.md);
-4. if you want to contribute, use the [first-hour contributor guide](docs/presentation/04-contributor-first-hour.md);
-5. browse the [examples](examples/README.md) before creating a new Issue, EXP, benchmark, adapter, or ADR;
-6. when you want to execute the current scaffold, follow [Running the bootstrap](docs/presentation/06-running-the-bootstrap.md).
+1. Read the short [project overview](docs/presentation/01-project-overview.md) and [repository tour](docs/presentation/02-repository-tour.md).
+2. Explore the [current I1 engineering handbook](src/i1/docs/README.md) and [evidence matrix](src/i1/docs/EVIDENCE_MATRIX.md).
+3. Review the [I1-to-I2 scientific transition and gates](docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md) before treating I2 as a running individual.
+4. See the [research workflow](docs/presentation/03-research-workflow.md), [contributor guide](docs/presentation/04-contributor-first-hour.md), and [worked examples](examples/README.md).
+5. For the historical I0 demonstration, see [Running the bootstrap](docs/presentation/06-running-the-bootstrap.md). That CLI is **not** the active natural-I1 engine.
 
-The project documentation is intentionally layered: you should not need to understand the whole architecture before making a useful contribution.
+The documentation is layered. You do not need to understand the complete architecture to inspect an experiment or contribute a focused change.
 
-## What is I0?
+## Architectural generations
 
-**I0** is the first integrated reference architecture of Individual Zero.
+I0, I1, and I2 are **architectural generations**, not ordinary software releases.
 
-It is not a promise of AGI and it is not meant to be final. It is the smallest integrated baseline from which scientific questions can be tested reproducibly.
+| Generation | Status (31 October 2026) | Entry point |
+| --- | --- | --- |
+| **I0** | Frozen historical reference; not the active research engine | [I0 archive and engine map](docs/architecture/ENGINE_GENERATIONS.md) |
+| **I1** | **Active** artificial-individual research architecture with generation-owned Lab, runtime, tests, and evidence | [I1 handbook](src/i1/docs/README.md) |
+| **I2** | **Proposal only**, unregistered and not an executable living individual; current source includes inert research fixtures | [I2 research proposal](docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md) |
 
-Future names such as **I1** or **I2** refer to architectural generations, not ordinary software releases.
+Each generation must be autonomous: a historical parent is a research lineage, **not** a runtime dependency. No successor may rely on an obsolete engine's live state, memory, owner, fallback mode, or resurrection path. See [ADR-0001](docs/decisions/ADR-0001-strict-generation-autonomy.md) and the [engine registry](config/engine-registry.json).
 
 ## Guiding rule
 
-> **Lab observes. Adapters connect. I0 operates. Experiments provide evidence. Tests verify the code.**
+> **Each generation owns its own cognition and living-world boundary. Experiments provide evidence. Tests verify code.**
 
-This separation keeps technical work lightweight while preserving scientific traceability when a change can alter what the individual learns, remembers, perceives, chooses, predicts, feels, or does.
+Scientific observations are kept distinct from software correctness, and historical generations remain available for isolated comparisons without being imported into a successor's runtime.
 
 ## Research workflow
 
@@ -52,32 +57,29 @@ Negative and inconclusive results are kept when they provide reproducible inform
 
 ```text
 individual-zero/
-├── docs/
-│   ├── presentation/
-│   ├── architecture/
-│   ├── research/
-│   └── decisions/
-├── examples/
+├── config/engine-registry.json
 ├── src/
-│   ├── lab/
-│   ├── adapters/
-│   └── i0/
+│   ├── adapters/                 # external integration boundaries
+│   ├── i0/                       # frozen historical engine
+│   ├── i1/                       # active engine, Lab, runtime and handbook
+│   └── i2/                       # unregistered, non-living research proposal
+├── archive/i0/                   # preserved historical material
+├── docs/
+│   ├── presentation/             # onboarding
+│   ├── architecture/             # models and generation proposals
+│   ├── research/                 # protocols, results and limitations
+│   ├── decisions/                # architecture decisions
+│   └── engineering/              # technical operating procedures
 ├── experiments/
 ├── benchmarks/
-└── tests/
+├── tests/
+└── tools/
 ```
 
-- `docs/presentation/`: short onboarding documents for humans discovering the project.
-- `docs/architecture/`: architecture descriptions, interfaces, and generation manifests.
-- `docs/research/`: research method, terminology, RAI, and experiment guidance.
-- `docs/decisions/`: shared architectural decisions recorded as ADRs.
-- `examples/`: non-authoritative examples showing how the workflow is used.
-- `src/lab/`: runtime, simulation, logging, metrics, seeds, artifact collection, reproduction tools.
-- `src/adapters/`: integration layers between I0 interfaces and external projects.
-- `src/i0/`: reference cognitive architecture and behavior.
-- `experiments/`: scientific questions, RAI decisions, protocols, results, and conclusions.
-- `benchmarks/`: reusable scenarios, metrics, and comparison rules.
-- `tests/`: software correctness, integration, compatibility, and regression tests.
+- [I1 research handbook](src/i1/docs/README.md) holds the active generation's mechanism descriptions and evidence limits.
+- [Generation map](docs/architecture/ENGINE_GENERATIONS.md) explains engine ownership and archive boundaries.
+- [Research documentation](docs/research/README.md) and `experiments/` record hypotheses, protocols, observations, uncertainty, and negative outcomes.
+- [Engineering start guide](docs/engineering/START_HERE.md) explains current entrypoints. The older `individual-zero` CLI is a historical I0 bootstrap demo, not an I1 science run.
 
 ## When is an experiment required?
 
@@ -139,34 +141,15 @@ The project should progress in stages, evaluate developed capabilities, keep res
 
 See [SECURITY.md](SECURITY.md).
 
-## Current status
+## Research status (31 October 2026)
 
-The repository is in its initial research bootstrap phase.
+**I1 is active; I0 is preserved; I2 is not activated.** I1 implements and tests mechanisms for first-person perception, bodily regulation, mortal world interaction, memory, learning, and authenticated persistence. Those implementation facts do **not** establish that the combined system learns naturally, efficiently, or autonomously across novel environments.
 
-The following foundations now exist:
+The pre-registered A1-C confirmatory study was a targeted **NO_GO**. General adaptive improvement at the L3 scientific gate remains **NOT_ESTABLISHED**. The A2-R cohort was **NOT_EXECUTED** (0/96). I2 work is limited to proposals and isolated, non-living research fixtures; no I2 birth or scientific promotion is authorized.
 
-- repository and contribution workflow;
-- neutral Lab execution loop;
-- deterministic technical smoke scenario;
-- structured JSONL run artifacts;
-- minimal I0 execution contracts;
-- executable BootstrapI0 with a deliberate no-op action boundary;
-- automated unit tests and CI.
+Start with the [I1 evidence matrix](src/i1/docs/EVIDENCE_MATRIX.md), the [I1-to-I2 decision and result limits](docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md), and the [generation autonomy decision](docs/decisions/ADR-0001-strict-generation-autonomy.md). The project makes **no claim of AGI, consciousness, or demonstrated generalized autonomous learning**.
 
-The current executable scaffold is **not yet a cognitive I0**. It is the research chassis required to test future mechanisms cleanly.
-
-Next goals are:
-
-1. identify the first genuinely measurable cognitive question;
-2. perform RAI for the mechanism involved;
-3. register the first real EXP;
-4. implement the smallest mechanism needed to test it;
-5. add shared benchmarks only when reuse becomes useful;
-6. iterate from evidence.
-
-See [Running the bootstrap](docs/presentation/06-running-the-bootstrap.md) and [Bootstrap runtime boundary](docs/architecture/BOOTSTRAP_RUNTIME.md).
-
-The repository intentionally does **not** pre-create speculative experiments merely to make the project look busy.
+Software progress, behavioral observation, and scientific validation are deliberately reported separately.
 
 ## Citation
 
