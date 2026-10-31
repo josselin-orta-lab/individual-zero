@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from i2.modules.action_control_boundary import SafetyFinding  # noqa: E402
 from i2.modules.cognitive_cycle_fixture import (  # noqa: E402
-    CognitiveCycleFixture, CycleReceipt, CONTROL_SCHEMA, SCHEMA, _chain, _json,
+    CognitiveCycleFixture, CycleReceipt, SCHEMA, _chain, _json,
     FaultInjected, CommitAcknowledgmentLost,
 )
 from i2.modules.action_control_custody_fixture import FaultInjected as ControlFaultInjected  # noqa: E402
@@ -96,6 +96,11 @@ class Safety:
         return result if self.mutate is None else self.mutate(result)
 
 
+class Terminal:
+    def verify_terminal(self, **kwargs):
+        return True
+
+
 class UnifiedCognitionAndControl(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -106,18 +111,18 @@ class UnifiedCognitionAndControl(unittest.TestCase):
         self.current = Current()
         self.safety = Safety()
 
-    def make(self, capacity=20, *, control=True):
+    def make(self, capacity=20):
         params = dict(path=self.db, life_ref=LIFE, synthetic_uc=capacity,
                       observation_source=self.source, valuation_source=self.values)
-        if control:
-            params.update(current_source=self.current, safety_source=self.safety)
+        params.update(current_source=self.current, safety_source=self.safety,
+                      genesis_ref="genesis:unified-control", terminal_source=Terminal())
         return CognitiveCycleFixture.create(**params)
 
-    def reopen(self, *, control=True):
+    def reopen(self):
         params = dict(path=self.db, life_ref=LIFE,
                       observation_source=self.source, valuation_source=self.values)
-        if control:
-            params.update(current_source=self.current, safety_source=self.safety)
+        params.update(current_source=self.current, safety_source=self.safety,
+                      genesis_ref="genesis:unified-control", terminal_source=Terminal())
         return CognitiveCycleFixture.reopen(**params)
 
     def first(self, instance, *, at=3, visible=(A,B,C), fault=None):
@@ -138,7 +143,7 @@ class UnifiedCognitionAndControl(unittest.TestCase):
             record = json.loads(body)
             change(record)
             new_text = _json(record)
-            head = _chain(previous, new_text, schema=CONTROL_SCHEMA)
+            head = _chain(previous, new_text, schema=SCHEMA)
             conn.execute("UPDATE events SET event_json=?,event_hash=? WHERE seq=1",
                          (new_text, head))
             conn.execute("UPDATE account SET chain_head=? WHERE id=1", (head,))
@@ -155,7 +160,7 @@ class UnifiedCognitionAndControl(unittest.TestCase):
         self.assertEqual(f.audit()["remaining_synthetic_uc"],15)
         self.assertEqual(f.audit()["committed"],1)
         self.assertTrue(f.audit()["control_review_included"])
-        self.assertEqual(f.audit()["schema"], CONTROL_SCHEMA)
+        self.assertEqual(f.audit()["schema"], SCHEMA)
         self.assertEqual(len(self.current.calls),2)
         self.assertEqual(len(self.safety.calls),1)
         self.assertEqual(self.event()["control_review"]["motor_authority"],"NONE")
@@ -245,25 +250,6 @@ class UnifiedCognitionAndControl(unittest.TestCase):
         self.assertEqual(self.event()["control_uc"],first.control_uc)
         self.assertEqual(f.audit()["remaining_synthetic_uc"],4)
 
-    def test_no_control_mode_preserves_v1_legacy_events(self):
-        f = self.make(control=False)
-        r = self.first(f)
-        self.assertEqual(r.control_uc,0)
-        self.assertIsNone(r.control_status)
-        self.assertIsNone(r.control_suggested_candidate_ref)
-        self.assertEqual(f.audit()["schema"],SCHEMA)
-        self.assertFalse(f.audit()["control_review_included"])
-        self.assertNotIn("control_review",self.event())
-        self.assertEqual(self.reopen(control=False).lookup(capture_ref="capture:3"),r)
-
-    def test_v1_database_cannot_be_silently_reinterpreted_as_v2(self):
-        f = self.make(control=False)
-        self.first(f)
-        with self.assertRaises(ValueError):
-            self.reopen(control=True)
-        self.assertEqual(f.audit()["schema"], SCHEMA)
-        self.assertEqual(f.audit()["remaining_synthetic_uc"], 16)
-
     def test_control_mode_exhausted_intention_refuses_before_any_publication(self):
         f = self.make(capacity=0)
         with self.assertRaises(ValueError):
@@ -276,20 +262,20 @@ class UnifiedCognitionAndControl(unittest.TestCase):
     def test_reopen_requires_same_mode_and_external_ports(self):
         f = self.make()
         self.first(f)
-        with self.assertRaises(ValueError):
-            self.reopen(control=False)
         again = self.reopen()
         self.assertEqual(again.audit()["committed"],1)
         self.assertEqual(again.lookup(capture_ref="capture:3"),f.lookup(capture_ref="capture:3"))
 
     def test_missing_current_or_safety_port_fails_before_creating_db(self):
-        bad = (dict(current_source=self.current), dict(safety_source=self.safety),
-               dict(current_source=object(),safety_source=self.safety),
-               dict(current_source=self.current,safety_source=object()))
+        bad = (dict(current_source=object()),
+               dict(safety_source=object()),
+               dict(terminal_source=object()))
         for override in bad:
             with self.subTest(override=override):
                 params=dict(path=self.db, life_ref=LIFE,synthetic_uc=9,
-                            observation_source=self.source,valuation_source=self.values)
+                            observation_source=self.source,valuation_source=self.values,
+                            current_source=self.current,safety_source=self.safety,
+                            genesis_ref="genesis:unified-control",terminal_source=Terminal())
                 params.update(override)
                 with self.assertRaises(ValueError): CognitiveCycleFixture.create(**params)
                 self.assertFalse(self.db.exists())
