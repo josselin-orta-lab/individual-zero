@@ -403,6 +403,28 @@ class CycleReceipt:
 
 
 @dataclass(frozen=True, slots=True)
+class UncertainCommitInspection:
+    """One read-only LOCAL snapshot, never evidence of real M11 publication.
+
+    ABSENT_LOCAL_ONLY does NOT authorize a retry: a copied/rolled-back file
+    can conceal a previously committed generation. A verified local record
+    also cannot attest an external anchor or any physical effect.
+    """
+
+    outcome: str
+    event_kind: str
+    expected_seq: int
+    target_ref: str
+    observed_committed: int
+    observed_head: str
+    recorded_event_head: str | None
+    motor_authority: str = "NONE"
+    resumption_authorized: bool = False
+    retry_authorized: bool = False
+    m11_authenticated: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class SyntheticTerminalReceipt:
     """Local seal receipt, NOT authenticated death or a physical operation."""
 
@@ -1225,6 +1247,121 @@ class CognitiveCycleFixture:
         return self._process(claim=claim, request=_request("observe"),
                              _fault_at=_fault_at, feedback_update=feedback_update,
                              feedback_previous=feedback_previous)
+
+    def _inspect_uncertain_local(
+        self, *, previous_count: int, previous_head: str,
+        expected_step: int, target_ref: str, event_kind: str,
+        expected_claim: dict[str, object] | None = None,
+        expected_terminal: dict[str, object] | None = None,
+    ) -> UncertainCommitInspection:
+        """Inspect exactly one v5 snapshot without consulting external ports.
+
+        A locally absent record is NEVER evidence of an absent physical
+        effect, nor permission to repeat a potentially committed operation.
+        """
+        if (type(previous_count) is not int or previous_count < 0 or
+                type(previous_head) is not str or len(previous_head) != 64 or
+                any(ch not in "0123456789abcdef" for ch in previous_head) or
+                (previous_count == 0) != (previous_head == ZERO_HASH)):
+            raise ValueError("invalid declared predecessor head")
+        if type(expected_step) is not int or expected_step < 0:
+            raise ValueError("invalid expected synthetic step")
+        _ref(target_ref, "uncertain commit target")
+        if event_kind not in ("cognitive", "synthetic_terminal"):
+            raise ValueError("invalid expected event kind")
+        if (event_kind == "cognitive") != (expected_claim is not None):
+            raise ValueError("exactly one expected event projection required")
+        if (event_kind == "synthetic_terminal") != (expected_terminal is not None):
+            raise ValueError("exactly one expected terminal projection required")
+
+        conn = self._connect(readonly=True)
+        try:
+            conn.execute("BEGIN")
+            _balance, _step, count, head, _owner = self._verify(conn)
+            previous_record = (
+                ZERO_HASH if previous_count == 0 else (
+                    conn.execute("SELECT event_hash FROM events WHERE seq=?",
+                                 (previous_count,)).fetchone()
+                )
+            )
+            prior_matches = (previous_record == ZERO_HASH if previous_count == 0
+                             else previous_record is not None and
+                             previous_record[0] == previous_head)
+            recorded_head = None
+            if not prior_matches:
+                outcome = "CONFLICT_LOCAL"
+            elif count == previous_count:
+                outcome = "ABSENT_LOCAL_ONLY"
+            else:
+                row = conn.execute(
+                    "SELECT physical_step,capture_ref,claim_digest,event_json,"
+                    "previous_hash,event_hash FROM events WHERE seq=?",
+                    (previous_count + 1,),
+                ).fetchone()
+                if row is None:
+                    outcome = "CONFLICT_LOCAL"
+                else:
+                    step, ref, digest, body, parent_head, event_head = row
+                    data = json.loads(body)
+                    matches = (
+                        step == expected_step and ref == target_ref and
+                        parent_head == previous_head and
+                        (data == expected_terminal and
+                         digest == _digest(expected_terminal)
+                         if event_kind == "synthetic_terminal" else
+                         data.get("kind") != "synthetic_terminal" and
+                         data["claim"] == expected_claim and
+                         digest == data["claim_digest"])
+                    )
+                    outcome = "RECORDED_LOCAL_ONLY" if matches else "CONFLICT_LOCAL"
+                    if matches:
+                        recorded_head = event_head
+            return UncertainCommitInspection(
+                outcome=outcome, event_kind=event_kind,
+                expected_seq=previous_count + 1, target_ref=target_ref,
+                observed_committed=count, observed_head=head,
+                recorded_event_head=recorded_head,
+            )
+        finally:
+            conn.close()
+
+    def inspect_uncertain_cognition(
+        self, *, previous_count: int, previous_head: str,
+        claim: ObservationClaim,
+    ) -> UncertainCommitInspection:
+        """Check a possibly committed *claimed* capture, never retry it."""
+        if type(claim) is not ObservationClaim:
+            raise ValueError("exact subjective claim required")
+        claim.validate()
+        if claim.life_ref != self.life_ref:
+            raise ValueError("foreign synthetic life")
+        return self._inspect_uncertain_local(
+            previous_count=previous_count, previous_head=previous_head,
+            expected_step=claim.capture.step, target_ref=claim.capture.ref,
+            event_kind="cognitive", expected_claim=_claim_map(claim),
+        )
+
+    def inspect_uncertain_terminal(
+        self, *, previous_count: int, previous_head: str,
+        physical_step: int, terminal_ref: str, evidence_ref: str,
+    ) -> UncertainCommitInspection:
+        """Inspect a claimed terminal seal without ever re-sealing."""
+        terminal_ref = _ref(terminal_ref, "synthetic terminal ref")
+        evidence_ref = _ref(evidence_ref, "synthetic terminal evidence")
+        if not terminal_ref.startswith("terminal:"):
+            raise ValueError("nonterminal identity")
+        if type(physical_step) is not int or physical_step < 0:
+            raise ValueError("invalid terminal step")
+        expected = _terminal_record(
+            seq=previous_count + 1, life_ref=self.life_ref,
+            genesis_ref=self.genesis_ref, physical_step=physical_step,
+            terminal_ref=terminal_ref, evidence_ref=evidence_ref,
+        ) if type(previous_count) is int and previous_count >= 0 else None
+        return self._inspect_uncertain_local(
+            previous_count=previous_count, previous_head=previous_head,
+            expected_step=physical_step, target_ref=terminal_ref,
+            event_kind="synthetic_terminal", expected_terminal=expected,
+        )
 
     def lookup(self, *, capture_ref: str) -> CycleReceipt | None:
         """Read a confirmed cycle without performing another cognitive evaluation."""
