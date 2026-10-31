@@ -41,6 +41,36 @@ class LinkedTests(unittest.TestCase):
         for effects in cases:
             with self.subTest(effects=effects),self.assertRaises(ValueError):
                 study_physically_linked_credit(events=e,effects=effects,authority=Proof())
+    def test_real_noop_may_be_observed_without_creating_a_replay(self):
+        a=effect(1)
+        b=replace(effect(2),before_state_ref=a.after_state_ref,
+                  after_state_ref=a.after_state_ref)
+        result=study_physically_linked_credit(
+            events=(event(1),event(2)), effects=(a,b), authority=Proof())
+        self.assertEqual(result.study.observed_steps,2)
+        self.assertEqual(result.correspondences[-1].committed_event_ref,"commit:2")
+
+    def test_return_to_earlier_state_does_not_mean_rollback(self):
+        first=replace(effect(1),after_state_ref="state:1")
+        second=replace(effect(2),before_state_ref="state:1",
+                       after_state_ref="state:0")
+        third=replace(effect(3),before_state_ref="state:0",
+                      after_state_ref="state:1")
+        result=study_physically_linked_credit(
+            events=(event(1),event(2),event(3)),
+            effects=(first,second,third), authority=Proof())
+        self.assertEqual(result.study.observed_steps,3)
+
+    def test_same_state_transition_replayed_with_new_commit_still_only_claimed(self):
+        # Neither the shape of a state transition nor this port proves
+        # actual execution. Distinct monotone commits may repeat a no-op.
+        a=replace(effect(1),after_state_ref="state:0")
+        b=replace(effect(2),before_state_ref="state:0",
+                  after_state_ref="state:0")
+        result=study_physically_linked_credit(
+            events=(event(1),event(2)),effects=(a,b),authority=Proof())
+        self.assertFalse(result.m11_authenticated)
+
     def test_unobserved_outcome_not_inferred_from_physics(self):
         missing=replace(event(2),outcome_ref=None,lived_delta=None)
         with self.assertRaises(ValueError):

@@ -43,3 +43,5 @@ Le garde-fou de compatibilité rejette explicitement une étiquette de générat
 ## Crédit conditionné à une chaîne physique déclarée (G2)
 
 `study_physically_linked_credit` vérifie, avant tout calcul de crédit, une correspondance 1:1 entre chaque transition subjective et chaque effet physique déclaré, une chaîne continue d'états avant/après et de pas, l'absence de références de COMMIT et d'admission rejouées et l'absence d'effet terminal. Un refus annule tout résultat, sans crédit partiel. Les attestations demeurent des doubles de test sans ancre WorldBody/M11 : la cohérence d'une chaîne déclarée n'établit ni réalité physique ni causalité. Aucun droit moteur, aucun propriétaire supplémentaire.
+
+Une action réellement appliquée peut laisser l'état inchangé ou ramener le corps à un état précédemment vu. Le contrôle G2 ne confond donc plus égalité de digest avant/après ou retour d'état avec un rejeu. Les refus restent fondés sur les identifiants de COMMIT/admission, la séquence de pas et la continuité entre effets. Ceci ne constitue toujours pas une preuve de publication M11 indépendante.
