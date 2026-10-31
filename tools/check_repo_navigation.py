@@ -17,6 +17,8 @@ ENTRYPOINTS = (
     "docs/README.md", "docs/engineering/AGENT_NAVIGATION.md",
     "docs/engineering/START_HERE.md", "docs/architecture/README.md",
     "docs/architecture/ENGINE_GENERATIONS.md",
+    "docs/architecture/ATLAS.md",
+    "docs/architecture/proposals/README.md",
     "docs/presentation/01-project-overview.md",
     "docs/presentation/02-repository-tour.md",
     "docs/presentation/04-contributor-first-hour.md",
@@ -51,6 +53,9 @@ STALE = ("Experimental code may remain experimental until results justify integr
 
 
 def is_historical(path: str) -> bool:
+    # The proposals/ index is a current route; its dated proposals are archival.
+    if path == "docs/architecture/proposals/README.md":
+        return False
     if path.startswith(("archive/", "src/i0/", "docs/operations/",
                         "docs/architecture/proposals/")):
         return True

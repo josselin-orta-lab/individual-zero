@@ -15,7 +15,7 @@ These files are intentionally short and should remain understandable without rea
 
 ## Agent route and generation ownership
 
-For task-oriented agents start at [agent navigation](engineering/AGENT_NAVIGATION.md); [I1's handbook](../src/i1/docs/README.md) documents the active engine, and [I2's handbook](../src/i2/docs/README.md) documents non-living proposal fixtures. Their own `docs/STATUS.md` files hold short current summaries; `STATUS_HISTORY.md` preserves earlier updates. Global documentation does not override generation-owned source or contracts.
+For task-oriented agents start at [agent navigation](engineering/AGENT_NAVIGATION.md), then use the [Architecture Atlas](architecture/ATLAS.md) to trace generation ownership, real I1 causal flow and proposal boundaries; [I1's handbook](../src/i1/docs/README.md) documents the active engine, and [I2's handbook](../src/i2/docs/README.md) documents non-living proposal fixtures. Their own `docs/STATUS.md` files hold short current summaries; `STATUS_HISTORY.md` preserves earlier updates. Global documentation does not override generation-owned source or contracts.
 
 ## Documentation areas
 
