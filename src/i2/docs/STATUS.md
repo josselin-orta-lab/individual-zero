@@ -37,3 +37,5 @@ I1 reste seul actif dans `config/engine-registry.json`, I2 n'a aucun point d'ent
 - **G2 fenêtre H2 longue durée (31/10)** : après seize retours, fenêtre glissante de 16, compteur cumulatif et tête de chaînage locale; la prédiction reste accessible. Tests au-delà du plafond et garde anti-rejeu dans la fenêtre. Pas de stockage authentifié M11, ni preuve globale anti-rollback. G3 `NOT_ESTABLISHED`.
 
 - **G2 contrat de transition H2 (31/10)** : `feedback_transition_contract.py` valide le couple ancien/nouveau snapshot H2 et sa chaine avant un futur COMMIT unique. Les tests ciblent CAS perime, rejeu, changement d'identite et tetes falsifiees. Aucun branchement SQLite de cette memoire n'est encore realise : G3 `NOT_ESTABLISHED`.
+
+- **G2 garde de score H2 (31/10)** : le contrat de transition rejette maintenant les scores hors échantillon contrefaits, incohérents, dupliqués ou déclarant des privilèges M11/moteur. Cette PR ne modifie pas le schéma SQLite : l'insertion atomique de H2 avec les UC et les événements reste non établie, et exige une évolution de schéma/rejeu étudiée séparément.

@@ -61,6 +61,24 @@ class TransitionTests(unittest.TestCase):
                     stored=old, expected_previous_digest=_feedback_memory_digest(old),
                     update=replace(update, new_memory=candidate))
 
+    def test_score_forgery_and_duplicated_episodes_refused(self):
+        old, update = self.transition()
+        score = update.heldout_score
+        invalid = (
+            replace(score, absolute_error=score.absolute_error + 1),
+            replace(score, direction_agreement=not score.direction_agreement),
+            replace(score, observed_episode_refs=("episode:same", "episode:same")),
+            replace(score, motor_authority="ADMITTED"),
+            replace(score, m11_authenticated=True),
+            replace(score, observed_outcome_difference=True),
+        )
+        for counterfeit in invalid:
+            with self.subTest(score=counterfeit), self.assertRaises(ValueError):
+                verify_feedback_transition(
+                    stored=old,
+                    expected_previous_digest=_feedback_memory_digest(old),
+                    update=replace(update, heldout_score=counterfeit))
+
     def test_motor_flag_never_accepted(self):
         old, update = self.transition()
         with self.assertRaises(ValueError):

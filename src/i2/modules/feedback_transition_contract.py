@@ -59,6 +59,27 @@ def verify_feedback_transition(
             current.last_observed_step <= stored.last_observed_step):
         raise ValueError("H2 history did not advance exactly once")
     score = update.heldout_score
+    if (type(score.observed_outcome_difference) is not int or
+            not -200 <= score.observed_outcome_difference <= 200 or
+            type(score.predicted_outcome_difference) is not int or
+            not -200 <= score.predicted_outcome_difference <= 200 or
+            type(score.absolute_error) is not int or
+            score.absolute_error != abs(
+                score.predicted_outcome_difference - score.observed_outcome_difference) or
+            type(score.direction_agreement) is not bool or
+            score.direction_agreement != (
+                ((score.predicted_outcome_difference > 0) -
+                 (score.predicted_outcome_difference < 0)) ==
+                ((score.observed_outcome_difference > 0) -
+                 (score.observed_outcome_difference < 0))) or
+            score.interpretation != "HELDOUT_SYNTHETIC_SCORE_NOT_CAUSAL_PROOF" or
+            score.motor_authority != "NONE" or
+            score.scheduler_uc_authenticated is not False or
+            score.m11_authenticated is not False or
+            type(score.observed_episode_refs) is not tuple or
+            len(score.observed_episode_refs) != 2 or
+            len(set(score.observed_episode_refs)) != 2):
+        raise ValueError("invalid or motor-capable H2 heldout score")
     if (score.life_ref != stored.life_ref or
             score.issue_capture_ref in stored.used_issue_captures or
             any(ref in stored.used_episode_refs for ref in score.observed_episode_refs) or
