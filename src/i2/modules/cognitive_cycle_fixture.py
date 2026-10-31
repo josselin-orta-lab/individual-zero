@@ -106,7 +106,8 @@ def _h2_transition_map(previous: object, update: object) -> dict:
     }
 
 
-def _h2_replay_transition(payload: object, stored: object, step: int) -> object:
+def _h2_replay_transition(payload: object, stored: object, step: int,
+                          *, life_ref: str) -> object:
     from fractions import Fraction
     from .delayed_credit_study import FeedbackUpdate, HeldoutForecastScore, _feedback_memory_digest
     from .feedback_transition_contract import verify_feedback_transition
@@ -115,12 +116,16 @@ def _h2_replay_transition(payload: object, stored: object, step: int) -> object:
     if type(payload) is not dict or set(payload) != names:
         raise ValueError("invalid H2 event record")
     before = _h2_memory_parse(payload["previous"])
+    if before.life_ref != life_ref:
+        raise ValueError("foreign H2 life in cognitive replay")
     if stored is None:
         if before.total_observations != 0 or before.last_observed_step != -1:
             raise ValueError("nonempty H2 genesis")
     elif _feedback_memory_digest(before) != _feedback_memory_digest(stored):
         raise ValueError("H2 replay predecessor diverges")
     after = _h2_memory_parse(payload["next"])
+    if after.life_ref != life_ref:
+        raise ValueError("foreign H2 life in cognitive replay")
     score_dict = payload["score"]
     if type(score_dict) is not dict or set(score_dict) != set(HeldoutForecastScore.__dataclass_fields__):
         raise ValueError("invalid H2 score schema")
@@ -737,7 +742,7 @@ class CognitiveCycleFixture:
                 balance = control_ledger.remaining
             if data["feedback_transition"] is not None:
                 payload = data["feedback_transition"]
-                memory_next = _h2_replay_transition(payload, memory, step)
+                memory_next = _h2_replay_transition(payload, memory, step, life_ref=self.life_ref)
                 score = payload["score"]
                 episode_refs = score["observed_episode_refs"]
                 if (score["issue_capture_ref"] in used_issues or
@@ -1106,7 +1111,8 @@ class CognitiveCycleFixture:
                 if feedback_update.new_memory.last_observed_step > claim.capture.step:
                     raise ValueError("H2 learns from future relative to cognitive capture")
                 payload = json.loads(_json(_h2_transition_map(prior, feedback_update)))
-                _h2_replay_transition(payload, old, claim.capture.step)
+                _h2_replay_transition(payload, old, claim.capture.step,
+                                      life_ref=self.life_ref)
                 conn.execute("UPDATE feedback SET snapshot_json=? WHERE id=1",
                              (_json(payload["next"]),))
             event["feedback_transition"] = payload
