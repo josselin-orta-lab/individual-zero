@@ -17,6 +17,8 @@ Keep four distinctions explicit:
 
 These distinctions are what make a result understandable after the original contributor has moved on.
 
+The [historic I0 CI execution policy](ci-execution-policy.md) is retained only as dated engineering provenance. For present validation read [current engineering CI routing](../engineering/START_HERE.md).
+
 ## Research documents
 
 ### MVP v1.3.0 migration preparation (not executed)

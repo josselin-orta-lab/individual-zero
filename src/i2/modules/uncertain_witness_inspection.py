@@ -12,7 +12,7 @@ from typing import Callable
 from .cognitive_cycle_fixture import CognitiveCycleFixture, UncertainCommitInspection
 from .intention_ingress import ObservationClaim
 from .lifecycle_external_witness import (
-    IndependentWitness, LIFECYCLE_SCHEMA, WitnessAudit, WitnessRefusal,
+    IndependentWitness, LatestWitness, LIFECYCLE_SCHEMA, WitnessAudit, WitnessRefusal,
     compare_audit,
 )
 
@@ -30,7 +30,8 @@ class UncertainWitnessInspection:
 
 
 def _inspect(*, fixture: object, witness: IndependentWitness,
-             local_probe: Callable[[], UncertainCommitInspection]
+             local_probe: Callable[[], UncertainCommitInspection],
+             minimum_witness: LatestWitness | None = None,
              ) -> UncertainWitnessInspection:
     if (type(fixture) is not CognitiveCycleFixture or
             fixture.schema != LIFECYCLE_SCHEMA):
@@ -54,7 +55,8 @@ def _inspect(*, fixture: object, witness: IndependentWitness,
         raise WitnessRefusal("UNKNOWN", "unknown local attempt inspection result")
 
     try:
-        corroboration = compare_audit(report=before, witness=witness)
+        corroboration = compare_audit(report=before, witness=witness,
+                                      minimum_witness=minimum_witness)
     finally:
         # Run this even when the remote provider fails/refuses. A concurrent
         # local COMMIT must not be mislabeled as a stable STALE/UNANCHORED.
@@ -69,12 +71,13 @@ def _inspect(*, fixture: object, witness: IndependentWitness,
 def inspect_uncertain_cognition_with_witness(
     *, fixture: object, witness: IndependentWitness,
     previous_count: int, previous_head: str, claim: ObservationClaim,
+    minimum_witness: LatestWitness | None = None,
 ) -> UncertainWitnessInspection:
     """Inspect a possibly committed claimed capture. Never dispatch or retry."""
     if type(fixture) is not CognitiveCycleFixture:
         raise ValueError("exact inert v5 fixture required")
     return _inspect(
-        fixture=fixture, witness=witness,
+        fixture=fixture, witness=witness, minimum_witness=minimum_witness,
         local_probe=lambda: fixture.inspect_uncertain_cognition(
             previous_count=previous_count, previous_head=previous_head, claim=claim,
         ),
@@ -85,6 +88,7 @@ def inspect_uncertain_terminal_with_witness(
     *, fixture: object, witness: IndependentWitness,
     previous_count: int, previous_head: str,
     physical_step: int, terminal_ref: str, evidence_ref: str,
+    minimum_witness: LatestWitness | None = None,
 ) -> UncertainWitnessInspection:
     """Inspect a synthetic terminal claim; never infer real death or rebirth."""
     if type(fixture) is not CognitiveCycleFixture:

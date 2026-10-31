@@ -29,6 +29,10 @@ Les fonctions `inspect_uncertain_cognition` et `inspect_uncertain_terminal` clas
 
 L'adaptateur `uncertain_witness_inspection.py` confronte un diagnostic local à un port de témoin externe **injecté** ; les classifications `UNKNOWN`, `STALE`, `UNANCHORED` et `FORK` restent non autorisantes. Les témoins tests n'établissent ni M11 indépendant, ni effet WorldBody, ni droit de reprise ou de retry. Voir [audit externe](LIFECYCLE_EXTERNAL_WITNESS.md).
 
+### G2 : borne externe déclarée pour le témoin
+
+Le test `minimum_witness` refuse un témoin externe régressif (`STALE`), équivoque ou étendant un état terminal (`FORK`), **seulement si** une borne antérieure déjà vérifiée a été gardée indépendamment du rollback. Le projet ne fournit ni stockage indépendant, ni signature, ni preuve M11, ni droit d'action ou de reprise. Voir [audit du témoin](LIFECYCLE_EXTERNAL_WITNESS.md).
+
 ## Next authorized work
 
 Review [architecture](ARCHITECTURE.md), [research hypothesis](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md) and [promotion procedure](../../../docs/engineering/ENGINE_PROMOTION.md); close separately the genuine-world, independent custody and preregistered science gates. Do not instantiate an I2 individual.

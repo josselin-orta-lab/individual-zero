@@ -1,5 +1,7 @@
 # GitHub Actions execution policy
 
+> **Historical I0 / Stage-9 policy, not the present CI operating guide.** This file records the former `.github/workflows/ci.yml` trigger strategy, now preserved under the frozen I0 archive. Its event/label table and commands below must **not** be applied to the current I1 or I2 workflows. For current routing and validation depth, use the [engineering start guide](../engineering/START_HERE.md), the registered [I1 test matrix](../../src/i1/docs/TEST_PLAN.md), and the [I2 synthetic test plan](../../src/i2/docs/TEST_PLAN.md). This banner does not rewrite the original historical protocol.
+
 **Status:** technical operating instructions. This is not a research protocol, a scientific result, INV-25 acceptance, or a Stage-9 Golden. The English normative specification `docs/architecture/reference/en/mvp-specification-v1.2.1.md` remains authoritative and unchanged.
 
 ## Cost control and triggers

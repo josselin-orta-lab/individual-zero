@@ -19,6 +19,21 @@ python scripts/check_i1_handbook.py --json
 
 These are structural checks, not scientific evidence. For changing I1 behavior, consult the exact commands in `src/i1/engine.json` and [I1 test plan](../../src/i1/docs/TEST_PLAN.md) before running smoke/full and relevant M11 parity suites. For I2 synthetic fixtures, see [I2 test plan](../../src/i2/docs/TEST_PLAN.md). Use the **exact commit SHA** when reporting CI. Do not run repeated heavy tests merely because documentation changed.
 
+## Current CI routing (do not use the archived I0 policy)
+
+The **actual workflow files** determine what runs. The older [I0 CI policy](../research/ci-execution-policy.md) describes historical behaviour only.
+
+| Changed scope | Verification |
+| --- | --- |
+| I1 executable source, engine contracts, relevant scripts and structural tooling | [I1 CI](../../.github/workflows/i1-current-ci.yml), Python 3.11 and 3.12, potentially expensive |
+| I1 Markdown, `AGENTS.md`, navigational guides and examples only | `python tools/check_repo_navigation.py --scope current` and targeted local unit tests; **do not start a full mortal cohort run** |
+| I2 prototype source or generation-owned documentation | [I2 proposal-only CI](../../.github/workflows/i2-proposal-safety.yml), synthetic tests only; no birth or motor authorization |
+| Explicit architecture/custody/promotion change | Required [engine structural guard](../../.github/workflows/engine-structural.yml) and generation-specific review, with full checks if executable invariants change |
+
+The I1 workflow excludes generation-owned Markdown from its expensive automatic run; negatives in its ordered GitHub `paths` list must stay **after** positive patterns. The I1 workflow still activates for changes to `scripts/check_engine_repository.py` and its own YAML. Avoid gratuitous CI re-runs on adjacent documentation commits. A skipped check is never a PASS. Preserve the exact commit SHA and any manual approval gate.
+
+For a dated account of the October 17 native-source migration, consult [the historical I1 migration ledger](I1_NATIVE_MIGRATION.md). Its old PR statuses and paths are snapshots, not current implementation authority.
+
 ## Boundaries
 
 Each generation owns its own world, Lab, cognition, UC and persistence. I1's generated `i1lab` namespace is an existing I1-specific persistence contract, not a shared runtime. Never inject Oracle truth, force a choice, waive UC, resurrect, silently restore, or treat an I2 test opinion as motor authority. Software PASS, observed behavior, and scientific GO are different claims.

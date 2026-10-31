@@ -31,6 +31,7 @@ individual-zero/
 
 ## Where to look
 
+- [Development agent instructions](../../AGENTS.md) and [short navigation map](../engineering/AGENT_NAVIGATION.md): establish generation ownership before inspecting implementation details.
 - [I1 handbook](../../src/i1/docs/README.md): actual active mechanisms, causal boundaries, scientific obligations.
 - [I1 evidence matrix](../../src/i1/docs/EVIDENCE_MATRIX.md): implemented, software-tested, observed, and **not established** are separate categories.
 - [Engine generation map](../architecture/ENGINE_GENERATIONS.md): code and Lab ownership, archive policies, and promotion procedure.
