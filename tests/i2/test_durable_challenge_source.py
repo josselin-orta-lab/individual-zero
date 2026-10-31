@@ -77,7 +77,7 @@ class DurableChallengeTests(unittest.TestCase):
         with self.assertRaises(ChallengeCustodyError):
             self.source(NEXT).next_challenge()
         self.assertEqual((self.dir/"challenges.log").read_bytes(),
-                         (NONCE+"\\n").encode())
+                         (NONCE+"\n").encode())
 
     def test_reopen_existing_empty_log_refuses(self):
         self.source().next_challenge()
