@@ -47,6 +47,27 @@ def _inspect(*, fixture: object, witness: IndependentWitness,
         raise WitnessRefusal(
             "UNKNOWN", "local synthetic journal moved between audit and attempt inspection"
         )
+    if minimum_witness is not None:
+        if type(minimum_witness) is not LatestWitness:
+            raise ValueError("exact pinned witness required")
+        minimum_witness.validate()
+        if (minimum_witness.life_ref != before["life_ref"] or
+                minimum_witness.genesis_ref != before["genesis_ref"]):
+            raise ValueError("foreign pinned witness")
+        prefix = local.audited_prefix
+        if prefix is None or prefix.requested_seq != minimum_witness.committed:
+            raise WitnessRefusal("UNKNOWN", "missing same-snapshot pinned prefix")
+        if (prefix.observed_head != before["chain_head"] or
+                prefix.observed_committed != before["committed"]):
+            raise WitnessRefusal("UNKNOWN", "local journal moved during prefix inspection")
+        if prefix.prefix_head is None:
+            raise WitnessRefusal("STALE", "local history shorter than pinned witness")
+        if (prefix.prefix_head != minimum_witness.chain_head or
+                prefix.prefix_step != minimum_witness.last_step or
+                prefix.prefix_terminal_ref != minimum_witness.terminal_ref or
+                (minimum_witness.terminal_ref is not None and
+                 prefix.observed_committed > minimum_witness.committed)):
+            raise WitnessRefusal("FORK", "local attempt does not descend from pinned witness")
     if local.outcome == "CONFLICT_LOCAL":
         # A wrong attempt or predecessor is not an external-head mismatch.
         # Refuse before even consulting an untrusted provider.
@@ -85,6 +106,7 @@ def inspect_uncertain_cognition_with_witness(
         fixture=fixture, witness=witness, minimum_witness=minimum_witness,
         local_probe=lambda: fixture.inspect_uncertain_cognition(
             previous_count=previous_count, previous_head=previous_head, claim=claim,
+            minimum_sequence=(None if minimum_witness is None else minimum_witness.committed),
         ),
     )
 
@@ -104,5 +126,6 @@ def inspect_uncertain_terminal_with_witness(
             previous_count=previous_count, previous_head=previous_head,
             physical_step=physical_step, terminal_ref=terminal_ref,
             evidence_ref=evidence_ref,
+            minimum_sequence=(None if minimum_witness is None else minimum_witness.committed),
         ),
     )
