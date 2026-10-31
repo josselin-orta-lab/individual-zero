@@ -47,3 +47,5 @@ I1 reste seul actif dans `config/engine-registry.json`, I2 n'a aucun point d'ent
 - **Consolidation documentaire G2 (31/10)** : documents du mode cognitif v1 et modèle CI inerte retirés ; contrat v4 et plan de tests alignés sur la CI existante. Nouveau test structurel interdisant un second import SQLite dans les modules I2. Les travaux H2 et témoins sont conservés ; G3 reste `NOT_ESTABLISHED`.
 
 - **I2 v5, H2 atomique synthétique (31/10)** : H2 est conservée dans la même base SQLite que la cognition, les UC de test et le journal ; la transition est dans le même événement/COMMIT, puis auditée par rejeu et digest à froid. Tests de rollback, accusé perdu, refus d'identité étrangère. Schéma v4 obsolète, pas de migration silencieuse. Ce n'est pas M11, le Scheduler vivant ou un WorldBody ; G3 NOT_ESTABLISHED.
+
+- **Contrôle longitudinal G2 (31/10)** : le COMMIT v5 vérifie désormais les références H2 contre tout le journal, même après leur éviction de la fenêtre des 16 observations. Tests de 17 transitions avec relecture froide à chaque cycle et refus de rejeu avant COMMIT, sans débit UC conservé. Toujours aucune preuve M11 ou WorldBody, G3 `NOT_ESTABLISHED`.
