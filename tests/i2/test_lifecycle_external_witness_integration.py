@@ -100,7 +100,7 @@ class SQLiteWitnessIntegration(unittest.TestCase):
                                      evidence_ref="evidence:synthetic-term")
 
     def test_real_v3_schema_is_bound_to_witness_contract(self):
-        self.assertEqual(LIFECYCLE_SCHEMA, "i2-unified-cognitive-lifecycle-fixture-v4")
+        self.assertEqual(LIFECYCLE_SCHEMA, "i2-unified-cognitive-lifecycle-feedback-fixture-v5")
 
     def test_exact_empty_v3_inspection_remains_nonmotor(self):
         f = self.create()
