@@ -858,3 +858,71 @@ def verify_lived_physical_correspondence(
         effect.admission_ref, effect.committed_event_ref,
         event.capture_ref, event.lived_delta,
     )
+
+
+@dataclass(frozen=True, slots=True)
+class PhysicallyLinkedCredit:
+    """An observational research result, never a motor or M11 credential."""
+
+    study: DelayedCreditStudy
+    correspondences: tuple[LivedPhysicalCorrespondence, ...]
+    interpretation: str = "SYNTHETIC_LINKED_ASSOCIATION_NOT_CAUSAL_PROOF"
+    motor_authority: str = "NONE"
+    m11_authenticated: bool = False
+
+
+def study_physically_linked_credit(
+        *, events: tuple[ClaimedLivedStep, ...],
+        effects: tuple[PhysicalEffectClaim, ...],
+        authority: PhysicalEffectAuthority,
+        horizon: int = 8, decay_numerator: int = 1,
+        decay_denominator: int = 2) -> PhysicallyLinkedCredit:
+    """Refuse the ENTIRE study unless every claimed transition is linked.
+
+    The one-to-one order follows chronological physical steps. The after
+    state of an effect must be the next before state; duplicate commits,
+    admissions, state reversals and missing observations fail closed. No
+    independent publisher exists here, so this remains a G2 synthetic port.
+    """
+    if (type(events) is not tuple or type(effects) is not tuple or
+            not events or len(events) != len(effects) or len(events) > 128):
+        raise ValueError("one physical effect required for every lived step")
+    if (isinstance(authority, type) or
+            not callable(getattr(authority, "verify_committed_effect", None)) or
+            not callable(getattr(authority, "verify_subjective_after", None))):
+        raise ValueError("physical proof source required")
+
+    class _AlreadyLinked:
+        def verify_lived(self, *, event: ClaimedLivedStep) -> bool:
+            # Correspondence has already checked this exact tuple; never
+            # consult a different mock authority or a world oracle.
+            return True
+
+    correspondences: list[LivedPhysicalCorrespondence] = []
+    previous: PhysicalEffectClaim | None = None
+    used_commit_refs: set[str] = set()
+    used_admissions: set[str] = set()
+    used_state_pairs: set[tuple[str, str]] = set()
+    for event, effect in zip(events, effects):
+        verified = verify_lived_physical_correspondence(
+            effect=effect, event=event, authority=authority)
+        if effect.committed_event_ref in used_commit_refs or effect.admission_ref in used_admissions:
+            raise ValueError("replayed physical event or admission")
+        pair = (effect.before_state_ref, effect.after_state_ref)
+        if pair in used_state_pairs or effect.before_state_ref == effect.after_state_ref:
+            raise ValueError("duplicate or unchanged physical state claim")
+        if previous is not None and (
+                effect.life_ref != previous.life_ref or
+                effect.generation_ref != previous.generation_ref or
+                effect.before_step != previous.after_step or
+                effect.before_state_ref != previous.after_state_ref):
+            raise ValueError("disconnected physical state sequence")
+        used_commit_refs.add(effect.committed_event_ref)
+        used_admissions.add(effect.admission_ref)
+        used_state_pairs.add(pair)
+        correspondences.append(verified)
+        previous = effect
+    result = study_delayed_credit(
+        events=events, source=_AlreadyLinked(), horizon=horizon,
+        decay_numerator=decay_numerator, decay_denominator=decay_denominator)
+    return PhysicallyLinkedCredit(result, tuple(correspondences))
