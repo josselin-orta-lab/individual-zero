@@ -18,7 +18,7 @@ from i2.modules.cognitive_cycle_fixture import (  # noqa: E402
     CognitiveCycleFixture, CycleReceipt, SCHEMA, _chain, _json,
     FaultInjected, CommitAcknowledgmentLost,
 )
-from i2.modules.action_control_custody_fixture import FaultInjected as ControlFaultInjected  # noqa: E402
+from i2.modules.cognitive_cycle_fixture import FaultInjected as ControlFaultInjected  # noqa: E402
 from i2.modules.competition_preview import SubjectiveValuation  # noqa: E402
 from i2.modules.intention_continuity import FirstPersonCapture  # noqa: E402
 from i2.modules.intention_ingress import ObservationClaim  # noqa: E402
