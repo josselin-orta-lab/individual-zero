@@ -60,6 +60,11 @@ Le laboratoire vérifie les inodes de ses fichiers de garde sous verrou et avant
 
 `verify_fixture` réaudite désormais le journal local même si le fournisseur externe lève une erreur ou signale `STALE`, `FORK` ou `UNANCHORED`. Une modification concurrente ou un échec du second audit est classé `UNKNOWN`, sans reprise ni rejeu. L'inspection des COMMIT incertains refuse également les erreurs du second audit. Protection locale contre une course détectée, non linéarisable, aucune authentification M11 ni effet physique.
 
+
+### G2 : controle du prefixe historique local
+
+L'audit froid peut verifier une tete historique SQLite v5. `verify_fixture` compare ce prefixe a une borne precedemment verifiee declaree, refusant une divergence `FORK` meme quand la tete actuelle correspond au fournisseur. Aucun serveur independant ni preuve M11 n'est ajoute, aucune activation I2.
+
 ## Next authorized work
 
 Review [architecture](ARCHITECTURE.md), [research hypothesis](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md) and [promotion procedure](../../../docs/engineering/ENGINE_PROMOTION.md); close separately the genuine-world, independent custody and preregistered science gates. Do not instantiate an I2 individual.
