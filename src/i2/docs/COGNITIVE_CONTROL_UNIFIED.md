@@ -1,4 +1,4 @@
-# I2 : contrat actuel du cycle cognitif synthétique v4
+# I2 : contrat actuel du cycle cognitif synthétique v5
 
 **G2 `TESTED_SYNTHETIC`, proposition inerte.** I1 demeure seul actif. I2 n'a ni point d'entrée, ni naissance, ni autorité motrice.
 
@@ -6,7 +6,7 @@ Source unique : `src/i2/modules/cognitive_cycle_fixture.py`. Tests de cycle, con
 
 ## Propriété et interface
 
-Le schéma **unique** `i2-unified-cognitive-lifecycle-fixture-v4` possède un fichier SQLite de test, un compte UC synthétique, un état d'intention, un journal d'événements chaînés et un marqueur terminal synthétique. Les ports `observation_source`, `valuation_source`, `current_source`, `safety_source`, `genesis_ref` et `terminal_source` sont obligatoires. Aucun deuxième banc SQLite autonome d'intention, Competition ou Action Control n'est autorisé.
+Le schéma **unique** `i2-unified-cognitive-lifecycle-feedback-fixture-v5` possède un fichier SQLite de test, un compte UC synthétique, un état d'intention, un journal d'événements chaînés et un marqueur terminal synthétique. Les ports `observation_source`, `valuation_source`, `current_source`, `safety_source`, `genesis_ref` et `terminal_source` sont obligatoires. Aucun deuxième banc SQLite autonome d'intention, Competition ou Action Control n'est autorisé.
 
 L'appel `open` ou `observe` entre dans `BEGIN IMMEDIATE`, rejoue et vérifie le journal, rejette une capture répétée ou périmée et consulte un port d'observation subjective **synthétique**. Le compte débite une UC de test pour la consultation de l'intention si elle est financée. Les candidats proviennent uniquement de la capture courante. Competition facture **tous** les candidats du cadre ou aucun, puis formule un avis non moteur. La revue Action Control requiert un contrôle de fraîcheur avant et après son travail ; la sécurité garde son veto. Un contrôle Action Control financé peut débiter son UC de test ; aucun avis ne devient une commande.
 
@@ -27,3 +27,7 @@ L'audit froid rejoue la chaîne, le compte UC, l'intention, les possibilités re
 Les sources de preuve sont des doubles injectés. Un SHA-256 local n'est pas une signature M11. Une copie intégralement réécrite peut rester cohérente en interne. Rejouer le fichier à chaque transaction coûte O(N), acceptable seulement pour ce banc. Le résultat conserve toujours `motor_authority=NONE`.
 
 Vérification ciblée : `python -m unittest discover -s tests/i2 -p 'test_*.py' -v`. Les tests synthétiques ne représentent ni une vie I2, ni un GO G3, ni une preuve de gain adaptatif. Pour les études de crédit et d'apprentissage, voir [DELAYED_CREDIT_STUDY.md](DELAYED_CREDIT_STUDY.md). Pour les états d'avancement, voir [STATUS.md](STATUS.md).
+
+## Mémoire H2 dans le COMMIT local
+
+Le schéma v5 ajoute une seule table d'état H2 au même fichier SQLite, sans second propriétaire ni migration automatique. Le premier retour inclut sa mémoire initiale vide. Toute transition suivante est validée par digest de prédécesseur et score H2, puis inscrite avec l'événement et le débit UC synthétique avant le même COMMIT. L'audit à froid rejoue les transitions, empêche les références de résultats rejouées à travers tout le journal (même après éviction de la fenêtre de 16), et rapproche le snapshot final. Faute avant COMMIT : rollback intégral. Accusé perdu après COMMIT : inspection seulement, aucun nouvel acte. Ces ports H2 restent synthétiques : aucune source M11 ni effet physique attesté. Les anciennes bases v4 et antérieures sont refusées sans compatibilité.
