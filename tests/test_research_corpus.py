@@ -136,6 +136,21 @@ class ResearchCorpusTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             corpus.collect_paths(self.root, ["../outside"])
 
+    def test_historical_locations_are_separated_from_current_status_hints(self):
+        self.write("docs/research/archive/old-A1-C-results.md",
+                   "# Old A1-C\nPASS in historical software suite.\n")
+        self.write("src/i1/docs/STATUS_HISTORY.md",
+                   "# Old A1-C\nNO_GO in an archived note.\n")
+        indexed = self.index()
+        old = next(x for x in indexed["documents"]
+                   if x["path"].endswith("STATUS_HISTORY.md"))
+        self.assertEqual(old["generation_scope"], "HISTORICAL_LOCATION")
+        group = corpus.related_groups(indexed, topic="study:A1-C")["groups"][0]
+        self.assertEqual(group["historical_location_documents"], 2)
+        self.assertIn("NO_GO", group["current_location_status_signals"])
+        self.assertIn("HISTORICAL_LOCATION", [x["generation_scope"]
+            for x in indexed["documents"] if "/archive/" in x["path"]])
+
     def test_large_and_invalid_utf8_have_no_asserted_content(self):
         path = self.root / "docs/research/big-results.md"
         path.write_bytes(b"# prefix\n" + b"X" * 1500)

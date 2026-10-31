@@ -136,14 +136,14 @@ def kind_hint(path: str) -> str:
 
 
 def generation_scope(path: str) -> str:
+    if "/archive/" in path or "STATUS_HISTORY" in path:
+        return "HISTORICAL_LOCATION"
     if path.startswith("src/i1/"):
         return "I1_DOCUMENTATION"
     if path.startswith("src/i2/"):
         return "I2_DOCUMENTATION"
     if path.startswith("docs/architecture/proposals/"):
         return "ARCHITECTURE_PROPOSAL"
-    if "/archive/" in path or "STATUS_HISTORY" in path:
-        return "HISTORICAL_LOCATION"
     return "GENERATION_NOT_INFERRED"
 
 
@@ -320,13 +320,20 @@ def related_groups(index: dict, *, topic: str | None = None, limit: int = 30) ->
     for identifier in sorted(by_topic):
         if topic is not None and topic != identifier:
             continue
-        docs = sorted(by_topic[identifier], key=lambda x: x["path"])
+        docs = sorted(by_topic[identifier], key=lambda x: (
+            x["generation_scope"] == "HISTORICAL_LOCATION", x["path"]))
         if len(docs) < 2 and topic is None:
             continue
         kinds = sorted(set(x["filename_hint"] for x in docs))
+        historical = [d for d in docs if d["generation_scope"] == "HISTORICAL_LOCATION"]
         signals = sorted({s for d in docs for mention in d.get("status_mentions", [])
                           for s in mention.get("signals", [])})
+        current_signals = sorted({s for d in docs if d["generation_scope"] != "HISTORICAL_LOCATION"
+                                 for mention in d.get("status_mentions", [])
+                                 for s in mention.get("signals", [])})
         group = {"topic": identifier, "document_count": len(docs),
+                 "historical_location_documents": len(historical),
+                 "current_location_status_signals": current_signals,
                  "documents": [{"path": x["path"], "blob_sha": x["blob_sha"],
                                 "kind_hint": x["filename_hint"],
                                 "first_topic_line": next((y["first_line"] for y in x["topics"]
@@ -340,7 +347,9 @@ def related_groups(index: dict, *, topic: str | None = None, limit: int = 30) ->
             group["review_prompts"].append("Compare protocol and result on matching exact SHAs, protocols, populations and endpoints.")
         elif "possible_results" in kinds:
             group["review_prompts"].append("Locate an original preregistration; an absent filename hint is not proof a protocol is missing.")
-        if "NO_GO" in signals and ("APPROVED_MENTION" in signals or "PASS_MENTION" in signals):
+        if historical:
+            group["review_prompts"].append("Historical-location records are preserved provenance, never current policy or scientific authority.")
+        if "NO_GO" in current_signals and ("APPROVED_MENTION" in current_signals or "PASS_MENTION" in current_signals):
             group["review_prompts"].append("Mixed negative and approval/test language: inspect contexts and gate scopes; not a verified contradiction.")
             group["status"] = "POSSIBLE_STATUS_SCOPE_DISAGREEMENT_REVIEW"
         if "NOT_EXECUTED" in signals and "PASS_MENTION" in signals:
