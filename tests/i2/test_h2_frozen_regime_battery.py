@@ -48,7 +48,7 @@ ACK_LOST = ("abrupt_reversal", 14)
 
 class FrozenH2Battery(unittest.TestCase):
     def run_regime(self, label, outcomes, *, return_shadow=False,
-                   fault_index=None, lost_ack_index=None):
+                   fault_index=None, lost_ack_index=None, return_three=False):
         with tempfile.TemporaryDirectory() as folder:
             old = empty_feedback_memory(opportunity(START_STEP))
             life = old.life_ref
@@ -203,7 +203,7 @@ class FrozenH2Battery(unittest.TestCase):
                 sum((row["adaptive_error"] for row in report["rows"]), Fraction(0))
                 / SAMPLES_PER_TRIAL,
             )
-            return (report, shadow) if return_shadow else report
+            if return_three:\n                return report, shadow, owner.feedback_three_way_shadow_report()\n            return (report, shadow) if return_shadow else report
 
     def test_all_frozen_regimes_are_reported_including_losses(self):
         self.assertEqual(TRIALS, 5)
