@@ -771,3 +771,90 @@ class PaidFeedbackValuationPort:
                 candidate.candidate_ref, receipt.ref, evidence, updated,
             ))
         return tuple(valuations)
+
+
+# Physical evidence guard for later I2 design: a *read-only* correspondence
+# check. No M11 provider is implemented and it NEVER admits motor execution.
+# This generation label is a local compatibility fence, not an attestation.
+PHYSICAL_CLAIM_GENERATION = "I2"
+@dataclass(frozen=True, slots=True)
+class PhysicalEffectClaim:
+    life_ref: str
+    generation_ref: str
+    admission_ref: str
+    command_ref: str
+    before_step: int
+    after_step: int
+    before_state_ref: str
+    after_state_ref: str
+    committed_event_ref: str
+    terminal: bool
+
+    def validate(self) -> None:
+        for name in ("life_ref", "generation_ref", "admission_ref",
+                     "command_ref", "before_state_ref", "after_state_ref",
+                     "committed_event_ref"):
+            _ref(getattr(self, name), name)
+        if (type(self.before_step) is not int or
+                type(self.after_step) is not int or
+                self.before_step < 0 or self.after_step != self.before_step + 1 or
+                type(self.terminal) is not bool):
+            raise ValueError("invalid committed physical claim chronology")
+
+
+class PhysicalEffectAuthority(Protocol):
+    def verify_committed_effect(self, *, effect: PhysicalEffectClaim) -> bool: ...
+    def verify_subjective_after(self, *, event: ClaimedLivedStep,
+                                effect: PhysicalEffectClaim) -> bool: ...
+
+
+@dataclass(frozen=True, slots=True)
+class LivedPhysicalCorrespondence:
+    life_ref: str
+    generation_ref: str
+    physical_step: int
+    admission_ref: str
+    committed_event_ref: str
+    subjective_capture_ref: str
+    observed_delta: int
+    interpretation: str = "PHYSICAL_CORRESPONDENCE_CLAIM_ONLY"
+    motor_authority: str = "NONE"
+    m11_authenticated: bool = False
+
+
+def verify_lived_physical_correspondence(
+        *, effect: PhysicalEffectClaim, event: ClaimedLivedStep,
+        authority: PhysicalEffectAuthority) -> LivedPhysicalCorrespondence:
+    """Require distinct committed-physics and post-effect subjective attestations.
+
+    This verifies consistency of claims through an injected provider. A mock
+    provider cannot establish the truth of a body, M11 or physical causality.
+    Terminal effects must be inspected elsewhere, never learned from here.
+    Unobserved results cannot be turned into zero-valued lived credit.
+    """
+    if type(effect) is not PhysicalEffectClaim or type(event) is not ClaimedLivedStep:
+        raise ValueError("exact physical and first-person claims required")
+    effect.validate()
+    event.validate()
+    if (effect.generation_ref != PHYSICAL_CLAIM_GENERATION or
+            effect.life_ref != event.life_ref or
+            effect.after_step != event.physical_step or
+            effect.admission_ref != event.admission_ref or
+            effect.command_ref != event.action_semantic_ref or
+            event.capture_ref == effect.committed_event_ref or
+            event.lived_delta is None or event.outcome_ref is None or
+            effect.terminal):
+        raise ValueError("foreign, terminal or mismatched physical effect")
+    if (isinstance(authority, type) or
+            not callable(getattr(authority, "verify_committed_effect", None)) or
+            not callable(getattr(authority, "verify_subjective_after", None))):
+        raise ValueError("independent committed physical authority required")
+    if authority.verify_committed_effect(effect=effect) is not True:
+        raise ValueError("committed physical effect not attested")
+    if authority.verify_subjective_after(event=event, effect=effect) is not True:
+        raise ValueError("post-effect subjective observation not attested")
+    return LivedPhysicalCorrespondence(
+        effect.life_ref, effect.generation_ref, effect.after_step,
+        effect.admission_ref, effect.committed_event_ref,
+        event.capture_ref, event.lived_delta,
+    )
