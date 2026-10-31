@@ -107,7 +107,7 @@ class DurableChallengeTests(unittest.TestCase):
         with self.assertRaisesRegex(ChallengeCustodyError,"unsafe|replaced"):
             source.next_challenge()
         self.assertEqual((self.dir/"challenges.log").read_bytes(),
-                         (NONCE+"\\n").encode("ascii"))
+                         (NONCE+"\n").encode("ascii"))
 
     def test_replaced_log_during_reservation_refuses(self):
         self.source().next_challenge()
