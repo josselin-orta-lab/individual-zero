@@ -248,12 +248,22 @@ def verify_fixture(*, fixture: object, witness: IndependentWitness,
     # Catch an intervening *local* commit while the external provider reads;
     # this is not a lock and cannot close a later race or attest physics.
     before = fixture.audit()
-    inspection = compare_audit(
-        report=before, witness=witness, minimum_witness=minimum_witness,
-    )
-    after = fixture.audit()
-    if after != before:
-        raise WitnessRefusal(
-            "UNKNOWN", "local synthetic journal changed during external inspection"
+    try:
+        inspection = compare_audit(
+            report=before, witness=witness, minimum_witness=minimum_witness,
         )
+    finally:
+        # Check even if the provider returned STALE/FORK/UNANCHORED or
+        # raised. Its reported error might describe a local snapshot that
+        # changed during that same remote read. No fallback or retry.
+        try:
+            after = fixture.audit()
+        except Exception as exc:
+            raise WitnessRefusal(
+                "UNKNOWN", "local journal unavailable for post-witness audit"
+            ) from exc
+        if after != before:
+            raise WitnessRefusal(
+                "UNKNOWN", "local synthetic journal changed during external inspection"
+            )
     return inspection

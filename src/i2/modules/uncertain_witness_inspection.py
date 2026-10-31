@@ -60,7 +60,12 @@ def _inspect(*, fixture: object, witness: IndependentWitness,
     finally:
         # Run this even when the remote provider fails/refuses. A concurrent
         # local COMMIT must not be mislabeled as a stable STALE/UNANCHORED.
-        after = fixture.audit()
+        try:
+            after = fixture.audit()
+        except Exception as exc:
+            raise WitnessRefusal(
+                "UNKNOWN", "local journal unavailable after uncertain witness inspection"
+            ) from exc
         if after != before:
             raise WitnessRefusal(
                 "UNKNOWN", "local synthetic journal moved during external inspection"
