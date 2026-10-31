@@ -5,7 +5,9 @@ GitHub CI uses real I2 types. Witness below is not an M11 service.
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import sqlite3
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -14,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 from i2.modules.cognitive_cycle_fixture import CognitiveCycleFixture, LIFECYCLE_SCHEMA  # noqa: E402
 from i2.modules.lifecycle_external_witness import (  # noqa: E402
-    LatestWitness, WITNESS_SCHEMA, verify_fixture,
+    LatestWitness, WITNESS_SCHEMA, compare_audit, verify_fixture,
 )
 
 LIFE = "life:synthetic-anchor-integration"
@@ -179,6 +181,84 @@ class SQLiteWitnessIntegration(unittest.TestCase):
                     valuation_source=EmptyValues())
         with self.assertRaisesRegex(ValueError, "exact I2 synthetic v3"):
             verify_fixture(fixture=v1, witness=Witness(checkpoint(self.create().audit())))
+
+
+    def cold_audit_in_separate_process(self, path):
+        """Audit an existing SQLite snapshot in a separate Python process.
+
+        The test still uses synthetic ports and proves no remote custody.
+        Crucially, neither an in-memory owner nor a preloaded journal can
+        provide the child's result: it must reopen the database on disk.
+        """
+        child = """
+import json
+from pathlib import Path
+import sys
+sys.path.insert(0, sys.argv[1])
+from i2.modules.cognitive_cycle_fixture import CognitiveCycleFixture
+
+class UnusedObservation:
+    def verify(self, **kwargs):
+        raise AssertionError("cold audit must not read perception")
+class UnusedValues:
+    def evaluate_batch(self, **kwargs):
+        raise AssertionError("cold audit must not recompute external values")
+class UnusedCurrent:
+    def verify_current(self, **kwargs):
+        raise AssertionError("cold audit must not review a motor action")
+class UnusedSafety:
+    def check(self, **kwargs):
+        raise AssertionError("cold audit must not inspect safety source")
+class UnusedTerminal:
+    def verify_terminal(self, **kwargs):
+        raise AssertionError("cold audit must not attest a new terminal")
+fixture = CognitiveCycleFixture.reopen(
+    path=Path(sys.argv[2]), life_ref=sys.argv[3],
+    genesis_ref=sys.argv[4], observation_source=UnusedObservation(),
+    valuation_source=UnusedValues(), current_source=UnusedCurrent(),
+    safety_source=UnusedSafety(), terminal_source=UnusedTerminal(),
+)
+print(json.dumps(fixture.audit(), sort_keys=True))
+"""
+        result = subprocess.run(
+            [sys.executable, "-c", child, str(ROOT / "src"), str(path),
+             LIFE, GENESIS],
+            cwd=ROOT, capture_output=True, text=True, timeout=15, check=True,
+        )
+        return json.loads(result.stdout)
+
+    def test_stale_backup_rejected_after_cold_process_audit(self):
+        fixture = self.create()
+        old_path = Path(self.t.name) / "old-cold.sqlite"
+        with sqlite3.connect(str(self.path)) as src, sqlite3.connect(str(old_path)) as dst:
+            src.backup(dst)
+        self.seal(fixture)
+        latest = self.cold_audit_in_separate_process(self.path)
+        stale = self.cold_audit_in_separate_process(old_path)
+        self.assertEqual(latest["committed"], 1)
+        self.assertEqual(stale["committed"], 0)
+        with self.assertRaisesRegex(ValueError, "stale local copy"):
+            compare_audit(report=stale, witness=Witness(checkpoint(latest)))
+
+    def test_cold_process_fork_and_unanchored_extension_fail_closed(self):
+        original = self.create()
+        fork_path = Path(self.t.name) / "cold-fork.sqlite"
+        with sqlite3.connect(str(self.path)) as src, sqlite3.connect(str(fork_path)) as dst:
+            src.backup(dst)
+        fork = self.reopen(fork_path)
+        self.seal(original, ref="terminal:cold-A")
+        self.seal(fork, ref="terminal:cold-B")
+        a = self.cold_audit_in_separate_process(self.path)
+        b = self.cold_audit_in_separate_process(fork_path)
+        self.assertEqual(a["committed"], b["committed"])
+        self.assertNotEqual(a["chain_head"], b["chain_head"])
+        with self.assertRaisesRegex(ValueError, "fork"):
+            compare_audit(report=b, witness=Witness(checkpoint(a)))
+        genesis_only = dict(a, committed=0, last_step=-1,
+                            chain_head="0" * 64, synthetic_terminal=False,
+                            terminal_ref=None, terminal_step=None)
+        with self.assertRaisesRegex(ValueError, "unanchored local extension"):
+            compare_audit(report=a, witness=Witness(checkpoint(genesis_only)))
 
 
 if __name__ == "__main__":
