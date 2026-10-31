@@ -40,6 +40,15 @@ def _inspect(*, fixture: object, witness: IndependentWitness,
     # Three separate local read transactions. This checks detected changes
     # between reads but cannot lock out subsequent writes or global rollback.
     before = fixture.audit()
+    # Validate caller-held evidence before constructing an inspection probe.
+    # Never dereference a malformed minimum or run a diagnostic on its behalf.
+    if minimum_witness is not None:
+        if type(minimum_witness) is not LatestWitness:
+            raise ValueError("exact pinned witness required")
+        minimum_witness.validate()
+        if (minimum_witness.life_ref != before["life_ref"] or
+                minimum_witness.genesis_ref != before["genesis_ref"]):
+            raise ValueError("foreign pinned witness")
     local = local_probe()
     if (type(local) is not UncertainCommitInspection or
             local.observed_committed != before["committed"] or
@@ -48,12 +57,6 @@ def _inspect(*, fixture: object, witness: IndependentWitness,
             "UNKNOWN", "local synthetic journal moved between audit and attempt inspection"
         )
     if minimum_witness is not None:
-        if type(minimum_witness) is not LatestWitness:
-            raise ValueError("exact pinned witness required")
-        minimum_witness.validate()
-        if (minimum_witness.life_ref != before["life_ref"] or
-                minimum_witness.genesis_ref != before["genesis_ref"]):
-            raise ValueError("foreign pinned witness")
         prefix = local.audited_prefix
         if prefix is None or prefix.requested_seq != minimum_witness.committed:
             raise WitnessRefusal("UNKNOWN", "missing same-snapshot pinned prefix")
@@ -102,6 +105,13 @@ def inspect_uncertain_cognition_with_witness(
     """Inspect a possibly committed claimed capture. Never dispatch or retry."""
     if type(fixture) is not CognitiveCycleFixture:
         raise ValueError("exact inert v5 fixture required")
+    if minimum_witness is not None:
+        if type(minimum_witness) is not LatestWitness:
+            raise ValueError("exact pinned witness required")
+        minimum_witness.validate()
+        if (minimum_witness.life_ref != fixture.life_ref or
+                minimum_witness.genesis_ref != fixture.genesis_ref):
+            raise ValueError("foreign pinned witness")
     return _inspect(
         fixture=fixture, witness=witness, minimum_witness=minimum_witness,
         local_probe=lambda: fixture.inspect_uncertain_cognition(
@@ -120,6 +130,13 @@ def inspect_uncertain_terminal_with_witness(
     """Inspect a synthetic terminal claim; never infer real death or rebirth."""
     if type(fixture) is not CognitiveCycleFixture:
         raise ValueError("exact inert v5 fixture required")
+    if minimum_witness is not None:
+        if type(minimum_witness) is not LatestWitness:
+            raise ValueError("exact pinned witness required")
+        minimum_witness.validate()
+        if (minimum_witness.life_ref != fixture.life_ref or
+                minimum_witness.genesis_ref != fixture.genesis_ref):
+            raise ValueError("foreign pinned witness")
     return _inspect(
         fixture=fixture, witness=witness, minimum_witness=minimum_witness,
         local_probe=lambda: fixture.inspect_uncertain_terminal(
