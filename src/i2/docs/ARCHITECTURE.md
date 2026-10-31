@@ -1,9 +1,14 @@
-# I2 : architecture candidate
+# I2 : architecture candidate autonome
 
-Les modules, runtime, Lab et config sont strictement propres a I2. Aucun import de `i1lab` comme moteur. Contrats de recherche : [`i2-continuity-and-learning-contract-2026-10-31.md`](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md).
+**Statut actuel : G2 `TESTED_SYNTHETIC`, I2 `PROPOSAL_ONLY`, non enregistrée et non exécutable.** Il existe des composants cognitifs et un cycle SQLite **de test** ; il n'existe ni Lab/WorldBody vivant, ni runtime I2, ni identité née.
 
-Statut : NON IMPLEMENTE. Aucune boucle cognitive ni identite vivante.
+Chaque génération possède ses propres modules, runtime, Lab, UC, mémoire, contrôles et contrats. Aucun import de `i1lab` comme moteur I2. Le champ `parent: I1` indique une filiation scientifique, jamais une dépendance d'exécution. Norme obligatoire : [ADR-0001](../../../docs/decisions/ADR-0001-strict-generation-autonomy.md).
 
-## Regle normative prospective
+## Sources normatives et état courant
 
-[ADR-0001](../../../docs/decisions/ADR-0001-strict-generation-autonomy.md) : I2 doit etre une architecture pleinement autonome, sans import, proprietaire, moteur, Lab, Memoire ou M11 de I1 et sans compatibilite des modes perimes. Le champ `parent: I1` est une filiation historique de conception. Les schemas anterieurs sont refuses. Aucun moteur vivant I2 ni naissance n'est autorise.
+- [Contrat de recherche I2](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md) : proposition G1, non revue indépendamment.
+- [Cycle cognitif v4](COGNITIVE_CONTROL_UNIFIED.md) : unique propriétaire SQLite synthétique du débit UC, de l'intention, Competition, Action Control et du terminal.
+- [Étude H2](DELAYED_CREDIT_STUDY.md) : apprentissage et crédit différé **expérimentaux**, pas de politique motrice prouvée.
+- [État actuel](STATUS.md) : portes G0 à G6, blocages, inventaire et liens vers les expériences.
+
+Les anciens modes et les propriétaires transactionnels séparés ne sont plus supportés. Aucun héritage de données de vie, migration silencieuse, naissance ou activation I2 n'est autorisé.
