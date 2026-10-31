@@ -45,6 +45,23 @@ def verify_feedback_transition(
     if (update.motor_authority != "NONE" or
             update.interpretation != "SYNTHETIC_ADAPTATION_NOT_CAUSAL_OR_MOTOR_PROOF"):
         raise ValueError("motor-capable or foreign H2 update")
+    from fractions import Fraction
+    score = update.heldout_score
+    if (type(update.predicted_outcome_difference) is not Fraction or
+            type(update.absolute_error) is not Fraction or
+            type(update.direction_agreement) is not bool or
+            update.absolute_error != abs(
+                update.predicted_outcome_difference - score.observed_outcome_difference) or
+            update.direction_agreement != (
+                ((update.predicted_outcome_difference > 0) -
+                 (update.predicted_outcome_difference < 0)) ==
+                ((score.observed_outcome_difference > 0) -
+                 (score.observed_outcome_difference < 0)))):
+        raise ValueError("inconsistent issued H2 feedback score")
+    if (type(score.training_episode_refs) is not tuple or
+            len(score.training_episode_refs) != 2 or
+            len(set(score.training_episode_refs)) != 2):
+        raise ValueError("invalid historical H2 episode references")
     current = update.new_memory
     if type(current) is not OutcomeFeedbackMemory:
         raise ValueError("exact successor H2 snapshot required")
