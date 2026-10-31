@@ -203,7 +203,9 @@ class FrozenH2Battery(unittest.TestCase):
                 sum((row["adaptive_error"] for row in report["rows"]), Fraction(0))
                 / SAMPLES_PER_TRIAL,
             )
-            if return_three:\n                return report, shadow, owner.feedback_three_way_shadow_report()\n            return (report, shadow) if return_shadow else report
+            if return_three:
+                return report, shadow, owner.feedback_three_way_shadow_report()
+            return (report, shadow) if return_shadow else report
 
     def test_all_frozen_regimes_are_reported_including_losses(self):
         self.assertEqual(TRIALS, 5)
