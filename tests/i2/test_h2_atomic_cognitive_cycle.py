@@ -92,4 +92,31 @@ class AtomicH2Tests(unittest.TestCase):
         self.assertEqual(f.audit()["remaining_synthetic_uc"],20)
         self.assertEqual(f.audit()["committed"],0)
 
+    def test_v4_fixture_is_not_silently_migrated(self):
+        f=self.make()
+        with sqlite3.connect(self.path) as conn:
+            conn.execute("UPDATE identity SET schema_id=? WHERE id=1",
+                         ("i2-unified-cognitive-lifecycle-fixture-v4",))
+        with self.assertRaises(ValueError):
+            CognitiveCycleFixture.reopen(path=self.path,**self.ports)
+
+    def test_stored_feedback_snapshot_tampering_refused_by_cold_audit(self):
+        from i2.modules.intention_ingress import ObservationClaim
+        from i2.modules.intention_continuity import FirstPersonCapture
+        old,update=TransitionTests().transition()
+        self.ports["life_ref"]=old.life_ref
+        class Subject:
+            def verify(self,*,life_ref,claim,digest):return True
+        self.ports["observation_source"]=Subject()
+        f=self.make()
+        c=ObservationClaim(old.life_ref,FirstPersonCapture(
+            30,"capture:cycle30",old.goal_ref,tuple(sorted((A,B,C)))),
+            "source:cycle30",("evidence:30",))
+        f.open(claim=c,semantic_ref=A,evidence_ref="evidence:30",ttl_steps=12,
+               feedback_previous=old,feedback_update=update)
+        with sqlite3.connect(self.path) as conn:
+            conn.execute("UPDATE feedback SET snapshot_json=NULL WHERE id=1")
+        with self.assertRaisesRegex(ValueError,"H2 owner and replay journal diverge"):
+            CognitiveCycleFixture.reopen(path=self.path,**self.ports)
+
 if __name__=="__main__":unittest.main()
