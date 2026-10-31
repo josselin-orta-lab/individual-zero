@@ -337,7 +337,11 @@
         "docs/engineering/RESEARCH_COORDINATOR.md",
         "tools/research_corpus.py",
         "tests/test_research_corpus.py",
-        "docs/engineering/RESEARCH_CORPUS.md"
+        "docs/engineering/RESEARCH_CORPUS.md",
+        "config/research-dossiers.json",
+        "tools/research_dossiers.py",
+        "tests/test_research_dossiers.py",
+        "docs/engineering/RESEARCH_DOSSIERS.md"
       ],
       "keywords": [
         "global research",
@@ -346,7 +350,10 @@
         "scientific bottlenecks",
         "research roadmap",
         "corpus ingestion",
-        "experiment relation"
+        "experiment relation",
+        "research dossier",
+        "protocol outcome",
+        "independent evidence review"
       ],
       "documents": [
         "docs/engineering/RESEARCH_COORDINATOR.md",
@@ -354,17 +361,20 @@
         "src/i1/docs/STATUS.md",
         "src/i2/docs/STATUS.md",
         "docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md",
-        "docs/engineering/RESEARCH_CORPUS.md"
+        "docs/engineering/RESEARCH_CORPUS.md",
+        "docs/engineering/RESEARCH_DOSSIERS.md"
       ],
       "owners": [
         "config/research-program.json",
         "config/engine-registry.json",
-        "tools/research_corpus.py"
+        "tools/research_corpus.py",
+        "config/research-dossiers.json"
       ],
       "tests": [
         "tests/test_research_coordinator.py",
         "tests/test_research_knowledge.py",
-        "tests/test_research_corpus.py"
+        "tests/test_research_corpus.py",
+        "tests/test_research_dossiers.py"
       ],
       "invariants": [
         "Source-marker matching is not evidence or gate approval.",
@@ -375,7 +385,9 @@
         "python tools/research_coordinator.py audit",
         "python -m unittest discover -s tests -p test_research_coordinator.py -v",
         "python -m unittest discover -s tests -p test_research_knowledge.py -v",
-        "python -m unittest discover -s tests -p test_research_corpus.py -v"
+        "python -m unittest discover -s tests -p test_research_corpus.py -v",
+        "python tools/research_dossiers.py audit",
+        "python -m unittest discover -s tests -p test_research_dossiers.py -v"
       ]
     }
   },

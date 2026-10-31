@@ -6,16 +6,20 @@ on:
     paths:
       - 'config/agent-context-map.json'
       - 'config/research-program.json'
+      - 'config/research-dossiers.json'
       - 'tools/agent_context.py'
       - 'tools/research_coordinator.py'
       - 'tools/research_corpus.py'
+      - 'tools/research_dossiers.py'
       - 'tests/test_agent_context.py'
       - 'tests/test_research_coordinator.py'
       - 'tests/test_research_knowledge.py'
       - 'tests/test_research_corpus.py'
+      - 'tests/test_research_dossiers.py'
       - 'docs/engineering/AGENT_CONTEXT.md'
       - 'docs/engineering/RESEARCH_COORDINATOR.md'
       - 'docs/engineering/RESEARCH_CORPUS.md'
+      - 'docs/engineering/RESEARCH_DOSSIERS.md'
       - 'docs/engineering/AGENT_HANDOFF.md'
       - 'docs/engineering/DOCUMENT_AUTHORITY.md'
       - 'docs/engineering/COMPONENT_OWNERSHIP.md'
@@ -43,6 +47,26 @@ jobs:
           python -m unittest discover -s tests -p test_research_coordinator.py -v
           python -m unittest discover -s tests -p test_research_knowledge.py -v
           python -m unittest discover -s tests -p test_research_corpus.py -v
+          python tools/research_dossiers.py audit > /tmp/iz-dossier-audit.json
+          python -m unittest discover -s tests -p test_research_dossiers.py -v
+          python tools/research_dossiers.py show --id I1-A1C-TARGETED > /tmp/iz-a1c-dossier.json
+          python tools/research_dossiers.py gaps > /tmp/iz-dossier-gaps.json
+          python tools/research_dossiers.py compare --left I1-A1C-TARGETED --right I1-A2R-REWARD > /tmp/iz-dossier-compare.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          dossier = json.loads(Path('/tmp/iz-a1c-dossier.json').read_text())
+          audit = json.loads(Path('/tmp/iz-dossier-audit.json').read_text())
+          gaps = json.loads(Path('/tmp/iz-dossier-gaps.json').read_text())
+          comparison = json.loads(Path('/tmp/iz-dossier-compare.json').read_text())
+          assert audit['status'] == 'PASS'
+          assert dossier['reported_assessment'] == 'NO_GO'
+          assert dossier['primary_record'] == 'PRIMARY_ORIGINAL_RESULT_NOT_LINKED'
+          assert dossier['scientific_verdict'] == 'NOT_EVALUATED'
+          assert gaps['scientific_verdict'] == 'NOT_EVALUATED'
+          assert comparison['same_explicit_scope'] is False
+          print('CURATED_DOSSIERS_SOURCE_PINS_AND_LIMITS_PASS')
+          PY
           python tools/research_corpus.py index --output /tmp/iz-research-corpus.json
           python tools/research_corpus.py delta --baseline /tmp/iz-research-corpus.json > /tmp/iz-research-delta.json
           python tools/research_corpus.py review --topic study:A1-C --limit 3 > /tmp/iz-research-review.json

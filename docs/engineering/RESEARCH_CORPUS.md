@@ -28,6 +28,10 @@ python tools/research_corpus.py review --topic issue:304
 
 Records under historical archives and `STATUS_HISTORY.md` are labeled `HISTORICAL_LOCATION`, and their status mentions do not masquerade as current claims when suggesting mixed-status reviews. Shared identifiers only establish **possible topical relationships**. Two reports may cite the same issue while measuring different endpoints, reference different motor versions or describe historical versus current work. Filename tags like `possible_preregistration` and `possible_results` are review hints, not verified document types.
 
+## From lexical relationships to curated dossiers
+
+When multiple documents appear to describe an experiment, collect the **original** preregistration, dated result, separate diagnostic, current status and missing artifacts as distinct roles in the [curated dossier register](RESEARCH_DOSSIERS.md). The dossier tool verifies full Git blob identities and requires explicit provenance gaps before a reviewer is asked to reconcile the case. It never replaces the source report or independently approves science.
+
 ## Before adding anything to the knowledge graph
 
 For each candidate protocol/results/decision chain, the reviewing agent must inspect its source content and establish: original preregistration; scope and date; version and exact source SHA; cohort, independent units and seeds; true controls; observed measurements; failed or null outcomes; alternative explanations; and the actual independent disposition. If any of these is absent, use `UNVERIFIED` or `NOT_OBSERVED`. Do **not** manufacture a scientific graph edge based on a filename or a software CI PASS.

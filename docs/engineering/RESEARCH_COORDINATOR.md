@@ -59,6 +59,10 @@ For wider context than the curated research-program seed, run `python tools/rese
 
 The global coordinator's evidence and gate logic remains curated; corpus index entries never automatically become new scientific findings, changes to the registry or permits to execute. Cite the original source before linking a candidate into the verified research program.
 
+## Curated source dossiers and unresolved independent reviews
+
+The [research dossier register](RESEARCH_DOSSIERS.md) bridges the wide lexical corpus index and the small, prioritized research program. Run `python tools/research_dossiers.py list`, `show --id I1-A1C-TARGETED` and `gaps` to see original preregistrations, dated outcomes, post-hoc diagnostics, what is not independently verified, and precisely scoped comparisons. **Never treat a dossier, its Git source pins or its completion as a scientific approval.**
+
 ## Agent decision cycle
 
 1. Re-read HEAD, registry, engine contracts, current statuses, evidence matrix and this program. Flag contradictions.

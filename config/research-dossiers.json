@@ -1,0 +1,275 @@
+{
+  "schema": "individual-zero-curated-research-dossiers/v1",
+  "repository": "josselin-orta-lab/individual-zero",
+  "as_of": "2026-11-01",
+  "description": "Curated, independently unverified dossier starters. Source anchors and blob IDs establish file identity only, not scientific validity.",
+  "sources": [
+    {
+      "id": "a1c-prereg",
+      "path": "docs/research/I1_ECO_A1C_PREREGISTRATION_2026-10-29.md",
+      "blob_sha": "511574a2383bd31de360605b6812c67ac27f9122",
+      "anchor": "Ce document constitue un contrat figé",
+      "authority": "original_preregistration"
+    },
+    {
+      "id": "a1c-diagnostic",
+      "path": "docs/research/audits/I1_ECO_A1C_POSTHOC_REWARD_CREDIT_2026-10-29.md",
+      "blob_sha": "b29d316714eaf3c4c2fad05c36a9f5b679d77ede",
+      "anchor": "Verdict A1-C inchangé : NO-GO",
+      "authority": "dated_posthoc_diagnostic"
+    },
+    {
+      "id": "i1-a2r-status",
+      "path": "src/i1/docs/STATUS.md",
+      "blob_sha": "6c9dec0566634d021723be7c7542f575d52b3bf3",
+      "anchor": "A2-R remains **NOT_EXECUTED (0/96)**",
+      "authority": "current_status_snapshot"
+    },
+    {
+      "id": "a2r-prereg",
+      "path": "docs/research/I1_ECO_A2R_REWARD_PREREGISTRATION_2026-10-30.md",
+      "blob_sha": "2638072dfef994c7df372608d6afe89866835d6d",
+      "anchor": "96 vies, 48 paires",
+      "authority": "original_preregistration"
+    },
+    {
+      "id": "a235b-prereg",
+      "path": "docs/research/i1-a235b-natural-competition-prereg-2026-10-16.en.md",
+      "blob_sha": "6b2394cc480244276ff0200511312db7767cf292",
+      "anchor": "prospective natural-competition test of lived-recall I1",
+      "authority": "original_preregistration"
+    },
+    {
+      "id": "a235b-results",
+      "path": "docs/research/i1-a235b-natural-competition-results-2026-10-16.en.md",
+      "blob_sha": "73056ee6bf230593b0722b9f15ec021088eff252",
+      "anchor": "INCONCLUSIVE",
+      "authority": "dated_reported_result"
+    },
+    {
+      "id": "i2-contract",
+      "path": "docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md",
+      "blob_sha": "fcf924b73763a7c5da283480b2d6ee0da8cbfd68",
+      "anchor": "proposition, non revue indépendamment",
+      "authority": "architecture_proposal"
+    },
+    {
+      "id": "i2-boundaries",
+      "path": "docs/architecture/proposals/i2-publication-boundaries-g1-review-2026-10-31.md",
+      "blob_sha": "3fefd0bdf62c21a3b7ae9baaf6a342ae11d26098",
+      "anchor": "aucune autorisation G1/G3",
+      "authority": "pending_review_proposal"
+    },
+    {
+      "id": "i2-status",
+      "path": "src/i2/docs/STATUS.md",
+      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811",
+      "anchor": "Architectural and scientific review still required",
+      "authority": "current_status_snapshot"
+    },
+    {
+      "id": "i1-a1c-status",
+      "path": "src/i1/docs/STATUS.md",
+      "blob_sha": "6c9dec0566634d021723be7c7542f575d52b3bf3",
+      "anchor": "A1-C confirmatory result was a targeted **NO_GO**",
+      "authority": "current_status_snapshot"
+    }
+  ],
+  "dossiers": [
+    {
+      "id": "I1-A1C-TARGETED",
+      "generation": "I1",
+      "kind": "historical_confirmatory",
+      "title": "Targeted A1-C TD-read contrast: negative reported outcome",
+      "question_id": "I1-L3",
+      "related_issues": [
+        304,
+        305
+      ],
+      "scope": {
+        "study_key": "A1-C",
+        "cohort_key": "A1C-48-H48-20261029",
+        "endpoint_key": "physiological_deficit_area_H48",
+        "contrast_key": "canonical_vs_td_read_masked"
+      },
+      "reported_assessment": "NO_GO",
+      "source_roles": [
+        {
+          "source_id": "a1c-prereg",
+          "role": "preregistration"
+        },
+        {
+          "source_id": "a1c-diagnostic",
+          "role": "posthoc_diagnostic"
+        },
+        {
+          "source_id": "i1-a1c-status",
+          "role": "current_status"
+        }
+      ],
+      "review_gaps": [
+        {
+          "id": "primary-outcome-record",
+          "state": "UNVERIFIED",
+          "question": "Is the original frozen A1-C decision/aggregation artifact accessible and independently linked to the preregistration?"
+        },
+        {
+          "id": "m11-originals",
+          "state": "EXTERNAL_NOT_VERIFIED",
+          "question": "Are all 48 original sealed M11 archives independently accessible with verified hashes?"
+        },
+        {
+          "id": "reviewer",
+          "state": "INDEPENDENT_REVIEW_REQUIRED",
+          "question": "Has a third party reproduced the frozen outcome and provenance on the original data?"
+        }
+      ],
+      "scope_limit": "NO_GO applies only to the preregistered targeted TD read criterion. L3 general remains NOT_ESTABLISHED; post hoc reward analyses are not new confirmatory trials.",
+      "next_review": "Recheck preregistration, locked analysis, source SHA and independent archive custody before interpreting the finding.",
+      "authority": "CURATED_SOURCE_NAVIGATION_ONLY",
+      "scientific_gate": "NOT_EVALUATED"
+    },
+    {
+      "id": "I1-A2R-REWARD",
+      "generation": "I1",
+      "kind": "preregistered_unexecuted",
+      "title": "Prospective A2-R physiological reward comparison: no cohort",
+      "question_id": "I1-L3",
+      "related_issues": [
+        304,
+        305,
+        306
+      ],
+      "scope": {
+        "study_key": "A2-R",
+        "cohort_key": "A2R-96-H192-PROPOSED",
+        "endpoint_key": "physiological_deficit_area_H192",
+        "contrast_key": "canonical_absolute_vs_deficit_reward"
+      },
+      "reported_assessment": "NOT_EXECUTED",
+      "source_roles": [
+        {
+          "source_id": "a2r-prereg",
+          "role": "preregistration"
+        },
+        {
+          "source_id": "i1-a2r-status",
+          "role": "current_status"
+        }
+      ],
+      "review_gaps": [
+        {
+          "id": "execution",
+          "state": "NOT_EXECUTED",
+          "question": "The preregistered 96 independent births have not been performed; do not fabricate results."
+        },
+        {
+          "id": "provenance",
+          "state": "UNVERIFIED",
+          "question": "Review final execution gate and permitted source custody without launching the cohort."
+        }
+      ],
+      "scope_limit": "A preregistered hypothesis is not an experimental effect or a failed result; A2-R remains 0/96.",
+      "next_review": "Do not run A2-R to close documentation. Preserve the frozen protocol and review authorization separately.",
+      "authority": "CURATED_SOURCE_NAVIGATION_ONLY",
+      "scientific_gate": "NOT_EVALUATED"
+    },
+    {
+      "id": "I1-A235B-COMPETITION",
+      "generation": "I1",
+      "kind": "historical_inconclusive",
+      "title": "Natural Competition held-out: opportunities unavailable",
+      "question_id": "I1-L3",
+      "related_issues": [
+        317
+      ],
+      "scope": {
+        "study_key": "A2.35-B",
+        "cohort_key": "A235B-64-BIRTHS-20261016",
+        "endpoint_key": "natural_multi_primitive_contested_choices",
+        "contrast_key": "a235_recall_on_vs_off"
+      },
+      "reported_assessment": "INCONCLUSIVE",
+      "source_roles": [
+        {
+          "source_id": "a235b-prereg",
+          "role": "preregistration"
+        },
+        {
+          "source_id": "a235b-results",
+          "role": "reported_result"
+        }
+      ],
+      "review_gaps": [
+        {
+          "id": "original-witness",
+          "state": "UNVERIFIED",
+          "question": "Reconcile dated source and raw traces at the actual cohort SHA before any newer-generation claim."
+        },
+        {
+          "id": "causal-opportunity",
+          "state": "NOT_OBSERVED",
+          "question": "A naturally contested action difference was not observed under the preregistered eligibility criterion."
+        }
+      ],
+      "scope_limit": "The report states software CI PASS but genuine natural competition was unavailable; it is not a null-effect proof and cannot establish generalized learning.",
+      "next_review": "Review preregistered contested-opportunity conditions before deciding whether a new prospective test is justified.",
+      "authority": "CURATED_SOURCE_NAVIGATION_ONLY",
+      "scientific_gate": "NOT_EVALUATED"
+    },
+    {
+      "id": "I2-G1-INDEPENDENT-REVIEW",
+      "generation": "I2",
+      "kind": "architecture_review_pending",
+      "title": "I2 G1 architecture, motor admission and independent M11 review",
+      "question_id": "I2-H1",
+      "related_issues": [
+        662,
+        664
+      ],
+      "scope": {
+        "study_key": "I2-G1",
+        "cohort_key": "NO_LIVING_COHORT",
+        "endpoint_key": "independent_architecture_review",
+        "contrast_key": "non_motoring_proposal_vs_required_living_guards"
+      },
+      "reported_assessment": "REVIEW_REQUIRED",
+      "source_roles": [
+        {
+          "source_id": "i2-contract",
+          "role": "architecture_proposal"
+        },
+        {
+          "source_id": "i2-boundaries",
+          "role": "review_proposal"
+        },
+        {
+          "source_id": "i2-status",
+          "role": "current_status"
+        }
+      ],
+      "review_gaps": [
+        {
+          "id": "independent-review",
+          "state": "INDEPENDENT_REVIEW_REQUIRED",
+          "question": "Have architecture and scientific reviewers accepted the crash/fencing/M11 ownership model?"
+        },
+        {
+          "id": "living-m11",
+          "state": "NOT_ESTABLISHED",
+          "question": "Independent living M11, UC, WorldBody and birth remain outside synthetic G2."
+        }
+      ],
+      "scope_limit": "A proposed G1 document and green G2 fixtures cannot authorize G3, birth, physical action, recovery or promotion. I1 remains active.",
+      "next_review": "Review G1 threat model and all negative controls without changing I2 activation or registry.",
+      "authority": "CURATED_SOURCE_NAVIGATION_ONLY",
+      "scientific_gate": "NOT_EVALUATED"
+    }
+  ],
+  "policy": {
+    "no_auto_scientific_approval": true,
+    "no_auto_execution": true,
+    "none_claims_independent_attestation": true,
+    "scopes_required_for_comparisons": true
+  }
+}
