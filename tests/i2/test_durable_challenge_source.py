@@ -63,6 +63,36 @@ class DurableChallengeTests(unittest.TestCase):
         with self.assertRaises(ChallengeCustodyError):
             self.source().next_challenge()
 
+    def test_missing_log_after_valid_reservation_is_not_recreated(self):
+        self.source().next_challenge()
+        path=self.dir/"challenges.log"
+        path.unlink()
+        with self.assertRaises(ChallengeCustodyError):
+            self.source().next_challenge()
+        self.assertFalse(path.exists())
+
+    def test_missing_lock_with_existing_log_is_not_silently_reinitialized(self):
+        self.source().next_challenge()
+        (self.dir/".challenge.lock").unlink()
+        with self.assertRaises(ChallengeCustodyError):
+            self.source(NEXT).next_challenge()
+        self.assertEqual((self.dir/"challenges.log").read_bytes(),
+                         (NONCE+"\\n").encode())
+
+    def test_reopen_existing_empty_log_refuses(self):
+        self.source().next_challenge()
+        (self.dir/"challenges.log").write_bytes(b"")
+        with self.assertRaises(ChallengeCustodyError):
+            self.source(NEXT).next_challenge()
+
+    def test_fully_restored_directory_is_still_not_detectable(self):
+        self.source().next_challenge()
+        # An attacker with directory control can replace both files. This
+        # synthetic demonstration is a LIMIT, never a security success.
+        (self.dir/".challenge.lock").unlink()
+        (self.dir/"challenges.log").unlink()
+        self.assertEqual(self.source().next_challenge(),NONCE)
+
     def test_invalid_candidate_never_creates_log(self):
         with self.assertRaises(ChallengeCustodyError):
             self.source("not-a-challenge").next_challenge()
