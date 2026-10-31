@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 from i2.modules.lifecycle_external_witness import (  # noqa: E402
     LatestWitness, WitnessAudit, WITNESS_SCHEMA, LIFECYCLE_SCHEMA,
-    ZERO_HASH, compare_audit,
+    ZERO_HASH, WitnessRefusal, compare_audit,
 )
 
 LIFE = "life:synthetic-witness"
@@ -56,6 +56,30 @@ class FakeWitness:
 
 
 class WitnessProtocolTests(unittest.TestCase):
+    def test_classified_fail_closed_refusals_are_non_authorizing(self):
+        cases = (
+            ("STALE", report(count=2, head="b"*64), record(report(count=5, head="c"*64))),
+            ("UNANCHORED", report(count=5, head="c"*64), record(report())),
+            ("FORK", report(), record(report(head="c"*64))),
+            ("UNKNOWN", report(), replace(record(), witness_schema="wrong")),
+        )
+        for reason, local, external in cases:
+            with self.subTest(reason=reason):
+                with self.assertRaises(WitnessRefusal) as result:
+                    compare_audit(report=local, witness=FakeWitness(external))
+                self.assertEqual(result.exception.reason, reason)
+                self.assertNotIn("authorized", vars(result.exception))
+
+    def test_invalid_external_proof_and_identity_classified_unknown(self):
+        for witness in (
+            FakeWitness(valid=False),
+            FakeWitness(replace(record(), genesis_ref="genesis:foreign")),
+            FakeWitness(replace(record(), committed=True)),
+        ):
+            with self.subTest(witness=witness), self.assertRaises(WitnessRefusal) as failure:
+                compare_audit(report=report(), witness=witness)
+            self.assertEqual(failure.exception.reason, "UNKNOWN")
+
     def test_matching_open_inspection_remains_nonmotor(self):
         witness = FakeWitness()
         result = compare_audit(report=report(), witness=witness)
