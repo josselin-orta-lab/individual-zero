@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-WITNESS_SCHEMA = "i2-lifecycle-external-witness-proposal-v1"
+WITNESS_SCHEMA = "i2-lifecycle-external-witness-proposal-v2"
 LIFECYCLE_SCHEMA = "i2-unified-cognitive-lifecycle-fixture-v3"
 ZERO_HASH = "0" * 64
 _HEX = frozenset("0123456789abcdef")
@@ -73,15 +73,18 @@ class LatestWitness:
 
 
 class IndependentWitness(Protocol):
-    """Both methods MUST bind to the same freshest trusted append-only view.
+    """A SINGLE linearizable latest-head read and verification operation.
 
-    A static signed receipt can be stale. verify_latest must also verify the
-    issuer, immutability, freshness and anti-equivocation of read_latest.
-    Neither such service nor a signature implementation exists in I2.
+    The independently operated provider MUST select its freshest monotone
+    revision and validate issuer, signature, revocation, freshness and
+    anti-equivocation against that SAME revision before returning. A static
+    signed receipt or a separate read_latest/verify_latest pair is unsafe:
+    a head can change between the two calls. On any doubt it MUST raise.
+    This interface has no provider implementation or trusted signer in I2.
     """
 
-    def read_latest(self, *, life_ref: str, genesis_ref: str) -> LatestWitness: ...
-    def verify_latest(self, *, record: LatestWitness) -> bool: ...
+    def read_verified_latest(self, *, life_ref: str,
+                             genesis_ref: str) -> LatestWitness: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -153,11 +156,19 @@ def compare_audit(*, report: dict[str, object], witness: IndependentWitness) -> 
         _ref(terminal_ref, "local terminal ref")
     elif terminal_ref is not None or terminal_step is not None:
         raise ValueError("unsealed local state has terminal fields")
-    if isinstance(witness, type) or not callable(getattr(witness, "read_latest", None)) or not callable(
-            getattr(witness, "verify_latest", None)):
-        raise ValueError("independent latest+proof witness is mandatory")
+    if isinstance(witness, type) or not callable(
+            getattr(witness, "read_verified_latest", None)):
+        raise ValueError("independent atomic verified-latest witness is mandatory")
 
-    record = witness.read_latest(life_ref=life, genesis_ref=genesis)
+    # One provider call must SELECT and VERIFY the same latest revision.
+    # Only a real independent provider can enforce this contract; our
+    # in-memory test doubles have no evidentiary standing.
+    try:
+        record = witness.read_verified_latest(life_ref=life, genesis_ref=genesis)
+    except Exception as exc:
+        raise WitnessRefusal(
+            "UNKNOWN", "independent latest-head attestation unavailable or invalid"
+        ) from exc
     if type(record) is not LatestWitness:
         raise WitnessRefusal("UNKNOWN", "no exact external witness record")
     try:
@@ -166,9 +177,6 @@ def compare_audit(*, report: dict[str, object], witness: IndependentWitness) -> 
         raise WitnessRefusal("UNKNOWN", str(exc)) from exc
     if record.life_ref != life or record.genesis_ref != genesis:
         raise WitnessRefusal("UNKNOWN", "external witness belongs to another identity")
-    # Failing the independent proof is never a fallback to the local hash.
-    if witness.verify_latest(record=record) is not True:
-        raise WitnessRefusal("UNKNOWN", "external witness provenance/freshness not verified")
     if seq < record.committed:
         raise WitnessRefusal("STALE", "stale local copy: external witness has a later head")
     if seq > record.committed:
