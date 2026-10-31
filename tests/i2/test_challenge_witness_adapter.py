@@ -108,7 +108,58 @@ class AdapterTests(unittest.TestCase):
         adapter=ChallengeBoundWitness(challenge_source=Reused(),clock=Clock(),
                                       transport=transport,verifier=Crypto(),policy=POLICY)
         adapter.read_verified_latest(life_ref=LIFE,genesis_ref=self.ports["genesis_ref"])
-        adapter.read_verified_latest(life_ref=LIFE,genesis_ref=self.ports["genesis_ref"])
-        self.assertEqual(transport.calls,[NONCE,NONCE])
+        with self.assertRaisesRegex(ValueError,"duplicate witness challenge"):
+            adapter.read_verified_latest(life_ref=LIFE,genesis_ref=self.ports["genesis_ref"])
+        self.assertEqual(transport.calls,[NONCE])
+
+    def test_bad_nonce_refused_before_transport(self):
+        for nonce in ("bad", "G"*64, True, None, "a"*63):
+            class Invalid:
+                def next_challenge(self): return nonce
+            transport=Transport(self.record())
+            adapter=ChallengeBoundWitness(challenge_source=Invalid(),clock=Clock(),
+                                          transport=transport,verifier=Crypto(),policy=POLICY)
+            with self.subTest(nonce=nonce),self.assertRaises(ValueError):
+                adapter.read_verified_latest(life_ref=LIFE,genesis_ref=self.ports["genesis_ref"])
+            self.assertEqual(transport.calls,[])
+
+    def test_uncertain_transport_failure_burns_nonce_in_session(self):
+        class Same:
+            def next_challenge(self): return NONCE
+        class Lost(Transport):
+            def request_latest(self,**kwargs):
+                self.calls.append(kwargs["challenge"])
+                raise TimeoutError("lost response")
+        transport=Lost(self.record())
+        adapter=ChallengeBoundWitness(challenge_source=Same(),clock=Clock(),
+                                      transport=transport,verifier=Crypto(),policy=POLICY)
+        with self.assertRaises(TimeoutError):
+            adapter.read_verified_latest(life_ref=LIFE,genesis_ref=self.ports["genesis_ref"])
+        with self.assertRaisesRegex(ValueError,"duplicate witness challenge"):
+            adapter.read_verified_latest(life_ref=LIFE,genesis_ref=self.ports["genesis_ref"])
+        self.assertEqual(transport.calls,[NONCE])
+
+    def test_concurrent_duplicate_nonce_one_transport_call(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Barrier
+        class Same:
+            def next_challenge(self): return NONCE
+        transport=Transport(self.record())
+        adapter=ChallengeBoundWitness(challenge_source=Same(),clock=Clock(),
+                                      transport=transport,verifier=Crypto(),policy=POLICY)
+        barrier=Barrier(3)
+        def attempt():
+            barrier.wait()
+            try:
+                adapter.read_verified_latest(life_ref=LIFE,genesis_ref=self.ports["genesis_ref"])
+                return "accepted"
+            except ValueError:
+                return "refused"
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures=[pool.submit(attempt) for _ in range(2)]
+            barrier.wait()
+            self.assertEqual(sorted(f.result(timeout=5) for f in futures),
+                             ["accepted","refused"])
+        self.assertEqual(transport.calls,[NONCE])
 
 if __name__=="__main__": unittest.main()
