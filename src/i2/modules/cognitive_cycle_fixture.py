@@ -789,6 +789,29 @@ class CognitiveCycleFixture:
         finally:
             conn.close()
 
+    def feedback_snapshot(self) -> object | None:
+        """Return the audited immutable H2 snapshot from this SAME v5 owner.
+
+        A cold reader must use the persisted memory, not a caller's cached
+        FeedbackUpdate. The read transaction holds one SQLite snapshot through
+        full journal/UC/control/H2 replay and the final memory read. No new
+        memory owner, motor permission, M11 attestation or live Scheduler.
+        None means no H2 observation has been committed.
+        """
+        conn = self._connect(readonly=True)
+        try:
+            conn.execute("BEGIN")
+            self._verify(conn)
+            rows = conn.execute(
+                "SELECT snapshot_json FROM feedback WHERE id=1"
+            ).fetchall()
+            if len(rows) != 1:
+                raise ValueError("missing unique H2 owner")
+            return (None if rows[0][0] is None else
+                    _h2_memory_parse(json.loads(rows[0][0])))
+        finally:
+            conn.close()
+
     def _process(self, *, claim: ObservationClaim, request: dict,
                  _fault_at: str | None = None, feedback_update: object | None = None,
                  feedback_previous: object | None = None) -> CycleReceipt:
