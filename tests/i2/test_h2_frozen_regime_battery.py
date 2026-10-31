@@ -66,7 +66,7 @@ class FrozenH2Battery(unittest.TestCase):
                 "genesis_ref": "genesis:fixed-h2-battery",
                 "terminal_source": Terminal(),
             }
-            owner = CognitiveCycleFixture.create(synthetic_uc=100, **ports)
+            owner = CognitiveCycleFixture.create(synthetic_uc=160, **ports)
             source = Source()
             history = []
             for i, outcome in enumerate(outcomes):
@@ -151,7 +151,7 @@ class FrozenH2Battery(unittest.TestCase):
             self.assertEqual(report["samples"], SAMPLES_PER_TRIAL)
             self.assertEqual(owner.audit()["committed"], SAMPLES_PER_TRIAL)
             self.assertEqual(owner.audit()["feedback_version"], SAMPLES_PER_TRIAL)
-            self.assertEqual(owner.audit()["remaining_synthetic_uc"], 72)
+            self.assertEqual(owner.audit()["remaining_synthetic_uc"], 40)
             self.assertEqual(report["motor_authority"], "NONE")
             self.assertIs(report["m11_authenticated"], False)
             self.assertIs(report["scheduler_uc_authenticated"], False)
