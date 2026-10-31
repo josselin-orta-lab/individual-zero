@@ -1,4 +1,4 @@
-# I2 : audit externe du journal v4 (proposition G2 uniquement)
+# I2 : audit externe du journal v5 (proposition G2 uniquement)
 
 **31 octobre 2026. Protocole de temoin v2, lecture seule, aucune naissance, aucune permission motrice et aucune preuve M11.**
 
@@ -18,7 +18,7 @@ Le module **ne cree aucun service de garde**. Il exige un port `IndependentWitne
 1. `read_verified_latest(life_ref, genesis_ref)` doit selectionner **et verifier dans une operation indivisible** la derniere revision monotone pour cette identite, et retourner un `LatestWitness` structurellement valide. Le port est une exigence contractuelle, sans implementation de service independant.
 2. Le fournisseur doit verifier la signature, la confiance/revocation du signataire, la fraicheur, l'absence d'equivocation et le lien exact entre preuve et champs **sur la meme revision**. Toute indisponibilite ou erreur est classee `UNKNOWN`, sans recours au hash local. L'ancien couple `read_latest`/`verify_latest` est refuse afin d'eviter une course entre deux operations. Les tests injectent un double in-memory sans valeur de securite.
 3. Le controle n'accepte ni un temoin plus recent que le journal local (ancienne copie), ni un journal plus recent que le temoin (publication non encore attestee), ni deux tetes divergentes au meme nombre d'evenements. La fermeture terminale doit coincider exactement.
-4. `verify_fixture(fixture, witness)` exige le vrai banc `CognitiveCycleFixture` sur le contrat v4, effectue l'audit local **avant** de consulter le temoin, et produit uniquement une `WitnessAudit` en lecture seule. La comparaison pure `compare_audit(report, witness)` est exposée pour les tests de contrat ; un dictionnaire fourni arbitrairement ne prouve pas son origine.
+4. `verify_fixture(fixture, witness)` exige le vrai banc `CognitiveCycleFixture` sur le contrat v5, effectue l'audit local **avant** de consulter le temoin, et produit uniquement une `WitnessAudit` en lecture seule. La comparaison pure `compare_audit(report, witness)` est exposée pour les tests de contrat ; un dictionnaire fourni arbitrairement ne prouve pas son origine.
 5. La sortie porte toujours `motor_authority=NONE`, `resumption_authorized=False` et `m11_authenticated=False`, y compris lorsque le temoin concorde sur un etat ouvert. Le statut `MATCHED_OPEN_INSPECTION` **n'autorise aucune reprise**.
 
 ## Scenarios adversariaux
@@ -49,3 +49,7 @@ Reproduction : `python -m unittest discover -s tests/i2 -p 'test_*.py' -v`.
 ## Limite nouvelle version
 
 Le changement de protocole v1 vers `i2-lifecycle-external-witness-proposal-v2` casse intentionnellement la compatibilite des temoins v1. L'appel atomique reste un **contrat demande au fournisseur**, pas une preuve que le fournisseur existe ou assure des lectures linearizables. Un double de test qui retourne un enregistrement choisi par l'appelant peut toujours produire une inspection `MATCHED` sans origine de confiance. Toute exploitation exige une revue independante et des preuves verifiables du fournisseur. Aucun effet sur Action Control, une vie ou le Scheduler.
+
+## Inspection des COMMIT incertains avec ancrage (G2)
+
+`uncertain_witness_inspection.py` rapproche en **lecture seule** une inspection de tentative SQLite v5 de la dernière tête vérifiée *revendiquée* par le port externe. Les contrôles locaux sont relus avant, pendant et après la consultation distante. `CONFLICT_LOCAL` refuse avant toute sollicitation du témoin ; un journal mouvant ou un port indisponible donne `UNKNOWN` ; une tête externe plus avancée donne `STALE`, une extension locale non ancrée `UNANCHORED`, une bifurcation `FORK`. Une correspondance peut décrire un COMMIT local retrouvé ou une absence seulement locale, jamais une reprise ou un droit de retry. Aucun lock distribué, ancrage réel, signer ou M11 authentifié n'existe. Les doubles de tests ne démontrent ni indépendance ni fraîcheur. L'inspection peut devenir périmée aussitôt retournée.
