@@ -9,3 +9,5 @@
 - **G4-G6 NOT_STARTED** : aucun protocole I2 confirmatoire final, vie, cohorte, promotion ou preuve de gain adaptatif.
 
 I1 reste seul actif dans `config/engine-registry.json`, I2 n'a aucun point d'entree. Aucune politique alimentaire, Q, memoire ou donnee historique I1 ne devient la naissance d'I2. **Toute `WitnessAudit` conserve `resumption_authorized=False` et `motor_authority=NONE`, meme si les preuves concordent.**
+
+- **G2 laboratoire fichier (31/10)** : `operator_file_witness.py` propose une projection append-only cote operateur, `flock`, HMAC-SHA256, CAS sur tete et relecture froide interprocessus (voir [OPERATOR_FILE_WITNESS.md](OPERATOR_FILE_WITNESS.md)). Le test negatif montre que le rollback complet du fichier reste possible et indetectable sans ancrage independant. Ce composant n'est pas un service M11, ne signe pas avec une cle de confiance externe et ne donne jamais de droit moteur/reprise. CI a verifier sur SHA de PR ; G3 reste `NOT_ESTABLISHED`.
