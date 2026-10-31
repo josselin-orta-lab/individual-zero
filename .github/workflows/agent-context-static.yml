@@ -10,6 +10,7 @@ on:
       - 'tools/research_coordinator.py'
       - 'tests/test_agent_context.py'
       - 'tests/test_research_coordinator.py'
+      - 'tests/test_research_knowledge.py'
       - 'docs/engineering/AGENT_CONTEXT.md'
       - 'docs/engineering/RESEARCH_COORDINATOR.md'
       - 'docs/engineering/AGENT_HANDOFF.md'
@@ -37,5 +38,6 @@ jobs:
           python tools/agent_context.py audit --json
           python tools/research_coordinator.py audit
           python -m unittest discover -s tests -p test_research_coordinator.py -v
+          python -m unittest discover -s tests -p test_research_knowledge.py -v
           python -m unittest discover -s tests -p test_agent_context.py -v
           python tools/check_repo_navigation.py --scope entrypoints

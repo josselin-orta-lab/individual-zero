@@ -18,3 +18,5 @@ For I2, a synthetic fixture, committed SQLite cycle or externally injected witne
 For a multi-agent effort, prefer one handoff per coherent route. If boundaries cross, explicitly enumerate each dependent route; do not silently collapse a cognition/persistence/observer change into a generic handoff. Keep historic work inspectable rather than rewriting old results.
 
 For research-coordinator-driven work, include the question ID, targeted gate, blocking predecessors, proposed falsifying observation and source/issue status at the exact SHA. A gate stays unapproved unless separately reviewed. See [global research coordination](RESEARCH_COORDINATOR.md).
+
+For research interventions, attach the relevant `trace` node identifiers, actual source paths and exact SHA, including negative/null results and any uncited documents subsequently reviewed. Filename hints and matching text markers never stand in for scientific evidence.

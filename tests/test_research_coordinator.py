@@ -22,6 +22,8 @@ class ResearchCoordinatorTests(unittest.TestCase):
         (self.root / rc.PROGRAM).write_text(json.dumps(self.program), encoding="utf-8")
         (self.root / rc.REGISTRY).write_text(json.dumps(
             {"active_generation":"I1", "generations":{"I0":{"role":"frozen_reference"},"I1":{"role":"active"}}}))
+        for dirname in self.program.get("catalog_roots", []):
+            (self.root / dirname).mkdir(parents=True, exist_ok=True)
         for gen, status, entrypoints in (("i1","active",{"birth":"example"}),
                                           ("i2","proposal",{})):
             p = self.root / f"src/{gen}/engine.json"

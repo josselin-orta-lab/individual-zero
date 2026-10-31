@@ -4,7 +4,7 @@ This file governs **repository work**, never the mind, values or behavior of a b
 
 ## Start in this order
 
-**When selecting the next intervention (rather than executing a specified task)**, first consult [global research coordination](docs/engineering/RESEARCH_COORDINATOR.md) and run `python tools/research_coordinator.py recommend`. Review evidence gaps, dependencies, negative results, live issues/PRs and the exact SHA before choosing a scoped task. A recommendation is not permission to run experiments or to approve a generation.
+**When selecting the next intervention (rather than executing a specified task)**, first consult [global research coordination](docs/engineering/RESEARCH_COORDINATOR.md) and run `python tools/research_coordinator.py recommend`. Review evidence gaps, dependencies, negative results, live issues/PRs and the exact SHA before choosing a scoped task. A recommendation is not permission to run experiments or to approve a generation. Use `python tools/research_coordinator.py trace --id <question-or-gate-id>` to inspect curated provenance and `python tools/research_coordinator.py catalog` to find sources not yet directly indexed. Both are read-only and do not establish scientific truth.
 
 1. Read [the agent navigation map](docs/engineering/AGENT_NAVIGATION.md) and `config/engine-registry.json` to establish the **active generation**.
 2. Read the chosen generation's `engine.json`, its `AGENTS.md` (if present), and its own `docs/README.md` and `docs/STATUS.md`.

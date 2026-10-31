@@ -22,6 +22,24 @@ A recommendation contains question and gate, issue link, expected new knowledge,
 
 The planning heuristic combines downstream gate dependency count, ordinal information gain (1–3), estimated effort (1–3) and risk (1–3). **Scores are not probabilities, measured scientific confidence or statistical significance.**
 
+## Traceability graph and the unreviewed research corpus
+
+For decisions grounded in actual source claims (not only in gate labels), use the **typed research-provenance graph**:
+
+```bash
+python tools/research_coordinator.py graph --mode knowledge --format json
+python tools/research_coordinator.py graph --mode knowledge
+python tools/research_coordinator.py trace --id question:I1-L3 --format json
+python tools/research_coordinator.py trace --id gate:I2-G3
+python tools/research_coordinator.py catalog --limit 30
+```
+
+Graph entities include research questions, reported findings (including negative/null results), gate dependencies, intervention candidates, source quotations, source documents and linked issues. The edge `reported_in` means **document attribution**, not proof. `qualifies_question` communicates a result or limitation, **not causal inference**. Gate edges remain blocked pending explicit independent review.
+
+The catalog inspects Markdown names across `docs/research/`, `src/i1/docs/`, `src/i2/docs/`, `docs/architecture/proposals/` and `experiments/`. It reports the number of documents directly cited in the curated program and returns **unreviewed candidates** with filename-derived hints. A historical report not directly cited is **not** necessarily missing from all research; it simply has not been linked into this small index. A file called `results.md` is not verified evidence.
+
+**Research coordination loop:** global status → trace the selected question and its negative/uncertain findings → inspect the original source at the exact SHA → identify gated dependencies → select a falsifiable intervention → scope its code through `agent_context.py` → submit a handoff with remaining uncertainties. Use `catalog` to expand curated coverage gradually, with explicit review and without migrating or rewriting original scientific records.
+
 ## Agent decision cycle
 
 1. Re-read HEAD, registry, engine contracts, current statuses, evidence matrix and this program. Flag contradictions.

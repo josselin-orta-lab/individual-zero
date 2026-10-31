@@ -115,9 +115,41 @@ def audit(root: Path = ROOT) -> dict:
             errors.append("nonordinal ranking fields in " + t["id"])
         if not isinstance(t.get("issue"), int) or not t.get("disconfirming_result"):
             errors.append("missing issue or falsification criterion: " + t["id"])
+    findings = m.get("findings", [])
+    if not isinstance(findings, list) or len(findings) != len(set(
+            f.get("id") for f in findings if isinstance(f, dict))):
+        errors.append("duplicate or malformed findings")
+    for finding in findings:
+        if finding.get("kind") not in FINDING_KINDS:
+            errors.append("invalid finding kind: " + str(finding.get("id")))
+        if not set(finding.get("questions", [])) <= question_ids or not finding.get("questions"):
+            errors.append("unknown question for finding: " + str(finding.get("id")))
+        if not set(finding.get("gates", [])) <= gate_ids:
+            errors.append("unknown gate for finding: " + str(finding.get("id")))
+        if not set(finding.get("source_checks", [])) <= source_ids or not finding.get("source_checks"):
+            errors.append("unknown source for finding: " + str(finding.get("id")))
+        if not finding.get("scope_limit") or not finding.get("summary"):
+            errors.append("missing scope limit/summary for finding: " + str(finding.get("id")))
+        if finding.get("reported_assessment") in POSITIVE_GATE_STATES:
+            errors.append("cannot approve gates through findings: " + str(finding.get("id")))
+    roots = m.get("catalog_roots", [])
+    if not isinstance(roots, list) or len(roots) != len(set(roots)):
+        errors.append("duplicate/malformed catalog roots")
+    for dirname in roots:
+        if not safe_path(dirname) or not (root / dirname).is_dir():
+            errors.append("missing or unsafe catalog directory: " + str(dirname))
+    route_path = root / "config/agent-context-map.json"
+    if route_path.is_file():
+        try:
+            allowed = read_json(root, "config/agent-context-map.json")["routes"]
+            for item in tasks:
+                if item.get("agent_route") not in allowed:
+                    errors.append("unrecognized agent route in " + item["id"])
+        except (OSError, ValueError, TypeError, KeyError):
+            errors.append("cannot validate agent routes")
     return {"status": "FAIL" if errors else "PASS", "errors": sorted(set(errors)),
             "sources": len(sources), "questions": len(questions),
-            "gates": len(gates), "interventions": len(tasks),
+            "gates": len(gates), "interventions": len(tasks), "findings": len(findings),
             "scientific_verdict": "NOT_EVALUATED"}
 
 
@@ -194,6 +226,7 @@ def research_state(root: Path = ROOT, *, at_sha: str | None = None,
             "active_generation": registry["active_generation"], "generations": generations,
             "questions": [map_item(q) for q in m["questions"]],
             "gates": [map_item(g) for g in m["gates"]],
+            "findings": [map_item(f) for f in m.get("findings", [])],
             "unverified_sources": failed, "source_checks": sources, "github": github,
             "scientific_verdict": "NOT_EVALUATED",
             "warning": "Text matching is not scientific verification. Historical reports and CI never approve a gate."}
@@ -237,6 +270,8 @@ def recommendations(state: dict, program: dict, top: int = 5, generation: str = 
         score = (7 * downstream + 4 * t["information_gain"]
                  + (6 if t["priority_class"] == "blocking" else 2)
                  - 2 * t["effort"] - t["risk"])
+        linked_findings = [f for f in state.get("findings", [])
+                           if set(f["questions"]) & set(t["questions"])]
         proposals.append({"id": t["id"], "title": t["title"], "gate": t["gate"],
                           "questions": t["questions"], "agent_route": t["agent_route"],
                           "issue": t["issue"],
@@ -246,6 +281,9 @@ def recommendations(state: dict, program: dict, top: int = 5, generation: str = 
                           "action": t["action"], "expected_knowledge": t["expected_knowledge"],
                           "disconfirming_result": t["disconfirming_result"],
                           "deliverables": t["deliverables"],
+                          "recorded_findings_not_verified": [{"id": f["id"], "kind": f["kind"],
+                             "assessment": f["reported_assessment"], "scope_limit": f["scope_limit"],
+                             "source_integrity": f["source_integrity"]} for f in linked_findings],
                           "heuristic": {"score": score, "downstream_gates": downstream,
                                         "ordinal_information_gain": t["information_gain"],
                                         "ordinal_effort": t["effort"], "ordinal_risk": t["risk"],
@@ -281,6 +319,9 @@ def markdown(state: dict, ranked: dict) -> str:
              "", "## Research questions"]
     for q in state["questions"]:
         lines.append(f'- {q["id"]}: {q["reported_assessment"]}, {q["source_integrity"]}. {q["question"]} Missing: {q["missing_evidence"]}')
+    lines.extend(["", "## Recorded findings (not independently verified)"])
+    for finding in state.get("findings", []):
+        lines.append(f'- {finding["id"]}: {finding["kind"]}, {finding["reported_assessment"]}; {finding["scope_limit"]}')
     lines.extend(["", "## Gates (reported only)"])
     for g in state["gates"]:
         lines.append(f'- {g["id"]}: {g["reported_assessment"]}; dependencies {g["prerequisites"]}; human approval NOT_GRANTED')
@@ -299,11 +340,197 @@ def markdown(state: dict, ranked: dict) -> str:
     return "\n".join(lines)
 
 
+
+# These links describe provenance and planning, never scientific proof.
+FINDING_KINDS = {"negative_result", "not_executed", "open_evidence_gap",
+                 "software_only", "pending_review"}
+CATALOG_HINTS = (("prereg", "possible_preregistration"),
+                 ("protocol", "possible_protocol"),
+                 ("results", "possible_result"), ("result", "possible_result"),
+                 ("audit", "possible_audit"), ("review", "possible_review"),
+                 ("status", "possible_status"), ("experiment", "possible_experiment"))
+
+
+def catalog(root: Path, program: dict, limit: int = 25) -> dict:
+    """Inventory files by filename; do not infer scientific results."""
+    if not 0 <= limit <= 500:
+        raise ValueError("catalog limit must be 0..500")
+    referenced = {s["path"] for s in program["source_checks"]}
+    counts: dict[str, dict] = {}
+    uncited: list[dict] = []
+    all_paths: set[str] = set()
+    for dirname in program.get("catalog_roots", []):
+        if not safe_path(dirname):
+            raise ValueError("unsafe catalog directory: " + str(dirname))
+        base = (root / dirname).resolve()
+        if not base.is_relative_to(root.resolve()) or not base.is_dir():
+            raise ValueError("missing or escaping catalog directory: " + dirname)
+        docs = []
+        for candidate in base.rglob("*.md"):
+            if not candidate.is_file() or not candidate.resolve().is_relative_to(root.resolve()):
+                continue
+            rel = candidate.relative_to(root).as_posix()
+            if rel not in all_paths:
+                all_paths.add(rel)
+                docs.append(rel)
+        docs.sort()
+        covered = set(docs) & referenced
+        counts[dirname] = {"markdown_files": len(docs),
+                           "directly_cited_in_program": len(covered),
+                           "not_directly_cited": len(docs) - len(covered)}
+        for rel in docs:
+            if rel not in referenced:
+                lower = Path(rel).name.lower()
+                hint = next((kind for pattern, kind in CATALOG_HINTS
+                             if pattern in lower), "unknown_document_kind")
+                uncited.append({"path": rel, "filename_hint": hint,
+                                "review": "NOT_REVIEWED_FOR_RESEARCH_GRAPH",
+                                "scientific_verdict": "NOT_EVALUATED"})
+    uncited.sort(key=lambda x: x["path"])
+    return {"status": "NAVIGATION_ONLY", "roots": counts,
+            "total_markdown_files": len(all_paths),
+            "directly_cited_in_program": len(all_paths & referenced),
+            "not_directly_cited": len(all_paths - referenced),
+            "sample_unreviewed": uncited[:limit], "returned": min(limit, len(uncited)),
+            "scientific_verdict": "NOT_EVALUATED",
+            "warning": "Direct-link coverage is not scientific coverage; filename hints are unverified."}
+
+
+def knowledge_graph(program: dict, state: dict) -> dict:
+    """Construct typed evidence/provenance links from curated metadata."""
+    nodes: dict[str, dict] = {}
+    edges: set[tuple[str, str, str]] = set()
+
+    def node(kind: str, name: str, label: str, **details: object) -> str:
+        ident = kind + ":" + name
+        if ident not in nodes:
+            nodes[ident] = {"id": ident, "kind": kind, "label": label, **details}
+        return ident
+
+    def edge(origin: str, dest: str, relation: str) -> None:
+        if origin not in nodes or dest not in nodes:
+            raise ValueError("invalid research graph reference")
+        edges.add((origin, dest, relation))
+
+    for gen in ("I0", "I1", "I2"):
+        node("generation", gen, gen, active=state["generations"][gen]["active"])
+    for source in program["source_checks"]:
+        key = node("source", source["id"], source["id"],
+                   path=source["path"], marker=source["marker"],
+                   source_integrity=state["source_checks"][source["id"]]["status"],
+                   source_authority=source["authority"])
+        file_key = node("artifact", source["path"], source["path"])
+        edge(key, file_key, "located_in")
+    for question in state["questions"]:
+        key = node("question", question["id"], question["question"],
+                   reported_assessment=question["reported_assessment"],
+                   source_integrity=question["source_integrity"])
+        edge("generation:" + question["generation"], key, "research_question")
+        for source_id in question["source_checks"]:
+            edge(key, "source:" + source_id, "reported_in")
+    for gate in state["gates"]:
+        key = node("gate", gate["id"], gate["label"],
+                   reported_assessment=gate["reported_assessment"],
+                   source_integrity=gate["source_integrity"],
+                   gate_approved=False)
+        edge("generation:" + gate["generation"], key, "research_gate")
+        for source_id in gate["source_checks"]:
+            edge(key, "source:" + source_id, "reported_in")
+        for required in gate["prerequisites"]:
+            edge(key, "gate:" + required, "requires_unapproved_gate")
+    for finding in state.get("findings", []):
+        key = node("finding", finding["id"], finding["summary"],
+                   kind_of_finding=finding["kind"],
+                   reported_assessment=finding["reported_assessment"],
+                   scope_limit=finding["scope_limit"],
+                   source_integrity=finding["source_integrity"])
+        for question in finding["questions"]:
+            edge(key, "question:" + question, "qualifies_question")
+        for gate in finding["gates"]:
+            edge(key, "gate:" + gate, "qualifies_gate")
+        for source_id in finding["source_checks"]:
+            edge(key, "source:" + source_id, "reported_in")
+    for task in program["interventions"]:
+        key = node("intervention", task["id"], task["title"],
+                   proposed_not_authorized=True)
+        issue_id = str(task["issue"])
+        issue = node("issue", issue_id, "#" + issue_id,
+                     url="https://github.com/" + state["repository"] + "/issues/" + issue_id)
+        owner = node("agent_route", task["agent_route"], task["agent_route"])
+        edge(key, issue, "tracked_by")
+        edge(key, owner, "initial_code_scope")
+        edge(key, "gate:" + task["gate"], "targets")
+        for question in task["questions"]:
+            edge(key, "question:" + question, "investigates")
+        for required in task["requires_gates"]:
+            edge(key, "gate:" + required, "requires_unapproved_gate")
+    return {"schema": "individual-zero-research-knowledge-graph/v1",
+            "head_sha": state["head_sha"], "status": "CURATED_PROVENANCE_ONLY",
+            "nodes": [nodes[key] for key in sorted(nodes)],
+            "edges": [{"from": a, "to": b, "relation": r}
+                      for a, b, r in sorted(edges)],
+            "scientific_verdict": "NOT_EVALUATED",
+            "warning": "Graph edges are documented associations, not scientific proof or permission."}
+
+
+def graph_mermaid(knowledge: dict) -> str:
+    names = {n["id"]: "n" + str(i) for i, n in enumerate(knowledge["nodes"])}
+    lines = ["flowchart LR"]
+    for item in knowledge["nodes"]:
+        label = re.sub(r'["<>{}\[\]\x60\\\n\r]', "", item["label"])
+        label = label[:72].replace("|", "/")
+        lines.append('  ' + names[item["id"]] + '["' + item["kind"] + ": " + label + '"]')
+    for edge in knowledge["edges"]:
+        lines.append("  " + names[edge["from"]] + " -->|" +
+                     edge["relation"] + "| " + names[edge["to"]])
+    return "\n".join(lines) + "\n"
+
+
+def explain(knowledge: dict, identifier: str) -> dict:
+    """Return a bounded two-hop trace with exact citation anchors."""
+    by_id = {n["id"]: n for n in knowledge["nodes"]}
+    candidates = [key for key in by_id
+                  if key == identifier or key.split(":", 1)[-1] == identifier]
+    if len(candidates) != 1:
+        raise ValueError("unknown/ambiguous id: " + identifier +
+                         "; use a qualified id; matches: " + ", ".join(candidates))
+    focus = candidates[0]
+    visited = {focus}
+    for _ in range(2):
+        additional = {endpoint for edge in knowledge["edges"]
+                      if edge["from"] in visited or edge["to"] in visited
+                      for endpoint in (edge["from"], edge["to"])}
+        visited |= additional
+    relevant = [e for e in knowledge["edges"]
+                if e["from"] in visited and e["to"] in visited]
+    sources = [by_id[key] for key in sorted(visited) if key.startswith("source:")]
+    changed = [s["id"] for s in sources
+               if s["source_integrity"] != "MARKER_PRESENT"]
+    return {"status": "SOURCE_REVIEW_REQUIRED" if changed else "PROVENANCE_LINKS_ONLY",
+            "focus": by_id[focus], "nodes": [by_id[key] for key in sorted(visited)],
+            "edges": relevant,
+            "source_references": [{"id": s["id"], "path": s["path"],
+                                   "quoted_marker": s["marker"],
+                                   "status": s["source_integrity"],
+                                   "authority": s["source_authority"]} for s in sources],
+            "changed_or_missing_sources": changed,
+            "scientific_verdict": "NOT_EVALUATED", "human_review_required": True,
+            "warning": "A matching citation anchor is not observation or proof. Verify source SHA and original evidence."}
+
+
 def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("audit")
-    commands.add_parser("graph")
+    graph_parser = commands.add_parser("graph", help="Gate dependency or provenance graph")
+    graph_parser.add_argument("--mode", choices=("gates", "knowledge"), default="gates")
+    graph_parser.add_argument("--format", choices=("mermaid", "json"), default="mermaid")
+    trace_parser = commands.add_parser("trace", help="Show the source links of a research node")
+    trace_parser.add_argument("--id", required=True)
+    trace_parser.add_argument("--at-sha")
+    trace_parser.add_argument("--format", choices=("json", "markdown"), default="json")
+    catalog_parser = commands.add_parser("catalog", help="Inventory unreviewed research files")
+    catalog_parser.add_argument("--limit", type=int, default=25)
     for name in ("status", "recommend"):
         p = commands.add_parser(name)
         p.add_argument("--at-sha")
@@ -326,8 +553,42 @@ def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
             return 0 if outcome["status"] == "PASS" else 1
         program = read_json(root, PROGRAM)
         if args.command == "graph":
-            print(graph(program), end="")
+            if args.mode == "gates":
+                diagram = graph(program)
+                if args.format == "json":
+                    print(json.dumps({"gates_mermaid": diagram,
+                                      "scientific_verdict": "NOT_EVALUATED"}))
+                else:
+                    print(diagram, end="")
+            else:
+                state = research_state(root)
+                if state["status"] == "INVALID_PROGRAM":
+                    print(json.dumps(state, ensure_ascii=False))
+                    return 1
+                knowledge = knowledge_graph(program, state)
+                if args.format == "json":
+                    print(json.dumps(knowledge, ensure_ascii=False, indent=2))
+                else:
+                    print(graph_mermaid(knowledge), end="")
             return 0
+        if args.command == "catalog":
+            print(json.dumps(catalog(root, program, args.limit), ensure_ascii=False, indent=2))
+            return 0
+        if args.command == "trace":
+            state = research_state(root, at_sha=args.at_sha)
+            if state["status"] == "INVALID_PROGRAM":
+                print(json.dumps(state, ensure_ascii=False))
+                return 1
+            result = explain(knowledge_graph(program, state), args.id)
+            if args.format == "json":
+                print(json.dumps(result, ensure_ascii=False, indent=2))
+            else:
+                print("# Research provenance: " + result["focus"]["id"])
+                for source in result["source_references"]:
+                    print("- " + source["path"] + ": " + source["status"] +
+                          " (marker: " + source["quoted_marker"] + ")")
+                print(result["warning"])
+            return 2 if result["status"] == "SOURCE_REVIEW_REQUIRED" else 0
         state = research_state(root, at_sha=args.at_sha, snapshot=args.github_snapshot)
         if state["status"] == "INVALID_PROGRAM":
             print(json.dumps(state, ensure_ascii=False, indent=2))

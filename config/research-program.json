@@ -2,7 +2,7 @@
   "schema": "individual-zero-research-program/v1",
   "project": "josselin-orta-lab/individual-zero",
   "as_of": "2026-11-01",
-  "description": "Curated falsifiable questions and review candidates. Statuses are source text hints, never scientific authority.",
+  "description": "Curated evidence-linked research graph seed, falsifiable questions and review candidates. Reports and status are text sources, never scientific authority; cataloged files are unreviewed.",
   "source_checks": [
     {
       "id": "i1-l3",
@@ -443,5 +443,121 @@
     "unreviewed_evidence_fails_closed": true,
     "score_is_heuristic_not_probability": true,
     "github_snapshot_max_age_hours": 24
-  }
+  },
+  "findings": [
+    {
+      "id": "I1-A1C-TARGETED-NOGO",
+      "kind": "negative_result",
+      "reported_assessment": "NO_GO",
+      "summary": "The A1-C preregistered targeted study did not meet its confirmatory criterion.",
+      "questions": [
+        "I1-L3"
+      ],
+      "gates": [
+        "I2-G0"
+      ],
+      "source_checks": [
+        "i1-a1c",
+        "g0"
+      ],
+      "scope_limit": "This does not by itself disprove every possible architecture or establish I2 effectiveness."
+    },
+    {
+      "id": "I1-A2R-NOT-EXECUTED",
+      "kind": "not_executed",
+      "reported_assessment": "NOT_EXECUTED",
+      "summary": "A2-R remains unexecuted (0/96).",
+      "questions": [
+        "I1-L3"
+      ],
+      "gates": [
+        "I2-G0"
+      ],
+      "source_checks": [
+        "i1-a2r"
+      ],
+      "scope_limit": "Missing trials cannot be counted as positive, negative, or inconclusive measured lives."
+    },
+    {
+      "id": "I1-L3-UNESTABLISHED",
+      "kind": "open_evidence_gap",
+      "reported_assessment": "NOT_ESTABLISHED",
+      "summary": "Generalized autonomous adaptive benefit at L3 is not scientifically established.",
+      "questions": [
+        "I1-L3"
+      ],
+      "gates": [],
+      "source_checks": [
+        "i1-l3",
+        "i1-matrix"
+      ],
+      "scope_limit": "A source-text match is not a new scientific assessment of HEAD."
+    },
+    {
+      "id": "I2-G2-SYNTHETIC",
+      "kind": "software_only",
+      "reported_assessment": "SYNTHETIC_ONLY",
+      "summary": "G2 implements controlled synthetic research fixtures, not independent living-world mechanisms.",
+      "questions": [
+        "I2-H1",
+        "I2-H2",
+        "I2-H3"
+      ],
+      "gates": [
+        "I2-G2"
+      ],
+      "source_checks": [
+        "g2",
+        "i2-proposal"
+      ],
+      "scope_limit": "No causal physical-world, living-birth, motor or independent M11 authority follows."
+    },
+    {
+      "id": "I2-G1-REVIEW-PENDING",
+      "kind": "pending_review",
+      "reported_assessment": "REVIEW_REQUIRED",
+      "summary": "Independent architecture/science review is still required for I2 G1.",
+      "questions": [
+        "I2-H1",
+        "I2-H2",
+        "I2-H3"
+      ],
+      "gates": [
+        "I2-G1"
+      ],
+      "source_checks": [
+        "g1",
+        "h1",
+        "h2",
+        "h3"
+      ],
+      "scope_limit": "Issue or document updates do not equal an accepted review; verify independently."
+    },
+    {
+      "id": "I2-G3-CUSTODY-GAP",
+      "kind": "open_evidence_gap",
+      "reported_assessment": "NOT_ESTABLISHED",
+      "summary": "I2 G3 does not yet establish independent living M11, UC, physical WorldBody and birth.",
+      "questions": [
+        "I2-H1",
+        "I2-H2",
+        "I2-H3"
+      ],
+      "gates": [
+        "I2-G3"
+      ],
+      "source_checks": [
+        "g3",
+        "i2-proposal"
+      ],
+      "scope_limit": "Independent physics, authority and persistence require separate reviewed evidence."
+    }
+  ],
+  "catalog_roots": [
+    "docs/research",
+    "src/i1/docs",
+    "src/i2/docs",
+    "docs/architecture/proposals",
+    "experiments"
+  ]
 }

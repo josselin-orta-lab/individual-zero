@@ -329,7 +329,7 @@
     },
     "research-coordination": {
       "generation": "any",
-      "summary": "Synthesize global research status, scientific gates, evidence gaps and the next justified intervention",
+      "summary": "Establish global research status, trace negative/uncertain evidence, inspect coverage gaps and prioritize falsifiable interventions",
       "match_paths": [
         "config/research-program.json",
         "tools/research_coordinator.py",
@@ -355,7 +355,8 @@
         "config/engine-registry.json"
       ],
       "tests": [
-        "tests/test_research_coordinator.py"
+        "tests/test_research_coordinator.py",
+        "tests/test_research_knowledge.py"
       ],
       "invariants": [
         "Source-marker matching is not evidence or gate approval.",
@@ -364,7 +365,8 @@
       ],
       "checks": [
         "python tools/research_coordinator.py audit",
-        "python -m unittest discover -s tests -p test_research_coordinator.py -v"
+        "python -m unittest discover -s tests -p test_research_coordinator.py -v",
+        "python -m unittest discover -s tests -p test_research_knowledge.py -v"
       ]
     }
   },
