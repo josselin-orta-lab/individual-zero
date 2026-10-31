@@ -87,3 +87,7 @@ La CI ciblée Python 3.11/3.12 sur le SHA de la PR est nécessaire avant fusion.
 **G0 archive I1 : PARTIAL ; G1 : REVIEW_REQUIRED ; G2 : banc amélioré ;
 G3 vrai M11/Scheduler/WorldBody : NOT_ESTABLISHED ; G4-G6 : NOT_STARTED.**
 I1 actif, I2 non enregistré et non exécutable ; A1-C NO_GO et L3 NOT_ESTABLISHED.
+
+## Extension v3 optionnelle (scellage terminal synthétique)
+
+Une version de schéma différente, `LIFECYCLE_SCHEMA`, ajoute au même fichier une référence d’origine déclarée et un événement terminal absorbant. La v1/v2 demeure inchangée ; il n’existe pas de conversion implicite. Cette extension teste exclusivement l’intégrité et le refus de redémarrage **dans le banc SQLite**, pas la mortalité WorldBody ni la non-résurrection globale. Voir [SYNTHETIC_LIFECYCLE_V3.md](SYNTHETIC_LIFECYCLE_V3.md).
