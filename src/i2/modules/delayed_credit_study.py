@@ -282,3 +282,181 @@ def compare_matched_outcomes(*, prepared: MatchedLivedEpisode,
         observed_outcome_difference=first[-1].lived_delta - second[-1].lived_delta,
         observed_net_difference=net,
     )
+
+
+@dataclass(frozen=True, slots=True)
+class ForecastOpportunity:
+    """Current *claimed* subjective context, with no future outcome fields."""
+
+    life_ref: str
+    goal_ref: str
+    capture_ref: str
+    physical_step: int
+    context_signature: tuple[str, ...]
+    preparatory_action_ref: str
+    alternative_action_ref: str
+    completion_action_ref: str
+
+    def validate(self) -> None:
+        for field in ("life_ref", "goal_ref", "capture_ref",
+                      "preparatory_action_ref", "alternative_action_ref",
+                      "completion_action_ref"):
+            _ref(getattr(self, field), field)
+        if type(self.physical_step) is not int or self.physical_step < 0:
+            raise ValueError("invalid forecast capture step")
+        if (type(self.context_signature) is not tuple or
+                not 1 <= len(self.context_signature) <= 16):
+            raise ValueError("bounded subjective forecast context required")
+        for ref in self.context_signature:
+            _ref(ref, "forecast context feature")
+        if self.context_signature != tuple(sorted(set(self.context_signature))):
+            raise ValueError("noncanonical forecast context")
+        if len({self.preparatory_action_ref, self.alternative_action_ref,
+                self.completion_action_ref}) != 3:
+            raise ValueError("forecast action roles must differ")
+
+
+class ProspectiveSource(MatchedLivedSource, Protocol):
+    """Test port only: a future real owner must journal issuance before outcome."""
+
+    def verify_forecast_capture(self, *, opportunity: ForecastOpportunity) -> bool: ...
+
+    def verify_issued_forecast(self, *, forecast: ProspectiveCreditForecast) -> bool: ...
+
+
+@dataclass(frozen=True, slots=True)
+class ProspectiveCreditForecast:
+    """Non-motor readout of old episodes, *before* any held-out outcome."""
+
+    opportunity: ForecastOpportunity
+    training_episode_refs: tuple[str, str]
+    last_training_step: int
+    predicted_outcome_difference: int
+    interpretation: str = "OUT_OF_SAMPLE_OBSERVATIONAL_HYPOTHESIS"
+    motor_authority: str = "NONE"
+    scheduler_uc_authenticated: bool = False
+    m11_authenticated: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class HeldoutForecastScore:
+    """Retrospective score; never feeds back into prospective forecast."""
+
+    life_ref: str
+    issue_capture_ref: str
+    training_episode_refs: tuple[str, str]
+    observed_episode_refs: tuple[str, str]
+    predicted_outcome_difference: int
+    observed_outcome_difference: int
+    absolute_error: int
+    direction_agreement: bool
+    interpretation: str = "HELDOUT_SYNTHETIC_SCORE_NOT_CAUSAL_PROOF"
+    motor_authority: str = "NONE"
+    scheduler_uc_authenticated: bool = False
+    m11_authenticated: bool = False
+
+
+def project_matched_outcome(*, prepared: MatchedLivedEpisode,
+                            control: MatchedLivedEpisode,
+                            opportunity: ForecastOpportunity,
+                            source: ProspectiveSource) -> ProspectiveCreditForecast:
+    """Issue a read-only prediction using ONLY past *claimed lived* episodes.
+
+    It does not choose a candidate, change Q or learn a causal mechanism.
+    The issuance port is simulated; no M11 audit/true historical signature.
+    """
+    if type(opportunity) is not ForecastOpportunity:
+        raise ValueError("exact prospective capture required")
+    opportunity.validate()
+    contrast = compare_matched_outcomes(
+        prepared=prepared, control=control,
+        preparatory_action_ref=opportunity.preparatory_action_ref,
+        completion_action_ref=opportunity.completion_action_ref,
+        source=source,
+    )
+    last = max(prepared.events[-1].physical_step,
+               control.events[-1].physical_step)
+    if (opportunity.life_ref != contrast.life_ref or
+            opportunity.goal_ref != contrast.goal_ref or
+            opportunity.context_signature != contrast.context_signature or
+            opportunity.alternative_action_ref != contrast.alternative_action_ref):
+        raise ValueError("future opportunity not matched to lived training")
+    if (opportunity.physical_step <= last or any(
+            event.capture_ref == opportunity.capture_ref
+            for event in prepared.events + control.events)):
+        raise ValueError("forecast cannot observe its own future or replay capture")
+    if (not callable(getattr(source, "verify_forecast_capture", None)) or
+            source.verify_forecast_capture(opportunity=opportunity) is not True):
+        raise ValueError("prospective subjective opportunity not attested")
+    return ProspectiveCreditForecast(
+        opportunity=opportunity,
+        training_episode_refs=(prepared.episode_ref, control.episode_ref),
+        last_training_step=last,
+        predicted_outcome_difference=contrast.observed_outcome_difference,
+    )
+
+
+def score_heldout_forecast(*, forecast: ProspectiveCreditForecast,
+                           prepared: MatchedLivedEpisode,
+                           control: MatchedLivedEpisode,
+                           source: ProspectiveSource) -> HeldoutForecastScore:
+    """Score distinct later observations without reissuing or revising forecast.
+
+    Only an independent, immutable issuance record could substantiate the
+    temporal commitment. The injected test port is NOT such a service.
+    """
+    if type(forecast) is not ProspectiveCreditForecast:
+        raise ValueError("exact previously issued forecast required")
+    opportunity = forecast.opportunity
+    if type(opportunity) is not ForecastOpportunity:
+        raise ValueError("missing exact forecast capture")
+    opportunity.validate()
+    if (forecast.interpretation != "OUT_OF_SAMPLE_OBSERVATIONAL_HYPOTHESIS" or
+            forecast.motor_authority != "NONE" or
+            forecast.scheduler_uc_authenticated is not False or
+            forecast.m11_authenticated is not False or
+            type(forecast.predicted_outcome_difference) is not int or
+            not -200 <= forecast.predicted_outcome_difference <= 200 or
+            type(forecast.last_training_step) is not int or
+            forecast.last_training_step >= opportunity.physical_step or
+            type(forecast.training_episode_refs) is not tuple or
+            len(forecast.training_episode_refs) != 2 or
+            len(set(forecast.training_episode_refs)) != 2):
+        raise ValueError("invalid nonmotor forecast receipt")
+    for ref in forecast.training_episode_refs:
+        _ref(ref, "training episode reference")
+    if (not callable(getattr(source, "verify_issued_forecast", None)) or
+            source.verify_issued_forecast(forecast=forecast) is not True):
+        raise ValueError("original prospective issue not authenticated")
+
+    contrast = compare_matched_outcomes(
+        prepared=prepared, control=control,
+        preparatory_action_ref=opportunity.preparatory_action_ref,
+        completion_action_ref=opportunity.completion_action_ref,
+        source=source,
+    )
+    if (contrast.life_ref != opportunity.life_ref or
+            contrast.goal_ref != opportunity.goal_ref or
+            contrast.context_signature != opportunity.context_signature or
+            contrast.alternative_action_ref != opportunity.alternative_action_ref or
+            prepared.episode_ref in forecast.training_episode_refs or
+            control.episode_ref in forecast.training_episode_refs or
+            min(prepared.events[0].physical_step,
+                control.events[0].physical_step) <= opportunity.physical_step or
+            any(event.capture_ref == opportunity.capture_ref
+                for event in prepared.events + control.events)):
+        raise ValueError("held-out episode is stale, reused or incompatible")
+
+    predicted = forecast.predicted_outcome_difference
+    observed = contrast.observed_outcome_difference
+    sign = lambda n: (n > 0) - (n < 0)
+    return HeldoutForecastScore(
+        life_ref=opportunity.life_ref,
+        issue_capture_ref=opportunity.capture_ref,
+        training_episode_refs=forecast.training_episode_refs,
+        observed_episode_refs=(prepared.episode_ref, control.episode_ref),
+        predicted_outcome_difference=predicted,
+        observed_outcome_difference=observed,
+        absolute_error=abs(predicted - observed),
+        direction_agreement=sign(predicted) == sign(observed),
+    )
