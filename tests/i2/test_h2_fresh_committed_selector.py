@@ -36,7 +36,7 @@ class FreshCommittedSelectorTests(unittest.TestCase):
                 self.assertTrue(all(row["horizon"] in (4,16) for row in shadow["rows"]))
                 self.assertEqual(shadow["motor_authority"],"NONE")
                 self.assertFalse(shadow["m11_authenticated"])
-                reports[name]={
+                # Three-way selector stays an audited read-only research view.\n                # The existing runner now returns the three-way report below.\n                reports[name]={
                     "selected":str(shadow["selected_mae"]),
                     "h2_16":str(shadow["h2_16_mae"]),
                     "h2_4":str(shadow["h2_4_mae"]),
