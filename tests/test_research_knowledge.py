@@ -5,6 +5,7 @@ from contextlib import redirect_stdout
 import importlib.util
 import io
 import json
+import hashlib
 from pathlib import Path
 import tempfile
 import unittest
@@ -41,6 +42,11 @@ class ResearchKnowledgeGraph(unittest.TestCase):
             path = self.root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("# Synthetic source\n" + "\n".join(markers))
+        for source in self.program["source_checks"]:
+            raw = (self.root / source["path"]).read_bytes()
+            source["blob_sha"] = hashlib.sha1(
+                b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()
+        (self.root / rc.PROGRAM).write_text(json.dumps(self.program), encoding="utf-8")
         self.sha = "a" * 40
 
     def state(self):
@@ -108,6 +114,20 @@ class ResearchKnowledgeGraph(unittest.TestCase):
         self.assertEqual(rc.audit(self.root)["status"], "FAIL")
         with self.assertRaises(ValueError):
             rc.catalog(self.root, self.program)
+
+    def test_exact_source_blob_changes_even_when_marker_remains(self):
+        path = self.root / "src/i1/docs/STATUS.md"
+        original = path.read_text(encoding="utf-8")
+        path.write_text(original + "\nNew information that changes interpretation.\n",
+                        encoding="utf-8")
+        state = self.state()
+        self.assertEqual(state["status"], "SOURCE_REVIEW_REQUIRED")
+        self.assertEqual(state["source_checks"]["i1-a1c"]["status"], "SOURCE_BLOB_DRIFT")
+        self.assertNotEqual(state["source_checks"]["i1-a1c"]["actual_blob_sha"],
+                            state["source_checks"]["i1-a1c"]["pinned_blob_sha"])
+        trace = rc.explain(rc.knowledge_graph(self.program, state), "I1-L3")
+        self.assertEqual(trace["status"], "SOURCE_REVIEW_REQUIRED")
+        self.assertTrue(trace["human_review_required"])
 
     def test_mermaid_no_raw_injection(self):
         knowledge = rc.knowledge_graph(self.program, self.state())

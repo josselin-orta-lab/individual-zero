@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone, timedelta
+import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import re
@@ -79,6 +80,8 @@ def audit(root: Path = ROOT) -> dict:
     question_ids = {q["id"] for q in questions}
     gate_ids = {g["id"] for g in gates}
     for s in sources:
+        if not SHA40.fullmatch(s.get("blob_sha", "")):
+            errors.append("missing/invalid pinned Git blob for source: " + str(s.get("id")))
         if not safe_path(s.get("path")) or not (root / s["path"]).is_file():
             errors.append("unsafe/missing cited source: " + str(s.get("path")))
         if not s.get("marker") or not s.get("authority"):
@@ -156,15 +159,27 @@ def audit(root: Path = ROOT) -> dict:
 def source_integrity(root: Path, program: dict) -> dict:
     result = {}
     for s in program["source_checks"]:
+        actual_blob = None
         try:
             if not safe_path(s["path"]):
                 state = "UNSAFE_SOURCE"
             else:
-                content = (root / s["path"]).read_text(encoding="utf-8")
-                state = "MARKER_PRESENT" if s["marker"] in content else "SOURCE_CHANGED"
-        except OSError:
-            state = "SOURCE_MISSING"
-        result[s["id"]] = {"path": s["path"], "status": state, "authority": s["authority"]}
+                raw = (root / s["path"]).read_bytes()
+                content = raw.decode("utf-8")
+                actual_blob = hashlib.sha1(
+                    b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()
+                if s["marker"] not in content:
+                    state = "SOURCE_CHANGED"
+                elif actual_blob != s.get("blob_sha"):
+                    state = "SOURCE_BLOB_DRIFT"
+                else:
+                    state = "PIN_MATCH"
+        except (OSError, UnicodeError):
+            state = "SOURCE_MISSING_OR_INVALID_UTF8"
+        result[s["id"]] = {"path": s["path"], "status": state,
+                           "pinned_blob_sha": s.get("blob_sha"),
+                           "actual_blob_sha": actual_blob,
+                           "authority": s["authority"]}
     return result
 
 
@@ -207,7 +222,7 @@ def research_state(root: Path = ROOT, *, at_sha: str | None = None,
     registry = read_json(root, REGISTRY)
     sha = head_sha(root, at_sha)
     sources = source_integrity(root, m)
-    failed = sorted(k for k, x in sources.items() if x["status"] != "MARKER_PRESENT")
+    failed = sorted(k for k, x in sources.items() if x["status"] != "PIN_MATCH")
     def map_item(item: dict) -> dict:
         missing = [key for key in item["source_checks"] if key in failed]
         return {**item, "source_integrity": "TEXT_MATCH_ONLY" if not missing else "UNVERIFIED",
@@ -418,6 +433,8 @@ def knowledge_graph(program: dict, state: dict) -> dict:
         key = node("source", source["id"], source["id"],
                    path=source["path"], marker=source["marker"],
                    source_integrity=state["source_checks"][source["id"]]["status"],
+                   pinned_blob_sha=state["source_checks"][source["id"]]["pinned_blob_sha"],
+                   actual_blob_sha=state["source_checks"][source["id"]]["actual_blob_sha"],
                    source_authority=source["authority"])
         file_key = node("artifact", source["path"], source["path"])
         edge(key, file_key, "located_in")
@@ -505,12 +522,14 @@ def explain(knowledge: dict, identifier: str) -> dict:
                 if e["from"] in visited and e["to"] in visited]
     sources = [by_id[key] for key in sorted(visited) if key.startswith("source:")]
     changed = [s["id"] for s in sources
-               if s["source_integrity"] != "MARKER_PRESENT"]
+               if s["source_integrity"] != "PIN_MATCH"]
     return {"status": "SOURCE_REVIEW_REQUIRED" if changed else "PROVENANCE_LINKS_ONLY",
             "focus": by_id[focus], "nodes": [by_id[key] for key in sorted(visited)],
             "edges": relevant,
             "source_references": [{"id": s["id"], "path": s["path"],
                                    "quoted_marker": s["marker"],
+                                   "pinned_blob_sha": s["pinned_blob_sha"],
+                                   "actual_blob_sha": s["actual_blob_sha"],
                                    "status": s["source_integrity"],
                                    "authority": s["source_authority"]} for s in sources],
             "changed_or_missing_sources": changed,
@@ -545,7 +564,7 @@ def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
             outcome = audit(root)
             if outcome["status"] == "PASS":
                 changed = [key for key, value in source_integrity(root, read_json(root, PROGRAM)).items()
-                           if value["status"] != "MARKER_PRESENT"]
+                           if value["status"] != "PIN_MATCH"]
                 if changed:
                     outcome["status"] = "FAIL"
                     outcome["errors"] += ["source marker changed: " + key for key in changed]

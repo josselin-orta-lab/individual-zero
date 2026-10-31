@@ -16,7 +16,7 @@ python tools/research_coordinator.py recommend --generation I2 --format json
 python tools/research_coordinator.py graph
 ```
 
-The tool rereads the local generation registry, I2 contract and cited status/research texts. A `MARKER_PRESENT` means **the cited words have not changed**, not that their scientific assertions have been independently verified. A changed/missing anchor yields `SOURCE_REVIEW_REQUIRED`. Dated reports remain dated even when markers match. Real code determines what can execute; original evidence and reviewed verdicts determine what science established.
+The tool rereads the local generation registry, I2 contract and cited status/research texts. A `PIN_MATCH` means the **entire referenced Git blob** matches the SHA pinned in `config/research-program.json` and its quoted marker remains present. `SOURCE_BLOB_DRIFT`, a missing source or a changed marker invalidates automatic recommendations until an agent inspects the new text and explicitly updates the source pin. A byte-for-byte match is **not scientific validation**. Dated reports remain dated even when markers match. Real code determines what can execute; original evidence and reviewed verdicts determine what science established.
 
 A recommendation contains question and gate, issue link, expected new knowledge, likely falsifying result, deliverables, blockers and an owner route. `REVIEW_CANDIDATE` means **review**, not execute. `BLOCKED_GATE` means required reviews are missing. A closed issue is not evidence of scientific success.
 
@@ -39,6 +39,19 @@ Graph entities include research questions, reported findings (including negative
 The catalog inspects Markdown names across `docs/research/`, `src/i1/docs/`, `src/i2/docs/`, `docs/architecture/proposals/` and `experiments/`. It reports the number of documents directly cited in the curated program and returns **unreviewed candidates** with filename-derived hints. A historical report not directly cited is **not** necessarily missing from all research; it simply has not been linked into this small index. A file called `results.md` is not verified evidence.
 
 **Research coordination loop:** global status → trace the selected question and its negative/uncertain findings → inspect the original source at the exact SHA → identify gated dependencies → select a falsifiable intervention → scope its code through `agent_context.py` → submit a handoff with remaining uncertainties. Use `catalog` to expand curated coverage gradually, with explicit review and without migrating or rewriting original scientific records.
+
+
+### Updating source pins without laundering old evidence
+
+To obtain the exact Git blob hash for an existing tracked file, use:
+
+```bash
+git rev-parse HEAD:src/i1/docs/STATUS.md
+```
+
+After reviewing changes and original evidence, update the corresponding `blob_sha` in `config/research-program.json` and record why the cited assessment still applies (or revise/retract the finding). The file SHA is about **document identity**, not scientific merit. A source file that changes while keeping the same marker is flagged as `SOURCE_BLOB_DRIFT`; human reconciliation is mandatory before recommending new work on it.
+
+The knowledge graph’s `source` nodes and `trace` reports include both pinned and observed blob hashes. The full-repository navigation CI checks graph construction, traces and corpus inventory without running I1 or I2.
 
 ## Agent decision cycle
 

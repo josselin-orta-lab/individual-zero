@@ -39,5 +39,23 @@ jobs:
           python tools/research_coordinator.py audit
           python -m unittest discover -s tests -p test_research_coordinator.py -v
           python -m unittest discover -s tests -p test_research_knowledge.py -v
+          python tools/research_coordinator.py status --format json > /tmp/research-state.json
+          python tools/research_coordinator.py graph --mode knowledge --format json > /tmp/research-graph.json
+          python tools/research_coordinator.py trace --id question:I1-L3 > /tmp/research-trace.json
+          python tools/research_coordinator.py catalog --limit 3 > /tmp/research-catalog.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          state = json.loads(Path("/tmp/research-state.json").read_text())
+          graph = json.loads(Path("/tmp/research-graph.json").read_text())
+          trace = json.loads(Path("/tmp/research-trace.json").read_text())
+          catalog = json.loads(Path("/tmp/research-catalog.json").read_text())
+          assert state["status"] == "RECORDED_TEXT_MATCHES", state["status"]
+          assert state["scientific_verdict"] == "NOT_EVALUATED"
+          assert graph["status"] == "CURATED_PROVENANCE_ONLY"
+          assert trace["status"] == "PROVENANCE_LINKS_ONLY"
+          assert catalog["scientific_verdict"] == "NOT_EVALUATED"
+          print("SOURCE_PINNED_RESEARCH_NAVIGATION_PASS")
+          PY
           python -m unittest discover -s tests -p test_agent_context.py -v
           python tools/check_repo_navigation.py --scope entrypoints

@@ -8,79 +8,92 @@
       "id": "i1-l3",
       "path": "src/i1/docs/STATUS.md",
       "marker": "general adaptive benefit at L3 is **NOT_ESTABLISHED**",
-      "authority": "status"
+      "authority": "status",
+      "blob_sha": "6c9dec0566634d021723be7c7542f575d52b3bf3"
     },
     {
       "id": "i1-a1c",
       "path": "src/i1/docs/STATUS.md",
       "marker": "A1-C confirmatory result was a targeted **NO_GO**",
-      "authority": "status"
+      "authority": "status",
+      "blob_sha": "6c9dec0566634d021723be7c7542f575d52b3bf3"
     },
     {
       "id": "i1-a2r",
       "path": "src/i1/docs/STATUS.md",
       "marker": "A2-R remains **NOT_EXECUTED (0/96)**",
-      "authority": "status"
+      "authority": "status",
+      "blob_sha": "6c9dec0566634d021723be7c7542f575d52b3bf3"
     },
     {
       "id": "i1-matrix",
       "path": "src/i1/docs/EVIDENCE_MATRIX.md",
       "marker": "SCIENTIFICALLY_ESTABLISHED",
-      "authority": "evidence_index"
+      "authority": "evidence_index",
+      "blob_sha": "af6a0a6fe8d233de5595137eb4687f03585958ce"
     },
     {
       "id": "i2-proposal",
       "path": "src/i2/docs/STATUS.md",
       "marker": "PROPOSAL_ONLY / NOT_REGISTERED / NOT_EXECUTABLE / NOT_BORN",
-      "authority": "status"
+      "authority": "status",
+      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811"
     },
     {
       "id": "g0",
       "path": "docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md",
       "marker": "G0 PARTIAL",
-      "authority": "dated_decision"
+      "authority": "dated_decision",
+      "blob_sha": "e83b07c33ab54b2b964ffb96a23e6591811cbc78"
     },
     {
       "id": "g1",
       "path": "src/i2/docs/STATUS.md",
       "marker": "Architectural and scientific review still required",
-      "authority": "status"
+      "authority": "status",
+      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811"
     },
     {
       "id": "g2",
       "path": "src/i2/docs/STATUS.md",
       "marker": "Independent **synthetic** research fixtures",
-      "authority": "status"
+      "authority": "status",
+      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811"
     },
     {
       "id": "g3",
       "path": "src/i2/docs/STATUS.md",
       "marker": "no independently authenticated living M11",
-      "authority": "status"
+      "authority": "status",
+      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811"
     },
     {
       "id": "g4",
       "path": "src/i2/docs/STATUS.md",
       "marker": "no I2 confirmatory study",
-      "authority": "status"
+      "authority": "status",
+      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811"
     },
     {
       "id": "h1",
       "path": "docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md",
       "marker": "**H1 (continuité)**",
-      "authority": "proposal"
+      "authority": "proposal",
+      "blob_sha": "fcf924b73763a7c5da283480b2d6ee0da8cbfd68"
     },
     {
       "id": "h2",
       "path": "docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md",
       "marker": "**H2 (crédit différé)**",
-      "authority": "proposal"
+      "authority": "proposal",
+      "blob_sha": "fcf924b73763a7c5da283480b2d6ee0da8cbfd68"
     },
     {
       "id": "h3",
       "path": "docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md",
       "marker": "**H3 (arbitrage cohérent)**",
-      "authority": "proposal"
+      "authority": "proposal",
+      "blob_sha": "fcf924b73763a7c5da283480b2d6ee0da8cbfd68"
     }
   ],
   "questions": [

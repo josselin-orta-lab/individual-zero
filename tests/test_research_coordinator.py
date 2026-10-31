@@ -2,6 +2,7 @@
 from datetime import datetime, timezone, timedelta
 import importlib.util
 import json
+import hashlib
 from pathlib import Path
 import tempfile
 import unittest
@@ -36,12 +37,17 @@ class ResearchCoordinatorTests(unittest.TestCase):
             p = self.root / name
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text("# Source\n" + "\n".join(markers) + "\n", encoding="utf-8")
-        self.sha = "a"*40
+        for source in self.program["source_checks"]:
+            raw = (self.root / source["path"]).read_bytes()
+            source["blob_sha"] = hashlib.sha1(
+                b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()
+        (self.root / rc.PROGRAM).write_text(json.dumps(self.program), encoding="utf-8")
+        self.sha = "a" * 40
 
     def test_manifest_and_evidence_markers(self):
         result = rc.audit(self.root)
         self.assertEqual(result["status"], "PASS", result["errors"])
-        self.assertTrue(all(v["status"] == "MARKER_PRESENT"
+        self.assertTrue(all(v["status"] == "PIN_MATCH"
                             for v in rc.source_integrity(self.root,self.program).values()))
 
     def test_global_gates_and_generation_boundary(self):
