@@ -522,6 +522,26 @@ class OutcomeFeedbackMemory:
             raise ValueError("duplicate feedback evidence")
 
 
+def _feedback_memory_digest(memory: OutcomeFeedbackMemory) -> str:
+    """Bind the FULL immutable H2 snapshot, not merely its mean and length.
+
+    This is a canonical local fingerprint. It is not a signature or M11
+    attestation and it cannot prove that the remembered events were lived.
+    """
+    from dataclasses import asdict
+    from hashlib import sha256
+    import json
+
+    memory.validate()
+    payload = {
+        "domain": "i2-h2-feedback-snapshot-v1",
+        "state": asdict(memory),
+    }
+    raw = json.dumps(payload, sort_keys=True, separators=(",", ":"),
+                     ensure_ascii=True, allow_nan=False).encode("ascii")
+    return "sha256:" + sha256(raw).hexdigest()
+
+
 def empty_feedback_memory(opportunity: ForecastOpportunity) -> OutcomeFeedbackMemory:
     """Initial state is just the current subjective identity, not knowledge."""
     if type(opportunity) is not ForecastOpportunity:
@@ -540,11 +560,15 @@ class FeedbackSource(ProspectiveSource, Protocol):
 
 @dataclass(frozen=True, slots=True)
 class FeedbackReadout:
-    """A priori expectation from past outcomes only, never an executable vote."""
+    """Past-only readout bound to exact memory contents, without motor rights.
+
+    memory_digest is a local non-secret fingerprint, not an M11 signature.
+    """
 
     baseline: ProspectiveCreditForecast
     memory_version: int
     predicted_outcome_difference: Fraction
+    memory_digest: str
     interpretation: str = "PAST_ONLY_FEEDBACK_HYPOTHESIS"
     motor_authority: str = "NONE"
     scheduler_uc_authenticated: bool = False
@@ -609,7 +633,9 @@ def read_feedback(*, memory: OutcomeFeedbackMemory,
     values = memory.observed_differences
     estimate = (Fraction(sum(values), len(values)) if values else
                 Fraction(forecast.predicted_outcome_difference))
-    return FeedbackReadout(forecast, len(values), estimate)
+    return FeedbackReadout(
+        forecast, len(values), estimate, _feedback_memory_digest(memory)
+    )
 
 
 def learn_from_feedback(*, memory: OutcomeFeedbackMemory,
@@ -771,7 +797,7 @@ class PaidFeedbackValuationPort:
             bound = json.dumps(
                 [frame.claim_digest, candidate.candidate_ref, receipt.ref,
                  prior.evidence_ref, readout.memory_version, difference,
-                 self.forecast.training_episode_refs],
+                 readout.memory_digest, self.forecast.training_episode_refs],
                 sort_keys=True, separators=(",", ":"), ensure_ascii=True,
             ).encode("ascii")
             evidence = "feedback:synthetic:" + sha256(bound).hexdigest()

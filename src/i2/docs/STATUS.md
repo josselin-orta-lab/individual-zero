@@ -31,3 +31,5 @@ I1 reste seul actif dans `config/engine-registry.json`, I2 n'a aucun point d'ent
 - **Correction G2 physique (31/10)** : le garde de crédit H2 permet les actions sans changement physique et les retours à un état antérieur ; ces phénomènes ne sont pas des restaurations de vie en eux-mêmes. Le rejeu d'un commit/admission et une rupture chronologique restent interdits. Preuves de test seulement, G3 `NOT_ESTABLISHED`.
 
 - **G2 garde émission H2 (31/10)** : l'adaptateur Competition réclame l'attestation synthétique du retour de calibration lui-même, et non seulement celle de la prévision historique. Échec : rollback local intégral UC/événement, aucun avis moteur. G3 reste `NOT_ESTABLISHED`.
+
+- **G2 intégrité mémoire H2 (31/10)** : émission et évidence Competition sont liées à l'empreinte canonique de la mémoire complète et non à sa seule moyenne/version. Tests de substitution d'historiques équivalents numériquement. Empreinte locale non signée, G3 `NOT_ESTABLISHED`.
