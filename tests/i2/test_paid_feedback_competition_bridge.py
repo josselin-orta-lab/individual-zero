@@ -78,6 +78,52 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(r.competition_uc,0)
         self.assertEqual(self.base.evaluation_count,0)
         self.assertEqual(fixture.audit()["remaining_synthetic_uc"],2)
+    def test_ablation_changes_advice_but_not_uc_or_motor_rights(self):
+        from i2.modules.option_reconstruction import reconstruct_candidates
+        from i2.modules.competition_preview import CompetitionPreview
+        from i2.modules.cognitive_cycle_fixture import CycleReceipt
+        from dataclasses import fields
+        # Paired synthetic lives share a capture and baseline, but use
+        # independent SQLite stores; neither run actuates a physical body.
+        for delta, expected_semantic in ((8,A),(-8,B),(0,B)):
+            with self.subTest(delta=delta):
+                self.source=ObservationPort()
+                self.base=CountValues({A:0,B:2,C:0})
+                self.db=Path(self.db.parent)/f"feedback_{delta}.sqlite"
+                f,c=self.make(delta)
+                result=f.open(claim=c,semantic_ref=A,
+                              evidence_ref="evidence:30",ttl_steps=12)
+                self.assertEqual(result.competition_status,"ADVISORY_ONLY")
+                self.assertEqual((result.intake_uc,result.competition_uc,result.control_uc),(1,3,1))
+                self.assertEqual(result.motor_authority,"NONE")
+                self.assertEqual(f.audit()["remaining_synthetic_uc"],15)
+                # Audit the actual committed advice rather than inferring
+                # the preferred candidate from a non-null receipt.
+                import sqlite3,json
+                with sqlite3.connect(self.db) as conn:
+                    stored=json.loads(conn.execute(
+                        "SELECT event_json FROM events WHERE seq=1").fetchone()[0])
+                options={entry["candidate_ref"]:entry["semantic_ref"]
+                         for entry in stored["frame"]["candidates"]}
+                self.assertEqual(options[result.suggested_candidate_ref],expected_semantic)
+                self.assertEqual(options[result.control_suggested_candidate_ref],expected_semantic)
+                self.assertEqual(len(stored["advice"]["values"]),3)
+                self.assertEqual(self.base.evaluation_count,1)
+
+    def test_veto_masks_both_positive_and_negative_feedback(self):
+        for delta in (8,-8):
+            with self.subTest(delta=delta):
+                self.source=ObservationPort()
+                self.base=CountValues({A:0,B:2,C:0})
+                self.db=Path(self.db.parent)/f"veto_{delta}.sqlite"
+                f,c=self.make(delta,control_veto=True)
+                r=f.open(claim=c,semantic_ref=A,
+                         evidence_ref="evidence:30",ttl_steps=12)
+                self.assertEqual(r.control_status,"VETOED")
+                self.assertIsNone(r.control_suggested_candidate_ref)
+                self.assertEqual(r.motor_authority,"NONE")
+                self.assertEqual(f.audit()["remaining_synthetic_uc"],15)
+
     def test_unrepresentable_half_step_rolls_back_all_uc(self):
         # Exact integer units are required; fractional feedback isn't rounded.
         c=self.source.add(claim(30,visible=(A,B,C)))
