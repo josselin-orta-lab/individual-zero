@@ -107,7 +107,8 @@ class PinnedMinimumTests(unittest.TestCase):
                                  evidence_ref="evidence:sealed")
         terminal=witness_from(self.owner.audit())
         forged=replace(terminal,committed=terminal.committed+1,
-                       last_step=terminal.last_step+1,chain_head="b"*64)
+                       last_step=terminal.last_step+1,
+                       terminal_step=terminal.last_step+1,chain_head="b"*64)
         with self.assertRaises(WitnessRefusal) as err:
             compare_audit(report=self.owner.audit(),witness=Mock(forged),
                           minimum_witness=terminal)
