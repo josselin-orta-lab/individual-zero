@@ -60,7 +60,7 @@ class DurableChallengeTests(unittest.TestCase):
             self.source()
         self.dir.chmod(0o700)
         (self.dir/"challenges.log").symlink_to(self.dir/"missing")
-        with self.assertRaises(OSError):
+        with self.assertRaises(ChallengeCustodyError):
             self.source().next_challenge()
 
     def test_invalid_candidate_never_creates_log(self):
