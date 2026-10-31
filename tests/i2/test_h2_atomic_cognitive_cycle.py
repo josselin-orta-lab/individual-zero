@@ -133,4 +133,60 @@ class AtomicH2Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"H2 owner and replay journal diverge"):
             CognitiveCycleFixture.reopen(path=self.path,**self.ports)
 
+
+    def test_cold_replay_rejects_cross_life_h2_even_with_consistent_hashes(self):
+        from dataclasses import replace
+        from i2.modules.cognitive_cycle_fixture import (
+            ZERO_HASH, _chain, _json, _h2_transition_map, _h2_memory_map,
+        )
+        from i2.modules.feedback_transition_contract import verify_feedback_transition
+        from i2.modules.intention_ingress import ObservationClaim
+        from i2.modules.intention_continuity import FirstPersonCapture
+
+        old, update = TransitionTests().transition()
+        self.ports["life_ref"] = old.life_ref
+
+        class Subject:
+            def verify(self, *, life_ref, claim, digest):
+                return True
+
+        self.ports["observation_source"] = Subject()
+        fixture = self.make()
+        c = ObservationClaim(
+            old.life_ref,
+            FirstPersonCapture(30, "capture:cycle30", old.goal_ref,
+                               tuple(sorted((A, B, C)))),
+            "source:cycle30", ("evidence:30",),
+        )
+        fixture.open(claim=c, semantic_ref=A, evidence_ref="evidence:30",
+                     ttl_steps=12, feedback_previous=old, feedback_update=update)
+
+        # Reforge both the H2 transition and its local SHA chain. This
+        # locally consistent H2 history belongs to another claimed life
+        # than the SQLite cognitive owner and first-person capture.
+        foreign = "life:foreign-replay"
+        previous = replace(old, life_ref=foreign)
+        next_memory = replace(update.new_memory, life_ref=foreign)
+        score = replace(update.heldout_score, life_ref=foreign)
+        altered = replace(update, new_memory=next_memory, heldout_score=score)
+        verify_feedback_transition(
+            stored=previous,
+            expected_previous_digest=_feedback_memory_digest(previous),
+            update=altered,
+        )
+        with sqlite3.connect(self.path) as conn:
+            row = conn.execute("SELECT event_json FROM events WHERE seq=1").fetchone()
+            event = json.loads(row[0])
+            event["feedback_transition"] = _h2_transition_map(previous, altered)
+            body = _json(event)
+            head = _chain(ZERO_HASH, body)
+            conn.execute("UPDATE events SET event_json=?, event_hash=? WHERE seq=1",
+                         (body, head))
+            conn.execute("UPDATE account SET chain_head=? WHERE id=1", (head,))
+            conn.execute("UPDATE feedback SET snapshot_json=? WHERE id=1",
+                         (_json(_h2_memory_map(next_memory)),))
+
+        with self.assertRaisesRegex(ValueError, "foreign H2 life"):
+            CognitiveCycleFixture.reopen(path=self.path, **self.ports)
+
 if __name__=="__main__":unittest.main()
