@@ -926,6 +926,49 @@ class CognitiveCycleFixture:
             "motor_authority": "NONE", "m11_authenticated": False,
         }
 
+    def feedback_three_way_shadow_report(self) -> dict[str, object]:
+        """Compare past-only H2-16, H2-4 and persistence without changing H2.
+
+        Select by cumulative error of the previous eight samples, with a
+        deterministic tie-break: 16 before 4 before persistence. All inputs
+        originate from the same fully audited v5 scorecard; no motor rights.
+        """
+        from fractions import Fraction
+        base = self.feedback_horizon_shadow_report()
+        rows = []
+        error_history = {"h2_16": [], "h2_4": [], "persistence": []}
+        order = ("h2_16", "h2_4", "persistence")
+        for item in base["rows"]:
+            previous = len(rows)
+            chosen = min(
+                order,
+                key=lambda name: (
+                    sum(error_history[name][-8:], Fraction(0)),
+                    order.index(name),
+                ),
+            ) if previous else "h2_16"
+            errors = {
+                "h2_16": item["h2_16_error"],
+                "h2_4": item["h2_4_error"],
+                "persistence": item["persistence_error"],
+            }
+            rows.append({"choice": chosen, "error": errors[chosen],
+                         "h2_16_error": errors["h2_16"],
+                         "h2_4_error": errors["h2_4"],
+                         "persistence_error": errors["persistence"]})
+            for name in order:
+                error_history[name].append(errors[name])
+        def average(key):
+            return (sum((row[key] for row in rows), Fraction(0)) / len(rows)
+                    if rows else None)
+        return {"samples": len(rows), "rows": tuple(rows),
+                "selected_mae": average("error"),
+                "h2_16_mae": average("h2_16_error"),
+                "h2_4_mae": average("h2_4_error"),
+                "persistence_mae": average("persistence_error"),
+                "interpretation": "THREE_WAY_SHADOW_NOT_CAUSAL_OR_MOTOR_PROOF",
+                "motor_authority": "NONE", "m11_authenticated": False}
+
     def _process(self, *, claim: ObservationClaim, request: dict,
                  _fault_at: str | None = None, feedback_update: object | None = None,
                  feedback_previous: object | None = None) -> CycleReceipt:
