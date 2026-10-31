@@ -2,6 +2,10 @@
 
 **31 octobre 2026. Source-only, non exécutable, non enregistré, aucun individu né et aucun GO scientifique.**
 
+**Complément :** un mode v2 opt-in réunit aussi la revue Action Control dans
+la **même** transaction de test. Voir [COGNITIVE_CONTROL_UNIFIED.md](COGNITIVE_CONTROL_UNIFIED.md).
+Le présent document conserve la description normative du mode cognitif v1.
+
 Source : `src/i2/modules/cognitive_cycle_fixture.py`. Vérifications : `tests/i2/test_cognitive_cycle_fixture.py`.
 
 ## Problème scientifique et technique
@@ -32,7 +36,10 @@ Les bancs antérieurs `intention_atomic_fixture.py` et `competition_transaction_
 
 **Précisions importantes :** `reopen()` inspecte une base de test ; ce n'est **pas une reprise d'une vie I2**. Le fournisseur de valeurs est supposé en lecture seule : un appel externe qui dépenserait irréversiblement des UC hors de la base ne deviendrait pas atomique par magie. La chaîne SHA-256 n'a pas de racine signée et un journal intégralement réécrit avec des hachages recalculés peut tromper le banc. Le rejeu ne réauthentifie pas les observations auprès d'un tiers, seulement leur cohérence avec les valeurs sauvées. Le coût O(N) du rejeu à chaque transaction est acceptable pour un **fixture**, pas nécessairement pour une vie.
 
-Les anciens bancs séparés restent des références de test et **ne doivent pas être assemblés directement** pour construire un runtime I2. La prochaine étape est de produire un propriétaire de transaction M11 unique, rattaché à une naissance indépendante et au vrai Scheduler, puis de tester une frontière Action Control qui refuse toute suggestion ancienne, inconnue, non payée ou vetoée. Aucun de ces éléments n'est prétendu implémenté ici.
+Les anciens bancs séparés restent des références de test et **ne doivent pas être assemblés directement** pour construire un runtime I2. La revue Action Control existe maintenant aussi en **mode de recherche non moteur**,
+avec la variante v2 transactionnelle documentée séparément. La prochaine étape
+reste de produire un propriétaire de transaction M11 unique, rattaché à une
+naissance indépendante et au vrai Scheduler. Le banc v2 n'est pas ce propriétaire.
 
 ## Vérifications et portes
 
