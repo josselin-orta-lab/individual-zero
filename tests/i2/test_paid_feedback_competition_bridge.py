@@ -22,6 +22,7 @@ class Proofs:
     def verify_complete_episode(self,*,episode):return True
     def verify_forecast_capture(self,*,opportunity):return True
     def verify_issued_forecast(self,*,forecast):return True
+    def verify_feedback_issue(self,*,readout):return True
 class CountValues(Values):
     def __init__(self,scores=None):
         super().__init__(scores)
@@ -123,6 +124,29 @@ class BridgeTests(unittest.TestCase):
                 self.assertIsNone(r.control_suggested_candidate_ref)
                 self.assertEqual(r.motor_authority,"NONE")
                 self.assertEqual(f.audit()["remaining_synthetic_uc"],15)
+
+    def test_feedback_issuance_refusal_rolls_back_paid_cycle(self):
+        class RefuseFeedback(Proofs):
+            def verify_feedback_issue(self,*,readout):return False
+        c=self.source.add(claim(30,visible=(A,B,C)))
+        op=ForecastOpportunity(LIFE,"goal:food",c.capture.ref,30,
+                               ("context:synthetic",),A,B,C)
+        prepared=episode("history:prepared",1,A,8)
+        alternative=episode("history:alternative",5,B,0)
+        forecast=project_matched_outcome(
+            prepared=prepared,control=alternative,opportunity=op,source=Proofs())
+        port=PaidFeedbackValuationPort(
+            claim=c,forecast=forecast,memory=empty_feedback_memory(op),
+            source=RefuseFeedback(),baseline=self.base)
+        fixture=CognitiveCycleFixture.create(
+            path=self.db,life_ref=LIFE,synthetic_uc=20,
+            observation_source=self.source,valuation_source=port,
+            current_source=self.current,safety_source=self.safety)
+        with self.assertRaisesRegex(ValueError,"feedback readout not attested"):
+            fixture.open(claim=c,semantic_ref=A,evidence_ref="evidence:30",ttl_steps=12)
+        self.assertEqual(fixture.audit()["remaining_synthetic_uc"],20)
+        self.assertEqual(fixture.audit()["committed"],0)
+        self.assertEqual(self.base.evaluation_count,0)
 
     def test_unrepresentable_half_step_rolls_back_all_uc(self):
         # Exact integer units are required; fractional feedback isn't rounded.
