@@ -48,3 +48,7 @@ Each motor version owns its own laboratory: the current I1 Lab is `src/i1/lab/`,
 ## Documentation ownership
 
 Each engine owns its documentation under `src/iN/docs/`, beside its source, runtime and Lab. I1's authoritative handbook begins at [`src/i1/docs/README.md`](../../src/i1/docs/README.md). Global `docs/engineering/` contains shared infrastructure documentation and must not duplicate I1's theoretical authority.
+
+## Normative generation autonomy (decision of 31 October 2026)
+
+**[ADR-0001: strict generation autonomy](../decisions/ADR-0001-strict-generation-autonomy.md) is mandatory for future engine development.** Every new I(n) is independently implementable, buildable and testable with its own Lab, WorldBody, cognition, UC, safety, M11, state owners and birth identity. A parent points to historical/design lineage only, not an executable dependency. No imports of an obsolete engine, fallback, compatibility mode, live-state sharing or automatic migration to another generation. Historical source and results remain available as archives and isolated scientific comparators. The active I1 and its own persisted namespace remain intact; do not retroactively break its authenticated lives. Reject incompatible old schemas rather than running them inside a successor.

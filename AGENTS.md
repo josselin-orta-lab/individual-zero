@@ -76,3 +76,7 @@ For future I2+ proposals run `python tools/assess_engine_proposal.py --generatio
 ## Generation-owned knowledge
 
 I1's canonical theory, mechanism map, evidence statuses, development playbook and observer instructions live under `src/i1/docs/`, next to the motor. Future generations follow `src/iN/docs/`. The cross-generation `docs/engineering/` directory holds shared tooling procedures only. Do not elevate a proposed scientific mechanism into I1 policy without new first-person evidence and explicit tests.
+
+## Binding rule for all future generation development (ADR-0001)
+
+Read [ADR-0001](docs/decisions/ADR-0001-strict-generation-autonomy.md) before modifying an engine. Every new generation is **fully autonomous**: its own runtime, Lab/WorldBody, cognition, UC Scheduler, safety, M11, durable identities, tests and contracts. The `parent` field is historical lineage only. **Never import, execute, delegate to, or fall back to an obsolete engine or maintain old runtime modes/schemas.** No shared mutable owners, inherited memory, silent migration or resurrection. Archived generations may be read for research or controlled cross-generation comparison, never used as a runtime dependency. General infrastructure helpers are permitted only when they own no active cognition, state, physics, UC or M11. Preserve the currently active I1 and its existing born identities. In every future PR verify these boundaries and add targeted negative tests; do not treat a software pass as scientific GO.
