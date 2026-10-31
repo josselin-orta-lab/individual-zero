@@ -460,3 +460,204 @@ def score_heldout_forecast(*, forecast: ProspectiveCreditForecast,
         absolute_error=abs(predicted - observed),
         direction_agreement=sign(predicted) == sign(observed),
     )
+
+
+# A *pure study* of personal feedback, not another persistence owner or Q table.
+# All functions below refuse motor authority and never read a future outcome
+# when issuing a prediction. The ports used by tests remain UNTRUSTED doubles.
+MEMORY_MAX_SCORES = 16
+
+
+@dataclass(frozen=True, slots=True)
+class OutcomeFeedbackMemory:
+    """Bounded subjective outcome history; no action, Q, or live state owner."""
+
+    life_ref: str
+    goal_ref: str
+    context_signature: tuple[str, ...]
+    preparatory_action_ref: str
+    alternative_action_ref: str
+    completion_action_ref: str
+    last_observed_step: int = -1
+    observed_differences: tuple[int, ...] = ()
+    used_issue_captures: tuple[str, ...] = ()
+    used_episode_refs: tuple[str, ...] = ()
+    motor_authority: str = "NONE"
+    m11_authenticated: bool = False
+
+    def validate(self) -> None:
+        for name in ("life_ref", "goal_ref", "preparatory_action_ref",
+                     "alternative_action_ref", "completion_action_ref"):
+            _ref(getattr(self, name), name)
+        if (len({self.preparatory_action_ref, self.alternative_action_ref,
+                 self.completion_action_ref}) != 3 or
+                type(self.context_signature) is not tuple or
+                not 1 <= len(self.context_signature) <= 16):
+            raise ValueError("invalid bounded feedback identity")
+        for item in self.context_signature:
+            _ref(item, "feedback context")
+        if self.context_signature != tuple(sorted(set(self.context_signature))):
+            raise ValueError("noncanonical feedback context")
+        n = len(self.observed_differences)
+        if (type(self.observed_differences) is not tuple or
+                type(self.used_issue_captures) is not tuple or
+                type(self.used_episode_refs) is not tuple or
+                n > MEMORY_MAX_SCORES or
+                len(self.used_issue_captures) != n or
+                len(self.used_episode_refs) != 2 * n or
+                type(self.last_observed_step) is not int or
+                self.last_observed_step < -1 or
+                (n == 0 and self.last_observed_step != -1) or
+                (n > 0 and self.last_observed_step < 0) or
+                self.motor_authority != "NONE" or
+                self.m11_authenticated is not False):
+            raise ValueError("invalid nonmotor feedback snapshot")
+        if any(type(value) is not int or not -200 <= value <= 200
+               for value in self.observed_differences):
+            raise ValueError("invalid observed feedback")
+        for ref in self.used_issue_captures + self.used_episode_refs:
+            _ref(ref, "consumed feedback evidence")
+        if (len(set(self.used_issue_captures)) != n or
+                len(set(self.used_episode_refs)) != 2 * n):
+            raise ValueError("duplicate feedback evidence")
+
+
+def empty_feedback_memory(opportunity: ForecastOpportunity) -> OutcomeFeedbackMemory:
+    """Initial state is just the current subjective identity, not knowledge."""
+    if type(opportunity) is not ForecastOpportunity:
+        raise ValueError("exact forecast opportunity required")
+    opportunity.validate()
+    return OutcomeFeedbackMemory(
+        opportunity.life_ref, opportunity.goal_ref, opportunity.context_signature,
+        opportunity.preparatory_action_ref, opportunity.alternative_action_ref,
+        opportunity.completion_action_ref,
+    )
+
+
+class FeedbackSource(ProspectiveSource, Protocol):
+    def verify_feedback_issue(self, *, readout: FeedbackReadout) -> bool: ...
+
+
+@dataclass(frozen=True, slots=True)
+class FeedbackReadout:
+    """A priori expectation from past outcomes only, never an executable vote."""
+
+    baseline: ProspectiveCreditForecast
+    memory_version: int
+    predicted_outcome_difference: Fraction
+    interpretation: str = "PAST_ONLY_FEEDBACK_HYPOTHESIS"
+    motor_authority: str = "NONE"
+    scheduler_uc_authenticated: bool = False
+    m11_authenticated: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class FeedbackUpdate:
+    """A scored *claimed* observation and its immutable revised memory."""
+
+    new_memory: OutcomeFeedbackMemory
+    heldout_score: HeldoutForecastScore
+    predicted_outcome_difference: Fraction
+    absolute_error: Fraction
+    direction_agreement: bool
+    interpretation: str = "SYNTHETIC_ADAPTATION_NOT_CAUSAL_OR_MOTOR_PROOF"
+    motor_authority: str = "NONE"
+
+
+def read_feedback(*, memory: OutcomeFeedbackMemory,
+                  forecast: ProspectiveCreditForecast,
+                  source: FeedbackSource) -> FeedbackReadout:
+    """Read from PREVIOUS observations; the future heldout pair is not an input."""
+    if type(memory) is not OutcomeFeedbackMemory or type(forecast) is not ProspectiveCreditForecast:
+        raise ValueError("exact feedback memory and baseline required")
+    memory.validate()
+    op = forecast.opportunity
+    if type(op) is not ForecastOpportunity:
+        raise ValueError("exact prospective opportunity required")
+    op.validate()
+    if ((op.life_ref, op.goal_ref, op.context_signature,
+         op.preparatory_action_ref, op.alternative_action_ref,
+         op.completion_action_ref) !=
+        (memory.life_ref, memory.goal_ref, memory.context_signature,
+         memory.preparatory_action_ref, memory.alternative_action_ref,
+         memory.completion_action_ref)):
+        raise ValueError("feedback belongs to a different context or individual")
+    if (forecast.interpretation != "OUT_OF_SAMPLE_OBSERVATIONAL_HYPOTHESIS" or
+            forecast.motor_authority != "NONE" or
+            forecast.scheduler_uc_authenticated is not False or
+            forecast.m11_authenticated is not False or
+            type(forecast.predicted_outcome_difference) is not int or
+            not -200 <= forecast.predicted_outcome_difference <= 200 or
+            type(forecast.last_training_step) is not int or
+            forecast.last_training_step >= op.physical_step or
+            type(forecast.training_episode_refs) is not tuple or
+            len(forecast.training_episode_refs) != 2 or
+            len(set(forecast.training_episode_refs)) != 2 or
+            op.physical_step <= memory.last_observed_step or
+            op.capture_ref in memory.used_issue_captures or
+            len(memory.observed_differences) >= MEMORY_MAX_SCORES):
+        raise ValueError("stale, full or unauthorized forecast")
+    for ref in forecast.training_episode_refs:
+        _ref(ref, "training episode")
+    if (not callable(getattr(source, "verify_issued_forecast", None)) or
+            source.verify_issued_forecast(forecast=forecast) is not True):
+        raise ValueError("unverified original forecast")
+
+    # A deliberately simple empirical mean, not causal inference or TD/Q:
+    # no observation -> historic matched contrast; subsequent observations
+    # -> exact arithmetic average of heldout outcomes already witnessed.
+    values = memory.observed_differences
+    estimate = (Fraction(sum(values), len(values)) if values else
+                Fraction(forecast.predicted_outcome_difference))
+    return FeedbackReadout(forecast, len(values), estimate)
+
+
+def learn_from_feedback(*, memory: OutcomeFeedbackMemory,
+                        readout: FeedbackReadout,
+                        prepared: MatchedLivedEpisode,
+                        control: MatchedLivedEpisode,
+                        source: FeedbackSource) -> FeedbackUpdate:
+    """Validate a later heldout result before revising the immutable snapshot."""
+    if type(readout) is not FeedbackReadout:
+        raise ValueError("exact readout required")
+    expected = read_feedback(memory=memory, forecast=readout.baseline, source=source)
+    if readout != expected:
+        raise ValueError("changed or reused feedback prediction")
+    if (not callable(getattr(source, "verify_feedback_issue", None)) or
+            source.verify_feedback_issue(readout=readout) is not True):
+        raise ValueError("feedback readout was not independently issued")
+
+    score = score_heldout_forecast(
+        forecast=readout.baseline, prepared=prepared, control=control, source=source)
+    if (type(prepared) is not MatchedLivedEpisode or
+            type(control) is not MatchedLivedEpisode):
+        raise ValueError("exact heldout episodes required")
+    first_test_step = min(prepared.events[0].physical_step,
+                          control.events[0].physical_step)
+    if (first_test_step <= memory.last_observed_step or
+            score.issue_capture_ref in memory.used_issue_captures or
+            any(ref in memory.used_episode_refs for ref in score.observed_episode_refs)):
+        raise ValueError("already observed or replayed outcome")
+    last = max(prepared.events[-1].physical_step,
+               control.events[-1].physical_step)
+    revised = OutcomeFeedbackMemory(
+        life_ref=memory.life_ref, goal_ref=memory.goal_ref,
+        context_signature=memory.context_signature,
+        preparatory_action_ref=memory.preparatory_action_ref,
+        alternative_action_ref=memory.alternative_action_ref,
+        completion_action_ref=memory.completion_action_ref,
+        last_observed_step=last,
+        observed_differences=memory.observed_differences +
+                             (score.observed_outcome_difference,),
+        used_issue_captures=memory.used_issue_captures + (score.issue_capture_ref,),
+        used_episode_refs=memory.used_episode_refs + score.observed_episode_refs,
+    )
+    revised.validate()
+    predicted, actual = readout.predicted_outcome_difference, score.observed_outcome_difference
+    sign = lambda value: (value > 0) - (value < 0)
+    return FeedbackUpdate(
+        new_memory=revised, heldout_score=score,
+        predicted_outcome_difference=predicted,
+        absolute_error=abs(predicted - actual),
+        direction_agreement=sign(predicted) == sign(actual),
+    )
