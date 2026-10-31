@@ -9,7 +9,7 @@
 3. Toute évaluation cognitive doit être facturée en UC **synthétiques**, avec refus du lot impayé.
 4. Les intentions persistent dans l'état du banc sans stocker un gagnant moteur.
 5. Veto, fraîcheur et scellage terminal synthétiques sont vérifiés en replay.
-6. Le journal SQLite v4 demeure **l'unique transaction cognitive** ; anciennes tables et propriétaires concurrents interdits.
+6. Le journal SQLite v5 demeure **l'unique transaction cognitive** ; anciennes tables et propriétaires concurrents interdits.
 7. H2 conserve les tests défavorables, neutres, de rejouage et de non-causalité.
 
 Commande locale : `python -m unittest discover -s tests/i2 -p 'test_*.py' -v`.
