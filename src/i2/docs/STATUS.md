@@ -51,6 +51,11 @@ Le composant `durable_challenge_source.py` reserve des defis avant transport dan
 
 L'initialisation de `durable_challenge_source.py` refuse les états partiellement absents ou vidés au redémarrage. La suppression simultanée du verrou et du journal reste un contre-exemple documenté ; elle ne peut être détectée sans autre domaine de confiance. Aucun droit moteur ou naissance I2.
 
+
+### G2 : identité des fichiers du registre
+
+Le laboratoire vérifie les inodes de ses fichiers de garde sous verrou et avant sortie, avec tests de substitution du verrou et du répertoire. Reste vulnérable aux remplacements cohérents avant la lecture et au rollback global. I2 reste inerte, G3 non établi.
+
 ## Next authorized work
 
 Review [architecture](ARCHITECTURE.md), [research hypothesis](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md) and [promotion procedure](../../../docs/engineering/ENGINE_PROMOTION.md); close separately the genuine-world, independent custody and preregistered science gates. Do not instantiate an I2 individual.
