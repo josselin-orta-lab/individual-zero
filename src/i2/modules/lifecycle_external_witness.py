@@ -119,7 +119,39 @@ class WitnessRefusal(ValueError):
         super().__init__(message)
 
 
-def compare_audit(*, report: dict[str, object], witness: IndependentWitness) -> WitnessAudit:
+def _check_minimum_witness(*, floor: LatestWitness, current: LatestWitness) -> None:
+    """Compare against an explicitly supplied *previous* verified record.
+
+    No trusted checkpoint is stored here. The caller must preserve floor
+    outside the rollback domain; a claim from the same restored directory
+    supplies no anti-rollback protection. No ancestry is proven by a hash
+    at a later sequence: that still requires an independent provider.
+    """
+    if current.committed < floor.committed:
+        raise WitnessRefusal(
+            "STALE", "external witness regressed below previously observed revision"
+        )
+    if current.committed == floor.committed:
+        if (current.last_step != floor.last_step or
+                current.chain_head != floor.chain_head or
+                current.terminal_ref != floor.terminal_ref or
+                current.terminal_step != floor.terminal_step):
+            raise WitnessRefusal(
+                "FORK", "external witness equivocated at pinned sequence"
+            )
+    else:
+        if floor.terminal_ref is not None:
+            raise WitnessRefusal(
+                "FORK", "external witness extended a pinned terminal state"
+            )
+        if current.last_step <= floor.last_step:
+            raise WitnessRefusal(
+                "FORK", "external witness moved forward without step progress"
+            )
+
+
+def compare_audit(*, report: dict[str, object], witness: IndependentWitness,
+                  minimum_witness: LatestWitness | None = None) -> WitnessAudit:
     """Compare an already verified v5 report to the independent latest anchor.
 
     This pure function is useful for protocol tests; callers MUST use
@@ -159,6 +191,13 @@ def compare_audit(*, report: dict[str, object], witness: IndependentWitness) -> 
     if isinstance(witness, type) or not callable(
             getattr(witness, "read_verified_latest", None)):
         raise ValueError("independent atomic verified-latest witness is mandatory")
+    if minimum_witness is not None:
+        if type(minimum_witness) is not LatestWitness:
+            raise ValueError("exact previously verified witness record required")
+        minimum_witness.validate()
+        if (minimum_witness.life_ref != life or
+                minimum_witness.genesis_ref != genesis):
+            raise ValueError("minimum witness belongs to another identity")
 
     # One provider call must SELECT and VERIFY the same latest revision.
     # Only a real independent provider can enforce this contract; our
@@ -177,6 +216,8 @@ def compare_audit(*, report: dict[str, object], witness: IndependentWitness) -> 
         raise WitnessRefusal("UNKNOWN", str(exc)) from exc
     if record.life_ref != life or record.genesis_ref != genesis:
         raise WitnessRefusal("UNKNOWN", "external witness belongs to another identity")
+    if minimum_witness is not None:
+        _check_minimum_witness(floor=minimum_witness, current=record)
     if seq < record.committed:
         raise WitnessRefusal("STALE", "stale local copy: external witness has a later head")
     if seq > record.committed:
@@ -192,7 +233,8 @@ def compare_audit(*, report: dict[str, object], witness: IndependentWitness) -> 
     )
 
 
-def verify_fixture(*, fixture: object, witness: IndependentWitness) -> WitnessAudit:
+def verify_fixture(*, fixture: object, witness: IndependentWitness,
+                   minimum_witness: LatestWitness | None = None) -> WitnessAudit:
     """Cold audit a real I2 G2 fixture then compare to latest witness.
 
     This does NOT guard subsequent writes or attest real death. It is not a
@@ -206,7 +248,9 @@ def verify_fixture(*, fixture: object, witness: IndependentWitness) -> WitnessAu
     # Catch an intervening *local* commit while the external provider reads;
     # this is not a lock and cannot close a later race or attest physics.
     before = fixture.audit()
-    inspection = compare_audit(report=before, witness=witness)
+    inspection = compare_audit(
+        report=before, witness=witness, minimum_witness=minimum_witness,
+    )
     after = fixture.audit()
     if after != before:
         raise WitnessRefusal(
