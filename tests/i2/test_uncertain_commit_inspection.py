@@ -74,9 +74,9 @@ class UncertainLocalCommitTests(unittest.TestCase):
                           ttl_steps=12)
         other = self.source.add(claim(4))
         self.assertEqual(self.inspect(other).outcome, "CONFLICT_LOCAL")
-        self.assertEqual(self.inspect(first, count=0, head="a"*64).outcome,
-                         "CONFLICT_LOCAL")
         prior = self.fixture.audit()
+        self.assertEqual(self.inspect(first, count=1, head="a"*64).outcome,
+                         "CONFLICT_LOCAL")
         self.assertEqual(self.inspect(other, count=1, head=prior["chain_head"]).outcome,
                          "ABSENT_LOCAL_ONLY")
         self.assertEqual(self.inspect(first, count=1, head=prior["chain_head"]).outcome,
