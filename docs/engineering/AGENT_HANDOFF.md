@@ -19,4 +19,4 @@ For a multi-agent effort, prefer one handoff per coherent route. If boundaries c
 
 For research-coordinator-driven work, include the question ID, targeted gate, blocking predecessors, proposed falsifying observation and source/issue status at the exact SHA. A gate stays unapproved unless separately reviewed. See [global research coordination](RESEARCH_COORDINATOR.md).
 
-For research interventions, attach the relevant `trace` node identifiers, actual source paths and exact SHA, including negative/null results and any uncited documents subsequently reviewed. Filename hints and matching text markers never stand in for scientific evidence.
+For research interventions, record which broader corpus candidates were reviewed versus left `NOT_REVIEWED` (see [corpus index](RESEARCH_CORPUS.md)). Also attach the relevant `trace` node identifiers, actual source paths and exact SHA, including negative/null results and any uncited documents subsequently reviewed. Filename hints and matching text markers never stand in for scientific evidence.

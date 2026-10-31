@@ -334,29 +334,37 @@
         "config/research-program.json",
         "tools/research_coordinator.py",
         "tests/test_research_coordinator.py",
-        "docs/engineering/RESEARCH_COORDINATOR.md"
+        "docs/engineering/RESEARCH_COORDINATOR.md",
+        "tools/research_corpus.py",
+        "tests/test_research_corpus.py",
+        "docs/engineering/RESEARCH_CORPUS.md"
       ],
       "keywords": [
         "global research",
         "research coordination",
         "next intervention",
         "scientific bottlenecks",
-        "research roadmap"
+        "research roadmap",
+        "corpus ingestion",
+        "experiment relation"
       ],
       "documents": [
         "docs/engineering/RESEARCH_COORDINATOR.md",
         "src/i1/docs/EVIDENCE_MATRIX.md",
         "src/i1/docs/STATUS.md",
         "src/i2/docs/STATUS.md",
-        "docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md"
+        "docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md",
+        "docs/engineering/RESEARCH_CORPUS.md"
       ],
       "owners": [
         "config/research-program.json",
-        "config/engine-registry.json"
+        "config/engine-registry.json",
+        "tools/research_corpus.py"
       ],
       "tests": [
         "tests/test_research_coordinator.py",
-        "tests/test_research_knowledge.py"
+        "tests/test_research_knowledge.py",
+        "tests/test_research_corpus.py"
       ],
       "invariants": [
         "Source-marker matching is not evidence or gate approval.",
@@ -366,7 +374,8 @@
       "checks": [
         "python tools/research_coordinator.py audit",
         "python -m unittest discover -s tests -p test_research_coordinator.py -v",
-        "python -m unittest discover -s tests -p test_research_knowledge.py -v"
+        "python -m unittest discover -s tests -p test_research_knowledge.py -v",
+        "python -m unittest discover -s tests -p test_research_corpus.py -v"
       ]
     }
   },

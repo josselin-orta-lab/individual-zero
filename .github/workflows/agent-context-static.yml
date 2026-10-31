@@ -8,11 +8,14 @@ on:
       - 'config/research-program.json'
       - 'tools/agent_context.py'
       - 'tools/research_coordinator.py'
+      - 'tools/research_corpus.py'
       - 'tests/test_agent_context.py'
       - 'tests/test_research_coordinator.py'
       - 'tests/test_research_knowledge.py'
+      - 'tests/test_research_corpus.py'
       - 'docs/engineering/AGENT_CONTEXT.md'
       - 'docs/engineering/RESEARCH_COORDINATOR.md'
+      - 'docs/engineering/RESEARCH_CORPUS.md'
       - 'docs/engineering/AGENT_HANDOFF.md'
       - 'docs/engineering/DOCUMENT_AUTHORITY.md'
       - 'docs/engineering/COMPONENT_OWNERSHIP.md'
@@ -39,6 +42,22 @@ jobs:
           python tools/research_coordinator.py audit
           python -m unittest discover -s tests -p test_research_coordinator.py -v
           python -m unittest discover -s tests -p test_research_knowledge.py -v
+          python -m unittest discover -s tests -p test_research_corpus.py -v
+          python tools/research_corpus.py index --output /tmp/iz-research-corpus.json
+          python tools/research_corpus.py delta --baseline /tmp/iz-research-corpus.json > /tmp/iz-research-delta.json
+          python tools/research_corpus.py review --topic study:A1-C --limit 3 > /tmp/iz-research-review.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          inventory = json.loads(Path('/tmp/iz-research-corpus.json').read_text())
+          delta = json.loads(Path('/tmp/iz-research-delta.json').read_text())
+          lead = json.loads(Path('/tmp/iz-research-review.json').read_text())
+          assert inventory['summary']['documents'] >= 100
+          assert inventory['scientific_verdict'] == 'NOT_EVALUATED'
+          assert delta['status'] == 'NO_FILE_CHANGES'
+          assert lead['scientific_verdict'] == 'NOT_EVALUATED'
+          print('CORPUS_NAVIGATION_NO_SCIENTIFIC_PROMOTION_PASS')
+          PY
           python tools/research_coordinator.py status --format json > /tmp/research-state.json
           python tools/research_coordinator.py graph --mode knowledge --format json > /tmp/research-graph.json
           python tools/research_coordinator.py trace --id question:I1-L3 > /tmp/research-trace.json

@@ -53,6 +53,12 @@ After reviewing changes and original evidence, update the corresponding `blob_sh
 
 The knowledge graph’s `source` nodes and `trace` reports include both pinned and observed blob hashes. The full-repository navigation CI checks graph construction, traces and corpus inventory without running I1 or I2.
 
+## Incremental corpus discovery before choosing a task
+
+For wider context than the curated research-program seed, run `python tools/research_corpus.py report --top 8`, then inspect relevant source documents with `python tools/research_corpus.py review --topic study:A1-C` or `--topic issue:304`. The [corpus ingestion guide](RESEARCH_CORPUS.md) explains the deterministic inventory, Git-blob-indexed delta comparisons, exact-line citations and unreviewed relation suggestions. A lexical co-occurrence of PASS and NO_GO **is not a contradiction**: confirm the scientific question, endpoint, protocol, independent evidence and status scope before drawing conclusions.
+
+The global coordinator's evidence and gate logic remains curated; corpus index entries never automatically become new scientific findings, changes to the registry or permits to execute. Cite the original source before linking a candidate into the verified research program.
+
 ## Agent decision cycle
 
 1. Re-read HEAD, registry, engine contracts, current statuses, evidence matrix and this program. Flag contradictions.

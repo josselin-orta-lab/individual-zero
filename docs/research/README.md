@@ -4,7 +4,7 @@ This directory contains research methods and explanatory documents broader than 
 
 Formal EXP records may live in `../../experiments/EXP-####/`, while substantial dated historical investigations are also preserved in this directory and under generation-owned documentation. This page is not a comprehensive current evidence index. For active I1 claims use [its evidence matrix](../../src/i1/docs/EVIDENCE_MATRIX.md); for I2 see [proposal status](../../src/i2/docs/STATUS.md).
 
-The [research map](../../RESEARCH_MAP.md) records cross-cutting research axes. The [global research coordinator](../engineering/RESEARCH_COORDINATOR.md) provides an initially curated, source-linked view of questions, negative evidence, gate dependencies and proposed interventions. Neither is a live census or a substitute for original evidence and independent scientific review.
+The [research map](../../RESEARCH_MAP.md) records cross-cutting research axes. The [incremental corpus indexer](../engineering/RESEARCH_CORPUS.md) can enumerate source blobs and suggest possible protocol/results connections without claiming scientific equivalence. The [global research coordinator](../engineering/RESEARCH_COORDINATOR.md) provides an initially curated, source-linked view of questions, negative evidence, gate dependencies and proposed interventions. Neither is a live census or a substitute for original evidence and independent scientific review.
 
 ## Core principle
 

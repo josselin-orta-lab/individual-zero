@@ -24,10 +24,12 @@ python tools/research_coordinator.py status
 python tools/research_coordinator.py recommend --top 5
 python tools/research_coordinator.py trace --id question:I1-L3
 python tools/research_coordinator.py graph --mode knowledge
+python tools/research_corpus.py report --top 8
+python tools/research_corpus.py review --topic study:A1-C
 python tools/research_coordinator.py catalog --limit 20
 ```
 
-The seed program covers only selected I1 and I2 research questions. It is **not** a census of all research, a live GitHub issue tracker, an independently verified scientific verdict or a permission to run a study. File names returned by the catalog are unreviewed candidates, not scientific evidence.
+The [incremental corpus index](docs/engineering/RESEARCH_CORPUS.md) discovers direct research identifiers and candidate protocol/results relationships across the wider repository. Its status-language and filename hints require human scientific review. The seed program covers only selected I1 and I2 research questions. It is **not** a census of all research, a live GitHub issue tracker, an independently verified scientific verdict or a permission to run a study. File names returned by the catalog are unreviewed candidates, not scientific evidence.
 
 ## Where evidence actually lives
 
