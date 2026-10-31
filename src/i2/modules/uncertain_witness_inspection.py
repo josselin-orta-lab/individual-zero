@@ -7,7 +7,6 @@ two reports cannot prove that the provider is independent or up to date.
 from __future__ import annotations
 
 from dataclasses import dataclass
-import sqlite3
 from typing import Callable
 
 from .cognitive_cycle_fixture import CognitiveCycleFixture, UncertainCommitInspection
@@ -43,9 +42,12 @@ def _inspect(*, fixture: object, witness: IndependentWitness,
     before = fixture.audit()
     try:
         local = local_probe()
-    except (OSError, RuntimeError, sqlite3.DatabaseError) as exc:
-        # A failed second read has no usable single-snapshot proof.
-        # Never contact the external provider or infer an absent COMMIT.
+    except Exception as exc:
+        # Preserve caller validation failures. All remaining probe failures
+        # (including SQLite exceptions owned by the cognitive fixture)
+        # mean no usable local snapshot, not an absent COMMIT.
+        if isinstance(exc, ValueError):
+            raise
         raise WitnessRefusal(
             "UNKNOWN", "local uncertain-commit inspection unavailable"
         ) from exc
