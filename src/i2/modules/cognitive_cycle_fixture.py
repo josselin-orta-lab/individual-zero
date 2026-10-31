@@ -902,6 +902,24 @@ class CognitiveCycleFixture:
                         raise ValueError("stale H2 snapshot")
                 if prior.life_ref != self.life_ref:
                     raise ValueError("foreign H2 life")
+                # The bounded H2 window cannot detect identifiers evicted after
+                # 16 outcomes. Check the entire canonical journal BEFORE COMMIT.
+                used_issues = set()
+                used_episodes = set()
+                for (old_body,) in conn.execute(
+                    "SELECT event_json FROM events ORDER BY seq"
+                ):
+                    saved = json.loads(old_body)
+                    old_transition = saved.get("feedback_transition")
+                    if old_transition is not None:
+                        past_score = old_transition["score"]
+                        used_issues.add(past_score["issue_capture_ref"])
+                        used_episodes.update(past_score["observed_episode_refs"])
+                new_score = feedback_update.heldout_score
+                if (new_score.issue_capture_ref in used_issues or
+                        any(ref in used_episodes for ref in
+                            new_score.observed_episode_refs)):
+                    raise ValueError("replayed H2 evidence outside memory window")
                 verify_feedback_transition(
                     stored=prior, expected_previous_digest=_feedback_memory_digest(prior),
                     update=feedback_update)
