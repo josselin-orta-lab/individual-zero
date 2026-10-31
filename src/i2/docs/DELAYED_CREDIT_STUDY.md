@@ -75,3 +75,7 @@ Avant d'accepter un score H2 dans le journal cognitif, le validateur recalcule l
 ## Sélecteur fantôme d'horizon issu du journal (G2)
 
 `feedback_horizon_shadow_report()` applique une règle fixe en lecture seule aux événements H2 du journal v5 intégralement audité : choisir une moyenne sur quatre observations seulement lorsque ses erreurs absolues sur les huit observations **précédentes** sont strictement inférieures à celles de la moyenne sur seize ; autrement retenir seize. Le premier choix et les égalités restent sur seize. Les cinq régimes de la batterie #710 sont rejoués pour contrôler la cohérence du choix et les résultats défavorables sont conservés. Ce n'est pas une politique motrice ni une preuve hors échantillon indépendante : la règle a été développée après observation de batteries précédentes. Aucun paramètre du moteur H2, aucun schéma SQLite et aucune naissance I2 ne changent.
+
+## Vérification distincte du sélecteur 4/16 (G2)
+
+`test_h2_fresh_committed_selector.py` fixe quatre régimes supplémentaires de 24 issues, différents des batteries #710 et #711. Le sélecteur #712 est inchangé. Chaque scénario utilise 24 COMMITs dans son propre journal v5, une relecture froide et un rapport de MAE exact pour sélection 4/16, horizons fixes, historique et persistance, y compris résultats défavorables. Un scénario injecte une erreur avant COMMIT et la perte de son accusé après COMMIT. Résultats imprimés sans filtrage. Les scénarios sont conçus dans cette PR : ce n'est pas une préinscription indépendante ni une validation de politique motrice.
