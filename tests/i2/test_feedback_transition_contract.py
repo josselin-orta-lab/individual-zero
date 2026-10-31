@@ -79,6 +79,26 @@ class TransitionTests(unittest.TestCase):
                     expected_previous_digest=_feedback_memory_digest(old),
                     update=replace(update, heldout_score=counterfeit))
 
+    def test_calibrated_prediction_cannot_be_changed_after_outcome(self):
+        from fractions import Fraction
+        old, update = self.transition()
+        forged = replace(update, predicted_outcome_difference=Fraction(99),
+                         absolute_error=abs(Fraction(99) -
+                                            update.heldout_score.observed_outcome_difference))
+        with self.assertRaisesRegex(ValueError, "prediction not derived"):
+            verify_feedback_transition(
+                stored=old, expected_previous_digest=_feedback_memory_digest(old),
+                update=forged)
+
+    def test_training_episode_cannot_reappear_as_heldout(self):
+        old, update = self.transition()
+        counterfeit = replace(update.heldout_score,
+            observed_episode_refs=update.heldout_score.training_episode_refs)
+        with self.assertRaisesRegex(ValueError, "training episode reused"):
+            verify_feedback_transition(
+                stored=old, expected_previous_digest=_feedback_memory_digest(old),
+                update=replace(update, heldout_score=counterfeit))
+
     def test_motor_flag_never_accepted(self):
         old, update = self.transition()
         with self.assertRaises(ValueError):

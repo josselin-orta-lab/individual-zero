@@ -9,7 +9,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from .delayed_credit_study import (
-    OutcomeFeedbackMemory, FeedbackUpdate, _feedback_memory_digest,
+    OutcomeFeedbackMemory, FeedbackUpdate, HeldoutForecastScore,
+    _feedback_memory_digest,
 )
 
 
@@ -47,6 +48,8 @@ def verify_feedback_transition(
         raise ValueError("motor-capable or foreign H2 update")
     from fractions import Fraction
     score = update.heldout_score
+    if type(score) is not HeldoutForecastScore:
+        raise ValueError("exact H2 heldout score required")
     if (type(update.predicted_outcome_difference) is not Fraction or
             type(update.absolute_error) is not Fraction or
             type(update.direction_agreement) is not bool or
@@ -97,6 +100,19 @@ def verify_feedback_transition(
             len(score.observed_episode_refs) != 2 or
             len(set(score.observed_episode_refs)) != 2):
         raise ValueError("invalid or motor-capable H2 heldout score")
+    # The prospective baseline and the calibrated prediction are different:
+    # with no H2 observations the prediction is the historical baseline;
+    # afterwards it MUST be the exact mean of the PAST bounded window.
+    # An arbitrary post-outcome forecast would make heldout scoring meaningless.
+    expected_prediction = (
+        Fraction(sum(stored.observed_differences), len(stored.observed_differences))
+        if stored.observed_differences else
+        Fraction(score.predicted_outcome_difference)
+    )
+    if update.predicted_outcome_difference != expected_prediction:
+        raise ValueError("H2 prediction not derived from prior observations")
+    if set(score.training_episode_refs) & set(score.observed_episode_refs):
+        raise ValueError("training episode reused as heldout observation")
     if (score.life_ref != stored.life_ref or
             score.issue_capture_ref in stored.used_issue_captures or
             any(ref in stored.used_episode_refs for ref in score.observed_episode_refs) or
