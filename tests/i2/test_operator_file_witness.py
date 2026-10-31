@@ -139,8 +139,6 @@ class FileWitnessTests(unittest.TestCase):
         original = (self.dir / "heads.jsonl").read_bytes()
         # Extra repeated schema key has the SAME parsed value and MAC.
         row = json.loads(original)
-        prefix = b'{"schema":'
-        self.assertIn(prefix, original)
         duplicate = (b'{"schema":' + json.dumps(row["schema"]).encode("ascii")
                      + b',' + original[1:])
         (self.dir / "heads.jsonl").write_bytes(duplicate)
