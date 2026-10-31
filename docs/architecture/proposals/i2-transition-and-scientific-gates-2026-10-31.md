@@ -2,11 +2,11 @@
 
 **Décision approuvée le 31 octobre 2026.** I2 est un candidat architectural distinct, pas une promotion automatique ni un remplacement d'I1. Aucun nouvel individu ne doit être instancié pendant cette phase documentaire.
 
-## Référence immuable
+## Référence Git épinglée (protection encore incomplète)
 - Dépôt : `josselin-orta-lab/individual-zero`
 - I1 code baseline : `1e19f02db14b64a35f8bb014d69cc061f311002c`
 - Sous-arbre `src/i1` : `cf7968d3ee94a5792d37d76241a55d4c8406a3fb`
-- Branche de conservation : `archive/i1-reference-2026-10-31` (ne jamais réécrire ni force-push).
+- Branche de conservation : `archive/i1-reference-2026-10-31` (pointe sur le commit épinglé, **`protected=false` observé via API le 31/10/2026**). Ne pas supprimer, réécrire ni force-push ; protection/règle externe encore à établir, voir #661.
 - I0 demeure inchangé. I1 reste `active` dans le registre tant que I2 n'a pas franchi ses portes.
 
 ## Faits et limites
@@ -32,7 +32,7 @@
 - Les expériences de I1 ne deviennent pas des connaissances de naissance d'I2.
 
 ## Plan séquentiel et portes
-**G0 Archive** : ancre Git I1, tree SHA, manifeste des résultats A1-P/A1-C et de leurs limitations, disponibilité durable des originaux, politique de non-réécriture. Archive source != gel complet des artefacts externes.
+**G0 Archive** : ancre Git I1, tree SHA, manifeste des résultats A1-P/A1-C et de leurs limitations, disponibilité durable des originaux, protection contre suppression/réécriture attestée (non acquise), politique de non-réécriture. Archive source != gel complet des artefacts externes.
 
 **G1 Théorie et contrats** : documenter causalité, provenance, propriétaire des intentions, expiration/renouvellement, coût UC, contexte de remise à zéro et transitions M11 ; spécifier H1–H3 avec réfutations possibles et risques. Revue architecturale obligatoire avant moteur.
 
@@ -52,4 +52,4 @@
 - Pas de cohortes longues avant le préenregistrement et la chaîne de custody.
 - Toute expérience négative est conservée ; pas d'ajustement opportuniste de seuils après résultat.
 
-**Statut au dépôt initial de la décision : G0 branche source créée ; G1 cadre proposé ; G2–G6 NOT_STARTED.**
+**Statut au dépôt initial de la décision : G0 PARTIAL (branche et SHA existants, non protégée) ; G1 cadre proposé ; G2–G6 NOT_STARTED.**
