@@ -85,3 +85,7 @@ Le registre local vérifie l'identité (device/inode) du répertoire, du verrou 
 ## G2 : ascendance locale verifiee a froid
 
 `verify_fixture` exige maintenant, lorsqu'une borne `minimum_witness` est fournie, que le hash et le pas du maillon historique exact soient retrouves dans le journal SQLite v5 apres rejeu complet. Une extension locale dont la tete recente concorde avec le fournisseur mais dont le prefixe diverge est refusee `FORK`. Un fichier local trop court est `STALE`. Cette preuve porte seulement sur le journal local fourni et sur la borne **declaree** : elle ne demontre pas que la borne a ete authentifiee, que le fournisseur est independant, ni que l'effet physique a eu lieu. Les inspections restent sans reprise ou pouvoir moteur.
+
+## Inspection incertaine avec ascendance dans un seul snapshot (G2)
+
+Le diagnostic d'un COMMIT incertain et le maillon historique demandé par `minimum_witness` proviennent désormais du même snapshot SQLite audité. L'inspection refuse `FORK` avant de contacter le témoin lorsque l'ascendance locale diverge, `STALE` si le préfixe manque, et `UNKNOWN` lorsqu'une modification concurrente est détectée au réaudit. Cette cohérence est locale et temporaire, non linéarisable avec le fournisseur externe, sans permission de rejeu, d'action ou de reprise et sans attestation M11 réelle.
