@@ -34,29 +34,27 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Static-only test (no birth or runtime imports)
+      - name: Isolated I2 policy and scaffold tests (no birth)
         run: |
-          python -m unittest discover -s tests/i2 -p 'test_proposal.py' -v
+          python -m unittest discover -s tests/i2 -p 'test_*.py' -v
           python -m compileall -q src/i2 tests/i2
-      - name: Independent inert proposal assessment (expected BLOCKED)
+      - name: Independent proposal assessment (expected BLOCKED)
         run: |
           python tools/assess_engine_proposal.py --generation I2 --json > i2-assessment.json
           python - <<'PY'
           import json
           from pathlib import Path
           r = json.loads(Path("i2-assessment.json").read_text())
-          expected_missing = {
-              "lab_implementation_present",
-              "runtime_implementation_present",
-              "cognition_implementation_present",
-              "independent_tests_present",
-          }
+          # A pure policy exists, but there is still no living Lab or runtime.
+          expected_missing = {"lab_implementation_present", "runtime_implementation_present"}
           assert r["status"] == "BLOCKED", r
           assert set(r["blocked_by"]) == expected_missing, r["blocked_by"]
+          assert r["checks"]["cognition_implementation_present"] is True, r
+          assert r["checks"]["independent_tests_present"] is True, r
           assert r["activation"] == "FORBIDDEN", r
           assert r["registration"] == "FORBIDDEN", r
           assert r["scientific_evidence"] == "NOT_EVALUATED", r
           assert r["test_execution"] == "NOT_PERFORMED", r
           assert r["human_review_required"] is True, r
-          print("I2_PROPOSAL_INERT_GUARD_PASS")
+          print("I2_PROPOSAL_POLICY_INERT_GUARD_PASS")
           PY
