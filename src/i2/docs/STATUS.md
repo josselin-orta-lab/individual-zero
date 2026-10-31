@@ -33,6 +33,10 @@ L'adaptateur `uncertain_witness_inspection.py` confronte un diagnostic local à 
 
 Le test `minimum_witness` refuse un témoin externe régressif (`STALE`), équivoque ou étendant un état terminal (`FORK`), **seulement si** une borne antérieure déjà vérifiée a été gardée indépendamment du rollback. Le projet ne fournit ni stockage indépendant, ni signature, ni preuve M11, ni droit d'action ou de reprise. Voir [audit du témoin](LIFECYCLE_EXTERNAL_WITNESS.md).
 
+### G2 : réponse signée à défi et témoin synthétique
+
+Les contrats `challenge_witness_contract.py` et `challenge_witness_adapter.py` spécifient et testent des enveloppes de témoin avec nonce, identité, fenêtre de validité et vérifications **injectées**. La borne `minimum_witness` est également transmise par l'inspection terminale. Il n'existe pas de fournisseur externe authentifié, ni de gestion persistante de nonce, ni de service de signature/de temps fiable ; les tests montrent un risque de rejeu avec nonce réutilisé. Ces diagnostics G2 n'autorisent **aucune naissance, action, reprise, ni promotion G3**. Voir [l'audit externe](LIFECYCLE_EXTERNAL_WITNESS.md) et le [registre historique](STATUS_HISTORY.md).
+
 ## Next authorized work
 
 Review [architecture](ARCHITECTURE.md), [research hypothesis](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md) and [promotion procedure](../../../docs/engineering/ENGINE_PROMOTION.md); close separately the genuine-world, independent custody and preregistered science gates. Do not instantiate an I2 individual.

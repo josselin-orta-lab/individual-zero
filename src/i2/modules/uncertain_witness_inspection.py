@@ -94,7 +94,7 @@ def inspect_uncertain_terminal_with_witness(
     if type(fixture) is not CognitiveCycleFixture:
         raise ValueError("exact inert v5 fixture required")
     return _inspect(
-        fixture=fixture, witness=witness,
+        fixture=fixture, witness=witness, minimum_witness=minimum_witness,
         local_probe=lambda: fixture.inspect_uncertain_terminal(
             previous_count=previous_count, previous_head=previous_head,
             physical_step=physical_step, terminal_ref=terminal_ref,
