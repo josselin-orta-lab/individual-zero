@@ -482,6 +482,8 @@ class OutcomeFeedbackMemory:
     observed_differences: tuple[int, ...] = ()
     used_issue_captures: tuple[str, ...] = ()
     used_episode_refs: tuple[str, ...] = ()
+    total_observations: int = 0
+    history_head: str = "0" * 64
     motor_authority: str = "NONE"
     m11_authenticated: bool = False
 
@@ -503,6 +505,13 @@ class OutcomeFeedbackMemory:
                 type(self.used_issue_captures) is not tuple or
                 type(self.used_episode_refs) is not tuple or
                 n > MEMORY_MAX_SCORES or
+                type(self.total_observations) is not int or
+                self.total_observations < n or
+                (self.total_observations == 0) != (n == 0) or
+                type(self.history_head) is not str or
+                len(self.history_head) != 64 or
+                any(c not in '0123456789abcdef' for c in self.history_head) or
+                (self.total_observations == 0 and self.history_head != '0' * 64) or
                 len(self.used_issue_captures) != n or
                 len(self.used_episode_refs) != 2 * n or
                 type(self.last_observed_step) is not int or
@@ -619,7 +628,7 @@ def read_feedback(*, memory: OutcomeFeedbackMemory,
             len(set(forecast.training_episode_refs)) != 2 or
             op.physical_step <= memory.last_observed_step or
             op.capture_ref in memory.used_issue_captures or
-            len(memory.observed_differences) >= MEMORY_MAX_SCORES):
+            memory.total_observations >= 1000000):
         raise ValueError("stale, full or unauthorized forecast")
     for ref in forecast.training_episode_refs:
         _ref(ref, "training episode")
@@ -634,7 +643,7 @@ def read_feedback(*, memory: OutcomeFeedbackMemory,
     estimate = (Fraction(sum(values), len(values)) if values else
                 Fraction(forecast.predicted_outcome_difference))
     return FeedbackReadout(
-        forecast, len(values), estimate, _feedback_memory_digest(memory)
+        forecast, memory.total_observations, estimate, _feedback_memory_digest(memory)
     )
 
 
@@ -666,6 +675,13 @@ def learn_from_feedback(*, memory: OutcomeFeedbackMemory,
         raise ValueError("already observed or replayed outcome")
     last = max(prepared.events[-1].physical_step,
                control.events[-1].physical_step)
+    from hashlib import sha256
+    import json
+    material = json.dumps(
+        ["i2-h2-feedback-history-v1", memory.history_head, score.issue_capture_ref,
+         list(score.observed_episode_refs), score.observed_outcome_difference],
+        sort_keys=True, separators=(",", ":"), ensure_ascii=True,
+    ).encode("ascii")
     revised = OutcomeFeedbackMemory(
         life_ref=memory.life_ref, goal_ref=memory.goal_ref,
         context_signature=memory.context_signature,
@@ -673,10 +689,12 @@ def learn_from_feedback(*, memory: OutcomeFeedbackMemory,
         alternative_action_ref=memory.alternative_action_ref,
         completion_action_ref=memory.completion_action_ref,
         last_observed_step=last,
-        observed_differences=memory.observed_differences +
-                             (score.observed_outcome_difference,),
-        used_issue_captures=memory.used_issue_captures + (score.issue_capture_ref,),
-        used_episode_refs=memory.used_episode_refs + score.observed_episode_refs,
+        observed_differences=(memory.observed_differences +
+                             (score.observed_outcome_difference,))[-MEMORY_MAX_SCORES:],
+        used_issue_captures=(memory.used_issue_captures + (score.issue_capture_ref,))[-MEMORY_MAX_SCORES:],
+        used_episode_refs=(memory.used_episode_refs + score.observed_episode_refs)[-2 * MEMORY_MAX_SCORES:],
+        total_observations=memory.total_observations + 1,
+        history_head=sha256(material).hexdigest(),
     )
     revised.validate()
     predicted, actual = readout.predicted_outcome_difference, score.observed_outcome_difference
