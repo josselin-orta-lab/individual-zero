@@ -4,9 +4,11 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 import multiprocessing
-import os
+import sys
 import tempfile
 import unittest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from i2.modules.lifecycle_external_witness import LatestWitness, WITNESS_SCHEMA, LIFECYCLE_SCHEMA, ZERO_HASH
 from i2.modules.operator_file_witness import (
@@ -111,7 +113,6 @@ class FileWitnessTests(unittest.TestCase):
     def test_complete_directory_rollback_remains_undetectable_here(self):
         """Explicit negative boundary: no independent latest-generation anchor."""
         first = self.genesis()
-        copy = self.dir / "old-copy"
         # Snapshot only the data file, outside the canonical store path.
         old = (self.dir / "heads.jsonl").read_bytes()
         self.store.stage(claim=claim(1), expected_proof_ref=first.proof_ref)
