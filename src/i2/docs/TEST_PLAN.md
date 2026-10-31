@@ -1,11 +1,19 @@
-# I2 : plan de tests NON EXECUTE
+# I2 : plan de validation, deux niveaux distincts
 
-1. Structure et registre I2 absent ; aucune entree de naissance.
-2. Observations personnelles et horodatage causal ; aucune fuite Oracle.
-3. Comptabilite UC et refus d'evaluation impayee.
-4. Intention semantique persistante sans candidature ou admission motrice conservee.
-5. Continuite, veto, disparition de ressource et fin de vie.
-6. M11 : commit atomique, relance certaine, corruption bloquee et mort irreversible.
-7. Comparaison experimentale preregistree ; aucun resultat reutilise d'I1.
+**G2 : les tests logiciels synthétiques sont exécutés en CI ciblée.** Le workflow `.github/workflows/i2-proposal-safety.yml` vérifie les suites `tests/i2/test_*.py` sous Python 3.11/3.12, la compilation et le blocage de toute activation I2. Ils ne créent aucune vie et ne représentent pas une preuve scientifique.
 
-Aucun test moteur/individu I2 n'est encore possible.
+## Invariants logiciels G2 à conserver
+
+1. I2 reste absent du registre actif, sans point d'entrée de naissance.
+2. Les observations sont déclarées first-person, chronologiques, sans oracle caché admis.
+3. Toute évaluation cognitive doit être facturée en UC **synthétiques**, avec refus du lot impayé.
+4. Les intentions persistent dans l'état du banc sans stocker un gagnant moteur.
+5. Veto, fraîcheur et scellage terminal synthétiques sont vérifiés en replay.
+6. Le journal SQLite v4 demeure **l'unique transaction cognitive** ; anciennes tables et propriétaires concurrents interdits.
+7. H2 conserve les tests défavorables, neutres, de rejouage et de non-causalité.
+
+Commande locale : `python -m unittest discover -s tests/i2 -p 'test_*.py' -v`.
+
+## Programme scientifique encore NON EXÉCUTÉ
+
+Authentification M11 indépendante, débit du Scheduler vivant, action et conséquence WorldBody réellement appliquées, mortalité irréversible, protections anti-rollback, continuité H2 atomique, études confirmatoires préenregistrées avec contrôles et comparaison sans réutiliser les résultats d'I1. Ces étapes nécessitent une revue G1/G3 distincte. **Aucune naissance, cohorte ni GO scientifique I2 n'est établie.**
