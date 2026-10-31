@@ -46,6 +46,11 @@ L'adaptateur de témoin réserve et valide maintenant le nonce avant tout appel 
 
 Le composant `durable_challenge_source.py` reserve des defis avant transport dans un journal append-only distinct du SQLite cognitif v5. Tests de redemarrage, concurrence cooperative, corruption et permissions. Cette persistance est **locale et restaurable**, sans anti-rollback global ni preuve d'independance M11. I1 actif ; I2 sans naissance, moteur ou autorite de reprise.
 
+
+### G2 : refus de perte partielle du registre de défis
+
+L'initialisation de `durable_challenge_source.py` refuse les états partiellement absents ou vidés au redémarrage. La suppression simultanée du verrou et du journal reste un contre-exemple documenté ; elle ne peut être détectée sans autre domaine de confiance. Aucun droit moteur ou naissance I2.
+
 ## Next authorized work
 
 Review [architecture](ARCHITECTURE.md), [research hypothesis](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md) and [promotion procedure](../../../docs/engineering/ENGINE_PROMOTION.md); close separately the genuine-world, independent custody and preregistered science gates. Do not instantiate an I2 individual.
