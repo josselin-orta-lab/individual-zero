@@ -53,3 +53,7 @@ The number records order, not importance.
 Start from [ADR_TEMPLATE.md](ADR_TEMPLATE.md).
 
 A filled illustrative example is available in [../../examples/adr-example.md](../../examples/adr-example.md).
+
+## Accepted decisions
+
+- [ADR-0001: strict autonomy of architectural generations](ADR-0001-strict-generation-autonomy.md) (31 October 2026). Mandatory for all future engine work; older generations are research references, not runtime dependencies.
