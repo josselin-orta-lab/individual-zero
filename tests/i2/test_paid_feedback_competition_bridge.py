@@ -161,7 +161,8 @@ class BridgeTests(unittest.TestCase):
         from i2.modules.delayed_credit_study import OutcomeFeedbackMemory
         mem=replace(empty_feedback_memory(op),last_observed_step=8,
              observed_differences=(0,1),used_issue_captures=("historic:1","historic:2"),
-             used_episode_refs=("e1","e2","e3","e4"))
+             used_episode_refs=("e1","e2","e3","e4"),
+             total_observations=2,history_head="a"*64)
         port=PaidFeedbackValuationPort(claim=c,forecast=f,memory=mem,
                                      source=Proofs(),baseline=self.base)
         fixture=CognitiveCycleFixture.create(path=self.db,life_ref=LIFE,
