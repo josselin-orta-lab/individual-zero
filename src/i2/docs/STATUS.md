@@ -21,6 +21,10 @@
 
 Latest G1-only proposal: [publication, anchoring and crash-boundary review](../../../docs/architecture/proposals/i2-publication-boundaries-g1-review-2026-10-31.md). This is a requested independent review, not a runtime implementation or promotion.
 
+### Nouvelle vérification synthétique G2
+
+Les fonctions `inspect_uncertain_cognition` et `inspect_uncertain_terminal` classent uniquement la présence locale d'un COMMIT SQLite v5 en lecture seule (`RECORDED_LOCAL_ONLY`, `ABSENT_LOCAL_ONLY`, `CONFLICT_LOCAL`). Elles ne donnent **aucun droit de rejeu, reprise ou action**, et n'attestent aucun effet physique, M11 ou ancrage externe. Voir [contrat de cycle](COGNITIVE_CONTROL_UNIFIED.md).
+
 ## Next authorized work
 
 Review [architecture](ARCHITECTURE.md), [research hypothesis](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md) and [promotion procedure](../../../docs/engineering/ENGINE_PROMOTION.md); close separately the genuine-world, independent custody and preregistered science gates. Do not instantiate an I2 individual.
