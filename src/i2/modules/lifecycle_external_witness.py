@@ -233,6 +233,30 @@ def compare_audit(*, report: dict[str, object], witness: IndependentWitness,
     )
 
 
+def _check_fixture_prefix(*, fixture: object, floor: LatestWitness,
+                          report: dict[str, object]) -> None:
+    """Verify local chain ancestry of a declared prior externally held head."""
+    if type(floor) is not LatestWitness:
+        raise ValueError("exact previously verified witness required")
+    floor.validate()
+    if (floor.life_ref != report["life_ref"] or
+            floor.genesis_ref != report["genesis_ref"]):
+        raise ValueError("foreign pinned witness")
+    prefix = fixture.audited_local_prefix(committed=floor.committed)
+    if (prefix.observed_committed != report["committed"] or
+            prefix.observed_head != report["chain_head"]):
+        raise WitnessRefusal("UNKNOWN", "local synthetic journal moved during ancestry audit")
+    if prefix.prefix_head is None:
+        raise WitnessRefusal("STALE", "local history shorter than pinned witness")
+    if (prefix.prefix_head != floor.chain_head or
+            prefix.prefix_step != floor.last_step or
+            prefix.prefix_terminal_ref != floor.terminal_ref):
+        raise WitnessRefusal("FORK", "audited local history does not descend from pinned head")
+    if (floor.terminal_ref is not None and
+            prefix.observed_committed > floor.committed):
+        raise WitnessRefusal("FORK", "audited local history extends a pinned terminal")
+
+
 def verify_fixture(*, fixture: object, witness: IndependentWitness,
                    minimum_witness: LatestWitness | None = None) -> WitnessAudit:
     """Cold audit a real I2 G2 fixture then compare to latest witness.
@@ -248,6 +272,10 @@ def verify_fixture(*, fixture: object, witness: IndependentWitness,
     # Catch an intervening *local* commit while the external provider reads;
     # this is not a lock and cannot close a later race or attest physics.
     before = fixture.audit()
+    if minimum_witness is not None:
+        # Local ancestry MUST be checked independently of the latest-head
+        # equality. A fully consistent local fork may match a bad provider.
+        _check_fixture_prefix(fixture=fixture, floor=minimum_witness, report=before)
     try:
         inspection = compare_audit(
             report=before, witness=witness, minimum_witness=minimum_witness,

@@ -425,6 +425,26 @@ class UncertainCommitInspection:
 
 
 @dataclass(frozen=True, slots=True)
+class AuditedLocalPrefix:
+    """One fully replayed local SQLite snapshot and its requested prefix.
+
+    A missing prefix is represented by None; a matching prefix is only
+    evidence about this local file, NOT independent custody, M11 ancestry,
+    physical causality or authorization to resume/retry an operation.
+    """
+
+    requested_seq: int
+    observed_committed: int
+    observed_head: str
+    prefix_step: int | None
+    prefix_head: str | None
+    prefix_terminal_ref: str | None
+    motor_authority: str = "NONE"
+    resumption_authorized: bool = False
+    m11_authenticated: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class SyntheticTerminalReceipt:
     """Local seal receipt, NOT authenticated death or a physical operation."""
 
@@ -813,6 +833,46 @@ class CognitiveCycleFixture:
             report["feedback_version"] = (0 if stored is None else
                 _h2_memory_parse(json.loads(stored)).total_observations)
             return report
+        finally:
+            conn.close()
+
+    def audited_local_prefix(self, *, committed: int) -> AuditedLocalPrefix:
+        """Extract one historical hash from a FULLY audited v5 read snapshot.
+
+        The caller supplies an independent, previously verified expected
+        prefix and compares it separately. This method does not attest that
+        the local file itself has not been copied, forged or rolled back.
+        """
+        if type(committed) is not int or committed < 0:
+            raise ValueError("invalid requested prefix sequence")
+        conn = self._connect(readonly=True)
+        try:
+            conn.execute("BEGIN")
+            _balance, _step, count, head, _owner = self._verify(conn)
+            prefix_step = None
+            prefix_head = None
+            prefix_terminal_ref = None
+            if committed == 0:
+                prefix_step, prefix_head = -1, ZERO_HASH
+            elif committed <= count:
+                row = conn.execute(
+                    "SELECT physical_step,event_hash,event_json FROM events WHERE seq=?",
+                    (committed,),
+                ).fetchone()
+                if row is None:
+                    raise ValueError("fully audited synthetic prefix is missing")
+                prefix_step, prefix_head, body = row
+                record = json.loads(body)
+                if record.get("kind") == "synthetic_terminal":
+                    prefix_terminal_ref = record["terminal_ref"]
+            return AuditedLocalPrefix(
+                requested_seq=committed,
+                observed_committed=count,
+                observed_head=head,
+                prefix_step=prefix_step,
+                prefix_head=prefix_head,
+                prefix_terminal_ref=prefix_terminal_ref,
+            )
         finally:
             conn.close()
 

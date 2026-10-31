@@ -81,3 +81,7 @@ Un journal absent associé à un verrou existant, ou l'inverse, échoue désorma
 ## G2 : contrôle d'identité des fichiers de garde
 
 Le registre local vérifie l'identité (device/inode) du répertoire, du verrou après acquisition et du journal pendant la réservation. Il refuse une substitution détectée au lieu de valider un verrou détaché. Cela ne protège pas contre les remplacements antérieurs à l'ouverture, les attaquants capables de manipuler les fichiers avec le même UID, le rollback intégral ou un faux stockage durable. Aucun changement d'autorité M11 ni de reprise.
+
+## G2 : ascendance locale verifiee a froid
+
+`verify_fixture` exige maintenant, lorsqu'une borne `minimum_witness` est fournie, que le hash et le pas du maillon historique exact soient retrouves dans le journal SQLite v5 apres rejeu complet. Une extension locale dont la tete recente concorde avec le fournisseur mais dont le prefixe diverge est refusee `FORK`. Un fichier local trop court est `STALE`. Cette preuve porte seulement sur le journal local fourni et sur la borne **declaree** : elle ne demontre pas que la borne a ete authentifiee, que le fournisseur est independant, ni que l'effet physique a eu lieu. Les inspections restent sans reprise ou pouvoir moteur.
