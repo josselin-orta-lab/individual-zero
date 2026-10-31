@@ -40,7 +40,14 @@ def _inspect(*, fixture: object, witness: IndependentWitness,
     # Three separate local read transactions. This checks detected changes
     # between reads but cannot lock out subsequent writes or global rollback.
     before = fixture.audit()
-    local = local_probe()
+    try:
+        local = local_probe()
+    except (OSError, RuntimeError) as exc:
+        # A failed second read has no usable single-snapshot proof.
+        # Never contact the external provider or infer an absent COMMIT.
+        raise WitnessRefusal(
+            "UNKNOWN", "local uncertain-commit inspection unavailable"
+        ) from exc
     if (type(local) is not UncertainCommitInspection or
             local.observed_committed != before["committed"] or
             local.observed_head != before["chain_head"]):
