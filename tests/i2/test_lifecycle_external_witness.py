@@ -167,7 +167,7 @@ class WitnessProtocolTests(unittest.TestCase):
 
     def test_forged_or_unverified_proof_is_not_accepted(self):
         for valid in (False, 1, "true", None, [], object()):
-            with self.subTest(valid=valid), self.assertRaisesRegex(ValueError, "not verified"):
+            with self.subTest(valid=valid), self.assertRaisesRegex(ValueError, "unavailable or invalid"):
                 compare_audit(report=report(), witness=FakeWitness(valid=valid))
 
     def test_no_port_does_not_fall_back_to_local_hash(self):
