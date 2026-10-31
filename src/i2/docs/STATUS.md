@@ -9,3 +9,5 @@
 - G4–G6 : aucune cohorte I2, aucun préenregistrement confirmatoire final ni preuve d'amélioration sur I1.
 
 `config/engine-registry.json` conserve **I1 actif**. I2 n'a aucun constructeur de naissance. Aucune mémoire, politique de survie, valeur Q ou expérience historique n'est transférée. Un conseil Competition n'est ni une action ni un avantage adaptatif établi.
+
+- **Étude hors ligne des UC** : `modules/uc_allocation_study.py` compare lot indivisible, préfixe fixe témoin et rotation à plafond UC identique. Les profils de valeur sont synthétiques et cachés jusqu'à l'audit. Référence `docs/UC_ALLOCATION_STUDY.md`. Aucun mode n'est sélectionné ni raccordé au prototype Competition actif.

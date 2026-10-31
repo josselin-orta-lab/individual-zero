@@ -7,3 +7,4 @@
 - `competition_preview.py` : prototype d'avis Competition avec évaluation **de tous** les candidats en un lot UC externe, refus si incomplet, et `veto_preview` sans admission. Les ports injectés des tests sont synthétiques, sans vraie facturation ou valeur vécue.
 
 Ce code n'est ni un moteur vivant, ni un Scheduler, ni un Action Control, ni une preuve scientifique. Voir `../docs/COMPETITION_PREVIEW.md`, `../docs/OPTION_RECONSTRUCTION.md`, `../docs/INTENTION_ATOMIC_FIXTURE.md`, `../docs/INTENTION_INGRESS.md` et `../docs/INTENTION_CONTINUITY.md`.
+- `uc_allocation_study.py` : comparaison **synthétique, non exécutable** de trois stratégies de sélection d'évaluations UC à plafond identique ; le témoin préfixe est biaisé et les diagnostics partiels ne sont jamais des actions. Ne change pas `CompetitionPreview`. Voir `../docs/UC_ALLOCATION_STUDY.md`.
