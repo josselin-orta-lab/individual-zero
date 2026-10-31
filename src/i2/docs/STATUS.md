@@ -33,3 +33,5 @@ I1 reste seul actif dans `config/engine-registry.json`, I2 n'a aucun point d'ent
 - **G2 garde émission H2 (31/10)** : l'adaptateur Competition réclame l'attestation synthétique du retour de calibration lui-même, et non seulement celle de la prévision historique. Échec : rollback local intégral UC/événement, aucun avis moteur. G3 reste `NOT_ESTABLISHED`.
 
 - **G2 intégrité mémoire H2 (31/10)** : émission et évidence Competition sont liées à l'empreinte canonique de la mémoire complète et non à sa seule moyenne/version. Tests de substitution d'historiques équivalents numériquement. Empreinte locale non signée, G3 `NOT_ESTABLISHED`.
+
+- **G2 fenêtre H2 longue durée (31/10)** : après seize retours, fenêtre glissante de 16, compteur cumulatif et tête de chaînage locale; la prédiction reste accessible. Tests au-delà du plafond et garde anti-rejeu dans la fenêtre. Pas de stockage authentifié M11, ni preuve globale anti-rollback. G3 `NOT_ESTABLISHED`.

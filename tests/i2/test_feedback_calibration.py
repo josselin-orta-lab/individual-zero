@@ -86,7 +86,8 @@ class FeedbackTests(unittest.TestCase):
         a=replace(empty_feedback_memory(op),last_observed_step=20,
                   observed_differences=(2,4),
                   used_issue_captures=("capture:11","capture:15"),
-                  used_episode_refs=("episode:a","episode:b","episode:c","episode:d"))
+                  used_episode_refs=("episode:a","episode:b","episode:c","episode:d"),
+                  total_observations=2,history_head="a"*64)
         b=replace(a,observed_differences=(1,5))
         first=read_feedback(memory=a,forecast=forecast(30),source=Source())
         second=read_feedback(memory=b,forecast=forecast(30),source=Source())
@@ -106,13 +107,31 @@ class FeedbackTests(unittest.TestCase):
         a=replace(empty_feedback_memory(op),last_observed_step=20,
                   observed_differences=(3,),
                   used_issue_captures=("capture:11",),
-                  used_episode_refs=("episode:a","episode:b"))
+                  used_episode_refs=("episode:a","episode:b"),
+                  total_observations=1,history_head="b"*64)
         b=replace(a,used_episode_refs=("episode:c","episode:d"))
         f=forecast(30)
         ra=read_feedback(memory=a,forecast=f,source=Source())
         rb=read_feedback(memory=b,forecast=f,source=Source())
         self.assertEqual(ra.predicted_outcome_difference,rb.predicted_outcome_difference)
         self.assertNotEqual(ra.memory_digest,rb.memory_digest)
+
+    def test_seventeen_updates_preserve_bounded_window_and_new_forecasts(self):
+        memory=empty_feedback_memory(opportunity(10))
+        for index in range(17):
+            at=10+index*15
+            issued=read_feedback(memory=memory,forecast=forecast(at),source=Source())
+            prepared,control=heldout(at+2,index%3,0)
+            update=learn_from_feedback(memory=memory,readout=issued,
+                                       prepared=prepared,control=control,source=Source())
+            memory=update.new_memory
+        self.assertEqual(memory.total_observations,17)
+        self.assertEqual(len(memory.observed_differences),16)
+        self.assertEqual(len(memory.used_episode_refs),32)
+        self.assertNotEqual(memory.history_head,"0"*64)
+        next_readout=read_feedback(memory=memory,forecast=forecast(270),source=Source())
+        self.assertEqual(next_readout.memory_version,17)
+        self.assertEqual(next_readout.motor_authority,"NONE")
 
     def test_replay_and_foreign_context_refused(self):
         memory=empty_feedback_memory(opportunity(10))
