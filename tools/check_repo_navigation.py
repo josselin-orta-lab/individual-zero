@@ -92,6 +92,24 @@ def source_paths(root: Path, scope: str) -> tuple[str, ...]:
     return tuple(sorted(found))
 
 
+
+def unindexed_architecture_proposals(root: Path) -> list[str]:
+    """Prevent the current proposal index from silently missing new records."""
+    folder = root / "docs/architecture/proposals"
+    index = folder / "README.md"
+    if not index.is_file():
+        return []
+    linked = set()
+    for match in LINK.finditer(index.read_text(encoding="utf-8")):
+        href = unquote(match.group(1).split("#", 1)[0].split("?", 1)[0])
+        if href.startswith(("https://", "http://", "/")):
+            continue
+        linked.add((folder / href).resolve())
+    return sorted(path.name for path in folder.glob("*.md")
+                  if path.name != "README.md" and path.resolve() not in linked)
+
+
+
 def inspect(root: Path = ROOT, scope: str = "entrypoints", strict_historical: bool = False) -> dict:
     root = root.resolve()
     errors = []
@@ -153,6 +171,8 @@ def inspect(root: Path = ROOT, scope: str = "entrypoints", strict_historical: bo
             errors.append(f"{generation}: missing preserved historical status")
         if current.is_file() and len(current.read_text(encoding="utf-8").splitlines()) > 100:
             errors.append(f"{generation}: current STATUS.md should be a short routing surface")
+    for filename in unindexed_architecture_proposals(root):
+        errors.append(f"docs/architecture/proposals/README.md: unindexed proposal {filename}")
     return {"status": "PASS" if not errors else "FAIL",
             "scope": scope, "checks": checked, "errors": sorted(set(errors)),
             "warnings": sorted(set(warnings)),
