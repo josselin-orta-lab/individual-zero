@@ -1,6 +1,6 @@
 # I2 : audit externe du journal v3 (proposition G2 uniquement)
 
-**31 octobre 2026. Lecture seule, aucune naissance, aucune permission motrice et aucune preuve M11.**
+**31 octobre 2026. Protocole de temoin v2, lecture seule, aucune naissance, aucune permission motrice et aucune preuve M11.**
 
 Source : `src/i2/modules/lifecycle_external_witness.py`.
 Tests : `tests/i2/test_lifecycle_external_witness.py` et `tests/i2/test_lifecycle_external_witness_integration.py`.
@@ -15,8 +15,8 @@ Le nouvel audit compare la sortie deja verifiee de `CognitiveCycleFixture.audit(
 
 Le module **ne cree aucun service de garde**. Il exige un port `IndependentWitness` :
 
-1. `read_latest(life_ref, genesis_ref)` retourne **un seul** `LatestWitness` structurellement valide pour la derniere version attestee de cette identite ; la lecture doit etre monotone, coherente, atomique et protegee contre les anciennes preuves.
-2. `verify_latest(record)` retourne litteralement `True` seulement si la signature, le proprietaire, la fraicheur de la lecture, l'absence d'equivocation et le lien exact entre preuve et champs sont controles par une autorite **distincte du fichier local**. Aucune implementation cryptographique de ce port n'existe dans I2. Les tests injectent un double in-memory sans valeur de securite.
+1. `read_verified_latest(life_ref, genesis_ref)` doit selectionner **et verifier dans une operation indivisible** la derniere revision monotone pour cette identite, et retourner un `LatestWitness` structurellement valide. Le port est une exigence contractuelle, sans implementation de service independant.
+2. Le fournisseur doit verifier la signature, la confiance/revocation du signataire, la fraicheur, l'absence d'equivocation et le lien exact entre preuve et champs **sur la meme revision**. Toute indisponibilite ou erreur est classee `UNKNOWN`, sans recours au hash local. L'ancien couple `read_latest`/`verify_latest` est refuse afin d'eviter une course entre deux operations. Les tests injectent un double in-memory sans valeur de securite.
 3. Le controle n'accepte ni un temoin plus recent que le journal local (ancienne copie), ni un journal plus recent que le temoin (publication non encore attestee), ni deux tetes divergentes au meme nombre d'evenements. La fermeture terminale doit coincider exactement.
 4. `verify_fixture(fixture, witness)` exige le vrai banc `CognitiveCycleFixture` en mode v3, effectue l'audit local **avant** de consulter le temoin, et produit uniquement une `WitnessAudit` en lecture seule. La comparaison pure `compare_audit(report, witness)` est exposée pour les tests de contrat ; un dictionnaire fourni arbitrairement ne prouve pas son origine.
 5. La sortie porte toujours `motor_authority=NONE`, `resumption_authorized=False` et `m11_authenticated=False`, y compris lorsque le temoin concorde sur un etat ouvert. Le statut `MATCHED_OPEN_INSPECTION` **n'autorise aucune reprise**.
@@ -45,3 +45,7 @@ Reproduction : `python -m unittest discover -s tests/i2 -p 'test_*.py' -v`.
 ## Diagnostics de refus typés (proposition G2)
 
 `WitnessRefusal` (sous-classe de `ValueError`) distingue désormais `STALE` (copie locale dépassée), `UNANCHORED` (extension locale en avance), `FORK` (divergence à même séquence/terminal) et `UNKNOWN` (preuve absente, provenance invalide, identité étrangère ou schéma externe invalide). Les refus demeurent des exceptions **sans autorité de reprise ni moteur** ; ils ne sélectionnent aucun état gagnant et ne réparent aucune transaction. Les entrées locales incohérentes restent des `ValueError` d'audit. Le port témoin et sa preuve restent simulés, non signés et non indépendants. `MATCHED_*_INSPECTION` ne correspond jamais à une permission de reprendre une vie.
+
+## Limite nouvelle version
+
+Le changement de protocole v1 vers `i2-lifecycle-external-witness-proposal-v2` casse intentionnellement la compatibilite des temoins v1. L'appel atomique reste un **contrat demande au fournisseur**, pas une preuve que le fournisseur existe ou assure des lectures linearizables. Un double de test qui retourne un enregistrement choisi par l'appelant peut toujours produire une inspection `MATCHED` sans origine de confiance. Toute exploitation exige une revue independante et des preuves verifiables du fournisseur. Aucun effet sur Action Control, une vie ou le Scheduler.

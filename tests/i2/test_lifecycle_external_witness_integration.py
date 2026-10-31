@@ -70,13 +70,9 @@ class Witness:
         self.record = record
         self.calls = []
 
-    def read_latest(self, *, life_ref, genesis_ref):
-        self.calls.append("read")
+    def read_verified_latest(self, *, life_ref, genesis_ref):
+        self.calls.append("read_verified_latest")
         return self.record
-
-    def verify_latest(self, *, record):
-        self.calls.append("verify")
-        return record is self.record
 
 
 class SQLiteWitnessIntegration(unittest.TestCase):
@@ -113,7 +109,7 @@ class SQLiteWitnessIntegration(unittest.TestCase):
         self.assertEqual(result.status, "MATCHED_OPEN_INSPECTION")
         self.assertEqual(result.motor_authority, "NONE")
         self.assertFalse(result.resumption_authorized)
-        self.assertEqual(anchor.calls, ["read", "verify"])
+        self.assertEqual(anchor.calls, ["read_verified_latest"])
 
     def test_terminal_v3_cold_reopen_matches_independent_latest(self):
         f = self.create()
@@ -138,7 +134,7 @@ class SQLiteWitnessIntegration(unittest.TestCase):
         anchor = Witness(checkpoint(f.audit()))
         with self.assertRaisesRegex(ValueError, "stale local copy"):
             verify_fixture(fixture=old, witness=anchor)
-        self.assertEqual(anchor.calls, ["read", "verify"])
+        self.assertEqual(anchor.calls, ["read_verified_latest"])
 
     def test_different_terminal_branch_same_seq_is_rejected(self):
         original = self.create()
