@@ -31,6 +31,7 @@ individual-zero/
 
 ## Where to look
 
+- [Development agent instructions](../../AGENTS.md) and [short navigation map](../engineering/AGENT_NAVIGATION.md): establish generation ownership before inspecting implementation details.
 - [I1 handbook](../../src/i1/docs/README.md): actual active mechanisms, causal boundaries, scientific obligations.
 - [I1 evidence matrix](../../src/i1/docs/EVIDENCE_MATRIX.md): implemented, software-tested, observed, and **not established** are separate categories.
 - [Engine generation map](../architecture/ENGINE_GENERATIONS.md): code and Lab ownership, archive policies, and promotion procedure.
@@ -38,6 +39,7 @@ individual-zero/
 - [ADR-0001](../decisions/ADR-0001-strict-generation-autonomy.md): successors own their runtime and living state; no obsolete-engine fallback.
 - [Research workflow](03-research-workflow.md): scientific protocol and decision logic.
 - [Engineering start guide](../engineering/START_HERE.md): current I1 technical commands and verification.
+- [Standalone Observer manual](../../observer/README.md): historical I0-oriented operator surface, not an active I1 birth or evidence authority.
 
 The `individual-zero` console command and [bootstrap guide](06-running-the-bootstrap.md) illustrate **historical I0** tooling; they are not a natural-I1 run or an I2 activation.
 

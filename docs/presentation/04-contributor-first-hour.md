@@ -13,7 +13,7 @@ Read:
 
 Remember one sentence:
 
-> **Lab observes. Adapters connect. I0 operates. Experiments provide evidence. Tests verify the code.**
+> **Each generation owns its Lab and cognition. I1 is active, I0 is frozen, I2 is a proposal. Tests verify software; experiments supply scientific evidence.**
 
 ## Minute 10-20: identify your contribution
 
@@ -56,14 +56,15 @@ Start with evidence. An ADR comes later if a shared decision is needed.
 
 Use this shortcut:
 
-- "How I0 thinks or acts" -> `src/i0/`
-- "How we run or observe it" -> `src/lab/`
-- "How we connect an external dependency" -> `src/adapters/`
+- "Active I1 behavior or its environment" -> `src/i1/` (including `lab/`, `runtime/`, `modules/`)
+- "Independent inert I2 research" -> `src/i2/`
+- "Frozen historical engine" -> inspect `src/i0/` and `archive/i0/` without edits
+- "External integration without cognitive ownership" -> `src/adapters/`
 - "What we measured and concluded" -> `experiments/`
 - "What several variants should be compared on" -> `benchmarks/`
 - "Whether software still follows a specification" -> `tests/`
 
-If unsure, read [repository placement examples](../../examples/repository-placement.md).
+If unsure, read [agent navigation](../engineering/AGENT_NAVIGATION.md) and [repository placement examples](../../examples/repository-placement.md).
 
 ## Minute 30-40: check whether the idea already exists
 
@@ -100,7 +101,7 @@ Before opening a PR, be able to answer:
 - What changed?
 - Why?
 - How was it tested?
-- Can I0 cognitive behavior change?
+- Can the affected generation's cognitive behavior change?
 - Which EXP justifies it, if needed?
 - Are third-party licenses preserved?
 

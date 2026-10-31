@@ -1,6 +1,6 @@
 # I1 Development Handbook
 
-**Canonical, generation-owned engineering knowledge for natural I1.** This directory travels with `src/i1/`; do not store a second normative theory in a global docs folder.
+**Canonical, generation-owned engineering knowledge for natural I1.** Begin with [I1 agent instructions](../AGENTS.md), [short current status](STATUS.md) and the [historical status ledger](STATUS_HISTORY.md) only when needed. This directory travels with `src/i1/`; do not store a second normative theory in a global docs folder.
 
 ## Reading order
 
@@ -24,7 +24,7 @@
 - [UC_AND_SCHEDULING.md](UC_AND_SCHEDULING.md): two independent logical UC ledgers, actual charge points, failure diagnosis
 - [EXPERIMENT_PROTOCOL.md](EXPERIMENT_PROTOCOL.md): independent mortal lives, controls, traces and limits of scientific inference
 - [ISSUE_317_STAGED_INTEGRATION.md](ISSUE_317_STAGED_INTEGRATION.md): stable personally grounded memory option ID and gated retention across steps
-- [STATUS.md](STATUS.md): verified staged #318 integration ledger and remaining review boundaries
+- [STATUS_HISTORY.md](STATUS_HISTORY.md): preserved historical integration ledger; not a current issue/CI status
 - [ISSUE_330_STABLE_GEOGRAPHIC_IDENTITY.md](ISSUE_330_STABLE_GEOGRAPHIC_IDENTITY.md): exact local frontier/transit identity from fresh observations
 - [ISSUE_326_IMPLEMENTATION.md](ISSUE_326_IMPLEMENTATION.md): dormant and bounded intention-continuation prototype, issue #326
 - [ISSUE_327_IMPLEMENTATION.md](ISSUE_327_IMPLEMENTATION.md): dormant local-opportunity and Q exposure selectors, issue #327

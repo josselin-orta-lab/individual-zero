@@ -8,13 +8,13 @@ Add the current Git commit hash and seed to every Lab run summary.
 
 ## Why this is technical
 
-The change improves reproducibility metadata but is not expected to alter I0 cognitive behavior.
+The change improves reproducibility metadata but is not expected to alter the active generation's cognitive behavior.
 
 ## Placement
 
-- implementation: `src/lab/`;
-- tests: `tests/`;
-- documentation: Lab README if public behavior changes.
+- implementation: generation-owned Lab (for active I1, `src/i1/lab/`) or a strictly external read-only observer;
+- tests: `tests/i1/` for I1-specific changes or appropriate tooling tests;
+- documentation: owning generation's Lab README if public behavior changes.
 
 ## EXP required?
 

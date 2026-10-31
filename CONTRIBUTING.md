@@ -14,7 +14,7 @@ For a quick orientation, read:
 - [First-hour contributor guide](docs/presentation/04-contributor-first-hour.md)
 - [Examples](examples/README.md)
 
-Then identify the nature of your proposed change.
+Then read [the agent navigation map](docs/engineering/AGENT_NAVIGATION.md) and [strict generation autonomy](docs/decisions/ADR-0001-strict-generation-autonomy.md), and identify the generation and nature of your proposed change.
 
 Before submitting or merging a PR, read the [access and merge policy](docs/governance/GITHUB_ACCESS_POLICY.md). Public forks may propose changes, but only explicitly authorized maintainers may merge into the canonical protected `main`. A PR template and CODEOWNERS file are not substitutes for enforced GitHub protection rules.
 
@@ -47,7 +47,7 @@ Typical flow:
 
 **Question -> EXP -> RAI -> minimal prototype -> test -> results -> pull request / integration decision**
 
-Experimental code may remain experimental until results justify integration into I0.
+Experimental code remains isolated until reviewed evidence justifies integrating it into the appropriate active generation.
 
 ### Architectural contribution
 
@@ -63,18 +63,21 @@ An ADR records a shared decision. It does not replace an experiment.
 
 | Location | Put here | Do not put here |
 | --- | --- | --- |
-| `src/lab/` | runtime, simulation, logging, metrics, seeds, artifact collection, reproduction tools | I0-specific cognitive mechanisms |
+| `src/iN/lab/` | generation-owned world, simulation and observations | shared living-world state across generations |
 | `src/adapters/` | external API conversion, integration, configuration, compatibility handling | new cognitive logic disguised as integration |
-| `src/i0/` | I0 execution cycle, cognitive interfaces, project-developed modules, reference configuration | generic Lab infrastructure or experiment evidence |
+| `src/i0/`, `archive/i0/` | frozen, separately reproducible historical reference | active I1 or I2 changes |
+| `src/i1/` | active I1 cognition, runtime, Lab and handbook | obsolete-generation runtime imports |
+| `src/i2/` | inoperative I2 research fixtures and proposal contracts | living engines, born states or motor authority |
 | `experiments/` | question, RAI, protocol, reproduction commands, results, decision | permanent copies of reference code |
 | `benchmarks/` | reusable scenarios, metrics, reference data, comparison rules | conclusions specific to one EXP |
 | `tests/` | unit, integration, compatibility, regression tests | scientific interpretation |
 
 A practical placement rule:
 
-- if the code describes **how I0 thinks or acts**, use `src/i0/`;
-- if it only **runs or observes**, use `src/lab/`;
-- if it **connects I0 to an external dependency**, use `src/adapters/`.
+- if the change affects active I1 cognition or its living Lab, use `src/i1/` and its generation-owned tests;
+- if it concerns non-living I2 research, use `src/i2/` without activating an engine;
+- if it preserves historical I0 research, document it without mutating frozen sources;
+- if it connects an external dependency without owning cognition, use `src/adapters/`.
 
 See [repository placement examples](examples/repository-placement.md).
 
@@ -84,7 +87,7 @@ Create or join an EXP when the work is intended to:
 
 - test a scientific hypothesis;
 - compare mechanisms or implementations;
-- change I0's reference cognitive behavior;
+- change the active generation's reference cognitive behavior;
 - justify replacing a reference cognitive component;
 - alter the global cognitive cycle or structural relationships.
 
@@ -141,10 +144,12 @@ Research axes live in `RESEARCH_MAP.md`. Experimental evidence lives in `experim
 
 A pull request should explain:
 
+- the affected generation and its exact base SHA;
+
 - what changed;
 - why;
 - how it was tested;
-- whether I0 cognitive behavior can change;
+- which generation's cognitive behavior can change;
 - the related EXP, if any;
 - the related Issue, ADR, or benchmark, if any.
 

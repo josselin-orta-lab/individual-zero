@@ -1,35 +1,7 @@
-# I0 architecture
+# I1 architecture directory: historical bootstrap boundary
 
-This directory contains implementation of I0's structural coordination.
+The file bootstrap.py in this directory still describes a **non-cognitive I0 bootstrap**. It is a preserved scaffold inside the I1 source tree, **not** the canonical I1 life-loop or evidence that I1 executes I0.
 
-## Typical responsibilities
+For the current natural I1 architecture, start at [I1 docs](../docs/README.md), [the actual Stage and interface map](../docs/STAGES_AND_INTERFACES.md), [the cognitive flow](../docs/COGNITIVE_FLOW.md) and [engine.json](../engine.json). Its active compositional runtime lives under [runtime/](../runtime/) with its generation-owned [Lab](../lab/).
 
-This area may eventually contain:
-
-- global execution-cycle control;
-- sequencing and timing assumptions;
-- coordination between cognitive subsystems;
-- shared state-routing mechanisms;
-- architectural arbitration that is not local to one module.
-
-## What belongs elsewhere
-
-A self-contained cognitive mechanism generally belongs in `../modules/`.
-
-A neutral scheduler used only to run experiments may belong in `../../lab/`.
-
-External API glue belongs in `../../adapters/`.
-
-## Change discipline
-
-Changes that alter the global cycle or structural relationships between several subsystems are scientific and architectural changes.
-
-They should be evaluated before integration.
-
-If results justify a shared reference decision, record that decision in `../../../docs/decisions/`.
-
-## Example
-
-Changing the internal algorithm of one memory implementation may remain a module-level experiment.
-
-Changing the order in which memory, regulation, and action selection are coordinated is an architecture-level change.
+Do not edit bootstrap.py expecting a change in the born natural-I1 runtime. Confirm the executed entrypoint and method owner before editing. Any old-engine import found in an I1 source path must be evaluated for reachability and resolved under the [strict-generation autonomy decision](../../../docs/decisions/ADR-0001-strict-generation-autonomy.md), not treated as permissible future fallback.

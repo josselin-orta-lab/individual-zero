@@ -15,13 +15,15 @@ Research axes map scientific questions and related work. They do not define the 
 
 ## Active questions
 
-No scientific question is formally registered yet. Add only the first questions that are actually being worked on.
+The tables below are **unpopulated research-axis planning templates**, not a live issue tracker or evidence index. There are already active [I1 research questions](https://github.com/josselin-orta-lab/individual-zero/issues), historical studies under [research docs](docs/research/README.md), and [I1's evidence matrix](src/i1/docs/EVIDENCE_MATRIX.md). Do not infer that no research exists from these empty templates.
 
 | Question ID | Question | Axes | EXP | Dependencies | Status |
 | --- | --- | --- | --- | --- | --- |
 | _none yet_ | | | | | |
 
 ## Experiments
+
+This table is not automatically synchronized with the repository's experiment records or GitHub issues.
 
 | EXP | Question | Target | Axes | Status | Decision |
 | --- | --- | --- | --- | --- | --- |

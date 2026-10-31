@@ -1,7 +1,11 @@
 # I1 validation matrix
 
 The current pipeline is `.github/workflows/i1-current-ci.yml`, running on
-Python 3.11 and 3.12. Every result is associated with an exact commit SHA.
+Python 3.11 and 3.12 for executable or structural changes. Documentation-only
+changes are explicitly excluded from that expensive I1 suite; run
+`python tools/check_repo_navigation.py --scope current` and focused unit tests
+instead. See [current CI routing](../../../docs/engineering/START_HERE.md).
+Every reported software result must be associated with its exact commit SHA.
 
 | Layer | Commands / coverage | Assertion boundary |
 | --- | --- | --- |

@@ -2,9 +2,9 @@
 
 This directory contains research methods and explanatory documents broader than a single experiment.
 
-Evidence for a specific experiment belongs in `../../experiments/EXP-####/`.
+Formal EXP records may live in `../../experiments/EXP-####/`, while substantial dated historical investigations are also preserved in this directory and under generation-owned documentation. This page is not a comprehensive current evidence index. For active I1 claims use [its evidence matrix](../../src/i1/docs/EVIDENCE_MATRIX.md); for I2 see [proposal status](../../src/i2/docs/STATUS.md).
 
-The current scientific map belongs in `../../RESEARCH_MAP.md`.
+The [research map](../../RESEARCH_MAP.md) lists axes and templates but is not a live census of all issues, studies or results.
 
 ## Core principle
 
@@ -16,6 +16,8 @@ Keep four distinctions explicit:
 4. **project-developed mechanism vs reused or adapted external component**.
 
 These distinctions are what make a result understandable after the original contributor has moved on.
+
+The [historic I0 CI execution policy](ci-execution-policy.md) is retained only as dated engineering provenance. For present validation read [current engineering CI routing](../engineering/START_HERE.md).
 
 ## Research documents
 

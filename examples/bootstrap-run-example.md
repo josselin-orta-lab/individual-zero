@@ -1,6 +1,6 @@
 # Bootstrap run example
 
-> Illustrative technical example. Not scientific evidence.
+> **Historical I0 bootstrap** example, not a natural-I1 run, I2 activation or scientific result.
 
 After installation:
 

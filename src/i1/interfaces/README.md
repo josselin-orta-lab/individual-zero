@@ -1,52 +1,7 @@
-# I0 interfaces
+# I1 interfaces: source ownership and historical context
 
-This directory defines cognitive contracts between I0 components.
+This directory contains minimal interfaces under core.py (Observation, Action, PrimitiveCommand, StepResult and Individual) with historical bootstrap-oriented descriptions. Their presence **does not mean** that the natural I1 runtime follows the old I0 bootstrap protocol as its canonical motor contract.
 
-## Purpose
+For the actual active I1 execution, use [engine.json](../engine.json), [cognitive flow](../docs/COGNITIVE_FLOW.md), [Stage handoffs](../docs/STAGES_AND_INTERFACES.md), and the source defining the affected interface and owner. Check the method's actual runtime caller, the first-person observation boundary, Action Control and M11 before changing a shared type.
 
-An interface separates **what role the architecture expects** from **how a particular implementation provides it**.
-
-This can make it possible to:
-
-- compare multiple implementations;
-- integrate external projects through adapters;
-- replace a mechanism without rewriting unrelated modules;
-- instrument shared boundaries;
-- make architectural assumptions explicit.
-
-## When to create an interface
-
-Create one when the boundary is useful for research or architecture, not simply because abstraction is fashionable.
-
-Good reasons include:
-
-- two implementations need to be compared under one contract;
-- an external project may be substituted;
-- several modules rely on the same structural assumption;
-- observability at the boundary matters.
-
-## Example
-
-A memory interface may define:
-
-- query input;
-- returned items;
-- metadata required by I0;
-- error semantics.
-
-It should not necessarily dictate the internal storage algorithm.
-
-An external library can then be connected through `src/adapters/`.
-
-## Architectural impact
-
-A change to a shared cognitive interface can affect several subsystems.
-
-If behavior or scientific interpretation may change:
-
-1. start from an EXP;
-2. collect evidence;
-3. record a shared architectural decision in an ADR if needed;
-4. update reference architecture documentation.
-
-See [adapter example](../../../examples/adapter-example.md).
+An interface should clarify ownership, provenance and replaceability, not silently add cognitive policy, inherited runtime state, legacy fallback or unearned world knowledge. See [ADR-0001](../../../docs/decisions/ADR-0001-strict-generation-autonomy.md) and [adapter example](../../../examples/adapter-example.md).
