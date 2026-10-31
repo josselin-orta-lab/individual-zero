@@ -49,3 +49,7 @@ Reproduction : `python -m unittest discover -s tests/i2 -p 'test_*.py' -v`.
 ## Limite nouvelle version
 
 Le changement de protocole v1 vers `i2-lifecycle-external-witness-proposal-v2` casse intentionnellement la compatibilite des temoins v1. L'appel atomique reste un **contrat demande au fournisseur**, pas une preuve que le fournisseur existe ou assure des lectures linearizables. Un double de test qui retourne un enregistrement choisi par l'appelant peut toujours produire une inspection `MATCHED` sans origine de confiance. Toute exploitation exige une revue independante et des preuves verifiables du fournisseur. Aucun effet sur Action Control, une vie ou le Scheduler.
+
+## Inspection des COMMIT incertains avec ancrage (G2)
+
+`uncertain_witness_inspection.py` rapproche en **lecture seule** une inspection de tentative SQLite v5 de la dernière tête vérifiée *revendiquée* par le port externe. Les contrôles locaux sont relus avant, pendant et après la consultation distante. `CONFLICT_LOCAL` refuse avant toute sollicitation du témoin ; un journal mouvant ou un port indisponible donne `UNKNOWN` ; une tête externe plus avancée donne `STALE`, une extension locale non ancrée `UNANCHORED`, une bifurcation `FORK`. Une correspondance peut décrire un COMMIT local retrouvé ou une absence seulement locale, jamais une reprise ou un droit de retry. Aucun lock distribué, ancrage réel, signer ou M11 authentifié n'existe. Les doubles de tests ne démontrent ni indépendance ni fraîcheur. L'inspection peut devenir périmée aussitôt retournée.

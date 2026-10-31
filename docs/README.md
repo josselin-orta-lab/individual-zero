@@ -63,7 +63,7 @@ The documentation directory explains the project. Scientific evidence may be rec
 
 Reusable comparison protocols belong in `../benchmarks/`.
 
-The live map of questions and experiments belongs in `../RESEARCH_MAP.md`.
+The [research map](../RESEARCH_MAP.md) defines research axes and planning templates; it is **not** a live census. For current questions and work, consult [GitHub issues](https://github.com/josselin-orta-lab/individual-zero/issues), the active generation's evidence matrix, and the original dated study records.
 
 ## Licensing
 
