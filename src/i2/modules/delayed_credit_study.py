@@ -667,6 +667,8 @@ class PaidFeedbackValuationPort:
     """G2-only bridge from a past-only H2 forecast to *paid* Competition values.
 
     Competition's existing ledger MUST call this after a full batch debit.
+    The computed feedback readout also requires an issuance assertion before
+    affecting valuations; a historical forecast receipt alone is not enough.
     This port does not own UC, store memory, authenticate M11 or admit action.
     Its source and baseline are test-injected, not physiological authorities.
     """
@@ -682,9 +684,10 @@ class PaidFeedbackValuationPort:
             raise ValueError("exact H2 forecast required")
         if type(memory) is not OutcomeFeedbackMemory:
             raise ValueError("exact H2 feedback memory required")
-        if not callable(getattr(source, "verify_issued_forecast", None)) or not callable(
-                getattr(source, "verify_forecast_capture", None)):
-            raise ValueError("first-person forecast verification port required")
+        if (not callable(getattr(source, "verify_issued_forecast", None)) or
+                not callable(getattr(source, "verify_forecast_capture", None)) or
+                not callable(getattr(source, "verify_feedback_issue", None))):
+            raise ValueError("first-person forecast and feedback issuance verification required")
         if not callable(getattr(baseline, "evaluate_batch", None)):
             raise ValueError("independent full-frame baseline evaluator required")
         self.claim = claim
@@ -727,6 +730,11 @@ class PaidFeedbackValuationPort:
         # debited every visible candidate, including unaffected alternatives.
         readout = read_feedback(memory=self.memory, forecast=self.forecast,
                                 source=self.source)
+        # The historical forecast alone does not attest the derived feedback
+        # readout. Do not let an unissued or altered calibration affect advice.
+        # This G2 port is a synthetic double, not a durable M11 issuance.
+        if self.source.verify_feedback_issue(readout=readout) is not True:
+            raise ValueError("paid H2 feedback readout not attested as issued")
         diff = readout.predicted_outcome_difference
         if diff.denominator != 1:
             # The motor preview accepts only integer values; choosing a
