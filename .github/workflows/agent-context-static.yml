@@ -1,0 +1,35 @@
+name: Agent context navigation (static only)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'config/agent-context-map.json'
+      - 'tools/agent_context.py'
+      - 'tests/test_agent_context.py'
+      - 'docs/engineering/AGENT_CONTEXT.md'
+      - 'docs/engineering/AGENT_HANDOFF.md'
+      - 'docs/engineering/DOCUMENT_AUTHORITY.md'
+      - 'docs/engineering/COMPONENT_OWNERSHIP.md'
+      - '.github/workflows/agent-context-static.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  navigation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check metadata and focused routing tests without running an engine
+        run: |
+          python tools/agent_context.py audit --json
+          python -m unittest discover -s tests -p test_agent_context.py -v
+          python tools/check_repo_navigation.py --scope entrypoints
