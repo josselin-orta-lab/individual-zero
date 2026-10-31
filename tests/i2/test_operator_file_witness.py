@@ -117,8 +117,8 @@ class FileWitnessTests(unittest.TestCase):
         original = (self.dir / "heads.jsonl").read_bytes()
         row = json.loads(original)
         variants = (
-            original.replace(b"\\n", b"\\r\\n"),
-            (json.dumps(row, indent=2, sort_keys=False).encode("ascii") + b"\\n"),
+            original.replace(b"\n", b"\r\n"),
+            (json.dumps(row, indent=2, sort_keys=False).encode("ascii") + b"\n"),
             (original[:-2] + b" " + original[-2:]),
         )
         for forged in variants:
