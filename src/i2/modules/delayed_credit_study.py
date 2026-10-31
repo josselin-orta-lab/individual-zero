@@ -881,8 +881,10 @@ def study_physically_linked_credit(
 
     The one-to-one order follows chronological physical steps. The after
     state of an effect must be the next before state; duplicate commits,
-    admissions, state reversals and missing observations fail closed. No
-    independent publisher exists here, so this remains a G2 synthetic port.
+    admissions, broken state links and missing observations fail closed.
+    Equal or revisited physical states are allowed: an applied action may be
+    ineffective, or may return the body to an earlier state. Only the real
+    commit authority could prove these claims; this remains a G2 test port.
     """
     if (type(events) is not tuple or type(effects) is not tuple or
             not events or len(events) != len(effects) or len(events) > 128):
@@ -902,15 +904,11 @@ def study_physically_linked_credit(
     previous: PhysicalEffectClaim | None = None
     used_commit_refs: set[str] = set()
     used_admissions: set[str] = set()
-    used_state_pairs: set[tuple[str, str]] = set()
     for event, effect in zip(events, effects):
         verified = verify_lived_physical_correspondence(
             effect=effect, event=event, authority=authority)
         if effect.committed_event_ref in used_commit_refs or effect.admission_ref in used_admissions:
             raise ValueError("replayed physical event or admission")
-        pair = (effect.before_state_ref, effect.after_state_ref)
-        if pair in used_state_pairs or effect.before_state_ref == effect.after_state_ref:
-            raise ValueError("duplicate or unchanged physical state claim")
         if previous is not None and (
                 effect.life_ref != previous.life_ref or
                 effect.generation_ref != previous.generation_ref or
@@ -919,7 +917,6 @@ def study_physically_linked_credit(
             raise ValueError("disconnected physical state sequence")
         used_commit_refs.add(effect.committed_event_ref)
         used_admissions.add(effect.admission_ref)
-        used_state_pairs.add(pair)
         correspondences.append(verified)
         previous = effect
     result = study_delayed_credit(
