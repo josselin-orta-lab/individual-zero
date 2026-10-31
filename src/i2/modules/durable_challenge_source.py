@@ -51,6 +51,9 @@ class DurableChallengeSource:
             candidate_source if candidate_source is not None
             else lambda: secrets.token_hex(32)
         )
+        # Pin the inode for this instance so a swapped directory is not
+        # silently treated as the original custody domain.
+        self._directory_inode: tuple[int, int] | None = None
         self._check_directory()
 
     def _check_directory(self) -> None:
@@ -61,6 +64,11 @@ class DurableChallengeSource:
         if (not stat.S_ISDIR(st.st_mode) or st.st_uid != os.getuid()
                 or stat.S_IMODE(st.st_mode) & 0o077):
             raise ChallengeCustodyError("challenge directory must be private")
+        identity = (st.st_dev, st.st_ino)
+        if self._directory_inode is None:
+            self._directory_inode = identity
+        elif identity != self._directory_inode:
+            raise ChallengeCustodyError("challenge custody directory was replaced")
 
     @staticmethod
     def _check_file(fd: int) -> None:
@@ -69,6 +77,23 @@ class DurableChallengeSource:
                 or st.st_uid != os.getuid()
                 or stat.S_IMODE(st.st_mode) & 0o077):
             raise ChallengeCustodyError("unsafe challenge custody file")
+
+    def _check_named_file(self, name: str, fd: int) -> None:
+        """Require the locked/open descriptor to remain the named inode.
+
+        Cooperative flock on a detached lock inode would not serialize
+        another process that opened its replacement. Also reject a log
+        replaced after we opened its descriptor, before releasing a nonce.
+        """
+        self._check_file(fd)
+        try:
+            named = os.stat(self.directory / name, follow_symlinks=False)
+        except OSError as exc:
+            raise ChallengeCustodyError("challenge custody file disappeared") from exc
+        held = os.fstat(fd)
+        if (not stat.S_ISREG(named.st_mode) or
+                (named.st_dev, named.st_ino) != (held.st_dev, held.st_ino)):
+            raise ChallengeCustodyError("challenge custody file was replaced")
 
     def _sync_directory(self) -> None:
         fd = os.open(
@@ -127,6 +152,7 @@ class DurableChallengeSource:
             self._check_file(lock_fd)
             fcntl.flock(lock_fd, fcntl.LOCK_EX)
             self._check_directory()
+            self._check_named_file(".challenge.lock", lock_fd)
             try:
                 # New lock must pair with a new log. Existing locks MUST
                 # reopen an existing nonempty log, never recreate one.
@@ -139,7 +165,7 @@ class DurableChallengeSource:
             except OSError as exc:
                 raise ChallengeCustodyError("challenge log unavailable") from exc
             try:
-                self._check_file(log_fd)
+                self._check_named_file("challenges.log", log_fd)
                 os.lseek(log_fd, 0, os.SEEK_SET)
                 with os.fdopen(os.dup(log_fd), "rb") as stream:
                     data = stream.read(_MAX_RECORDS * _LINE_SIZE + 1)
@@ -158,6 +184,12 @@ class DurableChallengeSource:
                     raise ChallengeCustodyError("short challenge reservation write")
                 os.fsync(log_fd)
                 self._sync_directory()
+                # Catch replacement of either path while the ledger was
+                # inspected/appended. No claim against hostile same-UID
+                # processes, global filesystem rollback or power-loss lies.
+                self._check_directory()
+                self._check_named_file(".challenge.lock", lock_fd)
+                self._check_named_file("challenges.log", log_fd)
             finally:
                 os.close(log_fd)
         finally:

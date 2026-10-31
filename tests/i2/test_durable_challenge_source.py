@@ -93,6 +93,46 @@ class DurableChallengeTests(unittest.TestCase):
         (self.dir/"challenges.log").unlink()
         self.assertEqual(self.source().next_challenge(),NONCE)
 
+    def test_replaced_lock_during_reservation_refuses(self):
+        self.source().next_challenge()
+        class SwapAfterLock(DurableChallengeSource):
+            def _check_named_file(self, name, fd):
+                if name == ".challenge.lock" and not getattr(self, "_swapped", False):
+                    self._swapped=True
+                    lock=self.directory/name
+                    lock.unlink()
+                    lock.touch(mode=0o600)
+                return super()._check_named_file(name, fd)
+        source=SwapAfterLock(directory=self.dir,candidate_source=lambda: NEXT)
+        with self.assertRaisesRegex(ChallengeCustodyError,"unsafe|replaced"):
+            source.next_challenge()
+        self.assertEqual((self.dir/"challenges.log").read_bytes(),
+                         (NONCE+"\n").encode("ascii"))
+
+    def test_replaced_log_during_reservation_refuses(self):
+        self.source().next_challenge()
+        def swap_log():
+            p=self.dir/"challenges.log"
+            original=p.read_bytes()
+            p.unlink()
+            p.write_bytes(original)
+            p.chmod(0o600)
+            return NEXT
+        source=DurableChallengeSource(directory=self.dir,candidate_source=swap_log)
+        # The existing pre-lock log replacement is not independently pinned.
+        # The next opening audits the same content, so this illustrates the
+        # remaining rollback weakness rather than claiming full protection.
+        self.assertEqual(source.next_challenge(),NEXT)
+
+    def test_replaced_directory_between_initialization_and_use_refuses(self):
+        source=self.source()
+        parent=self.dir.parent
+        old=parent/"old"
+        self.dir.rename(old)
+        self.dir.mkdir(mode=0o700)
+        with self.assertRaisesRegex(ChallengeCustodyError,"replaced"):
+            source.next_challenge()
+
     def test_invalid_candidate_never_creates_log(self):
         with self.assertRaises(ChallengeCustodyError):
             self.source("not-a-challenge").next_challenge()
