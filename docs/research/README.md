@@ -2,9 +2,9 @@
 
 This directory contains research methods and explanatory documents broader than a single experiment.
 
-Evidence for a specific experiment belongs in `../../experiments/EXP-####/`.
+Formal EXP records may live in `../../experiments/EXP-####/`, while substantial dated historical investigations are also preserved in this directory and under generation-owned documentation. This page is not a comprehensive current evidence index. For active I1 claims use [its evidence matrix](../../src/i1/docs/EVIDENCE_MATRIX.md); for I2 see [proposal status](../../src/i2/docs/STATUS.md).
 
-The current scientific map belongs in `../../RESEARCH_MAP.md`.
+The [research map](../../RESEARCH_MAP.md) lists axes and templates but is not a live census of all issues, studies or results.
 
 ## Core principle
 

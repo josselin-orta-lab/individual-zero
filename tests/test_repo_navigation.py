@@ -1,0 +1,41 @@
+"""Focused tests for the static navigation checker; no active engine runs."""
+import importlib.util
+from pathlib import Path
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+SPEC = importlib.util.spec_from_file_location("check_repo_navigation",
+                                             ROOT / "tools/check_repo_navigation.py")
+module = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(module)
+
+
+class NavigationSanity(unittest.TestCase):
+    def test_live_entrypoints(self):
+        outcome = module.inspect(ROOT)
+        self.assertEqual(outcome["status"], "PASS", outcome["errors"])
+        self.assertEqual(outcome["scientific_gate"], "NOT_EVALUATED")
+
+    def test_broken_link_detected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for p in module.ENTRYPOINTS:
+                target = root / p
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text("# Entry\n")
+            for gen in ("i1", "i2"):
+                (root / f"src/{gen}/docs/STATUS_HISTORY.md").write_text("# History\n")
+                (root / f"src/{gen}/engine.json").write_text(
+                    '{"paths": {"documentation": "src/' + gen + '/docs"}, "entrypoints": {}}')
+            cfg = root / "config/engine-registry.json"
+            cfg.parent.mkdir(parents=True, exist_ok=True)
+            cfg.write_text('{"active_generation": "I1", "generations": {"I1": {}}}')
+            (root / "docs/README.md").write_text("[missing](nothing.md)\n")
+            outcome = module.inspect(root)
+            self.assertTrue(any("broken local link" in e for e in outcome["errors"]))
+            self.assertEqual(outcome["status"], "FAIL")
+
+
+if __name__ == "__main__":
+    unittest.main()

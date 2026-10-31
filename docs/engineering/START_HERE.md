@@ -1,26 +1,24 @@
 # Start here: current Individual Zero engineering
 
-**Active generation: I1. Preserved reference: I0.** Lab sources are now generation-owned: `src/i1/lab/` and `archive/i0/lab/`; there is no active shared `src/lab/`. The repository's older top-level README describes an early bootstrap and is not current operational authority for I1.
+**Active: I1. Frozen: I0. Proposal only: I2.** This page routes technical work; it is not the scientific or runtime authority. The root [README](../../README.md) is the current public overview. The old `individual-zero` CLI is an I0 bootstrap example, **not** an active natural-I1 run.
 
-1. [I1 Handbook](../../src/i1/docs/README.md) describes the active model's theory, cognitive architecture, evidence and development rules.
-2. [Engine map](../architecture/ENGINE_GENERATIONS.md) explains boundaries, ownership and how future generations are promoted.
-2. [Machine registry](../../config/engine-registry.json) declares locations and test entrypoints.
-3. [Historical archive index](../../config/archives/i0-20261017.json) pins every archived file to its original Git blob.
-4. [PR #246 test audit](../research/i1-pr246-current-test-audit-2026-10-17.fr.md) documents I1 SMOKE/FULL, residual scientific limits and I0 protections.
-5. [Historical I0 README](../../archive/i0/README.md) documents restoration of old tests and GitHub workflows.
+1. Read the [agent navigation index](AGENT_NAVIGATION.md), [root instructions](../../AGENTS.md) and [generation registry](../../config/engine-registry.json).
+2. For I1, read [generation-specific instructions](../../src/i1/AGENTS.md), [handbook](../../src/i1/docs/README.md), [current status](../../src/i1/docs/STATUS.md) and [evidence matrix](../../src/i1/docs/EVIDENCE_MATRIX.md).
+3. For I2 synthetic research, read [I2 instructions](../../src/i2/AGENTS.md), [handbook](../../src/i2/docs/README.md) and [current status](../../src/i2/docs/STATUS.md). I2 is **not** registered or executable.
+4. Review [strict autonomy](../decisions/ADR-0001-strict-generation-autonomy.md), [generation map](../architecture/ENGINE_GENERATIONS.md) and [promotion procedure](ENGINE_PROMOTION.md) only for generation-sensitive work.
+5. For old I0 material, see [archive index](../../config/archives/i0-20261017.json); do not rewrite preserved bytes.
 
-## Day-one commands
+## Lightweight first checks
 
 ```bash
-python -m pip install -e .
+python tools/check_repo_navigation.py --scope entrypoints
 python scripts/check_engine_repository.py --json
-python -m unittest discover -s tests -p test_engine_repository.py -v
-python scripts/test_i1_ci.py --mode smoke --seed 246 --junit reports/i1-smoke.xml
-python scripts/test_i1_ci.py --mode full --seed 246 --junit reports/i1-full.xml
+python scripts/check_engine_contracts.py --json
+python scripts/check_i1_handbook.py --json
 ```
 
-The current I1 builder is `scripts/build_i1_fork.py`. Run it into a temporary directory, not `src`. The active GitHub workflow remains `.github/workflows/i1-current-ci.yml`. Old research and I0-specific scenarios belong outside the current I1 CI and remain independently retrievable.
+These are structural checks, not scientific evidence. For changing I1 behavior, consult the exact commands in `src/i1/engine.json` and [I1 test plan](../../src/i1/docs/TEST_PLAN.md) before running smoke/full and relevant M11 parity suites. For I2 synthetic fixtures, see [I2 test plan](../../src/i2/docs/TEST_PLAN.md). Use the **exact commit SHA** when reporting CI. Do not run repeated heavy tests merely because documentation changed.
 
-**Hard boundary:** No I0 rewriting, rollback, postmortem activity, Oracle/Bench data in cognitive observation, disabling current-I1 modules or imposing obsolete H1/H2 expectations. A real failure must fail CI; an individual's plausible death under ignorance is not automatically a software failure.
+## Boundaries
 
-**Future generation rule (31 October 2026):** [ADR-0001](../decisions/ADR-0001-strict-generation-autonomy.md) requires complete architectural autonomy without an obsolete engine runtime dependency or legacy mode. Historical comparison is allowed; hidden compatibility, shared state and cross-generation life recovery are not. Keep I1's active life contracts intact.
+Each generation owns its own world, Lab, cognition, UC and persistence. I1's generated `i1lab` namespace is an existing I1-specific persistence contract, not a shared runtime. Never inject Oracle truth, force a choice, waive UC, resurrect, silently restore, or treat an I2 test opinion as motor authority. Software PASS, observed behavior, and scientific GO are different claims.

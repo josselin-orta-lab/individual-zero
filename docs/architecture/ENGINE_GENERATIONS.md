@@ -1,6 +1,6 @@
 # Engine generations: working map
 
-This document reflects the live repository after #246 and the staged historical archive #251. It is an engineering map, **not** a declaration of scientific GO.
+This document describes structural ownership and historical migration boundaries. **Verify the registry and real HEAD** for live statuses; older PR numbers below are provenance, not current merge-state claims. It is an engineering map, **not** a declaration of scientific GO.
 
 | Component | Authority | Location | Change policy |
 | --- | --- | --- | --- |
@@ -26,7 +26,7 @@ This document reflects the live repository after #246 and the staged historical 
 
 ## Next engine generation: I2, I3, ...
 
-**No new engine has been created yet.** For each proposed generation, keep `src/iN/` source separate from previous generations, define canonical constructor/identity, isolated generation-owned Lab, typed contracts, a unique test harness, an explicit activation decision, and a separate CI workflow. Update the registry only after the generation is actually implemented. Do not rename I1 to I2 or inherit an experiment's measurements as normative requirements.
+**I2 has an independent proposal directory and synthetic fixtures, but no active or born engine has been created.** For each proposed generation, keep `src/iN/` source separate from previous generations, define canonical constructor/identity, isolated generation-owned Lab, typed contracts, a unique test harness, an explicit activation decision, and a separate CI workflow. Update the registry only after the generation is actually implemented. Do not rename I1 to I2 or inherit an experiment's measurements as normative requirements.
 
 Use this promotion sequence: design proposal → architectural decision → isolated prototype → software invariants → new preregistered physical evidence → explicit activation. Record NO-GO and limitations. Keep older generations available for reproducible historical audits.
 
@@ -41,13 +41,13 @@ Avoid creating generic names such as `latest_model` in runtime imports. Every li
 
 ## Lab ownership per generation
 
-Each motor version owns its own laboratory: the current I1 Lab is `src/i1/lab/`, and the frozen I0 Lab is `archive/i0/lab/` (original Git tree SHA `18f5aabdd49a5cc2f7cae3b0996bf958a0843028`). The unversioned `src/lab/` path is removed. The only exception is a temporary restoration of I0's original Lab in a disposable CI checkout to run archived I0 tests against their original imports. This is not an active shared Lab. Future I2 needs `src/i2/lab/` and its own tested custody; no engine should silently use another generation's Lab. The canonical I1 runner retains the generated `i1lab` import namespace for persisted birth compatibility, but its sources now come exclusively from I1.
+Each motor version owns its own laboratory: the current I1 Lab is `src/i1/lab/`, and the frozen I0 Lab is `archive/i0/lab/` (original Git tree SHA `18f5aabdd49a5cc2f7cae3b0996bf958a0843028`). The unversioned `src/lab/` path is removed. The only exception is a temporary restoration of I0's original Lab in a disposable CI checkout to run archived I0 tests against their original imports. This is not an active shared Lab. The I2 proposal contains `src/i2/lab/`, but any future living I2 still needs a fully independent implemented and verified Lab and its own tested custody; no engine should silently use another generation's Lab. The canonical I1 runner retains the generated `i1lab` import namespace for persisted birth compatibility, but its sources now come exclusively from I1.
 
 `individual-zero` remains a legacy I0 bootstrap demonstration, not a natural I1 CLI or scientific gate. Natural I1 must use its versioned birth entrypoint.
 
 ## Documentation ownership
 
-Each engine owns its documentation under `src/iN/docs/`, beside its source, runtime and Lab. I1's authoritative handbook begins at [`src/i1/docs/README.md`](../../src/i1/docs/README.md). Global `docs/engineering/` contains shared infrastructure documentation and must not duplicate I1's theoretical authority.
+Each engine owns its documentation under `src/iN/docs/`, beside its source, runtime and Lab. Begin with `src/iN/AGENTS.md` and `src/iN/docs/README.md` when available. I1's authoritative handbook begins at [`src/i1/docs/README.md`](../../src/i1/docs/README.md). Global `docs/engineering/` contains shared infrastructure documentation and must not duplicate I1's theoretical authority.
 
 ## Normative generation autonomy (decision of 31 October 2026)
 

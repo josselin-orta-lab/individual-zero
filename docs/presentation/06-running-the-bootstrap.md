@@ -1,6 +1,8 @@
-# Running the bootstrap
+# Running the historical I0 bootstrap
 
-The repository now contains a minimal executable path.
+This page documents a **historical I0 technical demonstration**, not a natural I1 run or I2 prototype. For current work begin at [agent navigation](../engineering/AGENT_NAVIGATION.md).
+
+The original bootstrap offers a minimal executable path.
 
 It is deliberately small:
 
@@ -100,7 +102,7 @@ The seed is already part of the runtime contract even though the bootstrap I0 do
 
 ## What comes next
 
-The next scientific step is **not** to fill the bootstrap with arbitrary cognition.
+For this historical bootstrap, do **not** infer that it is the present research frontier. The next research steps for I1/I2 are documented in their generation-owned status and evidence indexes.
 
 Instead:
 
