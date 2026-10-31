@@ -1,5 +1,7 @@
 # Individual Zero Observer (Phase 1 + Phase 2 operator candidate)
 
+> **Scope note (31 October 2026): historical I0-oriented operator tooling.** This standalone web console and its `I0_*` settings and `python -m lab.*` commands describe the original I0/Stage-11 operator tests, not the **active natural I1 runtime**. The old unscoped `src/lab/` is not the current I1 Lab. Before invoking commands, inspect the real installed entrypoints and [engine registry](../config/engine-registry.json); this manual does not certify I1 integration, M11 recovery, independent Oracle proof or a scientific result. The current [I1 handbook](../src/i1/docs/README.md) and [agent navigation](../docs/engineering/AGENT_NAVIGATION.md) govern work on I1.
+
 Independent, local-only web console for human operators. No `lab`, `i0` or
 `adapters` imports from the Observer process. **The Core runs without this
 service.** This directory intentionally has its own Python package and static

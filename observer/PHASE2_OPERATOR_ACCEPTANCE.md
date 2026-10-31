@@ -1,5 +1,7 @@
 # Individual Zero Observer Phases 1 + 2: operator acceptance
 
+> **Historical I0 / Stage-11 operator acceptance worksheet.** Its `src/lab/` path, test launcher and I0 custody expectations belong to the original archived workflow, not to active natural I1. Keep the recorded tests and pending ACCEPT/REJECT decision for provenance, but do not execute this worksheet as I1 birth or operator approval. [Current engine map](../docs/architecture/ENGINE_GENERATIONS.md).
+
 Status: **pending operator ACCEPT / REJECT**. Passing CI is technical
 readiness only, not an operator, behavioral or scientific verdict.
 

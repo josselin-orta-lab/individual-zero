@@ -37,6 +37,7 @@ CURRENT_EXTRA = (
     "src/i1/architecture/README.md", "src/i1/config/README.md",
     "src/i1/interfaces/README.md", "src/i1/lab/README.md",
     "src/i1/modules/README.md",
+    "src/adapters/README.md", "observer/README.md",
 )
 CURRENT_DIRS = (
     "docs/presentation", "docs/engineering", "docs/governance",

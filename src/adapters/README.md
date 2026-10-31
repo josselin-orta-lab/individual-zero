@@ -1,54 +1,34 @@
-# Adapters
+# External adapters: integration without cognitive ownership
 
-Adapters connect external components to the interfaces expected by Individual Zero.
+This directory translates external APIs or data into **generation-owned contracts**. It does not own an individual's mind, learning policy, physical WorldBody, living memory, Action Control, UC Scheduler or M11 persistence. Follow [strict generation autonomy](../../docs/decisions/ADR-0001-strict-generation-autonomy.md) and the [agent navigation guide](../../docs/engineering/AGENT_NAVIGATION.md).
 
-Their job is **translation and integration**, not to hide new cognitive architecture.
+**Generation status:** I1 is the active independently owned engine; I0 is frozen historical material; I2 is an unregistered, non-living proposal. Do not turn an I0 integration into a hidden dependency of I1 or I2.
 
-## Responsibilities
+## What belongs here
 
-An adapter may contain:
+- External API and data-format translation, schema validation and explicit trust-boundary checks.
+- Dependency-specific connection and lifecycle management without transferring cognitive authority.
+- Read-only instrumentation that does not inject privileged Oracle/Bench/WorldBody data into a living individual.
+- Licensing, provenance, error handling and versioned assumptions about an external dependency.
 
-- API conversion;
-- data-format conversion;
-- configuration mapping;
-- compatibility handling;
-- dependency-specific error handling;
-- instrumentation required to observe the external component;
-- lifecycle glue needed to initialize or stop the dependency.
+An adapter may serve a particular generation only when **that generation explicitly declares its interface and owner**. A shared import path is never permission to share mutable cognition, birth state, memory or persistence across generations.
 
-## What does not belong here
+## What belongs in an engine instead
 
-An adapter should not silently become:
+Memory policy, action arbitration, motivation, learning and consolidation, embodied observation, cost accounting and admissibility remain in `src/iN/` for the specific generation. If an adapter would change any of these, review it as a cognitive/architectural change with targeted tests and, where needed, a preregistered experiment.
 
-- a new memory policy;
-- a new action-selection mechanism;
-- a new motivation system;
-- an architectural coordinator;
-- a place where project cognition is implemented simply because the external API was inconvenient.
-
-If the adapter itself becomes the mechanism being studied, treat that work as I0 code or as an experimental prototype.
-
-## Example: external memory library
-
-A clean integration might look like:
+## Example: external memory package
 
 ```text
-I0 memory role
+I1's observed memory contract and owner (verify real call sites)
     |
     v
-src/i0/interfaces/
+src/adapters/<external-memory>/  # API translation only
     |
     v
-src/adapters/<external-memory>/
-    |
-    v
-third-party project
+Third-party package
 ```
 
-I0 remains responsible for **what role memory plays**.
+The I1 engine still chooses **when, why and under which UC budget** to remember. I2 must prove its own contracts independently, not inherit I1's live adapter state. The equivalent old I0 diagram is historical, not the current placement rule.
 
-The adapter is responsible for translating that role into the external library's API.
-
-If choosing the external library can alter behavior, evaluate the choice in an EXP before it becomes reference behavior.
-
-See [adapter example](../../examples/adapter-example.md).
+See the [worked adapter example](../../examples/adapter-example.md) and [I1 mechanism handbook](../i1/docs/README.md). Document whether any live path actually uses the adapter before claiming a capability is integrated.

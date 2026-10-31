@@ -39,6 +39,7 @@ individual-zero/
 - [ADR-0001](../decisions/ADR-0001-strict-generation-autonomy.md): successors own their runtime and living state; no obsolete-engine fallback.
 - [Research workflow](03-research-workflow.md): scientific protocol and decision logic.
 - [Engineering start guide](../engineering/START_HERE.md): current I1 technical commands and verification.
+- [Standalone Observer manual](../../observer/README.md): historical I0-oriented operator surface, not an active I1 birth or evidence authority.
 
 The `individual-zero` console command and [bootstrap guide](06-running-the-bootstrap.md) illustrate **historical I0** tooling; they are not a natural-I1 run or an I2 activation.
 
