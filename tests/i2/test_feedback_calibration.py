@@ -86,7 +86,8 @@ class FeedbackTests(unittest.TestCase):
         a=replace(empty_feedback_memory(op),last_observed_step=20,
                   observed_differences=(2,4),
                   used_issue_captures=("capture:11","capture:15"),
-                  used_episode_refs=("episode:a","episode:b","episode:c","episode:d"))
+                  used_episode_refs=("episode:a","episode:b","episode:c","episode:d"),
+                  total_observations=2,history_head="a"*64)
         b=replace(a,observed_differences=(1,5))
         first=read_feedback(memory=a,forecast=forecast(30),source=Source())
         second=read_feedback(memory=b,forecast=forecast(30),source=Source())
@@ -106,7 +107,8 @@ class FeedbackTests(unittest.TestCase):
         a=replace(empty_feedback_memory(op),last_observed_step=20,
                   observed_differences=(3,),
                   used_issue_captures=("capture:11",),
-                  used_episode_refs=("episode:a","episode:b"))
+                  used_episode_refs=("episode:a","episode:b"),
+                  total_observations=1,history_head="b"*64)
         b=replace(a,used_episode_refs=("episode:c","episode:d"))
         f=forecast(30)
         ra=read_feedback(memory=a,forecast=f,source=Source())
