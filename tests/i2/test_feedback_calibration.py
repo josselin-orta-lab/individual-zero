@@ -116,6 +116,23 @@ class FeedbackTests(unittest.TestCase):
         self.assertEqual(ra.predicted_outcome_difference,rb.predicted_outcome_difference)
         self.assertNotEqual(ra.memory_digest,rb.memory_digest)
 
+    def test_seventeen_updates_preserve_bounded_window_and_new_forecasts(self):
+        memory=empty_feedback_memory(opportunity(10))
+        for index in range(17):
+            at=10+index*15
+            issued=read_feedback(memory=memory,forecast=forecast(at),source=Source())
+            prepared,control=heldout(at+2,index%3,0)
+            update=learn_from_feedback(memory=memory,readout=issued,
+                                       prepared=prepared,control=control,source=Source())
+            memory=update.new_memory
+        self.assertEqual(memory.total_observations,17)
+        self.assertEqual(len(memory.observed_differences),16)
+        self.assertEqual(len(memory.used_episode_refs),32)
+        self.assertNotEqual(memory.history_head,"0"*64)
+        next_readout=read_feedback(memory=memory,forecast=forecast(270),source=Source())
+        self.assertEqual(next_readout.memory_version,17)
+        self.assertEqual(next_readout.motor_authority,"NONE")
+
     def test_replay_and_foreign_context_refused(self):
         memory=empty_feedback_memory(opportunity(10))
         first=read_feedback(memory=memory,forecast=forecast(10),source=Source())
