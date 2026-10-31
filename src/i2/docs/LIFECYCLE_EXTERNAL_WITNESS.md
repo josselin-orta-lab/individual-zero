@@ -89,3 +89,7 @@ Le registre local vérifie l'identité (device/inode) du répertoire, du verrou 
 ## Inspection incertaine avec ascendance dans un seul snapshot (G2)
 
 Le diagnostic d'un COMMIT incertain et le maillon historique demandé par `minimum_witness` proviennent désormais du même snapshot SQLite audité. L'inspection refuse `FORK` avant de contacter le témoin lorsque l'ascendance locale diverge, `STALE` si le préfixe manque, et `UNKNOWN` lorsqu'une modification concurrente est détectée au réaudit. Cette cohérence est locale et temporaire, non linéarisable avec le fournisseur externe, sans permission de rejeu, d'action ou de reprise et sans attestation M11 réelle.
+
+## G2 : refus du probe SQLite indisponible
+
+Si l'inspection locale d'un COMMIT incertain échoue après le premier audit (erreur I/O, SQLite ou d'exécution), l'adaptateur refuse `UNKNOWN` **avant** de consulter le témoin. Une donnée illisible n'est jamais interprétée comme absence de COMMIT et n'autorise aucun rejeu. Les arguments invalides restent des erreurs de validation ; aucun moteur I2 ni M11 réel n'est ajouté.
