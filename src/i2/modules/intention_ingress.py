@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from hashlib import sha256
+from threading import Lock
 import json
 from typing import Protocol
 
@@ -128,11 +129,15 @@ class IntentionIngress:
         self._seen_captures: set[str] = set()
         self._used_receipts: set[str] = set()
         self._last_step = -1
+        # Serialize ingress through owner mutation: concurrent calls cannot
+        # both spend UC for the same capture.
+        self._lock = Lock()
 
     @property
     def current(self):
         """Read-only semantic state. Not a motor candidate or command."""
-        return self._owner.current
+        with self._lock:
+            return self._owner.current
 
     def _admit(self, claim: ObservationClaim, *, evidence_ref: str | None) -> UCReceipt:
         if type(claim) is not ObservationClaim:
@@ -151,6 +156,12 @@ class IntentionIngress:
                                        digest=digest)
         if verified is not True:
             raise ValueError("capture provenance not authenticated by source port")
+        # Reserve before calling a potentially non-idempotent external debit.
+        # Timeouts, malformed receipts and lost acknowledgements cannot
+        # trigger a second charge for this capture in the current session.
+        # This is only an ephemeral guard, NOT durable M11 idempotency.
+        self._last_step = claim.capture.step
+        self._seen_captures.add(claim.capture.ref)
         # The real UC debit must occur before consulting IntentionContinuity.
         ticket = self._budget.debit(life_ref=self.life_ref,
             capture_ref=claim.capture.ref, claim_digest=digest,
@@ -164,10 +175,6 @@ class IntentionIngress:
         # An external debit may have occurred even if the policy rejects the
         # cognitive attempt. Record the claimed receipt to forbid its reuse.
         self._used_receipts.add(ticket.ref)
-        # An unsuccessful paid consideration consumes this capture too.
-        # No second attempt or free retry within the same physical step.
-        self._last_step = claim.capture.step
-        self._seen_captures.add(claim.capture.ref)
         return ticket
 
     def open(self, *, claim: ObservationClaim, semantic_ref: str,
@@ -177,17 +184,20 @@ class IntentionIngress:
         _ref(evidence_ref, "origin evidence ref")
         if type(ttl_steps) is not int or not 1 <= ttl_steps <= 64:
             raise ValueError("bounded intention TTL required")
-        ticket = self._admit(claim, evidence_ref=evidence_ref)
-        result = self._owner.open(capture=claim.capture, semantic_ref=semantic_ref,
-                                  evidence_ref=evidence_ref, ttl_steps=ttl_steps,
-                                  work_ref=ticket.ref)
-        return result
+        with self._lock:
+            ticket = self._admit(claim, evidence_ref=evidence_ref)
+            return self._owner.open(
+                capture=claim.capture, semantic_ref=semantic_ref,
+                evidence_ref=evidence_ref, ttl_steps=ttl_steps,
+                work_ref=ticket.ref,
+            )
 
     def observe(self, *, claim: ObservationClaim) -> IntentionTransition:
-        ticket = self._admit(claim, evidence_ref=None)
-        result = self._owner.observe(capture=claim.capture, work_ref=ticket.ref)
-        return result
+        with self._lock:
+            ticket = self._admit(claim, evidence_ref=None)
+            return self._owner.observe(capture=claim.capture, work_ref=ticket.ref)
 
     def inspect_proposal_state(self) -> dict[str, object]:
         """Unsigned local owner view, NEVER a durable M11 recovery checkpoint."""
-        return self._owner.export_state()
+        with self._lock:
+            return self._owner.export_state()
