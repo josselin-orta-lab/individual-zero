@@ -900,6 +900,8 @@ class CognitiveCycleFixture:
                     prior = old
                     if _feedback_memory_digest(feedback_previous) != _feedback_memory_digest(old):
                         raise ValueError("stale H2 snapshot")
+                if prior.life_ref != self.life_ref:
+                    raise ValueError("foreign H2 life")
                 verify_feedback_transition(
                     stored=prior, expected_previous_digest=_feedback_memory_digest(prior),
                     update=feedback_update)
