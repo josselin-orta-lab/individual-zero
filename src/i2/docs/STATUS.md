@@ -29,3 +29,5 @@ I1 reste seul actif dans `config/engine-registry.json`, I2 n'a aucun point d'ent
 - **H2 chaîne physique G2 (31/10)** : le calcul de crédit peut désormais être conditionné à une suite ininterrompue d'effets physiques déclarés et d'observations subjectives, avec refus des doublons, ruptures, terminaux et conséquences inconnues. Tests purement synthétiques ; aucune attestation WorldBody/M11, aucun droit moteur, G3 `NOT_ESTABLISHED`.
 
 - **Correction G2 physique (31/10)** : le garde de crédit H2 permet les actions sans changement physique et les retours à un état antérieur ; ces phénomènes ne sont pas des restaurations de vie en eux-mêmes. Le rejeu d'un commit/admission et une rupture chronologique restent interdits. Preuves de test seulement, G3 `NOT_ESTABLISHED`.
+
+- **G2 garde émission H2 (31/10)** : l'adaptateur Competition réclame l'attestation synthétique du retour de calibration lui-même, et non seulement celle de la prévision historique. Échec : rollback local intégral UC/événement, aucun avis moteur. G3 reste `NOT_ESTABLISHED`.
