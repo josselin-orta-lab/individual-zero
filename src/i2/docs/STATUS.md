@@ -56,6 +56,10 @@ L'initialisation de `durable_challenge_source.py` refuse les états partiellemen
 
 Le laboratoire vérifie les inodes de ses fichiers de garde sous verrou et avant sortie, avec tests de substitution du verrou et du répertoire. Reste vulnérable aux remplacements cohérents avant la lecture et au rollback global. I2 reste inerte, G3 non établi.
 
+### G2 : relecture locale après refus du témoin
+
+`verify_fixture` réaudite désormais le journal local même si le fournisseur externe lève une erreur ou signale `STALE`, `FORK` ou `UNANCHORED`. Une modification concurrente ou un échec du second audit est classé `UNKNOWN`, sans reprise ni rejeu. L'inspection des COMMIT incertains refuse également les erreurs du second audit. Protection locale contre une course détectée, non linéarisable, aucune authentification M11 ni effet physique.
+
 ## Next authorized work
 
 Review [architecture](ARCHITECTURE.md), [research hypothesis](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md) and [promotion procedure](../../../docs/engineering/ENGINE_PROMOTION.md); close separately the genuine-world, independent custody and preregistered science gates. Do not instantiate an I2 individual.
