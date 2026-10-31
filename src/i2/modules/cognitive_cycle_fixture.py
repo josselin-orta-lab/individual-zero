@@ -874,6 +874,58 @@ class CognitiveCycleFixture:
         finally:
             conn.close()
 
+    def feedback_horizon_shadow_report(self) -> dict[str, object]:
+        """Read-only, past-only horizon choice from audited v5 H2 events.
+
+        Fixed policy: compare 4-step and 16-step forecasts over the previous
+        eight scored observations; choose four ONLY if its previous MAE is
+        strictly lower, otherwise sixteen. No state, motor rights, or tuning.
+        """
+        from fractions import Fraction
+        audited = self.feedback_scorecard()
+        history = []
+        errors4 = []
+        errors16 = []
+        rows = []
+        for record in audited["rows"]:
+            historic = Fraction(record["historical_prediction"])
+            actual = Fraction(record["observed"])
+            pred4 = (sum(history[-4:], Fraction(0)) / len(history[-4:])
+                     if history else historic)
+            pred16 = (sum(history[-16:], Fraction(0)) / len(history[-16:])
+                      if history else historic)
+            if len(errors4) >= 1:
+                past4 = sum(errors4[-8:], Fraction(0))
+                past16 = sum(errors16[-8:], Fraction(0))
+                horizon = 4 if past4 < past16 else 16
+            else:
+                horizon = 16
+            selected = pred4 if horizon == 4 else pred16
+            rows.append({
+                "horizon": horizon, "observed": actual,
+                "selected_prediction": selected, "selected_error": abs(selected-actual),
+                "h2_16_error": abs(pred16-actual),
+                "h2_4_error": abs(pred4-actual),
+                "historical_error": abs(historic-actual),
+                "persistence_error": record["persistence_error"],
+            })
+            errors4.append(abs(pred4-actual))
+            errors16.append(abs(pred16-actual))
+            history.append(actual)
+        def mae(key):
+            return (sum((r[key] for r in rows), Fraction(0))/len(rows)
+                    if rows else None)
+        return {
+            "samples": len(rows), "rows": tuple(rows),
+            "selected_mae": mae("selected_error"),
+            "h2_16_mae": mae("h2_16_error"),
+            "h2_4_mae": mae("h2_4_error"),
+            "historical_mae": mae("historical_error"),
+            "persistence_mae": mae("persistence_error"),
+            "interpretation": "SHADOW_PAST_ONLY_NOT_MOTOR_OR_CAUSAL_PROOF",
+            "motor_authority": "NONE", "m11_authenticated": False,
+        }
+
     def _process(self, *, claim: ObservationClaim, request: dict,
                  _fault_at: str | None = None, feedback_update: object | None = None,
                  feedback_previous: object | None = None) -> CycleReceipt:

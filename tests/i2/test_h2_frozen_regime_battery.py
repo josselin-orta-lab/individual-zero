@@ -143,6 +143,27 @@ class FrozenH2Battery(unittest.TestCase):
                 history.append(outcome)
 
             self.assertEqual(len(history), SAMPLES_PER_TRIAL)
+            shadow = owner.feedback_horizon_shadow_report()
+            self.assertEqual(shadow["samples"], SAMPLES_PER_TRIAL)
+            self.assertEqual(shadow["h2_16_mae"], owner.feedback_scorecard()["adaptive_mae"])
+            self.assertEqual(shadow, CognitiveCycleFixture.reopen(**ports).feedback_horizon_shadow_report())
+            self.assertEqual(shadow["motor_authority"], "NONE")
+            shadow_history = []
+            shadow_errors4 = []
+            shadow_errors16 = []
+            for idx, row in enumerate(shadow["rows"]):
+                expected4 = (Fraction(sum(shadow_history[-4:]), len(shadow_history[-4:]))
+                             if shadow_history else Fraction(7))
+                expected16 = (Fraction(sum(shadow_history[-16:]), len(shadow_history[-16:]))
+                              if shadow_history else Fraction(7))
+                expected_horizon = (4 if shadow_errors4 and
+                    sum(shadow_errors4[-8:]) < sum(shadow_errors16[-8:]) else 16)
+                self.assertEqual(row["horizon"], expected_horizon)
+                self.assertEqual(row["selected_prediction"],
+                    expected4 if expected_horizon == 4 else expected16)
+                shadow_errors4.append(abs(expected4-outcomes[idx]))
+                shadow_errors16.append(abs(expected16-outcomes[idx]))
+                shadow_history.append(outcomes[idx])
             report = owner.feedback_scorecard()
             self.assertEqual(
                 report,
