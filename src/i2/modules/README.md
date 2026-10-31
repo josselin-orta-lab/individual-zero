@@ -1,10 +1,11 @@
-# I2 : composants logiciels expérimentaux isolés, sans naissance
+# I2 : composants isolés, sans naissance ni autorité motrice
 
-- `intention_continuity.py` : propriétaire d'intentions sémantiques, sans action.
-- `intention_ingress.py` : interface à deux ports pour provenance et débit UC ; aucune autorité réelle I2 n'est encore installée.
-- `intention_atomic_fixture.py` : SQLite local, budget synthétique et journal de test, **pas M11**.
-- `option_reconstruction.py` : possibilités sémantiques présentes et éphémères ; intention seulement en métadonnée.
-- `competition_preview.py` : prototype d'avis Competition avec évaluation **de tous** les candidats en un lot UC externe, refus si incomplet, et `veto_preview` sans admission. Les ports injectés des tests sont synthétiques, sans vraie facturation ou valeur vécue.
+- `intention_continuity.py` : intention sémantique persistante, sans commande.
+- `intention_ingress.py` : contrats de ports source et débit UC externes.
+- `intention_atomic_fixture.py` : budget synthétique et intention dans une transaction SQLite, pas M11.
+- `option_reconstruction.py` : candidats issus exclusivement de la perception courante.
+- `competition_preview.py` : avis après lot complet d'évaluations déclarées payées, sans admission.
+- `uc_allocation_study.py` : étude hors ligne de politiques UC à budget plafonné ; aucune politique sélectionnée.
+- `competition_transaction_fixture.py` : **second banc** SQLite, dédié à la publication atomique du débit UC synthétique et de l'avis Competition, avec audit/rejeu et confirmations perdues. Les deux bancs ne partagent pas de transaction commune.
 
-Ce code n'est ni un moteur vivant, ni un Scheduler, ni un Action Control, ni une preuve scientifique. Voir `../docs/COMPETITION_PREVIEW.md`, `../docs/OPTION_RECONSTRUCTION.md`, `../docs/INTENTION_ATOMIC_FIXTURE.md`, `../docs/INTENTION_INGRESS.md` et `../docs/INTENTION_CONTINUITY.md`.
-- `uc_allocation_study.py` : comparaison **synthétique, non exécutable** de trois stratégies de sélection d'évaluations UC à plafond identique ; le témoin préfixe est biaisé et les diagnostics partiels ne sont jamais des actions. Ne change pas `CompetitionPreview`. Voir `../docs/UC_ALLOCATION_STUDY.md`.
+Ces composants ne constituent ni un vrai Scheduler, ni un runtime M11, ni Action Control. L'identité first-person et les preuves d'apprentissage demeurent des obligations d'intégration non satisfaites. Voir `../docs/COMPETITION_TRANSACTION_FIXTURE.md` et `../docs/STATUS.md`.
