@@ -10,7 +10,7 @@ birth/death authority. External attestations remain synthetic test ports.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from hashlib import sha256
 import json
 import os
@@ -30,7 +30,7 @@ from .action_control_boundary import (
     CONTROL_OPERATION, CONTROL_UC,
 )
 
-SCHEMA = "i2-unified-cognitive-lifecycle-fixture-v4"
+SCHEMA = "i2-unified-cognitive-lifecycle-feedback-fixture-v5"
 ZERO_HASH = "0" * 64
 _FAULTS = frozenset({"after_intake_debit", "after_intention", "after_competition_debit",
                     "after_control_debit", "after_safety", "before_commit", "after_commit"})
@@ -38,6 +38,7 @@ _EVENT_FIELDS = frozenset({
     "seq", "claim", "claim_digest", "request", "intake_receipt_ref", "intention_kind",
     "owner_snapshot", "frame", "advice", "intake_uc", "competition_uc",
     "control_review", "control_receipt", "safety_finding", "control_uc",
+    "feedback_transition",
 })
 _TERMINAL_FIELDS = frozenset({
     "kind", "seq", "life_ref", "genesis_ref", "physical_step",
@@ -58,6 +59,98 @@ _REVIEW_KEYS = frozenset({
     "suggested_candidate_ref", "control_receipt_ref", "safety_evidence_ref",
     "motor_authority",
 })
+
+
+def _h2_memory_map(memory: object) -> dict:
+    from .delayed_credit_study import OutcomeFeedbackMemory
+    if type(memory) is not OutcomeFeedbackMemory:
+        raise ValueError("exact H2 memory required")
+    memory.validate()
+    return asdict(memory)
+
+
+def _h2_memory_parse(obj: object) -> object:
+    from .delayed_credit_study import OutcomeFeedbackMemory
+    names = {f.name for f in fields(OutcomeFeedbackMemory)}
+    if type(obj) is not dict or set(obj) != names:
+        raise ValueError("invalid H2 memory schema")
+    data = dict(obj)
+    for name in ("context_signature", "observed_differences", "used_issue_captures",
+                 "used_episode_refs"):
+        if type(data[name]) is not list:
+            raise ValueError("noncanonical H2 tuple")
+        data[name] = tuple(data[name])
+    state = OutcomeFeedbackMemory(**data)
+    state.validate()
+    return state
+
+
+def _h2_transition_map(previous: object, update: object) -> dict:
+    from .delayed_credit_study import FeedbackUpdate, _feedback_memory_digest
+    from fractions import Fraction
+    if type(update) is not FeedbackUpdate:
+        raise ValueError("exact feedback update required")
+    if type(update.predicted_outcome_difference) is not Fraction or type(update.absolute_error) is not Fraction:
+        raise ValueError("exact rational H2 values required")
+    return {
+        "previous": _h2_memory_map(previous),
+        "previous_digest": _feedback_memory_digest(previous),
+        "next": _h2_memory_map(update.new_memory),
+        "score": asdict(update.heldout_score),
+        "predicted": [update.predicted_outcome_difference.numerator,
+                      update.predicted_outcome_difference.denominator],
+        "error": [update.absolute_error.numerator, update.absolute_error.denominator],
+        "direction_agreement": update.direction_agreement,
+        "interpretation": update.interpretation,
+        "motor_authority": update.motor_authority,
+    }
+
+
+def _h2_replay_transition(payload: object, stored: object, step: int) -> object:
+    from fractions import Fraction
+    from .delayed_credit_study import FeedbackUpdate, HeldoutForecastScore, _feedback_memory_digest
+    from .feedback_transition_contract import verify_feedback_transition
+    names = {"previous", "previous_digest", "next", "score", "predicted", "error",
+             "direction_agreement", "interpretation", "motor_authority"}
+    if type(payload) is not dict or set(payload) != names:
+        raise ValueError("invalid H2 event record")
+    before = _h2_memory_parse(payload["previous"])
+    if stored is None:
+        if before.total_observations != 0 or before.last_observed_step != -1:
+            raise ValueError("nonempty H2 genesis")
+    elif _feedback_memory_digest(before) != _feedback_memory_digest(stored):
+        raise ValueError("H2 replay predecessor diverges")
+    after = _h2_memory_parse(payload["next"])
+    score_dict = payload["score"]
+    if type(score_dict) is not dict or set(score_dict) != set(HeldoutForecastScore.__dataclass_fields__):
+        raise ValueError("invalid H2 score schema")
+    score_dict = dict(score_dict)
+    for key in ("training_episode_refs", "observed_episode_refs"):
+        if type(score_dict[key]) is not list:
+            raise ValueError("invalid H2 score references")
+        score_dict[key] = tuple(score_dict[key])
+    def exact_fraction(value):
+        if (type(value) is not list or len(value) != 2 or
+                any(type(n) is not int for n in value) or value[1] <= 0):
+            raise ValueError("invalid rational H2 receipt")
+        result = Fraction(value[0], value[1])
+        if [result.numerator, result.denominator] != value:
+            raise ValueError("noncanonical rational H2 receipt")
+        return result
+    update = FeedbackUpdate(
+        new_memory=after, heldout_score=HeldoutForecastScore(**score_dict),
+        predicted_outcome_difference=exact_fraction(payload["predicted"]),
+        absolute_error=exact_fraction(payload["error"]),
+        direction_agreement=payload["direction_agreement"],
+        interpretation=payload["interpretation"],
+        motor_authority=payload["motor_authority"],
+    )
+    proof = verify_feedback_transition(
+        stored=before, expected_previous_digest=payload["previous_digest"],
+        update=update)
+    if after.last_observed_step > step or after.life_ref != score_dict["life_ref"]:
+        raise ValueError("future or foreign H2 experience")
+    return after
 
 
 def _json(value: object) -> str:
@@ -472,7 +565,9 @@ class CognitiveCycleFixture:
                 id INTEGER PRIMARY KEY CHECK(id=1),
                 genesis_ref TEXT NOT NULL, terminal_step INTEGER,
                 terminal_ref TEXT, terminal_digest TEXT, terminal_hash TEXT)""")
+            conn.execute("CREATE TABLE feedback (id INTEGER PRIMARY KEY CHECK(id=1), snapshot_json TEXT)")
             conn.execute("BEGIN IMMEDIATE")
+            conn.execute("INSERT INTO feedback VALUES (1,NULL)")
             conn.execute("INSERT INTO identity VALUES (1,?,?,?)", (obj.schema, obj.life_ref, synthetic_uc))
             conn.execute("INSERT INTO lifecycle VALUES (1,?,NULL,NULL,NULL,NULL)",
                          (obj.genesis_ref,))
@@ -537,6 +632,9 @@ class CognitiveCycleFixture:
         chain = ZERO_HASH
         owner = IntentionContinuity()
         count = 0
+        memory = None
+        memory_refs: set[str] = set()
+        used_issues: set[str] = set()
         capture_refs: set[str] = set()
         digests: set[str] = set()
         for seq, step, ref, digest, body, previous_hash, event_hash in conn.execute(
@@ -637,6 +735,17 @@ class CognitiveCycleFixture:
                         review.motor_authority != "NONE"):
                     raise ValueError("synthetic Action Control replay or debit mismatch")
                 balance = control_ledger.remaining
+            if data["feedback_transition"] is not None:
+                payload = data["feedback_transition"]
+                memory_next = _h2_replay_transition(payload, memory, step)
+                score = payload["score"]
+                episode_refs = score["observed_episode_refs"]
+                if (score["issue_capture_ref"] in used_issues or
+                        any(ref in memory_refs for ref in episode_refs)):
+                    raise ValueError("H2 evidence replayed across entire journal")
+                used_issues.add(score["issue_capture_ref"])
+                memory_refs.update(episode_refs)
+                memory = memory_next
             chain = event_hash
             last_step = step
             capture_refs.add(ref)
@@ -645,6 +754,12 @@ class CognitiveCycleFixture:
         actual = None if lifecycle_row[1] is None else lifecycle_row[1:]
         if expected != actual:
             raise ValueError("terminal marker and journal disagree")
+        feedback_rows = conn.execute("SELECT snapshot_json FROM feedback WHERE id=1").fetchall()
+        if len(feedback_rows) != 1:
+            raise ValueError("missing unique H2 owner")
+        expected_snapshot = None if memory is None else _json(_h2_memory_map(memory))
+        if feedback_rows[0][0] != expected_snapshot:
+            raise ValueError("H2 owner and replay journal diverge")
         if account != (balance, last_step, count, _json(owner.export_state()), chain):
             raise ValueError("synthetic account, intention or head mismatch")
         return balance, last_step, count, chain, owner
@@ -667,14 +782,20 @@ class CognitiveCycleFixture:
                           synthetic_terminal=row[1] is not None,
                           terminal_step=row[1], terminal_ref=row[2],
                           physiological_death_attested=False)
+            stored = conn.execute("SELECT snapshot_json FROM feedback WHERE id=1").fetchone()[0]
+            report["feedback_version"] = (0 if stored is None else
+                _h2_memory_parse(json.loads(stored)).total_observations)
             return report
         finally:
             conn.close()
 
     def _process(self, *, claim: ObservationClaim, request: dict,
-                 _fault_at: str | None = None) -> CycleReceipt:
+                 _fault_at: str | None = None, feedback_update: object | None = None,
+                 feedback_previous: object | None = None) -> CycleReceipt:
         if _fault_at is not None and _fault_at not in _FAULTS:
             raise ValueError("invalid test fault point")
+        if (feedback_update is None) != (feedback_previous is None):
+            raise ValueError("H2 update requires its claimed predecessor")
         if type(claim) is not ObservationClaim:
             raise ValueError("exact subjective claim required")
         claim.validate()
@@ -764,6 +885,31 @@ class CognitiveCycleFixture:
             event.update(control_review=control_review,
                          control_receipt=control_receipt,
                          safety_finding=safety_finding, control_uc=control_uc)
+            payload = None
+            if feedback_update is not None:
+                from .delayed_credit_study import _feedback_memory_digest
+                from .feedback_transition_contract import verify_feedback_transition
+                record = conn.execute("SELECT snapshot_json FROM feedback WHERE id=1").fetchone()[0]
+                old = _h2_memory_parse(json.loads(record)) if record is not None else None
+                if old is None:
+                    candidate = _h2_memory_map(feedback_previous)
+                    prior = _h2_memory_parse(json.loads(_json(candidate)))
+                    if prior.total_observations != 0:
+                        raise ValueError("nonempty initial H2 history")
+                else:
+                    prior = old
+                    if _feedback_memory_digest(feedback_previous) != _feedback_memory_digest(old):
+                        raise ValueError("stale H2 snapshot")
+                verify_feedback_transition(
+                    stored=prior, expected_previous_digest=_feedback_memory_digest(prior),
+                    update=feedback_update)
+                if feedback_update.new_memory.last_observed_step > claim.capture.step:
+                    raise ValueError("H2 learns from future relative to cognitive capture")
+                payload = _h2_transition_map(prior, feedback_update)
+                _h2_replay_transition(payload, old, claim.capture.step)
+                conn.execute("UPDATE feedback SET snapshot_json=? WHERE id=1",
+                             (_json(payload["next"]),))
+            event["feedback_transition"] = payload
             body = _json(event)
             next_hash = _chain(head, body, schema=self.schema)
             conn.execute("INSERT INTO events VALUES (?,?,?,?,?,?,?)",
@@ -860,15 +1006,19 @@ class CognitiveCycleFixture:
 
     def open(self, *, claim: ObservationClaim, semantic_ref: str,
              evidence_ref: str, ttl_steps: int,
-             _fault_at: str | None = None) -> CycleReceipt:
+             _fault_at: str | None = None, feedback_update: object | None = None,
+             feedback_previous: object | None = None) -> CycleReceipt:
         return self._process(claim=claim,
                              request=_request("open", semantic_ref, evidence_ref, ttl_steps),
-                             _fault_at=_fault_at)
+                             _fault_at=_fault_at, feedback_update=feedback_update,
+                             feedback_previous=feedback_previous)
 
     def observe(self, *, claim: ObservationClaim,
-                _fault_at: str | None = None) -> CycleReceipt:
+                _fault_at: str | None = None, feedback_update: object | None = None,
+                feedback_previous: object | None = None) -> CycleReceipt:
         return self._process(claim=claim, request=_request("observe"),
-                             _fault_at=_fault_at)
+                             _fault_at=_fault_at, feedback_update=feedback_update,
+                             feedback_previous=feedback_previous)
 
     def lookup(self, *, capture_ref: str) -> CycleReceipt | None:
         """Read a confirmed cycle without performing another cognitive evaluation."""
