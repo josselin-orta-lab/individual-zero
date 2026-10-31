@@ -41,6 +41,11 @@ Les contrats `challenge_witness_contract.py` et `challenge_witness_adapter.py` s
 
 L'adaptateur de témoin réserve et valide maintenant le nonce avant tout appel au transport, sous verrou interthreads. Une répétition ou un nonce malformé est refusé, et un échec réseau ne libère pas le nonce. Il s'agit d'un garde **volatile** uniquement : aucune garantie d'unicité après redémarrage ou entre processus, aucune source cryptographique indépendante ni M11 vivant. Les tests sont synthétiques et ne donnent aucune autorité motrice ni de reprise.
 
+
+### G2 : registre de defis local durable (proposition)
+
+Le composant `durable_challenge_source.py` reserve des defis avant transport dans un journal append-only distinct du SQLite cognitif v5. Tests de redemarrage, concurrence cooperative, corruption et permissions. Cette persistance est **locale et restaurable**, sans anti-rollback global ni preuve d'independance M11. I1 actif ; I2 sans naissance, moteur ou autorite de reprise.
+
 ## Next authorized work
 
 Review [architecture](ARCHITECTURE.md), [research hypothesis](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md) and [promotion procedure](../../../docs/engineering/ENGINE_PROMOTION.md); close separately the genuine-world, independent custody and preregistered science gates. Do not instantiate an I2 individual.
