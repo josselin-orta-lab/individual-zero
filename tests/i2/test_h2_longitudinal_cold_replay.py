@@ -57,6 +57,15 @@ class LongitudinalH2Tests(unittest.TestCase):
             memory = owner.feedback_snapshot()
             self.assertEqual(memory, update.new_memory)
             self.assertEqual(owner.audit()["feedback_version"], index + 1)
+        scorecard = owner.feedback_scorecard()
+        self.assertEqual(scorecard["samples"], 17)
+        self.assertEqual(scorecard["adaptive_mae"], scorecard["rows"][0]["adaptive_error"] * 0 +
+                         sum(row["adaptive_error"] for row in scorecard["rows"]) / 17)
+        self.assertEqual(scorecard["motor_authority"], "NONE")
+        self.assertFalse(scorecard["m11_authenticated"])
+        self.assertEqual(owner.audit()["committed"], 17)
+        cold = CognitiveCycleFixture.reopen(**ports).feedback_scorecard()
+        self.assertEqual(scorecard, cold)
         self.assertEqual(len(memory.used_issue_captures), 16)
         self.assertNotIn(first_score.issue_capture_ref, memory.used_issue_captures)
 
