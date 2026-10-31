@@ -100,6 +100,22 @@ class WitnessAudit:
     m11_authenticated: bool = False
 
 
+
+class WitnessRefusal(ValueError):
+    """A *read-only* witness comparison failed closed.
+
+    reason is a stable diagnostic category, not a recovery hint or an
+    authorization. An unavailable/invalid proof is UNKNOWN; conflicting
+    sequence/head/terminal claims do not select a winning life.
+    """
+
+    def __init__(self, reason: str, message: str) -> None:
+        if reason not in {"UNKNOWN", "STALE", "FORK", "UNANCHORED"}:
+            raise ValueError("unsupported witness refusal category")
+        self.reason = reason
+        super().__init__(message)
+
+
 def compare_audit(*, report: dict[str, object], witness: IndependentWitness) -> WitnessAudit:
     """Compare an already verified v3 report to the independent latest anchor.
 
@@ -143,21 +159,24 @@ def compare_audit(*, report: dict[str, object], witness: IndependentWitness) -> 
 
     record = witness.read_latest(life_ref=life, genesis_ref=genesis)
     if type(record) is not LatestWitness:
-        raise ValueError("no exact external witness record")
-    record.validate()
+        raise WitnessRefusal("UNKNOWN", "no exact external witness record")
+    try:
+        record.validate()
+    except ValueError as exc:
+        raise WitnessRefusal("UNKNOWN", str(exc)) from exc
     if record.life_ref != life or record.genesis_ref != genesis:
-        raise ValueError("external witness belongs to another identity")
+        raise WitnessRefusal("UNKNOWN", "external witness belongs to another identity")
     # Failing the independent proof is never a fallback to the local hash.
     if witness.verify_latest(record=record) is not True:
-        raise ValueError("external witness provenance/freshness not verified")
+        raise WitnessRefusal("UNKNOWN", "external witness provenance/freshness not verified")
     if seq < record.committed:
-        raise ValueError("stale local copy: external witness has a later head")
+        raise WitnessRefusal("STALE", "stale local copy: external witness has a later head")
     if seq > record.committed:
-        raise ValueError("unanchored local extension: external witness is behind")
+        raise WitnessRefusal("UNANCHORED", "unanchored local extension: external witness is behind")
     if step != record.last_step or head != record.chain_head:
-        raise ValueError("same-sequence local fork or altered head")
+        raise WitnessRefusal("FORK", "same-sequence local fork or altered head")
     if terminal_ref != record.terminal_ref or terminal_step != record.terminal_step:
-        raise ValueError("terminal closure does not match external witness")
+        raise WitnessRefusal("FORK", "terminal closure does not match external witness")
     return WitnessAudit(
         status="MATCHED_TERMINAL_INSPECTION" if terminal else "MATCHED_OPEN_INSPECTION",
         life_ref=life, genesis_ref=genesis, committed=seq, chain_head=head,

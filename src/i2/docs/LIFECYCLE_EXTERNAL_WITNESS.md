@@ -41,3 +41,7 @@ Le module **ne cree aucun service de garde**. Il exige un port `IndependentWitne
 **G0 I1 PARTIAL ; G1 REVIEW_REQUIRED ; G2 inspecteur logiciel ; G3-Scheduler/M11/WorldBody NOT_ESTABLISHED ; G4-G6 NOT_STARTED.** Aucune connaissance I1 n'est importee, aucune naissance I2 n'a lieu et aucune conclusion L3 ne change.
 
 Reproduction : `python -m unittest discover -s tests/i2 -p 'test_*.py' -v`.
+
+## Diagnostics de refus typés (proposition G2)
+
+`WitnessRefusal` (sous-classe de `ValueError`) distingue désormais `STALE` (copie locale dépassée), `UNANCHORED` (extension locale en avance), `FORK` (divergence à même séquence/terminal) et `UNKNOWN` (preuve absente, provenance invalide, identité étrangère ou schéma externe invalide). Les refus demeurent des exceptions **sans autorité de reprise ni moteur** ; ils ne sélectionnent aucun état gagnant et ne réparent aucune transaction. Les entrées locales incohérentes restent des `ValueError` d'audit. Le port témoin et sa preuve restent simulés, non signés et non indépendants. `MATCHED_*_INSPECTION` ne correspond jamais à une permission de reprendre une vie.
