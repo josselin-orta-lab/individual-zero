@@ -95,12 +95,15 @@ class DurableChallengeTests(unittest.TestCase):
 
     def test_replaced_lock_during_reservation_refuses(self):
         self.source().next_challenge()
-        def swap_lock():
-            lock=self.dir/".challenge.lock"
-            lock.unlink()
-            lock.touch(mode=0o600)
-            return NEXT
-        source=DurableChallengeSource(directory=self.dir,candidate_source=swap_lock)
+        class SwapAfterLock(DurableChallengeSource):
+            def _check_named_file(self, name, fd):
+                if name == ".challenge.lock" and not getattr(self, "_swapped", False):
+                    self._swapped=True
+                    lock=self.directory/name
+                    lock.unlink()
+                    lock.touch(mode=0o600)
+                return super()._check_named_file(name, fd)
+        source=SwapAfterLock(directory=self.dir,candidate_source=lambda: NEXT)
         with self.assertRaisesRegex(ChallengeCustodyError,"replaced"):
             source.next_challenge()
         self.assertEqual((self.dir/"challenges.log").read_bytes(),
