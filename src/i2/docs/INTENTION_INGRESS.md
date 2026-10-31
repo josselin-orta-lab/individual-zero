@@ -67,3 +67,8 @@ Exiger une CI GitHub 3.11 + 3.12 **sur le SHA exact** avant fusion.
 
 **Portes** : G1 `REVIEW_REQUIRED` ; G2 interface locale en progrès ; G3
 provenance réelle/UC réelle/M11/vie `NOT_ESTABLISHED` ; G4-G6 fermées.
+## Garde d'incertitude UC (G2, 31/10/2026)
+
+L'entree reserve maintenant la capture dans un verrou de session **avant** d'appeler le port de debit externe. Si le debit leve une exception, retourne un recu malforme ou perd son accuse, la meme capture ne peut pas declencher un second debit dans cette instance. Les appels concurrents sont serialises jusque dans la consultation et la mutation de l'intention. L'inspection locale est egalement protegee contre une mutation concurrente. Tests cibles : timeout apres depense declaree, recu etranger apres depense, et deux threads tentant la meme capture.
+
+Cette reservation en memoire n'est PAS une intention durable, un paiement M11 ni un protocole de resolution apres crash. Une erreur peut laisser une capture inutilisable alors que le debit reel n'a pas eu lieu : **fail-closed volontaire**, sans remboursement ni reexecution automatique. Une nouvelle instance perd l'historique de reservation ; le futur Scheduler/M11 devra apporter une idempotence persistante, un registre des tentatives et une consultation sure des recus. Aucune preuve G3 et aucun droit moteur.
