@@ -111,7 +111,7 @@ class OperatorFileWitness:
         # endings and json.loads() silently accepts duplicate JSON keys.
         # The recorded representation must be unique, not merely a parsed
         # object that produces the same HMAC under re-serialization.
-        for line in data.split(b"\\n")[:-1]:
+        for line in data.split(b"\n")[:-1]:
             try:
                 row = json.loads(line)
                 if _canonical(row) != line:
