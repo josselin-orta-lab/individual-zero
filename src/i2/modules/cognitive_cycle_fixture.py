@@ -18,19 +18,16 @@ from pathlib import Path
 import sqlite3
 from typing import Protocol
 
-from .intention_continuity import IntentionContinuity, IntentionTransition, _ref
+from .intention_continuity import FirstPersonCapture, IntentionContinuity, IntentionTransition, _ref
 from .intention_ingress import ObservationClaim, INTAKE_UC
-from .intention_atomic_fixture import _claim_map, _parse_claim, _request
 from .option_reconstruction import reconstruct_candidates, CandidateFrame
 from .competition_preview import (
     CompetitionPreview, CompetitionReceipt, SubjectiveValuation,
     OPERATION, UC_PER_CANDIDATE, _frame,
 )
-from .competition_transaction_fixture import _frame_map, _advice_map, _AcceptFrame, _PublishedValues
-from .action_control_boundary import ActionControlBoundary, SafetyFinding, ControlReview
-from .action_control_custody_fixture import (
-    _LocalLedger as _ControlLedger, _CaptureSafety, _RecordedSafety,
-    _AcceptedCurrent, _RECEIPT_KEYS, _SAFETY_KEYS, _REVIEW_KEYS,
+from .action_control_boundary import (
+    ActionControlBoundary, ControlReceipt, SafetyFinding, ControlReview,
+    CONTROL_OPERATION, CONTROL_UC,
 )
 
 SCHEMA = "i2-unified-cognitive-lifecycle-fixture-v4"
@@ -47,6 +44,20 @@ _TERMINAL_FIELDS = frozenset({
     "terminal_ref", "evidence_ref",
 })
 _TERMINAL_FAULTS = frozenset({"after_insert", "before_commit", "after_commit"})
+
+# Serialization belongs to the one v4 journal, never to obsolete ledgers.
+_CLAIM_FIELDS = frozenset({"life_ref", "source_event_ref", "subjective_evidence_refs", "capture"})
+_CAPTURE_FIELDS = frozenset({
+    "step", "ref", "goal_ref", "accessible_semantics", "contradicted_semantics",
+})
+_VALUE_KEYS = frozenset({"candidate_ref", "receipt_ref", "evidence_ref", "value"})
+_RECEIPT_KEYS = frozenset(ControlReceipt.__dataclass_fields__)
+_SAFETY_KEYS = frozenset(SafetyFinding.__dataclass_fields__)
+_REVIEW_KEYS = frozenset({
+    "frame_ref", "capture_ref", "physical_step", "status",
+    "suggested_candidate_ref", "control_receipt_ref", "safety_evidence_ref",
+    "motor_authority",
+})
 
 
 def _json(value: object) -> str:
@@ -70,6 +81,185 @@ def _competition_ref(life: str, frame_ref: str, candidate_ref: str,
                      seq: int, index: int) -> str:
     return "cycle:competition:" + _digest([SCHEMA, life, frame_ref, candidate_ref, seq, index])
 
+
+# V4-owned serialization/replay helpers, formerly hosted by three retired SQLite fixtures.
+def _claim_map(claim: ObservationClaim) -> dict[str, object]:
+    claim.validate()
+    c = claim.capture
+    return {
+        "life_ref": claim.life_ref, "source_event_ref": claim.source_event_ref,
+        "subjective_evidence_refs": list(claim.subjective_evidence_refs),
+        "capture": {
+            "step": c.step, "ref": c.ref, "goal_ref": c.goal_ref,
+            "accessible_semantics": list(c.accessible_semantics),
+            "contradicted_semantics": list(c.contradicted_semantics),
+        },
+    }
+
+
+def _parse_claim(payload: object) -> ObservationClaim:
+    if type(payload) is not dict or set(payload) != _CLAIM_FIELDS:
+        raise ValueError("invalid claim schema")
+    c = payload["capture"]
+    if type(c) is not dict or set(c) != _CAPTURE_FIELDS:
+        raise ValueError("invalid capture schema")
+    if any(type(c[key]) is not list for key in
+           ("accessible_semantics", "contradicted_semantics")):
+        raise ValueError("invalid capture sequences")
+    if type(payload["subjective_evidence_refs"]) is not list:
+        raise ValueError("invalid evidence sequence")
+    claim = ObservationClaim(
+        life_ref=payload["life_ref"],
+        source_event_ref=payload["source_event_ref"],
+        subjective_evidence_refs=tuple(payload["subjective_evidence_refs"]),
+        capture=FirstPersonCapture(
+            step=c["step"], ref=c["ref"], goal_ref=c["goal_ref"],
+            accessible_semantics=tuple(c["accessible_semantics"]),
+            contradicted_semantics=tuple(c["contradicted_semantics"]),
+        ),
+    )
+    claim.validate()
+    return claim
+
+
+def _request(method: str, semantic_ref: str | None = None,
+             evidence_ref: str | None = None, ttl_steps: int | None = None) -> dict[str, object]:
+    if method not in ("open", "observe"):
+        raise ValueError("invalid intention method")
+    if method == "open":
+        _ref(semantic_ref, "semantic ref")
+        _ref(evidence_ref, "evidence ref")
+        if type(ttl_steps) is not int or not 1 <= ttl_steps <= 64:
+            raise ValueError("invalid intention TTL")
+    elif any(x is not None for x in (semantic_ref, evidence_ref, ttl_steps)):
+        raise ValueError("observe takes no additional intention proposal")
+    return {"method": method, "semantic_ref": semantic_ref,
+            "evidence_ref": evidence_ref, "ttl_steps": ttl_steps}
+
+def _frame_map(frame: CandidateFrame) -> dict[str, object]:
+    _frame(frame)
+    return {"frame_ref": frame.frame_ref, "life_ref": frame.life_ref,
+            "capture_ref": frame.capture_ref, "physical_step": frame.physical_step,
+            "claim_digest": frame.claim_digest,
+            "work_correlation_ref": frame.work_correlation_ref,
+            "candidates": [{"candidate_ref": x.candidate_ref,
+                            "semantic_ref": x.semantic_ref,
+                            "intention_ref": x.intention_ref}
+                           for x in frame.candidates]}
+
+def _advice_map(advice: CompetitionAdvice) -> dict[str, object]:
+    return {"status": advice.status,
+            "suggested_candidate_ref": advice.suggested_candidate_ref,
+            "evaluated_candidate_refs": list(advice.evaluated_candidate_refs),
+            "receipt_refs": list(advice.receipt_refs),
+            "values": [{"candidate_ref": v.candidate_ref, "receipt_ref": v.receipt_ref,
+                        "evidence_ref": v.evidence_ref, "value": v.value}
+                       for v in advice.valuation_records]}
+
+class _PublishedValues:
+    """Replay saved values to the same pure Competition policy, not a new oracle."""
+    def __init__(self, values: object) -> None:
+        if type(values) is not list:
+            raise ValueError("invalid saved values")
+        self.values = []
+        for item in values:
+            if type(item) is not dict or set(item) != _VALUE_KEYS:
+                raise ValueError("invalid saved valuation")
+            v = SubjectiveValuation(**item)
+            v.validate()
+            self.values.append(v)
+
+    def evaluate_batch(self, *, frame: CandidateFrame,
+                       receipts: tuple[CompetitionReceipt, ...]) -> tuple[SubjectiveValuation, ...]:
+        return tuple(self.values)
+
+
+class _AcceptFrame:
+    def verify(self, *, life_ref: str, frame: CandidateFrame) -> bool:
+        return True  # Only for audit replay; NOT an independent attester.
+
+def _control_ref(life: str, frame: CandidateFrame, candidate: str, seq: int) -> str:
+    return "synthetic:control:" + _digest([SCHEMA, life, frame.frame_ref,
+                                        frame.claim_digest, candidate, seq])
+
+class _AcceptedCurrent:
+    """For local replay only. NOT M11 authentication."""
+    def verify_current(self, *, life_ref: str, frame: CandidateFrame,
+                       advice: CompetitionAdvice) -> bool:
+        return True
+
+
+class _ControlLedger:
+    """Debit local synthetic UC within the caller's existing transaction."""
+    def __init__(self, *, conn: sqlite3.Connection | None, life_ref: str,
+                 seq: int, balance: int, fault: str | None = None) -> None:
+        self.conn = conn
+        self.life_ref = life_ref
+        self.seq = seq
+        self.remaining = balance
+        self.spent = 0
+        self.receipt: ControlReceipt | None = None
+        self.fault = fault
+
+    def debit(self, *, life_ref: str, frame_ref: str, capture_ref: str,
+              claim_digest: str, candidate_ref: str, operation: str,
+              units: int) -> ControlReceipt | None:
+        if (life_ref != self.life_ref or operation != CONTROL_OPERATION or
+                type(units) is not int or units != CONTROL_UC):
+            raise ValueError("unexpected synthetic control debit")
+        if self.remaining < CONTROL_UC:
+            return None
+        self.remaining -= CONTROL_UC
+        self.spent += CONTROL_UC
+        if self.conn is not None:
+            self.conn.execute("UPDATE account SET remaining_uc=remaining_uc-? WHERE id=1",
+                              (CONTROL_UC,))
+        if self.fault == "after_control_debit":
+            raise FaultInjected("after synthetic Action Control debit")
+        # The resulting deterministic receipt is generated by the *local fixture*,
+        # not an external Scheduler. Its identity is tied to the full frame.
+        candidate = _ref(candidate_ref, "synthetic candidate")
+        frame = self._frame
+        if (frame_ref != frame.frame_ref or capture_ref != frame.capture_ref or
+                claim_digest != frame.claim_digest):
+            raise ValueError("control debit context mismatch")
+        self.receipt = ControlReceipt(
+            _control_ref(self.life_ref, frame, candidate, self.seq), life_ref,
+            frame_ref, capture_ref, claim_digest, candidate, operation, units)
+        return self.receipt
+
+    def bind_frame(self, frame: CandidateFrame) -> _ControlLedger:
+        self._frame = frame
+        return self
+
+
+class _CaptureSafety:
+    def __init__(self, source: object, fault: str | None = None) -> None:
+        self.source = source
+        self.fault = fault
+        self.finding: SafetyFinding | None = None
+
+    def check(self, *, life_ref: str, frame: CandidateFrame,
+              candidate_ref: str, control_receipt_ref: str) -> SafetyFinding:
+        value = self.source.check(life_ref=life_ref, frame=frame,
+                                  candidate_ref=candidate_ref,
+                                  control_receipt_ref=control_receipt_ref)
+        self.finding = value
+        if self.fault == "after_safety":
+            raise FaultInjected("after synthetic safety review")
+        return value
+
+
+class _RecordedSafety:
+    """Replays recorded data, not the current outside-world safety authority."""
+    def __init__(self, finding: SafetyFinding | None) -> None:
+        self.finding = finding
+
+    def check(self, *, life_ref: str, frame: CandidateFrame,
+              candidate_ref: str, control_receipt_ref: str) -> SafetyFinding:
+        if self.finding is None:
+            raise ValueError("missing historically stored safety finding")
+        return self.finding
 
 class ObservationSource(Protocol):
     def verify(self, *, life_ref: str, claim: ObservationClaim, digest: str) -> bool: ...
