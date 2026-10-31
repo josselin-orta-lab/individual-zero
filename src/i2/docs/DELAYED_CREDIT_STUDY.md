@@ -79,3 +79,7 @@ Avant d'accepter un score H2 dans le journal cognitif, le validateur recalcule l
 ## Vérification distincte du sélecteur 4/16 (G2)
 
 `test_h2_fresh_committed_selector.py` fixe quatre régimes supplémentaires de 24 issues, différents des batteries #710 et #711. Le sélecteur #712 est inchangé. Chaque scénario utilise 24 COMMITs dans son propre journal v5, une relecture froide et un rapport de MAE exact pour sélection 4/16, horizons fixes, historique et persistance, y compris résultats défavorables. Un scénario injecte une erreur avant COMMIT et la perte de son accusé après COMMIT. Résultats imprimés sans filtrage. Les scénarios sont conçus dans cette PR : ce n'est pas une préinscription indépendante ni une validation de politique motrice.
+
+## Comparateur fantôme à trois prédicteurs (G2)
+
+`feedback_three_way_shadow_report()` compare H2-16, H2-4 et persistance depuis les scores du seul journal v5 audité. La règle fixe utilise les erreurs des huit épisodes strictement antérieurs, avec départage déterministe 16, puis 4, puis persistance. Trois nouveaux régimes sont testés sur des COMMITs synthétiques, sans changement de l'apprentissage, du stockage ni de l'autorité motrice. Les tests ne fournissent pas une préinscription indépendante ou une preuve de généralisation ; les performances défavorables doivent être conservées.
