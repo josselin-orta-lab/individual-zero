@@ -39,3 +39,7 @@ Le port de mémoire n'est pas encore un propriétaire durable, ni un Scheduler r
 **Limites :** les ports de test ne sont pas une attestation M11, la génération n'est pas authentifiée indépendamment, et la vérification ne modifie ni mémoire ni décision motrice. Cette interface ne garantit pas la vérité d'un événement, l'atomicité, le non-rejeu mondial ni la mortalité d'un véritable individu. G3 demeure `NOT_ESTABLISHED`.
 
 Le garde-fou de compatibilité rejette explicitement une étiquette de génération différente de `I2` et toute conséquence non observée. Cette étiquette locale n'est **pas** une attestation cryptographique de génération : l'authentification reste entièrement absente du port simulé.
+
+## Crédit conditionné à une chaîne physique déclarée (G2)
+
+`study_physically_linked_credit` vérifie, avant tout calcul de crédit, une correspondance 1:1 entre chaque transition subjective et chaque effet physique déclaré, une chaîne continue d'états avant/après et de pas, l'absence de références de COMMIT et d'admission rejouées et l'absence d'effet terminal. Un refus annule tout résultat, sans crédit partiel. Les attestations demeurent des doubles de test sans ancre WorldBody/M11 : la cohérence d'une chaîne déclarée n'établit ni réalité physique ni causalité. Aucun droit moteur, aucun propriétaire supplémentaire.
