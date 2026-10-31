@@ -7,7 +7,7 @@ Chaque génération possède ses propres modules, runtime, Lab, UC, mémoire, co
 ## Sources normatives et état courant
 
 - [Contrat de recherche I2](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md) : proposition G1, non revue indépendamment.
-- [Cycle cognitif v4](COGNITIVE_CONTROL_UNIFIED.md) : unique propriétaire SQLite synthétique du débit UC, de l'intention, Competition, Action Control et du terminal.
+- [Cycle cognitif v5](COGNITIVE_CONTROL_UNIFIED.md) : unique propriétaire SQLite synthétique du débit UC, de l'intention, Competition, Action Control et du terminal.
 - [Étude H2](DELAYED_CREDIT_STUDY.md) : apprentissage et crédit différé **expérimentaux**, pas de politique motrice prouvée.
 - [État actuel](STATUS.md) : portes G0 à G6, blocages, inventaire et liens vers les expériences.
 
