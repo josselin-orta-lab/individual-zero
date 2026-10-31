@@ -8,6 +8,10 @@
 4. Review [strict autonomy](../decisions/ADR-0001-strict-generation-autonomy.md), [generation map](../architecture/ENGINE_GENERATIONS.md) and [promotion procedure](ENGINE_PROMOTION.md) only for generation-sensitive work.
 5. For old I0 material, see [archive index](../../config/archives/i0-20261017.json); do not rewrite preserved bytes.
 
+## Research-first intervention selection
+
+If the task is not already narrowly specified, first run `python tools/research_coordinator.py status` and `python tools/research_coordinator.py recommend`. Its recommendations are provisional and do not authorize experiments, births or changes to scientific gates. See [global research coordination](RESEARCH_COORDINATOR.md).
+
 ## Lightweight first checks
 
 ```bash

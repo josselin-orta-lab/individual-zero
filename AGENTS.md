@@ -4,6 +4,8 @@ This file governs **repository work**, never the mind, values or behavior of a b
 
 ## Start in this order
 
+**When selecting the next intervention (rather than executing a specified task)**, first consult [global research coordination](docs/engineering/RESEARCH_COORDINATOR.md) and run `python tools/research_coordinator.py recommend`. Review evidence gaps, dependencies, negative results, live issues/PRs and the exact SHA before choosing a scoped task. A recommendation is not permission to run experiments or to approve a generation.
+
 1. Read [the agent navigation map](docs/engineering/AGENT_NAVIGATION.md) and `config/engine-registry.json` to establish the **active generation**.
 2. Read the chosen generation's `engine.json`, its `AGENTS.md` (if present), and its own `docs/README.md` and `docs/STATUS.md`.
 3. Read [ADR-0001](docs/decisions/ADR-0001-strict-generation-autonomy.md) and only the contracts, tests and evidence relevant to the affected boundary.

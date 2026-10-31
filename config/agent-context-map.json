@@ -326,6 +326,46 @@
         "python tools/check_tool_inventory.py",
         "python tools/agent_context.py audit --json"
       ]
+    },
+    "research-coordination": {
+      "generation": "any",
+      "summary": "Synthesize global research status, scientific gates, evidence gaps and the next justified intervention",
+      "match_paths": [
+        "config/research-program.json",
+        "tools/research_coordinator.py",
+        "tests/test_research_coordinator.py",
+        "docs/engineering/RESEARCH_COORDINATOR.md"
+      ],
+      "keywords": [
+        "global research",
+        "research coordination",
+        "next intervention",
+        "scientific bottlenecks",
+        "research roadmap"
+      ],
+      "documents": [
+        "docs/engineering/RESEARCH_COORDINATOR.md",
+        "src/i1/docs/EVIDENCE_MATRIX.md",
+        "src/i1/docs/STATUS.md",
+        "src/i2/docs/STATUS.md",
+        "docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md"
+      ],
+      "owners": [
+        "config/research-program.json",
+        "config/engine-registry.json"
+      ],
+      "tests": [
+        "tests/test_research_coordinator.py"
+      ],
+      "invariants": [
+        "Source-marker matching is not evidence or gate approval.",
+        "No automatic execution, birth, cohort launch or I2 promotion.",
+        "Retain negative and unexecuted outcomes and review G0/G1 before living comparisons."
+      ],
+      "checks": [
+        "python tools/research_coordinator.py audit",
+        "python -m unittest discover -s tests -p test_research_coordinator.py -v"
+      ]
     }
   },
   "workflows": {

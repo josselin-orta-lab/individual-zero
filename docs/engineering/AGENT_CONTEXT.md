@@ -1,5 +1,7 @@
 # Task-scoped context routing for development agents
 
+**Choose the scientific problem before choosing its files.** Start with [global research coordination](RESEARCH_COORDINATOR.md) and `python tools/research_coordinator.py recommend`. The task router is used only *after* selecting a justified intervention.
+
 The repository root [`AGENTS.md`](../../AGENTS.md), generation-owned `AGENTS.md`, generation `engine.json`, and live source remain the authorities. The map at [`config/agent-context-map.json`](../../config/agent-context-map.json) is **only a navigational index**. It cannot register an engine, declare a mechanism active, launch a CI workflow, approve a scientific claim, or grant an I2 fixture motor authority.
 
 ## Two-minute workflow

@@ -1,0 +1,74 @@
+# Global research coordinator
+
+**Global understanding comes first; task routing comes second.** A development agent should explain what Individual Zero has actually demonstrated, which hypotheses remain unproven, what blocks the next scientific gate, and which intervention reduces the most uncertainty before inspecting individual modules.
+
+The [research program](../../config/research-program.json) contains a **curated, source-linked** set of falsifiable questions (I1-L3 and I2-H1/H2/H3), I2 gates G0–G6, and intervention candidates. Its initial coverage is **not exhaustive**: it does not automatically summarize every historic report or GitHub issue. Extend it as reviewed questions are added. Never overwrite negative results or turn this manifest into a second evidence authority.
+
+## Start with global research state
+
+From the repository root:
+
+```bash
+python tools/research_coordinator.py audit
+python tools/research_coordinator.py status
+python tools/research_coordinator.py recommend --top 5
+python tools/research_coordinator.py recommend --generation I2 --format json
+python tools/research_coordinator.py graph
+```
+
+The tool rereads the local generation registry, I2 contract and cited status/research texts. A `MARKER_PRESENT` means **the cited words have not changed**, not that their scientific assertions have been independently verified. A changed/missing anchor yields `SOURCE_REVIEW_REQUIRED`. Dated reports remain dated even when markers match. Real code determines what can execute; original evidence and reviewed verdicts determine what science established.
+
+A recommendation contains question and gate, issue link, expected new knowledge, likely falsifying result, deliverables, blockers and an owner route. `REVIEW_CANDIDATE` means **review**, not execute. `BLOCKED_GATE` means required reviews are missing. A closed issue is not evidence of scientific success.
+
+The planning heuristic combines downstream gate dependency count, ordinal information gain (1–3), estimated effort (1–3) and risk (1–3). **Scores are not probabilities, measured scientific confidence or statistical significance.**
+
+## Agent decision cycle
+
+1. Re-read HEAD, registry, engine contracts, current statuses, evidence matrix and this program. Flag contradictions.
+2. Inspect live GitHub issues, relevant open PRs on the exact SHA, original traces and negative findings. This tool does not fetch authenticated GitHub state.
+3. Identify the **critical research dependency**. Distinguish code existence, tested software, observed behavior and independently established science.
+4. Propose the smallest falsifiable intervention that closes a consequential gap, including competing explanations and a potential negative result.
+5. Obtain review/protocol approval where required; never launch a study just to fill missing rows.
+6. Only then call `python tools/agent_context.py route --route <agent-route>` for scoped ownership and tests.
+7. Produce an [agent handoff](AGENT_HANDOFF.md): exact SHA, evidence, test results and next independent research question.
+
+In the dated 31 October 2026 source reports, I1 A1-C has a targeted **NO_GO**, L3 is **NOT_ESTABLISHED**, A2-R is **NOT_EXECUTED**, and I2 G2 is synthetic/non-living. Independent G1 review (#662) and G0 archive/custody verification (#661) deserve examination **before** G3 living architecture or G5 comparisons. These are recorded assessments, not verified live issue states.
+
+## Optional issue-state snapshot
+
+A separately connected agent can supply temporary JSON with `schema`, `repository`, `commit_sha`, `captured_at` and `issues`. Example:
+
+```json
+{
+  "schema": "individual-zero-github-snapshot/v1",
+  "repository": "josselin-orta-lab/individual-zero",
+  "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "captured_at": "2026-11-01T00:00:00+00:00",
+  "issues": [
+    {"number": 661, "state": "open", "url": "https://github.com/josselin-orta-lab/individual-zero/issues/661"}
+  ]
+}
+```
+
+The SHA and timestamp above are **illustrative placeholders**. The tool validates structure, issue URLs, exact-SHA agreement and a 24-hour freshness window:
+
+```bash
+python tools/research_coordinator.py recommend --format json \
+  --at-sha <exact-current-SHA> --github-snapshot /tmp/issues.json
+```
+
+**User-supplied JSON cannot be authenticated by this script.** Even a fresh, structurally valid snapshot cannot certify issue completion, evidence, G1/G3 approval or authorization. Verify directly in the GitHub connector before deciding. Do not commit transient snapshots as canonical evidence.
+
+## Guardrails and maintenance
+
+I2 remains `PROPOSAL_ONLY` without birth or motor rights. Synthetic witness tests do not establish independent M11. The coordinator cannot run cohorts, approve gates, edit the registry or promote a generation. These are explicit review and scientific decisions.
+
+When evidence or an accepted decision changes, update the **owning source document first**, then review the research program in a PR with traceable citations and falsifiable alternatives:
+
+```bash
+python tools/research_coordinator.py audit
+python -m unittest discover -s tests -p test_research_coordinator.py -v
+python tools/agent_context.py audit --json
+```
+
+This is an initial, inspectable research-planning layer. Expand its reviewed coverage over time, rather than claiming full understanding of hundreds of historical files from filenames alone.
