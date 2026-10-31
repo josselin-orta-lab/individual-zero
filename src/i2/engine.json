@@ -1,0 +1,30 @@
+{
+  "schema": "individual-zero-engine-contract/v1",
+  "generation": "I2",
+  "status": "proposal",
+  "parent": "I1",
+  "paths": {
+    "engine": "src/i2",
+    "lab": "src/i2/lab",
+    "runtime": "src/i2/runtime",
+    "tests": "tests/i2",
+    "documentation": "src/i2/docs"
+  },
+  "entrypoints": {},
+  "publication_owners": [],
+  "constraints": {
+    "first_person_observations_only": true,
+    "uc_billed_cognition": true,
+    "mortality_irreversible": true,
+    "live_state_rollback": false,
+    "hidden_oracle_input": false,
+    "legacy_h1_h2_default": false
+  },
+  "persistence": {
+    "no_postmortem_recovery": true
+  },
+  "scientific": {
+    "gate": "not_established"
+  },
+  "activation": "NOT_REGISTERED_NOT_EXECUTABLE"
+}
