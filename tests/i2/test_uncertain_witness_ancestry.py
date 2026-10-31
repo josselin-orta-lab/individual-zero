@@ -81,6 +81,26 @@ class AncestryTests(unittest.TestCase):
             minimum_witness=floor)
         self.assertEqual(result.local.outcome,"RECORDED_LOCAL_ONLY")
         self.assertFalse(result.retry_authorized)
+    def test_invalid_minimum_refused_before_probing_or_external_read(self):
+        f=self.make("invalid-floor.sqlite")
+        c=self.source.add(claim(3))
+        w=Witness(checkpoint(f.audit()))
+        for invalid in (object(), "not-a-witness", True):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                self.check(f,c,w,invalid)
+            with self.subTest(terminal=invalid), self.assertRaises(ValueError):
+                inspect_uncertain_terminal_with_witness(
+                    fixture=f,witness=w,previous_count=0,previous_head=ZERO_HASH,
+                    physical_step=3,terminal_ref="terminal:test",evidence_ref="evidence:test",
+                    minimum_witness=invalid,
+                )
+        from dataclasses import replace
+        foreign=replace(checkpoint(f.audit()),life_ref="life:foreign")
+        with self.assertRaises(ValueError):
+            self.check(f,c,w,foreign)
+        self.assertEqual(w.calls,0)
+        self.assertEqual(f.audit()["committed"],0)
+
     def test_provider_race_is_unknown_even_after_valid_prefix(self):
         f=self.make("race.sqlite")
         c=self.write(f,3)
