@@ -5,7 +5,7 @@ import tempfile
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/"src"))
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from test_unified_control_cycle import (LIFE,A,B,C,claim,ObservationPort,Values,Current,Safety)
+from test_unified_control_cycle import (LIFE,A,B,C,claim,ObservationPort,Values,Current,Safety,Terminal)
 from i2.modules.cognitive_cycle_fixture import CognitiveCycleFixture
 from i2.modules.delayed_credit_study import (
     ClaimedLivedStep, MatchedLivedEpisode, ForecastOpportunity,
@@ -54,7 +54,8 @@ class BridgeTests(unittest.TestCase):
         fixture=CognitiveCycleFixture.create(
             path=self.db,life_ref=LIFE,synthetic_uc=capacity,
             observation_source=self.source,valuation_source=port,
-            current_source=self.current,safety_source=self.safety)
+            current_source=self.current,safety_source=self.safety,
+            genesis_ref="genesis:paid-feedback",terminal_source=Terminal())
         return fixture,c
     def test_favorable_history_changes_paid_advice_and_keeps_veto(self):
         fixture,c=self.make(8,control_veto=True)
@@ -141,7 +142,8 @@ class BridgeTests(unittest.TestCase):
         fixture=CognitiveCycleFixture.create(
             path=self.db,life_ref=LIFE,synthetic_uc=20,
             observation_source=self.source,valuation_source=port,
-            current_source=self.current,safety_source=self.safety)
+            current_source=self.current,safety_source=self.safety,
+            genesis_ref="genesis:paid-feedback",terminal_source=Terminal())
         with self.assertRaisesRegex(ValueError,"feedback readout not attested"):
             fixture.open(claim=c,semantic_ref=A,evidence_ref="evidence:30",ttl_steps=12)
         self.assertEqual(fixture.audit()["remaining_synthetic_uc"],20)
@@ -167,7 +169,8 @@ class BridgeTests(unittest.TestCase):
                                      source=Proofs(),baseline=self.base)
         fixture=CognitiveCycleFixture.create(path=self.db,life_ref=LIFE,
             synthetic_uc=20,observation_source=self.source,valuation_source=port,
-            current_source=self.current,safety_source=self.safety)
+            current_source=self.current,safety_source=self.safety,
+            genesis_ref="genesis:paid-feedback",terminal_source=Terminal())
         with self.assertRaisesRegex(ValueError,"fractional"):
             fixture.open(claim=c,semantic_ref=A,evidence_ref="evidence:30",ttl_steps=12)
         self.assertEqual(fixture.audit()["remaining_synthetic_uc"],20)

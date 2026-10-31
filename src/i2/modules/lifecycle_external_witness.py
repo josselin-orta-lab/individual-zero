@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 WITNESS_SCHEMA = "i2-lifecycle-external-witness-proposal-v2"
-LIFECYCLE_SCHEMA = "i2-unified-cognitive-lifecycle-fixture-v3"
+from .cognitive_cycle_fixture import SCHEMA as LIFECYCLE_SCHEMA
 ZERO_HASH = "0" * 64
 _HEX = frozenset("0123456789abcdef")
 
@@ -51,7 +51,7 @@ class LatestWitness:
         _ref(self.genesis_ref, "witness genesis")
         _ref(self.proof_ref, "external witness proof")
         if self.journal_schema != LIFECYCLE_SCHEMA:
-            raise ValueError("witness is not for v3 synthetic lifecycle")
+            raise ValueError("witness is not for unified synthetic lifecycle")
         if (type(self.committed) is not int or self.committed < 0 or
                 type(self.last_step) is not int or self.last_step < -1):
             raise ValueError("invalid witness sequence")
@@ -198,8 +198,8 @@ def verify_fixture(*, fixture: object, witness: IndependentWitness) -> WitnessAu
     This does NOT guard subsequent writes or attest real death. It is not a
     lock on WorldBody, a committed M11 owner or a recovery authorization.
     """
-    from .cognitive_cycle_fixture import CognitiveCycleFixture, LIFECYCLE_SCHEMA as CURRENT
+    from .cognitive_cycle_fixture import CognitiveCycleFixture, SCHEMA as CURRENT
     if (CURRENT != LIFECYCLE_SCHEMA or type(fixture) is not CognitiveCycleFixture
-            or fixture.schema != LIFECYCLE_SCHEMA or not fixture.lifecycle_enabled):
+            or fixture.schema != LIFECYCLE_SCHEMA):
         raise ValueError("exact I2 synthetic v3 fixture required")
     return compare_audit(report=fixture.audit(), witness=witness)

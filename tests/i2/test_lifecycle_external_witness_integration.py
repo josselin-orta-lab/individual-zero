@@ -14,7 +14,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
-from i2.modules.cognitive_cycle_fixture import CognitiveCycleFixture, LIFECYCLE_SCHEMA  # noqa: E402
+from i2.modules.cognitive_cycle_fixture import CognitiveCycleFixture, SCHEMA as LIFECYCLE_SCHEMA  # noqa: E402
 from i2.modules.lifecycle_external_witness import (  # noqa: E402
     LatestWitness, WITNESS_SCHEMA, compare_audit, verify_fixture,
 )
@@ -100,7 +100,7 @@ class SQLiteWitnessIntegration(unittest.TestCase):
                                      evidence_ref="evidence:synthetic-term")
 
     def test_real_v3_schema_is_bound_to_witness_contract(self):
-        self.assertEqual(LIFECYCLE_SCHEMA, "i2-unified-cognitive-lifecycle-fixture-v3")
+        self.assertEqual(LIFECYCLE_SCHEMA, "i2-unified-cognitive-lifecycle-fixture-v4")
 
     def test_exact_empty_v3_inspection_remains_nonmotor(self):
         f = self.create()
@@ -169,15 +169,6 @@ class SQLiteWitnessIntegration(unittest.TestCase):
         with self.assertRaises(ValueError):
             verify_fixture(fixture=f, witness=anchor)
         self.assertEqual(anchor.calls, [])
-
-    def test_wrong_fixture_schema_refuses_witness_proof(self):
-        legacy = Path(self.t.name) / "old-v1.sqlite"
-        v1 = CognitiveCycleFixture.create(path=legacy, life_ref=LIFE,
-                    synthetic_uc=4, observation_source=EmptySource(),
-                    valuation_source=EmptyValues())
-        with self.assertRaisesRegex(ValueError, "exact I2 synthetic v3"):
-            verify_fixture(fixture=v1, witness=Witness(checkpoint(self.create().audit())))
-
 
     def cold_audit_in_separate_process(self, path):
         """Audit an existing SQLite snapshot in a separate Python process.

@@ -1,15 +1,12 @@
-"""Inert I2 SQLite fixture: one atomic *synthetic* cognitive cycle.
+"""I2 inert unified SQLite research fixture, one schema only.
 
-The optional v2 mode extends the same single SQLite COMMIT across a mock
-intention consultation, reconstruction, full-frame Competition advice and an
-independent synthetic Action Control review and veto, debited from ONE local
-UC balance. The original v1 cognition-only fixture remains supported. A v3 research mode
-pins a caller-declared synthetic genesis and seals one terminal event inside
-that SAME SQLite ledger; this is not a physiological death witness.
+One local synthetic transaction owns intention, Competition UC, Action Control
+review, and an absorbing synthetic terminal marker. Cognition-only v1,
+optional-control v2 and former v3 layouts are no longer accepted: there is
+no migration, compatibility branch or physical actuation.
 
-This is NOT a living engine, real Scheduler, M11 WAL, physical Action Control,
-first-person proof or motor command. External ports are simulated read-only
-claims; do not attach this fixture to a living individual's UC account.
+This is NOT a living engine, Scheduler, WorldBody, M11, or independent
+birth/death authority. External attestations remain synthetic test ports.
 """
 from __future__ import annotations
 
@@ -36,17 +33,13 @@ from .action_control_custody_fixture import (
     _AcceptedCurrent, _RECEIPT_KEYS, _SAFETY_KEYS, _REVIEW_KEYS,
 )
 
-SCHEMA = "i2-unified-cognitive-cycle-fixture-v1"
-CONTROL_SCHEMA = "i2-unified-cognitive-control-fixture-v2"
-LIFECYCLE_SCHEMA = "i2-unified-cognitive-lifecycle-fixture-v3"
+SCHEMA = "i2-unified-cognitive-lifecycle-fixture-v4"
 ZERO_HASH = "0" * 64
 _FAULTS = frozenset({"after_intake_debit", "after_intention", "after_competition_debit",
                     "after_control_debit", "after_safety", "before_commit", "after_commit"})
 _EVENT_FIELDS = frozenset({
     "seq", "claim", "claim_digest", "request", "intake_receipt_ref", "intention_kind",
     "owner_snapshot", "frame", "advice", "intake_uc", "competition_uc",
-})
-_CONTROL_EVENT_FIELDS = _EVENT_FIELDS | frozenset({
     "control_review", "control_receipt", "safety_finding", "control_uc",
 })
 _TERMINAL_FIELDS = frozenset({
@@ -211,11 +204,11 @@ def _make_receipt(seq: int, claim: ObservationClaim, data: dict, chain: str) -> 
         competition_status="POLICY_REJECTED" if advice is None else advice["status"],
         suggested_candidate_ref=None if advice is None else advice["suggested_candidate_ref"],
         intake_uc=data["intake_uc"], competition_uc=data["competition_uc"], chain_head=chain,
-        control_status=None if data.get("control_review") is None else data["control_review"]["status"],
-        control_uc=data.get("control_uc", 0),
-        control_receipt_ref=(None if data.get("control_receipt") is None
+        control_status=None if data["control_review"] is None else data["control_review"]["status"],
+        control_uc=data["control_uc"],
+        control_receipt_ref=(None if data["control_receipt"] is None
                              else data["control_receipt"]["ref"]),
-        control_suggested_candidate_ref=(None if data.get("control_review") is None
+        control_suggested_candidate_ref=(None if data["control_review"] is None
                                          else data["control_review"]["suggested_candidate_ref"]),
     )
 
@@ -230,51 +223,30 @@ class CognitiveCycleFixture:
     def __init__(self, *, path: Path, life_ref: str,
                  observation_source: ObservationSource,
                  valuation_source: ValuationSource,
-                 current_source: object | None = None,
-                 safety_source: object | None = None,
-                 genesis_ref: str | None = None,
-                 terminal_source: TerminalSource | None = None) -> None:
+                 current_source: object, safety_source: object,
+                 genesis_ref: str, terminal_source: TerminalSource) -> None:
         self.path = Path(path)
         self.life_ref = _ref(life_ref, "synthetic life")
-        if not callable(getattr(observation_source, "verify", None)):
-            raise ValueError("observation source required")
-        if not callable(getattr(valuation_source, "evaluate_batch", None)):
-            raise ValueError("subjective value source required")
-        if (current_source is None) != (safety_source is None):
-            raise ValueError("both current and safety ports required for unified control mode")
-        if current_source is not None:
-            if not callable(getattr(current_source, "verify_current", None)):
-                raise ValueError("independent current-capture source required")
-            if not callable(getattr(safety_source, "check", None)):
-                raise ValueError("independent safety veto source required")
+        self.genesis_ref = _ref(genesis_ref, "caller-declared synthetic genesis")
+        if (not callable(getattr(observation_source, "verify", None)) or
+                not callable(getattr(valuation_source, "evaluate_batch", None)) or
+                not callable(getattr(current_source, "verify_current", None)) or
+                not callable(getattr(safety_source, "check", None)) or
+                not callable(getattr(terminal_source, "verify_terminal", None))):
+            raise ValueError("all synthetic observation, control and terminal ports required")
         self.observation_source = observation_source
         self.valuation_source = valuation_source
         self.current_source = current_source
         self.safety_source = safety_source
-        self.control_enabled = current_source is not None
-        if (genesis_ref is None) != (terminal_source is None):
-            raise ValueError("genesis and terminal source must be provided together")
-        self.lifecycle_enabled = genesis_ref is not None
-        if self.lifecycle_enabled:
-            if not self.control_enabled:
-                raise ValueError("terminal sealing requires unified cognition/control")
-            self.genesis_ref = _ref(genesis_ref, "caller-declared synthetic genesis")
-            if not callable(getattr(terminal_source, "verify_terminal", None)):
-                raise ValueError("independent synthetic terminal claim port required")
-        else:
-            self.genesis_ref = None
         self.terminal_source = terminal_source
-        self.schema = (LIFECYCLE_SCHEMA if self.lifecycle_enabled else
-                       CONTROL_SCHEMA if self.control_enabled else SCHEMA)
+        self.schema = SCHEMA
 
     @classmethod
     def create(cls, *, path: Path, life_ref: str, synthetic_uc: int,
                observation_source: ObservationSource,
                valuation_source: ValuationSource,
-               current_source: object | None = None,
-               safety_source: object | None = None,
-               genesis_ref: str | None = None,
-               terminal_source: TerminalSource | None = None) -> CognitiveCycleFixture:
+               current_source: object, safety_source: object,
+               genesis_ref: str, terminal_source: TerminalSource) -> CognitiveCycleFixture:
         if type(synthetic_uc) is not int or not 0 <= synthetic_uc <= 1000000:
             raise ValueError("invalid synthetic UC capacity")
         obj = cls(path=path, life_ref=life_ref,
@@ -306,16 +278,14 @@ class CognitiveCycleFixture:
                     event_json TEXT NOT NULL, previous_hash TEXT NOT NULL,
                     event_hash TEXT NOT NULL UNIQUE);
             """)
-            if obj.lifecycle_enabled:
-                conn.execute("""CREATE TABLE lifecycle (
-                    id INTEGER PRIMARY KEY CHECK(id=1),
-                    genesis_ref TEXT NOT NULL, terminal_step INTEGER,
-                    terminal_ref TEXT, terminal_digest TEXT, terminal_hash TEXT)""")
+            conn.execute("""CREATE TABLE lifecycle (
+                id INTEGER PRIMARY KEY CHECK(id=1),
+                genesis_ref TEXT NOT NULL, terminal_step INTEGER,
+                terminal_ref TEXT, terminal_digest TEXT, terminal_hash TEXT)""")
             conn.execute("BEGIN IMMEDIATE")
             conn.execute("INSERT INTO identity VALUES (1,?,?,?)", (obj.schema, obj.life_ref, synthetic_uc))
-            if obj.lifecycle_enabled:
-                conn.execute("INSERT INTO lifecycle VALUES (1,?,NULL,NULL,NULL,NULL)",
-                             (obj.genesis_ref,))
+            conn.execute("INSERT INTO lifecycle VALUES (1,?,NULL,NULL,NULL,NULL)",
+                         (obj.genesis_ref,))
             conn.execute("INSERT INTO account VALUES (1,?,-1,0,?,?)",
                          (synthetic_uc, _json(IntentionContinuity().export_state()), ZERO_HASH))
             conn.execute("COMMIT")
@@ -328,10 +298,8 @@ class CognitiveCycleFixture:
     def reopen(cls, *, path: Path, life_ref: str,
                observation_source: ObservationSource,
                valuation_source: ValuationSource,
-               current_source: object | None = None,
-               safety_source: object | None = None,
-               genesis_ref: str | None = None,
-               terminal_source: TerminalSource | None = None) -> CognitiveCycleFixture:
+               current_source: object, safety_source: object,
+               genesis_ref: str, terminal_source: TerminalSource) -> CognitiveCycleFixture:
         obj = cls(path=path, life_ref=life_ref,
                   observation_source=observation_source, valuation_source=valuation_source,
                   current_source=current_source, safety_source=safety_source,
@@ -351,8 +319,6 @@ class CognitiveCycleFixture:
         return conn
 
     def _lifecycle(self, conn: sqlite3.Connection) -> tuple | None:
-        if not self.lifecycle_enabled:
-            return None
         row = conn.execute(
             "SELECT genesis_ref, terminal_step, terminal_ref, terminal_digest, terminal_hash "
             "FROM lifecycle WHERE id=1"
@@ -394,7 +360,7 @@ class CognitiveCycleFixture:
             if terminal_seen is not None:
                 raise ValueError("events after synthetic terminal seal")
             data = json.loads(body)
-            if self.lifecycle_enabled and type(data) is dict and data.get("kind") == "synthetic_terminal":
+            if type(data) is dict and data.get("kind") == "synthetic_terminal":
                 if set(data) != _TERMINAL_FIELDS or _json(data) != body:
                     raise ValueError("noncanonical terminal event")
                 _ref(data["terminal_ref"], "terminal event reference")
@@ -412,7 +378,7 @@ class CognitiveCycleFixture:
                 capture_refs.add(ref)
                 digests.add(digest)
                 continue
-            if type(data) is not dict or set(data) != (_CONTROL_EVENT_FIELDS if self.control_enabled else _EVENT_FIELDS) or _json(data) != body:
+            if type(data) is not dict or set(data) != _EVENT_FIELDS or _json(data) != body:
                 raise ValueError("noncanonical cognitive cycle event")
             claim = _parse_claim(data["claim"])
             request = data["request"]
@@ -450,47 +416,45 @@ class CognitiveCycleFixture:
                 if saved_advice != _advice_map(advice) or type(data["competition_uc"]) is not int or data["competition_uc"] != ledger.spent:
                     raise ValueError("competition replay or UC mismatch")
                 balance = ledger.remaining
-            if self.control_enabled:
-                if type(data["control_uc"]) is not int or data["control_uc"] < 0:
-                    raise ValueError("malformed synthetic control UC cost")
-                if transition is None:
-                    if (data["control_review"] is not None or data["control_receipt"] is not None
-                            or data["safety_finding"] is not None or data["control_uc"] != 0):
-                        raise ValueError("rejected intention cannot publish safety review")
-                else:
-                    stored_review = data["control_review"]
-                    stored_receipt = data["control_receipt"]
-                    stored_finding = data["safety_finding"]
-                    if (type(stored_review) is not dict or set(stored_review) != _REVIEW_KEYS
-                            or (stored_receipt is not None and
-                                (type(stored_receipt) is not dict or set(stored_receipt) != _RECEIPT_KEYS))
-                            or (stored_finding is not None and
-                                (type(stored_finding) is not dict or set(stored_finding) != _SAFETY_KEYS))):
-                        raise ValueError("invalid stored synthetic safety records")
-                    recorded_finding = SafetyFinding(**stored_finding) if stored_finding is not None else None
-                    control_ledger = _ControlLedger(
-                        conn=None, life_ref=self.life_ref, seq=seq, balance=balance,
-                    ).bind_frame(frame)
-                    review = ActionControlBoundary(
-                        life_ref=self.life_ref, current_authority=_AcceptedCurrent(),
-                        ledger=control_ledger, safety_authority=_RecordedSafety(recorded_finding),
-                    ).review(frame=frame, advice=advice)
-                    if (asdict(review) != stored_review or
-                            (asdict(control_ledger.receipt) if control_ledger.receipt else None) != stored_receipt or
-                            type(data["control_uc"]) is not int or
-                            data["control_uc"] != control_ledger.spent or
-                            review.motor_authority != "NONE"):
-                        raise ValueError("synthetic Action Control replay or debit mismatch")
-                    balance = control_ledger.remaining
+            if type(data["control_uc"]) is not int or data["control_uc"] < 0:
+                raise ValueError("malformed synthetic control UC cost")
+            if transition is None:
+                if (data["control_review"] is not None or data["control_receipt"] is not None
+                        or data["safety_finding"] is not None or data["control_uc"] != 0):
+                    raise ValueError("rejected intention cannot publish safety review")
+            else:
+                stored_review = data["control_review"]
+                stored_receipt = data["control_receipt"]
+                stored_finding = data["safety_finding"]
+                if (type(stored_review) is not dict or set(stored_review) != _REVIEW_KEYS
+                        or (stored_receipt is not None and
+                            (type(stored_receipt) is not dict or set(stored_receipt) != _RECEIPT_KEYS))
+                        or (stored_finding is not None and
+                            (type(stored_finding) is not dict or set(stored_finding) != _SAFETY_KEYS))):
+                    raise ValueError("invalid stored synthetic safety records")
+                recorded_finding = SafetyFinding(**stored_finding) if stored_finding is not None else None
+                control_ledger = _ControlLedger(
+                    conn=None, life_ref=self.life_ref, seq=seq, balance=balance,
+                ).bind_frame(frame)
+                review = ActionControlBoundary(
+                    life_ref=self.life_ref, current_authority=_AcceptedCurrent(),
+                    ledger=control_ledger, safety_authority=_RecordedSafety(recorded_finding),
+                ).review(frame=frame, advice=advice)
+                if (asdict(review) != stored_review or
+                        (asdict(control_ledger.receipt) if control_ledger.receipt else None) != stored_receipt or
+                        type(data["control_uc"]) is not int or
+                        data["control_uc"] != control_ledger.spent or
+                        review.motor_authority != "NONE"):
+                    raise ValueError("synthetic Action Control replay or debit mismatch")
+                balance = control_ledger.remaining
             chain = event_hash
             last_step = step
             capture_refs.add(ref)
             digests.add(digest)
-        if self.lifecycle_enabled:
-            expected = None if terminal_seen is None else terminal_seen
-            actual = None if lifecycle_row[1] is None else lifecycle_row[1:]
-            if expected != actual:
-                raise ValueError("terminal marker and journal disagree")
+        expected = None if terminal_seen is None else terminal_seen
+        actual = None if lifecycle_row[1] is None else lifecycle_row[1:]
+        if expected != actual:
+            raise ValueError("terminal marker and journal disagree")
         if account != (balance, last_step, count, _json(owner.export_state()), chain):
             raise ValueError("synthetic account, intention or head mismatch")
         return balance, last_step, count, chain, owner
@@ -502,18 +466,17 @@ class CognitiveCycleFixture:
             conn.execute("BEGIN")
             remaining, step, count, head, owner = self._verify(conn)
             report = {"schema": self.schema, "life_ref": self.life_ref,
-                    "control_review_included": self.control_enabled,
+                    "control_review_included": True,
                     "remaining_synthetic_uc": remaining, "last_step": step,
                     "committed": count, "chain_head": head,
                     "intention": owner.export_state()["current"],
                     "m11_authenticated": False, "scheduler_uc_authenticated": False,
                     "motor_authority": "NONE"}
-            if self.lifecycle_enabled:
-                row = self._lifecycle(conn)
-                report.update(genesis_ref=self.genesis_ref,
-                              synthetic_terminal=row[1] is not None,
-                              terminal_step=row[1], terminal_ref=row[2],
-                              physiological_death_attested=False)
+            row = self._lifecycle(conn)
+            report.update(genesis_ref=self.genesis_ref,
+                          synthetic_terminal=row[1] is not None,
+                          terminal_step=row[1], terminal_ref=row[2],
+                          physiological_death_attested=False)
             return report
         finally:
             conn.close()
@@ -532,21 +495,17 @@ class CognitiveCycleFixture:
         digest = claim.digest()
         # The injected source MUST be read-only and backed by authenticated
         # first-person events in a future life. Here it is a synthetic test port.
-        if not self.lifecycle_enabled and self.observation_source.verify(
-                life_ref=self.life_ref, claim=claim, digest=digest) is not True:
-            raise ValueError("unattested synthetic observation")
         conn = self._connect()
         try:
             conn.execute("BEGIN IMMEDIATE")
             balance, last_step, count, head, owner = self._verify(conn)
-            if self.lifecycle_enabled:
-                if self._lifecycle(conn)[1] is not None:
-                    raise ValueError("terminal synthetic identity cannot process cognition")
-                if claim.capture.ref.startswith("terminal:"):
-                    raise ValueError("terminal event reference cannot be a capture")
-                if self.observation_source.verify(
-                        life_ref=self.life_ref, claim=claim, digest=digest) is not True:
-                    raise ValueError("unattested synthetic observation")
+            if self._lifecycle(conn)[1] is not None:
+                raise ValueError("terminal synthetic identity cannot process cognition")
+            if claim.capture.ref.startswith("terminal:"):
+                raise ValueError("terminal event reference cannot be a capture")
+            if self.observation_source.verify(
+                    life_ref=self.life_ref, claim=claim, digest=digest) is not True:
+                raise ValueError("unattested synthetic observation")
             if claim.capture.step <= last_step or conn.execute(
                 "SELECT 1 FROM events WHERE capture_ref=? OR claim_digest=?",
                 (claim.capture.ref, digest),
@@ -577,46 +536,44 @@ class CognitiveCycleFixture:
                 advice_map = _advice_map(advice)
                 comp_uc = ledger.spent
                 balance = ledger.remaining
-                if self.control_enabled:
-                    # This is a read-only *synthetic* external freshness assertion,
-                    # not a WorldBody lock or an M11 witness.
-                    if self.current_source.verify_current(
-                        life_ref=self.life_ref, frame=frame, advice=advice,
-                    ) is not True:
-                        raise ValueError("synthetic control context not current")
-                    control_ledger = _ControlLedger(
-                        conn=conn, life_ref=self.life_ref, seq=seq,
-                        balance=balance, fault=_fault_at,
-                    ).bind_frame(frame)
-                    safety = _CaptureSafety(self.safety_source, fault=_fault_at)
-                    review = ActionControlBoundary(
-                        life_ref=self.life_ref, current_authority=_AcceptedCurrent(),
-                        ledger=control_ledger, safety_authority=safety,
-                    ).review(frame=frame, advice=advice)
-                    # A fresh assertion immediately before publication only;
-                    # no downstream right to act is minted by this fixture.
-                    if self.current_source.verify_current(
-                        life_ref=self.life_ref, frame=frame, advice=advice,
-                    ) is not True:
-                        raise ValueError("synthetic control context changed before commit")
-                    if review.motor_authority != "NONE":
-                        raise ValueError("motor authority never permitted")
-                    control_review = asdict(review)
-                    control_receipt = (asdict(control_ledger.receipt)
-                                       if control_ledger.receipt is not None else None)
-                    safety_finding = (asdict(safety.finding)
-                                      if safety.finding is not None else None)
-                    control_uc = control_ledger.spent
-                    balance = control_ledger.remaining
+                # This is a read-only *synthetic* external freshness assertion,
+                # not a WorldBody lock or an M11 witness.
+                if self.current_source.verify_current(
+                    life_ref=self.life_ref, frame=frame, advice=advice,
+                ) is not True:
+                    raise ValueError("synthetic control context not current")
+                control_ledger = _ControlLedger(
+                    conn=conn, life_ref=self.life_ref, seq=seq,
+                    balance=balance, fault=_fault_at,
+                ).bind_frame(frame)
+                safety = _CaptureSafety(self.safety_source, fault=_fault_at)
+                review = ActionControlBoundary(
+                    life_ref=self.life_ref, current_authority=_AcceptedCurrent(),
+                    ledger=control_ledger, safety_authority=safety,
+                ).review(frame=frame, advice=advice)
+                # A fresh assertion immediately before publication only;
+                # no downstream right to act is minted by this fixture.
+                if self.current_source.verify_current(
+                    life_ref=self.life_ref, frame=frame, advice=advice,
+                ) is not True:
+                    raise ValueError("synthetic control context changed before commit")
+                if review.motor_authority != "NONE":
+                    raise ValueError("motor authority never permitted")
+                control_review = asdict(review)
+                control_receipt = (asdict(control_ledger.receipt)
+                                   if control_ledger.receipt is not None else None)
+                safety_finding = (asdict(safety.finding)
+                                  if safety.finding is not None else None)
+                control_uc = control_ledger.spent
+                balance = control_ledger.remaining
             event = {"seq": seq, "claim": _claim_map(claim), "claim_digest": digest,
                      "request": request, "intake_receipt_ref": intake_ref,
                      "intention_kind": kind, "owner_snapshot": owner.export_state(),
                      "frame": frame_map, "advice": advice_map,
                      "intake_uc": INTAKE_UC, "competition_uc": comp_uc}
-            if self.control_enabled:
-                event.update(control_review=control_review,
-                             control_receipt=control_receipt,
-                             safety_finding=safety_finding, control_uc=control_uc)
+            event.update(control_review=control_review,
+                         control_receipt=control_receipt,
+                         safety_finding=safety_finding, control_uc=control_uc)
             body = _json(event)
             next_hash = _chain(head, body, schema=self.schema)
             conn.execute("INSERT INTO events VALUES (?,?,?,?,?,?,?)",
@@ -644,8 +601,6 @@ class CognitiveCycleFixture:
         Never calls a real physiology owner; the injected test port has no M11
         authority. Reopening this database is for inspection, never rebirth.
         """
-        if not self.lifecycle_enabled:
-            raise ValueError("synthetic terminal seal requires v3 lifecycle mode")
         if _fault_at is not None and _fault_at not in _TERMINAL_FAULTS:
             raise ValueError("unsupported terminal test fault")
         if type(physical_step) is not int or physical_step < 0:
@@ -699,8 +654,6 @@ class CognitiveCycleFixture:
 
     def terminal_lookup(self) -> SyntheticTerminalReceipt | None:
         """Read-only terminal resolution, never authorizing process resumption."""
-        if not self.lifecycle_enabled:
-            raise ValueError("terminal lookup requires v3")
         conn = self._connect(readonly=True)
         try:
             conn.execute("BEGIN")

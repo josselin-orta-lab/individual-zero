@@ -19,7 +19,7 @@ from i2.modules.intention_ingress import ObservationClaim  # noqa: E402
 from i2.modules.competition_preview import SubjectiveValuation  # noqa: E402
 from i2.modules.action_control_boundary import SafetyFinding  # noqa: E402
 from i2.modules.cognitive_cycle_fixture import (  # noqa: E402
-    CognitiveCycleFixture, LIFECYCLE_SCHEMA, CONTROL_SCHEMA, SCHEMA,
+    CognitiveCycleFixture, SCHEMA,
     SyntheticTerminalReceipt, FaultInjected, CommitAcknowledgmentLost,
     _json, _chain,
 )
@@ -141,7 +141,7 @@ class SyntheticLifecycleTests(unittest.TestCase):
         f = self.create()
         a = f.audit()
         self.assertEqual((a["schema"], a["genesis_ref"], a["committed"]),
-                         (LIFECYCLE_SCHEMA, GENESIS, 0))
+                         (SCHEMA, GENESIS, 0))
         self.assertIs(a["synthetic_terminal"], False)
         self.assertIs(a["physiological_death_attested"], False)
         self.assertEqual((a["terminal_ref"], a["terminal_step"]), (None, None))
@@ -175,22 +175,7 @@ class SyntheticLifecycleTests(unittest.TestCase):
             self.create(terminal_source=object())
         self.assertFalse(self.path.exists())
 
-    def test_old_modes_have_no_terminal_table_or_seal_permission(self):
-        kwargs = self.args(); kwargs.pop("genesis_ref"); kwargs.pop("terminal_source")
-        v2 = CognitiveCycleFixture.create(synthetic_uc=6, **kwargs)
-        self.assertEqual(v2.audit()["schema"], CONTROL_SCHEMA)
-        with self.assertRaises(ValueError):
-            v2.seal_terminal(physical_step=2, terminal_ref="terminal:test", evidence_ref="evidence:t")
-        with self.assertRaises(ValueError): v2.terminal_lookup()
-        self.assertEqual(self.inspect_table("SELECT name FROM sqlite_master WHERE name='lifecycle'"), [])
-
-    def test_legacy_v1_unchanged_without_lifecycle(self):
-        kwargs=self.args(); [kwargs.pop(k) for k in ("genesis_ref","terminal_source","current_source","safety_source")]
-        v1=CognitiveCycleFixture.create(synthetic_uc=6,**kwargs)
-        self.assertEqual(v1.audit()["schema"],SCHEMA)
-        self.assertNotIn("synthetic_terminal",v1.audit())
-
-    def test_no_silent_v1_v2_to_v3_conversion(self):
+    def test_no_mode_or_identity_relaxation(self):
         f=self.create()
         for kwargs in (dict(genesis_ref=None,terminal_source=None),
                        dict(genesis_ref="genesis:other"),
@@ -350,7 +335,7 @@ class SyntheticLifecycleTests(unittest.TestCase):
         with closing(sqlite3.connect(self.path)) as conn, conn:
             body,prev=conn.execute("SELECT event_json,previous_hash FROM events").fetchone()
             e=json.loads(body);e["evidence_ref"]="evidence:forged"
-            altered=_json(e);head=_chain(prev,altered,schema=LIFECYCLE_SCHEMA)
+            altered=_json(e);head=_chain(prev,altered,schema=SCHEMA)
             conn.execute("UPDATE events SET event_json=?,event_hash=?",(altered,head))
             conn.execute("UPDATE account SET chain_head=?",(head,))
         with self.assertRaises(ValueError):f.audit()
@@ -369,7 +354,7 @@ class SyntheticLifecycleTests(unittest.TestCase):
             data["seq"]=2
             data["physical_step"]=3
             data["terminal_ref"]="terminal:again"
-            body=_json(data); prev=seal.chain_head; head=_chain(prev,body,schema=LIFECYCLE_SCHEMA)
+            body=_json(data); prev=seal.chain_head; head=_chain(prev,body,schema=SCHEMA)
             conn.execute("INSERT INTO events VALUES (?,?,?,?,?,?,?)",
                          (2,3,"terminal:again","a"*64,body,prev,head))
             conn.execute("UPDATE account SET committed=2,last_step=3,chain_head=?",(head,))
