@@ -2,10 +2,10 @@
 
 **PROPOSAL ONLY / NOT REGISTERED / NOT EXECUTABLE / SCIENTIFIC GO NOT ESTABLISHED.**
 
-- G0 I1 : branche de référence SHA épinglée, protection externe et diffusion auditable des archives M11 non attestées.
-- G1 : contrat de continuité et d'apprentissage documenté, revue architecturale substantielle `REVIEW_REQUIRED` (#662).
-- G2 : scaffold séparé intégré par PR #667 ; prototype **purement logiciel** de propriétaire d'intention sémantique, non connecté à un runtime vivant, proposé dans le chantier suivant. Sa documentation : [INTENTION_CONTINUITY.md](INTENTION_CONTINUITY.md).
-- G3 : tests unitaires ciblés du prototype, mais aucun test de vie I2, source cognitive UC authentifiée, moteur Action Control, M11, monde, corps ou mortalité I2.
-- G4-G6 : non commencées. Aucune comparaison prospective ou promotion.
+- G0 I1 : source Git ancrée au SHA `1e19f02db14b64a35f8bb014d69cc061f311002c` ; branche d'archive encore non protégée, diffusion auditable des M11 non attestée.
+- G1 : continuité et apprentissage décrits dans le contrat architectural ; revue scientifique substantielle `REVIEW_REQUIRED` (#662).
+- G2 : scaffold isolé #667, propriétaire d'intention sémantique #668, puis interface d'admission de preuves/UC **proposée** (`modules/intention_ingress.py`). Le module n'est relié à aucune vie.
+- G3 : tests de politique et de ports simulés, mais les **vraies** attestations première personne, le débit du Scheduler, la transaction atomique, le contrôle moteur, la mort et le M11 I2 ne sont pas implémentés. Voir [INTENTION_INGRESS.md](INTENTION_INGRESS.md), [INTENTION_CONTINUITY.md](INTENTION_CONTINUITY.md).
+- G4-G6 : aucun préenregistrement comparatif final, aucune nouvelle vie I2, aucune preuve de supériorité ni promotion.
 
-Le registre garde I1 actif. Ni copie d'un I1 vivant, ni transfert de Q, mémoire, expérience, priorité alimentaire ou autorisation motrice.
+I1 reste l'unique moteur actif du registre. Aucun état cognitif, vécu, Q ou priorité motrice ne lui est emprunté. Le SHA-256 d'une observation non signée n'est pas une preuve M11 ; un reçu UC synthétique ne facture aucun calcul d'un individu vivant.
