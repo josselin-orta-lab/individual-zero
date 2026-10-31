@@ -1,95 +1,39 @@
 # Project overview
 
-## Why Individual Zero exists
+## Research question
 
-Individual Zero explores a practical research question:
+Can an artificial individual in a simplified body and world learn useful behavior from its own experience, adapt to unfamiliar situations, and retain that learning without externally prescribed action choices?
 
-> Can we build an artificial individual capable of learning, adapting, and mobilizing what it has learned in genuinely new situations?
+Individual Zero is an open research project in artificial intelligence, cognitive architectures, embodied agents, and autonomous learning. Human-inspired mechanisms are hypotheses to test, not prevalidated answers. The aim is measurable, inspectable, reproducible research rather than a claim of AGI or consciousness.
 
-The project does not begin from the assumption that a particular theory of cognition is correct. Human cognition is an inspiration source, not a blueprint to copy mechanically.
+## Architectural generations (31 October 2026)
 
-The research goal is to build a system whose important mechanisms can be inspected, measured, challenged, replaced, and reproduced.
+- **I0:** frozen historical reference.
+- **I1:** active generation with its own cognitive modules, Lab, runtime, memory, first-person observation boundaries, tests, and M11 persistence.
+- **I2:** proposed independent successor under architectural and scientific review. Any present fixtures are non-living research artifacts; I2 is not registered, born, or promoted.
 
-## What the project is building
+The active registry is [config/engine-registry.json](../../config/engine-registry.json). The [generation autonomy decision](../decisions/ADR-0001-strict-generation-autonomy.md) prohibits carrying over obsolete runtime engines, mutable living state, memories, or fallback modes into a successor.
 
-The first target is **I0**, the initial integrated reference architecture.
+## Research mechanisms
 
-I0 is useful because research questions become much easier to interpret when experiments share a common reference system.
+The active I1 research addresses bodily needs and temperament, perception, memory and consolidation, action selection, causal attribution, cost-accounted cognition (UC), mortality, and authenticated state recovery. Its [handbook](../../src/i1/docs/README.md) documents the mechanisms; its [evidence matrix](../../src/i1/docs/EVIDENCE_MATRIX.md) distinguishes implementation from tests and science.
 
-I0 should be:
+## Evidence and limits
 
-- executable;
-- observable;
-- small enough to understand;
-- modular enough to replace mechanisms;
-- reproducible enough to compare results;
-- explicit enough that architectural changes leave a trace.
+The intended goal is integrated natural, effective, autonomous learning, **not** the mere presence of individual learning modules. The confirmatory A1-C study returned a targeted **NO_GO**. General adaptive benefit at L3 is **NOT_ESTABLISHED**, and A2-R remains **NOT_EXECUTED** (0/96). See the [transition and scientific gates](../architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md).
 
-## The core separation
-
-The repository is intentionally split into several roles:
-
-- **Lab** runs, observes, measures, and reproduces.
-- **Adapters** connect external projects.
-- **I0** contains the reference cognitive behavior.
-- **Experiments** preserve scientific evidence.
-- **Benchmarks** provide reusable comparison scenarios.
-- **Tests** verify expected software behavior.
-
-The short version is:
-
-> **Lab observes. Adapters connect. I0 operates. Experiments provide evidence. Tests verify the code.**
+Software tests can establish particular implementation invariants. Observed trajectories can describe behavior in their measured conditions. Neither alone demonstrates transferable autonomous learning. Negative or inconclusive results are retained and hypotheses remain falsifiable.
 
 ## How progress happens
 
-A scientific contribution typically follows:
+**Question / hypothesis -> RAI (Reuse, Adapt, Implement) -> minimal plan -> prototype -> test -> results -> decision.**
 
-**Question -> RAI -> minimal plan -> prototype -> test -> results -> decision**
-
-The point is not to maximize implementation volume.
-
-The point is to make each meaningful change answer a question.
-
-## What counts as progress
-
-Useful outcomes include:
-
-- a mechanism works better under defined conditions;
-- a mechanism works worse;
-- two variants are equivalent;
-- a hypothesis is not supported;
-- the experiment is inconclusive but exposes a measurement problem;
-- an external component is good enough to reuse;
-- an architectural assumption should be revised.
-
-Negative results are part of the project memory when they are reproducible.
-
-## What the project deliberately avoids
-
-Individual Zero tries to avoid:
-
-- building cognitive mechanisms without a question;
-- copying external tools without checking whether they fit;
-- hiding scientific behavior inside infrastructure;
-- treating software tests as scientific evidence;
-- using architecture documents as substitutes for experiments;
-- creating long-lived Git branches for research axes;
-- creating speculative EXP records merely to make the roadmap look populated.
-
-## Current stage
-
-The project is currently building its research foundations:
-
-1. repository and collaboration workflow;
-2. minimal Lab;
-3. minimal executable I0;
-4. first active research questions;
-5. first reproducible experiments;
-6. shared benchmarks;
-7. iterative architectural evolution from evidence.
+Scientific studies identify baselines, preregistered outcomes when appropriate, independent lives, physical consequences, failure cases, provenance, and limits. New generations require separate architectural and scientific gates.
 
 ## Where to go next
 
+- [Current I1 handbook](../../src/i1/docs/README.md)
+- [I1 evidence matrix](../../src/i1/docs/EVIDENCE_MATRIX.md)
 - [Repository tour](02-repository-tour.md)
 - [Research workflow](03-research-workflow.md)
 - [First-hour contributor guide](04-contributor-first-hour.md)
