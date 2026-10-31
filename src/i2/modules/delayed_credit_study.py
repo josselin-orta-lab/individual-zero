@@ -775,6 +775,8 @@ class PaidFeedbackValuationPort:
 
 # Physical evidence guard for later I2 design: a *read-only* correspondence
 # check. No M11 provider is implemented and it NEVER admits motor execution.
+# This generation label is a local compatibility fence, not an attestation.
+PHYSICAL_CLAIM_GENERATION = "I2"
 @dataclass(frozen=True, slots=True)
 class PhysicalEffectClaim:
     life_ref: str
@@ -814,7 +816,7 @@ class LivedPhysicalCorrespondence:
     admission_ref: str
     committed_event_ref: str
     subjective_capture_ref: str
-    observed_delta: int | None
+    observed_delta: int
     interpretation: str = "PHYSICAL_CORRESPONDENCE_CLAIM_ONLY"
     motor_authority: str = "NONE"
     m11_authenticated: bool = False
@@ -827,17 +829,20 @@ def verify_lived_physical_correspondence(
 
     This verifies consistency of claims through an injected provider. A mock
     provider cannot establish the truth of a body, M11 or physical causality.
-    Terminal effects are inspectable but cannot become learning updates.
+    Terminal effects must be inspected elsewhere, never learned from here.
+    Unobserved results cannot be turned into zero-valued lived credit.
     """
     if type(effect) is not PhysicalEffectClaim or type(event) is not ClaimedLivedStep:
         raise ValueError("exact physical and first-person claims required")
     effect.validate()
     event.validate()
-    if (effect.life_ref != event.life_ref or
+    if (effect.generation_ref != PHYSICAL_CLAIM_GENERATION or
+            effect.life_ref != event.life_ref or
             effect.after_step != event.physical_step or
             effect.admission_ref != event.admission_ref or
             effect.command_ref != event.action_semantic_ref or
             event.capture_ref == effect.committed_event_ref or
+            event.lived_delta is None or event.outcome_ref is None or
             effect.terminal):
         raise ValueError("foreign, terminal or mismatched physical effect")
     if (isinstance(authority, type) or
