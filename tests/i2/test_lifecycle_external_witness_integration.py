@@ -122,6 +122,39 @@ class SQLiteWitnessIntegration(unittest.TestCase):
         self.assertFalse(result.resumption_authorized)
         self.assertEqual(self.terminal.calls, 1)
 
+    def test_local_commit_during_external_read_is_refused(self):
+        fixture = self.create()
+        old = checkpoint(fixture.audit())
+
+        class InterleavingWitness:
+            def __init__(self, parent):
+                self.parent = parent
+                self.calls = 0
+
+            def read_verified_latest(self, *, life_ref, genesis_ref):
+                self.calls += 1
+                self.parent.seal(fixture)
+                return old
+
+        witness = InterleavingWitness(self)
+        from i2.modules.lifecycle_external_witness import WitnessRefusal
+        with self.assertRaises(WitnessRefusal) as failure:
+            verify_fixture(fixture=fixture, witness=witness)
+        self.assertEqual(failure.exception.reason, "UNKNOWN")
+        self.assertEqual(witness.calls, 1)
+        self.assertTrue(fixture.audit()["synthetic_terminal"])
+
+    def test_stable_two_audits_remain_inspection_only(self):
+        fixture = self.create()
+        witness = Witness(checkpoint(fixture.audit()))
+        before = fixture.audit()
+        inspection = verify_fixture(fixture=fixture, witness=witness)
+        self.assertEqual(fixture.audit(), before)
+        self.assertEqual(witness.calls, ["read_verified_latest"])
+        self.assertEqual(inspection.status, "MATCHED_OPEN_INSPECTION")
+        self.assertFalse(inspection.resumption_authorized)
+        self.assertEqual(inspection.motor_authority, "NONE")
+
     def test_old_sqlite_backup_after_terminal_is_rejected(self):
         f = self.create()
         stale = Path(self.t.name) / "stale.sqlite"
