@@ -22,3 +22,5 @@ python scripts/test_i1_ci.py --mode full --seed 246 --junit reports/i1-full.xml
 The current I1 builder is `scripts/build_i1_fork.py`. Run it into a temporary directory, not `src`. The active GitHub workflow remains `.github/workflows/i1-current-ci.yml`. Old research and I0-specific scenarios belong outside the current I1 CI and remain independently retrievable.
 
 **Hard boundary:** No I0 rewriting, rollback, postmortem activity, Oracle/Bench data in cognitive observation, disabling current-I1 modules or imposing obsolete H1/H2 expectations. A real failure must fail CI; an individual's plausible death under ignorance is not automatically a software failure.
+
+**Future generation rule (31 October 2026):** [ADR-0001](../decisions/ADR-0001-strict-generation-autonomy.md) requires complete architectural autonomy without an obsolete engine runtime dependency or legacy mode. Historical comparison is allowed; hidden compatibility, shared state and cross-generation life recovery are not. Keep I1's active life contracts intact.
